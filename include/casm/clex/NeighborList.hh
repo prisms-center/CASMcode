@@ -73,12 +73,23 @@ namespace CASM {
     const SublatIndices &sublat_indices() const;
 
     /// \brief Returns a NeighborList weighting matrix appropriate for a particular lattice
-    static Matrix3Type make_weight_matrix(const Eigen::Matrix3d lat_column_mat, Index max_element_value, double tol);
+    static Matrix3Type make_weight_matrix(const Eigen::Matrix3d lat_column_mat,
+                                          Index max_element_value,
+                                          double tol);
+
+    /// \brief Get neighborlist index of UnitCellCoord @param _ucc, expanding neighborhood if necessary
+    Scalar neighbor_index(UnitCellCoord const &_ucc);
+
+    /// \brief Get neighborlist indices of a collection of UnitCells, stored in @param _uc_container
+    template<typename UnitCellCoordIterator>
+    std::vector<Scalar> neighbor_indices(UnitCellCoordIterator _begin, UnitCellCoordIterator _end);
 
     /// \brief Clone
     std::unique_ptr<PrimNeighborList> clone() const;
 
   private:
+    /// \brief Get neighborlist index of UnitCellCoord @param _ucc, without expanding neighborhood
+    Scalar _neighbor_index(UnitCellCoord const &_ucc) const;
 
     /// \brief Ensure that all intermediate UnitCell are included in our neighborhood
     void _expand(Scalar prev_range);
@@ -238,6 +249,21 @@ namespace CASM {
 
     // otherwise, ensure all intermediate UnitCell are included
     _expand(prev_range);
+  }
+
+  /// \brief Get neighborlist indices of a of UnitCells, passed by begin and end iterator
+  template<typename UnitCellCoordIterator>
+  std::vector<PrimNeighborList::Scalar> PrimNeighborList::neighbor_indices(UnitCellCoordIterator _begin,
+                                                                           UnitCellCoordIterator _end) {
+    expand(_begin, _end);
+    std::vector<Scalar> result;
+    std::transform(_begin,
+                   _end,
+                   std::back_inserter(result),
+    [this](UnitCellCoord const & A)->Scalar{
+      return this->_neighbor_index(A);
+    });
+    return result;
   }
 
   /** @} */

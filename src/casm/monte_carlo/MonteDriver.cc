@@ -1,5 +1,4 @@
 #include "casm/monte_carlo/MonteDriver_impl.hh"
-#include "casm/crystallography/Molecule.hh"
 #include "casm/monte_carlo/canonical/Canonical.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"

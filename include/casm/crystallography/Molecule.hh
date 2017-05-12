@@ -3,11 +3,10 @@
 
 #include <iostream>
 #include <array>
+#include <vector>
 
-#include "casm/casm_io/json_io/container.hh"
-#include "casm/basis_set/DoF.hh"
-#include "casm/crystallography/Coordinate.hh"
-#include "casm/symmetry/SymOp.hh"
+#include "casm/misc/Comparisons.hh"
+#include "casm/crystallography/MoleculeAttribute.hh"
 
 namespace CASM {
 
@@ -17,84 +16,114 @@ namespace CASM {
    *  @{
    */
 
+  class SymOp;
   class Molecule;
-  template <typename T>
-  class OccupantDoF;
-  typedef OccupantDoF<Molecule> MoleculeOccupant;
+  template<typename T> struct jsonConstructor;
+
   //****************************************************
+  ///\brief Lightweight container for atom properties.
 
-  /// \brief A vacancy is any Specie/Molecule with (name == "VA" || name == "va" || name == "Va")
-  inline bool is_vacancy(const std::string &name) {
-    return (name == "VA" || name == "va" || name == "Va");
-  }
-
-  class Specie : public Comparisons<Specie> {
+  /// For now, it only contains the name, but in future other properties
+  /// may be needed (mass, atomic number, etc).
+  // Additional fields should only be added if absolutely necessary!
+  class AtomSpecie : public Comparisons<AtomSpecie> {
   public:
-    std::string name;
-    //BP: for current Kinetics logic, Specie is essentially "Atom"
-    //  (spherically symmetric, comparable by name only)
-    //  double mass, magmom, U, J; //Changed 05/10/13 -- was int
-    Specie() { };
-    explicit Specie(std::string init_name) : name(init_name) { };
+    AtomSpecie(std::string const &_name) :
+      m_name(_name) {}
 
-    bool is_vacancy() const {
-      return CASM::is_vacancy(name);
+    std::string const &name() const {
+      return m_name;
     }
 
-    bool operator<(const Specie &RHS) const {
-      return name < RHS.name;
-    };
+    bool operator==(AtomSpecie const &RHS) const {
+      return name() == RHS.name();
+    }
+
+    bool operator<(AtomSpecie const &RHS) const {
+      return name() < RHS.name();
+    }
 
   private:
-
-    friend Comparisons<Specie>;
-    bool _eq(const Specie &RHS) const {
-      return (name == RHS.name);
-    };
-
+    std::string m_name;
   };
 
-  jsonParser &to_json(const Specie &specie, jsonParser &json);
+  void from_json(AtomSpecie &_specie, jsonParser const &json);
 
-  void from_json(Specie &specie, const jsonParser &json);
-
+  jsonParser &to_json(AtomSpecie const &_specie, jsonParser &json);
   //****************************************************
 
-  class AtomPosition : public Coordinate {
+  /// \brief An atomic specie associated with a position in space
+  class AtomPosition {
   public:
     typedef std::array<bool, 3> sd_type;
-    Specie specie;
 
-    sd_type SD_flag;
+    AtomPosition(double _pos1,
+                 double _pos2,
+                 double _pos3,
+                 AtomSpecie const &_specie,
+                 sd_type const &_sd_flag = sd_type{false, false, false}) :
+      m_position(_pos1, _pos2, _pos3),
+      m_specie(_specie),
+      m_sd_flag(_sd_flag) { }
 
-    explicit AtomPosition(const Lattice &init_lattice) : Coordinate(0, 0, 0, init_lattice, CART) { };
-    AtomPosition(double elem1,
-                 double elem2,
-                 double elem3,
-                 std::string sp_name,
-                 const Lattice &init_lattice,
-                 COORD_TYPE mode,
-    sd_type _SD_flag = sd_type {{false, false, false}}) :
-      Coordinate(elem1, elem2, elem3, init_lattice, mode),
-      specie(sp_name),
-      SD_flag(_SD_flag) { };
+    AtomPosition(Eigen::Ref<const Eigen::Vector3d> const &_pos,
+                 AtomSpecie const &_specie,
+                 sd_type const &_sd_flag = sd_type{false, false, false}) :
+      m_position(_pos),
+      m_specie(_specie),
+      m_sd_flag(_sd_flag) { }
 
+    /// Const access of specie name
+    std::string const &name() const {
+      return m_specie.name();
+    }
 
-    bool operator==(const AtomPosition &RHS) const;
+    /// Const access of atomic specie
+    AtomSpecie const &specie() const {
+      return m_specie;
+    }
 
-    void print(std::ostream &stream, const Coordinate &trans, int spaces, bool SD_is_on = false) const;
-    // TODO: If comparing coordinates alone does not suffice, add a == operator here.
+    /// Const access of Cartesian position of atom
+    Eigen::Vector3d const &cart() const {
+      return m_position;
+    }
+
+    /// Const access of selective dynamics flags
+    sd_type const &sd_flag() const {
+      return m_sd_flag;
+    }
+
+    bool identical(AtomPosition const &RHS, double _tol) const;
+
+    void print(std::ostream &stream,
+               Eigen::Ref<const Eigen::Vector3d> const &trans,
+               Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
+               int spaces,
+               bool print_sd_flags = false) const;
 
     AtomPosition &apply_sym(const SymOp &op);
-    AtomPosition &apply_sym_no_trans(const SymOp &op);
 
+  private:
+    /// Atomic specie
+    AtomSpecie m_specie;
 
+    /// Cartesian position; origin is centered at site
+    Eigen::Vector3d m_position;
+
+    /// selective dynamics flags
+    sd_type m_sd_flag;
   };
 
-  jsonParser &to_json(const AtomPosition &apos, jsonParser &json);
+  jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Matrix3d const &c2f_mat);
 
-  // Lattice must be set already
-  void from_json(AtomPosition &apos, const jsonParser &json);
+  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+
+  template<>
+  struct jsonConstructor<AtomPosition> {
+
+    /// \brief Read from json [b, i, j, k], using 'unit' for AtomPosition::unit()
+    static AtomPosition from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+  };
 
   //****************************************************
 
@@ -104,86 +133,114 @@ namespace CASM {
    *  @{
    */
 
-  class Molecule :
-    public Array<AtomPosition>,
-    public Comparisons<Molecule> {
-
-    Lattice const *m_home;
-
-    Array<SymOp> point_group;
-
+  class Molecule {
   public:
-    using Array<AtomPosition>::push_back;
-    using Array<AtomPosition>::at;
-    using Array<AtomPosition>::size;
+    /// \brief Return an atomic Molecule with specified name
+    static Molecule make_atom(std::string const &atom_name,
+                              AtomPosition::sd_type const &_sd_flags);
 
-    Coordinate center;
-    std::string name;
+    /// \brief Return an atomic Molecule with specified name
+    static Molecule make_atom(std::string const &atom_name) {
+      return make_atom(atom_name, AtomPosition::sd_type{false, false, false});
+    }
 
-    explicit Molecule(const Lattice &init_home) : m_home(&init_home), center(0, 0, 0, init_home, CART) {};
+    /// \brief Return a vacancy Molecule
+    static Molecule make_vacancy();
 
-    Lattice const *home() const {
-      return m_home;
+    Molecule(std::string const &_name,
+             std::initializer_list<AtomPosition> const &_atoms) :
+      m_name(_name),
+      m_atoms(_atoms),
+      m_divisible(false) {}
+
+    Molecule(std::string const &_name,
+             std::vector<AtomPosition> const &_atoms) :
+      m_name(_name),
+      m_atoms(_atoms),
+      m_divisible(false) {}
+
+    Index size() const {
+      return m_atoms.size();
+    }
+
+    std::string const &name() const {
+      return m_name;
+    }
+
+    std::vector<AtomPosition> const &atoms() const {
+      return m_atoms;
+    }
+
+    AtomPosition const &atom(Index i) const {
+      return m_atoms[i];
     }
 
     bool is_vacancy() const {
-      return CASM::is_vacancy(name);
-    };
-
-    /// \brief Check if Molecule is indivisible
-    ///
-    /// - Currently, always false
-    bool is_indivisible() const {
-      return false;
+      return m_atoms.empty();
     }
 
-    Molecule &apply_sym(const SymOp &op);
-    Molecule &apply_sym_no_trans(const SymOp &op);
+    Molecule &apply_sym(SymOp const &op);
 
-    void set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode);
+    /// \brief Check equality of two molecules, within specified tolerance.
+    /// Compares atoms, irrespective of order, and attributes (name is not checked)
+    bool identical(Molecule const &RHS, double _tol) const;
 
-    bool contains(const std::string &name) const;
+    /// \brief Returns true of molecule contains atom of specified name
+    bool contains(std::string const &atom_name) const;
 
     void read(std::istream &stream);
-    void print(std::ostream &stream, const Coordinate &trans, int spaces, char delim, bool SD_is_on = false) const;
 
-    jsonParser &to_json(jsonParser &json) const;
+    void print(std::ostream &stream,
+               Eigen::Ref<const Eigen::Vector3d> const &trans,
+               Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
+               int spaces,
+               char delim,
+               bool print_sd_flags  = false) const;
 
-    // Lattice must be set already
-    void from_json(const jsonParser &json);
+    jsonParser &to_json(jsonParser &json, Eigen::Matrix3d const &c2f_mat) const;
 
-    /// \brief Name comparison via '<', '>', '<=', '>='
-    bool operator<(const Molecule &B) const;
+    void from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
 
-    using Comparisons<Molecule>::operator==;
-    using Comparisons<Molecule>::operator!=;
-    using Comparisons<Molecule>::operator<=;
-    using Comparisons<Molecule>::operator>;
-    using Comparisons<Molecule>::operator>=;
+    bool is_divisible() const {
+      return m_divisible;
+    }
+
+    bool is_indivisible() const {
+      return !m_divisible;
+    }
 
   private:
-
-    friend Comparisons<Molecule>;
-
-    /// \brief center and AtomPosition comparison via '==', '!='
-    bool _eq(const Molecule &B) const;
+    std::string m_name;
+    std::vector<AtomPosition> m_atoms;
+    std::map<std::string, MoleculeAttribute> m_attribute_map;
+    bool m_divisible;
   };
 
-  /// \brief Return an atomic Molecule with specified name and Lattice
-  Molecule make_atom(std::string atom_name, const Lattice &lat);
+  inline
+  bool operator==(Molecule const &A, Molecule const &B) {
+    return A.identical(B, TOL);
+  }
 
-  /// \brief Return an vacancy Molecule with specified Lattice
-  Molecule make_vacancy(const Lattice &lat);
+  /// \brief A vacancy is any Specie/Molecule with (name == "VA" || name == "va" || name == "Va")
+  inline bool is_vacancy(const std::string &name) {
+    return (name == "VA" || name == "va" || name == "Va");
+  }
 
   /// \brief Return true if Molecule name matches 'name', including Va checks
-  bool is_molecule_name(const Molecule &mol, std::string name);
+  inline
+  bool is_molecule_name(const Molecule &mol, std::string name) {
+    return mol.name() == name || (mol.is_vacancy() && is_vacancy(name));
+  }
 
+  jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Matrix3d const &c2f_mat);
 
-  jsonParser &to_json(const Molecule &mol, jsonParser &json);
+  void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
 
-  // Lattice must be set already
-  void from_json(Molecule &mol, const jsonParser &json);
-
+  template<>
+  struct jsonConstructor<Molecule> {
+    static Molecule from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+  };
   /** @} */
-};
+}
+
 #endif

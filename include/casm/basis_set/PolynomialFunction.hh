@@ -87,10 +87,6 @@ namespace CASM {
     double cache_eval() const;
     double cache_deval(const DoF::RemoteHandle &dvar) const;
 
-    double eval(const Array<Index> &dof_IDs, const Array<Index> &var_states) const;
-    double eval(const Array<Index> &dof_IDs, const Array<double> &arg_states) const;
-    double poly_eval(const Array<double> &arg_states) const;
-
     Function *apply_sym_coeffs(const SymOp &op, int dependency_layer);
 
     Function *poly_quotient(const Variable *RHS) const;
@@ -128,7 +124,10 @@ namespace CASM {
 
     Function *_apply_sym(const SymOp &op);
     Function *_apply_sym(const SymOp &op, const std::vector<bool> &transform_flags);
+
     bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
+
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL)const;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,6 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/algorithm.hh"
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/PrimGrid.hh"
 
@@ -101,6 +102,20 @@ namespace CASM {
   /// \brief const_iterator over the neighborhood of unit cells
   const PrimNeighborList::SublatIndices &PrimNeighborList::sublat_indices() const {
     return m_sublat_indices;
+  }
+
+  /// \brief Get neighborlist index of UnitCellCoord @param _ucc, expanding neighborhood if necessary
+  PrimNeighborList::Scalar PrimNeighborList::neighbor_index(UnitCellCoord const &_ucc) {
+    expand(_ucc);
+    return _neighbor_index(_ucc);
+  }
+
+  /// \brief Get neighborlist index of UnitCellCoord @param _ucc, without expanding neighborhood
+  PrimNeighborList::Scalar PrimNeighborList::_neighbor_index(UnitCellCoord const &_ucc) const {
+    Scalar uc_ind(find_index(m_neighborhood, _ucc.unitcell()));
+    Scalar sublat_dist(find_index(sublat_indices(), _ucc.sublat()));
+
+    return uc_ind * sublat_indices().size() + sublat_dist;
   }
 
   /// \brief Calculate A.transpose()*M*A

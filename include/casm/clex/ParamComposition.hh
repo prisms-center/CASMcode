@@ -2,8 +2,9 @@
 #define PARAMCOMPOSITION_HH
 
 #include <vector>
+#include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_Eigen.hh"
-#include "casm/container/Array.hh"
+#include "casm/casm_io/stream_io/container.hh"
 
 namespace CASM {
 
@@ -15,10 +16,10 @@ namespace CASM {
   class ParamComposition {
     // holds the transformation matrix to go from NUMBER_ATOMS to
     // PARAM_COMP and vice versa
-    Array< Eigen::MatrixXd > m_comp;
+    std::vector< Eigen::MatrixXd > m_comp;
 
     // hold the list of allowed components, based on the PRIM
-    Array< std::string > m_components;
+    std::vector< std::string > m_components;
 
     // The origin of the composition space
     Eigen::VectorXd m_origin;
@@ -32,7 +33,7 @@ namespace CASM {
 
     //holds the list of end members as defined in this space by the
     //comp and origin matrices
-    Array< Eigen::VectorXd > m_spanning_end_members;
+    std::vector< Eigen::VectorXd > m_spanning_end_members;
 
     // holds the list of all allowed end_members in the PRIM
     //   each row is an end_member
@@ -43,7 +44,7 @@ namespace CASM {
 
     // the list of possible composition axes that have positive
     // composition axes as computed by generate_composition_axes
-    Array< ParamComposition > m_allowed_list;
+    std::vector< ParamComposition > m_allowed_list;
   public:
     //*************************************************************
     //CONSTRUCTORS
@@ -66,7 +67,7 @@ namespace CASM {
       m_rank_of_space = -1;
     }
 
-    ParamComposition(const Array< std::string > &_components, const Eigen::MatrixXd &transf_mat, const Eigen::VectorXd &_origin, const int &_rank_of_space, const Structure &_prim, const int &COMP_TYPE) {
+    ParamComposition(const std::vector< std::string > &_components, const Eigen::MatrixXd &transf_mat, const Eigen::VectorXd &_origin, const int &_rank_of_space, const Structure &_prim, const int &COMP_TYPE) {
       m_rank_of_space = _rank_of_space;
       m_components = _components;
       m_origin = _origin;
@@ -122,7 +123,7 @@ namespace CASM {
 
     //*************************************************************
     //CALC Routines
-    ParamComposition calc_composition_object(const Eigen::VectorXd &torigin, const Array< Eigen::VectorXd> tspanning);
+    ParamComposition calc_composition_object(const Eigen::VectorXd &torigin, const std::vector< Eigen::VectorXd> tspanning);
     Eigen::VectorXd calc(const Eigen::VectorXd &tcomp, const int &MODE);
     //    ptree calc_composition_ptree() const; //returns a ptree object with all the data from this composition object
     void calc_spanning_end_members();
@@ -193,7 +194,7 @@ namespace CASM {
       return *m_prim_struc;
     }
 
-    const Array< Eigen::VectorXd > &spanning_end_members() const {
+    const std::vector< Eigen::VectorXd > &spanning_end_members() const {
       return m_spanning_end_members;
     };
 
@@ -202,7 +203,7 @@ namespace CASM {
       return m_prim_end_members;
     }
 
-    const Array< Eigen::MatrixXd > &comp() const {
+    const std::vector< Eigen::MatrixXd > &comp() const {
       return m_comp;
     };
 
@@ -219,13 +220,13 @@ namespace CASM {
     };
 
     /// \brief Components are ordered as in Structure::struc_molecule
-    const Array<std::string> &components() const {
+    const std::vector<std::string> &components() const {
       return m_components;
     };
 
     std::string composition_formula() const;
 
-    const Array<ParamComposition> &allowed_list() const {
+    const std::vector<ParamComposition> &allowed_list() const {
       return m_allowed_list;
     }
 

@@ -56,6 +56,8 @@ namespace CASM {
     /// do not depend on the lattice of 'RHS'
     BasicStructure(const BasicStructure &RHS);
 
+    ~BasicStructure();
+
     //  ****Inspectors/Accessors****
 
     /// return basis index of site that matches test_coord, if it is in basis

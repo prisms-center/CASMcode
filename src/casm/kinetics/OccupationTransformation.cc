@@ -1,6 +1,7 @@
 #include "casm/kinetics/OccupationTransformation.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 
@@ -96,9 +97,9 @@ namespace CASM {
 
     out << indent() << indent() << indent();
     out << trans.uccoord << " : ";
-    out << trans.from_value << " (" << trans.from_mol().name << ")";
+    out << trans.from_value << " (" << trans.from_mol().name() << ")";
     out << "  ->  ";
-    out << trans.to_value << " (" << trans.to_mol().name << ")";
+    out << trans.to_value << " (" << trans.to_mol().name() << ")";
     if(delim)
       out << delim;
     out << std::flush;

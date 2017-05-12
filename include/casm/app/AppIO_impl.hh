@@ -90,67 +90,6 @@ namespace CASM {
 
   }
 
-  /// \brief Print site basis functions, as for 'casm bset --functions'
-  ///
-  /// \param begin,end Range of Orbit<IntegralCluster, SymCompareType>
-  /// \param clex_basis A ClexBasis object generated from the provided orbits
-  /// \param out output stream
-  /// \param mode Coordinate output mode
-  ///
-  template<typename ClusterOrbitIterator>
-  void print_site_basis_funcs(
-    ClusterOrbitIterator begin,
-    ClusterOrbitIterator end,
-    const ClexBasis &clex_basis,
-    std::ostream &out,
-    COORD_TYPE mode) {
-
-    out << "COORD_MODE = " << mode << std::endl << std::endl;
-
-    out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
-    out.precision(5);
-    Index asym_unit_count = 1;
-
-    auto bset_orb_it = clex_basis.begin();
-    for(auto it = begin; it != end; ++it, ++bset_orb_it) {
-      if(it->prototype().size() != 1) {
-        continue;
-      }
-
-      out << "Asymmetric unit " << asym_unit_count++ << ":\n";
-
-
-      auto bset_it = bset_orb_it->begin();
-      for(const auto &equiv : *it) {
-
-        auto b = equiv[0].sublat();
-        const auto &site_occ = equiv[0].site().site_occupant();
-        const auto &bset = *bset_it++;
-
-        out << "  Basis site " << b << ":\n"
-            << "  ";
-        equiv[0].site().print(out);
-        out << "\n";
-        if(bset.size() == 0) {
-          out << "        [No site basis functions]\n\n";
-        }
-        for(Index f = 0; f < bset.size(); ++f) {
-          for(Index s = 0; s < site_occ.size(); ++s) {
-            if(s == 0)
-              out << "    ";
-            out << "    \\phi_" << b << '_' << f << '[' << site_occ[s].name << "] = "
-                << bset[f]->eval(Array<Index>(1, site_occ.ID()), Array<Index>(1, s));
-            if(s + 1 == site_occ.size())
-              out << "\n";
-            else
-              out << ",   ";
-          }
-        }
-      }
-    }
-  }
-
-
   // ---------- clust.json IO ------------------------------------------------------------------
 
   /// \brief Read JSON containing Orbit<IntegralCluster, SymCompareType> prototypes

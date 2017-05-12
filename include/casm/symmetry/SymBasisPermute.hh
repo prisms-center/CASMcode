@@ -1,15 +1,14 @@
 #ifndef SYMBASISPERMUTE_HH
 #define SYMBASISPERMUTE_HH
 
-#include "casm/container/Array.hh"
+#include <vector>
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/symmetry/SymOpRepresentation.hh"
-#include "casm/symmetry/SymOp.hh"
-#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
   class MasterSymGroup;
   class Lattice;
+  class jsonParser;
 
   /** \ingroup SymOp
    *  @{
@@ -28,7 +27,7 @@ namespace CASM {
   class SymBasisPermute: public SymOpRepresentation {
   private:
 
-    /// Array of UnitCellCoords, of length basis.size(). Site (b,0,0,0) goes to
+    /// vector of UnitCellCoords, of length basis.size(). Site (b,0,0,0) goes to
     /// (b_new,i,j,k)==m_ucc_permute[b] after application of symmetry.
     std::vector<UnitCellCoord> m_ucc_permute;
 
@@ -85,27 +84,6 @@ namespace CASM {
     void from_json(const jsonParser &json) override {};
 
   };
-
-
-  // ---- SymBasisPermute Definitions --------------------
-
-  /// Construct SymBasisPermute
-  template<typename StrucType>
-  SymBasisPermute::SymBasisPermute(const SymOp &op, const StrucType &struc, double tol) {
-    SymOp::matrix_type frac_op(cart2frac(op.matrix(), struc.lattice()));
-    if(!is_integer(frac_op, tol)) {
-      throw std::runtime_error(
-        std::string("Error in 'SymBasisPermute(const SymOp& op, const StrucType& struc, double tol)'\n") +
-        "  Could not get integer point transformation matrix.");
-    }
-
-    m_point_mat = lround(frac_op);
-
-    // Determine how basis sites transform from the origin unit cell
-    for(int b = 0; b < struc.basis.size(); b++) {
-      m_ucc_permute.push_back(UnitCellCoord(struc, CASM::copy_apply(op, struc.basis[b]), tol));
-    }
-  }
 
 }
 #endif

@@ -9,13 +9,6 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/BasisFunction.hh"
 
-//#include "../container/SparseTensor.cc"
-//#include "../container/Tensor.cc"
-//#include "../basis_set/DoF.cc"
-//#include "../symmetry/SymOp.hh"
-//#include "../symmetry/SymGroup.hh"
-//#include "../misc/HierarchyID.cc"
-
 namespace CASM {
 
   class FunctionVisitor;
@@ -133,11 +126,11 @@ namespace CASM {
     void remote_deval_to(IteratorType result_begin, IteratorType result_end, const DoF::RemoteHandle &dvar)const;
 
     /// Define the basis set to contain only variables (e.g., x,y,z)
-    void set_variable_basis(const Array<ContinuousDoF> &tvar_compon, SymGroupRepID _sym_rep_ID);
+    void set_variable_basis(const DoFSet &_dof_set);
 
-    void set_dof_IDs(const Array<Index> &new_IDs);
+    void set_dof_IDs(const std::vector<Index> &new_IDs);
 
-    const Array<Index> &dof_IDs() const {
+    const std::vector<Index> &dof_IDs() const {
       return m_dof_IDs;
     }
 
@@ -151,7 +144,7 @@ namespace CASM {
 
     std::vector<std::set<Index> > independent_sub_bases() const;
 
-    int register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles);
+    int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles);
 
     void append(const BasisSet &RHS);
 
@@ -170,7 +163,7 @@ namespace CASM {
                                                   const SymGroup &symgroup);
 
     void construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
-                                                  const Array<double> &occ_probs,
+                                                  const std::vector<double> &occ_probs,
                                                   Index basis_ind,
                                                   const SymGroup &symgroup);
 
@@ -228,7 +221,7 @@ namespace CASM {
     // {x, y, x*u, x*v, x*w, y*u, y*v,y*w, x*u*u, x*u*v, x*u*w, ..., y*w*w}
     Index m_min_poly_order, m_max_poly_order;
 
-    Array<Index> m_dof_IDs;
+    std::vector<Index> m_dof_IDs;
     Array<SubBasis> m_dof_subbases;
     Array<PolyConstraint> m_min_poly_constraints, m_max_poly_constraints;
 
@@ -268,7 +261,7 @@ namespace CASM {
       m_argument = new_args;
     }
 
-    void _update_dof_IDs(const Array<Index> before_IDs, const Array<Index> &after_IDs);
+    void _update_dof_IDs(const std::vector<Index> before_IDs, const std::vector<Index> &after_IDs);
 
     //non-const access to constraints
     Array<PolyConstraint> &_min_poly_constraints() {

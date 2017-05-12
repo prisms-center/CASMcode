@@ -4,6 +4,7 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/casm_io/json_io/container.hh"
+#include "casm/container/LinearAlgebra.hh"
 
 namespace CASM {
 

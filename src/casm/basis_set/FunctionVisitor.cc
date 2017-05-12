@@ -7,6 +7,49 @@
 #include "casm/misc/CASM_math.hh"
 namespace CASM {
 
+  bool FunctionVisitor::visit(Variable const &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(Variable &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(OccupantFunction const &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(OccupantFunction &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(PolynomialFunction const &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(PolynomialFunction &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+
+  bool FunctionVisitor::_generic_visit(Function &host, BasisSet const *bset_ptr)const {
+    Function const &const_host(host);
+    return this->_generic_visit(const_host, bset_ptr);
+  }
+
+  bool FunctionVisitor::_generic_visit(Function const &host, BasisSet const *bset_ptr)const {
+    return false;
+  }
+
+  bool OccFuncEvaluator::visit(OccupantFunction &host, BasisSet const *bset_ptr)const {
+    m_value = host.discrete_eval(m_state);
+    return false;
+  }
+
+  bool OccFuncEvaluator::visit(OccupantFunction const &host, BasisSet const *bset_ptr)const {
+    m_value = host.discrete_eval(m_state);
+    return false;
+  }
 
   OccFuncLabeler::OccFuncLabeler(const std::string &_template) {
     // parse _template into the Array m_sub_strings
@@ -89,7 +132,7 @@ namespace CASM {
     std::stringstream tformula, ttex;
     Array<int> var_ind;
 
-    for(Index i = 0; i < host.var_compon().size(); i++) {
+    for(Index i = 0; i < host.dof_set().size(); i++) {
       if(!almost_zero(host.coeffs()[i])) {
         var_ind.push_back(i);
       }
@@ -116,7 +159,7 @@ namespace CASM {
 
     double coeff;
     for(Index i = 0; i < var_ind.size(); i++) {
-      const ContinuousDoF &var_compon(host.var_compon()[var_ind[i]]);
+      const ContinuousDoF &dof_set(host.dof_set()[var_ind[i]]);
       coeff = host.coeffs()[var_ind[i]];
 
       if(i > 0 && coeff > 0) {
@@ -142,25 +185,25 @@ namespace CASM {
 
       for(Index j = 0; j < m_sub_strings.size(); j++) {
         if(m_sub_strings[j] == "%n") {
-          if(valid_index(var_compon.ID())) {
-            ttex << var_compon.ID();
-            tformula << var_compon.ID();
+          if(valid_index(dof_set.ID())) {
+            ttex << dof_set.ID();
+            tformula << dof_set.ID();
           }
           else {
-            //std::cout << "type_name is " << var_compon.type_name() << ", ID is " << var_compon.ID() << "\n";
+            //std::cout << "type_name is " << dof_set.type_name() << ", ID is " << dof_set.ID() << "\n";
             ttex << '?';
             tformula << '?';
           }
         }
         else if(m_sub_strings[j] == "%p") {
-          std::string prefix = var_compon.type_name_prefix();
+          std::string prefix = dof_set.type_name();
           if(prefix.empty())
             prefix = "?";
           ttex << prefix;
           tformula << prefix;
         }
         else if(m_sub_strings[j] == "%s") {
-          std::string suffix = var_compon.type_name_suffix();
+          std::string suffix = dof_set.var_name();
           if(suffix.empty())
             suffix = "?";
           ttex << suffix;
@@ -207,29 +250,12 @@ namespace CASM {
     //std::cout << "substring expression: " << m_sub_strings << " and bset_name is " << m_bset_name << '\n';
   }
 
-  //*******************************************************************************************
-
-  bool SubExpressionLabeler::visit(Variable &host, BasisSet const *bset_ptr)const {
-    return _generic_visit(host, bset_ptr);
-  }
-
-  //*******************************************************************************************
-
-  bool SubExpressionLabeler::visit(OccupantFunction &host, BasisSet const *bset_ptr)const {
-    return _generic_visit(host, bset_ptr);
-  }
-
-  //*******************************************************************************************
-
-  bool SubExpressionLabeler::visit(PolynomialFunction &host, BasisSet const *bset_ptr)const {
-    return _generic_visit(host, bset_ptr);
-  }
 
   //*******************************************************************************************
 
   bool SubExpressionLabeler::_generic_visit(Function &host, BasisSet const *bset_ptr) const {
 
-    if(bset_ptr == NULL || (bset_ptr->name()).find(m_bset_name) != 0) {
+    if(bset_ptr == nullptr || (bset_ptr->name()).find(m_bset_name) != 0) {
       //std::cout << "_generic_visit(): bset_ptr is " << bset_ptr << "\n";
       return false;
     }

@@ -2,9 +2,11 @@
 
 #include <tuple>
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/QueryHandler.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/misc/algorithm.hh"

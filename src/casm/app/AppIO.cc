@@ -65,14 +65,14 @@ namespace CASM {
         from_json(occ_name, json["basis"][i]["occupant_dof"]);
 
         // fill site.site_occupant
-        Array<Molecule> tocc;
-        for(int i = 0; i < occ_name.size(); i++) {
-          Molecule tMol(prim.lattice());
-          tMol.name = occ_name[i];
-          tMol.push_back(AtomPosition(0, 0, 0, occ_name[i], prim.lattice(), CART));
-          tocc.push_back(tMol);
-        }
-        site.set_site_occupant(MoleculeOccupant(tocc));
+        std::vector<Molecule> tocc;
+        tocc.reserve(occ_name.size());
+        std::transform(occ_name.begin(),
+                       occ_name.end(),
+                       std::back_inserter(tocc),
+                       static_cast<Molecule(*)(std::string const &)>(Molecule::make_atom));
+
+        site.set_allowed_species(tocc);
         site.set_occ_value(0);
 
         // add site to prim
@@ -139,7 +139,7 @@ namespace CASM {
       json["basis"][i]["occupant_dof"] = jsonParser::array(prim.basis[i].site_occupant().size());
 
       for(int j = 0; j < prim.basis[i].site_occupant().size(); j++) {
-        json["basis"][i]["occupant_dof"][j] = prim.basis[i].site_occupant()[j].name;
+        json["basis"][i]["occupant_dof"][j] = prim.basis[i].site_occupant()[j].name();
       }
 
     }
@@ -481,7 +481,6 @@ namespace CASM {
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,FullSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoFuncsPrinter) \
-  template void print_site_basis_funcs<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode); \
   template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(\
     INSERTER result,\
     const jsonParser &json,\

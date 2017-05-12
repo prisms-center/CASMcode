@@ -3,7 +3,8 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
-
+#include "casm/container/LinearAlgebra.hh"
+#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
 

@@ -167,6 +167,7 @@ namespace CASM {
       print_names(err_log(), enumerators());
       return ERR_INVALID_ARG;
     }
+    throw std::runtime_error("Unknown error in 'casm enum'");
   }
 
   const EnumeratorMap &EnumCommand::enumerators() const {

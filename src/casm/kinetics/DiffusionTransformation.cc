@@ -1,7 +1,11 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 
+#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/clex/Configuration.hh"
 
 namespace CASM {
@@ -11,9 +15,9 @@ namespace CASM {
   namespace Kinetics {
 
     namespace {
-      std::ostream &operator<<(std::ostream &sout, const std::map<Specie, Index> &count) {
+      std::ostream &operator<<(std::ostream &sout, const std::map<AtomSpecie, Index> &count) {
         for(const auto &t : count) {
-          sout << "  " << t.first.name << ": " << t.second << std::endl;
+          sout << "  " << t.first.name() << ": " << t.second << std::endl;
         }
         return sout;
       }
@@ -34,8 +38,8 @@ namespace CASM {
       return uccoord.sublat_site().site_occupant()[occ];
     }
 
-    const Specie &SpecieLocation::specie() const {
-      return mol()[pos].specie;
+    const AtomSpecie &SpecieLocation::specie() const {
+      return mol().atom(pos).specie();
     }
 
     std::tuple<UnitCellCoord, Index, Index> SpecieLocation::_tuple() const {
@@ -177,7 +181,7 @@ namespace CASM {
     sout << obj.cluster_invariants;
     if(obj.specie_count.size() > 0) {
       for(const auto &t : obj.specie_count) {
-        sout << " " << t.first.name << ":" << t.second;
+        sout << " " << t.first.name() << ":" << t.second;
       }
     }
     return sout;
@@ -360,9 +364,9 @@ namespace CASM {
     ///
     /// - Uses occ_transform() 'from' specie
     /// - Is equal to 'to' specie count if is_valid_occ_transform() == true
-    const std::map<Specie, Index> &DiffusionTransformation::specie_count() const {
+    const std::map<AtomSpecie, Index> &DiffusionTransformation::specie_count() const {
       if(!m_specie_count) {
-        m_specie_count = notstd::make_cloneable<std::map<Specie, Index> >(_from_specie_count());
+        m_specie_count = notstd::make_cloneable<std::map<AtomSpecie, Index> >(_from_specie_count());
       }
       return *m_specie_count;
     }
@@ -571,32 +575,32 @@ namespace CASM {
       m_specie_count.reset();
     }
 
-    std::map<Specie, Index> DiffusionTransformation::_from_specie_count() const {
-      std::map<Specie, Index> _specie_count = _empty_specie_count();
+    std::map<AtomSpecie, Index> DiffusionTransformation::_from_specie_count() const {
+      std::map<AtomSpecie, Index> _specie_count = _empty_specie_count();
       for(const auto &t : m_occ_transform) {
         const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.from_value];
-        for(const AtomPosition &specie_pos : mol) {
-          _specie_count[specie_pos.specie]++;
+        for(const AtomPosition &specie_pos : mol.atoms()) {
+          _specie_count[specie_pos.specie()]++;
         }
       }
       return _specie_count;
     }
 
-    std::map<Specie, Index> DiffusionTransformation::_to_specie_count() const {
-      std::map<Specie, Index> _specie_count = _empty_specie_count();
+    std::map<AtomSpecie, Index> DiffusionTransformation::_to_specie_count() const {
+      std::map<AtomSpecie, Index> _specie_count = _empty_specie_count();
       for(const auto &t : m_occ_transform) {
         const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.to_value];
-        for(const AtomPosition &specie_pos : mol) {
-          _specie_count[specie_pos.specie]++;
+        for(const AtomPosition &specie_pos : mol.atoms()) {
+          _specie_count[specie_pos.specie()]++;
         }
       }
       return _specie_count;
     }
 
-    std::map<Specie, Index> DiffusionTransformation::_empty_specie_count() const {
+    std::map<AtomSpecie, Index> DiffusionTransformation::_empty_specie_count() const {
       auto struc_specie = prim().struc_specie();
-      std::map<Specie, Index> _specie_count;
-      for(const Specie &s : struc_specie) {
+      std::map<AtomSpecie, Index> _specie_count;
+      for(const AtomSpecie &s : struc_specie) {
         _specie_count[s] = 0;
       }
       return _specie_count;
@@ -630,13 +634,13 @@ namespace CASM {
       from_json(
         trans.occ_transform(),
         json["occ_transform"],
-        json["occ_transform"][0].get<Kinetics::OccupationTransformation>(prim));
+        prim);
     }
     if(json["specie_traj"].size() > 0) {
       from_json(
         trans.specie_traj(),
         json["specie_traj"],
-        json["specie_traj"][0].get<Kinetics::SpecieTrajectory>(prim));
+        prim);
     }
   }
 
@@ -648,7 +652,7 @@ namespace CASM {
     if(trans.is_valid()) {
       for(const auto &traj : trans.specie_traj()) {
         out << indent() << indent() << indent();
-        out << traj.from.specie().name + ": " << traj.from << "  ->  " << traj.to;
+        out << traj.from.specie().name() + ": " << traj.from << "  ->  " << traj.to;
 
         if(delim)
           out << delim;
@@ -663,9 +667,9 @@ namespace CASM {
       out << indent() << indent() << indent() << "specie trajectory:" << delim;
       for(const auto &traj : trans.specie_traj()) {
         out << indent() << indent() << indent();
-        out << traj.from << " (" << traj.from.specie().name << ")";
+        out << traj.from << " (" << traj.from.specie().name() << ")";
         out << "  ->  ";
-        out << traj.to << " (" << traj.to.specie().name << ")";
+        out << traj.to << " (" << traj.to.specie().name() << ")";
 
         if(delim)
           out << delim;

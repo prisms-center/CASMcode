@@ -45,14 +45,14 @@ namespace CASM {
       if(m_mol_names.size() == 0) {
         for(Index i = 0; i < struc_molecule.size(); i++) {
           _add_rule(std::vector<Index>({i}));
-          m_mol_names.push_back(struc_molecule[i].name);
+          m_mol_names.push_back(struc_molecule[i].name());
         }
       }
       else {
         for(Index n = 0; n < m_mol_names.size(); n++) {
           Index i = 0;
           for(i = 0; i < struc_molecule.size(); i++) {
-            if(struc_molecule[i].name == m_mol_names[n]) {
+            if(struc_molecule[i].name() == m_mol_names[n]) {
               _add_rule(std::vector<Index>({i}));
               break;
             }

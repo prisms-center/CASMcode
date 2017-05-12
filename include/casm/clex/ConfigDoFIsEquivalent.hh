@@ -309,7 +309,7 @@ namespace CASM {
         FloatIsEquivalent(_configdof, _tol),
         m_fg_index_A(-1),
         m_fg_index_B(-1),
-        m_def_tensor(_configdof.deformation().transpose()*_configdof.deformation()) {}
+        m_def_tensor(_configdof.deformation().transpose() * _configdof.deformation()) {}
 
       Strain(const Configuration &_config, double _tol) :
         Strain(_config.configdof(), _tol) {}

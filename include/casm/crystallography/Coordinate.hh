@@ -6,7 +6,6 @@
 #include <cassert>
 
 #include "casm/crystallography/CoordinateSystems.hh"
-#include "casm/container/LinearAlgebra.hh"
 #include "casm/crystallography/Lattice.hh"
 
 namespace CASM {

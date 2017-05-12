@@ -1,6 +1,7 @@
 #ifndef CASM_PrimClex_impl
 #define CASM_PrimClex_impl
 
+#include "casm/casm_io/jsonParser.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ClexDescription.hh"

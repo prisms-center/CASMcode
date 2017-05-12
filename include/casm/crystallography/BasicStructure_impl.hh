@@ -13,6 +13,7 @@
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
   template<typename CoordType>
@@ -36,6 +37,11 @@ namespace CASM {
       basis[i].set_lattice(lattice(), CART);
     }
   }
+
+  //***********************************************************
+
+  template<typename CoordType>
+  BasicStructure<CoordType>::~BasicStructure() {}
 
   //***********************************************************
 

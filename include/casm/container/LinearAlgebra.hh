@@ -20,7 +20,7 @@
 #include "casm/external/Eigen/Eigenvalues"
 
 #include "casm/container/Array.hh"
-#include "casm/misc/CASM_math.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 namespace CASM {
 
   /** \defgroup LinearAlgebra

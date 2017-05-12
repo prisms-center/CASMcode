@@ -1,5 +1,6 @@
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/CASM_global_enum.hh"
+#include "casm/misc/CASM_math.hh"
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {

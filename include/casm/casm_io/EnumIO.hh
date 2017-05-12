@@ -164,6 +164,7 @@ namespace CASM {
     val = from_string<ENUM>(json.get<std::string>()); \
   } \
 
+
 }
 
 #endif

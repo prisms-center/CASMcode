@@ -263,33 +263,34 @@ namespace CASM {
       return _eci() * corr.data();
     }
 
-    void Canonical::_set_nlist(Index l) const {
-      _clexulator().set_nlist(nlist().sites(nlist().unitcell_index(l)).data());
-    };
-
     void Canonical::_calc_delta_point_corr(Index l, int new_occ, Eigen::VectorXd &dCorr_comp) const {
 
       int sublat = _config().sublat(l);
       int curr_occ = _configdof().occ(l);
-      _set_nlist(l);
 
       // Calculate the change in correlations due to this event
       if(m_use_deltas) {
         if(m_all_correlations) {
-          _clexulator().calc_delta_point_corr(sublat,
-                                              curr_occ,
-                                              new_occ,
-                                              dCorr_comp.data());
+          _clexulator().calc_delta_point_corr(
+            _configdof(),
+            nlist().sites(nlist().unitcell_index(l)).data(),
+            sublat,
+            curr_occ,
+            new_occ,
+            dCorr_comp.data());
         }
         else {
           auto begin = _eci().index().data();
           auto end = begin + _eci().index().size();
-          _clexulator().calc_restricted_delta_point_corr(sublat,
-                                                         curr_occ,
-                                                         new_occ,
-                                                         dCorr_comp.data(),
-                                                         begin,
-                                                         end);
+          _clexulator().calc_restricted_delta_point_corr(
+            _configdof(),
+            nlist().sites(nlist().unitcell_index(l)).data(),
+            sublat,
+            curr_occ,
+            new_occ,
+            dCorr_comp.data(),
+            begin,
+            end);
         }
       }
       else {
@@ -300,26 +301,46 @@ namespace CASM {
         if(m_all_correlations) {
 
           // Calculate before
-          _clexulator().calc_point_corr(sublat, before.data());
+          _clexulator().calc_point_corr(
+            _configdof(),
+            nlist().sites(nlist().unitcell_index(l)).data(),
+            sublat,
+            before.data());
 
           // Apply change
           _configdof().occ(l) = new_occ;
 
           // Calculate after
-          _clexulator().calc_point_corr(sublat, after.data());
+          _clexulator().calc_point_corr(
+            _configdof(),
+            nlist().sites(nlist().unitcell_index(l)).data(),
+            sublat,
+            after.data());
         }
         else {
           auto begin = _eci().index().data();
           auto end = begin + _eci().index().size();
 
           // Calculate before
-          _clexulator().calc_restricted_point_corr(sublat, before.data(), begin, end);
+          _clexulator().calc_restricted_point_corr(
+            _configdof(),
+            nlist().sites(nlist().unitcell_index(l)).data(),
+            sublat,
+            before.data(),
+            begin,
+            end);
 
           // Apply change
           _configdof().occ(l) = new_occ;
 
           // Calculate after
-          _clexulator().calc_restricted_point_corr(sublat, after.data(), begin, end);
+          _clexulator().calc_restricted_point_corr(
+            _configdof(),
+            nlist().sites(nlist().unitcell_index(l)).data(),
+            sublat,
+            after.data(),
+            begin,
+            end);
 
         }
         dCorr_comp = after - before;
@@ -345,9 +366,6 @@ namespace CASM {
       }
       Eigen::VectorXd dCorr_comp { Eigen::VectorXd::Zero(event.dCorr().size()) };
 
-
-      // Point the Clexulator to the right neighborhood and right ConfigDoF
-      _clexulator().set_config_occ(_configdof().occupation().data());
 
       // calc dCorr for first site
       _calc_delta_point_corr(f_a.l, new_occ_a, event.dCorr());

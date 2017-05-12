@@ -9,7 +9,6 @@ namespace CASM {
   class Configuration;
   class SymOp;
   class Molecule;
-  class Specie;
 
   namespace Kinetics {
 
