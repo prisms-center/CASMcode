@@ -1,6 +1,8 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/container/LinearAlgebra.hh"

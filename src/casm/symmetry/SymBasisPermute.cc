@@ -2,6 +2,8 @@
 #include "casm/symmetry/SymOp.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 

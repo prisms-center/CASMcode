@@ -49,6 +49,22 @@ namespace CASM {
 
 
   //************************************************************
+
+  Structure const &ClexBasis::prim() const {
+    return *m_prim_ptr;
+  }
+
+  /// \brief Total number of basis sites in primitive cell
+  Index ClexBasis::n_sublat() const {
+    throw std::runtime_error("ClexBasis::n_sublat is not implemented");
+  }
+
+  /// \brief Total number of basis functions
+  Index ClexBasis::n_functions() const {
+    throw std::runtime_error("ClexBasis::n_functions is not implemented");
+  }
+
+
   /*
   void print_eci_in(ClexBasis const &_clex_basis,
                     std::ostream &out,

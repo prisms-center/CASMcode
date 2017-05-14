@@ -1,5 +1,6 @@
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/Molecule.hh"
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {

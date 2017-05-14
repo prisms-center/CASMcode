@@ -1,7 +1,5 @@
 #include "casm/basis_set/DoF.hh"
-
-// needed for to/from json... this should be fixed
-#include "casm/crystallography/Molecule.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
   namespace DoF_impl {

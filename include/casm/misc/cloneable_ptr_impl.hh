@@ -10,12 +10,12 @@
 /// \brief Non-std smart pointer classes and functions
 namespace notstd {
 
-  template < typename T, typename std::enable_if < !has_clone<T>::value, void >::type * = nullptr >
+  template < typename T, typename std::enable_if < !has_clone<T>::value, void >::type * >
   std::unique_ptr<T> clone(const T &obj) {
     return std::unique_ptr<T>(new T(obj));
   }
 
-  template<typename T, typename std::enable_if<has_clone<T>::value, void>::type * = nullptr>
+  template<typename T, typename std::enable_if<has_clone<T>::value, void>::type * >
   std::unique_ptr<T> clone(const T &obj) {
     return obj.clone();
   }
@@ -77,7 +77,7 @@ namespace notstd {
 
   /// \brief Assignment via copy-swap
   template<typename Type>
-  cloneable_ptr &cloneable_ptr<Type>::operator=(cloneable_ptr other) {
+  cloneable_ptr<Type> &cloneable_ptr<Type>::operator=(cloneable_ptr other) {
     swap(*this, other);
     return *this;
   }
@@ -85,7 +85,7 @@ namespace notstd {
   /// \brief Assignment via move
   template<typename Type>
   template<typename U>
-  cloneable_ptr &cloneable_ptr<Type>::operator=(cloneable_ptr<U> &&other) {
+  cloneable_ptr<Type> &cloneable_ptr<Type>::operator=(cloneable_ptr<U> &&other) {
     unique() = std::move(other.unique());
     return *this;
   }
@@ -94,7 +94,7 @@ namespace notstd {
   /// \brief Assignment via clone
   template<typename Type>
   template<typename U>
-  cloneable_ptr &cloneable_ptr<Type>::operator=(const std::unique_ptr<U> &other) {
+  cloneable_ptr<Type> &cloneable_ptr<Type>::operator=(const std::unique_ptr<U> &other) {
     if(other) {
       unique() = clone(*other);
     }
@@ -107,19 +107,19 @@ namespace notstd {
   /// \brief Assignment via move
   template<typename Type>
   template<typename U>
-  cloneable_ptr &cloneable_ptr<Type>::operator=(std::unique_ptr<U> &&other) {
+  cloneable_ptr<Type> &cloneable_ptr<Type>::operator=(std::unique_ptr<U> &&other) {
     unique() = std::move(other);
     return *this;
   }
 
 
   template<typename Type>
-  cloneable_ptr<Type>::reference cloneable_ptr<Type>::operator*() const {
+  typename cloneable_ptr<Type>::reference cloneable_ptr<Type>::operator*() const {
     return *m_unique;
   }
 
   template<typename Type>
-  cloneable_ptr<Type>::pointer cloneable_ptr<Type>::operator->() const {
+  typename cloneable_ptr<Type>::pointer cloneable_ptr<Type>::operator->() const {
     return &(this->operator*());
   }
 
@@ -137,13 +137,13 @@ namespace notstd {
 
   /// \brief const Access contained unique_ptr
   template<typename Type>
-  const std::unique_ptr<Type> &cloneable_ptr<Type>::vunique() const {
+  const std::unique_ptr<Type> &cloneable_ptr<Type>::unique() const {
     return m_unique;
   }
 
   /// \brief Checks whether *this owns an object
   template<typename Type>
-  operator cloneable_ptr<Type>::bool() const {
+  cloneable_ptr<Type>::operator bool() const {
     return static_cast<bool>(m_unique);
   }
 

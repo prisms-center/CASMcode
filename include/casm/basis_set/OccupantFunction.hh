@@ -6,6 +6,7 @@
 #include <map>
 #include "casm/basis_set/BasisFunction.hh"
 #include "casm/basis_set/DoF.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
 
@@ -27,14 +28,6 @@ namespace CASM {
   public:
     OccupantFunction(const DiscreteDoF &init_var, const Eigen::VectorXd &init_eval, int _occ_func_ind, int _basis_ind, SymGroupRepID _sym_rep_ID):
       m_var(init_var.clone()), m_eval_table(init_eval), m_sym_rep_ID(_sym_rep_ID), m_occ_func_ind(_occ_func_ind), m_basis_ind(_basis_ind) { }
-
-    OccupantFunction(const OccupantFunction &RHS) : Function(RHS), m_var(RHS.m_var->clone()), m_eval_table(RHS.m_eval_table),
-      m_sym_rep_ID(RHS.m_sym_rep_ID), m_occ_func_ind(RHS.occ_func_ind()), m_basis_ind(RHS.basis_ind()) {}
-
-    ~OccupantFunction() {
-      if(m_var)
-        delete m_var;
-    }
 
     static int sclass_ID();
     int class_ID() const override;
@@ -119,7 +112,7 @@ namespace CASM {
 
     //Array<std::string> m_formula_bits;     //mutable?
 
-    DiscreteDoF *m_var;
+    notstd::cloneable_ptr<DiscreteDoF> m_var;
     Eigen::VectorXd m_eval_table;
     SymGroupRepID m_sym_rep_ID;
     Index m_occ_func_ind, m_basis_ind;
