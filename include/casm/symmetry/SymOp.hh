@@ -71,7 +71,7 @@ namespace CASM {
         return m_integral_tau;
       }
       else {
-        std::cerr << "Attempt to access integral tau without it being valid" << std::endl;
+        throw std::runtime_error("Attempt to access SymOp::integral_tau() without it being valid");
       }
     }
 

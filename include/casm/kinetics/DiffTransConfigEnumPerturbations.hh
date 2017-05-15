@@ -15,23 +15,9 @@ namespace CASM {
 
     public:
 
-      Perturbation(std::set<OccupationTransformation> &from_set) {
-        for(const OccupationTransformation &item : from_set) {
-          this->insert(item);
-        }
-      };
+      Perturbation(std::set<OccupationTransformation> &from_set);
 
-      Perturbation &apply_sym(const SymOp &op) {
-        std::set<OccupationTransformation> tmp;
-        for(const OccupationTransformation &occ_trans : *this) {
-          tmp.insert(copy_apply(op, occ_trans));
-        }
-        this->clear();
-        for(const OccupationTransformation &item : tmp) {
-          this->insert(item);
-        }
-      };
-
+      Perturbation &apply_sym(const SymOp &op);
 
     };
 
