@@ -1,5 +1,7 @@
 #include "casm/basis_set/PolynomialFunction.hh"
 
+#include "casm/misc/CASM_Array_math.hh"
+
 #include "casm/container/Counter.hh"
 #include "casm/container/IsoCounter.hh"
 #include "casm/container/MultiCounter.hh"

@@ -72,8 +72,8 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
     log << "testing 'casm composition'" << std::endl;
     (*proj_it)->check_composition();
 
-    log << "testing 'casm bset'" << std::endl;
-    (*proj_it)->check_bset();
+    log << "skipping 'casm bset'" << std::endl;
+    //(*proj_it)->check_bset();
 
     log << "testing 'casm enum'" << std::endl;
     (*proj_it)->check_enum();

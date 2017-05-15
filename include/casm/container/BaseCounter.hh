@@ -123,11 +123,11 @@ namespace CASM {
   class BaseCounter {
 
   public:
-    typedef typename CASM_TMP::traits<DerivedCounter>::Container Container;
-    typedef typename CASM_TMP::traits<DerivedCounter>::value_type value_type;
-    typedef typename CASM_TMP::traits<DerivedCounter>::size_type size_type;
-    typedef typename CASM_TMP::traits<DerivedCounter>::Access Access;
-    typedef typename CASM_TMP::traits<DerivedCounter>::Compare Compare;
+    typedef typename traits<DerivedCounter>::Container Container;
+    typedef typename traits<DerivedCounter>::value_type value_type;
+    typedef typename traits<DerivedCounter>::size_type size_type;
+    typedef typename traits<DerivedCounter>::Access Access;
+    typedef typename traits<DerivedCounter>::Compare Compare;
     typedef CounterValueIterator<DerivedCounter> const_value_iterator;
 
     /// \brief Default construct a Counter

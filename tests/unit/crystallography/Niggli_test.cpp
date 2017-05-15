@@ -8,6 +8,8 @@
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/clex/ScelEnum.hh"
 #include "ZrOProj.hh"
 
 namespace CASM {
@@ -119,18 +121,22 @@ namespace CASM {
 
   void ZrO_supercell_enum_test() {
 
+    BOOST_TEST_MESSAGE("Checking known ZrO lattices");
+
     // ZrO prim
-    Structure prim(test::ZrO_prim());
-    PrimClex primclex(prim, null_log());
+    test::ZrOProj proj;
+    proj.check_init();
+    PrimClex primclex(proj.dir, null_log());
 
     // enumerate size 5 supercells
     bool verbose = false;
     ScelEnumProps enum_props(5, 6);
-    primclex.generate_supercells(enum_props);
+    ScelEnumByProps scel_enum(primclex, enum_props);
+    for(const auto &scel : scel_enum) {}
 
     // there will be 7
     int scel_list_size = 7;
-    BOOST_CHECK_EQUAL(primclex.supercell_list().size(), scel_list_size);
+    BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), scel_list_size);
 
     // check if the canonical equivalent lattice of this volume 5 left handed
     // lattice is among the enumerated lattices
@@ -143,11 +149,54 @@ namespace CASM {
     // this should generate the canonical equivalent lattice and add it, but
     // since we already enumerated supercells the supercell list size should
     // not increase
-    Index scel_index = primclex.add_supercell(test_lat);
-    BOOST_CHECK_EQUAL(primclex.supercell_list().size(), scel_list_size);
+    Supercell(&primclex, test_lat).insert();
+    BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), scel_list_size);
+  }
+
+  void ZrO_supercell_enum_test2() {
+
+    BOOST_TEST_MESSAGE("Checking niggli and canonical_equivalent_lattice");
+
+    const Structure test_struc(test::ZrO_prim());
+    const Lattice test_lat = test_struc.lattice();
+    const SymGroup effective_pg = test_struc.factor_group();
+
+    ScelEnumProps enum_props(1, 11);
+    SupercellEnumerator<Lattice> test_enumerator(test_lat, effective_pg, enum_props);
+
+    // check that niggli cell and canonical lattice don't change when re-applied
+
+    double tol = TOL;
+    for(auto it = test_enumerator.begin(); it != test_enumerator.end(); ++it) {
+
+      // -- check niggli generation
+
+      Lattice niggli1 = niggli(*it, tol);
+      Lattice niggli2 = niggli(niggli1, tol);
+      bool check_niggli = almost_equal(
+                            niggli1.lat_column_mat(),
+                            niggli2.lat_column_mat(),
+                            tol);
+
+      BOOST_CHECK_EQUAL(check_niggli, true);
+
+      // -- check canonical generation
+
+      Lattice canon = canonical_equivalent_lattice(*it, effective_pg, tol);
+      Lattice canon2 = canonical_equivalent_lattice(canon, effective_pg, tol);
+      bool check = almost_equal(
+                     canon.lat_column_mat(),
+                     canon2.lat_column_mat(),
+                     tol);
+
+      BOOST_CHECK_EQUAL(check, true);
+
+    }
   }
 
   void standard_orientation_compare_test() {
+
+    BOOST_TEST_MESSAGE("Checking standard_orientation_compare");
 
     double tol = TOL;
 
@@ -219,6 +268,7 @@ BOOST_AUTO_TEST_CASE(EvilNiggliTest) {
 
 BOOST_AUTO_TEST_CASE(ZrOScelEnumTest) {
   CASM::ZrO_supercell_enum_test();
+  CASM::ZrO_supercell_enum_test2();
   CASM::standard_orientation_compare_test();
 }
 

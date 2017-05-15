@@ -2,6 +2,7 @@
 #define CASM_SuperConfigEnum
 
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/container/Counter.hh"
 #include "casm/container/InputEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
@@ -31,13 +32,13 @@ namespace CASM {
 
     /// \brief Constructor, using all Supercell permutations
     template<typename ConfigIterator>
-    SuperConfigEnum(Supercell &_target_scel,
+    SuperConfigEnum(const Supercell &_target_scel,
                     ConfigIterator _begin,
                     ConfigIterator _end);
 
     /// \brief Constructor
     template<typename ConfigIterator>
-    SuperConfigEnum(Supercell &_target_scel,
+    SuperConfigEnum(const Supercell &_target_scel,
                     ConfigIterator _begin,
                     ConfigIterator _end,
                     PermuteIterator _perm_begin,
@@ -49,7 +50,7 @@ namespace CASM {
 
     static const std::string enumerator_name;
     static const std::string interface_help;
-    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
 
     // -- Unique -------------------
@@ -93,12 +94,12 @@ namespace CASM {
     bool _check_current() const;
 
     /// Access the super-config supercell
-    Supercell &_target_supercell() {
+    const Supercell &_target_supercell() {
       return m_target_scel;
     }
 
     /// Access the sub-config supercell
-    Supercell &_sub_supercell() {
+    const Supercell &_sub_supercell() const {
       return *m_sub_scel;
     }
 
@@ -126,7 +127,7 @@ namespace CASM {
 
 
     /// The supercell being filled
-    Supercell &m_target_scel;
+    const Supercell &m_target_scel;
 
     /// A vector containing each possible sub_config
     std::vector<Configuration> m_sub_config;
@@ -134,7 +135,7 @@ namespace CASM {
     PermuteIterator m_perm_begin, m_perm_end;
 
     // All sub_config use the same supercell
-    Supercell *m_sub_scel;
+    const Supercell *m_sub_scel;
 
     /// The 'current' Configuration
     notstd::cloneable_ptr<Configuration> m_current;
@@ -155,7 +156,7 @@ namespace CASM {
   /// \brief Constructor, using all Supercell permutations
   ///
   template<typename ConfigIterator>
-  SuperConfigEnum::SuperConfigEnum(Supercell &_target_scel,
+  SuperConfigEnum::SuperConfigEnum(const Supercell &_target_scel,
                                    ConfigIterator _begin,
                                    ConfigIterator _end) :
     SuperConfigEnum(_target_scel,
@@ -167,7 +168,7 @@ namespace CASM {
   /// \brief Constructor
   ///
   template<typename ConfigIterator>
-  SuperConfigEnum::SuperConfigEnum(Supercell &_target_scel,
+  SuperConfigEnum::SuperConfigEnum(const Supercell &_target_scel,
                                    ConfigIterator _begin,
                                    ConfigIterator _end,
                                    PermuteIterator _perm_begin,

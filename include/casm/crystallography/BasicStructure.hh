@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cmath>
 
+#include "casm/CASM_global_enum.hh"
 #include "casm/crystallography/Lattice.hh"
 
 namespace CASM {

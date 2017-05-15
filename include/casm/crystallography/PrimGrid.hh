@@ -1,11 +1,12 @@
-#ifndef PRIMGRID_HH
-#define PRIMGRID_HH
+#ifndef CASM_PrimGrid
+#define CASM_PrimGrid
 
 
 #include <iostream>
 #include <cmath>
 #include <cassert>
 
+#include "casm/CASM_global_enum.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/container/Permutation.hh"
 
@@ -49,7 +50,7 @@ namespace CASM {
     matrix_type m_U, m_invU;
 
     /// Permutations that describe how translation permutes sites of the supercell
-    mutable Array<Permutation> m_trans_permutations;
+    mutable std::vector<Permutation> m_trans_permutations;
 
     ///==============================================================================================
     /// Because
@@ -128,24 +129,24 @@ namespace CASM {
     Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const;
 
     /// map a UnitCell inside the supercell
-    UnitCell within(const UnitCell &ijk)const;
+    UnitCell within(const UnitCell &ijk) const;
 
     /// map a UnitCellCoord inside the supercell
-    UnitCellCoord within(const UnitCellCoord &_uccoord)const;
+    UnitCellCoord within(const UnitCellCoord &_uccoord) const;
 
     // get Coordinate or UnitCell from linear index
-    Coordinate coord(Index l, CELL_TYPE lat_mode)const;
-    Coordinate coord(const UnitCell &ijk, CELL_TYPE lat_mode)const;
-    UnitCell unitcell(Index i)const;
+    Coordinate coord(Index l, CELL_TYPE lat_mode) const;
+    Coordinate coord(const UnitCell &ijk, CELL_TYPE lat_mode) const;
+    UnitCell unitcell(Index i) const;
 
-    SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep)const;
+    SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep) const;
 
     // Returns Array of permutations.  Permutation 'l' describes the effect of translating PrimGrid site 'l'
     // to the origin.  NB is the number of primitive-cell basis sites. -- keep public for now
-    ReturnArray<Permutation > make_translation_permutations(Index NB)const;
+    std::vector<Permutation > make_translation_permutations(Index NB) const;
 
     /// const access to m_trans_permutations. Generates permutations if they don't already exist.
-    const Array<Permutation> &translation_permutations() const {
+    const std::vector<Permutation> &translation_permutations() const {
 
       if(m_trans_permutations.size() != m_N_vol) {
         if(m_trans_permutations.size() > 0) {

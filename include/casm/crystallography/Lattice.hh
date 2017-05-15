@@ -4,10 +4,9 @@
 #include <iostream>
 #include <cmath>
 
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/container/Array.hh"
-#include "casm/container/LinearAlgebra.hh"
-#include "casm/container/Counter.hh"
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,6 +14,7 @@ namespace CASM {
   class SymGroup;
   class SymOp;
   class ScelEnumProps;
+  class jsonParser;
 
   /** \defgroup Crystallography
    *
@@ -139,11 +139,20 @@ namespace CASM {
     /// \brief Check if Lattice is in the canonical form
     bool is_canonical(double tol = TOL) const;
 
+    /// \brief Check if Lattice is in the canonical form
+    bool is_canonical(const SymGroup &pg, double tol = TOL) const;
+
     /// \brief Returns the operation that applied to *this returns the canonical form
     SymOp to_canonical(double tol = TOL) const;
 
+    /// \brief Returns the operation that applied to *this returns the canonical form
+    SymOp to_canonical(const SymGroup &pg, double tol = TOL) const;
+
     /// \brief Returns the operation that applied to the canonical form returns *this
     SymOp from_canonical(double tol = TOL) const;
+
+    /// \brief Returns the operation that applied to the canonical form returns *this
+    SymOp from_canonical(const SymGroup &pg, double tol = TOL) const;
 
     /// \brief Returns the canonical equivalent Lattice, using the point group of the Lattice
     Lattice canonical_form(double tol = TOL) const;

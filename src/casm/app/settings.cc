@@ -1,6 +1,8 @@
+#include <boost/filesystem.hpp>
 #include "casm/app/casm_functions.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/misc/algorithm.hh"
 #include "casm/clex/PrimClex.hh"
 
 #include "casm/completer/Handlers.hh"
@@ -269,7 +271,7 @@ namespace CASM {
       const po::options_description &desc = settings_opt.desc(); //I'm tired of fixing merge conflicts, this is ugly and should not stay like this.
 
       try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+        po::store(po::parse_command_line(args.argc(), args.argv(), desc), vm); // can throw
 
         bool call_help = false;
 
@@ -290,143 +292,143 @@ namespace CASM {
         // must call one and only one option at a time:
         if(!vm.count("help")) {
           if(option_count == 0) {
-            args.log << "Error in 'casm settings'. No option selected." << std::endl;
+            args.log() << "Error in 'casm settings'. No option selected." << std::endl;
             call_help = true;
           }
           else if(option_count > 1) {
-            args.log << "Error in 'casm settings'. Use one option (other than --clex) at a time." << std::endl;
+            args.log() << "Error in 'casm settings'. Use one option (other than --clex) at a time." << std::endl;
             call_help = true;
           }
         }
 
         // --help option
         if(vm.count("help") || call_help) {
-          args.log << "\n";
-          args.log << desc << std::endl;
+          args.log() << "\n";
+          args.log() << desc << std::endl;
 
           return 0;
         }
 
         if(vm.count("desc")) {
-          args.log << "\n";
-          args.log << desc << std::endl;
-          args.log << "DESCRIPTION" << std::endl;
-          args.log << "\n";
-          args.log << "    Often it is useful to try multiple different basis sets, \n" <<
-                   "    calculation settings, references, or ECI fits in a single\n" <<
-                   "    project. The 'casm settings' option helps to organize    \n" <<
-                   "    these within a project and quickly switch between        \n" <<
-                   "    different settings.                                      \n";
-          args.log << "\n";
-          args.log << "    Examples:\n";
-          args.log << "                                                             \n" <<
-                   "      casm settings --list                                   \n" <<
-                   "      - List all settings, with '*' for current settings     \n\n" <<
+          args.log() << "\n";
+          args.log() << desc << std::endl;
+          args.log() << "DESCRIPTION" << std::endl;
+          args.log() << "\n";
+          args.log() << "    Often it is useful to try multiple different basis sets, \n" <<
+                     "    calculation settings, references, or ECI fits in a single\n" <<
+                     "    project. The 'casm settings' option helps to organize    \n" <<
+                     "    these within a project and quickly switch between        \n" <<
+                     "    different settings.                                      \n";
+          args.log() << "\n";
+          args.log() << "    Examples:\n";
+          args.log() << "                                                             \n" <<
+                     "      casm settings --list                                   \n" <<
+                     "      - List all settings, with '*' for current settings     \n\n" <<
 
-                   "      casm settings --new-clex 'my_newclex'                  \n" <<
-                   "      casm settings --set-default-clex 'other_clex'          \n" <<
-                   "      - Creates a new group of settings for a cluster        \n" <<
-                   "        expansion                                            \n" <<
-                   "      - Includes property, calctype, ref, bset, and eci      \n" <<
-                   "      - Can be used in Monte Carlo input files, and as       \n" <<
-                   "        arguments to 'casm select' and 'casm query'          \n" <<
-                   "        properties such as 'clex' and 'corr' to specify which\n" <<
-                   "        basis functions and eci to use.                      \n\n" <<
+                     "      casm settings --new-clex 'my_newclex'                  \n" <<
+                     "      casm settings --set-default-clex 'other_clex'          \n" <<
+                     "      - Creates a new group of settings for a cluster        \n" <<
+                     "        expansion                                            \n" <<
+                     "      - Includes property, calctype, ref, bset, and eci      \n" <<
+                     "      - Can be used in Monte Carlo input files, and as       \n" <<
+                     "        arguments to 'casm select' and 'casm query'          \n" <<
+                     "        properties such as 'clex' and 'corr' to specify which\n" <<
+                     "        basis functions and eci to use.                      \n\n" <<
 
-                   "      casm settings --set-formation-energy 'other_clex'      \n" <<
-                   "      - The cluster expansion 'other_clex' is copied to one  \n" <<
-                   "        named 'formation_energy' which is used as the default\n" <<
-                   "        for grand canoncial Monte Carlo calculations and     \n" <<
-                   "        cluster expansion convex hull calculations.          \n\n" <<
+                     "      casm settings --set-formation-energy 'other_clex'      \n" <<
+                     "      - The cluster expansion 'other_clex' is copied to one  \n" <<
+                     "        named 'formation_energy' which is used as the default\n" <<
+                     "        for grand canoncial Monte Carlo calculations and     \n" <<
+                     "        cluster expansion convex hull calculations.          \n\n" <<
 
-                   "      casm settings --new-property 'my_new_property'         \n" <<
-                   "      casm settings --new-bset 'my_new_bset'                 \n" <<
-                   "      casm settings --new-calctype 'my_new_calctype'         \n" <<
-                   "      casm settings --new-ref 'my_new_ref'                   \n" <<
-                   "      casm settings --new-eci 'my_new_eci'                   \n" <<
-                   "      - Creates new settings directories with appropriate    \n" <<
-                   "        names                                                \n" <<
-                   "      - For --new-property, new 'default' calctype, ref, and \n" <<
-                   "        eci are created.                                     \n" <<
-                   "      - For --new-calctype, a new 'default' ref is created.  \n" <<
-                   "      - For --new-ref, a new reference is created for the    \n" <<
-                   "        current calctype                                     \n" <<
-                   "      - For --new-eci, a new eci directory is created for the\n" <<
-                   "         current clex, calctype and ref.                     \n\n" <<
+                     "      casm settings --new-property 'my_new_property'         \n" <<
+                     "      casm settings --new-bset 'my_new_bset'                 \n" <<
+                     "      casm settings --new-calctype 'my_new_calctype'         \n" <<
+                     "      casm settings --new-ref 'my_new_ref'                   \n" <<
+                     "      casm settings --new-eci 'my_new_eci'                   \n" <<
+                     "      - Creates new settings directories with appropriate    \n" <<
+                     "        names                                                \n" <<
+                     "      - For --new-property, new 'default' calctype, ref, and \n" <<
+                     "        eci are created.                                     \n" <<
+                     "      - For --new-calctype, a new 'default' ref is created.  \n" <<
+                     "      - For --new-ref, a new reference is created for the    \n" <<
+                     "        current calctype                                     \n" <<
+                     "      - For --new-eci, a new eci directory is created for the\n" <<
+                     "         current clex, calctype and ref.                     \n\n" <<
 
-                   "      casm settings --set-property 'other_property'          \n" <<
-                   "      casm settings --set-bset 'other_bset'                  \n" <<
-                   "      casm settings --set-calctype 'other_calctype'          \n" <<
-                   "      casm settings --set-ref 'other_ref'                    \n" <<
-                   "      casm settings --set-eci 'other_eci'                    \n" <<
-                   "      casm settings --set-all 'property' 'calctype', 'ref', 'bset', 'eci'\n" <<
-                   "      - Switch the current settings                          \n" <<
-                   "      - For --set-property, standard options are:            \n" <<
-                   "        - 'formation_energy' (the only standard option for now)\n" <<
-                   "        After switching, the 'default' calctype, ref, bset,  \n" <<
-                   "        and eci are used"
-                   "      - For --set-calctype, the current property and bset are\n" <<
-                   "        maintained, and the 'default' ref, and eci are used. \n" <<
-                   "      - For --set-ref, the current property, calctype, and   \n" <<
-                   "        bset are maintained, and the 'default' eci is used.  \n" <<
-                   "      - For --set-bset, the current property, calctype, and  \n" <<
-                   "        ref are maintained, and the 'default' eci is used.   \n" <<
-                   "      - For --set-eci, the current property, calctype, ref,  \n" <<
-                   "        and bset are maintained.                             \n" <<
-                   "      - For --set-all, all settings are switched at once.    \n\n" <<
+                     "      casm settings --set-property 'other_property'          \n" <<
+                     "      casm settings --set-bset 'other_bset'                  \n" <<
+                     "      casm settings --set-calctype 'other_calctype'          \n" <<
+                     "      casm settings --set-ref 'other_ref'                    \n" <<
+                     "      casm settings --set-eci 'other_eci'                    \n" <<
+                     "      casm settings --set-all 'property' 'calctype', 'ref', 'bset', 'eci'\n" <<
+                     "      - Switch the current settings                          \n" <<
+                     "      - For --set-property, standard options are:            \n" <<
+                     "        - 'formation_energy' (the only standard option for now)\n" <<
+                     "        After switching, the 'default' calctype, ref, bset,  \n" <<
+                     "        and eci are used"
+                     "      - For --set-calctype, the current property and bset are\n" <<
+                     "        maintained, and the 'default' ref, and eci are used. \n" <<
+                     "      - For --set-ref, the current property, calctype, and   \n" <<
+                     "        bset are maintained, and the 'default' eci is used.  \n" <<
+                     "      - For --set-bset, the current property, calctype, and  \n" <<
+                     "        ref are maintained, and the 'default' eci is used.   \n" <<
+                     "      - For --set-eci, the current property, calctype, ref,  \n" <<
+                     "        and bset are maintained.                             \n" <<
+                     "      - For --set-all, all settings are switched at once.    \n\n" <<
 
-                   "      casm settings --set-cxx 'cxx'                          \n" <<
-                   "      - Specifies compiler to use. In order of priority: \n"
-                   "        1) User specified by 'casm settings --set-cxx' \n"
-                   "           (use '' to clear) \n"
-                   "        2) $CASM_CXX \n"
-                   "        3) $CXX \n"
-                   "        4) \"g++\" \n\n"
+                     "      casm settings --set-cxx 'cxx'                          \n" <<
+                     "      - Specifies compiler to use. In order of priority: \n"
+                     "        1) User specified by 'casm settings --set-cxx' \n"
+                     "           (use '' to clear) \n"
+                     "        2) $CASM_CXX \n"
+                     "        3) $CXX \n"
+                     "        4) \"g++\" \n\n"
 
-                   "      casm settings --set-cxxflags 'cxxflags'                \n"
-                   "      - Specifies compiler options. In order of priority:    \n"
-                   "        1) User specified by 'casm settings --set-cxxflags' \n"
-                   "           (use '' to clear) \n"
-                   "        2) $CASM_CXXFLAGS \n"
-                   "        3) \"-O3 -Wall -fPIC --std=c++11\" \n\n"
+                     "      casm settings --set-cxxflags 'cxxflags'                \n"
+                     "      - Specifies compiler options. In order of priority:    \n"
+                     "        1) User specified by 'casm settings --set-cxxflags' \n"
+                     "           (use '' to clear) \n"
+                     "        2) $CASM_CXXFLAGS \n"
+                     "        3) \"-O3 -Wall -fPIC --std=c++11\" \n\n"
 
-                   "      casm settings --set-soflags 'soflags' \n"
-                   "      - Specifies shared object construction flags. In order \n"
-                   "        of priority: \n"
-                   "        1) User specified by 'casm settings --set-soflags' \n"
-                   "           (use '' to clear) \n"
-                   "        2) $CASM_SOFLAGS \n"
-                   "        3) \"-shared -lboost_system\" \n\n"
+                     "      casm settings --set-soflags 'soflags' \n"
+                     "      - Specifies shared object construction flags. In order \n"
+                     "        of priority: \n"
+                     "        1) User specified by 'casm settings --set-soflags' \n"
+                     "           (use '' to clear) \n"
+                     "        2) $CASM_SOFLAGS \n"
+                     "        3) \"-shared -lboost_system\" \n\n"
 
-                   "      casm settings --set-casm-prefix 'casm_prefix' \n"
-                   "      casm settings --set-casm-includedir 'casm_includedir' \n"
-                   "      casm settings --set-casm-libdir 'casm_libdir' \n"
-                   "      - Specifies location to find CASM header files and shared\n"
-                   "        libraries for runtime compilation and linking.         \n"
-                   "        In order of priority: \n"
-                   "        1) User specified by via 'casm settings' (use '' to clear) \n"
-                   "        2) $CASM_INCLUDEDIR and $CASM_LIBDIR \n"
-                   "        3) $CASM_PREFIX/include and $CASM_PREFIX/lib \n"
-                   "        4) (default search paths) \n\n"
+                     "      casm settings --set-casm-prefix 'casm_prefix' \n"
+                     "      casm settings --set-casm-includedir 'casm_includedir' \n"
+                     "      casm settings --set-casm-libdir 'casm_libdir' \n"
+                     "      - Specifies location to find CASM header files and shared\n"
+                     "        libraries for runtime compilation and linking.         \n"
+                     "        In order of priority: \n"
+                     "        1) User specified by via 'casm settings' (use '' to clear) \n"
+                     "        2) $CASM_INCLUDEDIR and $CASM_LIBDIR \n"
+                     "        3) $CASM_PREFIX/include and $CASM_PREFIX/lib \n"
+                     "        4) (default search paths) \n\n"
 
-                   "      casm settings --set-boost-prefix 'boost_prefix' \n"
-                   "      casm settings --set-boost-includedir 'boost_includedir' \n"
-                   "      casm settings --set-boost-libdir 'boost_libdir' \n"
-                   "      - Specifies location to find boost header files and shared\n"
-                   "        libraries for runtime compilation and linking.         \n"
-                   "        In order of priority: \n"
-                   "        1) User specified by via 'casm settings' (use '' to clear) \n"
-                   "        2) $CASM_BOOST_INCLUDEDIR and $CASM_BOOST_LIBDIR \n"
-                   "        3) $CASM_BOOST_PREFIX/include and $CASM_BOOST_PREFIX/lib \n"
-                   "        4) (default search paths) \n\n"
+                     "      casm settings --set-boost-prefix 'boost_prefix' \n"
+                     "      casm settings --set-boost-includedir 'boost_includedir' \n"
+                     "      casm settings --set-boost-libdir 'boost_libdir' \n"
+                     "      - Specifies location to find boost header files and shared\n"
+                     "        libraries for runtime compilation and linking.         \n"
+                     "        In order of priority: \n"
+                     "        1) User specified by via 'casm settings' (use '' to clear) \n"
+                     "        2) $CASM_BOOST_INCLUDEDIR and $CASM_BOOST_LIBDIR \n"
+                     "        3) $CASM_BOOST_PREFIX/include and $CASM_BOOST_PREFIX/lib \n"
+                     "        4) (default search paths) \n\n"
 
-                   "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
-                   "      - Sets the command used by 'casm view' to open         \n" <<
-                   "        visualization software.                              \n" <<
-                   "      - Will be executed with '/path/to/POSCAR' as an        \n" <<
-                   "        argument, the location of a POSCAR for a configuration\n" <<
-                   "        selected for visualization.                          \n" <<
-                   "\n";
+                     "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
+                     "      - Sets the command used by 'casm view' to open         \n" <<
+                     "        visualization software.                              \n" <<
+                     "      - Will be executed with '/path/to/POSCAR' as an        \n" <<
+                     "        argument, the location of a POSCAR for a configuration\n" <<
+                     "        selected for visualization.                          \n" <<
+                     "\n";
 
           if(call_help)
             return 1;
@@ -442,23 +444,23 @@ namespace CASM {
 
       }
       catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
+        args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
+        args.err_log() << desc << std::endl;
         return 1;
       }
     }
     catch(std::exception &e) {
-      std::cerr << "Unhandled Exception reached the top of main: "
-                << e.what() << ", application will now exit" << std::endl;
+      args.err_log() << "Unhandled Exception reached the top of main: "
+                     << e.what() << ", application will now exit" << std::endl;
       return 1;
 
     }
 
     const fs::path &root = args.root;
     if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << "current_path: " << fs::current_path() << std::endl;
-      args.err_log << std::endl;
+      args.err_log().error("No casm project found");
+      args.err_log() << "current_path: " << fs::current_path() << std::endl;
+      args.err_log() << std::endl;
       return ERR_NO_PROJ;
     }
 
@@ -469,20 +471,20 @@ namespace CASM {
     if(vm.count("clex")) {
       auto it = set.cluster_expansions().find(vm["clex"].as<std::string>());
       if(it == set.cluster_expansions().end()) {
-        args.err_log.error("Invalid --clex value");
-        args.err_log << vm["clex"].as<std::string>() << " not found. expected basis set specifications file at: " << dir.bspecs(clex_desc.bset) << "\n" << std::endl;
+        args.err_log().error("Invalid --clex value");
+        args.err_log() << vm["clex"].as<std::string>() << " not found. expected basis set specifications file at: " << dir.bspecs(clex_desc.bset) << "\n" << std::endl;
         return ERR_INVALID_ARG;
       }
       clex_desc = it->second;
     }
 
-    Data d(args.primclex, dir, set, clex_desc, args.log, args.err_log);
+    Data d(args.primclex, dir, set, clex_desc, args.log(), args.err_log());
 
     typedef Data::pair_type pair_type;
 
     // disply all settings
     if(vm.count("list")) {
-      set.print_summary(args.log);
+      set.print_summary(args.log());
       return 0;
     }
 
@@ -538,10 +540,10 @@ namespace CASM {
     else if(vm.count("new-clex")) {
       clex_desc.name = single_input;
       if(set.new_clex(clex_desc)) {
-        args.log << "Created new cluster expansion named '" << single_input << "'\n\n";
+        args.log() << "Created new cluster expansion named '" << single_input << "'\n\n";
       }
       else {
-        args.log << "Could not create new cluster expansion named '" << single_input << "'.\n\n";
+        args.log() << "Could not create new cluster expansion named '" << single_input << "'.\n\n";
         return 1;
       }
 
@@ -550,11 +552,11 @@ namespace CASM {
         if(args.primclex) {
           args.primclex->refresh(true, false, true, true, true);
         }
-        args.log << "Set '" << clex_desc.name << "' as default cluster expansion.\n\n";
+        args.log() << "Set '" << clex_desc.name << "' as default cluster expansion.\n\n";
         return 0;
       }
       else {
-        args.log << "Could not set '" << clex_desc.name << "' as default cluster expansion.\n\n";
+        args.log() << "Could not set '" << clex_desc.name << "' as default cluster expansion.\n\n";
         return 1;
       }
     }
@@ -562,14 +564,14 @@ namespace CASM {
     // erase cluster expansion settings group
     else if(vm.count("erase-clex")) {
       if(set.default_clex().name == single_input) {
-        args.log << "Coult not erase the cluster expansion named '" << single_input << "' "
-                 << "because it is the default cluster expansion.\n\n";
+        args.log() << "Coult not erase the cluster expansion named '" << single_input << "' "
+                   << "because it is the default cluster expansion.\n\n";
         return 1;
       }
 
       if(set.cluster_expansions().size() == 1) {
-        args.log << "Could not erase the cluster expansion named '" << single_input << "' "
-                 << "because it is the only cluster expansion.\n\n";
+        args.log() << "Could not erase the cluster expansion named '" << single_input << "' "
+                   << "because it is the only cluster expansion.\n\n";
         return 1;
       }
 
@@ -578,11 +580,11 @@ namespace CASM {
         if(args.primclex) {
           args.primclex->refresh(true, false, true, true, true);
         }
-        args.log << "Erased cluster expansion named '" << single_input << "'\n\n";
+        args.log() << "Erased cluster expansion named '" << single_input << "'\n\n";
         return 0;
       }
       else {
-        args.log << "Could not erase cluster expansion named '" << single_input << "'.\n\n";
+        args.log() << "Could not erase cluster expansion named '" << single_input << "'.\n\n";
         return 1;
       }
     }
@@ -591,9 +593,9 @@ namespace CASM {
     else if(vm.count("set-formation-energy")) {
 
       if(clex_desc.property != "formation_energy") {
-        std::cerr << "Attempting to use cluster expansion '" << clex_desc.name
-                  << "' for formation_energy, but it has 'property' value '"
-                  << clex_desc.property << "'.\n\n";
+        args.err_log() << "Attempting to use cluster expansion '" << clex_desc.name
+                       << "' for formation_energy, but it has 'property' value '"
+                       << clex_desc.property << "'.\n\n";
         return ERR_INVALID_ARG;
       }
 
@@ -607,13 +609,13 @@ namespace CASM {
         if(args.primclex) {
           args.primclex->refresh(true, false, true, true, true);
         }
-        args.log << "Now using cluster expansion '" << single_input
-                 << "' as the default for formation_energy.\n\n";
+        args.log() << "Now using cluster expansion '" << single_input
+                   << "' as the default for formation_energy.\n\n";
         return 0;
       }
       else {
-        args.log << "Could not use cluster expansion '" << single_input
-                 << "' as the default for formation_energy.\n\n";
+        args.log() << "Could not use cluster expansion '" << single_input
+                   << "' as the default for formation_energy.\n\n";
         return 1;
       }
     }
@@ -625,11 +627,11 @@ namespace CASM {
         if(args.primclex) {
           args.primclex->refresh(true, false, true, true, true);
         }
-        args.log << "Switched to cluster expansion '" << single_input << "'.\n\n";
+        args.log() << "Switched to cluster expansion '" << single_input << "'.\n\n";
         return 0;
       }
       else {
-        args.log << "Could not switch to cluster expansion '" << single_input << "'.\n\n";
+        args.log() << "Could not switch to cluster expansion '" << single_input << "'.\n\n";
         return 1;
       }
     }
@@ -686,7 +688,7 @@ namespace CASM {
     else if(vm.count("set-all")) {
 
       if(multi_input.size() != 5) {
-        args.log << "Error using --set-all: Expected 5 arguments: 'property' 'calctype' 'ref' 'bset' 'eci'" << std::endl;
+        args.log() << "Error using --set-all: Expected 5 arguments: 'property' 'calctype' 'ref' 'bset' 'eci'" << std::endl;
         return ERR_INVALID_ARG;
       }
 
@@ -707,9 +709,9 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("cxx", set.cxx());
-      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log() << "Set " << _wdefaultval("cxx", set.cxx());
+      args.log() << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log() << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -722,8 +724,8 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("cxxflags", set.cxxflags());
-      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log() << "Set " << _wdefaultval("cxxflags", set.cxxflags());
+      args.log() << "Compile command is now: '" << set.compile_options() << "'\n\n";
 
       return 0;
     }
@@ -736,8 +738,8 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("soflags", set.soflags());
-      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log() << "Set " << _wdefaultval("soflags", set.soflags());
+      args.log() << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -750,10 +752,10 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("casm_includedir", set.casm_includedir());
-      args.log << "Set " << _wdefaultval("casm_libdir", set.casm_libdir());
-      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log() << "Set " << _wdefaultval("casm_includedir", set.casm_includedir());
+      args.log() << "Set " << _wdefaultval("casm_libdir", set.casm_libdir());
+      args.log() << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log() << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -766,9 +768,9 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("casm_includedir", set.casm_includedir());
-      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log() << "Set " << _wdefaultval("casm_includedir", set.casm_includedir());
+      args.log() << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log() << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -781,9 +783,9 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("casm_libdir", set.casm_libdir());
-      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log() << "Set " << _wdefaultval("casm_libdir", set.casm_libdir());
+      args.log() << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log() << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -796,10 +798,10 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("boost_includedir", set.boost_includedir());
-      args.log << "Set " << _wdefaultval("boost_libdir", set.boost_libdir());
-      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log() << "Set " << _wdefaultval("boost_includedir", set.boost_includedir());
+      args.log() << "Set " << _wdefaultval("boost_libdir", set.boost_libdir());
+      args.log() << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log() << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -812,9 +814,9 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("boost_includedir", set.boost_includedir());
-      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log() << "Set " << _wdefaultval("boost_includedir", set.boost_includedir());
+      args.log() << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log() << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -827,9 +829,9 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("boost_libdir", set.boost_libdir());
-      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log() << "Set " << _wdefaultval("boost_libdir", set.boost_libdir());
+      args.log() << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log() << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -842,12 +844,12 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, false);
       }
 
-      args.log << "Set view command to: '" << set.view_command() << "'\n\n";
+      args.log() << "Set view command to: '" << set.view_command() << "'\n\n";
 
       return 0;
     }
 
-    args.log << std::endl;
+    args.log() << std::endl;
 
     return 0;
   };

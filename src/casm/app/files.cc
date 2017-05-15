@@ -56,7 +56,7 @@ namespace CASM {
     Completer::FilesOption files_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, files_opt.desc()), vm); // can throw
+      po::store(po::parse_command_line(args.argc(), args.argv(), files_opt.desc()), vm); // can throw
 
       if(!vm.count("help")) {
 
@@ -64,16 +64,16 @@ namespace CASM {
 
         allowed = std::vector<std::string> {"", "curr", "all"};
         if(!contains(allowed, settings)) {
-          std::cerr << "Error in 'casm files'. '" << settings << "' is not a valid option to --settings." << std::endl;
-          std::cerr << "  Valid options are: 'curr', 'all'" << std::endl;
+          args.err_log() << "Error in 'casm files'. '" << settings << "' is not a valid option to --settings." << std::endl;
+          args.err_log() << "  Valid options are: 'curr', 'all'" << std::endl;
           return ERR_INVALID_ARG;
         }
 
         allowed = std::vector<std::string> {"settings", "status", "all"};
         for(auto it = calc.begin(); it != calc.end(); ++it) {
           if(!contains(allowed, *it)) {
-            std::cerr << "Error in 'casm files'. '" << *it << "' is not a valid option to --calc." << std::endl;
-            std::cerr << "  Valid options are: 'settings', 'status', 'all'" << std::endl;
+            args.err_log() << "Error in 'casm files'. '" << *it << "' is not a valid option to --calc." << std::endl;
+            args.err_log() << "  Valid options are: 'settings', 'status', 'all'" << std::endl;
             return ERR_INVALID_ARG;
           }
         }
@@ -82,72 +82,72 @@ namespace CASM {
       /** --help option
        */
       if(vm.count("help")) {
-        std::cout << "\n";
-        std::cout << files_opt.desc() << std::endl;
+        args.log() << "\n";
+        args.log() << files_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << files_opt.desc() << std::endl;
+        args.log() << "\n";
+        args.log() << files_opt.desc() << std::endl;
 
-        std::cout << "DESCRIPTION  \n"
-                  "    Enumerate files used by this CASM project\n"
-                  "    - If --all given, include files from all settings (bset, \n"
-                  "      calctype, ref, clex, eci). Otherwise only include files\n"
-                  "      relevant to the current settings.\n"
-                  "    - If --calc given, include training data files. This option\n"
-                  "      accepts one or more of: 'settings', 'status', or 'all'.\n"
-                  "      'settings': include files from the 'training_data' \n"
-                  "                  settings directories.\n"
-                  "      'status':   include 'properties.calc.json' and     \n"
-                  "                  'status.json' files.\n"
-                  "      'all':      include all files in the 'training_data'\n"
-                  "                  directory, recursively.\n\n"
+        args.log() << "DESCRIPTION  \n"
+                   "    Enumerate files used by this CASM project\n"
+                   "    - If --all given, include files from all settings (bset, \n"
+                   "      calctype, ref, clex, eci). Otherwise only include files\n"
+                   "      relevant to the current settings.\n"
+                   "    - If --calc given, include training data files. This option\n"
+                   "      accepts one or more of: 'settings', 'status', or 'all'.\n"
+                   "      'settings': include files from the 'training_data' \n"
+                   "                  settings directories.\n"
+                   "      'status':   include 'properties.calc.json' and     \n"
+                   "                  'status.json' files.\n"
+                   "      'all':      include all files in the 'training_data'\n"
+                   "                  directory, recursively.\n\n"
 
-                  "    Examples:\n"
-                  "      casm files\n"
-                  "      - Prints basic project files for the current settings.\n"
-                  "      - Prints absolute paths.\n\n"
+                   "    Examples:\n"
+                   "      casm files\n"
+                   "      - Prints basic project files for the current settings.\n"
+                   "      - Prints absolute paths.\n\n"
 
-                  "      casm files -R\n"
-                  "      - Prints basic project files for the current settings.\n"
-                  "      - Prints relative paths from project root directory.\n\n"
+                   "      casm files -R\n"
+                   "      - Prints basic project files for the current settings.\n"
+                   "      - Prints relative paths from project root directory.\n\n"
 
-                  "      casm files -o absfiles.txt\n"
-                  "      - Write 'absfiles.txt' with basic project files for \n"
-                  "        the current settings.\n"
-                  "      - Prints absolute paths.\n\n"
+                   "      casm files -o absfiles.txt\n"
+                   "      - Write 'absfiles.txt' with basic project files for \n"
+                   "        the current settings.\n"
+                   "      - Prints absolute paths.\n\n"
 
-                  "      casm files -R -o relfiles.txt\n"
-                  "      - Write 'relfiles.txt' with basic project files for \n"
-                  "        the current settings.\n"
-                  "      - Prints relative paths from project root directory.\n\n"
+                   "      casm files -R -o relfiles.txt\n"
+                   "      - Write 'relfiles.txt' with basic project files for \n"
+                   "        the current settings.\n"
+                   "      - Prints relative paths from project root directory.\n\n"
 
-                  "      tar -czvf proj.tar.gz `casm files -o STDOUT` \n"
-                  "      tar -czvf proj.tar.gz -T absfiles.txt \n"
-                  "      - Use tar to create an archive of your CASM project. \n"
-                  "      - Extract with 'tar -xzvf proj.tar.gz'. \n\n"
+                   "      tar -czvf proj.tar.gz `casm files -o STDOUT` \n"
+                   "      tar -czvf proj.tar.gz -T absfiles.txt \n"
+                   "      - Use tar to create an archive of your CASM project. \n"
+                   "      - Extract with 'tar -xzvf proj.tar.gz'. \n\n"
 
-                  "      rsync -avPR `casm files -R -o STDOUT` destination -n \n"
-                  "      - Copy project files to the 'destination' directory, \n"
-                  "        creating sub-directories as necessary.             \n"
-                  "      - **Must run from project root directory**           \n"
-                  "      - Replace 'destination' with '-e ssh user@host:destination' \n"
-                  "        for a remote destination.\n"
-                  "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
-                  "        to do the transfer.\n\n"
+                   "      rsync -avPR `casm files -R -o STDOUT` destination -n \n"
+                   "      - Copy project files to the 'destination' directory, \n"
+                   "        creating sub-directories as necessary.             \n"
+                   "      - **Must run from project root directory**           \n"
+                   "      - Replace 'destination' with '-e ssh user@host:destination' \n"
+                   "        for a remote destination.\n"
+                   "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
+                   "        to do the transfer.\n\n"
 
-                  "      rsync -avPR --files-from=relfiles.txt src destination -n \n"
-                  "      - Copy project files to the 'destination' directory, \n"
-                  "        creating sub-directories as necessary.             \n"
-                  "      - 'src' is the path to the root directory of the CASM\n"
-                  "        project you are copying from.                      \n"
-                  "      - Replace 'destination' with '-e ssh user@host:destination' \n"
-                  "        for a remote destination.\n"
-                  "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
-                  "        to do the transfer.\n";
+                   "      rsync -avPR --files-from=relfiles.txt src destination -n \n"
+                   "      - Copy project files to the 'destination' directory, \n"
+                   "        creating sub-directories as necessary.             \n"
+                   "      - 'src' is the path to the root directory of the CASM\n"
+                   "        project you are copying from.                      \n"
+                   "      - Replace 'destination' with '-e ssh user@host:destination' \n"
+                   "        for a remote destination.\n"
+                   "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
+                   "        to do the transfer.\n";
 
         return 0;
       }
@@ -163,13 +163,13 @@ namespace CASM {
 
     }
     catch(po::error &e) {
-      std::cerr << files_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << files_opt.desc() << std::endl;
+      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << files_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << files_opt.desc() << std::endl;
+      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
     }
 
@@ -186,18 +186,18 @@ namespace CASM {
 
     const fs::path &root = args.root;
     if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << std::endl;
+      args.err_log().error("No casm project found");
+      args.err_log() << std::endl;
       return ERR_NO_PROJ;
     }
 
 
     // set output_stream: where the file paths are written
     std::unique_ptr<std::ostream> uniq_fout;
-    std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log, uniq_fout, out_path, gz_flag);
+    std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log(), uniq_fout, out_path, gz_flag);
 
     // set status_stream: where query settings and PrimClex initialization messages are sent
-    Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
+    Log &status_log = (out_path.string() == "STDOUT") ? args.err_log() : args.log();
 
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'

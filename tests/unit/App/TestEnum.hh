@@ -13,9 +13,9 @@ extern "C" {
 namespace CASM {
 
   /** \defgroup ConfigEnumGroup Configuration Enumerators
-   *
+   *  \ingroup Configuration
    *  \ingroup Enumerator
-   *
+   *  \brief Enumerates Configuration
    *  @{
   */
 
@@ -28,7 +28,7 @@ namespace CASM {
   public:
 
     /// \brief Construct with a Supercell, using all permutations
-    TestEnum(Supercell &_scel);
+    TestEnum(const Supercell &_scel);
 
     std::string name() const override {
       return enumerator_name;
@@ -36,7 +36,15 @@ namespace CASM {
 
     static const std::string enumerator_name;
     static const std::string interface_help;
-    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+
+    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+
+    template<typename ScelIterator>
+    static int run(
+      const PrimClex &primclex,
+      ScelIterator begin,
+      ScelIterator end,
+      const std::vector<std::string> &filter_expr = {});
 
   private:
 
@@ -50,7 +58,7 @@ namespace CASM {
     /// Returns true if current() is primitive and canonical
     bool _check_current() const;
 
-    Counter<Array<int> > m_counter;
+    Counter<std::vector<int> > m_counter;
     notstd::cloneable_ptr<Configuration> m_current;
   };
 

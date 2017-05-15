@@ -12,6 +12,7 @@
 #include <cmath>
 #include <complex>
 #include <cassert>
+#include <type_traits>
 
 #include <boost/math/special_functions/round.hpp>
 
@@ -89,7 +90,7 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = boost::math::iround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::iround<typename Derived::Scalar>)) , const Derived >
+  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::iround<typename Derived::Scalar>)), const Derived >
   iround(const Eigen::MatrixBase<Derived> &val) {
     return val.unaryExpr(std::ptr_fun(boost::math::iround<typename Derived::Scalar>));
   }
@@ -103,7 +104,7 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = std::lround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::lround<typename Derived::Scalar>)) , const Derived >
+  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::lround<typename Derived::Scalar>)), const Derived >
   lround(const Eigen::MatrixBase<Derived> &val) {
     return val.unaryExpr(std::ptr_fun(boost::math::lround<typename Derived::Scalar>));
   }

@@ -3,7 +3,6 @@
 
 #include <map>
 #include <functional>
-#include "casm/external/boost.hh"
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/misc/cloneable_ptr.hh"
 

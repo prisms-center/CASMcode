@@ -49,9 +49,9 @@ namespace CASM {
 
   public:
 
-    typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
-    typedef typename CASM_TMP::traits<Derived>::Element Element;
-    typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
+    typedef typename traits<Derived>::MostDerived MostDerived;
+    typedef typename traits<Derived>::Element Element;
+    typedef typename traits<Derived>::InvariantsType InvariantsType;
 
     /// \brief Prepare an element for comparison
     ///
@@ -212,7 +212,7 @@ namespace CASM {
   template<typename Derived>
   class SymComparable : public CASM_TMP::CRTPBase<Derived> {
   public:
-    typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
+    typedef typename traits<Derived>::InvariantsType InvariantsType;
 
     const InvariantsType &invariants() const {
       if(!m_invariants) {

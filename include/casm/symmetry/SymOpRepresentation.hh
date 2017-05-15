@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include "casm/CASM_global_definitions.hh"
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/container/Array.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
 

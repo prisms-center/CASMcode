@@ -3,10 +3,7 @@
 
 #include "casm/app/AppIO.hh"
 
-#include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/Site.hh"
-//#include "casm/symmetry/SymInfo.hh"
-//#include "casm/symmetry/SymGroup.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"

@@ -6,6 +6,7 @@
 
 /// What is being used to test it:
 
+#include "casm/crystallography/Structure.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 

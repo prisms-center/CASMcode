@@ -53,19 +53,16 @@ namespace CASM {
 
   template<typename Derived> class IntegralClusterSymCompare;
 
-  namespace CASM_TMP {
-
-    /// \brief Traits class for any IntegralClusterSymCompare derived class
-    ///
-    /// \ingroup IntegralCluster
-    ///
-    template<typename Derived>
-    struct traits<IntegralClusterSymCompare<Derived> > {
-      typedef Derived MostDerived;
-      typedef IntegralCluster Element;
-      typedef ClusterInvariants<IntegralCluster> InvariantsType;
-    };
-  }
+  /// \brief Traits class for any IntegralClusterSymCompare derived class
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename Derived>
+  struct traits<IntegralClusterSymCompare<Derived> > {
+    typedef Derived MostDerived;
+    typedef IntegralCluster Element;
+    typedef ClusterInvariants<IntegralCluster> InvariantsType;
+  };
 
   /// \brief CRTP Base class for IntegralClusterSymCompare
   ///

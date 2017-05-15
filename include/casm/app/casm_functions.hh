@@ -1,9 +1,12 @@
 #ifndef CASM_FUNCTIONS_HH
 #define CASM_FUNCTIONS_HH
 
-#include <wordexp.h>
+#include <boost/filesystem/path.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/app/CLIParse.hh"
+#include "casm/misc/cloneable_ptr.hh"
+#include "casm/misc/unique_cloneable_map.hh"
 
 /**
  *  \defgroup API
@@ -56,7 +59,27 @@
 /// \brief Main CASM namespace
 namespace CASM {
 
+  void print_splash(std::ostream &out);
+
   class PrimClex;
+  class jsonParser;
+
+  class runtime_error : public std::runtime_error {
+  public:
+    runtime_error(std::string _what, int _code = ERR_UNKNOWN) :
+      std::runtime_error(_what),
+      m_code(_code) {}
+
+    virtual ~runtime_error() {}
+
+    int code() const {
+      return m_code;
+    }
+
+  private:
+    std::string m_what;
+    int m_code;
+  };
 
   /**
    *  \defgroup API
@@ -67,7 +90,7 @@ namespace CASM {
    */
 
   /// \brief Data structure holding basic CASM command info
-  struct CommandArgs : public Logging {
+  struct CommandArgs : public CLIParse {
 
     /// \brief CommandArgs constructor
     CommandArgs(int _argc,
@@ -108,27 +131,22 @@ namespace CASM {
     /// \brief CommandArgs destructor
     ~CommandArgs();
 
-    int argc;
-    char **argv;
-    PrimClex *primclex;
-    fs::path root;
-    Log &log;
-    Log &err_log;
 
-    /// stores error codes when attempting to parse std::string _args -> argc, argv
-    int parse_result;
+    PrimClex *primclex;
+
+    fs::path root;
 
     bool is_help;
+
+    // if LOG should be written
     bool write_log;
+
+    // which casm sub-command ('init', 'enum', etc.)
     std::string command;
 
   private:
 
     void _init();
-
-    /// Used when parsing std::string args -> argc, argv
-    bool m_free_p;
-    wordexp_t m_p;
 
   };
 
@@ -140,11 +158,6 @@ namespace CASM {
 
   /// \brief Executes CASM commands specified by args
   int casm_api(const CommandArgs &args);
-
-  // /// \brief Executes casm_api in specified working directory
-  // int casm_api(const CommandArgs &args, fs::path working_dir);
-
-
 
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
   ///        return reference to existing or constructed PrimClex
@@ -165,45 +178,51 @@ namespace CASM {
 
   int help_command(const CommandArgs &args);
 
-  int bset_command(const CommandArgs &args);
-
-  int composition_command(const CommandArgs &args);
-
-  int enum_command(const CommandArgs &args);
-
-  int files_command(const CommandArgs &args);
-
-  int format_command(const CommandArgs &args);
-
-  int import_command(const CommandArgs &args);
-
-  int init_command(const CommandArgs &args);
-
-  int monte_command(const CommandArgs &args);
-
-  int perturb_command(const CommandArgs &args);
-
-  int query_command(const CommandArgs &args);
-
-  int ref_command(const CommandArgs &args);
-
-  int run_command(const CommandArgs &args);
-
-  int select_command(const CommandArgs &args);
-
-  int settings_command(const CommandArgs &args);
-
-  int status_command(const CommandArgs &args);
-
-  int super_command(const CommandArgs &args);
-
-  int sym_command(const CommandArgs &args);
-
-  int update_command(const CommandArgs &args);
-
   int version_command(const CommandArgs &args);
 
-  int view_command(const CommandArgs &args);
+
+  /// \brief Base class for generic use of algorithms through the API
+  template<typename OptionType>
+  class InterfaceBase {
+
+  public:
+
+    InterfaceBase() {}
+
+    virtual ~InterfaceBase() {}
+
+    virtual std::string help() const = 0;
+
+    virtual std::string name() const = 0;
+
+    virtual int run(const PrimClex &primclex, const jsonParser &kwargs, const OptionType &opt) const = 0;
+
+    std::unique_ptr<InterfaceBase> clone() const {
+      return std::unique_ptr<InterfaceBase>(this->_clone());
+    }
+
+  private:
+
+    virtual InterfaceBase *_clone() const = 0;
+
+  };
+
+  /// \brief Used to hold a list of all algorithms that may be accessed via the API
+  template<typename OptionType>
+  using InterfaceMap = notstd::unique_cloneable_map<std::string, InterfaceBase<OptionType> >;
+
+  /// \brief Use to construct an InterfaceMap
+  template<typename OptionType>
+  std::unique_ptr<InterfaceMap<OptionType> > make_interface_map() {
+
+    return notstd::make_unique<InterfaceMap<OptionType> >(
+    [](const InterfaceBase<OptionType> &e) -> std::string {
+      return e.name();
+    },
+    [](const InterfaceBase<OptionType> &e) -> notstd::cloneable_ptr<InterfaceBase<OptionType> > {
+      return notstd::clone(e);
+    });
+  }
 
   /** @} */
 }

@@ -246,14 +246,14 @@ namespace CASM {
   ///   - In header:
   ///     - ENUMERATOR_TRAITS(MyDerivedEnumClass)
   ///   - In the source code file:
-  ///     - const std::string CASM_TMP::traits<MyDerivedEnumClass>::name = "MyDerivedEnumClass";
+  ///     - const std::string traits<MyDerivedEnumClass>::name = "MyDerivedEnumClass";
   /// - For enumerators only meant to be added to the API:
   ///   - In header:
   ///     - ENUMERATOR_INTERFACE_TRAITS(MyDerivedClass)
   ///   - In the source code file:
   ///     - \code
-  ///       const std::string CASM_TMP::traits<MyDerivedEnumClass>::name = "MyDerivedEnumClass";
-  ///       const std::string CASM_TMP::traits<MyDerivedEnumClass>::help =
+  ///       const std::string traits<MyDerivedEnumClass>::name = "MyDerivedEnumClass";
+  ///       const std::string traits<MyDerivedEnumClass>::help =
   ///         "MyDerivedEnumClass: \n\n"
   ///
   ///         "  kwarg1: type (default=X) \n"
@@ -359,7 +359,6 @@ namespace CASM {
     using ValEnumerator<ValueType, IsConst>::_decrement_step;
     using ValEnumerator<ValueType, IsConst>::_invalidate;
     using ValEnumerator<ValueType, IsConst>::_set_current_ptr;
-    using ValEnumerator<ValueType, IsConst>::_current;
 
     /// Set size value
     void _set_size(size_type val) {
@@ -373,7 +372,7 @@ namespace CASM {
     /// - Should return a pointer to the object 'at' step n
     /// - May be implemented by returning pointers to different objects, or
     ///   by modifying the object being pointed at and returning the same pointer
-    virtual value_type *at_step(step_type n) = 0;
+    virtual CASM_TMP::ConstSwitch<IsConst, value_type> *at_step(step_type n) = 0;
 
     /// Sets step, current pointer via call to 'at_step', and enumerator validity
     /// - If n in valid range, calls at_step to set the current object and

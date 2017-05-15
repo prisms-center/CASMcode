@@ -1,4 +1,5 @@
 #include "casm/clex/ECIContainer.hh"
+#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
 

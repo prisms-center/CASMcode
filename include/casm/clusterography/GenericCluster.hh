@@ -2,7 +2,6 @@
 #define CASM_GenericCluster
 
 #include <vector>
-#include "casm/misc/CASM_TMP.hh"
 
 namespace CASM {
 
@@ -17,24 +16,21 @@ namespace CASM {
 
   template<typename Derived> class GenericCluster;
 
-  namespace CASM_TMP {
-
-    /// \brief Traits class for GenericCluster
-    ///
-    /// \ingroup IntegralCluster
-    ///
-    template<typename Derived>
-    struct traits<GenericCluster<Derived> > {
-      typedef typename traits<Derived>::MostDerived MostDerived;
-      typedef typename traits<Derived>::Element Element;
-      typedef typename traits<Derived>::InvariantsType InvariantsType;
-    };
-  }
+  /// \brief Traits class for GenericCluster
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename Derived>
+  struct traits<GenericCluster<Derived> > {
+    typedef typename traits<Derived>::MostDerived MostDerived;
+    typedef typename traits<Derived>::Element Element;
+    typedef typename traits<Derived>::InvariantsType InvariantsType;
+  };
 
   /// \brief A CRTP base class for a cluster of anything
   ///
-  /// - Needs a CASM_TMP::traits<Derived>::Element type
-  /// - Needs a CASM_TMP::traits<Derived>::InvariantsType type
+  /// - Needs a traits<Derived>::Element type
+  /// - Needs a traits<Derived>::InvariantsType type
   /// - Needs Derived::apply_sym_impl to be implemented
   ///
   /// \ingroup Clusterography
@@ -45,9 +41,9 @@ namespace CASM {
   public:
 
     typedef unsigned int size_type;
-    typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
-    typedef typename CASM_TMP::traits<Derived>::Element Element;
-    typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
+    typedef typename traits<Derived>::MostDerived MostDerived;
+    typedef typename traits<Derived>::Element Element;
+    typedef typename traits<Derived>::InvariantsType InvariantsType;
     typedef typename std::vector<Element>::value_type value_type;
     typedef typename std::vector<Element>::iterator iterator;
     typedef typename std::vector<Element>::const_iterator const_iterator;
@@ -141,24 +137,21 @@ namespace CASM {
 
   template<typename Derived> class ElementWiseSymCluster;
 
-  namespace CASM_TMP {
-
-    /// \brief Traits class for any ClusterSymCompare derived class
-    ///
-    /// \ingroup IntegralCluster
-    ///
-    template<typename Derived>
-    struct traits<ElementWiseSymCluster<Derived> > {
-      typedef typename traits<Derived>::MostDerived MostDerived;
-      typedef typename traits<Derived>::Element Element;
-      typedef typename traits<Derived>::InvariantsType InvariantsType;
-    };
-  }
+  /// \brief Traits class for any ClusterSymCompare derived class
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename Derived>
+  struct traits<ElementWiseSymCluster<Derived> > {
+    typedef typename traits<Derived>::MostDerived MostDerived;
+    typedef typename traits<Derived>::Element Element;
+    typedef typename traits<Derived>::InvariantsType InvariantsType;
+  };
 
   /// \brief CRTP-Base cluster class to apply_sym on an element-by-element basis
   ///
-  /// - Needs a CASM_TMP::traits<Derived>::Element type
-  /// - Needs a CASM_TMP::traits<Derived>::InvariantsType type
+  /// - Needs a traits<Derived>::Element type
+  /// - Needs a traits<Derived>::InvariantsType type
   ///
   /// \ingroup Clusterography
   ///
@@ -167,7 +160,7 @@ namespace CASM {
 
   public:
 
-    typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
+    typedef typename traits<Derived>::MostDerived MostDerived;
 
     /// \brief ElementWiseSymCluster applies symmetry element-by-element
     MostDerived &apply_sym(const SymOp &op) {
@@ -203,19 +196,16 @@ namespace CASM {
 
   template<typename Derived> class ClusterSymCompare;
 
-  namespace CASM_TMP {
-
-    /// \brief Traits class for any ClusterSymCompare derived class
-    ///
-    /// \ingroup IntegralCluster
-    ///
-    template<typename Derived>
-    struct traits<ClusterSymCompare<Derived> > {
-      typedef typename traits<Derived>::MostDerived MostDerived;
-      typedef typename traits<Derived>::Element Element;
-      typedef typename traits<Derived>::InvariantsType InvariantsType;
-    };
-  }
+  /// \brief Traits class for any ClusterSymCompare derived class
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename Derived>
+  struct traits<ClusterSymCompare<Derived> > {
+    typedef typename traits<Derived>::MostDerived MostDerived;
+    typedef typename traits<Derived>::Element Element;
+    typedef typename traits<Derived>::InvariantsType InvariantsType;
+  };
 
   /// \brief CRTP Base class for Cluster comparisons
   ///
@@ -243,10 +233,10 @@ namespace CASM {
   public:
 
     /// Element refers to Cluster, not element of Cluster
-    typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
-    typedef typename CASM_TMP::traits<Derived>::Element Element;
+    typedef typename traits<Derived>::MostDerived MostDerived;
+    typedef typename traits<Derived>::Element Element;
     typedef Element ClusterType;
-    typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
+    typedef typename traits<Derived>::InvariantsType InvariantsType;
 
     /// \brief Return tolerance
     double tol() const {

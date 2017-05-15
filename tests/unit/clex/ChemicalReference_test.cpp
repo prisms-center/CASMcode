@@ -2,12 +2,14 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-#include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/ChemicalReference_impl.hh"
 #include "casm/casm_io/json_io/clex.hh"
 
 /// What is being used to test it:
 
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/crystallography/Structure.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 

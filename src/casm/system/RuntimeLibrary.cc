@@ -1,4 +1,7 @@
 #include "casm/system/RuntimeLibrary.hh"
+
+#include <vector>
+#include <boost/filesystem.hpp>
 #include "casm/casm_io/Log.hh"
 
 namespace CASM {

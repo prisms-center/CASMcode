@@ -1,5 +1,5 @@
-#include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/crystallography/Site.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"

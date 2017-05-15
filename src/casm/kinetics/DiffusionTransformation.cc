@@ -1,10 +1,8 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/clex/Configuration.hh"
+
 #include "casm/symmetry/Orbit_impl.hh"
-#include "casm/clex/NeighborList.hh"
-#include "casm/crystallography/Coordinate.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include <limits>
+#include "casm/crystallography/Structure.hh"
+#include "casm/clex/Configuration.hh"
 
 
 namespace CASM {
@@ -28,6 +26,22 @@ namespace CASM {
       uccoord(_uccoord),
       occ(_occ),
       pos(_pos) {}
+
+    bool SpecieLocation::operator<(const SpecieLocation &B) const {
+      return _tuple() < B._tuple();
+    }
+
+    const Molecule &SpecieLocation::mol() const {
+      return uccoord.sublat_site().site_occupant()[occ];
+    }
+
+    const Specie &SpecieLocation::specie() const {
+      return mol()[pos].specie;
+    }
+
+    std::tuple<UnitCellCoord, Index, Index> SpecieLocation::_tuple() const {
+      return std::make_tuple(uccoord, occ, pos);
+    }
 
     /// \brief Print DiffusionTransformationInvariants
     std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj) {
@@ -82,6 +96,18 @@ namespace CASM {
       return *this;
     }
 
+    bool SpecieTrajectory::specie_types_map() const {
+      return from.specie() == to.specie();
+    }
+
+    bool SpecieTrajectory::is_no_change() const {
+      return from == to;
+    }
+
+    bool SpecieTrajectory::operator<(const SpecieTrajectory &B) const {
+      return _tuple() < B._tuple();
+    }
+
     void SpecieTrajectory::apply_sym(const SymOp &op) {
       from.uccoord.apply_sym(op);
       to.uccoord.apply_sym(op);
@@ -94,6 +120,9 @@ namespace CASM {
       swap(from, to);
     }
 
+    std::tuple<SpecieLocation, SpecieLocation> SpecieTrajectory::_tuple() const {
+      return std::make_tuple(from, to);
+    }
   }
 
   jsonParser &to_json(const Kinetics::SpecieTrajectory &traj, jsonParser &json) {
@@ -430,6 +459,29 @@ namespace CASM {
       return !this->_lt(_tmp) && !_tmp._lt(*this);
     }
 
+    /// \brief Return the cluster size
+    Index DiffusionTransformation::size() const {
+      return cluster().size();
+    }
+
+    /// \brief Return the min pair distance, or 0.0 if size() <= 1
+    double DiffusionTransformation::min_length() const {
+      return cluster().min_length();
+    }
+
+    /// \brief Return the max pair distance, or 0.0 if size() <= 1
+    double DiffusionTransformation::max_length() const {
+      return cluster().max_length();
+    }
+
+    /*
+    DiffusionTransformation DiffusionTransformation::copy_apply_sym(const SymOp &op) const {
+      DiffusionTransformation t {*this};
+      t.apply_sym(op);
+      return t;
+    }
+    */
+
     std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit) {
       Structure prim(orbit.prototype().specie_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
@@ -571,7 +623,6 @@ namespace CASM {
     double min_dist_to_path(const DiffusionTransformation &diff_trans) {
       return _path_nearest_neighbor(diff_trans).second;
     }
-
 
     Configuration &DiffusionTransformation::apply_to_impl(Configuration &config) const {
 

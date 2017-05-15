@@ -1,6 +1,8 @@
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/ProjectSettings.hh"
 
+#include <boost/filesystem.hpp>
+#include "casm/system/RuntimeLibrary.hh"
 #include "casm/container/Enumerator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/casm_functions.hh"

@@ -1,9 +1,14 @@
 #ifndef CASM_FileEnumerator
 #define CASM_FileEnumerator
 
+#include <boost/filesystem.hpp>
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/EnumeratorHandler.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigIterator.hh"
-
+#include "casm/clex/Supercell.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/database/DatabaseDefs.hh"
 
 namespace CASM {
 
@@ -258,23 +263,17 @@ namespace CASM {
         continue;
       }
 
-      auto scel_begin = m_primclex.supercell_list().begin();
-      auto scel_end = m_primclex.supercell_list().end();
-
       // calculation settings: global
       result = _all_that_exist(result, m_dir.calc_settings_dir(calctype));
 
       // supercell level
-      for(auto scel_it = scel_begin; scel_it != scel_end; ++scel_it) {
-        result = _all_that_exist(result, m_dir.supercell_calc_settings_dir(scel_it->name(), calctype));
+      for(const auto &scel : m_primclex.db<Supercell>()) {
+        result = _all_that_exist(result, m_dir.supercell_calc_settings_dir(scel.name(), calctype));
       }
 
-      auto begin = m_primclex.config_begin();
-      auto end = m_primclex.config_end();
-
       // configuration level
-      for(auto it = begin; it != end; ++it) {
-        result = _all_that_exist(result, m_dir.configuration_calc_settings_dir(it->name(), calctype));
+      for(const auto &config : m_primclex.db<Configuration>()) {
+        result = _all_that_exist(result, m_dir.configuration_calc_settings_dir(config.name(), calctype));
       }
     }
     return result;
@@ -291,13 +290,10 @@ namespace CASM {
         continue;
       }
 
-      auto begin = m_primclex.config_begin();
-      auto end = m_primclex.config_end();
-
       // calculation summaries: properties.calc.json, status.json
-      for(auto it = begin; it != end; ++it) {
-        result = _if_exists(result, m_dir.calculated_properties(it->name(), calctype));
-        result = _if_exists(result, m_dir.calc_status(it->name(), calctype));
+      for(const auto &config : m_primclex.db<Configuration>()) {
+        result = _if_exists(result, m_dir.calculated_properties(config.name(), calctype));
+        result = _if_exists(result, m_dir.calc_status(config.name(), calctype));
       }
 
     }

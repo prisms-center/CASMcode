@@ -13,10 +13,12 @@ class Oszicar(object):
 
        Currently, just contains:
            self.E = list of ionic step E0 values
+           self.mag = list of ionic step magnetic moment values
     """
     def __init__(self,filename):
         self.filename = filename
         self.E = []
+        self.mag = []
         try:
             self.read()
         except OszicarError as e:
@@ -38,6 +40,8 @@ class Oszicar(object):
         for line in f:
             if re.search("E0",line):
                 self.E.append(float(line.split()[4]))
+            if re.search("mag", line):
+                self.mag.append(float(line.split()[-1]))
         f.close()
 
 

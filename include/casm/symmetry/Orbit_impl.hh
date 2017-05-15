@@ -1,6 +1,8 @@
 #ifndef CASM_Orbit_impl
 #define CASM_Orbit_impl
 
+#include <set>
+#include <boost/iterator/transform_iterator.hpp>
 #include "casm/symmetry/Orbit.hh"
 #include "casm/misc/algorithm.hh"
 

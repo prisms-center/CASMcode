@@ -16,7 +16,7 @@ namespace CASM {
     "  ... include help documentation here ... \n\n";
 
   int ConfigEnumInterpolation::run(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
     throw std::runtime_error("ConfigEnumAllOccupations::run is not implemented");
@@ -65,19 +65,19 @@ namespace CASM {
     }
 
     this->_initialize(&m_current);
-    _current().set_source(this->source(step()));
+    m_current.set_source(this->source(step()));
   }
 
   /// Set m_current to correct value at specified step and return a reference to it
-  Configuration *ConfigEnumInterpolation::at_step(step_type n) {
-    if(current().has_displacement())
-      _current().set_displacement(m_initial.displacement() + ((double) n)*m_displacement_inc);
+  const Configuration *ConfigEnumInterpolation::at_step(step_type n) {
+    if(m_current.has_displacement())
+      m_current.set_displacement(m_initial.displacement() + ((double) n)*m_displacement_inc);
 
-    if(current().has_deformation())
-      _current().set_deformation(m_initial.deformation() + ((double) n)*m_deformation_inc);
+    if(m_current.has_deformation())
+      m_current.set_deformation(m_initial.deformation() + ((double) n)*m_deformation_inc);
 
-    _current().set_source(this->source(step()));
-    return &_current();
+    m_current.set_source(this->source(step()));
+    return &m_current;
   }
 
 }

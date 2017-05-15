@@ -1,3 +1,8 @@
+#ifndef CASM_DataFormatter_impl
+#define CASM_DataFormatter_impl
+#include "casm/casm_io/DataFormatter.hh"
+
+#include <boost/tokenizer.hpp>
 #include "casm/casm_io/DataStream.hh"
 #include "casm/container/Counter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
@@ -390,4 +395,13 @@ namespace CASM {
     return formatter;
   }
 
+  /// \brief Use a initializer list of string to build a DataFormatter<DataObject>
+  template<typename DataObject, typename DatumFormatterType>
+  DataFormatter<DataObject> DataFormatterDictionary<DataObject, DatumFormatterType>::parse(
+    std::initializer_list<std::string> input) const {
+    return parse(std::vector<std::string>(input));
+  }
+
 }
+
+#endif

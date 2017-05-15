@@ -1,11 +1,9 @@
 #ifndef PARAMCOMPOSITION_HH
 #define PARAMCOMPOSITION_HH
 
-#include "casm/external/boost.hh"
-using boost::property_tree::ptree;
-
+#include <vector>
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/container/Array.hh"
-#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 

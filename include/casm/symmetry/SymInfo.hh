@@ -29,7 +29,7 @@ namespace CASM {
 
   ENUM_TRAITS(symmetry_type)
 
-  ENUM_IO(symmetry_type)
+  ENUM_IO_DECL(symmetry_type)
 
   /// \brief Simple struct to be used as return type for SymOp::info().
   struct SymInfo {

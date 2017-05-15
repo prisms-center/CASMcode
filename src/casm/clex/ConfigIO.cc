@@ -1,16 +1,33 @@
 #include "casm/clex/ConfigIO.hh"
 
 #include <functional>
-#include "casm/clex/Configuration.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Norm.hh"
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOStrain.hh"
-#include "casm/clex/ConfigIOSelected.hh"
+#include "casm/clex/ConfigMapping.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/DataFormatterTools_impl.hh"
+#include "casm/app/ClexDescription.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/database/Selected.hh"
+#include "casm/database/DatabaseDefs.hh"
 
 namespace CASM {
+
+  template class BaseDatumFormatter<Configuration>;
+  template class DataFormatterOperator<bool, std::string, Configuration>;
+  template class DataFormatterOperator<bool, bool, Configuration>;
+  template class DataFormatterOperator<bool, double, Configuration>;
+  template class DataFormatterOperator<double, double, Configuration>;
+  template class DataFormatterOperator<Index, double, Configuration>;
+  template class DataFormatter<Configuration>;
+  template bool DataFormatter<Configuration>::evaluate_as_scalar<bool>(Configuration const &) const;
+  template double DataFormatter<Configuration>::evaluate_as_scalar<double>(Configuration const &) const;
+  template class DataFormatterDictionary<Configuration>;
 
   namespace ConfigIO_impl {
 
@@ -140,6 +157,22 @@ namespace CASM {
       return species_frac(config);
     }
 
+    // --- MagBase implementations ---
+
+    const std::string MagBase::Name = "relaxed_mag";
+
+    const std::string MagBase::Desc =
+      "Relaxed magnetic moment on each basis site. " ;
+
+    /// \brief Returns true if the Configuration has relaxed_mag
+    bool MagBase::validate(const Configuration &config) const {
+      return config.calc_properties().contains("relaxed_mag");
+    }
+
+    /// \brief Returns the atom fraction
+    Eigen::VectorXd MagBase::evaluate(const Configuration &config) const {
+      return relaxed_mag(config);
+    }
 
     // --- Corr implementations -----------
 
@@ -306,21 +339,6 @@ namespace CASM {
 
   namespace ConfigIO {
 
-    template<>
-    Selected selected_in(const ConfigSelection<true> &_selection) {
-      return Selected(_selection);
-    }
-
-    template<>
-    Selected selected_in(const ConfigSelection<false> &_selection) {
-      return Selected(_selection);
-    }
-
-    Selected selected_in() {
-      return Selected();
-    }
-
-
     GenericConfigFormatter<std::string> configname() {
       return GenericConfigFormatter<std::string>("configname",
                                                  "Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
@@ -356,7 +374,7 @@ namespace CASM {
 
     GenericConfigFormatter<Index> scel_size() {
       return GenericConfigFormatter<Index>("scel_size",
-                                           "Supercell volume, given as the integer number of unit cells",
+                                           "Supercell volume, given as the integer number of primitive cells",
       [](const Configuration & config)->Index {
         return config.supercell().volume();
       });
@@ -366,27 +384,17 @@ namespace CASM {
       return GenericConfigFormatter<Index>("multiplicity",
                                            "Symmetric multiplicity of the configuration, excluding translational equivalents.",
       [](const Configuration & config)->Index {
-        return config.prim().factor_group().size() / config.factor_group().size();
+        return config.multiplicity();
       });
     }
 
-    GenericConfigFormatter<std::string> pointgroup_name() {
-      return GenericConfigFormatter<std::string>("pointgroup_name",
+    GenericConfigFormatter<std::string> point_group_name() {
+      return GenericConfigFormatter<std::string>("point_group_name",
                                                  "Name of the configuration's point group.",
-      [](const Configuration & config)->std::string{
-        return config.point_group().get_name();
+      [](const Configuration & config)->std::string {
+        return config.point_group_name();
       });
     }
-
-    /*
-    GenericConfigFormatter<bool> selected() {
-      return GenericConfigFormatter<bool>("selected",
-                                          "Specifies whether configuration is selected (1/true) or not (0/false)",
-      [](const Configuration & config)->bool{
-        return config.selected();
-      });
-    }
-    */
 
     GenericConfigFormatter<double> relaxed_energy() {
       return GenericConfigFormatter<double>(
@@ -451,7 +459,7 @@ namespace CASM {
     GenericConfigFormatter<bool> is_calculated() {
       return GenericConfigFormatter<bool>("is_calculated",
                                           "True (1) if all current properties have been been calculated for the configuration",
-                                          CASM::is_calculated);
+                                          static_cast<bool(*)(const Configuration &)>(CASM::is_calculated));
     }
 
     GenericConfigFormatter<bool> is_primitive() {
@@ -494,6 +502,22 @@ namespace CASM {
                                             has_volume_relaxation);
     }
 
+    GenericConfigFormatter<double> relaxed_magmom() {
+      return GenericConfigFormatter<double>("relaxed_magmom",
+                                            "Relaxed magnetic moment, normalized per primative cell.",
+                                            CASM::relaxed_magmom,
+                                            has_relaxed_magmom);
+    }
+
+    GenericConfigFormatter<double> relaxed_magmom_per_species() {
+      return GenericConfigFormatter<double>("relaxed_magmom_per_atom",
+                                            "Relaxed magnetic moment, normalized per atom.",
+                                            CASM::relaxed_magmom_per_species,
+                                            has_relaxed_magmom);
+    }
+
+
+
     /*End ConfigIO*/
   }
 
@@ -504,11 +528,14 @@ namespace CASM {
     StringAttributeDictionary<Configuration> dict;
 
     dict.insert(
+      name<Configuration>(),
       configname(),
+      alias<Configuration>(),
+      alias_or_name<Configuration>(),
       scelname(),
       calc_status(),
       failure_type(),
-      pointgroup_name()
+      point_group_name()
     );
 
     return dict;
@@ -524,8 +551,7 @@ namespace CASM {
       is_calculated(),
       is_canonical(),
       is_primitive(),
-      //selected(),
-      selected_in(),
+      DB::Selected<Configuration>(),
       OnClexHull(),
       OnHull()
     );
@@ -567,9 +593,18 @@ namespace CASM {
       rms_force(),
       basis_deformation(),
       lattice_deformation(),
-      volume_relaxation()
+      volume_relaxation(),
+      relaxed_magmom(),
+      relaxed_magmom_per_species()
     );
 
+    return dict;
+  }
+
+  template<>
+  VectorXiAttributeDictionary<Configuration> make_vectorxi_dictionary<Configuration>() {
+    using namespace ConfigIO;
+    VectorXiAttributeDictionary<Configuration> dict;
     return dict;
   }
 
@@ -587,7 +622,8 @@ namespace CASM {
       RelaxationStrain(),
       DoFStrain(),
       SiteFrac(),
-      StrucScore()
+      StrucScore(),
+      MagBase()
     );
 
     return dict;

@@ -1,12 +1,11 @@
-#ifndef DATAFORMATTER_HH
-#define DATAFORMATTER_HH
+#ifndef CASM_DataFormatter
+#define CASM_DataFormatter
 
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <vector>
 #include <functional>
-#include "casm/external/boost.hh"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/multivector.hh"
 #include "casm/misc/CASM_math.hh"
@@ -369,7 +368,7 @@ namespace CASM {
     /// described by the formatter.
     /// Ex: "clex(formation_energy)" or "comp(a)", "comp(c)"
     ///
-    /// - Default uses col_header
+    /// - Default uses short_header
     virtual std::vector<std::string> col_header(const DataObject &_template_obj) const {
       return std::vector<std::string> {this->short_header(_template_obj)};
     }
@@ -639,7 +638,7 @@ namespace CASM {
     typedef typename UniqueMapType::const_iterator const_iterator;
 
     DataFormatterDictionary() :
-      UniqueMapType([](const value_type &value)->std::string {
+      UniqueMapType([](const value_type & value)->std::string {
       return value.name();
     },
     DictionaryConverter<DataObject, DatumFormatterType>()) {}
@@ -693,6 +692,9 @@ namespace CASM {
     /// \brief Use a single string to build a DataFormatter<DataObject>
     DataFormatter<DataObject> parse(const std::vector<std::string> &input) const;
 
+    /// \brief Use a single string to build a DataFormatter<DataObject>
+    DataFormatter<DataObject> parse(std::initializer_list<std::string> input) const;
+
   };
 
 
@@ -740,7 +742,5 @@ namespace CASM {
 
 
 }
-
-#include "casm/casm_io/DataFormatter_impl.hh"
 
 #endif

@@ -79,8 +79,8 @@ extern "C" {
     fs::path _root(root);
 
     CommandArgs command_args(s, _primclex, _root, _log, _err_log);
-    if(command_args.parse_result) {
-      return command_args.parse_result;
+    if(command_args.parse_result()) {
+      return command_args.parse_result();
     }
 
     return casm_api(command_args);

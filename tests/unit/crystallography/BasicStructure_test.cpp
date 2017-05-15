@@ -5,11 +5,13 @@
 #include "casm/crystallography/BasicStructure.hh"
 
 /// What is being used to test it:
+#include <boost/filesystem/fstream.hpp>
 #include "ZrOProj.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Structure.hh"
 
 using namespace CASM;
 

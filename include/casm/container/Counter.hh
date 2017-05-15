@@ -1,6 +1,8 @@
 #ifndef COUNTER_HH
 #define COUNTER_HH
 
+#include <iostream>
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/container/BaseCounter.hh"
 #include "casm/misc/CASM_math.hh"
 
@@ -71,17 +73,15 @@ namespace CASM {
   template<typename _Container, typename _value_type, typename _size_type, typename _Access, typename _Compare>
   class Counter;
 
-  namespace CASM_TMP {
-    template<typename _Container, typename _value_type, typename _size_type, typename _Access, typename _Compare>
-    struct traits<Counter<_Container, _value_type, _size_type, _Access, _Compare> > {
-      typedef BaseCounter<Counter<_Container, _value_type, _size_type, _Access, _Compare> > Base;
-      typedef _Container Container;
-      typedef _value_type value_type;
-      typedef _size_type size_type;
-      typedef _Access Access;
-      typedef _Compare Compare;
-    };
-  }
+  template<typename _Container, typename _value_type, typename _size_type, typename _Access, typename _Compare>
+  struct traits<Counter<_Container, _value_type, _size_type, _Access, _Compare> > {
+    typedef BaseCounter<Counter<_Container, _value_type, _size_type, _Access, _Compare> > Base;
+    typedef _Container Container;
+    typedef _value_type value_type;
+    typedef _size_type size_type;
+    typedef _Access Access;
+    typedef _Compare Compare;
+  };
 
   template < typename _Container,
              typename _value_type = typename _Container::value_type,
@@ -89,7 +89,7 @@ namespace CASM {
              typename _Access = CASM_TMP::BracketAccess<_Container, _value_type, _size_type>,
              typename _Compare = CASM_TMP::MuchLessThan<_value_type> >
   class Counter : public BaseCounter<Counter<_Container, _value_type, _size_type, _Access, _Compare> > {
-    typedef typename CASM_TMP::traits<Counter>::Base Base;
+    typedef typename traits<Counter>::Base Base;
     using Base::_valid;
     using Base::_current;
     using Base::_increment;
