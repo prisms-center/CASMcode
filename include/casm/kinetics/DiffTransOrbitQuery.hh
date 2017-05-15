@@ -1,5 +1,6 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/symmetry/Orbit.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 

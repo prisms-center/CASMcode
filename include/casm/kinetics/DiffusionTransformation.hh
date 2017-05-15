@@ -4,6 +4,7 @@
 #include "casm/kinetics/DoFTransformation.hh"
 #include "casm/kinetics/OccupationTransformation.hh"
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/clusterography/IntegralCluster.hh"
@@ -216,9 +217,9 @@ namespace CASM {
 
     public:
 
-      typedef CASM_TMP::traits<LocalDiffTransSymCompare>::MostDerived MostDerived;
-      typedef CASM_TMP::traits<LocalDiffTransSymCompare>::Element Element;
-      typedef CASM_TMP::traits<LocalDiffTransSymCompare>::InvariantsType InvariantsType;
+      typedef traits<LocalDiffTransSymCompare>::MostDerived MostDerived;
+      typedef traits<LocalDiffTransSymCompare>::Element Element;
+      typedef traits<LocalDiffTransSymCompare>::InvariantsType InvariantsType;
 
       LocalDiffTransSymCompare(double tol);
 
@@ -252,9 +253,9 @@ namespace CASM {
 
     public:
 
-      typedef CASM_TMP::traits<ScelPeriodicDiffTransSymCompare>::MostDerived MostDerived;
-      typedef CASM_TMP::traits<ScelPeriodicDiffTransSymCompare>::Element Element;
-      typedef CASM_TMP::traits<ScelPeriodicDiffTransSymCompare>::InvariantsType InvariantsType;
+      typedef traits<ScelPeriodicDiffTransSymCompare>::MostDerived MostDerived;
+      typedef traits<ScelPeriodicDiffTransSymCompare>::Element Element;
+      typedef traits<ScelPeriodicDiffTransSymCompare>::InvariantsType InvariantsType;
 
       ScelPeriodicDiffTransSymCompare(const PrimGrid &prim_grid, double tol);
 

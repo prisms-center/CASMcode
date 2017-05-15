@@ -126,7 +126,7 @@ namespace CASM {
     }
 
     /// Implements run
-    int DiffusionTransformationEnum::run(PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
+    int DiffusionTransformationEnum::run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
 
       jsonParser kwargs;
       if(!_kwargs.get_if(kwargs, "bspecs")) {

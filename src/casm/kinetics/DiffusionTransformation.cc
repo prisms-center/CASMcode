@@ -3,6 +3,7 @@
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/NeighborList.hh"
 
 
 namespace CASM {

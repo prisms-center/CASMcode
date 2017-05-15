@@ -45,7 +45,7 @@ namespace CASM {
       static const std::string enumerator_name;
       static const std::string interface_help;
 
-      static int run(PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
+      static int run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
 
     private:
 

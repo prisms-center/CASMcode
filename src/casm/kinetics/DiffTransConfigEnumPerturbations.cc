@@ -130,7 +130,7 @@ namespace CASM {
 
     };
 
-    int DiffTransConfigEnumPerturbations::run(PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
+    int DiffTransConfigEnumPerturbations::run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
 
       jsonParser orbitnames;
       if(!_kwargs.get_if(orbitnames, "orbits")) {

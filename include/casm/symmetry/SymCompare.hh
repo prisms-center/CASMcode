@@ -8,6 +8,7 @@
 #include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 

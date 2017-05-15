@@ -14,6 +14,7 @@
 #include "Common.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/app/enum.hh"
 
 using namespace CASM;
 using namespace test;
