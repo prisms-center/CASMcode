@@ -71,9 +71,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
   std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
   Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 2, orbits.begin() + 3, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
   Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[0].prototype();
-  std::cout << diff_trans_orbits.size() << "\n";
+  //std::cout << diff_trans_orbits.size() << "\n";
 
-  std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype << "\n";
+  //std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype << "\n";
 
   /// Test bubble checkers
   ///Make various supercells
@@ -123,20 +123,20 @@ BOOST_AUTO_TEST_CASE(Test0) {
   for(auto it = diff_trans_unique.begin(); it != diff_trans_unique.end(); ++it) {
     subdifftrans.push_back(*it);
   }
-  std::cout << "Diff_Trans_Uniques " << subdifftrans.size() << " total" << "\n";
+  /*std::cout << "Diff_Trans_Uniques " << subdifftrans.size() << " total" << "\n";
   for(auto it = subdifftrans.begin(); it != subdifftrans.end(); ++it) {
     std::cout << *it << "\n";
-  }
+  }*/
 
   /// Check if number of unique diff trans is what we expect
   //Size of diff trans factor group should be equal to (size of scel fg)*(volume of scel)/(size of bg_config fg)
-  std::cout << "size of Config factor group " << diff_trans_unique.invariant_subgroup().size() << std::endl;
+  /*std::cout << "size of Config factor group " << diff_trans_unique.invariant_subgroup().size() << std::endl;
   std::cout << "size of Supercell factor group " << bg_config_prim.supercell().factor_group().size() << std::endl;
   std::cout << "size of Supercell (#prims) " << bg_config_prim.supercell().volume() << std::endl;
   std::cout << "size of non-prim Supercell factor group " << config.supercell().factor_group().size() << std::endl;
   std::cout << "size of non-prim Supercell (#prims) " << config.supercell().volume() << std::endl;
   std::cout << "size of diff trans unique " << subdifftrans.size() << std::endl;
-
+  */
   int config_fg_int = static_cast<int>(diff_trans_unique.invariant_subgroup().size());
   int scel_fg_int = static_cast<int>(bg_config_prim.supercell().factor_group().size());
   int scel_vol_int = static_cast<int>(bg_config_prim.supercell().volume());
@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   Kinetics::make_prim_periodic_diff_trans_orbits(orbits2.begin() + 2, orbits2.begin() + 3, primclex2.crystallography_tol(), std::back_inserter(diff_trans_orbits2));
   Kinetics::DiffusionTransformation diff_trans_prototype2 = diff_trans_orbits2[4].prototype();
 
-  std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype2 << "\n";
+  //std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype2 << "\n";
 
   //For this hop and configuration
   // Expect 2 unique transformations A site to B site (16 total in scel) or A site to A site (32 total in scel)

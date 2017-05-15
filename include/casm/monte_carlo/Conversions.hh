@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <set>
+#include <string>
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
