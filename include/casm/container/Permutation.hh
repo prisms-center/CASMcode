@@ -3,19 +3,24 @@
 #ifndef PERMUTATION_HH
 #define PERMUTATION_HH
 
-#include "casm/container/Array.hh"
+#include <cassert>
+#include <vector>
+#include <numeric>
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
 
+  class jsonParser;
+
   /// Permutation is a an operator that permutes indices or items in a list.
   /// Permutations are defined such that for an initial array
-  ///        Array<THINGS> before;
+  ///        std::vector<THINGS> before;
   ///
   /// A Permutation
   ///        Permutation my_perm;
   ///
   /// and an output array after permutation
-  ///        Array<THINGS> after = my_perm.permute(before);
+  ///        std::vector<THINGS> after = my_perm.permute(before);
   ///
   /// The following relation is satisfied
   ///        after[i] = before[my_perm[i]];
@@ -37,24 +42,24 @@ namespace CASM {
     /// Permutation array. If m_perm_array[i]==j, then an entry at index 'j' before permutation
     /// goes to index 'i' after permutation. Put another way, m_perm_array IS the result of performing
     /// the permutation to the list {0,1,2,...,size()-1}
-    Array<Index> m_perm_array;
+    std::vector<Index> m_perm_array;
 
   public:
-    Permutation(Index N): m_perm_array(Array<Index>::sequence(0, N - 1)) {};
-
-    Permutation(const std::vector<Index> &init_perm) {
-      m_perm_array.reserve(init_perm.size());
-      for(auto it = init_perm.cbegin(); it != init_perm.cend(); ++it)
-        m_perm_array.push_back(*it);
+    Permutation(Index N):
+      m_perm_array(N) {
+      std::iota(m_perm_array.begin(), m_perm_array.end(), 0);
     };
-    Permutation(const Array<Index> &init_perm): m_perm_array(init_perm) {};
-    Permutation(ReturnArray<Index> &init_perm): m_perm_array(init_perm) {};
+
+    template<typename Iterator>
+    Permutation(Iterator begin, Iterator end): m_perm_array(begin, end) {};
+    Permutation(const std::vector<Index> &init_perm): m_perm_array(init_perm) {};
+    Permutation(std::vector<Index> &&init_perm): m_perm_array(std::move(init_perm)) {};
 
     Index size() const {
       return m_perm_array.size();
     };
 
-    const Array<Index> &perm_array() const {
+    const std::vector<Index> &perm_array() const {
       return m_perm_array;
     };
 
@@ -72,7 +77,7 @@ namespace CASM {
 
     /// Construct permutation of dimension size()*block_dims.sum() that describes the effect of permuting
     /// N blocks, where the i'th block has dimension block_dims[i] (N=size()==block_dims.size())
-    Permutation make_block_permutation(const Array<Index> &block_dims)const;
+    Permutation make_block_permutation(const std::vector<Index> &block_dims)const;
 
     /// Rearrange 'this' permutation to form an equivalent permutation for
     /// any list that has already been permuted by trans_perm.
@@ -88,20 +93,16 @@ namespace CASM {
       return m_perm_array[i];
     };
 
-    /// Generate permuted copy of type-T Array
+    /// Generate permuted copy of type-T std::vector
     template<typename T>
-    ReturnArray<T> permute(const Array<T> &before_array) const;
+    std::vector<T> permute(const std::vector<T> &before_vec) const;
 
-    /// Generate permuted copy of type-T vector
+    /// Generate inversely permuted copy of type-T std::vector
     template<typename T>
-    std::vector<T> permute(const std::vector<T> &before_array) const;
-
-    /// Generate inversely permuted copy of type-T Array
-    template<typename T>
-    ReturnArray<T> ipermute(const Array<T> &before_array) const;
+    std::vector<T> ipermute(const std::vector<T> &before_array) const;
 
     template<typename T>
-    ReturnArray<T> operator*(const Array<T> &before_array) const {
+    std::vector<T> operator*(const std::vector<T> &before_array) const {
       return this->permute(before_array);
     }
 
@@ -119,31 +120,12 @@ namespace CASM {
   //************************************************************************************************************************************//
   //************************************************************************************************************************************//
 
-  /// Generate permuted copy of type-T Array
-  /// THIS IMPLEMENTATION DEPENDS ON DEFINITION OF PERMUTATION CONVENTION
-  /// Note: To switch conventions, swap names of permute and ipermute
-  template<typename T>
-  ReturnArray<T> Permutation::permute(const Array<T> &before_array) const {
-    assert(before_array.size() == size() && "WARNING: You're trying to permute an Array with an incompatible permutation!");
-
-    Array<T> after_array;
-    after_array.reserve(size());
-
-    for(Index i = 0; i < size(); i++) {
-      after_array.push_back(before_array[m_perm_array[i]]);
-    }
-    return after_array;
-  }
-
-
-  //************************************************************************************************************************************//
-
   /// Generate permuted copy of type-T std::vector
   /// THIS IMPLEMENTATION DEPENDS ON DEFINITION OF PERMUTATION CONVENTION
   /// Note: To switch conventions, swap names of permute and ipermute
   template<typename T>
   std::vector<T> Permutation::permute(const std::vector<T> &before_vec) const {
-    assert(before_vec.size() == size() && "WARNING: You're trying to permute an Array with an incompatible permutation!");
+    assert(before_vec.size() == size() && "WARNING: You're trying to permute an std::vector with an incompatible permutation!");
 
     std::vector<T> after_vec;
     after_vec.reserve(size());
@@ -156,14 +138,14 @@ namespace CASM {
 
   //**************************************************************
 
-  /// Generate inversely permuted copy of type-T Array
+  /// Generate inversely permuted copy of type-T std::vector
   /// THIS IMPLEMENTATION DEPENDS ON DEFINITION OF PERMUTATION CONVENTION
   /// Note: To switch conventions, swap names of permute and ipermute
   template<typename T>
-  ReturnArray<T> Permutation::ipermute(const Array<T> &before_array) const {
-    assert(before_array.size() == size() && "WARNING: You're trying to permute an Array with an incompatible permutation!");
+  std::vector<T> Permutation::ipermute(const std::vector<T> &before_array) const {
+    assert(before_array.size() == size() && "WARNING: You're trying to permute an std::vector with an incompatible permutation!");
 
-    Array<T> after_array(before_array);
+    std::vector<T> after_array(before_array);
     //after_array.reserve(size());
 
     for(Index i = 0; i < size(); i++) {

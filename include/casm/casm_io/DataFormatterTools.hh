@@ -1,5 +1,5 @@
-#ifndef DATAFORMATTERTOOLS_HH
-#define DATAFORMATTERTOOLS_HH
+#ifndef CASM_DataFormatterTools
+#define CASM_DataFormatterTools
 #include <numeric>
 #include <iterator>
 #include "casm/external/boost.hh"
@@ -107,8 +107,8 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("add", "Add two or more numbers",
     [](const std::vector<double> &vec)->double {
       return std::accumulate(vec.cbegin(),
-      vec.cend(),
-      0.0);
+                             vec.cend(),
+                             0.0);
     });
 
   }
@@ -137,8 +137,8 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("mult", "Multiply two or more numbers",
     [](const std::vector<double> &vec)->double {
       return std::accumulate(vec.cbegin(),
-      vec.cend(),
-      1.0,
+                             vec.cend(),
+                             1.0,
       [](double a, double b)->double{
         return a *b;
       });
@@ -170,7 +170,7 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("max", "Max value of two or more numbers",
     [](const std::vector<double> &vec)->double {
       return (*std::max_element(vec.cbegin(),
-      vec.cend()));
+                                vec.cend()));
     });
   }
 
@@ -183,7 +183,7 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("min", "Min value of two or more numbers",
     [](const std::vector<double> &vec)->double {
       return (*std::min_element(vec.cbegin(),
-      vec.cend()));
+                                vec.cend()));
     });
   }
 
@@ -317,8 +317,8 @@ namespace CASM {
     return DataFormatterOperator<bool, bool, DataObject>("and", "Boolean AND for sequence of boolean values",
     [](const std::vector<bool> &vec)->bool {
       return std::accumulate(vec.cbegin(),
-      vec.cend(),
-      true,
+                             vec.cend(),
+                             true,
       [](bool a, bool b)->bool{
         return a && b;
       });
@@ -335,8 +335,8 @@ namespace CASM {
     return DataFormatterOperator<bool, bool, DataObject>("or", "Boolean OR for sequence of boolean values",
     [](const std::vector<bool> &vec)->bool {
       return std::accumulate(vec.cbegin(),
-      vec.cend(),
-      false,
+                             vec.cend(),
+                             false,
       [](bool a, bool b)->bool{
         return a || b;
       });
@@ -848,6 +848,44 @@ namespace CASM {
 
   };
 
+  template<typename DataObject>
+  GenericDatumFormatter<std::string, DataObject> name() {
+    return GenericDatumFormatter<std::string, DataObject>(
+             "name",
+             traits<DataObject>::name + " name",
+    [](const DataObject & obj)->std::string {
+      return obj.name();
+    });
+  }
+
+  template<typename DataObject>
+  GenericDatumFormatter<std::string, DataObject> alias() {
+    return GenericDatumFormatter<std::string, DataObject>(
+             "alias",
+             traits<DataObject>::name + " alias (if exists, else \"none\")",
+    [](const DataObject & obj)->std::string {
+      std::string alias = obj.alias();
+      if(alias.empty()) {
+        return "none";
+      }
+      return alias;
+    });
+  }
+
+  template<typename DataObject>
+  GenericDatumFormatter<std::string, DataObject> alias_or_name() {
+    return GenericDatumFormatter<std::string, DataObject>(
+             "name_or_alias",
+             traits<DataObject>::name + " alias (if exists), else name",
+    [](const DataObject & obj)->std::string {
+      std::string alias = obj.alias();
+      if(alias.empty()) {
+        return obj.name();
+      }
+      return alias;
+    });
+  }
+
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1038,7 +1076,7 @@ namespace CASM {
                             const std::string &_desc,
                             Evaluator _evaluator,
                             Validator _validator = always_true<DataObject>) :
-      Base1DDatumFormatter<DataObject, Container>(_name, _desc),
+      Base1DDatumFormatter<Container, DataObject>(_name, _desc),
       m_evaluate(_evaluator),
       m_validate(_validator) {}
 
@@ -1067,7 +1105,7 @@ namespace CASM {
   private:
 
     /// \brief Clone using copy constructor
-    Generic1DDatumFormatter *_clone() const {
+    Generic1DDatumFormatter *_clone() const override {
       return new Generic1DDatumFormatter(*this);
     }
 
@@ -1163,6 +1201,28 @@ namespace CASM {
   ScalarAttributeDictionary<DataObject> make_scalar_dictionary();
 
 
+  /// \brief Template alias for BaseValueFormatter returning Eigen::VectorXi
+  ///
+  /// \ingroup DataFormatterTypes
+  ///
+  template<typename DataObject>
+  using VectorXiAttribute = Base1DDatumFormatter<Eigen::VectorXi, DataObject>;
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
+  template<typename DataObject>
+  using VectorXiAttributeDictionary = DataFormatterDictionary<DataObject, VectorXiAttribute<DataObject> >;
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
+  template<typename DataObject>
+  VectorXiAttributeDictionary<DataObject> make_vectorxi_dictionary();
+
+
   /// \brief Template alias for BaseValueFormatter returning Eigen::VectorXd
   ///
   /// \ingroup DataFormatterTypes
@@ -1197,6 +1257,7 @@ namespace CASM {
       make_boolean_dictionary<DataObject>(),
       make_integer_dictionary<DataObject>(),
       make_scalar_dictionary<DataObject>(),
+      make_vectorxi_dictionary<DataObject>(),
       make_vectorxd_dictionary<DataObject>()
     );
 
@@ -1305,5 +1366,4 @@ namespace CASM {
 
 }
 
-#include "casm/casm_io/DataFormatterTools_impl.hh"
 #endif

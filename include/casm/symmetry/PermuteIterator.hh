@@ -1,7 +1,7 @@
 #ifndef PermuteIterator_HH
 #define PermuteIterator_HH
 
-#include "casm/container/Array.hh"
+#include <vector>
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/container/Permutation.hh"
 #include "casm/misc/Comparisons.hh"
@@ -43,7 +43,7 @@ namespace CASM {
     PrimGrid const *m_prim_grid;
 
     /// m_trans_permute points to the Array<Permutation> of translation permutations inside of m_prim_grid (to provide faster access)
-    Array<Permutation> const *m_trans_permute;
+    std::vector<Permutation> const *m_trans_permute;
 
     Index m_factor_group_index;
     Index m_translation_index;
@@ -117,9 +117,6 @@ namespace CASM {
 
     PermuteIterator operator*(const PermuteIterator &RHS) const;
 
-    jsonParser &to_json(jsonParser &json) const;
-    void from_json(const jsonParser &json);
-
     friend void swap(PermuteIterator &a, PermuteIterator &b);
 
   private:
@@ -131,7 +128,15 @@ namespace CASM {
   };
 
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
-  void from_json(PermuteIterator &clust, const jsonParser &json);
+
+
+  class Supercell;
+  template<typename T> struct jsonConstructor;
+
+  template<>
+  struct jsonConstructor<PermuteIterator> {
+    static PermuteIterator from_json(const jsonParser &json, const Supercell &scel);
+  };
 
   /** @} */
 }

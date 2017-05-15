@@ -1,8 +1,7 @@
-#include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
@@ -51,35 +50,22 @@ namespace CASM {
     "      }' \n\n";
 
   int ConfigEnumAllOccupations::run(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 
     std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
-    auto lambda = [&](Supercell & scel) {
-      return notstd::make_unique<ConfigEnumAllOccupations>(scel);
-    };
-
-    int returncode = insert_unique_canon_configs(
-                       enumerator_name,
-                       primclex,
-                       scel_enum->begin(),
-                       scel_enum->end(),
-                       lambda,
-                       filter_expr);
-
-    return returncode;
+    return run(primclex, scel_enum->begin(), scel_enum->end(), filter_expr);
   }
 
-
   /// \brief Construct with a Supercell, using all permutations
-  ConfigEnumAllOccupations::ConfigEnumAllOccupations(Supercell &_scel) :
+  ConfigEnumAllOccupations::ConfigEnumAllOccupations(const Supercell &_scel) :
     m_counter(
-      Array<int>(_scel.num_sites(), 0),
+      std::vector<int>(_scel.num_sites(), 0),
       _scel.max_allowed_occupation(),
-      Array<int>(_scel.num_sites(), 1)) {
+      std::vector<int>(_scel.num_sites(), 1)) {
 
     m_current = notstd::make_cloneable<Configuration>(_scel, this->source(0), m_counter());
     reset_properties(*m_current);
@@ -94,7 +80,7 @@ namespace CASM {
     if(valid()) {
       _set_step(0);
     }
-    _current().set_source(this->source(step()));
+    m_current->set_source(this->source(step()));
   }
 
   /// Implements _increment over all occupations
@@ -104,7 +90,7 @@ namespace CASM {
 
     while(!is_valid_config && ++m_counter) {
 
-      _current().set_occupation(m_counter());
+      m_current->set_occupation(m_counter());
       is_valid_config = _check_current();
     }
 
@@ -114,7 +100,7 @@ namespace CASM {
     else {
       this->_invalidate();
     }
-    _current().set_source(this->source(step()));
+    m_current->set_source(this->source(step()));
   }
 
   /// Returns true if current() is primitive and canonical

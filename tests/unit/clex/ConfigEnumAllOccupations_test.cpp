@@ -8,8 +8,12 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/ScelEnum.hh"
+#include "casm/database/DatabaseDefs.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/enum.hh"
+#include "casm/app/CLIParse.hh"
 #include "Common.hh"
 
 using namespace CASM;
@@ -62,16 +66,18 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsTest) {
 
     // generate supercells
     ScelEnumProps enum_props(j["min_vol"].get<int>(), j["max_vol"].get<int>() + 1);
-    primclex.generate_supercells(enum_props);
+    ScelEnumByProps scel_enum(primclex, enum_props);
+    for(const auto &scel : scel_enum) {
+    }
 
     // run checks:
     jsonParser json_scel;
-    json_scel = (Index) primclex.supercell_list().size();
+    json_scel = (Index) primclex.db<Supercell>().size();
     check("Nscel", j, json_scel, test_cases_path, quiet);
 
     // generate configurations
     jsonParser json = jsonParser::array();
-    for(auto &scel : primclex.supercell_list()) {
+    for(auto &scel : primclex.db<Supercell>()) {
       ConfigEnumAllOccupations e(scel);
       json.push_back(std::distance(e.begin(), e.end()));
     }
@@ -81,12 +87,38 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsTest) {
 
     // ... add more here ...
 
-
     // clean up test proj
     if(fs::exists(test_proj_dir / ".casm")) {
       fs::remove_all(test_proj_dir);
     }
   }
 }
+
+BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsRunTest) {
+
+  // create a project
+  test::FCCTernaryProj proj;
+  proj.check_init();
+
+  // construct PrimClex
+  PrimClex primclex(proj.dir, null_log());
+
+  {
+    Completer::EnumOption opt;
+    parse_args(opt, "casm enum --method ScelEnum --max 4", primclex);
+    ScelEnum::run(primclex, jsonParser(), opt);
+  }
+  BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), 13);
+
+  {
+    Completer::EnumOption opt;
+    parse_args(opt, "casm enum --method ConfigEnumAllOccupations -a", primclex);
+    ConfigEnumAllOccupations::run(primclex, jsonParser(), opt);
+  }
+  BOOST_CHECK_EQUAL(primclex.db<Configuration>().size(), 126);
+
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()

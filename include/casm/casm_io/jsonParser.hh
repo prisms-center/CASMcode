@@ -9,12 +9,15 @@
 #include <exception>
 #include <complex>
 
-#include "casm/external/boost.hh"
+namespace boost {
+  namespace filesystem {
+    class path;
+  }
+}
 
 namespace CASM {
 
   namespace fs = boost::filesystem;
-  namespace po = boost::program_options;
 
   template<bool IsConst>
   class jsonParserIterator;
@@ -319,9 +322,7 @@ namespace CASM {
     }
 
     /// Construct a jsonParser from a file containing JSON data
-    static jsonParser parse(const fs::path &path) {
-      return jsonParser(path);
-    }
+    static jsonParser parse(const fs::path &path);
 
     /// Construct a jsonParser from a stream containing JSON data
     static jsonParser parse(std::istream &stream) {
@@ -437,16 +438,7 @@ namespace CASM {
   }
 
   /// Create a jsonParser by reading a file
-  ///
-  /// This function reads the contents of the file at 'file_path' as if it were JSON.
-  /// Use 'to_json(file_path.string(), json)' if you only want the path as a string
-  inline void to_json(fs::path file_path, jsonParser &json) {
-    if(!json.read(file_path)) {
-      throw std::runtime_error(
-        std::string("ERROR: Could not read JSON file: '") + file_path.string() +
-        "'.\n\nPlease check your formatting. For instance, try http://www.jsoneditoronline.org.");
-    }
-  }
+  void to_json(fs::path file_path, jsonParser &json);
 
   /// To JSON for complex
   template<typename T>
@@ -505,11 +497,10 @@ namespace CASM {
 
 
   /// Return the location at which jsonParser 'A' != 'B' as a boost::filesystem::path
-  boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, boost::filesystem::path diff = boost::filesystem::path());
+  fs::path find_diff(const jsonParser &A, const jsonParser &B);
 
   /// Return the location at which jsonParser !A.almost_equal(B, tol) as a boost::filesystem::path
-  boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, double tol, boost::filesystem::path diff = boost::filesystem::path());
-
+  fs::path find_diff(const jsonParser &A, const jsonParser &B, double tol);
 
   /// jsonParser bidirectional Iterator class
   ///   Can iterate over a JSON object or JSON array or JSON value (though this is only one value)

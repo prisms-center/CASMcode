@@ -5,6 +5,7 @@
 #include <sstream>  //John G 010413
 #include <map>
 #include <memory>
+#include <set>
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/BasisFunction.hh"
 

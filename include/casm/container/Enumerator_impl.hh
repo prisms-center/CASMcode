@@ -4,6 +4,11 @@
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/container/Enumerator.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/FilteredConfigIterator.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ScelDatabase.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
 
@@ -23,36 +28,39 @@ namespace CASM {
   template<typename ScelIterator, typename ConfigEnumConstructor>
   int insert_unique_canon_configs(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     ScelIterator begin,
     ScelIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr) {
 
     Log &log = primclex.log();
+    auto &db_config = primclex.db<Configuration>();
+    auto distance = [&](const std::string & scelname) {
+      return db_config.scel_range_size(scelname);
+    };
 
-    Index Ninit = std::distance(primclex.config_begin(), primclex.config_end());
+    Index Ninit = db_config.size();
     log << "# configurations in this project: " << Ninit << "\n" << std::endl;
 
     log.begin(method);
 
     for(auto scel_it = begin; scel_it != end; ++scel_it) {
-      Supercell &scel = *scel_it;
+      const Supercell &scel = *scel_it;
       log << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
 
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
-      Index num_before = scel.config_list().size();
+      Index num_before = distance(scel.name());
       if(!filter_expr.empty()) {
         try {
-          scel.add_unique_canon_configs(
+          primclex.db<Configuration>().insert(
             filter_begin(
               enumerator.begin(),
               enumerator.end(),
               filter_expr,
               primclex.settings().query_handler<Configuration>().dict()),
-            filter_end(enumerator.end())
-          );
+            filter_end(enumerator.end()));
         }
         catch(std::exception &e) {
           primclex.err_log() << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
@@ -60,24 +68,24 @@ namespace CASM {
         }
       }
       else {
-        scel.add_unique_canon_configs(enumerator.begin(), enumerator.end());
+        primclex.db<Configuration>().insert(enumerator.begin(), enumerator.end());
       }
 
-      log << (scel.config_list().size() - num_before) << " configs." << std::endl;
+      log << (distance(scel.name()) - num_before) << " configs." << std::endl;
     }
     log << "  DONE." << std::endl << std::endl;
 
-    Index Nfinal = std::distance(primclex.config_begin(), primclex.config_end());
+    Index Nfinal = db_config.size();
 
     log << "# new configurations: " << Nfinal - Ninit << "\n";
     log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
 
-    log << "Write SCEL..." << std::endl;
-    primclex.print_supercells();
+    log << "Write supercell database..." << std::endl;
+    primclex.db<Supercell>().commit();
     log << "  DONE" << std::endl << std::endl;
 
-    log << "Writing config_list..." << std::endl;
-    primclex.write_config_list();
+    log << "Writing configuration database..." << std::endl;
+    db_config.commit();
     log << "  DONE" << std::endl;
 
     return 0;
@@ -99,7 +107,7 @@ namespace CASM {
   template<typename LatticeIterator, typename ConfigEnumConstructor>
   int insert_configs(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     LatticeIterator begin,
     LatticeIterator end,
     ConfigEnumConstructor f,
@@ -107,20 +115,24 @@ namespace CASM {
     bool primitive_only) {
 
     Log &log = primclex.log();
+    auto &db_config = primclex.db<Configuration>();
+    auto distance = [&](const std::string & scelname) {
+      return db_config.scel_range_size(scelname);
+    };
 
-    Index Ninit = std::distance(primclex.config_begin(), primclex.config_end());
+    Index Ninit = db_config.size();
     log << "# configurations in this project: " << Ninit << "\n" << std::endl;
 
     log.begin(method);
 
     for(auto scel_lat_it = begin; scel_lat_it != end; ++scel_lat_it) {
       Supercell scel(&primclex, *scel_lat_it);
-      Supercell &canon_scel = scel.canonical_form();
+      const Supercell &canon_scel = scel.canonical_form();
       log << "Enumerate configurations for " << canon_scel.name() << " ...  " << std::flush;
 
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
-      Index num_before = canon_scel.config_list().size();
+      Index num_before = distance(canon_scel.name());
       if(!filter_expr.empty()) {
         try {
           auto it = filter_begin(
@@ -146,21 +158,21 @@ namespace CASM {
         }
       }
 
-      log << (canon_scel.config_list().size() - num_before) << " configs." << std::endl;
+      log << (distance(canon_scel.name()) - num_before) << " configs." << std::endl;
     }
     log << "  DONE." << std::endl << std::endl;
 
-    Index Nfinal = std::distance(primclex.config_begin(), primclex.config_end());
+    Index Nfinal = primclex.db<Configuration>().size();
 
     log << "# new configurations: " << Nfinal - Ninit << "\n";
     log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
 
-    log << "Write SCEL..." << std::endl;
-    primclex.print_supercells();
+    log << "Write supercell database..." << std::endl;
+    primclex.db<Supercell>().commit();
     log << "  DONE" << std::endl << std::endl;
 
-    log << "Writing config_list..." << std::endl;
-    primclex.write_config_list();
+    log << "Writing configuration database..." << std::endl;
+    db_config.commit();
     log << "  DONE" << std::endl;
 
     return 0;

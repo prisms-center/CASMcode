@@ -391,6 +391,7 @@ void expand_dims_test() {
 }
 
 jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol) {
+
   const Structure test_struc(testdir / pos_filename);
   const Lattice test_lat = test_struc.lattice();
   const SymGroup effective_pg = test_struc.factor_group();
@@ -400,8 +401,32 @@ jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol
   ScelEnumProps enum_props(minvol, maxvol + 1);
   SupercellEnumerator<Lattice> test_enumerator(test_lat, effective_pg, enum_props);
 
+  double tol = TOL;
   for(auto it = test_enumerator.begin(); it != test_enumerator.end(); ++it) {
     enumerated_mats.push_back(it.matrix());
+
+    // -- check niggli generation
+
+    Lattice niggli1 = niggli(*it, tol);
+    Lattice niggli2 = niggli(niggli1, tol);
+    bool check_niggli = almost_equal(
+                          niggli1.lat_column_mat(),
+                          niggli2.lat_column_mat(),
+                          tol);
+
+    BOOST_CHECK_EQUAL(check_niggli, true);
+
+    // -- check canonical generation
+
+    Lattice canon = canonical_equivalent_lattice(*it, effective_pg, tol);
+    Lattice canon2 = canonical_equivalent_lattice(canon, effective_pg, tol);
+    bool check = almost_equal(
+                   canon.lat_column_mat(),
+                   canon2.lat_column_mat(),
+                   tol);
+
+    BOOST_CHECK_EQUAL(check, true);
+
   }
 
   jsonParser mat_dump;

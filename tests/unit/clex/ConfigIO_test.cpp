@@ -11,6 +11,9 @@
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
+#include "casm/clex/ConfigMapping.hh"
+#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/Selected.hh"
 #include "Common.hh"
 
 using namespace CASM;
@@ -39,7 +42,7 @@ BOOST_AUTO_TEST_CASE(DatumFormatters) {
   check(is_calculated());
   check(is_primitive());
   check(is_canonical());
-  check(selected_in());
+  check(DB::Selected<Configuration>());
 
   // Integer
   check(scel_size());
@@ -199,25 +202,25 @@ BOOST_AUTO_TEST_CASE(AllTest) {
 
   log << "---- Comp -------------" << std::endl;
   ConfigIO::Comp comp;
-  for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
-    log << "name: " << it->name() << "  comp: " << comp(*it).transpose() << "  print: ";
-    comp.print(*it, log);
+  for(const auto &config : primclex.db<Configuration>()) {
+    log << "name: " << config.name() << "  comp: " << comp(config).transpose() << "  print: ";
+    comp.print(config, log);
     log << std::endl;
   }
 
   log << "---- BaseValueFormatter Ptr -------------" << std::endl;
   BaseValueFormatter<Eigen::VectorXd, Configuration> *value_ptr = &comp;
-  for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
-    log << "name: " << it->name() << "  value: " << (*value_ptr)(*it).transpose() << "  print: ";
-    value_ptr->print(*it, log);
+  for(const auto &config : primclex.db<Configuration>()) {
+    log << "name: " << config.name() << "  value: " << (*value_ptr)(config).transpose() << "  print: ";
+    value_ptr->print(config, log);
     log << std::endl;
   }
 
   log << "---- BaseDatumFormatter Ptr -------------" << std::endl;
   BaseDatumFormatter<Configuration> *datum_ptr = &comp;
-  for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
-    log << "name: " << it->name() << "  print: ";
-    datum_ptr->print(*it, log);
+  for(const auto &config : primclex.db<Configuration>()) {
+    log << "name: " << config.name() << "  print: ";
+    datum_ptr->print(config, log);
     log << std::endl;
   }
 

@@ -2,6 +2,7 @@
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
+#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
 
@@ -102,7 +103,7 @@ namespace CASM {
 
         // prepare a SymPermutation and then read from json
         Array<Index> perm;
-        SymPermutation trep(perm);
+        SymPermutation trep(perm.begin(), perm.end());
         CASM::from_json(trep, json);
 
         // copy to rep

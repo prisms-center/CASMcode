@@ -681,7 +681,7 @@ namespace CASM {
       }
     }
 
-    CASM::swap(m_leaf_list, other.m_leaf_list);
+    std::swap(m_leaf_list, other.m_leaf_list);
     if(m_leaf_list)
       m_leaf_list->prev_leaf_addr = &m_leaf_list;
     if(other.m_leaf_list)

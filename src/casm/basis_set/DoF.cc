@@ -89,6 +89,16 @@ namespace CASM {
 
   // ** ContinuousDoF **
 
+  jsonParser &ContinuousDoF::to_json(jsonParser &json) const {
+    json.put_obj();
+    json["DoF_type"] = "ContinuousDoF";
+    json["m_type_name"] = m_type_name;
+    json["min"] = min_val;
+    json["max"] = max_val;
+    json["current"] = current_val;
+    return json;
+  }
+
   jsonParser &to_json(const ContinuousDoF &dof, jsonParser &json) {
     return dof.to_json(json);
   }

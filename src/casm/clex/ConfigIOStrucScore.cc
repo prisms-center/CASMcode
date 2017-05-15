@@ -5,11 +5,37 @@
 #include "casm/crystallography/jsonStruc.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
+#include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ClexDescription.hh"
+#include "casm/app/ProjectSettings.hh"
 
 namespace CASM {
 
+  namespace {
+    fs::path _calc_properties_path(const Configuration &config) {
+      const PrimClex &primclex = config.primclex();
+      return primclex.dir().calculated_properties(config.name(), primclex.settings().default_clex().calctype);
+    }
+  }
+
   namespace ConfigIO {
+
+    StrucScore::StrucScore() :
+      VectorXdAttribute<Configuration>("struc_score", "Evaluates the mapping of a configuration onto an arbitrary primitive structure, specified by its path. Allowed options are [ 'basis_score' (mean-square site displacement) | 'lattice_score' (lattice deformation metric having units Angstr.^2) | 'total_score' (w*lattice_score+(1.0-w)*basis_score) ].  The struc_score weighting parameter 'w' can be provided as an optional decimal parameter from 0.0 to 1.0 (default 0.5). Ex: struc_score(path/to/PRIM, basis_score, 0.4)"),
+      m_configmapper(notstd::make_unique<ConfigMapper>(ConfigMapper::null_initializer)) {};
+
+    StrucScore::StrucScore(const StrucScore &RHS) :
+      VectorXdAttribute<Configuration>(RHS),
+      m_altprimclex((RHS.m_altprimclex == nullptr) ? nullptr : new PrimClex(RHS.m_altprimclex->prim())),
+      m_configmapper(notstd::make_unique<ConfigMapper>(*RHS.m_configmapper)),
+      m_prim_path(RHS.m_prim_path),
+      m_prop_names(RHS.m_prop_names) {
+      m_configmapper->set_primclex(*m_altprimclex);
+    }
+
     bool StrucScore::parse_args(const std::string &args) {
       std::vector<std::string> splt_vec;
       double _lattice_weight(0.5);
@@ -42,7 +68,7 @@ namespace CASM {
             throw std::runtime_error("Attempted to initialize format tag " + name()
                                      + " with invalid argument '" + splt_vec[i] + "'. Valid arguments are [ basis_score | lattice_score | total_score ]\n");
           }
-          if(already_initialized && !almost_equal(_lattice_weight, m_configmapper.lattice_weight())) {
+          if(already_initialized && !almost_equal(_lattice_weight, m_configmapper->lattice_weight())) {
             for(; pushed_args > 0; pushed_args--)
               m_prop_names.pop_back();
             return false;
@@ -53,14 +79,14 @@ namespace CASM {
           ++pushed_args;
         }
       }
-      m_configmapper = ConfigMapper(*m_altprimclex, _lattice_weight);
+      m_configmapper = notstd::make_unique<ConfigMapper>(*m_altprimclex, _lattice_weight);
       return true;
     }
 
     //****************************************************************************************
 
     bool StrucScore::validate(const Configuration &_config) const {
-      return fs::exists(_config.calc_properties_path());
+      return fs::exists(_calc_properties_path(_config));
     }
 
     //****************************************************************************************
@@ -69,7 +95,8 @@ namespace CASM {
       std::vector<std::string> col;
       for(Index i = 0; i < m_prop_names.size(); i++) {
         std::stringstream t_ss;
-        t_ss << "    " << name() << '(' << m_prim_path.string() << ',' << m_prop_names[i] << ',' << m_configmapper.lattice_weight() << ')';
+        t_ss << "    " << name() << '(' << m_prim_path.string() << ','
+             << m_prop_names[i] << ',' << m_configmapper->lattice_weight() << ')';
         col.push_back(t_ss.str());
       }
       return col;
@@ -83,7 +110,7 @@ namespace CASM {
       t_ss << name() << '(' << m_prim_path.string();
       for(Index i = 0; i < m_prop_names.size(); i++)
         t_ss   << ',' << m_prop_names[i];
-      t_ss << ',' << m_configmapper.lattice_weight() << ')';
+      t_ss << ',' << m_configmapper->lattice_weight() << ')';
       return t_ss.str();
     }
 
@@ -103,9 +130,9 @@ namespace CASM {
         return res;
       };
 
-      from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(_config.calc_properties_path()));
+      from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(_calc_properties_path(_config)));
 
-      if(!m_configmapper.struc_to_configdof(relaxed_struc, mapped_configdof, mapped_lat)) {
+      if(!m_configmapper->struc_to_configdof(relaxed_struc, mapped_configdof, mapped_lat)) {
         for(Index i = 0; i < m_prop_names.size(); i++) {
           result_vec.push_back(1e9);
         }
@@ -122,52 +149,14 @@ namespace CASM {
 
           double bc = ConfigMapping::basis_cost(mapped_configdof, relaxed_struc.basis.size());
 
-          double w = m_configmapper.lattice_weight();
+          double w = m_configmapper->lattice_weight();
           result_vec.push_back(w * sc + (1.0 - w)*bc);
         }
       }
 
       return lambda(result_vec);
     }
-    /*
-        // ****************************************************************************************
-        void StrucScore::inject(const Configuration &_config, DataStream &_stream, Index) const {
-          if(!validate(_config)) {
-            _stream << DataStream::failbit << std::vector<double>(m_prop_names.size(), NAN);
-          }
-          else {
-            _stream << _evaluate(_config);
-          }
-        }
 
-        // ****************************************************************************************
-
-        void StrucScore::print(const Configuration &_config, std::ostream &_stream, Index) const {
-          _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-          _stream.precision(8);
-
-          if(!validate(_config)) {
-            for(auto it = m_prop_names.cbegin(); it != m_prop_names.cend(); ++it)
-              _stream << "     unknown";
-          }
-
-          else {
-            std::vector<double> result_vec(_evaluate(_config));
-            for(auto it = result_vec.cbegin(); it != result_vec.cend(); ++it)
-              _stream << "     " << *it;
-          }
-
-        }
-
-        // ****************************************************************************************
-
-        jsonParser &StrucScore::to_json(const Configuration &_config, jsonParser &json)const {
-          if(validate(_config))
-            json = _evaluate(_config);
-
-          return json;
-        }
-    */
   }
 }
 

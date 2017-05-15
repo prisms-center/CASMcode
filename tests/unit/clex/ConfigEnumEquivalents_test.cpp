@@ -10,8 +10,11 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/ScelEnum.hh"
+#include "casm/clex/NeighborList.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/database/DatabaseDefs.hh"
 #include "Common.hh"
 
 using namespace CASM;
@@ -63,16 +66,19 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
     // generate supercells
     ScelEnumProps enum_props(1, j["max_vol"].get<int>() + 1);
-    primclex.generate_supercells(enum_props);
+    ScelEnumByProps scel_enum(primclex, enum_props);
+    for(const auto &scel : scel_enum) {
+    }
 
     // generate configurations
     std::map<Index, Index> prim_count;
     std::map<Index, Index> total_count;
 
-    for(Index i = 0; i < primclex.supercell_list().size(); ++i) {
+    Index i = 0;
+    for(const auto &scel : primclex.db<Supercell>()) {
 
       // for each supercell, enumerate unique configurations
-      Supercell &scel = primclex.supercell(i);
+
       //std::cout << "scel: " << scel.name() << std::endl;
       //std::cout << "max_occupation: " << scel.max_allowed_occupation() << std::endl;
 
@@ -81,14 +87,17 @@ BOOST_AUTO_TEST_CASE(Test1) {
       prim_count[i] = 0;
 
       // add prim configurations from smaller supercells that tile scel
-      for(Index j = 0; j < i; j++) {
+      Index j = 0;
+      auto scel_j = primclex.db<Supercell>().begin();
+      for(; scel_j->volume() < scel.volume(); ++scel_j) {
         jsonParser json;
-        ScelEnumEquivalents e(primclex.supercell(j));
+        ScelEnumEquivalents e(*scel_j);
         for(const auto &tunit : e) {
-          if(is_supercell(scel.real_super_lattice(), tunit.real_super_lattice(), tol).first) {
+          if(is_supercell(scel.lattice(), tunit.lattice(), tol).first) {
             total_count[i] += prim_count[j];
           }
         }
+        ++j;
       }
 
       for(auto &config : enumerator) {
@@ -108,6 +117,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
       // the product of the number of allowed occupants on each site in the
       // Supercell
       BOOST_CHECK_EQUAL(total_count[i], prod);
+
+      ++i;
     }
 
     // run checks:

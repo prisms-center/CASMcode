@@ -2,6 +2,7 @@
 #define CASM_algorithm
 
 #include <algorithm>
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
 
@@ -85,6 +86,13 @@ namespace CASM {
     return container.end() != std::find_if_not(container.begin(), container.end(), q);
   }
 
+  template<typename Container>
+  typename Container::value_type sum(const Container &container, typename Container::value_type init_val = 0) {
+    for(const auto &val : container) {
+      init_val += val;
+    }
+    return init_val;
+  }
 }
 
 #endif

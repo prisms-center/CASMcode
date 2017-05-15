@@ -3,12 +3,13 @@
 
 /// What is being tested:
 #include "casm/clex/ScelEnum.hh"
-//#include "casm/clex/ScelEnum_impl.hh"
+#include "casm/clex/ScelEnum_impl.hh"
 
 /// What is being used to test it:
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
+#include "casm/crystallography/Structure.hh"
 
 using namespace CASM;
 
@@ -47,7 +48,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   }
 
   // -- test a random access enumerator --------------------
-  ScelEnumByNameT<false> e(primclex, m_names.begin(), m_names.end());
+  ScelEnumByName e(primclex, m_names.begin(), m_names.end());
   {
     auto it = e.begin();
     BOOST_CHECK_EQUAL(it.step(), 0);

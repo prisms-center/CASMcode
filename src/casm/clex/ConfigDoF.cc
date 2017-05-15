@@ -1,6 +1,9 @@
-#include "casm/CASM_global_definitions.hh"
 #include "casm/clex/ConfigDoF.hh"
+
+#include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/symmetry/PermuteIterator.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
@@ -19,7 +22,7 @@ namespace CASM {
 
   //*******************************************************************************
 
-  ConfigDoF::ConfigDoF(const Array<int> &_occ, double _tol):
+  ConfigDoF::ConfigDoF(const std::vector<int> &_occ, double _tol):
     m_N(_occ.size()),
     m_occupation(_occ),
     m_deformation(Eigen::Matrix3d::Identity()),
@@ -29,7 +32,7 @@ namespace CASM {
 
   //*******************************************************************************
 
-  ConfigDoF::ConfigDoF(const Array<int> &_occ, const Eigen::MatrixXd &_disp, const Eigen::Matrix3d &_deformation, double _tol):
+  ConfigDoF::ConfigDoF(const std::vector<int> &_occ, const Eigen::MatrixXd &_disp, const Eigen::Matrix3d &_deformation, double _tol):
     m_N(_occ.size()),
     m_occupation(_occ),
     m_displacement(_disp),
@@ -56,15 +59,15 @@ namespace CASM {
   }
 
   void ConfigDoF::clear_occupation() {
-    _occupation().clear();
+    occupation().clear();
   }
 
   void ConfigDoF::clear_displacement() {
-    _displacement() = Eigen::MatrixXd();
+    displacement() = Eigen::MatrixXd();
   }
 
   void ConfigDoF::clear_deformation() {
-    _deformation() = Eigen::Matrix3d::Identity();
+    deformation() = Eigen::Matrix3d::Identity();
     m_has_deformation = false;
   }
 
@@ -75,9 +78,9 @@ namespace CASM {
   //*******************************************************************************
 
   void ConfigDoF::swap(ConfigDoF &RHS) {
-    _deformation().swap(RHS._deformation());
-    _occupation().swap(RHS._occupation());
-    _displacement().swap(RHS._displacement());
+    deformation().swap(RHS.deformation());
+    occupation().swap(RHS.occupation());
+    displacement().swap(RHS.displacement());
     specie_id().swap(RHS.specie_id());
     std::swap(m_N, RHS.m_N);
     std::swap(m_tol, RHS.m_tol);
@@ -86,7 +89,7 @@ namespace CASM {
 
   //*******************************************************************************
 
-  void ConfigDoF::set_occupation(const Array<int> &new_occupation) {
+  void ConfigDoF::set_occupation(const std::vector<int> &new_occupation) {
     if(!m_N)
       m_N = new_occupation.size();
 
@@ -98,7 +101,7 @@ namespace CASM {
       exit(1);
     }
 
-    _occupation() = new_occupation;
+    occupation() = new_occupation;
 
   }
 
@@ -116,14 +119,14 @@ namespace CASM {
       exit(1);
     }
 
-    _displacement() = new_displacement;
+    displacement() = new_displacement;
   }
 
   //*******************************************************************************
 
   void ConfigDoF::set_deformation(const Eigen::Matrix3d &new_deformation) {
     m_has_deformation = true;
-    _deformation() = new_deformation;
+    deformation() = new_deformation;
   }
 
   //*******************************************************************************
@@ -145,10 +148,10 @@ namespace CASM {
   //*******************************************************************************
   void ConfigDoF::from_json(const jsonParser &json) {
     clear();
-    json.get_if(_occupation(), "occupation");
+    json.get_if(occupation(), "occupation");
     m_N = occupation().size();
 
-    json.get_if(_displacement(), "displacement");
+    json.get_if(displacement(), "displacement");
     if(displacement().cols() && size() && displacement().cols() != size()) {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::from_json(), parsing displacement having size " << displacement().cols() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
@@ -158,7 +161,7 @@ namespace CASM {
     }
 
     if(json.contains("deformation")) {
-      CASM::from_json(_deformation(), json["deformation"]);
+      CASM::from_json(deformation(), json["deformation"]);
       m_has_deformation = true;
     }
 
@@ -221,7 +224,7 @@ namespace CASM {
     //Inform Clexulator of the bitstring
 
     //TODO: This will probably get more complicated with displacements and stuff
-    clexulator.set_config_occ(configdof.occupation().begin());
+    clexulator.set_config_occ(configdof.occupation().data());
     //mc_clexor.set_config_disp(mc_confdof.m_displacements.begin());   //or whatever
     //mc_clexor.set_config_strain(mc_confdof.m_strain.begin());   //or whatever
 
@@ -250,7 +253,7 @@ namespace CASM {
   Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
 
     // [basis_site][site_occupant_index]
-    auto convert = index_converter(scel.prim(), scel.prim().struc_molecule());
+    auto convert = make_index_converter(scel.prim(), scel.prim().struc_molecule());
 
     // create an array to count the number of each molecule
     Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.prim().struc_molecule().size());

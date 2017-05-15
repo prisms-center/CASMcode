@@ -5,6 +5,7 @@
 #include "casm/crystallography/Structure.hh"
 
 /// What is being used to test it:
+#include <boost/filesystem/fstream.hpp>
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/casm_io/VaspIO.hh"

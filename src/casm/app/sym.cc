@@ -1,3 +1,4 @@
+#include <boost/filesystem/fstream.hpp>
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -37,22 +38,22 @@ namespace CASM {
     /// Set command line options using boost program_options
     Completer::SymOption sym_opt;
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, sym_opt.desc()), vm); // can throw
+      po::store(po::parse_command_line(args.argc(), args.argv(), sym_opt.desc()), vm); // can throw
 
       /** --help option
       */
       if(vm.count("help")) {
-        std::cout << "\n";
-        std::cout << sym_opt.desc() << std::endl;
+        args.log() << "\n";
+        args.log() << sym_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << sym_opt.desc() << std::endl;
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Display symmetry group information.\n";
+        args.log() << "\n";
+        args.log() << sym_opt.desc() << std::endl;
+        args.log() << "DESCRIPTION" << std::endl;
+        args.log() << "    Display symmetry group information.\n";
 
         return 0;
       }
@@ -63,13 +64,13 @@ namespace CASM {
       coordtype = sym_opt.coordtype_enum();
     }
     catch(po::error &e) {
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      std::cerr << sym_opt.desc() << std::endl;
+      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << sym_opt.desc() << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << "Unhandled Exception reached the top of main: "
-                << e.what() << ", application will now exit" << std::endl;
+      args.err_log() << "Unhandled Exception reached the top of main: "
+                     << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
 
     }
@@ -78,8 +79,8 @@ namespace CASM {
 
     const fs::path &root = args.root;
     if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << std::endl;
+      args.err_log().error("No casm project found");
+      args.err_log() << std::endl;
       return ERR_NO_PROJ;
     }
 
@@ -87,41 +88,41 @@ namespace CASM {
     ProjectSettings set(root);
     Structure prim(read_prim(dir.prim()));
 
-    std::cout << "Generating lattice point group. " << std::endl << std::endl;
+    args.log() << "Generating lattice point group. " << std::endl << std::endl;
     SymGroup prim_pg;
     prim.lattice().generate_point_group(prim_pg, set.crystallography_tol());
     prim_pg.character_table();
 
 
-    std::cout << "  Lattice point group size: " << prim_pg.size() << std::endl;
-    std::cout << "  Lattice point group is: " << prim_pg.get_name() << std::endl << std::endl;
+    args.log() << "  Lattice point group size: " << prim_pg.size() << std::endl;
+    args.log() << "  Lattice point group is: " << prim_pg.get_name() << std::endl << std::endl;
 
-    std::cout << "Generating factor group. " << std::endl << std::endl;
+    args.log() << "Generating factor group. " << std::endl << std::endl;
 
     prim.generate_factor_group(set.crystallography_tol());
     prim.set_site_internals();
 
-    std::cout << "  Factor group size: " << prim.factor_group().size() << std::endl;
+    args.log() << "  Factor group size: " << prim.factor_group().size() << std::endl;
 
-    std::cout << "  Crystal point group is: " << prim.point_group().get_name() << std::endl;
+    args.log() << "  Crystal point group is: " << prim.point_group().get_name() << std::endl;
 
 
     if(vm.count("lattice-point-group")) {
-      std::cout << "\n***************************\n" << std::endl;
-      std::cout << "Lattice point group:\n\n" << std::endl;
-      prim_pg.print(std::cout, coordtype);
+      args.log() << "\n***************************\n" << std::endl;
+      args.log() << "Lattice point group:\n\n" << std::endl;
+      prim_pg.print(args.log(), coordtype);
     }
 
     if(vm.count("factor-group")) {
-      std::cout << "\n***************************\n" << std::endl;
-      std::cout << "Factor group:\n\n" << std::endl;
-      prim.factor_group().print(std::cout, coordtype);
+      args.log() << "\n***************************\n" << std::endl;
+      args.log() << "Factor group:\n\n" << std::endl;
+      prim.factor_group().print(args.log(), coordtype);
     }
 
     if(vm.count("crystal-point-group")) {
-      std::cout << "\n***************************\n" << std::endl;
-      std::cout << "Crystal point group:\n\n" << std::endl;
-      prim.point_group().print(std::cout, coordtype);
+      args.log() << "\n***************************\n" << std::endl;
+      args.log() << "Crystal point group:\n\n" << std::endl;
+      prim.point_group().print(args.log(), coordtype);
     }
 
     // Write symmetry info files
@@ -157,7 +158,7 @@ namespace CASM {
       outfile.close();
     }
 
-    std::cout << std::endl;
+    args.log() << std::endl;
 
     return 0;
 

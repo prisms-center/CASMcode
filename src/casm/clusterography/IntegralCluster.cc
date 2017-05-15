@@ -1,6 +1,8 @@
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/jsonParser.hh"
 #include "casm/app/AppIO.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 

@@ -3,6 +3,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"

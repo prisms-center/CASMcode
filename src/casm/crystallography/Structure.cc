@@ -4,7 +4,8 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/misc/algorithm.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/symmetry/SymGroupRep.hh"
@@ -756,7 +757,7 @@ namespace CASM {
 
   /// Returns 'converter' which converts Site::site_occupant indices to 'mol_list' indices:
   ///   mol_list_index = converter[basis_site][site_occupant_index]
-  std::vector< std::vector<Index> > index_converter(const Structure &struc, std::vector<Molecule> mol_list) {
+  std::vector< std::vector<Index> > make_index_converter(const Structure &struc, std::vector<Molecule> mol_list) {
 
     std::vector< std::vector<Index> > converter(struc.basis.size());
 
@@ -774,7 +775,7 @@ namespace CASM {
 
   /// Returns 'converter' which converts Site::site_occupant indices to 'mol_name_list' indices:
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
-  std::vector< std::vector<Index> > index_converter(const Structure &struc, std::vector<std::string> mol_name_list) {
+  std::vector< std::vector<Index> > make_index_converter(const Structure &struc, std::vector<std::string> mol_name_list) {
 
     std::vector< std::vector<Index> > converter(struc.basis.size());
 
@@ -787,6 +788,31 @@ namespace CASM {
     }
 
     return converter;
+
+  }
+
+  /// Returns 'converter_inverse' which converts 'mol_name_list' indices to Site::site_occupant indices:
+  ///  site_occupant_index = converter_inverse[basis_site][mol_name_list_index]
+  ///
+  /// If mol is not allowed on basis_site, return struc.basis[basis_site].site_occupant().size()
+  std::vector< std::vector<Index> > make_index_converter_inverse(const Structure &struc, std::vector<std::string> mol_name_list) {
+
+    std::vector< std::vector<Index> > converter_inv(struc.basis.size());
+
+    for(Index i = 0; i < struc.basis.size(); i++) {
+      converter_inv[i].resize(mol_name_list.size());
+
+      std::vector<std::string> site_occ_name_list;
+      for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
+        site_occ_name_list.push_back(struc.basis[i].site_occupant()[j].name);
+      }
+
+      for(Index j = 0; j < mol_name_list.size(); j++) {
+        converter_inv[i][j] = find_index(site_occ_name_list, mol_name_list[j]);
+      }
+    }
+
+    return converter_inv;
 
   }
 

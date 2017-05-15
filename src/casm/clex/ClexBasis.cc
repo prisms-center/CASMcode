@@ -1,5 +1,7 @@
 #include "casm/clex/ClexBasis.hh"
 
+#include "casm/CASM_global_Eigen.hh"
+
 namespace CASM {
 
   //*************************************************

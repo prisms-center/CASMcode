@@ -130,7 +130,7 @@ struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_ty
 
     /// \brief Assignment via move
     template<typename U>
-    cloneable_ptr &operator=(cloneable_ptr<U> && other) {
+    cloneable_ptr &operator=(cloneable_ptr<U> &&other) {
       unique() = std::move(other.unique());
       return *this;
     }
@@ -150,7 +150,7 @@ struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_ty
 
     /// \brief Assignment via move
     template<typename U>
-    cloneable_ptr &operator=(std::unique_ptr<U> && other) {
+    cloneable_ptr &operator=(std::unique_ptr<U> &&other) {
       unique() = std::move(other);
       return *this;
     }

@@ -1,30 +1,28 @@
-#ifndef PRIMCLEX_HH
-#define PRIMCLEX_HH
+#ifndef CASM_PrimClex
+#define CASM_PrimClex
 
-#include "casm/external/boost.hh"
-
-#include "casm/misc/cloneable_ptr.hh"
+#include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
-
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/clex/Clexulator.hh"
-#include "casm/clex/ChemicalReference.hh"
-#include "casm/clex/NeighborList.hh"
-#include "casm/clex/ClexBasis.hh"
-
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/app/ProjectSettings.hh"
-#include "casm/app/EnumeratorHandler.hh"
-#include "casm/app/QueryHandler.hh"
 
 /// Cluster expansion class
 namespace CASM {
 
+  class DirectoryStructure;
+  class ProjectSettings;
+  class ClexDescription;
+  class CompositionConverter;
+  class ChemicalReference;
+  class Structure;
+  class PrimNeighborList;
+  class ClexBasis;
+  class Clexulator;
   class ECIContainer;
 
-  template<typename T, typename U> class ConfigIterator;
+  namespace DB {
+    template<typename T> class Database;
+    class PropertiesDatabase;
+    class DatabaseHandler;
+  }
 
   /** \defgroup Clex
    *
@@ -50,35 +48,7 @@ namespace CASM {
   /// -
   class PrimClex : public Logging {
 
-    DirectoryStructure m_dir;
-    ProjectSettings m_settings;
-
-    Structure m_prim;
-    bool m_vacancy_allowed;
-    Index m_vacancy_index;
-
-    /// Contains all the supercells that were involved in the enumeration.
-    boost::container::stable_vector< Supercell > m_supercell_list;
-
-
-    /// CompositionConverter specifies parameteric composition axes and converts between
-    ///   parametric composition and mol composition
-    bool m_has_composition_axes = false;
-    CompositionConverter m_comp_converter;
-
-    /// ChemicalReference specifies a reference for formation energies, chemical
-    /// potentials, etc.
-    notstd::cloneable_ptr<ChemicalReference> m_chem_ref;
-
-    /// Stores the neighboring UnitCell and which sublattices to include in neighbor lists
-    /// - mutable for lazy construction
-    mutable notstd::cloneable_ptr<PrimNeighborList> m_nlist;
-
-
   public:
-
-    typedef ConfigIterator<Configuration, PrimClex> config_iterator;
-    typedef ConfigIterator<const Configuration, const PrimClex> config_const_iterator;
 
     // **** Constructors ****
 
@@ -89,6 +59,10 @@ namespace CASM {
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
     explicit PrimClex(const fs::path &_root, const Logging &logging = Logging());
 
+    PrimClex(const PrimClex &) = delete;
+
+    ~PrimClex();
+
     /// Reload PrimClex data from settings
     void refresh(bool read_settings = false,
                  bool read_composition = false,
@@ -98,22 +72,14 @@ namespace CASM {
 
     // ** Directory path and settings accessors **
 
-    const DirectoryStructure &dir() const {
-      return m_dir;
-    }
+    const DirectoryStructure &dir() const;
 
-    ProjectSettings &settings() {
-      return m_settings;
-    }
+    ProjectSettings &settings();
 
-    const ProjectSettings &settings() const {
-      return m_settings;
-    }
+    const ProjectSettings &settings() const;
 
     /// \brief Get the crystallography_tol
-    double crystallography_tol() const {
-      return settings().crystallography_tol();
-    }
+    double crystallography_tol() const;
 
 
     // ** Composition accessors **
@@ -149,106 +115,25 @@ namespace CASM {
     Index vacancy_index() const;
 
 
-    // ** Supercell and Configuration accessors **
+    // ** Supercell, Configuration, etc. databases **
 
-    /// Access entire supercell_list
-    boost::container::stable_vector<Supercell> &supercell_list();
+    template<typename T>
+    DB::Database<T> &db() const;
 
-    /// const Access entire supercell_list
-    const boost::container::stable_vector<Supercell> &supercell_list() const;
-
-    /// const Access supercell by index
-    const Supercell &supercell(Index i) const;
-
-    /// Access supercell by index
-    Supercell &supercell(Index i);
-
-    /// const Access supercell by name
-    const Supercell &supercell(std::string scellname) const;
-
-    /// Access supercell by name
-    Supercell &supercell(std::string scellname);
-
-    /// Access supercell by Lattice, adding if necessary
-    Supercell &supercell(const Lattice &lat);
-
-    /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
-    const Configuration &configuration(const std::string &configname) const;
-    Configuration &configuration(const std::string &configname);
-
-    /// Configuration iterator: begin
-    config_iterator config_begin();
-
-    /// Configuration iterator: end
-    config_iterator config_end();
-
-    /// Configuration iterator: begin
-    config_const_iterator config_begin() const;
-
-    /// Configuration iterator: end
-    config_const_iterator config_end() const;
-
-    /// const Configuration iterator: begin
-    config_const_iterator config_cbegin() const;
-
-    /// const Configuration iterator: end
-    config_const_iterator config_cend() const;
-
-    /// Configuration iterator: begin
-    config_iterator selected_config_begin();
-
-    /// Configuration iterator: end
-    config_iterator selected_config_end();
-
-    /// const Configuration iterator: begin
-    config_const_iterator selected_config_cbegin() const;
-
-    /// const Configuration iterator: end
-    config_const_iterator selected_config_cend() const;
+    template<typename T>
+    const DB::Database<T> &const_db() const;
 
 
-    // **** IO ****
+    template<typename T>
+    DB::PropertiesDatabase &db_props() const;
 
-    ///Call Configuration::write on every configuration to update files
-    ///  - call update to also read all files
-    void write_config_list();
-
-
-    // **** Operators ****
-
-    // **** Functions for preparing CLEXulators ****
-
-    /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
-    void generate_supercells(const ScelEnumProps &enum_props);
-
-    //Enumerate configurations for all the supercells that are stored in 'supercell_list'
-    void print_enum_info(std::ostream &stream);
-    void print_supercells() const;
-    void print_supercells(std::ostream &stream) const;
-    void read_supercells(std::istream &stream);
-    void print_clex_configurations();
+    template<typename T>
+    const DB::PropertiesDatabase &const_db_props() const;
 
 
-    //ParamComposition i/o and calculators in PrimClex
+    DB::DatabaseHandler &db_handler() const;
 
-    void read_config_list();
-
-    ///Fill up props of every configuration for a partucluar supercell. This will be deprecated when props disappears
-    void read_scel_props(int scel_index, const std::string &JSON_output);
-    ///Call read_config_props on every Supercell
-    void read_all_scel_props(const std::string &JSON_output);
-
-    ///Count over the number of configurations that are selected in all supercells
-    int amount_selected() const;
-
-    bool contains_supercell(std::string scellname, Index &index) const;
-
-    bool contains_supercell(const Supercell &scel) const;
-    bool contains_supercell(const Supercell &scel, Index &index) const;
-
-    Index add_supercell(const Lattice &superlat);
-
-    Index add_canonical_supercell(const Lattice &superlat);
+    const DB::DatabaseHandler &const_db_handler() const;
 
 
     bool has_orbits(const ClexDescription &key) const;
@@ -266,33 +151,19 @@ namespace CASM {
     bool has_eci(const ClexDescription &key) const;
     const ECIContainer &eci(const ClexDescription &key) const;
 
+
   private:
+
+    /// To avoid excessive includes, use "pointer to data"
+    /// - PrimClexData is defined in PrimClex.cc
+    struct PrimClexData;
 
     /// Initialization routines
     void _init();
 
-    mutable std::map<ClexDescription, ClexBasis> m_clex_basis;
-    mutable std::map<ClexDescription, Clexulator> m_clexulator;
-    mutable std::map<ClexDescription, ECIContainer> m_eci;
+    std::unique_ptr<PrimClexData> m_data;
 
   };
-
-  //*******************************************************************************************
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator PrimClex::orbits(
-    const ClexDescription &key,
-    OrbitOutputIterator result,
-    const SymCompareType &sym_compare) const {
-
-    return read_clust(
-             result,
-             jsonParser(dir().clust(key.bset)),
-             prim(),
-             prim().factor_group(),
-             sym_compare,
-             settings().crystallography_tol());
-  }
-
 
 }
 #endif

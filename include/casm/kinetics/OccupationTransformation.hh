@@ -8,6 +8,8 @@ namespace CASM {
 
   class Configuration;
   class SymOp;
+  class Molecule;
+  class Specie;
 
   namespace Kinetics {
 
@@ -29,17 +31,11 @@ namespace CASM {
       Index from_value;
       Index to_value;
 
-      const Molecule &from_mol() const {
-        return this->uccoord.sublat_site().site_occupant()[from_value];
-      }
+      const Molecule &from_mol() const;
 
-      const Molecule &to_mol() const {
-        return this->uccoord.sublat_site().site_occupant()[to_value];
-      }
+      const Molecule &to_mol() const;
 
-      bool operator<(const OccupationTransformation &B) const {
-        return _tuple() < B._tuple();
-      }
+      bool operator<(const OccupationTransformation &B) const;
 
     private:
 
@@ -51,9 +47,7 @@ namespace CASM {
 
       OccupationTransformation *_clone() const override;
 
-      std::tuple<UnitCellCoord, Index, Index> _tuple() const {
-        return std::make_tuple(uccoord, from_value, to_value);
-      }
+      std::tuple<UnitCellCoord, Index, Index> _tuple() const;
 
     };
 

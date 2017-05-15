@@ -1,10 +1,54 @@
 #include "casm/app/casm_functions.hh"
+
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+
+#include "casm/app/bset.hh"
+#include "casm/app/composition.hh"
+#include "casm/app/enum.hh"
+#include "casm/app/files.hh"
+#include "casm/app/format.hh"
+#include "casm/app/import.hh"
+#include "casm/app/init.hh"
+#include "casm/app/monte.hh"
+#include "casm/app/query.hh"
+#include "casm/app/ref.hh"
+#include "casm/app/rm.hh"
+#include "casm/app/run.hh"
+#include "casm/app/select.hh"
+#include "casm/app/settings.hh"
+#include "casm/app/status.hh"
+#include "casm/app/super.hh"
+#include "casm/app/sym.hh"
+#include "casm/app/update.hh"
+#include "casm/app/view.hh"
+
+#include "casm/app/APICommand.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/APICommand_impl.hh"
+
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigSelection.hh"
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/version/version.hh"
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
+
+  void print_splash(std::ostream &out) {
+
+    out << "       .::::::::.        .:::::.         .::::::.          .:.       .:.     \n"
+        << "     .:::::::::::.      .:::::::.      .::::::::::.       .:::.     .:::.    \n"
+        << "    .:::'     ':::.    .:::' ':::.    .:::'   '::::      .:::::.   .:::::.   \n"
+        << "    ::::       ::::   .:::'   ':::.   ::::     '::'     .:::::::. .:::::::.  \n"
+        << "    ::::              ::::     ::::   '::::.            ::::'':::.:::''::::  \n"
+        << "    ::::              ::::     ::::    '::::::.         ::::  ':::::'  ::::  \n"
+        << "    ::::              :::::::::::::      ''::::::.      ::::   ':::'   ::::  \n"
+        << "    ::::              :::::::::::::         '::::::     ::::    ':'    ::::  \n"
+        << "    ::::      .::::   ::::     ::::            :::::    ::::           ::::  \n"
+        << "    ':::.    .::::'   ::::     ::::   .::.     .::::    ::::           ::::  \n"
+        << "     '::::::::::'     ::::     ::::   :::::...:::::'    ::::           ::::  \n"
+        << "        ':::::'       '::'     '::'   ':::::::::::'     '::'           '::'  \n";
+  }
 
   /// \brief CommandArgs constructor - specify logging
   ///
@@ -20,15 +64,9 @@ namespace CASM {
                            PrimClex *_primclex,
                            fs::path _root,
                            const Logging &_logging) :
-    Logging(_logging),
-    argc(_argc),
-    argv(_argv),
+    CLIParse(_argc, _argv, _logging),
     primclex(_primclex),
-    root(_root),
-    log(Logging::log()),
-    err_log(Logging::err_log()),
-    parse_result(0),
-    m_free_p(false) {
+    root(_root) {
     _init();
   }
 
@@ -44,41 +82,13 @@ namespace CASM {
                            PrimClex *_primclex,
                            fs::path _root,
                            const Logging &_logging) :
-    Logging(_logging),
+    CLIParse(_args, _logging),
     primclex(_primclex),
-    root(_root),
-    log(Logging::log()),
-    err_log(Logging::err_log()) {
-
-    // parse _args -> argc, argv
-    parse_result = wordexp(_args.c_str(), &m_p, 0);
-    if(parse_result) {
-      err_log << "Error parsing query: '" << _args << "'" << std::endl;
-      err_log << "wordexp() error: " << parse_result << std::endl;
-      switch(parse_result) {
-      case 1: {
-        err_log << "Check for illegal unescaped characters: |, &, ;, <, >, (, ), {, }" << std::endl;
-        break;
-      }
-      default: {
-        err_log << "Check 'man wordexp' for error code meaning" << std::endl;
-      }
-      }
-      return;
-    }
-
-    m_free_p = true;
-    argc = m_p.we_wordc;
-    argv = m_p.we_wordv;
-
+    root(_root) {
     _init();
   }
 
-  CommandArgs::~CommandArgs() {
-    if(m_free_p) {
-      wordfree(&m_p);
-    }
-  }
+  CommandArgs::~CommandArgs() {}
 
   void CommandArgs::_init() {
 
@@ -88,7 +98,7 @@ namespace CASM {
     }
 
     // set 'command'
-    command = (argc > 1) ? std::string(argv[1]) : "";
+    command = (argc() > 1) ? std::string(argv()[1]) : "";
 
     // check if 'help' command
     std::vector<std::string> help_commands {
@@ -119,16 +129,16 @@ namespace CASM {
       {"sym", sym_command},
       {"composition", composition_command},
       {"ref", ref_command},
-      {"update", update_command},
-      {"enum", enum_command},
+      {UpdateCommand::name, run_api_command<UpdateCommand>},
+      {EnumCommand::name, run_api_command<EnumCommand>},
       {"super", super_command},
-      {"select", select_command},
+      {SelectCommand::name, run_api_command<SelectCommand>},
       {"bset", bset_command},
-      {"perturb", perturb_command},
       {"run", run_command},
-      {"query", query_command},
+      {RmCommand::name, run_api_command<RmCommand>},
+      {QueryCommand::name, run_api_command<QueryCommand>},
       {"files", files_command},
-      {"import", import_command},
+      {ImportCommand::name, run_api_command<ImportCommand>},
       {"monte", monte_command},
       {"view", view_command},
       {"help", help_command}
@@ -179,8 +189,8 @@ namespace CASM {
       log << "# " << version()  << "\n";
 
       // record command arguments
-      for(int i = 0; i < args.argc; i++) {
-        log << args.argv[i] << " ";
+      for(int i = 0; i < args.argc(); i++) {
+        log << args.argv()[i] << " ";
       }
       log << "\n";
       log.close();
@@ -188,7 +198,7 @@ namespace CASM {
 
     void write_LOG_end(const CommandArgs &args, int retcode) {
       fs::ofstream log(args.root / "LOG", std::ofstream::out | std::ofstream::app);
-      log << "# return: " << retcode << " runtime(s): " << args.log.time_s() << "\n\n";
+      log << "# return: " << retcode << " runtime(s): " << args.log().time_s() << "\n\n";
       log.close();
     }
 
@@ -197,7 +207,7 @@ namespace CASM {
   /// \brief Executes CASM commands specified by args
   int casm_api(const CommandArgs &args) {
 
-    if(args.argc == 1) {
+    if(args.argc() == 1) {
       help_command(args);
       return ERR_INVALID_ARG;
     }
@@ -209,7 +219,7 @@ namespace CASM {
         api_impl::write_LOG_begin(args);
       }
 
-      args.log.restart_clock();
+      args.log().restart_clock();
       int retcode = it->second(args);
       if(args.write_log) {
         api_impl::write_LOG_end(args, retcode);
@@ -222,25 +232,6 @@ namespace CASM {
     }
   }
 
-  /*
-  /// \brief Executes casm_api in specified working directory
-  int casm_api(const CommandArgs &args, fs::path working_dir) {
-    fs::path prev = fs::current_path();
-    fs::current_path(working_dir);
-    int res;
-
-    try {
-      res = casm_api(args);
-    }
-    catch(...) {
-      fs::current_path(prev);
-      throw;
-    }
-    return res;
-  }
-  */
-
-
 
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
   ///        return reference to existing or constructed PrimClex
@@ -252,7 +243,7 @@ namespace CASM {
   ///          uniq_primclex, or existing pointed at by args.primclex)
   ///
   PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex) {
-    return make_primclex_if_not(args, uniq_primclex, args.log);
+    return make_primclex_if_not(args, uniq_primclex, args.log());
   }
 
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
@@ -306,13 +297,13 @@ namespace CASM {
 
   }
 
-  /// \brief Print CASM help info to args.log
+  /// \brief Print CASM help info to args.log()
   int help_command(const CommandArgs &args) {
-    args.log.custom("casm usage");
-    args.log << "\n";
+    args.log().custom("casm usage");
+    args.log() << "\n";
 
-    args.log << "casm [--version] <command> [options] [args]" << std::endl << std::endl;
-    args.log << "available commands:" << std::endl;
+    args.log() << "casm [--version] <command> [options] [args]" << std::endl << std::endl;
+    args.log() << "available commands:" << std::endl;
 
     std::vector<std::string> subcom;
     for(auto it = command_map().begin(); it != command_map().end(); ++it) {
@@ -325,18 +316,18 @@ namespace CASM {
 
     std::sort(subcom.begin(), subcom.end());
     for(auto it = subcom.begin(); it != subcom.end(); ++it) {
-      args.log << *it << "\n";
+      args.log() << *it << "\n";
     }
-    args.log << "\n";
+    args.log() << "\n";
 
-    args.log << "For help using a command: 'casm <command> --help'" << std::endl << std::endl;
-    args.log << "For step by step help use: 'casm status -n'" << std::endl << std::endl;
+    args.log() << "For help using a command: 'casm <command> --help'" << std::endl << std::endl;
+    args.log() << "For step by step help use: 'casm status -n'" << std::endl << std::endl;
 
     return 0;
   };
 
   int version_command(const CommandArgs &args) {
-    args.log << "casm version: " << version() << std::endl;
+    args.log() << "casm version: " << version() << std::endl;
     return 0;
   }
 

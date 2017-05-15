@@ -20,6 +20,14 @@ class SpeciesError(Exception):
     def __str__(self):
         return self.msg
 
+class SpeciesDict(dict):
+    """
+        SpeciesDict subclasses dict so it can hold additional metadata without disrupting routines that
+            rely on species_setting containing *only* key/value pairs corresponding to IndividualSpecies
+    """
+    def set_available_tags(self, tags):
+        """ Set a metadata member that lists the available tags listed in a SPECIES file """
+        self.tags = tags
 
 class IndividualSpecies:
     """
@@ -129,7 +137,7 @@ class IndividualSpecies:
 
 
 def species_settings(filename):
-    """ Returns a dict of IndividualSpecies objects, with keys equal to their names. """
+    """ Returns a SpeciesDict of IndividualSpecies objects, with keys equal to their names. """
     try:
         file = open(filename)
     except IOError:
@@ -148,7 +156,8 @@ def species_settings(filename):
     if len(column_names) < 4:
         raise SpeciesError("Insufficient number of columns in SPECIES file")
     tags = column_names[4:]
-    species_settings = dict()
+    species_settings = SpeciesDict()
+    species_settings.set_available_tags(tags)
     for line in file:
         if line.strip():
             values = line.strip().split()

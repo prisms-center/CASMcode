@@ -1,116 +1,13 @@
-#include "casm/app/casm_functions.hh"
-#include "casm/CASM_global_definitions.hh"
-#include "casm/casm_io/DataFormatter.hh"
+#include "casm/app/select.hh"
+#include "casm/app/DBInterface.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/clex/ConfigSelection.hh"
-#include "casm/completer/Handlers.hh"
+#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/Selection.hh"
 
 namespace CASM {
-
-  template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk, Log &err_log) {
-    //boost::trim(criteria);
-
-    try {
-      if(criteria.size()) {
-        DataFormatter<Configuration> tformat(dict.parse(criteria));
-        for(; begin != end; ++begin) {
-          if(begin.selected() == mk)
-            continue;
-          ValueDataStream<bool> select_stream;
-          if(select_stream.fail()) {
-            err_log << "Warning: Unable to apply criteria \"" << criteria << "\" to configuration " <<  begin.name() << "\n";
-            continue;
-          }
-
-          select_stream << tformat(*begin);
-          if(select_stream.value()) {
-            begin.set_selected(mk);
-          }
-        }
-      }
-      else {
-        for(; begin != end; ++begin) {
-          begin.set_selected(mk);
-        }
-      }
-    }
-    catch(std::exception &e) {
-      throw std::runtime_error(std::string("Failure to select using criteria \"") + criteria + "\" for configuration " + begin.name() + "\n    Reason:  " + e.what());
-    }
-    return;
-  }
-
-  template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, Log &err_log) {
-    //boost::trim(criteria);
-    try {
-      if(criteria.size()) {
-        DataFormatter<Configuration> tformat(dict.parse(criteria));
-        for(; begin != end; ++begin) {
-          ValueDataStream<bool> select_stream;
-          if(select_stream.fail()) {
-            err_log << "Warning: Unable to apply criteria \"" << criteria << "\" to configuration " <<  begin.name() << "\n";
-            continue;
-          }
-          select_stream << tformat(*begin);
-          begin.set_selected(select_stream.value());
-        }
-      }
-    }
-    catch(std::exception &e) {
-      throw std::runtime_error(std::string("Failure to select using criteria \"") + criteria + "\" for configuration " + begin.name() + "\n    Reason:  " + e.what());
-    }
-
-    return;
-  }
-
-  template<bool IsConst>
-  bool write_selection(const DataFormatterDictionary<Configuration> &dict, const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected, Log &err_log) {
-    if(fs::exists(out_path) && !force) {
-      err_log << "File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
-      return ERR_EXISTING_FILE;
-    }
-
-    if(write_json || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
-      jsonParser json;
-      config_select.to_json(dict, json, only_selected);
-      SafeOfstream sout;
-      sout.open(out_path);
-      json.print(sout.ofstream());
-      sout.close();
-    }
-    else {
-      SafeOfstream sout;
-      sout.open(out_path);
-      config_select.print(dict, sout.ofstream(), only_selected);
-      sout.close();
-    }
-    return 0;
-  }
-
-  void select_help(const DataFormatterDictionary<Configuration> &_dict, std::ostream &_stream, std::vector<std::string> help_opt) {
-    _stream << "DESCRIPTION" << std::endl
-            << "\n"
-            << "    Use '[--set | --set-on | --set-off] [criteria]' for specifying or editing a selection.\n";
-
-    for(const std::string &str : help_opt) {
-      if(str.empty()) {
-        continue;
-      }
-
-      if(str[0] == 'o') {
-        _stream << "Available operators for use within selection criteria:" << std::endl;
-        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
-      }
-      else if(str[0] == 'p') {
-        _stream << "Available property tags are currently:" << std::endl;
-        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Property);
-      }
-      _stream << std::endl;
-    }
-    _stream << std::endl;
-  }
 
   namespace Completer {
     SelectOption::SelectOption(): OptionHandlerBase("select") {}
@@ -121,8 +18,9 @@ namespace CASM {
 
     void SelectOption::initialize() {
       add_general_help_suboption();
-      add_configlists_suboption();
-      add_output_suboption();
+      add_selections_suboption();
+      add_db_type_suboption(traits<Configuration>::short_name, DB::types_short());
+      add_output_suboption("MASTER");
 
       m_desc.add_options()
       ("json", "Write JSON output (otherwise CSV, unless output extension is '.json' or '.JSON')")
@@ -141,351 +39,481 @@ namespace CASM {
 
   }
 
-  template<bool IsConst>
-  void write_selection_stats(Index Ntot, const ConfigSelection<IsConst> &config_select, Log &log, bool only_selected) {
 
-    auto Nselected = std::distance(config_select.selected_config_begin(), config_select.selected_config_end());
-    auto Ninclude = only_selected ? Nselected : std::distance(config_select.config_begin(), config_select.config_end());
+  // -- SelectCommandImplBase --------------------------------------------
+
+  /// Defaults used if DataObject type doesn't matter or not given
+  class SelectCommandImplBase : public Logging {
+  public:
+
+    SelectCommandImplBase(const SelectCommand &cmd);
+
+    virtual ~SelectCommandImplBase() {}
+
+    virtual int help() const;
+
+    virtual int desc() const;
+
+    virtual int run() const;
+
+  protected:
+
+    const SelectCommand &m_cmd;
+  };
+
+
+  SelectCommandImplBase::SelectCommandImplBase(const SelectCommand &cmd) :
+    Logging(cmd),
+    m_cmd(cmd) {}
+
+  int SelectCommandImplBase::help() const {
+    log() << std::endl << m_cmd.opt().desc() << std::endl;
+
+    log() <<
+          "Use query commands to specify objects that should be selected or unselected.\n\n"
+
+          "By default, the input and output selection is the MASTER selection, but one \n"
+          "or more input selections may be specified via --selections (-c), and the output \n"
+          "selection may be specified via --output (-o).\n\n"
+
+          "For complete query options description, use '--help operators' or \n"
+          "'--help properties' along with '--type <typename>'.\n\n"
+
+          "The type of objects acted on is specified via --type (-t).\n\n";
+
+    m_cmd.print_names(log());
+    return 0;
+  }
+
+  int SelectCommandImplBase::desc() const {
+    return help();
+  }
+
+  int SelectCommandImplBase::run() const {
+    throw CASM::runtime_error("Unknown error in 'casm select'.", ERR_UNKNOWN);
+  }
+
+
+  // -- SelectCommandImpl -----------------
+
+  /// 'casm select' implementation, templated by type
+  ///
+  /// This:
+  /// - holds a DB::InterfaceData object which stores dictionaries and selections
+  /// - provides the implementation for 'help' (i.e. print allowed query commands)
+  /// - provides the implementation for 'run' (i.e. --set, --set-on, --set-off, --and, etc.)
+  ///
+  template<typename DataObject>
+  class SelectCommandImpl : public SelectCommandImplBase {
+  public:
+    SelectCommandImpl(const SelectCommand &cmd);
+
+    int help() const override;
+
+    int desc() const override;
+
+    int run() const override;
+
+  private:
+
+    int _count(std::string s) const {
+      return m_cmd.vm().count(s);
+    }
+
+    const std::vector<fs::path> &_selection_paths() const {
+      return m_cmd.opt().selection_paths();
+    }
+
+    fs::path _selection_paths(Index i) const {
+      return _selection_paths()[i];
+    }
+
+    const std::vector<std::string> &_criteria_vec() const {
+      return m_cmd.opt().criteria_vec();
+    }
+
+    std::string _criteria() const;
+
+    fs::path _output_path() const {
+      return m_cmd.opt().output_path();
+    }
+
+    void _set() const;
+
+    void _set_on() const;
+
+    void _set_off() const;
+
+    void _and() const;
+
+    void _or() const;
+
+    void _xor() const;
+
+    void _not() const;
+
+    void _subset() const;
+
+    void _write_input_stats() const;
+
+    void _write_selection_stats(
+      Index Ntot,
+      const DB::Selection<DataObject> &sel,
+      Log &log,
+      bool only_selected) const;
+
+    const DataFormatterDictionary<DataObject> &_dict() const {
+      return m_data.dict();
+    }
+
+    std::string _sel_str() const {
+      return m_data.sel_str();
+    }
+
+    double _sel_size() const {
+      return m_data.sel_size();
+    }
+
+    DB::Selection<DataObject> &_sel(Index i = 0) const {
+      return m_data.sel(i);
+    }
+
+  private:
+
+    // access dictionary and selections
+    mutable DB::InterfaceData<DataObject> m_data;
+    Index m_Ntot;
+  };
+
+
+  template<typename DataObject>
+  SelectCommandImpl<DataObject>::SelectCommandImpl(const SelectCommand &cmd) :
+    SelectCommandImplBase(cmd),
+    m_data(cmd),
+    m_Ntot(m_cmd.primclex().template db<DataObject>().size()) {
+  }
+
+  template<typename DataObject>
+  int SelectCommandImpl<DataObject>::help() const {
+
+    if(!m_cmd.opt().help_opt_vec().size()) {
+      return SelectCommandImplBase::help();
+    }
+
+    for(const std::string &str : m_cmd.opt().help_opt_vec()) {
+      if(str.empty()) {
+        continue;
+      }
+
+      if(str[0] == 'o') {
+        log() << "Available operators for use within selection criteria:" << std::endl;
+        _dict().print_help(log(), BaseDatumFormatter<DataObject>::Operator);
+      }
+      else if(str[0] == 'p') {
+        log() << "Available property tags are currently:" << std::endl;
+        _dict().print_help(log(), BaseDatumFormatter<DataObject>::Property);
+      }
+      log() << std::endl;
+    }
+    log() << std::endl;
+    return 0;
+  }
+
+  template<typename DataObject>
+  int SelectCommandImpl<DataObject>::desc() const {
+    return help();
+  }
+
+  template<typename DataObject>
+  int SelectCommandImpl<DataObject>::run() const {
+
+    _write_input_stats();
+
+    log().begin_lap();
+    if(_count("set")) {
+      _set();
+    }
+    else if(_count("set-on")) {
+      _set_on();
+    }
+    else if(_count("set-off")) {
+      _set_off();
+    }
+    else if(_count("and")) {
+      _and();
+    }
+    else if(_count("or")) {
+      _or();
+    }
+    else if(_count("xor")) {
+      _xor();
+    }
+    else if(_count("not")) {
+      _not();
+    }
+    else {
+      err_log() << "ERROR: No valid command recognized." << std::endl;
+      help();
+      return ERR_INVALID_ARG;
+    }
+
+    bool only_selected = false;
+    if(_count("subset")) {
+      _subset();
+      only_selected = true;
+    }
+
+    log() << "selection time: " << log().lap_time() << " (s)\n" << std::endl;
+
+    log().write("Selection");
+    int ret_code = _sel(0).write(
+                     _dict(),
+                     _count("force") || (_output_path().string() == "MASTER"),
+                     _output_path(),
+                     _count("json"),
+                     only_selected);
+    log() << "write: " << _output_path() << "\n" << std::endl;
+
+    log().custom("Output config list", _output_path().string());
+    _write_selection_stats(m_Ntot, _sel(0), log(), only_selected);
+
+    log() << std::endl;
+
+    return ret_code;
+  }
+
+  template<typename DataObject>
+  std::string SelectCommandImpl<DataObject>::_criteria() const {
+    if(_criteria_vec().size() == 0) {
+      return "";
+    }
+    else if(_criteria_vec().size() == 1) {
+      return _criteria_vec()[0];
+    }
+    else {
+      err_log() << "ERROR: Selection criteria must be a single string.  You provided "
+                << _criteria_vec().size() << " strings:\n";
+      for(const std::string &str : _criteria_vec())
+        err_log() << "     - " << str << "\n";
+      throw runtime_error("Invalid selection criteria", ERR_INVALID_ARG);
+    }
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_set() const {
+    log().custom("set", _criteria());
+    _sel(0).set(_dict(), _criteria());
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_set_on() const {
+    log().custom("set-on", _criteria());
+    _sel(0).set(_dict(), _criteria(), true);
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_set_off() const {
+    log().custom("set-off", _criteria());
+    _sel(0).set(_dict(), _criteria(), false);
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_and() const {
+    log().custom(std::string("and(") + _sel_str() + ")");
+    for(int i = 1; i < _sel_size(); i++) {
+      for(const auto &val : _sel(i).data()) {
+        auto find_it = _sel(0).data().find(val.first);
+        if(find_it != _sel(0).data().end()) {
+          find_it->second = (find_it->second && val.second);
+        }
+        else {
+          _sel(0).data()[val.first] = false;
+        }
+      }
+    }
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_or() const {
+    log().custom(std::string("or(") +  _sel_str() + ")");
+    for(int i = 1; i < _sel_size(); i++) {
+      for(const auto &val : _sel(i).data()) {
+        if(val.second) {
+          _sel(0).data()[val.first] = true;
+        }
+      }
+    }
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_xor() const {
+    log().custom(_selection_paths(0).string() + " xor " + _selection_paths(1).string());
+    for(const auto &val : _sel(1).data()) {
+      // if not selected in second, use 'sel(0)' 'is_selected' value
+      if(!val.second) {
+        continue;
+      }
+      // else, if selected in second:
+
+      // if not in 'sel(0)' insert selected
+      auto find_it = _sel(0).data().find(val.first);
+      if(find_it == _sel(0).data().end()) {
+        _sel(0).data().insert(val);
+      }
+      // else, use opposite of sel(0) 'is_selected' value
+      else {
+        find_it->second = !find_it->second;
+      }
+    }
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_not() const {
+    log().custom(std::string("not ") + _selection_paths(0).string());
+    for(auto &value : _sel(0).data()) {
+      value.second = !value.second;
+    }
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_subset() const {
+    auto it = _sel(0).data().cbegin();
+    auto end = _sel(0).data().cend();
+    while(it != end) {
+      if(!it->second) {
+        it = _sel(0).data().erase(it);
+      }
+      else {
+        ++it;
+      }
+    }
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_write_input_stats() const {
+
+    // ---- write starting stats ----
+    log().custom("Input config list", _selection_paths(0).string());
+    _write_selection_stats(m_Ntot, _sel(0), log(), false);
+    log() << std::endl;
+
+    for(int i = 1; i < _selection_paths().size(); ++i) {
+      log().custom("Input config list", _selection_paths(i).string());
+      _write_selection_stats(m_Ntot, _sel(i), log(), false);
+      log() << std::endl;
+    }
+  }
+
+  template<typename DataObject>
+  void SelectCommandImpl<DataObject>::_write_selection_stats(
+    Index Ntot,
+    const DB::Selection<DataObject> &sel, Log &log,
+    bool only_selected) const {
+
+    auto Nselected = sel.selected_size();
+    auto Ninclude = only_selected ? Nselected : sel.size();
 
     log << "# configurations in this project: " << Ntot << "\n";
     log << "# configurations included in this list: " << Ninclude << "\n";
     log << "# configurations selected in this list: " << Nselected << "\n";
   }
 
-  template<bool IsConst>
-  void write_master_selection_stats(Index Ntot, const ConfigSelection<IsConst> &config_select, Log &log) {
 
-    auto Nselected = std::distance(config_select.selected_config_begin(), config_select.selected_config_end());
+  // -- class SelectCommand ----------------------------------------------------
 
-    log << "# configurations in this project: " << Ntot << "\n";
-    log << "# configurations selected in this list: " << Nselected << "\n";
-  }
+  const std::string SelectCommand::name = "select";
 
-  // ///////////////////////////////////////
-  // 'select' function for casm
-  //    (add an 'if-else' statement in casm.cpp to call this)
+  SelectCommand::SelectCommand(const CommandArgs &_args, Completer::SelectOption &_opt) :
+    APICommand<Completer::SelectOption>(_args, _opt) {}
 
-  int select_command(const CommandArgs &args) {
+  SelectCommand::~SelectCommand() {}
 
-    //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
-    //- enumerate supercells and configs and hop local configurations
-
-    std::vector<std::string> criteria_vec, help_opt_vec;
-    std::vector<fs::path> selection;
-
-    fs::path out_path;
-    COORD_TYPE coordtype;
-    po::variables_map vm;
-
-    /// Set command line options using boost program_options
-    // NOTE: multitoken() is used instead of implicit_value() because implicit_value() is broken on some systems -- i.e., braid.cnsi.ucsb.edu
-    //       (not sure if it's an issue with a particular shell, or boost version, or something else)
-    Completer::SelectOption select_opt;
+  int SelectCommand::vm_count_check() const {
+    if(!in_project()) {
+      err_log().error("No casm project found");
+      err_log() << std::endl;
+      return ERR_NO_PROJ;
+    }
 
     std::string cmd;
     std::vector<std::string> allowed_cmd = {"and", "or", "xor", "not", "set-on", "set-off", "set"};
 
-    try {
-      po::store(po::parse_command_line(args.argc, args.argv, select_opt.desc()), vm); // can throw
-
-      Index num_cmd(0);
-      for(const std::string &cmd_str : allowed_cmd) {
-        if(vm.count(cmd_str)) {
-          num_cmd++;
-          cmd = cmd_str;
-        }
+    Index num_cmd(0);
+    for(const std::string &cmd_str : allowed_cmd) {
+      if(vm().count(cmd_str)) {
+        num_cmd++;
+        cmd = cmd_str;
       }
-
-      if(!vm.count("help")) {
-        if(num_cmd > 1) {
-          args.err_log << "Error in 'casm select'. Must use exactly one of --set-on, --set-off, --set, --and, --or, --xor, or --not." << std::endl;
-          return ERR_INVALID_ARG;
-        }
-        else if(vm.count("subset") && vm.count("config") && selection.size() != 1) {
-          args.err_log << "ERROR: 'casm select --subset' expects zero or one list as argument." << std::endl;
-          return ERR_INVALID_ARG;
-        }
-
-
-
-        if(!vm.count("output") && (cmd == "or" || cmd == "and" || cmd == "xor" || cmd == "not")) {
-          args.err_log << "ERROR: 'casm select --" << cmd << "' expects an --output file." << std::endl;
-          return ERR_INVALID_ARG;
-        }
-
-      }
-
-      // Start --help option
-      if(vm.count("help")) {
-        args.log << std::endl << select_opt.desc() << std::endl;
-      }
-
-      po::notify(vm); // throws on error, so do after help in case of problems
-
-      criteria_vec = select_opt.criteria_vec();
-      help_opt_vec = select_opt.help_opt_vec();
-      selection = select_opt.selection_paths();
-      out_path = select_opt.output_path();
-
-      // Finish --help option
-      if(vm.count("help")) {
-        const fs::path &root = args.root;
-        if(root.empty()) {
-          auto dict = make_dictionary<Configuration>();
-          select_help(dict, args.log, help_opt_vec);
-        }
-        else {
-          // set status_stream: where query settings and PrimClex initialization messages are sent
-          Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
-
-          // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
-          // Then whichever exists, store reference in 'primclex'
-          std::unique_ptr<PrimClex> uniq_primclex;
-          if(out_path.string() == "STDOUT") {
-            args.log.set_verbosity(0);
-          }
-          PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
-
-          select_help(primclex.settings().query_handler<Configuration>().dict(), args.log, help_opt_vec);
-        }
-        return 0;
-      }
-
-      if((vm.count("set-on") || vm.count("set-off") || vm.count("set")) && vm.count("config") && selection.size() != 1) {
-        std::string cmd = "--set-on";
-        if(vm.count("set-off")) {
-          cmd = "--set-off";
-        }
-        if(vm.count("set")) {
-          cmd = "--set";
-        }
-
-        args.err_log << "Error in 'casm select " << cmd << "'. " << selection.size() << " config selections were specified, but no more than one selection is allowed (MASTER list is used if no other is specified)." << std::endl;
-        return ERR_INVALID_ARG;
-      }
-
     }
-    catch(po::error &e) {
-      args.err_log << select_opt.desc() << std::endl;
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+
+    if(num_cmd > 1) {
+      err_log() << "Error in 'casm select'. No more than one of the following may be used: " << allowed_cmd << std::endl;
       return ERR_INVALID_ARG;
     }
-    catch(std::exception &e) {
-      args.err_log << select_opt.desc() << std::endl;
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      return ERR_UNKNOWN;
+    else if(vm().count("subset") && vm().count("selections") && opt().selection_paths().size() != 1) {
+      err_log() << "ERROR: 'casm select --subset' expects zero or one list as argument." << std::endl;
+      return ERR_INVALID_ARG;
     }
 
-
-    if(vm.count("output") && out_path != "MASTER") {
-
-      //check now so we can exit early with an obvious error
-      if(fs::exists(out_path) && !vm.count("force")) {
-        args.err_log << "ERROR: File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
-        return ERR_EXISTING_FILE;
-      }
+    if(!vm().count("output") && (cmd == "or" || cmd == "and" || cmd == "xor" || cmd == "not")) {
+      err_log() << "ERROR: 'casm select --" << cmd << "' expects an --output file." << std::endl;
+      return ERR_INVALID_ARG;
     }
 
-    bool only_selected(false);
-    if(selection.empty()) {
-      only_selected = true;
-      selection.push_back("MASTER");
+    if((cmd == "set-on" || cmd == "set-off" || cmd == "set") && vm().count("selections") && opt().selection_paths().size() != 1) {
+      err_log() << "Error in 'casm select " << cmd << "'. "
+                << opt().selection_paths().size() << " config selections were specified, "
+                "but no more than one selection is allowed (MASTER list is used if no "
+                "other is specified)." << std::endl;
+      return ERR_INVALID_ARG;
     }
 
-    const fs::path &root = args.root;
-    if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << std::endl;
-      return ERR_NO_PROJ;
-    }
-
-    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
-    // Then whichever exists, store reference in 'primclex'
-    std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    ProjectSettings &set = primclex.settings();
-
-    // count total number of configurations in this project one time
-    Index Ntot = std::distance(primclex.config_begin(), primclex.config_end());
-
-
-    // load initial selection into config_select -- this is also the selection that will be printed at end
-    ConfigSelection<false> config_select(primclex, selection[0]);
-
-    std::stringstream ss;
-    ss << selection[0];
-
-    std::vector<ConstConfigSelection> tselect(selection.size() - 1);
-    for(int i = 1; i < selection.size(); ++i) {
-      ss << ", " << selection[i];
-      tselect.push_back(ConstConfigSelection(primclex, selection[i]));
-    }
-
-    set.query_handler<Configuration>().set_selected(config_select);
-
-    args.log.custom("Input config list", selection[0].string());
-    write_selection_stats(Ntot, config_select, args.log, false);
-    args.log << std::endl;
-
-    for(int i = 1; i < selection.size(); ++i) {
-      args.log.custom("Input config list", selection[i].string());
-      write_selection_stats(Ntot, tselect[i], args.log, false);
-      args.log << std::endl;
-    }
-
-    if(vm.count("set-on") || vm.count("set-off") || vm.count("set")) {
-      bool select_switch = vm.count("set-on");
-      std::string criteria;
-      if(criteria_vec.size() == 1) {
-        criteria = criteria_vec[0];
-      }
-      else if(criteria_vec.size() > 1) {
-        args.err_log << "ERROR: Selection criteria must be a single string.  You provided " << criteria_vec.size() << " strings:\n";
-        for(const std::string &str : criteria_vec)
-          args.err_log << "     - " << str << "\n";
-        return ERR_INVALID_ARG;
-      }
-
-      if(vm.count("set-on")) {
-        args.log.custom("set-on", criteria);
-      }
-      if(vm.count("set-off")) {
-        args.log.custom("set-off", criteria);
-      }
-      if(vm.count("set")) {
-        args.log.custom("set", criteria);
-      }
-      args.log.begin_lap();
-
-      try {
-        if(vm.count("set"))
-          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, args.err_log);
-        else
-          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, select_switch, args.err_log);
-      }
-      catch(std::exception &e) {
-        args.err_log << "ERROR: " << e.what() << "\n";
-        return ERR_INVALID_ARG;
-      }
-
-      args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
-    }
-
-    if(vm.count("subset")) {
-      args.log.custom("subset");
-      args.log.begin_lap();
-      args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
-      only_selected = true;
-    }
-
-    if(vm.count("not")) {
-      if(selection.size() != 1) {
-        args.err_log << "ERROR: Option --not requires exactly 1 selection as argument\n";
-        return ERR_INVALID_ARG;
-      }
-
-      args.log.custom(std::string("not ") + selection[0].string());
-      args.log.begin_lap();
-
-      // loop through other lists, keeping only configurations selected in the other lists
-      auto it = config_select.config_begin();
-      for(; it != config_select.config_end(); ++it) {
-        it.set_selected(!it.selected());
-      }
-      args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
-    }
-
-    if(vm.count("or")) {
-
-      args.log.custom(std::string("or(") + ss.str() + ")");
-      args.log.begin_lap();
-
-      // loop through other lists, inserting all selected configurations
-      for(int i = 1; i < selection.size(); i++) {
-        for(auto it = tselect[i].selected_config_cbegin(); it != tselect[i].selected_config_cend(); ++it) {
-          config_select.set_selected(it.name(), true);
-        }
-      }
-      args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
-      only_selected = true;
-    }
-
-    if(vm.count("and")) {
-      args.log.custom(std::string("and(") + ss.str() + ")");
-      args.log.begin_lap();
-
-      // loop through other lists, keeping only configurations selected in the other lists
-      for(int i = 1; i < selection.size(); i++) {
-        auto it = config_select.selected_config_begin();
-        for(; it != config_select.selected_config_end(); ++it) {
-          it.set_selected(tselect[i].selected(it.name()));
-        }
-      }
-
-      args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
-      only_selected = true;
-    }
-
-    if(vm.count("xor")) {
-      if(selection.size() != 2) {
-        args.err_log << "ERROR: Option --xor requires exactly 2 selections as argument\n";
-        return 1;
-      }
-
-      args.log.custom(selection[0].string() + " xor " + selection[1].string());
-      args.log.begin_lap();
-
-      for(auto it = tselect[1].selected_config_begin(); it != tselect[1].selected_config_end(); ++it) {
-        //If selected in both lists, deselect it
-        if(config_select.selected(it.name())) {
-          config_select.set_selected(it.name(), false);
-        }
-        else { // If only selected in tselect, add it to config_select
-          config_select.set_selected(it.name(), true);
-        }
-
-      }
-      args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
-      only_selected = true;
-    }
-
-    /// Only write selection to disk past this point
-    if(!vm.count("output") || out_path == "MASTER") {
-      auto pc_it = primclex.config_begin(), pc_end = primclex.config_end();
-      for(; pc_it != pc_end; ++pc_it) {
-        pc_it->set_selected(false);
-      }
-
-      auto it = config_select.selected_config_begin(), it_end = config_select.selected_config_end();
-      for(; it != it_end; ++it) {
-        it->set_selected(true);
-      }
-
-      args.log.write("Master config_list");
-      primclex.write_config_list();
-      args.log << "wrote: MASTER\n" << std::endl;
-
-      args.log.custom("Master config list");
-      write_master_selection_stats(Ntot, config_select, args.log);
-
-      args.log << std::endl;
-      return 0;
-    }
-    else {
-
-      args.log.write("Selection");
-      int ret_code = write_selection(set.query_handler<Configuration>().dict(), config_select, vm.count("force"), out_path, vm.count("json"), only_selected, args.err_log);
-      args.log << "write: " << out_path << "\n" << std::endl;
-
-      args.log.custom("Output config list", out_path.string());
-      write_selection_stats(Ntot, config_select, args.log, only_selected);
-
-      args.log << std::endl;
-      return ret_code;
+    if(cmd == "xor" && opt().selection_paths().size() != 2) {
+      err_log() << "ERROR: Option --xor requires exactly 2 selections as argument\n";
+      return ERR_INVALID_ARG;
     }
 
     return 0;
-  };
+  }
+
+  int SelectCommand::help() const {
+    return impl().help();
+  }
+
+  int SelectCommand::desc() const {
+    return impl().desc();
+  }
+
+  int SelectCommand::run() const {
+    return impl().run();
+  }
+
+  SelectCommandImplBase &SelectCommand::impl() const {
+    if(!m_impl) {
+      if(in_project()) {
+        if(!opt().db_type_opts().count(opt().db_type())) {
+          std::stringstream msg;
+          msg << "--type " << opt().db_type() << " is not allowed for 'casm " << name << "'.";
+          print_names(err_log());
+          throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
+        }
+
+        DB::for_config_type_short(opt().db_type(), DB::ConstructImpl<SelectCommand>(m_impl, *this));
+      }
+      else {
+        m_impl = notstd::make_unique<SelectCommandImplBase>(*this);
+      }
+    }
+    return *m_impl;
+  }
+
+  void SelectCommand::print_names(std::ostream &sout) const {
+    sout << "The allowed types are:\n";
+
+    for(const auto &db_type : opt().db_type_opts()) {
+      sout << "  " << db_type << std::endl;
+    }
+  }
 
 }
 

@@ -1,11 +1,14 @@
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
-#include "casm/clex/ConfigSelection.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumEquivalents.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/completer/Handlers.hh"
+#include "casm/app/enum.hh"
 #include "casm/container/Enumerator_impl.hh"
+#include "casm/database/Selection.hh"
+#include "casm/database/ConfigDatabase.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_SuperConfigEnum_interface() {
@@ -69,14 +72,14 @@ namespace CASM {
   /// sub-routine for EnumInterface<SuperConfigEnum>::run,
   ///   generates primitive configurations from input
   void _generate_primitives(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const Supercell &unit_cell,
     const jsonParser &kwargs,
     std::map<Configuration, std::string> &prim_subconfig) {
 
     auto check_is_supercell = [&](const Lattice & plat) {
       auto end = primclex.prim().factor_group().end();
-      return is_supercell(unit_cell.real_super_lattice(),
+      return is_supercell(unit_cell.lattice(),
                           plat,
                           primclex.prim().factor_group().begin(),
                           end,
@@ -92,7 +95,7 @@ namespace CASM {
     if(kwargs["subconfigs"].is_array()) {
       const jsonParser &j = kwargs["subconfigs"];
       for(auto it = j.begin(); it != j.end(); ++it) {
-        const Configuration &config = primclex.configuration(it->get<std::string>());
+        const Configuration &config = *primclex.db<Configuration>().find(it->get<std::string>());
         log << "  " << config.name() << "\n";
         Configuration pconfig = config.primitive();
         if(!check_is_supercell(pconfig.ideal_lattice())) {
@@ -107,8 +110,8 @@ namespace CASM {
       }
     }
     else {
-      ConstConfigSelection selection(primclex, kwargs["subconfigs"].get<fs::path>());
-      for(auto it = selection.selected_config_begin(); it != selection.selected_config_end(); ++it) {
+      DB::Selection<Configuration> selection(primclex.db<Configuration>(), kwargs["subconfigs"].get<fs::path>());
+      for(auto it = selection.selected().begin(); it != selection.selected().end(); ++it) {
         log << "  " << it->name() << "\n";
         Configuration pconfig = it->primitive();
         if(!check_is_supercell(pconfig.ideal_lattice())) {
@@ -128,7 +131,7 @@ namespace CASM {
   ///   generates equivalent configurations of all primitive configurations
   void _generate_equivalents(
     const PrimClex &primclex,
-    Supercell &unit_cell,
+    const Supercell &unit_cell,
     const std::map<Configuration, std::string> &prim_subconfig,
     std::vector<Configuration> &subconfig) {
 
@@ -147,7 +150,7 @@ namespace CASM {
   }
 
   int SuperConfigEnum::run(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 
@@ -162,7 +165,8 @@ namespace CASM {
     _kwargs.get_if(primitive_only, "primitive_only");
 
     // -- make <SupercellEnumerator<Lattice> & filter_expr from input
-    std::unique_ptr<SupercellEnumerator<Lattice> > superlat_enum = make_enumerator_superlat_enum(primclex, _kwargs, enum_opt);
+    std::unique_ptr<SupercellEnumerator<Lattice> > superlat_enum =
+      make_enumerator_superlat_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
     // -- Unit cell --
@@ -218,8 +222,8 @@ namespace CASM {
 
     // construct PrimGrid
     m_prim_grid = notstd::make_cloneable<PrimGrid>(
-                    _sub_supercell().real_super_lattice(),
-                    _target_supercell().real_super_lattice()
+                    _sub_supercell().lattice(),
+                    _target_supercell().lattice()
                   );
 
     // initialize 'm_counter' to count over all possible sub-config on
@@ -255,7 +259,7 @@ namespace CASM {
     m_has_disp = std::any_of(m_sub_config.begin(), m_sub_config.end(), has_disp);
 
     _initialize(&(*m_current));
-    _fill(counter(), _current());
+    _fill(counter(), *m_current);
 
     // Make sure that current() satisfies requested conditions
     if(!_check_current()) {
@@ -266,7 +270,7 @@ namespace CASM {
     if(valid()) {
       _set_step(0);
     }
-    _current().set_source(source(step()));
+    m_current->set_source(source(step()));
   }
 
   // **** Mutators ****
@@ -276,7 +280,7 @@ namespace CASM {
     bool is_valid_config {false};
 
     while(!is_valid_config && ++m_counter) {
-      _fill(counter(), _current());
+      _fill(counter(), *m_current);
       is_valid_config = _check_current();
     }
 

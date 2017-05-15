@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "casm/misc/CASM_Eigen_math.hh"
+
 #include "casm/container/PolyTrie.hh"
 
 #include "casm/symmetry/SymOp.hh"

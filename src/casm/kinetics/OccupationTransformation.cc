@@ -1,4 +1,5 @@
 #include "casm/kinetics/OccupationTransformation.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/Configuration.hh"
 
 namespace CASM {
@@ -24,6 +25,18 @@ namespace CASM {
       return std::unique_ptr<OccupationTransformation>(this->_clone());
     }
 
+    const Molecule &OccupationTransformation::from_mol() const {
+      return this->uccoord.sublat_site().site_occupant()[from_value];
+    }
+
+    const Molecule &OccupationTransformation::to_mol() const {
+      return this->uccoord.sublat_site().site_occupant()[to_value];
+    }
+
+    bool OccupationTransformation::operator<(const OccupationTransformation &B) const {
+      return _tuple() < B._tuple();
+    }
+
     Configuration &OccupationTransformation::apply_to_impl(Configuration &config) const {
       config.set_occ(config.linear_index(uccoord), to_value);
       return config;
@@ -41,6 +54,10 @@ namespace CASM {
 
     OccupationTransformation *OccupationTransformation::_clone() const {
       return new OccupationTransformation(*this);
+    }
+
+    std::tuple<UnitCellCoord, Index, Index> OccupationTransformation::_tuple() const {
+      return std::make_tuple(uccoord, from_value, to_value);
     }
 
     /// \brief Print OccupationTransformation to stream, using default Printer<Kinetics::OccupationTransformation>

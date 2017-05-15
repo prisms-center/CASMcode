@@ -1,7 +1,12 @@
-#ifndef CONFIGMAPPING_HH
-#define CONFIGMAPPING_HH
-#include "casm/CASM_global_definitions.hh"
+#ifndef CASM_ConfigMapping
+#define CASM_ConfigMapping
+
 #include <vector>
+#include "casm/CASM_global_definitions.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Site.hh"
+#include "casm/casm_io/jsonParser.hh"
+
 namespace CASM {
   class Supercell;
   class Lattice;
@@ -9,10 +14,48 @@ namespace CASM {
   class PrimClex;
   class Configuration;
   class ConfigDoF;
-  class Site;
-  class Coordinate;
-  template<typename CoordType>
-  class BasicStructure;
+
+  namespace Completer {
+    class ImportOption;
+  }
+
+  /// Data structure holding results of ConfigMapper algorithm
+  struct ConfigMapperResult {
+
+    ConfigMapperResult() :
+      success(false) {}
+
+    /// Output structure, after applying lattice similarity and/or rotation to
+    /// input structure.
+    BasicStructure<Site> structure;
+
+    /// The configuration the input structure was mapped onto
+    std::unique_ptr<Configuration> config;
+
+    /// relaxation_properties is populated by relaxation properties:
+    ///
+    /// - 'lattice_deformation': lattice mapping score
+    /// - 'basis_deformation': atomic mapping score
+    /// - 'volume_relaxation': V/V_ideal
+    /// - 'relaxation_deformation': 3x3 tensor describing cell relaxation
+    jsonParser relaxation_properties;
+
+    /// best_assignment is populated by the permutation of sites in the imported
+    /// structure that maps them onto sites of the ideal crystal (excluding vacancies)
+    std::vector<Index> best_assignment;
+
+    /// cart_op is populated by the cartesian isometry that rotates the imported
+    /// structure onto the coordinate system of the ideal crystal
+    Eigen::Matrix3d cart_op;
+
+    /// True if could map to prim, false if not
+    bool success;
+
+    /// Failure message if could not map to prim
+    std::string fail_msg;
+
+  };
+
 
   /// A class for mapping an arbitrary crystal structure as a configuration of a crystal template
   /// as described by a PrimClex.  ConfigMapper manages options for the mapping algorithm and mapping cost function
@@ -64,14 +107,14 @@ namespace CASM {
     ///\endparblock
     ///
     ///\param _tol tolerance for mapping comparisons
-    ConfigMapper(PrimClex &_pclex,
+    ConfigMapper(const PrimClex &_pclex,
                  double _lattice_weight,
                  double _max_volume_change = 0.5,
                  int _options = robust, // this should actually be a bitwise-OR of ConfigMapper::Options
                  double _tol = TOL);
 
 
-    PrimClex &primclex() const {
+    const PrimClex &primclex() const {
       return *m_pclex;
     }
 
@@ -106,32 +149,12 @@ namespace CASM {
 
     ///\brief imports structure specified by 'pos_path' into primclex() by finding optimal mapping
     ///       and then setting displacements and strain to zero (only the mapped occupation is preserved)
-    ///\param imported_name is populated by the configname given to the imported structure
-    ///                     (or an existing equivalent structure if one exists)
-    ///\param relaxation_properties is populated by relaxation properties:
-    ///                     'lattice_deformation':    lattice mapping score
-    ///                     'basis_deformation':      atomic mapping score
-    ///                     'volume_relaxation':      V/V_ideal
-    ///                     'relaxation_deformation': 3x3 tensor describing cell relaxation
-    ///\param best_assignment is populated by the permutation of sites in the imported structure
-    ///                       that maps them onto sites of the ideal crystal (excluding vacancies)
-    ///\param cart_op is populated by the cartesian isometry that rotates the imported structure
-    ///               onto the coordinate system of the ideal crystal
-    bool import_structure_occupation(const fs::path &pos_path,
-                                     std::string &imported_name,
-                                     jsonParser &relaxation_properties,
-                                     std::vector<Index> &best_assignment,
-                                     Eigen::Matrix3d &cart_op) const;
+    ///
+    ConfigMapperResult import_structure_occupation(const fs::path &pos_path) const;
 
     ///\brief imports structure specified by '_struc' into primclex()
-    /// \param update_struc if true, applies lattice similarity and/or rotation to _struc. If false, _struc is unchanged
-    /// update_struc=true is useful for preserving mapping info that is lost when only the occupation is imported
-    bool import_structure_occupation(BasicStructure<Site> &_struc,
-                                     std::string &imported_name,
-                                     jsonParser &relaxation_properties,
-                                     std::vector<Index> &best_assignment,
-                                     Eigen::Matrix3d &cart_op,
-                                     bool update_struc = false) const;
+    ///
+    ConfigMapperResult import_structure_occupation(const BasicStructure<Site> &_struc) const;
 
     ///\brief imports structure specified by '_struc' into primclex()
     ///\param hint_ptr[in]
@@ -141,59 +164,21 @@ namespace CASM {
     ///                in combination with Option 'strict' to force mapping onto a particular configuration
     ///                or be used to provide user reports of the form "Suggested mapping: 0.372; Optimal mapping: 0.002"
     ///\endparblock
-    /// \param update_struc if true, applies lattice similarity and/or rotation to _struc. If false, _struc is unchanged
-    /// update_struc=true is useful for preserving mapping info that is lost when only the occupation is imported
-    bool import_structure_occupation(BasicStructure<Site> &_struc,
-                                     const Configuration *hint_ptr,
-                                     std::string &imported_name,
-                                     jsonParser &relaxation_properties,
-                                     std::vector<Index> &best_assignment,
-                                     Eigen::Matrix3d &cart_op,
-                                     bool update_struc = false) const;
+    ///
+    ConfigMapperResult import_structure_occupation(const BasicStructure<Site> &_struc,
+                                                   const Configuration *hint_ptr) const;
 
 
     ///\brief imports structure specified by 'pos_path' into primclex() by finding optimal mapping
     ///       unlike import_structure_occupation, displacements and strain are preserved
     ///
-    ///\param imported_name[out]
-    ///\parblock
-    ///                 populated by the configname given to the imported structure
-    ///                 (or an existing equivalent structure if one exists)
-    ///\endparblock
-    ///
-    ///\param relaxation_properties[out]
-    ///\parblock
-    ///                 populated by relaxation properties:
-    ///                     'lattice_deformation':    lattice mapping score
-    ///                     'basis_deformation':      atomic mapping score
-    ///                     'volume_change':          V/V_ideal
-    ///                     'relaxation_deformation': Not recorded in this case, because it is a DoF
-    ///\endparblock
-    ///
-    ///\param best_assignment[out]
-    ///\parblock
-    ///                   populated by the permutation of sites in the imported structure
-    ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
-    ///\endparblock
-    ///
-    ///\param cart_op[out]
-    ///\parblock
-    ///                   populated by the cartesian isometry that rotates the imported structure
-    ///                   onto the coordinate system of the ideal crystal
-    ///\endparblock
-    bool import_structure(const fs::path &pos_path,
-                          std::string &imported_name,
-                          jsonParser &relaxation_properties,
-                          std::vector<Index> &best_assignment,
-                          Eigen::Matrix3d &cart_op) const;
+    ConfigMapperResult import_structure(const fs::path &pos_path) const;
 
     ///\brief imports structure specified by '_struc' into primclex() by finding optimal mapping
     ///       unlike import_structure_occupation, displacements and strain are preserved
-    bool import_structure(const BasicStructure<Site> &_struc,
-                          std::string &imported_name,
-                          jsonParser &relaxation_properties,
-                          std::vector<Index> &best_assignment,
-                          Eigen::Matrix3d &cart_op) const;
+    ///
+    ConfigMapperResult import_structure(const BasicStructure<Site> &_struc) const;
+
 
     ///\brief Low-level routine to map a structure onto a ConfigDof
     ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
@@ -201,6 +186,8 @@ namespace CASM {
     bool struc_to_configdof(const BasicStructure<Site> &_struc,
                             ConfigDoF &mapped_configdof,
                             Lattice &mapped_lat) const;
+
+  private:
 
     ///\brief Low-level routine to map a structure onto a ConfigDof
     ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
@@ -269,7 +256,8 @@ namespace CASM {
                                                 Eigen::Matrix3d &cart_op) const;
 
   private:
-    PrimClex *m_pclex;
+
+    const PrimClex *m_pclex;
     mutable std::map<Index, std::vector<Lattice> > m_superlat_map;
     double m_lattice_weight;
     double m_max_volume_change;

@@ -3,13 +3,15 @@
 
 /// What is being tested:
 #include "casm/clex/ScelEnum.hh"
-//#include "casm/clex/ScelEnum_impl.hh"
+#include "casm/clex/ScelEnum_impl.hh"
 
 /// What is being used to test it:
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
 
@@ -21,6 +23,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
+  primclex.settings().set_crystallography_tol(1e-5);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
@@ -29,7 +32,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   // -- Test ScelEnumByProps --------------------
   {
-    ScelEnumProps enum_props(1, 5);
+    ScelEnumProps enum_props(1, 10);
     ScelEnumByProps e(primclex, enum_props);
 
     BOOST_CHECK_EQUAL(e.name(), "ScelEnumByProps");
@@ -44,15 +47,34 @@ BOOST_AUTO_TEST_CASE(Test1) {
     Index count = 0;
     for(; it != end; ++it, ++count) {
       m_names.push_back(it->name());
-      //std::cout << it->name() << std::endl;
+
+      Lattice canon_check = canonical_equivalent_lattice(
+                              it->lattice(),
+                              primclex.prim().point_group(),
+                              primclex.crystallography_tol());
+
+      bool check = almost_equal(
+                     it->lattice().lat_column_mat(),
+                     canon_check.lat_column_mat(),
+                     primclex.crystallography_tol());
+
+      if(!check) {
+        std::cout << "superlat: \n" << it->lattice().lat_column_mat() << std::endl;
+        std::cout << "canon_check: \n" << canon_check.lat_column_mat() << std::endl;
+      }
+
+      BOOST_CHECK_EQUAL(check, true);
+
+      BOOST_CHECK_EQUAL(it->is_canonical(), true);
+
     }
-    BOOST_CHECK_EQUAL(count, 20);
+    BOOST_CHECK_EQUAL(count, 114);
     BOOST_CHECK(it == end);
   }
 
   // -- use results to Test ScelEnumByName --------------------
   {
-    ScelEnumByNameT<false> e(primclex, m_names.begin(), m_names.end());
+    ScelEnumByName e(primclex, m_names.begin(), m_names.end());
     BOOST_CHECK_EQUAL(e.name(), "ScelEnumByName");
 
     auto it = e.begin();
@@ -66,7 +88,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     for(; it != end; ++it, ++count) {
       //std::cout << it->name() << std::endl;
     }
-    BOOST_CHECK_EQUAL(count, 20);
+    BOOST_CHECK_EQUAL(count, 114);
     BOOST_CHECK(it == end);
   }
 

@@ -1,12 +1,15 @@
 #include "casm/app/ProjectSettings.hh"
 
 #include <tuple>
+#include "casm/system/RuntimeLibrary.hh"
 #include "casm/app/AppIO.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/app/QueryHandler.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
-
-#include "casm/clex/ConfigIOSelected.hh"
-#include "casm/clex/ConfigSelection.hh"
+#include "casm/misc/algorithm.hh"
+#include "casm/casm_io/SafeOfstream.hh"
+#include "casm/database/DatabaseTypeTraits.hh"
 
 namespace CASM {
 
@@ -32,51 +35,38 @@ namespace CASM {
     return sublat_indices;
   }
 
-  void ClexDescription::print(std::ostream &sout, bool is_default, int indent) const {
-    std::string in(' ', indent);
-    sout << in << name;
-    if(is_default) {
-      sout << "*";
-    }
-    sout << ": \n";
-    sout << in << std::setw(16) << "property: " << property << "\n";
-    sout << in << std::setw(16) << "calctype: " << calctype << "\n";
-    sout << in << std::setw(16) << "ref: " << ref << "\n";
-    sout << in << std::setw(16) << "bset: " << bset << "\n";
-    sout << in << std::setw(16) << "eci: " << eci << "\n";
-    sout << "\n";
-  }
+  namespace {
+    struct AddAliasesFromJSON {
+      AddAliasesFromJSON(ProjectSettings &_set, jsonParser &_json) :
+        set(_set), json(_json) {}
 
-  /// \brief Compare using name strings: A.name < B.name
-  bool operator<(const ClexDescription &A, const ClexDescription &B) {
-    return A.name < B.name;
-  }
+      template<typename T>
+      void eval() {
+        if(json.contains(traits<T>::name)) {
+          auto &q = set.query_handler<T>();
+          auto res = json.find(traits<T>::name);
+          auto it = res->begin();
+          auto end = res->end();
+          for(; it != end; ++it) {
+            q.add_alias(it.name(), it->template get<std::string>());
+          }
+        }
+      }
 
-  jsonParser &to_json(const ClexDescription &desc, jsonParser &json) {
-    json.put_obj();
-    json["name"] = desc.name;
-    json["property"] = desc.property;
-    json["calctype"] = desc.calctype;
-    json["ref"] = desc.ref;
-    json["bset"] = desc.bset;
-    json["eci"] = desc.eci;
-    return json;
-  }
+      ProjectSettings &set;
+      jsonParser &json;
+    };
 
-  void from_json(ClexDescription &desc, const jsonParser &json) {
-    from_json(desc.name, json["name"]);
-    from_json(desc.property, json["property"]);
-    from_json(desc.calctype, json["calctype"]);
-    from_json(desc.ref, json["ref"]);
-    from_json(desc.bset, json["bset"]);
-    from_json(desc.eci, json["eci"]);
-  }
+    struct AddAliasesToJSON {
+      AddAliasesToJSON(const ProjectSettings &_set, jsonParser &_json) : set(_set), json(_json) {}
 
-  bool clex_exists(const DirectoryStructure &dir, const ClexDescription &desc) {
-    return contains(dir.all_calctype(), desc.calctype) &&
-           contains(dir.all_ref(desc.calctype), desc.ref) &&
-           contains(dir.all_bset(), desc.bset) &&
-           contains(dir.all_eci(desc.property, desc.calctype, desc.ref, desc.bset), desc.eci);
+      template<typename T> void eval() {
+        json[traits<T>::name] = set.query_handler<T>().aliases();
+      }
+
+      jsonParser &json;
+      const ProjectSettings &set;
+    };
   }
 
   /// \brief Default constructor
@@ -93,7 +83,8 @@ namespace CASM {
   ProjectSettings::ProjectSettings(fs::path root, std::string name, const Logging &logging) :
     Logging(logging),
     m_dir(root),
-    m_name(name) {
+    m_name(name),
+    m_db_name("jsonDB") {
 
     if(fs::exists(m_dir.casm_dir())) {
       throw std::runtime_error(
@@ -120,7 +111,8 @@ namespace CASM {
   ///
   ProjectSettings::ProjectSettings(fs::path root, const Logging &logging) :
     Logging(logging),
-    m_dir(root) {
+    m_dir(root),
+    m_db_name("jsonDB") {
 
     if(fs::exists(m_dir.casm_dir())) {
 
@@ -130,7 +122,12 @@ namespace CASM {
         fs::ifstream file(m_dir.project_settings());
         jsonParser settings(file);
 
-        from_json(m_properties, settings["curr_properties"]);
+        if(settings.contains("curr_properties")) { // deprecated after v0.2.X
+          from_json(m_properties, settings["curr_properties"]);
+        }
+        else { // v0.3+
+          from_json(m_properties, settings["properties"]);
+        }
 
         if(settings.contains("cluster_expansions") && settings["cluster_expansions"].size()) {
           from_json(m_clex, settings["cluster_expansions"]);
@@ -223,25 +220,8 @@ namespace CASM {
           m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
         }
 
-        // migrate existing query_alias from deprecated 'query_alias.json'
-        jsonParser &alias_json = settings["query_alias"];
-        if(fs::exists(m_dir.query_alias())) {
-          jsonParser depr(m_dir.query_alias());
-          for(auto it = depr.begin(); it != depr.end(); ++it) {
-            if(!alias_json.contains(it.name())) {
-              alias_json[it.name()] = it->get<std::string>();
-              and_commit = true;
-            }
-          }
-        }
-
         // add aliases to dictionary
-        if(alias_json.size()) {
-          auto &q = query_handler<Configuration>();
-          for(auto it = alias_json.begin(); it != alias_json.end(); ++it) {
-            q.add_alias(it.name(), it->get<std::string>());
-          }
-        }
+        DB::for_each_type(AddAliasesFromJSON(*this, settings["query_alias"]));
 
         if(and_commit) {
           commit();
@@ -262,6 +242,7 @@ namespace CASM {
 
   }
 
+  ProjectSettings::~ProjectSettings() {}
 
   /// \brief Get project name
   std::string ProjectSettings::name() const {
@@ -269,8 +250,15 @@ namespace CASM {
   }
 
   /// \brief Access current properties
+  template<typename DataObject>
   std::vector<std::string> &ProjectSettings::properties() {
-    return m_properties;
+    std::string config_type_name = traits<DataObject>::name;
+    if(!DB::config_types().count(config_type_name)) {
+      std::stringstream msg;
+      msg << "Unrecognized config type: " << config_type_name;
+      throw std::runtime_error(msg.str());
+    }
+    return m_properties[config_type_name];
   }
 
 
@@ -419,6 +407,51 @@ namespace CASM {
   }
 
 
+  // ** Enumerators **
+
+  EnumeratorHandler &ProjectSettings::enumerator_handler() {
+    if(!m_enumerator_handler) {
+      m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
+    }
+    return *m_enumerator_handler;
+  }
+
+  const EnumeratorHandler &ProjectSettings::enumerator_handler() const {
+    return const_cast<ProjectSettings &>(*this).enumerator_handler();
+  }
+
+
+  // ** Database **
+
+  void ProjectSettings::set_db_name(std::string _db_name) {
+    m_db_name = _db_name;
+  }
+
+  std::string ProjectSettings::db_name() const {
+    return m_db_name;
+  }
+
+  // ** Queries **
+
+  template<typename DataObject>
+  QueryHandler<DataObject> &ProjectSettings::query_handler() {
+    auto res = m_query_handler.find(traits<DataObject>::name);
+    if(res == m_query_handler.end()) {
+      res = m_query_handler.insert(
+              std::make_pair(
+                traits<DataObject>::name,
+                notstd::cloneable_ptr<notstd::Cloneable>(new QueryHandler<DataObject>(*this))
+              )
+            ).first;
+    }
+    return static_cast<QueryHandler<DataObject>& >(*res->second);
+  }
+
+  template<typename DataObject>
+  const QueryHandler<DataObject> &ProjectSettings::query_handler() const {
+    return const_cast<ProjectSettings &>(*this).query_handler<DataObject>();
+  }
+
   // ** Clexulator names **
 
   std::string ProjectSettings::clexulator() const {
@@ -479,8 +512,9 @@ namespace CASM {
   // ** Change current settings **
 
   /// \brief const Access current properties
+  template<typename DataObject>
   const std::vector<std::string> &ProjectSettings::properties() const {
-    return m_properties;
+    return const_cast<ProjectSettings &>(*this).properties<DataObject>();
   }
 
 
@@ -629,7 +663,7 @@ namespace CASM {
 
     json["name"] = name();
     json["cluster_expansions"] = cluster_expansions();
-    json["curr_properties"] = properties();
+    json["properties"] = m_properties;
     json["default_clex"] = m_default_clex;
     json["nlist_weight_matrix"] = nlist_weight_matrix();
     json["nlist_sublat_indices"] = nlist_sublat_indices();
@@ -656,7 +690,8 @@ namespace CASM {
     json["crystallography_tol"].set_scientific();
     json["lin_alg_tol"] = lin_alg_tol();
     json["lin_alg_tol"].set_scientific();
-    json["query_alias"] = query_handler<Configuration>().aliases();
+
+    DB::for_each_type(AddAliasesToJSON(*this, json["query_alias"]));
 
     return json;
   }
@@ -762,4 +797,22 @@ namespace CASM {
   }
 
 }
+
+// explicit instantiations
+#include "casm/database/DatabaseTypeTraits.hh"
+
+#define INST_ProjectSettings_all(r, data, type) \
+template QueryHandler<type> &ProjectSettings::query_handler<type>(); \
+template const QueryHandler<type> &ProjectSettings::query_handler<type>() const;
+
+#define INST_ProjectSettings_config(r, data, type) \
+template std::vector<std::string> &ProjectSettings::properties<type>(); \
+template const std::vector<std::string> &ProjectSettings::properties<type>() const;
+
+namespace CASM {
+  BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_all, _, CASM_DB_TYPES)
+  BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_config, _, CASM_DB_CONFIG_TYPES)
+}
+
+
 

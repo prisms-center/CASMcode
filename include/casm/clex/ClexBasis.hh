@@ -5,6 +5,7 @@
 #include <vector>
 #include "casm/container/multivector.hh"
 #include "casm/basis_set/BasisSet.hh"
+#include "casm/CASM_global_enum.hh"
 
 namespace CASM {
 

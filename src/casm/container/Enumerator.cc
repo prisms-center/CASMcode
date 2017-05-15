@@ -1,8 +1,30 @@
 #include "casm/container/Enumerator_impl.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/SuperConfigEnum.hh"
 #include "casm/clex/ScelEnum.hh"
+#include "casm/app/enum.hh"
 
 namespace CASM {
+
+  /// \brief Use to construct an InterfaceMap
+  std::unique_ptr<InterfaceMap<Completer::EnumOption> > make_enumerator_map() {
+    return make_interface_map<Completer::EnumOption>();
+  }
+
+  /// \brief Use to construct an EnumeratorMap with standard Enumerators (not plugins)
+  std::unique_ptr<EnumeratorMap> make_standard_enumerator_map() {
+    std::unique_ptr<EnumeratorMap> emap = make_enumerator_map();
+
+    emap->insert(
+      EnumInterface<ScelEnum>(),
+      EnumInterface<ConfigEnumAllOccupations>(),
+      EnumInterface<SuperConfigEnum>()
+    );
+
+    return emap;
+  }
 
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
@@ -42,7 +64,7 @@ namespace CASM {
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnumProps
   ScelEnumProps make_enumerator_scel_enum_props(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 
@@ -55,7 +77,7 @@ namespace CASM {
   ///
   /// See SuperConfigEnum for example documentation
   std::unique_ptr<SupercellEnumerator<Lattice> > make_enumerator_superlat_enum(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 
@@ -76,7 +98,7 @@ namespace CASM {
   ///
   /// See ConfigEnumAllOccupations for example documentation
   std::unique_ptr<ScelEnum> make_enumerator_scel_enum(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 

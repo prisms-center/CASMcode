@@ -20,10 +20,6 @@ namespace CASM {
   template<typename DataObject>
   class Norm;
 
-  ///
-  template<bool IsConst>
-  class ConfigSelection;
-
   /**  \addtogroup ConfigIO
        @{
    */
@@ -63,8 +59,6 @@ namespace CASM {
 
   /// Contains ConfigIO classes and functions
   namespace ConfigIO {
-
-    class Selected;
 
     /// \brief Template alias for Configuration formatters of specified ValueType
     ///
@@ -232,6 +226,47 @@ namespace CASM {
     /// \brief In the future, AtomFrac will actually be atoms only
     typedef AtomFrac SpeciesFrac;
 
+    /// \brief Returns the site-specific magnetic moments
+    ///
+    /// Site-specific magnetic moments, should they exist
+    ///
+
+    class MagBase : public ConfigIO_impl::MolDependent {
+      /* class MagBase : public VectorXdAttribute<Configuration> { */
+
+    public:
+
+      static const std::string Name;
+
+      static const std::string Desc;
+
+
+      MagBase() : MolDependent(Name, Desc) {}
+
+      // --- Required implementations -----------
+
+      /// \brief Returns the mag sites
+      Eigen::VectorXd evaluate(const Configuration &config) const override;
+
+      /// \brief Clone using copy constructor
+      std::unique_ptr<MagBase> clone() const {
+        return std::unique_ptr<MagBase>(this->_clone());
+      }
+
+      // --- Specialized implementation -----------
+
+      /// \brief Returns true if the Configuration has relaxed_mag
+      bool validate(const Configuration &config) const override;
+
+    private:
+
+      /// \brief Clone using copy constructor
+      MagBase *_clone() const override {
+        return new MagBase(*this);
+      }
+
+    };
+
 
     /// \brief Returns correlation values
     ///
@@ -364,12 +399,7 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<Index> multiplicity();
 
-    ConfigIO::GenericConfigFormatter<std::string> subgroup_name();
-
-    template<bool IsConst>
-    ConfigIO::Selected selected_in(const ConfigSelection<IsConst> &_selection);
-
-    ConfigIO::Selected selected_in();
+    ConfigIO::GenericConfigFormatter<std::string> point_group_name();
 
     ConfigIO::GenericConfigFormatter<bool> is_calculated();
 
@@ -398,6 +428,10 @@ namespace CASM {
     ConfigIO::GenericConfigFormatter<double> lattice_deformation();
 
     ConfigIO::GenericConfigFormatter<double> volume_relaxation();
+
+    ConfigIO::GenericConfigFormatter<double> relaxed_magmom();
+
+    ConfigIO::GenericConfigFormatter<double> relaxed_magmom_per_species();
 
   }
 
