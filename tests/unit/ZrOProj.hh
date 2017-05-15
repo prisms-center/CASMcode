@@ -5,6 +5,7 @@
 
 #include "Proj.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/crystallography/Molecule.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/DatabaseDefs.hh"
 
@@ -23,9 +24,9 @@ namespace test {
     BasicStructure<Site> struc(Lattice(lat.transpose()));
     struc.title = "ZrO";
 
-    Molecule O = make_atom("O", struc.lattice());
-    Molecule Zr = make_atom("Zr", struc.lattice());
-    Molecule Va = make_vacancy(struc.lattice());
+    Molecule O = Molecule::make_atom("O");
+    Molecule Zr = Molecule::make_atom("Zr");
+    Molecule Va = Molecule::make_vacancy();
 
     struc.basis.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), FRAC), {Zr}));
     struc.basis.push_back(Site(Coordinate(Eigen::Vector3d(2. / 3., 1. / 3., 1. / 2.), struc.lattice(), FRAC), {Zr}));

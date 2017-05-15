@@ -5,6 +5,8 @@
 
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 

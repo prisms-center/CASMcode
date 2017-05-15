@@ -8,6 +8,8 @@
 #include <boost/filesystem/fstream.hpp>
 #include "ZrOProj.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
@@ -44,9 +46,10 @@ void prim1_read_test(BasicStructure<Site> &struc) {
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name, check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i][0].const_frac(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i][0].specie.name, check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name(), check_name[i]);
+    BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).specie().name(), check_name[i]);
   }
 
   // FCC motif
@@ -89,10 +92,10 @@ void prim2_read_test(BasicStructure<Site> &struc) {
       // occupants are Molecule with name "A", etc.
       // Molecule are composed of AtomPosition
       // An AtomPosition 'is' a Coordinate with a Specie
-      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].name, check_name[j]);
-      BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[j][0].const_frac(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j][0].specie.name, check_name[j]);
-
+      BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name(), check_name[i]);
+      BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+      BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).name(), check_name[i]);
+      BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).specie().name(), check_name[i]);
     }
     BOOST_CHECK_EQUAL(struc.basis[i].site_occupant().value(), check_value[i]);
   }
@@ -154,9 +157,10 @@ void pos1_read_test(BasicStructure<Site> &struc) {
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].name, check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[0][0].const_frac(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0][0].specie.name, check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name(), check_name[i]);
+    BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).specie().name(), check_name[i]);
   }
 
   // FCC structure

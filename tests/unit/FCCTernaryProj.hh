@@ -8,6 +8,8 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/DatabaseDefs.hh"
@@ -28,9 +30,9 @@ namespace test {
     BasicStructure<Site> struc {Lattice{lat}};
     struc.title = "FCC_ternary";
 
-    Molecule A = make_atom("A", struc.lattice());
-    Molecule B = make_atom("B", struc.lattice());
-    Molecule C = make_atom("C", struc.lattice());
+    Molecule A = Molecule::make_atom("A");
+    Molecule B = Molecule::make_atom("B");
+    Molecule C = Molecule::make_atom("C");
 
     struc.basis.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), {A, B, C}));
 
