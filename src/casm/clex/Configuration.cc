@@ -439,7 +439,7 @@ namespace CASM {
   }
 
   //*******************************************************************************
-  
+
   /// \brief Returns the point group that leaves the Configuration unchanged
   SymGroup Configuration::point_group() const {
     SymGroup sym_group;
@@ -454,8 +454,8 @@ namespace CASM {
           new_symop = false;
       }
       if(new_symop)
-         sym_group.push_back(config_factor_group[i].sym_op());
-      }
+        sym_group.push_back(config_factor_group[i].sym_op());
+    }
     return sym_group;
   }
 

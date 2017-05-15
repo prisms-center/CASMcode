@@ -75,7 +75,6 @@ namespace CASM {
     auto equal = [&](const Element & A, const Element & B) {
       return m_sym_compare.equal(A, B);
     };
-
     // generate equivalents
     std::set<Element, decltype(compare)> t_equiv(compare);
     for(const auto &op : g) {
@@ -90,15 +89,20 @@ namespace CASM {
 
     // use _set.begin()->first for prototype, use _set.begin()->second to generate equiv
     for(auto op_index : _set.begin()->second) {
-      m_element.push_back(prepare(copy_apply(g[op_index], _set.begin()->first)));
+      SymOp my_op;
+      for(auto &op : g) {
+        if(op.index() == op_index)
+          my_op = op;
+      }
+      m_element.push_back(prepare(copy_apply(my_op, _set.begin()->first)));
     }
-
     // generate equivalence map
     m_equivalence_map.resize(m_element.size());
     for(const auto &op : g) {
       Index i = find_index(m_element, prepare(copy_apply(op, m_element[0])), equal);
       m_equivalence_map[i].push_back(op);
     }
+
   }
 
   /// \brief Apply symmetry to Orbit

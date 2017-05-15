@@ -2,6 +2,8 @@
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/SuperConfigEnum.hh"
+#include "casm/kinetics/DiffusionTransformationEnum.hh"
+#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
 
 namespace CASM {
 
@@ -12,7 +14,9 @@ namespace CASM {
     m_enumerator.insert(
       EnumInterface<ScelEnum>(),
       EnumInterface<ConfigEnumAllOccupations>(),
-      EnumInterface<SuperConfigEnum>()
+      EnumInterface<SuperConfigEnum>(),
+      EnumInterface<Kinetics::DiffusionTransformationEnum>(),
+      EnumInterface<Kinetics::DiffTransConfigEnumPerturbations>()
     );
 
     load_enumerator_plugins(

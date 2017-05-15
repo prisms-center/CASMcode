@@ -162,7 +162,6 @@ namespace CASM {
     /// Construct by reading from main data file (json)
     Configuration(const jsonParser &json, Supercell &_supercell, Index _id);
 
-
     //********** DESTRUCTORS *********
 
     //********** MUTATORS  ***********
