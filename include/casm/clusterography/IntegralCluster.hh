@@ -189,6 +189,7 @@ namespace CASM {
         return obj;
       }
       std::sort(obj.begin(), obj.end());
+      m_integral_tau = -obj[0].unitcell();
       return obj - obj[0].unitcell();
     }
 
@@ -239,6 +240,7 @@ namespace CASM {
       }
       std::sort(obj.begin(), obj.end());
       auto trans = obj[0].unitcell() - m_prim_grid.within(obj[0]).unitcell();
+      m_integral_tau = -trans;
       return obj - trans;
     }
 

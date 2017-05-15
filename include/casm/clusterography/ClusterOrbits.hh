@@ -8,6 +8,7 @@
 
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/IntegralCluster.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
 
 namespace CASM {
 
@@ -120,6 +121,15 @@ namespace CASM {
     OutputIterator result,
     double xtal_tol);
 
+  /// \brief Output the neighborhood of DiffusionTransformation within max_radius of any sites in the transformation
+  template<typename CoordType, typename OutputIterator>
+  OutputIterator neighborhood(
+    const Kinetics::DiffusionTransformation &diff_trans,
+    double max_radius,
+    std::function<bool (CoordType)> site_filter,
+    OutputIterator result,
+    double xtal_tol);
+
 
   /* -- Cluster Orbit generating function declarations ------------------------------------- */
 
@@ -171,6 +181,20 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status);
 
+  /// \brief Generate Orbit<IntegralCluster> around a DiffusionTransformation
+  /// by specifying max cluster length for each branch and cut off radius for local environment
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_local_orbits(
+    const Kinetics::DiffusionTransformation &diff_trans,
+    const std::vector<double> &cutoff_radius,
+    const std::vector<double> &max_length,
+    const std::vector<IntegralCluster> &custom_generators,
+    const std::function<bool (Site)> &site_filter,
+    double xtal_tol,
+    OrbitOutputIterator result,
+    std::ostream &status,
+    const SymGroup &generating_group = SymGroup());
+
   /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_orbits(
@@ -180,6 +204,18 @@ namespace CASM {
     double xtal_tol,
     OrbitOutputIterator result,
     std::ostream &status);
+
+  /// \brief Generate Orbit<IntegralCluster> around a DiffusionTransformation from
+  /// bspecs.json-type JSON input file
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_local_orbits(
+    const Kinetics::DiffusionTransformation &diff_trans,
+    const jsonParser &bspecs,
+    const std::function<bool (Site)> &site_filter,
+    double xtal_tol,
+    OrbitOutputIterator result,
+    std::ostream &status,
+    const SymGroup &generating_group = SymGroup());
 
 
   /* -- Orbit access/usage function declarations ------------------------------------- */

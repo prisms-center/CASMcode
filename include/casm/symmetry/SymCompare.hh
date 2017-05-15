@@ -5,12 +5,18 @@
 #include <memory>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymOp.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
   /* -- SymCompare Declarations --------------------------- */
 
   class SymOp;
+  class UnitCell;
+  class Coordinate;
 
   /// \brief CRTP base class for implementing element and orbit comparison
   ///
@@ -116,6 +122,17 @@ namespace CASM {
       return *this;
     }
 
+    /// \brief Access integral adjustment shift due to varying symmetry of object vs. generating group
+    const UnitCell integral_tau() const {
+      return m_integral_tau;
+    }
+
+    /// \brief Access SymOp adjustment due to varying symmetry of object vs. generating group
+    const SymOp translation(const Structure &prim) const {
+      Coordinate tau(m_integral_tau.cast<double>(), prim.lattice(), FRAC);
+      return SymOp::translation(tau.const_cart());
+    }
+
   protected:
 
     SymCompare() {}
@@ -149,6 +166,8 @@ namespace CASM {
       // next lexicographical_compare of Element in A and B
       return this->compare(A, B);
     }
+
+    mutable UnitCell m_integral_tau = Eigen::Vector3l::Zero(3);
   };
 
   /// \brief Template class to be specialized for comparisons with aperiodic symmetry
@@ -166,7 +185,9 @@ namespace CASM {
   class ScelPeriodicSymCompare {};
 
   /// \brief Return subgroup that leaves an element unchanged
-  ///
+  /// THIS FUNCTION CURRENTLY ONLY WORKS FOR LOCAL OBJECTS.
+  /// if the element has supercell periodicity with a group
+  /// that has prim periodicity this will not be correct.
   /// All SymOp such that:
   /// \code
   /// Element e = sym_compare.prepare(generating_element);
@@ -178,10 +199,11 @@ namespace CASM {
                               const SymGroup &generating_grp,
                               const SymCompareType &sym_compare) {
     Element e(sym_compare.prepare(element));
-    SymGroup result;
+    SymGroup result = generating_grp;
+    result.clear();
     for(const auto &op : generating_grp) {
       if(sym_compare.equal(e, sym_compare.prepare(copy_apply(op, e)))) {
-        result.push_back(op);
+        result.push_back(sym_compare.translation(element.prim())*op);
       }
     }
     return result;
