@@ -37,6 +37,14 @@ namespace CASM {
     typedef std::tuple<BOOST_PP_SEQ_ENUM(CASM_DB_CONFIG_TYPES)> ConfigTypeTuple;
 
 
+    // -- SFINAE helper --
+
+    template<typename T>
+    using IfConfigType = std::enable_if<CASM_TMP::has_type<T, ConfigTypeTuple>::value, T>;
+
+    template<typename T>
+    using IfNotConfigType = std::enable_if < !CASM_TMP::has_type<T, ConfigTypeTuple>::value, T >;
+
     // -- List of Database DataObject and ConfigType --
 
     template<typename F>
