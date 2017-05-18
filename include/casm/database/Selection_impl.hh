@@ -11,6 +11,36 @@ namespace CASM {
 
   namespace DB {
 
+    namespace {
+
+      // Initialization for "CALCULATED" depends on type:
+
+      /// Use SFINAE to implement if ObjType is a calculable config type:
+      ///
+      /// - Set selected to value of 'is_calculated(const ObjType&)'
+      template<typename ObjType, typename IfConfigType<ObjType>::type * = nullptr>
+      void init_calculated(
+        typename Selection<ObjType>::map_type &m_data,
+        Database<ObjType> &db) {
+        for(const auto &obj : db) {
+          m_data.insert(std::make_pair(obj.name(), is_calculated(obj)));
+        }
+      }
+
+      /// Use SFINAE to implement if ObjType is not a calculable config type
+      ///
+      /// - throw runtime_error
+      template<typename ObjType, typename IfNotConfigType<ObjType>::type * = nullptr>
+      void init_calculated(
+        typename Selection<ObjType>::map_type &m_data,
+        Database<ObjType> &db) {
+        std::stringstream msg;
+        msg << "Selection \"CALCULATED\" is not allowed for type: " << traits<ObjType>::short_name;
+        throw std::runtime_error(msg.str());
+      }
+    }
+
+
     /// boost::iterator_facade implementation
     template<typename ObjType, typename BaseIterator>
     const ObjType &SelectionIterator<ObjType, BaseIterator>::dereference() const {
@@ -42,9 +72,7 @@ namespace CASM {
           }
         }
       }
-      else if(selection_path == "NONE" ||
-              ((config_types().find(traits<ObjType>::name) == config_types().end())
-               && (selection_path == "CALCULATED"))) {
+      else if(selection_path == "NONE") {
         for(const auto &obj : db()) {
           m_data.insert(std::make_pair(obj.name(), false));
         }
@@ -57,10 +85,8 @@ namespace CASM {
           m_data.insert(std::make_pair(obj.name(), true));
         }
       }
-      else if(selection_path == "CALCULATED" && (config_types().find(traits<ObjType>::name) != config_types().end())) {
-        for(const auto &obj : db()) {
-          m_data.insert(std::make_pair(obj.name(), is_calculated(obj)));
-        }
+      else if(selection_path == "CALCULATED") {
+        init_calculated(m_data, db());
       }
       else {
         if(!fs::exists(selection_path)) {

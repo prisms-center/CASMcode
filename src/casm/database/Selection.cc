@@ -10,6 +10,6 @@ template class Selection<type>; \
 
 namespace CASM {
   namespace DB {
-    BOOST_PP_SEQ_FOR_EACH(INST_Selection, _, CASM_DB_CONFIG_TYPES)
+    BOOST_PP_SEQ_FOR_EACH(INST_Selection, _, CASM_DB_TYPES)
   }
 }

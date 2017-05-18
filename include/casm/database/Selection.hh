@@ -122,8 +122,9 @@ namespace CASM {
         }
       };
 
-      typedef std::map<std::string, bool>::iterator base_iterator;
-      typedef std::map<std::string, bool>::const_iterator base_const_iterator;
+      typedef std::map<std::string, bool, Compare> map_type;
+      typedef typename map_type::iterator base_iterator;
+      typedef typename map_type::const_iterator base_const_iterator;
       typedef SelectionIterator<ObjType, base_iterator> iterator;
       typedef SelectionIterator<ObjType, base_const_iterator> const_iterator;
       typedef Index size_type;
@@ -170,11 +171,11 @@ namespace CASM {
       }
 
 
-      std::map<std::string, bool, Compare> &data() {
+      map_type &data() {
         return m_data;
       }
 
-      const std::map<std::string, bool, Compare> &data() const {
+      const map_type &data() const {
         return m_data;
       }
 
@@ -233,7 +234,7 @@ namespace CASM {
 
       // first will only be 'name', no matter whether 'name' or 'alias' is
       // written in the selection file
-      std::map<std::string, bool, Compare> m_data;
+      map_type m_data;
 
       std::vector<std::string> m_col_headers;
       std::string m_name;
