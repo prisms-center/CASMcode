@@ -5,6 +5,9 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include "casm/symmetry/Orbit.hh"
 #include "casm/misc/algorithm.hh"
+#include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
+#include "casm/database/Named.hh"
+#include "casm/database/Database.hh"
 
 namespace CASM {
 
@@ -176,6 +179,12 @@ namespace CASM {
     return res;
   }
 
+
+
+  template<>
+  inline std::string Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare>::_generate_name() const {
+    return traits<PrimPeriodicDiffTransOrbit>::orbit_type_name + "." + id();
+  };
 
 }
 

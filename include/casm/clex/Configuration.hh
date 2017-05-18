@@ -49,14 +49,14 @@ namespace CASM {
     //********* CONSTRUCTORS *********
 
     /// Construct a default Configuration
-    Configuration(const Supercell &_supercell,
-                  const jsonParser &source = jsonParser(),
-                  const ConfigDoF &_dof = ConfigDoF());
+    explicit Configuration(const Supercell &_supercell,
+                           const jsonParser &source = jsonParser(),
+                           const ConfigDoF &_dof = ConfigDoF());
 
     /// Construct a default Configuration that owns its Supercell
-    Configuration(const std::shared_ptr<Supercell> &_supercell,
-                  const jsonParser &source = jsonParser(),
-                  const ConfigDoF &_dof = ConfigDoF());
+    explicit Configuration(const std::shared_ptr<Supercell> &_supercell,
+                           const jsonParser &source = jsonParser(),
+                           const ConfigDoF &_dof = ConfigDoF());
 
 
     /// Construct a Configuration from JSON data

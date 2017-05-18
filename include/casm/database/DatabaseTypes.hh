@@ -8,7 +8,7 @@
 #include "casm/misc/CASM_TMP.hh"
 
 // 1) add Database types here
-#define CASM_DB_NONCONFIG_TYPES (Supercell)
+#define CASM_DB_NONCONFIG_TYPES (PrimPeriodicDiffTransOrbit) (Supercell)
 #define CASM_DB_CONFIG_TYPES (Configuration)
 
 // 2) add #include locations as appropriate to:

@@ -407,6 +407,163 @@ namespace CASM {
       return std::make_pair(_iterator(result.first), result.second);
     }
 
+
+    /// PPDTO stuff starts here
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::jsonDatabase(const PrimClex &_primclex) :
+      Database<PrimPeriodicDiffTransOrbit>(_primclex),
+      m_is_open(false) {}
+
+
+    jsonDatabase<PrimPeriodicDiffTransOrbit> &jsonDatabase<PrimPeriodicDiffTransOrbit>::open() {
+
+      if(m_is_open) {
+        return *this;
+      }
+
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      if(fs::exists(dir.obj_list<PrimPeriodicDiffTransOrbit>())) {
+        jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+        jsonParser json(dir.obj_list<PrimPeriodicDiffTransOrbit>());
+
+        // check json version
+        if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
+          throw std::runtime_error(
+            std::string("Error jsonDB version mismatch: found: ") +
+            json["version"].get<std::string>() +
+            " expected: " +
+            traits<jsonDB>::version);
+        }
+
+        if(!json.is_obj() || !json.contains("prototypes")) {
+          throw std::runtime_error(
+            std::string("Error invalid format: ") + dir.obj_list<PrimPeriodicDiffTransOrbit>().string());
+        }
+
+        auto it = json["prototypes"].begin();
+        auto end = json["protoypes"].end();
+        for(; it != end; ++it) {
+          Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(*it, primclex().prim());
+          Kinetics::PrimPeriodicDiffTransSymCompare symcompare(primclex().crystallography_tol());
+          auto result = m_orbit_list.emplace(trans, primclex().prim().factor_group(), symcompare);
+          this->set_id(*(result.first), it.name());
+          _on_insert_or_emplace(result, false);
+        }
+
+        //read next orbit id
+        from_json(m_orbit_id, json["orbit_id"]);
+
+        this->read_aliases();
+      }
+      m_is_open = true;
+      return *this;
+    }
+
+    void jsonDatabase<PrimPeriodicDiffTransOrbit>::commit() {
+
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      fs::path orbit_list_path = dir.obj_list<PrimPeriodicDiffTransOrbit>();
+
+      jsonParser json;
+
+      if(fs::exists(orbit_list_path)) {
+        json.read(orbit_list_path);
+      }
+      else {
+        json.put_obj();
+      }
+      json["version"] = traits<jsonDB>::version;
+
+      for(const auto &orbit : m_orbit_list) {
+        to_json(orbit.prototype(), json["prototypes"][orbit.id()]);
+      }
+
+      json["orbit_id"] = m_orbit_id;
+
+      SafeOfstream file;
+      fs::create_directories(orbit_list_path.parent_path());
+      file.open(orbit_list_path);
+      //json.print(file.ofstream());
+      int indent = 0;
+      int prec = 12;
+      json_spirit::write_stream((json_spirit::mValue &) json, file.ofstream(), indent, prec),
+                  file.close();
+
+      this->write_aliases();
+    }
+
+    void jsonDatabase<PrimPeriodicDiffTransOrbit>::close() {
+      m_name_to_orbit.clear();
+      m_orbit_list.clear();
+      m_is_open = false;
+    }
+
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<PrimPeriodicDiffTransOrbit>::begin() const {
+      return _iterator(m_orbit_list.begin());
+    }
+
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<PrimPeriodicDiffTransOrbit>::end() const {
+      return _iterator(m_orbit_list.end());
+    }
+
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::size_type jsonDatabase<PrimPeriodicDiffTransOrbit>::size() const {
+      return m_orbit_list.size();
+    }
+
+    std::pair<jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<PrimPeriodicDiffTransOrbit>::insert(const PrimPeriodicDiffTransOrbit &orbit) {
+
+      auto result = m_orbit_list.insert(orbit);
+
+      return _on_insert_or_emplace(result, true);
+    }
+
+    std::pair<jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<PrimPeriodicDiffTransOrbit>::insert(const PrimPeriodicDiffTransOrbit &&orbit) {
+
+      auto result = m_orbit_list.insert(std::move(orbit));
+
+      return _on_insert_or_emplace(result, true);
+    }
+
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<PrimPeriodicDiffTransOrbit>::erase(iterator pos) {
+
+      // get m_orbit_list iterator
+      auto base_it = static_cast<db_set_iterator *>(pos.get())->base();
+
+      // erase name & alias
+      m_name_to_orbit.erase(base_it->name());
+
+      // erase PrimPeriodicDiffTransOrbit
+      return _iterator(m_orbit_list.erase(base_it));
+    }
+
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<PrimPeriodicDiffTransOrbit>::find(const std::string &name_or_alias) const {
+      auto it = m_name_to_orbit.find(this->name(name_or_alias));
+      if(it == m_name_to_orbit.end()) {
+        return _iterator(m_orbit_list.end());
+      }
+      return _iterator(it->second);
+    }
+
+    /// Update m_name_to_orbit after performing an insert or emplace
+    std::pair<jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator, bool>
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
+
+      if(result.second) {
+
+        const PrimPeriodicDiffTransOrbit &orbit = *result.first;
+
+        if(is_new) {
+          // set the orbit id, and increment
+          this->set_id(orbit, m_orbit_id++);
+        }
+
+        // update name -> orbit
+        m_name_to_orbit.insert(std::make_pair(orbit.name(), result.first));
+
+      }
+
+      return std::make_pair(_iterator(result.first), result.second);
+    }
+
   }
 }
 

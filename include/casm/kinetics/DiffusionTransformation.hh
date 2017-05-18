@@ -409,10 +409,8 @@ namespace CASM {
     /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
     std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans);
 
-    typedef Orbit<DiffusionTransformation, PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbit;
-
     /// \brief Return a standardized name for this diffusion transformation orbit
-    std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit);
+    //std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit);
 
     // \brief Returns the distance from uccoord to the closest point on a linearly
     /// interpolated diffusion path. (Could be an end point)
@@ -428,6 +426,8 @@ namespace CASM {
     double min_dist_to_path(const DiffusionTransformation &diff_trans);
 
   }
+
+  typedef Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbit;
 
   /// \brief Write DiffusionTransformation to JSON object
   jsonParser &to_json(const Kinetics::DiffusionTransformation &trans, jsonParser &json);

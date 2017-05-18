@@ -482,7 +482,7 @@ namespace CASM {
       return t;
     }
     */
-
+    /*
     std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit) {
       Structure prim(orbit.prototype().specie_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
@@ -525,7 +525,7 @@ namespace CASM {
                                  [it->to.uccoord.unitcell(2)] + it->to.uccoord.sublat() * nlist.size()) + "-";
       }
       return result;
-    }
+    }*/
 
     /// \brief Returns the distance from uccoord to the closest point on a linearly
     /// interpolated diffusion path. (Could be an end point)

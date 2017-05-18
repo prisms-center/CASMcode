@@ -1,9 +1,21 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffTransOrbitQuery.hh"
+#include "casm/kinetics/PrimPeriodicDiffTransOrbitIO.hh"
 
 namespace CASM {
 
-  namespace DiffTransOrbitIO {
+  template class BaseDatumFormatter<PrimPeriodicDiffTransOrbit>;
+  template class DataFormatterOperator<bool, std::string, PrimPeriodicDiffTransOrbit>;
+  template class DataFormatterOperator<bool, bool, PrimPeriodicDiffTransOrbit>;
+  template class DataFormatterOperator<bool, double, PrimPeriodicDiffTransOrbit>;
+  template class DataFormatterOperator<double, double, PrimPeriodicDiffTransOrbit>;
+  template class DataFormatterOperator<Index, double, PrimPeriodicDiffTransOrbit>;
+  template class DataFormatter<PrimPeriodicDiffTransOrbit>;
+  //template std::string DataFormatterOperator<double, double, PrimPeriodicDiffTransOrbit >::short_header<std::string>(PrimPeriodicDiffTransOrbit const&) const;
+  //template class DataFormatterOperator<double, double, PrimPeriodicDiffTransOrbit >::parse_args(std::string const&);
+  template class DataFormatterDictionary<PrimPeriodicDiffTransOrbit>;
+
+
+  namespace PrimPeriodicDiffTransOrbitIO {
 
     // Contains implementations
 
@@ -17,7 +29,7 @@ namespace CASM {
 
     /// \brief Returns true if all of the species in m_search_list are in the prototype
     ///  of the orbit
-    bool Contains::evaluate(const Kinetics::PrimPeriodicDiffTransOrbit &orbit) const {
+    bool Contains::evaluate(const PrimPeriodicDiffTransOrbit &orbit) const {
       auto speciemap = orbit.prototype().specie_count();
       for(auto it = this->m_search_list.begin(); it != this->m_search_list.end(); it++) {
         for(auto it2 = speciemap.begin(); it2 != speciemap.end(); it2++) {
@@ -42,7 +54,7 @@ namespace CASM {
     GenericDiffTransOrbitFormatter<Index> multiplicity() {
       return GenericDiffTransOrbitFormatter<Index>("multiplicity",
                                                    "Symmetric multiplicity of the diffusion transformation, excluding translational equivalents.",
-      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)->Index {
+      [](const PrimPeriodicDiffTransOrbit & orbit)->Index {
         return orbit.size();
       });
     }
@@ -50,7 +62,7 @@ namespace CASM {
     GenericDiffTransOrbitFormatter<Index> cluster_size() {
       return GenericDiffTransOrbitFormatter<Index>("cluster_size",
                                                    "Size of the cluster corresponding to the diffusion transformation.",
-      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)->Index {
+      [](const PrimPeriodicDiffTransOrbit & orbit)->Index {
         return orbit.prototype().size();
       });
     }
@@ -58,7 +70,7 @@ namespace CASM {
     GenericDiffTransOrbitFormatter<double> min_length() {
       return GenericDiffTransOrbitFormatter<double>("min_length",
                                                     "Returns the minimum length between two sites in the cluser of the diffusion transformation",
-      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> double {
+      [](const PrimPeriodicDiffTransOrbit & orbit)-> double {
         return orbit.prototype().min_length();
       });
     }
@@ -66,7 +78,7 @@ namespace CASM {
     GenericDiffTransOrbitFormatter<double> max_length() {
       return GenericDiffTransOrbitFormatter<double>("max_length",
                                                     "Returns the maximum length between two sites in the cluser of the diffusion transformation",
-      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> double {
+      [](const PrimPeriodicDiffTransOrbit & orbit)-> double {
         return orbit.prototype().max_length();
       });
     }
@@ -74,7 +86,7 @@ namespace CASM {
     GenericDiffTransOrbitFormatter<double> min_dist_to_path() {
       return GenericDiffTransOrbitFormatter<double>("min_dist_to_path",
                                                     "Returns the distance of the closest atom to the diffusion transformation",
-      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> double {
+      [](const PrimPeriodicDiffTransOrbit & orbit)-> double {
         return min_dist_to_path(orbit.prototype());
       });
     }
@@ -82,7 +94,7 @@ namespace CASM {
     GenericDiffTransOrbitFormatter<std::string> species_list() {
       return GenericDiffTransOrbitFormatter<std::string>("species_list",
                                                          "Returns the species that move in this diffusion transformation",
-      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> std::string {
+      [](const PrimPeriodicDiffTransOrbit & orbit)-> std::string {
 
         auto speciemap = orbit.prototype().specie_count();
         std::string result = "";
@@ -98,18 +110,18 @@ namespace CASM {
     GenericDiffTransOrbitFormatter<std::string> diff_trans_orbitname() {
       return GenericDiffTransOrbitFormatter<std::string>("diff_trans_orbitname",
                                                          "Returns the name of the diffusion transformation orbit",
-      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> std::string {
-        return orbit_name(orbit);
+      [](const PrimPeriodicDiffTransOrbit & orbit)-> std::string {
+        return orbit.name();
       });
     }
 
     GenericDiffTransOrbitFormatter<double> min_activation_barrier() {
       return GenericDiffTransOrbitFormatter<double>("min_activation_barrier",
                                                     "Returns the locally cluster expanded activation barrier associated with this diffusion transformation",
-      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> double {
+      [](const PrimPeriodicDiffTransOrbit & orbit)-> double {
         //TEMPORARY FUNCTION UNTIL ACTIVATION BARRIER CAN BE CALCULATED
         return min_dist_to_path(orbit.prototype());
-      }, [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> bool {
+      }, [](const PrimPeriodicDiffTransOrbit & orbit)-> bool {
         return false;
       });
     }
@@ -118,10 +130,10 @@ namespace CASM {
 
 
   template<>
-  StringAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> make_string_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>() {
+  StringAttributeDictionary<PrimPeriodicDiffTransOrbit> make_string_dictionary<PrimPeriodicDiffTransOrbit>() {
 
-    using namespace DiffTransOrbitIO;
-    StringAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> dict;
+    using namespace PrimPeriodicDiffTransOrbitIO;
+    StringAttributeDictionary<PrimPeriodicDiffTransOrbit> dict;
 
     dict.insert(
       species_list(),
@@ -132,10 +144,10 @@ namespace CASM {
   }
 
   template<>
-  BooleanAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> make_boolean_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>() {
+  BooleanAttributeDictionary<PrimPeriodicDiffTransOrbit> make_boolean_dictionary<PrimPeriodicDiffTransOrbit>() {
 
-    using namespace DiffTransOrbitIO;
-    BooleanAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> dict;
+    using namespace PrimPeriodicDiffTransOrbitIO;
+    BooleanAttributeDictionary<PrimPeriodicDiffTransOrbit> dict;
 
     dict.insert(
       Contains()
@@ -145,10 +157,10 @@ namespace CASM {
   }
 
   template<>
-  IntegerAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> make_integer_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>() {
+  IntegerAttributeDictionary<PrimPeriodicDiffTransOrbit> make_integer_dictionary<PrimPeriodicDiffTransOrbit>() {
 
-    using namespace DiffTransOrbitIO;
-    IntegerAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> dict;
+    using namespace PrimPeriodicDiffTransOrbitIO;
+    IntegerAttributeDictionary<PrimPeriodicDiffTransOrbit> dict;
 
     dict.insert(
       multiplicity(),
@@ -159,10 +171,10 @@ namespace CASM {
   }
 
   template<>
-  ScalarAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> make_scalar_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>() {
+  ScalarAttributeDictionary<PrimPeriodicDiffTransOrbit> make_scalar_dictionary<PrimPeriodicDiffTransOrbit>() {
 
-    using namespace DiffTransOrbitIO;
-    ScalarAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> dict;
+    using namespace PrimPeriodicDiffTransOrbitIO;
+    ScalarAttributeDictionary<PrimPeriodicDiffTransOrbit> dict;
 
     dict.insert(
       min_length(),

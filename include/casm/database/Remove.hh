@@ -62,7 +62,7 @@ namespace CASM {
       fs::path m_report_dir;
     };
 
-    // To be specialized for ConfigType (default implemenation exists for ConfigTypes)
+    // To be specialized for ConfigType (default implementation exists for ConfigTypes)
     template<typename ConfigType>
     class Remove : public RemoveT<ConfigType> {
     public:

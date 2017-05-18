@@ -8,6 +8,10 @@
 #include "casm/misc/Comparisons.hh"
 #include "casm/container/multivector.hh"
 #include "casm/symmetry/SymCompare.hh"
+#include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
+#include "casm/database/Named.hh"
+#include "casm/database/Database.hh"
+#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
 
@@ -26,7 +30,8 @@ namespace CASM {
   /// \ingroup Clusterography
   ///
   template<typename _Element, typename _SymCompareType>
-  class Orbit : public Comparisons<Orbit<_Element, _SymCompareType> > {
+  class Orbit : public Comparisons<Orbit<_Element, _SymCompareType> >,
+    public DB::Indexed<Orbit<_Element, _SymCompareType>> {
 
   public:
 
@@ -131,7 +136,17 @@ namespace CASM {
       return m_sym_compare.inter_orbit_compare(prototype(), B.prototype());
     }
 
+    /// \brief Primclex work around
+    PrimClex &primclex() const {
+      return PrimClex::PrimClex(prototype().prim());
+    }
+
   private:
+
+    friend DB::Named<Orbit<_Element, _SymCompareType>>;
+    inline std::string _generate_name() const {
+      return "";
+    };
 
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry rep
     template<typename SymOpIterator>

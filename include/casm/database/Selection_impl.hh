@@ -5,6 +5,7 @@
 #include "casm/casm_io/stream_io/container.hh"
 #include "casm/database/DatabaseDefs.hh"
 #include "casm/database/Selected.hh"
+#include "casm/database/DatabaseTypes.hh"
 
 namespace CASM {
 
@@ -41,7 +42,9 @@ namespace CASM {
           }
         }
       }
-      else if(selection_path == "NONE") {
+      else if(selection_path == "NONE" ||
+              ((config_types().find(traits<ObjType>::name) == config_types().end())
+               && (selection_path == "CALCULATED"))) {
         for(const auto &obj : db()) {
           m_data.insert(std::make_pair(obj.name(), false));
         }
@@ -54,7 +57,7 @@ namespace CASM {
           m_data.insert(std::make_pair(obj.name(), true));
         }
       }
-      else if(selection_path == "CALCULATED") {
+      else if(selection_path == "CALCULATED" && (config_types().find(traits<ObjType>::name) != config_types().end())) {
         for(const auto &obj : db()) {
           m_data.insert(std::make_pair(obj.name(), is_calculated(obj)));
         }
@@ -62,7 +65,7 @@ namespace CASM {
       else {
         if(!fs::exists(selection_path)) {
           std::stringstream ss;
-          ss << "ERROR in parsing configuation selection name. \n"
+          ss << "ERROR in parsing configuration selection name. \n"
              << "  Expected <filename>, 'ALL', 'NONE', 'EMPTY', 'CALCULATED', or 'MASTER' <--default \n"
              << "  Received: '" << selection_path << "'\n"
              << "  No file named '" << selection_path << "'.";
