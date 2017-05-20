@@ -81,4 +81,9 @@ namespace CASM {
 
   template<>
   VectorXdAttributeDictionary<PrimPeriodicDiffTransOrbit> make_vectorxd_dictionary<PrimPeriodicDiffTransOrbit>();
+
+  template<>
+  VectorXiAttributeDictionary<PrimPeriodicDiffTransOrbit> make_vectorxi_dictionary<PrimPeriodicDiffTransOrbit>();
+
+
 }

@@ -411,7 +411,7 @@ namespace CASM {
     /// PPDTO stuff starts here
     jsonDatabase<PrimPeriodicDiffTransOrbit>::jsonDatabase(const PrimClex &_primclex) :
       Database<PrimPeriodicDiffTransOrbit>(_primclex),
-      m_is_open(false) {}
+      m_is_open(false), m_orbit_id(0) {}
 
 
     jsonDatabase<PrimPeriodicDiffTransOrbit> &jsonDatabase<PrimPeriodicDiffTransOrbit>::open() {

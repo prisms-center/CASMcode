@@ -8,6 +8,7 @@
 // need to add specializations here
 #include "casm/clex/RemoveSupercell.hh"
 #include "casm/database/ConfigImport.hh"
+#include "casm/kinetics/RemovePrimPeriodicDiffTransOrbit.hh"
 
 namespace CASM {
 

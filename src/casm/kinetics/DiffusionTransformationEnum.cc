@@ -4,6 +4,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
+#include "casm/database/DiffTransOrbitDatabase.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_DiffusionTransformationEnum_interface() {
@@ -134,54 +135,64 @@ namespace CASM {
         std::cerr << "Core dump will occur because cannot find proper input" << std::endl;
       }
 
+      std::vector<std::string> require;
+      std::vector<std::string> exclude;
+      if(_kwargs.get_if(kwargs, "require")) {
+        for(auto it = _kwargs["require"].begin(); it != _kwargs["require"].end(); ++it) {
+          require.push_back(from_json<std::string>(*it));
+        }
+      }
+      if(_kwargs.get_if(kwargs, "exclude")) {
+        for(auto it = _kwargs["exclude"].begin(); it != _kwargs["exclude"].end(); ++it) {
+          exclude.push_back(from_json<std::string>(*it));
+        }
+      }
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-      std::vector<std::string> filter_expr =      make_enumerator_filter_expr(_kwargs, enum_opt);
+      std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
       auto end = make_prim_periodic_orbits(
                    primclex.prim(), _kwargs["bspecs"], alloy_sites_filter, primclex.crystallography_tol(), std::back_inserter(orbits), primclex.log());
+
+      Log &log = primclex.log();
+      auto &db_orbits = primclex.db<PrimPeriodicDiffTransOrbit>();
+
+      Index Ninit = db_orbits.size();
+      log << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
+
+      log.begin(enumerator_name);
+
 
       std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
       auto end2 = make_prim_periodic_diff_trans_orbits(
                     orbits.begin(), orbits.end(), primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
 
-      if(_kwargs.get_if(kwargs, "require")) {
-        std::vector<std::string> require;
-        for(auto it = _kwargs["require"].begin(); it != _kwargs["require"].end(); ++it) {
-          require.push_back(from_json<std::string>(*it));
-        }
-        for(auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); ++it) {
-          auto speciemap = it->prototype().specie_count();
-          for(auto it2 = speciemap.begin(); it2 != speciemap.end(); ++it2) {
-            if(std::find(require.begin(), require.end(), it2->first.name) != require.end() && it2->second == 0) {
-              diff_trans_orbits.erase(it);
-              --it;
-            }
+      for(auto &diff_trans_orbit : diff_trans_orbits) {
+        auto speciemap = diff_trans_orbit.prototype().specie_count();
+        auto it = speciemap.begin();
+        for(; it != speciemap.end(); ++it) {
+          if(std::find(require.begin(), require.end(), it->first.name) != require.end() && it->second == 0) {
+            break;
+          }
+          if(std::find(exclude.begin(), exclude.end(), it->first.name) != exclude.end() && it->second != 0) {
+            break;
           }
         }
-      }
-      if(_kwargs.get_if(kwargs, "exclude")) {
-        std::vector<std::string> require;
-        for(auto it = _kwargs["exclude"].begin(); it != _kwargs["exclude"].end(); ++it) {
-          require.push_back(from_json<std::string>(*it));
-        }
-        for(auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); ++it) {
-          auto speciemap = it->prototype().specie_count();
-          for(auto it2 = speciemap.begin(); it2 != speciemap.end(); ++it2) {
-            if(std::find(require.begin(), require.end(), it2->first.name) != require.end() && it2->second != 0) {
-              diff_trans_orbits.erase(it);
-              --it;
-            }
-          }
+        if(it == speciemap.end()) {
+          //insert current into database
+          primclex.db<PrimPeriodicDiffTransOrbit>().insert(diff_trans_orbit);
         }
       }
-      /*PrototypePrinter<Kinetics::DiffusionTransformation> printer;
-      print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
 
-      for(auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); it++) {
-        std::cout << orbit_name(*it) << std::endl;
-        std::cout << min_dist_to_path(it->prototype()) << std::endl;
-        std::cout << path_nearest_neighbor(it->prototype()) << std::endl;
-      }*/
+      log << "  DONE." << std::endl << std::endl;
+
+      Index Nfinal = db_orbits.size();
+
+      log << "# new diffusion transformations: " << Nfinal - Ninit << "\n";
+      log << "# diffusion transformations in this project: " << Nfinal << "\n" << std::endl;
+
+      log << "Writing diffusion transformation database..." << std::endl;
+      db_orbits.commit();
+      log << "  DONE" << std::endl;
 
       return 0;
     }

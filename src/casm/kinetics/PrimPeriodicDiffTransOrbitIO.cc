@@ -1,5 +1,7 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/PrimPeriodicDiffTransOrbitIO.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/DataFormatterTools_impl.hh"
 
 namespace CASM {
 
@@ -184,4 +186,16 @@ namespace CASM {
 
     return dict;
   }
+
+  template<>
+  VectorXdAttributeDictionary<PrimPeriodicDiffTransOrbit> make_vectorxd_dictionary<PrimPeriodicDiffTransOrbit>() {
+    return VectorXdAttributeDictionary<PrimPeriodicDiffTransOrbit>();
+  }
+
+
+  template<>
+  VectorXiAttributeDictionary<PrimPeriodicDiffTransOrbit> make_vectorxi_dictionary<PrimPeriodicDiffTransOrbit>() {
+    return VectorXiAttributeDictionary<PrimPeriodicDiffTransOrbit>();
+  }
+
 }
