@@ -2,7 +2,7 @@
 #define CASM_DiffTransConfigInterpolation
 
 #include "casm/container/Counter.hh"
-#include "casm/container/InputEnumerator.hh"
+#include "casm/container/RandomAccessEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/clex/ConfigEnumInterpolation.hh"
@@ -24,7 +24,7 @@ namespace CASM {
 
     /// \brief Enumerate over all possible occupations in a particular Supercell
     ///
-    class DiffTransConfigInterpolation : public InputEnumeratorBase<Configuration> {
+    class DiffTransConfigInterpolation : public RandomAccessEnumeratorBase<Configuration> {
 
       // -- Required members -------------------
 
@@ -49,8 +49,8 @@ namespace CASM {
 
       DiffTransConfiguration m_diff_trans_config;
 
-      /// Implements increment
-      void increment() override{};
+      /// Implements at_step
+      const Configuration *at_step(step_type n) override {};
 
       // // -- Unique -------------------
       

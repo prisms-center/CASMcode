@@ -1,7 +1,6 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ScelEnum.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
@@ -51,6 +50,8 @@ namespace CASM {
       Index i = 0;
       for(const auto &tconfig : e) {
         Configuration con = tconfig;
+        Configuration con2 = e[i];
+        con2.write_pos(std::cout);
         // con.write_pos(std::cout);
         Configuration::displacement_matrix_t config_disp = con.displacement();
         std::cout << i << "\n";
@@ -71,15 +72,15 @@ namespace CASM {
                                           const Completer::EnumOption &enum_optconst) {
 
       // Constrct a DB selection of DiffTransConfiguration from json and enumoption inputs
-      DB::Selection<DiffTransConfiguration> sel(primclex);
-      int n_images = 4; // For Testing purposes
-      for (const auto &config : sel.selected()){
-        // Create a interpolation object  
-        DiffTransConfigInterpolation enumerator(config, n_images);
-        for (const auto &thing: enumerator){
-          //do a print of things
-        }
-      }
+      // DB::Selection<DiffTransConfiguration> sel(primclex);
+      // int n_images = 4; // For Testing purposes
+      // for (const auto &config : sel.selected()){
+      //   // Create a interpolation object  
+      //   DiffTransConfigInterpolation enumerator(config, n_images);
+      //   for (const auto &thing: enumerator){
+      //     //do a print of things
+      //   }
+      // }
       // setup error methods
       return 0;
     }
