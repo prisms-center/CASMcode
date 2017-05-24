@@ -31,7 +31,7 @@ namespace CASM {
     public:
 
       /// \brief Construct with a Supercell, using all permutations
-      DiffTransConfigInterpolation(const DiffTransConfiguration &_diff_trans_config);
+      DiffTransConfigInterpolation(const DiffTransConfiguration &_diff_trans_config, const int n_images);
 
       std::string name() const override {
         return enumerator_name;
@@ -40,7 +40,8 @@ namespace CASM {
       static const std::string enumerator_name;
       static const std::string interface_help;
       
-      static int run(const std::string config_path, const int n_images, DiffTransConfiguration diff_trans_config);
+      // static int run(const std::string config_path, const int n_images, DiffTransConfiguration diff_trans_config);
+      static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
       
     private:
       // Returns to and from configs that are edited to have same occupants on the diff_trans_orbit
@@ -48,17 +49,11 @@ namespace CASM {
 
       DiffTransConfiguration m_diff_trans_config;
 
-      // /// Implements increment
-      // void increment() override;
-
+      /// Implements increment
+      void increment() override{};
 
       // // -- Unique -------------------
       
-      // /// Returns true if current() is primitive and canonical
-      // bool _check_current() const;
-      
-      // Counter<std::vector<int> > m_counter;
-      // notstd::cloneable_ptr<Configuration> m_current;
     };
     Configuration make_config_diff_trans_free(const Configuration &config, const DiffusionTransformation &diff_trans);
   }
