@@ -642,7 +642,7 @@ def error_check_neb(jobdir, stdout, err_types):
             else:
                 freeze_error = False
                 break
-        if not freeze_error:
+        if freeze_error:
             err[p.__class__.__name__] = p
 
     sout.close()
