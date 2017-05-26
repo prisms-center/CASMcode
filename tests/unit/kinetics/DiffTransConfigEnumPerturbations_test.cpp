@@ -18,6 +18,9 @@
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/kinetics/SubOrbitGenerators.hh"
+#include "casm/symmetry/SymOp.hh"
+#include "casm/casm_io/VaspIO.hh"
 
 using namespace CASM;
 using namespace test;
@@ -57,14 +60,28 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config.init_deformation();
   config.init_specie_id();
   config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0});
+  //config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
   //  config.print_occupation(std::cout);
   //  std::cout << config;
+
+  /*
+  fs::ofstream file;
+  fs::path POSCARpath = "POSCAR";
+  file.open(POSCARpath);
+  VaspIO::PrintPOSCAR p(config);
+  p.sort();
+  p.print(file);
+  file.close();
+  */
+
+
   Configuration bg_config_prim = config.primitive();
 
   //  std::cout << "Supercell factor groups" << "\n";
   //  for ( auto &g: bg_config_prim.supercell().factor_group()){
   //  g.print(std::cout);
   //  }
+
 
   /// Find prototype of m_diff_trans_orbit
   //print_clust(orbits.begin() + 2, orbits.begin() + 3, std::cout, ProtoSitesPrinter());
@@ -105,7 +122,158 @@ BOOST_AUTO_TEST_CASE(Test0) {
   std::vector<Supercell> result = Kinetics::viable_supercells(local_orbits, scel_list);
   BOOST_CHECK_EQUAL(*(result.begin()) == scel2, 1);
 
+  //const multivector<SymOp>::X<2> diff_trans_map = diff_trans_orbits[0].equivalence_map();
 
+  /*
+  int c1 = 1;
+  for(auto it = diff_trans_map.begin(); it != diff_trans_map.end(); ++it) {
+    std::cout << c1 << std::endl;
+    ++c1;
+    for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
+      it2->print(std::cout);
+    }
+  }
+  /**/
+
+
+  //const CASM::SymOp Tk = scel.prim_grid().sym_op(0);
+  //Tk.print(std::cout);
+
+
+
+  const Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare> orbit = diff_trans_orbits[0];
+  const SymGroup config_scel_fg = config.supercell().factor_group();
+  const SymGroup prim_config_scel_fg = bg_config_prim.supercell().factor_group();
+
+  /*
+  std::vector<SymOp> unique_prim_op;
+  for(prim_op : prim_config_scel_fg) {
+    if(prim_op <= scel_op*prim_op for all scel_op) {
+      unique_prim_op.push_back(prim_op);
+    }
+  }
+  /**/
+
+  const Configuration prim_config = config.primitive();
+  std::vector<Kinetics::DiffusionTransformation> unique_prim_config_elements;
+  const Supercell prim_scel = prim_config.supercell();
+  const std::vector<CASM::PermuteIterator> prim_config_fg = prim_config.factor_group();
+
+  for(auto i = 0; i < orbit.size(); i++) {
+    //std::cout << "i: " << i << std::endl;
+    for(auto k = 0; k < prim_scel.prim_grid().size(); k++) {
+      //std::cout << "k: " << k << std::endl;
+      SymOp Sik = prim_scel.prim_grid().sym_op(k) * orbit.equivalence_map()[i][0];
+      //std::cout << "Sik for i = " << i << " and k = " << k << "\n";
+      //Sik.print(std::cout);
+      //std::cout << std::endl;
+      auto lambda = [&](const PermuteIterator & it) {
+        Kinetics::ScelPeriodicDiffTransSymCompare symcompare(prim_scel.prim_grid(), primclex.crystallography_tol());
+        // get primclex from something for template
+        return symcompare.compare(copy_apply(Sik, orbit.prototype()), copy_apply(it.sym_op(), copy_apply(Sik, orbit.prototype())));
+      };
+
+      if(std::none_of(prim_config_fg.begin(), prim_config_fg.end(), lambda)) {
+        Kinetics::DiffusionTransformation Eik = copy_apply(Sik, orbit.prototype());
+        unique_prim_config_elements.push_back(Eik);
+        //std::cout << Eik << std::endl;
+      }
+    }
+  }
+
+  std::cout << "Number of elements in unique_prim_config_elements: " << unique_prim_config_elements.size() << std::endl;
+
+  // Map the unique orbit elements found above onto config by using SymOps in primcell that are not present in supercell
+
+  std::vector<SymOp> unique_prim_op;
+
+  for(auto prim_op : prim_config_scel_fg) {
+
+    auto lambda = [&](const SymOp & config_op) {
+      Kinetics::ScelPeriodicDiffTransSymCompare symcompare(prim_scel.prim_grid(), primclex.crystallography_tol());
+      return symcompare.compare(copy_apply(prim_op, orbit.prototype()), copy_apply(config_op, copy_apply(prim_op, orbit.prototype())));
+    };
+
+    if(std::none_of(config_scel_fg.begin(), config_scel_fg.end(), lambda)) {
+      unique_prim_op.push_back(prim_op);
+    }
+  }
+
+  std::vector<Kinetics::DiffusionTransformation> unique_config_elements;
+  for(auto e : unique_prim_config_elements) {
+    for(auto op : unique_prim_op) {
+      unique_config_elements.push_back(copy_apply(op, e));
+      //*result++ = copy_apply(op, e);
+    }
+  }
+
+  std::cout << "Number of elements in unique_config_elements: " << unique_config_elements.size() << std::endl;
+
+
+  std::cout << "Prim config fg size: " << prim_config_fg.size() << std::endl;
+  std::cout << "config scel fg size: " << config_scel_fg.size() << std::endl;
+
+
+  /*
+    int ii = 1;
+    int kk = 4;
+    SymOp Sik0 = prim_scel.prim_grid().sym_op(kk)*orbit.equivalence_map()[ii][0];
+
+    int counter1 = 0;
+    for(auto it : prim_config_fg) {
+      SymRepIndexCompare compare;
+      std::cout << counter1 << "\n";
+      //it.sym_op().print(std::cout);
+      //std::cout << "\n";
+      counter1++;
+      //std::cout << "Sik: " << std::endl;
+      //Sik0.print(std::cout);
+      //std::cout << "\n";
+      SymOp itSik = it.sym_op()*Sik0;
+      std::cout << "it.sym_op()*Sik: " << std::endl;
+      itSik.print(std::cout);
+      std::cout << "\n";
+      std::cout << "Compared: " << compare(Sik0, it.sym_op()*Sik0) << std::endl;
+    }
+
+
+
+
+    /*
+    std::vector<Kinetics::DiffusionTransformation> unique_config_difftrans;
+    //Kinetics::sub_orbit_generators <Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare, std::vector<Kinetics::DiffusionTransformation>::iterator> (orbit, config, std::back_inserter(unique_config_elements));
+    Kinetics::sub_orbit_generators(orbit, config, std::back_inserter(unique_config_difftrans));
+
+    std::cout << unique_config_difftrans.size() << std::endl;
+
+    for(auto i : unique_config_difftrans) {
+      std::cout << i << std::endl;
+    }
+
+    /*
+    std::vector<Kinetics::DiffusionTransformation> unique_prim_elements;
+    sub_orbit_generator(orbit, bg_config_prim, std::back_inserter(unique_prim_elements));
+
+
+    for(i : orbit.size()) {
+      for(k : scel.prim_grid.size()) {
+        Sik = scel.prim_grid().sym_op(k)*orbit.equivalence_map()[i][0];
+
+        auto lambda = [&](const PermuteIterator &it) {
+          return Sik < it.sym_op*Sik;
+        };
+
+        if(std::none_of(config_scel_fg.begin(), config_scel_fg.end(), lambda)) {
+          // use this Eik
+        }
+      }
+    }
+
+    /*
+
+  */
+
+  /*
   /// Find unique DiffusionTransformations
   //    PermuteIterator begin = bg_config_prim.supercell().permute_begin();
   //    PermuteIterator end = bg_config_prim.supercell().permute_end();
@@ -143,7 +311,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   int subdifftrans_size_int = static_cast<int>(subdifftrans.size());
 
-  int expected_subdifftrans_size_int = scel_fg_int * scel_vol_int / config_fg_int;
+  int expected_subdifftrans_size_int = scel_fg_int * scel_vol_int ElementOutputIterator / config_fg_int;
   int expected_subdifftrans_size_int_remainder = scel_fg_int * scel_vol_int % config_fg_int;
 
   BOOST_CHECK_EQUAL(expected_subdifftrans_size_int_remainder, 0);
