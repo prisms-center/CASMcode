@@ -16,6 +16,8 @@ namespace CASM {
       add_general_help_suboption();
       add_selection_suboption();
       add_db_type_suboption(traits<Configuration>::short_name, DB::types_short());
+      //add_db_type_suboption(traits<Supercell>::short_name, DB::types_short());
+      //add_db_type_suboption(traits<PrimPeriodicDiffTransOrbit>::short_name, DB::types_short());
       add_output_suboption();
       add_gzip_suboption();
 
@@ -23,11 +25,11 @@ namespace CASM {
       ("columns,k", po::value<std::vector<std::string> >(&m_columns_vec)->multitoken()->zero_tokens()->value_name(ArgHandler::query()), "List of values you want printed as columns")
       ("json,j", "Print in JSON format (CSV otherwise, unless output extension is .json/.JSON)")
       ("verbatim,v", "Print exact properties specified, without prepending 'name' and 'selected' entries")
-      ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
+      ("all,a", "Print results all objects in input selection, whether or not they are selected.")
       ("no-header,n", "Print without header (CSV only)")
       ("alias", po::value<std::vector<std::string> >(&m_new_alias_vec)->multitoken(),
        "Create an alias for a query that will persist within this project. "
-       "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
+       "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
       ("write-pos", "Write POS file for each configuration");
 
       return;
@@ -267,10 +269,11 @@ namespace CASM {
     }
   }
 
+  //_write_pos should only be an option for configurations
   template<typename DataObject>
   int QueryCommandImpl<DataObject>::_write_pos() const {
     for(const auto &config : _sel().selected()) {
-      config.write_pos();
+      //config.write_pos();
     }
     return 0;
   }
@@ -321,7 +324,7 @@ namespace CASM {
     status_log << std::endl;
 
     // construct formatter
-    DataFormatter<Configuration> formatter = _dict().parse(_all_columns());
+    DataFormatter<DataObject> formatter = _dict().parse(_all_columns());
 
     auto begin = _count("all") ? _sel().all().begin() : _sel().selected().begin();
     auto end = _count("all") ? _sel().all().end() : _sel().selected().end();
@@ -441,7 +444,7 @@ namespace CASM {
           throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
         }
 
-        DB::for_config_type_short(opt().db_type(), DB::ConstructImpl<QueryCommand>(m_impl, *this));
+        DB::for_type_short(opt().db_type(), DB::ConstructImpl<QueryCommand>(m_impl, *this));
       }
       else {
         m_impl = notstd::make_unique<QueryCommandImplBase>(*this);

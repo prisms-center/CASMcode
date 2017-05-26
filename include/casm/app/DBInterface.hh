@@ -4,6 +4,8 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
 
 namespace CASM {
 

@@ -110,7 +110,7 @@ namespace CASM {
     }
 
     GenericDiffTransOrbitFormatter<std::string> diff_trans_orbitname() {
-      return GenericDiffTransOrbitFormatter<std::string>("diff_trans_orbitname",
+      return GenericDiffTransOrbitFormatter<std::string>("name",
                                                          "Returns the name of the diffusion transformation orbit",
       [](const PrimPeriodicDiffTransOrbit & orbit)-> std::string {
         return orbit.name();

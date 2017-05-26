@@ -178,12 +178,12 @@ namespace CASM {
     }
     return res;
   }
-
-  template<>
-  std::string Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare>::_generate_name() const {
-    return traits<PrimPeriodicDiffTransOrbit>::orbit_type_name + "." + id();
-  };
-
+  /*
+    template<>
+    std::string Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare>::_generate_name() const {
+      return traits<PrimPeriodicDiffTransOrbit>::orbit_type_name + "." + id();
+    };
+    */
   template<typename _Element, typename _SymCompareType>
   std::string Orbit<_Element, _SymCompareType>::_generate_name() const {
     return "";
