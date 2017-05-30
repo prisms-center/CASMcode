@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   /// Find prototype of m_diff_trans_orbit
   //print_clust(orbits.begin() + 2, orbits.begin() + 3, std::cout, ProtoSitesPrinter());
-  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
+  std::vector<PrimPeriodicDiffTransOrbit> diff_trans_orbits;
   Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 2, orbits.begin() + 3, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
   Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[0].prototype();
   //std::cout << diff_trans_orbits.size() << "\n";
@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   l12.set_occupation({0, 0, 0, 1, 1, 0, 0, 0});
 
   /// Find prototype of m_diff_trans_orbit
-  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits2;
+  std::vector<PrimPeriodicDiffTransOrbit> diff_trans_orbits2;
   Kinetics::make_prim_periodic_diff_trans_orbits(orbits2.begin() + 2, orbits2.begin() + 3, primclex2.crystallography_tol(), std::back_inserter(diff_trans_orbits2));
   Kinetics::DiffusionTransformation diff_trans_prototype2 = diff_trans_orbits2[4].prototype();
 

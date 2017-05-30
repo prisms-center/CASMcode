@@ -146,7 +146,6 @@ namespace CASM {
     friend DB::Named<Orbit<_Element, _SymCompareType>>;
     std::string _generate_name() const;
 
-
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry rep
     template<typename SymOpIterator>
     void _construct(Element generating_element,
@@ -169,6 +168,11 @@ namespace CASM {
   /// \brief Find orbit containing an element in a range of Orbit
   template<typename OrbitIterator, typename Element>
   OrbitIterator find_orbit(OrbitIterator begin, OrbitIterator end, Element e);
+
+  template<typename OrbitType>
+  std::string generate_orbit_name();
+
+
 }
 
 #endif
