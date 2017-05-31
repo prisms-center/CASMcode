@@ -14,6 +14,7 @@ namespace CASM {
   class Site;
   class Structure;
   class SymOp;
+  class Lattice;
 
   /** \ingroup Coordinate
    *  @{
@@ -191,16 +192,6 @@ namespace CASM {
   /// \brief Change unit structure, keeping indices constant
   inline void UnitCellCoord::set_unit(const UnitType &_unit) {
     m_unit = &_unit;
-  }
-
-  /// \brief Access the Lattice
-  inline const Lattice &UnitCellCoord::lattice() const {
-    return unit().lattice();
-  }
-
-  /// \brief Get corresponding coordinate
-  inline Coordinate UnitCellCoord::coordinate() const {
-    return site();
   }
 
   inline UnitCell &UnitCellCoord::unitcell() {

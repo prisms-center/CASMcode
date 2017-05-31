@@ -184,30 +184,6 @@ namespace CASM {
   template<typename Element>
   class ScelPeriodicSymCompare {};
 
-  /// \brief Construct the subgroup that leaves an element unchanged
-  /// THIS FUNCTION CURRENTLY ONLY WORKS FOR LOCAL OBJECTS.
-  /// if the element has supercell periodicity with a group
-  /// that has prim periodicity this will not be correct.
-  /// All SymOp such that:
-  /// \code
-  /// Element e = sym_compare.prepare(generating_element);
-  /// Element test = sym_compare.prepare(copy_apply(op, e));
-  /// sym_compare.equal(e, test) == true
-  /// \endcode
-  template<typename Element, typename SymCompareType>
-  SymGroup make_invariant_subgroup(const Element &element,
-                                   const SymGroup &generating_grp,
-                                   const SymCompareType &sym_compare) {
-    Element e(sym_compare.prepare(element));
-    SymGroup result = generating_grp;
-    result.clear();
-    for(const auto &op : generating_grp) {
-      if(sym_compare.equal(e, sym_compare.prepare(copy_apply(op, e)))) {
-        result.push_back(sym_compare.translation(element.prim())*op);
-      }
-    }
-    return result;
-  }
 
   /// \brief CRTP Base class for types that should be SymComparable
   template<typename Derived>

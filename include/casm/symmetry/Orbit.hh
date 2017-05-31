@@ -151,7 +151,6 @@ namespace CASM {
 
   };
 
-
   /// \brief Find orbit containing an element in a range of Orbit
   template<typename OrbitIterator, typename Element>
   OrbitIterator find_orbit(OrbitIterator begin, OrbitIterator end, Element e);

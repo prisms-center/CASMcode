@@ -179,18 +179,6 @@ namespace CASM {
     return it;
   }
 
-  jsonParser &PermuteIterator::to_json(jsonParser &json) const {
-    json.put_obj();
-    json["factgrp"] = m_factor_group_index;
-    json["trans"] = m_translation_index;
-    return json;
-  }
-
-  void PermuteIterator::from_json(const jsonParser &json) {
-    CASM::from_json(m_factor_group_index, json["factgrp"]);
-    CASM::from_json(m_translation_index, json["trans"]);
-  }
-
   template<typename PermuteIteratorIt>
   SymGroup make_sym_group(const Lattice &lat, PermuteIteratorIt begin, PermuteIteratorIt end) {
     SymGroup sym_group;

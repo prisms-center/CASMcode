@@ -185,86 +185,97 @@ namespace CASM {
     return sout;
   }
 
+  PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::PrimPeriodicSymCompare(double _tol) :
+    Kinetics::DiffTransSymCompare<PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> >(_tol) {}
+
+  PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::Element
+  PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::prepare_impl(const Element &A) const {
+    if(A.occ_transform().size()) {
+      Element tmp = A.sorted();
+      m_integral_tau = -(tmp.occ_transform()[0].uccoord.unitcell());
+      tmp -= tmp.occ_transform()[0].uccoord.unitcell();
+      return tmp;
+    }
+    else {
+      return A;
+    }
+  }
+
+  bool PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::compare_impl(
+    const Element &A,
+    const Element &B) const {
+    return A < B;
+  }
+
+  bool PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::invariants_compare_impl(
+    const InvariantsType &A,
+    const InvariantsType &B) const {
+    return CASM::compare(A, B, tol());
+  }
+
+  // LocalDiffTransSymCompare
+
+  LocalSymCompare<Kinetics::DiffusionTransformation>::LocalSymCompare(double _tol) :
+    DiffTransSymCompare<LocalSymCompare<Kinetics::DiffusionTransformation> >(_tol) {}
+
+  LocalSymCompare<Kinetics::DiffusionTransformation>::Element
+  LocalSymCompare<Kinetics::DiffusionTransformation>::prepare_impl(const Element &A) const {
+    if(A.occ_transform().size()) {
+      Element tmp = A.sorted();
+      return tmp;
+    }
+    else {
+      return A;
+    }
+  }
+
+  bool LocalSymCompare<Kinetics::DiffusionTransformation>::compare_impl(
+    const Element &A,
+    const Element &B) const {
+    return A < B;
+  }
+
+  bool LocalSymCompare<Kinetics::DiffusionTransformation>::invariants_compare_impl(
+    const InvariantsType &A,
+    const InvariantsType &B) const {
+    return CASM::compare(A, B, tol());
+  }
+
+
+  // ScelPeriodicDiffTransSymCompare
+
+  ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::ScelPeriodicSymCompare(
+    const PrimGrid &prim_grid,
+    double _tol) :
+    DiffTransSymCompare<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> >(_tol),
+    m_prim_grid(prim_grid) {}
+
+  ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::Element
+  ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::prepare_impl(const Element &A) const {
+    if(A.occ_transform().size()) {
+      Element tmp = A.sorted();
+      m_integral_tau = (m_prim_grid.within(tmp.occ_transform()[0].uccoord).unitcell())
+                       - tmp.occ_transform()[0].uccoord.unitcell();
+      tmp += m_integral_tau;
+      return tmp;
+    }
+    else {
+      return A;
+    }
+  }
+
+  bool ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::compare_impl(
+    const Element &A, const Element &B) const {
+    return A < B;
+  }
+
+  bool ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::invariants_compare_impl(
+    const InvariantsType &A,
+    const InvariantsType &B) const {
+    return CASM::compare(A, B, tol());
+  }
+
   namespace Kinetics {
-
-    // PrimPeriodicDiffTransSymCompare
-
-    PrimPeriodicDiffTransSymCompare::PrimPeriodicDiffTransSymCompare(double tol) :
-      SymCompare<PrimPeriodicDiffTransSymCompare>(),
-      m_tol(tol) {}
-
-    PrimPeriodicDiffTransSymCompare::Element PrimPeriodicDiffTransSymCompare::prepare_impl(const Element &A) const {
-      if(A.occ_transform().size()) {
-        Element tmp = A.sorted();
-        m_integral_tau = -(tmp.occ_transform()[0].uccoord.unitcell());
-        tmp -= tmp.occ_transform()[0].uccoord.unitcell();
-        return tmp;
-      }
-      else {
-        return A;
-      }
-    }
-
-    bool PrimPeriodicDiffTransSymCompare::compare_impl(const Element &A, const Element &B) const {
-      return A < B;
-    }
-
-    bool PrimPeriodicDiffTransSymCompare::invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
-      return CASM::compare(A, B, tol());
-    }
-
-    // LocalDiffTransSymCompare
-
-    LocalDiffTransSymCompare::LocalDiffTransSymCompare(double tol) :
-      SymCompare<LocalDiffTransSymCompare>(),
-      m_tol(tol) {}
-
-    LocalDiffTransSymCompare::Element LocalDiffTransSymCompare::prepare_impl(const Element &A) const {
-      if(A.occ_transform().size()) {
-        Element tmp = A.sorted();
-        return tmp;
-      }
-      else {
-        return A;
-      }
-    }
-
-    bool LocalDiffTransSymCompare::compare_impl(const Element &A, const Element &B) const {
-      return A < B;
-    }
-
-    bool LocalDiffTransSymCompare::invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
-      return CASM::compare(A, B, tol());
-    }
-
-
-    // ScelPeriodicDiffTransSymCompare
-
-    ScelPeriodicDiffTransSymCompare::ScelPeriodicDiffTransSymCompare(const PrimGrid &prim_grid, double tol) :
-      SymCompare<ScelPeriodicDiffTransSymCompare>(),
-      m_tol(tol),
-      m_prim_grid(prim_grid) {}
-
-    ScelPeriodicDiffTransSymCompare::Element ScelPeriodicDiffTransSymCompare::prepare_impl(const Element &A) const {
-      if(A.occ_transform().size()) {
-        Element tmp = A.sorted();
-        m_integral_tau = (m_prim_grid.within(tmp.occ_transform()[0].uccoord).unitcell()) - tmp.occ_transform()[0].uccoord.unitcell();
-        tmp += m_integral_tau;
-        return tmp;
-      }
-      else {
-        return A;
-      }
-    }
-
-    bool ScelPeriodicDiffTransSymCompare::compare_impl(const Element &A, const Element &B) const {
-      return A < B;
-    }
-
-    bool ScelPeriodicDiffTransSymCompare::invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
-      return CASM::compare(A, B, tol());
-    }
-
 
     // DiffusionTransformation
 

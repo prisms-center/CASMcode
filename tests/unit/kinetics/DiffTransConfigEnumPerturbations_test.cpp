@@ -2,26 +2,22 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
-#include "casm/kinetics/DiffTransEnumEquivalents.hh"
+//#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
+//#include "casm/kinetics/DiffTransEnumEquivalents.hh"
 
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/kinetics/DoFTransformation.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
-#include "casm/kinetics/SubOrbitGenerators.hh"
-#include "casm/symmetry/SymOp.hh"
-#include "casm/symmetry/Orbit.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/symmetry/Orbit_impl.hh"
+#include "casm/symmetry/InvariantSubgroup_impl.hh"
+#include "casm/symmetry/SubOrbits_impl.hh"
+//#include "casm/casm_io/VaspIO.hh"
 
 using namespace CASM;
 using namespace test;
@@ -29,225 +25,6 @@ using namespace test;
 typedef Orbit <
 Kinetics::DiffusionTransformation,
          Kinetics::PrimPeriodicDiffTransSymCompare > PrimPeriodicDiffTransOrbit;
-
-
-//generating group: G {g0, g1, ...}
-//orbit: O {e0, e1, ...} = G * proto
-//sub-group of G: H {h0, h1, ...}
-
-// ex. config.primitive() is cubic, has G && config is tetragonal, has H
-
-// Orbit_g(proto, G) ->
-//   Orbit_h0(C00'*proto, H), Orbit_h1(C10'*proto, H), ...
-
-// all the unique cosets of H:
-//   C0, C1, C2, ... have no elements in common, have all elements in G
-
-// Ci0*(Sj*proto) may be equal to Cj0*(Sk*proto), where S is in invariant subgroup of proto
-
-// so we want elements of G, g, such that g >= h*g*s, for all h in H, s in S
-
-
-
-template<typename OrbitType>
-SymGroup make_invariant_subgroup(const OrbitType &orbit, Index element_index = 0) {
-  SymGroup result;
-  result.set_lattice(orbit.prototype().lattice());
-  const auto &map = orbit.equivalence_map();
-  for(Index i = 0; i < orbit.equivalence_map()[0].size(); ++i) {
-    result.push_back(map[0][i]*map[element_index][0]);
-  }
-  return result;
-}
-
-/// Implementation
-template<typename Element, typename ElementOutputIterator>
-ElementOutputIterator make_suborbit_generators(
-  const Element &element,
-  const SymGroup &invariant_subgroup,
-  const SymGroup &group,
-  const SymGroup &subgroup,
-  ElementOutputIterator result) {
-
-  // find "max" SymOp in each coset of the subgroup,
-  //   excluding those cosets that cause duplicate generating elements
-  for(Index i = 0; i < group.size(); ++i) {
-    const SymOp &test_op = group[i];
-    auto lambda = [&](const SymOp & op) {
-      for(const auto &el_op : invariant_subgroup) {
-        if(test_op.index() < (op * test_op * el_op).index()) {
-          return true;
-        }
-      }
-      return false;
-    };
-    // if test_op is max
-    if(std::none_of(subgroup.begin(), subgroup.end(), lambda)) {
-      // apply to element and construct suborbit generator
-      *result++ = copy_apply(test_op, element);
-    }
-  }
-  return result;
-}
-
-template<typename Element, typename SymCompareType, typename ElementOutputIterator>
-ElementOutputIterator make_suborbit_generators(
-  const Element &element,
-  const SymCompareType &sym_compare,
-  const SymGroup &group,
-  const SymGroup &subgroup,
-  ElementOutputIterator result) {
-
-  SymGroup invariant_subgroup = make_invariant_subgroup(element, group, sym_compare);
-  return make_suborbit_generators(element, invariant_subgroup, group, subgroup, result);
-}
-
-template<typename OrbitType, typename ElementOutputIterator>
-ElementOutputIterator make_suborbit_generators(
-  const OrbitType &orbit,
-  const SymGroup &group,
-  const SymGroup &subgroup,
-  ElementOutputIterator result) {
-
-  SymGroup invariant_subgroup = make_invariant_subgroup(orbit);
-  return make_suborbit_generators(orbit.prototype(), invariant_subgroup, group, subgroup, result);
-}
-
-template<typename Element>
-std::vector<PermuteIterator> make_invariant_subgroup(const Element &element, const Supercell &scel) {
-
-  ScelPeriodicSymCompare<Element> sym_compare(scel.prim_grid(), scel.primclex().crystallography_tol());
-  Element e(sym_compare.prepare(element));
-  std::vector<PermuteIterator> result;
-  auto it = scel.permute_begin();
-  auto end = scel.permute_end();
-  while(it != end) {
-    auto test = sym_compare.prepare(copy_apply(it.sym_op(), e));
-    if(sym_compare.equal(test, e)) {
-      auto trans_it = scel.permute_it(0, scel.prim_grid().find(sym_compare.integral_tau()));
-      result.push_back(trans_it * it);
-    }
-    ++it;
-  }
-  return result;
-}
-
-template<typename Element, typename ElementOutputIterator, typename PermuteIteratorIt>
-ElementOutputIterator make_suborbit_generators(
-  const Element &element,
-  const Supercell &scel,
-  PermuteIteratorIt subgroup_begin,
-  PermuteIteratorIt subgroup_end,
-  ElementOutputIterator result) {
-
-  const PrimGrid &prim_grid = scel.prim_grid();
-
-  std::vector<PermuteIterator> scel_inv_group = make_invariant_subgroup(element, scel);
-
-  // find "max" permute in each coset of the subgroup [begin, end),
-  //   excluding those cosets that cause duplicate generating elements
-  auto test_it = scel.permute_begin();
-  auto test_end = scel.permute_end();
-  for(; test_it != test_end; ++test_it) {
-    auto lambda = [&](const PermuteIterator & permute_it) {
-      for(auto it = scel_inv_group.begin(); it != scel_inv_group.end(); ++it) {
-        if(test_it < permute_it * (test_it * (*it))) {
-          return true;
-        }
-      }
-      return false;
-    };
-
-    // if test_it is max
-    if(std::none_of(subgroup_begin, subgroup_end, lambda)) {
-      // apply to prototype and construct suborbit
-      *result++ = copy_apply(test_it.sym_op(), element);
-    }
-  }
-
-  return result;
-}
-
-/// Prim-periodic generating elements -> Scel-periodic orbit generating elements in a Configuration
-///
-/// Uses config.supercell() PermuteIterators
-template<typename OrbitIterator, typename ElementOutputIterator>
-ElementOutputIterator make_suborbit_generators_slow(
-  OrbitIterator begin,
-  OrbitIterator end,
-  const Configuration &config,
-  ElementOutputIterator result) {
-
-  typedef typename std::iterator_traits<OrbitIterator>::value_type OrbitType;
-  typedef typename OrbitType::Element Element;
-
-  const Structure &prim = config.prim();
-  const Supercell &scel = config.supercell();
-  std::vector<PermuteIterator> config_fg = config.factor_group();
-
-  for(auto it = begin; it != end; ++it) {
-
-    // get generating elements for prim->supercell orbit splitting
-    std::vector<Element> scel_suborbit_generators;
-
-    make_suborbit_generators(
-      *it,
-      prim.factor_group(),
-      scel.factor_group(),
-      std::back_inserter(scel_suborbit_generators));
-
-    // get generating elements for supercell->config orbit splitting
-    for(const auto &el : scel_suborbit_generators) {
-
-      result = make_suborbit_generators(
-                 el,
-                 scel,
-                 config_fg.begin(),
-                 config_fg.end(),
-                 result);
-    }
-  }
-  return result;
-}
-
-/// Prim-periodic generating element -> Scel-periodic generating elements in a Configuration
-///
-/// Uses config.primitive().supercell() PermuteIterators, then splits again
-/// for case that config has lower symmetry than config.primitive()
-template<typename OrbitIterator, typename ElementOutputIterator>
-ElementOutputIterator make_suborbit_generators(
-  OrbitIterator begin,
-  OrbitIterator end,
-  const Configuration &config,
-  ElementOutputIterator result) {
-
-  typedef typename std::iterator_traits<OrbitIterator>::value_type OrbitType;
-  typedef typename OrbitType::Element Element;
-
-  Configuration prim_config = config.primitive().in_canonical_supercell();
-  ScelPeriodicSymCompare<Element> sym_compare(
-    config.supercell().prim_grid(),
-    config.crystallography_tol());
-
-  std::vector<Element> prim_config_suborbit_generators;
-
-  make_suborbit_generators_slow(
-    begin,
-    end,
-    prim_config,
-    std::back_inserter(prim_config_suborbit_generators));
-
-  for(const auto &el : prim_config_suborbit_generators) {
-    result = make_suborbit_generators(
-               el,
-               sym_compare,
-               prim_config.supercell().factor_group(),
-               config.supercell().factor_group(),
-               result);
-  }
-
-  return result;
-}
 
 // Test 1: PrimPeriodic -> ScelPeriodic orbits
 template<typename OrbitType, typename ElementType>
@@ -467,13 +244,11 @@ BOOST_AUTO_TEST_CASE(Test0) {
     primclex.crystallography_tol(),
     std::back_inserter(diff_trans_orbits));
 
-  /*
   print_clust(
     diff_trans_orbits.begin(),
     diff_trans_orbits.end(),
     std::cout,
     PrototypePrinter<Kinetics::DiffusionTransformation>());
-  */
 
   // Make test config
   Eigen::Vector3d a, b, c;

@@ -5,6 +5,7 @@
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/clusterography/SubClusterGenerator.hh"
 #include "casm/crystallography/Structure.hh"
 
