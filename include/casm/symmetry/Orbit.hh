@@ -136,16 +136,10 @@ namespace CASM {
       return m_sym_compare.inter_orbit_compare(prototype(), B.prototype());
     }
 
-    /// \brief Primclex work around
-    PrimClex &primclex() const {
-      return PrimClex::PrimClex(prototype().prim());
-    }
-
   private:
 
     friend DB::Named<Orbit<_Element, _SymCompareType>>;
     std::string _generate_name() const;
-
 
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry rep
     template<typename SymOpIterator>

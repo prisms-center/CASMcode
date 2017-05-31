@@ -19,6 +19,11 @@ namespace CASM {
     public:
 
       Named() :
+        m_primclex(nullptr),
+        m_name("") {}
+
+      Named(const PrimClex &_primclex) :
+        m_primclex(&_primclex),
         m_name("") {}
 
       std::string name() const {
@@ -39,6 +44,14 @@ namespace CASM {
         m_name = "";
       }
 
+      /// \brief Get PrimClex
+      const PrimClex &primclex() const {
+        if(!m_primclex) {
+          throw std::runtime_error("Error in Orbit::primclex(): PrimClex not valid");
+        }
+        return *m_primclex;
+      }
+
     private:
 
       friend ValDatabase<Derived>;
@@ -48,7 +61,13 @@ namespace CASM {
         return *static_cast<const Derived *>(this);
       }
 
+      /// \brief Add PrimClex pointer to objects constructed from Database
+      void set_primclex(const PrimClex &_primclex) const {
+        m_primclex = &_primclex;
+      }
+
       mutable std::string m_name;
+      mutable const PrimClex *m_primclex;
 
     };
 
