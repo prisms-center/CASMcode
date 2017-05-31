@@ -183,7 +183,7 @@ namespace CASM {
   template<typename Element>
   class ScelPeriodicSymCompare {};
 
-  /// \brief Return subgroup that leaves an element unchanged
+  /// \brief Construct the subgroup that leaves an element unchanged
   ///
   /// All SymOp such that:
   /// \code
@@ -192,9 +192,9 @@ namespace CASM {
   /// sym_compare.equal(e, test) == true
   /// \endcode
   template<typename Element, typename SymCompareType>
-  SymGroup invariant_subgroup(const Element &element,
-                              const SymGroup &generating_grp,
-                              const SymCompareType &sym_compare) {
+  SymGroup make_invariant_subgroup(const Element &element,
+                                   const SymGroup &generating_grp,
+                                   const SymCompareType &sym_compare) {
     Element e(sym_compare.prepare(element));
     SymGroup result = generating_grp;
     result.clear();

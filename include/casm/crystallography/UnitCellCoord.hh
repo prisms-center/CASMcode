@@ -88,7 +88,7 @@ namespace CASM {
 
     UnitCellCoord(UnitCellCoord &&B) = default;
 
-    UnitCellCoord &operator=(UnitCellCoord && B) = default;
+    UnitCellCoord &operator=(UnitCellCoord &&B) = default;
 
 
     /// \brief Get unit structure reference
@@ -96,6 +96,9 @@ namespace CASM {
 
     /// \brief Change unit structure, keeping indices constant
     void set_unit(const UnitType &_unit);
+
+    /// \brief Access the Lattice
+    const Lattice &lattice() const;
 
     /// \brief Get corresponding coordinate
     Coordinate coordinate() const;
@@ -191,6 +194,11 @@ namespace CASM {
   /// \brief Change unit structure, keeping indices constant
   inline void UnitCellCoord::set_unit(const UnitType &_unit) {
     m_unit = &_unit;
+  }
+
+  /// \brief Access the Lattice
+  inline const Lattice &UnitCellCoord::lattice() const {
+    return unit().lattice();
   }
 
   /// \brief Get corresponding coordinate

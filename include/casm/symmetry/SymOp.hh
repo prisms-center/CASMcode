@@ -70,9 +70,8 @@ namespace CASM {
       if(m_valid_integral_tau) {
         return m_integral_tau;
       }
-      else {
-        std::cerr << "Attempt to access integral tau without it being valid" << std::endl;
-      }
+
+      throw std::runtime_error("Error in SymOp::integral_tau(), not valid");
     }
 
     ///\brief returns true if matrix part of operation is identity

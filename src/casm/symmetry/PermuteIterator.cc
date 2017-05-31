@@ -189,6 +189,22 @@ namespace CASM {
     CASM::from_json(m_translation_index, json["trans"]);
   }
 
+  template<typename PermuteIteratorIt>
+  SymGroup make_sym_group(const Lattice &lat, PermuteIteratorIt begin, PermuteIteratorIt end) {
+    SymGroup sym_group;
+    sym_group.set_lattice(lat);
+    while(begin != end) {
+      sym_group.push_back(begin->sym_op());
+      ++begin;
+    }
+    return sym_group;
+  }
+
+  template SymGroup make_sym_group(
+    const Lattice &lat,
+    std::vector<PermuteIterator>::const_iterator begin,
+    std::vector<PermuteIterator>::const_iterator end);
+
   void swap(PermuteIterator &a, PermuteIterator &b) {
     std::swap(a.m_fg_permute_rep, b.m_fg_permute_rep);
     std::swap(a.m_prim_grid, b.m_prim_grid);

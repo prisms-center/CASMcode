@@ -81,12 +81,17 @@ namespace CASM {
     CoordCluster(CoordCluster &&other) = default;
 
     /// \brief Default move assignment
-    CoordCluster &operator=(CoordCluster && other) = default;
+    CoordCluster &operator=(CoordCluster &&other) = default;
 
 
     /// \brief Return a reference to the primitive Structure
     const PrimType &prim() const {
       return *m_prim_ptr;
+    }
+
+    /// \brief Return a reference to the primitive Structure lattice
+    const Lattice &lattice() const {
+      return prim().lattice();
     }
 
     /// \brief Return the coordinate corresponding to element(i)
