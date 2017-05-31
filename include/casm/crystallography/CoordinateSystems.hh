@@ -2,7 +2,7 @@
 #define COORDINATESYSTEMS_HH
 
 #include <iostream>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/CASM_global_enum.hh"
 
 namespace CASM {
 

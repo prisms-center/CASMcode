@@ -3,23 +3,17 @@
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
+#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
 
 namespace CASM {
 
   EnumeratorHandler::EnumeratorHandler(const ProjectSettings &set) :
     m_set(&set),
-    m_enumerator(make_enumerator_map()) {
-
-    m_enumerator.insert(
-      EnumInterface<ScelEnum>(),
-      EnumInterface<ConfigEnumAllOccupations>(),
-      EnumInterface<SuperConfigEnum>(),
-      EnumInterface<Kinetics::DiffusionTransformationEnum>()
-    );
+    m_enumerator(make_standard_enumerator_map()) {
 
     load_enumerator_plugins(
       *m_set,
-      std::inserter(m_enumerator, m_enumerator.end()),
+      std::inserter(*m_enumerator, m_enumerator->end()),
       std::inserter(m_lib, m_lib.end()));
   }
 

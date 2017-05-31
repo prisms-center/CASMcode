@@ -1,6 +1,8 @@
 #include "casm/symmetry/PermuteIterator.hh"
 
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
 
@@ -214,11 +216,16 @@ namespace CASM {
   }
 
   jsonParser &to_json(const PermuteIterator &it, jsonParser &json) {
-    return it.to_json(json);
+    json.put_obj();
+    json["factgrp"] = it.factor_group_index();
+    json["trans"] = it.translation_index();
+    return json;
   }
 
-  void from_json(PermuteIterator &it, const jsonParser &json) {
-    it.from_json(json);
+  PermuteIterator jsonConstructor<PermuteIterator>::from_json(
+    const jsonParser &json,
+    const Supercell &scel) {
+    return scel.permute_it(json["factgrp"].get<Index>(), json["trans"].get<Index>());
   }
 
 }

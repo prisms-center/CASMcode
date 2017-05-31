@@ -1,6 +1,9 @@
 #ifndef CASM_NeighborList_HH
 #define CASM_NeighborList_HH
 
+#include <set>
+#include <vector>
+#include <memory>
 #include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {

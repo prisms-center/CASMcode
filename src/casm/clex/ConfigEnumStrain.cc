@@ -1,10 +1,12 @@
 #include "casm/clex/ConfigEnumStrain.hh"
 #include <algorithm>
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
 
 extern "C" {
@@ -23,13 +25,13 @@ namespace CASM {
     "  ... include help documentation here ... \n\n";
 
   int ConfigEnumStrain::run(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
     throw std::runtime_error("EnumInterface<Strain>::run is not implemented");
   }
 
-  ConfigEnumStrain::ConfigEnumStrain(Supercell &_scel,
+  ConfigEnumStrain::ConfigEnumStrain(const Supercell &_scel,
                                      const Configuration &_init,
                                      const std::vector<Index> &linear_partitions,
                                      const std::vector<double> &magnitudes,
@@ -165,7 +167,7 @@ namespace CASM {
     if(!m_counter.valid()) {
       this->_invalidate();
     }
-    _current().set_source(this->source(step()));
+    m_current.set_source(this->source(step()));
   }
 
   // Implements _increment
@@ -190,10 +192,10 @@ namespace CASM {
     }
 
     if(m_counter.valid()) {
-      _current().set_deformation(m_strain_calc.unrolled_strain_metric_to_F(m_trans_mats[m_equiv_ind] * m_counter()));
+      m_current.set_deformation(m_strain_calc.unrolled_strain_metric_to_F(m_trans_mats[m_equiv_ind] * m_counter()));
       std::cout << "Counter is " << m_counter().transpose() << "\n\n";
       //std::cout << "strain vector is \n" << m_trans_mats[m_equiv_ind]*m_counter() << "\n\n";
-      //std::cout << "DEFORMATION IS\n" << _current().deformation() << "\n\n";
+      //std::cout << "DEFORMATION IS\n" << m_current.deformation() << "\n\n";
       //is_valid_config = current().is_canonical(_perm_begin(), _perm_end());
       //std::cout << "counter() is: " << m_counter() << ";  is_valid_config: " << is_valid_config
       //<< ";  is_valid_counter: " << m_counter.valid() << "\n";
@@ -203,7 +205,7 @@ namespace CASM {
       //std::cout << "REACHED END OF THE LINE!\n";
       _invalidate();
     }
-    _current().set_source(this->source(step()));
+    m_current.set_source(this->source(step()));
     //std::cout << "--FINISHED SEARCH " << _step()<< "--\n";
     return;
   }

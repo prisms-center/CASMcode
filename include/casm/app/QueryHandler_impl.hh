@@ -1,52 +1,57 @@
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
-
+#include "casm/database/Selection.hh"
+#include "casm/database/Selected.hh"
+#include "casm/system/RuntimeLibrary.hh"
 
 namespace CASM {
 
   template<typename DataObject>
   QueryHandler<DataObject>::QueryHandler(const ProjectSettings &set) :
     m_set(&set),
-    m_dict(make_dictionary<DataObject>()) {
+    m_dict(notstd::make_cloneable<DataFormatterDictionary<DataObject>>()) {
+
+    *m_dict = make_dictionary<DataObject>();
 
     // add plugins
     load_query_plugins(
       set,
-      std::inserter(m_dict, m_dict.end()),
+      std::inserter(*m_dict, m_dict->end()),
       std::inserter(m_lib, m_lib.end()));
   };
 
   template<typename DataObject>
   QueryHandler<DataObject>::~QueryHandler() {
     // order of deletion matters
-    m_dict.clear();
+    m_dict->clear();
     m_lib.clear();
   }
 
   template<typename DataObject>
   DataFormatterDictionary<DataObject> &QueryHandler<DataObject>::dict() {
-    return m_dict;
+    return *m_dict;
   }
 
   template<typename DataObject>
   const DataFormatterDictionary<DataObject> &QueryHandler<DataObject>::dict() const {
-    return m_dict;
+    return *m_dict;
   }
 
   /// \brief Set the selection to be used for the 'selected' column
   ///
-  /// - ToDo: generalize ConfigIO::Selected
+  /// - ToDo: generalize Selected<DataObject>
   template<typename DataObject>
-  void QueryHandler<DataObject>::set_selected(const typename QueryTraits<DataObject>::Selected &selection) {
-    if(m_dict.find("selected") != m_dict.end()) {
-      m_dict.erase("selected");
+  void QueryHandler<DataObject>::set_selected(const DB::Selected<DataObject> &selection) {
+    if(m_dict->find("selected") != m_dict->end()) {
+      m_dict->erase("selected");
     }
-    m_dict.insert(
+    m_dict->insert(
       datum_formatter_alias(
         "selected",
         selection,
-        "Returns true if configuration is specified in the input selection"
+        "Returns true if object is specified in the input selection"
       )
     );
   }
@@ -55,9 +60,8 @@ namespace CASM {
   ///
   /// - ToDo: generalize ConstConfigSelection
   template<typename DataObject>
-  void QueryHandler<DataObject>::set_selected(const typename QueryTraits<DataObject>::Selection &selection) {
-    typedef typename QueryTraits<DataObject>::Selected selected_type;
-    set_selected(selected_type(selection));
+  void QueryHandler<DataObject>::set_selected(const DB::Selection<DataObject> &selection) {
+    set_selected(DB::Selected<DataObject>(selection));
   }
 
   /// \brief Add user-defined query alias
@@ -67,12 +71,12 @@ namespace CASM {
   template<typename DataObject>
   void QueryHandler<DataObject>::add_alias(const std::string &alias_name, const std::string &alias_command) {
 
-    auto new_formatter = datum_formatter_alias<DataObject>(alias_name, alias_command, m_dict);
-    auto key = m_dict.key(new_formatter);
+    auto new_formatter = datum_formatter_alias<DataObject>(alias_name, alias_command, *m_dict);
+    auto key = m_dict->key(new_formatter);
 
     // if not in dictionary (includes operator dictionary), add
-    if(m_dict.find(key) == m_dict.end()) {
-      m_dict.insert(new_formatter);
+    if(m_dict->find(key) == m_dict->end()) {
+      m_dict->insert(new_formatter);
     }
     // if a user-created alias, over-write with message
     else if(aliases().find(alias_name) != aliases().end()) {
@@ -80,7 +84,7 @@ namespace CASM {
                        << "             " << _aliases()[alias_name] << "\n"
                        << "         I will forget it and learn '" << alias_name << "' as:\n"
                        << "             " << alias_command << std::endl;
-      m_dict.insert(new_formatter);
+      m_dict->insert(new_formatter);
     }
     // else do not add, throw error
     else {

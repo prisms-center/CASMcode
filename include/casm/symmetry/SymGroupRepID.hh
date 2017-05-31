@@ -1,11 +1,12 @@
 #ifndef SYMGROUPREPID_HH
 #define SYMGROUPREPID_HH
 
-#include "casm/casm_io/jsonParser.hh"
 #include "casm/CASM_global_definitions.hh"
 #include <iostream>
 
 namespace CASM {
+
+  class jsonParser;
 
   /** \ingroup SymGroup
    *  @{
@@ -63,11 +64,7 @@ namespace CASM {
     }
 
     /// \brief Output internal state to JSON
-    jsonParser const &from_json(jsonParser const &json) {
-      json.get_else(m_group_index, "group_index", Index(-1));
-      json.get_else(m_rep_index, "group_index", Index(-1));
-      return json;
-    }
+    jsonParser const &from_json(jsonParser const &json);
 
   private:
     /// Private constructor skips bounds checks -- Used for identity() and default construction
@@ -100,17 +97,9 @@ namespace CASM {
            (a.group_index() == b.group_index() && a.rep_index() < b.rep_index());
   }
 
-  inline
-  jsonParser &to_json(SymGroupRepID const &_id, jsonParser &json) {
-    json["group_index"] = _id.group_index();
-    json["rep_index"] = _id.rep_index();
-    return json;
-  }
+  jsonParser &to_json(SymGroupRepID const &_id, jsonParser &json);
 
-  inline
-  jsonParser const &from_json(SymGroupRepID &_id, jsonParser const &json) {
-    return _id.from_json(json);
-  }
+  jsonParser const &from_json(SymGroupRepID &_id, jsonParser const &json);
 
   inline
   std::ostream &operator<<(std::ostream &out, SymGroupRepID const &_id) {

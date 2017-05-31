@@ -188,7 +188,7 @@ namespace CASM {
   };
 
   SymGroupRep subset_permutation_rep(const SymGroupRep &permute_rep, const Array<Index>::X2 &subsets);
-  SymGroupRep permuted_direct_sum_rep(const SymGroupRep &permute_rep, const Array<SymGroupRep const *> &sum_reps);
+  SymGroupRep permuted_direct_sum_rep(const SymGroupRep &permute_rep, const std::vector<SymGroupRep const *> &sum_reps);
   SymGroupRep kron_rep(const SymGroupRep &LHS, const SymGroupRep &RHS);
 
   jsonParser &to_json(const SymGroupRep &rep, jsonParser &json);

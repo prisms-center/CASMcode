@@ -8,6 +8,7 @@
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/misc/CASM_TMP.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
@@ -30,14 +31,6 @@ namespace CASM {
    *  - ConfigEnumInterpolation
    *  - ConfigEnumStrain
    *  - SuperConfigEnum
-   *
-   *  Some macros and functions can be used to help implement the required
-   *  members in an Enumerator class. Most enumerators provide iterators that
-   *  dereference as const reference to the object of interest. In some cases it
-   *  may be useful to implement enumerators via a template class using a boolean
-   *  template parameter to specify whether dereferencing iterators results in a
-   *  const or non-const reference to the objects being enumerated. This is what
-   *  the VARIABLECONST macros are intended for.
    *
    *  Enumerators are required to "know" their own name by implementing a
    *  traits class with 'name' as a const std::string member. For enumerators
@@ -223,7 +216,7 @@ namespace CASM {
     /// - Sets current to point at _initial
     /// - Sets step to 0
     /// - Sets valid to true
-    void _initialize(value_type *_initial) {
+    void _initialize(CASM_TMP::ConstSwitch<IsConst, value_type> *_initial) {
       _set_current_ptr(_initial);
       EnumeratorBase::_initialize();
     }
@@ -246,18 +239,13 @@ namespace CASM {
   protected:
 
     /// Change the pointer
-    void _set_current_ptr(value_type *_new) {
+    void _set_current_ptr(CASM_TMP::ConstSwitch<IsConst, value_type> *_new) {
       m_current_ptr = _new;
-    }
-
-    /// Access the current ObjectType by reference
-    value_type &_current() {
-      return *m_current_ptr;
     }
 
   private:
 
-    value_type *m_current_ptr;
+    CASM_TMP::ConstSwitch<IsConst, value_type> *m_current_ptr;
 
   };
 
@@ -408,9 +396,7 @@ namespace CASM {
   // ---- Interface ---------------------
 
   class PrimClex;
-  template<bool>
-  class ScelEnumT;
-  typedef ScelEnumT<false> ScelEnum;
+  class ScelEnum;
   class ScelEnumProps;
   class Lattice;
   template<typename T>
@@ -424,46 +410,8 @@ namespace CASM {
       @{
   */
 
-  /// \brief Base class for generic use of enumerators that may be accessed through the API
-  class EnumInterfaceBase {
-
-  public:
-
-    EnumInterfaceBase() {}
-
-    virtual ~EnumInterfaceBase() {}
-
-    virtual std::string help() const = 0;
-
-    virtual std::string name() const = 0;
-
-    virtual int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const = 0;
-
-    std::unique_ptr<EnumInterfaceBase> clone() const {
-      return std::unique_ptr<EnumInterfaceBase>(this->_clone());
-    }
-
-  private:
-
-    virtual EnumInterfaceBase *_clone() const = 0;
-
-  };
-
-
-  /// \brief Used to hold a list of all enumerators that may be accessed via the API
-  typedef notstd::unique_cloneable_map<std::string, EnumInterfaceBase> EnumeratorMap;
-
-  /// \brief Use to construct an EnumeratorMap
-  inline EnumeratorMap make_enumerator_map() {
-
-    return EnumeratorMap(
-    [](const EnumInterfaceBase & e) -> std::string {
-      return e.name();
-    },
-    [](const EnumInterfaceBase & e) -> notstd::cloneable_ptr<EnumInterfaceBase> {
-      return notstd::clone(e);
-    });
-  }
+  typedef InterfaceBase<Completer::EnumOption> EnumInterfaceBase;
+  typedef InterfaceMap<Completer::EnumOption> EnumeratorMap;
 
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
@@ -472,19 +420,19 @@ namespace CASM {
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnumProps
   ScelEnumProps make_enumerator_scel_enum_props(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make an SupercellEnumerator<Lattice>
   std::unique_ptr<SupercellEnumerator<Lattice> > make_enumerator_superlat_enum(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnum
   std::unique_ptr<ScelEnum> make_enumerator_scel_enum(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt);
 
@@ -498,7 +446,7 @@ namespace CASM {
   template<typename ScelIterator, typename ConfigEnumConstructor>
   int insert_unique_canon_configs(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     ScelIterator begin,
     ScelIterator end,
     ConfigEnumConstructor f,
@@ -508,7 +456,7 @@ namespace CASM {
   template<typename LatticeIterator, typename ConfigEnumConstructor>
   int insert_configs(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     LatticeIterator begin,
     LatticeIterator end,
     ConfigEnumConstructor f,
@@ -529,7 +477,7 @@ namespace CASM {
       return Derived::enumerator_name;
     }
 
-    int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override {
+    int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override {
       return Derived::run(primclex, kwargs, enum_opt);
     }
 
@@ -545,6 +493,11 @@ namespace CASM {
 
 
   };
+
+  /// \brief Use to construct an InterfaceMap
+  std::unique_ptr<InterfaceMap<Completer::EnumOption> > make_enumerator_map();
+
+  std::unique_ptr<EnumeratorMap> make_standard_enumerator_map();
 
   /** @}*/
 

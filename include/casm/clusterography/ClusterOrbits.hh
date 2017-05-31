@@ -192,7 +192,8 @@ namespace CASM {
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
-    std::ostream &status);
+    std::ostream &status,
+    const SymGroup &generating_group = SymGroup());
 
   /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
   template<typename OrbitOutputIterator>
@@ -209,13 +210,12 @@ namespace CASM {
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_local_orbits(
     const Kinetics::DiffusionTransformation &diff_trans,
-    const double &cutoff_radius,
     const jsonParser &bspecs,
-    const std::vector<IntegralCluster> &custom_generators,
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
-    std::ostream &status);
+    std::ostream &status,
+    const SymGroup &generating_group = SymGroup());
 
 
   /* -- Orbit access/usage function declarations ------------------------------------- */

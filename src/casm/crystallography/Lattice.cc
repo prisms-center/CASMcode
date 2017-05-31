@@ -238,6 +238,13 @@ namespace CASM {
 
   //*******************************************************************************
 
+  /// \brief Check if Lattice is in the canonical form
+  bool Lattice::is_canonical(const SymGroup &pg, double tol) const {
+    return almost_equal(this->lat_column_mat(), this->canonical_form(pg, tol).lat_column_mat(), tol);
+  }
+
+  //*******************************************************************************
+
   /// \brief Returns the operation that applied to *this returns the canonical form
   SymOp Lattice::to_canonical(double tol) const {
 
@@ -251,8 +258,27 @@ namespace CASM {
   //*******************************************************************************
 
   /// \brief Returns the operation that applied to *this returns the canonical form
+  SymOp Lattice::to_canonical(const SymGroup &pg, double tol) const {
+
+    // canon = X*this
+    // canon.t = this.t * X.t
+
+    Lattice canon {this->canonical_form(pg, tol)};
+    return SymOp {(this->lat_column_mat().transpose()).colPivHouseholderQr().solve(canon.lat_column_mat().transpose()).transpose()};
+  }
+
+  //*******************************************************************************
+
+  /// \brief Returns the operation that applied to *this returns the canonical form
   SymOp Lattice::from_canonical(double tol) const {
-    return to_canonical().inverse();
+    return to_canonical(tol).inverse();
+  }
+
+  //*******************************************************************************
+
+  /// \brief Returns the operation that applied to *this returns the canonical form
+  SymOp Lattice::from_canonical(const SymGroup &pg, double tol) const {
+    return to_canonical(pg, tol).inverse();
   }
 
   //*******************************************************************************

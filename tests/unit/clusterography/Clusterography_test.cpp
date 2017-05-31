@@ -57,6 +57,8 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
   fs::path test_cases_path("tests/unit/clusterography/test_cases.json");
   jsonParser tests(test_cases_path);
 
+  Log &log = null_log();
+
   for(auto test_it = tests.begin(); test_it != tests.end(); ++test_it) {
 
     // input and expected output data
@@ -97,7 +99,7 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
         alloy_sites_filter,
         crystallography_tol,
         std::back_inserter(asym_unit),
-        std::cout);
+        log);
 
       // run checks:
       check("asym_unit", j, expected_asym_unit(asym_unit.begin(), asym_unit.end()), test_cases_path, quiet);
@@ -112,7 +114,7 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
         alloy_sites_filter,
         crystallography_tol,
         std::back_inserter(orbits),
-        std::cout);
+        log);
 
       // run checks:
       check("Nclusters", j, expected_Nclusters(orbits.begin(), orbits.end()), test_cases_path, quiet);

@@ -4,8 +4,9 @@
 #include "casm/external/qhull/libqhullcpp/PointCoordinates.h"
 #include "casm/external/qhull/libqhullcpp/Qhull.h"
 
-#include "casm/clex/ConfigSelection.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/ConfigIO.hh"
+#include "casm/database/Selection.hh"
 
 namespace CASM {
 
@@ -23,7 +24,7 @@ namespace CASM {
     typedef std::map<std::string, CalculatorPair> CalculatorOptions;
 
     /// \brief Constructor for convex hull in composition/energy space
-    Hull(const ConstConfigSelection &_selection,
+    Hull(const DB::Selection<Configuration> &_selection,
          const CompCalculator &_comp_calculator = ConfigIO::SpeciesFrac(),
          const EnergyCalculator &_energy_calculator = ConfigIO::formation_energy_per_species(),
          double _singular_value_tol = 1e-14,
@@ -83,7 +84,7 @@ namespace CASM {
     orgQhull::Qhull m_hull;
 
     // the selection of Configurations used to generate the hull
-    ConstConfigSelection m_selection;
+    DB::Selection<Configuration> m_selection;
 
     // get composition coordinates for Configuration
     notstd::cloneable_ptr<CompCalculator> m_comp_calculator;

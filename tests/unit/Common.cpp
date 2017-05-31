@@ -5,6 +5,7 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/AppIO.hh"
 
 namespace test {
 
@@ -190,7 +191,6 @@ namespace test {
   void Proj::check_query() {
     m_p.popen(cd_and() + "casm query --columns comp");
     BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
-
   }
 
 }

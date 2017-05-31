@@ -520,6 +520,10 @@ class Relax(object):
         output = dict()
         vrun = vasp.io.Vasprun( os.path.join(vaspdir, "vasprun.xml") )
 
+         # load the final OSZICAR, OUTCAR, and INCAR
+        zcar = vasp.io.Oszicar( os.path.join(vaspdir, "OSZICAR") )
+        ocar = vasp.io.Outcar( os.path.join(vaspdir, "OUTCAR") )
+
         # the calculation is run on the 'sorted' POSCAR, need to report results 'unsorted'
 
         if (super_poscarfile is not None) and (speciesfile is not None):
@@ -529,7 +533,7 @@ class Relax(object):
         else:
             # fake unsort_dict (unsort_dict[i] == i)
             unsort_dict = dict(zip(range(0,len(vrun.basis)),range(0,len(vrun.basis))))
-	    super = vasp.io.Poscar(os.path.join(vaspdir,"POSCAR"))
+            super = vasp.io.Poscar(os.path.join(vaspdir,"POSCAR"))
 
         # unsort_dict:
         #   Returns 'unsort_dict', for which: unsorted_dict[orig_index] == sorted_index;
@@ -554,6 +558,19 @@ class Relax(object):
             output["relaxed_basis"][unsort_dict[i] ] = casm.NoIndent(vrun.basis[i])
 
         output["relaxed_energy"] = vrun.total_energy
+
+        # output["relaxed_mag_basis"] = [ None for i in range(len(vrun.basis))]
+        # output["relaxed_magmom"] = None
+        if ocar.ispin == 2:
+            output["relaxed_magmom"] = zcar.mag[-1]
+            if ocar.lorbit in [1, 2, 11, 12]:
+                output["relaxed_mag_basis"] = [ None for i in range(len(vrun.basis))]
+                for i, v in enumerate(vrun.basis):
+                    output["relaxed_mag_basis"][unsort_dict[i]] = casm.NoIndent(ocar.mag[i])
+        # if output["relaxed_magmom"] is None:
+        #     output.pop("relaxed_magmom", None)
+        # if output["relaxed_mag_basis"][0] is None:
+        #     output.pop("relaxed_mag_basis", None)
 
 	return output
 

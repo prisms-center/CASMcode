@@ -3,14 +3,14 @@
 
 #include <vector>
 #include <map>
-#include "casm/external/Eigen/Dense"
+#include "casm/CASM_global_Eigen.hh"
 
-#include "casm/casm_io/jsonParser.hh"
 #include "casm/clex/ParamComposition.hh"
 
 namespace CASM {
 
   class Structure;
+  class jsonParser;
 
   /// \brief Convert between number of species per unit cell and parametric composition
   ///

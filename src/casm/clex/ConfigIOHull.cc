@@ -3,6 +3,7 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Norm.hh"
+#include "casm/database/ConfigDatabase.hh"
 
 namespace CASM {
 
@@ -31,6 +32,153 @@ namespace CASM {
     std::string default_hull_calculator() {
       return "atom_frac";
     }
+
+
+    // --- BaseHull Template Definitions (only needed here) -------------------
+
+    /// \brief Constructor
+    ///
+    /// \param _name Formatter name, e.g. "on_hull", "hull_dist", etc.
+    /// \param _desc Formatter help description
+    /// \param _comp_calculator Function or functor that return the composition of a Configuration as a Eigen::VectorXd
+    /// \param _energy_calcuator Function or functor that return the energy of a Configuration as a double
+    /// \param _singular_value_tol Used with CASM::almost_zero to detect zero-valued singular values
+    ///
+    /// - The selection of Configuration used to generate the hull is passed as an argument. See parse_args
+    /// - The units of composition and energy are determined by the calculator parameters
+    ///
+    template<typename ValueType>
+    BaseHull<ValueType>::BaseHull(const std::string &_name,
+                                  const std::string &_desc,
+                                  const std::string &_default_selection,
+                                  const std::string &_default_composition_type,
+                                  const Hull::CalculatorOptions &_calculator_map,
+                                  double _singular_value_tol,
+                                  double _bottom_facet_tol) :
+      BaseValueFormatter<ValueType, Configuration>(_name, _desc),
+      m_selection(_default_selection),
+      m_composition_type(_default_composition_type),
+      m_calculator_map(_calculator_map),
+      m_singular_value_tol(_singular_value_tol),
+      m_bottom_facet_tol(_bottom_facet_tol),
+      m_initialized(false) {}
+
+    /// \brief Calculates the convex hull
+    ///
+    /// - Uses the parsed args to determine the selection to use to calculate the hull
+    /// - Calls 'init' on the CompCalculator and EnergyCalculator
+    /// - Constructs the hull
+    ///
+    template<typename ValueType>
+    void BaseHull<ValueType>::init(const Configuration &_tmplt) const {
+
+      DB::Selection<Configuration> selection(
+        _tmplt.primclex().db<Configuration>(),
+        m_selection);
+
+      // Hull typedefs:
+      //typedef std::pair<notstd::cloneable_ptr<CompCalculator>,
+      //                  notstd::cloneable_ptr<EnergyCalculator> > CalculatorPair;
+      //typedef std::map<std::string, CalculatorPair> CalculatorOptions;
+
+      auto res = m_calculator_map.find(m_composition_type)->second;
+      res.first->init(_tmplt);
+      res.second->init(_tmplt);
+
+      m_hull = std::make_shared<Hull>(selection,
+                                      *res.first,
+                                      *res.second,
+                                      m_singular_value_tol,
+                                      m_bottom_facet_tol);
+
+    }
+
+    /// \brief column header to use
+    ///
+    /// \returns 'name() + '(' + args + ')'
+    /// - ex: 'on_hull(MASTER)' if name() is 'on_hull', and args is "MASTER"
+    /// - ex: 'on_clex_hull(ALL,comp) if name() is 'on_clex_hull', and args is "ALL,comp"
+    ///
+    template<typename ValueType>
+    std::string BaseHull<ValueType>::short_header(const Configuration &_config) const {
+      std::stringstream t_ss;
+      t_ss << this->name() << "(" << m_selection << "," << m_composition_type << ")";
+      return t_ss.str();
+    }
+
+    /// \brief Determine the selection to use to generate the hull
+    ///
+    /// Args are: ($selection,$composition,$dim_tol,$bottom_tol)
+    ///
+    /// Options for $selection are:
+    /// - "ALL", use all configurations
+    /// - "MASTER", use the current MASTER selection (default for no args)
+    /// - "CALCULATED", use configurations for which is_calculated is true
+    /// - other, assume the argument is the filename for a selection to use
+    ///
+    /// Options for $composition are:
+    /// - "atom_frac", (default) use atom_frac for the composition and "formation_energy_per_species" for the energy
+    /// - "comp", use parametric composition for the composition and "formation_energy" for the energy
+    ///
+    /// $dim_tol, default=1e-8
+    /// - singular value tolerance used for detecting composition dimensions
+    ///
+    /// $bottom_tol, default=1e-8
+    /// - tolerance used for detecting facets on the convex hull bottom
+    ///
+    template<typename ValueType>
+    bool BaseHull<ValueType>::parse_args(const std::string &args) {
+
+      if(m_initialized) {
+        return false;
+      }
+
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+      if(splt_vec.size() > 4) {
+        throw std::runtime_error("Attempted to initialize format tag " + this->name()
+                                 + " with " + std::to_string(splt_vec.size()) + " arguments ("
+                                 + args + "), but only up to 4 arguments allowed.\n");
+        return false;
+      }
+
+      while(splt_vec.size() < 4) {
+        splt_vec.push_back("");
+      }
+
+      m_selection = splt_vec[0].empty() ? m_selection : splt_vec[0];
+      m_composition_type = splt_vec[1].empty() ? m_composition_type : splt_vec[1];
+      m_singular_value_tol = splt_vec[2].empty() ? m_singular_value_tol : std::stod(splt_vec[2]);
+      m_bottom_facet_tol = splt_vec[3].empty() ? m_bottom_facet_tol : std::stod(splt_vec[3]);
+      m_initialized = true;
+
+      auto it = m_calculator_map.find(m_composition_type);
+      if(it == m_calculator_map.end()) {
+
+        std::stringstream ss;
+        ss << "Composition type '" << m_composition_type << "' is not recognized. Options are: ";
+        for(auto it = m_calculator_map.begin(); it != m_calculator_map.end(); ++it) {
+          std::cerr << it->first << " ";
+          if(it != m_calculator_map.begin()) {
+            ss << ", ";
+          }
+          ss << "'" << it->first << "'";
+        }
+        throw std::runtime_error(ss.str());
+
+      }
+
+      // prevent combining formatters
+      return false;
+    }
+
+    /// \brief const Access the Hull object
+    template<typename ValueType>
+    const Hull &BaseHull<ValueType>::_hull() const {
+      return *m_hull;
+    }
+
 
     // --- OnHull Definitions -------------------
 
@@ -180,6 +328,8 @@ namespace CASM {
       return d;
     }
 
+    template class BaseHull<bool>;
+    template class BaseHull<double>;
   }
 }
 

@@ -23,7 +23,7 @@ namespace CASM {
 
   public:
 
-    ConfigEnumStrain(Supercell &scel,
+    ConfigEnumStrain(const Supercell &scel,
                      const Configuration &_init,
                      const std::vector<Index> &subspace_partitions,
                      const std::vector<double> &magnitudes,
@@ -35,7 +35,7 @@ namespace CASM {
 
     static const std::string enumerator_name;
     static const std::string interface_help;
-    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
   private:
 

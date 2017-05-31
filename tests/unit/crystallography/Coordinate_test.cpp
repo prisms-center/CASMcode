@@ -2,6 +2,8 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/container/Counter.hh"
 #include "casm/crystallography/Coordinate.hh"
 
 using namespace CASM;

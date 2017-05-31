@@ -1,5 +1,9 @@
+#ifndef CASM_DataFormatterTools_impl
+#define CASM_DataFormatterTools_impl
+
 #include <algorithm>
-#include "casm/external/boost.hh"
+#include "casm/casm_io/DataFormatterTools.hh"
+
 namespace CASM {
 
   template<typename ValueType, typename ArgType, typename DataObject>
@@ -95,3 +99,5 @@ namespace CASM {
   }
 
 }
+
+#endif

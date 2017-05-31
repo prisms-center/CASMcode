@@ -1,358 +1,47 @@
 #include "casm/clex/Supercell.hh"
 
-#include <math.h>
-#include <map>
+//#include <math.h>
 #include <vector>
-#include <stdlib.h>
+//#include <stdlib.h>
 
+#include "casm/app/ProjectSettings.hh"
+#include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigIterator.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/clex/NeighborList.hh"
+#include "casm/database/ScelDatabase.hh"
 
 namespace CASM {
 
-  /*****************************************************************/
-
-  ReturnArray<int> Supercell::max_allowed_occupation() const {
-    Array<int> max_allowed;
-
-    // Figures out the maximum number of occupants in each basis site, to initialize counter with
-    for(Index i = 0; i < prim().basis.size(); i++) {
-      max_allowed.append(Array<int>(volume(), prim().basis[i].site_occupant().size() - 1));
-    }
-    //std::cout << "max_allowed_occupation is:  " << max_allowed << "\n\n";
-    return max_allowed;
+  bool ConfigMapCompare::operator()(const Configuration *A, const Configuration *B) const {
+    return *A < *B;
   }
-
-  /*****************************************************************/
-
-  const Structure &Supercell::prim() const {
-    return m_primclex->prim();
-  }
-
-  /// \brief Returns the SuperNeighborList
-  const SuperNeighborList &Supercell::nlist() const {
-
-    // if any additions to the prim nlist, must update the super nlist
-    if(primclex().nlist().size() != m_nlist_size_at_construction) {
-      m_nlist.unique().reset();
-    }
-
-    // lazy construction of neighbor list
-    if(!m_nlist) {
-      m_nlist_size_at_construction = primclex().nlist().size();
-      m_nlist = notstd::make_cloneable<SuperNeighborList>(
-                  m_prim_grid,
-                  primclex().nlist()
-                );
-    }
-    return *m_nlist;
-  };
-
-  /*****************************************************************/
-
-  // begin and end iterators for iterating over configurations
-  Supercell::config_iterator Supercell::config_begin() {
-    return config_iterator(m_primclex, m_id, 0);
-  }
-
-  Supercell::config_iterator Supercell::config_end() {
-    return ++config_iterator(m_primclex, m_id, config_list().size() - 1);
-  }
-
-  // begin and end const_iterators for iterating over configurations
-  Supercell::config_const_iterator Supercell::config_cbegin() const {
-    return config_const_iterator(m_primclex, m_id, 0);
-  }
-
-  Supercell::config_const_iterator Supercell::config_cend() const {
-    return ++config_const_iterator(m_primclex, m_id, config_list().size() - 1);
-  }
-
-  /*****************************************************************/
-
-  const SymGroup &Supercell::factor_group() const {
-    if(!m_factor_group.size())
-      generate_factor_group();
-    return m_factor_group;
-  }
-
-  /*****************************************************************/
-
-  // permutation_symrep() populates permutation symrep if needed
-  const Permutation &Supercell::factor_group_permute(Index i) const {
-    return *(permutation_symrep().get_permutation(factor_group()[i]));
-  }
-  /*****************************************************************/
-
-  // PrimGrid populates translation permutations if needed
-  const Permutation &Supercell::translation_permute(Index i) const {
-    return m_prim_grid.translation_permutation(i);
-  }
-
-  /*****************************************************************/
-
-  // PrimGrid populates translation permutations if needed
-  const Array<Permutation> &Supercell::translation_permute() const {
-    return m_prim_grid.translation_permutations();
-  }
-
-  /*****************************************************************/
-
-  /// \brief Begin iterator over translation permutations
-  Supercell::permute_const_iterator Supercell::translate_begin() const {
-    return permute_begin();
-  }
-
-  /*****************************************************************/
-
-  /// \brief End iterator over translation permutations
-  Supercell::permute_const_iterator Supercell::translate_end() const {
-    return permute_begin().begin_next_fg_op();
-  }
-
-  /*****************************************************************/
-  /* //Example usage case:
-   *  Supercell my_supercell;
-   *  Configuration my_config(my_supercell, configuration_info);
-   *  ConfigDoF my_dof=my_config.configdof();
-   *  my_dof.is_canonical(my_supercell.permute_begin(),my_supercell.permute_end());
-   */
-  Supercell::permute_const_iterator Supercell::permute_begin() const {
-    return permute_it(0, 0); // starting indices
-  }
-
-  /*****************************************************************/
-
-  Supercell::permute_const_iterator Supercell::permute_end() const {
-    return permute_it(factor_group().size(), 0); // one past final indices
-  }
-
-  /*****************************************************************/
-
-  Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, Index trans_index) const {
-    return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
-                                  m_prim_grid,
-                                  fg_index, trans_index); // one past final indices
-  }
-
-  /*****************************************************************/
-
-  //Printing config_index_to_bijk
-  void Supercell::print_bijk(std::ostream &stream) {
-    for(Index i = 0; i < num_sites(); i++) {
-      stream << uccoord(i);
-    }
-  }
-
-  //*******************************************************************************
-  /**
-   *   Checks if the Configuration 'config' is contained in Supercell::config_list().
-   *     Only checks Configuration::occupation for equivalence.
-   *     Does not check for symmetrically equivalent Configurations, so put your
-   *     'config' in canonical form first.
-   */
-  //*******************************************************************************
-  bool Supercell::contains_config(const Configuration &config) const {
-    Index index;
-    return contains_config(config, index);
-  };
-
-  //*******************************************************************************
-  /**
-   *   Checks if the Configuration 'config' is contained in Supercell::config_list().
-   *     Only checks Configuration::configdof for equivalence.
-   *     Does not check for symmetrically equivalent Configurations, so put your
-   *     'config' in canonical form first.
-   *
-   *   If equivalent found, 'index' contains it's index into config_list, else
-   *     'index' = config_list().size().
-   */
-  //*******************************************************************************
-  bool Supercell::contains_config(const Configuration &config, Index &index) const {
-    auto res = m_config_map.find(&config);
-    if(res == m_config_map.end()) {
-      index = config_list().size();
-      return false;
-    }
-    index = res->second;
-    return true;
-  };
-
-  //*******************************************************************************
-  Supercell::config_const_iterator Supercell::find(const Configuration &config) const {
-    auto res = m_config_map.find(&config);
-    if(res == m_config_map.end()) {
-      return config_cend();
-    }
-    return config_const_iterator(&primclex(), id(), res->second);
-  }
-
-  //*******************************************************************************
-  /**
-   *   Converts 'config' to canonical form, then adds to config_list if not already
-   *     present. Location in config_list is stored in 'index'.
-   *     Permutation that resulted in canonical form is stored in 'permute_it'.
-   *     Return 'true' if new config, 'false' otherwise.
-   *
-   *   Might want to rewrite without using new canon_config for memory/speed issues.
-   */
-  //*******************************************************************************
-
-  bool Supercell::add_config(const Configuration &config) {
-    Index index;
-    Supercell::permute_const_iterator permute_it;
-    return add_config(config, index, permute_it);
-  }
-
-  bool Supercell::add_config(const Configuration &config, Index &index, Supercell::permute_const_iterator &permute_it) {
-    // 'permut_it' stores operation that takes 'config' to its canonical form
-    permute_it = config.to_canonical();
-
-    // std::cout << "    config: " << config.occupation() << std::endl;
-    // std::cout << "     canon: " << canon_config.occupation() << std::endl;
-
-    return add_canon_config(copy_apply(permute_it, config), index);
-  }
-
-  //*******************************************************************************
-  /**
-   *   Assumes 'canon_config' is in canonical form, adds to config_list if not already there.
-   *     Location in config_list is stored in 'index'.
-   */
-  //*******************************************************************************
-  bool Supercell::add_canon_config(const Configuration &canon_config, Index &index) {
-
-    // Add 'canon_config' to 'm_config_list' if it doesn't already exist
-    //   store it's index into 'm_config_list' in 'm_config_list_index'
-    //std::cout << "check if canon_config is in m_config_list" << std::endl;
-    if(!contains_config(canon_config, index)) {
-      //std::cout << "new config" << std::endl;
-      _add_canon_config(canon_config);
-      return true;
-      //std::cout << "    added" << std::endl;
-    }
-    else {
-      m_config_list[index].push_back_source(canon_config.source());
-    }
-    return false;
-  }
-
-  //*******************************************************************************
-
-  /// \brief Insert a configuration that may be non-canonical
-  std::pair<Supercell::config_const_iterator, bool>
-  Supercell::insert_config(const Configuration &config) {
-    return insert_canon_config(config.canonical_form());
-  }
-
-  //*******************************************************************************
-
-  /// \brief Insert a configuration that is known to be canonical
-  std::pair<Supercell::config_const_iterator, bool>
-  Supercell::insert_canon_config(const Configuration &canon_config) {
-    Index index;
-    bool inserted = false;
-    if(!contains_config(canon_config, index)) {
-      _add_canon_config(canon_config);
-      index = config_list().size() - 1;
-      inserted = true;
-    }
-    config_const_iterator it(&primclex(), id(), index);
-    return std::make_pair(it, inserted);
-  }
-
-  //*******************************************************************************
-  /**
-   *   Adds to config_list, assuming 'canon_config' is in canonical form and not
-   *   already there
-   */
-  //*******************************************************************************
-  void Supercell::_add_canon_config(const Configuration &canon_config) {
-
-    if(this != &canon_config.supercell()) {
-      throw std::runtime_error("Error adding Configuration to Supercell: Supercell mismatch");
-    }
-    //std::cout << "new config" << std::endl;
-    config_list().push_back(canon_config);
-    config_list().back().set_id(config_list().size() - 1);
-    m_config_map.insert(
-      std::make_pair(&config_list().back(),
-                     boost::lexical_cast<Index>(config_list().back().id())));
-    config_list().back().set_selected(false);
-  }
-
-  //*******************************************************************************
-
-  void Supercell::read_config_list(const jsonParser &json) {
-
-    // Provide an error check
-    if(config_list().size() != 0) {
-      std::cerr << "Error in Supercell::read_configuration." << std::endl;
-      std::cerr << "  config_list().size() != 0, only use this once" << std::endl;
-      exit(1);
-    }
-
-    if(!json.contains("supercells")) {
-      return;
-    }
-
-    if(!json["supercells"].contains(name())) {
-      return;
-    }
-
-    // Read all configurations for this supercell. They should be numbered sequentially, so read until not found.
-    Index configid = 0;
-    while(true) {
-      std::stringstream ss;
-      ss << configid;
-
-      if(json["supercells"][name()].contains(ss.str())) {
-        config_list().push_back(Configuration(json, *this, configid));
-        m_config_map.insert(
-          std::make_pair(&config_list().back(),
-                         boost::lexical_cast<Index>(config_list().back().id())));
-      }
-      else {
-        return;
-      }
-      configid++;
-    }
-  }
-
-
-  //*******************************************************************************
 
   //Copy constructor is needed for proper initialization of m_prim_grid
   Supercell::Supercell(const Supercell &RHS) :
     m_primclex(RHS.m_primclex),
-    m_real_super_lattice(RHS.m_real_super_lattice),
-    m_prim_grid((*m_primclex).prim().lattice(), m_real_super_lattice, (*m_primclex).prim().basis.size()),
-    m_name(RHS.m_name),
+    m_lattice(RHS.m_lattice),
+    m_prim_grid((*m_primclex).prim().lattice(), m_lattice, (*m_primclex).prim().basis.size()),
     m_nlist(RHS.m_nlist),
     m_canonical(nullptr),
-    m_config_list(RHS.m_config_list),
-    m_transf_mat(RHS.m_transf_mat),
-    m_id(RHS.m_id) {
+    m_transf_mat(RHS.m_transf_mat) {
   }
 
-  //*******************************************************************************
-
-  Supercell::Supercell(PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
+  Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     m_primclex(_prim),
-    m_real_super_lattice((*m_primclex).prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
-    m_prim_grid((*m_primclex).prim().lattice(), m_real_super_lattice, (*m_primclex).prim().basis.size()),
+    m_lattice((*m_primclex).prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
+    m_prim_grid((*m_primclex).prim().lattice(), m_lattice, (*m_primclex).prim().basis.size()),
     m_canonical(nullptr),
     m_transf_mat(transf_mat_init) {
     //    fill_reciprocal_supercell();
   }
 
-  //*******************************************************************************
-
-  Supercell::Supercell(PrimClex *_prim, const Lattice &superlattice) :
+  Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
     m_primclex(_prim),
-    m_real_super_lattice(superlattice),
+    m_lattice(superlattice),
     m_canonical(nullptr),
-    m_prim_grid((*m_primclex).prim().lattice(), m_real_super_lattice, (*m_primclex).prim().basis.size()) {
+    m_prim_grid((*m_primclex).prim().lattice(), m_lattice, (*m_primclex).prim().basis.size()) {
 
     auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
     if(!res.first) {
@@ -367,144 +56,104 @@ namespace CASM {
     m_transf_mat = res.second;
   }
 
-  //*******************************************************************************
+  Supercell::~Supercell() {}
 
-  /// \brief Get the PrimClex crystallography_tol
-  double Supercell::crystallography_tol() const {
-    return primclex().crystallography_tol();
+  /// \brief Return the sublattice index for a linear index
+  ///
+  /// Linear indices are grouped by sublattice, then ordered as determined by
+  /// PrimGrid. This function is equivalent to:
+  /// \code
+  /// linear_index / volume();
+  /// \endcode
+  Index Supercell::sublat(Index linear_index) const {
+    return linear_index / volume();
   }
 
-  //*******************************************************************************
-  /**
-   * Run through every selected Configuration in *this and call write() on it. This will
-   * update all the JSON files and also rewrite POS, DoF etc. Meant for when
-   * you calculated some properties (e.g. formation energies or correlations) and
-   * want it outputted, but didn't generate any new configurations.
-   */
+  /// \brief Given a Coordinate and tolerance, return linear index into Configuration
+  ///
+  ///   This may be slow, first converts Coordinate -> UnitCellCoord,
+  ///   then gets linear_index from UnitCellCoord
+  ///
+  /// Implementation:
+  /// \code
+  /// Coordinate tcoord(coord);
+  /// tcoord.within();
+  /// return linear_index(UnitCellCoord(prim(), coord, tol));
+  /// \endcode
+  Index Supercell::linear_index(const Coordinate &coord, double tol) const {
+    Coordinate tcoord(coord);
+    tcoord.within();
+    return linear_index(UnitCellCoord(prim(), coord, tol));
+  };
 
-  jsonParser &Supercell::write_config_list(jsonParser &json) {
-    for(Index c = 0; c < config_list().size(); c++) {
-      m_config_list[c].write(json);
+  /// \brief Return the linear index corresponding to integral coordinates
+  ///
+  /// Linear indices are grouped by sublattice, then ordered as determined by
+  /// PrimGrid. This function is equivalent to:
+  /// \code
+  /// bijk[0] * volume() + m_prim_grid.find(bijk.unitcell());
+  /// \endcode
+  Index Supercell::linear_index(const UnitCellCoord &bijk) const {
+    return bijk[0] * volume() + m_prim_grid.find(bijk.unitcell());
+  }
+
+  /// \brief Return the linear index corresponding to integral coordinates
+  ///
+  /// Equivalent to:
+  /// \code
+  /// uccoord(linear_index).coordinate()
+  /// \endcode
+  Coordinate Supercell::coord(Index linear_index) const {
+    return uccoord(linear_index).coordinate();
+  }
+
+  /// \brief Return the integral coordinates corresponding to a linear index
+  ///
+  /// Linear indices are grouped by sublattice, then ordered as determined by
+  /// PrimGrid. This function is equivalent to:
+  /// \code
+  /// UnitCellCoord(prim(), sublat(linear_index), m_prim_grid.unitcell(linear_index % volume()))
+  /// \endcode
+  UnitCellCoord Supercell::uccoord(Index linear_index) const {
+    return UnitCellCoord(prim(), sublat(linear_index), m_prim_grid.unitcell(linear_index % volume()));
+  };
+
+  std::vector<int> Supercell::max_allowed_occupation() const {
+    std::vector<int> max_allowed;
+
+    // Figures out the maximum number of occupants in each basis site, to initialize counter with
+    for(Index i = 0; i < prim().basis.size(); i++) {
+      std::vector<int> tmp(volume(), prim().basis[i].site_occupant().size() - 1);
+      max_allowed.insert(max_allowed.end(), tmp.begin(), tmp.end());
     }
-    return json;
+    //std::cout << "max_allowed_occupation is:  " << max_allowed << "\n\n";
+    return max_allowed;
   }
 
-  //***********************************************************
-
-  void Supercell::generate_factor_group()const {
-    m_real_super_lattice.find_invariant_subgroup(prim().factor_group(), m_factor_group);
-    m_factor_group.set_lattice(m_real_super_lattice);
-    return;
+  bool Supercell::is_canonical() const {
+    return lattice().is_canonical(
+             prim().point_group(),
+             primclex().crystallography_tol());
   }
 
-  //***********************************************************
-
-  void Supercell::generate_permutations()const {
-    if(!m_perm_symrep_ID.empty()) {
-      std::cerr << "WARNING: In Supercell::generate_permutations(), but permutations data already exists.\n"
-                << "         It will be overwritten.\n";
-    }
-    m_perm_symrep_ID = m_prim_grid.make_permutation_representation(factor_group(), prim().basis_permutation_symrep_ID());
-    //m_trans_permute = m_prim_grid.make_translation_permutations(basis_size()); <--moved to PrimGrid
-
-    /*
-      std::cerr << "For SCEL " << " -- " << name() << " Translation Permutations are:\n";
-      for(int i = 0; i < m_trans_permute.size(); i++)
-      std::cerr << i << ":   " << m_trans_permute[i].perm_array() << "\n";
-
-      std::cerr << "For SCEL " << " -- " << name() << " factor_group Permutations are:\n";
-      for(int i = 0; i < m_factor_group.size(); i++){
-    std::cerr << "Operation " << i << ":\n";
-    m_factor_group[i].print(std::cerr,FRAC);
-    std::cerr << '\n';
-    std::cerr << i << ":   " << m_factor_group[i].get_permutation_rep(m_perm_symrep_ID)->perm_array() << '\n';
-
-    }
-    std:: cerr << "End permutations for SCEL " << name() << '\n';
-    */
-
-    return;
+  SymOp Supercell::to_canonical() const {
+    return lattice().to_canonical(
+             prim().point_group(),
+             primclex().crystallography_tol());
   }
 
-  //***********************************************************
-
-  void Supercell::_generate_name() const {
-    if(is_canonical()) {
-      m_name = CASM::generate_name(m_transf_mat);
-    }
-    else {
-      /*
-      ... to do ...
-      Supercell& canon = canonical_form();
-      ScelEnumEquivalents e(canon);
-
-      for(auto it = e.begin(); it != e.end(); ++it) {
-        if(this->is_equivalent(*it)) {
-          break;
-        }
-      }
-
-      m_name = canon.name() + "." + std::to_string(e.sym_op().index());
-      */
-
-      Supercell &canon = canonical_form();
-      m_name = canon.name() + ".non_canonical_equivalent";
-    }
+  SymOp Supercell::from_canonical() const {
+    return lattice().from_canonical(
+             prim().point_group(),
+             primclex().crystallography_tol());
   }
 
-  //***********************************************************
-
-  fs::path Supercell::path() const {
-    return primclex().dir().supercell_dir(name());
-  }
-
-  /*
-   * Run through the configuration list and count how many of them
-   * have been selected then return value.
-   */
-
-  Index Supercell::amount_selected() const {
-    Index amount_selected = 0;
-    for(Index c = 0; c < config_list().size(); c++) {
-      if(m_config_list[c].selected()) {
-        amount_selected++;
-      }
-    }
-    return amount_selected;
-  }
-
-  //***********************************************************
-
-  Supercell &Supercell::canonical_form() const {
+  const Supercell &Supercell::canonical_form() const {
     if(!m_canonical) {
-      m_canonical = &primclex().supercell(primclex().add_supercell(real_super_lattice()));
+      m_canonical = &*insert().first;
     }
     return *m_canonical;
   }
-
-  //***********************************************************
-  /**  Check if a Structure fits in this Supercell
-   *  - Checks that 'structure'.lattice is supercell of 'real_super_lattice'
-   *  - Does *NOT* check basis sites
-   */
-  //***********************************************************
-  bool Supercell::is_supercell_of(const Structure &structure) const {
-    Eigen::Matrix3d mat;
-    return is_supercell_of(structure, mat);
-  };
-
-  //***********************************************************
-  /**  Check if a Structure fits in this Supercell
-   *  - Checks that 'structure'.lattice is supercell of 'real_super_lattice'
-   *  - Does *NOT* check basis sites
-   */
-  //***********************************************************
-  bool Supercell::is_supercell_of(const Structure &structure, Eigen::Matrix3d &mat) const {
-    Structure tstruct = structure;
-    SymGroup point_group;
-    tstruct.lattice().generate_point_group(point_group);
-    return m_real_super_lattice.is_supercell_of(tstruct.lattice(), point_group, mat);
-  };
 
   //***********************************************************
   /**  Generate a Configuration from a Structure
@@ -513,7 +162,7 @@ namespace CASM {
    *  - tested OK for perfect prim coordinates, not yet tested with relaxed coordinates using 'tol'
    */
   //***********************************************************
-  Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) {
+  Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) const {
     //Because the user is a fool and the supercell may not be a supercell (This still doesn't check the basis!)
     Eigen::Matrix3d transmat;
     if(!structure_to_config.lattice().is_supercell_of(prim().lattice(), prim().factor_group(), transmat)) {
@@ -530,7 +179,7 @@ namespace CASM {
     const Structure &prim = (*m_primclex).prim();
 
     // create a 'superstruc' that fills '*this'
-    BasicStructure<Site> superstruc = structure_to_config.create_superstruc(m_real_super_lattice);
+    BasicStructure<Site> superstruc = structure_to_config.create_superstruc(m_lattice);
 
     //std::cout << "superstruc:\n";
     //superstruc.print(std::cout);
@@ -542,7 +191,7 @@ namespace CASM {
     Configuration config(*this);
 
     // Initially set occupation to -1 (for unknown) on every site
-    config.set_occupation(Array<int>(num_sites(), -1));
+    config.set_occupation(std::vector<int>(num_sites(), -1));
 
     Index _linear_index, b;
     int val;
@@ -589,15 +238,13 @@ namespace CASM {
 
   };
 
-  //***********************************************************
-  /**  Returns a Structure equivalent to the Supercell
-   *  - basis sites are ordered to agree with Supercell::config_index_to_bijk
-   *  - occupation set to prim default, not curr_state
-   */
-  //***********************************************************
+  ///  Returns a Structure equivalent to the Supercell
+  ///  - basis sites are ordered to agree with Supercell::config_index_to_bijk
+  ///  - occupation set to prim default, not curr_state
+  ///
   Structure Supercell::superstructure() const {
     // create a 'superstruc' that fills '*this'
-    Structure superstruc = (*m_primclex).prim().create_superstruc(m_real_super_lattice);
+    Structure superstruc = (*m_primclex).prim().create_superstruc(m_lattice);
 
     // sort basis sites so that they agree with config_index_to_bijk
     //   This sorting may not be necessary,
@@ -617,13 +264,11 @@ namespace CASM {
 
   }
 
-  //***********************************************************
-  /**  Returns a Structure equivalent to the Supercell
-   *  - basis sites are ordered to agree with Supercell::config_index_to_bijk
-   *  - occupation set to config
-   *  - prim set to (*m_primclex).prim
-   */
-  //***********************************************************
+  ///  Returns a Structure equivalent to the Supercell
+  ///  - basis sites are ordered to agree with Supercell::config_index_to_bijk
+  ///  - occupation set to config
+  ///  - prim set to (*m_primclex).prim
+  ///
   Structure Supercell::superstructure(const Configuration &config) const {
     // create a 'superstruc' that fills '*this'
     Structure superstruc = superstructure();
@@ -640,37 +285,132 @@ namespace CASM {
 
   }
 
-  /**
-   * This is a safer version that takes an Index instead of an actual Configuration.
-   * It might be better to have the version that takes a Configuration private,
-   * that way you can't pass it anything that's incompatible.
-   */
-
-  Structure Supercell::superstructure(Index config_index) const {
-    if(config_index >= config_list().size()) {
-      std::cerr << "ERROR in Supercell::superstructure" << std::endl;
-      std::cerr << "Requested superstructure of configuration with index " << config_index << " but there are only " << config_list().size() << " configurations" << std::endl;
-      exit(185);
-    }
-    return superstructure(m_config_list[config_index]);
+  const PrimClex &Supercell::primclex() const {
+    return *m_primclex;
   }
 
-  //***********************************************************
-  /**  Returns an Array<int> consistent with
-   *     Configuration::occupation that is all vacancies.
-   *     A site which can not contain a vacancy is set to -1.
-   */
-  //***********************************************************
-  ReturnArray<int> Supercell::vacant() const {
-    Array<int> occupation = Array<int>(num_sites(), -1);
-    int b, index;
-    for(Index i = 0; i < num_sites(); i++) {
-      b = sublat(i);
-      if(prim().basis[b].contains("Va", index)) {
-        occupation[i] = index;
-      }
+  /// \brief Get the PrimClex crystallography_tol
+  double Supercell::crystallography_tol() const {
+    return primclex().crystallography_tol();
+  }
+
+  const PrimGrid &Supercell::prim_grid() const {
+    return m_prim_grid;
+  }
+
+  const Structure &Supercell::prim() const {
+    return m_primclex->prim();
+  }
+
+  ///Return number of primitive cells that fit inside of *this
+  Index Supercell::volume() const {
+    return m_prim_grid.size();
+  };
+
+  Index Supercell::basis_size() const {
+    return prim().basis.size();
+  }
+
+  Index Supercell::num_sites() const {
+    return volume() * basis_size();
+  };
+
+  // the permutation_symrep is the SymGroupRep of prim().factor_group() that describes how
+  // operations of m_factor_group permute sites of the Supercell.
+  // NOTE: The permutation representation is for (*this).prim().factor_group(), which may contain
+  //       more operations than m_factor_group, so the Permutation SymGroupRep may have 'gaps' at the
+  //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
+  //       SymGroupRep::get_representation(m_factor_group[i]) or SymGroupRep::get_permutation(m_factor_group[i]),
+  //       so that you don't encounter the gaps (i.e., the representation can be indexed using the
+  //       SymOps of m_factor_group
+  SymGroupRepID Supercell::permutation_symrep_ID() const {
+    if(m_perm_symrep_ID.empty()) {
+      _generate_permutations();
     }
-    return occupation;
+    return m_perm_symrep_ID;
+  }
+
+  SymGroupRep const &Supercell::permutation_symrep() const {
+    return prim().factor_group().representation(permutation_symrep_ID());
+  }
+
+  const Eigen::Matrix3i &Supercell::transf_mat() const {
+    return m_transf_mat;
+  };
+
+  const Lattice &Supercell::lattice() const {
+    return m_lattice;
+  };
+
+  /// \brief Returns the SuperNeighborList
+  const SuperNeighborList &Supercell::nlist() const {
+
+    // if any additions to the prim nlist, must update the super nlist
+    if(primclex().nlist().size() != m_nlist_size_at_construction) {
+      m_nlist.unique().reset();
+    }
+
+    // lazy construction of neighbor list
+    if(!m_nlist) {
+      m_nlist_size_at_construction = primclex().nlist().size();
+      m_nlist = notstd::make_cloneable<SuperNeighborList>(
+                  m_prim_grid,
+                  primclex().nlist()
+                );
+    }
+    return *m_nlist;
+  };
+
+  const SymGroup &Supercell::factor_group() const {
+    if(!m_factor_group.size()) {
+      _generate_factor_group();
+    }
+    return m_factor_group;
+  }
+
+  // permutation_symrep() populates permutation symrep if needed
+  const Permutation &Supercell::factor_group_permute(Index i) const {
+    return *(permutation_symrep().get_permutation(factor_group()[i]));
+  }
+
+  // PrimGrid populates translation permutations if needed
+  const Permutation &Supercell::translation_permute(Index i) const {
+    return m_prim_grid.translation_permutation(i);
+  }
+
+  // PrimGrid populates translation permutations if needed
+  const std::vector<Permutation> &Supercell::translation_permute() const {
+    return m_prim_grid.translation_permutations();
+  }
+
+  /// \brief Begin iterator over translation permutations
+  Supercell::permute_const_iterator Supercell::translate_begin() const {
+    return permute_begin();
+  }
+
+  /// \brief End iterator over translation permutations
+  Supercell::permute_const_iterator Supercell::translate_end() const {
+    return permute_begin().begin_next_fg_op();
+  }
+
+  /// Example usage case:
+  ///  Supercell my_supercell;
+  ///  Configuration my_config(my_supercell, configuration_info);
+  ///  ConfigDoF my_dof=my_config.configdof();
+  ///  my_dof.is_canonical(my_supercell.permute_begin(),my_supercell.permute_end());
+  ///
+  Supercell::permute_const_iterator Supercell::permute_begin() const {
+    return permute_it(0, 0); // starting indices
+  }
+
+  Supercell::permute_const_iterator Supercell::permute_end() const {
+    return permute_it(factor_group().size(), 0); // one past final indices
+  }
+
+  Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, Index trans_index) const {
+    return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
+                                  m_prim_grid,
+                                  fg_index, trans_index); // one past final indices
   }
 
   bool Supercell::operator<(const Supercell &B) const {
@@ -682,7 +422,53 @@ namespace CASM {
     if(volume() != B.volume()) {
       return volume() < B.volume();
     }
-    return real_super_lattice() < B.real_super_lattice();
+    return lattice() < B.lattice();
+  }
+
+  /// \brief Insert the canonical form of this into the database
+  std::pair<DB::DatabaseIterator<Supercell>, bool> Supercell::insert() const {
+    return primclex().db<Supercell>().emplace(
+             m_primclex,
+             canonical_equivalent_lattice(
+               lattice(),
+               prim().point_group(),
+               crystallography_tol()));
+  }
+
+  ///  Check if a Structure fits in this Supercell
+  ///  - Checks that 'structure'.lattice is supercell of 'lattice'
+  ///  - Does *NOT* check basis sites
+  ///
+  bool Supercell::is_supercell_of(const Structure &structure) const {
+    Eigen::Matrix3d mat;
+    return is_supercell_of(structure, mat);
+  };
+
+  ///  Check if a Structure fits in this Supercell
+  ///  - Checks that 'structure'.lattice is supercell of 'lattice'
+  ///  - Does *NOT* check basis sites
+  ///
+  bool Supercell::is_supercell_of(const Structure &structure, Eigen::Matrix3d &mat) const {
+    Structure tstruct = structure;
+    SymGroup point_group;
+    tstruct.lattice().generate_point_group(point_group);
+    return m_lattice.is_supercell_of(tstruct.lattice(), point_group, mat);
+  };
+
+  ///  Returns an std::vector<int> consistent with
+  ///    Configuration::occupation that is all vacancies.
+  ///    A site which can not contain a vacancy is set to -1.
+  ///
+  std::vector<int> Supercell::vacant() const {
+    std::vector<int> occupation(num_sites(), -1);
+    int b, index;
+    for(Index i = 0; i < num_sites(); i++) {
+      b = sublat(i);
+      if(prim().basis[b].contains("Va", index)) {
+        occupation[i] = index;
+      }
+    }
+    return occupation;
   }
 
   bool Supercell::_eq(const Supercell &B) const {
@@ -694,15 +480,56 @@ namespace CASM {
     return transf_mat() == B.transf_mat();
   }
 
+  void Supercell::_generate_factor_group()const {
+    m_lattice.find_invariant_subgroup(prim().factor_group(), m_factor_group);
+    m_factor_group.set_lattice(m_lattice);
+    return;
+  }
+
+  void Supercell::_generate_permutations()const {
+    if(!m_perm_symrep_ID.empty()) {
+      std::cerr << "WARNING: In Supercell::generate_permutations(), but permutations data already exists.\n"
+                << "         It will be overwritten.\n";
+    }
+    m_perm_symrep_ID = m_prim_grid.make_permutation_representation(factor_group(), prim().basis_permutation_symrep_ID());
+    //m_trans_permute = m_prim_grid.make_translation_permutations(basis_size()); <--moved to PrimGrid
+
+    /*
+      std::cerr << "For SCEL " << " -- " << name() << " Translation Permutations are:\n";
+      for(int i = 0; i < m_trans_permute.size(); i++)
+      std::cerr << i << ":   " << m_trans_permute[i].perm_array() << "\n";
+
+      std::cerr << "For SCEL " << " -- " << name() << " factor_group Permutations are:\n";
+      for(int i = 0; i < m_factor_group.size(); i++){
+    std::cerr << "Operation " << i << ":\n";
+    m_factor_group[i].print(std::cerr,FRAC);
+    std::cerr << '\n';
+    std::cerr << i << ":   " << m_factor_group[i].get_permutation_rep(m_perm_symrep_ID)->perm_array() << '\n';
+
+    }
+    std:: cerr << "End permutations for SCEL " << name() << '\n';
+    */
+
+    return;
+  }
+
+  /// \brief Return supercell name
+  ///
+  /// - If lattice is the canonical equivalent, then return 'SCELV_A_B_C_D_E_F'
+  /// - Else, return 'SCELV_A_B_C_D_E_F.$FG_INDEX', where $FG_INDEX is the index of the first
+  ///   symmetry operation in the primitive structure's factor group such that the lattice
+  ///   is equivalent to `apply(fg_op, canonical equivalent)`
+  std::string Supercell::_generate_name() const {
+    return CASM::generate_name(m_transf_mat);
+  }
 
   Supercell &apply(const SymOp &op, Supercell &scel) {
     return scel = copy_apply(op, scel);
   }
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel) {
-    return Supercell(&scel.primclex(), copy_apply(op, scel.real_super_lattice()));
+    return Supercell(&scel.primclex(), copy_apply(op, scel.lattice()));
   }
-
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat) {
     std::string name_str;

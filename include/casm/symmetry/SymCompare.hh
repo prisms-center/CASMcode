@@ -8,6 +8,7 @@
 #include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
@@ -49,9 +50,9 @@ namespace CASM {
 
   public:
 
-    typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
-    typedef typename CASM_TMP::traits<Derived>::Element Element;
-    typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
+    typedef typename traits<Derived>::MostDerived MostDerived;
+    typedef typename traits<Derived>::Element Element;
+    typedef typename traits<Derived>::InvariantsType InvariantsType;
 
     /// \brief Prepare an element for comparison
     ///
@@ -184,7 +185,9 @@ namespace CASM {
   class ScelPeriodicSymCompare {};
 
   /// \brief Construct the subgroup that leaves an element unchanged
-  ///
+  /// THIS FUNCTION CURRENTLY ONLY WORKS FOR LOCAL OBJECTS.
+  /// if the element has supercell periodicity with a group
+  /// that has prim periodicity this will not be correct.
   /// All SymOp such that:
   /// \code
   /// Element e = sym_compare.prepare(generating_element);
@@ -210,7 +213,7 @@ namespace CASM {
   template<typename Derived>
   class SymComparable : public CASM_TMP::CRTPBase<Derived> {
   public:
-    typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
+    typedef typename traits<Derived>::InvariantsType InvariantsType;
 
     const InvariantsType &invariants() const {
       if(!m_invariants) {

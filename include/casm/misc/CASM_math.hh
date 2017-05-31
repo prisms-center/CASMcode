@@ -1,16 +1,21 @@
 #ifndef CASM_MATH_HH
 #define CASM_MATH_HH
 #include "casm/CASM_global_definitions.hh"
-#include "casm/container/Array.hh"
+
+/*
 //Maybe we should transition to boost math library?
 //#include <boost/math/special_functions/binomial.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <iostream>
-#include <cmath>
+
 #include <cstddef>
-#include <complex>
 #include <string>
 #include <sstream>
+*/
+
+#include <cmath>
+#include <complex>
+#include <cassert>
 
 namespace CASM {
 
@@ -66,7 +71,7 @@ namespace CASM {
     };
 
     template<typename T>
-    using MuchLessThan = typename std::conditional<boost::is_integral<T>::value, IntegralLessThan<T>, FloatingPointLessThan<T> >::type;
+    using MuchLessThan = typename std::conditional<std::is_integral<T>::value, IntegralLessThan<T>, FloatingPointLessThan<T> >::type;
     // End of MuchLessThan
 
   }
@@ -111,12 +116,6 @@ namespace CASM {
   inline
   bool almost_zero(const T &val, double tol = TOL) {
     return val == 0;
-  }
-
-  /// \brief Equivalent to almost_zero(double(val.norm()), tol);
-  template <typename Derived>
-  bool almost_zero(const Eigen::MatrixBase<Derived> &val, double tol = TOL) {
-    return val.isZero(tol);
   }
 
   // *******************************************************************************************
@@ -168,11 +167,6 @@ namespace CASM {
   bool float_lexicographical_compare(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2, double tol) {
     FloatCompare compare(tol);
     return std::lexicographical_compare(first1, last1, first2, last2, compare);
-  }
-
-  /// \brief Floating point lexicographical comparison with tol
-  inline bool float_lexicographical_compare(const Eigen::VectorXd &A, const Eigen::VectorXd &B, double tol) {
-    return float_lexicographical_compare(A.data(), A.data() + A.size(), B.data(), B.data() + B.size(), tol);
   }
 
   // *******************************************************************************************
@@ -229,33 +223,12 @@ namespace CASM {
   double ran0(int &idum);
 
   // *******************************************************************************************
-
-  using boost::math::factorial;
-
-  // *******************************************************************************************
   /// Find greatest common factor
   int gcf(int i1, int i2);
 
   // *******************************************************************************************
   /// Find least common multiple
   int lcm(int i1, int i2);
-
-  // *******************************************************************************************
-
-  // evaluates Gaussians using the formula:
-  // f(x) = a*e^(-(x-b)^2/(c^2))
-  double gaussian(double a, double x, double b, double c);
-
-  // calculates Gaussian moments given by the integral:
-  // m = \int_{\infty}^{\infty} dx x^pow*exp[-x^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
-  double gaussian_moment(int expon, double sigma);
-
-  // calculates Gaussian moments given by the integral:
-  // m = \int_{\infty}^{\infty} dx x^pow*exp[-(x-x0)^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
-  double gaussian_moment(int expon, double sigma, double x0);
-
-
-  Eigen::VectorXd eigen_vector_from_string(const std::string &tstr, const int &size);
 
   // *******************************************************************************************
   /// \brief Calculate greatest common factor of two integers, and bezout coefficients
@@ -269,6 +242,8 @@ namespace CASM {
   ///
   template<typename IntType>
   IntType extended_gcf(IntType i1, IntType i2, IntType &p1, IntType &p2) {
+    using std::swap;
+
     IntType s1 = sgn(i1);
     IntType s2 = sgn(i2);
 
@@ -297,8 +272,18 @@ namespace CASM {
   }
 
   // *******************************************************************************************
-  /// Find least common multiple
-  int lcm(int i1, int i2);
+
+  // evaluates Gaussians using the formula:
+  // f(x) = a*e^(-(x-b)^2/(c^2))
+  double gaussian(double a, double x, double b, double c);
+
+  // calculates Gaussian moments given by the integral:
+  // m = \int_{\infty}^{\infty} dx x^pow*exp[-x^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
+  double gaussian_moment(int expon, double sigma);
+
+  // calculates Gaussian moments given by the integral:
+  // m = \int_{\infty}^{\infty} dx x^pow*exp[-(x-x0)^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
+  double gaussian_moment(int expon, double sigma, double x0);
 
 
   // *******************************************************************************************
@@ -330,266 +315,6 @@ namespace CASM {
 
   double cuberoot(double number);
 
-  // *******************************************************************************************
-
-  void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree); //Ivy
-
-  // //////////////////////////////////////////
-  // //////////////////////////////////////////
-  // Array Function declarations:
-
-  // *******************************************************************************************
-
-  // returns 'i' if 'input' is equivalent to 'unique[i]', w.r.t. permutation of the equivalent elements of 'input'.
-  // equivalent elements are specified by 'ind_equiv'
-  // if 'input' specifies a new combination of integers, unique.size() is returned
-  Index which_unique_combination(const Array<Index> &input, const Array<Index>::X2 &unique, const Array<Index>::X2 &ind_equiv);
-
-  // *******************************************************************************************
-
-  Index which_unique_combination(const Array<Index> &input, const Array<Index>::X2 &unique);
-
-  // *******************************************************************************************
-  /// Find least common multiple
-  int lcm(const Array<int> &series);
-
-  // *******************************************************************************************
-
-  ReturnArray< Array<int> > get_prime_factors(int target);
-
-  // *******************************************************************************************
-
-  template <typename IntType>
-  IntType multinomial_coeff(const Array<IntType> &exponents) {
-    IntType tcoeff(1), tsum(0);
-    for(Index i = 0; i < exponents.size(); i++) {
-      tsum += exponents[i];
-      tcoeff *= nchoosek(tsum, exponents[i]);
-    }
-    return tcoeff;
-  }
-
-  // *******************************************************************************************
-  // get multinomial coefficient for only a subset of the coeffs
-  template <typename IntType>
-  IntType multinomial_coeff(const Array<IntType> &exponents, const Array<Index> &sublist) {
-    IntType tcoeff(1), tsum(0);
-    for(Index i = 0; i < sublist.size(); i++) {
-      tsum += exponents[sublist[i]];
-      tcoeff *= nchoosek(tsum, exponents[sublist[i]]);
-    }
-    return tcoeff;
-  }
-  // ************************************************************
-  template <typename T>
-  bool almost_equal(const Array<T> &A, const Array<T> &B, double tol = TOL) {
-    if(A.size() != B.size())
-      return false;
-    for(Index i = 0; i < A.size(); i++) {
-      if(!almost_equal(A[i], B[i], tol))
-        return false;
-    }
-    return true;
-  }
-
-  // ************************************************************
-  // cumulative sum, first element is 0 and final elment is array.sum()
-  template <typename T>
-  ReturnArray<T> cum_sum(const Array<T> &arr) {
-    Array<T> result;
-    result.reserve(arr.size() + 1);
-    result.push_back(0);
-    for(Index i = 0; i < arr.size(); i++) {
-      result.push_back(result[i] + arr[i]);
-    }
-    return result;
-  }
-
-  // ************************************************************
-
-  template<typename Derived>
-  double length(const Eigen::MatrixBase<Derived> &value) {
-    return value.norm();
-  }
-
-  // ************************************************************
-
-  template<typename Derived>
-  ReturnArray<Index> partition_distinct_values(const Eigen::MatrixBase<Derived> &value, double tol = TOL) {
-    Array<Index> subspace_dims;
-    Index last_i = 0;
-    for(Index i = 1; i < value.size(); i++) {
-      if(!almost_equal(value[last_i], value[i], tol)) {
-        subspace_dims.push_back(i - last_i);
-        last_i = i;
-      }
-    }
-    subspace_dims.push_back(value.size() - last_i);
-    return subspace_dims;
-  }
-
-  // Finds optimal assignments, based on cost_matrix, and returns total optimal cost
-  double hungarian_method(const Eigen::MatrixXd &cost_matrix, std::vector<Index> &optimal_assignments, const double _tol);
-
-  namespace HungarianMethod_impl {
-    // *******************************************************************************************
-    /* Hungarian Algorithm Routines
-     * Step 1: reduce the rows by smallest element
-     * Step 2: star zeros
-     * Step 3: cover columns with starred zeros and check assignement
-     *         if K columns covered DONE. Else goto 4.
-     * Step 4: Find uncovered zero and prime. if no starred zero in row
-     *         goto 5. Otherwise, cover row, uncover column with star zero.
-     *         Continue until all zeros are covered. Store smalles
-     *         uncovered value goto 6.
-     * Step 5: Build alternating prime and star zeros. Goto 3.
-     * Step 6: Add value from 4 to all covered rows, and subtract it
-     *         from uncovered columns. DO NOT alter stars, primes or covers.
-     *         Return to 3.
-     *
-     */
-    // *******************************************************************************************
-    void hungarian_method(const Eigen::MatrixXd &cost_matrix_arg, std::vector<Index> &optimal_assignments, const double _tol);
-
-    //void reduce_cost(Eigen::MatrixXd &cost_matrix, double _infinity);
-
-    //void find_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::MatrixXi &zero_marks, double _tol);
-
-    //bool check_assignment(const Eigen::MatrixXi &zero_marks, Eigen::VectorXi &col_covered);
-
-    //int prime_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered, Eigen::MatrixXi &zero_marks, double &min, Eigen::VectorXi &first_prime_zero);
-
-    //int alternating_path(const Eigen::MatrixXd &cost_matrix, const Eigen::VectorXi &first_prime_zero, Eigen::MatrixXi &zero_marks, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered);
-
-    //int update_costs(const Eigen::VectorXi &row_covered, const Eigen::VectorXi &col_covered, const double min, Eigen::MatrixXd &cost_matrix);
-  }
-
-  //*******************************************************************************************
-  ///Take a vector of doubles, and multiply by some factor that turns it into a vector of integers (within a tolerance)
-  template <typename Derived>
-  Eigen::Matrix<int,
-        Derived::RowsAtCompileTime,
-        Derived::ColsAtCompileTime>
-  scale_to_int(const Eigen::MatrixBase<Derived> &val, double _tol = TOL) {
-
-    typedef Eigen::Matrix<int, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> int_mat_type;
-    typedef Eigen::Matrix<double, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> dub_mat_type;
-
-    int_mat_type ints(int_mat_type::Zero(val.rows(), val.cols()));
-
-    dub_mat_type dubs(val);
-
-    Index min_i(-1), min_j(-1);
-    double min_coeff = 2; //all values are <=1;
-    for(Index i = 0; i < dubs.rows(); i++) {
-      for(Index j = 0; j < dubs.cols(); j++) {
-        if(almost_zero(dubs(i, j))) {
-          dubs(i, j) = 0.0;
-        }
-        else if(std::abs(dubs(i, j)) < std::abs(min_coeff)) {
-          min_coeff = dubs(i, j);
-          min_i = i;
-          min_j = j;
-        }
-      }
-    }
-    if(valid_index(min_i))
-      dubs /= std::abs(min_coeff);
-    else
-      return ints;
-
-
-    //We want to multiply the miller indeces by some factor such that all indeces become integers.
-    //In order to do this we pick a tolerance to work with and round the miller indeces if they are close
-    //enough to the integer value (e.g. 2.95 becomes 3). Choosing a tolerance that is too small will
-    //result in the "primitive-slab" blowing up.
-
-    //Begin choosing a factor and multiply all indeces by it (starting with 1). Then round the non-smallest
-    //miller indeces (smallest index requires no rounding, since it will always be a perfect
-    //integer thanks to the previous division).
-    //Next take absolute value of difference between rounded indeces and actual values (int_diff 1 & 2).
-    //If the difference for both indeces is smaller than the tolerance then you've reached the desired
-    //accuracy and the rounded indeces can be used to construct the "primitive-slab" cell. If not, increase the
-    //factor by 1 and try again, until the tolerance is met.
-    bool within_tol = false;
-
-    dub_mat_type tdubs;
-    Index i, j;
-    for(Index factor = 1; factor < 1000 && !within_tol; factor++) {
-      tdubs = double(factor) * dubs;
-      for(Index i = 0; i < dubs.rows(); i++) {
-        for(Index j = 0; j < dubs.cols(); j++) {
-          if(!almost_zero(round(tdubs(i, j)) - tdubs(i, j), _tol))
-            break;
-        }
-        if(j < dubs.cols())
-          break;
-      }
-      if(dubs.rows() <= i)
-        within_tol = true;
-    }
-
-    if(within_tol) {
-      for(Index i = 0; i < dubs.rows(); i++) {
-        for(Index j = 0; j < dubs.cols(); j++) {
-          ints(i, j) = round(tdubs(i, j));
-        }
-      }
-    }
-
-    return ints;
-  }
-
-
-}
-
-namespace Eigen {
-  template <typename Derived1, typename Derived2>
-  inline
-  bool almost_equal(const Eigen::MatrixBase<Derived1> &val1, const Eigen::MatrixBase<Derived2> &val2, double tol = CASM::TOL) {
-    return CASM::almost_zero(val1 - val2, tol);
-  }
-
-  /**
-   * Checks to see whether the given matrix is symmetric
-   * by checking if its transpose is equal to itself.
-   * Only works for square matrices n x n.
-   * (Reflected along 0,0 to n,n)
-   */
-
-  template <typename Derived>
-  inline
-  bool is_symmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
-    return CASM::almost_zero(test_mat - test_mat.transpose(), test_tol);
-  }
-
-  /**
-   * Checks to see if the given matrix is persymmetric, i.e.
-   * whether it's symmetric along the cross diagonal.
-   * Only works for square matrices n x n.
-   * (Reflected along 0,n to n,0)
-   */
-
-  template <typename Derived>
-  inline
-  bool is_persymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
-    //Reverse order of columns and rows
-    auto rev_mat = test_mat.colwise().reverse().eval().rowwise().reverse().eval();
-    return CASM::almost_zero(test_mat - rev_mat.transpose(), test_tol);
-  }
-
-  /**
-   * Checks to see if the given matrix is bisymmetric, i.e.
-   * whether it's symmetric along both diagonals.
-   * Only works for square matrices n x n.
-   * (Reflected along 0,n to n,0 AND 0,0 to n,n)
-   */
-
-  template <typename Derived>
-  inline
-  bool is_bisymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
-    return (is_symmetric(test_mat, test_tol) && is_persymmetric(test_mat, test_tol));
-  }
 }
 
 #endif

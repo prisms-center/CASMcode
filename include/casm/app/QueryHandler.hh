@@ -4,15 +4,18 @@
 #include <map>
 #include <memory>
 
-#include "casm/system/RuntimeLibrary.hh"
+#include "casm/misc/cloneable_ptr.hh"
 #include "casm/casm_io/DataFormatter.hh"
 
 namespace CASM {
 
+  class RuntimeLibrary;
   class ProjectSettings;
 
-  template<typename DataObject>
-  struct QueryTraits {};
+  namespace DB {
+    template<typename DataObject> class Selected;
+    template<typename DataObject> class Selection;
+  }
 
   template<typename _DataObject>
   class QueryHandler : public notstd::Cloneable {
@@ -30,14 +33,10 @@ namespace CASM {
     const DataFormatterDictionary<DataObject> &dict() const;
 
     /// \brief Set the selection to be used for the 'selected' column
-    ///
-    /// - ToDo: generalize ConfigIO::Selected
-    void set_selected(const typename QueryTraits<DataObject>::Selected &selection);
+    void set_selected(const DB::Selected<DataObject> &selection);
 
     /// \brief Set the selection to be used for the 'selected' column
-    ///
-    /// - ToDo: generalize ConstConfigSelection
-    void set_selected(const typename QueryTraits<DataObject>::Selection &selection);
+    void set_selected(const DB::Selection<DataObject> &selection);
 
     /// \brief Add user-defined query alias
     ///
@@ -75,7 +74,7 @@ namespace CASM {
 
     std::map<std::string, std::string> m_aliases;
 
-    DataFormatterDictionary<DataObject> m_dict;
+    notstd::cloneable_ptr<DataFormatterDictionary<DataObject> > m_dict;
 
     std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_lib;
 

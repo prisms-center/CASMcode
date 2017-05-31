@@ -1,66 +1,88 @@
 #include "casm/clex/Configuration.hh"
 
 #include <sstream>
-//#include "casm/misc/Time.hh"
+
+#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
-#include "casm/crystallography/jsonStruc.hh"
 #include "casm/clex/ECIContainer.hh"
-#include "casm/casm_io/VaspIO.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/clex/ConfigCompare.hh"
-#include "casm/clex/ConfigIterator.hh"
-#include "casm/clex/ConfigIOSelected.hh"
-#include "casm/app/QueryHandler_impl.hh"
+#include "casm/clex/CompositionConverter.hh"
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/casm_io/VaspIO.hh"
+#include "casm/casm_io/stream_io/container.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/DirectoryStructure.hh"
 
 namespace CASM {
 
-  const std::string QueryTraits<Configuration>::name = "Configuration";
-
-  template class QueryHandler<Configuration>;
-
   namespace {
-    typedef std::insert_iterator<std::map<std::string, std::shared_ptr<RuntimeLibrary> > > runtimelib_it_type;
-    typedef std::insert_iterator<DataFormatterDictionary<Configuration> > config_dict_it_type;
+    std::vector<std::string> split(std::string s, char delim) {
+      typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+      boost::char_separator<char> sep(&delim);
+      tokenizer tok(s, sep);
+      return std::vector<std::string>(tok.begin(), tok.end());
+    }
+
   }
-
-  template std::pair<config_dict_it_type, runtimelib_it_type> load_query_plugins(
-    const ProjectSettings &set,
-    config_dict_it_type dict_it,
-    runtimelib_it_type lib_it);
-
 
 
   /// Construct a default Configuration
-  Configuration::Configuration(Supercell &_supercell, const jsonParser &src, const ConfigDoF &_configdof)
-    : m_id("none"), m_supercell(&_supercell), m_source_updated(true), m_multiplicity(-1),
-      m_configdof(_configdof), m_prop_updated(true), m_selected(false) {
+  Configuration::Configuration(
+    const Supercell &_supercell,
+    const jsonParser &src,
+    const ConfigDoF &_configdof) :
+    m_supercell(&_supercell),
+    m_source_updated(false),
+    m_configdof(_configdof),
+    m_dof_deps_updated(false),
+    m_prop_updated(false) {
+
     set_source(src);
   }
 
-  //*********************************************************************************
-  /// Construct by reading from main data file (json)
-  Configuration::Configuration(const jsonParser &json, Supercell &_supercell, Index _id)
-    : m_supercell(&_supercell), m_source_updated(false), m_multiplicity(-1),
-      m_configdof(_supercell.num_sites()), m_prop_updated(false) {
+  /// Construct a default Configuration that owns its Supercell
+  Configuration::Configuration(
+    const std::shared_ptr<Supercell> &_supercell,
+    const jsonParser &source,
+    const ConfigDoF &_configdof) :
+    m_supercell(_supercell.get()),
+    m_supercell_ptr(_supercell),
+    m_source_updated(false),
+    m_configdof(_configdof),
+    m_dof_deps_updated(false),
+    m_prop_updated(false) {
 
-    std::stringstream ss;
-    ss << _id;
-    m_id = ss.str();
-
-    read(json);
+    set_source(source);
   }
 
-  //********** MUTATORS  ***********
+  /// Construct a Configuration from JSON data
+  Configuration::Configuration(
+    const Supercell &_supercell,
+    const std::string &_id,
+    const jsonParser &_data) :
+    m_source_updated(false),
+    m_dof_deps_updated(false),
+    m_prop_updated(false) {
 
-  void Configuration::set_id(Index _id) {
-    std::stringstream ss;
-    ss << _id;
-    m_id = ss.str();
+    this->from_json(_data, _supercell, _id);
 
-    m_prop_updated = true;
   }
+
+  /// Construct a Configuration from JSON data
+  Configuration::Configuration(const PrimClex &_primclex,
+                               const std::string &_configname,
+                               const jsonParser &_data) :
+    Configuration(*_primclex.db<Supercell>().find(Configuration::split_name(_configname).first),
+                  Configuration::split_name(_configname).second,
+                  _data) {}
 
   //*********************************************************************************
   void Configuration::set_source(const jsonParser &source) {
@@ -75,6 +97,7 @@ namespace CASM {
       m_source = source;
     }
     m_source_updated = true;
+    m_dof_deps_updated = true;
   }
 
   //*********************************************************************************
@@ -95,6 +118,7 @@ namespace CASM {
       m_source.push_back(source);
 
       m_source_updated = true;
+      m_dof_deps_updated = true;
     }
     else {
 
@@ -116,6 +140,7 @@ namespace CASM {
           m_source.push_back(source[s]);
 
           m_source_updated = true;
+          m_dof_deps_updated = true;
         }
       }
     }
@@ -123,18 +148,19 @@ namespace CASM {
 
   //*********************************************************************************
   void Configuration::clear() {
-    _invalidate_id();
+    _modify_dof();
     m_configdof.clear();
   }
 
   //*********************************************************************************
   void Configuration::init_occupation() {
-    set_occupation(Array<int>(this->size(), 0));
+    _modify_dof();
+    set_occupation(std::vector<int>(this->size(), 0));
   }
 
   //*********************************************************************************
-  void Configuration::set_occupation(const Array<int> &new_occupation) {
-    _invalidate_id();
+  void Configuration::set_occupation(const std::vector<int> &new_occupation) {
+    _modify_dof();
     if(new_occupation.size() != this->size()) {
       default_err_log().error("Configuration::set_occupation size error");
       default_err_log() << "new_occupation.size(): " << new_occupation.size() << std::endl;
@@ -147,19 +173,20 @@ namespace CASM {
 
   //*********************************************************************************
   void Configuration::set_occ(Index site_l, int val) {
-    _invalidate_id();
+    _modify_dof();
     m_configdof.occ(site_l) = val;
   }
 
   //*********************************************************************************
   void Configuration::clear_occupation() {
+    _modify_dof();
     m_configdof.clear_occupation();
   }
 
   //*********************************************************************************
 
   void Configuration::init_specie_id() {
-    _invalidate_id();
+    _modify_dof();
     m_configdof.specie_id().resize(this->size());
     for(Index i = 0; i < this->size(); ++i) {
       m_configdof.specie_id()[i].resize(mol(i).size(), 0);
@@ -169,7 +196,7 @@ namespace CASM {
   //*********************************************************************************
 
   std::vector<std::vector<Index> > &Configuration::specie_id() {
-    _invalidate_id();
+    _modify_dof();
     return m_configdof.specie_id();
   }
 
@@ -182,7 +209,7 @@ namespace CASM {
   //*********************************************************************************
 
   std::vector<Index> &Configuration::specie_id(Index site_l) {
-    _invalidate_id();
+    _modify_dof();
     return m_configdof.specie_id()[site_l];
   }
 
@@ -195,17 +222,19 @@ namespace CASM {
   //*********************************************************************************
 
   void Configuration::clear_specie_id() {
+    _modify_dof();
     m_configdof.clear_specie_id();
   }
 
   //*********************************************************************************
   void Configuration::init_displacement() {
+    _modify_dof();
     set_displacement(displacement_matrix_t::Zero(3, this->size()));
   }
 
   //*********************************************************************************
   void Configuration::set_displacement(const displacement_matrix_t &new_displacement) {
-    _invalidate_id();
+    _modify_dof();
     if(new_displacement.cols() != this->size()) {
       default_err_log().error("Configuration::set_displacement size error");
       default_err_log() << "new_displacement.cols(): " << new_displacement.cols() << std::endl;
@@ -217,32 +246,33 @@ namespace CASM {
 
   //*********************************************************************************
   void Configuration::set_disp(Index site_l, const Eigen::VectorXd &_disp) {
-    _invalidate_id();
+    _modify_dof();
     m_configdof.disp(site_l) = _disp;
   }
 
   //*********************************************************************************
   void Configuration::clear_displacement() {
-    _invalidate_id();
+    _modify_dof();
     m_configdof.clear_displacement();
   }
 
   //*********************************************************************************
   void Configuration::init_deformation() {
+    _modify_dof();
     set_deformation(Eigen::Matrix3d::Identity());
   }
 
   //*********************************************************************************
 
   void Configuration::set_deformation(const Eigen::Matrix3d &new_deformation) {
-    _invalidate_id();
+    _modify_dof();
     m_configdof.set_deformation(new_deformation);
   }
 
   //*********************************************************************************
 
   void Configuration::clear_deformation() {
-    _invalidate_id();
+    _modify_dof();
     m_configdof.clear_deformation();
   }
 
@@ -250,7 +280,12 @@ namespace CASM {
 
   /// \brief Check if this is a primitive Configuration
   bool Configuration::is_primitive() const {
-    return (find_translation() == supercell().translate_end());
+    if(!cache().contains("is_primitive")) {
+      bool result = (find_translation() == supercell().translate_end());
+      cache_insert("is_primitive", result);
+      return result;
+    }
+    return cache()["is_primitive"].get<bool>();
   }
 
   //*******************************************************************************
@@ -280,7 +315,7 @@ namespace CASM {
     Configuration tconfig {*this};
     /*
     std::cout << "T: \n" << tconfig.supercell().transf_mat() << std::endl;
-    std::cout << "L: \n" << tconfig.supercell().real_super_lattice().lat_column_mat() << std::endl;
+    std::cout << "L: \n" << tconfig.supercell().lattice().lat_column_mat() << std::endl;
     */
 
     std::unique_ptr<Supercell> next_scel;
@@ -302,7 +337,7 @@ namespace CASM {
       next_scel.reset(new Supercell(&primclex(), new_lat));
       /*
       std::cout << "T: \n" << next_scel->transf_mat() << std::endl;
-      std::cout << "L: \n" << next_scel->real_super_lattice().lat_column_mat() << std::endl;
+      std::cout << "L: \n" << next_scel->lattice().lat_column_mat() << std::endl;
       */
 
       // create a sub configuration in the new supercell
@@ -321,23 +356,36 @@ namespace CASM {
 
   /// \brief Check if Configuration is in the canonical form
   bool Configuration::is_canonical() const {
-    const Supercell &scel = supercell();
-    ConfigIsEquivalent f(*this, crystallography_tol());
-    return std::all_of(
-             ++scel.permute_begin(),
-             scel.permute_end(),
-    [&](const PermuteIterator & p) {
-      return f(p) || !f.is_less();
-    });
+    if(!cache().contains("to_canonical")) {
+      const Supercell &scel = supercell();
+      ConfigIsEquivalent f(*this, crystallography_tol());
+      bool result = std::all_of(
+                      ++scel.permute_begin(),
+                      scel.permute_end(),
+      [&](const PermuteIterator & p) {
+        return f(p) || !f.is_less();
+      });
+
+      cache_insert("is_canonical", result);
+      return result;
+    }
+    return cache()["is_canonical"].get<bool>();
   }
 
   //*******************************************************************************
 
   /// \brief Returns the operation that applied to *this returns the canonical form
   PermuteIterator Configuration::to_canonical() const {
-    ConfigCompare f(*this, crystallography_tol());
-    const Supercell &scel = supercell();
-    return std::max_element(scel.permute_begin(), scel.permute_end(), f);
+    if(!cache().contains("to_canonical")) {
+      ConfigCompare f(*this, crystallography_tol());
+      const Supercell &scel = supercell();
+      auto result = std::max_element(scel.permute_begin(), scel.permute_end(), f);
+      cache_insert("to_canonical", result);
+      return result;
+    }
+    else {
+      return cache()["to_canonical"].get<PermuteIterator>(supercell());
+    }
   }
 
   //*******************************************************************************
@@ -358,10 +406,11 @@ namespace CASM {
 
   /// \brief Returns the canonical form Configuration in the canonical Supercell
   ///
-  /// - Will be a Supercell included in the PrimClex.supercell_list()
+  /// - Canonical Supercell will be inserted in the PrimClex.db<Supercell>() if
+  ///   necessary
   Configuration Configuration::in_canonical_supercell() const {
 
-    Supercell &canon_scel = supercell().canonical_form();
+    const Supercell &canon_scel = supercell().canonical_form();
 
     FillSupercell f(canon_scel, *this, crystallography_tol());
     Configuration in_canon = f(*this);
@@ -375,30 +424,22 @@ namespace CASM {
 
   //*******************************************************************************
 
-  /// \brief Insert this configuration (in canonical form) in the canonical Supercell config list
+  /// \brief Insert this configuration (in primitive & canonical form) in the database
   ///
   /// \param primitive_only If true, only the primitive Configuration is inserted.
   ///
   /// - By convention, the primitive canonical form of a configuration must
   ///   always be saved in the config list.
-  /// - By default, both the primitive canonical Configuration and the equivalent
-  ///   non-primitive Configuration in the canonical Supercell are saved
-  /// - Optionally, this can insert just the primitive Configuration
-  ///
+  /// - Supercells are inserted in the Supercell database as necessary
+  /// - If this is already known to be primitive & canonical, prefer to use
+  ///   PrimClex::db<Configuration>.insert(config) directly.
   ConfigInsertResult Configuration::insert(bool primitive_only) const {
 
     ConfigInsertResult res;
 
     Configuration pconfig = this->primitive().in_canonical_supercell();
-    Supercell &canon_scel = pconfig.supercell();
-    Index config_index;
-
-    res.insert_primitive = canon_scel.add_canon_config(pconfig, config_index);
-
-    res.primitive_it = PrimClex::config_const_iterator(
-                         &primclex(),
-                         canon_scel.id(),
-                         config_index);
+    std::tie(res.primitive_it, res.insert_primitive) =
+      primclex().db<Configuration>().insert(pconfig);
 
     // if the primitive supercell is the same as the equivalent canonical supercell
     if(supercell().canonical_form() == pconfig.supercell()) {
@@ -410,17 +451,8 @@ namespace CASM {
         res.insert_canonical = false;
       }
       else {
-        // primitive is returned as canonical form in canonical supercell
-        Supercell &canon_scel = supercell().canonical_form();
-        Index config_index;
-        Supercell::permute_const_iterator permute_it;
-
-        res.insert_canonical = canon_scel.add_config(this->in_canonical_supercell(), config_index, permute_it);
-
-        res.canonical_it = PrimClex::config_const_iterator(
-                             &primclex(),
-                             canon_scel.id(),
-                             config_index);
+        std::tie(res.canonical_it, res.insert_canonical) =
+          primclex().db<Configuration>().insert(this->in_canonical_supercell());
       }
     }
     return res;
@@ -435,6 +467,10 @@ namespace CASM {
     ConfigIsEquivalent f(*this, crystallography_tol());
     const Supercell &scel = supercell();
     std::copy_if(scel.permute_begin(), scel.permute_end(), std::back_inserter(fg), f);
+
+    int mult = this->prim().factor_group().size() / fg.size();
+    cache_insert("multiplicity", mult);
+
     return fg;
   }
 
@@ -456,13 +492,24 @@ namespace CASM {
       if(new_symop)
         sym_group.push_back(config_factor_group[i].sym_op());
     }
+    cache_insert("point_group_name", sym_group.get_name());
     return sym_group;
   }
 
   //*******************************************************************************
 
+  /// \brief Returns the point group that leaves the Configuration unchanged
+  std::string Configuration::point_group_name() const  {
+    if(!cache().contains("point_group_name")) {
+      this->point_group();
+    }
+    return cache()["point_group_name"].get<std::string>();
+  }
+
+  //*******************************************************************************
+
   /// \brief Fills supercell 'scel' with reoriented configuration, op*(*this)
-  Configuration Configuration::fill_supercell(Supercell &scel, const SymOp &op) const {
+  Configuration Configuration::fill_supercell(const Supercell &scel, const SymOp &op) const {
     FillSupercell f(scel, op);
     return f(*this);
 
@@ -475,10 +522,10 @@ namespace CASM {
   /// \brief Fills supercell 'scel' with reoriented configuration, op*(*this)
   ///
   /// - Uses the first symop in g that such that scel is a supercell of op*(*this)
-  Configuration Configuration::fill_supercell(Supercell &scel, const SymGroup &g) const {
+  Configuration Configuration::fill_supercell(const Supercell &scel, const SymGroup &g) const {
 
     auto res = is_supercell(
-                 scel.real_super_lattice(),
+                 scel.lattice(),
                  ideal_lattice(),
                  g.begin(),
                  g.end(),
@@ -504,70 +551,62 @@ namespace CASM {
 
   //*********************************************************************************
   void Configuration::set_calc_properties(const jsonParser &calc) {
-    m_prop_updated = true;
     m_calculated = calc;
+    m_prop_updated = true;
+    m_dof_deps_updated = true;
   }
 
   //*********************************************************************************
 
-  bool Configuration::read_calc_properties(jsonParser &parsed_props) const {
-    //std::cout << "begin Configuration::read_calculated()" << std::endl;
-    bool success = true;
-    /// properties.calc.json: contains calculated properties
-    ///   For default clex calctype only
-    fs::path filepath = calc_properties_path();
-    //std::cout << "filepath: " << filepath << std::endl;
-    parsed_props = jsonParser();
-    if(fs::exists(filepath)) {
-      jsonParser json(filepath);
+  /// \brief Read properties.calc.json from training_data
+  ///
+  /// \returns tuple of:
+  /// - 0: JSON with calculated properties (or empty object)
+  /// - 1: bool indicating there is any data
+  /// - 2: bool indicating complete data
+  ///
+  /// JSON includes:
+  /// - file contents verbatim
+  /// -  "data_timestamp" with the last write time of the file
+  ///
+  std::tuple<jsonParser, bool, bool> Configuration::read_calc_properties() const {
+    return read_calc_properties(primclex(), calc_properties_path(*this));
+  }
 
-      //Record file timestamp
-      parsed_props["data_timestamp"] = fs::last_write_time(filepath);
+  //*********************************************************************************
 
-      std::vector<std::string> props = primclex().settings().properties();
-      for(Index i = 0; i < props.size(); i++) {
-        //std::cout << "checking for: " << props[i] << std::endl;
-        if(json.contains(props[i])) {
-
-          // normal by #prim cells for some properties
-          if(props[i] == "energy" || props[i] == "relaxed_energy") {
-            parsed_props[ props[i] ] = json[props[i]].get<double>() / supercell().volume();
-          }
-          else {
-            parsed_props[props[i]] = json[props[i]];
-          }
-        }
-        else
-          success = false;
-      }
-      //Get RMS force:
-      if(json.contains("relaxed_forces")) {
-        if(json["relaxed_forces"].size()) {
-          Eigen::MatrixXd forces;
-          from_json(forces, json["relaxed_forces"]);
-          parsed_props["rms_force"] = sqrt((forces.transpose() * forces).trace() / double(forces.rows()));
-        }
-        else {
-          parsed_props["rms_force"] = 0.;
-        }
-      }
+  /// \brief Read properties.calc.json from file
+  ///
+  /// \returns tuple of:
+  /// - 0: JSON with calculated properties (or empty object)
+  /// - 1: bool indicating there is any data
+  /// - 2: bool indicating complete data
+  ///
+  /// JSON includes:
+  /// - file contents verbatim
+  /// - "data_timestamp" with the last write time of the file
+  ///
+  std::tuple<jsonParser, bool, bool> Configuration::read_calc_properties(const PrimClex &primclex, const fs::path &filepath) {
+    if(!fs::exists(filepath)) {
+      return std::make_tuple(jsonParser(), false, false);
     }
-    else
-      success = false;
+    jsonParser props(filepath);
+    if(!props.is_obj()) {
+      primclex.err_log() << "error parsing: " << filepath << std::endl;
+      primclex.err_log() << "not a valid properties.calc.json for Configuration: not a JSON object" << std::endl;
+      return std::make_tuple(jsonParser(), false, false);
+    }
+    props["data_timestamp"] = fs::last_write_time(filepath);
 
-    return success;
+    const auto &prop_vec = primclex.settings().properties<Configuration>();
+    bool is_calc = is_calculated(jsonParser(filepath), prop_vec);
+    return std::make_tuple(props, true, is_calc);
   }
 
   //********** ACCESSORS ***********
 
   const Lattice &Configuration::ideal_lattice()const {
-    return supercell().real_super_lattice();
-  }
-
-  //*********************************************************************************
-
-  std::string Configuration::id() const {
-    return m_id;
+    return supercell().lattice();
   }
 
   //*********************************************************************************
@@ -588,55 +627,13 @@ namespace CASM {
   ///   - Then applies prim Structure factor group op with index PRIM_FG_OP and
   ///     fills the supercell $CANON_SCELNAME.$PRIM_FG_OP1
   ///
-  std::string Configuration::name() const {
-    if(m_name.empty()) {
-      _generate_name();
-    }
-    return m_name;
-  }
-
-  void Configuration::_generate_name() const {
-
-    // canonical forms in canonical supercells
-    if(id() != "none") {
-      m_name = supercell().name() + "/" + id();
-    }
-    else if(supercell().is_canonical() && is_canonical()) {
-      m_name = supercell().name() + "/" + id();
-    }
-    else {
-      m_name = supercell().name() + "/non_canonical_equivalent";
-    }
-  }
-
-  //*********************************************************************************
-  std::string Configuration::calc_status() const {
-    if(fs::exists(calc_status_path())) {
-      jsonParser json(calc_status_path());
-      if(json.contains("status"))
-        return json["status"].get<std::string>();
-    }
-    return("not_submitted");
-  }
-
-  //*********************************************************************************
-  std::string Configuration::failure_type() const {
-    if(fs::exists(calc_status_path())) {
-      jsonParser json(calc_status_path());
-      if(json.contains("failure_type"))
-        return json["failure_type"].get<std::string>();
-    }
-    return("none");
+  std::string Configuration::_generate_name() const {
+    return supercell().name() + "/" + id();
   }
 
   //*********************************************************************************
   const jsonParser &Configuration::source() const {
     return m_source;
-  }
-
-  //*********************************************************************************
-  fs::path Configuration::path() const {
-    return supercell().path() / id();
   }
 
   //*********************************************************************************
@@ -656,12 +653,12 @@ namespace CASM {
   //}
 
   //*********************************************************************************
-  PrimClex &Configuration::primclex() const {
+  const PrimClex &Configuration::primclex() const {
     return supercell().primclex();
   }
 
   //*********************************************************************************
-  Supercell &Configuration::supercell() const {
+  const Supercell &Configuration::supercell() const {
     return *m_supercell;
   }
 
@@ -691,14 +688,19 @@ namespace CASM {
   }
 
   //*********************************************************************************
-  const Properties &Configuration::calc_properties() const {
+  const jsonParser &Configuration::calc_properties() const {
     return m_calculated;
   }
 
   //*********************************************************************************
-
-  const Properties &Configuration::generated_properties() const {
-    return m_generated;
+  /// \brief Get symmetric multiplicity, excluding translations
+  ///
+  /// - equal to prim.factor_group().size() / this->factor_group().size()
+  int Configuration::multiplicity() const {
+    if(!cache().contains("multiplicity")) {
+      this->factor_group();
+    }
+    return cache()["multiplicity"].get<int>();
   }
 
   //*********************************************************************************
@@ -731,7 +733,7 @@ namespace CASM {
     Index i;
 
     // [basis_site][site_occupant_index]
-    auto convert = index_converter(prim(), prim().struc_molecule());
+    auto convert = make_index_converter(prim(), prim().struc_molecule());
 
     // create an array to count the number of each molecule
     std::vector<Eigen::VectorXi> sublat_num_each_molecule;
@@ -806,19 +808,13 @@ namespace CASM {
   Eigen::VectorXd Configuration::num_each_component() const {
 
     // component order used for param_composition
-    std::vector<std::string> v_components = primclex().composition_axes().components();
-
-    // copy to CASM::Array
-    std::vector<std::string> components;
-    for(auto it = v_components.cbegin(); it != v_components.cend(); ++it) {
-      components.push_back(*it);
-    }
+    std::vector<std::string> components = primclex().composition_axes().components();
 
     // initialize
     Eigen::VectorXd num_each_component = Eigen::VectorXd::Zero(components.size());
 
     // [basis_site][site_occupant_index]
-    auto convert = index_converter(prim(), components);
+    auto convert = make_index_converter(prim(), components);
 
     // count the number of each component
     for(Index i = 0; i < size(); i++) {
@@ -839,396 +835,124 @@ namespace CASM {
 
 
   /// Writes the Configuration to a json object (the config list)
-  ///   Uses PrimClex's current default settings to write the appropriate properties
   ///
-  ///   'json' is a jsonParser JSON object (or will be set to a JSON object)
+  ///   writes: dof, source, cache:
+  ///     json["dof"]
+  ///     json["source"]
+  ///     json["cache"]
   ///
-  ///   write_dof, source, selected: (absolute path in config_list)
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["source"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["selected"]
-  ///
-  ///   write_properties: (absolute path in config_list)
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
-  jsonParser &Configuration::write(jsonParser &json) const {
+  jsonParser &Configuration::to_json(jsonParser &json) const {
 
-    //std::cout << "begin Configuration::write()" << std::endl;
+    //std::cout << "begin Configuration::to_json(jsonParser& json)" << std::endl;
 
-    const ProjectSettings &set = primclex().settings();
-    std::string calc_string = "calctype." + set.default_clex().calctype;
-    std::string ref_string = "ref." + set.default_clex().ref;
+    json.put_obj();
 
-    /// write json object hierarchy if not existing
-    jsonParser &json_scel = json["supercells"][supercell().name()];
-    jsonParser &json_config = json_scel[id()];
-    jsonParser &json_ref = json_config[calc_string][ref_string];
-    jsonParser &json_prop = json_ref["properties"];
+    CASM::to_json(m_configdof, json["dof"]);
+    CASM::to_json(m_source, json["source"]);
 
-    json_config["selected"] = selected();
-
-    if(!json_config.contains("dof")) {
-      write_dof(json_config);
+    if(cache_updated()) {
+      json["cache"] = cache();
     }
 
-    if(m_source_updated) {
-      write_source(json_config);
-    }
-
-    if(m_prop_updated) {
-      write_properties(json_prop);
-    }
-
-    //std::cout << "finish Configuration::write()" << std::endl;
-
+    //std::cout << "finish Configuration::to_json(jsonParser& json)" << std::endl;
     return json;
+  }
+
+  //*********************************************************************************
+
+  std::ostream &Configuration::write_pos(std::ostream &sout) const {
+    VaspIO::PrintPOSCAR p(*this);
+    p.sort();
+    p.print(sout);
+    return sout;
   }
 
   //*********************************************************************************
 
   void Configuration::write_pos() const {
 
+    const auto &dir = primclex().dir();
     try {
-      fs::create_directories(path());
+      fs::create_directories(dir.configuration_dir(name()));
     }
     catch(const fs::filesystem_error &ex) {
       std::cerr << "Error in Configuration::write_pos()." << std::endl;
       std::cerr << ex.what() << std::endl;
     }
 
-    fs::ofstream file(pos_path());
-    VaspIO::PrintPOSCAR p(*this);
-    p.sort();
-    p.print(file);
+    fs::ofstream file(dir.POS(name()));
+    write_pos(file);
     return;
-  }
-
-  //*********************************************************************************
-
-  void Configuration::print_occupation(std::ostream &stream) const {
-    stream << occupation() << "\n";
-    return;
-  }
-
-  //*********************************************************************************
-
-  void Configuration::print_config_list(std::ostream &stream, int composition_flag) const {
-
-    stream.width(10);
-    stream.flags(std::ios::left);
-    stream << id() << " ";
-
-    stream.width(10);
-    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
-    stream << name() << " ";
-    //Prints composition if comp_flag=1, true_composition if comp_flag=2
-    // and the sublattice composition if comp_flag=3
-    if(composition_flag == 1) {
-      print_composition(stream);
-    }
-    else if(composition_flag == 2) {
-      print_true_composition(stream);
-    }
-    else if(composition_flag == 3) {
-      print_sublattice_composition(stream);
-    }
-
-    stream.width(8);
-    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-    stream << selected();
-
-    stream << "\n";
-  }
-
-  //*********************************************************************************
-  void Configuration::print_composition(std::ostream &stream) const {
-
-    Eigen::VectorXd comp = composition();
-    auto mol_list = prim().struc_molecule();
-
-    for(Index i = 0; i < mol_list.size(); i++) {
-      if(mol_list[i].is_vacancy()) {
-        continue;
-      }
-      stream.precision(6);
-      stream.width(12);
-      stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      stream << comp[i] << " ";
-    }
-
-  }
-
-  //*********************************************************************************
-  void Configuration::print_true_composition(std::ostream &stream) const {
-
-    Eigen::VectorXd true_comp = true_composition();
-
-    for(Index i = 0; i < true_comp.size(); i++) {
-      stream.precision(6);
-      stream.width(12);
-      stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      stream << true_comp[i] << " ";
-    }
-
-  }
-
-  //*********************************************************************************
-  void Configuration::print_sublattice_composition(std::ostream &stream) const {
-
-    std::vector<Eigen::VectorXd> sublattice_comp = sublattice_composition();
-
-    for(Index i = 0; i < sublattice_comp.size(); i++) {
-      for(Index j = 0; j < sublattice_comp[i].size(); j++) {
-        stream.precision(6);
-        stream.width(12);
-        stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-        stream << sublattice_comp[i][j] << " ";
-      }
-    }
-
   }
 
   //*********************************************************************************
 
   /// Private members:
 
-  /// Reads the Configuration from the config list
+  /// Reads the Configuration from JSON
   ///   Uses PrimClex's current default settings to read in the appropriate properties
   ///
   /// This is private, because it is only called from the constructor:
-  ///   Configuration(const Supercell &_supercell, Index _id)
-  ///   It's called from the constructor because of the Supercell pointer
+  ///   Configuration(const jsonParser& json, const PrimClex& _primclex, const std::string &configname)
   ///
-  ///   read dof, source, selected: (absolute path in config_list)
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["source"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["selected"]
+  ///   "json" corresponds (entire file)["supercells"][scelname][id]
+  ///   "configname" corresponds to "scelname/id"
+  ///
+  ///   read dof, source: (absolute path in config_list)
+  ///     json["dof"]
+  ///     json["source"]
   ///
   ///   read properties: (absolute path in config_list)
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
+  ///     json["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
   ///
-  void Configuration::read(const jsonParser &json) {
+  void Configuration::from_json(const jsonParser &json, const Supercell &scel, std::string _id) {
 
-    //std::cout << "begin  Configuration::read()" << std::endl;
+    //std::cout << "begin  Configuration::from_json()" << std::endl;
+
+    m_supercell = &scel;
+
+    this->clear_name();
+    this->set_id(_id);
+
+    json.get_if(m_source, "source");
+    m_source_updated = false;
+
+    CASM::from_json(m_configdof, json["dof"]);
+    m_dof_deps_updated = false;
+
+    CASM::from_json(cache(), json["cache"]);
+
+    // read properties from 'json' input only: does not attempt to read in new
+    // calculation data from the calc.properties.json file
+    // - use read_calc_properties() to read new calc.properties.json files
+    m_prop_updated = false;
 
     const ProjectSettings &set = primclex().settings();
-
     std::string calc_string = "calctype." + set.default_clex().calctype;
+    auto calc_it = json.find(calc_string);
+    if(calc_it == json.end()) {
+      return;
+    }
+
     std::string ref_string = "ref." + set.default_clex().ref;
-
-    // read dof
-    if(!json.contains("supercells"))
-      return;
-    const jsonParser &json_scel = json["supercells"];
-    if(!json_scel.contains(supercell().name()))
-      return;
-    if(!json_scel[supercell().name()].contains(id()))
-      return;
-    const jsonParser &json_config = json_scel[supercell().name()][id()];
-
-    read_dof(json_config);
-
-
-    // read properties: does not attempt to read in new calculation data
-    if(!json_config.contains(calc_string))
-      return;
-    const jsonParser &json_calc = json_config[calc_string];
-    if(!json_calc.contains(ref_string))
-      return;
-    const jsonParser &json_ref = json_calc[ref_string];
-    if(!json_ref.contains("properties"))
-      return;
-    const jsonParser &json_prop = json_ref["properties"];
-
-    read_properties(json_prop);
-
-    //std::cout << "finish Configuration::read()" << std::endl;
-  }
-
-  //*********************************************************************************
-
-  /// Read degree of freedom, source, and selected info
-  ///
-  ///   read dof, source, selected:  (absolute path in config_list)
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["source"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["selected"]
-  ///
-  /// Tries to read dof from json["dof"]
-  /// Tries to read source from json["source"]
-  /// Tries to read selected from json["selected"]
-  ///
-  void Configuration::read_dof(const jsonParser &json) {
-
-    /// json["dof"]: contains degree of freedom information
-    if(!json.contains("dof")) {
-      _invalidate_id();
-      set_selected(false);
+    auto ref_it = calc_it->find(ref_string);
+    if(ref_it == calc_it->end()) {
       return;
     }
-    else {
 
-      json.get_if(m_source, "source");
-      json.get_else(m_selected, "selected", false);
-      from_json(m_configdof, json["dof"]);
+    auto prop_it = ref_it->find("properties");
+    if(prop_it == ref_it->end()) {
+      return;
     }
+
+    prop_it->get_if(m_calculated, "calc");
+
+    //std::cout << "finish Configuration::from_json()" << std::endl;
   }
 
-  //*********************************************************************************
-  /// Read configuration properties
-  /// - this does not automatically read new externally calculated properties
-  ///
-  ///   read properties: (absolute path in config_list)
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
-  ///
-  /// Tries to read calculated from json["calc"]
-  /// Tries to read generated from json["gen"]
-  ///
-  void Configuration::read_properties(const jsonParser &json) {
-    if(json.contains("calc")) {
-      from_json(m_calculated, json["calc"]);
-    }
-
-    if(json.contains("gen")) {
-      from_json(m_generated, json["gen"]);
-    }
-  }
-
-  //*********************************************************************************
-  fs::path Configuration::pos_path() const {
-    return primclex().dir().POS(name());
-  }
-
-  //*********************************************************************************
-  fs::path Configuration::calc_properties_path() const {
-    return primclex().dir().calculated_properties(name(), primclex().settings().default_clex().calctype);
-  }
-
-  //*********************************************************************************
-  fs::path Configuration::calc_status_path() const {
-    return primclex().dir().calc_status(name(), primclex().settings().default_clex().calctype);
-  }
-
-  //*********************************************************************************
-  /// Write config.json file containing degree of freedom info
-  ///
-  ///   writes dof: (absolute path in config_list)
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
-  ///
-  ///   adds: json["dof"]
-  ///
-  jsonParser &Configuration::write_dof(jsonParser &json) const {
-
-    if(!json["dof"].is_obj()) {
-      json["dof"].put_obj();
-    }
-
-    jsonParser &dof = json["dof"];
-
-    if(occupation().size() == 0) {
-      dof.erase("occupation");
-    }
-    else {
-      dof["occupation"] = occupation();
-    }
-
-    if(displacement().size() == 0) {
-      dof.erase("displacement");
-    }
-    else {
-      dof["displacement"] = displacement();
-    }
-
-    if(!has_deformation()) {
-      dof.erase("deformation");
-    }
-    else {
-      dof["deformation"] = deformation();
-    }
-
-    return json;
-
-  }
-
-  //*********************************************************************************
-  /// Write config.json file containing degree of freedom info
-  ///   location: json = supercells/SCEL_NAME/CONFIG_ID, adds: source
-  ///
-  jsonParser &Configuration::write_source(jsonParser &json) const {
-
-    json["source"] = m_source;
-
-    return json;
-
-  }
-
-  //*********************************************************************************
-  /// Write POS file containing Structure
-  ///   location: json = supercells/SCEL_NAME/CONFIG_ID, adds: pos
-  ///   If the configuration is completely vacant, json["pos"] = null
-  ///
-  jsonParser &Configuration::write_pos(jsonParser &json) const {
-
-    // print POS to stringstream
-    if(occupation() != supercell().vacant()) {
-      std::stringstream ss;
-      VaspIO::PrintPOSCAR p(*this);
-      p.sort();
-      p.print(ss);
-
-      json["pos"] = ss.str();
-    }
-    else {
-      json["pos"].put_null();
-    }
-
-    return json;
-
-  }
-
-  //*********************************************************************************
-  /// Write param_composition.json file containing correlations
-  ///   location: json = supercells/SCEL_NAME/CONFIG_ID/CURR_CLEX/CURR_REF, adds: param_composition
-  ///
-  jsonParser &Configuration::write_param_composition(jsonParser &json) const {
-
-    if(!primclex().has_composition_axes()) {
-      json.erase("param_comp_formula");
-      json.erase("param_composition");
-      return json;
-    }
-
-    json["param_comp_formula"] = primclex().composition_axes().mol_formula();
-    json["param_composition"] = param_composition();
-
-    return json;
-
-  }
-
-  //*********************************************************************************
-  /// Write properties.calc.json file containing calculated properties and param_composition
-  ///   location: json = supercells/SCEL_NAME/CONFIG_ID/CURR_CLEX/CURR_REF/properties, adds: calc
-  ///
-  jsonParser &Configuration::write_properties(jsonParser &json) const {
-
-    if(m_calculated.size() == 0) {
-      json.erase("calc");
-    }
-    else {
-      json["calc"] = m_calculated;
-    }
-
-    if(m_generated.size() == 0) {
-      json.erase("gen");
-    }
-    else {
-      json["gen"] = m_generated;
-    }
-
-    return json;
-
+  void Configuration::from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname) {
+    auto name = Configuration::split_name(_configname);
+    this->from_json(json, *primclex.db<Supercell>().find(name.first), name.second);
   }
 
   bool Configuration::is_equivalent(const Configuration &B) const {
@@ -1243,25 +967,17 @@ namespace CASM {
     return f(B);
   }
 
-  std::pair<std::string, Index> Configuration::split_name(std::string configname) {
+  std::pair<std::string, std::string> Configuration::split_name(std::string configname) {
     std::vector<std::string> splt_vec;
     boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
-    Index config_ind;
     if(splt_vec.size() != 2) {
       default_err_log().error("Parsing configuration name");
       default_err_log() << "configuration '" << configname << "' not valid." << std::endl;
+      default_err_log() << "must have form: scelname/configid" << std::endl;
       throw std::invalid_argument("Error in Configuration::split_name(const std::string &configname) const: Not valid");
     }
 
-    try {
-      config_ind = boost::lexical_cast<Index>(splt_vec[1]);
-    }
-    catch(boost::bad_lexical_cast &e) {
-      default_err_log().error("Invalid config index");
-      default_err_log() << "CRITICAL ERROR: In PrimClex::configuration(), malformed input:" << configname << "\n";
-      throw e;
-    }
-    return std::make_pair(splt_vec[0], config_ind);
+    return std::make_pair(splt_vec[0], splt_vec[1]);
   }
 
   bool Configuration::_eq(const Configuration &B) const {
@@ -1270,6 +986,22 @@ namespace CASM {
     }
     ConfigIsEquivalent f(*this, crystallography_tol());
     return f(B);
+  }
+
+  Configuration jsonConstructor<Configuration>::from_json(
+    const jsonParser &json,
+    const PrimClex &primclex,
+    const std::string &configname) {
+
+    return Configuration(primclex, configname, json);
+  }
+
+  Configuration jsonConstructor<Configuration>::from_json(
+    const jsonParser &json,
+    const Supercell &scel,
+    const std::string &id) {
+
+    return Configuration(scel, id, json);
   }
 
   Configuration &apply(const PermuteIterator &it, Configuration &config) {
@@ -1310,7 +1042,7 @@ namespace CASM {
     //std::cout << " here 3" << std::endl;
     // initialize site dof
     if(super_config.has_occupation()) {
-      sub_config.configdof().set_occupation(Array<int>(sub_config.size(), 0));
+      sub_config.configdof().set_occupation(std::vector<int>(sub_config.size(), 0));
     }
     if(super_config.has_displacement()) {
       sub_config.configdof().set_displacement(
@@ -1341,16 +1073,6 @@ namespace CASM {
 
     //std::cout << "finish sub_configuration" << std::endl;
     return sub_config;
-  }
-
-
-  namespace {
-    std::vector<std::string> split(std::string s, char delim) {
-      typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-      boost::char_separator<char> sep(&delim);
-      tokenizer tok(s, sep);
-      return std::vector<std::string>(tok.begin(), tok.end());
-    }
   }
 
   /// \brief Make Configuration from name string
@@ -1410,7 +1132,7 @@ namespace CASM {
       }
 
       FillSupercell f(
-        primclex.supercell(scelname),
+        *primclex.db<Supercell>().find(scelname),
         sym_op);
 
       return f(prim_equiv);
@@ -1434,7 +1156,7 @@ namespace CASM {
         throw std::invalid_argument("Error in make_configuration: configuration name format error");
       }
 
-      Configuration pconfig = primclex.configuration(primname);
+      Configuration pconfig = *primclex.db<Configuration>().find(primname);
       Index fg_index = boost::lexical_cast<Index>(tokens[2]);
       Index trans_index = boost::lexical_cast<Index>(tokens[3]);
 
@@ -1442,7 +1164,7 @@ namespace CASM {
     }
 
     // if $CANON_SCELNAME/$CANON_INDEX
-    return primclex.configuration(name);
+    return *primclex.db<Configuration>().find(name);
   }
 
   /// \brief Returns correlations using 'clexulator'.
@@ -1491,9 +1213,31 @@ namespace CASM {
     return comp_n(config) / config.prim().basis.size();
   }
 
+  /// \brief Status of calculation
+  std::string calc_status(const Configuration &config) {
+    fs::path p = calc_status_path(config);
+    if(fs::exists(p)) {
+      jsonParser json(p);
+      if(json.contains("status"))
+        return json["status"].get<std::string>();
+    }
+    return("not_submitted");
+  }
+
+  // \brief Reason for calculation failure.
+  std::string failure_type(const Configuration &config) {
+    fs::path p = calc_status_path(config);
+    if(fs::exists(p)) {
+      jsonParser json(p);
+      if(json.contains("failure_type"))
+        return json["failure_type"].get<std::string>();
+    }
+    return("none");
+  }
+
   /// \brief Returns the relaxed energy, normalized per unit cell
   double relaxed_energy(const Configuration &config) {
-    return config.calc_properties()["relaxed_energy"].get<double>();
+    return config.calc_properties()["relaxed_energy"].get<double>() / config.supercell().volume();
   }
 
   /// \brief Returns the relaxed energy, normalized per species
@@ -1551,17 +1295,30 @@ namespace CASM {
 
   /// \brief Return true if all current properties have been been calculated for the configuration
   bool is_calculated(const Configuration &config) {
-    const auto &set = config.primclex().settings();
-    return std::all_of(set.properties().begin(),
-                       set.properties().end(),
+    const auto &props = config.primclex().settings().properties<Configuration>();
+    return is_calculated(config.calc_properties(), props);
+  }
+
+  /// \brief Return true if all required properties are included in the JSON
+  bool is_calculated(
+    const jsonParser &calc_properties,
+    const std::vector<std::string> &required_properties) {
+
+    return std::all_of(required_properties.begin(),
+                       required_properties.end(),
     [&](const std::string & key) {
-      return config.calc_properties().contains(key);
+      return calc_properties.contains(key);
     });
   }
 
   /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
   double rms_force(const Configuration &_config) {
-    return _config.calc_properties()["rms_force"].get<double>();
+    //Get RMS force:
+    const jsonParser &props = _config.calc_properties();
+
+    Eigen::MatrixXd forces;
+    props["relaxed_forces"].get(forces);
+    return sqrt((forces.transpose() * forces).trace() / double(forces.rows()));
   }
 
   /// \brief Cost function that describes the degree to which basis sites have relaxed
@@ -1577,6 +1334,26 @@ namespace CASM {
   /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
   double volume_relaxation(const Configuration &_config) {
     return _config.calc_properties()["volume_relaxation"].get<double>();
+  }
+
+  /// \brief Returns the relaxed magnetic moment, normalized per unit cell
+  double relaxed_magmom(const Configuration &_config) {
+    return _config.calc_properties()["relaxed_magmom"].get<double>();
+  }
+
+  /// \brief Returns the relaxed magnetic moment, normalized per species
+  double relaxed_magmom_per_species(const Configuration &_config) {
+    return relaxed_magmom(_config) / n_species(_config);
+  }
+
+  /// \brief Returns the relaxed magnetic moment at each basis site
+  Eigen::VectorXd relaxed_mag_basis(const Configuration &_config) {
+    return _config.calc_properties()["relaxed_mag_basis"].get<Eigen::VectorXd>();
+  }
+
+  /// \brief Returns the relaxed magnetic moment for each molecule
+  Eigen::VectorXd relaxed_mag(const Configuration &_config) {
+    return _config.calc_properties()["relaxed_mag"].get<Eigen::VectorXd>();
   }
 
   /// \brief returns true if _config describes primitive cell of the configuration it describes
@@ -1603,7 +1380,9 @@ namespace CASM {
   }
 
   bool has_rms_force(const Configuration &_config) {
-    return _config.calc_properties().contains("rms_force");
+    const jsonParser &props = _config.calc_properties();
+    auto it = props.find("relaxed_forces");
+    return it != props.end() && it->size();
   }
 
   bool has_basis_deformation(const Configuration &_config) {
@@ -1618,12 +1397,42 @@ namespace CASM {
     return _config.calc_properties().contains("volume_relaxation");
   }
 
+  bool has_relaxed_magmom(const Configuration &_config) {
+    return _config.calc_properties().contains("relaxed_magmom");
+  }
+
+  bool has_relaxed_mag_basis(const Configuration &_config) {
+    return _config.calc_properties().contains("relaxed_mag_basis");
+  }
+
+  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().calculated_properties(configname, primclex.settings().default_clex().calctype);
+  }
+  fs::path calc_properties_path(const Configuration &config) {
+    return calc_properties_path(config.primclex(), config.name());
+  }
+
+  fs::path pos_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().POS(configname);
+  }
+  fs::path pos_path(const Configuration &config) {
+    return pos_path(config.primclex(), config.name());
+  }
+
+  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().calc_status(configname, primclex.settings().default_clex().calctype);
+  }
+  fs::path calc_status_path(const Configuration &config) {
+    return calc_status_path(config.primclex(), config.name());
+  }
+
+
   /// \brief Constructor
   ///
   /// \param _scel Supercell to be filled
   /// \param _op SymOp that transforms the input motif before tiling into the
   ///        Supercell that is filled
-  FillSupercell::FillSupercell(Supercell &_scel, const SymOp &_op) :
+  FillSupercell::FillSupercell(const Supercell &_scel, const SymOp &_op) :
     m_scel(&_scel), m_op(&_op), m_motif_scel(nullptr) {}
 
   /// \brief Constructor
@@ -1633,7 +1442,7 @@ namespace CASM {
   ///               tiling into _scel
   /// \param _tol tolerance
   ///
-  FillSupercell::FillSupercell(Supercell &_scel, const Configuration &_motif, double _tol) :
+  FillSupercell::FillSupercell(const Supercell &_scel, const Configuration &_motif, double _tol) :
     m_scel(&_scel), m_op(find_symop(_motif, _tol)), m_motif_scel(nullptr) {}
 
   Configuration FillSupercell::operator()(const Configuration &motif) const {
@@ -1650,12 +1459,12 @@ namespace CASM {
     }
 
     // ------- site dof ----------
-    Array<int> tscel_occ;
+    std::vector<int> tscel_occ;
     ConfigDoF::displacement_matrix_t tscel_disp, motif_new_disp;
 
     // apply fg op
     if(motif.has_occupation()) {
-      result.set_occupation(Array<int>(m_scel->num_sites(), 0));
+      result.set_occupation(std::vector<int>(m_scel->num_sites(), 0));
     }
     //std::cout << "has_disp: " << motif.has_displacement() << std::endl;
     if(motif.has_displacement()) {
@@ -1690,8 +1499,8 @@ namespace CASM {
   ///        can be used to fill the Supercell
   const SymOp *FillSupercell::find_symop(const Configuration &motif, double tol) {
 
-    const Lattice &motif_lat = motif.supercell().real_super_lattice();
-    const Lattice &scel_lat = m_scel->real_super_lattice();
+    const Lattice &motif_lat = motif.supercell().lattice();
+    const Lattice &scel_lat = m_scel->lattice();
     auto begin = m_scel->primclex().prim().factor_group().begin();
     auto end = m_scel->primclex().prim().factor_group().end();
 
@@ -1714,16 +1523,16 @@ namespace CASM {
     return &(*res.first);
   }
 
-  void FillSupercell::_init(Supercell &_motif_scel) const {
+  void FillSupercell::_init(const Supercell &_motif_scel) const {
 
     m_motif_scel = &_motif_scel;
 
     // ------- site dof ----------
-    Lattice oriented_motif_lat = copy_apply(*m_op, m_motif_scel->real_super_lattice());
+    Lattice oriented_motif_lat = copy_apply(*m_op, m_motif_scel->lattice());
 
     // Create a PrimGrid linking the prim and the oriented motif each to the supercell
     // So we can tile the decoration of the motif config onto the supercell correctly
-    PrimGrid prim_grid(oriented_motif_lat, m_scel->real_super_lattice());
+    PrimGrid prim_grid(oriented_motif_lat, m_scel->lattice());
 
     //std::cout << "m_op->matrix(): \n" << m_op->matrix() << std::endl;
     //std::cout << "m_op->tau(): \n" << m_op->tau() << std::endl;

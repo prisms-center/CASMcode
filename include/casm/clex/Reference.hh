@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include "casm/external/Eigen/Dense"
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"

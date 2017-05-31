@@ -1,6 +1,6 @@
 #include "casm/crystallography/Coordinate.hh"
 
-#include "casm/misc/CASM_math.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/casm_io/json_io/container.hh"

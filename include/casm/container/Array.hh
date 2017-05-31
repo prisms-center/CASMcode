@@ -6,10 +6,10 @@
 #include <cassert>
 #include <new>
 #include <stdlib.h>
+#include <cmath>
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_TMP.hh"
-#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
   template<class T>
@@ -288,28 +288,6 @@ namespace CASM {
     // I/O
     void print_column(std::ostream &stream, const std::string &indent = "")const;
   };
-
-  template<typename T>
-  jsonParser &to_json(const Array<T> &value, jsonParser &json) {
-    json.put_array();
-    for(Index i = 0; i < value.size(); i++)
-      json.push_back(value[i]);
-    return json;
-  }
-
-  /// This requires that 'T::T()' exists, if not, you must do this by hand
-  template<typename T>
-  void from_json(Array<T> &value, const jsonParser &json) {
-    try {
-      value.resize(json.size());
-      for(int i = 0; i < json.size(); i++)
-        from_json(value[i], json[i]);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -821,7 +799,7 @@ namespace CASM {
         // in the current region (left:right-1), seperate the values less than the pivot value (which is now at 'right')
         curr = left;
         for(i = left; i < right; i++) {
-          if(comp.compare(at(i) , at(right))) {
+          if(comp.compare(at(i), at(right))) {
             swap_elem(curr, i);
             curr++;
           }

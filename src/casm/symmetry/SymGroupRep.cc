@@ -1,8 +1,12 @@
 #include "casm/symmetry/SymGroupRep.hh"
 
 #include <numeric>
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/external/Eigen/CASM_AddOns"
+#include "casm/casm_io/jsonParser.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/misc/CASM_Array_math.hh"
 
 #include "casm/container/Permutation.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
@@ -1404,14 +1408,14 @@ namespace CASM {
           exit(1);
         }
       }
-      new_rep.set_rep(np, SymPermutation(tperm));
+      new_rep.set_rep(np, SymPermutation(tperm.begin(), tperm.end()));
     }
     return new_rep;
   }
 
   //*******************************************************************************************
 
-  SymGroupRep permuted_direct_sum_rep(const SymGroupRep &permute_rep, const Array<SymGroupRep const *> &sum_reps) {
+  SymGroupRep permuted_direct_sum_rep(const SymGroupRep &permute_rep, const std::vector<SymGroupRep const *> &sum_reps) {
     SymGroupRep new_rep(SymGroupRep::NO_HOME, permute_rep.size());
     if(permute_rep.has_valid_master())
       new_rep = SymGroupRep(permute_rep.master_group());

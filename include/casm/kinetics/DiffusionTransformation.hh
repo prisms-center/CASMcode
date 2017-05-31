@@ -3,9 +3,8 @@
 
 #include "casm/kinetics/DoFTransformation.hh"
 #include "casm/kinetics/OccupationTransformation.hh"
-#include "casm/symmetry/PermuteIterator.hh"
-#include "casm/misc/CASM_TMP.hh"
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/clusterography/IntegralCluster.hh"
@@ -33,23 +32,15 @@ namespace CASM {
       /// Position of specie in Molecule
       Index pos;
 
-      bool operator<(const SpecieLocation &B) const {
-        return _tuple() < B._tuple();
-      }
+      bool operator<(const SpecieLocation &B) const;
 
-      const Molecule &mol() const {
-        return uccoord.sublat_site().site_occupant()[occ];
-      }
+      const Molecule &mol() const;
 
-      const Specie &specie() const {
-        return mol()[pos].specie;
-      }
+      const Specie &specie() const;
 
     private:
 
-      std::tuple<UnitCellCoord, Index, Index> _tuple() const {
-        return std::make_tuple(uccoord, occ, pos);
-      }
+      std::tuple<UnitCellCoord, Index, Index> _tuple() const;
     };
 
     /// \brief Print DiffusionTransformationInvariants
@@ -81,20 +72,14 @@ namespace CASM {
 
       SpecieTrajectory &operator-=(UnitCell frac);
 
-      bool specie_types_map() const {
-        return from.specie() == to.specie();
-      }
+      bool specie_types_map() const;
 
-      bool is_no_change() const {
-        return from == to;
-      }
+      bool is_no_change() const;
 
       SpecieLocation from;
       SpecieLocation to;
 
-      bool operator<(const SpecieTrajectory &B) const {
-        return _tuple() < B._tuple();
-      }
+      bool operator<(const SpecieTrajectory &B) const;
 
       void apply_sym(const SymOp &op);
 
@@ -102,9 +87,7 @@ namespace CASM {
 
     private:
 
-      std::tuple<SpecieLocation, SpecieLocation> _tuple() const {
-        return std::make_tuple(from, to);
-      }
+      std::tuple<SpecieLocation, SpecieLocation> _tuple() const;
 
     };
   }
@@ -356,19 +339,13 @@ namespace CASM {
       bool is_sorted() const;
 
       /// \brief Return the cluster size
-      Index size() const {
-        return cluster().size();
-      }
+      Index size() const;
 
       /// \brief Return the min pair distance, or 0.0 if size() <= 1
-      double min_length() const {
-        return cluster().min_length();
-      }
+      double min_length() const;
 
       /// \brief Return the max pair distance, or 0.0 if size() <= 1
-      double max_length() const {
-        return cluster().max_length();
-      }
+      double max_length() const;
 
       void apply_sym(const PermuteIterator &it) {
         apply_sym_impl(it.sym_op());

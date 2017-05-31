@@ -11,13 +11,24 @@ namespace CASM {
 
   namespace Kinetics {
 
+    class Perturbation : public std::set<OccupationTransformation> {
+
+    public:
+
+      Perturbation(std::set<OccupationTransformation> &from_set);
+
+      Perturbation &apply_sym(const SymOp &op);
+
+    };
+
+
     /// \brief Enumerate DiffTransConfiguration for a particular DiffusionTransformation,
     ///        set of local clusters, and a particular initial Configuration
     ///
     class DiffTransConfigEnumPerturbations : public InputEnumeratorBase<DiffTransConfiguration> {
 
       // -- Required members -------------------
-
+      //class Perturbation;
     public:
 
       /// \brief Construct with an IntegralCluster
@@ -34,7 +45,7 @@ namespace CASM {
       static const std::string enumerator_name;
       static const std::string interface_help;
 
-      static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+      static int run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
 
     private:
 
@@ -45,31 +56,35 @@ namespace CASM {
 
 
       ///... members necessary to do the enumeration ...
-      void _init_base_dtc();
-      void _init_unique_dts();
+      void _init_base_config();
+      void _init_unique_difftrans();
       void _init_perturbations();
 
 
       void _set_current();
-      void _increment_base_dtc();
+      void _increment_base_config();
 
       /// Select unique DiffusionTransformations from PrimPeriodicDiffTransOrbit
-      //DiffusionTransformation UniqueDiffusionTransformaitions(const PrimPeriodicDiffTransOrbit &diff_trans_orbit);
-      /*
-      more stuff about perturbation index and such
-      std::set<PerturbationType> m_perturbations;
-      std::set<PerturbationType>::iterator m_perturb_it;
-      */
+      //DiffusionTransformation UniqueDiffusionTransformations(const PrimPeriodicDiffTransOrbit &diff_trans_orbit);
 
-      std::set<DiffusionTransformation>::iterator m_unique_dts_it;
-      std::set<DiffusionTransformation> m_unique_dts;
-      DiffTransConfiguration m_base_dtc;
+
+      std::set<Perturbation> m_perturbations;
+      std::set<Perturbation>::iterator m_perturb_it;
+
+      std::set<DiffusionTransformation>::iterator m_unique_difftrans_it;
+      std::set<DiffusionTransformation> m_unique_difftrans;
+      DiffTransConfiguration m_base_config;
 
       Configuration m_background_config;
       PrimPeriodicDiffTransOrbit m_diff_trans_orbit;
       jsonParser m_local_bspecs;
       notstd::cloneable_ptr<DiffTransConfiguration> m_current;
     };
+
+    bool has_local_bubble_overlap(std::vector<LocalIntegralClusterOrbit> &local_orbits, const Supercell &scel);
+
+    std::vector<Supercell> viable_supercells(std::vector<LocalIntegralClusterOrbit> &local_orbits, std::vector<Supercell>);
+
 
   }
 }

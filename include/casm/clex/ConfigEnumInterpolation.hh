@@ -29,12 +29,12 @@ namespace CASM {
 
     static const std::string enumerator_name;
     static const std::string interface_help;
-    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
   private:
 
     /// Implements goto_step
-    Configuration *at_step(step_type n) override;
+    const Configuration *at_step(step_type n) override;
 
 
     // -- Unique members -------------------

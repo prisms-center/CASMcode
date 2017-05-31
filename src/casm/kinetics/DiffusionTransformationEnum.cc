@@ -1,5 +1,5 @@
-#include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/crystallography/Site.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
@@ -126,7 +126,7 @@ namespace CASM {
     }
 
     /// Implements run
-    int DiffusionTransformationEnum::run(PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
+    int DiffusionTransformationEnum::run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
 
       jsonParser kwargs;
       if(!_kwargs.get_if(kwargs, "bspecs")) {
@@ -174,14 +174,14 @@ namespace CASM {
           }
         }
       }
-      PrototypePrinter<Kinetics::DiffusionTransformation> printer;
+      /*PrototypePrinter<Kinetics::DiffusionTransformation> printer;
       print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
 
       for(auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); it++) {
         std::cout << orbit_name(*it) << std::endl;
         std::cout << min_dist_to_path(it->prototype()) << std::endl;
         std::cout << path_nearest_neighbor(it->prototype()) << std::endl;
-      }
+      }*/
 
       return 0;
     }

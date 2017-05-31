@@ -1,11 +1,16 @@
 #include <cstring>
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/jsonParser.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/app/AppIO.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
@@ -34,26 +39,26 @@ namespace CASM {
     Completer::InitOption init_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, init_opt.desc()), vm); // can throw
+      po::store(po::parse_command_line(args.argc(), args.argv(), init_opt.desc()), vm); // can throw
 
       /** --help option
       */
       if(vm.count("help")) {
-        std::cout << "\n";
-        std::cout << init_opt.desc() << std::endl;
+        args.log() << "\n";
+        args.log() << init_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << init_opt.desc() << std::endl;
+        args.log() << "\n";
+        args.log() << init_opt.desc() << std::endl;
 
-        std::cout << "DESCRIPTION                                                \n" <<
-                  "    Initialize a new CASM project in the current directory.\n" <<
-                  "    - Expects a prim.json file in the current directory    \n" <<
-                  "    - If not found, looks for a PRIM file in the current   \n" <<
-                  "      directory and creates prim.json.                     \n\n";
+        args.log() << "DESCRIPTION                                                \n" <<
+                   "    Initialize a new CASM project in the current directory.\n" <<
+                   "    - Expects a prim.json file in the current directory    \n" <<
+                   "    - If not found, looks for a PRIM file in the current   \n" <<
+                   "      directory and creates prim.json.                     \n\n";
 
         return 0;
       }
@@ -62,23 +67,23 @@ namespace CASM {
       // there are any problems
     }
     catch(po::error &e) {
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      std::cerr << init_opt.desc() << std::endl;
+      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << init_opt.desc() << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << "Unhandled Exception reached the top of main: "
-                << e.what() << ", application will now exit" << std::endl;
+      args.err_log() << "Unhandled Exception reached the top of main: "
+                     << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
 
     }
 
     if(fs::current_path() == find_casmroot(fs::current_path())) {
-      std::cout << "Already in a casm project." << std::endl;
+      args.log() << "Already in a casm project." << std::endl;
       return ERR_OTHER_PROJ;
     }
 
-    std::cout << "\n***************************\n" << std::endl;
+    args.log() << "\n***************************\n" << std::endl;
 
     fs::path root = fs::current_path();
 
@@ -90,11 +95,11 @@ namespace CASM {
     if(!fs::is_regular_file(dir.prim())) {
 
       if(!fs::is_regular_file(dir.PRIM())) {
-        std::cout << "Error in 'casm init': Neither 'prim.json' nor 'PRIM' found.\n\n";
+        args.log() << "Error in 'casm init': Neither 'prim.json' nor 'PRIM' found.\n\n";
 
-        std::cout << "Run 'casm format --prim' for the format of the 'prim.json' file.\n\n";
+        args.log() << "Run 'casm format --prim' for the format of the 'prim.json' file.\n\n";
 
-        std::cout << "For step by step help use: 'casm status -n'\n\n";
+        args.log() << "For step by step help use: 'casm status -n'\n\n";
 
         return ERR_MISSING_INPUT_FILE;
       }
@@ -107,21 +112,21 @@ namespace CASM {
       }
       catch(std::runtime_error &e) {
 
-        std::cerr << "ERROR: No prim.json exists. PRIM exists, but it could not be read.\n";
-        std::cerr << e.what() << std::endl;
+        args.err_log() << "ERROR: No prim.json exists. PRIM exists, but it could not be read.\n";
+        args.err_log() << e.what() << std::endl;
         return ERR_INVALID_INPUT_FILE;
       }
 
 
       std::string poscar_prim_title = prim.title;
-      std::cout << "Converting 'PRIM' to 'prim.json'.\n\n" << std::endl;
+      args.log() << "Converting 'PRIM' to 'prim.json'.\n\n" << std::endl;
 
-      std::cout << "Please enter a short title for this project.\n";
-      std::cout << "  Use something suitable as a prefix for files specific to this project, such as 'ZrO' or 'TiAl'.\n\n";
+      args.log() << "Please enter a short title for this project.\n";
+      args.log() << "  Use something suitable as a prefix for files specific to this project, such as 'ZrO' or 'TiAl'.\n\n";
 
-      std::cout << "Title: ";
+      args.log() << "Title: ";
       std::cin >> prim.title;
-      std::cout << "\n\n";
+      args.log() << "\n\n";
 
       jsonParser json;
       write_prim(prim, json, FRAC);
@@ -141,7 +146,7 @@ namespace CASM {
       prim = Structure(read_prim(prim_json));
     }
     catch(std::runtime_error &e) {
-      std::cerr << e.what() << std::endl;
+      args.err_log() << e.what() << std::endl;
 
       return ERR_INVALID_INPUT_FILE;
     }
@@ -151,8 +156,8 @@ namespace CASM {
     true_prim.title = prim.title;
     if(!prim.is_primitive(true_prim)) {
       if(!vm.count("force")) {
-        std::cerr << "ERROR: The structure in the prim.json file is not primitive. Writing the most       \n"
-                  << "       primitive structure to file 'prim.true.json'.\n\n";
+        args.err_log() << "ERROR: The structure in the prim.json file is not primitive. Writing the most       \n"
+                       << "       primitive structure to file 'prim.true.json'.\n\n";
 
         Structure tmp(true_prim);
         Lattice lat_niggli = canonical_equivalent_lattice(true_prim.lattice(), tmp.point_group(), TOL);
@@ -165,13 +170,13 @@ namespace CASM {
         json.print(primfile);
         primfile.close();
 
-        std::cerr << "If you want to use the current prim.json anyway, re-run with the --force option. Some\n"
-                  << "CASM features cannot be used with a non-primitive starting structure.\n";
+        args.err_log() << "If you want to use the current prim.json anyway, re-run with the --force option. Some\n"
+                       << "CASM features cannot be used with a non-primitive starting structure.\n";
         return ERR_INVALID_INPUT_FILE;
       }
       else {
-        std::cerr << "WARNING: The structure in the prim.json file is not primitive. Continuing anyway    \n"
-                  << "         because the --force option is on.\n\n";
+        args.err_log() << "WARNING: The structure in the prim.json file is not primitive. Continuing anyway    \n"
+                       << "         because the --force option is on.\n\n";
       }
     }
 
@@ -183,9 +188,9 @@ namespace CASM {
     if(!is_standard_niggli) {
       if(!vm.count("force")) {
         if(!is_standard_niggli) {
-          std::cerr << "ERROR: The structure in the prim.json file is not the niggli cell in the CASM standard\n"
-                    << "       orientation. Writing the suggested structure to 'prim.niggli.json'.\n\n"
-                    << "       If you want to use the current prim.json anyway, re-run with the --force option.\n";
+          args.err_log() << "ERROR: The structure in the prim.json file is not the niggli cell in the CASM standard\n"
+                         << "       orientation. Writing the suggested structure to 'prim.niggli.json'.\n\n"
+                         << "       If you want to use the current prim.json anyway, re-run with the --force option.\n";
         }
 
         Structure tmp(true_prim);
@@ -202,8 +207,8 @@ namespace CASM {
         return ERR_INVALID_INPUT_FILE;
       }
       else {
-        std::cerr << "WARNING: The structure in the prim.json file is not the standard orientation Niggli\n"
-                  << "         cell. Continuing anyway because the --force option is on.\n\n";
+        args.err_log() << "WARNING: The structure in the prim.json file is not the standard orientation Niggli\n"
+                       << "         cell. Continuing anyway because the --force option is on.\n\n";
         //return 1;
       }
 
@@ -212,10 +217,10 @@ namespace CASM {
     //Check if the lattice is right handed, and if not print PRIM.right_handed.json
     if(!prim.lattice().is_right_handed()) {
       if(!vm.count("force")) {
-        std::cerr << "ERROR: The structure in prim.json is not right-handed. Some electronic-"
-                  << "structure codes will not accept this input. If you would like to "
-                  << "keep this PRIM, re-run with the --force option. Writing the "
-                  << "right-handed structure to PRIM.right_handed.json" << std::endl;
+        args.err_log() << "ERROR: The structure in prim.json is not right-handed. Some electronic-"
+                       << "structure codes will not accept this input. If you would like to "
+                       << "keep this PRIM, re-run with the --force option. Writing the "
+                       << "right-handed structure to PRIM.right_handed.json" << std::endl;
 
         prim.set_lattice(Lattice(prim.lattice()).make_right_handed(), CART);
         prim.within();
@@ -229,24 +234,24 @@ namespace CASM {
         return ERR_INVALID_INPUT_FILE;
       }
       else {
-        std::cerr << "WARNING: The structure in the prim.json file is not right-handed. Continuing anyway    \n"
-                  << "         because the --force option is on.\n\n";
+        args.err_log() << "WARNING: The structure in the prim.json file is not right-handed. Continuing anyway    \n"
+                       << "         because the --force option is on.\n\n";
       }
     }
 
     try {
-      std::cout << "Initializing CASM project '" << prim.title << "'" << std::endl;
+      args.log() << "Initializing CASM project '" << prim.title << "'" << std::endl;
       ProjectBuilder builder(root, prim.title, "formation_energy");
       builder.build();
     }
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR: Could not build CASM project.\n";
-      std::cerr << e.what() << std::endl;
+      args.err_log() << "ERROR: Could not build CASM project.\n";
+      args.err_log() << e.what() << std::endl;
       return ERR_INVALID_INPUT_FILE;
     }
 
-    std::cout << "  DONE" << std::endl;
-    std::cout << std::endl;
+    args.log() << "  DONE" << std::endl;
+    args.log() << std::endl;
 
     return 0;
   };

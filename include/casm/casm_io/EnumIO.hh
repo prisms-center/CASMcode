@@ -5,10 +5,13 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <map>
+#include <vector>
 #include "casm/misc/CASM_TMP.hh"
-#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
+
+  class jsonParser;
 
   /// \defgroup casmIO IO
   ///
@@ -36,7 +39,7 @@ namespace CASM {
   std::string help() {
     std::stringstream ss;
     ss << "Options are:\n";
-    for(auto it = CASM_TMP::traits<ENUM>::strval.begin(); it != CASM_TMP::traits<ENUM>::strval.end(); ++it) {
+    for(auto it = traits<ENUM>::strval.begin(); it != traits<ENUM>::strval.end(); ++it) {
       ss << "  ";
       for(auto sit = it->second.begin(); sit != it->second.end(); sit++) {
         if(sit != it->second.begin()) {
@@ -67,7 +70,7 @@ namespace CASM {
   template<typename ENUM>
   void invalid_enum_string(std::string val, std::ostream &serr) {
     std::stringstream s;
-    s << "Invalid " << CASM_TMP::traits<ENUM>::name << ": " << val;
+    s << "Invalid " << traits<ENUM>::name << ": " << val;
     serr << s.str() << "\n";
     serr << help<ENUM>();
     throw std::invalid_argument(std::string("ERROR: ") + s.str());
@@ -79,7 +82,7 @@ namespace CASM {
   ///
   template<typename ENUM>
   std::string to_string(ENUM val) {
-    return CASM_TMP::traits<ENUM>::strval.find(val)->second[0];
+    return traits<ENUM>::strval.find(val)->second[0];
   }
 
   /// \brief Return enum class object from string representation
@@ -88,7 +91,7 @@ namespace CASM {
   ///
   template<typename ENUM>
   ENUM from_string(const std::string &val) {
-    for(auto it = CASM_TMP::traits<ENUM>::strval.begin(); it != CASM_TMP::traits<ENUM>::strval.end(); ++it) {
+    for(auto it = traits<ENUM>::strval.begin(); it != traits<ENUM>::strval.end(); ++it) {
       for(auto sit = it->second.begin(); sit != it->second.end(); sit++) {
         if(*sit == val) {
           return it->first;
@@ -97,11 +100,10 @@ namespace CASM {
     }
 
     invalid_enum_string<ENUM>(val, std::cerr);
-    return CASM_TMP::traits<ENUM>::strval.begin()->first;
+    return traits<ENUM>::strval.begin()->first;
   }
 
 #define ENUM_TRAITS(ENUM) \
-namespace CASM_TMP {\
   template<> \
   struct traits<ENUM> { \
   \
@@ -109,10 +111,39 @@ namespace CASM_TMP {\
   \
     static const std::multimap<ENUM, std::vector<std::string> > strval; \
   \
-  }; \
-}
+  };
 
-#define ENUM_IO(ENUM) \
+#define ENUM_IO_DECL(ENUM) \
+  std::ostream &operator<<(std::ostream &sout, const ENUM& val); \
+  \
+  std::istream &operator>>(std::istream &sin, ENUM& val); \
+  \
+  jsonParser &to_json(const ENUM &val, jsonParser &json); \
+  \
+  void from_json(ENUM& val, const jsonParser& json); \
+
+#define ENUM_IO_DEF(ENUM) \
+  std::ostream &operator<<(std::ostream &sout, const ENUM& val) { \
+    sout << to_string<ENUM>(val); \
+    return sout; \
+  } \
+  \
+  std::istream &operator>>(std::istream &sin, ENUM& val) { \
+    std::string s; \
+    sin >> s; \
+    val = from_string<ENUM>(s); \
+    return sin; \
+  } \
+  \
+  jsonParser &to_json(const ENUM &val, jsonParser &json) { \
+    return to_json(to_string<ENUM>(val), json); \
+  } \
+  \
+  void from_json(ENUM& val, const jsonParser& json) { \
+    val = from_string<ENUM>(json.get<std::string>()); \
+  } \
+
+#define ENUM_IO_INLINE(ENUM) \
   inline std::ostream &operator<<(std::ostream &sout, const ENUM& val) { \
     sout << to_string<ENUM>(val); \
     return sout; \
@@ -132,7 +163,6 @@ namespace CASM_TMP {\
   inline void from_json(ENUM& val, const jsonParser& json) { \
     val = from_string<ENUM>(json.get<std::string>()); \
   } \
- 
 
 }
 

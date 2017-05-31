@@ -6,6 +6,7 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/clusterography/SubClusterGenerator.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
@@ -669,19 +670,19 @@ namespace CASM {
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
-    std::ostream &status) {
+    std::ostream &status,
+    const SymGroup &generating_group) {
 
     typedef LocalIntegralClusterOrbit orbit_type;
     typedef typename orbit_type::Element cluster_type;
-
-    const SymGroup &prim_grp = diff_trans.prim().factor_group();
-    //SymGroup generating_grp = prim_grp;
+    SymGroup generating_grp {generating_group};
+    if(!generating_group.size()) {
+      const SymGroup &prim_grp = diff_trans.prim().factor_group();
+      Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
+      SymGroup generating_grp = make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
+    }
 
     LocalIntegralClusterSymCompare sym_compare(xtal_tol);
-    Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
-    //Find which prim factor group operations make diff_trans the same.
-    //may need to do translations here?
-    SymGroup generating_grp = make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -762,11 +763,12 @@ namespace CASM {
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
-    std::ostream &status) {
+    std::ostream &status,
+    const SymGroup &generating_group) {
 
     typedef LocalIntegralClusterOrbit orbit_type;
     typedef typename orbit_type::Element cluster_type;
-
+    SymGroup generating_grp {generating_group};
     // read max_length from bspecs
     std::vector<double> max_length = max_length_from_bspecs(bspecs);
     // read cutoff_radius from bspecs
@@ -774,11 +776,13 @@ namespace CASM {
 
     // collect custom orbit generating clusters in 'generators'
     LocalIntegralClusterSymCompare sym_compare(xtal_tol);
-    const SymGroup &prim_grp = diff_trans.prim().factor_group();
-    Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
-    OrbitGenerators<orbit_type> generators(
-      make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare),
-      sym_compare);
+    if(!generating_grp.size()) {
+      const SymGroup &prim_grp = diff_trans.prim().factor_group();
+      Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
+      generating_grp = make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
+    }
+
+    OrbitGenerators<orbit_type> generators(generating_grp, sym_compare);
 
     if(bspecs.contains("orbit_specs")) {
 
@@ -803,7 +807,7 @@ namespace CASM {
 
     std::vector<cluster_type> custom_generators(generators.elements.begin(), generators.elements.end());
 
-    return make_local_orbits(diff_trans, cutoff_radius, max_length, custom_generators, site_filter, xtal_tol, result, status);
+    return make_local_orbits(diff_trans, cutoff_radius, max_length, custom_generators, site_filter, xtal_tol, result, status, generating_grp);
 
   }
 

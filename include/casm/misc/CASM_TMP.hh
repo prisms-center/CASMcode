@@ -2,14 +2,16 @@
 #define CASM_TMP_HH
 
 #include <type_traits>
+#include <tuple>
 #include <cassert>
 #include <iterator>
+#include <string>
 
 namespace CASM {
-  namespace CASM_TMP {
 
-    template <typename T>
-    struct traits {};
+  template<typename T> struct traits;
+
+  namespace CASM_TMP {
 
     // ---------------------
 
@@ -40,7 +42,7 @@ namespace CASM {
     /// - T is considered an iterator if it is incrementable, dereferenceable, and comparable
     template <typename T>
     struct is_iterator < T,
-    void_t < decltype(++std::declval<T &>()),
+           void_t < decltype(++std::declval<T &>()),
            decltype(*std::declval<T &>()),
            decltype(std::declval<T &>() == std::declval<T &>()) > >
        : std::true_type { };
@@ -178,13 +180,13 @@ namespace CASM {
 
     /// \brief Base class for CRTP pattern
     ///
-    /// - Expects traits: CASM_TMP::traits<Derived>::MostDerived
+    /// - Expects traits: traits<Derived>::MostDerived
     template<typename Derived>
     class CRTPBase {
 
     public:
 
-      typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
+      typedef typename traits<Derived>::MostDerived MostDerived;
 
     protected:
 
@@ -196,8 +198,108 @@ namespace CASM {
         return *static_cast<const MostDerived *>(this);
       }
     };
-  }
 
+    // ----------------------------------------
+
+    template<int I>
+    struct for_each_type_impl {
+      template<typename TupleType, typename F>
+      static void eval(F f) {
+        typedef typename std::tuple_element < I - 1, TupleType >::type ElementType;
+        f.template eval<ElementType>();
+        for_each_type_impl < I - 1 >::template eval<TupleType, F>(f);
+      }
+    };
+
+    template<>
+    struct for_each_type_impl<1> {
+      template<typename TupleType, typename F>
+      static void eval(F f) {
+        typedef typename std::tuple_element<0, TupleType>::type ElementType;
+        return f.template eval<ElementType>();
+      }
+    };
+
+    template<typename TupleType, typename F>
+    void for_each_type(F f = F()) {
+      return for_each_type_impl<std::tuple_size<TupleType>::value>::template eval<TupleType, F>(f);
+    }
+
+    // ----------------------------------------
+
+    template<int I>
+    struct for_type_impl {
+      template<typename TupleType, typename F>
+      static void eval(std::string name, F f) {
+        typedef typename std::tuple_element < I - 1, TupleType >::type ElementType;
+        if(traits<ElementType>::name == name) {
+          f.template eval<ElementType>();
+        }
+        for_type_impl < I - 1 >::template eval<TupleType, F>(name, f);
+      }
+    };
+
+    template<>
+    struct for_type_impl<1> {
+      template<typename TupleType, typename F>
+      static void eval(std::string name, F f) {
+        typedef typename std::tuple_element<0, TupleType>::type ElementType;
+        if(traits<ElementType>::name == name) {
+          f.template eval<ElementType>();
+        }
+      }
+    };
+
+    template<typename TupleType, typename F>
+    void for_type(std::string name, F f = F()) {
+      return for_type_impl<std::tuple_size<TupleType>::value>::template eval<TupleType, F>(name, f);
+    }
+
+    // ----------------------------------------
+
+    template<int I>
+    struct for_type_short_impl {
+      template<typename TupleType, typename F>
+      static void eval(std::string short_name, F f) {
+        typedef typename std::tuple_element < I - 1, TupleType >::type ElementType;
+        if(traits<ElementType>::short_name == short_name) {
+          f.template eval<ElementType>();
+        }
+        for_type_short_impl < I - 1 >::template eval<TupleType, F>(short_name, f);
+      }
+    };
+
+    template<>
+    struct for_type_short_impl<1> {
+      template<typename TupleType, typename F>
+      static void eval(std::string short_name, F f) {
+        typedef typename std::tuple_element<0, TupleType>::type ElementType;
+        if(traits<ElementType>::short_name == short_name) {
+          f.template eval<ElementType>();
+        }
+      }
+    };
+
+    template<typename TupleType, typename F>
+    void for_type_short(std::string short_name, F f = F()) {
+      return for_type_short_impl<std::tuple_size<TupleType>::value>::template eval<TupleType, F>(short_name, f);
+    }
+
+    // -------------------------------------------
+
+    template <typename T, typename Tuple>
+    struct has_type;
+
+    template <typename T>
+    struct has_type<T, std::tuple<>> : std::false_type {};
+
+    template <typename T, typename U, typename... Ts>
+    struct has_type<T, std::tuple<U, Ts...>> : has_type<T, std::tuple<Ts...>> {};
+
+    template <typename T, typename... Ts>
+    struct has_type<T, std::tuple<T, Ts...>> : std::true_type {};
+
+  }
 }
 
 #endif

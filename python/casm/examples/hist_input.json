@@ -1,0 +1,18 @@
+{
+  "figure_kwargs": {
+    "plot_height": 400,
+    "plot_width": 800,
+    "tools": "crosshair,pan,reset,resize,box_zoom"
+  },
+  "series": [
+    {
+      "project": null,
+      "selection": "test_sel",
+      "x": "basis_deformation",
+      "hist_kwargs": {
+        "bins": 20,
+        "density": true
+      }
+    }
+  ]
+}

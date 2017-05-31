@@ -1,4 +1,6 @@
 #include "casm/casm_io/jsonParser.hh"
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/misc/CASM_math.hh"
 
 namespace CASM {
@@ -61,6 +63,17 @@ namespace CASM {
     return json = value;
   }
 
+  /// Create a jsonParser by reading a file
+  ///
+  /// This function reads the contents of the file at 'file_path' as if it were JSON.
+  /// Use 'to_json(file_path.string(), json)' if you only want the path as a string
+  void to_json(fs::path file_path, jsonParser &json) {
+    if(!json.read(file_path)) {
+      throw std::runtime_error(
+        std::string("ERROR: Could not read JSON file: '") + file_path.string() +
+        "'.\n\nPlease check your formatting. For instance, try http://www.jsoneditoronline.org.");
+    }
+  }
 
   template<>
   bool from_json<bool>(const jsonParser &json) {
@@ -166,8 +179,8 @@ namespace CASM {
     return json_spirit::read_stream(stream, (json_spirit::mValue &) * this);
   }
 
-  bool jsonParser::read(const boost::filesystem::path &file_path) {
-    boost::filesystem::ifstream stream(file_path);
+  bool jsonParser::read(const fs::path &file_path) {
+    fs::ifstream stream(file_path);
     return read(stream);
   }
 
@@ -196,8 +209,8 @@ namespace CASM {
   }
 
   /// Write json to file
-  void jsonParser::write(const boost::filesystem::path &file_path, unsigned int indent, unsigned int prec) const {
-    boost::filesystem::ofstream file(file_path);
+  void jsonParser::write(const fs::path &file_path, unsigned int indent, unsigned int prec) const {
+    fs::ofstream file(file_path);
     print(file, indent, prec);
     file.close();
     return;
@@ -281,7 +294,6 @@ namespace CASM {
   bool jsonParser::is_array() const {
     return type() == json_spirit::array_type;
   }
-
 
   // ---- Navigate the JSON data: ----------------------------
 
@@ -376,54 +388,67 @@ namespace CASM {
     return (const jsonParser &) get_array()[element];
   }
 
-  /// Return the location at which jsonParser 'A' != 'B' as a boost::filesystem::path
-  boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, boost::filesystem::path diff) {
-    auto A_it = A.cbegin();
-    auto B_it = B.cbegin();
-    while(A_it != A.cend()) {
-      if(*A_it != *B_it) {
-        if(A.is_obj() && B.is_obj()) {
-          return find_diff(*A_it, *B_it, diff / A_it.name());
+  namespace {
+    /// Return the location at which jsonParser 'A' != 'B' as a fs::path
+    fs::path find_diff(const jsonParser &A, const jsonParser &B, fs::path diff) {
+      auto A_it = A.cbegin();
+      auto B_it = B.cbegin();
+      while(A_it != A.cend()) {
+        if(*A_it != *B_it) {
+          if(A.is_obj() && B.is_obj()) {
+            return find_diff(*A_it, *B_it, diff / A_it.name());
+          }
+          else if(A.is_array() && B.is_array()) {
+            std::stringstream ss;
+            ss << std::distance(A.cbegin(), A_it);
+            return find_diff(*A_it, *B_it, diff / ss.str());
+          }
+          return diff;
         }
-        else if(A.is_array() && B.is_array()) {
-          std::stringstream ss;
-          ss << std::distance(A.cbegin(), A_it);
-          return find_diff(*A_it, *B_it, diff / ss.str());
-        }
-        return diff;
+        ++A_it;
+        ++B_it;
       }
-      ++A_it;
-      ++B_it;
+      return diff;
     }
-    return diff;
+
+    /// Return the location at which jsonParser !A.almost_equal(B, tol) as a fs::path
+    fs::path find_diff(const jsonParser &A, const jsonParser &B, double tol, fs::path diff) {
+      auto A_it = A.cbegin();
+      auto B_it = B.cbegin();
+      while(A_it != A.cend()) {
+        if(!A_it->almost_equal(*B_it, tol)) {
+          if(A.is_obj() && B.is_obj()) {
+            if(A.size() != B.size()) {
+              return diff;
+            }
+            return find_diff(*A_it, *B_it, tol, diff / A_it.name());
+          }
+          else if(A.is_array() && B.is_array()) {
+            if(A.size() != B.size()) {
+              return diff;
+            }
+            std::stringstream ss;
+            ss << std::distance(A.cbegin(), A_it);
+            return find_diff(*A_it, *B_it, tol, diff / ss.str());
+          }
+          return diff;
+        }
+        ++A_it;
+        ++B_it;
+      }
+      return diff;
+    }
+
   }
 
-  /// Return the location at which jsonParser !A.almost_equal(B, tol) as a boost::filesystem::path
-  boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, double tol, boost::filesystem::path diff) {
-    auto A_it = A.cbegin();
-    auto B_it = B.cbegin();
-    while(A_it != A.cend()) {
-      if(!A_it->almost_equal(*B_it, tol)) {
-        if(A.is_obj() && B.is_obj()) {
-          if(A.size() != B.size()) {
-            return diff;
-          }
-          return find_diff(*A_it, *B_it, tol, diff / A_it.name());
-        }
-        else if(A.is_array() && B.is_array()) {
-          if(A.size() != B.size()) {
-            return diff;
-          }
-          std::stringstream ss;
-          ss << std::distance(A.cbegin(), A_it);
-          return find_diff(*A_it, *B_it, tol, diff / ss.str());
-        }
-        return diff;
-      }
-      ++A_it;
-      ++B_it;
-    }
-    return diff;
+  /// Return the location at which jsonParser 'A' != 'B' as a fs::path
+  fs::path find_diff(const jsonParser &A, const jsonParser &B) {
+    return find_diff(A, B, fs::path());
+  }
+
+  /// Return the location at which jsonParser !A.almost_equal(B, tol) as a fs::path
+  fs::path find_diff(const jsonParser &A, const jsonParser &B, double tol) {
+    return find_diff(A, B, tol, fs::path());
   }
 
   /// Returns array size if *this is a JSON array, object size if *this is a JSON object, 1 otherwise
@@ -507,5 +532,10 @@ namespace CASM {
     return get_obj().erase(name);
   }
 
-}
+  // ---- static Methods -------------------------------------
 
+  /// Construct a jsonParser from a file containing JSON data
+  jsonParser jsonParser::parse(const fs::path &path) {
+    return jsonParser(path);
+  }
+}

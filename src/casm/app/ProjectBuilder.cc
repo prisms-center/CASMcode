@@ -1,7 +1,55 @@
 #include "casm/app/ProjectBuilder.hh"
+
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/regex.hpp>
+#include "casm/app/AppIO.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ClexDescription.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/database/DatabaseTypeTraits.hh"
 
 namespace CASM {
+
+  namespace {
+    struct SetPropsImpl {
+      typedef std::map<std::string, std::vector<std::string> > map_type;
+      ProjectSettings &set;
+      map_type props;
+      SetPropsImpl(ProjectSettings &_set, const map_type &_props):
+        set(_set), props(_props) {}
+      template<typename T> void eval() {
+        set.properties<T>() = props[traits<T>::name];
+      }
+    };
+  }
+
+
+  /// \brief Construct a CASM ProjectBuilder
+  ///
+  /// \param _root The directory where a new CASM project should be created.
+  /// \param _name The name of the CASM project. Should be a short name suitable for prepending to files.
+  /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
+  ///
+  ProjectBuilder::ProjectBuilder(fs::path _root, std::string _name, std::string _property) :
+    m_root(_root),
+    m_name(_name),
+    m_property(_property) {
+
+    /// check if m_name is suitable:
+    if(!boost::regex_match(m_name, boost::regex(R"([_a-zA-Z]\w*)"))) {
+      throw std::runtime_error(
+        std::string("Error constructing ProjectBuilder.\n") +
+        "  Invalid Project name: '" + m_name + "'\n"
+        "  Must be a valid C++ identifier: \n"
+        "  - only alphanumeric characters and underscores allowed\n"
+        "  - cannot start with a number");
+    }
+
+  }
 
   /// \brief Builds a new CASM project
   ///
@@ -51,7 +99,7 @@ namespace CASM {
           "  Could not set " + type);
       };
 
-      set.properties() = m_properties;
+      DB::for_each_config_type(SetPropsImpl(set, m_properties));
 
       ClexDescription desc("formation_energy", "formation_energy", "default", "default", "default", "default");
       set.new_clex(desc);

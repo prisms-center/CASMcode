@@ -4,7 +4,10 @@
 #include <string>
 #include <vector>
 #include <boost/program_options.hpp>
+#include <boost/filesystem/path.hpp>
+#include "casm/casm_io/stream_io/container.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/CASM_global_enum.hh"
 
 namespace CASM {
   namespace Completer {
@@ -113,6 +116,9 @@ namespace CASM {
       ///Get the program options, filled with the initialized values
       const po::options_description &desc();
 
+      ///Get the program options, filled with the initialized values
+      const po::options_description &desc() const;
+
       ///The desired name for the casm option (Perhaps this should get tied with CommandArg?)
       const std::string &tag() const;
 
@@ -123,7 +129,7 @@ namespace CASM {
       std::string m_tag;
 
       ///Boost program options. All the derived classes have them, but will fill them up themselves
-      po::options_description m_desc;
+      mutable po::options_description m_desc;
 
       ///Boost program options variable map
       po::variables_map m_vm;
@@ -132,6 +138,9 @@ namespace CASM {
       virtual void initialize() = 0;
 
       //-------------------------------------------------------------------------------------//
+
+      ///Add --selection suboption (defaults to MASTER)
+      void add_selection_suboption(const fs::path &_default = "MASTER");
 
       ///Add --config suboption (defaults to MASTER)
       void add_configlist_suboption(const fs::path &_default = "MASTER");
@@ -143,6 +152,9 @@ namespace CASM {
       const fs::path &selection_path() const;
 
       //----------------------------//
+
+      ///Add --selections suboption (defaults to MASTER)
+      void add_selections_suboption(const fs::path &_default = "MASTER");
 
       ///Add --configs suboption (defaults to MASTER)
       void add_configlists_suboption(const fs::path &_default = "MASTER");
@@ -162,6 +174,40 @@ namespace CASM {
 
       ///Add --configs suboption (no default)
       void add_configlists_nodefault_suboption();
+
+      //-------------------------------------------------------------------------------------//
+
+      ///Add --type suboption (default, set of short_name of allowed ConfigTypes)
+      void add_configtype_suboption(
+        std::string _default,
+        std::set<std::string> _configtype_opts);
+
+      /// User-specified config type
+      std::string m_configtype;
+
+      /// Set of valid config types
+      std::set<std::string> m_configtype_opts;
+
+      std::string configtype() const;
+
+      std::set<std::string> configtype_opts() const;
+
+      //-------------------------------------------------------------------------------------//
+
+      ///Add --type suboption (default, set of short_name of allowed DataObject Types)
+      void add_db_type_suboption(
+        std::string _default,
+        std::set<std::string> _configtype_opts);
+
+      /// User-specified config type
+      std::string m_db_type;
+
+      /// Set of valid config types
+      std::set<std::string> m_db_type_opts;
+
+      std::string db_type() const;
+
+      std::set<std::string> db_type_opts() const;
 
       //-------------------------------------------------------------------------------------//
 
@@ -214,8 +260,12 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
-      ///Add a --output suboption. Expects to allow "STDOUT" to print to screen.
+      /// Add a --output suboption. Expects to allow "STDOUT" to print to screen.
       void add_output_suboption();
+
+      /// Add a --output suboption, with default value.
+      /// Expects to allow "STDOUT" to print to screen.
+      void add_output_suboption(const fs::path &_default);
 
       ///The path that goes with add_output_suboption
       fs::path m_output_path;
@@ -277,6 +327,17 @@ namespace CASM {
 
       ///Returns the names of the supercells for add_configname_suboption(), for when multiple=false
       const std::vector<std::string> &config_strs() const;
+
+      //----------------------------//
+
+      ///Add a --names suboption.
+      void add_names_suboption();
+
+      ///The list of the supercell names of add_configname_suboption()
+      std::vector<std::string> m_name_strs;
+
+      ///Returns the names of the supercells for add_configname_suboption(), for when multiple=false
+      const std::vector<std::string> &name_strs() const;
 
       //-------------------------------------------------------------------------------------//
 
@@ -341,49 +402,6 @@ namespace CASM {
       void initialize() override;
 
       std::string m_exec_str;
-    };
-
-    //*****************************************************************************************************//
-
-    /**
-     * Options set for `casm query`. Get casm to query your things here.
-     */
-
-    class QueryOption : public OptionHandlerBase {
-
-    public:
-
-      using OptionHandlerBase::selection_path;
-      using OptionHandlerBase::output_path;
-      using OptionHandlerBase::gzip_flag;
-      using OptionHandlerBase::help_opt_vec;
-
-      QueryOption();
-
-      const std::vector<std::string> &columns_vec() const;
-
-      const std::vector<std::string> &new_alias_vec() const;
-
-      bool json_flag() const;
-
-      bool verbatim_flag() const;
-
-      bool no_header_flag() const;
-
-    private:
-
-      void initialize() override;
-
-      std::vector<std::string> m_columns_vec;
-
-      std::vector<std::string> m_new_alias_vec;
-
-      bool m_json_flag;
-
-      bool m_verbatim_flag;
-
-      bool m_no_header_flag;
-
     };
 
     //*****************************************************************************************************//
@@ -501,49 +519,6 @@ namespace CASM {
     //*****************************************************************************************************//
 
     /**
-     * Options set for `casm import`. Add new structures to your project here.
-     */
-
-    class ImportOption : public OptionHandlerBase {
-
-    public:
-
-      ImportOption();
-
-      double vol_tolerance() const;
-
-      double lattice_weight() const;
-
-      double min_va_frac() const;
-
-      double max_va_frac() const;
-
-      const std::vector<fs::path> &pos_vec() const;
-
-      const fs::path &batch_path() const;
-
-
-    private:
-
-      void initialize() override;
-
-      double m_vol_tolerance;
-
-      double m_lattice_weight;
-
-      double m_min_va_frac;
-
-      double m_max_va_frac;
-
-      std::vector<fs::path> m_pos_vec;
-
-      fs::path m_batch_path;
-
-    };
-
-    //*****************************************************************************************************//
-
-    /**
      * Options set for `casm format`. Get your input files here.
      */
 
@@ -580,33 +555,6 @@ namespace CASM {
       void initialize() override;
 
       fs::path m_cspecs_path;
-
-    };
-
-    //*****************************************************************************************************//
-
-    /**
-     * Options set for `casm perturb`. Get your defects here.
-     */
-
-    class SelectOption : public OptionHandlerBase {
-
-    public:
-
-      using OptionHandlerBase::help_opt_vec;
-      using OptionHandlerBase::selection_paths;
-      using OptionHandlerBase::output_path;
-
-      SelectOption();
-
-      const std::vector<std::string> &criteria_vec() const;
-
-    private:
-
-      void initialize() override;
-
-      std::vector<std::string> m_criteria_vec;
-
 
     };
 
@@ -720,44 +668,6 @@ namespace CASM {
     //*****************************************************************************************************//
 
     /**
-     * Options set for `casm update`. Get your project up to date here.
-     */
-
-    class UpdateOption : public OptionHandlerBase {
-
-    public:
-
-      using OptionHandlerBase::coordtype_enum;
-
-      using OptionHandlerBase::selection_path;
-
-      UpdateOption();
-
-      double vol_tolerance() const;
-
-      double lattice_weight() const;
-
-      double min_va_frac() const;
-
-      double max_va_frac() const;
-
-    private:
-
-      void initialize() override;
-
-      double m_vol_tolerance;
-
-      double m_lattice_weight;  //TODO: Push to base? Other commands use this
-
-      double m_min_va_frac;
-
-      double m_max_va_frac;
-
-    };
-
-    //*****************************************************************************************************//
-
-    /**
      * Options set for `casm view`. See what your casm landscape looks like here.
      */
 
@@ -775,62 +685,6 @@ namespace CASM {
       void initialize() override;
 
     };
-
-    //*****************************************************************************************************//
-
-    /**
-     * Options set for `casm enum`. Enumerate configurations and supercells here.
-     */
-
-    class EnumOption : public OptionHandlerBase {
-
-    public:
-
-      EnumOption();
-
-      using OptionHandlerBase::settings_path;
-      using OptionHandlerBase::input_str;
-      using OptionHandlerBase::supercell_strs;
-
-      const std::vector<std::string> &desc_vec() const {
-        return m_desc_vec;
-      }
-
-      std::string method() const {
-        return m_method;
-      }
-
-      int min_volume() const {
-        return m_min_volume;
-      }
-
-      int max_volume() const {
-        return m_max_volume;
-      }
-
-      bool all_existing() const {
-        return m_all_existing;
-      }
-
-      const std::vector<std::string> &filter_strs() const {
-        return m_filter_strs;
-      }
-
-    private:
-
-      void initialize() override;
-
-      std::vector<std::string> m_desc_vec;
-
-      std::string m_method;
-      int m_min_volume;
-      int m_max_volume;
-      bool m_all_existing;
-      std::vector<std::string> m_filter_strs;
-
-    };
-
-    //*****************************************************************************************************//
 
   }
 }

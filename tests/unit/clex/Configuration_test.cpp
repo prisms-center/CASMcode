@@ -10,6 +10,7 @@
 #include "FCCTernaryProj.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/app/AppIO.hh"
+#include "casm/crystallography/Structure.hh"
 
 using namespace CASM;
 
@@ -39,7 +40,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   config.clear_occupation();
   BOOST_CHECK_EQUAL(config.has_occupation(), false);
 
-  config.set_occupation(Array<int>(1, 0));
+  config.set_occupation(std::vector<int>({0}));
   BOOST_CHECK_EQUAL(config.has_occupation(), true);
 
   for(int i = 0; i < 3; ++i) {

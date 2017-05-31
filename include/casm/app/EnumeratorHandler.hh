@@ -4,11 +4,16 @@
 #include <map>
 #include <memory>
 
-#include "casm/container/Enumerator.hh"
-#include "casm/system/RuntimeLibrary.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
+  namespace Completer {
+    class EnumOption;
+  }
+
+  typedef InterfaceMap<Completer::EnumOption> EnumeratorMap;
+  class RuntimeLibrary;
   class ProjectSettings;
 
   class EnumeratorHandler {
@@ -19,23 +24,23 @@ namespace CASM {
 
     ~EnumeratorHandler() {
       // order of deletion matters
-      m_enumerator.clear();
+      m_enumerator->clear();
       m_lib.clear();
     }
 
     EnumeratorMap &map() {
-      return m_enumerator;
+      return *m_enumerator;
     }
 
     const EnumeratorMap &map() const {
-      return m_enumerator;
+      return *m_enumerator;
     }
 
   private:
 
     const ProjectSettings *m_set;
 
-    EnumeratorMap m_enumerator;
+    notstd::cloneable_ptr<EnumeratorMap> m_enumerator;
 
     std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_lib;
 

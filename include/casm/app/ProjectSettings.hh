@@ -3,29 +3,21 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <set>
 
-#include "casm/casm_io/SafeOfstream.hh"
-#include "casm/system/RuntimeLibrary.hh"
+#include "casm/CASM_global_Eigen.hh"
+#include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/app/EnumeratorHandler.hh"
-#include "casm/app/QueryHandler.hh"
-
-#include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
 
   class Configuration;
-
-  template <bool IsConst>
-  class ConfigSelection;
-  typedef ConfigSelection<true> ConstConfigSelection;
-
-  namespace ConfigIO {
-    class Selected;
-  }
+  class jsonParser;
+  class EnumeratorHandler;
+  template<typename T> class QueryHandler;
 
   /** \defgroup Project
    *
@@ -41,48 +33,6 @@ namespace CASM {
    *
    *  @{
   */
-
-  /// \brief Specifies a particular cluster expansion
-  ///
-  /// - Cluster expansions are given an identifying name as a shortcut
-  /// - Cluster expansions are fully specified via:
-  ///   - property: the property being expanded, for instance 'formation_energy'
-  ///   - calctype: the type of calculations of the property the cluster
-  ///     expansion is fit to
-  ///   - ref: indicates a reference used to calculate the property being
-  ///     expanded
-  ///   - bset: the basis set used
-  ///
-  struct ClexDescription {
-    ClexDescription() {}
-
-    ClexDescription(std::string _name,
-                    std::string _property,
-                    std::string _calctype,
-                    std::string _ref,
-                    std::string _bset,
-                    std::string _eci) :
-      name(_name), property(_property), calctype(_calctype), ref(_ref), bset(_bset), eci(_eci) {}
-
-    void print(std::ostream &sout, bool is_default, int indent = 0) const;
-
-    std::string name;
-    std::string property;
-    std::string calctype;
-    std::string ref;
-    std::string bset;
-    std::string eci;
-  };
-
-  /// \brief Compare using name strings: A.name < B.name
-  bool operator<(const ClexDescription &A, const ClexDescription &B);
-
-  jsonParser &to_json(const ClexDescription &desc, jsonParser &json);
-
-  void from_json(ClexDescription &desc, const jsonParser &json);
-
-  bool clex_exists(const DirectoryStructure &dir, const ClexDescription &desc);
-
 
   /// \brief Read/modify settings of an already existing CASM project
   ///
@@ -109,6 +59,8 @@ namespace CASM {
     ///
     explicit ProjectSettings(fs::path root, const Logging &logging = Logging());
 
+    ~ProjectSettings();
+
 
     /// \brief Get project name
     std::string name() const;
@@ -117,7 +69,8 @@ namespace CASM {
       return m_dir;
     }
 
-    /// \brief Get current properties
+    /// \brief const Access current properties required for a ConfigType to be considered calculated
+    template<typename DataObject>
     const std::vector<std::string> &properties() const;
 
 
@@ -183,37 +136,25 @@ namespace CASM {
 
     // ** Enumerators **
 
-    EnumeratorHandler &enumerator_handler() {
-      if(!m_enumerator_handler) {
-        m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
-      }
-      return *m_enumerator_handler;
-    }
+    EnumeratorHandler &enumerator_handler();
 
-    const EnumeratorHandler &enumerator_handler() const {
-      return const_cast<ProjectSettings &>(*this).enumerator_handler();
-    }
+    const EnumeratorHandler &enumerator_handler() const;
+
+
+    // ** Database **
+
+    void set_db_name(std::string _db_name);
+
+    std::string db_name() const;
+
 
     // ** Queries **
 
     template<typename DataObject>
-    QueryHandler<DataObject> &query_handler() {
-      auto res = m_query_handler.find(QueryTraits<DataObject>::name);
-      if(res == m_query_handler.end()) {
-        res = m_query_handler.insert(
-                std::make_pair(
-                  QueryTraits<DataObject>::name,
-                  notstd::cloneable_ptr<notstd::Cloneable>(new QueryHandler<DataObject>(*this))
-                )
-              ).first;
-      }
-      return static_cast<QueryHandler<DataObject>& >(*res->second);
-    }
+    QueryHandler<DataObject> &query_handler();
 
     template<typename DataObject>
-    const QueryHandler<DataObject> &query_handler() const {
-      return const_cast<ProjectSettings &>(*this).query_handler<DataObject>();
-    }
+    const QueryHandler<DataObject> &query_handler() const;
 
 
     // ** Clexulator names **
@@ -256,7 +197,8 @@ namespace CASM {
 
     // ** Change current settings **
 
-    /// \brief Access current properties
+    /// \brief Access current properties required for a ConfigType to be considered calculated
+    template<typename DataObject>
     std::vector<std::string> &properties();
 
 
@@ -355,8 +297,9 @@ namespace CASM {
     Eigen::Matrix3l m_nlist_weight_matrix;
     std::set<int> m_nlist_sublat_indices;
 
-    // Properties to read from calculations
-    std::vector<std::string> m_properties;
+    // Properties required to be read from calculations
+    // ConfigType::name -> {prop1, prop2, ...}
+    std::map<std::string, std::vector<std::string> > m_properties;
 
     // Runtime library compilation settings: compilation options
     std::pair<std::string, std::string> m_cxx;
@@ -381,6 +324,8 @@ namespace CASM {
     // Linear algebra tolerance
     double m_lin_alg_tol;
 
+    // Database
+    std::string m_db_name;
   };
 
   jsonParser &to_json(const ProjectSettings &set, jsonParser &json);

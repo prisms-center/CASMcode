@@ -2,6 +2,8 @@
 #define CASM_Norm
 
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/clex/Configuration.hh"
 
 namespace CASM {
 
