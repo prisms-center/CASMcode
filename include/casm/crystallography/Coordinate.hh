@@ -195,6 +195,11 @@ namespace CASM {
       return *m_home;
     }
 
+    /// \brief Access the home lattice of the coordinate
+    const Lattice &lattice() const {
+      return home();
+    }
+
     //term is terminal character, prec is precision, pad is field width - precision  (should be greater than 3)
     void read(std::istream &stream, COORD_TYPE mode);
     void print(std::ostream &stream, COORD_TYPE mode, char term = 0, int prec = 7, int pad = 5) const;

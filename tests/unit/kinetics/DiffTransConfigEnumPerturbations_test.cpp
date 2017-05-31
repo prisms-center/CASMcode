@@ -2,25 +2,211 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
-#include "casm/kinetics/DiffTransEnumEquivalents.hh"
+//#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
+//#include "casm/kinetics/DiffTransEnumEquivalents.hh"
 
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/kinetics/DoFTransformation.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/symmetry/Orbit_impl.hh"
+#include "casm/symmetry/InvariantSubgroup_impl.hh"
+#include "casm/symmetry/SubOrbits_impl.hh"
+//#include "casm/casm_io/VaspIO.hh"
 
 using namespace CASM;
 using namespace test;
+
+typedef Orbit <
+Kinetics::DiffusionTransformation,
+         Kinetics::PrimPeriodicDiffTransSymCompare > PrimPeriodicDiffTransOrbit;
+
+// Test 1: PrimPeriodic -> ScelPeriodic orbits
+template<typename OrbitType, typename ElementType>
+void test_1(
+  const Configuration &config,
+  const Configuration &prim_config,
+  const std::vector<OrbitType> &orbits,
+  std::vector<ElementType> &scel_generators,
+  std::vector<Index> &orbit_index,
+  std::vector<Index> &scel_suborbit_size) {
+
+  // useful SymGroups
+  const Structure &prim = config.prim();
+  const auto &prim_fg = prim.factor_group();
+  const auto &config_scel_fg = config.supercell().factor_group();
+  const auto &prim_config_scel_fg = prim_config.supercell().factor_group();
+
+  std::cout << "Symmetry:\n";
+  std::cout << "prim_fg.size(): " << prim_fg.size() << std::endl;
+  std::cout << "config_scel_fg.size(): " << config_scel_fg.size() << std::endl;
+  std::cout << "prim_config_scel_fg.size(): " << prim_config_scel_fg.size() << std::endl;
+
+  std::cout << "\n!!! begin test 1" << std::endl;
+  // Split IntegralCluster orbits according to config.supercell().factor_group()
+  Index orbit_i = 0;
+  for(const auto &orbit : orbits) {
+    std::cout << "\n ----------------- \n";
+    std::cout << "begin orbit " << orbit_i << "/" << orbits.size() << std::endl;
+    std::vector<ElementType> suborbit_generators;
+    make_suborbit_generators(
+      orbit,
+      prim_fg,
+      prim_config_scel_fg,
+      std::back_inserter(suborbit_generators));
+
+    // Check results:
+    std::cout << "Prototype, orbit " << orbit_i << "  prim-orbit.size(): "
+              << orbit.size() << std::endl;
+    //std::cout << orbit.prototype() << std::endl;
+    std::cout << "Sub-orbit generators: " << std::endl;
+    Index suborbit_i = 0;
+    Index suborbit_size_sum = 0;
+    for(const auto &el : suborbit_generators) {
+      Orbit<ElementType, PrimPeriodicSymCompare<ElementType>> suborbit(el, prim_config_scel_fg, orbit.sym_compare());
+      std::cout << "sub-orbit " << suborbit_i << "/" << suborbit_generators.size()
+                << ", size: " << suborbit.size() << ":" << std::endl;
+      //std::cout << el << std::endl;
+      scel_suborbit_size.push_back(suborbit.size());
+      orbit_index.push_back(orbit_i);
+      suborbit_size_sum += suborbit.size();
+      ++suborbit_i;
+    }
+    std::cout << "sum: " << suborbit_size_sum
+              << "  prim-orbit.size(): "
+              << orbit.size() << std::endl;
+
+    BOOST_CHECK_EQUAL(orbit.size(), suborbit_size_sum);
+    ++orbit_i;
+    std::copy(suborbit_generators.begin(), suborbit_generators.end(), std::back_inserter(scel_generators));
+  }
+
+}
+
+// Test 2: ScelPeriodic orbits -> Config orbits
+template<typename OrbitType, typename ElementType>
+void test_2(
+  const Configuration &prim_config,
+  const std::vector<OrbitType> &orbits,
+  const std::vector<ElementType> &scel_generators,
+  std::vector<ElementType> &config_generators,
+  std::vector<Index> &orbit_index,
+  std::vector<Index> &scel_suborbit_size) {
+
+  const Structure &prim = prim_config.prim();
+  std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
+  SymGroup _prim_config_fg = make_sym_group(prim.lattice(), prim_config_fg);
+  ScelPeriodicSymCompare<ElementType> prim_config_scel_sym_compare(
+    prim_config.supercell().prim_grid(),
+    prim_config.crystallography_tol());
+
+  std::vector<Index> config_suborbit_size;
+  std::cout << "\n!!! begin test 2" << std::endl;
+  // Split IntegralCluster orbits according to config occupation
+  for(Index el_i = 0; el_i < scel_generators.size(); ++el_i) {
+    std::cout << "\n ----------------- \n";
+    std::cout << "begin scel_generator " << el_i << "/" << scel_generators.size() << std::endl;
+    const auto &el = scel_generators[el_i];
+
+    std::vector<ElementType> suborbit_generators;
+    make_suborbit_generators(
+      el,
+      prim_config.supercell(),
+      prim_config_fg.begin(),
+      prim_config_fg.end(),
+      std::back_inserter(suborbit_generators));
+
+    // Check results:
+    std::cout << "Generator, " << el_i << "  orbit, " << orbit_index[el_i] << "  scel-orbit.size() / prim-orbit.size(): "
+              << scel_suborbit_size[el_i] << "/" << orbits[orbit_index[el_i]].size() << std::endl;
+    //std::cout << el << std::endl;
+    std::cout << "Sub-orbit generators: " << std::endl;
+    Index config_suborbit_i = 0;
+    Index config_suborbit_size_sum = 0;
+    for(const auto &config_el : suborbit_generators) {
+      Orbit<ElementType, ScelPeriodicSymCompare<ElementType>> suborbit(config_el, _prim_config_fg, prim_config_scel_sym_compare);
+      std::cout << "config sub-orbit " << config_suborbit_i << "/" << suborbit_generators.size()
+                << ", size: " << suborbit.size() << ":" << std::endl;
+      //std::cout << config_el << std::endl;
+      config_suborbit_size.push_back(suborbit.size());
+      config_suborbit_size_sum += suborbit.size();
+      ++config_suborbit_i;
+    }
+    std::cout << "sum: " << config_suborbit_size_sum
+              << "  sub-orbit.size() * scel volume: "
+              << scel_suborbit_size[el_i]*prim_config.supercell().volume() << std::endl;
+
+    if(el.size() == 0) {
+      BOOST_CHECK_EQUAL(1, config_suborbit_size_sum);
+    }
+    else {
+      BOOST_CHECK_EQUAL(scel_suborbit_size[el_i]*prim_config.supercell().volume(), config_suborbit_size_sum);
+    }
+    std::copy(suborbit_generators.begin(), suborbit_generators.end(), std::back_inserter(config_generators));
+  }
+  std::cout << "  config_generators.size(): " << config_generators.size() << std::endl;
+}
+
+// Test 3: PrimPeriodic -> Config orbits,
+//   using make_suborbit_generators_slow and primitive Configuration
+template<typename OrbitType, typename ElementType>
+void test_3(
+  const Configuration &prim_config,
+  const std::vector<OrbitType> &orbits,
+  const std::vector<ElementType> &config_generators) {
+
+  std::cout << "\n!!! begin test 3" << std::endl;
+  std::vector<ElementType> config_generators_slow;
+  {
+    make_suborbit_generators_slow(
+      orbits.begin(),
+      orbits.end(),
+      prim_config,
+      std::back_inserter(config_generators_slow));
+    std::cout << "  config_generators_slow.size(): " << config_generators_slow.size() << std::endl;
+    BOOST_CHECK_EQUAL(config_generators.size(), config_generators_slow.size());
+  }
+
+}
+
+// Test 4: PrimPeriodic -> Config orbits,
+//   using make_suborbit_generators and non-primitive Configuration
+//   (Need a new test config: current prim_config is lower symmetry than config)
+template<typename OrbitType>
+void test_4(
+  const Configuration &config,
+  const std::vector<OrbitType> &orbits) {
+
+  typedef typename OrbitType::Element ElementType;
+
+  std::cout << "\n!!! begin test 4" << std::endl;
+  std::vector<ElementType> config_generators_nonprim_slow;
+  std::vector<ElementType> config_generators_nonprim;
+  {
+    make_suborbit_generators_slow(
+      orbits.begin(),
+      orbits.end(),
+      config,
+      std::back_inserter(config_generators_nonprim_slow));
+    std::cout << "  config_generators_nonprim_slow.size(): " << config_generators_nonprim_slow.size() << std::endl;
+
+    make_suborbit_generators(
+      orbits.begin(),
+      orbits.end(),
+      config,
+      std::back_inserter(config_generators_nonprim));
+    std::cout << "  config_generators_nonprim.size(): " << config_generators_nonprim.size() << std::endl;
+
+    BOOST_CHECK_EQUAL(config_generators_nonprim_slow.size(), config_generators_nonprim.size());
+  }
+}
+
+
 
 BOOST_AUTO_TEST_SUITE(DiffTransConfigEnumPerturbationsTest)
 
@@ -32,10 +218,13 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
+  const Structure &prim = primclex.prim();
+  const Lattice &lat = prim.lattice();
 
   fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
+  // Make PrimPeriodicIntegralClusterOrbit
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
     primclex.prim(),
@@ -45,11 +234,25 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::back_inserter(orbits),
     primclex.log());
 
+  print_clust(orbits.begin(), orbits.end(), std::cout, PrototypePrinter<IntegralCluster>());
+
+  // Make PrimPeriodicDiffTransOrbit
+  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
+  Kinetics::make_prim_periodic_diff_trans_orbits(
+    orbits.begin() + 2,
+    orbits.begin() + 4,
+    primclex.crystallography_tol(),
+    std::back_inserter(diff_trans_orbits));
+
+  print_clust(
+    diff_trans_orbits.begin(),
+    diff_trans_orbits.end(),
+    std::cout,
+    PrototypePrinter<Kinetics::DiffusionTransformation>());
+
+  // Make test config
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
-
-
-  /// Make background_config
   Supercell scel {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
   Configuration config(scel);
   config.init_occupation();
@@ -57,258 +260,34 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config.init_deformation();
   config.init_specie_id();
   config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0});
-  //  config.print_occupation(std::cout);
-  //  std::cout << config;
-  Configuration bg_config_prim = config.primitive();
 
-  //  std::cout << "Supercell factor groups" << "\n";
-  //  for ( auto &g: bg_config_prim.supercell().factor_group()){
-  //  g.print(std::cout);
-  //  }
+  // Make test prim_config
+  Configuration prim_config = config.primitive().in_canonical_supercell();
 
-  /// Find prototype of m_diff_trans_orbit
-  //print_clust(orbits.begin() + 2, orbits.begin() + 3, std::cout, ProtoSitesPrinter());
-  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 2, orbits.begin() + 3, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
-  Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[0].prototype();
-  //std::cout << diff_trans_orbits.size() << "\n";
+  // IntegralCluster tests
+  {
+    std::vector<IntegralCluster> scel_generators;
+    std::vector<Index> orbit_index;
+    std::vector<Index> scel_suborbit_size;
+    std::vector<IntegralCluster> config_generators;
 
-  //std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype << "\n";
-
-  /// Test bubble checkers
-  ///Make various supercells
-  Supercell scel1 {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
-  Supercell scel2 {&primclex, Lattice(4 * a, 4 * b, 3 * c)};
-  Supercell scel3 {&primclex, Lattice(8 * a, 2 * b, 3 * c)};
-  Supercell scel4 {&primclex, Lattice(4 * a, 3 * b, 4 * c)};
-  std::vector<Supercell> scel_list;
-  scel_list.push_back(scel1);
-  scel_list.push_back(scel2);
-  scel_list.push_back(scel3);
-  scel_list.push_back(scel4);
-  ///make local orbits
-  fs::path local_bspecs_path = "tests/unit/kinetics/local_bspecs_0.json";
-  jsonParser local_bspecs {local_bspecs_path};
-  std::vector<LocalIntegralClusterOrbit> local_orbits;
-  make_local_orbits(
-    diff_trans_prototype,
-    local_bspecs,
-    alloy_sites_filter,
-    primclex.crystallography_tol(),
-    std::back_inserter(local_orbits),
-    primclex.log());
-
-  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel1), 1);
-  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel2), 0);
-  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel3), 1);
-  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel4), 1);
-  std::vector<Supercell> result = Kinetics::viable_supercells(local_orbits, scel_list);
-  BOOST_CHECK_EQUAL(*(result.begin()) == scel2, 1);
-
-
-  /// Find unique DiffusionTransformations
-  //    PermuteIterator begin = bg_config_prim.supercell().permute_begin();
-  //    PermuteIterator end = bg_config_prim.supercell().permute_end();
-  //    Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
-  PermuteIterator begin = config.supercell().permute_begin();
-  PermuteIterator end = config.supercell().permute_end();
-  Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, config);
-
-  //  std::cout << "Config factor groups" << "\n";
-  //  for ( auto &g: diff_trans_unique.invariant_subgroup()){
-  //  g.sym_op().print(std::cout);
-
-  std::vector<Kinetics::DiffusionTransformation> subdifftrans;
-
-  for(auto it = diff_trans_unique.begin(); it != diff_trans_unique.end(); ++it) {
-    subdifftrans.push_back(*it);
-  }
-  /*std::cout << "Diff_Trans_Uniques " << subdifftrans.size() << " total" << "\n";
-  for(auto it = subdifftrans.begin(); it != subdifftrans.end(); ++it) {
-    std::cout << *it << "\n";
-  }*/
-
-  /// Check if number of unique diff trans is what we expect
-  //Size of diff trans factor group should be equal to (size of scel fg)*(volume of scel)/(size of bg_config fg)
-  /*std::cout << "size of Config factor group " << diff_trans_unique.invariant_subgroup().size() << std::endl;
-  std::cout << "size of Supercell factor group " << bg_config_prim.supercell().factor_group().size() << std::endl;
-  std::cout << "size of Supercell (#prims) " << bg_config_prim.supercell().volume() << std::endl;
-  std::cout << "size of non-prim Supercell factor group " << config.supercell().factor_group().size() << std::endl;
-  std::cout << "size of non-prim Supercell (#prims) " << config.supercell().volume() << std::endl;
-  std::cout << "size of diff trans unique " << subdifftrans.size() << std::endl;
-  */
-  int config_fg_int = static_cast<int>(diff_trans_unique.invariant_subgroup().size());
-  int scel_fg_int = static_cast<int>(bg_config_prim.supercell().factor_group().size());
-  int scel_vol_int = static_cast<int>(bg_config_prim.supercell().volume());
-
-  int subdifftrans_size_int = static_cast<int>(subdifftrans.size());
-
-  int expected_subdifftrans_size_int = scel_fg_int * scel_vol_int / config_fg_int;
-  int expected_subdifftrans_size_int_remainder = scel_fg_int * scel_vol_int % config_fg_int;
-
-  BOOST_CHECK_EQUAL(expected_subdifftrans_size_int_remainder, 0);
-  BOOST_CHECK_EQUAL(expected_subdifftrans_size_int, subdifftrans_size_int);
-
-  /// Check that the unique diff trans found are the ones we expect
-  // Sites and clusters are equivalent along b lattice vector direction
-  // Side refers exclusively to the a lattice vector direction
-  // Above is in the positive c lattice direction
-  // Below is in the negative c lattice direction
-  // Expected unique diff trans indicating pairs by linear index and description:
-
-  //  1
-  //  Va: 2, 0 0 0 : 0 0  ->  3, 0 0 0 : 0 0
-  //  O: 3, 0 0 0 : 1 0  ->  2, 0 0 0 : 1 0
-  //  24-36, 25-37
-  //  Ox-Ox, 1 Ox above, 2 Ox below, 1 Va to either side of upper site
-  //
-  //  2
-  //  Va: 2, 1 1 1 : 0 0  ->  3, 1 1 1 : 0 0
-  //  O: 3, 1 1 1 : 1 0  ->  2, 1 1 1 : 1 0
-  //  27-39, 26-38
-  //  Ox-Ox, 1 Ox above, 1 Va below, 1 Va to either side of upper site
-  //
-  //  3
-  //  Va: 2, 0 0 2 : 0 0  ->  3, 0 0 2 : 0 0
-  //  O: 3, 0 0 2 : 1 0  ->  2, 0 0 2 : 1 0
-  //  28-40, 29-41
-  //  Ox-Ox, 3 Ox above, 1 Va below, 1 Va to either side of upper site
-  //
-  //  4
-  //  Va: 2, 1 1 0 : 0 0  ->  3, 1 1 0 : 0 0
-  //  O: 3, 1 1 0 : 1 0  ->  2, 1 1 0 : 1 0
-  //  31-43, 30-42
-  //  Ox-Va, 3 Ox above, 1 Va below, no NN Va to the sides
-  //
-  //  5
-  //  Va: 2, 0 0 1 : 0 0  ->  3, 0 0 1 : 0 0
-  //  O: 3, 0 0 1 : 1 0  ->  2, 0 0 1 : 1 0
-  //  32-44, 33-45
-  //  Ox-Va, 5 Ox above, 4 Ox below, no NN Va to the sides
-  //
-  //  6
-  //  Va: 2, 1 1 2 : 0 0  ->  3, 1 1 2 : 0 0
-  //  O: 3, 1 1 2 : 1 0  ->  2, 1 1 2 : 1 0
-  //  35-47, 34-46
-  //  Ox-Va, 1 Ox above, 2 Ox below, no NN Va to the sides
-  //
-  //  Clusters 7-12 are similar to 1-6, but are unique due to lack of 2 fold symmetry in config
-  //
-  //  7
-  //  Va: 3,  0 -1  0 : 0 0  ->  2,  0 -1  1 : 0 0
-  //  O: 2,  0 -1  1 : 1 0  ->  3,  0 -1  0 : 1 0
-  //  37-33, 36-32
-  //  Ox-Ox, 1 Va above, 3 Ox below, 1 Va to either side of lower site
-  //  Similar to 3
-  //
-  //  8
-  //  Va: 3, 1 0 1 : 0 0  ->  2, 1 0 2 : 0 0
-  //  O: 2, 1 0 2 : 1 0  ->  3, 1 0 1 : 1 0
-  //  38-34, 39-35
-  //  Ox-Ox, 1 Va above, 1 Ox below, 1 Va to either side of lower site
-  //  Similar to 2
-  //
-  //  9
-  //  Va: 3,  0 -1  2 : 0 0  ->  2,  0 -1  3 : 0 0
-  //  O: 2,  0 -1  3 : 1 0  ->  3,  0 -1  2 : 1 0
-  //  41-25, 40-24
-  //  Ox-Ox, 2 Ox above, 1 Ox below, 1 Va to either side of lower site
-  //  Similar to 1
-  //
-  //  10
-  //  Va: 3, 1 0 0 : 0 0  ->  2, 1 0 1 : 0 0
-  //  O: 2, 1 0 1 : 1 0  ->  3, 1 0 0 : 1 0
-  //  42-26, 43-27
-  //  Va-Ox, 2 Ox above, 1 Ox below, no NN Va to the sides
-  //  Similar to 6
-  //
-  //  11
-  //  Va: 3,  0 -1  1 : 0 0  ->  2,  0 -1  2 : 0 0
-  //  O: 2,  0 -1  2 : 1 0  ->  3,  0 -1  1 : 1 0
-  //  45-29, 44-28
-  //  Va-Ox, 4 Ox above, 5 Ox below, no NN Va to the sides
-  //  Similar to 5
-  //
-  //  12
-  //  Va: 3, 1 0 2 : 0 0  ->  2, 1 0 3 : 0 0
-  //  O: 2, 1 0 3 : 1 0  ->  3, 1 0 2 : 1 0
-  //  46-30, 47-31
-  //  Va-Ox, 1 Va above, 3 Ox below, no NN Va to the sides
-  //  Similar to 4
-
-
-  for(auto it = subdifftrans.begin(); it != subdifftrans.end(); ++it) {
-    //std::vector<Kinetics::SpecieTrajectory> tmp = *it.specie_traj();
-    std::vector<Kinetics::SpecieTrajectory> tmp = it->specie_traj();
-    for(auto it2 = tmp.begin(); it2 != tmp.end(); ++it2) {
-      Kinetics::SpecieLocation tmpfrom = it2->from;
-      Kinetics::SpecieLocation tmpto = it2->to;
-      UnitCellCoord tmpfromcoord = tmpfrom.uccoord;
-      UnitCellCoord tmptocoord = tmpto.uccoord;
-      //std::cout << "tmp from coord: " << tmpfromcoord << std::endl;
-      //tmpfromcoord.coordinate().print(std::cout);
-      //std::cout << "\n";
-      //tmpfromcoord.unit().main_print(std::cout, FRAC, true, 0);
-    }
+    test_1(config, prim_config, orbits, scel_generators, orbit_index, scel_suborbit_size);
+    test_2(prim_config, orbits, scel_generators, config_generators, orbit_index, scel_suborbit_size);
+    test_3(prim_config, orbits, config_generators);
+    test_4(config, orbits);
   }
 
-  //
-  //diff_trans_unique.my_increment();
-  //std::cout << "\n";
-  //std::cout << diff_trans_unique.current();
+  // DiffusionTransformation tests
+  {
+    std::vector<Kinetics::DiffusionTransformation> scel_generators;
+    std::vector<Index> orbit_index;
+    std::vector<Index> scel_suborbit_size;
+    std::vector<Kinetics::DiffusionTransformation> config_generators;
 
-  //DiffTransEnumEquivalents diff_trans_enum;
-  //diff_trans_enum.current()
-
-  test::FCCTernaryProj proj2;
-  proj2.check_init();
-  proj2.check_composition();
-
-  Logging logging2 = Logging::null();
-  PrimClex primclex2(proj2.dir, logging2);
-
-  std::vector<PrimPeriodicIntegralClusterOrbit> orbits2;
-  make_prim_periodic_orbits(
-    primclex2.prim(),
-    bspecs,
-    alloy_sites_filter,
-    primclex2.crystallography_tol(),
-    std::back_inserter(orbits2),
-    primclex2.log());
-
-  Eigen::Vector3d a2, b2, c2;
-  std::tie(a2, b2, c2) = primclex2.prim().lattice().vectors();
-
-  /// Make background_config
-  Supercell fcc_scel {&primclex2, Lattice(2 * a2, 2 * b2, 2 * c2)};
-  Configuration l12(fcc_scel);
-  l12.init_occupation();
-  l12.init_displacement();
-  l12.init_deformation();
-  l12.init_specie_id();
-  l12.set_occupation({0, 0, 0, 1, 1, 0, 0, 0});
-
-  /// Find prototype of m_diff_trans_orbit
-  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits2;
-  Kinetics::make_prim_periodic_diff_trans_orbits(orbits2.begin() + 2, orbits2.begin() + 3, primclex2.crystallography_tol(), std::back_inserter(diff_trans_orbits2));
-  Kinetics::DiffusionTransformation diff_trans_prototype2 = diff_trans_orbits2[4].prototype();
-
-  //std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype2 << "\n";
-
-  //For this hop and configuration
-  // Expect 2 unique transformations A site to B site (16 total in scel) or A site to A site (32 total in scel)
-
-
-  /// Make background_config
-  Supercell fcc_scel2 {&primclex2, Lattice(4 * a2, 2 * b2, 2 * c2)};
-  Configuration l12_ext(fcc_scel2);
-  l12_ext.init_occupation();
-  l12_ext.init_displacement();
-  l12_ext.init_deformation();
-  l12_ext.init_specie_id();
-  l12_ext.set_occupation({0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0});
-
-  ///For this hop and configuration
-  ///Expect the A to B site along c axis (32 total) A to A site along a axis (32 total) and A to A along B (32 total)
+    test_1(config, prim_config, diff_trans_orbits, scel_generators, orbit_index, scel_suborbit_size);
+    test_2(prim_config, diff_trans_orbits, scel_generators, config_generators, orbit_index, scel_suborbit_size);
+    test_3(prim_config, diff_trans_orbits, config_generators);
+    test_4(config, diff_trans_orbits);
+  }
 }
 BOOST_AUTO_TEST_SUITE_END()

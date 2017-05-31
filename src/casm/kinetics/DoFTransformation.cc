@@ -1,4 +1,5 @@
 #include "casm/kinetics/DoFTransformation.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
@@ -8,6 +9,11 @@ namespace CASM {
 
     DoFTransformation::DoFTransformation(const PrimType &prim) :
       m_prim(&prim) {};
+
+    /// \brief Return a reference to the primitive Structure lattice
+    const Lattice &DoFTransformation::lattice() const {
+      return prim().lattice();
+    }
 
     Configuration &DoFTransformation::apply_to(Configuration &config) const {
       return this->apply_to_impl(config);

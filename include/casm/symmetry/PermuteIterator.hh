@@ -127,6 +127,14 @@ namespace CASM {
 
   };
 
+  template<typename PermuteIteratorContainer>
+  SymGroup make_sym_group(const Lattice &lat, const PermuteIteratorContainer &container) {
+    return make_sym_group(lat, container.begin(), container.end());
+  }
+
+  template<typename PermuteIteratorIt>
+  SymGroup make_sym_group(const Lattice &lat, PermuteIteratorIt begin, PermuteIteratorIt end);
+
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
 
 
