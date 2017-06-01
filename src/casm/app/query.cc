@@ -29,7 +29,7 @@ namespace CASM {
       ("no-header,n", "Print without header (CSV only)")
       ("alias", po::value<std::vector<std::string> >(&m_new_alias_vec)->multitoken(),
        "Create an alias for a query that will persist within this project. "
-       "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
+       "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
       ("write-pos", "Write POS file for each configuration");
 
       return;

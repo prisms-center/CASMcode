@@ -152,21 +152,11 @@ namespace CASM {
     typedef typename std::iterator_traits<OrbitIterator>::value_type orbit_type;
     const auto &sym_compare = begin->sym_compare();
 
-    struct GetPrototype {
-      const Element &operator()(const orbit_type &orbit) const {
-        return orbit.prototype();
-      }
-    };
-
-    auto transform_it = [](OrbitIterator it) {
-      return boost::make_transform_iterator(it, GetPrototype());
-    };
-
     // first find range of possible orbit by checking invariants
     auto compare = [&](const Element & A, const Element & B) {
       return sym_compare.invariants_compare(A.invariants(), B.invariants());
     };
-    auto _range = std::equal_range(transform_it(begin), transform_it(end), e, compare);
+    auto _range = std::equal_range(prototype_iterator(begin), prototype_iterator(end), e, compare);
 
     // find if any of the orbits in range [_range.first, _range.second) contain equivalent
     auto contains = [&](const orbit_type & orbit) {
@@ -178,15 +168,20 @@ namespace CASM {
     }
     return res;
   }
-  /*
-    template<>
-    std::string Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare>::_generate_name() const {
-      return traits<PrimPeriodicDiffTransOrbit>::orbit_type_name + "." + id();
-    };
-    */
+
+  template<typename OrbitType>
+  std::string _generate_orbit_name(const OrbitType &orbit);
+
+  template<> std::string _generate_orbit_name(const Kinetics::PrimPeriodicDiffTransOrbit &orbit);
+
+  template<typename OrbitType>
+  std::string _generate_orbit_name(const OrbitType &orbit) {
+    return "";
+  }
+
   template<typename _Element, typename _SymCompareType>
   std::string Orbit<_Element, _SymCompareType>::_generate_name() const {
-    return "";
+    return _generate_orbit_name(*this);
   };
 
 
