@@ -164,15 +164,26 @@ namespace CASM {
 
   };
 
-
   /// \brief Find orbit containing an element in a range of Orbit
   template<typename OrbitIterator, typename Element>
   OrbitIterator find_orbit(OrbitIterator begin, OrbitIterator end, Element e);
 
-  template<typename OrbitType>
-  std::string generate_orbit_name();
+  struct GetPrototype {
 
+    template<typename OrbitType>
+    typename OrbitType::Element const &operator()(const OrbitType &orbit) const {
+      return orbit.prototype();
+    }
+  };
 
+  template<typename OrbitIterator>
+  using PrototypeIterator = boost::transform_iterator<GetPrototype, OrbitIterator>;
+
+  /// Convert an Orbit iterator to a prototype iterator
+  template<typename OrbitIterator>
+  PrototypeIterator<OrbitIterator> prototype_iterator(OrbitIterator orbit_it) {
+    return boost::make_transform_iterator(orbit_it, GetPrototype());
+  }
 }
 
 #endif

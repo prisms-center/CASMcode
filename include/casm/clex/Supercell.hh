@@ -238,6 +238,10 @@ namespace CASM {
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat);
 
+  /// \brief Construct the subgroup of permutations that leaves an element unchanged
+  template<typename Element>
+  std::vector<PermuteIterator> make_invariant_subgroup(const Element &element, const Supercell &scel);
+
   /** @} */
 }
 #endif

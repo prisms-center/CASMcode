@@ -5,6 +5,7 @@
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/clusterography/SubClusterGenerator.hh"
 #include "casm/crystallography/Structure.hh"
 
@@ -397,15 +398,13 @@ namespace CASM {
     /// Construct an OrbitGenerators object to collect orbit generating elements
     OrbitGenerators<OrbitType> generators(specs.generating_group(), specs.sym_compare());
 
-    auto get_prototype = [](typename std::iterator_traits<OrbitInputIterator>::reference orbit) {
-      return orbit.prototype();
-    };
-
-    auto tbegin = boost::make_transform_iterator(begin, get_prototype);
-    auto tend = boost::make_transform_iterator(end, get_prototype);
-
     /// Use OrbitBranchSpecs to insert orbit generating elements for the next orbitbranch
-    _insert_next_orbitbranch_generators(tbegin, tend, specs, generators, status);
+    _insert_next_orbitbranch_generators(
+      prototype_iterator(begin),
+      prototype_iterator(end),
+      specs,
+      generators,
+      status);
 
     /// Generate orbits from the orbit generating elements
     return generators.make_orbits(result);
@@ -681,16 +680,10 @@ namespace CASM {
     if(!generating_group.size()) {
       const SymGroup &prim_grp = diff_trans.prim().factor_group();
       Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
-      SymGroup generating_grp = invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
+      SymGroup generating_grp = make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
     }
 
-    //SymGroup generating_grp = prim_grp;
-
     LocalIntegralClusterSymCompare sym_compare(xtal_tol);
-
-    //Find which prim factor group operations make diff_trans the same.
-    //may need to do translations here?
-
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -787,7 +780,7 @@ namespace CASM {
     if(!generating_grp.size()) {
       const SymGroup &prim_grp = diff_trans.prim().factor_group();
       Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
-      generating_grp = invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
+      generating_grp = make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
     }
 
     OrbitGenerators<orbit_type> generators(generating_grp, sym_compare);

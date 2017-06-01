@@ -216,7 +216,7 @@ namespace CASM {
       const SymGroup &scel_grp = m_base_config.from_config().supercell().factor_group();
       Kinetics::ScelPeriodicDiffTransSymCompare dt_sym_compare(m_base_config.from_config().supercell().prim_grid(),
                                                                m_base_config.from_config().primclex().crystallography_tol());
-      SymGroup generating_group = invariant_subgroup(m_base_config.diff_trans(), scel_grp, dt_sym_compare);
+      SymGroup generating_group = make_invariant_subgroup(m_base_config.diff_trans(), scel_grp, dt_sym_compare);
       std::vector<LocalIntegralClusterOrbit> local_orbits;
       make_local_orbits(
         m_base_config.diff_trans(),
