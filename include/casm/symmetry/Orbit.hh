@@ -136,11 +136,6 @@ namespace CASM {
       return m_sym_compare.inter_orbit_compare(prototype(), B.prototype());
     }
 
-    /// \brief Primclex work around
-    PrimClex &primclex() const {
-      return PrimClex::PrimClex(prototype().prim());
-    }
-
   private:
 
     friend DB::Named<Orbit<_Element, _SymCompareType>>;
