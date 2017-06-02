@@ -409,21 +409,21 @@ namespace CASM {
 
 
     /// PPDTO stuff starts here
-    jsonDatabase<PrimPeriodicDiffTransOrbit>::jsonDatabase(const PrimClex &_primclex) :
-      Database<PrimPeriodicDiffTransOrbit>(_primclex),
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::jsonDatabase(const PrimClex &_primclex) :
+      Database<Kinetics::PrimPeriodicDiffTransOrbit>(_primclex),
       m_is_open(false), m_orbit_id(0) {}
 
 
-    jsonDatabase<PrimPeriodicDiffTransOrbit> &jsonDatabase<PrimPeriodicDiffTransOrbit>::open() {
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit> &jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::open() {
 
       if(m_is_open) {
         return *this;
       }
 
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
-      if(fs::exists(dir.obj_list<PrimPeriodicDiffTransOrbit>())) {
+      if(fs::exists(dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>())) {
         jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
-        jsonParser json(dir.obj_list<PrimPeriodicDiffTransOrbit>());
+        jsonParser json(dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>());
 
         // check json version
         if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
@@ -436,7 +436,7 @@ namespace CASM {
 
         if(!json.is_obj() || !json.contains("prototypes")) {
           throw std::runtime_error(
-            std::string("Error invalid format: ") + dir.obj_list<PrimPeriodicDiffTransOrbit>().string());
+            std::string("Error invalid format: ") + dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>().string());
         }
 
         auto it = json["prototypes"].begin();
@@ -458,10 +458,10 @@ namespace CASM {
       return *this;
     }
 
-    void jsonDatabase<PrimPeriodicDiffTransOrbit>::commit() {
+    void jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::commit() {
 
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
-      fs::path orbit_list_path = dir.obj_list<PrimPeriodicDiffTransOrbit>();
+      fs::path orbit_list_path = dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>();
 
       jsonParser json;
 
@@ -491,39 +491,39 @@ namespace CASM {
       this->write_aliases();
     }
 
-    void jsonDatabase<PrimPeriodicDiffTransOrbit>::close() {
+    void jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::close() {
       m_name_to_orbit.clear();
       m_orbit_list.clear();
       m_is_open = false;
     }
 
-    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<PrimPeriodicDiffTransOrbit>::begin() const {
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::begin() const {
       return _iterator(m_orbit_list.begin());
     }
 
-    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<PrimPeriodicDiffTransOrbit>::end() const {
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::end() const {
       return _iterator(m_orbit_list.end());
     }
 
-    jsonDatabase<PrimPeriodicDiffTransOrbit>::size_type jsonDatabase<PrimPeriodicDiffTransOrbit>::size() const {
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::size_type jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::size() const {
       return m_orbit_list.size();
     }
 
-    std::pair<jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<PrimPeriodicDiffTransOrbit>::insert(const PrimPeriodicDiffTransOrbit &orbit) {
+    std::pair<jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::insert(const Kinetics::PrimPeriodicDiffTransOrbit &orbit) {
 
       auto result = m_orbit_list.insert(orbit);
 
       return _on_insert_or_emplace(result, true);
     }
 
-    std::pair<jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<PrimPeriodicDiffTransOrbit>::insert(const PrimPeriodicDiffTransOrbit &&orbit) {
+    std::pair<jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::insert(const Kinetics::PrimPeriodicDiffTransOrbit &&orbit) {
 
       auto result = m_orbit_list.insert(std::move(orbit));
 
       return _on_insert_or_emplace(result, true);
     }
 
-    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<PrimPeriodicDiffTransOrbit>::erase(iterator pos) {
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::erase(iterator pos) {
 
       // get m_orbit_list iterator
       auto base_it = static_cast<db_set_iterator *>(pos.get())->base();
@@ -531,11 +531,11 @@ namespace CASM {
       // erase name & alias
       m_name_to_orbit.erase(base_it->name());
 
-      // erase PrimPeriodicDiffTransOrbit
+      // erase Kinetics::PrimPeriodicDiffTransOrbit
       return _iterator(m_orbit_list.erase(base_it));
     }
 
-    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<PrimPeriodicDiffTransOrbit>::find(const std::string &name_or_alias) const {
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::find(const std::string &name_or_alias) const {
       auto it = m_name_to_orbit.find(this->name(name_or_alias));
       if(it == m_name_to_orbit.end()) {
         return _iterator(m_orbit_list.end());
@@ -544,12 +544,12 @@ namespace CASM {
     }
 
     /// Update m_name_to_orbit after performing an insert or emplace
-    std::pair<jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator, bool>
-    jsonDatabase<PrimPeriodicDiffTransOrbit>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
+    std::pair<jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator, bool>
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
 
       if(result.second) {
 
-        const PrimPeriodicDiffTransOrbit &orbit = *result.first;
+        const Kinetics::PrimPeriodicDiffTransOrbit &orbit = *result.first;
 
         if(is_new) {
           // set the orbit id, and increment

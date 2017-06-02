@@ -1,5 +1,5 @@
-#ifndef CASM_SubOrbits_impl
-#define CASM_SubOrbits_impl
+#ifndef CASM_SubOrbits
+#define CASM_SubOrbits
 
 namespace CASM {
 

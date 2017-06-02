@@ -204,14 +204,14 @@ namespace CASM {
     /// json["orbit_id"] is the next id to be assigned to a newly enumerated orbit.
     ///
     template<>
-    class jsonDatabase<PrimPeriodicDiffTransOrbit> : public Database<PrimPeriodicDiffTransOrbit> {
+    class jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit> : public Database<Kinetics::PrimPeriodicDiffTransOrbit> {
 
     public:
 
-      jsonDatabase<PrimPeriodicDiffTransOrbit>(const PrimClex &_primclex);
+      jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>(const PrimClex &_primclex);
 
 
-      jsonDatabase<PrimPeriodicDiffTransOrbit> &open() override;
+      jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit> &open() override;
 
       void commit() override;
 
@@ -223,9 +223,9 @@ namespace CASM {
 
       size_type size() const override ;
 
-      std::pair<iterator, bool> insert(const PrimPeriodicDiffTransOrbit &orbit) override;
+      std::pair<iterator, bool> insert(const Kinetics::PrimPeriodicDiffTransOrbit &orbit) override;
 
-      std::pair<iterator, bool> insert(const PrimPeriodicDiffTransOrbit &&orbit) override;
+      std::pair<iterator, bool> insert(const Kinetics::PrimPeriodicDiffTransOrbit &&orbit) override;
 
       template<typename... Args>
       std::pair<iterator, bool> emplace(Args &&... args) {
@@ -238,8 +238,8 @@ namespace CASM {
 
     private:
 
-      typedef std::set<PrimPeriodicDiffTransOrbit>::iterator base_iterator;
-      typedef DatabaseSetIterator<PrimPeriodicDiffTransOrbit, jsonDatabase<PrimPeriodicDiffTransOrbit> > db_set_iterator;
+      typedef std::set<Kinetics::PrimPeriodicDiffTransOrbit>::iterator base_iterator;
+      typedef DatabaseSetIterator<Kinetics::PrimPeriodicDiffTransOrbit, jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit> > db_set_iterator;
 
       /// Update m_name_and_alias and m_scel_range after performing an insert or emplace
       std::pair<iterator, bool> _on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new);
@@ -250,13 +250,13 @@ namespace CASM {
 
       bool m_is_open;
 
-      // map name -> PrimPeriodicDiffTransOrbit
+      // map name -> Kinetics::PrimPeriodicDiffTransOrbit
       std::map<std::string, base_iterator> m_name_to_orbit;
 
-      // container of PrimPeriodicDiffTransOrbit
-      std::set<PrimPeriodicDiffTransOrbit> m_orbit_list;
+      // container of Kinetics::PrimPeriodicDiffTransOrbit
+      std::set<Kinetics::PrimPeriodicDiffTransOrbit> m_orbit_list;
 
-      //next id to assign to a new PrimPeriodicDiffTransOrbit
+      //next id to assign to a new Kinetics::PrimPeriodicDiffTransOrbit
       Index m_orbit_id;
     };
 

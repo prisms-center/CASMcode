@@ -135,6 +135,15 @@ BOOST_AUTO_TEST_CASE(Test0) {
         BOOST_CHECK_EQUAL(orb.size(), 0);
       }
     }
+    jsonParser dtjson;
+    dtjson.put_obj();
+    if(diff_trans_orbits.size()) {
+      to_json(diff_trans_orbits[0].prototype(), dtjson);
+      Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(dtjson, primclex.prim());
+      BOOST_CHECK_EQUAL(trans == diff_trans_orbits[0].prototype(), 1);
+      BOOST_CHECK_EQUAL(diff_trans_orbits[0].prototype().is_valid(), 1);
+      BOOST_CHECK_EQUAL(trans.is_valid(), 1);
+    }
 
     // print DiffTrans prototypes
     //{

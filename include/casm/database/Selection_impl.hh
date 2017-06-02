@@ -68,7 +68,6 @@ namespace CASM {
         }
         else {
           for(const auto &obj : db()) {
-            std::cout << obj.name() << std::endl;
             m_data.insert(std::make_pair(obj.name(), false));
           }
         }

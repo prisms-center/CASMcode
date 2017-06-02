@@ -62,7 +62,7 @@ namespace CASM {
 
   Kinetics::SpecieLocation jsonConstructor<Kinetics::SpecieLocation>::from_json(const jsonParser &json, const Structure &prim) {
     return Kinetics::SpecieLocation {
-      json["uccoord"].get<UnitCellCoord>(prim),
+      jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
       json["occ"].get<Index>(),
       json["pos"].get<Index>()
     };
@@ -135,8 +135,8 @@ namespace CASM {
 
   Kinetics::SpecieTrajectory jsonConstructor<Kinetics::SpecieTrajectory>::from_json(const jsonParser &json, const Structure &prim) {
     return Kinetics::SpecieTrajectory {
-      json["from"].get<Kinetics::SpecieLocation>(prim),
-      json["to"].get<Kinetics::SpecieLocation>(prim)
+      jsonConstructor<Kinetics::SpecieLocation>::from_json(json["from"], prim),
+      jsonConstructor<Kinetics::SpecieLocation>::from_json(json["to"], prim)
     };
   }
 
@@ -833,16 +833,24 @@ namespace CASM {
   /// \brief Read from JSON
   void from_json(Kinetics::DiffusionTransformation &trans, const jsonParser &json, const Structure &prim) {
     if(json["occ_transform"].size() > 0) {
-      from_json(
+      trans.occ_transform().clear();
+      for(auto it = json["occ_transform"].begin(); it != json["occ_transform"].end(); ++it) {
+        trans.occ_transform().push_back(jsonConstructor<Kinetics::OccupationTransformation>::from_json(*it, prim));
+      }
+      /*from_json(
         trans.occ_transform(),
         json["occ_transform"],
-        json["occ_transform"][0].get<Kinetics::OccupationTransformation>(prim));
+        json["occ_transform"][0].get<Kinetics::OccupationTransformation>(prim));*/
     }
     if(json["specie_traj"].size() > 0) {
-      from_json(
+      trans.specie_traj().clear();
+      for(auto it = json["specie_traj"].begin(); it != json["specie_traj"].end(); ++it) {
+        trans.specie_traj().push_back(jsonConstructor<Kinetics::SpecieTrajectory>::from_json(*it, prim));
+      }
+      /*from_json(
         trans.specie_traj(),
         json["specie_traj"],
-        json["specie_traj"][0].get<Kinetics::SpecieTrajectory>(prim));
+        json["specie_traj"][0].get<Kinetics::SpecieTrajectory>(prim));*/
     }
   }
 

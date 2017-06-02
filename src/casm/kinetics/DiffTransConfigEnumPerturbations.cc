@@ -8,6 +8,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
+#include "casm/symmetry/SubOrbits_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_DiffTransConfigEnumPerturbations_interface() {
@@ -189,23 +190,14 @@ namespace CASM {
       return;
     }
 
-    /// Uses DiffTransEnumEquivalents to initialize set of the unique diffusion transformations in
+    /// Uses make_suborbit_generators to initialize set of the unique diffusion transformations in
     /// this configuration
     void DiffTransConfigEnumPerturbations::_init_unique_difftrans() {
-      /// Need to find sub prototypes
-      /* Inefficient but correct
-        for (auto &e : m_diff_trans_orbit){
-          subprototypes.push_back(e);
-        }
-      */
+      std::vector<PrimPeriodicDiffTransOrbit> orbit_vec;
+      orbit_vec.push_back(m_diff_trans_orbit);
       std::vector<DiffusionTransformation> subprototypes;
-      subprototypes.push_back(m_diff_trans_orbit.prototype());
-      for(auto it = subprototypes.begin(); it != subprototypes.end(); ++it) {
-        auto begin = m_background_config.supercell().permute_begin();
-        auto end = m_background_config.supercell().permute_end();
-        DiffTransEnumEquivalents diff_trans_unique(*it, begin, end, m_background_config);
-        m_unique_difftrans.insert(diff_trans_unique.begin(), diff_trans_unique.end());
-      }
+      make_suborbit_generators(orbit_vec.begin(), orbit_vec.end(), m_background_config, std::back_inserter(subprototypes));
+      m_unique_difftrans.insert(subprototypes.begin(), subprototypes.end());
       return;
     }
 

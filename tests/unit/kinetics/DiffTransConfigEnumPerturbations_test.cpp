@@ -271,14 +271,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::vector<Index> scel_suborbit_size;
     std::vector<IntegralCluster> config_generators;
 
-    /// Find prototype of m_diff_trans_orbit
-    //print_clust(orbits.begin() + 2, orbits.begin() + 3, std::cout, ProtoSitesPrinter());
-    std::vector<PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-    Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 2, orbits.begin() + 3, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
     Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[0].prototype();
-    //std::cout << diff_trans_orbits.size() << "\n";
-
-    //std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype << "\n";
 
     /// Test bubble checkers
     ///Make various supercells

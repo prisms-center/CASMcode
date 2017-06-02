@@ -85,7 +85,6 @@ namespace CASM {
     for(const auto &op : g) {
       t_equiv.insert(prepare(copy_apply(op, generating_element)));
     }
-
     // sort element using each element's first equivalence map column to find prototype
     std::set<std::pair<Element, std::vector<Index> >, _EqMapCompare<Element> > _set;
     for(const auto &e : t_equiv) {
