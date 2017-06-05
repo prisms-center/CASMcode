@@ -169,7 +169,7 @@ namespace CASM {
           /// DiffTransConfigEnumPerturbations enumerator(bg_config,dtorbit,local_bspecs)
           /// while (enumerator.is_valid()){
           ///   if (enumerator.current() passes filter){
-          ///     enumerator.store()
+          ///     db.insert(enumerator.current().canonical_form());
           ///   }
           ///
           ///   ++enumerator;
@@ -258,6 +258,7 @@ namespace CASM {
         occ_trans.apply_to(tmp);
       }
       DiffTransConfiguration ret_dtc(tmp, m_base_config.diff_trans());
+      ret_dtc.set_orbit_name(m_diff_trans_orbit.name());
       *m_current = ret_dtc;
       return;
     }

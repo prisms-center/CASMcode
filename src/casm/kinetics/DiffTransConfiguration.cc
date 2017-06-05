@@ -17,6 +17,28 @@ namespace CASM {
       m_diff_trans = symcompare.prepare(m_diff_trans);
     }
 
+    /// Construct a DiffTransConfiguration from JSON data
+    DiffTransConfiguration::DiffTransConfiguration(
+      const Supercell &_supercell,
+      const jsonParser &_data) :
+      m_diff_trans(_supercell.prim()),
+      m_from_config(_supercell) {
+
+      this->from_json(_data, _supercell);
+
+    }
+
+    /// Construct a DiffTransConfiguration from JSON data
+    DiffTransConfiguration::DiffTransConfiguration(
+      const PrimClex &_primclex,
+      const jsonParser &_data) :
+      m_diff_trans(_primclex.prim()),
+      m_from_config(Supercell(& _primclex, _primclex.prim().lattice())) {
+
+      this->from_json(_data, _primclex);
+
+    }
+
     /// \brief sort DiffTransConfiguration in place
     DiffTransConfiguration &DiffTransConfiguration::sort() {
       Configuration to = to_config();
@@ -106,6 +128,46 @@ namespace CASM {
       return *this;
     }
 
+    std::string DiffTransConfiguration::_generate_name() const {
+      return orbit_name + from_config().supercell().name() + id();
+    }
+
+    void DiffTransConfiguration::set_orbit_name(const std::string &orbit_name) const {
+      m_orbit_name = orbit_name;
+    }
+
+
+
+
+    /// Writes the DiffTransConfiguration to JSON
+    jsonParser &DiffTransConfiguration::to_json(jsonParser &json) const {
+      json.put_obj();
+      json["from_configname"] = from_config().name();
+      from_config().to_json(json["from_config_data"]);
+      CASM::to_json(diff_trans(), json["diff_trans"]);
+
+      /*if(cache_updated()) {
+      json["cache"] = cache();
+      }*/
+      return json;
+    }
+
+    /// Reads the DiffTransConfiguration from JSON
+    void DiffTransConfiguration::from_json(const jsonParser &json, const Supercell &scel) {
+      m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], scel.prim());
+      std::vector<std::string> splt_vec;
+      std::string configname = json["from_configname"].get<std::string>();
+      boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
+      m_from_config = Configuration(scel, splt_vec[1], json["from_config_data"]);
+    }
+
+    /// Reads the DiffTransConfiguration from JSON
+    void DiffTransConfiguration::from_json(const jsonParser &json, const PrimClex &primclex) {
+      m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], primclex.prim());
+      m_from_config = Configuration(primclex, json["from_configname"].get<std::string>(), json["from_config_data"]);
+    }
+
+
     /// \brief prints this DiffTransConfiguration
     std::ostream &operator<<(std::ostream &sout, const DiffTransConfiguration &dtc) {
       sout << dtc.diff_trans();
@@ -135,5 +197,19 @@ namespace CASM {
       return result;
     }
 
+  }
+
+  Kinetics::DiffTransConfiguration jsonConstructor<Kinetics::DiffTransConfiguration>::from_json(
+    const jsonParser &json,
+    const PrimClex &primclex) {
+
+    return Kinetics::DiffTransConfiguration(primclex, json);
+  }
+
+  Kinetics::DiffTransConfiguration jsonConstructor<Kinetics::DiffTransConfiguration>::from_json(
+    const jsonParser &json,
+    const Supercell &scel) {
+
+    return Kinetics::DiffTransConfiguration(scel, json);
   }
 }

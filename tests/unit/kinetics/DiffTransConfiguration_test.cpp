@@ -133,6 +133,12 @@ BOOST_AUTO_TEST_CASE(Test0) {
   BOOST_CHECK_EQUAL(1, copy_apply(dtc.to_canonical(), dtc) == dtc.canonical_form());
   BOOST_CHECK_EQUAL(1, copy_apply(dtc.from_canonical(), dtc.canonical_form()) == dtc);
 
+  jsonParser dtcjson;
+  dtcjson.put_obj();
+  dtc.to_json(dtcjson);
+  Kinetics::DiffTransConfiguration loaded_dtc(primclex, dtcjson);
+  BOOST_CHECK_EQUAL(dtc == loaded_dtc, 1);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

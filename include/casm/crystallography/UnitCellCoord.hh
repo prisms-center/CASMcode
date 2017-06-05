@@ -77,7 +77,7 @@ namespace CASM {
     /// \brief SymBasisPermute rep should be obtainable from UnitType
     typedef Structure UnitType;
 
-    UnitCellCoord(const UnitType &unit);
+    explicit UnitCellCoord(const UnitType &unit);
 
     UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell);
 

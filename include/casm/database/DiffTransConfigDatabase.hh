@@ -28,18 +28,18 @@ namespace CASM {
     /// instance as in the method insert_unique_canon_diff_trans_configs.
     ///
     template<>
-    class Database<DiffTransConfiguration> : public ValDatabase<DiffTransConfiguration> {
+    class Database<Kinetics::DiffTransConfiguration> : public ValDatabase<Kinetics::DiffTransConfiguration> {
 
     public:
 
       Database(const PrimClex &_primclex) :
-        ValDatabase<DiffTransConfiguration>(_primclex) {}
+        ValDatabase<Kinetics::DiffTransConfiguration>(_primclex) {}
 
       virtual ~Database() {}
 
 
       /// Update record
-      virtual iterator update(const DiffTransConfiguration &diff_trans_config) = 0;
+      virtual iterator update(const Kinetics::DiffTransConfiguration &diff_trans_config) = 0;
 
       /// Range of DiffTransConfiguration in a particular supercell within an orbit
       ///
@@ -50,6 +50,16 @@ namespace CASM {
 
       /// Number of DiffTransConfiguration in a particular supercell within an orbit
       Index orbit_scel_range_size(const std::string &diff_trans_name, const std::string &scelname) const;
+
+      /// Range of DiffTransConfiguration in a particular supercell
+      ///
+      /// - Should return range {end(), end()} if no DiffTransConfiguration in specified Supercell
+      /// - Note: boost::iterator_range<iterator>::size is not valid for
+      ///   DatabaseIterator.  Use boost::distance instead.
+      virtual boost::iterator_range<iterator> scel_range(const std::string &scelname) const = 0;
+
+      /// Number of DiffTransConfiguration in a particular supercell
+      Index scel_range_size(const std::string &scelname) const;
 
       /// Range of DiffTransConfiguration in a particular diff_trans
       ///

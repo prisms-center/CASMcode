@@ -17,6 +17,7 @@
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
+#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
 //#include "casm/casm_io/VaspIO.hh"
 
 using namespace CASM;
@@ -307,6 +308,21 @@ BOOST_AUTO_TEST_CASE(Test0) {
     test_2(prim_config, orbits, scel_generators, config_generators, orbit_index, scel_suborbit_size);
     test_3(prim_config, orbits, config_generators);
     test_4(config, orbits);
+
+    Configuration config_scel2(scel2);
+    config_scel2.init_occupation();
+    config_scel2.init_displacement();
+    config_scel2.init_deformation();
+    config_scel2.init_specie_id();
+    config_scel2.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0 ,
+                                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0
+                                });
+
+    Kinetics::DiffTransConfigEnumPerturbations enumerator(config_scel2, diff_trans_orbits[0], local_bspecs);
+
   }
 
   // DiffusionTransformation tests
@@ -322,4 +338,5 @@ BOOST_AUTO_TEST_CASE(Test0) {
     test_4(config, diff_trans_orbits);
   }
 
-  BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END();
+}
