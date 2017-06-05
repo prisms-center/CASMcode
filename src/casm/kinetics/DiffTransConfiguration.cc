@@ -129,10 +129,10 @@ namespace CASM {
     }
 
     std::string DiffTransConfiguration::_generate_name() const {
-      return orbit_name + from_config().supercell().name() + id();
+      return m_orbit_name + from_config().supercell().name() + id();
     }
 
-    void DiffTransConfiguration::set_orbit_name(const std::string &orbit_name) const {
+    void DiffTransConfiguration::set_orbit_name(const std::string &orbit_name) {
       m_orbit_name = orbit_name;
     }
 
