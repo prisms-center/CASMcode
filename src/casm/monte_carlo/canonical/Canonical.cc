@@ -337,9 +337,6 @@ namespace CASM {
       Index new_occ_a = m_convert.occ_index(f_a.asym, f_a.to_species);
       Index new_occ_b = m_convert.occ_index(f_b.asym, f_b.to_species);
 
-      if(curr_occ_a != 0) {
-        throw std::runtime_error("occ location error");
-      }
       Eigen::VectorXd dCorr_comp { Eigen::VectorXd::Zero(event.dCorr().size()) };
 
 
