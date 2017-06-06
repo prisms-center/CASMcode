@@ -107,11 +107,11 @@ namespace CASM {
 
     fs::path settings_path;
     std::string verbosity_str;
-    po::variables_map vm;
     Index condition_index;
 
     // Set command line options using boost program_options
     Completer::MonteOption monte_opt;
+    po::variables_map &vm = monte_opt.vm();
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, monte_opt.desc()), vm); // can throw
