@@ -187,7 +187,7 @@ namespace CASM {
         ConfigDoF configdof = m_mc.configdof();
         from_json(configdof, jsonParser(m_dir.final_state_json(start_i - 1)));
 
-        m_mc.set_configdof(configdof, std::string("Using: ") + m_dir.final_state_json(start_i - 1).string());
+        m_mc.set_state(m_conditions_list[start_i], configdof, std::string("Using: ") + m_dir.final_state_json(start_i - 1).string());
       }
     }
 
