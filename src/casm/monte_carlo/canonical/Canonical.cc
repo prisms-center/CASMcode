@@ -80,7 +80,7 @@ namespace CASM {
 
       m_condition = new_conditions;
 
-      clear_samples();
+      reset(_enforce_conditions(configdof()));
       _update_properties();
 
       return;
