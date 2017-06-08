@@ -123,7 +123,7 @@ namespace CASM {
 
       m_tsum[0] = 0.;
       for(Index i = 0; i < tsize; ++i) {
-        m_tsum[i + 1] = m_tsum[0] +
+        m_tsum[i + 1] = m_tsum[i] +
                         ((double) cand_size(canonical_swap[i].cand_a)) *
                         ((double) cand_size(canonical_swap[i].cand_b));
       }

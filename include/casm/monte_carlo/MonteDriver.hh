@@ -389,10 +389,12 @@ namespace CASM {
       run_counter++;
 
       if(run_counter.sample_time()) {
-        m_log.custom<Log::debug>("Sample data");
-        m_log << "pass: " << run_counter.pass() << "  "
-              << "step: " << run_counter.step() << "  "
-              << "take sample " << m_mc.sample_times().size() << "\n" << std::endl;
+        if(debug()) {
+          m_log.custom<Log::debug>("Sample data");
+          m_log << "pass: " << run_counter.pass() << "  "
+                << "step: " << run_counter.step() << "  "
+                << "take sample " << m_mc.sample_times().size() << "\n" << std::endl;
+        }
 
         m_mc.sample_data(run_counter);
         run_counter.increment_samples();
