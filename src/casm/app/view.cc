@@ -3,6 +3,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/clex/ConfigSelection.hh"
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/jsonStruc.hh"
 
 #include "casm/completer/Handlers.hh"
 
@@ -16,7 +17,8 @@ namespace CASM {
       add_help_suboption();
       add_confignames_suboption();
       add_configlist_nodefault_suboption();
-
+      m_desc.add_options()
+      ("relaxed,r", "Attempt to display corresponding relaxed structures to the given configurations.");
       return;
     }
   }
@@ -127,19 +129,48 @@ namespace CASM {
 
     // execute the 'casm view' command for each selected configuration
     for(auto it = config_select.selected_config_cbegin(); it != config_select.selected_config_cend(); ++it) {
-      // write '.casm/tmp/POSCAR'
-      fs::ofstream file;
-      fs::path POSCARpath = tmp_dir / "POSCAR";
-      file.open(POSCARpath);
-      VaspIO::PrintPOSCAR p(*it);
-      p.sort();
-      p.print(file);
-      file.close();
+      //for relaxed structure
+      if(vm.count("relaxed") && is_calculated(*it)) {
+        fs::ofstream file;
+        fs::path POSCARpath = tmp_dir / "POSCAR";
 
-      args.log << it->name() << ":\n";
-      Popen popen;
-      popen.popen(set.view_command() + " " + POSCARpath.string());
-      popen.print(args.log);
+        //Make pos_path the path to properties.calc.json constructed from it
+        fs::path pos_path = it->calc_properties_path();
+        args.log << "Obtaining relaxed structure from:\n";
+        args.log << pos_path.string() << std::endl;
+        BasicStructure<Site> import_struc;
+        jsonParser datajson(pos_path);
+        from_json(simple_json(import_struc, "relaxed_"), datajson);
+
+        file.open(POSCARpath);
+        VaspIO::PrintPOSCAR p(import_struc);
+        p.sort();
+        p.print(file);
+        file.close();
+
+        args.log << it->name() << " relaxed" << ":\n";
+        Popen popen;
+        popen.popen(set.view_command() + " " + POSCARpath.string());
+        popen.print(std::cout);
+      }
+
+      else {
+        // write '.casm/tmp/POSCAR'
+        fs::ofstream file;
+        fs::path POSCARpath = tmp_dir / "POSCAR";
+        file.open(POSCARpath);
+        VaspIO::PrintPOSCAR p(*it);
+        p.sort();
+        p.print(file);
+        file.close();
+        if(vm.count("relaxed")) {
+          args.log << "No relaxed structure found." << "\n";
+        }
+        args.log << it->name() << ":\n";
+        Popen popen;
+        popen.popen(set.view_command() + " " + POSCARpath.string());
+        popen.print(args.log);
+      }
 
     }
 
