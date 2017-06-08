@@ -326,13 +326,13 @@ namespace CASM {
     /// Reference to first element in enumerator
     reference front() {
       this->goto_step(0);
-      return this->dereference();
+      return this->current();
     }
 
     /// Reference to last element in enumerator
     reference back() {
       this->goto_step(size() - 1);
-      return this->dereference();
+      return this->current();
     }
 
     /// Reference to first element in enumerator
@@ -348,7 +348,7 @@ namespace CASM {
     /// Reference an element in enumerator
     reference operator[](size_type n) {
       this->goto_step(n);
-      return this->dereference();
+      return this->current();
     }
 
   protected:
