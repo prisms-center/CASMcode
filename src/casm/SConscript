@@ -23,7 +23,7 @@ casm_lib_src = ['CASM_global_definitions.cc'] + [glob(join(x,'*.cc')) for x in c
 #include path
 candidates = [
   env['INCDIR'], 
-  env.include_path(env['BOOST_PREFIX'], 'boost')
+  env.include_path(env['BOOST_INCLUDEDIR'], 'boost')
 ]
 cpppath = [x for x in candidates if x is not None]
 
