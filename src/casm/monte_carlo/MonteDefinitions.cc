@@ -5,7 +5,8 @@ namespace CASM {
   const std::string traits<Monte::ENSEMBLE>::name = "ensemble";
 
   const std::multimap<Monte::ENSEMBLE, std::vector<std::string> > traits<Monte::ENSEMBLE>::strval = {
-    {Monte::ENSEMBLE::GrandCanonical, {"GrandCanonical", "grand_canonical"} }
+    {Monte::ENSEMBLE::GrandCanonical, {"GrandCanonical", "grand_canonical"} },
+    {Monte::ENSEMBLE::Canonical, {"Canonical", "canonical"} }
   };
 
 

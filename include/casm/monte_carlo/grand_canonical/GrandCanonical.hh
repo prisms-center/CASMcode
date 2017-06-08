@@ -32,6 +32,7 @@ namespace CASM {
 
   public:
 
+    static const Monte::ENSEMBLE ensemble;
     typedef GrandCanonicalEvent EventType;
     typedef GrandCanonicalConditions CondType;
     typedef GrandCanonicalSettings SettingsType;
