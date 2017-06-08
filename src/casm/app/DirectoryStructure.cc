@@ -285,11 +285,10 @@ namespace CASM {
   ///
   /// - For Configuration: use 'SCELV_A_B_C_D_E_F'
   /// - For DiffTransConfiguration: use 'diff_trans.0/SCELV_A_B_C_D_E_F'
-  /*
   fs::path DirectoryStructure::supercell_dir(std::string scelname) const {
+    std::cout << "Warning: check supercell directory path for DiffTransConfiguration" << std::endl;
     return m_root / m_calc_dir / scelname;
   }
-  */
 
   /// \brief Return supercell LAT file path (scelname has format SCELV_A_B_C_D_E_F)
   ///
@@ -318,11 +317,10 @@ namespace CASM {
   ///
   /// - For Configuration: use 'SCELV_A_B_C_D_E_F'
   /// - For DiffTransConfiguration: use 'diff_trans.0/SCELV_A_B_C_D_E_F'
-  /*
   fs::path DirectoryStructure::supercell_calc_settings_dir(std::string scelname, std::string calctype) const {
+    std::cout << "Warning: check supercell directory path for DiffTransConfiguration" << std::endl;
     return supercell_dir(scelname) / m_set_dir / _calctype(calctype);
   }
-  */
 
   /// \brief Return calculation settings directory path, for configuration specific settings
   fs::path DirectoryStructure::configuration_calc_settings_dir(std::string configname, std::string calctype) const {
