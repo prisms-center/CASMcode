@@ -19,7 +19,7 @@ CASM is currently beta software with very active development. Our goal is that t
 
 CASM can be cited using the following four references:
 
-- [ref1]        CASM, v0.2.0 (2016). Available from https://github.com/prisms-center/CASMcode. doi:[include doi here]
+- [ref1]        CASM, v0.2.1 (2017). Available from https://github.com/prisms-center/CASMcode. doi:[include doi here]
   - DOIs are generated after a release is archived so they cannot be included in the README for the current release. The appropriate DOI for a particular release can be obtained from the wiki page: <https://github.com/prisms-center/CASMcode/wiki/DOIs>.
 - [ref2] 	J. C. Thomas, A. Van der Ven, *Finite-temperature properties of strongly anharmonic and mechanically unstable crystal phases from first principles*, *Physical Review B*, **88**, 214111 (2013).
 - [ref3] 	B. Puchala, A. Van der Ven, *Thermodynamics of the Zr-O system from first-principles calculations*, *Physical Review B*, **88**, 094108 (2013).
