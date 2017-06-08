@@ -2,6 +2,7 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/jsonStruc.hh"
+#include "casm/clex/Calculable.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ConfigMapping.hh"
@@ -157,7 +158,7 @@ namespace CASM {
       // check for and read raw 'unmapped' data, adds 'data_timestamp'
       if(!prop_path.empty()) {
         std::tie(res.mapped_props.unmapped, res.has_data, res.has_complete_data) =
-          Configuration::read_calc_properties(primclex(), prop_path);
+          read_calc_properties<Configuration>(primclex(), prop_path);
       }
 
       // copy relaxation properties from best config mapping into 'mapped' props

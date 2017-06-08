@@ -1,9 +1,9 @@
-#include "casm/kinetics/DiffusionTransformation.hh"
+#ifndef CASM_DiffTransConfigurationIO
+#define CASM_DiffTransConfigurationIO
+
 #include "casm/kinetics/DiffTransConfiguration.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/symmetry/Orbit.hh"
-#include "casm/symmetry/Orbit_impl.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/DataFormatterTools_impl.hh"
 
 
 namespace CASM {
@@ -360,19 +360,26 @@ namespace CASM {
       DiffTransConfigIO::GenericDiffTransConfigFormatter<double> kra_barrier();
     }
 
-    template<>
-    StringAttributeDictionary<DiffTransConfiguration> make_string_dictionary<DiffTransConfiguration>();
-
-    template<>
-    BooleanAttributeDictionary<DiffTransConfiguration> make_boolean_dictionary<DiffTransConfiguration>();
-
-    template<>
-    IntegerAttributeDictionary<DiffTransConfiguration> make_integer_dictionary<DiffTransConfiguration>();
-
-    template<>
-    ScalarAttributeDictionary<DiffTransConfiguration> make_scalar_dictionary<DiffTransConfiguration>();
-
-    template<>
-    VectorXdAttributeDictionary<DiffTransConfiguration> make_vectorxd_dictionary<DiffTransConfiguration>();
   }
+
+  template<>
+  StringAttributeDictionary<Kinetics::DiffTransConfiguration> make_string_dictionary<Kinetics::DiffTransConfiguration>();
+
+  template<>
+  BooleanAttributeDictionary<Kinetics::DiffTransConfiguration> make_boolean_dictionary<Kinetics::DiffTransConfiguration>();
+
+  template<>
+  IntegerAttributeDictionary<Kinetics::DiffTransConfiguration> make_integer_dictionary<Kinetics::DiffTransConfiguration>();
+
+  template<>
+  ScalarAttributeDictionary<Kinetics::DiffTransConfiguration> make_scalar_dictionary<Kinetics::DiffTransConfiguration>();
+
+  template<>
+  VectorXiAttributeDictionary<Kinetics::DiffTransConfiguration> make_vectorxi_dictionary<Kinetics::DiffTransConfiguration>();
+
+  template<>
+  VectorXdAttributeDictionary<Kinetics::DiffTransConfiguration> make_vectorxd_dictionary<Kinetics::DiffTransConfiguration>();
+
 }
+
+#endif

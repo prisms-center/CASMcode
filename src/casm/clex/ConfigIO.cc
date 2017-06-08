@@ -4,6 +4,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Norm.hh"
+#include "casm/clex/Calculable.hh"
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
@@ -360,15 +361,15 @@ namespace CASM {
     GenericConfigFormatter<std::string> calc_status() {
       return GenericConfigFormatter<std::string>("calc_status",
                                                  "Status of calculation.",
-                                                 CASM::calc_status,
-                                                 CASM::has_calc_status);
+                                                 CASM::calc_status<Configuration>,
+                                                 CASM::has_calc_status<Configuration>);
     }
 
     GenericConfigFormatter<std::string> failure_type() {
       return GenericConfigFormatter<std::string>("failure_type",
                                                  "Reason for calculation failure.",
-                                                 CASM::failure_type,
-                                                 CASM::has_failure_type);
+                                                 CASM::failure_type<Configuration>,
+                                                 CASM::has_failure_type<Configuration>);
     }
 
 

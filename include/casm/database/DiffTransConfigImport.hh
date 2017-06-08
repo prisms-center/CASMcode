@@ -27,7 +27,8 @@ namespace CASM {
     template<typename T> class DatabaseIterator;
 
     template<>
-    class StructureMap<Kinetics::DiffTransConfiguration> : public ConfigData<Kinetics::DiffTransConfiguration> {
+    class StructureMap<Kinetics::DiffTransConfiguration> :
+      public ConfigData<Kinetics::DiffTransConfiguration> {
 
     public:
 

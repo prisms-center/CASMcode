@@ -8,6 +8,7 @@
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/clex/Calculable.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigurationTraits.hh"
 #include "casm/database/Cache.hh"
@@ -36,10 +37,16 @@ namespace CASM {
 
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
+  /// DFT calculated properties:
+  /// - "relaxed_energy" -> double
+  /// - "relaxation_deformation" -> matrix double
+  /// - "relaxation_displacement" -> matrix double
+  /// - "rms_force" -> double
+  /// - "volume_relaxation" -> double
+  /// - "lattice_deformation" -> double
   class Configuration :
     public Comparisons<Configuration>,
-    public DB::Cache,
-    public DB::Indexed<Configuration> {
+    public Calculable<Configuration> {
 
   public:
     typedef ConfigDoF::displacement_matrix_t displacement_matrix_t;
@@ -69,22 +76,10 @@ namespace CASM {
                   const std::string &_configname,
                   const jsonParser &_data);
 
-    //********** Source ***********
-
-    void set_source(const jsonParser &source);
-
-    void push_back_source(const jsonParser &source);
-
-    const jsonParser &source() const;
-
-
     // ******** Supercell **********************
 
     /// \brief Get the primitive Structure for this Configuration
     const Structure &prim() const;
-
-    /// \brief Get the PrimClex for this Configuration
-    const PrimClex &primclex() const;
 
     /// \brief Get the Supercell for this Configuration
     const Supercell &supercell() const;
@@ -427,19 +422,6 @@ namespace CASM {
     Configuration fill_supercell(const Supercell &scel, const SymGroup &g) const;
 
 
-    // ******** Calculated Properties ***********
-
-    /// \brief Set calculated properties exactly
-    void set_calc_properties(const jsonParser &json);
-
-    const jsonParser &calc_properties() const;
-
-    /// \brief Read properties.calc.json from training_data
-    std::tuple<jsonParser, bool, bool> read_calc_properties() const;
-
-    /// \brief Read properties.calc.json from file
-    static std::tuple<jsonParser, bool, bool> read_calc_properties(const PrimClex &primclex, const fs::path &filepath);
-
     //********** Composition ***********
 
     // Returns composition on each sublattice: sublat_comp[ prim basis site / sublattice][ molecule_type]
@@ -495,17 +477,6 @@ namespace CASM {
 
   private:
 
-    void _modify_dof() {
-      if(m_dof_deps_updated) {
-        this->clear_name();
-        m_calculated.put_null();
-        m_dof_deps_updated = false;
-      }
-      if(cache_updated()) {
-        cache_clear();
-      }
-    }
-
     friend Named<Configuration>;
     std::string _generate_name() const;
 
@@ -517,39 +488,14 @@ namespace CASM {
     /// - Checks that all DoF are the same, within tolerance
     bool _eq(const Configuration &B) const;
 
-    /// Configuration DFT data is expected in:
-    ///   primclex().dir().calculated_properties(configname, calctype)
-
-    /// POS files are written to:
-    ///  primclex().POS(configname)
-
-
     /// const pointer to the (non-const) Supercell for this Configuration
     const Supercell *m_supercell;
 
     /// Used when constructing temporary Configuration in non-canonical Supercell
     std::shared_ptr<Supercell> m_supercell_ptr;
 
-    /// a jsonParser object indicating where this Configuration came from
-    jsonParser m_source;
-    bool m_source_updated;
-
     /// Degrees of Freedom
     ConfigDoF m_configdof;
-
-    /// Set to true when modiyfing anything that depends on dof:
-    /// - m_name, m_id, m_alias, m_cache, m_source, m_calculated
-    mutable bool m_dof_deps_updated;
-
-    /// DFT calculated properties:
-    /// - "relaxed_energy" -> double
-    /// - "relaxation_deformation" -> matrix double
-    /// - "relaxation_displacement" -> matrix double
-    /// - "rms_force" -> double
-    /// - "volume_relaxation" -> double
-    /// - "lattice_deformation" -> double
-    jsonParser m_calculated;
-    bool m_prop_updated;
 
   };
 
@@ -650,14 +596,6 @@ namespace CASM {
   /// \brief Returns the formation energy, normalized per species
   double clex_formation_energy_per_species(const Configuration &config);
 
-  /// \brief Return true if all required properties have been been calculated for the configuration
-  bool is_calculated(const Configuration &config);
-
-  /// \brief Return true if all required properties are included in the JSON
-  bool is_calculated(
-    const jsonParser &calc_properties,
-    const std::vector<std::string> &required_properties);
-
   /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
   double rms_force(const Configuration &_config);
 
@@ -691,12 +629,6 @@ namespace CASM {
   /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
   bool is_canonical(const Configuration &_config);
 
-  /// \brief Status of calculation
-  std::string calc_status(const Configuration &_config);
-
-  // \brief Reason for calculation failure.
-  std::string failure_type(const Configuration &_config);
-
   bool has_relaxed_energy(const Configuration &_config);
 
   bool has_reference_energy(const Configuration &_config);
@@ -715,26 +647,6 @@ namespace CASM {
 
   bool has_relaxed_mag_basis(const Configuration &_config);
 
-  inline
-  bool has_calc_status(const Configuration &_config) {
-    return !calc_status(_config).empty();
-  }
-
-  inline
-  bool has_failure_type(const Configuration &_config) {
-    return !failure_type(_config).empty();
-  }
-
-  // directory structure helpers
-
-  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname);
-  fs::path calc_properties_path(const Configuration &config);
-
-  fs::path pos_path(const PrimClex &primclex, const std::string &configname);
-  fs::path pos_path(const Configuration &config);
-
-  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname);
-  fs::path calc_status_path(const Configuration &config);
 
   /// \brief Apply SymOp not in Supercell factor group, and make supercells
   ///
@@ -773,12 +685,6 @@ namespace CASM {
   };
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c);
-
-
-  inline
-  void reset_properties(Configuration &_config) {
-    _config.set_calc_properties(jsonParser());
-  }
 
   /** @} */
 

@@ -36,7 +36,7 @@ namespace CASM {
       /// \brief Return "alias" if object stored in database and alias exists,
       ///        return empty string otherwise
       std::string alias() const {
-        return derived().primclex().template db<Derived>().alias(name());
+        return primclex().template db<Derived>().alias(name());
       }
 
       /// \brief Unset "name", if object is modified

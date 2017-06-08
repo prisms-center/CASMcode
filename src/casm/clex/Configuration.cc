@@ -40,10 +40,7 @@ namespace CASM {
     const jsonParser &src,
     const ConfigDoF &_configdof) :
     m_supercell(&_supercell),
-    m_source_updated(false),
-    m_configdof(_configdof),
-    m_dof_deps_updated(false),
-    m_prop_updated(false) {
+    m_configdof(_configdof) {
 
     set_source(src);
   }
@@ -55,10 +52,7 @@ namespace CASM {
     const ConfigDoF &_configdof) :
     m_supercell(_supercell.get()),
     m_supercell_ptr(_supercell),
-    m_source_updated(false),
-    m_configdof(_configdof),
-    m_dof_deps_updated(false),
-    m_prop_updated(false) {
+    m_configdof(_configdof) {
 
     set_source(source);
   }
@@ -67,10 +61,7 @@ namespace CASM {
   Configuration::Configuration(
     const Supercell &_supercell,
     const std::string &_id,
-    const jsonParser &_data) :
-    m_source_updated(false),
-    m_dof_deps_updated(false),
-    m_prop_updated(false) {
+    const jsonParser &_data) {
 
     this->from_json(_data, _supercell, _id);
 
@@ -83,68 +74,6 @@ namespace CASM {
     Configuration(*_primclex.db<Supercell>().find(Configuration::split_name(_configname).first),
                   Configuration::split_name(_configname).second,
                   _data) {}
-
-  //*********************************************************************************
-  void Configuration::set_source(const jsonParser &source) {
-    if(source.is_null() || source.size() == 0) {
-      m_source.put_array();
-    }
-    else if(!source.is_array()) {
-      m_source.put_array();
-      m_source.push_back(source);
-    }
-    else {
-      m_source = source;
-    }
-    m_source_updated = true;
-    m_dof_deps_updated = true;
-  }
-
-  //*********************************************************************************
-  void Configuration::push_back_source(const jsonParser &source) {
-
-    if(source.is_null() || source.size() == 0) {
-      return;
-    }
-    if(!source.is_array()) {
-
-      // check if the new source is already listed, if it is do nothing
-      for(int i = 0; i < m_source.size(); i++) {
-        if(m_source[i] == source)
-          return;
-      }
-
-      // else, add the new source
-      m_source.push_back(source);
-
-      m_source_updated = true;
-      m_dof_deps_updated = true;
-    }
-    else {
-
-      // check all new sources, if already listed skip, if the any of the new sources is already listed, if it is do nothing
-
-      for(int s = 0; s < source.size(); s++) {
-
-        bool found = false;
-
-        for(int i = 0; i < m_source.size(); i++) {
-          if(m_source[i] == source[s]) {
-            found = true;
-            break;
-          }
-        }
-
-        if(!found) {
-          // else, add the new source
-          m_source.push_back(source[s]);
-
-          m_source_updated = true;
-          m_dof_deps_updated = true;
-        }
-      }
-    }
-  }
 
   //*********************************************************************************
   void Configuration::clear() {
@@ -549,60 +478,6 @@ namespace CASM {
     return fill_supercell(scel, *res.first);
   }
 
-  //*********************************************************************************
-  void Configuration::set_calc_properties(const jsonParser &calc) {
-    m_calculated = calc;
-    m_prop_updated = true;
-    m_dof_deps_updated = true;
-  }
-
-  //*********************************************************************************
-
-  /// \brief Read properties.calc.json from training_data
-  ///
-  /// \returns tuple of:
-  /// - 0: JSON with calculated properties (or empty object)
-  /// - 1: bool indicating there is any data
-  /// - 2: bool indicating complete data
-  ///
-  /// JSON includes:
-  /// - file contents verbatim
-  /// -  "data_timestamp" with the last write time of the file
-  ///
-  std::tuple<jsonParser, bool, bool> Configuration::read_calc_properties() const {
-    return read_calc_properties(primclex(), calc_properties_path(*this));
-  }
-
-  //*********************************************************************************
-
-  /// \brief Read properties.calc.json from file
-  ///
-  /// \returns tuple of:
-  /// - 0: JSON with calculated properties (or empty object)
-  /// - 1: bool indicating there is any data
-  /// - 2: bool indicating complete data
-  ///
-  /// JSON includes:
-  /// - file contents verbatim
-  /// - "data_timestamp" with the last write time of the file
-  ///
-  std::tuple<jsonParser, bool, bool> Configuration::read_calc_properties(const PrimClex &primclex, const fs::path &filepath) {
-    if(!fs::exists(filepath)) {
-      return std::make_tuple(jsonParser(), false, false);
-    }
-    jsonParser props(filepath);
-    if(!props.is_obj()) {
-      primclex.err_log() << "error parsing: " << filepath << std::endl;
-      primclex.err_log() << "not a valid properties.calc.json for Configuration: not a JSON object" << std::endl;
-      return std::make_tuple(jsonParser(), false, false);
-    }
-    props["data_timestamp"] = fs::last_write_time(filepath);
-
-    const auto &prop_vec = primclex.settings().properties<Configuration>();
-    bool is_calc = is_calculated(jsonParser(filepath), prop_vec);
-    return std::make_tuple(props, true, is_calc);
-  }
-
   //********** ACCESSORS ***********
 
   const Lattice &Configuration::ideal_lattice()const {
@@ -632,11 +507,6 @@ namespace CASM {
   }
 
   //*********************************************************************************
-  const jsonParser &Configuration::source() const {
-    return m_source;
-  }
-
-  //*********************************************************************************
   ///Returns number of sites, NOT the number of primitives that fit in here
   Index Configuration::size() const {
     return supercell().num_sites();
@@ -645,16 +515,6 @@ namespace CASM {
   //*********************************************************************************
   const Structure &Configuration::prim() const {
     return supercell().prim();
-  }
-
-  //*********************************************************************************
-  //PrimClex &Configuration::primclex() {
-  //return supercell().primclex();
-  //}
-
-  //*********************************************************************************
-  const PrimClex &Configuration::primclex() const {
-    return supercell().primclex();
   }
 
   //*********************************************************************************
@@ -685,11 +545,6 @@ namespace CASM {
   //*********************************************************************************
   const Molecule &Configuration::mol(Index site_l) const {
     return prim().basis[ sublat(site_l) ].site_occupant()[ occ(site_l) ];
-  }
-
-  //*********************************************************************************
-  const jsonParser &Configuration::calc_properties() const {
-    return m_calculated;
   }
 
   //*********************************************************************************
@@ -848,7 +703,7 @@ namespace CASM {
     json.put_obj();
 
     CASM::to_json(m_configdof, json["dof"]);
-    CASM::to_json(m_source, json["source"]);
+    CASM::to_json(source(), json["source"]);
 
     if(cache_updated()) {
       json["cache"] = cache();
@@ -914,18 +769,16 @@ namespace CASM {
     this->clear_name();
     this->set_id(_id);
 
-    json.get_if(m_source, "source");
-    m_source_updated = false;
-
+    auto source_it = json.find("source");
+    if(source_it != json.end()) {
+      set_source(*source_it);
+    }
     CASM::from_json(m_configdof, json["dof"]);
-    m_dof_deps_updated = false;
-
     CASM::from_json(cache(), json["cache"]);
 
     // read properties from 'json' input only: does not attempt to read in new
     // calculation data from the calc.properties.json file
     // - use read_calc_properties() to read new calc.properties.json files
-    m_prop_updated = false;
 
     const ProjectSettings &set = primclex().settings();
     std::string calc_string = "calctype." + set.default_clex().calctype;
@@ -945,7 +798,10 @@ namespace CASM {
       return;
     }
 
-    prop_it->get_if(m_calculated, "calc");
+    auto calc_props_it = prop_it->find("calc");
+    if(calc_props_it != prop_it->end()) {
+      set_calc_properties(*calc_props_it);
+    }
 
     //std::cout << "finish Configuration::from_json()" << std::endl;
   }
@@ -1213,28 +1069,6 @@ namespace CASM {
     return comp_n(config) / config.prim().basis.size();
   }
 
-  /// \brief Status of calculation
-  std::string calc_status(const Configuration &config) {
-    fs::path p = calc_status_path(config);
-    if(fs::exists(p)) {
-      jsonParser json(p);
-      if(json.contains("status"))
-        return json["status"].get<std::string>();
-    }
-    return("not_submitted");
-  }
-
-  // \brief Reason for calculation failure.
-  std::string failure_type(const Configuration &config) {
-    fs::path p = calc_status_path(config);
-    if(fs::exists(p)) {
-      jsonParser json(p);
-      if(json.contains("failure_type"))
-        return json["failure_type"].get<std::string>();
-    }
-    return("none");
-  }
-
   /// \brief Returns the relaxed energy, normalized per unit cell
   double relaxed_energy(const Configuration &config) {
     return config.calc_properties()["relaxed_energy"].get<double>() / config.supercell().volume();
@@ -1291,24 +1125,6 @@ namespace CASM {
   /// \brief Returns the formation energy, normalized per unit cell
   double clex_formation_energy_per_species(const Configuration &config) {
     return clex_formation_energy(config) / n_species(config);
-  }
-
-  /// \brief Return true if all current properties have been been calculated for the configuration
-  bool is_calculated(const Configuration &config) {
-    const auto &props = config.primclex().settings().properties<Configuration>();
-    return is_calculated(config.calc_properties(), props);
-  }
-
-  /// \brief Return true if all required properties are included in the JSON
-  bool is_calculated(
-    const jsonParser &calc_properties,
-    const std::vector<std::string> &required_properties) {
-
-    return std::all_of(required_properties.begin(),
-                       required_properties.end(),
-    [&](const std::string & key) {
-      return calc_properties.contains(key);
-    });
   }
 
   /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
@@ -1403,27 +1219,6 @@ namespace CASM {
 
   bool has_relaxed_mag_basis(const Configuration &_config) {
     return _config.calc_properties().contains("relaxed_mag_basis");
-  }
-
-  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname) {
-    return primclex.dir().calculated_properties(configname, primclex.settings().default_clex().calctype);
-  }
-  fs::path calc_properties_path(const Configuration &config) {
-    return calc_properties_path(config.primclex(), config.name());
-  }
-
-  fs::path pos_path(const PrimClex &primclex, const std::string &configname) {
-    return primclex.dir().POS(configname);
-  }
-  fs::path pos_path(const Configuration &config) {
-    return pos_path(config.primclex(), config.name());
-  }
-
-  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname) {
-    return primclex.dir().calc_status(configname, primclex.settings().default_clex().calctype);
-  }
-  fs::path calc_status_path(const Configuration &config) {
-    return calc_status_path(config.primclex(), config.name());
   }
 
 

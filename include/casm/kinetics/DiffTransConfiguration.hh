@@ -16,9 +16,9 @@ namespace CASM {
   namespace Kinetics {
 
 
-    class DiffTransConfiguration : public Comparisons<DiffTransConfiguration> ,
-      public DB::Cache,
-      public DB::Indexed<DiffTransConfiguration> {
+    class DiffTransConfiguration :
+      public Comparisons<DiffTransConfiguration>,
+      public Calculable<DiffTransConfiguration> {
 
     public:
 
