@@ -179,7 +179,7 @@ namespace CASM {
         }
         if(it == speciemap.end()) {
           //insert current into database
-          primclex.db<PrimPeriodicDiffTransOrbit>().insert(diff_trans_orbit);
+          db_orbits.insert(diff_trans_orbit);
         }
       }
 

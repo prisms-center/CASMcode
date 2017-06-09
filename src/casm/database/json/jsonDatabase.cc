@@ -804,7 +804,7 @@ namespace CASM {
       }
     }
 
-    /// Range of DiffTransConfiguration in a particular orbit
+    /// Range of DiffTransConfiguration in a particular supercell within an orbit
     boost::iterator_range<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator>
     jsonDatabase<Kinetics::DiffTransConfiguration>::orbit_scel_range(const std::string &diff_trans_name, const std::string &scelname) const {
       auto it = m_orbit_scel_range.find(diff_trans_name);

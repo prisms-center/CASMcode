@@ -9,6 +9,13 @@
 #include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
+#include "casm/database/Selection.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/database/DiffTransConfigDatabase.hh"
+#include "casm/database/DiffTransOrbitDatabase.hh"
+#include "casm/app/QueryHandler.hh"
+
 
 extern "C" {
   CASM::EnumInterfaceBase *make_DiffTransConfigEnumPerturbations_interface() {
@@ -104,7 +111,7 @@ namespace CASM {
       ""
       "  Example:\n"
       "  {\n"
-      "   \"orbits\":[\"DT0\",\"DT1\"],\n"
+      "   \"orbits\":[\"diff_trans.0\",\"diff_trans.1\"],\n"
       "   \"background_configs\":[\"SCEL8_2_2_2_0_0_0/2\"],\n"
       "    \"local_bspecs\":{\n"
       "       \"basis_functions\" : {\n"
@@ -153,29 +160,87 @@ namespace CASM {
       }
       else if(_kwargs.get_if(kwargs, "local_bspecs_filepath")) {
         //look for filepath given and load it
-        jsonParser local_bspecs {kwargs};
+        fs::path local_bspecs_path = _kwargs.get<std::string>();
+        jsonParser local_bspecs {local_bspecs_path};
       }
       else {
         //look for default local bspecs file.
-        // Find default path string here
-        //jsonParser local_bspecs {kwargs.get()};
+        fs::path local_bspecs_path = "default/path/to/local_bspecs.json";
+        jsonParser local_bspecs {local_bspecs_path};
       }
-      for(const auto &configname : confignames) {
-        for(const auto &orbitname : orbitnames) {
+
+
+      Log &log = primclex.log();
+      auto &db_diff_trans_configs = primclex.db<DiffTransConfiguration>();
+
+      Index Ninit = db_diff_trans_configs.size();
+      log << "# DiffTransConfiguration in this project: " << Ninit << "\n" << std::endl;
+
+      log.begin(enumerator_name);
+
+
+      for(const auto &configname_parser : confignames) {
+        std::string configname = configname_parser.get<std::string>();
+        log << "Searching in " << configname << "...";
+
+        for(const auto &orbitname_parser : orbitnames) {
+          std::string orbitname = orbitname_parser.get<std::string>();
+          log << "Using " << orbitname << "...";
+          Index Ninit_spec = db_diff_trans_configs.size();
           /// PrimPeriodicDiffTransOrbit dtorbit = select(orbitname);
+          PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
           /// Configuration bg_config = select(configname);
+          Configuration bg_config = *primclex.db<Configuration>().find(configname);
           /// check if configuration is big enough for local bspecs here
           /// give warning if not
-          /// DiffTransConfigEnumPerturbations enumerator(bg_config,dtorbit,local_bspecs)
-          /// while (enumerator.is_valid()){
-          ///   if (enumerator.current() passes filter){
-          ///     db.insert(enumerator.current().canonical_form());
-          ///   }
-          ///
-          ///   ++enumerator;
-          ///}
+          std::vector<LocalIntegralClusterOrbit> local_orbits;
+          make_local_orbits(
+            dtorbit.prototype(),
+            local_bspecs,
+            alloy_sites_filter,
+            primclex.crystallography_tol(),
+            std::back_inserter(local_orbits),
+            primclex.log());
+          if(has_local_bubble_overlap(local_orbits, bg_config.supercell())) {
+            std::cout << "WARNING!!! CHOICE OF BACKGROUND CONFIGURATION " << configname <<
+                      "\nRESULTS IN AN OVERLAP IN THE LOCAL CLUSTERS OF " << orbitname <<
+                      "\nWITH ITS PERIODIC IMAGES. CONSIDER CHOOSING SMALLER LOCAL CLUSTERS OR\n" <<
+                      "A LARGE BACKGROUND CONFIGURATION." << std::endl;
+          }
+          DiffTransConfigEnumPerturbations enumerator(bg_config, dtorbit, local_bspecs);
+          auto enum_it = enumerator.begin();
+          std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
+          try {
+            DataFormatter<DiffTransConfiguration> filter = primclex.settings().query_handler<DiffTransConfiguration>().dict().parse(filter_expr);
+            while(enum_it != enumerator.end()) {
+              ValueDataStream<bool> _stream;
+              _stream << filter(*enum_it);
+              if(_stream.value()) {
+                db_diff_trans_configs.insert(enum_it->canonical_form());
+              }
+              ++enum_it;
+            }
+          }
+          catch(std::exception &e) {
+            primclex.err_log() << "Cannot filter difftransconfigs using the expression provided: \n" << e.what() << "\nExiting...\n";
+            return ERR_INVALID_ARG;
+          }
+
+          Index Nfinal_spec = db_diff_trans_configs.size();
+          log << "Found " << Nfinal_spec - Ninit_spec << " new difftransconfigs" << std::endl;
         }
       }
+
+      log << "  DONE." << std::endl << std::endl;
+
+      Index Nfinal = db_diff_trans_configs.size();
+
+      log << "# new DiffTransConfiguration: " << Nfinal - Ninit << "\n";
+      log << "# DiffTransConfiguration in this project: " << Nfinal << "\n" << std::endl;
+
+      log << "Writing DiffTransConfiguration database..." << std::endl;
+      db_diff_trans_configs.commit();
+      log << "  DONE" << std::endl;
       return 0;
     }
 
