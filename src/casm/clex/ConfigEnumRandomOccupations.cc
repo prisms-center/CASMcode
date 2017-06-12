@@ -29,14 +29,16 @@ namespace CASM {
 
     "  primitive_only: bool (default=true)\n"
     "    If true, only the primitive form of a configuration is saved in the      \n"
-    "    otherwise, both primitive and non-primitive configurations are saved.    \n\n"
+    "    configuration list. Otherwise, both primitive and non-primitive          \n"
+    "    configurations are saved. \n\n"
 
     "  filter: string (optional, default=None)\n"
     "    A query command to use to filter which Configurations are kept.          \n\n"
 
     "  Examples:\n"
     "    To enumerate 200 random occupations in supercells up to and including size 4:\n"
-    "      casm enum --method ConfigEnumRandomOccupations -i '{\"supercells\": {\"max\": 4}, \"n_config\": 200}' \n"
+    "      casm enum --method ConfigEnumRandomOccupations -i \n"
+    "        '{\"supercell\":{\"max\":4}, \"n_config\": 200}' \n"
     "\n"
     "    To enumerate 200 random occupations in all existing supercells:\n"
     "      casm enum --method ConfigEnumRandomOccupations -i '{\"n_config\": 200}' \n"
