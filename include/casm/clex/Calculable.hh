@@ -23,6 +23,11 @@ namespace CASM {
   class Calculable : public DB::Cache, public DB::Indexed<Derived> {
 
   public:
+    Calculable(const PrimClex &_primclex):
+      DB::Indexed<Derived>::Indexed(_primclex) {}
+
+    Calculable():
+      DB::Indexed<Derived>::Indexed() {}
 
     const jsonParser &calc_properties() const;
 

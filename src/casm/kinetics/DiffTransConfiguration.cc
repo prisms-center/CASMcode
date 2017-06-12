@@ -11,7 +11,7 @@ namespace CASM {
 
     DiffTransConfiguration::DiffTransConfiguration(const Configuration &_from_config,
                                                    const DiffusionTransformation &_diff_trans) :
-      m_diff_trans(_diff_trans), m_from_config(_from_config) {
+      m_diff_trans(_diff_trans), m_from_config(_from_config), Calculable(_from_config.primclex()) {
       ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
                                                  m_from_config.supercell().crystallography_tol());
       m_diff_trans = symcompare.prepare(m_diff_trans);
@@ -22,7 +22,8 @@ namespace CASM {
       const Supercell &_supercell,
       const jsonParser &_data) :
       m_diff_trans(_supercell.prim()),
-      m_from_config(_supercell) {
+      m_from_config(_supercell),
+      Calculable(_supercell.primclex()) {
 
       this->from_json(_data, _supercell);
 
@@ -33,7 +34,8 @@ namespace CASM {
       const PrimClex &_primclex,
       const jsonParser &_data) :
       m_diff_trans(_primclex.prim()),
-      m_from_config(Supercell(& _primclex, _primclex.prim().lattice())) {
+      m_from_config(Supercell(& _primclex, _primclex.prim().lattice())),
+      Calculable(_primclex) {
 
       this->from_json(_data, _primclex);
 

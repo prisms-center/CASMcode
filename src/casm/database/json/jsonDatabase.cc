@@ -369,7 +369,7 @@ namespace CASM {
     jsonDatabase<Configuration>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
 
       if(result.second) {
-
+        this->set_primclex(*(result.first));
         const Configuration &config = *result.first;
 
         if(is_new) {
@@ -552,7 +552,6 @@ namespace CASM {
     jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
 
       if(result.second) {
-
         const Kinetics::PrimPeriodicDiffTransOrbit &orbit = *result.first;
 
         if(is_new) {

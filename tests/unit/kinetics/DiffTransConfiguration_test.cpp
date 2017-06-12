@@ -117,6 +117,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     symcompare.prepare(copy_apply(it.sym_op(), trans));
 
   Kinetics::DiffTransConfiguration newdtc(new_config, new_trans);
+  std::cout << newdtc << std::endl;
 
   BOOST_CHECK_EQUAL(copy_apply(it, dtc) == newdtc, 1);
 

@@ -80,6 +80,9 @@ namespace CASM {
     class Indexed : public Named<Derived> {
 
     public:
+      Indexed(const PrimClex &_primclex) :
+        Named<Derived>::Named(_primclex),
+        m_id("none") {}
 
       Indexed() :
         m_id("none") {}

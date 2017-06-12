@@ -40,7 +40,8 @@ namespace CASM {
     const jsonParser &src,
     const ConfigDoF &_configdof) :
     m_supercell(&_supercell),
-    m_configdof(_configdof) {
+    m_configdof(_configdof),
+    Calculable(supercell().primclex()) {
 
     set_source(src);
   }
@@ -52,7 +53,8 @@ namespace CASM {
     const ConfigDoF &_configdof) :
     m_supercell(_supercell.get()),
     m_supercell_ptr(_supercell),
-    m_configdof(_configdof) {
+    m_configdof(_configdof),
+    Calculable(supercell().primclex()) {
 
     set_source(source);
   }
@@ -61,7 +63,8 @@ namespace CASM {
   Configuration::Configuration(
     const Supercell &_supercell,
     const std::string &_id,
-    const jsonParser &_data) {
+    const jsonParser &_data):
+    Calculable(_supercell.primclex()) {
 
     this->from_json(_data, _supercell, _id);
 

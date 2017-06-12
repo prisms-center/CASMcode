@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
       BOOST_CHECK_EQUAL(trans.is_valid(), 1);
     }
 
-    // print DiffTrans prototypes
+    //print DiffTrans prototypes
     //{
     //  PrototypePrinter<Kinetics::DiffusionTransformation> printer;
     //  print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
