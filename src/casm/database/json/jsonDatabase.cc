@@ -421,45 +421,46 @@ namespace CASM {
       }
 
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
-      if(fs::exists(dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>())) {
-        jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
-        jsonParser json(dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>());
-
-        // check json version
-        if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
-          throw std::runtime_error(
-            std::string("Error jsonDB version mismatch: found: ") +
-            json["version"].get<std::string>() +
-            " expected: " +
-            traits<jsonDB>::version);
-        }
-
-        if(!json.is_obj() || !json.contains("prototypes")) {
-          throw std::runtime_error(
-            std::string("Error invalid format: ") + dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>().string());
-        }
-
-        auto it = json["prototypes"].begin();
-        auto end = json["protoypes"].end();
-        for(; it != end; ++it) {
-          if(!(it-> contains("occ_transform")) || !(it -> contains("specie_trajectory"))) {
-            continue;
-          }
-          Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(*it, primclex().prim());
-          Kinetics::PrimPeriodicDiffTransSymCompare symcompare(primclex().crystallography_tol());
-          auto result = m_orbit_list.emplace(trans, primclex().prim().factor_group(), symcompare);
-          this->set_id(*(result.first), it.name());
-          _on_insert_or_emplace(result, false);
-
-        }
-
-        //read next orbit id
-        from_json(m_orbit_id, json["orbit_id"]);
-
-        this->read_aliases();
+      fs::path diff_trans_list_path = dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>();
+      if(!fs::exists(diff_trans_list_path)) {
+        m_is_open = true;
+        return *this;
       }
+      jsonParser json(diff_trans_list_path);
+      // check json version
+      if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
+        throw std::runtime_error(
+          std::string("Error jsonDB version mismatch: found: ") +
+          json["version"].get<std::string>() +
+          " expected: " +
+          traits<jsonDB>::version);
+      }
+      if(!json.is_obj() || !json.contains("prototypes")) {
+        throw std::runtime_error(
+          std::string("Error invalid format: ") + dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>().string());
+      }
+      //std::cout << json << std::endl;
+      const auto end = json["protoypes"].end();
+      //std::cout << *end << std::endl;
+      for(auto it = json["prototypes"].begin(); it != end; ++it) {
+        if(it->size() == 1) {
+          break;
+        }
+        Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(*it, primclex().prim());
+        Kinetics::PrimPeriodicDiffTransSymCompare symcompare(primclex().crystallography_tol());
+        auto result = m_orbit_list.emplace(trans, primclex().prim().factor_group(), symcompare);
+        this->set_id(*(result.first), it.name());
+        _on_insert_or_emplace(result, false);
+      }
+
+      //read next orbit id
+      from_json(m_orbit_id, json["orbit_id"]);
+
+      this->read_aliases();
+
       m_is_open = true;
       return *this;
+
     }
 
     void jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::commit() {
@@ -476,7 +477,6 @@ namespace CASM {
         json.put_obj();
       }
       json["version"] = traits<jsonDB>::version;
-
       for(const auto &orbit : m_orbit_list) {
         to_json(orbit.prototype(), json["prototypes"][orbit.id()]);
       }
@@ -486,12 +486,12 @@ namespace CASM {
       SafeOfstream file;
       fs::create_directories(orbit_list_path.parent_path());
       file.open(orbit_list_path);
-      //json.print(file.ofstream());
-      int indent = 0;
+      json.print(file.ofstream());
+      /*int indent = 0;
       int prec = 12;
       json_spirit::write_stream((json_spirit::mValue &) json, file.ofstream(), indent, prec),
-                  file.close();
-
+                  file.close();*/
+      file.close();
       this->write_aliases();
     }
 
@@ -553,7 +553,6 @@ namespace CASM {
 
       if(result.second) {
         const Kinetics::PrimPeriodicDiffTransOrbit &orbit = *result.first;
-
         if(is_new) {
           // set the orbit id, and increment
           this->set_id(orbit, m_orbit_id++);
@@ -563,7 +562,7 @@ namespace CASM {
         m_name_to_orbit.insert(std::make_pair(orbit.name(), result.first));
 
       }
-
+      this->set_primclex(*result.first);
       return std::make_pair(_iterator(result.first), result.second);
     }
 

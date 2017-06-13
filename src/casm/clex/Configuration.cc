@@ -41,7 +41,7 @@ namespace CASM {
     const ConfigDoF &_configdof) :
     m_supercell(&_supercell),
     m_configdof(_configdof),
-    Calculable(supercell().primclex()) {
+    Calculable(_supercell.primclex()) {
 
     set_source(src);
   }
@@ -54,7 +54,7 @@ namespace CASM {
     m_supercell(_supercell.get()),
     m_supercell_ptr(_supercell),
     m_configdof(_configdof),
-    Calculable(supercell().primclex()) {
+    Calculable(_supercell->primclex()) {
 
     set_source(source);
   }
