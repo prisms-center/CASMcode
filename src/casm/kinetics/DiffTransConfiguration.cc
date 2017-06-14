@@ -129,7 +129,7 @@ namespace CASM {
     }
 
     std::string DiffTransConfiguration::_generate_name() const {
-      return m_orbit_name + from_config().supercell().name() + id();
+      return m_orbit_name + "/" + from_config().supercell().name() + "/" + id();
     }
 
     void DiffTransConfiguration::set_orbit_name(const std::string &orbit_name) {
@@ -145,7 +145,7 @@ namespace CASM {
       json["from_configname"] = from_config().name();
       from_config().to_json(json["from_config_data"]);
       CASM::to_json(diff_trans(), json["diff_trans"]);
-
+      json["orbit_name"] = orbit_name();
       json["cache"].put_obj();
       if(cache_updated()) {
         json["cache"] = cache();
@@ -160,12 +160,14 @@ namespace CASM {
       std::string configname = json["from_configname"].get<std::string>();
       boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
       m_from_config = Configuration(scel, splt_vec[1], json["from_config_data"]);
+      set_orbit_name(json["orbit_name"].get<std::string>());
     }
 
     /// Reads the DiffTransConfiguration from JSON
     void DiffTransConfiguration::from_json(const jsonParser &json, const PrimClex &primclex) {
       m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], primclex.prim());
       m_from_config = Configuration(primclex, json["from_configname"].get<std::string>(), json["from_config_data"]);
+      set_orbit_name(json["orbit_name"].get<std::string>());
     }
 
 

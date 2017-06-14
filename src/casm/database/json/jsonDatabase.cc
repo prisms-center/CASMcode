@@ -619,6 +619,7 @@ namespace CASM {
 
           for(; diff_trans_config_it != diff_trans_config_end; ++diff_trans_config_it) {
             auto result = m_diff_trans_config_list.emplace(scel, *diff_trans_config_it);
+            this->set_id(*(result.first), diff_trans_config_it.name());
             _on_insert_or_emplace(result, is_new);
           }
         }
