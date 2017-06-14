@@ -18,6 +18,10 @@ namespace CASM {
 
     using namespace Kinetics::DiffTransConfigIO;
     StringAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
+
+    dict.insert(
+      name<Kinetics::DiffTransConfiguration>()
+    );
     return dict;
   }
 

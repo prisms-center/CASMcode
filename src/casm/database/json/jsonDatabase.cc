@@ -653,7 +653,7 @@ namespace CASM {
       json["version"] = traits<jsonDB>::version;
       //This is going to be problematic Need to figure out how to preserve orbit name source
       for(const auto &diff_trans_config : m_diff_trans_config_list) {
-        std::string dtname = "";
+        std::string dtname = diff_trans_config.orbit_name();
         diff_trans_config.to_json(json["prototypes"][dtname]
                                   [diff_trans_config.from_config().supercell().name()][diff_trans_config.id()]);
       }
@@ -735,7 +735,7 @@ namespace CASM {
       }
 
       // update orbit_range
-      std::string dt_name = "";
+      std::string dt_name = base_it->orbit_name();
       auto _orbit_range_it = m_orbit_range.find(dt_name);
       if(_orbit_range_it->second.first == _orbit_range_it->second.second) {
         m_orbit_range.erase(_orbit_range_it);
@@ -831,7 +831,7 @@ namespace CASM {
         if(is_new) {
           // set the diff trans config id, and increment
           //Again need to determine orbit name from diff_trans_config object somehow
-          dt_name = "";
+          dt_name = diff_trans_config.orbit_name();
           std::string scelname = diff_trans_config.from_config().supercell().name();
           auto _config_id_it = m_config_id.find(dt_name);
           if(_config_id_it == m_config_id.end()) {
@@ -872,7 +872,7 @@ namespace CASM {
         }
 
         // check if orbit_range needs updating
-        dt_name = "";
+        dt_name = diff_trans_config.orbit_name();
         auto _orbit_range_it = m_orbit_range.find(dt_name);
 
         // new orbit

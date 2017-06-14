@@ -95,6 +95,9 @@ namespace CASM {
 
       void set_orbit_name(const std::string &orbit_name);
 
+      std::string orbit_name() const {
+        return m_orbit_name;
+      }
     private:
 
       bool _lt(const DiffTransConfiguration &B) const {
