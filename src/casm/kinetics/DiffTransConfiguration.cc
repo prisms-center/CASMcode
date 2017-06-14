@@ -66,7 +66,6 @@ namespace CASM {
       // check which supercell factor group operations
       // when applied to m_diff_trans results in the greatest
       // DiffusionTransformation
-
       std::vector<PermuteIterator> checklist;
       ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
                                                  m_from_config.supercell().crystallography_tol());
@@ -96,7 +95,6 @@ namespace CASM {
         Configuration tmp = copy_apply(*it, sorted().from_config());
 
         DiffTransConfiguration dtc_tmp(tmp, greatest);
-
         if(dtc_tmp.sorted() >= max_dtc) {
           max_dtc = dtc_tmp.sorted();
           canon_op_it = *it;
@@ -148,9 +146,10 @@ namespace CASM {
       from_config().to_json(json["from_config_data"]);
       CASM::to_json(diff_trans(), json["diff_trans"]);
 
-      /*if(cache_updated()) {
-      json["cache"] = cache();
-      }*/
+      json["cache"].put_obj();
+      if(cache_updated()) {
+        json["cache"] = cache();
+      }
       return json;
     }
 
@@ -188,7 +187,7 @@ namespace CASM {
       for(auto traj : diff_trans.specie_traj()) {
         Index l = bg_config.supercell().linear_index(traj.from.uccoord);
         if(bg_config.occ(l) != traj.from.occ) {
-          if(traj.from.occ < bg_config.supercell().max_allowed_occupation()[l]) {
+          if(traj.from.occ <= bg_config.supercell().max_allowed_occupation()[l]) {
             result.set_occ(l, traj.from.occ);
           }
           else {

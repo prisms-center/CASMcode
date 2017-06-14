@@ -439,10 +439,9 @@ namespace CASM {
         throw std::runtime_error(
           std::string("Error invalid format: ") + dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>().string());
       }
-      //std::cout << json << std::endl;
       const auto end = json["protoypes"].end();
-      //std::cout << *end << std::endl;
       for(auto it = json["prototypes"].begin(); it != end; ++it) {
+        //Hacky way to break out of broken iterator loop
         if(it->size() == 1) {
           break;
         }

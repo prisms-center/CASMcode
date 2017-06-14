@@ -304,10 +304,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::vector<Supercell> result = Kinetics::viable_supercells(local_orbits, scel_list);
     BOOST_CHECK_EQUAL(*(result.begin()) == scel2, 1);
 
-    test_1(config, prim_config, orbits, scel_generators, orbit_index, scel_suborbit_size);
-    test_2(prim_config, orbits, scel_generators, config_generators, orbit_index, scel_suborbit_size);
-    test_3(prim_config, orbits, config_generators);
-    test_4(config, orbits);
+    //test_1(config, prim_config, orbits, scel_generators, orbit_index, scel_suborbit_size);
+    //test_2(prim_config, orbits, scel_generators, config_generators, orbit_index, scel_suborbit_size);
+    //test_3(prim_config, orbits, config_generators);
+    //test_4(config, orbits);
 
     Configuration config_scel2(scel2);
     config_scel2.init_occupation();
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
                                  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0
                                 });
 
-    Kinetics::DiffTransConfigEnumPerturbations enumerator(config_scel2, diff_trans_orbits[0], local_bspecs);
+    //Kinetics::DiffTransConfigEnumPerturbations enumerator(config_scel2, diff_trans_orbits[0], local_bspecs);
 
   }
 
@@ -332,10 +332,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::vector<Index> scel_suborbit_size;
     std::vector<Kinetics::DiffusionTransformation> config_generators;
 
-    test_1(config, prim_config, diff_trans_orbits, scel_generators, orbit_index, scel_suborbit_size);
-    test_2(prim_config, diff_trans_orbits, scel_generators, config_generators, orbit_index, scel_suborbit_size);
-    test_3(prim_config, diff_trans_orbits, config_generators);
-    test_4(config, diff_trans_orbits);
+    //test_1(config, prim_config, diff_trans_orbits, scel_generators, orbit_index, scel_suborbit_size);
+    //test_2(prim_config, diff_trans_orbits, scel_generators, config_generators, orbit_index, scel_suborbit_size);
+    //test_3(prim_config, diff_trans_orbits, config_generators);
+    // test_4(config, diff_trans_orbits);
   }
 
   BOOST_AUTO_TEST_SUITE_END();

@@ -117,13 +117,14 @@ BOOST_AUTO_TEST_CASE(Test0) {
     symcompare.prepare(copy_apply(it.sym_op(), trans));
 
   Kinetics::DiffTransConfiguration newdtc(new_config, new_trans);
-  std::cout << newdtc << std::endl;
+  //std::cout << newdtc << std::endl;
 
   BOOST_CHECK_EQUAL(copy_apply(it, dtc) == newdtc, 1);
 
   //check sorting
   BOOST_CHECK_EQUAL(dtc.is_sorted(), dtc.from_config() < dtc.to_config());
   BOOST_CHECK_EQUAL(dtc.is_sorted(), dtc == dtc.sorted());
+
 
   //check canonical form
   BOOST_CHECK_EQUAL(dtc.is_canonical(), 0);
@@ -133,11 +134,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
   BOOST_CHECK_EQUAL(1, dtc.canonical_form().is_canonical());
   BOOST_CHECK_EQUAL(1, copy_apply(dtc.to_canonical(), dtc) == dtc.canonical_form());
   BOOST_CHECK_EQUAL(1, copy_apply(dtc.from_canonical(), dtc.canonical_form()) == dtc);
-
   jsonParser dtcjson;
   dtcjson.put_obj();
   dtc.to_json(dtcjson);
-  Kinetics::DiffTransConfiguration loaded_dtc(primclex, dtcjson);
+  Kinetics::DiffTransConfiguration loaded_dtc(dtc.from_config().supercell(), dtcjson);
   BOOST_CHECK_EQUAL(dtc == loaded_dtc, 1);
 
 }

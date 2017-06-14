@@ -56,11 +56,9 @@ namespace CASM {
       //Enumerate unique diffusion transformation set for this background config
       _init_unique_difftrans();
 
-
       if(!m_unique_difftrans.size()) {
         _invalidate();
       }
-
       //Pick the first base DiffTransConfiguration
       _init_base_config();
 
@@ -73,7 +71,6 @@ namespace CASM {
 
       //Set current DiffTransConfiguration
       _set_current();
-
 
       if(false) {
         increment();
@@ -129,6 +126,9 @@ namespace CASM {
     void DiffTransConfigEnumPerturbations::increment() {
       if(m_perturb_it == m_perturbations.end()) {
         _increment_base_config();
+        if(!this->valid()) {
+          return;
+        }
         _init_perturbations();
         m_perturb_it = m_perturbations.begin();
       }
@@ -147,7 +147,7 @@ namespace CASM {
       }
 
       jsonParser confignames;
-      if(!_kwargs.get_if(orbitnames, "background_configs")) {
+      if(!_kwargs.get_if(confignames, "background_configs")) {
         std::cerr << "DiffTransConfigEnumPerturbations currently has no default and requires a correct JSON with a background_configs tag within it" << std::endl;
         std::cerr << "Core dump will occur because cannot find proper input" << std::endl;
       }
@@ -155,18 +155,19 @@ namespace CASM {
       jsonParser kwargs;
       jsonParser local_bspecs;
       if(_kwargs.get_if(kwargs, "local_bspecs")) {
-        jsonParser local_bspecs {kwargs};
-
+        local_bspecs = kwargs;
       }
       else if(_kwargs.get_if(kwargs, "local_bspecs_filepath")) {
         //look for filepath given and load it
         fs::path local_bspecs_path = _kwargs.get<std::string>();
-        jsonParser local_bspecs {local_bspecs_path};
+        jsonParser tmp {local_bspecs_path};
+        local_bspecs = tmp;
       }
       else {
         //look for default local bspecs file.
         fs::path local_bspecs_path = "default/path/to/local_bspecs.json";
-        jsonParser local_bspecs {local_bspecs_path};
+        jsonParser tmp {local_bspecs_path};
+        local_bspecs = tmp;
       }
 
 
@@ -177,20 +178,17 @@ namespace CASM {
       log << "# DiffTransConfiguration in this project: " << Ninit << "\n" << std::endl;
 
       log.begin(enumerator_name);
-
-
       for(const auto &configname_parser : confignames) {
         std::string configname = configname_parser.get<std::string>();
-        log << "Searching in " << configname << "...";
+        log << "Searching in " << configname << "..." << std::endl;
 
+        Configuration bg_config = *primclex.db<Configuration>().find(configname);
         for(const auto &orbitname_parser : orbitnames) {
           std::string orbitname = orbitname_parser.get<std::string>();
-          log << "Using " << orbitname << "...";
-          Index Ninit_spec = db_diff_trans_configs.size();
-          /// PrimPeriodicDiffTransOrbit dtorbit = select(orbitname);
+          log << "\tUsing " << orbitname << "..." << std::flush;
+          Index Ninit_spec = db_diff_trans_configs.size() ;
+
           PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
-          /// Configuration bg_config = select(configname);
-          Configuration bg_config = *primclex.db<Configuration>().find(configname);
           /// check if configuration is big enough for local bspecs here
           /// give warning if not
           std::vector<LocalIntegralClusterOrbit> local_orbits;
@@ -200,30 +198,35 @@ namespace CASM {
             alloy_sites_filter,
             primclex.crystallography_tol(),
             std::back_inserter(local_orbits),
-            primclex.log());
+            log);
           if(has_local_bubble_overlap(local_orbits, bg_config.supercell())) {
-            std::cout << "WARNING!!! CHOICE OF BACKGROUND CONFIGURATION " << configname <<
-                      "\nRESULTS IN AN OVERLAP IN THE LOCAL CLUSTERS OF " << orbitname <<
-                      "\nWITH ITS PERIODIC IMAGES. CONSIDER CHOOSING SMALLER LOCAL CLUSTERS OR\n" <<
-                      "A LARGE BACKGROUND CONFIGURATION." << std::endl;
+            log << "WARNING!!! CHOICE OF BACKGROUND CONFIGURATION " << configname <<
+                "\nRESULTS IN AN OVERLAP IN THE LOCAL CLUSTERS OF " << orbitname <<
+                "\nWITH ITS PERIODIC IMAGES. CONSIDER CHOOSING SMALLER LOCAL CLUSTERS OR\n" <<
+                "A LARGER BACKGROUND CONFIGURATION." << std::endl;
           }
           DiffTransConfigEnumPerturbations enumerator(bg_config, dtorbit, local_bspecs);
           auto enum_it = enumerator.begin();
           std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
-          try {
-            DataFormatter<DiffTransConfiguration> filter = primclex.settings().query_handler<DiffTransConfiguration>().dict().parse(filter_expr);
-            while(enum_it != enumerator.end()) {
-              ValueDataStream<bool> _stream;
-              _stream << filter(*enum_it);
-              if(_stream.value()) {
-                db_diff_trans_configs.insert(enum_it->canonical_form());
+          if(!filter_expr.empty()) {
+            try {
+              DataFormatter<DiffTransConfiguration> filter = primclex.settings().query_handler<DiffTransConfiguration>().dict().parse(filter_expr);
+              while(enum_it != enumerator.end()) {
+                ValueDataStream<bool> _stream;
+                _stream << filter(*enum_it);
+                if(_stream.value()) {
+                  db_diff_trans_configs.insert(enum_it->canonical_form());
+                }
+                ++enum_it;
               }
-              ++enum_it;
+            }
+            catch(std::exception &e) {
+              primclex.err_log() << "Cannot filter difftransconfigs using the expression provided: \n" << e.what() << "\nExiting...\n";
+              return ERR_INVALID_ARG;
             }
           }
-          catch(std::exception &e) {
-            primclex.err_log() << "Cannot filter difftransconfigs using the expression provided: \n" << e.what() << "\nExiting...\n";
-            return ERR_INVALID_ARG;
+          else {
+            primclex.db<DiffTransConfiguration>().insert(enumerator.begin(), enumerator.end());
           }
 
           Index Nfinal_spec = db_diff_trans_configs.size();
@@ -248,10 +251,15 @@ namespace CASM {
 
     ///sets the first m_base_config as the orbit prototype placed in m_background_config
     void DiffTransConfigEnumPerturbations::_init_base_config() {
-      Configuration bg_config = make_attachable(*(m_unique_difftrans.begin()), m_background_config);
-      DiffTransConfiguration tmp(bg_config, *(m_unique_difftrans.begin()));
+      ScelPeriodicDiffTransSymCompare symcompare(m_background_config.supercell().prim_grid(),
+                                                 m_background_config.supercell().crystallography_tol());
+      DiffusionTransformation prepped = symcompare.prepare(*(m_unique_difftrans.begin()));
+      Configuration bg_config = make_attachable(prepped, m_background_config);
+      DiffTransConfiguration tmp(bg_config, prepped);
+      DiffTransConfiguration tmp2 = tmp.canonical_form();
       m_base_config = tmp.canonical_form();
       ++m_unique_difftrans_it;
+      m_current = notstd::make_cloneable<DiffTransConfiguration>(m_base_config);
       return;
     }
 
@@ -263,6 +271,7 @@ namespace CASM {
       std::vector<DiffusionTransformation> subprototypes;
       make_suborbit_generators(orbit_vec.begin(), orbit_vec.end(), m_background_config, std::back_inserter(subprototypes));
       m_unique_difftrans.insert(subprototypes.begin(), subprototypes.end());
+      m_unique_difftrans_it = m_unique_difftrans.begin();
       return;
     }
 
@@ -324,15 +333,18 @@ namespace CASM {
       }
       DiffTransConfiguration ret_dtc(tmp, m_base_config.diff_trans());
       ret_dtc.set_orbit_name(m_diff_trans_orbit.name());
-      *m_current = ret_dtc;
+      *m_current = ret_dtc.canonical_form();
       return;
     }
 
     /// Moves to next unique diffusion transformation and places in m_background_config
     void DiffTransConfigEnumPerturbations::_increment_base_config() {
       if(m_unique_difftrans_it != m_unique_difftrans.end()) {
-        Configuration bg_config = make_attachable(*m_unique_difftrans_it, m_background_config);
-        DiffTransConfiguration tmp(bg_config, *m_unique_difftrans_it);
+        ScelPeriodicDiffTransSymCompare symcompare(m_background_config.supercell().prim_grid(),
+                                                   m_background_config.supercell().crystallography_tol());
+        DiffusionTransformation prepped = symcompare.prepare(*m_unique_difftrans_it);
+        Configuration bg_config = make_attachable(prepped, m_background_config);
+        DiffTransConfiguration tmp(bg_config, prepped);
         m_base_config = tmp.canonical_form();
         ++m_unique_difftrans_it;
       }

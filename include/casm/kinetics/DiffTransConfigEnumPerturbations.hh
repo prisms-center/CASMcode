@@ -73,11 +73,12 @@ namespace CASM {
 
       std::set<DiffusionTransformation>::iterator m_unique_difftrans_it;
       std::set<DiffusionTransformation> m_unique_difftrans;
+
       DiffTransConfiguration m_base_config;
 
-      Configuration m_background_config;
-      PrimPeriodicDiffTransOrbit m_diff_trans_orbit;
-      jsonParser m_local_bspecs;
+      const Configuration m_background_config;
+      const PrimPeriodicDiffTransOrbit m_diff_trans_orbit;
+      const jsonParser m_local_bspecs;
       notstd::cloneable_ptr<DiffTransConfiguration> m_current;
     };
 
