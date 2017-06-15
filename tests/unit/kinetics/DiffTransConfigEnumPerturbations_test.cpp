@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
                                  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0
                                 });
 
-    //Kinetics::DiffTransConfigEnumPerturbations enumerator(config_scel2, diff_trans_orbits[0], local_bspecs);
+    Kinetics::DiffTransConfigEnumPerturbations enumerator(config_scel2, diff_trans_orbits[0], local_bspecs);
 
   }
 
