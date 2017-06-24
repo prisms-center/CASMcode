@@ -20,44 +20,42 @@ namespace CASM {
   namespace Kinetics {
 
     /// \brief Construct with a Supercell, using all permutations
-    DiffTransConfigInterpolation::DiffTransConfigInterpolation(const DiffTransConfiguration &_diff_trans_config,
-                                                               int n_images):m_diff_trans_config(_diff_trans_config) {
-      Configuration from_config = m_diff_trans_config.from_config();
-      Configuration to_config = m_diff_trans_config.to_config();
-
-      // for testing purposes
-      // include displacements & deformation
-      Eigen::Vector3d zero(0., 0., 0.);
-      Eigen::Vector3d dx(0.001, 0., 0.);
-      Eigen::Vector3d dy(0., 0.001, 0.);
-      Eigen::Vector3d dz(0., 0., 0.001);
-      to_config.set_disp(5, dx*4);
-      to_config.set_disp(6, dx*3);
-      to_config.set_disp(26, dy*3);
-      to_config.set_disp(30, dx*1 + dy*4);
-      to_config.set_disp(31, dz*4 + dy*2);
-
-
-      DiffusionTransformation diff_trans  = m_diff_trans_config.diff_trans();
-      Configuration from_config_edited = make_config_diff_trans_free(from_config, diff_trans);
-      Configuration to_config_edited = make_config_diff_trans_free(to_config, diff_trans);
-      ConfigEnumInterpolation e(from_config_edited, to_config_edited, n_images);
-      // from_config.write_pos(std::cout);
-      // to_config.write_pos(std::cout);
-      // from_config_edited.write_pos(std::cout);
-      // to_config_edited.write_pos(std::cout);
+    ///
+    /// \param _diff_trans_config abcdcd
+    /// \param n_images number of images excluding end points
+    DiffTransConfigInterpolation::DiffTransConfigInterpolation(
+      const DiffTransConfiguration &_diff_trans_config,
+      const int n_images):
+      RandomAccessEnumeratorBase<Configuration>(n_images+2),
+      m_current(_diff_trans_config.from_config()),
+      m_diff_trans_config(_diff_trans_config) {
       
-      Index i = 0;
-      for(const auto &tconfig : e) {
-        Configuration con = tconfig;
-        Configuration con2 = e[i];
-        con2.write_pos(std::cout);
-        // con.write_pos(std::cout);
-        Configuration::displacement_matrix_t config_disp = con.displacement();
-        std::cout << i << "\n";
-        std::cout << config_disp << "\n";
-        ++i;
-      }
+      Configuration from_config = m_diff_trans_config.from_config();
+      // set displacements from the properties.
+      jsonParser json = from_config.calc_properties();
+      // std::vector<std::vector<double>> deform = json["relaxed_deformation"];
+      // Eigen::Matrix3d deform = json["relaxed_deformation"];
+      // from_config.set_deformation(deform);
+      // from_config.set_displacement(json["relaxed_displacement"]);
+
+      Configuration to_config = get_relaxed_to_config(m_diff_trans_config);
+      DiffusionTransformation diff_trans  = m_diff_trans_config.diff_trans();
+      Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
+      m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
+                                                                            to_config_mutated, n_images+2); // +2 for end states
+      
+      // Index i = 0;
+      // for(const auto &tconfig : *m_config_enum_interpol) {
+      //   Configuration con = tconfig;
+      //   // con.write_pos(std::cout);
+      //   Configuration::displacement_matrix_t config_disp = con.displacement();
+      //   std::cout << "Image #:" << i << "\n";
+      //   std::cout << config_disp << "\n";
+      //   ++i;
+      // }
+
+      this->_initialize(&m_current);
+      m_current.set_source(this->source(step()));
     }
 
     const std::string DiffTransConfigInterpolation::enumerator_name = "DiffTransConfigInterpolation";
@@ -85,16 +83,53 @@ namespace CASM {
       return 0;
     }
 
-    // In namespace Kinetics 
-    Configuration make_config_diff_trans_free(const Configuration &config,
-                                              const DiffusionTransformation &diff_trans) {
+    Configuration DiffTransConfigInterpolation::prepare_to_config(const Configuration &config,
+                                                                  const DiffusionTransformation &diff_trans){
       Configuration result = config;
       for(auto traj : diff_trans.specie_traj()) {
-        Index l = config.supercell().linear_index(traj.from.uccoord);
-        result.set_occ(l, traj.from.occ);
+        Index k = config.supercell().linear_index(traj.from.uccoord);
+        Index l = config.supercell().linear_index(traj.to.uccoord);
+        result.set_occ(k, traj.from.occ);
+        Eigen::Vector3d displacement = config.disp(l);
+        const Eigen::Vector3d from_pos = config.supercell().coord(k).frac();
+        const Eigen::Vector3d to_pos = config.supercell().coord(l).frac();
+        Eigen::Vector3d ideal_pos_inc = to_pos - from_pos;
+        Eigen::Vector3d final_disp = displacement + ideal_pos_inc;
+        result.set_disp(k,final_disp);
       }
+      
       return result;
     }
-    
+
+    const Configuration *DiffTransConfigInterpolation::at_step(step_type n) {
+      Configuration result = (*m_config_enum_interpol)[n];
+      m_current.set_displacement(result.displacement());
+      return &m_current;
+    }
+
+    // In namespace Kinetics 
+    Configuration get_relaxed_to_config(const DiffTransConfiguration &dfc) {
+      Configuration to_config = dfc.to_config();
+      
+      // find the configname
+      // extract the deformations and displacemts of the cannonical config
+      // find transformation operation from cannonical to to_config
+      // apply the transformation to deformations and displacements
+      // apply the transformed deformations and displacements to the to_config
+
+      // for testing purposes
+      // include displacements & deformation
+      Eigen::Vector3d zero(0., 0., 0.);
+      Eigen::Vector3d dx(0.001, 0., 0.);
+      Eigen::Vector3d dy(0., 0.001, 0.);
+      Eigen::Vector3d dz(0., 0., 0.001);
+      to_config.set_disp(5, dx*4);
+      to_config.set_disp(6, dx*3);
+      to_config.set_disp(26, dy*3);
+      to_config.set_disp(30, dx*1 + dy*4);
+      to_config.set_disp(31, dz*4 + dy*2);
+      
+      return to_config;
+    }
   }
 }
