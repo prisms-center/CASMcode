@@ -97,14 +97,13 @@ namespace CASM {
     return bijk[0] * volume() + m_prim_grid.find(bijk.unitcell());
   }
 
-  /// \brief Return the linear index corresponding to integral coordinates
+  /// \brief Return the coordinate corresponding to linear index in the supercell
   ///
-  /// Equivalent to:
-  /// \code
-  /// uccoord(linear_index).coordinate()
-  /// \endcode
   Coordinate Supercell::coord(Index linear_index) const {
-    return uccoord(linear_index).coordinate();
+    Coordinate tcoord(m_prim_grid.coord(linear_index % volume(), SCEL));
+    tcoord.cart() += prim().basis[linear_index / volume()].cart();
+    return tcoord;
+    // return uccoord(linear_index).coordinate();
   }
 
   /// \brief Return the integral coordinates corresponding to a linear index
