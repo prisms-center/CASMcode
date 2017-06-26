@@ -49,17 +49,15 @@ BOOST_AUTO_TEST_CASE(Test1) {
   for(auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); ++it) {
     db_diff_trans.insert(*it);
   }
-  BOOST_CHECK_EQUAL(db_diff_trans.size(), 234);
+  BOOST_CHECK_EQUAL(db_diff_trans.size(), 28);
 
   db_diff_trans.commit();
-  //fs::ifstream file(primclex.dir().scel_list());
-  //std::cout << file.rdbuf() << std::endl;
 
   db_diff_trans.close();
   BOOST_CHECK_EQUAL(db_diff_trans.size(), 0);
 
   db_diff_trans.open();
-  BOOST_CHECK_EQUAL(db_diff_trans.size(), 234);
+  BOOST_CHECK_EQUAL(db_diff_trans.size(), 28);
 
 
 }

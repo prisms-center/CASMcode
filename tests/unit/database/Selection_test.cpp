@@ -62,9 +62,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(selection2.selected_size(), 0);
 
   auto &dict3 = primclex.settings().query_handler<Kinetics::PrimPeriodicDiffTransOrbit>().dict();
-  BOOST_CHECK_EQUAL(primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 234);
+  BOOST_CHECK_EQUAL(primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
   DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection3(primclex);
-  BOOST_CHECK_EQUAL(selection3.size(), 234);
+  BOOST_CHECK_EQUAL(selection3.size(), 28);
   BOOST_CHECK_EQUAL(selection3.selected_size(), 0);
 
   auto &dict4 = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>().dict();

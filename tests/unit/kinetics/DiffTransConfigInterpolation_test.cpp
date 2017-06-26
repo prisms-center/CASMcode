@@ -22,10 +22,10 @@
 using namespace CASM;
 using namespace test;
 
-BOOST_AUTO_TEST_SUITE(DiffTransConfigurationTest)
+BOOST_AUTO_TEST_SUITE(DiffTransConfigInterpolationTest)
 
 BOOST_AUTO_TEST_CASE(Test0) {
-
+  /*
   test::ZrOProj proj;
   proj.check_init();
   proj.check_composition();
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   Eigen::Vector3d dx(0.001, 0., 0.);
   Eigen::Vector3d dy(0., 0.001, 0.);
   Eigen::Vector3d dz(0., 0., 0.001);
-  
+
   Eigen::Matrix3d dF1;
   dF1 << 0.01, 0.01, 0.0,
     0.0, -0.01, 0.0,
@@ -97,14 +97,14 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   Kinetics::DiffTransConfigInterpolation dtc_interpol(dtc,4);
   // int temp = dtc_inter.run("abc",4,dtc);
-  
+
   config.write_pos(std::cout);
   config_prim.write_pos(std::cout);
   // Configuration::displacement_matrix_t config_disp = config.displacement();
   // std::cout << config_disp << "\n";
   // Configuration::displacement_matrix_t to_config_disp = to_config.displacement();
   // std::cout << to_config_disp << "\n";
-
+  */
 }
 
 BOOST_AUTO_TEST_SUITE_END()

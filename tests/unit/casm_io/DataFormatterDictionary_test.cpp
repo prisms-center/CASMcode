@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   std::stringstream ss2;
   ss2 << formatter2(selection2.all().begin(), selection2.all().end()) << std::endl;
 
-  BOOST_CHECK_EQUAL(primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 234);
+  BOOST_CHECK_EQUAL(primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
   primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().commit();
   DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection3(primclex, "ALL");
 

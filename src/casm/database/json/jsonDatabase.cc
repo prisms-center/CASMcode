@@ -439,12 +439,8 @@ namespace CASM {
         throw std::runtime_error(
           std::string("Error invalid format: ") + dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>().string());
       }
-      const auto end = json["protoypes"].end();
+      auto end = json["prototypes"].end();
       for(auto it = json["prototypes"].begin(); it != end; ++it) {
-        //Hacky way to break out of broken iterator loop
-        if(it->size() == 1) {
-          break;
-        }
         Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(*it, primclex().prim());
         Kinetics::PrimPeriodicDiffTransSymCompare symcompare(primclex().crystallography_tol());
         auto result = m_orbit_list.emplace(trans, primclex().prim().factor_group(), symcompare);
@@ -476,6 +472,7 @@ namespace CASM {
         json.put_obj();
       }
       json["version"] = traits<jsonDB>::version;
+      json["prototypes"].put_obj();
       for(const auto &orbit : m_orbit_list) {
         to_json(orbit.prototype(), json["prototypes"][orbit.id()]);
       }

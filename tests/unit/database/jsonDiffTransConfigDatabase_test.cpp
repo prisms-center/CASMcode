@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_SUITE(DiffTransConfigDatabase_Test)
 
 BOOST_AUTO_TEST_CASE(Test1) {
   /// THIS TEST IS JUST A TEMPLATE NEEDS TO BE FULLY FILLED OUT
-  test::FCCTernaryProj proj;
+  /*test::FCCTernaryProj proj;
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   const Supercell &scel = *tscel.insert().first;
   //construct an arbitrary DiffTransConfiguration here
   Configuration config(scel, jsonParser(), ConfigDoF({0, 0, 0, 0}));
-  //DiffusionTransformation diff_trans;
+  DiffusionTransformation diff_trans;
   Kinetics::DiffTransConfiguration diff_trans_config(config, diff_trans);
   auto res = db_diff_trans_config.insert(diff_trans_config);
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 1);
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     for(; next != end; ++it, ++next) {
       BOOST_CHECK_EQUAL(*it < *next, true);
     }
-  }
+  }*/
 }
 
 BOOST_AUTO_TEST_SUITE_END()
