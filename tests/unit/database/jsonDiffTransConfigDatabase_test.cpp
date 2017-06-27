@@ -17,6 +17,9 @@
 #include "casm/casm_io/stream_io/container.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/app/AppIO_impl.hh"
+#include "Common.hh"
 
 
 using namespace CASM;
@@ -25,7 +28,7 @@ BOOST_AUTO_TEST_SUITE(DiffTransConfigDatabase_Test)
 
 BOOST_AUTO_TEST_CASE(Test1) {
   /// THIS TEST IS JUST A TEMPLATE NEEDS TO BE FULLY FILLED OUT
-  /*test::FCCTernaryProj proj;
+  test::FCCTernaryProj proj;
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
@@ -34,6 +37,30 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
 
   DB::jsonDatabase<Kinetics::DiffTransConfiguration> db_diff_trans_config(primclex);
+
+  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  jsonParser bspecs {bspecs_path};
+
+  fs::path diffperturb_path = "tests/unit/kinetics/diff_perturb.json";
+  jsonParser diff_perturb_json {diffperturb_path};
+
+  // Make PrimPeriodicIntegralClusterOrbit
+  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+  make_prim_periodic_orbits(
+    primclex.prim(),
+    bspecs,
+    alloy_sites_filter,
+    primclex.crystallography_tol(),
+    std::back_inserter(orbits),
+    primclex.log());
+  // Make PrimPeriodicDiffTransOrbit
+  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
+  Kinetics::make_prim_periodic_diff_trans_orbits(
+    orbits.begin() + 2,
+    orbits.begin() + 4,
+    primclex.crystallography_tol(),
+    std::back_inserter(diff_trans_orbits));
+
 
   db_diff_trans_config.open();
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
@@ -47,6 +74,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   const Supercell &scel = *tscel.insert().first;
   //construct an arbitrary DiffTransConfiguration here
   Configuration config(scel, jsonParser(), ConfigDoF({0, 0, 0, 0}));
+  /*
   DiffusionTransformation diff_trans;
   Kinetics::DiffTransConfiguration diff_trans_config(config, diff_trans);
   auto res = db_diff_trans_config.insert(diff_trans_config);
@@ -55,14 +83,14 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   db_diff_trans_config.erase(res.first);
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
-
-  DiffTransConfigEnumPerturbations enum_diff_trans_config(dtorbit, config, local_bspecs);
+  */
+  Kinetics::DiffTransConfigEnumPerturbations enum_diff_trans_config(config, diff_trans_orbits[0], diff_perturb_json["local_bspecs"]);
   for(const auto &diff_trans_config : enum_diff_trans_config) {
     db_diff_trans_config.insert(diff_trans_config);
   }
   db_diff_trans_config.commit();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
-  BOOST_CHECK_EQUAL(db_diff_trans_config.begin()->id(), "1");
+  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 56);
+  /*
   for(const auto &diff_trans_config : db_diff_trans_config) {
     //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
     BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), false);
@@ -70,7 +98,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), true);
   }
   db_diff_trans_config.commit();
-
+  */
   {
     auto next = db_diff_trans_config.begin();
     auto it = next++;
@@ -84,12 +112,11 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
 
   db_diff_trans_config.open();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
-  BOOST_CHECK_EQUAL(db_diff_trans_config.begin()->id(), "1");
-  for(const auto &diff_trans_config : db_diff_trans_config) {
+  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 56);
+  /*for(const auto &diff_trans_config : db_diff_trans_config) {
     //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
     BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), true);
-  }
+  }*/
   {
     auto next = db_diff_trans_config.begin();
     auto it = next++;
@@ -97,7 +124,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     for(; next != end; ++it, ++next) {
       BOOST_CHECK_EQUAL(*it < *next, true);
     }
-  }*/
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
