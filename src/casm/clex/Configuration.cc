@@ -20,6 +20,7 @@
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/database/DiffTransConfigDatabase.hh"
 
 namespace CASM {
 
@@ -304,20 +305,49 @@ namespace CASM {
     return cache()["is_canonical"].get<bool>();
   }
 
+  /// \brief Check if Configuration is an endpoint of an existing diff_trans_config
+  bool Configuration::is_diff_trans_endpoint() const {
+    auto it = primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).begin();
+    for(; it != primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).end(); ++it) {
+      if(is_equivalent(it->from_config()) || is_equivalent(it->to_config())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// \brief tells which diff_trans this configuration is an endpoint of
+  std::string Configuration::diff_trans_endpoint_of() const {
+    std::set<std::string> collection;
+    auto it = primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).begin();
+    for(; it != primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).end(); ++it) {
+      if(is_equivalent(it->from_config()) || is_equivalent(it->to_config())) {
+        collection.insert(it->orbit_name());
+      }
+    }
+    std::string result = "none";
+    if(collection.size()) {
+      result = "";
+    }
+    for(auto &n : collection) {
+      result += n + ", ";
+    }
+    return result;
+  }
   //*******************************************************************************
 
   /// \brief Returns the operation that applied to *this returns the canonical form
   PermuteIterator Configuration::to_canonical() const {
-    if(!cache().contains("to_canonical")) {
-      ConfigCompare f(*this, crystallography_tol());
-      const Supercell &scel = supercell();
-      auto result = std::max_element(scel.permute_begin(), scel.permute_end(), f);
-      cache_insert("to_canonical", result);
-      return result;
-    }
+    //if(!cache().contains("to_canonical")) {
+    ConfigCompare f(*this, crystallography_tol());
+    const Supercell &scel = supercell();
+    auto result = std::max_element(scel.permute_begin(), scel.permute_end(), f);
+    cache_insert("to_canonical", result);
+    return result;
+    /*}
     else {
       return cache()["to_canonical"].get<PermuteIterator>(supercell());
-    }
+    }*/
   }
 
   //*******************************************************************************
@@ -1170,9 +1200,19 @@ namespace CASM {
     return _config.is_primitive();
   }
 
-  /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
+  /// \brief returns true if no symmetry transformation applied to _config will increase its lexicographic order
   bool is_canonical(const Configuration &_config) {
     return _config.is_canonical();
+  }
+
+  /// \brief returns true if _config is an endpoint of an existing diff_trans_config in the database
+  bool is_diff_trans_endpoint(const Configuration &_config) {
+    return _config.is_diff_trans_endpoint();
+  }
+
+  /// \brief returns which diff_trans _config is an endpoint of
+  std::string diff_trans_endpoint_of(const Configuration &_config) {
+    return _config.diff_trans_endpoint_of();
   }
 
   bool has_relaxed_energy(const Configuration &_config) {

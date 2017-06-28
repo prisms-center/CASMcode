@@ -34,15 +34,17 @@ namespace CASM {
       PermuteIterator it = from_config.from_canonical();
       from_config = from_config.canonical_form();
       // set displacements from the properties.
-      auto from_calc_tuple = read_calc_properties(from_config);
-      if(!std::get<2>(from_calc_tuple)) {
+      bool has_data, is_complete_data;
+      jsonParser myjson;
+      std::tie(myjson, has_data, is_complete_data) = read_calc_properties(from_config);
+      if(!is_complete_data) {
         std::cerr << "Incomplete calculation data for from config!" << std::endl;
       }
       //deformations and displacements are set up on canonical configurations
       Eigen::Matrix3d deform;
       Eigen::MatrixXd disp;
-      std::get<0>(from_calc_tuple).get_if(deform, "relaxed_deformation");
-      std::get<0>(from_calc_tuple).get_if(disp, "relaxed_displacement");
+      myjson.get_if(deform, "relaxed_deformation");
+      myjson.get_if(disp, "relaxed_displacement");
       from_config.set_deformation(deform);
       from_config.set_displacement(disp);
       //return from config to reference frame of the canonical diff_trans_config

@@ -405,7 +405,7 @@ namespace CASM {
   Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, Index trans_index) const {
     return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
                                   m_prim_grid,
-                                  fg_index, trans_index); // one past final indices
+                                  fg_index, trans_index);
   }
 
   bool Supercell::operator<(const Supercell &B) const {
