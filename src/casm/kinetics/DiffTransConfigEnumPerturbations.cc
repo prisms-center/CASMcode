@@ -52,7 +52,6 @@ namespace CASM {
     ) :
       m_background_config(background_config), m_diff_trans_orbit(diff_trans_orbit),
       m_local_bspecs(local_bspecs), m_base_config(background_config, diff_trans_orbit.prototype()) {
-
       //Enumerate unique diffusion transformation set for this background config
       _init_unique_difftrans();
 
@@ -66,16 +65,14 @@ namespace CASM {
       _init_perturbations();
 
       if(!m_perturbations.size()) {
-        _invalidate();
-      }
-
-      //Set current DiffTransConfiguration
-      _set_current();
-
-      if(false) {
         increment();
       }
-      else {
+      //Set current DiffTransConfiguration
+      _set_current();
+      while(!m_current->is_valid_neb() && m_unique_difftrans_it != m_unique_difftrans.end()) {
+        increment();
+      }
+      if(m_current->is_valid_neb()) {
         this-> _initialize(&(*m_current));
         _set_step(0);
       }
@@ -126,7 +123,7 @@ namespace CASM {
     void DiffTransConfigEnumPerturbations::increment() {
       if(m_perturb_it == m_perturbations.end()) {
         _increment_base_config();
-        if(!this->valid()) {
+        if(m_unique_difftrans_it == m_unique_difftrans.end()) {
           return;
         }
         _init_perturbations();
@@ -202,7 +199,7 @@ namespace CASM {
           if(has_local_bubble_overlap(local_orbits, bg_config.supercell())) {
             log << "WARNING!!! CHOICE OF BACKGROUND CONFIGURATION " << configname <<
                 "\nRESULTS IN AN OVERLAP IN THE LOCAL CLUSTERS OF " << orbitname <<
-                "\nWITH ITS PERIODIC IMAGES. CONSIDER CHOOSING SMALLER LOCAL CLUSTERS OR\n" <<
+                "\nWITH ITS PERIODIC IMAGES. CONSIDER CHOOSING \n" <<
                 "A LARGER BACKGROUND CONFIGURATION." << std::endl;
           }
           DiffTransConfigEnumPerturbations enumerator(bg_config, dtorbit, local_bspecs);
@@ -251,13 +248,13 @@ namespace CASM {
 
     ///sets the first m_base_config as the orbit prototype placed in m_background_config
     void DiffTransConfigEnumPerturbations::_init_base_config() {
+      std::set<Index> unique_indeces;
       ScelPeriodicDiffTransSymCompare symcompare(m_background_config.supercell().prim_grid(),
                                                  m_background_config.supercell().crystallography_tol());
       DiffusionTransformation prepped = symcompare.prepare(*(m_unique_difftrans.begin()));
       Configuration bg_config = make_attachable(prepped, m_background_config);
       DiffTransConfiguration tmp(bg_config, prepped);
-      DiffTransConfiguration tmp2 = tmp.canonical_form();
-      m_base_config = tmp.canonical_form();
+      m_base_config = tmp;
       ++m_unique_difftrans_it;
       m_current = notstd::make_cloneable<DiffTransConfiguration>(m_base_config);
       return;
@@ -329,6 +326,16 @@ namespace CASM {
       /// apply_perturbation(perturb,m_base_dtc);
       Configuration tmp {m_base_config.from_config()};
       for(const auto &occ_trans : *m_perturb_it) {
+        //Need to make sure perturbations doesn't attempt to alter any sites of the hop
+        std::set<Index> unique_indeces;
+        for(auto &traj : m_base_config.diff_trans().specie_traj()) {
+          unique_indeces.insert(tmp.supercell().linear_index(traj.from.uccoord));
+        }
+        if(unique_indeces.find(tmp.supercell().linear_index(occ_trans.uccoord)) != unique_indeces.end()) {
+          ++m_perturb_it;
+          increment();
+          return;
+        }
         occ_trans.apply_to(tmp);
       }
       DiffTransConfiguration ret_dtc(tmp, m_base_config.diff_trans());
@@ -345,7 +352,12 @@ namespace CASM {
         DiffusionTransformation prepped = symcompare.prepare(*m_unique_difftrans_it);
         Configuration bg_config = make_attachable(prepped, m_background_config);
         DiffTransConfiguration tmp(bg_config, prepped);
-        m_base_config = tmp.canonical_form();
+        if(!tmp.is_valid_neb()) {
+          ++m_unique_difftrans_it;
+          _increment_base_config();
+          return;
+        }
+        m_base_config = tmp;
         ++m_unique_difftrans_it;
       }
       else {

@@ -98,6 +98,10 @@ namespace CASM {
       std::string orbit_name() const {
         return m_orbit_name;
       }
+
+      /// States whether the diffusion transformation is possible with the given Configuration
+      bool is_valid_neb() const;
+
     private:
 
       bool _lt(const DiffTransConfiguration &B) const {

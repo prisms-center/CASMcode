@@ -321,6 +321,55 @@ BOOST_AUTO_TEST_CASE(Test0) {
                                  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0
                                 });
 
+
+    //FCC TESTING PROCEDURE
+    test::FCCTernary fccproj;
+    fccproj.check_init();
+    fccproj.check_composition();
+
+    Logging fcclogging = Logging::null();
+    PrimClex fccprimclex(fccproj.dir, fcclogging);
+    const Structure &fccprim = fccprimclex.prim();
+    const Lattice &fcclat = fccprim.lattice();
+
+    fs::path fccbspecs_path = "tests/unit/kinetics/bspecs_0.json";
+    jsonParser fccbspecs {fccbspecs_path};
+
+    // Make PrimPeriodicIntegralClusterOrbit
+    std::vector<PrimPeriodicIntegralClusterOrbit> fccorbits;
+    make_prim_periodic_orbits(
+      fccprimclex.prim(),
+      fccbspecs,
+      alloy_sites_filter,
+      fccprimclex.crystallography_tol(),
+      std::back_inserter(fccorbits),
+      fccprimclex.log());
+
+    // Make PrimPeriodicDiffTransOrbit
+    std::vector<Kinetics::PrimPeriodicDiffTransOrbit> fccdiff_trans_orbits;
+    Kinetics::make_prim_periodic_diff_trans_orbits(
+      fccorbits.begin() + 2,
+      fccorbits.begin() + 4,
+      fccprimclex.crystallography_tol(),
+      std::back_inserter(fccdiff_trans_orbits));
+
+    Kinetics::DiffusionTransformation fccdiff_trans_prototype = fccdiff_trans_orbits[0].prototype();
+    Eigen::Vector3d a1, b1, c1;
+    std::tie(a1, b1, c1) = fccprimclex.prim().lattice().vectors();
+    Supercell fccscel {&fccprimclex, Lattice(2 * a1, 2 * b1, 2 * c1)};
+    Configuration l12config(scel);
+    l12config.init_occupation();
+    l12config.init_displacement();
+    l12config.init_deformation();
+    l12config.init_specie_id();
+    l12config.set_occupation({0, 0, 0, 1, 0, 1, 0, 0});
+
+    //In this config there should be 2 options to place the nearest neighbor hop
+    // one toward the majority L12 atom and one towards minority L12 atom
+    //given a cutoff radius of 5 angstroms and only looking at local point and pair clusters
+    //There are the following unique perturbations:
+
+
     Kinetics::DiffTransConfigEnumPerturbations enumerator(config_scel2, diff_trans_orbits[0], local_bspecs);
 
   }

@@ -170,6 +170,15 @@ namespace CASM {
       set_orbit_name(json["orbit_name"].get<std::string>());
     }
 
+    bool DiffTransConfiguration::is_valid_neb() const {
+      std::set<Index> unique_indeces;
+      for(auto &traj : diff_trans().specie_traj()) {
+        Index l = from_config().supercell().linear_index(traj.from.uccoord);
+        unique_indeces.insert(l);
+      }
+      return (diff_trans().specie_traj().size() == unique_indeces.size());
+    }
+
 
     /// \brief prints this DiffTransConfiguration
     std::ostream &operator<<(std::ostream &sout, const DiffTransConfiguration &dtc) {
