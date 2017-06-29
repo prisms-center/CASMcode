@@ -22,6 +22,14 @@ extern "C" {
     return new CASM::EnumInterface<CASM::Kinetics::DiffTransConfigEnumPerturbations>();
   }
 }
+namespace {
+  class tmpBuff : public std::streambuf {
+  public:
+    int overflow(int c) {
+      return c;
+    }
+  };
+}
 
 namespace CASM {
 
@@ -188,6 +196,9 @@ namespace CASM {
           PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
           /// check if configuration is big enough for local bspecs here
           /// give warning if not
+
+          tmpBuff streambuff;
+          std::ostream dead(&streambuff);
           std::vector<LocalIntegralClusterOrbit> local_orbits;
           make_local_orbits(
             dtorbit.prototype(),
@@ -195,7 +206,7 @@ namespace CASM {
             alloy_sites_filter,
             primclex.crystallography_tol(),
             std::back_inserter(local_orbits),
-            log);
+            dead);
           if(has_local_bubble_overlap(local_orbits, bg_config.supercell())) {
             log << "WARNING!!! CHOICE OF BACKGROUND CONFIGURATION " << configname <<
                 "\nRESULTS IN AN OVERLAP IN THE LOCAL CLUSTERS OF " << orbitname <<
@@ -281,13 +292,15 @@ namespace CASM {
                                                                m_base_config.from_config().primclex().crystallography_tol());
       SymGroup generating_group = make_invariant_subgroup(m_base_config.diff_trans(), scel_grp, dt_sym_compare);
       std::vector<LocalIntegralClusterOrbit> local_orbits;
+      tmpBuff streambuff;
+      std::ostream dead(&streambuff);
       make_local_orbits(
         m_base_config.diff_trans(),
         m_local_bspecs,
         alloy_sites_filter,
         m_base_config.from_config().primclex().crystallography_tol(),
         std::back_inserter(local_orbits),
-        m_base_config.from_config().primclex().log(),
+        dead,
         generating_group);
 
       for(const auto &orbit : local_orbits) {
