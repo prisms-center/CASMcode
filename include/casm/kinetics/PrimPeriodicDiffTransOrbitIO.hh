@@ -41,6 +41,16 @@ namespace CASM {
       /// \brief Expects 'contains("Specie1","Specie2",...)'
       bool parse_args(const std::string &args) override;
 
+      /// \brief Short header returns: 'is_diff_trans_endpoint_of(diff_trans_name)', etc.
+      std::string short_header(const PrimPeriodicDiffTransOrbit &_tmplt) const override {
+        std::string big_string = m_search_list[0];
+        auto it = m_search_list.begin();
+        it++;
+        for(; it != m_search_list.end(); ++it) {
+          big_string += ("," + *it);
+        }
+        return "contains(" + big_string + ")";
+      }
     private:
       /// \brief Clone using copy constructor
       Contains *_clone() const override {

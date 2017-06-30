@@ -383,10 +383,8 @@ BOOST_AUTO_TEST_CASE(Test0) {
     collection.insert(enumerator.begin(), enumerator.end());
     std::cout << collection.size() << std::endl;
     for(auto &dtc : collection) {
-      //std::cout << "Is valid neb?" << dtc.is_valid_neb() << std::endl;
-      //std::cout << "Has valid from_occ?" << dtc.has_valid_from_occ() << std::endl;
-      //std::cout << "From config"<< dtc.sorted().from_config() << std::endl;
-      //std::cout << "To config " << dtc.sorted().to_config() << std::endl;
+      std::cout << "From config" << dtc.sorted().from_config() << std::endl;
+      std::cout << "To config " << dtc.sorted().to_config() << std::endl;
     }
   }
 

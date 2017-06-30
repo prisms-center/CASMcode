@@ -24,7 +24,7 @@ namespace CASM {
     const std::string Contains::Name = "contains";
 
     const std::string Contains::Desc =
-      "Checks to see if any of the listed species are in the prototype"
+      "Checks to see if all of the listed species are in the prototype"
       "of the orbit"
       "Requires an argument which is a string of the form:"
       "contains(species1,species2,...)";
@@ -33,14 +33,17 @@ namespace CASM {
     ///  of the orbit
     bool Contains::evaluate(const Kinetics::PrimPeriodicDiffTransOrbit &orbit) const {
       auto speciemap = orbit.prototype().specie_count();
-      for(auto it = this->m_search_list.begin(); it != this->m_search_list.end(); it++) {
-        for(auto it2 = speciemap.begin(); it2 != speciemap.end(); it2++) {
-          if(it2->first.name == *it && it2->second == 0) {
-            return false;
+      bool ret_val = true;
+      for(auto it = m_search_list.begin(); it != m_search_list.end(); ++it) {
+        bool tmp = false;
+        for(auto it2 = speciemap.begin(); it2 != speciemap.end(); ++it2) {
+          if(it2->first.name == *it && it2->second != 0) {
+            tmp = true;
           }
         }
+        ret_val = (ret_val && tmp);
       }
-      return true;
+      return ret_val;
     };
 
     /// \brief Expects 'contains("Specie1","Specie2",...)'
