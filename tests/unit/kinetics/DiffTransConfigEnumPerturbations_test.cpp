@@ -323,7 +323,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
 
     //FCC TESTING PROCEDURE
-    test::FCCTernary fccproj;
+    test::FCCTernaryProj fccproj;
     fccproj.check_init();
     fccproj.check_composition();
 
@@ -357,21 +357,32 @@ BOOST_AUTO_TEST_CASE(Test0) {
     Eigen::Vector3d a1, b1, c1;
     std::tie(a1, b1, c1) = fccprimclex.prim().lattice().vectors();
     Supercell fccscel {&fccprimclex, Lattice(2 * a1, 2 * b1, 2 * c1)};
-    Configuration l12config(scel);
+    Configuration l12config(fccscel);
     l12config.init_occupation();
     l12config.init_displacement();
     l12config.init_deformation();
     l12config.init_specie_id();
     l12config.set_occupation({0, 0, 0, 1, 0, 1, 0, 0});
 
+    fs::path l12_local_bspecs_path = "tests/unit/kinetics/l12_local_bspecs_0.json";
+    jsonParser l12_local_bspecs {l12_local_bspecs_path};
+
     //In this config there should be 2 options to place the nearest neighbor hop
     // one toward the majority L12 atom and one towards minority L12 atom
     //given a cutoff radius of 5 angstroms and only looking at local point and pair clusters
     //There are the following unique perturbations:
+    // Hop towards minority L12 surround 5 angst radius with Majority L12
+    // Hop towards minority L12 surround 5 angst radius with Minority L12
+    // Hop towards minority L12 1/3 of sites around hop with Minority L12 on multiplicity 2 site
+    // Hop towards minority L12 1/3 of sites around hop with Minority L12 on one multiplicity 4 site
+    // Hop towards minority L12 2/3 of sites around hop with Minority L12 on multiplicity 4 sites
+    // Hop towards minority L12 2/3 of sites around hop with Minority L12 on one multiplicity 2 site and one multiplicity 4 site
+    //Due to high incidence of periodicity the other orientation of the hop results in the same DiffTransConfigs
 
-
-    Kinetics::DiffTransConfigEnumPerturbations enumerator(config_scel2, diff_trans_orbits[0], local_bspecs);
-
+    std::set<Kinetics::DiffTransConfiguration> collection;
+    Kinetics::DiffTransConfigEnumPerturbations enumerator(l12config, fccdiff_trans_orbits[0], l12_local_bspecs);
+    collection.insert(enumerator.begin(), enumerator.end());
+    std::cout << collection.size() << std::endl;
   }
 
   // DiffusionTransformation tests
@@ -384,7 +395,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     //test_1(config, prim_config, diff_trans_orbits, scel_generators, orbit_index, scel_suborbit_size);
     //test_2(prim_config, diff_trans_orbits, scel_generators, config_generators, orbit_index, scel_suborbit_size);
     //test_3(prim_config, diff_trans_orbits, config_generators);
-    // test_4(config, diff_trans_orbits);
+    //test_4(config, diff_trans_orbits);
   }
 
   BOOST_AUTO_TEST_SUITE_END();
