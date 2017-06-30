@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
       fccprimclex.crystallography_tol(),
       std::back_inserter(fccdiff_trans_orbits));
 
-    Kinetics::DiffusionTransformation fccdiff_trans_prototype = fccdiff_trans_orbits[0].prototype();
+    Kinetics::DiffusionTransformation fccdiff_trans_prototype = fccdiff_trans_orbits[4].prototype();
     Eigen::Vector3d a1, b1, c1;
     std::tie(a1, b1, c1) = fccprimclex.prim().lattice().vectors();
     Supercell fccscel {&fccprimclex, Lattice(2 * a1, 2 * b1, 2 * c1)};
@@ -362,15 +362,14 @@ BOOST_AUTO_TEST_CASE(Test0) {
     l12config.init_displacement();
     l12config.init_deformation();
     l12config.init_specie_id();
-    l12config.set_occupation({0, 0, 0, 1, 0, 1, 0, 0});
-
+    l12config.set_occupation({0, 0, 0, 1, 1, 0, 0, 0});
     fs::path l12_local_bspecs_path = "tests/unit/kinetics/l12_local_bspecs_0.json";
     jsonParser l12_local_bspecs {l12_local_bspecs_path};
 
     //In this config there should be 2 options to place the nearest neighbor hop
     // one toward the majority L12 atom and one towards minority L12 atom
     //given a cutoff radius of 5 angstroms and only looking at local point and pair clusters
-    //There are the following unique perturbations:
+    //There are the following unique perturbations: (This project still has 3 possible occupants)
     // Hop towards minority L12 surround 5 angst radius with Majority L12
     // Hop towards minority L12 surround 5 angst radius with Minority L12
     // Hop towards minority L12 1/3 of sites around hop with Minority L12 on multiplicity 2 site
@@ -380,9 +379,15 @@ BOOST_AUTO_TEST_CASE(Test0) {
     //Due to high incidence of periodicity the other orientation of the hop results in the same DiffTransConfigs
 
     std::set<Kinetics::DiffTransConfiguration> collection;
-    Kinetics::DiffTransConfigEnumPerturbations enumerator(l12config, fccdiff_trans_orbits[0], l12_local_bspecs);
+    Kinetics::DiffTransConfigEnumPerturbations enumerator(l12config, fccdiff_trans_orbits[4], l12_local_bspecs);
     collection.insert(enumerator.begin(), enumerator.end());
     std::cout << collection.size() << std::endl;
+    for(auto &dtc : collection) {
+      //std::cout << "Is valid neb?" << dtc.is_valid_neb() << std::endl;
+      //std::cout << "Has valid from_occ?" << dtc.has_valid_from_occ() << std::endl;
+      //std::cout << "From config"<< dtc.sorted().from_config() << std::endl;
+      //std::cout << "To config " << dtc.sorted().to_config() << std::endl;
+    }
   }
 
   // DiffusionTransformation tests

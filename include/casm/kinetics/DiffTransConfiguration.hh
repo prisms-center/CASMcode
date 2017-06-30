@@ -102,6 +102,9 @@ namespace CASM {
       /// States whether the diffusion transformation is possible with the given Configuration
       bool is_valid_neb() const;
 
+      /// States whether the from specie locations in the diff_trans match the from_config
+      bool has_valid_from_occ() const;
+
     private:
 
       bool _lt(const DiffTransConfiguration &B) const {

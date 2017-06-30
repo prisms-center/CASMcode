@@ -73,7 +73,6 @@ namespace CASM {
       for(auto it = m_from_config.supercell().permute_begin();
           it != m_from_config.supercell().permute_end(); ++it) {
         DiffusionTransformation tmp = symcompare.prepare(copy_apply(it.sym_op(), m_diff_trans));
-
         if(tmp == greatest) {
           checklist.push_back(it);
         }
@@ -87,15 +86,15 @@ namespace CASM {
       // of these operations check which one maximizes
       // the result of applying to m_from_config
       auto it = checklist.begin();
-      DiffTransConfiguration max_dtc(copy_apply(*it, sorted().from_config()), greatest);
+      DiffTransConfiguration max_dtc(copy_apply(*it, from_config()), greatest);
       PermuteIterator canon_op_it {*it};
       ++it;
       for(; it != checklist.end(); ++it) {
 
-        Configuration tmp = copy_apply(*it, sorted().from_config());
+        Configuration tmp = copy_apply(*it, from_config());
 
         DiffTransConfiguration dtc_tmp(tmp, greatest);
-        if(dtc_tmp.sorted() >= max_dtc) {
+        if((dtc_tmp >= max_dtc || !max_dtc.has_valid_from_occ()) && dtc_tmp.has_valid_from_occ()) {
           max_dtc = dtc_tmp.sorted();
           canon_op_it = *it;
         }
@@ -112,7 +111,7 @@ namespace CASM {
       return std::all_of(m_from_config.supercell().permute_begin(),
                          m_from_config.supercell().permute_end(),
       [&](const PermuteIterator & p) {
-        return copy_apply(p, *this) <= *this;
+        return (copy_apply(p, *this) <= *this);
       });
     }
 
@@ -177,6 +176,21 @@ namespace CASM {
         unique_indeces.insert(l);
       }
       return (diff_trans().specie_traj().size() == unique_indeces.size());
+    }
+
+    bool DiffTransConfiguration::has_valid_from_occ() const {
+      ScelPeriodicDiffTransSymCompare symcompare(from_config().supercell().prim_grid(),
+                                                 from_config().supercell().crystallography_tol());
+      if(diff_trans() != symcompare.prepare(diff_trans())) {
+        std::cerr << "Diffusion Transformation is not based in this Configuration's supercell!" << std::endl;
+      }
+      for(auto traj : diff_trans().specie_traj()) {
+        Index l = from_config().supercell().linear_index(traj.from.uccoord);
+        if(from_config().occ(l) != traj.from.occ) {
+          return false;
+        }
+      }
+      return true;
     }
 
 
