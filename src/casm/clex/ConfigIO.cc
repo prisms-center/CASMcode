@@ -234,7 +234,7 @@ namespace CASM {
       }
       else {
         std::stringstream ss;
-        ss << "Too many arguments for 'clex'.  Received: " << args << "\n";
+        ss << "Too many arguments for 'corr'.  Received: " << args << "\n";
         throw std::runtime_error(ss.str());
       }
       return true;

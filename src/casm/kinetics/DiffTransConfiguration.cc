@@ -3,6 +3,10 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/clex/Clexulator.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/clex/NeighborList.hh"
 
 namespace CASM {
 
@@ -221,6 +225,16 @@ namespace CASM {
         }
       }
       return result;
+    }
+
+
+    /// \brief Returns correlations using 'clexulator'.
+    Eigen::VectorXd correlations(const DiffTransConfiguration &dtc, Clexulator &clexulator) {
+      Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
+
+      //do work here
+
+      return correlations;
     }
 
   }

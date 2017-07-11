@@ -139,6 +139,8 @@ namespace CASM {
     /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
     Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
 
+    /// \brief Returns correlations using 'clexulator'.
+    Eigen::VectorXd correlations(const DiffTransConfiguration &dtc, Clexulator &clexulator);
 
 
   }
