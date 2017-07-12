@@ -7,6 +7,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/database/ConfigDatabase.hh"
 
 namespace CASM {
 
@@ -197,6 +198,38 @@ namespace CASM {
       return true;
     }
 
+
+    /// The name of the canonical form of the from config
+    std::string DiffTransConfiguration::from_configname() const {
+      auto it = primclex().db<Configuration>().scel_range(from_config().supercell().name()).begin();
+      for(; it != primclex().db<Configuration>().scel_range(from_config().supercell().name()).end(); ++it) {
+        if(it->is_equivalent(from_config())) {
+          return it->name();
+        }
+      }
+      return "not_in_project";
+    }
+
+    /// The name of the canonical form of the to config
+    std::string DiffTransConfiguration::to_configname() const {
+      auto it = primclex().db<Configuration>().scel_range(from_config().supercell().name()).begin();
+      for(; it != primclex().db<Configuration>().scel_range(from_config().supercell().name()).end(); ++it) {
+        if(it->is_equivalent(to_config())) {
+          return it->name();
+        }
+      }
+      return "not_in_project";
+    }
+
+    /// A permute iterator it such that from_config = copy_apply(it,from_config.canonical_form())
+    PermuteIterator DiffTransConfiguration::from_config_from_canonical() const {
+      return from_config().from_canonical();
+    }
+
+    /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
+    PermuteIterator DiffTransConfiguration::to_config_from_canonical() const {
+      return to_config().from_canonical();
+    }
 
     /// \brief prints this DiffTransConfiguration
     std::ostream &operator<<(std::ostream &sout, const DiffTransConfiguration &dtc) {

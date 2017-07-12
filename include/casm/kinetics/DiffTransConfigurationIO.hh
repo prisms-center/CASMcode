@@ -337,6 +337,10 @@ namespace CASM {
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> dtconfigname();
 
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> from_configname();
+
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> to_configname();
+
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> scelname();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> orbitname();

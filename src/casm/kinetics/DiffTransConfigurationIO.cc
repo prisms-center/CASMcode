@@ -296,6 +296,23 @@ namespace CASM {
       LocalClex *LocalClex::_clone() const {
         return new LocalClex(*this);
       }
+
+
+      GenericDiffTransConfigFormatter<std::string> from_configname() {
+        return GenericDiffTransConfigFormatter<std::string>("from_configname",
+                                                            "canonical from Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
+        [](const DiffTransConfiguration & dtconfig)->std::string {
+          return dtconfig.from_configname();
+        });
+      }
+
+      GenericDiffTransConfigFormatter<std::string> to_configname() {
+        return GenericDiffTransConfigFormatter<std::string>("to_configname",
+                                                            "canonical to Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
+        [](const DiffTransConfiguration & dtconfig)->std::string {
+          return dtconfig.to_configname();
+        });
+      }
     }
   }
 
@@ -306,7 +323,9 @@ namespace CASM {
     StringAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
 
     dict.insert(
-      name<Kinetics::DiffTransConfiguration>()
+      name<Kinetics::DiffTransConfiguration>(),
+      from_configname(),
+      to_configname()
     );
     return dict;
   }

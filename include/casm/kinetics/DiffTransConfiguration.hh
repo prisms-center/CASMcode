@@ -105,6 +105,20 @@ namespace CASM {
       /// States whether the from specie locations in the diff_trans match the from_config
       bool has_valid_from_occ() const;
 
+      /// The name of the canonical form of the from config
+      std::string from_configname() const;
+
+      /// The name of the canonical form of the to config
+      std::string to_configname() const;
+
+      /// A permute iterator it such that from_config = copy_apply(it,from_config.canonical_form())
+      PermuteIterator from_config_from_canonical() const;
+
+      /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
+      PermuteIterator to_config_from_canonical() const;
+
+
+
     private:
 
       bool _lt(const DiffTransConfiguration &B) const {
