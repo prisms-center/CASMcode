@@ -113,7 +113,7 @@ namespace CASM {
       ""
       "  Example:\n"
       "  {\n"
-      "   \"orbits\":[\"diff_trans.0\",\"diff_trans.1\"],\n"
+      "   \"orbits\":[\"diff_trans/0\",\"diff_trans/1\"],\n"
       "   \"background_configs\":[\"SCEL8_2_2_2_0_0_0/2\"],\n"
       "    \"local_bspecs\":{\n"
       "       \"basis_functions\" : {\n"
