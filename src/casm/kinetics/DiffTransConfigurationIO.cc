@@ -18,6 +18,137 @@ namespace CASM {
   namespace Kinetics {
     namespace DiffTransConfigIO {
 
+      namespace DiffTransConfigIO_impl {
+
+        /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)', etc.
+        bool MolDependent::parse_args(const std::string &args) {
+          if(args.size() > 0)
+            m_mol_names.push_back(args);
+          return true;
+        }
+
+        /// \brief Adds index rules corresponding to the parsed args
+        void MolDependent::init(const DiffTransConfiguration &_tmplt) const {
+          auto struc_molecule = _tmplt.primclex().prim().struc_molecule();
+
+          if(m_mol_names.size() == 0) {
+            for(Index i = 0; i < struc_molecule.size(); i++) {
+              _add_rule(std::vector<Index>({i}));
+              m_mol_names.push_back(struc_molecule[i].name);
+            }
+          }
+          else {
+            for(Index n = 0; n < m_mol_names.size(); n++) {
+              Index i = 0;
+              for(i = 0; i < struc_molecule.size(); i++) {
+                if(struc_molecule[i].name == m_mol_names[n]) {
+                  _add_rule(std::vector<Index>({i}));
+                  break;
+                }
+              }
+              if(i == struc_molecule.size())
+                throw std::runtime_error(std::string("Format tag: '") + name() + "(" +
+                                         m_mol_names[n] + ")' does not correspond to a viable composition.\n");
+            }
+          }
+        }
+
+        /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
+        std::vector<std::string> MolDependent::col_header(const DiffTransConfiguration &_tmplt) const {
+          std::vector<std::string> col;
+          for(Index c = 0; c < m_mol_names.size(); c++) {
+            col.push_back(name() + "(" + m_mol_names[c] + ")");
+          }
+          return col;
+        }
+      }
+
+
+
+      // --- Comp implementations -----------
+
+      const std::string Comp::Name = "comp";
+
+      const std::string Comp::Desc =
+        "Parametric composition parameters, individual label as argument. "
+        "Without argument, all values are printed. Ex: comp(a), comp(b), etc.";
+
+      /// \brief Returns the parametric composition
+      Eigen::VectorXd Comp::evaluate(const DiffTransConfiguration &dtconfig) const {
+        return comp(dtconfig.from_config());
+      }
+
+      /// \brief Returns true if the PrimClex has composition axes
+      bool Comp::validate(const DiffTransConfiguration &dtconfig) const {
+        return dtconfig.primclex().has_composition_axes();
+      }
+
+      /// \brief Expects arguments of the form 'comp(a)', 'comp(b)', etc.
+      bool Comp::parse_args(const std::string &args) {
+        if(args.size() == 1) {
+          _add_rule(std::vector<Index>({(Index)(args[0] - 'a')}));
+        }
+        else if(args.size() > 1) {
+          throw std::runtime_error(std::string("Format tag: 'comp(") + args + ") is invalid.\n");
+          return false;
+        }
+        return true;
+      }
+
+      /// \brief col_header returns: {'comp(a)', 'comp(b)', ...}
+      std::vector<std::string> Comp::col_header(const DiffTransConfiguration &_tmplt) const {
+        std::vector<std::string> col;
+        for(Index c = 0; c < _index_rules().size(); c++) {
+          col.push_back(name() + "(" + (char)('a' + _index_rules()[c][0]) + ")");
+        }
+        return col;
+      }
+
+
+      // --- CompN implementations -----------
+
+      const std::string CompN::Name = "comp_n";
+
+      const std::string CompN::Desc =
+        "Number of each species per unit cell, including vacancies. "
+        "No argument prints all available values. Ex: comp_n, comp_n(Au), comp_n(Pt), etc.";
+
+      /// \brief Returns the number of each species per unit cell
+      Eigen::VectorXd CompN::evaluate(const DiffTransConfiguration &dtconfig) const {
+        return comp_n(dtconfig.from_config());
+      }
+
+
+      // --- SiteFrac implementations -----------
+
+      const std::string SiteFrac::Name = "site_frac";
+
+      const std::string SiteFrac::Desc =
+        "Fraction of sites occupied by a species, including vacancies. "
+        "No argument prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.";
+
+      /// \brief Returns the site fraction
+      Eigen::VectorXd SiteFrac::evaluate(const DiffTransConfiguration &dtconfig) const {
+        return site_frac(dtconfig.from_config());
+      }
+
+
+      // --- AtomFrac implementations -----------
+
+      const std::string AtomFrac::Name = "atom_frac";
+
+      const std::string AtomFrac::Desc =
+        "Fraction of atoms that are a particular species, excluding vacancies.  "
+        "Without argument, all values are printed. Ex: atom_frac(Au), atom_frac(Pt), etc.";
+
+      /// \brief Returns the site fraction
+      Eigen::VectorXd AtomFrac::evaluate(const DiffTransConfiguration &dtconfig) const {
+        return species_frac(dtconfig.from_config());
+      }
+
+
+
+
       // --- LocalCorr implementations -----------
 
       const std::string LocalCorr::Name = "local_corr";
@@ -94,9 +225,8 @@ namespace CASM {
 
       const std::string LocalClex::Desc =
         "Predicted local property value."
-        " Accepts arguments ($clex_name,$norm)."
-        " ($clex_name is a cluster expansion name as listed by 'casm settings -l', default=the default clex)"
-        " ($norm is the normalization, either 'per_species', or 'per_unitcell' <--default)";
+        " Accepts arguments ($clex_name)."
+        " ($clex_name is a cluster expansion name as listed by 'casm settings -l', default=the default clex)";
 
       LocalClex::LocalClex() :
         ScalarAttribute<DiffTransConfiguration>(Name, Desc) {
@@ -202,6 +332,9 @@ namespace CASM {
 
     using namespace Kinetics::DiffTransConfigIO;
     ScalarAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
+    dict.insert(
+      LocalClex()
+    );
     return dict;
   }
 
@@ -217,6 +350,13 @@ namespace CASM {
 
     using namespace Kinetics::DiffTransConfigIO;
     VectorXdAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
+    dict.insert(
+      LocalCorr(),
+      AtomFrac(),
+      Comp(),
+      CompN(),
+      SiteFrac()
+    );
     return dict;
   }
 

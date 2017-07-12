@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     db_diff_trans_config.insert(diff_trans_config);
   }
   db_diff_trans_config.commit();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 56);
+  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
   /*
   for(const auto &diff_trans_config : db_diff_trans_config) {
     //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
 
   db_diff_trans_config.open();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 56);
+  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
   /*for(const auto &diff_trans_config : db_diff_trans_config) {
     //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
     BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), true);

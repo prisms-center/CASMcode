@@ -68,9 +68,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(selection3.selected_size(), 0);
 
   auto &dict4 = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>().dict();
-  BOOST_CHECK_EQUAL(primclex.db<Kinetics::DiffTransConfiguration>().size(), 5);
+  BOOST_CHECK_EQUAL(primclex.db<Kinetics::DiffTransConfiguration>().size(), 2);
   DB::Selection<Kinetics::DiffTransConfiguration> selection4(primclex);
-  BOOST_CHECK_EQUAL(selection4.size(), 5);
+  BOOST_CHECK_EQUAL(selection4.size(), 2);
   BOOST_CHECK_EQUAL(selection4.selected_size(), 0);
 
 }

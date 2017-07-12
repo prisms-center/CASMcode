@@ -15,45 +15,39 @@ namespace CASM {
   namespace Kinetics {
 
     namespace DiffTransConfigIO {
-      /*
-
-      THESE CLASSES NEED TO BE CORRECTED FOR LOCAL ENVIRONMENTS ONLY
 
       namespace DiffTransConfigIO_impl {
 
-      /// \brief Returns fraction of sites occupied by a species
-      ///
-      /// Fraction of sites occupied by a species, including vacancies. No argument
-      /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
-      ///
-      class MolDependent : public VectorXdAttribute<DiffTransConfiguration> {
+        /// \brief Returns fraction of sites occupied by a species
+        ///
+        /// Fraction of sites occupied by a species, including vacancies. No argument
+        /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
+        ///
+        class MolDependent : public VectorXdAttribute<DiffTransConfiguration> {
 
-      public:
+        public:
 
-        MolDependent(const std::string &_name, const std::string &_desc) :
-          VectorXdAttribute<DiffTransConfiguration>(_name, _desc) {}
+          MolDependent(const std::string &_name, const std::string &_desc) :
+            VectorXdAttribute<DiffTransConfiguration>(_name, _desc) {}
 
 
-        // --- Specialized implementation -----------
+          // --- Specialized implementation -----------
 
-        /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)', etc.
-        bool parse_args(const std::string &args) override;
+          /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)', etc.
+          bool parse_args(const std::string &args) override;
 
-        /// \brief Adds index rules corresponding to the parsed args
-        void init(const DiffTransConfiguration &_tmplt) const override;
+          /// \brief Adds index rules corresponding to the parsed args
+          void init(const DiffTransConfiguration &_tmplt) const override;
 
-        /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
-        std::vector<std::string> col_header(const DiffTransConfiguration &_tmplt) const override;
+          /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
+          std::vector<std::string> col_header(const DiffTransConfiguration &_tmplt) const override;
 
-      private:
-        mutable std::vector<std::string> m_mol_names;
+        private:
+          mutable std::vector<std::string> m_mol_names;
 
-      };
+        };
 
       }
-
-
-
 
       /// \brief Calculate param composition of a DiffTransConfiguration
       ///
@@ -212,7 +206,6 @@ namespace CASM {
       /// \brief In the future, AtomFrac will actually be atoms only
       typedef AtomFrac SpeciesFrac;
 
-      */
       /// \brief Returns local correlation values
       ///
       /// Evaluated basis function values, normalized per primitive cell;
