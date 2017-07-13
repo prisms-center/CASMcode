@@ -495,8 +495,19 @@ namespace CASM {
     std::vector<std::string> filter_expr);
 
   /// \brief Standardizes insertion from enumerators that construct configurations
-  template<typename LatticeIterator, typename ConfigEnumConstructor>
+  template<typename ScelIterator, typename ConfigEnumConstructor>
   int insert_configs(
+    std::string method,
+    PrimClex &primclex,
+    ScelIterator begin,
+    ScelIterator end,
+    ConfigEnumConstructor f,
+    std::vector<std::string> filter_expr,
+    bool primitive_only);
+
+  /// \brief Standardizes insertion from enumerators that construct configurations
+  template<typename LatticeIterator, typename ConfigEnumConstructor>
+  int insert_configs_via_lattice_enum(
     std::string method,
     PrimClex &primclex,
     LatticeIterator begin,
