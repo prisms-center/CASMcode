@@ -79,7 +79,7 @@ namespace CASM {
 
   Kinetics::OccupationTransformation jsonConstructor<Kinetics::OccupationTransformation>::from_json(const jsonParser &json, const Structure &prim) {
     return Kinetics::OccupationTransformation(
-             json["uccoord"].get<UnitCellCoord>(prim),
+             jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
              json["from_value"].get<Index>(),
              json["to_value"].get<Index>());
   }

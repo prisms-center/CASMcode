@@ -28,6 +28,9 @@ namespace CASM {
         return *m_prim;
       }
 
+      /// \brief Return a reference to the primitive Structure lattice
+      const Lattice &lattice() const;
+
       Configuration &apply_to(Configuration &config) const;
 
       Configuration &apply_reverse_to(Configuration &config) const;

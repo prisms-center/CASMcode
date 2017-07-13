@@ -91,7 +91,7 @@ namespace CASM {
       else {
         if(!fs::exists(selection_path)) {
           std::stringstream ss;
-          ss << "ERROR in parsing configuation selection name. \n"
+          ss << "ERROR in parsing configuration selection name. \n"
              << "  Expected <filename>, 'ALL', 'NONE', 'EMPTY', 'CALCULATED', or 'MASTER' <--default \n"
              << "  Received: '" << selection_path << "'\n"
              << "  No file named '" << selection_path << "'.";

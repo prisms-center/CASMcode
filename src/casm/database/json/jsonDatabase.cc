@@ -369,7 +369,7 @@ namespace CASM {
     jsonDatabase<Configuration>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
 
       if(result.second) {
-
+        this->set_primclex(*(result.first));
         const Configuration &config = *result.first;
 
         if(is_new) {
@@ -402,6 +402,516 @@ namespace CASM {
         else if(_scel_range_it->second.second == std::prev(result.first)) {
           _scel_range_it->second.second = result.first;
         }
+      }
+
+      return std::make_pair(_iterator(result.first), result.second);
+    }
+
+
+    /// PPDTO stuff starts here
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::jsonDatabase(const PrimClex &_primclex) :
+      Database<Kinetics::PrimPeriodicDiffTransOrbit>(_primclex),
+      m_is_open(false), m_orbit_id(0) {}
+
+
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit> &jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::open() {
+
+      if(m_is_open) {
+        return *this;
+      }
+
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      fs::path diff_trans_list_path = dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>();
+      if(!fs::exists(diff_trans_list_path)) {
+        m_is_open = true;
+        return *this;
+      }
+      jsonParser json(diff_trans_list_path);
+      // check json version
+      if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
+        throw std::runtime_error(
+          std::string("Error jsonDB version mismatch: found: ") +
+          json["version"].get<std::string>() +
+          " expected: " +
+          traits<jsonDB>::version);
+      }
+      if(!json.is_obj() || !json.contains("prototypes")) {
+        throw std::runtime_error(
+          std::string("Error invalid format: ") + dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>().string());
+      }
+      auto end = json["prototypes"].end();
+      for(auto it = json["prototypes"].begin(); it != end; ++it) {
+        Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(*it, primclex().prim());
+        Kinetics::PrimPeriodicDiffTransSymCompare symcompare(primclex().crystallography_tol());
+        auto result = m_orbit_list.emplace(trans, primclex().prim().factor_group(), symcompare);
+        this->set_id(*(result.first), it.name());
+        _on_insert_or_emplace(result, false);
+      }
+
+      //read next orbit id
+      from_json(m_orbit_id, json["orbit_id"]);
+
+      this->read_aliases();
+
+      m_is_open = true;
+      return *this;
+
+    }
+
+    void jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::commit() {
+
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      fs::path orbit_list_path = dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>();
+
+      jsonParser json;
+
+      if(fs::exists(orbit_list_path)) {
+        json.read(orbit_list_path);
+      }
+      else {
+        json.put_obj();
+      }
+      json["version"] = traits<jsonDB>::version;
+      json["prototypes"].put_obj();
+      for(const auto &orbit : m_orbit_list) {
+        to_json(orbit.prototype(), json["prototypes"][orbit.id()]);
+      }
+
+      json["orbit_id"] = m_orbit_id;
+
+      SafeOfstream file;
+      fs::create_directories(orbit_list_path.parent_path());
+      file.open(orbit_list_path);
+      json.print(file.ofstream());
+      /*int indent = 0;
+      int prec = 12;
+      json_spirit::write_stream((json_spirit::mValue &) json, file.ofstream(), indent, prec),
+                  file.close();*/
+      file.close();
+      this->write_aliases();
+    }
+
+    void jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::close() {
+      m_name_to_orbit.clear();
+      m_orbit_list.clear();
+      m_is_open = false;
+    }
+
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::begin() const {
+      return _iterator(m_orbit_list.begin());
+    }
+
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::end() const {
+      return _iterator(m_orbit_list.end());
+    }
+
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::size_type jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::size() const {
+      return m_orbit_list.size();
+    }
+
+    std::pair<jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::insert(const Kinetics::PrimPeriodicDiffTransOrbit &orbit) {
+
+      auto result = m_orbit_list.insert(orbit);
+
+      return _on_insert_or_emplace(result, true);
+    }
+
+    std::pair<jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::insert(const Kinetics::PrimPeriodicDiffTransOrbit &&orbit) {
+
+      auto result = m_orbit_list.insert(std::move(orbit));
+
+      return _on_insert_or_emplace(result, true);
+    }
+
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::erase(iterator pos) {
+
+      // get m_orbit_list iterator
+      auto base_it = static_cast<db_set_iterator *>(pos.get())->base();
+
+      // erase name & alias
+      m_name_to_orbit.erase(base_it->name());
+
+      // erase Kinetics::PrimPeriodicDiffTransOrbit
+      return _iterator(m_orbit_list.erase(base_it));
+    }
+
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::find(const std::string &name_or_alias) const {
+      auto it = m_name_to_orbit.find(this->name(name_or_alias));
+      if(it == m_name_to_orbit.end()) {
+        return _iterator(m_orbit_list.end());
+      }
+      return _iterator(it->second);
+    }
+
+    /// Update m_name_to_orbit after performing an insert or emplace
+    std::pair<jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator, bool>
+    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
+
+      if(result.second) {
+        const Kinetics::PrimPeriodicDiffTransOrbit &orbit = *result.first;
+        if(is_new) {
+          // set the orbit id, and increment
+          this->set_id(orbit, m_orbit_id++);
+        }
+
+        // update name -> orbit
+        m_name_to_orbit.insert(std::make_pair(orbit.name(), result.first));
+
+      }
+      this->set_primclex(*result.first);
+      return std::make_pair(_iterator(result.first), result.second);
+    }
+
+    // BEGIN DiffTransConfiguration stuff
+    jsonDatabase<Kinetics::DiffTransConfiguration>::jsonDatabase(const PrimClex &_primclex) :
+      Database<Kinetics::DiffTransConfiguration>(_primclex),
+      m_is_open(false) {}
+
+    jsonDatabase<Kinetics::DiffTransConfiguration> &jsonDatabase<Kinetics::DiffTransConfiguration>::open() {
+      if(m_is_open) {
+        return *this;
+      }
+
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      fs::path diff_trans_config_list_path = dir.obj_list<Kinetics::DiffTransConfiguration>();
+
+      if(!fs::exists(diff_trans_config_list_path)) {
+        m_is_open = true;
+        return *this;
+      }
+
+      jsonParser json(diff_trans_config_list_path);
+
+      if(!json.is_obj() || !json.contains("prototypes")) {
+        throw std::runtime_error(
+          std::string("Error invalid format: ") + diff_trans_config_list_path.string());
+      }
+
+      // check json version
+      if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
+        throw std::runtime_error(
+          std::string("Error jsonDB version mismatch: found: ") +
+          json["version"].get<std::string>() +
+          " expected: " +
+          traits<jsonDB>::version);
+      }
+
+      // read diff_trans_config list contents
+      auto orbit_it = json["prototypes"].begin();
+      auto orbit_end = json["prototypes"].end();
+
+      for(; orbit_it != orbit_end; ++orbit_it) {
+
+        auto scel_it = orbit_it->begin();
+        auto scel_end = orbit_it->end();
+        bool is_new = false;
+
+        for(; scel_it != scel_end; ++scel_it) {
+
+          auto diff_trans_config_it = scel_it->begin();
+          auto diff_trans_config_end = scel_it->end();
+
+          const Supercell &scel = *primclex().db_handler().
+                                  db<Supercell>(traits<jsonDB>::name).find(scel_it.name());
+
+          for(; diff_trans_config_it != diff_trans_config_end; ++diff_trans_config_it) {
+            auto result = m_diff_trans_config_list.emplace(scel, *diff_trans_config_it);
+            this->set_id(*(result.first), diff_trans_config_it.name());
+            _on_insert_or_emplace(result, is_new);
+          }
+        }
+      }
+
+      // read next config id for each supercell
+      from_json(m_config_id, json["config_id"]);
+
+      this->read_aliases();
+
+      m_is_open = true;
+      return *this;
+    }
+
+    void jsonDatabase<Kinetics::DiffTransConfiguration>::commit() {
+
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      fs::path diff_trans_config_list_path = dir.obj_list<Kinetics::DiffTransConfiguration>();
+      if(primclex().db_handler().db<Supercell>(traits<jsonDB>::name).size() == 0) {
+        fs::remove(diff_trans_config_list_path);
+        return;
+      }
+
+      jsonParser json;
+
+      if(fs::exists(diff_trans_config_list_path)) {
+        json.read(diff_trans_config_list_path);
+      }
+      else {
+        json.put_obj();
+      }
+      json["version"] = traits<jsonDB>::version;
+      //This is going to be problematic Need to figure out how to preserve orbit name source
+      for(const auto &diff_trans_config : m_diff_trans_config_list) {
+        std::string dtname = diff_trans_config.orbit_name();
+        diff_trans_config.to_json(json["prototypes"][dtname]
+                                  [diff_trans_config.from_config().supercell().name()][diff_trans_config.id()]);
+      }
+
+      json["config_id"] = m_config_id;
+
+      SafeOfstream file;
+      fs::create_directories(diff_trans_config_list_path.parent_path());
+      file.open(diff_trans_config_list_path);
+      //json.print(file.ofstream());
+      int indent = 0;
+      int prec = 12;
+      json_spirit::write_stream((json_spirit::mValue &) json, file.ofstream(), indent, prec),
+                  file.close();
+
+      this->write_aliases();
+    }
+
+    void jsonDatabase<Kinetics::DiffTransConfiguration>::close() {
+      m_name_to_diff_trans_config.clear();
+      m_diff_trans_config_list.clear();
+      m_scel_range.clear();
+      m_orbit_range.clear();
+      m_orbit_scel_range.clear();
+      m_is_open = false;
+    }
+
+    jsonDatabase<Kinetics::DiffTransConfiguration>::iterator jsonDatabase<Kinetics::DiffTransConfiguration>::begin() const {
+      return _iterator(m_diff_trans_config_list.begin());
+    }
+
+    jsonDatabase<Kinetics::DiffTransConfiguration>::iterator jsonDatabase<Kinetics::DiffTransConfiguration>::end() const {
+      return _iterator(m_diff_trans_config_list.end());
+    }
+
+    jsonDatabase<Kinetics::DiffTransConfiguration>::size_type jsonDatabase<Kinetics::DiffTransConfiguration>::size() const {
+      return m_diff_trans_config_list.size();
+    }
+
+    std::pair<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator, bool> jsonDatabase<Kinetics::DiffTransConfiguration>::insert(const Kinetics::DiffTransConfiguration &diff_trans_config) {
+
+      auto result = m_diff_trans_config_list.insert(diff_trans_config);
+
+      return _on_insert_or_emplace(result, true);
+    }
+
+    std::pair<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator, bool> jsonDatabase<Kinetics::DiffTransConfiguration>::insert(const Kinetics::DiffTransConfiguration &&diff_trans_config) {
+
+      auto result = m_diff_trans_config_list.insert(std::move(diff_trans_config));
+
+      return _on_insert_or_emplace(result, true);
+    }
+
+    jsonDatabase<Kinetics::DiffTransConfiguration>::iterator jsonDatabase<Kinetics::DiffTransConfiguration>::update(const Kinetics::DiffTransConfiguration &diff_trans_config) {
+
+      ValDatabase<Kinetics::DiffTransConfiguration>::erase(diff_trans_config.name());
+      return insert(diff_trans_config).first;
+    }
+
+    //NEEDS TO be changed for dtc
+    jsonDatabase<Kinetics::DiffTransConfiguration>::iterator jsonDatabase<Kinetics::DiffTransConfiguration>::erase(iterator pos) {
+
+      // get m_diff_trans_config_list iterator
+      auto base_it = static_cast<db_set_iterator *>(pos.get())->base();
+
+      // erase name & alias
+      m_name_to_diff_trans_config.erase(base_it->name());
+
+      // update scel_range
+      auto _scel_range_it = m_scel_range.find(base_it->from_config().supercell().name());
+      if(_scel_range_it->second.first == _scel_range_it->second.second) {
+        m_scel_range.erase(_scel_range_it);
+      }
+      else if(_scel_range_it->second.first == base_it) {
+        ++(_scel_range_it->second.first);
+      }
+      else if(_scel_range_it->second.second == base_it) {
+        --(_scel_range_it->second.second);
+      }
+
+      // update orbit_range
+      std::string dt_name = base_it->orbit_name();
+      auto _orbit_range_it = m_orbit_range.find(dt_name);
+      if(_orbit_range_it->second.first == _orbit_range_it->second.second) {
+        m_orbit_range.erase(_orbit_range_it);
+      }
+      else if(_orbit_range_it->second.first == base_it) {
+        ++(_orbit_range_it->second.first);
+      }
+      else if(_orbit_range_it->second.second == base_it) {
+        --(_orbit_range_it->second.second);
+      }
+
+      // update orbit_scel_range
+      auto _orbit_scel_range_it = m_orbit_scel_range.find(dt_name);
+      auto _sub_it = (_orbit_scel_range_it->second).find(base_it->from_config().supercell().name());
+      if(_sub_it->second.first == _sub_it->second.second) {
+        (_orbit_scel_range_it->second).erase(_sub_it);
+        if(!(_orbit_scel_range_it->second).size()) {
+          m_orbit_scel_range.erase(_orbit_scel_range_it);
+        }
+      }
+      else if(_sub_it->second.first == base_it) {
+        ++(_sub_it->second.first);
+      }
+      else if(_sub_it->second.second == base_it) {
+        --(_sub_it->second.second);
+      }
+
+      // erase DiffTransConfiguration
+      return _iterator(m_diff_trans_config_list.erase(base_it));
+    }
+
+    jsonDatabase<Kinetics::DiffTransConfiguration>::iterator jsonDatabase<Kinetics::DiffTransConfiguration>::find(const std::string &name_or_alias) const {
+      auto it = m_name_to_diff_trans_config.find(this->name(name_or_alias));
+      if(it == m_name_to_diff_trans_config.end()) {
+        return _iterator(m_diff_trans_config_list.end());
+      }
+      return _iterator(it->second);
+    }
+
+    /// Range of DiffTransConfiguration in a particular supercell
+    boost::iterator_range<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator>
+    jsonDatabase<Kinetics::DiffTransConfiguration>::scel_range(const std::string &scelname) const {
+      auto it = m_scel_range.find(scelname);
+      if(it == m_scel_range.end()) {
+        return boost::make_iterator_range(end(), end());
+      }
+      else {
+        auto &res = it->second;
+        return boost::make_iterator_range(_iterator(res.first), _iterator(std::next(res.second)));
+      }
+    }
+
+    /// Range of DiffTransConfiguration in a particular orbit
+    boost::iterator_range<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator>
+    jsonDatabase<Kinetics::DiffTransConfiguration>::orbit_range(const std::string &diff_trans_name) const {
+      auto it = m_orbit_range.find(diff_trans_name);
+      if(it == m_orbit_range.end()) {
+        return boost::make_iterator_range(end(), end());
+      }
+      else {
+        auto &res = it->second;
+        return boost::make_iterator_range(_iterator(res.first), _iterator(std::next(res.second)));
+      }
+    }
+
+    /// Range of DiffTransConfiguration in a particular supercell within an orbit
+    boost::iterator_range<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator>
+    jsonDatabase<Kinetics::DiffTransConfiguration>::orbit_scel_range(const std::string &diff_trans_name, const std::string &scelname) const {
+      auto it = m_orbit_scel_range.find(diff_trans_name);
+      if(it == m_orbit_scel_range.end()) {
+        return boost::make_iterator_range(end(), end());
+      }
+      else {
+        auto it2 = (it->second).find(diff_trans_name);
+        if(it2 == (it->second).end()) {
+          return boost::make_iterator_range(end(), end());
+        }
+        else {
+          auto &res = it2->second;
+          return boost::make_iterator_range(_iterator(res.first), _iterator(std::next(res.second)));
+        }
+      }
+    }
+
+    /// Update m_name_to_diff_trans_config, m_orbit_scel_range, m_orbit_range, m_scel_range after performing an insert or emplace
+    std::pair<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator, bool>
+    jsonDatabase<Kinetics::DiffTransConfiguration>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
+
+      if(result.second) {
+
+        const Kinetics::DiffTransConfiguration &diff_trans_config = *result.first;
+        std::string dt_name;
+        if(is_new) {
+          // set the diff trans config id, and increment
+          //Again need to determine orbit name from diff_trans_config object somehow
+          dt_name = diff_trans_config.orbit_name();
+          std::string scelname = diff_trans_config.from_config().supercell().name();
+          auto _config_id_it = m_config_id.find(dt_name);
+          if(_config_id_it == m_config_id.end()) {
+            std::map<std::string, Index> tmp ;
+            tmp.insert(std::make_pair(scelname, 0));
+            _config_id_it = m_config_id.insert(
+                              std::make_pair(dt_name, tmp)).first;
+          }
+          else {
+            auto it2 = (_config_id_it->second).find(scelname);
+            if(it2 == (_config_id_it->second).end()) {
+              (_config_id_it->second).insert(std::make_pair(scelname, 0));
+            }
+          }
+          this->set_id(diff_trans_config, ((_config_id_it->second).find(scelname))->second++);
+
+        }
+
+        // update name -> config
+        m_name_to_diff_trans_config.insert(std::make_pair(diff_trans_config.name(), result.first));
+
+        // check if scel_range needs updating
+        auto _scel_range_it = m_scel_range.find(diff_trans_config.from_config().supercell().name());
+
+        // new supercell
+        if(_scel_range_it == m_scel_range.end()) {
+          m_scel_range.emplace(
+            diff_trans_config.from_config().supercell().name(),
+            std::make_pair(result.first, result.first));
+        }
+        // if new 'begin' of scel range
+        else if(_scel_range_it->second.first == std::next(result.first)) {
+          _scel_range_it->second.first = result.first;
+        }
+        // if new 'end' of scel range (!= past-the-last config in scel)
+        else if(_scel_range_it->second.second == std::prev(result.first)) {
+          _scel_range_it->second.second = result.first;
+        }
+
+        // check if orbit_range needs updating
+        dt_name = diff_trans_config.orbit_name();
+        auto _orbit_range_it = m_orbit_range.find(dt_name);
+
+        // new orbit
+        if(_orbit_range_it == m_orbit_range.end()) {
+          m_orbit_range.emplace(
+            dt_name,
+            std::make_pair(result.first, result.first));
+        }
+        // if new 'begin' of orbit range
+        else if(_orbit_range_it->second.first == std::next(result.first)) {
+          _orbit_range_it->second.first = result.first;
+        }
+        // if new 'end' of orbit range (!= past-the-last config in scel)
+        else if(_orbit_range_it->second.second == std::prev(result.first)) {
+          _orbit_range_it->second.second = result.first;
+        }
+
+        // check if orbit_scel_range needs updating
+        auto _orbit_scel_range_it = m_orbit_scel_range.find(dt_name);
+
+        // new supercell
+        if(_orbit_scel_range_it == m_orbit_scel_range.end()) {
+          std::map<std::string, std::pair<base_iterator, base_iterator>> tmp;
+          tmp.emplace(diff_trans_config.from_config().supercell().name(),
+                      std::make_pair(result.first, result.first));
+          m_orbit_scel_range.emplace(dt_name, tmp);
+        }
+        else if((_orbit_scel_range_it->second).find(diff_trans_config.from_config().supercell().name())
+                == (_orbit_scel_range_it->second).end()) {
+          (_orbit_scel_range_it->second).emplace(diff_trans_config.from_config().supercell().name(),
+                                                 std::make_pair(result.first, result.first));
+        }
+        // if new 'begin' of scel range
+        else if(((_orbit_scel_range_it->second).find(diff_trans_config.from_config().supercell().name()))->second.first == std::next(result.first)) {
+          ((_orbit_scel_range_it->second).find(diff_trans_config.from_config().supercell().name()))->second.first = result.first;
+        }
+        // if new 'end' of scel range (!= past-the-last config in scel)
+        else if(((_orbit_scel_range_it->second).find(diff_trans_config.from_config().supercell().name()))->second.second == std::prev(result.first)) {
+          ((_orbit_scel_range_it->second).find(diff_trans_config.from_config().supercell().name()))->second.second = result.first;
+        }
+
       }
 
       return std::make_pair(_iterator(result.first), result.second);

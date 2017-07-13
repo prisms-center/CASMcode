@@ -9,6 +9,7 @@
 
 // need to add specializations here
 #include "casm/database/ConfigImport.hh"
+#include "casm/database/DiffTransConfigImport.hh"
 
 
 namespace CASM {

@@ -19,6 +19,11 @@ namespace CASM {
     public:
 
       Named() :
+        m_primclex(nullptr),
+        m_name("") {}
+
+      Named(const PrimClex &_primclex) :
+        m_primclex(&_primclex),
         m_name("") {}
 
       std::string name() const {
@@ -31,12 +36,20 @@ namespace CASM {
       /// \brief Return "alias" if object stored in database and alias exists,
       ///        return empty string otherwise
       std::string alias() const {
-        return derived().primclex().template db<Derived>().alias(name());
+        return primclex().template db<Derived>().alias(name());
       }
 
       /// \brief Unset "name", if object is modified
       void clear_name() {
         m_name = "";
+      }
+
+      /// \brief Get PrimClex
+      const PrimClex &primclex() const {
+        if(!m_primclex) {
+          throw std::runtime_error("Error in Orbit::primclex(): PrimClex not valid");
+        }
+        return *m_primclex;
       }
 
     private:
@@ -48,7 +61,13 @@ namespace CASM {
         return *static_cast<const Derived *>(this);
       }
 
+      /// \brief Add PrimClex pointer to objects constructed from Database
+      void set_primclex(const PrimClex &_primclex) const {
+        m_primclex = &_primclex;
+      }
+
       mutable std::string m_name;
+      mutable const PrimClex *m_primclex;
 
     };
 
@@ -61,6 +80,9 @@ namespace CASM {
     class Indexed : public Named<Derived> {
 
     public:
+      Indexed(const PrimClex &_primclex) :
+        Named<Derived>::Named(_primclex),
+        m_id("none") {}
 
       Indexed() :
         m_id("none") {}

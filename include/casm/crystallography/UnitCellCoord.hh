@@ -14,6 +14,7 @@ namespace CASM {
   class Site;
   class Structure;
   class SymOp;
+  class Lattice;
 
   /** \ingroup Coordinate
    *  @{
@@ -76,7 +77,7 @@ namespace CASM {
     /// \brief SymBasisPermute rep should be obtainable from UnitType
     typedef Structure UnitType;
 
-    UnitCellCoord(const UnitType &unit);
+    explicit UnitCellCoord(const UnitType &unit);
 
     UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell);
 
@@ -99,6 +100,9 @@ namespace CASM {
 
     /// \brief Change unit structure, keeping indices constant
     void set_unit(const UnitType &_unit);
+
+    /// \brief Access the Lattice
+    const Lattice &lattice() const;
 
     /// \brief Get corresponding coordinate
     Coordinate coordinate() const;

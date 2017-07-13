@@ -136,158 +136,133 @@ namespace CASM {
                            const Kinetics::DiffusionTransformationInvariants &obj);
 
   namespace Kinetics {
-    class PrimPeriodicDiffTransSymCompare;
-    class LocalDiffTransSymCompare;
-    class ScelPeriodicDiffTransSymCompare;
+    template<typename Derived>
+    class DiffTransSymCompare : public SymCompare<DiffTransSymCompare<Derived> > {
+    public:
+      DiffTransSymCompare(double _tol) :
+        m_tol(_tol) {}
+
+      double tol() const {
+        return m_tol;
+      }
+
+    private:
+      double m_tol;
+    };
   }
 
   /// \brief Traits class for any ClusterSymCompare derived class
   ///
-  template<>
-  struct traits<Kinetics::PrimPeriodicDiffTransSymCompare> {
+  template<typename Derived>
+  struct traits<Kinetics::DiffTransSymCompare<Derived> > {
 
-    typedef typename Kinetics::PrimPeriodicDiffTransSymCompare MostDerived;
-    typedef typename Kinetics::DiffusionTransformation Element;
-    typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
+    typedef Derived MostDerived;
+    typedef Kinetics::DiffusionTransformation Element;
+    typedef Kinetics::DiffusionTransformationInvariants InvariantsType;
+
+  };
+
+  /// \brief Used to sort orbits
+  template<>
+  class PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> :
+    public Kinetics::DiffTransSymCompare<PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> > {
+
+  public:
+
+    typedef Kinetics::DiffusionTransformation Element;
+    typedef Kinetics::DiffusionTransformationInvariants InvariantsType;
+
+    PrimPeriodicSymCompare(double tol);
+
+  private:
+
+    friend class SymCompare<Kinetics::DiffTransSymCompare<PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> > >;
+
+    Element prepare_impl(const Element &A) const;
+
+    bool compare_impl(const Element &A, const Element &B) const;
+
+    bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
+
+    /// \brief Apply symmetry to this
+    ///
+    /// - Affects no change
+    void apply_sym_impl(const SymOp &op) {
+      return;
+    }
 
   };
 
 
-  /// \brief Traits class for any ClusterSymCompare derived class
-  ///
+  /// \brief Used to sort orbits
   template<>
-  struct traits<Kinetics::LocalDiffTransSymCompare> {
+  class LocalSymCompare<Kinetics::DiffusionTransformation> :
+    public Kinetics::DiffTransSymCompare<LocalSymCompare<Kinetics::DiffusionTransformation> > {
 
-    typedef typename Kinetics::LocalDiffTransSymCompare MostDerived;
-    typedef typename Kinetics::DiffusionTransformation Element;
-    typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
+  public:
+
+    typedef Kinetics::DiffusionTransformation Element;
+    typedef Kinetics::DiffusionTransformationInvariants InvariantsType;
+
+    LocalSymCompare(double tol);
+
+  private:
+
+    friend class SymCompare<Kinetics::DiffTransSymCompare<LocalSymCompare<Kinetics::DiffusionTransformation> > >;
+
+    Element prepare_impl(const Element &A) const;
+
+    bool compare_impl(const Element &A, const Element &B) const;
+
+    bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
+
+    /// \brief Apply symmetry to this
+    ///
+    /// - Affects no change
+    void apply_sym_impl(const SymOp &op) {
+      return;
+    }
+
   };
 
-  /// \brief Traits class for any ClusterSymCompare derived class
-  ///
+
+  /// \brief Used to canonicalize DiffusionTransformations
   template<>
-  struct traits<Kinetics::ScelPeriodicDiffTransSymCompare> {
+  class ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> :
+    public Kinetics::DiffTransSymCompare<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>> {
 
-    typedef typename Kinetics::ScelPeriodicDiffTransSymCompare MostDerived;
-    typedef typename Kinetics::DiffusionTransformation Element;
-    typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
+  public:
+
+    typedef Kinetics::DiffusionTransformation Element;
+    typedef Kinetics::DiffusionTransformationInvariants InvariantsType;
+
+    ScelPeriodicSymCompare(const PrimGrid &prim_grid, double tol);
+
+  private:
+
+    friend class SymCompare<Kinetics::DiffTransSymCompare<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> > >;
+
+    Element prepare_impl(const Element &A) const;
+
+    bool compare_impl(const Element &A, const Element &B) const;
+
+    bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
+
+    /// \brief Apply symmetry to this
+    ///
+    /// - Affects no change
+    void apply_sym_impl(const SymOp &op) {
+      return;
+    }
+
+    const PrimGrid &m_prim_grid;
+
   };
-
 
   namespace Kinetics {
-
-    /// \brief Used to sort orbits
-    class PrimPeriodicDiffTransSymCompare : public SymCompare<PrimPeriodicDiffTransSymCompare> {
-
-    public:
-
-      typedef traits<PrimPeriodicDiffTransSymCompare>::MostDerived MostDerived;
-      typedef traits<PrimPeriodicDiffTransSymCompare>::Element Element;
-      typedef traits<PrimPeriodicDiffTransSymCompare>::InvariantsType InvariantsType;
-
-      PrimPeriodicDiffTransSymCompare(double tol);
-
-      double tol() const {
-        return m_tol;
-      }
-
-    private:
-
-      friend class SymCompare<PrimPeriodicDiffTransSymCompare>;
-
-      Element prepare_impl(const Element &A) const;
-
-      bool compare_impl(const Element &A, const Element &B) const;
-
-      bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
-
-      /// \brief Apply symmetry to this
-      ///
-      /// - Affects no change
-      void apply_sym_impl(const SymOp &op) {
-        return;
-      }
-
-      double m_tol;
-
-    };
-
-    /// \brief Used to sort orbits
-    class LocalDiffTransSymCompare : public SymCompare<LocalDiffTransSymCompare> {
-
-    public:
-
-      typedef traits<LocalDiffTransSymCompare>::MostDerived MostDerived;
-      typedef traits<LocalDiffTransSymCompare>::Element Element;
-      typedef traits<LocalDiffTransSymCompare>::InvariantsType InvariantsType;
-
-      LocalDiffTransSymCompare(double tol);
-
-      double tol() const {
-        return m_tol;
-      }
-
-    private:
-
-      friend class SymCompare<LocalDiffTransSymCompare>;
-
-      Element prepare_impl(const Element &A) const;
-
-      bool compare_impl(const Element &A, const Element &B) const;
-
-      bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
-
-      /// \brief Apply symmetry to this
-      ///
-      /// - Affects no change
-      void apply_sym_impl(const SymOp &op) {
-        return;
-      }
-
-      double m_tol;
-
-    };
-
-    /// \brief Used to canonicalize DiffusionTransformations
-    class ScelPeriodicDiffTransSymCompare : public SymCompare<ScelPeriodicDiffTransSymCompare> {
-
-    public:
-
-      typedef traits<ScelPeriodicDiffTransSymCompare>::MostDerived MostDerived;
-      typedef traits<ScelPeriodicDiffTransSymCompare>::Element Element;
-      typedef traits<ScelPeriodicDiffTransSymCompare>::InvariantsType InvariantsType;
-
-      ScelPeriodicDiffTransSymCompare(const PrimGrid &prim_grid, double tol);
-
-      double tol() const {
-        return m_tol;
-      }
-
-    private:
-
-      friend class SymCompare<ScelPeriodicDiffTransSymCompare>;
-
-      Element prepare_impl(const Element &A) const;
-
-      bool compare_impl(const Element &A, const Element &B) const;
-
-      bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
-
-      /// \brief Apply symmetry to this
-      ///
-      /// - Affects no change
-      void apply_sym_impl(const SymOp &op) {
-        return;
-      }
-
-      double m_tol;
-
-      const PrimGrid &m_prim_grid;
-
-    };
-
-
-
+    typedef PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> PrimPeriodicDiffTransSymCompare;
+    typedef ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> ScelPeriodicDiffTransSymCompare;
+    typedef LocalSymCompare<Kinetics::DiffusionTransformation> LocalDiffTransSymCompare;
   }
 
   /// \brief Traits class for DiffusionTransformation
@@ -409,10 +384,8 @@ namespace CASM {
     /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
     std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans);
 
-    typedef Orbit<DiffusionTransformation, PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbit;
-
     /// \brief Return a standardized name for this diffusion transformation orbit
-    std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit);
+    //std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit);
 
     // \brief Returns the distance from uccoord to the closest point on a linearly
     /// interpolated diffusion path. (Could be an end point)
@@ -428,6 +401,8 @@ namespace CASM {
     double min_dist_to_path(const DiffusionTransformation &diff_trans);
 
   }
+
+  typedef Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbit;
 
   /// \brief Write DiffusionTransformation to JSON object
   jsonParser &to_json(const Kinetics::DiffusionTransformation &trans, jsonParser &json);

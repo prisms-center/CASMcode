@@ -5,9 +5,8 @@
     "site_basis_functions" : "occupation"
   },
   "orbit_branch_specs" : {
-    "2" : {"max_length" : 9.0},
-    "3" : {"max_length" : 7.0},
-    "4" : {"max_length" : 6.0}
+    "2" : {"max_length" : 5.0},
+    "3" : {"max_length" : 3.0}
   }
 }
 }

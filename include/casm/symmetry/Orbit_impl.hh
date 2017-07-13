@@ -5,6 +5,9 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include "casm/symmetry/Orbit.hh"
 #include "casm/misc/algorithm.hh"
+#include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
+#include "casm/database/Named.hh"
+#include "casm/database/Database.hh"
 
 namespace CASM {
 
@@ -82,7 +85,6 @@ namespace CASM {
     for(const auto &op : g) {
       t_equiv.insert(prepare(copy_apply(op, generating_element)));
     }
-
     // sort element using each element's first equivalence map column to find prototype
     std::set<std::pair<Element, std::vector<Index> >, _EqMapCompare<Element> > _set;
     for(const auto &e : t_equiv) {
@@ -149,21 +151,11 @@ namespace CASM {
     typedef typename std::iterator_traits<OrbitIterator>::value_type orbit_type;
     const auto &sym_compare = begin->sym_compare();
 
-    struct GetPrototype {
-      const Element &operator()(const orbit_type &orbit) const {
-        return orbit.prototype();
-      }
-    };
-
-    auto transform_it = [](OrbitIterator it) {
-      return boost::make_transform_iterator(it, GetPrototype());
-    };
-
     // first find range of possible orbit by checking invariants
     auto compare = [&](const Element & A, const Element & B) {
       return sym_compare.invariants_compare(A.invariants(), B.invariants());
     };
-    auto _range = std::equal_range(transform_it(begin), transform_it(end), e, compare);
+    auto _range = std::equal_range(prototype_iterator(begin), prototype_iterator(end), e, compare);
 
     // find if any of the orbits in range [_range.first, _range.second) contain equivalent
     auto contains = [&](const orbit_type & orbit) {
@@ -176,6 +168,20 @@ namespace CASM {
     return res;
   }
 
+  template<typename OrbitType>
+  std::string _generate_orbit_name(const OrbitType &orbit);
+
+  template<> std::string _generate_orbit_name(const Kinetics::PrimPeriodicDiffTransOrbit &orbit);
+
+  template<typename OrbitType>
+  std::string _generate_orbit_name(const OrbitType &orbit) {
+    return "";
+  }
+
+  template<typename _Element, typename _SymCompareType>
+  std::string Orbit<_Element, _SymCompareType>::_generate_name() const {
+    return _generate_orbit_name(*this);
+  };
 
 }
 

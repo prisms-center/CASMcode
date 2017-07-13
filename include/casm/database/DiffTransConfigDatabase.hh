@@ -1,8 +1,5 @@
-/*
 #ifndef CASM_DiffTransConfigDatabase
 #define CASM_DiffTransConfigDatabase
-
-#include <utility>
 
 #include "casm/database/Database.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
@@ -18,25 +15,61 @@ namespace CASM {
 
   namespace DB {
 
-    /// Derived ConfigDatabase must implement public methods:
-    /// - std::pair<iterator, bool> rename(const name_type& old_name, const name_type& new_name)
-    /// - std::pair<iterator, bool> update(const Configuration &config)
-    /// - boost::iterator_range<iterator> scel_range(const name_type& scelname) const
+    /// Derived DiffTransConfigDatabase must implement public methods:
+    /// - iterator update(const DiffTransConfiguration &config)
+    /// - boost::iterator_range<iterator> orbit_scel_range(const name_type& difftransname,const name_type& scelname) const
+    /// - boost::iterator_range<iterator> orbit_range(const name_type& difftransname) const
+    ///
+    /// Database insert methods by convention do not enforce canonical forms.
+    /// That logic is included in DiffTransConfiguration::insert, which is
+    /// the safest way to insert new DiffTransConfiguration in the database. But in cases
+    /// where it is known that a DiffTransConfiguration is generated in
+    /// canonical form, the Database insert methods may be used directly, for
+    /// instance as in the method insert_unique_canon_diff_trans_configs.
     ///
     template<>
-    class Database<DiffTransConfiguration> :
-      public ValDatabase<DiffTransConfiguration, std::string> {
+    class Database<Kinetics::DiffTransConfiguration> : public ValDatabase<Kinetics::DiffTransConfiguration> {
 
     public:
 
-      /// Set calc properties
-      virtual iterator set_calc_properties(const DiffTransConfiguration &config);
+      Database(const PrimClex &_primclex) :
+        ValDatabase<Kinetics::DiffTransConfiguration>(_primclex) {}
 
-      /// Range of DiffTransConfiguration for a particular DiffTransOrbit
-      virtual boost::iterator_range<iterator> orbit_range(const name_type &diff_trans_orbit_name) const;
+      virtual ~Database() {}
 
-      /// Range of DiffTransConfiguration in a particular DiffTransOrbit, in a particular supecell
-      virtual boost::iterator_range<iterator> orbit_scel_range(const name_type &diff_trans_orbit_name, const name_type &scelname) const;
+
+      /// Update record
+      virtual iterator update(const Kinetics::DiffTransConfiguration &diff_trans_config) = 0;
+
+      /// Range of DiffTransConfiguration in a particular supercell within an orbit
+      ///
+      /// - Should return range {end(), end()} if no DiffTransConfiguration in specified Supercell within an orbit
+      /// - Note: boost::iterator_range<iterator>::size is not valid for
+      ///   DatabaseIterator.  Use boost::distance instead.
+      virtual boost::iterator_range<iterator> orbit_scel_range(const std::string &diff_trans_name, const std::string &scelname) const = 0;
+
+      /// Number of DiffTransConfiguration in a particular supercell within an orbit
+      Index orbit_scel_range_size(const std::string &diff_trans_name, const std::string &scelname) const;
+
+      /// Range of DiffTransConfiguration in a particular supercell
+      ///
+      /// - Should return range {end(), end()} if no DiffTransConfiguration in specified Supercell
+      /// - Note: boost::iterator_range<iterator>::size is not valid for
+      ///   DatabaseIterator.  Use boost::distance instead.
+      virtual boost::iterator_range<iterator> scel_range(const std::string &scelname) const = 0;
+
+      /// Number of DiffTransConfiguration in a particular supercell
+      Index scel_range_size(const std::string &scelname) const;
+
+      /// Range of DiffTransConfiguration in a particular diff_trans
+      ///
+      /// - Should return range {end(), end()} if no DiffTransConfiguration in specified diff_trans_name
+      /// - Note: boost::iterator_range<iterator>::size is not valid for
+      ///   DatabaseIterator.  Use boost::distance instead.
+      virtual boost::iterator_range<iterator> orbit_range(const std::string &diff_trans_name) const = 0;
+
+      /// Number of DiffTransConfiguration in a particular diff_trans
+      Index orbit_range_size(const std::string &diff_trans_name) const;
 
     };
 
@@ -44,4 +77,3 @@ namespace CASM {
 }
 
 #endif
-*/

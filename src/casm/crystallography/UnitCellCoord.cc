@@ -22,6 +22,11 @@ namespace CASM {
       "  No matching basis site found.");
   }
 
+  /// \brief Access the Lattice
+  const Lattice &UnitCellCoord::lattice() const {
+    return unit().lattice();
+  }
+
   /// \brief Get corresponding coordinate
   Coordinate UnitCellCoord::coordinate() const {
     return site();
