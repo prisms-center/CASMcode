@@ -2,7 +2,7 @@
 #define CASM_HallOfFame
 
 #include <set>
-
+#include <limits>
 #include "casm/misc/CASM_math.hh"
 
 namespace CASM {

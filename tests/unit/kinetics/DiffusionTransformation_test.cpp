@@ -12,6 +12,9 @@
 #include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
+#include "casm/completer/Handlers.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/app/enum.hh"
 
 using namespace CASM;
 using namespace test;
@@ -132,13 +135,29 @@ BOOST_AUTO_TEST_CASE(Test0) {
         BOOST_CHECK_EQUAL(orb.size(), 0);
       }
     }
+    jsonParser dtjson;
+    dtjson.put_obj();
+    if(diff_trans_orbits.size()) {
+      to_json(diff_trans_orbits[0].prototype(), dtjson);
+      Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(dtjson, primclex.prim());
+      BOOST_CHECK_EQUAL(trans == diff_trans_orbits[0].prototype(), 1);
+      BOOST_CHECK_EQUAL(diff_trans_orbits[0].prototype().is_valid(), 1);
+      BOOST_CHECK_EQUAL(trans.is_valid(), 1);
+    }
 
-    // print DiffTrans prototypes
+    //print DiffTrans prototypes
     //{
     //  PrototypePrinter<Kinetics::DiffusionTransformation> printer;
     //  print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
     //}
   }
+
+  fs::path difftrans_path = "tests/unit/kinetics/diff_trans.json";
+  jsonParser diff_trans_json {difftrans_path};
+  Completer::EnumOption enum_opt;
+  enum_opt.desc();
+  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+  BOOST_CHECK_EQUAL(success, 0);
 
   /*
   auto vecprinter = [=](const std::string name, const std::vector<int>& v) {

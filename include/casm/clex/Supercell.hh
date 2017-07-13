@@ -85,8 +85,6 @@ namespace CASM {
 
     // **** Accessors ****
 
-    const PrimClex &primclex() const;
-
     /// \brief Get the PrimClex crystallography_tol
     double crystallography_tol() const;
 
@@ -186,10 +184,6 @@ namespace CASM {
 
     std::string _generate_name() const;
 
-
-    // pointer to Primcell containing all the cluster expansion data
-    const PrimClex *m_primclex;
-
     // lattice of supercell in real space
     Lattice m_lattice;
 
@@ -237,6 +231,10 @@ namespace CASM {
   Supercell copy_apply(const SymOp &op, const Supercell &scel);
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat);
+
+  /// \brief Construct the subgroup of permutations that leaves an element unchanged
+  template<typename Element>
+  std::vector<PermuteIterator> make_invariant_subgroup(const Element &element, const Supercell &scel);
 
   /** @} */
 }

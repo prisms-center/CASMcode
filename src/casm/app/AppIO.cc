@@ -510,6 +510,6 @@ namespace CASM {
 #define DIFFTRANS_VECTOR_INST(ORBIT) \
   PRINT_CLUST_INST(_VECTOR_IT(ORBIT), _VECTOR_INSERTER(ORBIT), PrototypePrinter<Kinetics::DiffusionTransformation>)
 
-  DIFFTRANS_VECTOR_INST(Kinetics::PrimPeriodicDiffTransOrbit)
+  DIFFTRANS_VECTOR_INST(PrimPeriodicDiffTransOrbit)
 }
 

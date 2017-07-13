@@ -498,7 +498,7 @@ namespace CASM {
           throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
         }
 
-        DB::for_config_type_short(opt().db_type(), DB::ConstructImpl<SelectCommand>(m_impl, *this));
+        DB::for_type_short(opt().db_type(), DB::ConstructImpl<SelectCommand>(m_impl, *this));
       }
       else {
         m_impl = notstd::make_unique<SelectCommandImplBase>(*this);

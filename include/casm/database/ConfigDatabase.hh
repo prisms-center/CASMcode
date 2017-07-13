@@ -48,7 +48,7 @@ namespace CASM {
       ///   DatabaseIterator.  Use boost::distance instead.
       virtual boost::iterator_range<iterator> scel_range(const std::string &scelname) const = 0;
 
-      /// Number of Configuration in a particular supecell
+      /// Number of Configuration in a particular supercell
       Index scel_range_size(const std::string &scelname) const;
     };
 

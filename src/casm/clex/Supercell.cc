@@ -21,28 +21,28 @@ namespace CASM {
 
   //Copy constructor is needed for proper initialization of m_prim_grid
   Supercell::Supercell(const Supercell &RHS) :
-    m_primclex(RHS.m_primclex),
+    Named(RHS.primclex()),
     m_lattice(RHS.m_lattice),
-    m_prim_grid((*m_primclex).prim().lattice(), m_lattice, (*m_primclex).prim().basis.size()),
+    m_prim_grid(primclex().prim().lattice(), m_lattice, primclex().prim().basis.size()),
     m_nlist(RHS.m_nlist),
     m_canonical(nullptr),
     m_transf_mat(RHS.m_transf_mat) {
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
-    m_primclex(_prim),
-    m_lattice((*m_primclex).prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
-    m_prim_grid((*m_primclex).prim().lattice(), m_lattice, (*m_primclex).prim().basis.size()),
+    Named(*_prim),
+    m_lattice(primclex().prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
+    m_prim_grid(primclex().prim().lattice(), m_lattice, primclex().prim().basis.size()),
     m_canonical(nullptr),
     m_transf_mat(transf_mat_init) {
     //    fill_reciprocal_supercell();
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
-    m_primclex(_prim),
+    Named(*_prim),
     m_lattice(superlattice),
     m_canonical(nullptr),
-    m_prim_grid((*m_primclex).prim().lattice(), m_lattice, (*m_primclex).prim().basis.size()) {
+    m_prim_grid(primclex().prim().lattice(), m_lattice, primclex().prim().basis.size()) {
 
     auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
     if(!res.first) {
@@ -98,14 +98,13 @@ namespace CASM {
     return bijk[0] * volume() + m_prim_grid.find(bijk.unitcell());
   }
 
-  /// \brief Return the linear index corresponding to integral coordinates
+  /// \brief Return the coordinate corresponding to linear index in the supercell
   ///
-  /// Equivalent to:
-  /// \code
-  /// uccoord(linear_index).coordinate()
-  /// \endcode
   Coordinate Supercell::coord(Index linear_index) const {
-    return uccoord(linear_index).coordinate();
+    Coordinate tcoord(m_prim_grid.coord(linear_index % volume(), SCEL));
+    tcoord.cart() += prim().basis[linear_index / volume()].cart();
+    return tcoord;
+    // return uccoord(linear_index).coordinate();
   }
 
   /// \brief Return the integral coordinates corresponding to a linear index
@@ -177,7 +176,7 @@ namespace CASM {
     //std::cout << "begin config()" << std::endl;
     //std::cout << "  mat:\n" << mat << std::endl;
 
-    const Structure &prim = (*m_primclex).prim();
+    const Structure &prim = primclex().prim();
 
     // create a 'superstruc' that fills '*this'
     BasicStructure<Site> superstruc = structure_to_config.create_superstruc(m_lattice);
@@ -245,7 +244,7 @@ namespace CASM {
   ///
   Structure Supercell::superstructure() const {
     // create a 'superstruc' that fills '*this'
-    Structure superstruc = (*m_primclex).prim().create_superstruc(m_lattice);
+    Structure superstruc = primclex().prim().create_superstruc(m_lattice);
 
     // sort basis sites so that they agree with config_index_to_bijk
     //   This sorting may not be necessary,
@@ -286,10 +285,6 @@ namespace CASM {
 
   }
 
-  const PrimClex &Supercell::primclex() const {
-    return *m_primclex;
-  }
-
   /// \brief Get the PrimClex crystallography_tol
   double Supercell::crystallography_tol() const {
     return primclex().crystallography_tol();
@@ -300,7 +295,7 @@ namespace CASM {
   }
 
   const Structure &Supercell::prim() const {
-    return m_primclex->prim();
+    return primclex().prim();
   }
 
   ///Return number of primitive cells that fit inside of *this
@@ -411,7 +406,7 @@ namespace CASM {
   Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, Index trans_index) const {
     return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
                                   m_prim_grid,
-                                  fg_index, trans_index); // one past final indices
+                                  fg_index, trans_index);
   }
 
   bool Supercell::operator<(const Supercell &B) const {
@@ -429,7 +424,7 @@ namespace CASM {
   /// \brief Insert the canonical form of this into the database
   std::pair<DB::DatabaseIterator<Supercell>, bool> Supercell::insert() const {
     return primclex().db<Supercell>().emplace(
-             m_primclex,
+             & primclex(),
              canonical_equivalent_lattice(
                lattice(),
                prim().point_group(),

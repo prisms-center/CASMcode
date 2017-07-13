@@ -87,6 +87,11 @@ namespace CASM {
       return *m_prim_ptr;
     }
 
+    /// \brief Return a reference to the primitive Structure lattice
+    const Lattice &lattice() const {
+      return prim().lattice();
+    }
+
     /// \brief Return the coordinate corresponding to element(i)
     Coordinate coordinate(size_type i) const {
       return static_cast<Coordinate>(this->element(i));

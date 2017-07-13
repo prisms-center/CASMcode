@@ -1,0 +1,12 @@
+{
+"require":["Va"],
+"bspecs":{
+  "basis_functions" : {
+    "site_basis_functions" : "occupation"
+  },
+  "orbit_branch_specs" : {
+    "2" : {"max_length" : 5.0},
+    "3" : {"max_length" : 3.0}
+  }
+}
+}

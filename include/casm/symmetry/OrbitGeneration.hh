@@ -69,7 +69,6 @@ namespace CASM {
       for(const auto &e : elements) {
         orbits.emplace_back(e, group, sym_compare);
       }
-
       // output Orbits
       return std::move(orbits.begin(), orbits.end(), result);
     }

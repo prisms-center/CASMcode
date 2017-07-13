@@ -5,6 +5,9 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include "casm/symmetry/Orbit.hh"
 #include "casm/misc/algorithm.hh"
+#include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
+#include "casm/database/Named.hh"
+#include "casm/database/Database.hh"
 
 namespace CASM {
 
@@ -77,13 +80,11 @@ namespace CASM {
     auto equal = [&](const Element & A, const Element & B) {
       return m_sym_compare.equal(A, B);
     };
-
     // generate equivalents
     std::set<Element, decltype(compare)> t_equiv(compare);
     for(const auto &op : g) {
       t_equiv.insert(prepare(copy_apply(op, generating_element)));
     }
-
     // sort element using each element's first equivalence map column to find prototype
     std::set<std::pair<Element, std::vector<Index> >, _EqMapCompare<Element> > _set;
     for(const auto &e : t_equiv) {
@@ -92,15 +93,20 @@ namespace CASM {
 
     // use _set.begin()->first for prototype, use _set.begin()->second to generate equiv
     for(auto op_index : _set.begin()->second) {
-      m_element.push_back(prepare(copy_apply(g[op_index], _set.begin()->first)));
+      SymOp my_op;
+      for(auto &op : g) {
+        if(op.index() == op_index)
+          my_op = op;
+      }
+      m_element.push_back(prepare(copy_apply(my_op, _set.begin()->first)));
     }
-
     // generate equivalence map
     m_equivalence_map.resize(m_element.size());
     for(const auto &op : g) {
       Index i = find_index(m_element, prepare(copy_apply(op, m_element[0])), equal);
       m_equivalence_map[i].push_back(op);
     }
+
   }
 
   /// \brief Apply symmetry to Orbit
@@ -145,21 +151,11 @@ namespace CASM {
     typedef typename std::iterator_traits<OrbitIterator>::value_type orbit_type;
     const auto &sym_compare = begin->sym_compare();
 
-    struct GetPrototype {
-      const Element &operator()(const orbit_type &orbit) const {
-        return orbit.prototype();
-      }
-    };
-
-    auto transform_it = [](OrbitIterator it) {
-      return boost::make_transform_iterator(it, GetPrototype());
-    };
-
     // first find range of possible orbit by checking invariants
     auto compare = [&](const Element & A, const Element & B) {
       return sym_compare.invariants_compare(A.invariants(), B.invariants());
     };
-    auto _range = std::equal_range(transform_it(begin), transform_it(end), e, compare);
+    auto _range = std::equal_range(prototype_iterator(begin), prototype_iterator(end), e, compare);
 
     // find if any of the orbits in range [_range.first, _range.second) contain equivalent
     auto contains = [&](const orbit_type & orbit) {
@@ -172,6 +168,20 @@ namespace CASM {
     return res;
   }
 
+  template<typename OrbitType>
+  std::string _generate_orbit_name(const OrbitType &orbit);
+
+  template<> std::string _generate_orbit_name(const Kinetics::PrimPeriodicDiffTransOrbit &orbit);
+
+  template<typename OrbitType>
+  std::string _generate_orbit_name(const OrbitType &orbit) {
+    return "";
+  }
+
+  template<typename _Element, typename _SymCompareType>
+  std::string Orbit<_Element, _SymCompareType>::_generate_name() const {
+    return _generate_orbit_name(*this);
+  };
 
 }
 

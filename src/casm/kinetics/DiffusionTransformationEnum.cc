@@ -1,7 +1,25 @@
-#include "casm/kinetics/DiffusionTransformationEnum.hh"
+#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/crystallography/Site.hh"
-#include "casm/crystallography/Molecule.hh"
-#include "casm/basis_set/DoF.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/app/AppIO_impl.hh"
+#include "casm/database/DiffTransOrbitDatabase.hh"
+
+extern "C" {
+  CASM::EnumInterfaceBase *make_DiffusionTransformationEnum_interface() {
+    return new CASM::EnumInterface<CASM::Kinetics::DiffusionTransformationEnum>();
+  }
+}
+
+namespace {
+  class tmpBuff : public std::streambuf {
+  public:
+    int overflow(int c) {
+      return c;
+    }
+  };
+}
 
 namespace CASM {
 
@@ -46,6 +64,37 @@ namespace CASM {
     }
 
     const std::string DiffusionTransformationEnum::enumerator_name = "DiffusionTransformationEnum";
+    const std::string DiffusionTransformationEnum::interface_help =
+      "DiffusionTransformationEnum: \n\n"
+
+      "  bspecs: JSON object \n"
+      "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
+      "    JSON item \"bspecs\" should be a bspecs style initialization of cluster number and sizes.\n"
+      "              \n\n"
+      ""
+      "  require: JSON array of strings (optional,default=[]) \n "
+      "    Indicate required species to enforce that a given species must be a part of the diffusion \n"
+      "    transformation. The JSON array \"require\" should be an array of species names.\n"
+      "    i.e. \"require\": [\"Va\",\"O\"] \n\n"
+      "  exclude: JSON array of strings (optional,default=[]) \n "
+      "    Indicate excluded species to enforce that a given species must not be a part of the diffusion \n"
+      "    transformation. The JSON array \"exclude\" should be an array of species names.\n"
+      "    i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n"
+      "  Example:\n"
+      "  {\n"
+      "   \"require\":[\"Va\"],\n"
+      "   \"exclude\":[],\n"
+      "    \"bspecs\":{\n"
+      "       \"basis_functions\" : {\n"
+      "        \"site_basis_functions\" : \"occupation\"\n"
+      "      },\n"
+      "      \"orbit_branch_specs\" : { \n"
+      "       \"2\" : {\"max_length\" : 5.01},\n"
+      "       \"3\" : {\"max_length\" : 5.01}\n"
+      "      }\n"
+      "    }\n"
+      "  }\n\n"
+      ;
 
     /// Implements increment
     void DiffusionTransformationEnum::increment() {
@@ -86,6 +135,77 @@ namespace CASM {
       _increment_step();
     }
 
+    /// Implements run
+    int DiffusionTransformationEnum::run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
+
+      jsonParser kwargs;
+      if(!_kwargs.get_if(kwargs, "bspecs")) {
+        std::cerr << "DiffusionTransformationEnum currently has no default and requires a correct JSON with a bspecs tag within it" << std::endl;
+        std::cerr << "Core dump will occur because cannot find proper input" << std::endl;
+      }
+
+      std::vector<std::string> require;
+      std::vector<std::string> exclude;
+      if(_kwargs.get_if(kwargs, "require")) {
+        for(auto it = _kwargs["require"].begin(); it != _kwargs["require"].end(); ++it) {
+          require.push_back(from_json<std::string>(*it));
+        }
+      }
+      if(_kwargs.get_if(kwargs, "exclude")) {
+        for(auto it = _kwargs["exclude"].begin(); it != _kwargs["exclude"].end(); ++it) {
+          exclude.push_back(from_json<std::string>(*it));
+        }
+      }
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+      std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
+      tmpBuff streambuff;
+      std::ostream dead(&streambuff);
+      auto end = make_prim_periodic_orbits(
+                   primclex.prim(), _kwargs["bspecs"], alloy_sites_filter, primclex.crystallography_tol(), std::back_inserter(orbits), dead);
+
+      Log &log = primclex.log();
+      auto &db_orbits = primclex.db<PrimPeriodicDiffTransOrbit>();
+
+      Index Ninit = db_orbits.size();
+      log << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
+
+      log.begin(enumerator_name);
+
+
+      std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
+      auto end2 = make_prim_periodic_diff_trans_orbits(
+                    orbits.begin(), orbits.end(), primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+
+      for(auto &diff_trans_orbit : diff_trans_orbits) {
+        auto speciemap = diff_trans_orbit.prototype().specie_count();
+        auto it = speciemap.begin();
+        for(; it != speciemap.end(); ++it) {
+          if(std::find(require.begin(), require.end(), it->first.name) != require.end() && it->second == 0) {
+            break;
+          }
+          if(std::find(exclude.begin(), exclude.end(), it->first.name) != exclude.end() && it->second != 0) {
+            break;
+          }
+        }
+        if(it == speciemap.end()) {
+          //insert current into database
+          db_orbits.insert(diff_trans_orbit);
+        }
+      }
+
+      log << "  DONE." << std::endl << std::endl;
+
+      Index Nfinal = db_orbits.size();
+
+      log << "# new diffusion transformations: " << Nfinal - Ninit << "\n";
+      log << "# diffusion transformations in this project: " << Nfinal << "\n" << std::endl;
+
+      log << "Writing diffusion transformation database..." << std::endl;
+      db_orbits.commit();
+      log << "  DONE" << std::endl;
+
+      return 0;
+    }
 
     // -- Unique -------------------
 

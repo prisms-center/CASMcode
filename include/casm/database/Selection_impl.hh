@@ -5,10 +5,41 @@
 #include "casm/casm_io/stream_io/container.hh"
 #include "casm/database/DatabaseDefs.hh"
 #include "casm/database/Selected.hh"
+#include "casm/database/DatabaseTypes.hh"
 
 namespace CASM {
 
   namespace DB {
+
+    namespace {
+
+      // Initialization for "CALCULATED" depends on type:
+
+      /// Use SFINAE to implement if ObjType is a calculable config type:
+      ///
+      /// - Set selected to value of 'is_calculated(const ObjType&)'
+      template<typename ObjType, typename IfConfigType<ObjType>::type * = nullptr>
+      void init_calculated(
+        typename Selection<ObjType>::map_type &m_data,
+        Database<ObjType> &db) {
+        for(const auto &obj : db) {
+          m_data.insert(std::make_pair(obj.name(), is_calculated(obj)));
+        }
+      }
+
+      /// Use SFINAE to implement if ObjType is not a calculable config type
+      ///
+      /// - throw runtime_error
+      template<typename ObjType, typename IfNotConfigType<ObjType>::type * = nullptr>
+      void init_calculated(
+        typename Selection<ObjType>::map_type &m_data,
+        Database<ObjType> &db) {
+        std::stringstream msg;
+        msg << "Selection \"CALCULATED\" is not allowed for type: " << traits<ObjType>::short_name;
+        throw std::runtime_error(msg.str());
+      }
+    }
+
 
     /// boost::iterator_facade implementation
     template<typename ObjType, typename BaseIterator>
@@ -55,14 +86,12 @@ namespace CASM {
         }
       }
       else if(selection_path == "CALCULATED") {
-        for(const auto &obj : db()) {
-          m_data.insert(std::make_pair(obj.name(), is_calculated(obj)));
-        }
+        init_calculated(m_data, db());
       }
       else {
         if(!fs::exists(selection_path)) {
           std::stringstream ss;
-          ss << "ERROR in parsing configuation selection name. \n"
+          ss << "ERROR in parsing configuration selection name. \n"
              << "  Expected <filename>, 'ALL', 'NONE', 'EMPTY', 'CALCULATED', or 'MASTER' <--default \n"
              << "  Received: '" << selection_path << "'\n"
              << "  No file named '" << selection_path << "'.";

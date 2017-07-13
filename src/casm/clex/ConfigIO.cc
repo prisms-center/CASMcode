@@ -4,6 +4,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Norm.hh"
+#include "casm/clex/Calculable.hh"
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
@@ -233,7 +234,7 @@ namespace CASM {
       }
       else {
         std::stringstream ss;
-        ss << "Too many arguments for 'clex'.  Received: " << args << "\n";
+        ss << "Too many arguments for 'corr'.  Received: " << args << "\n";
         throw std::runtime_error(ss.str());
       }
       return true;
@@ -334,6 +335,60 @@ namespace CASM {
     }
 
 
+    // --- IsDiffTransEndpointOf implementations -----------
+
+    const std::string IsDiffTransEndpointOf::Name = "is_diff_trans_endpoint_of";
+
+    const std::string IsDiffTransEndpointOf::Desc =
+      "True (1) if configuration is an endpoint of an existing diff_trans_config that uses diff_trans_name"
+      " Requires argument ($diff_trans_name)."
+      " ($diff_trans_name is a diff_trans in the project)";
+
+    IsDiffTransEndpointOf::IsDiffTransEndpointOf() :
+      BooleanAttribute<Configuration>(Name, Desc) {
+      parse_args("");
+    }
+
+    /// \brief Evaluates if config is an endpoint of diff_trans_name
+    bool IsDiffTransEndpointOf::evaluate(const Configuration &config) const {
+      auto it = config.primclex().db<Kinetics::DiffTransConfiguration>().orbit_range(m_diff_trans_name).begin();
+      for(; it != config.primclex().db<Kinetics::DiffTransConfiguration>().orbit_range(m_diff_trans_name).end(); ++it) {
+        if(config.is_equivalent(it->from_config()) || config.is_equivalent(it->to_config())) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    /// \brief Clone using copy constructor
+    std::unique_ptr<IsDiffTransEndpointOf> IsDiffTransEndpointOf::clone() const {
+      return std::unique_ptr<IsDiffTransEndpointOf>(this->_clone());
+    }
+
+
+    /// \brief Expects 'is_diff_trans_endpoint_of($diff_trans_name)'
+    bool IsDiffTransEndpointOf::parse_args(const std::string &args) {
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+      if(splt_vec.size()) {
+        m_diff_trans_name = splt_vec[0];
+      }
+
+      if(splt_vec.size() > 1) {
+        std::stringstream ss;
+        ss << "Too many arguments for 'is_diff_trans_endpoint_of'.  Received: " << args << "\n";
+        throw std::runtime_error(ss.str());
+      }
+
+      return true;
+    }
+
+    /// \brief Clone using copy constructor
+    IsDiffTransEndpointOf *IsDiffTransEndpointOf::_clone() const {
+      return new IsDiffTransEndpointOf(*this);
+    }
+
+
     /*End ConfigIO*/
   }
 
@@ -360,15 +415,21 @@ namespace CASM {
     GenericConfigFormatter<std::string> calc_status() {
       return GenericConfigFormatter<std::string>("calc_status",
                                                  "Status of calculation.",
-                                                 CASM::calc_status,
-                                                 CASM::has_calc_status);
+                                                 CASM::calc_status<Configuration>,
+                                                 CASM::has_calc_status<Configuration>);
     }
 
     GenericConfigFormatter<std::string> failure_type() {
       return GenericConfigFormatter<std::string>("failure_type",
                                                  "Reason for calculation failure.",
-                                                 CASM::failure_type,
-                                                 CASM::has_failure_type);
+                                                 CASM::failure_type<Configuration>,
+                                                 CASM::has_failure_type<Configuration>);
+    }
+
+    GenericConfigFormatter<std::string> diff_trans_endpoint_of() {
+      return GenericConfigFormatter<std::string>("diff_trans_endpoint_of",
+                                                 "Indicates which diff_trans this configuration is an endpoint of by name.",
+                                                 CASM::diff_trans_endpoint_of);
     }
 
 
@@ -470,8 +531,14 @@ namespace CASM {
 
     GenericConfigFormatter<bool> is_canonical() {
       return GenericConfigFormatter<bool>("is_canonical",
-                                          "True (1) if the configuration cannot be transfromed by symmetry to a configuration with higher lexicographic order",
+                                          "True (1) if the configuration cannot be transformed by symmetry to a configuration with higher lexicographic order",
                                           CASM::is_canonical);
+    }
+
+    GenericConfigFormatter<bool> is_diff_trans_endpoint() {
+      return GenericConfigFormatter<bool>("is_diff_trans_endpoint",
+                                          "True (1) if the configuration is an endpoint of one of the existing diff_trans_configs",
+                                          CASM::is_diff_trans_endpoint);
     }
 
     GenericConfigFormatter<double> rms_force() {
@@ -534,6 +601,7 @@ namespace CASM {
       alias_or_name<Configuration>(),
       scelname(),
       calc_status(),
+      diff_trans_endpoint_of(),
       failure_type(),
       point_group_name()
     );
@@ -551,6 +619,8 @@ namespace CASM {
       is_calculated(),
       is_canonical(),
       is_primitive(),
+      is_diff_trans_endpoint(),
+      IsDiffTransEndpointOf(),
       DB::Selected<Configuration>(),
       OnClexHull(),
       OnHull()

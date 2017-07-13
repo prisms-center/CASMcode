@@ -6,23 +6,19 @@
 #include <boost/preprocessor/seq/enum.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_TMP.hh"
+#include "casm/database/DatabaseTypeTraits.hh"
 
 // 1) add Database types here
-#define CASM_DB_NONCONFIG_TYPES (Supercell)
-#define CASM_DB_CONFIG_TYPES (Configuration)
+#define CASM_DB_NONCONFIG_TYPES (Supercell) (Kinetics::PrimPeriodicDiffTransOrbit)
+#define CASM_DB_CONFIG_TYPES (Configuration) (Kinetics::DiffTransConfiguration)
 
 // 2) add #include locations as appropriate to:
 //    DatabaseTypeDefs.hh, DatabaseTypeTraits.hh,
 //    ConfigTypeDefs.hh, ConfigTypeTraits.hh
 
-
 // --- the rest works based on ^ -----------------------------------------------
 
 #define CASM_DB_TYPES CASM_DB_NONCONFIG_TYPES CASM_DB_CONFIG_TYPES
-
-// forward declare classes
-#define DB_CLASS_DECL(r, data, elem) class elem;
-BOOST_PP_SEQ_FOR_EACH(DB_CLASS_DECL, _, CASM_DB_TYPES)
 
 namespace CASM {
 
@@ -36,6 +32,14 @@ namespace CASM {
     // List of all configtypes which have calculations stored in a PropertiesDatabase
     typedef std::tuple<BOOST_PP_SEQ_ENUM(CASM_DB_CONFIG_TYPES)> ConfigTypeTuple;
 
+
+    // -- SFINAE helper --
+
+    template<typename T>
+    using IfConfigType = std::enable_if<CASM_TMP::has_type<T, ConfigTypeTuple>::value, T>;
+
+    template<typename T>
+    using IfNotConfigType = std::enable_if < !CASM_TMP::has_type<T, ConfigTypeTuple>::value, T >;
 
     // -- List of Database DataObject and ConfigType --
 

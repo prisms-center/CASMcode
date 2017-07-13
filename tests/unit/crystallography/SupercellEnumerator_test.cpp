@@ -462,7 +462,7 @@ jsonParser generate_all_test_cases() {
   //********************************************************************//
 
   std::vector<jsonParser> all_mat_tests;
-  all_mat_tests.push_back(mat_test_case("POS1" , 1, 6));
+  all_mat_tests.push_back(mat_test_case("POS1", 1, 6));
   all_mat_tests.push_back(mat_test_case("PRIM1", 2, 9));
   all_mat_tests.push_back(mat_test_case("PRIM2", 4, 7));
   all_mat_tests.push_back(mat_test_case("PRIM4", 1, 8));
@@ -472,7 +472,7 @@ jsonParser generate_all_test_cases() {
   //********************************************************************//
 
   std::vector<jsonParser> all_lat_tests;
-  all_lat_tests.push_back(lat_test_case("POS1" , 2, 6));
+  all_lat_tests.push_back(lat_test_case("POS1", 2, 6));
   all_lat_tests.push_back(lat_test_case("PRIM1", 2, 9));
   all_lat_tests.push_back(lat_test_case("PRIM2", 3, 7));
   all_lat_tests.push_back(lat_test_case("PRIM4", 1, 8));

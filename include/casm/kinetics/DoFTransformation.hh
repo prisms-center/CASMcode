@@ -1,6 +1,7 @@
 #ifndef CASM_DoFTransformation
 #define CASM_DoFTransformation
 
+#include <memory>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
@@ -26,6 +27,9 @@ namespace CASM {
       const PrimType &prim() const {
         return *m_prim;
       }
+
+      /// \brief Return a reference to the primitive Structure lattice
+      const Lattice &lattice() const;
 
       Configuration &apply_to(Configuration &config) const;
 

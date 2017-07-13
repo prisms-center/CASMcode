@@ -6,6 +6,7 @@
 #include <cassert>
 #include <vector>
 #include <numeric>
+#include <ostream>
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {

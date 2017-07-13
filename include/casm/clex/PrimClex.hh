@@ -125,10 +125,10 @@ namespace CASM {
 
 
     template<typename T>
-    DB::PropertiesDatabase &db_props() const;
+    DB::PropertiesDatabase &db_props(std::string calc_type) const;
 
     template<typename T>
-    const DB::PropertiesDatabase &const_db_props() const;
+    const DB::PropertiesDatabase &const_db_props(std::string calc_type) const;
 
 
     DB::DatabaseHandler &db_handler() const;

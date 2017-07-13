@@ -8,6 +8,10 @@
 #include "casm/misc/Comparisons.hh"
 #include "casm/container/multivector.hh"
 #include "casm/symmetry/SymCompare.hh"
+#include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
+#include "casm/database/Named.hh"
+#include "casm/database/Database.hh"
+#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
 
@@ -26,7 +30,8 @@ namespace CASM {
   /// \ingroup Clusterography
   ///
   template<typename _Element, typename _SymCompareType>
-  class Orbit : public Comparisons<Orbit<_Element, _SymCompareType> > {
+  class Orbit : public Comparisons<Orbit<_Element, _SymCompareType> >,
+    public DB::Indexed<Orbit<_Element, _SymCompareType>> {
 
   public:
 
@@ -133,6 +138,9 @@ namespace CASM {
 
   private:
 
+    friend DB::Named<Orbit<_Element, _SymCompareType>>;
+    std::string _generate_name() const;
+
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry rep
     template<typename SymOpIterator>
     void _construct(Element generating_element,
@@ -151,10 +159,26 @@ namespace CASM {
 
   };
 
-
   /// \brief Find orbit containing an element in a range of Orbit
   template<typename OrbitIterator, typename Element>
   OrbitIterator find_orbit(OrbitIterator begin, OrbitIterator end, Element e);
+
+  struct GetPrototype {
+
+    template<typename OrbitType>
+    typename OrbitType::Element const &operator()(const OrbitType &orbit) const {
+      return orbit.prototype();
+    }
+  };
+
+  template<typename OrbitIterator>
+  using PrototypeIterator = boost::transform_iterator<GetPrototype, OrbitIterator>;
+
+  /// Convert an Orbit iterator to a prototype iterator
+  template<typename OrbitIterator>
+  PrototypeIterator<OrbitIterator> prototype_iterator(OrbitIterator orbit_it) {
+    return boost::make_transform_iterator(orbit_it, GetPrototype());
+  }
 }
 
 #endif

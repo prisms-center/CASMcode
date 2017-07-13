@@ -379,6 +379,48 @@ namespace CASM {
       mutable notstd::cloneable_ptr<Norm<Configuration> > m_norm;
     };
 
+    /// \brief Checks if Configuration is an endpoint of a diff_trans_config with the given diff_trans_name
+    ///
+    /// Returns true if config is an endpoint of diff_trans_name
+    ///
+    class IsDiffTransEndpointOf : public BooleanAttribute<Configuration> {
+
+    public:
+
+      static const std::string Name;
+
+      static const std::string Desc;
+
+
+      IsDiffTransEndpointOf();
+
+      // --- Required implementations -----------
+
+      /// \brief Returns the atom fraction
+      bool evaluate(const Configuration &config) const override;
+
+      /// \brief Clone using copy constructor
+      std::unique_ptr<IsDiffTransEndpointOf> clone() const;
+
+
+      // --- Specialized implementation -----------
+
+      /// \brief Expects 'is_diff_trans_endpoint_of(diff_trans_name)'
+      bool parse_args(const std::string &args) override;
+
+      /// \brief Short header returns: 'is_diff_trans_endpoint_of(diff_trans_name)', etc.
+      std::string short_header(const Configuration &_tmplt) const override {
+        return "is_diff_trans_endpoint_of(" + m_diff_trans_name + ")";
+      }
+
+    private:
+
+      /// \brief Clone using copy constructor
+      IsDiffTransEndpointOf *_clone() const override;
+
+      mutable std::string m_diff_trans_name;
+
+    };
   }
 
   namespace ConfigIO {
@@ -395,6 +437,8 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<std::string> failure_type();
 
+    ConfigIO::GenericConfigFormatter<std::string> diff_trans_endpoint_of();
+
     ConfigIO::GenericConfigFormatter<Index> scel_size();
 
     ConfigIO::GenericConfigFormatter<Index> multiplicity();
@@ -406,6 +450,8 @@ namespace CASM {
     ConfigIO::GenericConfigFormatter<bool> is_primitive();
 
     ConfigIO::GenericConfigFormatter<bool> is_canonical();
+
+    ConfigIO::GenericConfigFormatter<bool> is_diff_trans_endpoint();
 
     ConfigIO::GenericConfigFormatter<double> relaxed_energy();
 

@@ -4,6 +4,7 @@
 #include <iterator>
 #include <memory>
 #include <map>
+#include <algorithm>
 #include <boost/iterator/iterator_facade.hpp>
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/CASM_global_definitions.hh"
@@ -314,6 +315,19 @@ namespace CASM {
       void set_id(const _ValueType &obj, Index id) const {
         obj.set_id(id);
       }
+
+      /// Only ValDatabase<ValueType> is allowed to do a const id change
+      template<typename _ValueType>
+      void set_id(const _ValueType &obj, std::string id) const {
+        obj.set_id(id);
+      }
+
+      /// Only ValDatabase<ValueType> is allowed to do set_primclex
+      template<typename _ValueType>
+      void set_primclex(const _ValueType &obj) const {
+        obj.set_primclex(primclex());
+      }
+
 
     private:
 
