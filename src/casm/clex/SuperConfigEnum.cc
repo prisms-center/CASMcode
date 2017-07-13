@@ -34,8 +34,9 @@ namespace CASM {
 
     "  primitive_only: bool (default=true)\n"
     "    If true, only the primitive form of a configuration is saved in the      \n"
-    "    otherwise, both primitive and non-primitive configurations are saved.    \n"
-    "\n"
+    "    configuration list. Otherwise, both primitive and non-primitive          \n"
+    "    configurations are saved.    \n\n"
+
     "  filter: string (optional, default=None)\n"
     "    A query command to use to filter which configurations are kept.          \n"
     "\n"
@@ -193,7 +194,7 @@ namespace CASM {
       return notstd::make_unique<SuperConfigEnum>(scel, subconfig.begin(), subconfig.end());
     };
 
-    int returncode = insert_configs(
+    int returncode = insert_configs_via_lattice_enum(
                        enumerator_name,
                        primclex,
                        superlat_enum->begin(),
