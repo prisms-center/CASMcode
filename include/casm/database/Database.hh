@@ -321,6 +321,14 @@ namespace CASM {
       void set_id(const _ValueType &obj, std::string id) const {
         obj.set_id(id);
       }
+
+      /// Only ValDatabase<ValueType> is allowed to do set_primclex
+      template<typename _ValueType>
+      void set_primclex(const _ValueType &obj) const {
+        obj.set_primclex(primclex());
+      }
+
+
     private:
 
       // enable lookup of name -> alias

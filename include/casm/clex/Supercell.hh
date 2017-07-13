@@ -85,8 +85,6 @@ namespace CASM {
 
     // **** Accessors ****
 
-    const PrimClex &primclex() const;
-
     /// \brief Get the PrimClex crystallography_tol
     double crystallography_tol() const;
 
@@ -185,10 +183,6 @@ namespace CASM {
     void _generate_permutations() const;
 
     std::string _generate_name() const;
-
-
-    // pointer to Primcell containing all the cluster expansion data
-    const PrimClex *m_primclex;
 
     // lattice of supercell in real space
     Lattice m_lattice;

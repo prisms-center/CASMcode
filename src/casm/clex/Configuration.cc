@@ -20,6 +20,7 @@
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/database/DiffTransConfigDatabase.hh"
 
 namespace CASM {
 
@@ -40,7 +41,8 @@ namespace CASM {
     const jsonParser &src,
     const ConfigDoF &_configdof) :
     m_supercell(&_supercell),
-    m_configdof(_configdof) {
+    m_configdof(_configdof),
+    Calculable(_supercell.primclex()) {
 
     set_source(src);
   }
@@ -52,7 +54,8 @@ namespace CASM {
     const ConfigDoF &_configdof) :
     m_supercell(_supercell.get()),
     m_supercell_ptr(_supercell),
-    m_configdof(_configdof) {
+    m_configdof(_configdof),
+    Calculable(_supercell->primclex()) {
 
     set_source(source);
   }
@@ -61,8 +64,18 @@ namespace CASM {
   Configuration::Configuration(
     const Supercell &_supercell,
     const std::string &_id,
-    const jsonParser &_data) {
-
+    const jsonParser &_data):
+    Calculable(_supercell.primclex()) {
+    if(_id == "none") {
+      if(_data.contains("dof")) {
+        ConfigDoF dof;
+        CASM::from_json(dof, _data["dof"]);
+        *this = Configuration(_supercell, _data, dof);
+        return;
+      }
+      *this = Configuration(_supercell, _data);
+      return;
+    }
     this->from_json(_data, _supercell, _id);
 
   }
@@ -242,10 +255,6 @@ namespace CASM {
   ///   temporary Configuration
   Configuration Configuration::primitive() const {
     Configuration tconfig {*this};
-    /*
-    std::cout << "T: \n" << tconfig.supercell().transf_mat() << std::endl;
-    std::cout << "L: \n" << tconfig.supercell().lattice().lat_column_mat() << std::endl;
-    */
 
     std::unique_ptr<Supercell> next_scel;
 
@@ -264,14 +273,9 @@ namespace CASM {
                           crystallography_tol()).make_right_handed().reduced_cell();
 
       next_scel.reset(new Supercell(&primclex(), new_lat));
-      /*
-      std::cout << "T: \n" << next_scel->transf_mat() << std::endl;
-      std::cout << "L: \n" << next_scel->lattice().lat_column_mat() << std::endl;
-      */
 
       // create a sub configuration in the new supercell
       tconfig = sub_configuration(*next_scel, tconfig);
-      //std::cout << "sub occ: \n" << tconfig.occupation() << std::endl;
 
       tconfig.m_supercell_ptr.reset(next_scel.release());
       tconfig.m_supercell = tconfig.m_supercell_ptr.get();
@@ -301,20 +305,49 @@ namespace CASM {
     return cache()["is_canonical"].get<bool>();
   }
 
+  /// \brief Check if Configuration is an endpoint of an existing diff_trans_config
+  bool Configuration::is_diff_trans_endpoint() const {
+    auto it = primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).begin();
+    for(; it != primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).end(); ++it) {
+      if(is_equivalent(it->from_config()) || is_equivalent(it->to_config())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// \brief tells which diff_trans this configuration is an endpoint of
+  std::string Configuration::diff_trans_endpoint_of() const {
+    std::set<std::string> collection;
+    auto it = primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).begin();
+    for(; it != primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).end(); ++it) {
+      if(is_equivalent(it->from_config()) || is_equivalent(it->to_config())) {
+        collection.insert(it->orbit_name());
+      }
+    }
+    std::string result = "none";
+    if(collection.size()) {
+      result = "";
+    }
+    for(auto &n : collection) {
+      result += n + ", ";
+    }
+    return result;
+  }
   //*******************************************************************************
 
   /// \brief Returns the operation that applied to *this returns the canonical form
   PermuteIterator Configuration::to_canonical() const {
-    if(!cache().contains("to_canonical")) {
-      ConfigCompare f(*this, crystallography_tol());
-      const Supercell &scel = supercell();
-      auto result = std::max_element(scel.permute_begin(), scel.permute_end(), f);
-      cache_insert("to_canonical", result);
-      return result;
-    }
+    //if(!cache().contains("to_canonical")) {
+    ConfigCompare f(*this, crystallography_tol());
+    const Supercell &scel = supercell();
+    auto result = std::max_element(scel.permute_begin(), scel.permute_end(), f);
+    cache_insert("to_canonical", result);
+    return result;
+    /*}
     else {
       return cache()["to_canonical"].get<PermuteIterator>(supercell());
-    }
+    }*/
   }
 
   //*******************************************************************************
@@ -698,18 +731,16 @@ namespace CASM {
   ///
   jsonParser &Configuration::to_json(jsonParser &json) const {
 
-    //std::cout << "begin Configuration::to_json(jsonParser& json)" << std::endl;
-
     json.put_obj();
 
     CASM::to_json(m_configdof, json["dof"]);
     CASM::to_json(source(), json["source"]);
 
+    json["cache"].put_obj();
     if(cache_updated()) {
       json["cache"] = cache();
     }
 
-    //std::cout << "finish Configuration::to_json(jsonParser& json)" << std::endl;
     return json;
   }
 
@@ -762,8 +793,6 @@ namespace CASM {
   ///
   void Configuration::from_json(const jsonParser &json, const Supercell &scel, std::string _id) {
 
-    //std::cout << "begin  Configuration::from_json()" << std::endl;
-
     m_supercell = &scel;
 
     this->clear_name();
@@ -803,7 +832,6 @@ namespace CASM {
       set_calc_properties(*calc_props_it);
     }
 
-    //std::cout << "finish Configuration::from_json()" << std::endl;
   }
 
   void Configuration::from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname) {
@@ -879,23 +907,20 @@ namespace CASM {
     const Configuration &super_config,
     const UnitCell &origin) {
 
-    //std::cout << "begin sub_configuration" << std::endl;
+
     if(&sub_scel.primclex() != &super_config.primclex()) {
       throw std::runtime_error(std::string("Error in 'sub_configuration:"
                                            " PrimClex of sub-Supercell and super-configuration are not the same"));
     }
 
-    //std::cout << " here 1" << std::endl;
+
     Configuration sub_config {sub_scel};
 
-    //std::cout << " here 2" << std::endl;
     // copy global dof
     if(super_config.has_deformation()) {
       sub_config.configdof().set_deformation(super_config.deformation());
     }
 
-
-    //std::cout << " here 3" << std::endl;
     // initialize site dof
     if(super_config.has_occupation()) {
       sub_config.configdof().set_occupation(std::vector<int>(sub_config.size(), 0));
@@ -905,7 +930,6 @@ namespace CASM {
         ConfigDoF::displacement_matrix_t::Zero(3, sub_config.size()));
     }
 
-    //std::cout << " here 4" << std::endl;
     // copy site dof
     for(Index i = 0; i < sub_config.size(); i++) {
 
@@ -927,7 +951,6 @@ namespace CASM {
 
     }
 
-    //std::cout << "finish sub_configuration" << std::endl;
     return sub_config;
   }
 
@@ -1177,9 +1200,19 @@ namespace CASM {
     return _config.is_primitive();
   }
 
-  /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
+  /// \brief returns true if no symmetry transformation applied to _config will increase its lexicographic order
   bool is_canonical(const Configuration &_config) {
     return _config.is_canonical();
+  }
+
+  /// \brief returns true if _config is an endpoint of an existing diff_trans_config in the database
+  bool is_diff_trans_endpoint(const Configuration &_config) {
+    return _config.is_diff_trans_endpoint();
+  }
+
+  /// \brief returns which diff_trans _config is an endpoint of
+  std::string diff_trans_endpoint_of(const Configuration &_config) {
+    return _config.diff_trans_endpoint_of();
   }
 
   bool has_relaxed_energy(const Configuration &_config) {
@@ -1261,13 +1294,10 @@ namespace CASM {
     if(motif.has_occupation()) {
       result.set_occupation(std::vector<int>(m_scel->num_sites(), 0));
     }
-    //std::cout << "has_disp: " << motif.has_displacement() << std::endl;
     if(motif.has_displacement()) {
       result.init_displacement();
-      //std::cout << "disp: " << motif.displacement() << std::endl;
-      //std::cout << "mat: \n" << m_op->matrix() << std::endl;
+
       motif_new_disp = m_op->matrix() * motif.displacement();
-      //std::cout << "new_disp: " << motif_new_disp << std::endl;
 
     }
 
@@ -1283,9 +1313,6 @@ namespace CASM {
           result.configdof().disp(scel_s) = motif_new_disp.col(s);
         }
       }
-    }
-    if(motif.has_displacement()) {
-      //std::cout << "final disp: " << result.displacement() << std::endl;
     }
     return result;
   }
@@ -1329,20 +1356,14 @@ namespace CASM {
     // So we can tile the decoration of the motif config onto the supercell correctly
     PrimGrid prim_grid(oriented_motif_lat, m_scel->lattice());
 
-    //std::cout << "m_op->matrix(): \n" << m_op->matrix() << std::endl;
-    //std::cout << "m_op->tau(): \n" << m_op->tau() << std::endl;
-
     const Structure &prim = m_scel->prim();
     m_index_table.resize(m_motif_scel->num_sites());
 
     // for each site in motif
     for(Index s = 0 ; s < m_motif_scel->num_sites() ; s++) {
 
-      //std::cout << "before: " << m_motif_scel->uccoord(s) << std::endl;
-
       // apply symmetry to re-orient and find unit cell coord
       UnitCellCoord oriented_uccoord = copy_apply(*m_op, m_motif_scel->uccoord(s));
-      //std::cout << "after: " << oriented_uccoord << std::endl;
 
       // for each unit cell of the oriented motif in the supercell, copy the occupation
       for(Index i = 0 ; i < prim_grid.size() ; i++) {

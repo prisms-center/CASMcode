@@ -28,6 +28,7 @@ class Outcar(object):
         self.ngy = None
         self.ngz = None
         self.found_ngx = False
+        self.forces = []
 
         self.read()
 
@@ -52,6 +53,7 @@ class Outcar(object):
         else:
             raise OutcarError("file not found: " + self.filename)
 
+        force_index = False
         for line in f:
             try:
                 if re.search("generate k-points for:", line):
@@ -109,6 +111,18 @@ class Outcar(object):
                     self.ngy = int(r.group(2))
                     self.ngz = int(r.group(3))
                     self.found_ngx = True
+            except:
+                pass
+
+            if force_index:
+                if '--' in line and len(self.forces) > 0:
+                    force_index = False
+                elif '--' not in line:
+                    self.forces.append(map(float, line.split()[-3:]))
+
+            try:
+                if re.search("TOTAL-FORCE", line):
+                    force_index = True
             except:
                 pass
 

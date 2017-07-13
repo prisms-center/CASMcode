@@ -95,6 +95,30 @@ namespace CASM {
 
       void set_orbit_name(const std::string &orbit_name);
 
+      std::string orbit_name() const {
+        return m_orbit_name;
+      }
+
+      /// States whether the diffusion transformation is possible with the given Configuration
+      bool is_valid_neb() const;
+
+      /// States whether the from specie locations in the diff_trans match the from_config
+      bool has_valid_from_occ() const;
+
+      /// The name of the canonical form of the from config
+      std::string from_configname() const;
+
+      /// The name of the canonical form of the to config
+      std::string to_configname() const;
+
+      /// A permute iterator it such that from_config = copy_apply(it,from_config.canonical_form())
+      PermuteIterator from_config_from_canonical() const;
+
+      /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
+      PermuteIterator to_config_from_canonical() const;
+
+
+
     private:
 
       bool _lt(const DiffTransConfiguration &B) const {
@@ -129,6 +153,8 @@ namespace CASM {
     /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
     Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
 
+    /// \brief Returns correlations using 'clexulator'.
+    Eigen::VectorXd correlations(const DiffTransConfiguration &dtc, Clexulator &clexulator);
 
 
   }

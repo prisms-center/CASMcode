@@ -12,6 +12,15 @@ extern "C" {
   }
 }
 
+namespace {
+  class tmpBuff : public std::streambuf {
+  public:
+    int overflow(int c) {
+      return c;
+    }
+  };
+}
+
 namespace CASM {
 
   namespace Kinetics {
@@ -149,9 +158,10 @@ namespace CASM {
       }
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
-
+      tmpBuff streambuff;
+      std::ostream dead(&streambuff);
       auto end = make_prim_periodic_orbits(
-                   primclex.prim(), _kwargs["bspecs"], alloy_sites_filter, primclex.crystallography_tol(), std::back_inserter(orbits), primclex.log());
+                   primclex.prim(), _kwargs["bspecs"], alloy_sites_filter, primclex.crystallography_tol(), std::back_inserter(orbits), dead);
 
       Log &log = primclex.log();
       auto &db_orbits = primclex.db<PrimPeriodicDiffTransOrbit>();
@@ -179,7 +189,7 @@ namespace CASM {
         }
         if(it == speciemap.end()) {
           //insert current into database
-          primclex.db<PrimPeriodicDiffTransOrbit>().insert(diff_trans_orbit);
+          db_orbits.insert(diff_trans_orbit);
         }
       }
 

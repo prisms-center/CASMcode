@@ -2,8 +2,12 @@
 #define CASM_DiffTransConfigurationIO
 
 #include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatter_impl.hh"
 #include "casm/casm_io/DataFormatterTools_impl.hh"
+#include "casm/container/ContainerTraits.hh"
+#include "casm/clex/Clexulator.hh"
+#include "casm/clex/ECIContainer.hh"
 
 
 namespace CASM {
@@ -11,45 +15,39 @@ namespace CASM {
   namespace Kinetics {
 
     namespace DiffTransConfigIO {
-      /*
-
-      THESE CLASSES NEED TO BE CORRECTED FOR LOCAL ENVIRONMENTS ONLY
 
       namespace DiffTransConfigIO_impl {
 
-      /// \brief Returns fraction of sites occupied by a species
-      ///
-      /// Fraction of sites occupied by a species, including vacancies. No argument
-      /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
-      ///
-      class MolDependent : public VectorXdAttribute<DiffTransConfiguration> {
+        /// \brief Returns fraction of sites occupied by a species
+        ///
+        /// Fraction of sites occupied by a species, including vacancies. No argument
+        /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
+        ///
+        class MolDependent : public VectorXdAttribute<DiffTransConfiguration> {
 
-      public:
+        public:
 
-        MolDependent(const std::string &_name, const std::string &_desc) :
-          VectorXdAttribute<DiffTransConfiguration>(_name, _desc) {}
+          MolDependent(const std::string &_name, const std::string &_desc) :
+            VectorXdAttribute<DiffTransConfiguration>(_name, _desc) {}
 
 
-        // --- Specialized implementation -----------
+          // --- Specialized implementation -----------
 
-        /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)', etc.
-        bool parse_args(const std::string &args) override;
+          /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)', etc.
+          bool parse_args(const std::string &args) override;
 
-        /// \brief Adds index rules corresponding to the parsed args
-        void init(const DiffTransConfiguration &_tmplt) const override;
+          /// \brief Adds index rules corresponding to the parsed args
+          void init(const DiffTransConfiguration &_tmplt) const override;
 
-        /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
-        std::vector<std::string> col_header(const DiffTransConfiguration &_tmplt) const override;
+          /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
+          std::vector<std::string> col_header(const DiffTransConfiguration &_tmplt) const override;
 
-      private:
-        mutable std::vector<std::string> m_mol_names;
+        private:
+          mutable std::vector<std::string> m_mol_names;
 
-      };
+        };
 
       }
-
-
-
 
       /// \brief Calculate param composition of a DiffTransConfiguration
       ///
@@ -208,12 +206,11 @@ namespace CASM {
       /// \brief In the future, AtomFrac will actually be atoms only
       typedef AtomFrac SpeciesFrac;
 
-
       /// \brief Returns local correlation values
       ///
       /// Evaluated basis function values, normalized per primitive cell;
       ///
-      class Corr : public VectorXdAttribute<DiffTransConfiguration> {
+      class LocalCorr : public VectorXdAttribute<DiffTransConfiguration> {
 
       public:
 
@@ -222,10 +219,10 @@ namespace CASM {
         static const std::string Desc;
 
 
-        Corr() : VectorXdAttribute<DiffTransConfiguration>(Name, Desc), m_clex_name("") {}
+        LocalCorr() : VectorXdAttribute<DiffTransConfiguration>(Name, Desc), m_clex_name("") {}
 
-        Corr(const Clexulator &clexulator) :
-          VectorXdAttribute<Configuration>(Name, Desc),
+        LocalCorr(const Clexulator &clexulator) :
+          VectorXdAttribute<DiffTransConfiguration>(Name, Desc),
           m_clexulator(clexulator) {}
 
 
@@ -235,8 +232,8 @@ namespace CASM {
         Eigen::VectorXd evaluate(const DiffTransConfiguration &dtconfig) const override;
 
         /// \brief Clone using copy constructor
-        std::unique_ptr<Corr> clone() const {
-          return std::unique_ptr<Corr>(this->_clone());
+        std::unique_ptr<LocalCorr> clone() const {
+          return std::unique_ptr<LocalCorr>(this->_clone());
         }
 
 
@@ -253,8 +250,8 @@ namespace CASM {
       private:
 
         /// \brief Clone using copy constructor
-        Corr *_clone() const override {
-          return new Corr(*this);
+        LocalCorr *_clone() const override {
+          return new LocalCorr(*this);
         }
 
         mutable Clexulator m_clexulator;
@@ -265,11 +262,11 @@ namespace CASM {
 
 
 
-      /// \brief Returns predicted activation barrier
+      /// \brief Returns predicted kra barrier
       ///
-      /// Returns predicted activation energy (only activation energy for now)
+      /// Returns predicted kra energy (only kra energy for now)
       ///
-      class Clex : public ScalarAttribute<DiffTransConfiguration> {
+      class LocalClex : public ScalarAttribute<DiffTransConfiguration> {
 
       public:
 
@@ -278,10 +275,10 @@ namespace CASM {
         static const std::string Desc;
 
 
-        Clex();
+        LocalClex();
 
-        /// \brief Construct with Clexulator, ECI, and either 'formation_energy' or 'formation_energy_per_species'
-        Clex(const Clexulator &clexulator, const ECIContainer &eci, const Norm<DiffTransConfiguration> &norm);
+        /// \brief Construct with Clexulator, ECI, and either 'formation_energy'
+        LocalClex(const Clexulator &clexulator, const ECIContainer &eci);
 
 
         // --- Required implementations -----------
@@ -290,39 +287,36 @@ namespace CASM {
         double evaluate(const DiffTransConfiguration &dtconfig) const override;
 
         /// \brief Clone using copy constructor
-        std::unique_ptr<Clex> clone() const;
+        std::unique_ptr<LocalClex> clone() const;
 
 
         // --- Specialized implementation -----------
 
-        // validate: predicted property can always be calculated if clexulator and
-        // eci were obtained ok
+        // validate: predicted property can't always be calculated if clexulator and
+        // eci were obtained ok, checks to see if clexulator and eci match hop within dtconfig
+        bool validate(const DiffTransConfiguration &dtconfig) const override;
 
         /// \brief If not yet initialized, use the global clexulator and eci from the PrimClex
         void init(const DiffTransConfiguration &_tmplt) const override;
 
-        /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy_per_species)'
+        /// \brief Expects 'local_clex', 'local_clex(kra)'
         bool parse_args(const std::string &args) override;
 
-        /// \brief Short header returns: 'clex(formation_energy)', 'clex(formation_energy_per_species)', etc.
-        std::string short_header(const Configuration &_tmplt) const override {
-          return "clex(" + m_clex_name + ")";
+        /// \brief Short header returns: 'local_clex(kra)',  etc.
+        std::string short_header(const DiffTransConfiguration &_tmplt) const override {
+          return "local_clex(" + m_clex_name + ")";
         }
 
       private:
 
-        /// \brief Returns the normalization
-        double _norm(const DiffTransConfiguration &dtconfig) const;
-
         /// \brief Clone using copy constructor
-        Clex *_clone() const override;
+        LocalClex *_clone() const override;
 
         mutable std::string m_clex_name;
         mutable Clexulator m_clexulator;
         mutable ECIContainer m_eci;
-        mutable notstd::cloneable_ptr<Norm<DiffTransConfiguration> > m_norm;
       };
-      */
+
 
 
 
@@ -342,6 +336,10 @@ namespace CASM {
       DiffTransConfigIO::GenericDiffTransConfigFormatter<double> max_length();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> dtconfigname();
+
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> from_configname();
+
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> to_configname();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> scelname();
 

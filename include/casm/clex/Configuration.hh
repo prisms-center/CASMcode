@@ -390,6 +390,12 @@ namespace CASM {
     /// \brief Check if Configuration is in the canonical form
     bool is_canonical() const;
 
+    /// \brief Check if Configuration is an endpoint of any existing diff_trans_config
+    bool is_diff_trans_endpoint() const;
+
+    /// \brief Returns which diff_trans Configuration is an endpoint of
+    std::string diff_trans_endpoint_of() const;
+
     /// \brief Returns the operation that applied to *this returns the canonical form
     PermuteIterator to_canonical() const;
 
@@ -626,8 +632,14 @@ namespace CASM {
   /// \brief returns true if _config describes primitive cell of the configuration it describes
   bool is_primitive(const Configuration &_config);
 
-  /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
+  /// \brief returns true if no symmetry transformation applied to _config will increase its lexicographic order
   bool is_canonical(const Configuration &_config);
+
+  /// \brief returns true if _config is an endpoint of any existing diff_trans_config
+  bool is_diff_trans_endpoint(const Configuration &_config);
+
+  /// \brief returns which diff_trans _config is an endpoint of
+  std::string diff_trans_endpoint_of(const Configuration &_config);
 
   bool has_relaxed_energy(const Configuration &_config);
 
