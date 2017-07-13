@@ -21,9 +21,9 @@ namespace CASM {
 
     /// Insert a PropertiesDatabase
     template<typename T>
-    void DatabaseHandler::insert_props(std::string db_name, std::unique_ptr<PropertiesDatabase> &&value) {
+    void DatabaseHandler::insert_props(std::string db_name, std::string calc_type, std::unique_ptr<PropertiesDatabase> &&value) {
       m_db_props.emplace(
-        std::make_pair(traits<T>::name, db_name),
+        PropDBKey(traits<T>::name, db_name, calc_type),
         std::move(value));
     }
 
@@ -47,20 +47,20 @@ namespace CASM {
 
     /// Access default PropertiesDatabase
     template<typename T>
-    PropertiesDatabase &DatabaseHandler::db_props()  {
-      return db_props<T>(m_default_db_name);
+    PropertiesDatabase &DatabaseHandler::db_props(std::string calc_type)  {
+      return db_props<T>(m_default_db_name, calc_type);
     }
 
     /// Access default PropertiesDatabase
     template<typename T>
-    const PropertiesDatabase &DatabaseHandler::db_props() const  {
-      return db_props<T>(m_default_db_name);
+    const PropertiesDatabase &DatabaseHandler::db_props(std::string calc_type) const  {
+      return db_props<T>(m_default_db_name, calc_type);
     }
 
     /// Access default PropertiesDatabase
     template<typename T>
-    const PropertiesDatabase &DatabaseHandler::const_db_props()  {
-      return const_db_props<T>(m_default_db_name);
+    const PropertiesDatabase &DatabaseHandler::const_db_props(std::string calc_type)  {
+      return const_db_props<T>(m_default_db_name, calc_type);
     }
 
 
@@ -87,22 +87,22 @@ namespace CASM {
 
     /// Access specified PropertiesDatabase
     template<typename T>
-    PropertiesDatabase &DatabaseHandler::db_props(std::string db_name) {
-      auto res = _find_props<T>(db_name);
+    PropertiesDatabase &DatabaseHandler::db_props(std::string db_name, std::string calc_type) {
+      auto res = _find_props<T>(db_name, calc_type);
       return static_cast<PropertiesDatabase &>(res->second->open());
     }
 
     /// Access specified PropertiesDatabase
     template<typename T>
-    const PropertiesDatabase &DatabaseHandler::db_props(std::string db_name) const {
-      auto res = _find_props<T>(db_name);
+    const PropertiesDatabase &DatabaseHandler::db_props(std::string db_name, std::string calc_type) const {
+      auto res = _find_props<T>(db_name, calc_type);
       return static_cast<PropertiesDatabase &>(res->second->open());
     }
 
     /// Access specified PropertiesDatabase
     template<typename T>
-    const PropertiesDatabase &DatabaseHandler::const_db_props(std::string db_name) {
-      auto res = _find_props<T>(db_name);
+    const PropertiesDatabase &DatabaseHandler::const_db_props(std::string db_name, std::string calc_type) {
+      auto res = _find_props<T>(db_name, calc_type);
       return static_cast<PropertiesDatabase &>(res->second->open());
     }
 
@@ -117,11 +117,11 @@ namespace CASM {
     }
 
     template<typename T>
-    DatabaseHandler::props_map_type::iterator DatabaseHandler::_find_props(std::string db_name) const {
-      auto key = std::make_pair(traits<T>::name, db_name);
+    DatabaseHandler::props_map_type::iterator DatabaseHandler::_find_props(std::string db_name, std::string calc_type) const {
+      auto key = PropDBKey(traits<T>::name, db_name, calc_type);
       auto res = m_db_props.find(key);
       if(res == m_db_props.end()) {
-        _no_props_database_error<T>(db_name);
+        _no_props_database_error<T>(db_name, calc_type);
       }
       return res;
     }
@@ -135,10 +135,11 @@ namespace CASM {
     }
 
     template<typename T>
-    void DatabaseHandler::_no_props_database_error(std::string db_name) const {
+    void DatabaseHandler::_no_props_database_error(std::string db_name, std::string calc_type) const {
       std::stringstream ss;
       ss << "Value: " << traits<T>::name;
       ss << "  Database: " << db_name;
+      ss << "  CalcType: " << calc_type;
       throw std::runtime_error("Requested properties database not found: " + ss.str());
     }
 

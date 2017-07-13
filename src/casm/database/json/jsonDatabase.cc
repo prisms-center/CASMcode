@@ -37,16 +37,28 @@ namespace CASM {
     }
 
     namespace {
+
       struct InsertPropsImpl {
-        InsertPropsImpl(DatabaseHandler &_db_handler) : db_handler(_db_handler) {}
+        InsertPropsImpl(DatabaseHandler &_db_handler) :
+          db_handler(_db_handler),
+          primclex(_db_handler.primclex()),
+          dir(primclex.dir()),
+          json_dir(dir.root_dir()) {}
+
         DatabaseHandler &db_handler;
+        const PrimClex &primclex;
+        const DirectoryStructure &dir;
+        jsonDB::DirectoryStructure json_dir;
 
         template<typename T>
         void eval() {
-          fs::path loc; // need to get from primclex && T
-          db_handler.insert_props<T>(
-            traits<jsonDB>::name,
-            notstd::make_unique<jsonPropertiesDatabase>(db_handler.primclex(), loc));
+          for(auto calc_type : dir.all_calctype()) {
+            fs::path location = json_dir.props_list<T>(calc_type);
+            db_handler.insert_props<T>(
+              traits<jsonDB>::name,
+              calc_type,
+              notstd::make_unique<jsonPropertiesDatabase>(primclex, calc_type, location));
+          }
         }
       };
     }

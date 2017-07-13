@@ -60,7 +60,7 @@ namespace CASM {
 
     public:
 
-      jsonPropertiesDatabase(const PrimClex &_primclex, fs::path location);
+      jsonPropertiesDatabase(const PrimClex &_primclex, std::string calc_type, fs::path location);
 
       DatabaseBase &open() override;
 
@@ -114,6 +114,7 @@ namespace CASM {
 
       bool m_is_open;
 
+      std::string m_calc_type;
       fs::path m_location;
 
       ScoreMappedProperties m_default_score;
