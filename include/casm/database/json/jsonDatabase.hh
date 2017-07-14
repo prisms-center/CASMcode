@@ -39,9 +39,12 @@ namespace CASM {
       public:
         DirectoryStructure(const fs::path _root);
 
+        /// Location of the jsonDB 'config_list.json', containing DoF, for each ConfigType
         template<typename DataObject>
         fs::path obj_list() const;
 
+        /// Location of the jsonDB 'config_props.json', containing properties,
+        /// for each ConfigType and specified calctype
         template<typename DataObject>
         fs::path props_list(std::string calctype) const;
 

@@ -1,6 +1,7 @@
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
 
@@ -73,8 +74,8 @@ namespace CASM {
     json.get_if(coord_type, "coordinate_mode");
 
     if(coord_type == INTEGRAL) {
-      UnitCellCoord coord(clust.prim());
-      from_json(clust.elements(), json[name], coord);
+      //UnitCellCoord coord(clust.prim());
+      from_json(clust.elements(), json[name], clust.prim());
     }
     else {
       clust.elements().clear();

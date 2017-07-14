@@ -22,25 +22,29 @@ namespace CASM {
   /// An abstract FunctionVisitor object operates on a Function tree by being passed to the
   /// Function::accept(FunctionVisitor*) method of the root of the tree.
   class FunctionVisitor {
-
   public:
     virtual ~FunctionVisitor() {}
 
     virtual std::string type_name() const = 0;
 
-    virtual bool visit(Variable &host, BasisSet const *bset_ptr)const {
-      return false;
-    }
+    virtual bool visit(Variable const &host, BasisSet const *bset_ptr)const;
 
-    virtual bool visit(OccupantFunction &host, BasisSet const *bset_ptr)const {
-      return false;
-    }
-    virtual bool visit(PolynomialFunction &host, BasisSet const *bset_ptr)const {
-      return false;
-    }
+    virtual bool visit(Variable &host, BasisSet const *bset_ptr)const;
+
+    virtual bool visit(OccupantFunction const &host, BasisSet const *bset_ptr)const;
+
+    virtual bool visit(OccupantFunction &host, BasisSet const *bset_ptr)const;
+
+    virtual bool visit(PolynomialFunction const &host, BasisSet const *bset_ptr)const;
+
+    virtual bool visit(PolynomialFunction &host, BasisSet const *bset_ptr)const;
+
   private:
-    virtual bool _visit(const Array<Function *> &host_list, BasisSet const *bset_ptr)const {
+    virtual bool _generic_visit(Function &host, BasisSet const *bset_ptr)const;
 
+    virtual bool _generic_visit(Function const &host, BasisSet const *bset_ptr)const;
+
+    virtual bool _visit(const Array<Function *> &host_list, BasisSet const *bset_ptr)const {
       return false;
     }
 
@@ -83,6 +87,36 @@ namespace CASM {
     bool visit(OccupantFunction &host, BasisSet const *bset_ptr)const;
   };
 
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  /// \brief Evaluates
+  class OccFuncEvaluator : public FunctionVisitor {
+  public:
+    OccFuncEvaluator(int state) : m_state(state) {}
+
+    double value() {
+      return m_value;
+    }
+
+
+    std::string type_name() const {
+      return "OccFuncEvaluator";
+    }
+
+    bool visit(OccupantFunction &host, BasisSet const *bset_ptr)const;
+
+    bool visit(OccupantFunction const &host, BasisSet const *bset_ptr)const;
+
+  private:
+    bool _generic_visit(Function const &host, BasisSet const *bset_ptr)const {
+      throw std::runtime_error("OccFuncEvaluator can only be applied to OccupantFunction!");
+      return false;
+    }
+
+    int m_state;
+    mutable double m_value;
+  };
+
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   /// Selectively relabel all Variabless in a Function tree, using their
   /// set_formula() method. VariableLabeler is constructed using a template string,
@@ -109,9 +143,6 @@ namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   class SubExpressionLabeler : public FunctionVisitor {
-    std::string m_bset_name;
-    Array<std::string> m_sub_strings;
-    mutable std::stringstream m_ss;
   public:
     SubExpressionLabeler(const std::string &_bset_name, const std::string &_template);
 
@@ -119,14 +150,16 @@ namespace CASM {
       return "SubExpressionLabeler";
     }
 
-    bool visit(Variable &host, BasisSet const *bset_ptr)const;
-
-    bool visit(OccupantFunction &host, BasisSet const *bset_ptr)const;
-
-    bool visit(PolynomialFunction &host, BasisSet const *bset_ptr)const;
-
   private:
     bool _generic_visit(Function &host, BasisSet const *bset_ptr)const;
+
+    bool _generic_visit(Function const &host, BasisSet const *bset_ptr)const {
+      throw std::runtime_error("Application of a SubExpressionLabeler to a const Function is not allowed!!\n");
+    }
+
+    std::string m_bset_name;
+    Array<std::string> m_sub_strings;
+    mutable std::stringstream m_ss;
   };
 
 }

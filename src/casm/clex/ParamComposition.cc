@@ -3,7 +3,8 @@
 #include <cmath>
 #include <unistd.h>
 #include "casm/external/boost.hh"
-
+#include "casm/misc/algorithm.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 
@@ -18,7 +19,7 @@ namespace CASM {
 
      This routine generates the set ofx unique alloying components
      that are listed in the prim structure. The unique alloying
-     components are stored as an Array< std::string >
+     components are stored as an std::vector< std::string >
   */
   //*************************************************************
 
@@ -32,7 +33,7 @@ namespace CASM {
 
     auto struc_molecule = m_prim_struc->struc_molecule();
     for(auto it = struc_molecule.begin(); it != struc_molecule.end(); ++it) {
-      m_components.push_back(it->name);
+      m_components.push_back(it->name());
     }
 
     return;
@@ -60,8 +61,8 @@ namespace CASM {
     if(m_components.size() == 0)
       generate_components();
     //figuring out the number of sublattices on which alloying is happening
-    Array < Array< std::string> > tocc;
-    Array< std::string > tlist;
+    std::vector< std::vector< std::string> > tocc;
+    std::vector< std::string > tlist;
     for(Index i = 0; i < m_prim_struc->basis.size(); i++) {
       tlist = m_prim_struc->basis[i].allowed_occupants();
       //keep only those sublattices where alloying is allowed
@@ -75,12 +76,12 @@ namespace CASM {
     for(Index i = 0; i < tocc.size(); i++) {
       for(Index j = 0; j < tocc[i].size(); j++) {
         //If the component is not found in the components array, something is wrong!
-        if(!m_components.contains(tocc[i][j])) {
+        if(!contains(m_components, tocc[i][j])) {
           std::cerr << "ERROR:Your component matrix has been initialized badly. Quitting\n";
           exit(666);
         }
         //Find the position of the component in the components array and increment sublattice_map
-        Index pos = (m_components.find(tocc[i][j]));
+        Index pos = find_index(m_components, tocc[i][j]);
         m_sublattice_map(pos, i)++;
       }
     }
@@ -106,11 +107,11 @@ namespace CASM {
     //the number of atoms of components[priority_index[0]] is
     //maximized first following this the number of atoms of
     //components[priority_index[1]] is maxed out and so on
-    Array<int> priority_index;
+    std::vector<int> priority_index;
 
     //Holds a list of possible end members, this list is appended to
     //as and when we find an end_member.
-    Array< Eigen::MatrixXi > tend_members;
+    std::vector< Eigen::MatrixXi > tend_members;
     Eigen::MatrixXi tend;
 
     //set the size of priority index to the number of components in
@@ -148,7 +149,7 @@ namespace CASM {
         tend_members.push_back(tend); //add to the list if it is unique
       }
     }
-    while(priority_index.next_permute()); //repeat the above for all permutations of priority_index
+    while(next_permutation(priority_index.begin(), priority_index.end())); //repeat the above for all permutations of priority_index
 
     //Store tend_members as an Eigen::MatrixXi
     //makes it easier to find the rank of the space
@@ -192,9 +193,9 @@ namespace CASM {
     Eigen::FullPivHouseholderQR<Eigen::MatrixXd> qr(m_prim_end_members);
     Eigen::VectorXd torigin; //temp origin
     Eigen::VectorXd test_comp;
-    Array< Eigen::VectorXd > tspanning; //set of spanning end members
+    std::vector< Eigen::VectorXd > tspanning; //set of spanning end members
     bool is_positive; //flag to test for positive composition axes
-    Array<int> priority_index;
+    std::vector<int> priority_index;
 
     // If there is already a set of enumerated spaces for this
     // Composition object
@@ -210,7 +211,7 @@ namespace CASM {
 
     //This array is used to figure out which of the end members to
     //select as spanning end members
-    Array<int> binary_choose(m_prim_end_members.rows() - 1, 0);
+    std::vector<int> binary_choose(m_prim_end_members.rows() - 1, 0);
 
     //the priority index is used to pick a set of origin and end
     //members to span the space
@@ -237,16 +238,16 @@ namespace CASM {
       //NOTE: priority seems to be a misnomer here, its really the
       //list of end members that are in contention to be considered as
       //the set of spanning end members. Consider changing the name
-      Array<int> tpriority = priority_index;
-      tpriority.remove(i); //remove the 'origin' from contention
-      Array<int> tbinary_choose = binary_choose;
+      std::vector<int> tpriority = priority_index;
+      tpriority.erase(tpriority.begin() + i); //remove the 'origin' from contention
+      std::vector<int> tbinary_choose(binary_choose.begin(), binary_choose.end());
 
       //loop over all permutations of priority_index and pick rank-1
       //end members to span the space. Only keep those combinations
       //that result in positive compositions
       do {
         tspanning.clear();
-        Array< Eigen::VectorXi > tvec; //hold the list of end members that are being considered
+        std::vector< Eigen::VectorXi > tvec; //hold the list of end members that are being considered
 
         if(verbose)
           std::cout << "The end members being considered: " << std::endl;
@@ -298,7 +299,7 @@ namespace CASM {
         }
 
       }
-      while(tbinary_choose.next_permute());
+      while(next_permutation(tbinary_choose.begin(), tbinary_choose.end()));
       fflush(stdout);
     }
     std::cout << "                                                                                                                          \r";
@@ -399,7 +400,7 @@ namespace CASM {
     for(Index i = 0; i < m_allowed_list.size(); i++) {
       stream << std::setw(10) << i;
       m_allowed_list[i].print_origin_formula(stream, 10);
-      Array< Eigen::VectorXd > allowed_spanning_end_members;
+      std::vector< Eigen::VectorXd > allowed_spanning_end_members;
       allowed_spanning_end_members = m_allowed_list[i].spanning_end_members();
       for(Index j = 0; j < allowed_spanning_end_members.size(); j++) {
         print_member_formula(allowed_spanning_end_members[j], stream, 10);
@@ -436,7 +437,7 @@ namespace CASM {
     stream << "---" << std::endl;
 
     print_origin_formula(stream, 20);
-    Array< Eigen::VectorXd > allowed_spanning_end_members;
+    std::vector< Eigen::VectorXd > allowed_spanning_end_members;
     allowed_spanning_end_members = spanning_end_members();
     for(int j = 0; j < allowed_spanning_end_members.size(); j++) {
       print_member_formula(allowed_spanning_end_members[j], stream, 10);
@@ -510,7 +511,7 @@ namespace CASM {
   //*************************************************************
 
   //Given an origin and spanning vectors, returns a ParamComposition object that points to the same Prim as (*this)
-  ParamComposition ParamComposition::calc_composition_object(const Eigen::VectorXd &torigin, const Array< Eigen::VectorXd> tspanning) {
+  ParamComposition ParamComposition::calc_composition_object(const Eigen::VectorXd &torigin, const std::vector< Eigen::VectorXd> tspanning) {
     //holds the temporary transformation matrix that is going to be
     //used to initialize the new composition object
     Eigen::MatrixXd tmat;
@@ -604,7 +605,7 @@ namespace CASM {
       if(m_rank_of_space > 0 && m_comp[PARAM_COMP].rows() > 0) {
         std::string root("");
         root.append("end_members");
-        //Array< Eigen::VectorXd > tspanning_end_members = spanning_end_members();
+        //std::vector< Eigen::VectorXd > tspanning_end_members = spanning_end_members();
         //      ptree end_members_ptree;
         for(Index i = 0; i < m_spanning_end_members.size(); i++) {
           std::stringstream tspan_strs;
@@ -635,13 +636,13 @@ namespace CASM {
   //**************************************************************
   /*SPANNING END MEMBERS
 
-    Returns an Array< Eigen::VectorXi > that contain the spanning end
+    Returns an std::vector< Eigen::VectorXi > that contain the spanning end
     members listed in the same order as they occur in the
     transformation matrix.
 
   */
   void ParamComposition::calc_spanning_end_members() {
-    Array< Eigen::VectorXd > tspan_end;
+    std::vector< Eigen::VectorXd > tspan_end;
     if(m_rank_of_space <= 0) {
       std::cerr << "WARNING something is wrong in ParamComposition::spanning_end_members. The rank_of_space in the ParamComposition object is <=0. I do not know how to calculate the end_members in such a space" << std::endl;
       m_spanning_end_members = tspan_end;

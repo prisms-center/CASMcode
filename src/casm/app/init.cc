@@ -3,6 +3,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include "casm/CASM_global_definitions.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"

@@ -64,6 +64,32 @@ namespace CASM {
     template<bool IsConst, typename T>
     using ConstSwitch = typename std::conditional<IsConst, const T, T>::type;
 
+    // ---------------------
+
+    /// \brief Unary transformation that behaves as Identity (i.e. transform(arg) == arg is true)
+    template<typename T>
+    struct UnaryIdentity {
+      T operator()(T const &arg) const {
+        return arg;
+      }
+    };
+
+    /// \brief N-nary function that behaves as a constant (i.e. transform(arg1,arg2,...) == constant is true)
+    template<typename OutputType>
+    struct ConstantFunctor {
+      ConstantFunctor(OutputType const &_const) :
+        m_const(_const) {}
+
+      template<typename ... Args>
+      OutputType operator()(Args const &... args) const {
+        return m_const;
+      }
+    private:
+      OutputType m_const;
+    };
+
+    // ---------------------
+
     /// \brief Helper Functor for Counter container access using operator[]
     template < typename Container,
                typename _value_type = typename Container::value_type,

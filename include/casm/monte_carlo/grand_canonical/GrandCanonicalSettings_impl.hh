@@ -1,6 +1,7 @@
 #ifndef CASM_GrandCanonicalSettings_impl
 #define CASM_GrandCanonicalSettings_impl
 
+#include <boost/algorithm/string/trim.hpp>
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
 #include "casm/casm_io/stream_io/container.hh"
 #include "casm/app/QueryHandler.hh"
@@ -294,7 +295,7 @@ namespace CASM {
       for(size_type i = 0; i < primclex.composition_axes().components().size(); i++) {
 
         // sample for non-vacancy components
-        if(Specie(primclex.composition_axes().components()[i]).is_vacancy()) {
+        if(is_vacancy(primclex.composition_axes().components()[i])) {
           vacancy_index = i;
           break;
         }
@@ -304,7 +305,7 @@ namespace CASM {
       for(size_type i = 0; i < primclex.composition_axes().components().size(); i++) {
 
         // sample for non-vacancy components
-        if(!Specie(primclex.composition_axes().components()[i]).is_vacancy()) {
+        if(!is_vacancy(primclex.composition_axes().components()[i])) {
 
           print_name = std::string("atom_frac(") + primclex.composition_axes().components()[i] + ")";
 

@@ -3,11 +3,22 @@
 
 #include <iostream>
 
+#include "casm/misc/cloneable_ptr.hh"
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Molecule.hh"
+#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 
   class SymOp;
+  class Molecule;
+  class jsonParser;
+
+  template<typename OccType>
+  class OccupantDoF;
+  using MoleculeOccupant = OccupantDoF<Molecule>;
+
+  class DoFSet;
 
   /** \ingroup Coordinate
    *  @{
@@ -16,26 +27,25 @@ namespace CASM {
   class Site : public Coordinate {
   public:
     explicit Site(const Lattice &init_home);
+
     Site(const Coordinate &init_pos, const std::string &occ_name);
 
     /// \brief Construct site with initial position and the allowed Molecule
     Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ);
 
-    const MoleculeOccupant &site_occupant() const {
-      return m_site_occupant;
-    }
+    ~Site();
 
-    const Array<ContinuousDoF> &displacement() const {
-      return m_displacement;
-    }
+    const MoleculeOccupant &site_occupant() const;
 
-    void update_data_members(const Site &_ref_site);
+    DoFSet const &displacement() const;
+
+    DoFSet const &dof(std::string const &dof_type) const;
 
     /// Checks if current occupant is a vacancy
     bool is_vacant() const;
 
-    ///access m_nlist_ind
-    Index nlist_ind() const;
+    ///access m_label;
+    Index label() const;
 
     /// Name of current occupant (name of molecule, but for single atom, molecule name is species name)
 
@@ -55,29 +65,20 @@ namespace CASM {
     bool contains(const std::string &name) const;
     bool contains(const std::string &name, int &index) const;
 
-    void set_lattice(const Lattice &new_lat, COORD_TYPE mode);//John G
+    void set_allowed_species(std::vector<Molecule> const &_occ_domain);
 
-    void set_site_occupant(const MoleculeOccupant &new_dof) {
-      m_site_occupant = new_dof;
-      m_type_ID = -1;
-    }
+    void set_occ_value(int new_val);
 
-    void set_occ_value(int new_val) {
-      m_site_occupant.set_value(new_val);
-    }
-
-    void set_occ(const Molecule &new_occ) {
-      m_site_occupant.set_current_state(new_occ);
-    }
+    void set_occ(const Molecule &new_occ);
 
 
-    Array<std::string> allowed_occupants() const;
+    std::vector<std::string> allowed_occupants() const;
 
     /// set basis_ind of site and its occupant functions
     void set_basis_ind(Index);
 
-    /// set m_nlist_ind of Site and its DoFs
-    void set_nlist_ind(Index);
+    /// set m_label of Site
+    void set_label(Index _new_label);
 
     Site &apply_sym(const SymOp &op);
     Site &apply_sym_no_trans(const SymOp &op);
@@ -97,23 +98,27 @@ namespace CASM {
     void from_json(const jsonParser &json);
 
   private:
-    static Array<Site> &_type_prototypes() {
-      static Array<Site> m_type_prototypes;
+    static std::vector<Site> &_type_prototypes() {
+      static std::vector<Site> m_type_prototypes;
       return m_type_prototypes;
     }
 
-    //Index into PrimClex neighbor list
-    Index m_nlist_ind;     //John G 230913
-    mutable Index m_type_ID;
+    /// Integer label used to differentiate sites of otherwise identical type
+    Index m_label;
 
-    // displacement degrees of freedom of the molecule.
-    // These may be x,y,z, or a subspace (e.g., displacement only in the x--y plane).
-    Array<ContinuousDoF> m_displacement;
+    mutable Index m_type_ID;
 
     // Configuration state is fundamentally different from most other degrees of freedom,
     // so we'll treat it separately. 'occupant' is the discrete degree of freedom associated
     // with the molecule that occupies the site
-    MoleculeOccupant m_site_occupant;
+    notstd::cloneable_ptr<MoleculeOccupant> m_site_occupant;
+
+    /// displacement degrees of freedom of the molecule.
+    /// These may be x,y,z, or a subspace (e.g., displacement only in the x--y plane).
+    notstd::cloneable_ptr<DoFSet> m_displacement;
+
+    /// additional continuous degrees of freedom
+    std::map <std::string, notstd::cloneable_ptr<DoFSet> > m_dof_map;
 
     //============
 

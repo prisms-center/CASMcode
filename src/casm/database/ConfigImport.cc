@@ -1,6 +1,7 @@
 #include "casm/database/ConfigImport.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/jsonStruc.hh"
 #include "casm/clex/Calculable.hh"
 #include "casm/clex/PrimClex.hh"
@@ -16,6 +17,7 @@
 #include "casm/database/Import_impl.hh"
 #include "casm/database/Update_impl.hh"
 #include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 

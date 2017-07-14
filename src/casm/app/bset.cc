@@ -6,6 +6,7 @@
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clex/PrimClex.hh"
@@ -101,9 +102,6 @@ namespace CASM {
     std::string bset;
     ClexDescription clex_desc;
 
-    // not sure how this will work yet...
-    std::vector<std::string> dof_keys = {"occupation"};
-
     if(!vm.count("clex")) {
       clex_desc = set.default_clex();
     }
@@ -188,7 +186,7 @@ namespace CASM {
             args.log());
 
           clex_basis.reset(new ClexBasis(prim));
-          clex_basis->generate(local_orbits.begin(), local_orbits.end(), bspecs_json["local_bspecs"], dof_keys);
+          clex_basis->generate(local_orbits.begin(), local_orbits.end(), bspecs_json["local_bspecs"]);
 
         }
         else {
@@ -204,7 +202,7 @@ namespace CASM {
             args.log());
 
           clex_basis.reset(new ClexBasis(prim));
-          clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
+          clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json);
         }
 
       }
@@ -227,7 +225,6 @@ namespace CASM {
         args.log().write(dir.clust(bset).string());
         args.log() << std::endl;
       }
-
 
       // -- write basis.json ----------------
       {

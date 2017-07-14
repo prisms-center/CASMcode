@@ -5,7 +5,10 @@
 #include "casm/crystallography/Lattice.hh"
 
 /// What is being used to test it:
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/symmetry/SymGroup.hh"
 
 using namespace CASM;

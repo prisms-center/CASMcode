@@ -146,6 +146,7 @@ namespace CASM {
 
       Database<Supercell> &db_supercell() const;
 
+      /// Uses primclex().settings().default_clex().calctype
       virtual PropertiesDatabase &db_props() const = 0;
 
       /// \brief Path to default calctype training_data directory for config

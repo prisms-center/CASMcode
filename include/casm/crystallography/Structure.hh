@@ -7,6 +7,7 @@
 
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/Molecule.hh"
 #include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
@@ -62,6 +63,8 @@ namespace CASM {
     /// does not depend on the lattice of 'RHS'
     Structure(const Structure &RHS);
 
+    ~Structure();
+
     //  ****Inspectors/Accessors****
     //      - non-const versions try to populate data members before access
     const MasterSymGroup &factor_group() const;
@@ -71,7 +74,7 @@ namespace CASM {
     SymGroupRep const *basis_permutation_symrep()const;
     SymGroupRepID basis_permutation_symrep_ID()const;
 
-    std::vector<Specie> struc_specie() const;
+    std::vector<AtomSpecie> struc_specie() const;
     std::vector<Molecule> struc_molecule() const;
     std::vector<std::string> struc_molecule_name() const;
     Eigen::VectorXi num_each_specie() const;

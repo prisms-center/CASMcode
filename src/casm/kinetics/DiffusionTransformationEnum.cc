@@ -180,10 +180,10 @@ namespace CASM {
         auto speciemap = diff_trans_orbit.prototype().specie_count();
         auto it = speciemap.begin();
         for(; it != speciemap.end(); ++it) {
-          if(std::find(require.begin(), require.end(), it->first.name) != require.end() && it->second == 0) {
+          if(std::find(require.begin(), require.end(), it->first.name()) != require.end() && it->second == 0) {
             break;
           }
-          if(std::find(exclude.begin(), exclude.end(), it->first.name) != exclude.end() && it->second != 0) {
+          if(std::find(exclude.begin(), exclude.end(), it->first.name()) != exclude.end() && it->second != 0) {
             break;
           }
         }

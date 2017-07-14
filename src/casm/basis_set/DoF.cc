@@ -1,183 +1,139 @@
 #include "casm/basis_set/DoF.hh"
-
-// needed for to/from json... this should be fixed
-#include "casm/crystallography/Molecule.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
-
-  // ** OccupantDoF **
-
-  /// overload for each template type to be used
-  //    because we want to be able to do: void from_json(DoF *dof, const jsonParser &json)
-  //
-
-  // int version
-  template<> jsonParser &OccupantDoF<int>::to_json(jsonParser &json) const {
-    json.put_obj();
-    json["DoF_type"] = "OccupantDoF";
-    json["DoF_template_type"] = "int";
-    json["m_type_name"] = m_type_name;
-    json["m_domain"] = m_domain;
-    json["m_current_state"] = m_current_state;
-    return json;
-  }
-
-  jsonParser &to_json(const OccupantDoF<int> &dof, jsonParser &json) {
-    return dof.to_json(json);
-  }
-
-  void from_json(OccupantDoF<int> &dof, const jsonParser &json) {
-    try {
-      std::string name = json["m_type_name"].get<std::string>();
-      Array<int> domain = json["m_domain"].get<Array<int> >();
-      int current_state = json["m_current_state"].get<int>();
-
-      dof = OccupantDoF<int>(name, domain, current_state);
+  namespace DoF_impl {
+    /// \brief implements json parsing of a specialized DoF.
+    // In future, we may need to add another inheritance layer to handle DiscreteDoF types
+    void BasicTraits::from_json(ContinuousDoF &_dof, jsonParser const &json) const {
+      return;
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+
+    /// \brief implements json parsing of a specialized DoF.
+    // In future, we may need to add another inheritance layer to handle DiscreteDoF types
+    void BasicTraits::to_json(ContinuousDoF const &_dof, jsonParser &json) const {
+      return;
+    }
+
+    /// \brief implements json parsing of a specialized DoFSet.
+    void BasicTraits::from_json(DoFSet &_dof, jsonParser const &json) const {
+      return;
+    }
+
+    /// \brief implements json parsing of a specialized DoFSet.
+    void BasicTraits::to_json(DoFSet const &_dof, jsonParser &json) const {
+      return;
     }
   }
 
-  // molecule version
-  template<> jsonParser &OccupantDoF<Molecule>::to_json(jsonParser &json) const {
-    json.put_obj();
-    json["DoF_type"] = "OccupantDoF";
-    json["DoF_template_type"] = "Molecule";
-    json["m_type_name"] = m_type_name;
-
-    json["m_domain"] = m_domain;
-    json["m_current_state"] = m_current_state;
-
-    return json;
+  DoF::TraitsMap &DoF::_traits_map() {
+    static TraitsMap _static_traits_map([](const TraitsMap::value_type & value)->std::string {
+      return value.type_name();
+    },
+    DoF_impl::traits2cloneable_ptr);
+    return _static_traits_map;
   }
 
-  jsonParser &to_json(const OccupantDoF<Molecule> &dof, jsonParser &json) {
-    return dof.to_json(json);
-  }
+  //********************************************************************
 
-  // Note: as a hack this expects dof.domain[0] to be present and have the right lattice!!!
-  //   it's just used to set the lattice for all the Molecules
-  void from_json(OccupantDoF<Molecule> &dof, const jsonParser &json) {
-    try {
-      std::string name = json["m_type_name"].get<std::string>();
-
-      int current_state = json["m_current_state"].get<int>();
-
-      Array<Molecule> domain;
-      //std::cout<<"The size of the dof is "<<dof.get_domain().size()<<std::endl;
-      ////std::cout<<"The dof "
-      Molecule mol(*(dof[0].home()));
-      //domain.clear();
-      //std::cout<<"Done initializing molecule"<<std::endl;
-      for(int i = 0; i < json["m_domain"].size(); i++) {
-        from_json(mol, json["m_domain"][i]);
-        domain.push_back(mol);
-      }
-      //std::cout<<"Done adding the molecules to the list, trying to create"
-      //               <<" OccupantDoF<Molecule>"<<std::endl;
-
-      dof = OccupantDoF<Molecule>(name, domain, current_state);
+  DoF::BasicTraits const &DoF::traits(std::string const &_type_name) {
+    auto it = _traits_map().find(_type_name);
+    if(it == _traits_map().end()) {
+      throw std::runtime_error("Could not find DoF Traits for DoF type" + _type_name);
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return *it;
   }
 
+  //********************************************************************
 
+  DoF::DoF(DoF::BasicTraits const &_traits,
+           std::string const &_var_name,
+           Index _ID) :
+    m_type_name(_traits.type_name()),
+    m_var_name(_var_name),
+    m_dof_ID(_ID),
+    m_ID_lock(false) {
+
+    _traits_map().insert(_traits);
+
+  }
+
+  //********************************************************************
   // ** ContinuousDoF **
-
-  jsonParser &ContinuousDoF::to_json(jsonParser &json) const {
-    json.put_obj();
-    json["DoF_type"] = "ContinuousDoF";
-    json["m_type_name"] = m_type_name;
-    json["min"] = min_val;
-    json["max"] = max_val;
-    json["current"] = current_val;
-    return json;
-  }
 
   jsonParser &to_json(const ContinuousDoF &dof, jsonParser &json) {
     return dof.to_json(json);
   }
 
+  //********************************************************************
+
   void from_json(ContinuousDoF &dof, const jsonParser &json) {
-    try {
-      dof = ContinuousDoF(json["m_type_name"].get<std::string>(), json["min"].get<double>(), json["max"].get<double>());
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    DoF::traits(dof.type_name()).from_json(dof, json);
   }
 
+  //********************************************************************
 
-  // ** DoF **
-
-  /// creates jsonParser using polymorphism
-  jsonParser &to_json(const DoF *dof, jsonParser &json) {
-    return dof->to_json(json);
+  ContinuousDoF jsonConstructor<ContinuousDoF>::from_json(const jsonParser &json, DoF::BasicTraits const &_traits) {
+    ContinuousDoF tdof(_traits);
+    CASM::from_json(tdof, json);
+    return tdof;
   }
 
-  /// This allocates a new object to 'dof'.
-  ///   It needs a Lattice in case it is a OccupantDoF<Molecule>
-  ///
-  void from_json(DoF *dof, const jsonParser &json, const Lattice &lat) {
-    try {
-      if(json["DoF_type"] == "OccupantDoF") {
-        if(json["DoF_template_type"] == "int") {
+  //********************************************************************
 
-          // prepare a OccupantDoF<int> and then read from json
-          OccupantDoF<int> tdof;
-          CASM::from_json(tdof, json);
+  bool DoFSet::identical(DoFSet const &rhs)const {
+    if(!std::equal(begin(), end(), rhs.begin(), compare_no_value)) {
+      return false;
+    }
 
-          // copy to dof
-          dof = new OccupantDoF<int>(tdof);
+    return almost_equal(m_coordinate_space, rhs.m_coordinate_space);
+  }
 
-        }
-        else if(json["DoF_template_type"] == "Molecule") {
+  //********************************************************************
 
-          // prepare a OccupantDoF<Molecule> and then read from json
-          Array<Molecule> init_domain;
-          init_domain.push_back(Molecule(lat));
-          OccupantDoF<Molecule> tdof(json["m_type_name"].get<std::string>(), init_domain);
+  bool DoFSet::update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
 
-          // this expects dof.domain[0] has a Molecule with the right lattice
-          CASM::from_json(tdof, json);
-
-          // copy to dof
-          dof = new OccupantDoF<Molecule>(tdof);
-
-        }
-        else {
-          std::cerr << "Error in 'jsonParser from_json(DoF *dof, const jsonParser &json, const Lattice &lat)'" << std::endl;
-          std::cerr << "Unrecognized 'DoF_template_type': '" << json["DoF_template_type"] << "'." << std::endl;
-          exit(1);
-        }
-      }
-      else if(json["DoF_type"] == "ContinuousDoF") {
-
-        // prepare a OccupantDoF<Molecule> and then read from json
-        ContinuousDoF tdof(json["m_type_name"].get<std::string>(), 0.0, 0.0);
-        CASM::from_json(tdof, json);
-
-        // copy to dof
-        dof = new ContinuousDoF(tdof);
-
-      }
-      else {
-        std::cerr << "Error in 'void from_json(DoF *dof, const jsonParser &json, const Lattice &lat)'" << std::endl;
-        std::cerr << "Unrecognized 'DoF_type': '" << json["DoF_type"] << "'." << std::endl;
-        std::cerr << "Options are: 'OccupantDoF', or 'ContinuousDoF'." << std::endl;
-        exit(1);
+    Index ID_ind;
+    bool is_updated(false);
+    for(Index i = 0; i < m_components.size(); i++) {
+      // IMPORTANT: Do before_IDs.find(), NOT m_components().find() (if such a thing existed)
+      ID_ind = find_index(before_IDs, m_components[i].ID());
+      // Only set ID if DoF doesn't have an ID lock
+      if(ID_ind < after_IDs.size() && !m_components[i].is_locked()) {
+        m_components[i].set_ID(after_IDs[ID_ind]);
+        // The new ID only changes the formula if the corresponding coeff is nonzero
+        //if(!almost_zero(m_coeffs[i]))
+        is_updated = true;
       }
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return is_updated;
+  }
+
+  //********************************************************************
+
+  void DoFSet::from_json(jsonParser const &json) {
+    /*
+      if(json.contains("coordinate_space"))
+      m_coordinate_space=json["coordinate_space"].get<Eigen::MatrixXd>();
+    */
+    json.get_if(m_excluded_occs, "excluded_occupants");
+
+    DoF::traits(type_name()).from_json(*this, json);
+
+  }
+
+  //********************************************************************
+
+  jsonParser &DoFSet::to_json(jsonParser &json) const {
+    /*
+    if(!m_coordinate_space.isIdentity(1e-5))
+      json["coordinate_space"]=coordinate_space();
+    */
+    if(!m_excluded_occs.empty())
+      json["excluded_occupants"] = m_excluded_occs;
+
+    DoF::traits(type_name()).to_json(*this, json);
+    return json;
   }
 
 }

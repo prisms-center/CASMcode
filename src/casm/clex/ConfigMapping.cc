@@ -1,6 +1,7 @@
 #include "casm/clex/ConfigMapping.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/Configuration.hh"
@@ -886,7 +887,7 @@ namespace CASM {
 
           // Check if relaxed atom j is allowed on site i
           // If so, populate cost_matrix normally
-          if(config.mol(i).name == rstruc.basis[j].occ_name()) {
+          if(config.mol(i).name() == rstruc.basis[j].occ_name()) {
             cost_matrix(i, j) = scel.coord(i).min_dist2(current_relaxed_coord, metric);
           }
           // If not, set cost_matrix (i,j) = inf
@@ -907,7 +908,7 @@ namespace CASM {
         for(Index i = 0; i < scel.num_sites(); i++) {
 
           // Check if vacancies are allowed at each position in the supercell
-          if(config.mol(i).name == "Va") {
+          if(config.mol(i).name() == "Va") {
             cost_matrix(i, j) = 0;
           }
           else {
@@ -1192,7 +1193,7 @@ namespace CASM {
       for(Index n = 0; n < num_translations; n++) {
         double mean;
 
-        if(n > 0 && config.mol(0).name != rstruc.basis[n - 1].occ_name())
+        if(n > 0 && config.mol(0).name() != rstruc.basis[n - 1].occ_name())
           continue;
 
         Coordinate translation(scel.lattice());

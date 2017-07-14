@@ -223,25 +223,17 @@ namespace CASM {
 
     //Inform Clexulator of the bitstring
 
-    //TODO: This will probably get more complicated with displacements and stuff
-    clexulator.set_config_occ(configdof.occupation().data());
-    //mc_clexor.set_config_disp(mc_confdof.m_displacements.begin());   //or whatever
-    //mc_clexor.set_config_strain(mc_confdof.m_strain.begin());   //or whatever
-
     //Holds contribution to global correlations from a particular neighborhood
     Eigen::VectorXd tcorr = correlations;
     //std::vector<double> corr(clexulator.corr_size(), 0.0);
 
     for(int v = 0; v < scel_vol; v++) {
-
-      //Point the Clexulator to the right neighborhood
-      clexulator.set_nlist(scel.nlist().sites(v).data());
-
       //Fill up contributions
-      clexulator.calc_global_corr_contribution(tcorr.data());
+      clexulator.calc_global_corr_contribution(configdof,
+                                               scel.nlist().sites(v).data(),
+                                               tcorr.data());
 
       correlations += tcorr;
-
     }
 
     correlations /= (double) scel_vol;

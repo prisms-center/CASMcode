@@ -16,7 +16,8 @@ namespace CASM {
 
     template<typename _ConfigType>
     PropertiesDatabase &ConfigData<_ConfigType>::db_props() const {
-      return primclex().template db_props<ConfigType>();
+      return primclex().template db_props<ConfigType>(
+               primclex().settings().default_clex().calctype);
     }
 
   }

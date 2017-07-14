@@ -296,13 +296,13 @@ namespace CASM {
   }
 
   template<typename T>
-  DB::PropertiesDatabase &PrimClex::db_props() const {
-    return m_data->db_handler->template db_props<T>();
+  DB::PropertiesDatabase &PrimClex::db_props(std::string calc_type) const {
+    return m_data->db_handler->template db_props<T>(calc_type);
   }
 
   template<typename T>
-  const DB::PropertiesDatabase &PrimClex::const_db_props() const {
-    return m_data->db_handler->template const_db_props<T>();
+  const DB::PropertiesDatabase &PrimClex::const_db_props(std::string calc_type) const {
+    return m_data->db_handler->template const_db_props<T>(calc_type);
   }
 
   DB::DatabaseHandler &PrimClex::db_handler() const {
@@ -355,7 +355,7 @@ namespace CASM {
       bspecs_json.read(dir().bspecs(key.bset));
 
       ClexBasis &clex_basis = it->second;
-      clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json, {"occupation"});
+      clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json);
 
     }
 
@@ -439,8 +439,8 @@ template const DB::Database<type> &PrimClex::const_db<type>() const; \
 
 // explicit template instantiations
 #define INST_PrimClexProps(r, data, type) \
-template DB::PropertiesDatabase &PrimClex::db_props<type>() const; \
-template const DB::PropertiesDatabase &PrimClex::const_db_props<type>() const; \
+template DB::PropertiesDatabase &PrimClex::db_props<type>(std::string calc_type) const; \
+template const DB::PropertiesDatabase &PrimClex::const_db_props<type>(std::string calc_type) const; \
 
 namespace CASM {
   BOOST_PP_SEQ_FOR_EACH(INST_PrimClex, _, CASM_DB_TYPES)

@@ -2,6 +2,7 @@
 #include "casm/clusterography/ClusterInvariants_impl.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/symmetry/Orbit_impl.hh"
+#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 
@@ -26,7 +27,7 @@ namespace CASM {
   template bool almost_equal<ELEMENT>(const ClusterInvariants<ELEMENT> &A, const ClusterInvariants<ELEMENT> &B, double tol); \
   template bool compare<ELEMENT>(const ClusterInvariants<ELEMENT> &A, const ClusterInvariants<ELEMENT> &B, double tol); \
   template std::ostream &operator<< <ELEMENT>(std::ostream &sout, const ClusterInvariants<ELEMENT> &invariants); \
- 
+
   CLUSTER_INVARIANTS_INST(IntegralCluster)
 
 
@@ -61,7 +62,7 @@ namespace CASM {
     ITERATOR end, \
     Index size); \
   \
- 
+
 #define  PRIM_PERIODIC_CLUSTER_ORBITS_INST(INSERTER) \
   \
   template INSERTER make_prim_periodic_asymmetric_unit<INSERTER>( \
@@ -88,7 +89,7 @@ namespace CASM {
     INSERTER result, \
     std::ostream &status); \
   \
- 
+
 #define _SPECS_IT(ORBIT) std::vector<OrbitBranchSpecs<ORBIT> >::iterator
 
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator

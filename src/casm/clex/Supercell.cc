@@ -10,6 +10,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/database/ScelDatabase.hh"
 
 namespace CASM {

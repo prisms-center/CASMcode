@@ -7,9 +7,6 @@ from os.path import join
 
 Import('env')
 
-# build version
-SConscript(['version/SConscript'], {'env':env})
-
 #include path
 candidates = [
   env['INCDIR'], 
@@ -59,6 +56,8 @@ for file in files:
   env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + sobj
   env['CASM_SOBJ'] = env['CASM_SOBJ'] + sobj
 
+# build version
+SConscript(['version/SConscript'], {'env':env})
 
 # qhull c code
 include_qhull = join('..','..','include','casm','external','qhull','libqhull_r')

@@ -8,6 +8,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/misc/algorithm.hh"
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 
@@ -34,6 +35,10 @@ namespace CASM {
     copy_attributes_from(RHS);
 
   };
+
+  //***********************************************************
+
+  Structure::~Structure() {}
 
   //***********************************************************
 
@@ -120,10 +125,10 @@ namespace CASM {
   //************************************************************
 
   /// Returns an Array of each *possible* Specie in this Structure
-  std::vector<Specie> Structure::struc_specie() const {
+  std::vector<AtomSpecie> Structure::struc_specie() const {
 
     std::vector<Molecule> tstruc_molecule = struc_molecule();
-    std::vector<Specie> tstruc_specie;
+    std::vector<AtomSpecie> tstruc_specie;
 
     Index i, j;
 
@@ -131,8 +136,8 @@ namespace CASM {
     for(i = 0; i < tstruc_molecule.size(); i++) {
       // For each atomposition in the molecule
       for(j = 0; j < tstruc_molecule[i].size(); j++) {
-        if(!contains(tstruc_specie, tstruc_molecule[i][j].specie)) {
-          tstruc_specie.push_back(tstruc_molecule[i][j].specie);
+        if(!contains(tstruc_specie, tstruc_molecule[i].atom(j).specie())) {
+          tstruc_specie.push_back(tstruc_molecule[i].atom(j).specie());
         }
       }
     }
@@ -171,7 +176,7 @@ namespace CASM {
     // store Molecule names in vector
     std::vector<std::string> struc_mol_name;
     for(int i = 0; i < struc_mol.size(); i++) {
-      struc_mol_name.push_back(struc_mol[i].name);
+      struc_mol_name.push_back(struc_mol[i].name());
     }
 
     return struc_mol_name;
@@ -183,7 +188,7 @@ namespace CASM {
   ///   The Specie types are ordered according to struc_specie()
   Eigen::VectorXi Structure::num_each_specie() const {
 
-    std::vector<Specie> tstruc_specie = struc_specie();
+    std::vector<AtomSpecie> tstruc_specie = struc_specie();
     Eigen::VectorXi tnum_each_specie = Eigen::VectorXi::Zero(tstruc_specie.size());
 
     Index i, j;
@@ -192,7 +197,7 @@ namespace CASM {
       // For each atomposition in the molecule on the site
       for(j = 0; j < basis[i].occ().size(); j++) {
         // Count the present specie
-        tnum_each_specie(find_index(tstruc_specie, basis[i].occ()[j].specie))++;
+        tnum_each_specie(find_index(tstruc_specie, basis[i].occ().atom(j).specie()))++;
       }
     }
 
@@ -783,7 +788,7 @@ namespace CASM {
       converter[i].resize(struc.basis[i].site_occupant().size());
 
       for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        converter[i][j] = find_index(mol_name_list, struc.basis[i].site_occupant()[j].name);
+        converter[i][j] = find_index(mol_name_list, struc.basis[i].site_occupant()[j].name());
       }
     }
 
@@ -804,7 +809,7 @@ namespace CASM {
 
       std::vector<std::string> site_occ_name_list;
       for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        site_occ_name_list.push_back(struc.basis[i].site_occupant()[j].name);
+        site_occ_name_list.push_back(struc.basis[i].site_occupant()[j].name());
       }
 
       for(Index j = 0; j < mol_name_list.size(); j++) {

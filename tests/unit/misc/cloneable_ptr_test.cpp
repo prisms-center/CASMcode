@@ -34,7 +34,7 @@ public:
 
   };
 
-  ATest &operator=(ATest && other) {
+  ATest &operator=(ATest &&other) {
     if(this != &other) {
       m_value = other.m_value;
       other.m_value = 0;
@@ -81,7 +81,7 @@ public:
 
   };
 
-  BTest &operator=(BTest && other) {
+  BTest &operator=(BTest &&other) {
     if(this != &other) {
       m_value = other.m_value;
       other.m_value = -1;
@@ -144,7 +144,7 @@ public:
 
   };
 
-  CTest &operator=(CTest && other) {
+  CTest &operator=(CTest &&other) {
     if(this != &other) {
       m_value = other.m_value;
       other.m_value = -2;

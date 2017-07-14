@@ -15,6 +15,7 @@
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/casm_io/stream_io/container.hh"
 #include "casm/app/QueryHandler.hh"
@@ -1390,7 +1391,7 @@ namespace CASM {
     for(Index i = 0; i < c.size(); ++i) {
       sout << "Linear index: " << i << "  UnitCellCoord: " << c.uccoord(i) << std::endl;
       if(c.has_occupation()) {
-        sout << "  Occupation: " << c.occ(i) << "  (" << c.mol(i).name << ")\n";
+        sout << "  Occupation: " << c.occ(i) << "  (" << c.mol(i).name() << ")\n";
       }
       if(c.has_displacement()) {
         sout << "  Displacement: " << c.disp(i).transpose() << "\n";

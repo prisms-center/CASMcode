@@ -160,6 +160,12 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+
+  bool PolynomialFunction::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=nullptr*/) const {
+    return visitor.visit(*this, home_basis_ptr);
+  }
+
+  //*******************************************************************************************
   bool PolynomialFunction::depends_on(const Function *test_func) const {
     Index sub_ind(0), arg_ind(0), linear_ind(0);
     for(sub_ind = 0; sub_ind < m_argument.size(); sub_ind++) {
@@ -781,65 +787,6 @@ namespace CASM {
     return t_sum;
   }
 
-  //*******************************************************************************************
-
-  double PolynomialFunction::eval(const Array<Index> &dof_IDs, const Array<Index> &var_states) const {
-    if(var_states.size() != num_args()) {
-      std::cerr << "WARNING: Evalaution error in PolynomialFunction::eval(). Argument list has\n"
-                << "         incompatible number of variables for evaluation.\n";
-      return NAN;
-    }
-    Array<double> eval_table;
-    eval_table.reserve(num_args());
-    for(Index i = 0; i < num_args(); i++) {
-      eval_table.push_back(_argument(i)->eval(dof_IDs, var_states));
-    }
-    return poly_eval(eval_table);
-  }
-
-  //*******************************************************************************************
-
-  double PolynomialFunction::eval(const Array<Index> &dof_IDs, const Array<double> &var_states) const {
-    if(var_states.size() != num_args()) {
-      std::cerr << "WARNING: Evalaution error in PolynomialFunction::eval(). Argument list has\n"
-                << "         incompatible number of variables for evaluation.\n";
-      return NAN;
-    }
-    Array<double> eval_table;
-    eval_table.reserve(num_args());
-    for(Index i = 0; i < num_args(); i++) {
-      eval_table.push_back(_argument(i)->eval(dof_IDs, var_states));
-    }
-
-    return poly_eval(eval_table);
-
-  }
-
-  //*******************************************************************************************
-
-  double PolynomialFunction::poly_eval(const Array<double> &arg_states) const {
-    if(arg_states.size() != num_args()) {
-      std::cerr << "WARNING: Evalaution error in PolynomialFunction::eval(). Argument list has\n"
-                << "         incompatible number of variables for evaluation.\n";
-      return NAN;
-    }
-
-    double t_sum(0.0);
-    double t_prod;
-
-    PolyTrie<double>::const_iterator it(m_coeffs.begin()), it_end(m_coeffs.end());
-    for(; it != it_end; ++it) {
-      t_prod = *it;
-
-      for(Index i = 0; i < it.key().size(); i++) {
-        t_prod *= pow(arg_states[i], it.key()[i]);
-      }
-
-      t_sum += t_prod;
-    }
-
-    return t_sum;
-  }
 
   //*******************************************************************************************
 

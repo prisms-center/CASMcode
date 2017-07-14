@@ -115,7 +115,7 @@ namespace CASM {
   void BasisSet::append(const BasisSet &RHS) {
     //Before appending functions, copy over  DoF IDs and subbasis info
     for(Index i = 0; i < RHS.m_dof_IDs.size(); i++) {
-      Index ID_ind = m_dof_IDs.find(RHS.m_dof_IDs[i]);
+      Index ID_ind = find_index(m_dof_IDs, RHS.m_dof_IDs[i]);
       if(ID_ind == m_dof_IDs.size()) {
         assert(0 && "In BasisSet::append(), it is unsafe to append a BasisSet whose dependencies differ from (this).");
         m_dof_IDs.push_back(RHS.m_dof_IDs[i]);
@@ -289,27 +289,27 @@ namespace CASM {
 
   }
   //*******************************************************************************************
-  void BasisSet::set_variable_basis(const Array<ContinuousDoF> &tvar_compon, SymGroupRepID _var_sym_rep_ID) {
+  void BasisSet::set_variable_basis(DoFSet const &_dof_set) {
     m_argument.clear();
-    m_basis_symrep_ID = _var_sym_rep_ID;
-    Array<Index> tdof_IDs;
-    for(Index i = 0; i < tvar_compon.size(); i++) {
-      if(!tvar_compon[i].is_locked() && !tdof_IDs.contains(tvar_compon[i].ID()))
-        tdof_IDs.push_back(tvar_compon[i].ID());
+    m_basis_symrep_ID = _dof_set.sym_rep_ID();
+    std::vector<Index> tdof_IDs;
+    for(Index i = 0; i < _dof_set.size(); i++) {
+      if(!_dof_set[i].is_locked() && !CASM::contains(tdof_IDs, _dof_set[i].ID()))
+        tdof_IDs.push_back(_dof_set[i].ID());
     }
     set_dof_IDs(tdof_IDs);
-    for(Index i = 0; i < tvar_compon.size(); i++) {
-      push_back(new Variable(tvar_compon, i, _var_sym_rep_ID));
+    for(Index i = 0; i < _dof_set.size(); i++) {
+      push_back(new Variable(_dof_set, i));
     }
     _refresh_ID();
   }
   //*******************************************************************************************
-  void BasisSet::set_dof_IDs(const Array<Index> &new_IDs) {
+  void BasisSet::set_dof_IDs(const std::vector<Index> &new_IDs) {
     _update_dof_IDs(m_dof_IDs, new_IDs);
   }
   //*******************************************************************************************
   // Pass before_IDs by value to avoid aliasing issues when called from BasisSet::set_dof_IDs()
-  void BasisSet::_update_dof_IDs(const Array<Index> before_IDs, const Array<Index> &after_IDs) {
+  void BasisSet::_update_dof_IDs(const std::vector<Index> before_IDs, const std::vector<Index> &after_IDs) {
     //std::cout << "BasisSet " << this << " --> m_dof_IDs is " << m_dof_IDs << "; before_IDs: " << before_IDs << "; after_ID: " << after_IDs << "\n" << std::endl;
     if(before_IDs.size() != after_IDs.size() && size() > 0) {
       std::cerr << "CRITICAL ERROR: In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.\n"
@@ -326,7 +326,7 @@ namespace CASM {
     else {
       Index m;
       for(Index i = 0; i < m_dof_IDs.size(); i++) {
-        m = before_IDs.find(m_dof_IDs[i]);
+        m = find_index(before_IDs, m_dof_IDs[i]);
         if(m == before_IDs.size()) {
           std::cerr << "CRITICAL ERROR: In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.\n"
                     << "                Exiting...\n";
@@ -385,13 +385,13 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  int BasisSet::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
+  int BasisSet::register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) {
     int sum(0);
     for(Index i = 0; i < size(); i++)
-      sum += at(i)->register_remotes(dof_name, remote_handles);
+      sum += at(i)->register_remotes(remote_handles);
 
     for(Index i = 0; i < m_argument.size(); i++)
-      sum += m_argument[i]->register_remotes(dof_name, remote_handles);
+      sum += m_argument[i]->register_remotes(remote_handles);
 
     return sum;
   }
@@ -457,7 +457,7 @@ namespace CASM {
       Index offset = 0;
       for(Index j = 0; j < tsubs.size(); j++) {
         //std::cout << "dof_IDs of tsub " << j << " are " << tsubs[j]->dof_IDs() << "\n";
-        Index ID_ind = (tsubs[j]->dof_IDs()).find(dof_IDs()[i]);
+        Index ID_ind = find_index(tsubs[j]->dof_IDs(), dof_IDs()[i]);
         if(ID_ind == (tsubs[j]->dof_IDs()).size())
           continue;
         const SubBasis &sub_basis(tsubs[j]->dof_sub_basis(ID_ind));
@@ -555,7 +555,7 @@ namespace CASM {
     }
 
     if(!allowed_occs.is_locked()) {
-      set_dof_IDs(Array<Index>(1, allowed_occs.ID()));
+      set_dof_IDs(std::vector<Index>(1, allowed_occs.ID()));
       m_dof_subbases[0] = Array<Index>::sequence(0, N - 2);
     }
     //std::cout << "INSIDE construct_orthonormal_discrete_functions and gram_mat is \n";
@@ -688,7 +688,7 @@ namespace CASM {
   // only one probability is non-zero.
 
   void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
-                                                          const Array<double> &occ_probs,
+                                                          const std::vector<double> &occ_probs,
                                                           Index basis_ind,
                                                           const SymGroup &symgroup) {
 
@@ -699,11 +699,13 @@ namespace CASM {
       exit(1);
     }
 
-    if(!almost_equal(1.0, occ_probs.sum())) {
-      std::cerr << "CRITICAL ERROR: In BasiSet::construct_orthonormal_discrete_functions(), occ_probs must sum to 1 (they specify a probability distributation).\n"
-                << "                occ_probs is: " << occ_probs << "\nExiting...\n";
-      assert(0);
-      exit(1);
+    double prob_sum(0.);
+    for(double dub : occ_probs)
+      prob_sum += dub;
+
+    if(!almost_equal(1.0, prob_sum)) {
+      throw std::runtime_error("In BasiSet::construct_orthonormal_discrete_functions(), occ_probs must sum to 1 (they specify a probability distributation).\n");
+      //<< "                occ_probs is: " << occ_probs << "\nExiting...\n";
     }
 
     // Build a matrix with N-1 non-zero eigenvalues equal to 1/N.

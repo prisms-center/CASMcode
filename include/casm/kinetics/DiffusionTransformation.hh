@@ -8,14 +8,15 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/clusterography/IntegralCluster.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/app/AppIO.hh"
 
 namespace CASM {
 
+  class AtomSpecie;
   class Structure;
   class Configuration;
   class SymOp;
+  class jsonParser;
+  template<typename T> struct jsonConstructor;
 
   namespace Kinetics {
 
@@ -36,7 +37,7 @@ namespace CASM {
 
       const Molecule &mol() const;
 
-      const Specie &specie() const;
+      const AtomSpecie &specie() const;
 
     private:
 
@@ -115,7 +116,7 @@ namespace CASM {
       DiffusionTransformationInvariants(const DiffusionTransformation &trans);
 
       ClusterInvariants<IntegralCluster> cluster_invariants;
-      std::map<Specie, Index> specie_count;
+      std::map<AtomSpecie, Index> specie_count;
 
     };
   }
@@ -315,7 +316,7 @@ namespace CASM {
       const std::vector<SpecieTrajectory> &specie_traj() const;
 
       const IntegralCluster &cluster() const;
-      const std::map<Specie, Index> &specie_count() const;
+      const std::map<AtomSpecie, Index> &specie_count() const;
 
       /// \brief Compare DiffusionTransformation
       ///
@@ -364,9 +365,9 @@ namespace CASM {
       /// \brief Reset mutable members, cluster and invariants, when necessary
       void _reset();
 
-      std::map<Specie, Index> _from_specie_count() const;
-      std::map<Specie, Index> _to_specie_count() const;
-      std::map<Specie, Index> _empty_specie_count() const;
+      std::map<AtomSpecie, Index> _from_specie_count() const;
+      std::map<AtomSpecie, Index> _to_specie_count() const;
+      std::map<AtomSpecie, Index> _empty_specie_count() const;
 
 
       std::vector<OccupationTransformation> m_occ_transform;
@@ -377,7 +378,7 @@ namespace CASM {
 
       // stores Specie -> count, using 'from' specie
       // - is equal to 'to' specie count if is_valid_occ_transform() == true
-      mutable notstd::cloneable_ptr<std::map<Specie, Index> > m_specie_count;
+      mutable notstd::cloneable_ptr<std::map<AtomSpecie, Index> > m_specie_count;
 
     };
 

@@ -41,10 +41,13 @@ namespace CASM {
 
   //*******************************************************************************************
 
+  bool OccupantFunction::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=NULL*/) {
+    return visitor.visit(*this, home_basis_ptr);
+  }
 
   //*******************************************************************************************
 
-  bool OccupantFunction::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=NULL*/) {
+  bool OccupantFunction::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=NULL*/) const {
     return visitor.visit(*this, home_basis_ptr);
   }
 
@@ -128,29 +131,28 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  int OccupantFunction::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
-
-    if(dof().type_name() == dof_name) {
-      if(!valid_index(dof().ID()) || dof().ID() >= remote_handles.size()) {
-        std::cerr << "CRITICAL ERROR: In OccupantFunction::register_remotes(), dof().ID() = " << dof().ID() << " is out of bounds.\n"
-                  << "                Exiting...\n";
-        exit(1);
+  int OccupantFunction::register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) {
+    std::vector<DoF::RemoteHandle>::const_iterator it = find(remote_handles.begin(),
+                                                             remote_handles.end(),
+                                                             m_var->handle());
+    if(it != remote_handles.end()) {
+      if(!valid_index(m_var->ID())) {
+        throw std::runtime_error(std::string("In Variable::register_remotes(), attempting to register dof with ID = ")
+                                 + std::to_string(m_var->ID()) + ", which is out of bounds.\n");
       }
-      //std::cout << "Setting remote at Occ DoF " << dof().ID() << " of " << discrete_remotes.size() << "\n";
-      m_var->register_remote(remote_handles[dof().ID()]);
+      m_var->register_remote(*it);
       return 1;
     }
-
     return 0;
   }
 
   //*******************************************************************************************
 
 
-  bool OccupantFunction::_update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs) {
+  bool OccupantFunction::_update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
     if(dof().is_locked()) return false;
 
-    Index ID_ind = before_IDs.find(dof().ID());
+    Index ID_ind = find_index(before_IDs, dof().ID());
 
     if(ID_ind < after_IDs.size()) {
       m_var->set_ID(after_IDs[ID_ind]);
@@ -285,6 +287,13 @@ namespace CASM {
   //*******************************************************************************************
 
 
+  double OccupantFunction::discrete_eval(int state) const {
+    return m_eval_table[state];
+  }
+
+  //*******************************************************************************************
+
+
   double OccupantFunction::remote_eval() const {
     return m_eval_table[dof().remote_value()];
   }
@@ -300,21 +309,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-
-
-  double OccupantFunction::eval(const Array<Index> &dof_IDs, const Array<Index> &var_states) const {
-    Index which_state = dof_IDs.find(dof().ID());
-    if(which_state < var_states.size())
-      return m_eval_table[var_states[which_state]];
-    //else
-    std::cerr << "CRITICAL ERROR:  In OccupantFunction::eval(), DoF ID of this OccupantFunction (" << dof().ID() << ") is not among specified IDs: " << dof_IDs << "\n"
-              << "                 Exiting...\n";
-    assert(0);
-    exit(1);
-  }
-
-  //*******************************************************************************************
-
 
   bool OccOccOperation::compare(const Function *LHS, const Function *RHS) const {
     return static_cast<OccupantFunction const *>(LHS)->compare(static_cast<OccupantFunction const *>(RHS));

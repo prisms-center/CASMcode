@@ -3,6 +3,7 @@
 
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 

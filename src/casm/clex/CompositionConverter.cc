@@ -1,6 +1,7 @@
 #include "casm/clex/CompositionConverter.hh"
 
 #include "casm/crystallography/Structure.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 // currently still relies on this for getting standard composition axes
 #include "casm/clex/ParamComposition.hh"

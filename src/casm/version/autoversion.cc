@@ -9,7 +9,7 @@ using namespace CASM;
 
 #ifndef TXT_VERSION
 #define TXT_VERSION "unknown"
-#endif 
+#endif
 
 const std::string &CASM::version() {
   static const std::string &ver = TXT_VERSION;

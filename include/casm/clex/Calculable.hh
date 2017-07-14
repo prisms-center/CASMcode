@@ -18,6 +18,8 @@ namespace CASM {
   /// - name and calculated properties should be invalidated whenever the
   ///   ConfigType DoF are modified. Can do this by calling _modify_dof(). This
   ///   means all DoF should be accessed via functions.
+  /// - cache should only be used for DoF-dependent properties, not
+  ///   calctype-dependent properties
   ///
   template<typename Derived>
   class Calculable : public DB::Cache, public DB::Indexed<Derived> {

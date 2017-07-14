@@ -3,6 +3,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
   namespace VaspIO {
@@ -175,7 +176,7 @@ namespace CASM {
       for(int i = 0; i < config.size(); ++i) {
         m_atom_order.push_back(
           tuple_type(
-            config.mol(i).name,
+            config.mol(i).name(),
             scel.coord(i), // no displacement yet
             SelectiveDynamics()
           )
@@ -204,7 +205,7 @@ namespace CASM {
 
       // get occupant name for site i in configdof
       auto occ_name = [&](int i) {
-        return scel.prim().basis[scel.sublat(i)].site_occupant()[configdof.occ(i)].name;
+        return scel.prim().basis[scel.sublat(i)].site_occupant()[configdof.occ(i)].name();
       };
 
       // create tuples collecting (Atom name, Coordinate, SelectiveDynamics) for each site

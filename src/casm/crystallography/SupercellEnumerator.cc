@@ -6,6 +6,8 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 

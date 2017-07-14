@@ -29,13 +29,10 @@ namespace CASM {
     //  mutable std::string m_formula, m_tex_formula;
     //  ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    // m_var_compon defines coordinate system of variables
-    Array<ContinuousDoF> m_var_compon;
+    // m_dof_set defines coordinate system of variables
+    DoFSet m_dof_set;
 
-    //Symmetry representation for variable space (e.g., {x,y,z})
-    SymGroupRepID m_sym_rep_ID;
-
-    //coeffs defines linear combination (i.e., vector) of m_var_compon
+    //coeffs defines linear combination (i.e., vector) of m_dof_set
     Eigen::VectorXd m_coeffs;
 
     //Default construction not allowed
@@ -43,12 +40,12 @@ namespace CASM {
 
     // Copy construction is private.
     // Copy construction should only occur in Variable::copy()
-    Variable(const Variable &old_var);
+    Variable(const Variable &old_var) = default;
 
   public:
 
-    Variable(const Array<ContinuousDoF> &tvar, int var_ind, SymGroupRepID rep_ID);
-    Variable(const Array<ContinuousDoF> &tvar, const Eigen::VectorXd &init_coeffs, SymGroupRepID rep_ID);
+    Variable(const DoFSet &tvar, int var_ind);
+    Variable(const DoFSet &tvar, const Eigen::VectorXd &init_coeffs);
 
     static void fill_dispatch_table();
 
@@ -68,11 +65,12 @@ namespace CASM {
     double leading_coefficient(Index &index) const;
     double get_coefficient(Index i) const;
 
-    const Array<ContinuousDoF> &var_compon() const {
-      return m_var_compon;
+    const DoFSet &dof_set() const {
+      return m_dof_set;
     }
+
     SymGroupRepID sym_rep_ID() const {
-      return m_sym_rep_ID;
+      return dof_set().sym_rep_ID();
     }
 
     const Eigen::VectorXd &coeffs() const {
@@ -82,7 +80,7 @@ namespace CASM {
     void make_formula()const;
     void make_formula(double prefactor)const;
 
-    int register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles);
+    int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles);
 
     bool compare(const Variable *RHS) const;
 
@@ -116,8 +114,9 @@ namespace CASM {
   protected:
     Function *_apply_sym(const SymOp &op);
     bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) const;
 
-    bool _update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs);
+    bool _update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
 
   };
 

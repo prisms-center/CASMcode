@@ -1,6 +1,7 @@
 #ifndef CASM_ClusterOrbits_impl
 #define CASM_ClusterOrbits_impl
 
+#include <boost/iterator/transform_iterator.hpp>
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/misc/algorithm.hh"
@@ -8,6 +9,7 @@
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/clusterography/SubClusterGenerator.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
 
