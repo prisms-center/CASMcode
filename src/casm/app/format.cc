@@ -17,7 +17,6 @@ namespace CASM {
       ("dir,d", "CASM project directory structure summary")
       ("project_settings", "Description and location of 'project_settings' file")
       ("prim", "Description and location of 'prim.json' and 'PRIM' files")
-      ("config_list", "Description and location of 'config_list.json' file")
       ("sym", "Description and location of 'lattice_point_group.json', 'factor_group.json' and 'crystal_point_group.json' files")
       ("vasp", "Description and location of VASP settings files")
       ("comp", "Description and location of 'composition_axes.json' file")
@@ -98,7 +97,16 @@ namespace CASM {
       args.log() << "      LOG                                                           \n";
       args.log() << "    $ROOT/.casm                                                     \n";
       args.log() << "      project_settings.json                                         \n";
-      args.log() << "      config_list.json                                              \n";
+      args.log() << "      jsonDB/                                                       \n";
+      args.log() << "        config_list.json                                            \n";
+      args.log() << "        scel_list.json                                              \n";
+      args.log() << "        diff_trans_list.json                                        \n";
+      args.log() << "        diff_trans_config_list.json                                 \n";
+      args.log() << "      query/                                                        \n";
+      args.log() << "        Configuration/                                              \n";
+      args.log() << "        DiffTransConfiguration/                                     \n";
+      args.log() << "        PrimPeriodicDiffTransOrbit/                                 \n";
+      args.log() << "        Supercell/                                                  \n";
       args.log() << "      composition_axes.json                                         \n";
       args.log() << "    $ROOT/symmetry/                                                 \n";
       args.log() << "      lattice_point_group.json                                      \n";
@@ -282,82 +290,6 @@ Direct\n\
    0.3710000   0.8800000   0.0600000 O\n\
    0.7070000   0.7240000   0.6380000 O\n\
    0.2930000   0.2760000   0.3620000 O\n";
-      args.log() << "-------\n";
-      args.log() << std::endl << std::endl;
-    }
-
-    if(vm.count("config_list")) {
-      args.log() << "\n### config_list.json ##################\n\n";
-
-      args.log() << "LOCATION WHEN GENERATED:\n";
-      args.log() << "$ROOT/.casm/config_list.json\n\n\n";
-
-      args.log() << "DESCRIPTION:\n";
-      args.log() << "A list of generated configurations. This file is generated at the   \n";
-      args.log() << "project level once 'casm enum' has been used to generate            \n";
-      args.log() << "configurations.                                                     \n";
-      args.log() << "                                                                    \n";
-      args.log() << "Contains basic information describing the configuration:            \n\n" <<
-
-                 "supercells:supercell_name:configid:                                   \n" <<
-                 "  Configurations are organized in the JSON file first by the SCELNAME \n" <<
-                 "  and then listed by the configuration's CONFIGID.                    \n\n" <<
-
-                 "source:                                                             \n" <<
-                 "  Describes the possibly mutiple ways in which this configuration   \n" <<
-                 "  was generated. Possibilities are \"enumerated\": the configuration\n" <<
-                 "  was generated when all symmetrically unique configurations of the \n" <<
-                 "  supercell were enumerated, or \"perturbation\": the configuration \n" <<
-                 "  was generated as a perturbation with respect to some other        \n" <<
-                 "  configuration.                                                    \n\n" <<
-
-                 "occupation:                                                         \n" <<
-                 "  An array of int that describes the decoration for a particular    \n" <<
-                 "  configuration in a given supercell. The length of the array is the\n" <<
-                 "  same length as your basis, with each value corresponding to a     \n" <<
-                 "  particular basis site on the supercell. The value for a particular\n" <<
-                 "  site determines what type of molecule is occupying said site, with\n" <<
-                 "  values going from zero to the number of allowed occupants for that\n" <<
-                 "  particular site. The array is ordered in blocks of basis sites of \n" <<
-                 "  your primitive structure.                                         \n\n" <<
-
-                 "  For example, for an \"occupation\" corresponding to a volume 5    \n" <<
-                 "  supercell of a PRIM with 2 basis sites, the first 5 values in the \n" <<
-                 "  array represent basis sites for the first site in the PRIM, and   \n" <<
-                 "  the next 5 represent basis sites for the second site in the PRIM. \n" <<
-                 "  The occupation values can also be read from the \'config\' column \n" <<
-                 "  of the config_list file.                                          \n\n" <<
-
-                 "... other degrees of freedom will also be included in this file ... \n\n" <<
-
-                 "properties:calc:                                                    \n" <<
-                 "  This contains the values of properties calculated using a         \n" <<
-                 "  particular calctype. Properties are normalized per unit cell where\n" <<
-                 "  appropriate (relaxed_energy, volume).                             \n\n" <<
-
-                 "properties:ref:                                                     \n" <<
-                 "  This contains the reference values of properties based on the     \n" <<
-                 "  values of those properties in the current reference states for    \n" <<
-                 "  this configuration. The reference values are determined by a      \n" <<
-                 "  linear interpolation of their values in the reference states to   \n" <<
-                 "  the composition of this configuration. The most local reference   \n" <<
-                 "  states are used; see 'casm format --ref' for details.             \n\n" <<
-
-                 "properties:delta:                                                   \n" <<
-                 "  This contains the difference between the properties listed in     \n" <<
-                 "  \'properties:calc\' from those in \'properties:ref\'. These are   \n" <<
-                 "  the values to be cluster expanded.                                \n\n";
-      args.log() << "\n\n\n";
-
-      args.log() << "EXAMPLE:\n";
-      args.log() << "-------\n";
-      args.log() <<
-                 "{\n  \"supercells\" : {\n    \"SCEL1_1_1_1_0_0_0\" : {\n      \"0\" : {\n        \"calctype.default\" : {\n          \"ref.default\" : {\n            \"properties\" : {\n              \"calc\" : {\n                \"basis_deformation\" : 0.000000000000,\n                \"data_timestamp\" : 1441172550,\n                \"lattice_deformation\" : 0.000000676576,\n                \"relaxation_strain\" : [ 0.001443293898, 0.001443293305, 0.002332246990, 0.000000000000, 0.000000000000, -0.000000001264 ],\n                \"relaxed_energy\" : -17.093958770000,\n                \"rms_force\" : 0.000000000000,\n                \"relaxed_magmom\" : -4.125372200000,\n                \"volume_relaxation\" : 1.005222845232\n              },\n              \"delta\" : {\n                \"relaxed_energy\" : 0.000000000000\n              },\n              \"ref\" : {\n                \"relaxed_energy\" : -17.093958770000\n              }\n            }\n          }\n        },\n        \"dof\" : {\n          \"occupation\" : [ 0, 0, 0, 0 ]\n        },\n        \"selected\" : false,\n        \"source\" : [ \"occupation_enumeration\" ]\n      },\n\
-      ... other configurations ...\n\
-    },\n\
-    ... other supercells ... \n\
-  }\n\
-}\n";
       args.log() << "-------\n";
       args.log() << std::endl << std::endl;
     }
