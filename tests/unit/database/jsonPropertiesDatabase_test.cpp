@@ -95,8 +95,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   db_props.commit();
   BOOST_CHECK_EQUAL(1, 1);
-  fs::ifstream file(loc);
-  std::cout << file.rdbuf() << std::endl;
+  //fs::ifstream file(loc);
+  //std::cout << file.rdbuf() << std::endl;
 
   db_props.close();
   BOOST_CHECK_EQUAL(1, 1);

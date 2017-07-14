@@ -51,7 +51,7 @@ namespace CASM {
       notstd::make_cloneable<MoleculeOccupant>(
         DoFType::occupation,
         "s", // variable name
-        std::vector<Molecule>())) {
+        std::vector<Molecule>(site_occ))) {
 
   }
 
