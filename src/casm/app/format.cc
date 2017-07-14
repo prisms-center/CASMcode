@@ -22,6 +22,7 @@ namespace CASM {
       ("vasp", "Description and location of VASP settings files")
       ("comp", "Description and location of 'composition_axes.json' file")
       ("bspecs", "Description and location of 'bspecs.json' file")
+      ("local_bspecs", "Description and location of 'local_bspecs.json' file")
       ("clust", "Description and location of 'clust.json' file")
       ("basis", "Description and location of 'basis.json' file")
       ("clex", "Description and location of '$TITLE_Clexulator.*' files")
@@ -732,7 +733,7 @@ LCHARG = .FALSE.\n";
 
       args.log() << "DESCRIPTION:\n";
       args.log() << "This JSON file contains specifications for generating the cluster\n" <<
-                 "basis functions.                                                    \n\n";
+                 "basis functions. If generating local clusters see EXAMPLE 2.                        \n\n";
 
       std::cout << "'site_basis_functions' may specify a string, which can be either 'occupation' or \n"
                 << "'chebychev'. Otherwise, specifies a JSON object containing a composition vector or\n"
@@ -780,6 +781,79 @@ LCHARG = .FALSE.\n";
       args.log() << "-------\n";
       args.log() <<
                  "{\n  \"basis_functions\" : {\n    \"site_basis_functions\" : \"occupation\"\n  },\n  \"orbit_branch_specs\" : {\n    \"2\" : {\"max_length\" : 4.01},\n    \"3\" : {\"max_length\" : 3.01}\n  },\n  \"orbit_specs\" : [\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 1.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 2.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 3.000000000000, 0.000000000000, 0.000000000000 ]\n      ],\n      \"include_subclusters\" : true  \n    },\n    {\n      \"coordinate_mode\" : \"Integral\",\n      \"prototype\" : [\n        [ 0, 0, 0, 0 ],\n        [ 1, 0, 0, 0 ],\n        [ 0, 0, 0, 3 ]\n      ],\n      \"include_subclusters\" : true\n    }\n  ]\n}\n";
+      args.log() << "-------\n";
+
+      args.log() << "EXAMPLE2:\n";
+      args.log() << "The bspecs format is slightly different when calling casm bset -u for a local basis set\n";
+      args.log() << "'diff_trans' is the name of the hop the local cluster basis functions will be centered on\n";
+      args.log() << "'local_bspecs' is a JSON object that represents a local_bspecs specification see casm format --local_bspecs for more info\n";
+      args.log() << "-------\n";
+      args.log() <<
+                 "{\n  \"diff_trans\" : \"diff_trans/0\",\n  \"local_bspecs\" : {\n    \"basis_functions\" : {\n      \"site_basis_functions\" : \"occupation\"\n    },\n    \"orbit_branch_specs\" : {\n      \"1\" : {\"cutoff_radius\" : 6.01},\n      \"2\" : {\"cutoff_radius\" : 6.01,\"max_length\" : 4.01},\n      \"3\" : {\"cutoff_radius\" : 4.01,\"max_length\" : 3.01}\n    }\n  }\n}\n";
+      args.log() << "-------\n";
+
+    }
+
+    if(vm.count("local_bspecs")) {
+      args.log() << "\n### local_bspecs.json ##################\n\n";
+
+      args.log() << "LOCATION:\n";
+      args.log() << "$ROOT/basis_sets/$CURR_BSET/local_bspecs.json\n";
+      args.log() << "$ROOT/$your/$custom/$location\n";
+      args.log() << "\n\n";
+
+      args.log() << "DESCRIPTION:\n";
+      args.log() << "This JSON file contains specifications for generating the local clusters\n" <<
+                 "around a currently unspecified hop. Used as an internal object for local basis function enumeration.\n" <<
+                 "Also used for enumerations of diff_trans_configs.\n\n";
+
+      std::cout << "'site_basis_functions' may specify a string, which can be either 'occupation' or \n"
+                << "'chebychev'. Otherwise, specifies a JSON object containing a composition vector or\n"
+                << "a JSON array containing multiple composition vectors. A single composition vector\n"
+                << "is formatted as, e.g.\n"
+                << "   \"composition\" : {\"Au\" : 0.25, \"Cu\" : 0.75} \n"
+                << "The site basis functions will then be constructed as to be optimized for that composition.\n\n"
+
+                << "To specify different compositions on multiple sublattices, an array can be used. \n"
+                << "As an example, the following specifies a different composition on sublattice 0 than\n"
+                << "on sublattices 1 and 3: \n\n"
+
+                << "   \"site_basis_functions\" : [\n"
+                << "                                {\n"
+                << "                                  \"composition\" : {\"Ga\" : 0.3, \"In\" : 0.7},\n"
+                << "                                  \"sublat_indices\" : [0]\n"
+                << "                                },\n"
+                << "                                {\n"
+                << "                                  \"composition\" : {\"Ga\" : 1.0, \"In\" : 0.0},\n"
+                << "                                  \"sublat_indices\" : [1,2]\n"
+                << "                                }\n"
+                << "                             ]\n\n"
+
+                << "Sublattices are specified in the same order as in prim.json. Sublattice compositions\n"
+                << "are not allowed to break the symmetry of the crystal. If equivalent sublattices are\n"
+                << "assigned inequivalent compositions, one will be chosen arbitrarily and propagated to\n"
+                << "all equivalent sublattices.  The resulting site basis functions can be reviewed using\n"
+                << "'casm bset --functions'\n\n";
+
+
+      args.log() << "The JSON object 'orbit_branch_specs' specifies the maximum size of pair,   \n" <<
+                 "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
+                 "between any two sites in the cluster. This field also a cutoff_radius for the \n" <<
+                 "local bubble which can be customized for each orbit branch.\n\n";
+
+      args.log() << "The JSON array 'orbit_specs' allows specifying particular custom orbits    \n" <<
+                 "by providing the prototype cluster coordinates. The 'include_subclusters'  \n" <<
+                 "option allows including all orbits of subclusters of the specified cluster.\n" <<
+                 "The cluster coordinates may be in \"Direct\"/\"Fractional\" coordinates,   \n"
+                 "\"Cartesian\" coordinates, or \"Integral\" coordinates. \"Integral\"       \n"
+                 "coordinates are 4-element integer arrays indicating sublattice index, b,   \n"
+                 "followed by unit cell indices, i, j, k.                                    \n\n\n";
+
+
+      args.log() << "EXAMPLE:\n";
+      args.log() << "-------\n";
+      args.log() <<
+                 "{\n  \"basis_functions\" : {\n    \"site_basis_functions\" : \"occupation\"\n  },\n  \"orbit_branch_specs\" : {\n    \"1\" : {\"cutoff_radius\" : 6.01},\n    \"2\" : {\"cutoff_radius\" : 6.01, \"max_length\" : 4.01},\n    \"3\" : {\"cutoff_radius\" : 5.01,\"max_length\" : 3.01}\n  },\n  \"orbit_specs\" : [\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 1.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 2.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 3.000000000000, 0.000000000000, 0.000000000000 ]\n      ],\n      \"include_subclusters\" : true  \n    },\n    {\n      \"coordinate_mode\" : \"Integral\",\n      \"prototype\" : [\n        [ 0, 0, 0, 0 ],\n        [ 1, 0, 0, 0 ],\n        [ 0, 0, 0, 3 ]\n      ],\n      \"include_subclusters\" : true\n    }\n  ]\n}\n";
       args.log() << "-------\n";
 
     }
