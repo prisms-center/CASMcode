@@ -25,8 +25,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
   primclex.settings().set_crystallography_tol(1e-5);
   BOOST_CHECK_EQUAL(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
 
+  std::string calc_type("test");
   fs::path loc("tests/unit/database/config_props.json");
-  DB::jsonPropertiesDatabase db_props(primclex, loc);
+  DB::jsonPropertiesDatabase db_props(primclex, calc_type, loc);
   BOOST_CHECK_EQUAL(1, 1);
 
   db_props.open();

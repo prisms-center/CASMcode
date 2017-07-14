@@ -26,32 +26,41 @@ namespace CASM {
 
     try {
 
+      std::cout << "here 0" << std::endl;
       // read lattice
       Eigen::Matrix3d latvec_transpose;
 
+      std::cout << "here 1" << std::endl;
       from_json(latvec_transpose, json["lattice_vectors"]);
 
+      std::cout << "here 2" << std::endl;
       Lattice lat(latvec_transpose.transpose());
 
+      std::cout << "here 3" << std::endl;
       // create prim using lat
       BasicStructure<Site> prim(lat);
 
+      std::cout << "here 4" << std::endl;
       // read title
       from_json(prim.title, json["title"]);
 
       Eigen::Vector3d vec;
 
+      std::cout << "here 5" << std::endl;
       // read basis coordinate mode
       COORD_TYPE mode;
       from_json(mode, json["coordinate_mode"]);
 
+      std::cout << "here 6" << std::endl;
       // read basis sites
       for(int i = 0; i < json["basis"].size(); i++) {
 
+        std::cout << "here 7" << std::endl;
         // read coordinate
         Eigen::Vector3d coord(json["basis"][i]["coordinate"][0].get<double>(),
                               json["basis"][i]["coordinate"][1].get<double>(),
                               json["basis"][i]["coordinate"][2].get<double>());
+        std::cout << "here 8" << std::endl;
         Site site(prim.lattice());
         if(mode == FRAC) {
           site.frac() = coord;
@@ -60,10 +69,13 @@ namespace CASM {
           site.cart() = coord;
         }
 
+        std::cout << "here 9" << std::endl;
         // read atom occupant names
         Array<std::string> occ_name;
         from_json(occ_name, json["basis"][i]["occupant_dof"]);
+        std::cout << occ_name << std::endl;
 
+        std::cout << "here 10" << std::endl;
         // fill site.site_occupant
         std::vector<Molecule> tocc;
         tocc.reserve(occ_name.size());
@@ -72,11 +84,19 @@ namespace CASM {
                        std::back_inserter(tocc),
                        static_cast<Molecule(*)(std::string const &)>(Molecule::make_atom));
 
+        std::cout << "here 11" << std::endl;
+        jsonParser tjson;
+        std::cout << to_json(site, tjson) << std::endl;
+        std::cout << "here 11a" << std::endl;
         site.set_allowed_species(tocc);
+        std::cout << "here 11b" << std::endl;
         site.set_occ_value(0);
 
+        std::cout << "here 12" << std::endl;
         // add site to prim
         prim.basis.push_back(site);
+
+        std::cout << "here 13" << std::endl;
       }
 
       return prim;
