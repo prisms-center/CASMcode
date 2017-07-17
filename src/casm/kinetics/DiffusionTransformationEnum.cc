@@ -129,7 +129,7 @@ namespace CASM {
       jsonParser kwargs;
       if(!_kwargs.contains("cspecs")) {
         primclex.err_log() << "DiffusionTransformationEnum currently has no default and requires a correct JSON with a bspecs tag within it" << std::endl;
-        throw std::runtime_error("Error in DiffusionTransformationEnum: bspecs not found");
+        throw std::runtime_error("Error in DiffusionTransformationEnum: cspecs not found");
       }
 
       std::vector<std::string> require;
