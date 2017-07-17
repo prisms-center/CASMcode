@@ -117,7 +117,8 @@ namespace CASM {
       /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
       PermuteIterator to_config_from_canonical() const;
 
-
+      void write_pos() const;
+      std::ostream &write_pos(std::ostream &sout) const;
 
     private:
 

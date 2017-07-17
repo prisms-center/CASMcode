@@ -167,6 +167,9 @@ namespace CASM {
     bool is_supercell_of(const Structure &structure, Eigen::Matrix3d &multimat) const;
     std::vector<int> vacant()const;
 
+    void write_pos() const;
+    std::ostream &write_pos(std::ostream &sout) const;
+
   private:
 
     friend Comparisons<Supercell>;

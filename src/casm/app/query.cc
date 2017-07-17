@@ -269,11 +269,10 @@ namespace CASM {
     }
   }
 
-  //_write_pos should only be an option for configurations
   template<typename DataObject>
   int QueryCommandImpl<DataObject>::_write_pos() const {
-    for(const auto &config : _sel().selected()) {
-      //config.write_pos();
+    for(const auto &obj : _sel().selected()) {
+      obj.write_pos();
     }
     return 0;
   }

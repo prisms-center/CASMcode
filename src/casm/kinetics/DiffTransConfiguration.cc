@@ -8,6 +8,10 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/casm_io/VaspIO.hh"
 
 namespace CASM {
 
@@ -229,6 +233,31 @@ namespace CASM {
     /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
     PermuteIterator DiffTransConfiguration::to_config_from_canonical() const {
       return to_config().from_canonical();
+    }
+
+    void DiffTransConfiguration::write_pos() const {
+      const auto &dir = primclex().dir();
+      try {
+        fs::create_directories(dir.configuration_dir(name()));
+      }
+      catch(const fs::filesystem_error &ex) {
+        std::cerr << "Error in DiffTransConfiguration::write_pos()." << std::endl;
+        std::cerr << ex.what() << std::endl;
+      }
+
+      fs::ofstream file(dir.POS(name()));
+      write_pos(file);
+      return;
+    }
+    std::ostream &DiffTransConfiguration::write_pos(std::ostream &sout) const {
+      sout << "Initial POS:" << std::endl;
+      VaspIO::PrintPOSCAR from(sorted().from_config());
+      from.print(sout);
+      sout << std::endl;
+      sout << "Final POS:" << std::endl;
+      VaspIO::PrintPOSCAR to(sorted().to_config());
+      to.print(sout);
+      return sout;
     }
 
     /// \brief prints this DiffTransConfiguration

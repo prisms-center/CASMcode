@@ -178,10 +178,36 @@ namespace CASM {
     return "";
   }
 
+  template<typename OrbitType>
+  std::ostream &write_pos(const OrbitType &orbit, std::ostream &sout);
+
+  template<> std::ostream &write_pos(const Kinetics::PrimPeriodicDiffTransOrbit &orbit, std::ostream &sout);
+
   template<typename _Element, typename _SymCompareType>
   std::string Orbit<_Element, _SymCompareType>::_generate_name() const {
     return _generate_orbit_name(*this);
   };
+
+  template<typename _Element, typename _SymCompareType>
+  void Orbit<_Element, _SymCompareType>::write_pos() const {
+    return _write_pos(*this);
+  };
+
+  template<typename OrbitType>
+  void _write_pos(const OrbitType &orbit);
+
+  template<typename OrbitType>
+  void _write_pos(const Kinetics::PrimPeriodicDiffTransOrbit &orbit);
+
+  template<typename OrbitType>
+  void _write_pos(const OrbitType &orbit) {
+    return;
+  };
+
+  template<typename OrbitType>
+  std::ostream &write_pos(const OrbitType &orbit, std::ostream &sout) {
+    return sout;
+  }
 
 }
 

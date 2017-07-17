@@ -4,6 +4,10 @@
 #include <vector>
 //#include <stdlib.h>
 
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/casm_io/VaspIO.hh"
+#include "casm/casm_io/stream_io/container.hh"
+#include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Structure.hh"
@@ -507,6 +511,28 @@ namespace CASM {
 
     return;
   }
+
+  std::ostream &Supercell::write_pos(std::ostream &sout) const {
+    sout << lattice().lat_column_mat() << std::endl;
+    return sout;
+  }
+
+
+  void Supercell::write_pos() const {
+    const auto &dir = primclex().dir();
+    try {
+      fs::create_directories(dir.configuration_dir(name()));
+    }
+    catch(const fs::filesystem_error &ex) {
+      std::cerr << "Error in Supercell::write_pos()." << std::endl;
+      std::cerr << ex.what() << std::endl;
+    }
+
+    fs::ofstream file(dir.LAT(name()));
+    write_pos(file);
+    return;
+  }
+
 
   /// \brief Return supercell name
   ///
