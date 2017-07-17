@@ -384,7 +384,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::cout << collection.size() << std::endl;
     for(auto &dtc : collection) {
       std::cout << "From config" << dtc.sorted().from_config() << std::endl;
-      std::cout << "To config " << dtc.sorted().to_config() << std::endl;
+      //std::cout << "To config " << dtc.sorted().to_config() << std::endl;
     }
   }
 
