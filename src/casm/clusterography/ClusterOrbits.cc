@@ -90,6 +90,29 @@ namespace CASM {
     std::ostream &status); \
   \
 
+#define LOCAL_CLUSTER_ORBITS_INST(INSERTER) \
+  \
+  template INSERTER make_local_orbits<INSERTER>( \
+    const Kinetics::DiffusionTransformation &diff_trans, \
+    const std::vector<double> &cutoff_radius, \
+    const std::vector<double> &max_length, \
+    const std::vector<IntegralCluster> &custom_generators, \
+    const std::function<bool (Site)> &site_filter, \
+    double xtal_tol, \
+    INSERTER result, \
+    std::ostream &status, \
+    const SymGroup &generating_group); \
+  \
+  template INSERTER make_local_orbits<INSERTER>( \
+    const Kinetics::DiffusionTransformation &diff_trans, \
+    const jsonParser &bspecs, \
+    const std::function<bool (Site)> &site_filter, \
+    double xtal_tol, \
+    INSERTER result, \
+    std::ostream &status, \
+    const SymGroup &generating_group); \
+  \
+
 #define _SPECS_IT(ORBIT) std::vector<OrbitBranchSpecs<ORBIT> >::iterator
 
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator
@@ -105,14 +128,21 @@ namespace CASM {
     _ELEMENT(_ORBIT(ELEMENT,SYMCOMPARE)), \
     _SPECS_IT(_ORBIT(ELEMENT,SYMCOMPARE)))
 
-#define PRIM_PERIODIC_CLUSTER_ORBITS_VECTOR_INST(ELEMENT,SYMCOMPARE) \
-  PRIM_PERIODIC_CLUSTER_ORBITS_INST( \
-    _VECTOR_INSERTER(_ORBIT(ELEMENT,SYMCOMPARE)))
 
   CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, LocalSymCompare<IntegralCluster>)
   CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, PrimPeriodicSymCompare<IntegralCluster>)
   CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, ScelPeriodicSymCompare<IntegralCluster>)
 
+#define PRIM_PERIODIC_CLUSTER_ORBITS_VECTOR_INST(ELEMENT,SYMCOMPARE) \
+  PRIM_PERIODIC_CLUSTER_ORBITS_INST( \
+    _VECTOR_INSERTER(_ORBIT(ELEMENT,SYMCOMPARE)))
+
   PRIM_PERIODIC_CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, PrimPeriodicSymCompare<IntegralCluster>)
+
+#define LOCAL_CLUSTER_ORBITS_VECTOR_INST(ELEMENT,SYMCOMPARE) \
+  LOCAL_CLUSTER_ORBITS_INST( \
+    _VECTOR_INSERTER(_ORBIT(ELEMENT,SYMCOMPARE)))
+
+  LOCAL_CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, LocalSymCompare<IntegralCluster>)
 
 }

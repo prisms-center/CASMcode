@@ -257,9 +257,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
   Supercell scel {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
   Configuration config(scel);
   config.init_occupation();
-  config.init_displacement();
-  config.init_deformation();
-  config.init_specie_id();
+  //config.init_displacement();
+  //config.init_deformation();
+  //config.init_specie_id();
   config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0});
 
   // Make test prim_config
@@ -311,9 +311,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
     Configuration config_scel2(scel2);
     config_scel2.init_occupation();
-    config_scel2.init_displacement();
-    config_scel2.init_deformation();
-    config_scel2.init_specie_id();
+    //config_scel2.init_displacement();
+    //config_scel2.init_deformation();
+    //config_scel2.init_specie_id();
     config_scel2.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -359,9 +359,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
     Supercell fccscel {&fccprimclex, Lattice(2 * a1, 2 * b1, 2 * c1)};
     Configuration l12config(fccscel);
     l12config.init_occupation();
-    l12config.init_displacement();
-    l12config.init_deformation();
-    l12config.init_specie_id();
+    //l12config.init_displacement();
+    //l12config.init_deformation();
+    //l12config.init_specie_id();
     l12config.set_occupation({0, 0, 0, 1, 1, 0, 0, 0});
     fs::path l12_local_bspecs_path = "tests/unit/kinetics/l12_local_bspecs_0.json";
     jsonParser l12_local_bspecs {l12_local_bspecs_path};

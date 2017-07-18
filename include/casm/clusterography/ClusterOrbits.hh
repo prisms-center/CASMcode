@@ -181,6 +181,18 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status);
 
+  /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_prim_periodic_orbits(
+    const Structure &prim,
+    const jsonParser &bspecs,
+    const std::function<bool (Site)> &site_filter,
+    double xtal_tol,
+    OrbitOutputIterator result,
+    std::ostream &status);
+
+  /* -- Generate local orbits --------------------------------------- */
+
   /// \brief Generate Orbit<IntegralCluster> around a DiffusionTransformation
   /// by specifying max cluster length for each branch and cut off radius for local environment
   template<typename OrbitOutputIterator>
@@ -194,16 +206,6 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status,
     const SymGroup &generating_group = SymGroup());
-
-  /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
-  template<typename OrbitOutputIterator>
-  OrbitOutputIterator make_prim_periodic_orbits(
-    const Structure &prim,
-    const jsonParser &bspecs,
-    const std::function<bool (Site)> &site_filter,
-    double xtal_tol,
-    OrbitOutputIterator result,
-    std::ostream &status);
 
   /// \brief Generate Orbit<IntegralCluster> around a DiffusionTransformation from
   /// bspecs.json-type JSON input file
