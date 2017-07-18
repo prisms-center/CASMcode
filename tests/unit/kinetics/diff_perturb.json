@@ -1,5 +1,5 @@
 {
-   "orbits":["diff_trans.0","diff_trans.1"],
+   "orbits":["diff_trans/0","diff_trans/1"],
    "background_configs":["SCEL2_2_1_1_0_1_1/0"],
     "local_bspecs":{
        "basis_functions" : {

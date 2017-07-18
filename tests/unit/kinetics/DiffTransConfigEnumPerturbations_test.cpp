@@ -356,13 +356,13 @@ BOOST_AUTO_TEST_CASE(Test0) {
     Kinetics::DiffusionTransformation fccdiff_trans_prototype = fccdiff_trans_orbits[4].prototype();
     Eigen::Vector3d a1, b1, c1;
     std::tie(a1, b1, c1) = fccprimclex.prim().lattice().vectors();
-    Supercell fccscel {&fccprimclex, Lattice(6 * a1, 6 * b1, 6 * c1)};
+    Supercell fccscel {&fccprimclex, Lattice(2 * a1, 2 * b1, 2 * c1)};
     Configuration l12config(fccscel);
     l12config.init_occupation();
     l12config.init_displacement();
     l12config.init_deformation();
     l12config.init_specie_id();
-    l12config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /*l12config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                             });
+                             });*/
     fs::path l12_local_bspecs_path = "tests/unit/kinetics/l12_local_bspecs_0.json";
     jsonParser l12_local_bspecs {l12_local_bspecs_path};
     std::cout << l12config << std::endl;

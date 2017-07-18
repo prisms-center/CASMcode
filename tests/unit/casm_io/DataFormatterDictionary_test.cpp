@@ -64,6 +64,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   }
 
   // -- Check Configuration --
+
   {
     BOOST_CHECK_EQUAL(primclex.db<Configuration>().size(), 126);
 
@@ -80,7 +81,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
     BOOST_CHECK_EQUAL(true, true);
   }
-
   // -- DiffusionTransformation --
 
   {
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     jsonParser diff_perturb_json {diffperturb_path};
     Kinetics::DiffTransConfigEnumPerturbations::run(primclex, diff_perturb_json, enum_opt);
 
-    BOOST_CHECK_EQUAL(primclex.db<Kinetics::DiffTransConfiguration>().size(), 5);
+    BOOST_CHECK_EQUAL(primclex.db<Kinetics::DiffTransConfiguration>().size(), 2);
     primclex.db<Kinetics::DiffTransConfiguration>().commit();
     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex, "ALL");
 
@@ -126,6 +126,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
     BOOST_CHECK_EQUAL(true, true);
   }
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

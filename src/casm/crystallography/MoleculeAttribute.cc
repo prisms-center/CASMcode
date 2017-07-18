@@ -1,4 +1,4 @@
-#include "casm/misc/CASM_Eigen_Math.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/MoleculeAttribute.hh"
 #include "casm/symmetry/SymOp.hh"
 
