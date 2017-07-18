@@ -180,9 +180,7 @@ namespace CASM {
       return m_atoms[i];
     }
 
-    bool is_vacancy() const {
-      return m_atoms.empty();
-    }
+    bool is_vacancy() const;
 
     Molecule &apply_sym(SymOp const &op);
 
