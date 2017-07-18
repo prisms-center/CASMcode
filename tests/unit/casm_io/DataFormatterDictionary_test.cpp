@@ -40,7 +40,10 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // -- Generate Supercell & Configuration --
 
   ScelEnumByProps enum_scel(primclex, ScelEnumProps(1, 5));
+  BOOST_CHECK_EQUAL(true, true);
+
   ConfigEnumAllOccupations::run(primclex, enum_scel.begin(), enum_scel.end());
+  BOOST_CHECK_EQUAL(true, true);
 
   // -- Check Supercell --
 
