@@ -289,5 +289,26 @@ namespace CASM {
       }
     }
 
+#define  PRIM_PERIODIC_DIFF_TRANS_ORBITS_INST(INSERTER, CLUSTER_IT) \
+    \
+    template INSERTER make_prim_periodic_diff_trans_orbits<INSERTER, CLUSTER_IT>( \
+      CLUSTER_IT begin, \
+      CLUSTER_IT end, \
+      double xtal_tol, \
+      INSERTER result); \
+    \
+
+#define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator
+#define _VECTOR_INSERTER(ORBIT) std::back_insert_iterator<std::vector<ORBIT> >
+
+#define  PRIM_PERIODIC_DIFF_TRANS_ORBITS_VECTOR_INST(DIFF_TRANS_ORBIT, CLUSTER_ORBIT) \
+      PRIM_PERIODIC_DIFF_TRANS_ORBITS_INST( \
+        _VECTOR_INSERTER(DIFF_TRANS_ORBIT), \
+        _VECTOR_IT(CLUSTER_ORBIT))
+
+    PRIM_PERIODIC_DIFF_TRANS_ORBITS_VECTOR_INST(
+      PrimPeriodicDiffTransOrbit,
+      PrimPeriodicIntegralClusterOrbit)
+
   }
 }
