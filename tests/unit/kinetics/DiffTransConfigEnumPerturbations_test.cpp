@@ -257,9 +257,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
   Supercell scel {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
   Configuration config(scel);
   config.init_occupation();
-  //config.init_displacement();
-  //config.init_deformation();
-  //config.init_specie_id();
+  config.init_displacement();
+  config.init_deformation();
+  config.init_specie_id();
   config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0});
 
   // Make test prim_config
@@ -311,9 +311,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
     Configuration config_scel2(scel2);
     config_scel2.init_occupation();
-    //config_scel2.init_displacement();
-    //config_scel2.init_deformation();
-    //config_scel2.init_specie_id();
+    config_scel2.init_displacement();
+    config_scel2.init_deformation();
+    config_scel2.init_specie_id();
     config_scel2.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -356,16 +356,27 @@ BOOST_AUTO_TEST_CASE(Test0) {
     Kinetics::DiffusionTransformation fccdiff_trans_prototype = fccdiff_trans_orbits[4].prototype();
     Eigen::Vector3d a1, b1, c1;
     std::tie(a1, b1, c1) = fccprimclex.prim().lattice().vectors();
-    Supercell fccscel {&fccprimclex, Lattice(2 * a1, 2 * b1, 2 * c1)};
+    Supercell fccscel {&fccprimclex, Lattice(6 * a1, 6 * b1, 6 * c1)};
     Configuration l12config(fccscel);
     l12config.init_occupation();
-    //l12config.init_displacement();
-    //l12config.init_deformation();
-    //l12config.init_specie_id();
-    l12config.set_occupation({0, 0, 0, 1, 1, 0, 0, 0});
+    l12config.init_displacement();
+    l12config.init_deformation();
+    l12config.init_specie_id();
+    l12config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                             });
     fs::path l12_local_bspecs_path = "tests/unit/kinetics/l12_local_bspecs_0.json";
     jsonParser l12_local_bspecs {l12_local_bspecs_path};
-
+    std::cout << l12config << std::endl;
     //In this config there should be 2 options to place the nearest neighbor hop
     // one toward the majority L12 atom and one towards minority L12 atom
     //given a cutoff radius of 5 angstroms and only looking at local point and pair clusters
@@ -380,10 +391,19 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
     std::set<Kinetics::DiffTransConfiguration> collection;
     Kinetics::DiffTransConfigEnumPerturbations enumerator(l12config, fccdiff_trans_orbits[4], l12_local_bspecs);
+    std::vector<LocalIntegralClusterOrbit> local_orbits2;
+    make_local_orbits(
+      fccdiff_trans_orbits[4].prototype(),
+      local_bspecs,
+      alloy_sites_filter,
+      primclex.crystallography_tol(),
+      std::back_inserter(local_orbits2),
+      std::cout);
+    std::cout << "Local bubble overlaps dude" << Kinetics::has_local_bubble_overlap(local_orbits2, l12config.supercell()) << std::endl;
     collection.insert(enumerator.begin(), enumerator.end());
     std::cout << collection.size() << std::endl;
     for(auto &dtc : collection) {
-      std::cout << "From config" << dtc.sorted().from_config() << std::endl;
+      //std::cout << "From config" << dtc.sorted().from_config() << std::endl;
       //std::cout << "To config " << dtc.sorted().to_config() << std::endl;
     }
   }
@@ -401,5 +421,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
     //test_4(config, diff_trans_orbits);
   }
 
-  BOOST_AUTO_TEST_SUITE_END();
 }
+
+BOOST_AUTO_TEST_SUITE_END();
