@@ -136,6 +136,8 @@ namespace CASM {
       return m_sym_compare.inter_orbit_compare(prototype(), B.prototype());
     }
 
+    void write_pos() const;
+
   private:
 
     friend DB::Named<Orbit<_Element, _SymCompareType>>;
