@@ -81,18 +81,18 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
 
   // Make DiffTransConfiguration enumerator and enumerate configs
-  std::cout << "skipping DiffTransConfigEnumPerturbations dependent parts" << std::endl;
-  //  Kinetics::DiffTransConfigEnumPerturbations enum_diff_trans_config(
-  //    config, diff_trans_orbits[0], diff_perturb_json["local_bspecs"]);
-  //  for(const auto &diff_trans_config : enum_diff_trans_config) {
-  //    db_diff_trans_config.insert(diff_trans_config);
-  //  }
-  //  db_diff_trans_config.commit();
-  //  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
-  //
-  //
-  //  // Check cached properties
-  //  std::cout << "skipping cache check" << std::endl;
+  //std::cout << "skipping DiffTransConfigEnumPerturbations dependent parts" << std::endl;
+  Kinetics::DiffTransConfigEnumPerturbations enum_diff_trans_config(
+    config, diff_trans_orbits[0], diff_perturb_json["local_bspecs"]);
+  for(const auto &diff_trans_config : enum_diff_trans_config) {
+    db_diff_trans_config.insert(diff_trans_config);
+  }
+  db_diff_trans_config.commit();
+  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
+
+
+  // Check cached properties
+  std::cout << "skipping cache check" << std::endl;
   ////  for(const auto &diff_trans_config : db_diff_trans_config) {
   ////    //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
   ////    BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), false);
@@ -101,42 +101,42 @@ BOOST_AUTO_TEST_CASE(Test1) {
   ////  }
   ////  db_diff_trans_config.commit();
   //
-  //  // Check that the database is sorted
-  //  {
-  //    auto next = db_diff_trans_config.begin();
-  //    auto it = next++;
-  //    auto end = db_diff_trans_config.end();
-  //    for(; next != end; ++it, ++next) {
-  //      BOOST_CHECK_EQUAL(*it < *next, true);
-  //    }
-  //  }
+  // Check that the database is sorted
+  {
+    auto next = db_diff_trans_config.begin();
+    auto it = next++;
+    auto end = db_diff_trans_config.end();
+    for(; next != end; ++it, ++next) {
+      BOOST_CHECK_EQUAL(*it < *next, true);
+    }
+  }
   //
-  //  // Close DiffTransConfiguration database
-  //  db_diff_trans_config.close();
-  //  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
-  //
-  //  // Re-open DiffTransConfiguration database
-  //  db_diff_trans_config.open();
-  //  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
+  // Close DiffTransConfiguration database
+  db_diff_trans_config.close();
+  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
+
+  // Re-open DiffTransConfiguration database
+  db_diff_trans_config.open();
+  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
   //
   //  // Check cached properties
-  //  std::cout << "skipping cache check" << std::endl;
+  std::cout << "skipping cache check" << std::endl;
   ////  for(const auto &diff_trans_config : db_diff_trans_config) {
   ////    BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), true);
   ////  }
   //
-  //  // Check that the database is sorted
-  //  {
-  //    auto next = db_diff_trans_config.begin();
-  //    auto it = next++;
-  //    auto end = db_diff_trans_config.end();
-  //    for(; next != end; ++it, ++next) {
-  //      BOOST_CHECK_EQUAL(*it < *next, true);
-  //    }
-  //  }
-  //
-  //  // Close DiffTransConfiguration database
-  //  db_diff_trans_config.close();
+  // Check that the database is sorted
+  {
+    auto next = db_diff_trans_config.begin();
+    auto it = next++;
+    auto end = db_diff_trans_config.end();
+    for(; next != end; ++it, ++next) {
+      BOOST_CHECK_EQUAL(*it < *next, true);
+    }
+  }
+
+  // Close DiffTransConfiguration database
+  db_diff_trans_config.close();
   //
 }
 
