@@ -26,6 +26,7 @@ BOOST_AUTO_TEST_SUITE(DataFormatterDictionaryTest)
 
 BOOST_AUTO_TEST_CASE(Test1) {
 
+  BOOST_CHECK_EQUAL(true, true);
   test::FCCTernaryProj proj;
   proj.check_init();
   proj.check_composition();

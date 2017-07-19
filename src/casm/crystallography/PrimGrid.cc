@@ -139,13 +139,32 @@ namespace CASM {
 
   //**********************************************************************************************
 
+  const Lattice &PrimGrid::prim_lattice() const {
+    return *m_lat[static_cast<int>(PRIM)];
+  }
+
+  //**********************************************************************************************
+
+  const Lattice &PrimGrid::scel_lattice() const {
+    return *m_lat[static_cast<int>(SCEL)];
+  }
+
+  //**********************************************************************************************
+
+  const Lattice &PrimGrid::lattice(CELL_TYPE lat_mode) const {
+    return *m_lat[static_cast<int>(lat_mode)];
+  }
+
+
+  //**********************************************************************************************
+
   const Eigen::DiagonalWrapper<const PrimGrid::vector_type> PrimGrid::matrixS()const {
     return m_S.asDiagonal();
   }
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
 
-    auto frac((m_lat[static_cast<int>(PRIM)]->inv_lat_column_mat()*_coord.cart()).array() + TOL);
+    auto frac((prim_lattice().inv_lat_column_mat()*_coord.cart()).array() + TOL);
     UnitCell ijk(frac.unaryExpr(std::ptr_fun(floor)).matrix().cast<long>());
 
     return find(ijk);
@@ -161,7 +180,7 @@ namespace CASM {
   //**********************************************************************************************
 
   Index PrimGrid::find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const {
-    return find(Coordinate(_cart_coord, *m_lat[static_cast<int>(PRIM)], CART));
+    return find(Coordinate(_cart_coord, prim_lattice(), CART));
   }
 
   //**********************************************************************************************
@@ -213,9 +232,9 @@ namespace CASM {
 
   Coordinate PrimGrid::coord(const UnitCell &ijk, CELL_TYPE lat_mode)const {
 
-    Coordinate tcoord(ijk.cast<double>(), *(m_lat[static_cast<int>(PRIM)]), FRAC);
+    Coordinate tcoord(ijk.cast<double>(), prim_lattice(), FRAC);
 
-    tcoord.set_lattice(*(m_lat[static_cast<int>(lat_mode)]), CART);
+    tcoord.set_lattice(lattice(lat_mode), CART);
     return tcoord;
   }
 

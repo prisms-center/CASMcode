@@ -11,12 +11,13 @@
 
 namespace CASM {
 
-  namespace {
+  namespace Orbit_impl {
 
     /// \brief Returns vector containing sorted indices of SymOp in first column of equivalence_map
     ///
-    /// This is what the first column of equivalence_map will look like if Element
+    /// - This is what the first column of equivalence_map will look like if Element
     /// 'proto' is the prototype.
+    /// - Uses index into generating_group
     template<typename Element, typename SymCompareType, typename EquivContainer>
     std::vector<Index> _sorter(
       const Element &proto,
@@ -31,10 +32,10 @@ namespace CASM {
       int count = 0;
       std::vector<Index> sorter(equiv.size(), -1);
 
-      for(const auto &op : g) {
-        Index i = find_index(equiv, sym_compare.prepare(copy_apply(op, proto)), equal);
+      for(Index op_index = 0; op_index != g.size(); ++op_index) {
+        Index i = find_index(equiv, sym_compare.prepare(copy_apply(g[op_index], proto)), equal);
         if(sorter[i] == -1) {
-          sorter[i] = op.index();
+          sorter[i] = op_index;
           count++;
           if(count == equiv.size()) {
             std::sort(sorter.begin(), sorter.end());
@@ -86,19 +87,14 @@ namespace CASM {
       t_equiv.insert(prepare(copy_apply(op, generating_element)));
     }
     // sort element using each element's first equivalence map column to find prototype
-    std::set<std::pair<Element, std::vector<Index> >, _EqMapCompare<Element> > _set;
+    std::set<std::pair<Element, std::vector<Index> >, Orbit_impl::_EqMapCompare<Element> > _set;
     for(const auto &e : t_equiv) {
-      _set.insert(std::make_pair(e, _sorter(e, t_equiv, g, m_sym_compare)));
+      _set.insert(std::make_pair(e, Orbit_impl::_sorter(e, t_equiv, g, m_sym_compare)));
     }
 
     // use _set.begin()->first for prototype, use _set.begin()->second to generate equiv
     for(auto op_index : _set.begin()->second) {
-      SymOp my_op;
-      for(auto &op : g) {
-        if(op.index() == op_index)
-          my_op = op;
-      }
-      m_element.push_back(prepare(copy_apply(my_op, _set.begin()->first)));
+      m_element.push_back(prepare(copy_apply(g[op_index], _set.begin()->first)));
     }
     // generate equivalence map
     m_equivalence_map.resize(m_element.size());

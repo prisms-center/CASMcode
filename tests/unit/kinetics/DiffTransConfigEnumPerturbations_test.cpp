@@ -101,7 +101,7 @@ void test_2(
 
   const Structure &prim = prim_config.prim();
   std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
-  SymGroup _prim_config_fg = make_sym_group(prim.lattice(), prim_config_fg);
+  SymGroup _prim_config_fg = make_sym_group(prim_config_fg);
   ScelPeriodicSymCompare<ElementType> prim_config_scel_sym_compare(
     prim_config.supercell().prim_grid(),
     prim_config.crystallography_tol());
@@ -234,8 +234,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
     primclex.crystallography_tol(),
     std::back_inserter(orbits),
     primclex.log());
+  BOOST_CHECK_EQUAL(true, true);
 
-  print_clust(orbits.begin(), orbits.end(), std::cout, PrototypePrinter<IntegralCluster>());
+  //print_clust(orbits.begin(), orbits.end(), std::cout, PrototypePrinter<IntegralCluster>());
 
   // Make PrimPeriodicDiffTransOrbit
   std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
@@ -244,22 +245,20 @@ BOOST_AUTO_TEST_CASE(Test0) {
     orbits.begin() + 4,
     primclex.crystallography_tol(),
     std::back_inserter(diff_trans_orbits));
+  BOOST_CHECK_EQUAL(true, true);
 
+  /*
   print_clust(
     diff_trans_orbits.begin(),
     diff_trans_orbits.end(),
     std::cout,
-    PrototypePrinter<Kinetics::DiffusionTransformation>());
+    PrototypePrinter<Kinetics::DiffusionTransformation>());*/
 
   // Make test config
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
   Supercell scel {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
   Configuration config(scel);
-  config.init_occupation();
-  config.init_displacement();
-  config.init_deformation();
-  config.init_specie_id();
   config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0});
 
   // Make test prim_config
@@ -275,6 +274,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[0].prototype();
 
     /// Test bubble checkers
+
     ///Make various supercells
     Supercell scel1 {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
     Supercell scel2 {&primclex, Lattice(4 * a, 4 * b, 3 * c)};
@@ -285,6 +285,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     scel_list.push_back(scel2);
     scel_list.push_back(scel3);
     scel_list.push_back(scel4);
+
     ///make local orbits
     fs::path local_bspecs_path = "tests/unit/kinetics/local_bspecs_0.json";
     jsonParser local_bspecs {local_bspecs_path};
@@ -310,10 +311,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
     //test_4(config, orbits);
 
     Configuration config_scel2(scel2);
-    config_scel2.init_occupation();
-    config_scel2.init_displacement();
-    config_scel2.init_deformation();
-    config_scel2.init_specie_id();
     config_scel2.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -359,24 +356,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
     Supercell fccscel {&fccprimclex, Lattice(2 * a1, 2 * b1, 2 * c1)};
     Configuration l12config(fccscel);
     l12config.init_occupation();
-    l12config.init_displacement();
-    l12config.init_deformation();
-    l12config.init_specie_id();
-    /*l12config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                             });*/
+
     fs::path l12_local_bspecs_path = "tests/unit/kinetics/l12_local_bspecs_0.json";
     jsonParser l12_local_bspecs {l12_local_bspecs_path};
-    std::cout << l12config << std::endl;
+    //std::cout << l12config << std::endl;
     //In this config there should be 2 options to place the nearest neighbor hop
     // one toward the majority L12 atom and one towards minority L12 atom
     //given a cutoff radius of 5 angstroms and only looking at local point and pair clusters

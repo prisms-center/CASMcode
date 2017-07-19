@@ -3,6 +3,7 @@
 
 #include "casm/symmetry/InvariantSubgroup.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymCompare.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/clex/Supercell.hh"
 

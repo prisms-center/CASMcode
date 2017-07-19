@@ -59,6 +59,8 @@ namespace CASM {
                     Index _factor_group_index,
                     Index _translation_index);
 
+    const PrimGrid &prim_grid() const;
+
     PermuteIterator &operator=(PermuteIterator iter);
 
     /// Returns the combination of factor_group permutation and translation permutation
@@ -127,13 +129,19 @@ namespace CASM {
 
   };
 
+  /// \brief Returns a SymGroup generated from a container of PermuteIterator
+  ///
+  /// \param container A container of PermuteIterator
+  ///
+  /// - The result is sorted
   template<typename PermuteIteratorContainer>
-  SymGroup make_sym_group(const Lattice &lat, const PermuteIteratorContainer &container) {
-    return make_sym_group(lat, container.begin(), container.end());
+  SymGroup make_sym_group(const PermuteIteratorContainer &container) {
+    return make_sym_group(container.begin(), container.end());
   }
 
+  /// \brief Returns a SymGroup generated from a range of PermuteIterator
   template<typename PermuteIteratorIt>
-  SymGroup make_sym_group(const Lattice &lat, PermuteIteratorIt begin, PermuteIteratorIt end);
+  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end);
 
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
 
