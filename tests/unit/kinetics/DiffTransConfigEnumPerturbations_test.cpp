@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
     Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[0].prototype();
 
-    /// Test bubble checkers
+    /// Test neighborhood checkers
 
     ///Make various supercells
     Supercell scel1 {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
@@ -298,10 +298,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
       std::back_inserter(local_orbits),
       primclex.log());
 
-    BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel1), 1);
-    BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel2), 0);
-    BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel3), 1);
-    BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel4), 1);
+    BOOST_CHECK_EQUAL(Kinetics::has_local_neighborhood_overlap(local_orbits, scel1), 1);
+    BOOST_CHECK_EQUAL(Kinetics::has_local_neighborhood_overlap(local_orbits, scel2), 0);
+    BOOST_CHECK_EQUAL(Kinetics::has_local_neighborhood_overlap(local_orbits, scel3), 1);
+    BOOST_CHECK_EQUAL(Kinetics::has_local_neighborhood_overlap(local_orbits, scel4), 1);
     std::vector<Supercell> result = Kinetics::viable_supercells(local_orbits, scel_list);
     BOOST_CHECK_EQUAL(*(result.begin()) == scel2, 1);
 
@@ -353,13 +353,24 @@ BOOST_AUTO_TEST_CASE(Test0) {
     Kinetics::DiffusionTransformation fccdiff_trans_prototype = fccdiff_trans_orbits[4].prototype();
     Eigen::Vector3d a1, b1, c1;
     std::tie(a1, b1, c1) = fccprimclex.prim().lattice().vectors();
-    Supercell fccscel {&fccprimclex, Lattice(2 * a1, 2 * b1, 2 * c1)};
+    Supercell fccscel {&fccprimclex, Lattice(6 * a1, 6 * b1, 6 * c1)};
     Configuration l12config(fccscel);
     l12config.init_occupation();
+    l12config.set_occupation({0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0,
+                              0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0,
+                              0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0,
+                              0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+                              0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0,
+                              0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+                              1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+                              0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+                              1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0
+                             });
 
     fs::path l12_local_bspecs_path = "tests/unit/kinetics/l12_local_bspecs_0.json";
     jsonParser l12_local_bspecs {l12_local_bspecs_path};
-    //std::cout << l12config << std::endl;
     //In this config there should be 2 options to place the nearest neighbor hop
     // one toward the majority L12 atom and one towards minority L12 atom
     //given a cutoff radius of 5 angstroms and only looking at local point and pair clusters
@@ -377,12 +388,11 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::vector<LocalIntegralClusterOrbit> local_orbits2;
     make_local_orbits(
       fccdiff_trans_orbits[4].prototype(),
-      local_bspecs,
+      l12_local_bspecs,
       alloy_sites_filter,
       primclex.crystallography_tol(),
       std::back_inserter(local_orbits2),
       std::cout);
-    std::cout << "Local bubble overlaps dude" << Kinetics::has_local_bubble_overlap(local_orbits2, l12config.supercell()) << std::endl;
     collection.insert(enumerator.begin(), enumerator.end());
     std::cout << collection.size() << std::endl;
     for(auto &dtc : collection) {

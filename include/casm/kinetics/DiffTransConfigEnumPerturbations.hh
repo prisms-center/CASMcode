@@ -62,6 +62,7 @@ namespace CASM {
 
 
       void _set_current();
+      bool _check_current();
       void _increment_base_config();
 
       /// Select unique DiffusionTransformations from PrimPeriodicDiffTransOrbit
@@ -82,7 +83,7 @@ namespace CASM {
       notstd::cloneable_ptr<DiffTransConfiguration> m_current;
     };
 
-    bool has_local_bubble_overlap(std::vector<LocalIntegralClusterOrbit> &local_orbits, const Supercell &scel);
+    bool has_local_neighborhood_overlap(std::vector<LocalIntegralClusterOrbit> &local_orbits, const Supercell &scel);
 
     std::vector<Supercell> viable_supercells(std::vector<LocalIntegralClusterOrbit> &local_orbits, std::vector<Supercell>);
 

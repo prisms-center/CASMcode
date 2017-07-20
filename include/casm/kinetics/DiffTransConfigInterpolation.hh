@@ -56,7 +56,7 @@ namespace CASM {
       // // -- Unique -------------------
       Configuration prepare_to_config(const Configuration &config, const DiffusionTransformation &diff_trans);
     };
-    Configuration get_relaxed_to_config(const DiffTransConfiguration &dfc);
+    Configuration get_relaxed_config(const DiffTransConfiguration &dfc, Configuration config);
   }
 }
 #endif

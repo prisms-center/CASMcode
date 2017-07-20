@@ -120,7 +120,7 @@ namespace CASM {
       return std::all_of(m_from_config.supercell().permute_begin(),
                          m_from_config.supercell().permute_end(),
       [&](const PermuteIterator & p) {
-        return (copy_apply(p, *this) <= *this);
+        return (copy_apply(p, *this) <= *this || !copy_apply(p, *this).has_valid_from_occ());
       });
     }
 

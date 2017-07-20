@@ -129,18 +129,21 @@ namespace CASM {
       ;
 
     void DiffTransConfigEnumPerturbations::increment() {
-      if(m_perturb_it == m_perturbations.end()) {
-        _increment_base_config();
-        if(m_unique_difftrans_it == m_unique_difftrans.end()) {
-          return;
+      bool is_valid_config {false};
+      while(!is_valid_config) {
+        if(m_perturb_it == m_perturbations.end()) {
+          _increment_base_config();
+          if(m_unique_difftrans_it == m_unique_difftrans.end()) {
+            return;
+          }
+          _init_perturbations();
+          m_perturb_it = m_perturbations.begin();
         }
-        _init_perturbations();
-        m_perturb_it = m_perturbations.begin();
+
+        _set_current();
+        m_perturb_it++;
+        is_valid_config = _check_current();
       }
-
-      _set_current();
-      m_perturb_it++;
-
     };
 
     int DiffTransConfigEnumPerturbations::run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
@@ -207,7 +210,7 @@ namespace CASM {
             primclex.crystallography_tol(),
             std::back_inserter(local_orbits),
             dead);
-          if(has_local_bubble_overlap(local_orbits, bg_config.supercell())) {
+          if(has_local_neighborhood_overlap(local_orbits, bg_config.supercell())) {
             log << "WARNING!!! CHOICE OF BACKGROUND CONFIGURATION " << configname <<
                 "\nRESULTS IN AN OVERLAP IN THE LOCAL CLUSTERS OF " << orbitname <<
                 "\nWITH ITS PERIODIC IMAGES. CONSIDER CHOOSING \n" <<
@@ -265,8 +268,7 @@ namespace CASM {
       DiffusionTransformation prepped = symcompare.prepare(*(m_unique_difftrans.begin()));
       Configuration bg_config = make_attachable(prepped, m_background_config);
       DiffTransConfiguration tmp(bg_config, prepped);
-      m_base_config = tmp;
-      ++m_unique_difftrans_it;
+      m_base_config = tmp;//.canonical_form();
       m_current = notstd::make_cloneable<DiffTransConfiguration>(m_base_config);
       return;
     }
@@ -321,6 +323,7 @@ namespace CASM {
           Perturbation proto_perturb(my_occ_transforms);
           Perturbation max_perturbation = proto_perturb;
           for(auto &op : generating_group) {
+            //m_perturbations.insert(copy_apply(op, proto_perturb));
             if(copy_apply(op, proto_perturb) > max_perturbation) {
               max_perturbation = copy_apply(op, proto_perturb);
             }
@@ -338,12 +341,12 @@ namespace CASM {
     void DiffTransConfigEnumPerturbations::_set_current() {
       /// apply_perturbation(perturb,m_base_dtc);
       Configuration tmp {m_base_config.from_config()};
+      //Need to make sure perturbations doesn't attempt to alter any sites of the hop
+      std::set<Index> unique_indeces;
+      for(auto &traj : m_base_config.diff_trans().specie_traj()) {
+        unique_indeces.insert(tmp.supercell().linear_index(traj.from.uccoord));
+      }
       for(const auto &occ_trans : *m_perturb_it) {
-        //Need to make sure perturbations doesn't attempt to alter any sites of the hop
-        std::set<Index> unique_indeces;
-        for(auto &traj : m_base_config.diff_trans().specie_traj()) {
-          unique_indeces.insert(tmp.supercell().linear_index(traj.from.uccoord));
-        }
         if(unique_indeces.find(tmp.supercell().linear_index(occ_trans.uccoord)) != unique_indeces.end()) {
           ++m_perturb_it;
           increment();
@@ -357,8 +360,14 @@ namespace CASM {
       return;
     }
 
+    /// Checks if current is acceptable to insert
+    bool DiffTransConfigEnumPerturbations::_check_current() {
+      return current().is_canonical();
+    }
+
     /// Moves to next unique diffusion transformation and places in m_background_config
     void DiffTransConfigEnumPerturbations::_increment_base_config() {
+      ++m_unique_difftrans_it;
       if(m_unique_difftrans_it != m_unique_difftrans.end()) {
         ScelPeriodicDiffTransSymCompare symcompare(m_background_config.supercell().prim_grid(),
                                                    m_background_config.supercell().crystallography_tol());
@@ -366,12 +375,10 @@ namespace CASM {
         Configuration bg_config = make_attachable(prepped, m_background_config);
         DiffTransConfiguration tmp(bg_config, prepped);
         if(!tmp.is_valid_neb()) {
-          ++m_unique_difftrans_it;
           _increment_base_config();
           return;
         }
-        m_base_config = tmp;
-        ++m_unique_difftrans_it;
+        m_base_config = tmp;//.canonical_form();
       }
       else {
         _invalidate();
@@ -379,7 +386,7 @@ namespace CASM {
       return;
     }
 
-    bool has_local_bubble_overlap(std::vector<LocalIntegralClusterOrbit> &local_orbits, const Supercell &scel) {
+    bool has_local_neighborhood_overlap(std::vector<LocalIntegralClusterOrbit> &local_orbits, const Supercell &scel) {
       std::set<int> present;
       std::set<UnitCellCoord> coords;
       for(auto &orbit : local_orbits) {
@@ -401,7 +408,7 @@ namespace CASM {
     std::vector<Supercell> viable_supercells(std::vector<LocalIntegralClusterOrbit> &local_orbits, std::vector<Supercell> scel_options) {
       std::vector<Supercell> results;
       for(auto &scel : scel_options) {
-        if(!has_local_bubble_overlap(local_orbits, scel)) {
+        if(!has_local_neighborhood_overlap(local_orbits, scel)) {
           results.push_back(scel);
         }
       }

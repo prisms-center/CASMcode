@@ -1047,6 +1047,28 @@ namespace CASM {
     return *primclex.db<Configuration>().find(name);
   }
 
+  /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
+  Configuration get_relaxed_config(const Configuration &config, std::string calctype) {
+    Configuration tmp = config;
+    //switch this line for the one below once Brian changes config.calc_properties()
+    //jsonParser calc_props = config.calc_properties(calctype);
+    jsonParser calc_props = config.calc_properties();
+    tmp.init_deformation();
+    tmp.init_displacement();
+
+    if(calc_props.contains("relaxation_displacement")) {
+      Eigen::MatrixXd disp;
+      disp = calc_props["relaxation_displacement"].get<Eigen::MatrixXd>();
+      tmp.set_displacement(disp);
+    }
+    if(calc_props.contains("relaxation_deformation")) {
+      Eigen::Matrix3d deform;
+      deform = calc_props["relaxation_deformation"].get<Eigen::Matrix3d>();
+      tmp.set_deformation(deform);
+    }
+    return tmp;
+  }
+
   /// \brief Returns correlations using 'clexulator'.
   Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator) {
     return correlations(config.configdof(), config.supercell(), clexulator);
