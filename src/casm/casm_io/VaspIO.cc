@@ -149,6 +149,40 @@ namespace CASM {
       }
     }
 
+    namespace {
+
+      /// \brief returns a lattice with deformation if present
+      /// deformed_lattice = F * reference_lattice
+      /// F is the deformation matrix
+      ///
+      Lattice get_lattice(const Configuration &config) {
+        const Lattice &ref_lat = config.supercell().lattice();
+        if(config.has_deformation()) {
+          return Lattice(config.deformation() * ref_lat.lat_column_mat());
+        }
+        else {
+          return ref_lat;
+        }
+      }
+
+      /// \brief returns a coordinate including displacements and  deformation if present
+      /// deformed_coordinate = F * (reference_coordinate + displacement)
+      /// F is the deformation matrix
+      ///
+      Coordinate get_coord(const Configuration &config, Index i, const Lattice &deformed_lat) {
+        Coordinate ref_coord = config.supercell().coord(i);
+        if(config.has_displacement()) {
+          ref_coord.cart() += config.disp(i);
+        }
+        if(config.has_deformation()) {
+          ref_coord.cart() = config.deformation() * ref_coord.const_cart();
+        }
+        Coordinate deformed_coord(ref_coord.const_cart(), deformed_lat, CART);
+        deformed_coord.within();
+        return deformed_coord;
+      }
+    }
+
     /// \brief Construct PrintPOSCAR object
     ///
     /// By default:
@@ -159,13 +193,13 @@ namespace CASM {
     /// - Atoms printed in order appearing in the Configuration. (No sorting by atom types)
     /// - No selective dynamics
     /// - {"Va", "va", "VA"} atoms not printed
+    /// - also adds displacements and deformation if they are present as DoF
     ///
     /// Currently:
-    /// - no displacement
     /// - assumes all species are atomic
     ///
     PrintPOSCAR::PrintPOSCAR(const Configuration &config) :
-      vaspio_impl::PrintPOSCARBase(config.supercell().lattice()) {
+      vaspio_impl::PrintPOSCARBase(get_lattice(config)) {
 
       set_title(config.name());
 
@@ -173,10 +207,12 @@ namespace CASM {
 
       // create tuples collecting (Atom name, Coordinate, SelectiveDynamics) for each site
       for(int i = 0; i < config.size(); ++i) {
+        // Coordinate coord(get_coord(config, i).const_cart(), lattice(), CART);
+        // coord.within();
         m_atom_order.push_back(
           tuple_type(
             config.mol(i).name,
-            scel.coord(i), // no displacement yet
+            get_coord(config, i, lattice()),
             SelectiveDynamics()
           )
         );
