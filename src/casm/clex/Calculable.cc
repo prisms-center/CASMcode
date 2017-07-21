@@ -6,17 +6,48 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/database/DatabaseTypeDefs.hh"
+#include "casm/database/PropertiesDatabase.hh"
 
 namespace CASM {
 
   template<typename Derived>
-  const jsonParser &Calculable<Derived>::calc_properties() const {
-    return m_calc_properties;
+  const jsonParser &Calculable<Derived>::calc_properties(std::string calctype) const {
+    const PrimClex &primclex = (this->primclex());
+    auto it = m_calc_properties_map.find(calctype);
+    if(it != m_calc_properties_map.end()) {
+      if(it->second.is_null()) {
+        return it->second;
+      }
+    }
+    if(calctype == "") {
+      calctype = primclex.settings().default_clex().calctype;
+    }
+    return primclex.const_db_props<Derived>(calctype).find_via_from(this->name())->mapped;
   }
 
   template<typename Derived>
-  void Calculable<Derived>::set_calc_properties(const jsonParser &json) {
-    m_calc_properties = json;
+  void Calculable<Derived>::set_calc_properties(const jsonParser &json, std::string calctype) {
+    const PrimClex &primclex = (this->primclex());
+    if(calctype == "") {
+      calctype = primclex.settings().default_clex().calctype;
+    }
+    auto it = m_calc_properties_map.find(calctype);
+    if(it == m_calc_properties_map.end()) {
+      m_calc_properties_map.insert(std::make_pair(calctype, json));
+    }
+    else {
+      m_calc_properties_map[calctype] = json;
+    }
+  }
+
+  template<typename Derived>
+  void Calculable<Derived>::refresh_calc_properties(std::string calctype) {
+    const PrimClex &primclex = (this->primclex());
+    if(calctype == "") {
+      calctype = primclex.settings().default_clex().calctype;
+    }
+    set_calc_properties(primclex.const_db_props<Derived>(calctype).find_via_from(this->name())->mapped, calctype);
+    return;
   }
 
   template<typename Derived>
@@ -82,7 +113,7 @@ namespace CASM {
   template<typename Derived>
   void Calculable<Derived>::_modify_dof() {
     this->clear_name();
-    m_calc_properties.put_null();
+    m_calc_properties_map.clear();
 
     if(cache_updated()) {
       cache_clear();
@@ -92,16 +123,16 @@ namespace CASM {
   }
 
   /// \brief Return true if all required properties have been been calculated for
-  /// the configuration
+  /// the configuration in the default calctype
   template<typename ConfigType>
   bool is_calculated(const ConfigType &config) {
     const auto &props = config.primclex().settings().template properties<ConfigType>();
-    return is_calculated(config.calc_properties(), props);
+    return is_calculated(config.calc_properties(config.primclex().settings().default_clex().calctype), props);
   }
 
   template<typename ConfigType>
   void reset_properties(ConfigType &config) {
-    config.set_calc_properties(jsonParser());
+    config.set_calc_properties(jsonParser(), "");
   }
 
   /// \brief Status of calculation

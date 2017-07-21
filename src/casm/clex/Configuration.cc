@@ -830,7 +830,7 @@ namespace CASM {
 
     auto calc_props_it = prop_it->find("calc");
     if(calc_props_it != prop_it->end()) {
-      set_calc_properties(*calc_props_it);
+      set_calc_properties(*calc_props_it, set.default_clex().calctype);
     }
 
   }
@@ -1050,9 +1050,7 @@ namespace CASM {
   /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
   Configuration get_relaxed_config(const Configuration &config, std::string calctype) {
     Configuration tmp = config;
-    //switch this line for the one below once Brian changes config.calc_properties()
-    //jsonParser calc_props = config.calc_properties(calctype);
-    jsonParser calc_props = config.calc_properties();
+    jsonParser calc_props = config.calc_properties(calctype);
     tmp.init_deformation();
     tmp.init_displacement();
 

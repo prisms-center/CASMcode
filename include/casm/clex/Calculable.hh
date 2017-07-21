@@ -31,9 +31,12 @@ namespace CASM {
     Calculable():
       DB::Indexed<Derived>::Indexed() {}
 
-    const jsonParser &calc_properties() const;
+    const jsonParser &calc_properties(std::string calctype = "") const;
 
-    void set_calc_properties(const jsonParser &json);
+    void set_calc_properties(const jsonParser &json, std::string calctype);
+
+    /// \brief grabs properties from the indicated calctype and adds info to calc_properties_map
+    void refresh_calc_properties(std::string calctype);
 
     const jsonParser &source() const;
 
@@ -48,7 +51,7 @@ namespace CASM {
 
   private:
 
-    jsonParser m_calc_properties;
+    std::map<std::string, jsonParser> m_calc_properties_map;
     jsonParser m_source;
   };
 
