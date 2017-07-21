@@ -54,6 +54,10 @@ namespace CASM {
       ///     cart_op*L_calc = F*L_ideal, L_calc being the lattice in the imported structure,
       ///     and L_ideal the lattice of the ideal mapped to Configuration, and
       ///     cart_op is a cartesian transformation matrix operation.
+      ///   - 'relaxation_displacement': Eigen::MatrixXd, shape=(N,3) Gives the
+      ///     the cartesian displacement of each Molecule reference position from the
+      ///     ideal basis location. Remember, displacements are applied before
+      ///     deformation.
       /// - From ConfigMapperResult::best_assignment:
       ///   - "best_assignment": Permutation, Representations the permutation
       ///     that maps sites in the imported structure onto sites of the ideal crystal.
