@@ -572,7 +572,6 @@ LCHARG = .FALSE.\n";
         2\n\
     ], \n\
     \"coord_mode\": \"direct\", \n\
-    \"is_complete\": true, \n\
     \"relaxed_basis\": [\n\
         [0.6666667, 0.6666667, 0.6666667],\n\
         [0.00255632, 0.99488736, 0.00255632],\n\

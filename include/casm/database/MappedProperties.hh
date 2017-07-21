@@ -8,6 +8,11 @@
 namespace CASM {
   namespace DB {
 
+    /// \brief Data structure stored in PropertiesDatabase
+    ///
+    /// - Use documentation here as reference for reading/writing 'properties.calc.json'
+    ///   files.
+    ///
     struct MappedProperties {
 
       /// The name of the config that was the starting point for relaxation
@@ -18,10 +23,45 @@ namespace CASM {
       /// If no relaxation, from == to
       std::string to;
 
-      /// Raw & unmapped calculated properties, as from properties.calc.json
+      /// Raw & unmapped calculated properties, as from properties.calc.json:
+      ///
+      /// For Configuration:
+      /// - "atom_type": std::vector<std::string>, List of species names as in
+      ///   the PRIM, as ordered in basis.
+      /// - "atoms_per_type": Eigen::VectorXi, List of number of atoms of each type,
+      ///   corresponds to entries in "atom_type".
+      /// - "coord_mode": str, Coordinate mode for basis (always 'direct').
+      /// - "relaxed_forces": Eigen::MatrixXd, shape=(N,3), Final forces
+      ///   on atoms.
+      /// - "relaxed_lattice": Lattice, shape=(3,3), Final lattice
+      ///   vectors, stored as list [ [a0, a1, a2], [b0, b1, b2], [c0, c1, c2]].
+      /// - "relaxed_basis": Eigen::MatrixXd, shape=(N,3), Final basis
+      ///   coordinates.
+      /// - "relaxed_energy": double, Final energy.
+      /// - "relaxed_magmom": double, Final total magnetic moment.
+      /// - "relaxed_mag_basis": Eigen::VectorXd, Final magnetic moment at each
+      ///   basis site
       jsonParser unmapped;
 
-      /// Parsed & mapped properties, as from ConfigMapper::import_structure output
+      /// Parsed & mapped properties, as from ConfigMapperResult:
+      ///
+      /// For Configuration:
+      /// - From ConfigMapperResult::relaxation_properties:
+      ///   - 'lattice_deformation': double, lattice mapping score
+      ///   - 'basis_deformation': double, basis mapping score
+      ///   - 'volume_relaxation': double, V/V_ideal
+      ///   - 'relaxation_deformation': Eigen::Matrix3d, also referred to as F:
+      ///     cart_op*L_calc = F*L_ideal, L_calc being the lattice in the imported structure,
+      ///     and L_ideal the lattice of the ideal mapped to Configuration, and
+      ///     cart_op is a cartesian transformation matrix operation.
+      /// - From ConfigMapperResult::best_assignment:
+      ///   - "best_assignment": Permutation, Representations the permutation
+      ///     that maps sites in the imported structure onto sites of the ideal crystal.
+      ///     i.e. config[i] = imported_structure[best_assignment[i]]
+      /// - From ConfigMapperResult::cart_op:
+      ///   - "cart_op": Eigen::Matrix3d, the cartesian isometry that rotates the
+      ///     imported structure onto the coordinate system of the ideal crystal.
+      ///
       jsonParser mapped;
     };
 
