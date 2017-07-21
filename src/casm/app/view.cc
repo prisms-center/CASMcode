@@ -7,8 +7,19 @@
 #include "casm/database/Selection.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/kinetics/DiffTransConfigurationTraits.hh"
+#include "casm/app/DBInterface.hh"
+#include "casm/database/Selection.hh"
+
 
 #include "casm/completer/Handlers.hh"
+#include "casm/database/ConfigTypeTraits.hh"
+
+// need to add specializations here
+#include "casm/database/ConfigImport.hh"
+#include "casm/database/DiffTransConfigImport.hh"
+
+
 
 namespace CASM {
 
@@ -19,6 +30,7 @@ namespace CASM {
     void ViewOption::initialize() {
       add_help_suboption();
       add_confignames_suboption();
+      add_configtype_suboption(traits<Configuration>::short_name, DB::config_types_short());
       add_configlist_nodefault_suboption();
 
       return;
@@ -109,6 +121,53 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+
+    if(view_opt.configtype() == traits<Kinetics::DiffTransConfiguration>::short_name) {
+      DB::Selection<Kinetics::DiffTransConfiguration> config_select;
+      if(!vm.count("config")) {
+        config_select = DB::Selection<Kinetics::DiffTransConfiguration>(primclex, "NONE");
+      }
+      else if(selection == "MASTER") {
+        config_select = DB::Selection<Kinetics::DiffTransConfiguration>(primclex);
+      }
+      else {
+        config_select = DB::Selection<Kinetics::DiffTransConfiguration>(primclex, selection);
+      }
+
+      // add --confignames (or positional) input
+      for(int i = 0; i < confignames.size(); i++) {
+        config_select.data()[confignames[i]] = true;
+      }
+
+      fs::path tmp_dir = root / ".casm" / "tmp";
+      fs::create_directory(tmp_dir);
+
+      // execute the 'casm view' command for each selected configuration
+      for(const auto &config : config_select.selected()) {
+        // write '.casm/tmp/POSCAR'
+        fs::ofstream file_i;
+        fs::path POSCARpath_i = tmp_dir / "POSCAR00";
+        file_i.open(POSCARpath_i);
+        VaspIO::PrintPOSCAR p_i(config.sorted().from_config());
+        p_i.print(file_i);
+        file_i.close();
+
+        fs::ofstream file_f;
+        fs::path POSCARpath_f = tmp_dir / "POSCAR01";
+        file_f.open(POSCARpath_f);
+        VaspIO::PrintPOSCAR p_f(config.sorted().to_config());
+        p_f.print(file_f);
+        file_f.close();
+
+        args.log() << config.name() << ":\n";
+        Popen popen;
+        popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
+        popen.print(args.log());
+
+      }
+    }
+
+
 
     DB::Selection<Configuration> config_select;
     if(!vm.count("config")) {

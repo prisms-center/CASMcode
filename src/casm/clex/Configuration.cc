@@ -1048,6 +1048,7 @@ namespace CASM {
   }
 
   /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
+  /// \param config must have a canonical name
   Configuration get_relaxed_config(const Configuration &config, std::string calctype) {
     Configuration tmp = config;
     jsonParser calc_props = config.calc_properties(calctype);

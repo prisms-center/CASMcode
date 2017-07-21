@@ -57,6 +57,7 @@ namespace CASM {
       ("set-eci", po::value<std::string>(&m_input_str), "Set the effective cluster interactions (ECI)")
       ("set-all", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Set the current property, calctype, ref, bset, and eci all at once.")
       ("set-view-command", po::value<std::string>(&m_input_str), "Set the command used by 'casm view'.")
+      ("set-view-command-video", po::value<std::string>(&m_input_str), "Set the command used by 'casm view' for videos.")
       ("set-cxx", po::value<std::string>(&m_input_str), "Set the c++ compiler. Use '' to revert to default.")
       ("set-cxxflags", po::value<std::string>(&m_input_str), "Set the c++ compiler options. Use '' to revert to default.")
       ("set-soflags", po::value<std::string>(&m_input_str), "Set the shared library compilation options. Use '' to revert to default.")
@@ -282,7 +283,7 @@ namespace CASM {
                                             "set-cxx", "set-cxxflags", "set-soflags",
                                             "set-casm-prefix", "set-casm-includedir", "set-casm-libdir",
                                             "set-boost-prefix", "set-boost-includedir", "set-boost-libdir",
-                                            "set-view-command"
+                                            "set-view-command", "set-view-command-video"
                                            };
         int option_count = 0;
         for(int i = 0; i < all_opt.size(); i++) {
@@ -421,12 +422,17 @@ namespace CASM {
                      "        2) $CASM_BOOST_INCLUDEDIR and $CASM_BOOST_LIBDIR \n"
                      "        3) $CASM_BOOST_PREFIX/include and $CASM_BOOST_PREFIX/lib \n"
                      "        4) (default search paths) \n\n"
-
                      "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
                      "      - Sets the command used by 'casm view' to open         \n" <<
                      "        visualization software.                              \n" <<
                      "      - Will be executed with '/path/to/POSCAR' as an        \n" <<
                      "        argument, the location of a POSCAR for a configuration\n" <<
+                     "        selected for visualization.                          \n" <<
+                     "      casm settings --set-view-command-video 'casm.view \"open -a /Applications/Ovito/ovito.app\"'\n" <<
+                     "      - Sets the command used by 'casm view' to open         \n" <<
+                     "        visualization software.                              \n" <<
+                     "      - Will be executed with '/path/to/POSCAR' as an        \n" <<
+                     "        argument, the location of a POSCAR for a diff_trans_config\n" <<
                      "        selected for visualization.                          \n" <<
                      "\n";
 
@@ -845,6 +851,19 @@ namespace CASM {
       }
 
       args.log() << "Set view command to: '" << set.view_command() << "'\n\n";
+
+      return 0;
+    }
+
+    // set 'casm view' command
+    else if(vm.count("set-view-command-video")) {
+      set.set_view_command_video(single_input);
+      set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, false);
+      }
+
+      args.log() << "Set video view command to: '" << set.view_command_video() << "'\n\n";
 
       return 0;
     }

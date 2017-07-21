@@ -127,6 +127,9 @@ namespace CASM {
     /// \brief Get current command used by 'casm view'
     std::string view_command() const;
 
+    /// \brief Get current video viewing command used by 'casm view'
+    std::string view_command_video() const;
+
     /// \brief Get current project crystallography tolerance
     double crystallography_tol() const;
 
@@ -245,6 +248,9 @@ namespace CASM {
     /// \brief Set command used by 'casm view'
     bool set_view_command(std::string opt);
 
+    /// \brief Set video viewing command used by 'casm view'
+    bool set_view_command_video(std::string opt);
+
     /// \brief Set crystallography tolerance
     bool set_crystallography_tol(double _tol);
 
@@ -317,6 +323,9 @@ namespace CASM {
 
     // Command executed by 'casm view'
     std::string m_view_command;
+
+    // Command executed by 'casm view'
+    std::string m_view_command_video;
 
     // Crystallography tolerance
     double m_crystallography_tol;
