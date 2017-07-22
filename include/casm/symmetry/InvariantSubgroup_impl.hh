@@ -70,19 +70,73 @@ namespace CASM {
   ///
   template<typename Element>
   std::vector<PermuteIterator> make_invariant_subgroup(const Element &element, const Supercell &scel) {
+    return make_invariant_subgroup(
+             element,
+             scel,
+             scel.permute_begin(),
+             scel.permute_end());
+  }
+
+  /// \brief Construct the subgroup of permutations that leaves an element unchanged
+  ///
+  /// Uses comparison defined by (and include translation):
+  /// \code
+  /// ScelPeriodicSymCompare<Element> sym_compare(
+  ///    scel.prim_grid(),
+  ///    scel.crystallography_tol());
+  /// \endcode
+  ///
+  template<typename Element>
+  std::vector<PermuteIterator> make_invariant_subgroup(
+    const Element &element,
+    const Supercell &scel,
+    PermuteIterator begin,
+    PermuteIterator end) {
 
     ScelPeriodicSymCompare<Element> sym_compare(
       scel.prim_grid(),
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
     std::vector<PermuteIterator> result;
-    auto it = scel.permute_begin();
-    auto end = scel.permute_end();
+    auto it = begin;
     while(it != end) {
       auto test = sym_compare.prepare(copy_apply(it.sym_op(), e));
       if(sym_compare.equal(test, e)) {
         auto trans_it = scel.permute_it(0, scel.prim_grid().find(sym_compare.integral_tau()));
         result.push_back(trans_it * it);
+      }
+      ++it;
+    }
+    return result;
+  }
+
+  /// \brief Construct the subgroup of permutations that leaves an element unchanged
+  ///
+  /// Uses comparison defined by (and include translation):
+  /// \code
+  /// ScelPeriodicSymCompare<Element> sym_compare(
+  ///    scel.prim_grid(),
+  ///    scel.crystallography_tol());
+  /// \endcode
+  ///
+  template<typename Element, typename PermuteIteratorIt>
+  std::vector<PermuteIterator> make_invariant_subgroup(
+    const Element &element,
+    const Supercell &scel,
+    PermuteIteratorIt begin,
+    PermuteIteratorIt end) {
+
+    ScelPeriodicSymCompare<Element> sym_compare(
+      scel.prim_grid(),
+      scel.crystallography_tol());
+    Element e(sym_compare.prepare(element));
+    std::vector<PermuteIterator> result;
+    auto it = begin;
+    while(it != end) {
+      auto test = sym_compare.prepare(copy_apply(it->sym_op(), e));
+      if(sym_compare.equal(test, e)) {
+        auto trans_it = scel.permute_it(0, scel.prim_grid().find(sym_compare.integral_tau()));
+        result.push_back(trans_it * (*it));
       }
       ++it;
     }

@@ -26,6 +26,22 @@ namespace CASM {
     const Element &element,
     const Supercell &scel);
 
+  /// \brief Construct the subgroup of permutations that leaves an element unchanged
+  template<typename Element>
+  std::vector<PermuteIterator> make_invariant_subgroup(
+    const Element &element,
+    const Supercell &scel,
+    PermuteIterator begin,
+    PermuteIterator end);
+
+  /// \brief Construct the subgroup of permutations that leaves an element unchanged
+  template<typename Element, typename PermuteIteratorIt>
+  std::vector<PermuteIterator> make_invariant_subgroup(
+    const Element &element,
+    const Supercell &scel,
+    PermuteIteratorIt begin,
+    PermuteIteratorIt end);
+
 }
 
 #endif
