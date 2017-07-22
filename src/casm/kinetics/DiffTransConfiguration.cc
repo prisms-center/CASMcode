@@ -178,13 +178,13 @@ namespace CASM {
       set_orbit_name(json["orbit_name"].get<std::string>());
     }
 
-    bool DiffTransConfiguration::is_valid_neb() const {
-      std::set<Index> unique_indeces;
+    bool DiffTransConfiguration::is_valid() const {
+      std::set<Index> unique_indices;
       for(auto &traj : diff_trans().specie_traj()) {
         Index l = from_config().supercell().linear_index(traj.from.uccoord);
-        unique_indeces.insert(l);
+        unique_indices.insert(l);
       }
-      return (diff_trans().specie_traj().size() == unique_indeces.size());
+      return (diff_trans().specie_traj().size() == unique_indices.size());
     }
 
     bool DiffTransConfiguration::has_valid_from_occ() const {
