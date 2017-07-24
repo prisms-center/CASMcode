@@ -31,7 +31,7 @@ namespace CASM {
     public:
 
       /// \brief Construct with a Supercell, using all permutations
-      DiffTransConfigInterpolation(const DiffTransConfiguration &_diff_trans_config, const int n_images);
+      DiffTransConfigInterpolation(const DiffTransConfiguration &_diff_trans_config, const int n_images, std::string calctype = "");
 
       std::string name() const override {
         return enumerator_name;
@@ -41,6 +41,10 @@ namespace CASM {
       static const std::string interface_help;
 
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+
+      ConfigEnumInterpolation &config_enum_interpol() {
+        return *m_config_enum_interpol;
+      }
 
     private:
       // Returns to config that are edited to have same occupants on the diff_trans_orbit
@@ -56,7 +60,7 @@ namespace CASM {
       // // -- Unique -------------------
       Configuration prepare_to_config(const Configuration &config, const DiffusionTransformation &diff_trans);
     };
-    Configuration get_relaxed_config(const DiffTransConfiguration &dfc, Configuration config);
+    std::pair<Configuration, Configuration> get_relaxed_endpoints(const DiffTransConfiguration &dfc, std::string calctype);
   }
 }
 #endif

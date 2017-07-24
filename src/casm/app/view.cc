@@ -8,6 +8,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/kinetics/DiffTransConfigurationTraits.hh"
+#include "casm/kinetics/DiffTransConfigInterpolation.hh"
 #include "casm/app/DBInterface.hh"
 #include "casm/database/Selection.hh"
 
@@ -32,6 +33,8 @@ namespace CASM {
       add_confignames_suboption();
       add_configtype_suboption(traits<Configuration>::short_name, DB::config_types_short());
       add_configlist_nodefault_suboption();
+      m_desc.add_options()
+      ("images,i", po::value<int>(&m_images)->default_value(0), "Number of images between initial and final state when viewing diff_trans_configs.");
 
       return;
     }
@@ -145,25 +148,44 @@ namespace CASM {
       // execute the 'casm view' command for each selected configuration
       for(const auto &config : config_select.selected()) {
         // write '.casm/tmp/POSCAR'
-        fs::ofstream file_i;
-        fs::path POSCARpath_i = tmp_dir / "POSCAR00";
-        file_i.open(POSCARpath_i);
-        VaspIO::PrintPOSCAR p_i(config.sorted().from_config());
-        p_i.print(file_i);
-        file_i.close();
+        if(view_opt.m_images) {
+          Kinetics::DiffTransConfigInterpolation interpol(config, view_opt.m_images);
+          for(int count = 0; count != (view_opt.m_images + 2); ++count) {
+            fs::ofstream file;
+            std::ostringstream ostr;
+            ostr << std::setfill('0') << std::setw(2) << count;
+            fs::path POSCARpath = tmp_dir / ("POSCAR" + ostr.str());
+            file.open(POSCARpath);
+            VaspIO::PrintPOSCAR p(interpol.config_enum_interpol()[count]);
+            p.print(file);
+            file.close();
+          }
+          fs::path POSCARpath_i = tmp_dir / "POSCAR00";
+          args.log() << config.name() << ":\n";
+          Popen popen;
+          popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
+          popen.print(args.log());
+        }
+        else {
+          fs::ofstream file_i;
+          fs::path POSCARpath_i = tmp_dir / "POSCAR00";
+          file_i.open(POSCARpath_i);
+          VaspIO::PrintPOSCAR p_i(config.sorted().from_config());
+          p_i.print(file_i);
+          file_i.close();
 
-        fs::ofstream file_f;
-        fs::path POSCARpath_f = tmp_dir / "POSCAR01";
-        file_f.open(POSCARpath_f);
-        VaspIO::PrintPOSCAR p_f(config.sorted().to_config());
-        p_f.print(file_f);
-        file_f.close();
+          fs::ofstream file_f;
+          fs::path POSCARpath_f = tmp_dir / "POSCAR01";
+          file_f.open(POSCARpath_f);
+          VaspIO::PrintPOSCAR p_f(config.sorted().to_config());
+          p_f.print(file_f);
+          file_f.close();
 
-        args.log() << config.name() << ":\n";
-        Popen popen;
-        popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
-        popen.print(args.log());
-
+          args.log() << config.name() << ":\n";
+          Popen popen;
+          popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
+          popen.print(args.log());
+        }
       }
     }
 

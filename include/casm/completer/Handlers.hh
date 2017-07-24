@@ -681,6 +681,7 @@ namespace CASM {
       using OptionHandlerBase::configtype_opts;
 
       ViewOption();
+      int m_images;
 
     private:
 

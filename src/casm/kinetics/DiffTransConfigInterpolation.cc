@@ -25,13 +25,13 @@ namespace CASM {
     /// \param n_images number of images excluding end points
     DiffTransConfigInterpolation::DiffTransConfigInterpolation(
       const DiffTransConfiguration &_diff_trans_config,
-      const int n_images):
+      const int n_images, std::string calctype):
       RandomAccessEnumeratorBase<Configuration>(n_images + 2),
-      m_current(_diff_trans_config.from_config()),
-      m_diff_trans_config(_diff_trans_config) {
-
-      Configuration from_config = get_relaxed_config(m_diff_trans_config, m_diff_trans_config.from_config());
-      Configuration to_config = get_relaxed_config(m_diff_trans_config, m_diff_trans_config.to_config());
+      m_current(_diff_trans_config.sorted().from_config()),
+      m_diff_trans_config(_diff_trans_config.sorted()) {
+      auto configs = get_relaxed_endpoints(m_diff_trans_config, calctype);
+      Configuration from_config = configs.first;
+      Configuration to_config = configs.second;
       DiffusionTransformation diff_trans  = m_diff_trans_config.diff_trans();
       Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
       m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
@@ -90,30 +90,15 @@ namespace CASM {
       return &m_current;
     }
 
-    // In namespace Kinetics
-    // move it to DiffTransConfig
-    Configuration get_relaxed_config(const DiffTransConfiguration &dfc, Configuration config) {
-      config.init_deformation();
-      config.init_displacement();
-      return config;
+    /// Returns copies of from and to config updated such they reflect the relaxed structures from the properties database
+    std::pair<Configuration, Configuration> get_relaxed_endpoints(const DiffTransConfiguration &dfc, std::string calctype) {
+      Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
 
-      // auto it = to_config.from_canonical();
-      // Configuration to_config_canonical = to_config.canonical_form();
-      // to_config_canonical.init_deformation();
-      // to_config_canonical.init_displacement();
-      // bool is_data, is_data_complete;
-      // jsonParser json;
-      // std::tie(json, is_data, is_data_complete) = to_config_canonical.read_calc_properties();
-      // auto it_1 = json.find("relaxation_deformation");
-      // if(it_1 != json.end()) {
-      //   to_config_canonical.set_deformation(it_1->get<Eigen::Matrix3d>());
-      // }
-      // auto it_2 = json.find("relaxation_displacement");
-      // if(it_2 != json.end()) {
-      //   to_config_canonical.set_displacement(it_2->get<Eigen::MatrixXd>());
-      // }
-      // Configuration to_config_final = copy_apply(it, to_config_canonical);
-      // return to_config_final;
+      Configuration rlx_to = copy_apply_properties(make_configuration(dfc.primclex(), dfc.to_configname()), calctype);
+
+      return std::make_pair(copy_apply(dfc.from_config_from_canonical(), rlx_frm),
+                            copy_apply(dfc.to_config_from_canonical(), rlx_to));
+
     }
   }
 }

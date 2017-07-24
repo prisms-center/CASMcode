@@ -11,7 +11,7 @@
 namespace CASM {
 
   template<typename Derived>
-  const jsonParser &Calculable<Derived>::calc_properties(std::string calctype) const {
+  const jsonParser Calculable<Derived>::calc_properties(std::string calctype) const {
     const PrimClex &primclex = (this->primclex());
     auto it = m_calc_properties_map.find(calctype);
     if(it != m_calc_properties_map.end()) {
@@ -22,7 +22,10 @@ namespace CASM {
     if(calctype == "") {
       calctype = primclex.settings().default_clex().calctype;
     }
-    return primclex.const_db_props<Derived>(calctype).find_via_from(this->name())->mapped;
+    if(primclex.const_db_props<Derived>(calctype).find_via_from(this->name()) != primclex.const_db_props<Derived>(calctype).end()) {
+      return primclex.const_db_props<Derived>(calctype).find_via_from(this->name())->mapped;
+    }
+    return jsonParser().put_obj();
   }
 
   template<typename Derived>

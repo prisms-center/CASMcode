@@ -31,7 +31,7 @@ namespace CASM {
     Calculable():
       DB::Indexed<Derived>::Indexed() {}
 
-    const jsonParser &calc_properties(std::string calctype = "") const;
+    const jsonParser calc_properties(std::string calctype = "") const;
 
     void set_calc_properties(const jsonParser &json, std::string calctype);
 

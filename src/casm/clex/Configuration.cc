@@ -973,7 +973,7 @@ namespace CASM {
   ///   - Then applies prim Structure factor group op with index PRIM_FG_OP and
   ///     fills the supercell SCELNAME
   ///
-  Configuration make_configuration(PrimClex &primclex, std::string name) {
+  Configuration make_configuration(const PrimClex &primclex, std::string name) {
 
     // if $CANON_SCELNAME.$PRIM_FG_OP1/super.$PRIM_FG_OP2.$PRIMSCELNAME/$PRIM_CANON_INDEX.equiv.$FG_PERM.$TRANS_PERM
     auto pos = name.find("super");
@@ -1047,26 +1047,33 @@ namespace CASM {
     return *primclex.db<Configuration>().find(name);
   }
 
-  /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
+  /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
   /// \param config must have a canonical name
-  Configuration get_relaxed_config(const Configuration &config, std::string calctype) {
-    Configuration tmp = config;
+  Configuration &apply_properties(Configuration &config, std::string calctype) {
     jsonParser calc_props = config.calc_properties(calctype);
-    tmp.init_deformation();
-    tmp.init_displacement();
+    config.init_deformation();
+    config.init_displacement();
 
     if(calc_props.contains("relaxation_displacement")) {
       Eigen::MatrixXd disp;
       disp = calc_props["relaxation_displacement"].get<Eigen::MatrixXd>();
-      tmp.set_displacement(disp);
+      config.set_displacement(disp);
     }
     if(calc_props.contains("relaxation_deformation")) {
       Eigen::Matrix3d deform;
       deform = calc_props["relaxation_deformation"].get<Eigen::Matrix3d>();
-      tmp.set_deformation(deform);
+      config.set_deformation(deform);
     }
-    return tmp;
+    return config;
   }
+
+  /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
+  /// \param config must have a canonical name
+  Configuration copy_apply_properties(const Configuration &config, std::string calctype) {
+    Configuration tmp = config;
+    return apply_properties(tmp, calctype);
+  }
+
 
   /// \brief Returns correlations using 'clexulator'.
   Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator) {
