@@ -143,6 +143,7 @@ namespace CASM {
       }
 
       fs::path tmp_dir = root / ".casm" / "tmp";
+      fs::remove_all(tmp_dir);
       fs::create_directory(tmp_dir);
 
       // execute the 'casm view' command for each selected configuration
