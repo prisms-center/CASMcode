@@ -14,7 +14,13 @@ namespace CASM {
   MakeConfigSubOrbitGenerators::MakeConfigSubOrbitGenerators(const Configuration &_config) :
     m_config(_config),
     m_prim_config(m_config.primitive().in_canonical_supercell()),
-    m_prim_config_fg(m_prim_config.factor_group()) {}
+    m_prim_config_fg(m_prim_config.factor_group()),
+    m_config_subgroup(
+      make_invariant_subgroup(
+        m_config.supercell(),
+        m_prim_config.supercell(),
+        m_prim_config_fg.begin(),
+        m_prim_config_fg.end())) {}
 
   template<typename OrbitType, typename ElementOutputIterator>
   ElementOutputIterator MakeConfigSubOrbitGenerators::operator()(
@@ -28,14 +34,13 @@ namespace CASM {
     _slow(orbit, std::back_inserter(prim_config_suborbit_generators));
 
     // make suborbit generators in potentially non-prim config
-    MakeSubOrbitGenerators gen(
-      m_prim_config.supercell().factor_group(),
-      m_config.supercell().factor_group());
-    ScelPeriodicSymCompare<Element> sym_compare(
-      m_prim_config.supercell().prim_grid(),
-      m_prim_config.crystallography_tol());
     for(const auto &el : prim_config_suborbit_generators) {
-      result = gen(el, sym_compare, result);
+      result = make_suborbit_generators(
+                 el,
+                 m_prim_config.supercell(),
+                 m_prim_config_fg.begin(), m_prim_config_fg.end(),
+                 m_config_subgroup.begin(), m_config_subgroup.end(),
+                 result);
     }
     return result;
   }

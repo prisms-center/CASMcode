@@ -29,7 +29,12 @@ namespace CASM {
 
     Configuration m_config;
     Configuration m_prim_config;
+
+    // operations that map m_prim_config onto itself
     std::vector<PermuteIterator> m_prim_config_fg;
+
+    // subgroup of m_prim_config_fg that maps m_config supercell onto itself
+    std::vector<PermuteIterator> m_config_subgroup;
 
   };
 

@@ -143,6 +143,36 @@ namespace CASM {
     return result;
   }
 
+  /// \brief Construct the subgroup of permutations that leaves a Supercell unchanged
+  ///
+  /// \param scel_A Supercell find subgroup of permutations that leave scel_A unchanged
+  /// \param scel_B Supercell associated with the supergroup [begin, end)
+  /// \param begin,end Range of PermuteIterator describing the supergroup
+  template<typename PermuteIteratorIt>
+  std::vector<PermuteIterator> make_invariant_subgroup(
+    const Supercell &scel_A,
+    const Supercell &scel_B,
+    PermuteIteratorIt begin,
+    PermuteIteratorIt end) {
+
+    const SymGroup &scel_A_fg = scel_A.factor_group();
+    const SymGroup &scel_B_fg = scel_B.factor_group();
+
+    auto find_fg_op = [&](const PermuteIterator & scel_B_it) {
+      Index master_fg_index = scel_B_fg[scel_B_it.factor_group_index()].index();
+      return std::any_of(
+               scel_A_fg.begin(),
+               scel_A_fg.end(),
+      [&](const SymOp & op) {
+        return op.index() == master_fg_index;
+      });
+    };
+
+    std::vector<PermuteIterator> subgroup;
+    std::copy_if(begin, end, std::back_inserter(subgroup), find_fg_op);
+    return subgroup;
+  }
+
 }
 
 #endif

@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
       //print_res("prim_config_suborbit_generators", prim_config_suborbit_generators, prim_sym_compare);
     }
 
-    /// prim_config.supercell() -> config.supercell() symmetry breaking
+    /// prim_config -> config symmetry breaking
     std::vector<Kinetics::DiffusionTransformation> config_suborbit_generators;
     {
 
@@ -161,11 +161,19 @@ BOOST_AUTO_TEST_CASE(Test0) {
       //std::cout << "config.supercell().factor_group().size(): "
       //  << config.supercell().factor_group().size() << std::endl;
 
-      MakeSubOrbitGenerators gen(
-        prim_config.supercell().factor_group(),
-        config.supercell().factor_group());
+      std::vector<PermuteIterator> config_subgroup = make_invariant_subgroup(
+                                                       config.supercell(),
+                                                       prim_config.supercell(),
+                                                       prim_config_fg.begin(),
+                                                       prim_config_fg.end());
+
       for(const auto &el : prim_config_suborbit_generators) {
-        gen(el, prim_sym_compare, std::back_inserter(config_suborbit_generators));
+        make_suborbit_generators(
+          el,
+          prim_config.supercell(),
+          prim_config_fg.begin(), prim_config_fg.end(),
+          config_subgroup.begin(), config_subgroup.end(),
+          std::back_inserter(config_suborbit_generators));
       }
       BOOST_CHECK_EQUAL(true, true);
       BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 14);

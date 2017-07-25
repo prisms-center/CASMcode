@@ -42,6 +42,14 @@ namespace CASM {
     PermuteIteratorIt begin,
     PermuteIteratorIt end);
 
+  /// \brief Construct the subgroup of permutations that leaves a Supercell unchanged
+  template<typename PermuteIteratorIt>
+  std::vector<PermuteIterator> make_invariant_subgroup(
+    const Supercell &scel_A,
+    const Supercell &scel_B,
+    PermuteIteratorIt begin,
+    PermuteIteratorIt end);
+
 }
 
 #endif
