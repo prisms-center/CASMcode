@@ -545,7 +545,14 @@ namespace CASM {
     /// \brief Returns the distance from uccoord to the closest point on a linearly
     /// interpolated diffusion path. (Could be an end point)
     double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
+      return vector_to_path(diff_trans, uccoord).norm();
+    }
+
+    /// \brief Returns the vector from uccoord to the closest point on a linearly
+    /// interpolated diffusion path. (Could be an end point)
+    Eigen::Vector3d vector_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
       double dist = std::numeric_limits<double>::max();
+      Eigen::Vector3d result;
       for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
         //vector from -> input
         Coordinate v1 = (uccoord.coordinate() - it->from.uccoord.coordinate());
@@ -554,28 +561,34 @@ namespace CASM {
         // projection of v1 onto v2
         Eigen::Vector3d v3 = v1.const_cart().dot(v2.const_cart()) / (v1.const_cart().norm()) / (v2.const_cart().norm()) * v2.const_cart();
         double curr_dist;
+        Eigen::Vector3d curr_vec;
         //if v3 length is greater than v2 then input is closer to "to" than the path
         if(v3.norm() > v2.const_cart().norm()) {
-          curr_dist = (uccoord.coordinate().const_cart() - it->to.uccoord.coordinate().const_cart()).norm();
+          curr_vec = it->to.uccoord.coordinate().const_cart() - uccoord.coordinate().const_cart();
+          curr_dist = curr_vec.norm();
         }
         //if v3 is in opposite direction of v2 then input is closer to "from" than the path
         else if(v3.dot(v2.const_cart()) < 0) {
-          curr_dist = v1.const_cart().norm();
+          curr_vec = -v1.const_cart();
+          curr_dist = curr_vec.norm();
         }
         else {
           // find magnitude of v1-v3 and set to current distance
-          curr_dist = (v1.const_cart() - v3).norm();
+          curr_vec = v3 - v1.const_cart();
+          curr_dist = curr_vec.norm();
         }
         if(curr_dist < dist) {
           dist = curr_dist;
+          result = curr_vec;
         }
       }
-      return dist;
+      return result;
     }
 
     /// \brief Determines the nearest site distance to the diffusion path
-    std::pair<UnitCellCoord, double> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
+    std::pair<UnitCellCoord, Eigen::Vector3d> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
       double dist = std::numeric_limits<double>::max();
+      Eigen::Vector3d ret_vec;
       Structure prim(diff_trans.specie_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
       for(int i = 0; i < prim.basis.size(); i++) {
@@ -618,15 +631,17 @@ namespace CASM {
 
           if(!in_diff_trans) {
             double curr_dist = dist_to_path(diff_trans, uccoord);
+            Eigen::Vector3d curr_vec = vector_to_path(diff_trans, uccoord);
             if(curr_dist < dist) {
               dist = curr_dist;
+              ret_vec = curr_vec;
               ret_coord = uccoord;
             }
           }
         }
       }
 
-      std::pair<UnitCellCoord, double> pair(ret_coord, dist);
+      std::pair<UnitCellCoord, Eigen::Vector3d> pair(ret_coord, ret_vec);
       return pair;
     }
 
@@ -637,6 +652,11 @@ namespace CASM {
 
     /// \brief Determines the nearest site distance to the diffusion path
     double min_dist_to_path(const DiffusionTransformation &diff_trans) {
+      return _path_nearest_neighbor(diff_trans).second.norm();
+    }
+
+    /// \brief Determines the vector from the nearest site to the diffusion path
+    Eigen::Vector3d min_vector_to_path(const DiffusionTransformation &diff_trans) {
       return _path_nearest_neighbor(diff_trans).second;
     }
 

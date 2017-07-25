@@ -392,14 +392,21 @@ namespace CASM {
     /// interpolated diffusion path. (Could be an end point)
     double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord);
 
-    /// \brief Determines which site is closest to the diffusion transformation and the distance
-    std::pair<UnitCellCoord, double> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) ;
+    // \brief Returns the vector from uccoord to the closest point on a linearly
+    /// interpolated diffusion path. (Could be an end point)
+    Eigen::Vector3d vector_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord);
+
+    /// \brief Determines which site is closest to the diffusion transformation and the vector to take it to the path
+    std::pair<UnitCellCoord, Eigen::Vector3d> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) ;
 
     /// \brief Determines which site is closest to the diffusion transformation
     UnitCellCoord path_nearest_neighbor(const DiffusionTransformation &diff_trans);
 
     /// \brief Determines the nearest site distance to the diffusion path
     double min_dist_to_path(const DiffusionTransformation &diff_trans);
+
+    /// \brief Determines the vector from the nearest site to the diffusion path in cartesian coordinates
+    Eigen::Vector3d min_vector_to_path(const DiffusionTransformation &diff_trans);
 
   }
 
