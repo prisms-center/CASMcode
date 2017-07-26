@@ -74,6 +74,8 @@ namespace CASM {
 
     PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_dist_to_path();
 
+    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<bool> path_collision();
+
     PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> activation_barrier();
   }
 

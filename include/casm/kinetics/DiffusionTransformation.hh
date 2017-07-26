@@ -408,6 +408,9 @@ namespace CASM {
     /// \brief Determines the vector from the nearest site to the diffusion path in cartesian coordinates
     Eigen::Vector3d min_vector_to_path(const DiffusionTransformation &diff_trans);
 
+    /// \brief Determines whether the atoms moving in the diffusion transformation will collide on a linearly interpolated path
+    bool path_collision(const DiffusionTransformation &diff_trans);
+
   }
 
   typedef Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbit;

@@ -602,7 +602,7 @@ namespace CASM {
         sublat_indices.end()
       );
       UnitCell pos(1, 1, 1);
-      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
+      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); ++it) {
         UnitCellCoord fromcoord = it->from.uccoord;
         UnitCellCoord tocoord = it->to.uccoord;
 
@@ -658,6 +658,68 @@ namespace CASM {
     /// \brief Determines the vector from the nearest site to the diffusion path
     Eigen::Vector3d min_vector_to_path(const DiffusionTransformation &diff_trans) {
       return _path_nearest_neighbor(diff_trans).second;
+    }
+
+    /// \brief Determines whether the atoms moving in the diffusion transformation will collide on a linearly interpolated path
+    bool path_collision(const DiffusionTransformation &diff_trans) {
+      std::vector<SpecieTrajectory> paths_to_check;
+      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); ++it) {
+        if(!is_vacancy(it->from.specie().name())) {
+          paths_to_check.push_back(*it);
+        }
+      }
+      for(int i = 0; i < paths_to_check.size(); ++i) {
+        for(int j = i + 1; j < paths_to_check.size(); ++j) {
+          //vector from -> to path 1
+          Eigen::Vector3d v1 = (paths_to_check[i].to.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()).const_cart();
+          //vector from -> to path 2
+          Eigen::Vector3d v2 = (paths_to_check[j].to.uccoord.coordinate() - paths_to_check[j].from.uccoord.coordinate()).const_cart();
+          // simplification of the following problem
+          // parametric representation of path 1 = parametric representation of path 2
+          // paths_to_check[i].from.uccoord.coordinate() + t*v1 = paths_to_check[j].from.uccoord.coordinate() + s*v2
+          // v3 =  paths_to_check[j].from.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()
+          Eigen::Vector3d v3 = (paths_to_check[j].from.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()).const_cart();
+          Eigen::MatrixXd soln(2, 1);
+          Eigen::Matrix2d m;
+          Eigen::MatrixXd b(2, 1);
+          m << v1[0], v2[0],
+          v1[1], v2[1];
+          b << v3[0],
+          v3[1];
+          int excluded_index = 2;
+          try {
+            Eigen::FullPivLU<Eigen::Matrix2d> lu(m);
+            if(lu.rank() < 2) {
+              m << v1[1], v2[1],
+              v1[2], v2[2];
+              b << v3[1],
+              v3[2];
+              excluded_index = 0;
+              Eigen::FullPivLU<Eigen::Matrix2d> lu2(m);
+              if(lu2.rank() < 2) {
+                return true;
+              }
+            }
+            soln = m.inverse() * b;
+            if(soln(0, 0)*v1[excluded_index] + soln(1, 0)*v2[excluded_index] != v3[excluded_index]) {
+              continue; //if solution for x and y coordinates but not z solution is not viable
+            }
+            if(soln(0, 0) < 1 && soln(0, 0) > 0 && soln(1, 0) < 0 && soln(1, 0) > -1) {
+              return true;  // there is an intersection of paths not at the end points
+            }
+
+            if(soln(0, 0) == 1 || soln(0, 0) == 0 || soln(1, 0) == 0 || soln(1, 0) == -1) {
+              if(v1 == -v2) {
+                return true; // the paths are overlapping in opposition directions perfectly
+              }
+            }
+          }
+          catch(...) {
+            throw;
+          }
+        }
+      }
+      return false;
     }
 
     Configuration &DiffusionTransformation::apply_to_impl(Configuration &config) const {
