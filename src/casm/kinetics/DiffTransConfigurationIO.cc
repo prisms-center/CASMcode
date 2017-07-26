@@ -313,6 +313,22 @@ namespace CASM {
           return dtconfig.to_configname();
         });
       }
+
+      GenericDiffTransConfigFormatter<std::string> scelname() {
+        return GenericDiffTransConfigFormatter<std::string>("scelname",
+                                                            "canonical Supercell name, in the form 'SCEL#_#_#_#_#_#_#'",
+        [](const DiffTransConfiguration & dtconfig)->std::string {
+          return dtconfig.from_config().supercell().name();
+        });
+      }
+
+      GenericDiffTransConfigFormatter<std::string> orbitname() {
+        return GenericDiffTransConfigFormatter<std::string>("orbitname",
+                                                            "canonical orbit name, in the form 'diff_trans/#'",
+        [](const DiffTransConfiguration & dtconfig)->std::string {
+          return dtconfig.orbit_name();
+        });
+      }
     }
   }
 
@@ -325,7 +341,9 @@ namespace CASM {
     dict.insert(
       name<Kinetics::DiffTransConfiguration>(),
       from_configname(),
-      to_configname()
+      to_configname(),
+      scelname(),
+      orbitname()
     );
     return dict;
   }

@@ -126,6 +126,14 @@ namespace CASM {
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     if(view_opt.configtype() == traits<Kinetics::DiffTransConfiguration>::short_name) {
+      if(set.view_command_video().empty()) {
+        args.err_log() << "Error in 'casm view': No video command set. Use 'casm settings "
+                       "--set-view-command-video' to set the command to open video visualization "
+                       "software. It should take one argument, the path to a POSCAR00 "
+                       "to be visualized. For example, to use ovito on Linux: casm settings --set-view-command-video 'casm.view \"ovito\"'.\n";
+        return ERR_MISSING_DEPENDS;
+      }
+
       DB::Selection<Kinetics::DiffTransConfiguration> config_select;
       if(!vm.count("config")) {
         config_select = DB::Selection<Kinetics::DiffTransConfiguration>(primclex, "NONE");

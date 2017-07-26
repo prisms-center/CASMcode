@@ -1,6 +1,7 @@
 #ifndef CASM_DiffTransConfigurationIO
 #define CASM_DiffTransConfigurationIO
 
+#include "casm/clex/Supercell.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatter_impl.hh"
