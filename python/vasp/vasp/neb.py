@@ -278,7 +278,7 @@ class Neb(object):
         """
 
         # check if all complete
-        if io.job_complete(self.finaldir):
+        if io.job_complete(os.path.join(self.finaldir, "01")):
             return ("complete", None)
 
         # check status of relaxation runs
@@ -320,10 +320,3 @@ class Neb(object):
 
         # else if the latest run is not complete, continue with a new run
         return ("incomplete", 'new_run')
-
-    """
-    To Do:
-    1) write continue_neb_job() function
-    2) dig up all new errors possible for NEB calcs
-    3) make vasp.neb, vasp.neb_setup executables along with casm-calc support to run the calculation
-    """

@@ -608,6 +608,49 @@ def error_check(jobdir, stdoutfile, err_types):
     else:
         return err
 
+def error_check_neb(jobdir, stdout, err_types):
+    """ Check vasp stdout for errors in a neb calculation"""
+    image_folders = [str(i).zfill(2) for i in range(1, 100) if os.path.exists(os.path.join(jobdir, str(i).zfill(2)))][:-1]
+    err = dict()
+    err_objs = {}
+    for i_err in _RunError.__subclasses__():
+        err_objs[i_err.__name__] = i_err()
+    if err_types is None:
+        possible = [SubSpaceMatrixError()]
+    else:
+        # err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError(), 'NbandsError' : NbandsError()}
+        for s in err_types:
+            if s not in err_objs.keys():
+                raise VaspError('Invalid err_type: %s'%s)
+        possible = [err_objs[s] for s in err_types]
+
+    # Error to check line by line, only look for first of each type
+    sout = open(os.path.join(jobdir, "01", stdout), 'r')
+    for line in sout:
+        for p in possible:
+            if not p.__class__.__name__ in err:
+                if p.error(line=line, jobdir=jobdir):
+                    err[p.__class__.__name__] = p
+
+    # Error to check for once
+    possible = [i_err() for i_err in _FreezeError.__subclasses__()]
+    for p in possible:
+        freeze_error = True
+        for img in image_folders:
+            if p.error(line=None, jobdir=os.path.join(jobdir, img)):
+                continue
+            else:
+                freeze_error = False
+                break
+        if freeze_error:
+            err[p.__class__.__name__] = p
+
+    sout.close()
+    if len(err) == 0:
+        return None
+    else:
+        return err
+
 def crash_check(jobdir, stdoutfile, crash_types):
     """ Check vasp stdout for evidence of a crash """
     err = None
@@ -693,10 +736,10 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     sys.stdout.flush()
 
     if is_neb:
-        checkdir = os.path.join(jobdir, "01")
+        # checkdir = os.path.join(jobdir, "01")
         sout = open(os.path.join(jobdir, "01", stdout), 'w')
     else:
-        checkdir = jobdir
+        # checkdir = jobdir
         sout = open(os.path.join(jobdir, stdout), 'w')
     serr = open(os.path.join(jobdir, stderr), 'w')
     err = None
@@ -711,7 +754,10 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
         if time.time() - last_check > err_check_time:
             last_check = time.time()
-            err = error_check(checkdir, os.path.join(checkdir, stdout), err_types)
+            if is_neb:
+                err = error_check_neb(jobdir, stdout, err_types)
+            else:
+                err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
             if err != None:
                 # FreezeErrors are fatal and usually not helped with STOPCAR
                 if "FreezeError" in err.keys():
@@ -759,9 +805,16 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     # check finished job for errors
     if err is None:
         # Crash-type errors take priority over any other error that may show up
-        err = crash_check(checkdir, os.path.join(checkdir, stdout), err_types)
+        if is_neb: #if its neb it checks for crashes in the first image
+            err = crash_check(os.path.join(jobdir, "01"),
+                              os.path.join(jobdir, "01", stdout), err_types)
+        else:
+            err = crash_check(jobdir, os.path.join(jobdir, stdout), err_types)
         if err is None:
-            err = error_check(checkdir, os.path.join(checkdir, stdout), err_types)
+            if is_neb:
+                err = error_check_neb(jobdir, stdout, err_types)
+            else:
+                err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
     if err != None:
         print "  Found errors:",
         for e in err:
