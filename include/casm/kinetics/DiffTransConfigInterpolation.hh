@@ -30,8 +30,12 @@ namespace CASM {
 
     public:
 
-      /// \brief Construct with a Supercell, using all permutations
+      /// \brief Construct with a Diffusion configuration , n_images and calctype
       DiffTransConfigInterpolation(const DiffTransConfiguration &_diff_trans_config, const int n_images, std::string calctype = "");
+
+      /// \brief Construct with  from and to configurations and n_images
+      DiffTransConfigInterpolation(const DiffusionTransformation &diff_trans, const Configuration from_config, const Configuration to_config,
+                                   const int n_images);
 
       std::string name() const override {
         return enumerator_name;
@@ -51,7 +55,6 @@ namespace CASM {
       // output used to intepolate rest of the configuration other that diff trans orbit
 
       Configuration m_current;
-      DiffTransConfiguration m_diff_trans_config;
       std::unique_ptr<ConfigEnumInterpolation> m_config_enum_interpol;
 
       /// Implements at_step

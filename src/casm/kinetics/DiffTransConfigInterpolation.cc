@@ -27,12 +27,31 @@ namespace CASM {
       const DiffTransConfiguration &_diff_trans_config,
       const int n_images, std::string calctype):
       RandomAccessEnumeratorBase<Configuration>(n_images + 2),
-      m_current(_diff_trans_config.sorted().from_config()),
-      m_diff_trans_config(_diff_trans_config.sorted()) {
-      auto configs = get_relaxed_endpoints(m_diff_trans_config, calctype);
+      m_current(_diff_trans_config.sorted().from_config()) { 
+      auto diff_trans_config = _diff_trans_config.sorted(); 
+      auto configs = get_relaxed_endpoints(diff_trans_config, calctype);
       Configuration from_config = configs.first;
       Configuration to_config = configs.second;
-      DiffusionTransformation diff_trans  = m_diff_trans_config.diff_trans();
+      DiffusionTransformation diff_trans  = diff_trans_config.diff_trans();
+      Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
+      m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
+                                                                            to_config_mutated,
+                                                                            n_images + 2); // +2 for end states
+      this->_initialize(&m_current);
+      m_current.set_source(this->source(step()));
+    }
+
+    /// \brief Construct with a Supercell, using all permutations
+    ///
+    /// \param _diff_trans_config abcdcd
+    /// \param n_images number of images excluding end points
+    DiffTransConfigInterpolation::DiffTransConfigInterpolation(
+      const DiffusionTransformation &diff_trans,
+      const Configuration from_config,
+      const Configuration to_config,
+      const int n_images):
+      RandomAccessEnumeratorBase<Configuration>(n_images + 2),
+      m_current(make_attachable(diff_trans, from_config)) {
       Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
       m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
                                                                             to_config_mutated,
