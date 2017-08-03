@@ -150,14 +150,14 @@ namespace CASM {
 
       jsonParser orbitnames;
       if(!_kwargs.get_if(orbitnames, "orbits")) {
-        std::cerr << "DiffTransConfigEnumPerturbations currently has no default and requires a correct JSON with a orbits tag within it" << std::endl;
-        std::cerr << "Core dump will occur because cannot find proper input" << std::endl;
+        default_err_log() << "DiffTransConfigEnumPerturbations currently has no default and requires a correct JSON with a orbits tag within it" << std::endl;
+        default_err_log() << "Core dump will occur because cannot find proper input" << std::endl;
       }
 
       jsonParser confignames;
       if(!_kwargs.get_if(confignames, "background_configs")) {
-        std::cerr << "DiffTransConfigEnumPerturbations currently has no default and requires a correct JSON with a background_configs tag within it" << std::endl;
-        std::cerr << "Core dump will occur because cannot find proper input" << std::endl;
+        default_err_log() << "DiffTransConfigEnumPerturbations currently has no default and requires a correct JSON with a background_configs tag within it" << std::endl;
+        default_err_log() << "Core dump will occur because cannot find proper input" << std::endl;
       }
 
       jsonParser kwargs;

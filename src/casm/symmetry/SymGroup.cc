@@ -12,6 +12,7 @@
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymInfo.hh"
+#include "casm/casm_io/Log.hh"
 
 #include "casm/casm_io/json_io/container.hh"
 
@@ -406,8 +407,8 @@ namespace CASM {
       }
     }
     if(broken_check && m_rep_array.size()) {
-      std::cerr << "WARNING: Order of symmetry operations has been altered by MasterSymGroup::sort_by_class(). Attempting to repair "
-                << m_rep_array.size() << " symmetry representations.\n";
+      default_err_log() << "WARNING: Order of symmetry operations has been altered by MasterSymGroup::sort_by_class(). Attempting to repair "
+                        << m_rep_array.size() << " symmetry representations.\n";
       for(Index i = 0; i < m_rep_array.size(); i++) {
         m_rep_array[i]->permute(perm_array);
         for(Index j = 0; j < m_rep_array[i]->size(); j++) {
@@ -618,12 +619,12 @@ namespace CASM {
             group_number[1] = 220;
           }
           else {
-            std::cerr << "\n Error Cubic case 24 Acentric \n ";
+            default_err_log() << "\n Error Cubic case 24 Acentric \n ";
           }
         }
         break;
       default:
-        std::cerr << "\n Error Cubic \n";
+        default_err_log() << "\n Error Cubic \n";
       }
     } // for cubic;
     else if((rotation_groups[8].size() + rotation_groups[9].size()) == 2) {
@@ -650,7 +651,7 @@ namespace CASM {
             group_number[1] = 174;
           }
           else {
-            std::cerr << "\n Error Hexagonal case 6 Acentric \n ";
+            default_err_log() << "\n Error Hexagonal case 6 Acentric \n ";
           }
         }
         break;
@@ -676,7 +677,7 @@ namespace CASM {
               group_number[0] = 183;
               group_number[1] = 186;
             }
-            else std::cerr << "\n Error Hexagonal case 12 Ancentric #6 \n";
+            else default_err_log() << "\n Error Hexagonal case 12 Ancentric #6 \n";
           }
           else if(rotation_groups[9].size() == 2) {
             group_name[0] = "-6m2";
@@ -685,12 +686,12 @@ namespace CASM {
             group_number[1] = 190;
           }
           else {
-            std::cerr << "\n Error Hexagonal case 12 Acentric \n ";
+            default_err_log() << "\n Error Hexagonal case 12 Acentric \n ";
           }
         }
         break;
       default:
-        std::cerr << "\n Error Hexagonal \n";
+        default_err_log() << "\n Error Hexagonal \n";
       }
     } // for hexagonal
     else if((rotation_groups[4].size() + rotation_groups[5].size()) == 2) {
@@ -731,12 +732,12 @@ namespace CASM {
             group_number[1] = 161;
           }
           else {
-            std::cerr << "\n Error Trigonal case 6 Acentric \n ";
+            default_err_log() << "\n Error Trigonal case 6 Acentric \n ";
           }
         }
         break;
       default:
-        std::cerr << "\n Error Trigonal \n";
+        default_err_log() << "\n Error Trigonal \n";
       }
     } // for trigonal
     else if((rotation_groups[6].size() + rotation_groups[7].size()) == 2) {
@@ -763,7 +764,7 @@ namespace CASM {
             group_number[1] = 82;
           }
           else {
-            std::cerr << "\n Error Tetragonal case 4 Acentric \n ";
+            default_err_log() << "\n Error Tetragonal case 4 Acentric \n ";
           }
         }
 
@@ -789,7 +790,7 @@ namespace CASM {
               group_number[0] = 99;
               group_number[1] = 110;
             }
-            else std::cerr << "\n Error Tetragonal case 8 Ancentric #4 \n";
+            else default_err_log() << "\n Error Tetragonal case 8 Ancentric #4 \n";
           }
           else if(rotation_groups[7].size() == 2) {
             group_name[0] = "-42m";
@@ -798,12 +799,12 @@ namespace CASM {
             group_number[1] = 122;
           }
           else {
-            std::cerr << "\n Error Tetragonal case 8 Acentric \n ";
+            default_err_log() << "\n Error Tetragonal case 8 Acentric \n ";
           }
         }
         break;
       default:
-        std::cerr << "\n Error Tetragonal \n";
+        default_err_log() << "\n Error Tetragonal \n";
       }
     } // for tetragonal
     else if((rotation_groups[2].size() + rotation_groups[3].size()) == 3 || ((rotation_groups[2].size() + rotation_groups[3].size()) == 6  && nm == 4)) {
@@ -828,7 +829,7 @@ namespace CASM {
           group_number[1] = 46;
         }
         else {
-          std::cerr << "\n Error Orthorhombic Acentric \n ";
+          default_err_log() << "\n Error Orthorhombic Acentric \n ";
         }
       }
     } // for orthorhombic
@@ -855,7 +856,7 @@ namespace CASM {
           group_number[1] = 9;
         }
         else {
-          std::cerr << "\n Error Monoclinic Acentric \n ";
+          default_err_log() << "\n Error Monoclinic Acentric \n ";
         }
       }
     } // for Acentric monoclinic
@@ -875,7 +876,7 @@ namespace CASM {
       }
     }
     else {
-      std::cerr << "Error foind point group type \n";
+      default_err_log() << "Error foind point group type \n";
     }
     return;
   }
@@ -908,8 +909,8 @@ namespace CASM {
   //*******************************************************************************************
   void SymGroup::copy_no_trans(SymGroup &shiftless, bool keep_repeated) const {
     if(shiftless.size() != 0) {
-      std::cerr << "WARNING in SymGroup::copy_no_trans" << std::endl;
-      std::cerr << "The provided SymGroup wasn't empty and it's about to be erased. Say goodbye." << std::endl;
+      default_err_log() << "WARNING in SymGroup::copy_no_trans" << std::endl;
+      default_err_log() << "The provided SymGroup wasn't empty and it's about to be erased. Say goodbye." << std::endl;
       shiftless.clear();
     }
     shiftless.m_lat_ptr = m_lat_ptr;
@@ -1282,7 +1283,7 @@ namespace CASM {
     //    std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
 
     if(!all_unique) {
-      std::cerr << "WARNING: Failed to name all irreps uniquely...  \n";
+      default_err_log() << "WARNING: Failed to name all irreps uniquely...  \n";
     }
 
     std::cout << irrep_names << std::endl;
@@ -1885,7 +1886,7 @@ namespace CASM {
   void SymGroup::_generate_character_table()const { //AAB
     //std::cout << "Calculating character table of SymGroup " << this << '\n';
     if(!size()) {
-      std::cerr << "WARNING: This is an empty group. It has no character.\n";
+      default_err_log() << "WARNING: This is an empty group. It has no character.\n";
       name = "EMPTY";
       return;
     }
@@ -1903,7 +1904,7 @@ namespace CASM {
       info.push_back(SymInfo(at(i), lattice()));
 
     if(!size() || get_multi_table().size() != size() || !valid_index(get_multi_table()[0][0])) {
-      std::cerr << "WARNING: This is not a group!!!\n";
+      default_err_log() << "WARNING: This is not a group!!!\n";
       name = "NG";
       return;
     }
@@ -3050,7 +3051,7 @@ namespace CASM {
        || !valid_index(j) || j >= size()) {
 
 
-      //std::cerr << "WARNING: SymGroup::ind_prod() failed for " << i << ", " << j << "\n";// and multi_table\n" << get_multi_table() << "\n\n";
+      //default_err_log() << "WARNING: SymGroup::ind_prod() failed for " << i << ", " << j << "\n";// and multi_table\n" << get_multi_table() << "\n\n";
       //assert(0);
       return -1;
     }
@@ -3089,8 +3090,8 @@ namespace CASM {
 
   SymGroupRepID SymGroup::coord_rep_ID() const {
     if(!size() || !at(0).has_valid_master()) {
-      std::cerr << "CRITICAL ERROR: In SymGroup::get_coord_rep_ID(), SymGroup is improperly initialized.\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroup::get_coord_rep_ID(), SymGroup is improperly initialized.\n"
+                        << "                Exiting...\n";
       exit(1);
     }
 
@@ -3100,8 +3101,8 @@ namespace CASM {
 
   SymGroupRepID SymGroup::add_empty_representation() const {
     if(!size() || !at(0).has_valid_master()) {
-      std::cerr << "CRITICAL ERROR: In SymGroup::add_empty_representation(), SymGroup is improperly initialized.\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroup::add_empty_representation(), SymGroup is improperly initialized.\n"
+                        << "                Exiting...\n";
       exit(1);
     }
 
@@ -3135,8 +3136,8 @@ namespace CASM {
     tcosets.reserve(size() / subgroup_inds.size());
     tcosets.push_back(subgroup_inds);
     if(tcosets.back().size() == 0) {
-      std::cerr << "CRITICAL ERROR: In SymGroup::left_cosets(), could not find subgroup within *this group.\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroup::left_cosets(), could not find subgroup within *this group.\n"
+                        << "                Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -3214,8 +3215,8 @@ namespace CASM {
       _generate_character_table();
       if(!name.size()) {
 
-        std::cerr << "WARNING: In SymGroup::get_name(), unable to get symgroup type.\n";
-        std::cerr << "group size is " << size() << '\n';
+        default_err_log() << "WARNING: In SymGroup::get_name(), unable to get symgroup type.\n";
+        default_err_log() << "group size is " << size() << '\n';
         name = "unknown";
       }
     }
@@ -3258,10 +3259,10 @@ namespace CASM {
             //std::cout << "This SymGroup is not a group because the combination of at least two of its elements is not contained in the set.\n";
 
             //Returning a table of all 1's seems to make the most sense. This will prevent weird recursion from happening.
-            std::cerr << "Failed to construc multiplication table!  Table in progress:\n";
+            default_err_log() << "Failed to construc multiplication table!  Table in progress:\n";
             for(Index m = 0; m < multi_table.size(); m++)
-              std::cerr << multi_table[m] << "\n";
-            std::cerr << "\n";
+              default_err_log() << multi_table[m] << "\n";
+            default_err_log() << "\n";
             multi_table.resize(size(), Array<Index>(size(), -1));
             //multi_table.clear();
             return false;
@@ -3382,7 +3383,7 @@ namespace CASM {
       }
     }
     if(size() >= max_size - 1) {
-      std::cerr << "In SymGroup::enforce_group() -- you have reached the maximum allowed size you specified for your group (the default is 200). Unless you are generating a factor group in a large supercell, you probably need to adjust your tolerances.\n";
+      default_err_log() << "In SymGroup::enforce_group() -- you have reached the maximum allowed size you specified for your group (the default is 200). Unless you are generating a factor group in a large supercell, you probably need to adjust your tolerances.\n";
       assert(0);
     }
     return;
@@ -3935,8 +3936,8 @@ namespace CASM {
     SymGroup mol_pg(LOCAL);
 
     if(coord_map.empty()) {
-      std::cerr << "SymGroup molecular_point_group found an empty coord_map\n"
-                << "Exiting ... " << std::endl;
+      default_err_log() << "SymGroup molecular_point_group found an empty coord_map\n"
+                        << "Exiting ... " << std::endl;
       exit(88);
     }
 

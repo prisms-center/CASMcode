@@ -4,6 +4,7 @@
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/external/Eigen/CASM_AddOns"
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/CASM_Array_math.hh"
@@ -68,8 +69,8 @@ namespace CASM {
 
   void SymGroupRep::set_rep(const SymOp &base_op, const SymOpRepresentation &new_rep) const {
     if(!has_valid_master()) {
-      std::cerr << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOp whose factor_group is not specified!\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOp whose factor_group is not specified!\n"
+                        << "                Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -85,16 +86,16 @@ namespace CASM {
 
   void SymGroupRep::set_rep(const SymOpRepresentation &base_op, const SymOpRepresentation &new_rep) const {
     if(!has_valid_master()) {
-      std::cerr << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOpRepresentation whose factor_group is not specified!\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOpRepresentation whose factor_group is not specified!\n"
+                        << "                Exiting...\n";
       assert(0);
       exit(1);
     }
     if(valid_index(base_op.index()))
       set_rep(base_op.index(), new_rep);
     else {
-      std::cerr << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOpRepresentation whose index is not specified!\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOpRepresentation whose index is not specified!\n"
+                        << "                Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -107,8 +108,8 @@ namespace CASM {
 
     assert(valid_index(op_index) && op_index < size() && "In SymGroupRep::set_rep(), reference representation is improperly initialized.");
     if(at(op_index)) {
-      std::cerr << "CRITICAL ERROR: In SymGroupRep::set_rep(), representation already exists for operation " << op_index << ".\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), representation already exists for operation " << op_index << ".\n"
+                        << "                Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -286,7 +287,7 @@ namespace CASM {
     if(!size())
       return new_rep;
     if(at(0) && !(at(0)->get_MatrixXd())) {
-      std::cerr << "CRITICAL ERROR: Trying to perform matrix transformation on a non-matrix SymRep. Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: Trying to perform matrix transformation on a non-matrix SymRep. Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -474,7 +475,7 @@ namespace CASM {
   //*******************************************************************************************
   ReturnArray<Array< Eigen::VectorXd> > SymGroupRep::_calc_special_irrep_directions(const SymGroup &head_group)const {
     if(!size() || !(get_MatrixXd(head_group[0]))) {
-      std::cerr << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions() called on imcompatible SymGroupRep.\n Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions() called on imcompatible SymGroupRep.\n Exiting...\n";
       exit(1);
     }
 
@@ -495,7 +496,7 @@ namespace CASM {
     Eigen::MatrixXd Reynolds(*(at(0)->get_MatrixXd()));
     for(i = 0; i < isubs.size(); i++) {
       if(isubs[i].size() == 0 || isubs[i][0].size() == 0) {
-        std::cerr << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions(), attempting to use a zero-size subgroup.\n Exiting...\n";
+        default_err_log() << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions(), attempting to use a zero-size subgroup.\n Exiting...\n";
         exit(1);
       }
       Index s = 0;
@@ -571,7 +572,7 @@ namespace CASM {
 
   ReturnArray<Array< Eigen::MatrixXd> > SymGroupRep::calc_special_subspaces(const SymGroup &head_group)const {
     if(!size() || !at(0)->get_MatrixXd()) {
-      std::cerr << "CRITICAL ERROR: In SymGroupRep::calc_special_subspaces() called on imcompatible SymGroupRep.\n Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroupRep::calc_special_subspaces() called on imcompatible SymGroupRep.\n Exiting...\n";
       exit(1);
     }
 
@@ -593,7 +594,7 @@ namespace CASM {
     // 'i' loops over subgroup "orbits". There are 0 to 'dim' special directions associated with each orbit.
     for(i = 0; i < sg_op_inds.size(); i++) {
       if(sg_op_inds[i].size() == 0 || sg_op_inds[i][0].size() == 0) {
-        std::cerr << "CRITICAL ERROR: In SymGroupRep::calc_special_subspaces(), attempting to use a zero-size subgroup.\n Exiting...\n";
+        default_err_log() << "CRITICAL ERROR: In SymGroupRep::calc_special_subspaces(), attempting to use a zero-size subgroup.\n Exiting...\n";
         exit(1);
       }
 
@@ -674,7 +675,7 @@ namespace CASM {
     Array<Index> tarray(num_each_irrep(head_group, verbose));
 
     if(tarray.size() != complex_irrep.size()) {
-      std::cerr << "CRITICAL ERROR: Dimension mismatch in SymGroupRep::num_each_real_irrep. Exiting..\n";
+      default_err_log() << "CRITICAL ERROR: Dimension mismatch in SymGroupRep::num_each_real_irrep. Exiting..\n";
       assert(0);
       exit(1);
     }
@@ -683,7 +684,7 @@ namespace CASM {
     for(Index i = 0; i < tarray.size(); i++) {
       if(tarray[i] && complex_irrep[i]) {
         if(i + 1 == tarray.size() || tarray[i] != tarray[i + 1]) {
-          std::cerr << "CRITICAL ERROR: Invalid irrep decomposition found in SymGroupRep::num_each_real_irrep. Exiting..\n";
+          default_err_log() << "CRITICAL ERROR: Invalid irrep decomposition found in SymGroupRep::num_each_real_irrep. Exiting..\n";
           assert(0);
           exit(1);
         }
@@ -698,7 +699,7 @@ namespace CASM {
   //assumes that representation is real-valued
   ReturnArray<Index> SymGroupRep::num_each_irrep() const {
     if(!has_valid_master()) {
-      std::cerr << "In SymGroupRep::num_each_irrep() attempting to find irrep decomposition of a SymGroupRep that has no valid master_group.\n";
+      default_err_log() << "In SymGroupRep::num_each_irrep() attempting to find irrep decomposition of a SymGroupRep that has no valid master_group.\n";
       assert(0);
       exit(1);
     }
@@ -759,7 +760,7 @@ namespace CASM {
         calc_new_irreps(head_group);
 
       if(head_group.get_irrep_ID(i).empty()) {
-        std::cerr << "CRITICAL ERROR: In SymGroupRep::get_irrep_IDs(), cannot resolve irrep " << i << " which has multiplicity " << irrep_decomp[i] << ". Exiting...\n";
+        default_err_log() << "CRITICAL ERROR: In SymGroupRep::get_irrep_IDs(), cannot resolve irrep " << i << " which has multiplicity " << irrep_decomp[i] << ". Exiting...\n";
         assert(0);
         exit(1);
       }
@@ -775,7 +776,7 @@ namespace CASM {
 
   void SymGroupRep::calc_new_irreps(int max_iter) const {
     if(!has_valid_master()) {
-      std::cerr << "In SymGroupRep::calc_new_irreps() attempting to calculate new irreps of a SymGroupRep that has no valid master_group.\n";
+      default_err_log() << "In SymGroupRep::calc_new_irreps() attempting to calculate new irreps of a SymGroupRep that has no valid master_group.\n";
       assert(0);
       exit(1);
     }
@@ -791,8 +792,8 @@ namespace CASM {
   void SymGroupRep::calc_new_irreps(const SymGroup &head_group, int max_iter) const {
 
     if(!size() || !at(0)->get_MatrixXd()) {
-      std::cerr << "WARNING:  In SymGroupRep::calc_new_irreps, size of representation is " << size() << " and MatrixXd address is " << at(0)->get_MatrixXd() << std::endl
-                << "          No valid irreps will be returned.\n";
+      default_err_log() << "WARNING:  In SymGroupRep::calc_new_irreps, size of representation is " << size() << " and MatrixXd address is " << at(0)->get_MatrixXd() << std::endl
+                        << "          No valid irreps will be returned.\n";
       return;
     }
     if(!head_group.size()) {
@@ -806,15 +807,15 @@ namespace CASM {
     else if(head_group[0].has_valid_master())
       master_ptr = &head_group[0].master_group();
     else {
-      std::cerr << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps(), there is no MasterSymGroup available!\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps(), there is no MasterSymGroup available!\n"
+                        << "                Exiting...\n";
     }
     int dim((at(0)->get_MatrixXd())->rows());
 
     Array<Index> i_decomp(num_each_real_irrep(head_group));
     int Nirrep(i_decomp.sum());
     if(Nirrep == 0) {
-      std::cerr << "In SymGroupRep::calc_new_irreps(), there are no valid irreps, so no valid irreps will be returned.\n";
+      default_err_log() << "In SymGroupRep::calc_new_irreps(), there are no valid irreps, so no valid irreps will be returned.\n";
       return;
     }
     if(Nirrep == 1) {
@@ -894,8 +895,8 @@ namespace CASM {
     //std::cout << "After " << Nstep << " iterations, found suitable decomposition \n ***U:" << svd.matrixU() << "\n\n ***S" << svd.singularValues() << "\n\n";
     //std::cout << "trans_mat is:\n" << trans_mat << "\n\n";
     if(Nstep >= max_iter) {
-      std::cerr << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps, reached maximum iterations (" << max_iter << ") without finding all irreps.\n"
-                << "                I found " << max_found << " of " << Nirrep << " distinguishable within " << min_diff << " (0.1 required). Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps, reached maximum iterations (" << max_iter << ") without finding all irreps.\n"
+                        << "                I found " << max_found << " of " << Nirrep << " distinguishable within " << min_diff << " (0.1 required). Exiting...\n";
       assert(0);
       exit(1);
 
@@ -928,7 +929,7 @@ namespace CASM {
 
       Array<Index> tdecomp(new_irrep.num_each_real_irrep(head_group));
       if(tdecomp.sum() != 1) {
-        std::cerr << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps(), representation identified as irreducible did not pass final tests. Exiting...\n";
+        default_err_log() << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps(), representation identified as irreducible did not pass final tests. Exiting...\n";
         assert(0);
         exit(1);
       }
@@ -961,7 +962,7 @@ namespace CASM {
     //std::cout << '\n';
     Array<Index> tdecomp(new_irrep.num_each_real_irrep(head_group));
     if(tdecomp.sum() != 1) {
-      std::cerr << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps(), representation identified as irreducible did not pass final tests. Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps(), representation identified as irreducible did not pass final tests. Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -1112,9 +1113,9 @@ namespace CASM {
       // do QR (aka Gram-Shmidt), and first QR.rank() columns of QR will span the space
       QR.compute(tmat.transpose());
       if(QR.rank() != irrep_decomp[i]) {
-        std::cerr << "CRITICAL ERROR: In SymGroupRep::get_irrep_trans_mat(), did not find correct number of basis vectors to account for\n"
-                  << "                multiplicity of irrep #" << i << ". There should be " << irrep_decomp[i] << " but I found " << QR.rank() << "\n"
-                  << "                Exiting...\n";
+        default_err_log() << "CRITICAL ERROR: In SymGroupRep::get_irrep_trans_mat(), did not find correct number of basis vectors to account for\n"
+                          << "                multiplicity of irrep #" << i << ". There should be " << irrep_decomp[i] << " but I found " << QR.rank() << "\n"
+                          << "                Exiting...\n";
         exit(1);
       }
 
@@ -1161,8 +1162,8 @@ namespace CASM {
   Eigen::MatrixXd SymGroupRep::get_irrep_trans_mat_blind(const SymGroup &head_group) const {
 
     if(!size() || !head_group.size() || !get_MatrixXd(head_group[0].index())) {
-      std::cerr << "WARNING:  In SymGroupRep::calc_new_irreps, size of representation is " << size() << " and MatrixXd address is " << get_MatrixXd(head_group[0].index()) << std::endl
-                << "          No valid irreps will be returned.\n";
+      default_err_log() << "WARNING:  In SymGroupRep::calc_new_irreps, size of representation is " << size() << " and MatrixXd address is " << get_MatrixXd(head_group[0].index()) << std::endl
+                        << "          No valid irreps will be returned.\n";
       return Eigen::MatrixXd();
     }
 
@@ -1384,8 +1385,8 @@ namespace CASM {
       Permutation const *perm_ptr(permute_rep.get_permutation(np));
       if(perm_ptr == NULL) {
         // This check may not make sense. Some representations may not have all operations.  If it's causing problems, comment it out
-        std::cerr << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,Array<Index>::X2), permute_rep is missing at least one permutation!\n"
-                  << "                Exiting...\n";
+        default_err_log() << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,Array<Index>::X2), permute_rep is missing at least one permutation!\n"
+                          << "                Exiting...\n";
         assert(0);
         exit(1);
       }
@@ -1402,8 +1403,8 @@ namespace CASM {
           }
         }
         if(ns2 >= subsets.size()) {
-          std::cerr << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,Array<Index>::X2), subsets are not closed under permute_rep permutations!\n"
-                    << "                Exiting...\n";
+          default_err_log() << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,Array<Index>::X2), subsets are not closed under permute_rep permutations!\n"
+                            << "                Exiting...\n";
           assert(0);
           exit(1);
         }
@@ -1422,8 +1423,8 @@ namespace CASM {
 
     Array<Index> rep_dims(sum_reps.size(), 0);
     if(permute_rep.get_permutation(0) == NULL) {
-      std::cerr << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,Array<SymGroupRep const*>), permute_rep does not contain permutations!\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,Array<SymGroupRep const*>), permute_rep does not contain permutations!\n"
+                        << "                Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -1435,15 +1436,14 @@ namespace CASM {
       if((permute_rep.has_valid_master() != sum_reps[i]->has_valid_master())
          || (permute_rep.has_valid_master() && &(permute_rep.master_group()) != &(sum_reps[i]->master_group()))
          || sum_reps[i]->get_MatrixXd(0) == NULL) {
-        std::cerr << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,Array<SymGroupRep const*>), found incompatible SymGroupReps!\n"
-                  << "                Exiting...\n";
+        default_err_log() << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,Array<SymGroupRep const*>), found incompatible SymGroupReps!\n"
+                          << "                Exiting...\n";
         assert(0);
         exit(1);
       }
       rep_dims[i] = (*sum_reps[i])[0]->get_MatrixXd()->cols();
     }
-    //std::cout << "SUM_REPS is " << sum_reps << "\n";
-    //std::cout << "REP_DIMS is " << rep_dims << "\n";
+
     Array<Index> sum_inds(cum_sum(rep_dims));
     Eigen::MatrixXd sum_mat(rep_dims.sum(), rep_dims.sum());
     Eigen::MatrixXd const *rep_mat_ptr(NULL);
@@ -1465,8 +1465,8 @@ namespace CASM {
   //*******************************************************************************************
   SymGroupRep kron_rep(const SymGroupRep &LHS, const SymGroupRep &RHS) {
     if((LHS.has_valid_master() != RHS.has_valid_master()) || (LHS.has_valid_master() && &LHS.master_group() != &RHS.master_group())) {
-      std::cerr << "CRITICAL ERROR: In kron_rep(SymGroupRep,SymGroupRep), taking product of two incompatible SymGroupReps!\n"
-                << "                Exiting...\n";
+      default_err_log() << "CRITICAL ERROR: In kron_rep(SymGroupRep,SymGroupRep), taking product of two incompatible SymGroupReps!\n"
+                        << "                Exiting...\n";
       exit(1);
     }
     SymGroupRep new_rep(SymGroupRep::NO_HOME, LHS.size());

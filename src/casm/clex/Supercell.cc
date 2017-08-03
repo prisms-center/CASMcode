@@ -170,24 +170,19 @@ namespace CASM {
     //Because the user is a fool and the supercell may not be a supercell (This still doesn't check the basis!)
     Eigen::Matrix3d transmat;
     if(!structure_to_config.lattice().is_supercell_of(prim().lattice(), prim().factor_group(), transmat)) {
-      std::cerr << "ERROR in Supercell::configuration" << std::endl;
-      std::cerr << "The provided structure is not a supercell of the PRIM. Tranformation matrix was:" << std::endl;
-      std::cerr << transmat << std::endl;
+      default_err_log() << "ERROR in Supercell::configuration" << std::endl;
+      default_err_log() << "The provided structure is not a supercell of the PRIM. Tranformation matrix was:" << std::endl;
+      default_err_log() << transmat << std::endl;
       exit(881);
     }
 
-    std::cerr << "WARNING in Supercell::config(): This routine has not been tested on relaxed structures using 'tol'" << std::endl;
-    //std::cout << "begin config()" << std::endl;
-    //std::cout << "  mat:\n" << mat << std::endl;
+    default_err_log() << "WARNING in Supercell::config(): This routine has not been tested on relaxed structures using 'tol'" << std::endl;
 
     const Structure &prim = primclex().prim();
 
     // create a 'superstruc' that fills '*this'
     BasicStructure<Site> superstruc = structure_to_config.create_superstruc(m_lattice);
 
-    //std::cout << "superstruc:\n";
-    //superstruc.print(std::cout);
-    //std::cout << " " << std::endl;
 
     // Set the occuation state of a Configuration from superstruc
     //   Allow Va on sites where Va are allowed
@@ -202,21 +197,20 @@ namespace CASM {
 
     // For each site in superstruc, set occ index
     for(Index i = 0; i < superstruc.basis.size(); i++) {
-      //std::cout << "i: " << i << "  basis: " << superstruc.basis[i] << std::endl;
       _linear_index = linear_index(Coordinate(superstruc.basis[i]), tol);
       b = sublat(_linear_index);
 
       // check that we're not over-writing something already set
       if(config.occ(_linear_index) != -1) {
-        std::cerr << "Error in Supercell::config." << std::endl;
-        std::cerr << "  Adding a second atom on site: linear index: " << _linear_index << " bijk: " << uccoord(_linear_index) << std::endl;
+        default_err_log() << "Error in Supercell::config." << std::endl;
+        default_err_log() << "  Adding a second atom on site: linear index: " << _linear_index << " bijk: " << uccoord(_linear_index) << std::endl;
         exit(1);
       }
 
       // check that the Molecule in superstruc is allowed on the site in 'prim'
       if(!prim.basis[b].contains(superstruc.basis[i].occ_name(), val)) {
-        std::cerr << "Error in Supercell::config." << std::endl;
-        std::cerr << "  The molecule: " << superstruc.basis[i].occ_name() << " is not allowed on basis site " << b << " of the Supercell prim." << std::endl;
+        default_err_log() << "Error in Supercell::config." << std::endl;
+        default_err_log() << "  The molecule: " << superstruc.basis[i].occ_name() << " is not allowed on basis site " << b << " of the Supercell prim." << std::endl;
         exit(1);
       }
       config.set_occ(_linear_index, val);
@@ -231,8 +225,8 @@ namespace CASM {
           config.set_occ(i, val);
         }
         else {
-          std::cerr << "Error in Supercell::config." << std::endl;
-          std::cerr << "  Missing atom.  Vacancies are not allowed on the site: " << uccoord(i) << std::endl;
+          default_err_log() << "Error in Supercell::config." << std::endl;
+          default_err_log() << "  Missing atom.  Vacancies are not allowed on the site: " << uccoord(i) << std::endl;
           exit(1);
         }
       }
@@ -488,23 +482,23 @@ namespace CASM {
 
   void Supercell::_generate_permutations()const {
     if(!m_perm_symrep_ID.empty()) {
-      std::cerr << "WARNING: In Supercell::generate_permutations(), but permutations data already exists.\n"
-                << "         It will be overwritten.\n";
+      default_err_log() << "WARNING: In Supercell::generate_permutations(), but permutations data already exists.\n"
+                        << "         It will be overwritten.\n";
     }
     m_perm_symrep_ID = m_prim_grid.make_permutation_representation(factor_group(), prim().basis_permutation_symrep_ID());
     //m_trans_permute = m_prim_grid.make_translation_permutations(basis_size()); <--moved to PrimGrid
 
     /*
-      std::cerr << "For SCEL " << " -- " << name() << " Translation Permutations are:\n";
+      default_err_log() << "For SCEL " << " -- " << name() << " Translation Permutations are:\n";
       for(int i = 0; i < m_trans_permute.size(); i++)
-      std::cerr << i << ":   " << m_trans_permute[i].perm_array() << "\n";
+      default_err_log() << i << ":   " << m_trans_permute[i].perm_array() << "\n";
 
-      std::cerr << "For SCEL " << " -- " << name() << " factor_group Permutations are:\n";
+      default_err_log() << "For SCEL " << " -- " << name() << " factor_group Permutations are:\n";
       for(int i = 0; i < m_factor_group.size(); i++){
-    std::cerr << "Operation " << i << ":\n";
-    m_factor_group[i].print(std::cerr,FRAC);
-    std::cerr << '\n';
-    std::cerr << i << ":   " << m_factor_group[i].get_permutation_rep(m_perm_symrep_ID)->perm_array() << '\n';
+    default_err_log() << "Operation " << i << ":\n";
+    m_factor_group[i].print(default_err_log(),FRAC);
+    default_err_log() << '\n';
+    default_err_log() << i << ":   " << m_factor_group[i].get_permutation_rep(m_perm_symrep_ID)->perm_array() << '\n';
 
     }
     std:: cerr << "End permutations for SCEL " << name() << '\n';
@@ -525,8 +519,8 @@ namespace CASM {
       fs::create_directories(dir.configuration_dir(name()));
     }
     catch(const fs::filesystem_error &ex) {
-      std::cerr << "Error in Supercell::write_pos()." << std::endl;
-      std::cerr << ex.what() << std::endl;
+      default_err_log() << "Error in Supercell::write_pos()." << std::endl;
+      default_err_log() << ex.what() << std::endl;
     }
 
     fs::ofstream file(dir.LAT(name()));

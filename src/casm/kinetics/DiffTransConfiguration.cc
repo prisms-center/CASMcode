@@ -191,7 +191,7 @@ namespace CASM {
       ScelPeriodicDiffTransSymCompare symcompare(from_config().supercell().prim_grid(),
                                                  from_config().supercell().crystallography_tol());
       if(diff_trans() != symcompare.prepare(diff_trans())) {
-        std::cerr << "Diffusion Transformation is not based in this Configuration's supercell!" << std::endl;
+        default_err_log() << "Diffusion Transformation is not based in this Configuration's supercell!" << std::endl;
       }
       for(auto traj : diff_trans().specie_traj()) {
         Index l = from_config().supercell().linear_index(traj.from.uccoord);
@@ -241,8 +241,8 @@ namespace CASM {
         fs::create_directories(dir.configuration_dir(name()));
       }
       catch(const fs::filesystem_error &ex) {
-        std::cerr << "Error in DiffTransConfiguration::write_pos()." << std::endl;
-        std::cerr << ex.what() << std::endl;
+        default_err_log() << "Error in DiffTransConfiguration::write_pos()." << std::endl;
+        default_err_log() << ex.what() << std::endl;
       }
 
       fs::ofstream file(dir.POS(name()));
@@ -273,7 +273,7 @@ namespace CASM {
       ScelPeriodicDiffTransSymCompare symcompare(bg_config.supercell().prim_grid(),
                                                  bg_config.supercell().crystallography_tol());
       if(diff_trans != symcompare.prepare(diff_trans)) {
-        std::cerr << "Diffusion Transformation is not based in this Configuration's supercell!" << std::endl;
+        default_err_log() << "Diffusion Transformation is not based in this Configuration's supercell!" << std::endl;
       }
       for(auto traj : diff_trans.specie_traj()) {
         Index l = bg_config.supercell().linear_index(traj.from.uccoord);
@@ -282,7 +282,7 @@ namespace CASM {
             result.set_occ(l, traj.from.occ);
           }
           else {
-            std::cerr << "Diffusion Transformation does not have valid starting occupant for this position in this Configuration" << std::endl;
+            default_err_log() << "Diffusion Transformation does not have valid starting occupant for this position in this Configuration" << std::endl;
           }
         }
       }
