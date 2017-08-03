@@ -8,10 +8,15 @@
 #include "casm/casm_io/Log.hh"
 
 namespace CASM {
+  class PrimClex;
+
   namespace DB {
+    template<typename ValueType>
+    class Database;
 
     template<typename ObjType>
     class Selection;
+
 
     template<typename ObjType, typename BaseIterator>
     class SelectionIterator :

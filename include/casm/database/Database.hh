@@ -8,12 +8,16 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/database/Selection.hh"
 
 namespace CASM {
 
   class PrimClex;
 
   namespace DB {
+
+    template<typename ObjType>
+    class Selection;
 
     /// Fully generic database interface for use by DatabaseHandler
     class DatabaseBase {
@@ -304,6 +308,14 @@ namespace CASM {
 
       virtual void commit() = 0;
 
+      Selection<ValueType> &master_selection() {
+        return m_master_selection;
+      }
+
+      const Selection<ValueType> &master_selection() const {
+        return m_master_selection;
+      }
+
     protected:
 
       void read_aliases();
@@ -328,7 +340,6 @@ namespace CASM {
         obj.set_primclex(primclex());
       }
 
-
     private:
 
       // enable lookup of name -> alias
@@ -336,6 +347,9 @@ namespace CASM {
 
       // enable lookup of alias -> name
       std::map<std::string, std::string> m_alias_to_name;
+
+      //Master selection to update upon insertion or removal.
+      Selection<ValueType> m_master_selection;
 
     };
 

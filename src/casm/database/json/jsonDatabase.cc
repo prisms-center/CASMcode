@@ -338,7 +338,7 @@ namespace CASM {
 
       // erase name & alias
       m_name_to_config.erase(base_it->name());
-
+      master_selection().data().erase(base_it->name());
       // update scel_range
       auto _scel_range_it = m_scel_range.find(base_it->supercell().name());
       if(_scel_range_it->second.first == _scel_range_it->second.second) {
@@ -414,6 +414,8 @@ namespace CASM {
         else if(_scel_range_it->second.second == std::prev(result.first)) {
           _scel_range_it->second.second = result.first;
         }
+
+        master_selection().data().emplace(config.name(), 0);
       }
 
       return std::make_pair(_iterator(result.first), result.second);
@@ -542,6 +544,7 @@ namespace CASM {
 
       // erase name & alias
       m_name_to_orbit.erase(base_it->name());
+      master_selection().data().erase(base_it->name());
 
       // erase Kinetics::PrimPeriodicDiffTransOrbit
       return _iterator(m_orbit_list.erase(base_it));
@@ -568,6 +571,7 @@ namespace CASM {
 
         // update name -> orbit
         m_name_to_orbit.insert(std::make_pair(orbit.name(), result.first));
+        master_selection().data().emplace(orbit.name(), 0);
 
       }
       this->set_primclex(*result.first);
@@ -731,6 +735,7 @@ namespace CASM {
 
       // erase name & alias
       m_name_to_diff_trans_config.erase(base_it->name());
+      master_selection().data().erase(base_it->name());
 
       // update scel_range
       auto _scel_range_it = m_scel_range.find(base_it->from_config().supercell().name());
@@ -862,7 +867,7 @@ namespace CASM {
 
         // update name -> config
         m_name_to_diff_trans_config.insert(std::make_pair(diff_trans_config.name(), result.first));
-
+        master_selection().data().emplace(diff_trans_config.name(), 0);
         // check if scel_range needs updating
         auto _scel_range_it = m_scel_range.find(diff_trans_config.from_config().supercell().name());
 
