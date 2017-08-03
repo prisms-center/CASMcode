@@ -215,6 +215,10 @@ namespace CASM {
         //_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       }
       while(_input >> tname_or_alias >> tselect) {
+        // make name reading check if it exists first
+        if(db().find(db().name(tname_or_alias)) == db().end()) {
+          continue;
+        }
         m_data[db().name(tname_or_alias)] = tselect;
         _input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       }
@@ -330,7 +334,6 @@ namespace CASM {
                                    const fs::path &_out_path,
                                    bool write_json,
                                    bool only_selected) const {
-
       fs::path out_path(_out_path);
       if(out_path.string() == "MASTER") {
         out_path = primclex().dir().template master_selection<ObjType>();
@@ -357,6 +360,7 @@ namespace CASM {
         this->print(dict, sout.ofstream(), only_selected);
         sout.close();
       }
+
       return 0;
     }
   }

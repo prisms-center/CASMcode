@@ -274,7 +274,7 @@ namespace CASM {
                      only_selected);
     log() << "write: " << _output_path() << "\n" << std::endl;
 
-    log().custom("Output config list", _output_path().string());
+    log().custom("Output " + traits<DataObject>::short_name + " list", _output_path().string());
     _write_selection_stats(m_Ntot, _sel(0), log(), only_selected);
 
     log() << std::endl;
