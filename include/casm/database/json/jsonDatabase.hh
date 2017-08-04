@@ -156,6 +156,9 @@ namespace CASM {
       ///   DatabaseIterator.  Use boost::distance instead.
       boost::iterator_range<iterator> scel_range(const std::string &scelname) const override;
 
+      /// Find canonical Configuration in database by comparing DoF
+      iterator search(const Configuration &config) const override;
+
     private:
 
       typedef std::set<Configuration>::iterator base_iterator;
@@ -321,14 +324,14 @@ namespace CASM {
     /// json["orbit_id"] is the next id to be assigned to a newly enumerated orbit.
     ///
     template<>
-    class jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit> : public Database<Kinetics::PrimPeriodicDiffTransOrbit> {
+    class jsonDatabase<PrimPeriodicDiffTransOrbit> : public Database<PrimPeriodicDiffTransOrbit> {
 
     public:
 
-      jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>(const PrimClex &_primclex);
+      jsonDatabase<PrimPeriodicDiffTransOrbit>(const PrimClex &_primclex);
 
 
-      jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit> &open() override;
+      jsonDatabase<PrimPeriodicDiffTransOrbit> &open() override;
 
       void commit() override;
 
@@ -340,9 +343,9 @@ namespace CASM {
 
       size_type size() const override ;
 
-      std::pair<iterator, bool> insert(const Kinetics::PrimPeriodicDiffTransOrbit &orbit) override;
+      std::pair<iterator, bool> insert(const PrimPeriodicDiffTransOrbit &orbit) override;
 
-      std::pair<iterator, bool> insert(const Kinetics::PrimPeriodicDiffTransOrbit &&orbit) override;
+      std::pair<iterator, bool> insert(const PrimPeriodicDiffTransOrbit &&orbit) override;
 
       template<typename... Args>
       std::pair<iterator, bool> emplace(Args &&... args) {
@@ -353,10 +356,16 @@ namespace CASM {
 
       iterator find(const std::string &name_or_alias) const override;
 
+      /// Find PrimPeriodicDiffTransOrbit in database by comparing prototype
+      iterator search(const PrimPeriodicDiffTransOrbit &orbit) const override;
+
+      /// Find DiffusionTransformation in database by comparing to orbit prototypes
+      iterator search(const Kinetics::DiffusionTransformation &diff_trans) const override;
+
     private:
 
-      typedef std::set<Kinetics::PrimPeriodicDiffTransOrbit>::iterator base_iterator;
-      typedef DatabaseSetIterator<Kinetics::PrimPeriodicDiffTransOrbit, jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit> > db_set_iterator;
+      typedef std::set<PrimPeriodicDiffTransOrbit>::iterator base_iterator;
+      typedef DatabaseSetIterator<PrimPeriodicDiffTransOrbit, jsonDatabase<PrimPeriodicDiffTransOrbit> > db_set_iterator;
 
       /// Update m_name_and_alias and m_scel_range after performing an insert or emplace
       std::pair<iterator, bool> _on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new);
@@ -367,13 +376,13 @@ namespace CASM {
 
       bool m_is_open;
 
-      // map name -> Kinetics::PrimPeriodicDiffTransOrbit
+      // map name -> PrimPeriodicDiffTransOrbit
       std::map<std::string, base_iterator> m_name_to_orbit;
 
-      // container of Kinetics::PrimPeriodicDiffTransOrbit
-      std::set<Kinetics::PrimPeriodicDiffTransOrbit> m_orbit_list;
+      // container of PrimPeriodicDiffTransOrbit
+      std::set<PrimPeriodicDiffTransOrbit> m_orbit_list;
 
-      //next id to assign to a new Kinetics::PrimPeriodicDiffTransOrbit
+      //next id to assign to a new PrimPeriodicDiffTransOrbit
       Index m_orbit_id;
     };
 

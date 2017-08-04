@@ -4,12 +4,14 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/Database_impl.hh"
 #include "casm/database/DatabaseTypeDefs.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
 
 //for testing:
 #include "casm/casm_io/stream_io/container.hh"
@@ -376,13 +378,29 @@ namespace CASM {
       }
     }
 
+    /// Find canonical Configuration in database by comparing DoF
+    ///
+    /// \param config A Configuration in canonical form
+    ///
+    /// - Find in set<Configuration>
+    typename jsonDatabase<Configuration>::iterator
+    jsonDatabase<Configuration>::search(const Configuration &config) const {
+
+      // not clear if using m_scel_range to search on a sub-range would help...
+      auto res = m_config_list.find(config);
+      if(res == m_config_list.end()) {
+        return end();
+      }
+      return _iterator(res);
+    }
+
     /// Update m_name_to_config and m_scel_range after performing an insert or emplace
     std::pair<jsonDatabase<Configuration>::iterator, bool>
     jsonDatabase<Configuration>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
 
       if(result.second) {
-        this->set_primclex(*(result.first));
         const Configuration &config = *result.first;
+        assert(&config.primclex() == &primclex() && "jsonDatabase<Configuration>::_on_insert_or_emplace primclex does not match");
 
         if(is_new) {
           // set the config id, and increment
@@ -421,19 +439,19 @@ namespace CASM {
 
 
     /// PPDTO stuff starts here
-    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::jsonDatabase(const PrimClex &_primclex) :
-      Database<Kinetics::PrimPeriodicDiffTransOrbit>(_primclex),
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::jsonDatabase(const PrimClex &_primclex) :
+      Database<PrimPeriodicDiffTransOrbit>(_primclex),
       m_is_open(false), m_orbit_id(0) {}
 
 
-    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit> &jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::open() {
+    jsonDatabase<PrimPeriodicDiffTransOrbit> &jsonDatabase<PrimPeriodicDiffTransOrbit>::open() {
 
       if(m_is_open) {
         return *this;
       }
 
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
-      fs::path diff_trans_list_path = dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>();
+      fs::path diff_trans_list_path = dir.obj_list<PrimPeriodicDiffTransOrbit>();
       if(!fs::exists(diff_trans_list_path)) {
         m_is_open = true;
         return *this;
@@ -449,13 +467,13 @@ namespace CASM {
       }
       if(!json.is_obj() || !json.contains("prototypes")) {
         throw std::runtime_error(
-          std::string("Error invalid format: ") + dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>().string());
+          std::string("Error invalid format: ") + dir.obj_list<PrimPeriodicDiffTransOrbit>().string());
       }
       auto end = json["prototypes"].end();
       for(auto it = json["prototypes"].begin(); it != end; ++it) {
         Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(*it, primclex().prim());
-        Kinetics::PrimPeriodicDiffTransSymCompare symcompare(primclex().crystallography_tol());
-        auto result = m_orbit_list.emplace(trans, primclex().prim().factor_group(), symcompare);
+        PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> symcompare(primclex().crystallography_tol());
+        auto result = m_orbit_list.emplace(trans, primclex().prim().factor_group(), symcompare, &primclex());
         this->set_id(*(result.first), it.name());
         _on_insert_or_emplace(result, false);
       }
@@ -470,10 +488,10 @@ namespace CASM {
 
     }
 
-    void jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::commit() {
+    void jsonDatabase<PrimPeriodicDiffTransOrbit>::commit() {
 
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
-      fs::path orbit_list_path = dir.obj_list<Kinetics::PrimPeriodicDiffTransOrbit>();
+      fs::path orbit_list_path = dir.obj_list<PrimPeriodicDiffTransOrbit>();
 
       jsonParser json;
 
@@ -503,39 +521,45 @@ namespace CASM {
       this->write_aliases();
     }
 
-    void jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::close() {
+    void jsonDatabase<PrimPeriodicDiffTransOrbit>::close() {
       m_name_to_orbit.clear();
       m_orbit_list.clear();
       m_is_open = false;
     }
 
-    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::begin() const {
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::begin() const {
       return _iterator(m_orbit_list.begin());
     }
 
-    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::end() const {
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::end() const {
       return _iterator(m_orbit_list.end());
     }
 
-    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::size_type jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::size() const {
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::size_type
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::size() const {
       return m_orbit_list.size();
     }
 
-    std::pair<jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::insert(const Kinetics::PrimPeriodicDiffTransOrbit &orbit) {
+    std::pair<jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator, bool>
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::insert(const PrimPeriodicDiffTransOrbit &orbit) {
 
       auto result = m_orbit_list.insert(orbit);
 
       return _on_insert_or_emplace(result, true);
     }
 
-    std::pair<jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator, bool> jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::insert(const Kinetics::PrimPeriodicDiffTransOrbit &&orbit) {
+    std::pair<jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator, bool>
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::insert(const PrimPeriodicDiffTransOrbit &&orbit) {
 
       auto result = m_orbit_list.insert(std::move(orbit));
 
       return _on_insert_or_emplace(result, true);
     }
 
-    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::erase(iterator pos) {
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::erase(iterator pos) {
 
       // get m_orbit_list iterator
       auto base_it = static_cast<db_set_iterator *>(pos.get())->base();
@@ -543,11 +567,12 @@ namespace CASM {
       // erase name & alias
       m_name_to_orbit.erase(base_it->name());
 
-      // erase Kinetics::PrimPeriodicDiffTransOrbit
+      // erase PrimPeriodicDiffTransOrbit
       return _iterator(m_orbit_list.erase(base_it));
     }
 
-    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::find(const std::string &name_or_alias) const {
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::find(const std::string &name_or_alias) const {
       auto it = m_name_to_orbit.find(this->name(name_or_alias));
       if(it == m_name_to_orbit.end()) {
         return _iterator(m_orbit_list.end());
@@ -555,12 +580,33 @@ namespace CASM {
       return _iterator(it->second);
     }
 
+    /// Find PrimPeriodicDiffTransOrbit in database by comparing prototype
+    typename jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::search(const PrimPeriodicDiffTransOrbit &orbit) const {
+      return _iterator(m_orbit_list.find(orbit));
+    }
+
+    /// Find DiffusionTransformation in database by comparing to orbit prototypes
+    typename jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::search(const Kinetics::DiffusionTransformation &diff_trans) const {
+
+      const auto &g = prim().factor_group();
+      PrimPeriodicDiffTransSymCompare sym_compare(crystallography_tol());
+      CanonicalGenerator<PrimPeriodicDiffTransOrbit> gen(g, sym_compare);
+      auto canon_diff_trans = gen(diff_trans);
+      auto f = [&](const PrimPeriodicDiffTransOrbit & orbit) {
+        return sym_compare.equal(canon_diff_trans, gen(orbit.prototype()));
+      };
+
+      return _iterator(std::find_if(m_orbit_list.begin(), m_orbit_list.end(), f));
+    }
+
     /// Update m_name_to_orbit after performing an insert or emplace
-    std::pair<jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::iterator, bool>
-    jsonDatabase<Kinetics::PrimPeriodicDiffTransOrbit>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
+    std::pair<jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator, bool>
+    jsonDatabase<PrimPeriodicDiffTransOrbit>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
 
       if(result.second) {
-        const Kinetics::PrimPeriodicDiffTransOrbit &orbit = *result.first;
+        const PrimPeriodicDiffTransOrbit &orbit = *result.first;
         if(is_new) {
           // set the orbit id, and increment
           this->set_id(orbit, m_orbit_id++);
@@ -570,7 +616,6 @@ namespace CASM {
         m_name_to_orbit.insert(std::make_pair(orbit.name(), result.first));
 
       }
-      this->set_primclex(*result.first);
       return std::make_pair(_iterator(result.first), result.second);
     }
 

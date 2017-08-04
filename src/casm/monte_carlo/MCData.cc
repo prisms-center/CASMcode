@@ -1,6 +1,5 @@
 #include "casm/monte_carlo/MCData.hh"
-
-#include "casm/external/boost.hh"
+#include <boost/math/special_functions/erf.hpp>
 
 namespace CASM {
   namespace Monte {
