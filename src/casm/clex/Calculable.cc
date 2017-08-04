@@ -237,7 +237,7 @@ template fs::path pos_path(const type &config); \
 template fs::path calc_status_path(const type &config); \
 template std::tuple<jsonParser, bool, bool> read_calc_properties<type>(const type &config); \
 template std::tuple<jsonParser, bool, bool> read_calc_properties<type>(const PrimClex &primclex, const fs::path &filepath); \
-template class Calculable<type>;
+template class Calculable<CRTPBase<type>>;
 
   BOOST_PP_SEQ_FOR_EACH(INST_ConfigType, _, CASM_DB_CONFIG_TYPES)
 

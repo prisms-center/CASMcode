@@ -2,6 +2,7 @@
 #include "casm/app/rm.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/Supercell.hh"
 #include "casm/database/Selection.hh"
 #include "casm/database/Remove.hh"
 #include "casm/database/DatabaseDefs.hh"

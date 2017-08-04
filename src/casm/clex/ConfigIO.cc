@@ -15,7 +15,8 @@
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/Selected.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/database/DiffTransConfigDatabase.hh"
 
 namespace CASM {
 

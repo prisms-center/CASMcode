@@ -11,9 +11,6 @@ namespace CASM {
 
   class jsonParser;
 
-  /// Expect Derived to implement:
-  ///
-  /// - std::string _generate_name() const
   ///
   /// - name and calculated properties should be invalidated whenever the
   ///   ConfigType DoF are modified. Can do this by calling _modify_dof(). This
@@ -21,15 +18,13 @@ namespace CASM {
   /// - cache should only be used for DoF-dependent properties, not
   ///   calctype-dependent properties
   ///
-  template<typename Derived>
-  class Calculable : public DB::Cache, public DB::Indexed<Derived> {
+  template<typename _Base>
+  class Calculable : public DB::Cache, public DB::Indexed<_Base> {
 
   public:
-    Calculable(const PrimClex &_primclex):
-      DB::Indexed<Derived>::Indexed(_primclex) {}
 
-    Calculable():
-      DB::Indexed<Derived>::Indexed() {}
+    typedef typename DB::Indexed<_Base> Base;
+    using Base::derived;
 
     const jsonParser &calc_properties() const;
 
@@ -43,7 +38,7 @@ namespace CASM {
 
   protected:
 
-    /// Call in Derived any time DoF may be modified
+    /// Call in MostDerived any time DoF may be modified
     void _modify_dof();
 
   private:

@@ -3,7 +3,8 @@
 //#include <math.h>
 #include <vector>
 //#include <stdlib.h>
-
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/casm_io/stream_io/container.hh"
@@ -17,7 +18,13 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/database/ScelDatabase.hh"
 
+#include "casm/clex/HasPrimClex_impl.hh"
+#include "casm/clex/HasCanonicalForm_impl.hh"
+
 namespace CASM {
+
+  template class SupercellCanonicalForm<CRTPBase<Supercell> >;
+  template class HasPrimClex<DB::Named<Comparisons<SupercellCanonicalForm<CRTPBase<Supercell> > > > >;
 
   bool ConfigMapCompare::operator()(const Configuration *A, const Configuration *B) const {
     return *A < *B;
@@ -25,28 +32,25 @@ namespace CASM {
 
   //Copy constructor is needed for proper initialization of m_prim_grid
   Supercell::Supercell(const Supercell &RHS) :
-    Named(RHS.primclex()),
+    m_primclex(&RHS.primclex()),
     m_lattice(RHS.m_lattice),
-    m_prim_grid(primclex().prim().lattice(), m_lattice, primclex().prim().basis.size()),
+    m_prim_grid(prim().lattice(), m_lattice, prim().basis.size()),
     m_nlist(RHS.m_nlist),
-    m_canonical(nullptr),
     m_transf_mat(RHS.m_transf_mat) {
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
-    Named(*_prim),
-    m_lattice(primclex().prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
-    m_prim_grid(primclex().prim().lattice(), m_lattice, primclex().prim().basis.size()),
-    m_canonical(nullptr),
+    m_primclex(_prim),
+    m_lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
+    m_prim_grid(prim().lattice(), m_lattice, prim().basis.size()),
     m_transf_mat(transf_mat_init) {
     //    fill_reciprocal_supercell();
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
-    Named(*_prim),
+    m_primclex(_prim),
     m_lattice(superlattice),
-    m_canonical(nullptr),
-    m_prim_grid(primclex().prim().lattice(), m_lattice, primclex().prim().basis.size()) {
+    m_prim_grid(prim().lattice(), m_lattice, prim().basis.size()) {
 
     auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
     if(!res.first) {
@@ -62,6 +66,10 @@ namespace CASM {
   }
 
   Supercell::~Supercell() {}
+
+  const PrimClex &Supercell::primclex() const {
+    return *m_primclex;
+  }
 
   /// \brief Return the sublattice index for a linear index
   ///
@@ -134,31 +142,6 @@ namespace CASM {
     return max_allowed;
   }
 
-  bool Supercell::is_canonical() const {
-    return lattice().is_canonical(
-             prim().point_group(),
-             primclex().crystallography_tol());
-  }
-
-  SymOp Supercell::to_canonical() const {
-    return lattice().to_canonical(
-             prim().point_group(),
-             primclex().crystallography_tol());
-  }
-
-  SymOp Supercell::from_canonical() const {
-    return lattice().from_canonical(
-             prim().point_group(),
-             primclex().crystallography_tol());
-  }
-
-  const Supercell &Supercell::canonical_form() const {
-    if(!m_canonical) {
-      m_canonical = &*insert().first;
-    }
-    return *m_canonical;
-  }
-
   //***********************************************************
   /**  Generate a Configuration from a Structure
    *  - Generally expected the user will first call
@@ -179,8 +162,6 @@ namespace CASM {
     std::cerr << "WARNING in Supercell::config(): This routine has not been tested on relaxed structures using 'tol'" << std::endl;
     //std::cout << "begin config()" << std::endl;
     //std::cout << "  mat:\n" << mat << std::endl;
-
-    const Structure &prim = primclex().prim();
 
     // create a 'superstruc' that fills '*this'
     BasicStructure<Site> superstruc = structure_to_config.create_superstruc(m_lattice);
@@ -214,7 +195,7 @@ namespace CASM {
       }
 
       // check that the Molecule in superstruc is allowed on the site in 'prim'
-      if(!prim.basis[b].contains(superstruc.basis[i].occ_name(), val)) {
+      if(!prim().basis[b].contains(superstruc.basis[i].occ_name(), val)) {
         std::cerr << "Error in Supercell::config." << std::endl;
         std::cerr << "  The molecule: " << superstruc.basis[i].occ_name() << " is not allowed on basis site " << b << " of the Supercell prim." << std::endl;
         exit(1);
@@ -227,7 +208,7 @@ namespace CASM {
       if(config.occ(i) == -1) {
         b = sublat(i);
 
-        if(prim.basis[b].contains("Va", val)) {
+        if(prim().basis[b].contains("Va", val)) {
           config.set_occ(i, val);
         }
         else {
@@ -248,7 +229,7 @@ namespace CASM {
   ///
   Structure Supercell::superstructure() const {
     // create a 'superstruc' that fills '*this'
-    Structure superstruc = primclex().prim().create_superstruc(m_lattice);
+    Structure superstruc = prim().create_superstruc(m_lattice);
 
     // sort basis sites so that they agree with config_index_to_bijk
     //   This sorting may not be necessary,
@@ -271,7 +252,7 @@ namespace CASM {
   ///  Returns a Structure equivalent to the Supercell
   ///  - basis sites are ordered to agree with Supercell::config_index_to_bijk
   ///  - occupation set to config
-  ///  - prim set to (*m_primclex).prim
+  ///  - prim set to prim()
   ///
   Structure Supercell::superstructure(const Configuration &config) const {
     // create a 'superstruc' that fills '*this'
@@ -289,17 +270,8 @@ namespace CASM {
 
   }
 
-  /// \brief Get the PrimClex crystallography_tol
-  double Supercell::crystallography_tol() const {
-    return primclex().crystallography_tol();
-  }
-
   const PrimGrid &Supercell::prim_grid() const {
     return m_prim_grid;
-  }
-
-  const Structure &Supercell::prim() const {
-    return primclex().prim();
   }
 
   ///Return number of primitive cells that fit inside of *this
@@ -413,6 +385,10 @@ namespace CASM {
                                   fg_index, trans_index);
   }
 
+  Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, UnitCell trans) const {
+    return permute_it(fg_index, prim_grid().find(trans));
+  }
+
   bool Supercell::operator<(const Supercell &B) const {
     if(&primclex() != &B.primclex()) {
       throw std::runtime_error(
@@ -471,7 +447,10 @@ namespace CASM {
     return occupation;
   }
 
-  bool Supercell::_eq(const Supercell &B) const {
+  bool Supercell::eq_impl(const Supercell &B) const {
+    if(this == &B) {
+      return true;
+    }
     if(&primclex() != &B.primclex()) {
       throw std::runtime_error(
         "Error using Supercell::operator==(const Supercell& B): "
@@ -541,8 +520,13 @@ namespace CASM {
   /// - Else, return 'SCELV_A_B_C_D_E_F.$FG_INDEX', where $FG_INDEX is the index of the first
   ///   symmetry operation in the primitive structure's factor group such that the lattice
   ///   is equivalent to `apply(fg_op, canonical equivalent)`
-  std::string Supercell::_generate_name() const {
-    return CASM::generate_name(m_transf_mat);
+  std::string Supercell::generate_name_impl() const {
+    if(is_canonical()) {
+      return CASM::generate_name(m_transf_mat);
+    }
+    else {
+      return canonical_form().name() + "." + std::to_string(from_canonical().index());
+    }
   }
 
   Supercell &apply(const SymOp &op, Supercell &scel) {

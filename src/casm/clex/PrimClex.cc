@@ -1,6 +1,5 @@
 #include "casm/clex/PrimClex_impl.hh"
 
-#include "casm/external/boost.hh"
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Structure.hh"
@@ -20,6 +19,7 @@
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
 
 namespace CASM {
 
@@ -340,14 +340,14 @@ namespace CASM {
 
       it = m_data->clex_basis.insert(std::make_pair(key, ClexBasis(prim()))).first;
 
-      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+      std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
 
       read_clust(
         std::back_inserter(orbits),
         jsonParser(dir().clust(key.bset)),
         prim(),
         prim().factor_group(),
-        PrimPeriodicIntegralClusterSymCompare(settings().crystallography_tol()),
+        PrimPeriodicSymCompare<IntegralCluster>(settings().crystallography_tol()),
         settings().crystallography_tol()
       );
 
@@ -427,7 +427,7 @@ namespace CASM {
     const SymCompareType&) const;
 
 namespace CASM {
-  INST_PrimClex_orbits_vec(PrimPeriodicIntegralClusterOrbit, PrimPeriodicIntegralClusterSymCompare);
+  INST_PrimClex_orbits_vec(PrimPeriodicOrbit<IntegralCluster>, PrimPeriodicSymCompare<IntegralCluster>);
 }
 
 #include "casm/database/DatabaseTypes.hh"

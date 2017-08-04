@@ -147,7 +147,7 @@ namespace CASM {
                             m_primclex->prim().point_group(),
                             m_primclex->crystallography_tol());
       Supercell tmp(m_primclex, canon_lat);
-      return m_primclex->db<Supercell>().find(tmp) != m_primclex->db<Supercell>().end();
+      return m_primclex->db<Supercell>().find(tmp.name()) != m_primclex->db<Supercell>().end();
     }
     return true;
   }

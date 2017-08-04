@@ -1,5 +1,5 @@
 #include <functional>
-#include "casm/external/boost.hh"
+#include <boost/filesystem.hpp>
 #include "casm/casm_io/EigenDataStream.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/jsonStruc.hh"

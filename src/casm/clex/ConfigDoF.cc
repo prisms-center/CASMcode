@@ -55,7 +55,6 @@ namespace CASM {
     clear_occupation();
     clear_displacement();
     clear_deformation();
-    clear_specie_id();
   }
 
   void ConfigDoF::clear_occupation() {
@@ -71,17 +70,12 @@ namespace CASM {
     m_has_deformation = false;
   }
 
-  void ConfigDoF::clear_specie_id() {
-    specie_id().clear();
-  }
-
   //*******************************************************************************
 
   void ConfigDoF::swap(ConfigDoF &RHS) {
     deformation().swap(RHS.deformation());
     occupation().swap(RHS.occupation());
     displacement().swap(RHS.displacement());
-    specie_id().swap(RHS.specie_id());
     std::swap(m_N, RHS.m_N);
     std::swap(m_tol, RHS.m_tol);
     std::swap(m_has_deformation, RHS.m_has_deformation);
@@ -131,6 +125,29 @@ namespace CASM {
 
   //*******************************************************************************
 
+  // Calculate transformed ConfigDoF from PermuteIterator via
+  //   *this = permute_iterator * (*this)
+  ConfigDoF &ConfigDoF::apply_sym(const PermuteIterator &it) {
+    Eigen::Matrix3d fg_cart_op = it.sym_op().matrix();
+    if(has_deformation()) {
+      set_deformation(fg_cart_op * deformation() * fg_cart_op.transpose());
+    }
+    Permutation tperm(it.combined_permute());
+    if(occupation().size()) {
+      set_occupation(tperm * occupation());
+    }
+    if(displacement().cols()) {
+      Eigen::MatrixXd new_disp = fg_cart_op * displacement();
+      set_displacement(Eigen::MatrixXd(3, size()));
+      for(Index i = 0; i < size(); i++)
+        disp(i) = new_disp.col(tperm[i]);
+    }
+
+    return *this;
+  }
+
+  //*******************************************************************************
+
   jsonParser &ConfigDoF::to_json(jsonParser &json) const {
     json = jsonParser::object();
     if(occupation().size())
@@ -139,8 +156,6 @@ namespace CASM {
       json["displacement"] = displacement();
     if(has_deformation())
       json["deformation"] = deformation();
-    if(has_specie_id())
-      json["specie_id"] = specie_id();
 
     return json;
   }
@@ -165,7 +180,6 @@ namespace CASM {
       m_has_deformation = true;
     }
 
-    json.get_if(specie_id(), "specie_id");
   }
 
   //*******************************************************************************
@@ -178,33 +192,6 @@ namespace CASM {
 
   void from_json(ConfigDoF &value, const jsonParser &json) {
     value.from_json(json);
-  }
-
-  //*******************************************************************************
-
-  // Calculate transformed ConfigDoF from PermuteIterator via
-  //   transformed_configdof = permute_iterator * configdof
-  ConfigDoF &apply(const PermuteIterator &it, ConfigDoF &dof) {
-    Eigen::Matrix3d fg_cart_op = it.sym_op().matrix();
-    if(dof.has_deformation())
-      dof.set_deformation(fg_cart_op * dof.deformation() * fg_cart_op.transpose());
-
-    Permutation tperm(it.combined_permute());
-    if(dof.occupation().size())
-      dof.set_occupation(tperm * dof.occupation());
-
-    if(dof.displacement().cols()) {
-      Eigen::MatrixXd new_disp = fg_cart_op * dof.displacement();
-      dof.set_displacement(Eigen::MatrixXd(3, dof.size()));
-      for(Index i = 0; i < dof.size(); i++)
-        dof.disp(i) = new_disp.col(tperm[i]);
-    }
-
-    /*if(dof.has_specie_id()) {
-      // just haven't implemented this yet...
-      throw std::runtime_error("Error in apply(const PermuteIterator &it, ConfigDoF &dof): dof.has_specie_id() == true");
-    }*/
-    return dof;
   }
 
   //*******************************************************************************

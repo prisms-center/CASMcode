@@ -62,6 +62,38 @@ namespace CASM {
       return m_f->is_less();
     }
 
+    /// \brief Return config < A*other
+    bool operator()(const PermuteIterator &A, const Configuration &other) const {
+      if((*m_f)(A, other.configdof())) {
+        return false;
+      }
+      return m_f->is_less();
+    }
+
+    /// \brief Return config < A*other
+    bool operator()(const PermuteIterator &A, const ConfigDoF &other) const {
+      if((*m_f)(A, other)) {
+        return false;
+      }
+      return m_f->is_less();
+    }
+
+    /// \brief Return A*config < B*other
+    bool operator()(const PermuteIterator &A, const PermuteIterator &B, const Configuration &other) const {
+      if((*m_f)(A, B, other.configdof())) {
+        return false;
+      }
+      return m_f->is_less();
+    }
+
+    /// \brief Return A*config < B*other
+    bool operator()(const PermuteIterator &A, const PermuteIterator &B, const ConfigDoF &other) const {
+      if((*m_f)(A, B, other)) {
+        return false;
+      }
+      return m_f->is_less();
+    }
+
   private:
     notstd::cloneable_ptr<DoFIsEquivalent::ConfigDoFIsEquivalentBase> m_f;
 

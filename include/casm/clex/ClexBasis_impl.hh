@@ -1,11 +1,11 @@
+#ifndef CASM_ClexBasis_impl
+#define CASM_ClexBasis_impl
+
+#include "casm/clex/ClexBasis.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clex/NeighborList.hh"
-
-
-
-
 
 
 namespace CASM {
@@ -134,3 +134,5 @@ namespace CASM {
   }
 
 }
+
+#endif

@@ -1,5 +1,5 @@
-#ifndef CLEXBASISWRITER_HH
-#define CLEXBASISWRITER_HH
+#ifndef CASM_ClexBasisWriter
+#define CASM_ClexBasisWriter
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/clex/ClexBasis.hh"
@@ -161,5 +161,5 @@ namespace CASM {
                                                                  IntegralClusterSymCompareType const &sym_compare);
   }
 }
-#include "casm/clex/ClexBasisWriter_impl.hh"
+
 #endif

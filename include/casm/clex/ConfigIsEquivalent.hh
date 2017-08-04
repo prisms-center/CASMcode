@@ -2,7 +2,7 @@
 #define CASM_ConfigIsEquivalent
 
 #include "casm/clex/ConfigDoFCompare.hh"
-
+#include "casm/clex/Supercell.hh"
 
 namespace CASM {
 
@@ -39,6 +39,9 @@ namespace CASM {
       }
     }
 
+    ConfigIsEquivalent(const Configuration &_config) :
+      ConfigIsEquivalent(_config, _config.crystallography_tol()) {}
+
     const Configuration &config() const {
       return *m_config;
     }
@@ -72,6 +75,11 @@ namespace CASM {
     bool operator()(const Configuration &other) const {
       if(&config() == &other) {
         return true;
+      }
+
+      if(config().supercell() != other.supercell()) {
+        m_less = config().supercell() < other.supercell();
+        return false;
       }
 
       for(const auto &g : global_eq()) {
@@ -130,6 +138,50 @@ namespace CASM {
       for(const auto &s : site_eq()) {
         // check if config == other, for this site DoF type
         if(!s(A, B)) {
+          m_less = s.is_less();
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    /// \brief Check if config == A*other, store config < A*other
+    bool operator()(const PermuteIterator &A, const Configuration &other) const {
+
+      for(const auto &g : global_eq()) {
+        // check if config == other, for this global DoF type
+        if(!g(A, other)) {
+          m_less = g.is_less();
+          return false;
+        }
+      }
+
+      for(const auto &s : site_eq()) {
+        // check if config == other, for this site DoF type
+        if(!s(A, other)) {
+          m_less = s.is_less();
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    /// \brief Check if A*config == B*other, store A*config < B*other
+    bool operator()(const PermuteIterator &A, const PermuteIterator &B, const Configuration &other) const {
+
+      for(const auto &g : global_eq()) {
+        // check if config == other, for this global DoF type
+        if(!g(A, B, other)) {
+          m_less = g.is_less();
+          return false;
+        }
+      }
+
+      for(const auto &s : site_eq()) {
+        // check if config == other, for this site DoF type
+        if(!s(A, B, other)) {
           m_less = s.is_less();
           return false;
         }
