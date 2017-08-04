@@ -6,9 +6,6 @@
 
 namespace CASM {
 
-  template<typename _Element, typename _SymCompareType>
-  class Orbit;
-
   class SymGroup;
 
   /** \defgroup OrbitGeneration

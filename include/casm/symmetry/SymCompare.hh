@@ -6,6 +6,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymOp.hh"
+#include "casm/symmetry/OrbitDecl.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Structure.hh"
@@ -17,6 +18,27 @@ namespace CASM {
   class SymOp;
   class UnitCell;
   class Coordinate;
+
+  /// \brief Traits class for AperiodicSymCompare
+  template<typename _Element>
+  struct traits<AperiodicSymCompare<_Element>> {
+    typedef _Element Element;
+    typedef AperiodicSymCompare<Element> MostDerived;
+  };
+
+  /// \brief Traits class for PrimPeriodicSymCompare
+  template<typename _Element>
+  struct traits<PrimPeriodicSymCompare<_Element>> {
+    typedef _Element Element;
+    typedef PrimPeriodicSymCompare<Element> MostDerived;
+  };
+
+  /// \brief Traits class for ScelPeriodicSymCompare
+  template<typename _Element>
+  struct traits<ScelPeriodicSymCompare<_Element>> {
+    typedef _Element Element;
+    typedef ScelPeriodicSymCompare<Element> MostDerived;
+  };
 
   /// \brief CRTP base class for implementing element and orbit comparison
   ///
@@ -37,11 +59,11 @@ namespace CASM {
   ///   - not sure if this is needed... use to apply_sym to the SymCompare object itself
   ///   - default does nothing
   ///
-  /// The ClusterSymCompare hierarchy:
+  /// The SymCompare hierarchy for ClusterTypes:
   /// - SymCompare
   ///   - ClusterSymCompare (implements 'invariants_compare_impl', 'inter_orbit_compare_impl', and 'apply_sym_impl')
-  ///     - IntegralClusterSymCompare (implements 'compare_impl')
-  ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///     - LocalSymCompare<ClusterType> (implements 'compare_impl')
+  ///       - LocalSymCompare<ClusterType> (implements 'prepare_impl')
   ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///
@@ -52,7 +74,7 @@ namespace CASM {
 
     typedef typename traits<Derived>::MostDerived MostDerived;
     typedef typename traits<Derived>::Element Element;
-    typedef typename traits<Derived>::InvariantsType InvariantsType;
+    typedef typename traits<Element>::InvariantsType InvariantsType;
 
     /// \brief Prepare an element for comparison
     ///
@@ -163,44 +185,39 @@ namespace CASM {
         return false;
       }
 
-      // next lexicographical_compare of Element in A and B
+      // next compare A and B
       return this->compare(A, B);
+    }
+
+    /// \brief Transforms the SymCompare object, default does nothing
+    SymCompare &apply_sym_impl(const SymOp &op) {
+      return *this;
     }
 
     mutable UnitCell m_integral_tau = Eigen::Vector3l::Zero(3);
   };
 
-  /// \brief Template class to be specialized for comparisons with aperiodic symmetry
-  template<typename Element>
-  class LocalSymCompare {};
-
-  /// \brief Template class to be specialized for comparisons with periodic symmetry
-  /// of the primitive lattice
-  template<typename Element>
-  class PrimPeriodicSymCompare {};
-
-  /// \brief Template class to be specialized for comparisons with periodic symmetry
-  /// of the supercell lattice
-  template<typename Element>
-  class ScelPeriodicSymCompare {};
-
 
   /// \brief CRTP Base class for types that should be SymComparable
-  template<typename Derived>
-  class SymComparable : public CASM_TMP::CRTPBase<Derived> {
+  template<typename _Base>
+  class SymComparable : public _Base {
   public:
-    typedef typename traits<Derived>::InvariantsType InvariantsType;
+
+    typedef _Base Base;
+    typedef typename Base::MostDerived MostDerived;
+    using Base::derived;
+    typedef typename traits<MostDerived>::InvariantsType InvariantsType;
 
     const InvariantsType &invariants() const {
       if(!m_invariants) {
-        m_invariants = notstd::make_cloneable<InvariantsType>(this->derived());
+        m_invariants = notstd::make_cloneable<InvariantsType>(derived());
       }
       return *m_invariants;
     }
 
   protected:
 
-    void _reset_invariants() {
+    void reset_invariants() {
       m_invariants.reset();
     }
 

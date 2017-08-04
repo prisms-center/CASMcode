@@ -3,11 +3,16 @@
 
 #include <set>
 #include <boost/iterator/transform_iterator.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/symmetry/Orbit.hh"
+#include "casm/symmetry/SymGroup.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/database/Named.hh"
 #include "casm/database/Database.hh"
+#include "casm/app/DirectoryStructure.hh"
 
 namespace CASM {
 
@@ -65,9 +70,9 @@ namespace CASM {
   /// \param sym_compare Binary functor that implements symmetry properties
   ///
   template<typename _Element, typename _SymCompareType>
-  Orbit<_Element, _SymCompareType>::Orbit(Element generating_element,
-                                          const SymGroup &generating_group,
-                                          const _SymCompareType &sym_compare) :
+  GenericOrbit<_Element, _SymCompareType>::GenericOrbit(Element generating_element,
+                                                        const SymGroup &generating_group,
+                                                        const _SymCompareType &sym_compare) :
     m_sym_compare(sym_compare) {
 
     const SymGroup &g = generating_group;
@@ -107,7 +112,7 @@ namespace CASM {
 
   /// \brief Apply symmetry to Orbit
   template<typename _Element, typename _SymCompareType>
-  Orbit<_Element, _SymCompareType> &Orbit<_Element, _SymCompareType>::apply_sym(const SymOp &op) {
+  GenericOrbit<_Element, _SymCompareType> &GenericOrbit<_Element, _SymCompareType>::apply_sym(const SymOp &op) {
 
     // transform elements
     for(auto it = m_element.begin(); it != m_element.end(); ++it) {
@@ -164,45 +169,48 @@ namespace CASM {
     return res;
   }
 
-  template<typename OrbitType>
-  std::string _generate_orbit_name(const OrbitType &orbit);
+  /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
+  template<typename _Element, typename _SymCompareType>
+  DatabaseTypeOrbit<_Element, _SymCompareType>::DatabaseTypeOrbit(Element generating_element,
+                                                                  const SymGroup &generating_group,
+                                                                  const SymCompareType &sym_compare,
+                                                                  const PrimClex *_primclex) :
+    GenericOrbit<_Element, _SymCompareType>(generating_element, generating_group, sym_compare),
+    m_primclex(_primclex) {}
 
-  template<> std::string _generate_orbit_name(const Kinetics::PrimPeriodicDiffTransOrbit &orbit);
+  template<typename _Element, typename _SymCompareType>
+  void DatabaseTypeOrbit<_Element, _SymCompareType>::write_pos() const {
+    const auto &dir = primclex().dir();
+    try {
+      fs::create_directories(dir.configuration_dir(this->name()));
+    }
+    catch(const fs::filesystem_error &ex) {
+      std::cerr << "Error in DatabaseTypeOrbit::write_pos(): could not create_directories" << std::endl;
+      std::cerr << ex.what() << std::endl;
+    }
 
-  template<typename OrbitType>
-  std::string _generate_orbit_name(const OrbitType &orbit) {
-    return "";
+    fs::ofstream file(dir.POS(this->name()));
+    write_pos(file);
   }
 
-  template<typename OrbitType>
-  std::ostream &write_pos(const OrbitType &orbit, std::ostream &sout);
-
-  template<> std::ostream &write_pos(const Kinetics::PrimPeriodicDiffTransOrbit &orbit, std::ostream &sout);
+  template<typename _Element, typename _SymCompareType>
+  void DatabaseTypeOrbit<_Element, _SymCompareType>::write_pos(std::ostream &sout) const {
+    OrbitTraits<_Element, _SymCompareType>::write_pos(*this, sout);
+  }
 
   template<typename _Element, typename _SymCompareType>
-  std::string Orbit<_Element, _SymCompareType>::_generate_name() const {
-    return _generate_orbit_name(*this);
-  };
+  const PrimClex &DatabaseTypeOrbit<_Element, _SymCompareType>::primclex() const {
+    return *m_primclex;
+  }
 
   template<typename _Element, typename _SymCompareType>
-  void Orbit<_Element, _SymCompareType>::write_pos() const {
-    return _write_pos(*this);
-  };
+  std::string DatabaseTypeOrbit<_Element, _SymCompareType>::generate_name_impl() const {
+    return OrbitTraits<_Element, _SymCompareType>::generate_name_impl(*this);
+  }
 
-  template<typename OrbitType>
-  void _write_pos(const OrbitType &orbit);
-
-  template<typename OrbitType>
-  void _write_pos(const Kinetics::PrimPeriodicDiffTransOrbit &orbit);
-
-  template<typename OrbitType>
-  void _write_pos(const OrbitType &orbit) {
-    return;
-  };
-
-  template<typename OrbitType>
-  std::ostream &write_pos(const OrbitType &orbit, std::ostream &sout) {
-    return sout;
+  template<typename _Element, typename _SymCompareType>
+  void DatabaseTypeOrbit<_Element, _SymCompareType>::set_primclex(const PrimClex *_primclex) {
+    m_primclex = _primclex;
   }
 
 }

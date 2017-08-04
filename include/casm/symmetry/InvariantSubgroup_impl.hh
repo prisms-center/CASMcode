@@ -5,6 +5,7 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymCompare.hh"
 #include "casm/symmetry/PermuteIterator.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clex/Supercell.hh"
 
 namespace CASM {
@@ -51,8 +52,9 @@ namespace CASM {
   template<typename OrbitType>
   SymGroup make_invariant_subgroup(const OrbitType &orbit, Index element_index) {
     SymGroup result;
-    result.set_lattice(orbit.prototype().lattice());
     const auto &map = orbit.equivalence_map();
+    result.set_lattice(
+      map[0][0].master_group().lattice());
     for(Index i = 0; i < orbit.equivalence_map()[0].size(); ++i) {
       result.push_back(map[element_index][0]*map[0][i]*map[element_index][0].inverse());
     }

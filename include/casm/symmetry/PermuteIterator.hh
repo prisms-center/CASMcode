@@ -34,7 +34,7 @@ namespace CASM {
   ///
   class PermuteIterator :
     public std::iterator <std::bidirectional_iterator_tag, PermuteIterator>,
-    public Comparisons<PermuteIterator> {
+    public Comparisons<CRTPBase<PermuteIterator>> {
 
     /// permutation representation of factor group acting on sites of the supercell
     SymGroupRep::RemoteHandle m_fg_permute_rep;
@@ -123,9 +123,9 @@ namespace CASM {
 
   private:
 
-    friend Comparisons<PermuteIterator>;
+    friend Comparisons<CRTPBase<PermuteIterator>>;
 
-    bool _eq(const PermuteIterator &iter) const;
+    bool eq_impl(const PermuteIterator &iter) const;
 
   };
 

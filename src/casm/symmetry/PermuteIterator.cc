@@ -102,7 +102,7 @@ namespace CASM {
     return this->factor_group_index() < iter.factor_group_index();
   }
 
-  bool PermuteIterator::_eq(const PermuteIterator &iter) const {
+  bool PermuteIterator::eq_impl(const PermuteIterator &iter) const {
     if(m_fg_permute_rep == iter.m_fg_permute_rep &&
        m_prim_grid == iter.m_prim_grid &&
        m_factor_group_index == iter.m_factor_group_index &&
