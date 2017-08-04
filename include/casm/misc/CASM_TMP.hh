@@ -7,6 +7,8 @@
 #include <iterator>
 #include <string>
 
+#include "casm/misc/CRTPBase.hh"
+
 namespace CASM {
 
   template<typename T> struct traits;
@@ -202,29 +204,6 @@ namespace CASM {
 
     };
 
-    // ---------------------
-
-    /// \brief Base class for CRTP pattern
-    ///
-    /// - Expects traits: traits<Derived>::MostDerived
-    template<typename Derived>
-    class CRTPBase {
-
-    public:
-
-      typedef typename traits<Derived>::MostDerived MostDerived;
-
-    protected:
-
-      MostDerived &derived() {
-        return *static_cast<MostDerived *>(this);
-      }
-
-      const MostDerived &derived() const {
-        return *static_cast<const MostDerived *>(this);
-      }
-    };
-
     // ----------------------------------------
 
     template<int I>
@@ -326,6 +305,7 @@ namespace CASM {
     struct has_type<T, std::tuple<T, Ts...>> : std::true_type {};
 
   }
+
 }
 
 #endif
