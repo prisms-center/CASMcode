@@ -28,7 +28,7 @@ namespace CASM {
    *  @{
    */
 
-  class Lattice : public Comparisons<Lattice> {
+  class Lattice : public Comparisons<CRTPBase<Lattice>> {
   public:
     typedef Eigen::Matrix3d::ColXpr LatVec;
     typedef Eigen::Matrix3d::ConstColXpr ConstLatVec;
