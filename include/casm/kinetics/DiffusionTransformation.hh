@@ -1,13 +1,17 @@
 #ifndef CASM_DiffusionTransformation
 #define CASM_DiffusionTransformation
 
-#include "casm/kinetics/DoFTransformation.hh"
-#include "casm/kinetics/OccupationTransformation.hh"
 #include "casm/misc/cloneable_ptr.hh"
-#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/misc/Comparisons.hh"
+#include "casm/symmetry/SymCompare.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clex/HasPrimClex.hh"
+#include "casm/clex/HasCanonicalForm.hh"
+#include "casm/kinetics/DiffusionTransformationTraits.hh"
+#include "casm/kinetics/DoFTransformation.hh"
+#include "casm/kinetics/OccupationTransformation.hh"
 
 namespace CASM {
 
@@ -16,12 +20,13 @@ namespace CASM {
   class Configuration;
   class SymOp;
   class jsonParser;
+  class PermuteIterator;
   template<typename T> struct jsonConstructor;
 
   namespace Kinetics {
 
     /// \brief Specifies a particular specie
-    struct SpecieLocation : public Comparisons<SpecieLocation> {
+    struct SpecieLocation : public Comparisons<CRTPBase<SpecieLocation>> {
 
       SpecieLocation(const UnitCellCoord &_uccoord, Index _occ, Index _pos);
 
@@ -44,7 +49,7 @@ namespace CASM {
       std::tuple<UnitCellCoord, Index, Index> _tuple() const;
     };
 
-    /// \brief Print DiffusionTransformationInvariants
+    /// \brief Print DiffTransInvariants
     std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj);
 
   }
@@ -63,7 +68,7 @@ namespace CASM {
   namespace Kinetics {
 
     /// \brief Describes how one specie moves
-    class SpecieTrajectory : public Comparisons<SpecieTrajectory> {
+    class SpecieTrajectory : public Comparisons<CRTPBase<SpecieTrajectory>> {
 
     public:
 
@@ -82,7 +87,7 @@ namespace CASM {
 
       bool operator<(const SpecieTrajectory &B) const;
 
-      void apply_sym(const SymOp &op);
+      SpecieTrajectory &apply_sym(const SymOp &op);
 
       void reverse();
 
@@ -109,11 +114,11 @@ namespace CASM {
     class DiffusionTransformation;
 
     /// \brief Invariants of a DiffusionTransformation, used to sort orbits
-    class DiffusionTransformationInvariants {
+    class DiffTransInvariants {
 
     public:
 
-      DiffusionTransformationInvariants(const DiffusionTransformation &trans);
+      DiffTransInvariants(const DiffusionTransformation &trans);
 
       ClusterInvariants<IntegralCluster> cluster_invariants;
       std::map<AtomSpecie, Index> specie_count;
@@ -122,179 +127,41 @@ namespace CASM {
   }
 
 
-  /// \brief Check if DiffusionTransformationInvariants are equal
-  bool almost_equal(const Kinetics::DiffusionTransformationInvariants &A,
-                    const Kinetics::DiffusionTransformationInvariants &B,
+  /// \brief Check if DiffTransInvariants are equal
+  bool almost_equal(const Kinetics::DiffTransInvariants &A,
+                    const Kinetics::DiffTransInvariants &B,
                     double tol);
 
-  /// \brief Compare DiffusionTransformationInvariants
-  bool compare(const Kinetics::DiffusionTransformationInvariants &A,
-               const Kinetics::DiffusionTransformationInvariants &B,
+  /// \brief Compare DiffTransInvariants
+  bool compare(const Kinetics::DiffTransInvariants &A,
+               const Kinetics::DiffTransInvariants &B,
                double tol);
 
-  /// \brief Print DiffusionTransformationInvariants
+  /// \brief Print DiffTransInvariants
   std::ostream &operator<<(std::ostream &sout,
-                           const Kinetics::DiffusionTransformationInvariants &obj);
+                           const Kinetics::DiffTransInvariants &obj);
+
 
   namespace Kinetics {
-    template<typename Derived>
-    class DiffTransSymCompare : public SymCompare<DiffTransSymCompare<Derived> > {
-    public:
-      DiffTransSymCompare(double _tol) :
-        m_tol(_tol) {}
 
-      double tol() const {
-        return m_tol;
-      }
-
-    private:
-      double m_tol;
-    };
-  }
-
-  /// \brief Traits class for any ClusterSymCompare derived class
-  ///
-  template<typename Derived>
-  struct traits<Kinetics::DiffTransSymCompare<Derived> > {
-
-    typedef Derived MostDerived;
-    typedef Kinetics::DiffusionTransformation Element;
-    typedef Kinetics::DiffusionTransformationInvariants InvariantsType;
-
-  };
-
-  /// \brief Used to sort orbits
-  template<>
-  class PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> :
-    public Kinetics::DiffTransSymCompare<PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> > {
-
-  public:
-
-    typedef Kinetics::DiffusionTransformation Element;
-    typedef Kinetics::DiffusionTransformationInvariants InvariantsType;
-
-    PrimPeriodicSymCompare(double tol);
-
-  private:
-
-    friend class SymCompare<Kinetics::DiffTransSymCompare<PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> > >;
-
-    Element prepare_impl(const Element &A) const;
-
-    bool compare_impl(const Element &A, const Element &B) const;
-
-    bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
-
-    /// \brief Apply symmetry to this
-    ///
-    /// - Affects no change
-    void apply_sym_impl(const SymOp &op) {
-      return;
-    }
-
-  };
-
-
-  /// \brief Used to sort orbits
-  template<>
-  class LocalSymCompare<Kinetics::DiffusionTransformation> :
-    public Kinetics::DiffTransSymCompare<LocalSymCompare<Kinetics::DiffusionTransformation> > {
-
-  public:
-
-    typedef Kinetics::DiffusionTransformation Element;
-    typedef Kinetics::DiffusionTransformationInvariants InvariantsType;
-
-    LocalSymCompare(double tol);
-
-  private:
-
-    friend class SymCompare<Kinetics::DiffTransSymCompare<LocalSymCompare<Kinetics::DiffusionTransformation> > >;
-
-    Element prepare_impl(const Element &A) const;
-
-    bool compare_impl(const Element &A, const Element &B) const;
-
-    bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
-
-    /// \brief Apply symmetry to this
-    ///
-    /// - Affects no change
-    void apply_sym_impl(const SymOp &op) {
-      return;
-    }
-
-  };
-
-
-  /// \brief Used to canonicalize DiffusionTransformations
-  template<>
-  class ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> :
-    public Kinetics::DiffTransSymCompare<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>> {
-
-  public:
-
-    typedef Kinetics::DiffusionTransformation Element;
-    typedef Kinetics::DiffusionTransformationInvariants InvariantsType;
-
-    ScelPeriodicSymCompare(const PrimGrid &prim_grid, double tol);
-
-  private:
-
-    friend class SymCompare<Kinetics::DiffTransSymCompare<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> > >;
-
-    Element prepare_impl(const Element &A) const;
-
-    bool compare_impl(const Element &A, const Element &B) const;
-
-    bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
-
-    /// \brief Apply symmetry to this
-    ///
-    /// - Affects no change
-    void apply_sym_impl(const SymOp &op) {
-      return;
-    }
-
-    const PrimGrid &m_prim_grid;
-
-  };
-
-  namespace Kinetics {
-    typedef PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> PrimPeriodicDiffTransSymCompare;
-    typedef ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> ScelPeriodicDiffTransSymCompare;
-    typedef LocalSymCompare<Kinetics::DiffusionTransformation> LocalDiffTransSymCompare;
-  }
-
-  /// \brief Traits class for DiffusionTransformation
-  ///
-  template<>
-  struct traits<Kinetics::DiffusionTransformation> {
-
-    typedef typename Kinetics::DiffusionTransformation MostDerived;
-    typedef typename Kinetics::DiffusionTransformation Element;
-    typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
-
-  };
-
-  namespace Kinetics {
+    typedef DoFTransformation <
+    CanonicalForm <
+    Comparisons <
+    Translatable <
+    SymComparable <
+    CRTPBase<DiffusionTransformation >>> >>> DiffTransBase;
 
     /// \brief Describes how species move
-    class DiffusionTransformation :
-      public DoFTransformation,
-      public Comparisons<DiffusionTransformation>,
-      public SymComparable<DiffusionTransformation> {
+    class DiffusionTransformation : public DiffTransBase {
 
     public:
 
-      DiffusionTransformation(const PrimType &prim);
+      DiffusionTransformation(const Structure &_prim);
 
+
+      const Structure &prim() const;
 
       DiffusionTransformation &operator+=(UnitCell frac);
-
-      DiffusionTransformation &operator-=(UnitCell frac);
-
-      std::unique_ptr<DiffusionTransformation> clone() const;
 
       bool is_valid_occ_transform() const;
 
@@ -338,25 +205,20 @@ namespace CASM {
       /// \brief Return the max pair distance, or 0.0 if size() <= 1
       double max_length() const;
 
-      void apply_sym(const PermuteIterator &it) {
-        apply_sym_impl(it.sym_op());
-      }
+      DiffusionTransformation &apply_sym(const SymOp &op);
 
-      void apply_sym(const SymOp &op) {
-        apply_sym_impl(op);
-      }
+      DiffusionTransformation &apply_sym(const PermuteIterator &it);
+
+      Configuration &apply_to(Configuration &config) const;
+
+      void reverse();
+
 
     private:
 
-      Configuration &apply_to_impl(Configuration &config) const override;
+      friend DiffTransBase;
 
-      Configuration &apply_reverse_to_impl(Configuration &config) const override;
-
-      void apply_sym_impl(const SymOp &op) override;
-
-      void reverse_impl() override;
-
-      DiffusionTransformation *_clone() const override;
+      Configuration &apply_reverse_to_impl(Configuration &config) const;
 
       void _forward_sort();
 
@@ -367,8 +229,8 @@ namespace CASM {
 
       std::map<AtomSpecie, Index> _from_specie_count() const;
       std::map<AtomSpecie, Index> _to_specie_count() const;
-      std::map<AtomSpecie, Index> _empty_specie_count() const;
 
+      const Structure *m_prim_ptr;
 
       std::vector<OccupationTransformation> m_occ_transform;
       std::vector<SpecieTrajectory> m_specie_traj;
@@ -402,8 +264,6 @@ namespace CASM {
     double min_dist_to_path(const DiffusionTransformation &diff_trans);
 
   }
-
-  typedef Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbit;
 
   /// \brief Write DiffusionTransformation to JSON object
   jsonParser &to_json(const Kinetics::DiffusionTransformation &trans, jsonParser &json);

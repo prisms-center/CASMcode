@@ -4,11 +4,13 @@
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/container/Enumerator_impl.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/kinetics/DiffTransConfigInterpolation.hh"
 #include "casm/database/Selection.hh"
+
+#include "casm/container/Enumerator_impl.hh"
+
 // extern "C" {
 //   CASM::EnumInterfaceBase *make_DiffTransConfigInterpolation_interface() {
 //     return new CASM::EnumInterface<CASM::DiffTransConfigInterpolation>();

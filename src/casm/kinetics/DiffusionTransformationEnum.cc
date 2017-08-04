@@ -1,10 +1,12 @@
-#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
-#include "casm/app/AppIO_impl.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
+
+#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/app/AppIO_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_DiffusionTransformationEnum_interface() {

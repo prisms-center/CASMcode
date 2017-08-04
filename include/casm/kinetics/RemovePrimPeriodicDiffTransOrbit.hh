@@ -18,19 +18,19 @@ namespace CASM {
   namespace DB {
 
     template<>
-    class Remove<Kinetics::PrimPeriodicDiffTransOrbit> {
+    class Remove<PrimPeriodicDiffTransOrbit> {
 
     public:
       Remove(const PrimClex &primclex, fs::path report_dir, Log &_file_log);
 
       /// \brief Erase all enumerated difftransconfigs that have no data; if no data, erase PrimPeriodicDiffTransOrbit
-      void erase(const DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> &selection, bool dry_run);
+      void erase(const DB::Selection<PrimPeriodicDiffTransOrbit> &selection, bool dry_run);
 
       /// \brief Erase data and files (permanently), but not difftransconfigs / PrimPeriodicDiffTransOrbit
-      void erase_data(const DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> &selection, bool dry_run);
+      void erase_data(const DB::Selection<PrimPeriodicDiffTransOrbit> &selection, bool dry_run);
 
       /// \brief Removes PrimPeriodicDiffTransorbit, including all difftransconfigurations, data, and files (permanently)
-      void erase_all(const DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> &selection, bool dry_run);
+      void erase_all(const DB::Selection<PrimPeriodicDiffTransOrbit> &selection, bool dry_run);
 
       static const std::string desc;
       static int run(const PrimClex &primclex, const Completer::RmOption &opt);

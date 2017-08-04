@@ -7,6 +7,8 @@
 #include "casm/clex/ScelEnumEquivalents.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+
 namespace CASM {
 
   namespace Kinetics {

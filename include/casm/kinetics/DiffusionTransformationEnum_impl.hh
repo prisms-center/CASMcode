@@ -2,8 +2,10 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/symmetry/Orbit.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
 
 namespace CASM {
 

@@ -2,17 +2,25 @@
 
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
-#include "casm/symmetry/Orbit_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/NeighborList.hh"
 
+#include "casm/symmetry/Orbit_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clex/HasCanonicalForm_impl.hh"
+#include "casm/kinetics/DoFTransformation_impl.hh"
+
 
 namespace CASM {
 
-  template class Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare>;
+  template bool CanonicalForm<Comparisons<Translatable<SymComparable<CRTPBase<Kinetics::DiffusionTransformation> > > > >::
+  is_equivalent<PrimPeriodicDiffTransSymCompare>(
+    Kinetics::DiffusionTransformation const &,
+    SymGroup const &,
+    PrimPeriodicDiffTransSymCompare const &) const;
 
   namespace Kinetics {
 
@@ -48,7 +56,7 @@ namespace CASM {
       return std::make_tuple(uccoord, occ, pos);
     }
 
-    /// \brief Print DiffusionTransformationInvariants
+    /// \brief Print DiffTransInvariants
     std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj) {
       sout << obj.uccoord << " : " << obj.occ << " " << obj.pos;
       return sout;
@@ -113,11 +121,12 @@ namespace CASM {
       return _tuple() < B._tuple();
     }
 
-    void SpecieTrajectory::apply_sym(const SymOp &op) {
+    SpecieTrajectory &SpecieTrajectory::apply_sym(const SymOp &op) {
       from.uccoord.apply_sym(op);
       to.uccoord.apply_sym(op);
 
       //MOLECULE_SUPPORT: apply permutation to to/from_value & to/from_specie_index
+      return *this;
     }
 
     void SpecieTrajectory::reverse() {
@@ -153,22 +162,22 @@ namespace CASM {
   namespace Kinetics {
 
 
-    // DiffusionTransformationInvariants
+    // DiffTransInvariants
 
-    DiffusionTransformationInvariants::DiffusionTransformationInvariants(
+    DiffTransInvariants::DiffTransInvariants(
       const DiffusionTransformation &trans) :
       cluster_invariants(trans.cluster().invariants()),
       specie_count(trans.specie_count()) {}
   }
 
-  /// \brief Check if DiffusionTransformationInvariants are equal
-  bool almost_equal(const Kinetics::DiffusionTransformationInvariants &A, const Kinetics::DiffusionTransformationInvariants &B, double tol) {
+  /// \brief Check if DiffTransInvariants are equal
+  bool almost_equal(const Kinetics::DiffTransInvariants &A, const Kinetics::DiffTransInvariants &B, double tol) {
     return almost_equal(A.cluster_invariants, B.cluster_invariants, tol) &&
            A.specie_count == B.specie_count;
   }
 
-  /// \brief Compare DiffusionTransformationInvariants
-  bool compare(const Kinetics::DiffusionTransformationInvariants &A, const Kinetics::DiffusionTransformationInvariants &B, double tol) {
+  /// \brief Compare DiffTransInvariants
+  bool compare(const Kinetics::DiffTransInvariants &A, const Kinetics::DiffTransInvariants &B, double tol) {
     if(compare(A.cluster_invariants, B.cluster_invariants, tol)) {
       return true;
     }
@@ -178,8 +187,8 @@ namespace CASM {
     return A.specie_count < B.specie_count;
   }
 
-  /// \brief Print DiffusionTransformationInvariants
-  std::ostream &operator<<(std::ostream &sout, const Kinetics::DiffusionTransformationInvariants &obj) {
+  /// \brief Print DiffTransInvariants
+  std::ostream &operator<<(std::ostream &sout, const Kinetics::DiffTransInvariants &obj) {
     sout << obj.cluster_invariants;
     if(obj.specie_count.size() > 0) {
       for(const auto &t : obj.specie_count) {
@@ -189,104 +198,17 @@ namespace CASM {
     return sout;
   }
 
-  PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::PrimPeriodicSymCompare(double _tol) :
-    Kinetics::DiffTransSymCompare<PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> >(_tol) {}
-
-  PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::Element
-  PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::prepare_impl(const Element &A) const {
-    if(A.occ_transform().size()) {
-      Element tmp = A.sorted();
-      m_integral_tau = -(tmp.occ_transform()[0].uccoord.unitcell());
-      tmp -= tmp.occ_transform()[0].uccoord.unitcell();
-      return tmp;
-    }
-    else {
-      return A;
-    }
-  }
-
-  bool PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::compare_impl(
-    const Element &A,
-    const Element &B) const {
-    return A < B;
-  }
-
-  bool PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::invariants_compare_impl(
-    const InvariantsType &A,
-    const InvariantsType &B) const {
-    return CASM::compare(A, B, tol());
-  }
-
-  // LocalDiffTransSymCompare
-
-  LocalSymCompare<Kinetics::DiffusionTransformation>::LocalSymCompare(double _tol) :
-    DiffTransSymCompare<LocalSymCompare<Kinetics::DiffusionTransformation> >(_tol) {}
-
-  LocalSymCompare<Kinetics::DiffusionTransformation>::Element
-  LocalSymCompare<Kinetics::DiffusionTransformation>::prepare_impl(const Element &A) const {
-    if(A.occ_transform().size()) {
-      Element tmp = A.sorted();
-      return tmp;
-    }
-    else {
-      return A;
-    }
-  }
-
-  bool LocalSymCompare<Kinetics::DiffusionTransformation>::compare_impl(
-    const Element &A,
-    const Element &B) const {
-    return A < B;
-  }
-
-  bool LocalSymCompare<Kinetics::DiffusionTransformation>::invariants_compare_impl(
-    const InvariantsType &A,
-    const InvariantsType &B) const {
-    return CASM::compare(A, B, tol());
-  }
-
-
-  // ScelPeriodicDiffTransSymCompare
-
-  ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::ScelPeriodicSymCompare(
-    const PrimGrid &prim_grid,
-    double _tol) :
-    DiffTransSymCompare<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> >(_tol),
-    m_prim_grid(prim_grid) {}
-
-  ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::Element
-  ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::prepare_impl(const Element &A) const {
-    if(A.occ_transform().size()) {
-      Element tmp = A.sorted();
-      m_integral_tau = (m_prim_grid.within(tmp.occ_transform()[0].uccoord).unitcell())
-                       - tmp.occ_transform()[0].uccoord.unitcell();
-      tmp += m_integral_tau;
-      return tmp;
-    }
-    else {
-      return A;
-    }
-  }
-
-  bool ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::compare_impl(
-    const Element &A, const Element &B) const {
-    return A < B;
-  }
-
-  bool ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::invariants_compare_impl(
-    const InvariantsType &A,
-    const InvariantsType &B) const {
-    return CASM::compare(A, B, tol());
-  }
-
   namespace Kinetics {
 
     // DiffusionTransformation
 
-    DiffusionTransformation::DiffusionTransformation(const PrimType &prim) :
-      DoFTransformation(prim) {
+    DiffusionTransformation::DiffusionTransformation(const Structure &_prim) :
+      m_prim_ptr(&_prim) {
     }
 
+    const Structure &DiffusionTransformation::prim() const {
+      return *m_prim_ptr;
+    }
 
     DiffusionTransformation &DiffusionTransformation::operator+=(UnitCell frac) {
       for(auto &t : m_occ_transform) {
@@ -297,21 +219,6 @@ namespace CASM {
         t += frac;
       }
       return *this;
-    }
-
-    DiffusionTransformation &DiffusionTransformation::operator-=(UnitCell frac) {
-      for(auto &t : m_occ_transform) {
-        t -= frac;
-      }
-
-      for(auto &t : m_specie_traj) {
-        t -= frac;
-      }
-      return *this;
-    }
-
-    std::unique_ptr<DiffusionTransformation> DiffusionTransformation::clone() const {
-      return std::unique_ptr<DiffusionTransformation>(this->_clone());
     }
 
     /// \brief Check if valid occupation transform
@@ -398,7 +305,7 @@ namespace CASM {
     }
 
     std::vector<OccupationTransformation> &DiffusionTransformation::occ_transform() {
-      _reset_invariants();
+      reset_invariants();
       return m_occ_transform;
     }
 
@@ -407,7 +314,7 @@ namespace CASM {
     }
 
     std::vector<SpecieTrajectory> &DiffusionTransformation::specie_traj() {
-      _reset_invariants();
+      reset_invariants();
       return m_specie_traj;
     }
 
@@ -542,6 +449,113 @@ namespace CASM {
       return result;
     }*/
 
+    Configuration &DiffusionTransformation::apply_to(Configuration &config) const {
+      // transform the occupation variables
+      for(const auto &t : m_occ_transform) {
+        t.apply_to(config);
+      }
+      return config;
+    }
+
+    DiffusionTransformation &DiffusionTransformation::apply_sym(const SymOp &op) {
+      for(auto &t : m_occ_transform) {
+        t.apply_sym(op);
+      }
+
+      for(auto &t : m_specie_traj) {
+        t.apply_sym(op);
+      }
+      return *this;
+    }
+
+    DiffusionTransformation &DiffusionTransformation::apply_sym(const PermuteIterator &it) {
+      apply_sym(it.sym_op());
+      return *this;
+    }
+
+    void DiffusionTransformation::reverse() {
+      for(auto &t : m_occ_transform) {
+        t.reverse();
+      }
+
+      for(auto &t : m_specie_traj) {
+        t.reverse();
+      }
+    }
+
+    Configuration &DiffusionTransformation::apply_reverse_to_impl(Configuration &config) const {
+      // transform the occupation variables
+      for(const auto &t : m_occ_transform) {
+        t.apply_reverse_to(config);
+      }
+      return config;
+    }
+
+    /// \brief Puts this in a sorted form, without considering the reverse
+    void DiffusionTransformation::_forward_sort() {
+      std::sort(occ_transform().begin(), occ_transform().end());
+      std::sort(specie_traj().begin(), specie_traj().end());
+    }
+
+    /// \brief Comparison of this and B, without sorting or considering reverse
+    bool DiffusionTransformation::_lt(const DiffusionTransformation &B) const {
+      if(occ_transform().size() < B.occ_transform().size()) {
+        return true;
+      }
+      if(occ_transform().size() > B.occ_transform().size()) {
+        return false;
+      }
+
+      {
+        auto it = occ_transform().begin();
+        auto B_it = B.occ_transform().begin();
+        for(; it != occ_transform().end(); ++it, ++B_it) {
+          if(*it < *B_it) {
+            return true;
+          }
+          if(*it > *B_it) {
+            return false;
+          }
+        }
+      }
+
+      {
+        auto it = specie_traj().begin();
+        auto B_it = B.specie_traj().begin();
+        for(; it != specie_traj().end(); ++it, ++B_it) {
+          if(*it < *B_it) {
+            return true;
+          }
+          if(*it > *B_it) {
+            return false;
+          }
+        }
+      }
+      return false;
+    }
+
+    /// \brief Reset mutable members, cluster and invariants, when necessary
+    void DiffusionTransformation::_reset() {
+      m_cluster.reset();
+      reset_invariants();
+      m_specie_count.reset();
+    }
+
+    std::map<AtomSpecie, Index> DiffusionTransformation::_from_specie_count() const {
+      return from_specie_count(m_occ_transform.begin(), m_occ_transform.end());
+    }
+
+    std::map<AtomSpecie, Index> DiffusionTransformation::_to_specie_count() const {
+      return to_specie_count(m_occ_transform.begin(), m_occ_transform.end());
+    }
+
+    /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
+    std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans) {
+      Printer<Kinetics::DiffusionTransformation> printer;
+      printer.print(trans, sout);
+      return sout;
+    }
+
     /// \brief Returns the distance from uccoord to the closest point on a linearly
     /// interpolated diffusion path. (Could be an end point)
     double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
@@ -638,191 +652,6 @@ namespace CASM {
     /// \brief Determines the nearest site distance to the diffusion path
     double min_dist_to_path(const DiffusionTransformation &diff_trans) {
       return _path_nearest_neighbor(diff_trans).second;
-    }
-
-    Configuration &DiffusionTransformation::apply_to_impl(Configuration &config) const {
-
-      if(config.has_specie_id()) {
-        // create the final specie id vectors in a temporary map
-
-        // map of 'to' linear index -> 'to' specie_id
-        std::map<Index, std::vector<Index> > _specie_id;
-        for(const auto &t : m_specie_traj) {
-
-          // linear indices of 'from' and 'to' sites
-          Index from_l = config.linear_index(t.from.uccoord);
-          Index to_l = config.linear_index(t.to.uccoord);
-          // if 'to' linear index not yet in _specie_id, construct with correct length
-          auto it = _specie_id.find(to_l);
-          if(it == _specie_id.end()) {
-            it = _specie_id.insert(std::make_pair(to_l, std::vector<Index>(t.to.mol().size()))).first;
-          }
-          // copy the specie id
-          it->second[t.to.pos] = config.specie_id(from_l)[t.from.pos];
-        }
-
-        // copy the temporary specie_id
-        for(const auto &t : _specie_id) {
-          config.specie_id(t.first) = t.second;
-        }
-      }
-
-      // transform the occupation variables
-      for(const auto &t : m_occ_transform) {
-        t.apply_to(config);
-      }
-
-
-      return config;
-    }
-
-    Configuration &DiffusionTransformation::apply_reverse_to_impl(Configuration &config) const {
-
-      if(config.has_specie_id()) {
-        // create the final specie id vectors in a temporary map
-
-        // map of 'from' linear index -> 'from' specie_id
-        std::map<Index, std::vector<Index> > _specie_id;
-
-        for(const auto &t : m_specie_traj) {
-
-          // linear indices of 'from' and 'to' sites
-          Index from_l = config.linear_index(t.from.uccoord);
-          Index to_l = config.linear_index(t.to.uccoord);
-
-          // if 'from' linear index not yet in _specie_id, construct with correct length
-          auto it = _specie_id.find(from_l);
-          if(it == _specie_id.end()) {
-            it = _specie_id.insert(std::make_pair(from_l, std::vector<Index>(t.from.mol().size()))).first;
-          }
-
-          // copy the specie id
-          it->second[t.from.pos] = config.specie_id(to_l)[t.to.pos];
-        }
-        // copy the temporary specie_id
-        for(const auto &t : _specie_id) {
-          config.specie_id(t.first) = t.second;
-        }
-      }
-      // transform the occupation variables
-      for(const auto &t : m_occ_transform) {
-        t.apply_reverse_to(config);
-      }
-
-
-      return config;
-    }
-
-    void DiffusionTransformation::apply_sym_impl(const SymOp &op) {
-      for(auto &t : m_occ_transform) {
-        t.apply_sym(op);
-      }
-
-      for(auto &t : m_specie_traj) {
-        t.apply_sym(op);
-      }
-    }
-
-    void DiffusionTransformation::reverse_impl() {
-      for(auto &t : m_occ_transform) {
-        t.reverse();
-      }
-
-      for(auto &t : m_specie_traj) {
-        t.reverse();
-      }
-    }
-
-    DiffusionTransformation *DiffusionTransformation::_clone() const {
-      return new DiffusionTransformation(*this);
-    }
-
-    /// \brief Puts this in a sorted form, without considering the reverse
-    void DiffusionTransformation::_forward_sort() {
-      std::sort(occ_transform().begin(), occ_transform().end());
-      std::sort(specie_traj().begin(), specie_traj().end());
-    }
-
-    /// \brief Comparison of this and B, without sorting or considering reverse
-    bool DiffusionTransformation::_lt(const DiffusionTransformation &B) const {
-      if(occ_transform().size() < B.occ_transform().size()) {
-        return true;
-      }
-      if(occ_transform().size() > B.occ_transform().size()) {
-        return false;
-      }
-
-      {
-        auto it = occ_transform().begin();
-        auto B_it = B.occ_transform().begin();
-        for(; it != occ_transform().end(); ++it, ++B_it) {
-          if(*it < *B_it) {
-            return true;
-          }
-          if(*it > *B_it) {
-            return false;
-          }
-        }
-      }
-
-      {
-        auto it = specie_traj().begin();
-        auto B_it = B.specie_traj().begin();
-        for(; it != specie_traj().end(); ++it, ++B_it) {
-          if(*it < *B_it) {
-            return true;
-          }
-          if(*it > *B_it) {
-            return false;
-          }
-        }
-      }
-      return false;
-    }
-
-    /// \brief Reset mutable members, cluster and invariants, when necessary
-    void DiffusionTransformation::_reset() {
-      m_cluster.reset();
-      _reset_invariants();
-      m_specie_count.reset();
-    }
-
-    std::map<AtomSpecie, Index> DiffusionTransformation::_from_specie_count() const {
-      std::map<AtomSpecie, Index> _specie_count = _empty_specie_count();
-      for(const auto &t : m_occ_transform) {
-        const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.from_value];
-        for(const AtomPosition &specie_pos : mol.atoms()) {
-          _specie_count[specie_pos.specie()]++;
-        }
-      }
-      return _specie_count;
-    }
-
-    std::map<AtomSpecie, Index> DiffusionTransformation::_to_specie_count() const {
-      std::map<AtomSpecie, Index> _specie_count = _empty_specie_count();
-      for(const auto &t : m_occ_transform) {
-        const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.to_value];
-        for(const AtomPosition &specie_pos : mol.atoms()) {
-          _specie_count[specie_pos.specie()]++;
-        }
-      }
-      return _specie_count;
-    }
-
-    std::map<AtomSpecie, Index> DiffusionTransformation::_empty_specie_count() const {
-      auto struc_specie = prim().struc_specie();
-      std::map<AtomSpecie, Index> _specie_count;
-      for(const AtomSpecie &s : struc_specie) {
-        _specie_count[s] = 0;
-      }
-      return _specie_count;
-    }
-
-    /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
-    std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans) {
-      Printer<Kinetics::DiffusionTransformation> printer;
-      printer.print(trans, sout);
-      return sout;
     }
   }
 

@@ -10,10 +10,10 @@
 namespace CASM {
   namespace DB {
 
-    Remove<Kinetics::PrimPeriodicDiffTransOrbit>::Remove(const PrimClex &_primclex, fs::path report_dir, Log &_file_log) :
+    Remove<PrimPeriodicDiffTransOrbit>::Remove(const PrimClex &_primclex, fs::path report_dir, Log &_file_log) :
       m_primclex(_primclex), m_report_dir(report_dir), m_file_log(_file_log) {}
 
-    const std::string Remove<Kinetics::PrimPeriodicDiffTransOrbit>::desc =
+    const std::string Remove<PrimPeriodicDiffTransOrbit>::desc =
 
       "Remove a difftrans, including all enumerated difftransconfigurations and calculation results: \n\n"
 
@@ -204,12 +204,12 @@ namespace CASM {
     }
     */
 
-    int Remove<Kinetics::PrimPeriodicDiffTransOrbit>::run(
+    int Remove<PrimPeriodicDiffTransOrbit>::run(
       const PrimClex &primclex,
       const Completer::RmOption &opt) {
 
       // -- read selection --
-      DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection(primclex, opt.selection_path());
+      DB::Selection<PrimPeriodicDiffTransOrbit> selection(primclex, opt.selection_path());
       for(const auto &name : opt.name_strs()) {
         if(primclex.db<PrimPeriodicDiffTransOrbit>().count(name)) {
           selection.data()[name] = true;
@@ -226,7 +226,7 @@ namespace CASM {
       report_dir = create_report_dir(report_dir);
 
       // -- erase --
-      Remove<Kinetics::PrimPeriodicDiffTransOrbit> f(primclex, report_dir, primclex.log());
+      Remove<PrimPeriodicDiffTransOrbit> f(primclex, report_dir, primclex.log());
       /*
       if(opt.force()) {
         f.erase_all(selection, opt.dry_run());
@@ -240,15 +240,15 @@ namespace CASM {
       return 0;
     }
 
-    const PrimClex &Remove<Kinetics::PrimPeriodicDiffTransOrbit>::primclex() const {
+    const PrimClex &Remove<PrimPeriodicDiffTransOrbit>::primclex() const {
       return m_primclex;
     }
 
-    fs::path Remove<Kinetics::PrimPeriodicDiffTransOrbit>::report_dir() const {
+    fs::path Remove<PrimPeriodicDiffTransOrbit>::report_dir() const {
       return m_report_dir;
     }
 
-    Log &Remove<Kinetics::PrimPeriodicDiffTransOrbit>::file_log() const {
+    Log &Remove<PrimPeriodicDiffTransOrbit>::file_log() const {
       return m_file_log;
     }
 
