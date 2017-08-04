@@ -7,8 +7,10 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/casm_io/json_io/container.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
-#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/IntegralCluster_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/NeighborList.hh"
@@ -176,7 +178,7 @@ namespace CASM {
           args.log().construct("Orbitree");
           args.log() << std::endl;
           std::string orbitname = bspecs_json["diff_trans"].get<std::string>();
-          Kinetics::PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().find(orbitname);
+          PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
           make_local_orbits(
             dtorbit.prototype(),
             bspecs_json["local_bspecs"],

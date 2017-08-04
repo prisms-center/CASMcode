@@ -1,6 +1,7 @@
 #include "casm/app/select.hh"
 #include "casm/app/DBInterface.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/database/DatabaseTypeTraits.hh"

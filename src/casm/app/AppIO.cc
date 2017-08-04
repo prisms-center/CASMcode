@@ -1,5 +1,7 @@
 #include "casm/app/AppIO_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/Orbit_impl.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 

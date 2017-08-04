@@ -1,3 +1,4 @@
+#include <boost/filesystem/fstream.hpp>
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/clex/PrimClex.hh"

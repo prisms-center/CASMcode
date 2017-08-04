@@ -9,6 +9,7 @@
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/clusterography/ClusterDecl.hh"
 
 namespace CASM {
 
@@ -19,10 +20,7 @@ namespace CASM {
   class jsonParser;
   class ClexBasis;
   class ChemicalReference;
-  template<typename CoordType> class CoordCluster;
   class UnitCellCoord;
-  typedef CoordCluster<UnitCellCoord> IntegralCluster;
-  template<typename Element, typename SymCompareType> class Orbit;
   class SymGroup;
 
   /** \defgroup ProjectIO
