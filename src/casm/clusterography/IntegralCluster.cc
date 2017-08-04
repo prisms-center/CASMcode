@@ -5,7 +5,31 @@
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
 
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+
 namespace CASM {
+
+  template bool ClusterSymCompare<AperiodicSymCompare<IntegralCluster> >::compare_impl(
+    IntegralCluster const &,
+    IntegralCluster const &) const;
+  template bool ClusterSymCompare<AperiodicSymCompare<IntegralCluster> >::invariants_compare_impl(
+    ClusterInvariants<IntegralCluster> const &,
+    ClusterInvariants<IntegralCluster> const &) const;
+
+  template bool ClusterSymCompare<PrimPeriodicSymCompare<IntegralCluster> >::compare_impl(
+    IntegralCluster const &,
+    IntegralCluster const &) const;
+  template bool ClusterSymCompare<PrimPeriodicSymCompare<IntegralCluster> >::invariants_compare_impl(
+    ClusterInvariants<IntegralCluster> const &,
+    ClusterInvariants<IntegralCluster> const &) const;
+
+  template bool ClusterSymCompare<ScelPeriodicSymCompare<IntegralCluster> >::compare_impl(
+    IntegralCluster const &,
+    IntegralCluster const &) const;
+  template bool ClusterSymCompare<ScelPeriodicSymCompare<IntegralCluster> >::invariants_compare_impl(
+    ClusterInvariants<IntegralCluster> const &,
+    ClusterInvariants<IntegralCluster> const &) const;
+
 
   /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
   std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust) {

@@ -3,13 +3,17 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 #include "casm/clusterography/ClusterOrbits.hh"
-#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/container/Counter.hh"
 #include "casm/misc/algorithm.hh"
-#include "casm/symmetry/OrbitGeneration.hh"
-#include "casm/symmetry/InvariantSubgroup_impl.hh"
-#include "casm/clusterography/SubClusterGenerator.hh"
-#include "casm/crystallography/Structure.hh"
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/symmetry/Orbit.hh"
+#include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/symmetry/InvariantSubgroup.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/clusterography/SubClusterGenerator.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
 
 namespace CASM {
 
@@ -506,7 +510,7 @@ namespace CASM {
   /// \param status Stream for status messages
   ///
   /// - Uses prim.factor_group as the generating group
-  /// - Uses PrimPeriodicIntegralClusterSymCompare(xtal_tol) for cluster equivalence
+  /// - Uses PrimPeriodicSymCompare<IntegralCluster>(xtal_tol) for cluster equivalence
   /// - Figures out candidate_sites from max_length and site_filter input to
   ///   create OrbitBranchSpecs and calls make_orbits
   ///
@@ -520,11 +524,11 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status) {
 
-    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+    typedef PrimPeriodicOrbit<IntegralCluster> orbit_type;
     typedef typename orbit_type::Element cluster_type;
 
     const SymGroup &generating_grp = prim.factor_group();
-    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+    PrimPeriodicSymCompare<IntegralCluster> sym_compare(xtal_tol);
 
     std::vector<UnitCellCoord> candidate_sites;
     for(int i = 0; i < prim.basis.size(); ++i) {
@@ -561,7 +565,7 @@ namespace CASM {
   /// \param status Stream for status messages
   ///
   /// - Uses prim.factor_group as the generating group
-  /// - Uses PrimPeriodicIntegralClusterSymCompare(xtal_tol) for cluster equivalence
+  /// - Uses PrimPeriodicSymCompare<IntegralCluster>(xtal_tol) for cluster equivalence
   /// - Figures out candidate_sites from max_length and site_filter input to
   ///   create OrbitBranchSpecs and calls make_orbits
   ///
@@ -576,11 +580,11 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status) {
 
-    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+    typedef PrimPeriodicOrbit<IntegralCluster> orbit_type;
     typedef typename orbit_type::Element cluster_type;
 
     const SymGroup &generating_grp = prim.factor_group();
-    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+    PrimPeriodicSymCompare<IntegralCluster> sym_compare(xtal_tol);
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -642,6 +646,69 @@ namespace CASM {
 
   }
 
+  /// \brief Generate Orbit<IntegralCluster> around DiffusionTransformation
+  /// from bspecs.json-type JSON input file
+  ///
+  /// \param prim Primitive structure
+  /// \param bspecs jsonParser containing bspecs.json contents
+  /// \param site_filter A filter function that returns true for Site that
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
+  /// \param result An output iterator for Orbit
+  /// \param status Stream for status messages
+  ///
+  /// - Uses prim.factor_group as the generating group
+  /// - Uses PrimPerioidicSymCompare<IntegralCluster>(xtal_tol) for cluster equivalence
+  /// - Converts input to max_length and custom_generators and calls make_orbits
+  ///
+  /// \relates IntegralCluster
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_prim_periodic_orbits(
+    const Structure &prim,
+    const jsonParser &bspecs,
+    const std::function<bool (Site)> &site_filter,
+    double xtal_tol,
+    OrbitOutputIterator result,
+    std::ostream &status) {
+
+    typedef PrimPeriodicOrbit<IntegralCluster> orbit_type;
+    typedef typename orbit_type::Element cluster_type;
+
+    // read max_length from bspecs
+    std::vector<double> max_length = max_length_from_bspecs(bspecs);
+
+    // collect custom orbit generating clusters in 'generators'
+    PrimPeriodicSymCompare<IntegralCluster> sym_compare(xtal_tol);
+    OrbitGenerators<orbit_type> generators(prim.factor_group(), sym_compare);
+
+    if(bspecs.contains("orbit_specs")) {
+
+      // for each custom orbit
+      for(auto it = bspecs["orbit_specs"].begin(); it != bspecs["orbit_specs"].end(); ++it) {
+
+        // read orbit generating cluster from bspecs
+        cluster_type input_cluster(prim);
+        from_json(input_cluster, *it, xtal_tol);
+
+        // check if subclusters should be included (yes by default)
+        auto f_it = it->find("include_subclusters");
+        if(f_it == it->end() ||
+           (f_it != it->end() && f_it->get<bool>())) {
+          _insert_subcluster_generators(input_cluster, generators, status);
+        }
+        else {
+          generators.insert(input_cluster);
+        }
+      }
+    }
+
+    std::vector<cluster_type> custom_generators(generators.elements.begin(), generators.elements.end());
+
+    return make_prim_periodic_orbits(prim, max_length, custom_generators, site_filter, xtal_tol, result, status);
+
+  }
+
   /// \brief Generate Orbit<IntegralCluster> by specifying max cluster length for each branch
   /// by specifying max cluster length for each branch and cut off radius for local environment
   ///
@@ -659,7 +726,7 @@ namespace CASM {
   /// \param status Stream for status messages
   ///
   /// - Uses the invariant subgroup of diff_trans as the generating group
-  /// - Uses LocalIntegralClusterSymCompare(xtal_tol) for cluster equivalence
+  /// - Uses LocalSymCompare<IntegralCluster>(xtal_tol) for cluster equivalence
   /// - Figures out candidate_sites from max_length and site_filter input to
   ///   create OrbitBranchSpecs and calls make_orbits
   ///
@@ -676,16 +743,16 @@ namespace CASM {
     std::ostream &status,
     const SymGroup &generating_group) {
 
-    typedef LocalIntegralClusterOrbit orbit_type;
+    typedef LocalOrbit<IntegralCluster> orbit_type;
     typedef typename orbit_type::Element cluster_type;
     SymGroup generating_grp {generating_group};
     if(!generating_group.size()) {
       const SymGroup &prim_grp = diff_trans.prim().factor_group();
-      Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
+      PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(xtal_tol);
       SymGroup generating_grp = make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
     }
 
-    LocalIntegralClusterSymCompare sym_compare(xtal_tol);
+    LocalSymCompare<IntegralCluster> sym_compare(xtal_tol);
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -755,7 +822,7 @@ namespace CASM {
   /// \param status Stream for status messages
   ///
   /// - Uses the invariant sub group of diff_trans as the generating group
-  /// - Uses LocalIntegralClusterSymCompare(xtal_tol) for cluster equivalence
+  /// - Uses LocalSymCompare<IntegralCluster>(xtal_tol) for cluster equivalence
   /// - Converts input to max_length and custom_generators and calls make_orbits
   ///
   /// \relates IntegralCluster
@@ -769,7 +836,7 @@ namespace CASM {
     std::ostream &status,
     const SymGroup &generating_group) {
 
-    typedef LocalIntegralClusterOrbit orbit_type;
+    typedef LocalOrbit<IntegralCluster> orbit_type;
     typedef typename orbit_type::Element cluster_type;
     SymGroup generating_grp {generating_group};
     // read max_length from bspecs
@@ -778,10 +845,10 @@ namespace CASM {
     std::vector<double> cutoff_radius = cutoff_radius_from_bspecs(bspecs);
 
     // collect custom orbit generating clusters in 'generators'
-    LocalIntegralClusterSymCompare sym_compare(xtal_tol);
+    LocalSymCompare<IntegralCluster> sym_compare(xtal_tol);
     if(!generating_grp.size()) {
       const SymGroup &prim_grp = diff_trans.prim().factor_group();
-      Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
+      PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(xtal_tol);
       generating_grp = make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
     }
 
@@ -814,69 +881,6 @@ namespace CASM {
 
   }
 
-
-  /// \brief Generate Orbit<IntegralCluster> around DiffusionTransformation
-  /// from bspecs.json-type JSON input file
-  ///
-  /// \param prim Primitive structure
-  /// \param bspecs jsonParser containing bspecs.json contents
-  /// \param site_filter A filter function that returns true for Site that
-  ///        should be considered for the neighborhood (i.e. to check the number
-  ///        of components)
-  /// \param xtal_tol Crystallography tolerance
-  /// \param result An output iterator for Orbit
-  /// \param status Stream for status messages
-  ///
-  /// - Uses prim.factor_group as the generating group
-  /// - Uses PrimPerioidicIntegralClusterSymCompare(xtal_tol) for cluster equivalence
-  /// - Converts input to max_length and custom_generators and calls make_orbits
-  ///
-  /// \relates IntegralCluster
-  template<typename OrbitOutputIterator>
-  OrbitOutputIterator make_prim_periodic_orbits(
-    const Structure &prim,
-    const jsonParser &bspecs,
-    const std::function<bool (Site)> &site_filter,
-    double xtal_tol,
-    OrbitOutputIterator result,
-    std::ostream &status) {
-
-    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
-    typedef typename orbit_type::Element cluster_type;
-
-    // read max_length from bspecs
-    std::vector<double> max_length = max_length_from_bspecs(bspecs);
-
-    // collect custom orbit generating clusters in 'generators'
-    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
-    OrbitGenerators<orbit_type> generators(prim.factor_group(), sym_compare);
-
-    if(bspecs.contains("orbit_specs")) {
-
-      // for each custom orbit
-      for(auto it = bspecs["orbit_specs"].begin(); it != bspecs["orbit_specs"].end(); ++it) {
-
-        // read orbit generating cluster from bspecs
-        cluster_type input_cluster(prim);
-        from_json(input_cluster, *it, xtal_tol);
-
-        // check if subclusters should be included (yes by default)
-        auto f_it = it->find("include_subclusters");
-        if(f_it == it->end() ||
-           (f_it != it->end() && f_it->get<bool>())) {
-          _insert_subcluster_generators(input_cluster, generators, status);
-        }
-        else {
-          generators.insert(input_cluster);
-        }
-      }
-    }
-
-    std::vector<cluster_type> custom_generators(generators.elements.begin(), generators.elements.end());
-
-    return make_prim_periodic_orbits(prim, max_length, custom_generators, site_filter, xtal_tol, result, status);
-
-  }
 
   /* -- Cluster Orbit access/usage function definitions ------------------------------------- */
 

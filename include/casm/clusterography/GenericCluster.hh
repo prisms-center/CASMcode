@@ -3,9 +3,12 @@
 
 #include <vector>
 
-namespace CASM {
+#include "casm/clusterography/ClusterDecl.hh"
+#include "casm/symmetry/SymCompare.hh"
+#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/misc/Comparisons.hh"
 
-  template <typename ClusterType> class ClusterInvariants;
+namespace CASM {
 
   /** \defgroup Clusterography
 
@@ -14,108 +17,124 @@ namespace CASM {
 
   /* -- GenericCluster Declarations ------------------------------------- */
 
-  template<typename Derived> class GenericCluster;
-
-  /// \brief Traits class for GenericCluster
-  ///
-  /// \ingroup IntegralCluster
-  ///
+  /*
   template<typename Derived>
   struct traits<GenericCluster<Derived> > {
     typedef typename traits<Derived>::MostDerived MostDerived;
     typedef typename traits<Derived>::Element Element;
     typedef typename traits<Derived>::InvariantsType InvariantsType;
   };
+  */
 
   /// \brief A CRTP base class for a cluster of anything
   ///
-  /// - Needs a traits<Derived>::Element type
-  /// - Needs a traits<Derived>::InvariantsType type
-  /// - Needs Derived::apply_sym_impl to be implemented
+  /// - Needs a traits<MostDerived>::Element type
+  /// - Needs a traits<MostDerived>::InvariantsType type
+  /// - Requires implementations:
+  ///   - bool operator<(Element A, Element B);
+  ///   - std::vector<Element>& MostDerived::elements_impl();
+  ///   - const std::vector<Element>& MostDerived::elements_impl() const;
+  /// - Optional implementations:
+  ///   - MostDerived& MostDerived::sort_impl();
+  ///   - bool MostDerived::is_sorted_impl() const;
+  /// - _Base must inherit from CRTP_Base<MostDerived>
   ///
   /// \ingroup Clusterography
   ///
-  template<typename Derived>
-  class GenericCluster : public SymComparable<GenericCluster<Derived> > {
+  template<typename _Base>
+  class GenericCluster : public SymComparable<Comparisons<_Base>> {
 
   public:
 
-    typedef unsigned int size_type;
-    typedef typename traits<Derived>::MostDerived MostDerived;
-    typedef typename traits<Derived>::Element Element;
-    typedef typename traits<Derived>::InvariantsType InvariantsType;
+    typedef SymComparable<Comparisons<_Base>> Base;
+    typedef typename Base::MostDerived MostDerived;
+    using Base::derived;
+
+    typedef typename traits<MostDerived>::Element Element;
+    typedef typename traits<MostDerived>::InvariantsType InvariantsType;
+    typedef typename traits<MostDerived>::size_type size_type;
+
     typedef typename std::vector<Element>::value_type value_type;
     typedef typename std::vector<Element>::iterator iterator;
     typedef typename std::vector<Element>::const_iterator const_iterator;
 
     /// \brief Iterator to first UnitCellCoord in the cluster
     iterator begin() {
-      this->_reset_invariants();
-      return m_element.begin();
+      this->reset_invariants();
+      return derived().elements().begin();
     }
 
     /// \brief Iterator to first UnitCellCoord in the cluster
     const_iterator begin() const {
-      return m_element.begin();
+      return derived().elements().begin();
     }
 
     /// \brief Iterator to the past-the-last UnitCellCoord in the cluster
     iterator end() {
-      this->_reset_invariants();
-      return m_element.end();
+      this->reset_invariants();
+      return derived().elements().end();
     }
 
     /// \brief Iterator to the past-the-last UnitCellCoord in the cluster
     const_iterator end() const {
-      return m_element.end();
+      return derived().elements().end();
     }
 
     /// \brief Iterator to first UnitCellCoord in the cluster
     const_iterator cbegin() const {
-      return m_element.cbegin();
+      return derived().elements().cbegin();
     }
 
     /// \brief Iterator to the past-the-last UnitCellCoord in the cluster
     const_iterator cend() const {
-      return m_element.cend();
+      return derived().elements().cend();
     }
 
     /// \brief Number of UnitCellCoords in the cluster
     size_type size() const {
-      return m_element.size();
+      return derived().elements().size();
     }
 
     /// \brief Access a UnitCellCoord in the cluster by index
     value_type &operator[](size_type index) {
-      this->_reset_invariants();
-      return m_element[index];
+      this->reset_invariants();
+      return derived().element(index);
     }
 
     /// \brief Access a UnitCellCoord in the cluster by index
     const value_type &operator[](size_type index) const {
-      return m_element[index];
+      return derived().element(index);
     }
 
     /// \brief Access a UnitCellCoord in the cluster by index
     value_type &element(size_type index) {
-      this->_reset_invariants();
-      return m_element[index];
+      this->reset_invariants();
+      return derived().elements()[index];
     }
 
     /// \brief Access a UnitCellCoord in the cluster by index
     const value_type &element(size_type index) const {
-      return m_element[index];
+      return derived().elements()[index];
     }
 
-    /// \brief Access vector of elements
-    std::vector<Element> &elements() {
-      this->_reset_invariants();
-      return m_element;
+    MostDerived &sort() {
+      return derived().sort_impl();
     }
 
-    /// \brief const Access vector of elements
-    const std::vector<Element> &elements() const {
-      return m_element;
+    MostDerived sorted() const {
+      MostDerived tmp {derived()};
+      return tmp.sort();
+    }
+
+    bool is_sorted() const {
+      return derived().is_sorted_impl();
+    }
+
+    bool operator<(const GenericCluster &B) const {
+      if(size() != B.size()) {
+        return size() < B.size();
+      }
+      return lexicographical_compare(begin(), end(), B.begin(), B.end());
     }
 
   protected:
@@ -123,164 +142,53 @@ namespace CASM {
     /// \brief Construct an empty GenericCluster
     GenericCluster() {}
 
-    /// \brief Construct a GenericCluster with a range of Element
-    template<typename InputIterator>
-    GenericCluster(InputIterator _begin,
-                   InputIterator _end) :
-      m_element(_begin, _end) {}
+    MostDerived &sort_impl() {
+      std::sort(begin(), end());
+      return derived();
+    }
 
-  private:
-
-    std::vector<Element> m_element;
-
+    bool is_sorted_impl() const {
+      return std::is_sorted(begin(), end());
+    }
   };
 
-  template<typename Derived> class ElementWiseSymCluster;
 
-  /// \brief Traits class for any ClusterSymCompare derived class
-  ///
-  /// \ingroup IntegralCluster
-  ///
+  /*
   template<typename Derived>
   struct traits<ElementWiseSymCluster<Derived> > {
     typedef typename traits<Derived>::MostDerived MostDerived;
     typedef typename traits<Derived>::Element Element;
     typedef typename traits<Derived>::InvariantsType InvariantsType;
   };
+  */
 
   /// \brief CRTP-Base cluster class to apply_sym on an element-by-element basis
   ///
-  /// - Needs a traits<Derived>::Element type
-  /// - Needs a traits<Derived>::InvariantsType type
+  /// - Requires:
+  ///   - Element& Element::apply_sym(const SymOp& el);
   ///
   /// \ingroup Clusterography
   ///
-  template<typename Derived>
-  class ElementWiseSymCluster : public GenericCluster<ElementWiseSymCluster<Derived> > {
+  template<typename Base>
+  class ElementWiseSymApply : public Base {
 
   public:
 
-    typedef typename traits<Derived>::MostDerived MostDerived;
+    typedef typename Base::MostDerived MostDerived;
+    using Base::derived;
 
     /// \brief ElementWiseSymCluster applies symmetry element-by-element
     MostDerived &apply_sym(const SymOp &op) {
-      this->derived().apply_sym_impl(op);
-      return this->derived();
-    }
-
-  protected:
-
-    /// \brief Construct an empty ElementWiseSymCluster
-    ElementWiseSymCluster() :
-      GenericCluster<ElementWiseSymCluster<Derived> >() {}
-
-    /// \brief Construct a GenericCluster with a range of Element
-    template<typename InputIterator>
-    ElementWiseSymCluster(InputIterator _begin,
-                          InputIterator _end) :
-      GenericCluster<ElementWiseSymCluster<Derived> >(_begin, _end) {}
-
-
-    /// \brief ElementWiseSymCluster applies symmetry element-by-element
-    MostDerived &apply_sym_impl(const SymOp &op) {
-      for(auto &e : this->derived()) {
+      for(auto &e : derived()) {
         e.apply_sym(op);
       }
-      return this->derived();
+      return derived();
     }
 
-  };
-
-
-  /* -- ClusterSymCompare Declaration ------------------------------------- */
-
-  template<typename Derived> class ClusterSymCompare;
-
-  /// \brief Traits class for any ClusterSymCompare derived class
-  ///
-  /// \ingroup IntegralCluster
-  ///
-  template<typename Derived>
-  struct traits<ClusterSymCompare<Derived> > {
-    typedef typename traits<Derived>::MostDerived MostDerived;
-    typedef typename traits<Derived>::Element Element;
-    typedef typename traits<Derived>::InvariantsType InvariantsType;
-  };
-
-  /// \brief CRTP Base class for Cluster comparisons
-  ///
-  /// Implements:
-  /// - 'invariants_compare_impl' using 'compare'
-  /// - 'apply_sym_impl' (does nothing)
-  ///
-  /// Does not implement:
-  /// - 'prepare_impl'
-  /// - 'compare_impl'
-  ///
-  /// The ClusterSymCompare hierarchy:
-  /// - SymCompare
-  ///   - ClusterSymCompare
-  ///     - IntegralClusterSymCompare (implements 'compare_impl')
-  ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
-  ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
-  ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
-  ///
-  /// \ingroup Clusterography
-  ///
-  template<typename Derived>
-  class ClusterSymCompare : public SymCompare<ClusterSymCompare<Derived> > {
-
-  public:
-
-    /// Element refers to Cluster, not element of Cluster
-    typedef typename traits<Derived>::MostDerived MostDerived;
-    typedef typename traits<Derived>::Element Element;
-    typedef Element ClusterType;
-    typedef typename traits<Derived>::InvariantsType InvariantsType;
-
-    /// \brief Return tolerance
-    double tol() const {
-      return m_tol;
+    /// \brief ElementWiseSymCluster applies symmetry element-by-element
+    MostDerived &apply_sym(const PermuteIterator &it) {
+      return apply_sym(it.sym_op());
     }
-
-  protected:
-
-    friend class SymCompare<ClusterSymCompare<Derived> >;
-
-    /// \brief Constructor
-    ///
-    /// \param tol Tolerance for invariants_compare of site-to-site distances
-    ///
-    ClusterSymCompare(double tol):
-      SymCompare<ClusterSymCompare<Derived> >(),
-      m_tol(tol) {
-
-    }
-
-    // compare_impl : implement in Derived
-
-    /// \brief Orders 'prepared' elements in the same orbit
-    ///
-    /// - Returns 'true' to indicate A < B
-    /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
-    /// - Assumes elements are 'prepared' before being compared
-    /// Implementation:
-    /// - First compares by number of sites in cluster
-    /// - Then compare all displacements, from longest to shortest
-    bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
-      return compare(A, B, tol());
-    }
-
-    /// \brief Apply symmetry to this
-    ///
-    /// - Affects no change
-    void apply_sym_impl(const SymOp &op) {
-      return;
-    }
-
-  private:
-
-    double m_tol;
 
   };
 

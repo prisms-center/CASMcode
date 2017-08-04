@@ -1,44 +1,9 @@
-#ifndef CASM_IntegralCluster
-#define CASM_IntegralCluster
+#ifndef CASM_IntegralCluster_impl
+#define CASM_IntegralCluster_impl
 
-#include <vector>
-
-#include "casm/clusterography/ClusterDecl.hh"
-#include "casm/clusterography/CoordCluster.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 
 namespace CASM {
-
-  /** \defgroup Clusterography
-
-      \brief Functions and classes related to clusters
-  */
-
-  /** \defgroup IntegralCluster
-
-      \brief Functions and classes related to IntegralCluster
-      \ingroup Clusterography
-      \ingroup CoordCluster
-  */
-
-  /* -- IntegralCluster Declaration ------------------------------------- */
-
-  /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
-  std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust);
-
-  /// \brief Write IntegralCluster to JSON object
-  jsonParser &to_json(const IntegralCluster &clust, jsonParser &json);
-
-  /// \brief Read from JSON
-  void from_json(IntegralCluster &clust, const jsonParser &json, double xtal_tol);
-
-  template<>
-  struct jsonConstructor<IntegralCluster> {
-
-    /// \brief Construct from JSON
-    static IntegralCluster from_json(const jsonParser &json, const Structure &prim, double xtal_tol);
-  };
-
-
 
   /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
   ///
@@ -54,7 +19,15 @@ namespace CASM {
   template<typename OutputIterator>
   OutputIterator local_orbit_neighborhood(
     const LocalOrbit<IntegralCluster> &orbit,
-    OutputIterator result);
+    OutputIterator result) {
+
+    for(const auto &equiv : orbit) {
+      for(const auto &site : equiv) {
+        *result++ = site;
+      }
+    }
+    return result;
+  }
 
   /// \brief Iterate over all sites in all orbits and insert a UnitCellCoord
   ///
@@ -66,7 +39,13 @@ namespace CASM {
   /// \ingroup IntegralCluster
   ///
   template<typename ClusterOrbitIterator, typename OutputIterator>
-  OutputIterator local_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result);
+  OutputIterator local_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result) {
+    // create a neighborhood of all UnitCellCoord that an Orbitree touches
+    for(auto it = begin; it != end; ++it) {
+      result = local_orbit_neighborhood(*it, result);
+    }
+    return result;
+  }
 
   /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
   ///
@@ -84,7 +63,23 @@ namespace CASM {
   template<typename OutputIterator>
   OutputIterator prim_periodic_orbit_neighborhood(
     const PrimPeriodicOrbit<IntegralCluster> &orbit,
-    OutputIterator result);
+    OutputIterator result) {
+
+    for(const auto &equiv : orbit) {
+
+      // UnitCellCoord for all sites in cluster
+      std::vector<UnitCellCoord> coord(equiv.begin(), equiv.end());
+
+      // UnitCellCoord for 'flowertree': all clusters that touch origin unitcell
+      //  (includes translationally equivalent clusters)
+      for(int ns_i = 0; ns_i < coord.size(); ++ns_i) {
+        for(int ns_j = 0; ns_j < coord.size(); ++ns_j) {
+          *result++ = UnitCellCoord(coord[ns_j].unit(), coord[ns_j].sublat(), coord[ns_j].unitcell() - coord[ns_i].unitcell());
+        }
+      }
+    }
+    return result;
+  }
 
   /// \brief Iterate over all sites in all orbits and insert a UnitCellCoord
   ///
@@ -98,7 +93,13 @@ namespace CASM {
   /// \ingroup IntegralCluster
   ///
   template<typename ClusterOrbitIterator, typename OutputIterator>
-  OutputIterator prim_periodic_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result);
+  OutputIterator prim_periodic_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result) {
+    // create a neighborhood of all UnitCellCoord that an Orbitree touches
+    for(auto it = begin; it != end; ++it) {
+      result = prim_periodic_orbit_neighborhood(*it, result);
+    }
+    return result;
+  }
 
 }
 
