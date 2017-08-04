@@ -1,5 +1,7 @@
 #include "casm/database/Selected.hh"
+#include "casm/casm_io/jsonParser.hh"
 #include "casm/database/DatabaseTypeDefs.hh"
+#include "casm/database/DatabaseDefs.hh"
 
 namespace CASM {
   namespace DB {

@@ -2,16 +2,23 @@
 #define CASM_Selection
 
 #include <map>
-#include "casm/external/boost.hh"
-#include "casm/database/Database.hh"
-#include "casm/casm_io/DataFormatter.hh"
+#include <boost/filesystem.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+#include <boost/range/iterator_range.hpp>
+#include "casm/misc/CASM_TMP.hh"
+#include "casm/casm_io/DataFormatterDecl.hh"
 #include "casm/casm_io/Log.hh"
 
 namespace CASM {
+
+  class PrimClex;
+  class jsonParser;
+
   namespace DB {
 
-    template<typename ObjType>
-    class Selection;
+    template<typename ValueType> class Database;
+
+    template<typename ObjType> class Selection;
 
     template<typename ObjType, typename BaseIterator>
     class SelectionIterator :

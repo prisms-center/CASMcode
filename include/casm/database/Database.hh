@@ -8,6 +8,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/clex/HasPrimClex.hh"
 
 namespace CASM {
 
@@ -16,7 +17,7 @@ namespace CASM {
   namespace DB {
 
     /// Fully generic database interface for use by DatabaseHandler
-    class DatabaseBase {
+    class DatabaseBase : public HasPrimClex<CRTPBase<DatabaseBase>> {
 
     public:
 
@@ -298,9 +299,12 @@ namespace CASM {
       }
 
       virtual iterator find(const std::string &name_or_alias) const = 0;
+
+      /* Don't do this, it's confusing. Use find(obj.name) or insert(obj):
       iterator find(const ValueType &obj) const {
         return find(obj.name());
       }
+      */
 
       virtual void commit() = 0;
 
@@ -320,12 +324,6 @@ namespace CASM {
       template<typename _ValueType>
       void set_id(const _ValueType &obj, std::string id) const {
         obj.set_id(id);
-      }
-
-      /// Only ValDatabase<ValueType> is allowed to do set_primclex
-      template<typename _ValueType>
-      void set_primclex(const _ValueType &obj) const {
-        obj.set_primclex(primclex());
       }
 
 

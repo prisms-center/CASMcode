@@ -9,7 +9,7 @@
 #include "casm/database/DatabaseTypeTraits.hh"
 
 // 1) add Database types here
-#define CASM_DB_NONCONFIG_TYPES (Supercell) (Kinetics::PrimPeriodicDiffTransOrbit)
+#define CASM_DB_NONCONFIG_TYPES (Supercell) (PrimPeriodicOrbit<Kinetics::DiffusionTransformation>)
 #define CASM_DB_CONFIG_TYPES (Configuration) (Kinetics::DiffTransConfiguration)
 
 // 2) add #include locations as appropriate to:

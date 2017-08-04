@@ -7,28 +7,27 @@
 namespace CASM {
   namespace DB {
 
-    template<typename Derived> class Indexed;
-
-    /// Derived should implement:
-    /// - std::string _generate_name() const
-    /// - const PrimClex& primclex() const
+    /// CRTP Mixin for 'named' database objects with no id
     ///
-    template<typename Derived>
-    class Named {
+    /// - MostDerived should implement:
+    ///   - std::string MostDerived::generate_name_impl() const
+    ///   - const PrimClex& MostDerived::primclex_impl() const
+    /// - Use one of Indexed or Named
+    ///
+    template<typename Base>
+    class Named : public Base {
 
     public:
 
-      Named() :
-        m_primclex(nullptr),
-        m_name("") {}
+      typedef typename Base::MostDerived MostDerived;
+      using Base::derived;
 
-      Named(const PrimClex &_primclex) :
-        m_primclex(&_primclex),
+      Named() :
         m_name("") {}
 
       std::string name() const {
         if(m_name.empty()) {
-          m_name = derived()._generate_name();
+          m_name = derived().generate_name_impl();
         }
         return m_name;
       }
@@ -36,53 +35,36 @@ namespace CASM {
       /// \brief Return "alias" if object stored in database and alias exists,
       ///        return empty string otherwise
       std::string alias() const {
-        return primclex().template db<Derived>().alias(name());
+        return derived().primclex().template db<MostDerived>().alias(name());
       }
+
+    protected:
 
       /// \brief Unset "name", if object is modified
-      void clear_name() {
+      void clear_name() const {
         m_name = "";
-      }
-
-      /// \brief Get PrimClex
-      const PrimClex &primclex() const {
-        if(!m_primclex) {
-          throw std::runtime_error("Error in Orbit::primclex(): PrimClex not valid");
-        }
-        return *m_primclex;
       }
 
     private:
 
-      friend ValDatabase<Derived>;
-      friend Indexed<Derived>;
-
-      const Derived &derived() const {
-        return *static_cast<const Derived *>(this);
-      }
-
-      /// \brief Add PrimClex pointer to objects constructed from Database
-      void set_primclex(const PrimClex &_primclex) const {
-        m_primclex = &_primclex;
-      }
-
       mutable std::string m_name;
-      mutable const PrimClex *m_primclex;
 
     };
 
     /// Similar to 'Named', but includes an incrementing 'id' string
     ///
-    /// Setting id should be done through Database<Derived> implementations of
+    /// - Setting id should be done through Database<Derived> implementations of
     /// insert or emplace.
+    /// - Use one of Indexed or Named
     ///
-    template<typename Derived>
-    class Indexed : public Named<Derived> {
+    template<typename _Base>
+    class Indexed : public Named<_Base> {
 
     public:
-      Indexed(const PrimClex &_primclex) :
-        Named<Derived>::Named(_primclex),
-        m_id("none") {}
+
+      typedef Named<_Base> Base;
+      typedef typename Base::MostDerived MostDerived;
+      using Base::derived;
 
       Indexed() :
         m_id("none") {}
@@ -91,13 +73,13 @@ namespace CASM {
         return m_id;
       }
 
-      /// \brief Unset "id" and "name", if object is modified
-      void clear_name() {
-        m_id = "none";
-        Named<Derived>::clear_name();
-      }
-
     protected:
+
+      /// \brief Unset "id" and "name", if object is modified
+      void clear_name() const {
+        m_id = "none";
+        Named<_Base>::clear_name();
+      }
 
       /// \brief Set id
       ///
@@ -106,8 +88,7 @@ namespace CASM {
       ///
       /// - protected, to allow reading Derived from database and setting id
       void set_id(Index _id) const {
-        m_id = std::to_string(_id);
-        this->m_name = "";
+        set_id(std::to_string(_id));
       }
 
       /// \brief Set id
@@ -117,14 +98,14 @@ namespace CASM {
       ///
       /// - protected, to allow reading Derived from database and setting id
       void set_id(std::string _id) const {
+        Named<_Base>::clear_name();
         m_id = _id;
-        this->m_name = "";
       }
 
 
     private:
 
-      friend ValDatabase<Derived>;
+      friend ValDatabase<MostDerived>;
 
       mutable std::string m_id;
     };
