@@ -1,7 +1,7 @@
 #ifndef CASM_HasSupercell_impl
 #define CASM_HasSupercell_impl
 
-#include "casm/clex/Supercell.hh"
+#include "casm/clex/HasSupercell.hh"
 
 namespace CASM {
 

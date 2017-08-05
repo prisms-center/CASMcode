@@ -355,6 +355,7 @@ namespace CASM {
 
     std::vector<PermuteIterator> invariant_subgroup() const;
 
+    using ConfigurationBase::is_canonical;
     bool is_canonical() const;
 
     /// \brief Get symmetric multiplicity, excluding translations

@@ -7,7 +7,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/symmetry/ScelOrbitGeneration.hh"
-#include "casm/symmetry/InvariantSubgroup.hh"
+#include "casm/symmetry/InvariantSubgroup_impl.hh"
 
 namespace CASM {
 

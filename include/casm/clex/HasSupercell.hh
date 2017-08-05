@@ -5,6 +5,8 @@
 
 namespace CASM {
 
+  class Supercell;
+
   /// \brief Implements PrimClex dependent functions
   ///
   /// - Useful if MostDerived class has const Supercell& MostDerived::supercell() const;

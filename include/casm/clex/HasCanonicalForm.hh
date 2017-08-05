@@ -1,11 +1,14 @@
 #ifndef CASM_HasCanonicalForm
 #define CASM_HasCanonicalForm
 
+#include <vector>
+
 namespace CASM {
 
   class SymOp;
   class SymGroup;
   class PermuteIterator;
+  class Supercell;
 
   /// \brief Implements canonical form finding when using SymCompare
   ///
