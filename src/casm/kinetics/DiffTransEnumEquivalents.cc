@@ -1,13 +1,9 @@
 #include "casm/kinetics/DiffTransEnumEquivalents.hh"
+
 #include <algorithm>
-#include "casm/casm_io/Log.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/clex/Supercell.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/clex/ScelEnumEquivalents.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
-
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
 
 namespace CASM {
 

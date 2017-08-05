@@ -47,7 +47,12 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   //print_clust(orbits.begin(), orbits.end(), primclex.log(), ProtoSitesPrinter());
   std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 4, orbits.begin() + 7, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+  Kinetics::make_prim_periodic_diff_trans_orbits(
+    orbits.begin() + 4,
+    orbits.begin() + 7,
+    primclex.crystallography_tol(),
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   Kinetics::DiffusionTransformation trans = diff_trans_orbits[0].prototype();
   Kinetics::DiffusionTransformation trans2 = diff_trans_orbits[2].prototype();
 

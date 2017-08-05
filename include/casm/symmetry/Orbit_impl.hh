@@ -170,6 +170,14 @@ namespace CASM {
   }
 
   /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
+  ///
+  /// \param generating_element One element in the orbit
+  /// \param generating_group SymGroup applied to generating_element to generate
+  ///        equivalents in the orbit
+  /// \param sym_compare Implements element comparisons
+  /// \param _primclex PrimClex pointer. May be nullptr if only the GenericOrbit
+  ///        interface is needed, but this is probably the less likely use case
+  ///        so it must be explicitly given.
   template<typename _Element, typename _SymCompareType>
   DatabaseTypeOrbit<_Element, _SymCompareType>::DatabaseTypeOrbit(Element generating_element,
                                                                   const SymGroup &generating_group,
@@ -200,6 +208,9 @@ namespace CASM {
 
   template<typename _Element, typename _SymCompareType>
   const PrimClex &DatabaseTypeOrbit<_Element, _SymCompareType>::primclex() const {
+    if(!m_primclex) {
+      throw std::runtime_error("DatabaseTypeOrbit primclex pointer was not set");
+    }
     return *m_primclex;
   }
 

@@ -1,4 +1,4 @@
-#include "casm/clex/Configuration.hh"
+#include "casm/clex/Configuration_impl.hh"
 
 #include <sstream>
 #include <boost/lexical_cast.hpp>
@@ -9,12 +9,8 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"
-#include "casm/clex/ConfigIsEquivalent.hh"
-#include "casm/clex/ConfigCompare.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/database/ConfigDatabase.hh"
@@ -26,10 +22,6 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
-
-#include "casm/clex/HasSupercell_impl.hh"
-#include "casm/clex/HasPrimClex_impl.hh"
-#include "casm/clex/HasCanonicalForm_impl.hh"
 
 namespace CASM {
 

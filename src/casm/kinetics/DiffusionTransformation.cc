@@ -1,18 +1,5 @@
-#include "casm/kinetics/DiffusionTransformation.hh"
-
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/container.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Molecule.hh"
-#include "casm/basis_set/DoF.hh"
-#include "casm/clex/Configuration.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/clex/NeighborList.hh"
-
-#include "casm/symmetry/Orbit_impl.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
-#include "casm/clex/HasCanonicalForm_impl.hh"
-#include "casm/kinetics/DoFTransformation_impl.hh"
-
 
 namespace CASM {
 
@@ -24,12 +11,6 @@ namespace CASM {
 
   template class ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> > > >;
   template class ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>;
-
-  template bool CanonicalForm<Comparisons<Translatable<SymComparable<CRTPBase<Kinetics::DiffusionTransformation> > > > >::
-  is_equivalent<PrimPeriodicDiffTransSymCompare>(
-    Kinetics::DiffusionTransformation const &,
-    SymGroup const &,
-    PrimPeriodicDiffTransSymCompare const &) const;
 
   namespace Kinetics {
 

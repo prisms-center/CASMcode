@@ -1,5 +1,6 @@
 #include "casm/kinetics/DiffTransConfigurationIO.hh"
-#include "casm/clex/PrimClex.hh"
+
+#include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
 

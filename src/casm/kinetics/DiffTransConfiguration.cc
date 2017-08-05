@@ -1,35 +1,15 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
-#include "casm/clex/Configuration.hh"
-#include "casm/clex/ConfigIsEquivalent.hh"
-#include "casm/clex/ConfigCompare.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/clex/Clexulator.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/clex/NeighborList.hh"
-#include "casm/clex/Calculable.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffTransConfiguration.hh"
-#include "casm/kinetics/DiffTransConfigIsEqual.hh"
+#include "casm/kinetics/DiffTransConfiguration_impl.hh"
 
-#include "casm/app/AppIO.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/database/ConfigDataBase.hh"
 #include "casm/casm_io/VaspIO.hh"
-
 #include "casm/symmetry/Orbit_impl.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
-#include "casm/clex/HasPrimClex_impl.hh"
-#include "casm/clex/HasSupercell_impl.hh"
-#include "casm/clex/HasCanonicalForm_impl.hh"
-#include "casm/kinetics/DoFTransformation_impl.hh"
+#include "casm/clex/Clexulator.hh"
+
 
 namespace CASM {
-
-  template class HasSupercell<Comparisons<Calculable<CRTPBase<Kinetics::DiffTransConfiguration> > > >;
-  template class ConfigCanonicalForm<HasSupercell<Comparisons<Calculable<CRTPBase<Kinetics::DiffTransConfiguration> > > > >;
 
   namespace Kinetics {
 
@@ -355,9 +335,11 @@ namespace CASM {
     /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
     Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
       Configuration result = bg_config;
-      ScelPeriodicDiffTransSymCompare symcompare(bg_config.supercell().prim_grid(),
-                                                 bg_config.supercell().crystallography_tol());
-      if(diff_trans != symcompare.prepare(diff_trans)) {
+      ScelPeriodicDiffTransSymCompare sym_compare(bg_config.supercell());
+      if(diff_trans != sym_compare.prepare(diff_trans)) {
+        std::cout << "diff_trans: \n" << diff_trans << std::endl;
+        std::cout << "sym_compare.prepare(diff_trans): \n" << sym_compare.prepare(diff_trans) << std::endl;
+
         throw std::runtime_error("Error in make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config)");
       }
       for(auto traj : diff_trans.specie_traj()) {

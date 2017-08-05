@@ -1,15 +1,12 @@
-#include "casm/casm_io/Log.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/kinetics/DiffTransConfigInterpolation.hh"
+#include "casm/kinetics/DiffTransConfiguration_impl.hh"
+
+#include "casm/container/Enumerator_impl.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffTransConfiguration.hh"
-#include "casm/kinetics/DiffTransConfigInterpolation.hh"
-#include "casm/database/Selection.hh"
+#include "casm/database/Selection_impl.hh"
 
-#include "casm/container/Enumerator_impl.hh"
 
 // extern "C" {
 //   CASM::EnumInterfaceBase *make_DiffTransConfigInterpolation_interface() {

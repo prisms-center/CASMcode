@@ -3,8 +3,7 @@
 
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatter_impl.hh"
-#include "casm/casm_io/DataFormatterTools_impl.hh"
+#include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/container/ContainerTraits.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"

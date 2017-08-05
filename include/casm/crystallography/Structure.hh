@@ -194,6 +194,4 @@ namespace CASM {
   /** @} */
 };
 
-//#include "casm/clusterography/Orbitree_impl.hh"
-
 #endif

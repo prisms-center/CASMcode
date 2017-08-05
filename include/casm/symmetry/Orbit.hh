@@ -173,7 +173,7 @@ namespace CASM {
     DatabaseTypeOrbit(Element generating_element,
                       const SymGroup &generating_group,
                       const SymCompareType &sym_compare,
-                      const PrimClex *_primclex = nullptr);
+                      const PrimClex *_primclex);
 
     void write_pos() const;
 

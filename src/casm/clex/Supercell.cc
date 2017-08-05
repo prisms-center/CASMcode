@@ -1,4 +1,4 @@
-#include "casm/clex/Supercell.hh"
+#include "casm/clex/Supercell_impl.hh"
 
 //#include <math.h>
 #include <vector>
@@ -18,8 +18,6 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/database/ScelDatabase.hh"
 
-#include "casm/clex/HasPrimClex_impl.hh"
-#include "casm/clex/HasCanonicalForm_impl.hh"
 
 namespace CASM {
 

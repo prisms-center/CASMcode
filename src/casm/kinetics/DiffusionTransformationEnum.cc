@@ -163,7 +163,11 @@ namespace CASM {
 
       std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
       auto end2 = make_prim_periodic_diff_trans_orbits(
-                    orbits.begin(), orbits.end(), primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+                    orbits.begin(),
+                    orbits.end(),
+                    primclex.crystallography_tol(),
+                    std::back_inserter(diff_trans_orbits),
+                    &primclex);
 
       for(auto &diff_trans_orbit : diff_trans_orbits) {
         auto speciemap = diff_trans_orbit.prototype().specie_count();
@@ -297,7 +301,8 @@ namespace CASM {
       CLUSTER_IT begin, \
       CLUSTER_IT end, \
       double xtal_tol, \
-      INSERTER result); \
+      INSERTER result, \
+      const PrimClex*); \
     \
 
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator

@@ -7,7 +7,6 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clex/HasPrimClex.hh"
 #include "casm/clex/HasCanonicalForm.hh"
 #include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/kinetics/DoFTransformation.hh"

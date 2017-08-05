@@ -37,14 +37,19 @@ namespace CASM {
 
       // --- have optional default implementation: ---
 
-      Configuration &apply_reverse_to(Configuration &config) const;
-
-
+      Configuration &apply_reverse_to(Configuration &config) const {
+        return derived().apply_reverse_to_impl(config);
+      }
 
     protected:
 
       // customizable functions:
-      Configuration &apply_reverse_to_impl(Configuration &config) const;
+      Configuration &apply_reverse_to_impl(Configuration &config) const {
+        MostDerived tmp {derived()};
+        tmp.reverse();
+        tmp.apply_to(config);
+        return config;
+      }
 
     };
 

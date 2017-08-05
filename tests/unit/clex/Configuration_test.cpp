@@ -2,13 +2,12 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-#include "casm/clex/Configuration.hh"
+#include "casm/clex/Configuration_impl.hh"
 
 /// What is being used to test it:
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "casm/symmetry/SymInfo.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
 
@@ -193,6 +192,58 @@ BOOST_AUTO_TEST_CASE(Test2) {
     BOOST_CHECK_EQUAL(filled, check);
   }
 
+}
+
+BOOST_AUTO_TEST_CASE(Test3) {
+  // test ConfigCanonicalForm functions
+
+  test::FCCTernaryProj proj;
+  proj.check_init();
+
+  PrimClex primclex(proj.dir, null_log());
+
+  Eigen::Vector3d a, b, c;
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
+
+  {
+    // supercell (standard cubic FCC)
+    Supercell scel {&primclex, Lattice(a - b + c, a + b - c, b + c - a)};
+    std::cout << scel.lattice().lat_column_mat() << std::endl;
+    BOOST_CHECK_EQUAL(scel.is_canonical(), true);
+
+    {
+      Configuration config(scel);
+      config.set_occupation({1, 0, 0, 0});
+      BOOST_CHECK_EQUAL(config.is_canonical(), true);
+      BOOST_CHECK_EQUAL(config.is_primitive(), true);
+      BOOST_CHECK_EQUAL(config.invariant_subgroup().size(), 48);
+
+      {
+        Configuration test(scel);
+        test.set_occupation({1, 0, 0, 0});
+        BOOST_CHECK_EQUAL(config == test, true);
+        BOOST_CHECK_EQUAL(config.is_equivalent(test), true);
+        BOOST_CHECK_EQUAL(test.is_equivalent(config), true);
+        BOOST_CHECK_EQUAL(test < config, false);
+        BOOST_CHECK_EQUAL(config < test, false);
+      }
+
+      {
+        Configuration test(scel);
+        test.set_occupation({0, 1, 0, 0});
+        BOOST_CHECK_EQUAL(config == test, false);
+        BOOST_CHECK_EQUAL(config.is_equivalent(test), true);
+        BOOST_CHECK_EQUAL(test.is_equivalent(config), true);
+        BOOST_CHECK_EQUAL(test < config, true);
+        BOOST_CHECK_EQUAL(config < test, false);
+
+        auto to_canonical = test.to_canonical();
+        BOOST_CHECK_EQUAL(to_canonical.factor_group_index(), 0);
+        BOOST_CHECK_EQUAL(to_canonical.translation_index(), 0);
+        BOOST_CHECK_EQUAL(copy_apply(to_canonical, test) == config, true);
+      }
+    }
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

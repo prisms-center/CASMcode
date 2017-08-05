@@ -144,7 +144,7 @@ namespace CASM {
     }
     obj.sort();
     auto pos = position(obj);
-    this->m_integral_tau = pos.unitcell() - m_prim_grid->within(pos).unitcell();
+    this->m_integral_tau = m_prim_grid->within(pos).unitcell() - pos.unitcell();
     return obj + this->m_integral_tau;
   }
 

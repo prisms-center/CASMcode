@@ -2,13 +2,10 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-#include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffusionTransformationEnum.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 
 /// What is being used to test it:
-#include "casm/clex/PrimClex.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
@@ -150,7 +147,12 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
     // make orbits of DiffTrans
     std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-    Kinetics::make_prim_periodic_diff_trans_orbits(it, it + 1, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+    Kinetics::make_prim_periodic_diff_trans_orbits(
+      it,
+      it + 1,
+      primclex.crystallography_tol(),
+      std::back_inserter(diff_trans_orbits),
+      &primclex);
     BOOST_CHECK_EQUAL(true, true);
 
     // check how many DiffTrans orbits there are for each IntegralCluster orbit

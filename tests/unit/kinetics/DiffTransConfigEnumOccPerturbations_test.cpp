@@ -7,16 +7,18 @@
 
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
-#include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
+
+#include "casm/app/AppIO_impl.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
+#include "casm/clex/HasCanonicalForm_impl.hh"
+#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 //#include "casm/casm_io/VaspIO.hh"
 
@@ -67,7 +69,8 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
     orbits.begin() + 2,
     orbits.begin() + 4,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
 
@@ -144,7 +147,8 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
     orbits.begin() + 2,
     orbits.begin() + 4,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
 
@@ -236,7 +240,8 @@ BOOST_AUTO_TEST_CASE(FCCTest) {
     orbits.begin() + 2,
     orbits.begin() + 4,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 12);
 
   print_clust(

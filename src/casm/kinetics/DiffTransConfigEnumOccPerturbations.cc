@@ -1,25 +1,17 @@
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/clex/ConfigCompare.hh"
-#include "casm/clex/ConfigIsEquivalent.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
+#include "casm/kinetics/DiffTransConfiguration_impl.hh"
+#include "casm/symmetry/ConfigSubOrbits_impl.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 
 #include "casm/app/ProjectSettings.hh"
-#include "casm/app/AppIO.hh"
-#include "casm/app/QueryHandler.hh"
-#include "casm/database/Selection.hh"
+#include "casm/app/AppIO_impl.hh"
+#include "casm/app/QueryHandler_impl.hh"
+#include "casm/database/Selection_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
 
-#include "casm/app/AppIO_impl.hh"
-#include "casm/symmetry/ConfigSubOrbits_impl.hh"
-#include "casm/symmetry/ScelOrbitGeneration_impl.hh"
-#include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
 
 
 extern "C" {
@@ -470,32 +462,64 @@ namespace CASM {
       Configuration perturbed_from_config {m_base_it->config};
       perturb.apply_to(perturbed_from_config);
 
-      // check perturbed_from_config < test*perturbed_from_config, to find max
+      std::cout << "  find canonical from_config" << std::endl;
+      // - apply operations that leave perturb & diff_trans invariant
+      // - for each, also apply operations that leave diff_trans invariant
+      // - from these candidates, the 'max' config is then the canonical
+      //   from_config for this perturbation
       ConfigCompare compare(perturbed_from_config, _tol());
+      std::cout << "  get initial" << std::endl;
       auto max = m_base_it->diff_trans_g[0] * m_local_orbit_sub_g[0];
+      std::cout << "  begin loop" << std::endl;
       for(const auto &op_i : m_local_orbit_sub_g) {
+        std::cout << "  - op_i" << std::endl;
         for(const auto &op_j : m_base_it->diff_trans_g) {
+          std::cout << "  - - op_j" << std::endl;
           //auto test_config = op_j*op_i*(from_config + perturbation)
           auto test = op_j * op_i;
+          std::cout << "  - - test" << std::endl;
           if(compare(max, test)) {
+            std::cout << "  - - > new max" << std::endl;
             max = test;
           }
         }
       }
 
+      std::cout << "  construct canonical from_config" << std::endl;
       /// construct canonical DiffTransConfiguration as m_current
       m_current = notstd::make_cloneable<DiffTransConfiguration>(
                     copy_apply(max, perturbed_from_config),
                     m_base_it->diff_trans);
+      std::cout << " name: " << m_diff_trans_orbit.name() << std::endl;
+      m_current->set_orbit_name("test");
+      std::cout << "  set orbit name" << std::endl;
       m_current->set_orbit_name(m_diff_trans_orbit.name());
+      std::cout << "  orbit name: " << m_current->orbit_name() << std::endl;
+      std::cout << "  set source" << std::endl;
       m_current->set_source(this->source(step()));
+      std::cout << "  set ptr" << std::endl;
       this->_set_current_ptr(&(*m_current));
 
+      std::cout << "  debug check" << std::endl;
       // --- debug check ---
       // m_current should be in canonical form at this point
       if(!m_current->is_canonical()) {
-
-        throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical");
+        if(!m_current->diff_trans().is_canonical(
+             _supercell(),
+             _supercell().permute_begin(),
+             _supercell().permute_end())) {
+          throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: diff trans not canonical");
+        }
+        auto diff_trans_inv_group = m_current->diff_trans().invariant_subgroup(
+                                      _supercell(),
+                                      _supercell().permute_begin(),
+                                      _supercell().permute_end());
+        if(!m_current->from_config().is_canonical(
+             diff_trans_inv_group.begin(),
+             diff_trans_inv_group.end())) {
+          throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: from_config not canonical");
+        }
+        throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical, for unknown reason");
       }
       std::cout << "  end _set_current" << std::endl;
 

@@ -8,6 +8,8 @@
 
 namespace CASM {
 
+  template class DatabaseTypeOrbit<Kinetics::DiffusionTransformation, PrimPeriodicDiffTransSymCompare>;
+
   UnitCellCoord traits<Kinetics::DiffusionTransformation>::position(
     const Kinetics::DiffusionTransformation &diff_trans) {
     return diff_trans.occ_transform()[0].uccoord;
@@ -21,17 +23,34 @@ namespace CASM {
   };
 
   std::string PrimPeriodicDiffTransOrbitTraits::generate_name_impl(const OrbitType &orbit) {
+    std::cout << "begin PrimPeriodicDiffTransOrbitTraits::generate_name_impl" << std::endl;
     if(orbit.id() == "none") {
+      std::cout << "  get db ref" << std::endl;
       const auto &db = orbit.primclex().db<PrimPeriodicDiffTransOrbit>();
+      std::cout << "  search" << std::endl;
       auto find_it = db.search(orbit);
+      std::cout << "  check if orbit found" << std::endl;
       if(find_it != db.end()) {
+        std::cout << "  name: " << find_it->name() << std::endl;
+        std::cout << "end PrimPeriodicDiffTransOrbitTraits::generate_name_impl 0" << std::endl;
         return find_it->name();
       }
     }
+    std::cout << "end PrimPeriodicDiffTransOrbitTraits::generate_name_impl 1" << std::endl;
     return traits<PrimPeriodicDiffTransOrbit>::orbit_type_name + "/" + orbit.id();
 
   };
 
-  template class DatabaseTypeOrbit<Kinetics::DiffusionTransformation, PrimPeriodicDiffTransSymCompare>;
+
+  const std::string traits<PrimPeriodicDiffTransOrbit>::name = "PrimPeriodicDiffTransOrbit";
+
+  const std::string traits<PrimPeriodicDiffTransOrbit>::short_name = "diff_trans";
+
+  const std::string traits<PrimPeriodicDiffTransOrbit>::orbit_type_name = "diff_trans";
+
+  /// does lexicographical comparison
+  bool traits<PrimPeriodicDiffTransOrbit>::name_compare(std::string A, std::string B) {
+    return A < B;
+  };
 }
 

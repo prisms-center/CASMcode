@@ -25,7 +25,7 @@ namespace CASM {
     static UnitCellCoord position(const Kinetics::DiffusionTransformation &diff_trans);
   };
 
-  /// Specialization gives required functions for storing PrimPeriodicDiffTransOrbit in a Database
+  /// Specialization gives required for DatabaseTypeOrbit
   template<>
   struct OrbitTraits<Kinetics::DiffusionTransformation, PrimPeriodicDiffTransSymCompare> {
     typedef Kinetics::DiffusionTransformation Element;
@@ -45,6 +45,14 @@ namespace CASM {
   typedef Kinetics::PrimPeriodicDiffTransOrbit PrimPeriodicDiffTransOrbit;
   typedef Kinetics::ScelPeriodicDiffTransOrbit ScelPeriodicDiffTransOrbit;
 
+  /// Traits necessary for database types
+  template<>
+  struct traits<PrimPeriodicDiffTransOrbit> {
+    static const std::string name;
+    static const std::string short_name;
+    static const std::string orbit_type_name;
+    static bool name_compare(std::string A, std::string B);
+  };
 }
 
 #endif

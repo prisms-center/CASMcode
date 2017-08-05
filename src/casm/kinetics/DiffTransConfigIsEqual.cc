@@ -1,8 +1,5 @@
 #include "casm/kinetics/DiffTransConfigIsEqual.hh"
-#include "casm/clex/ConfigIsEquivalent.hh"
-#include "casm/kinetics/DiffTransConfiguration.hh"
-
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/kinetics/DiffTransConfiguration_impl.hh"
 
 namespace CASM {
   namespace Kinetics {
