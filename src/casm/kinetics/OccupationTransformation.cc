@@ -86,6 +86,9 @@ namespace CASM {
 
   template<typename OccTransfIt>
   std::map<AtomSpecie, Index> from_specie_count(OccTransfIt begin, OccTransfIt end) {
+    if(begin == end) {
+      return std::map<AtomSpecie, Index>();
+    }
     std::map<AtomSpecie, Index> _specie_count = empty_specie_count(begin->prim());
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
@@ -107,6 +110,9 @@ namespace CASM {
 
   template<typename OccTransfIt>
   std::map<AtomSpecie, Index> to_specie_count(OccTransfIt begin, OccTransfIt end) {
+    if(begin == end) {
+      return std::map<AtomSpecie, Index>();
+    }
     std::map<AtomSpecie, Index> _specie_count = empty_specie_count(begin->prim());
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;

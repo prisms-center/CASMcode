@@ -21,6 +21,42 @@ using namespace test;
 
 BOOST_AUTO_TEST_SUITE(DiffusionTransformationTest)
 
+BOOST_AUTO_TEST_CASE(SpeedTest0) {
+
+  test::ZrOProj proj;
+  proj.check_init();
+
+  Logging logging = Logging::null();
+  PrimClex primclex(proj.dir, logging);
+
+  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  jsonParser bspecs {bspecs_path};
+
+  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+  make_prim_periodic_orbits(
+    primclex.prim(),
+    bspecs,
+    alloy_sites_filter,
+    primclex.crystallography_tol(),
+    std::back_inserter(orbits),
+    primclex.log());
+
+  const auto &generating_grp = primclex.prim().factor_group();
+  PrimPeriodicDiffTransSymCompare sym_compare {primclex.crystallography_tol()};
+
+  OrbitGenerators<PrimPeriodicDiffTransOrbit> generators {generating_grp, sym_compare};
+
+  for(auto orbit_it = orbits.begin(); orbit_it != orbits.end(); ++orbit_it) {
+    Kinetics::DiffusionTransformationEnum e {orbit_it->prototype()};
+    for(auto it = e.begin(); it != e.end(); ++it) {
+      // generators.insert generates the sorted canonical form and inserts it
+      generators.insert(*it);
+    }
+  }
+
+  BOOST_CHECK_EQUAL(generators.elements.size(), 507);
+}
+
 BOOST_AUTO_TEST_CASE(Test0) {
 
   test::ZrOProj proj;
@@ -100,11 +136,13 @@ BOOST_AUTO_TEST_CASE(Test0) {
   auto expected_mult_it = expected_mult.begin();
 
 
+  BOOST_CHECK_EQUAL(true, true);
   for(auto it = orbits.begin(); it != orbits.end(); ++it) {
 
     // print the IntegralCluster prototype used to generate DiffTrans
-    //std::cout << "----------------\n";
-    //std::cout << "IntegralCluster: \n" << it->prototype() << std::endl;
+    // std::cout << "----------------\n";
+    // std::cout << "IntegralCluster: \n" << it->prototype() << std::endl;
+    // BOOST_CHECK_EQUAL(true, true);
 
     // check the number of valid DiffTrans
     Kinetics::DiffusionTransformationEnum e {it->prototype()};
@@ -113,6 +151,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     // make orbits of DiffTrans
     std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
     Kinetics::make_prim_periodic_diff_trans_orbits(it, it + 1, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+    BOOST_CHECK_EQUAL(true, true);
 
     // check how many DiffTrans orbits there are for each IntegralCluster orbit
     orbit_count.push_back(diff_trans_orbits.size());

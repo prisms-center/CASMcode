@@ -87,7 +87,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
   {
     fs::path difftrans_path = "tests/unit/kinetics/diff_trans.json";
     jsonParser diff_trans_json {difftrans_path};
+    BOOST_CHECK_EQUAL(true, true);
     Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+    BOOST_CHECK_EQUAL(true, true);
 
     BOOST_CHECK_EQUAL(primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
     primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().commit();
