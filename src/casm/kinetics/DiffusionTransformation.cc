@@ -16,6 +16,15 @@
 
 namespace CASM {
 
+  template class ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Kinetics::DiffusionTransformation> > > >;
+  template class AperiodicSymCompare<Kinetics::DiffusionTransformation>;
+
+  template class ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> > > >;
+  template class PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>;
+
+  template class ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> > > >;
+  template class ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>;
+
   template bool CanonicalForm<Comparisons<Translatable<SymComparable<CRTPBase<Kinetics::DiffusionTransformation> > > > >::
   is_equivalent<PrimPeriodicDiffTransSymCompare>(
     Kinetics::DiffusionTransformation const &,

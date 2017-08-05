@@ -16,7 +16,7 @@
 #include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/stream_io/container.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
-#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
+#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
@@ -81,8 +81,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
 
   // Make DiffTransConfiguration enumerator and enumerate configs
-  //std::cout << "skipping DiffTransConfigEnumPerturbations dependent parts" << std::endl;
-  Kinetics::DiffTransConfigEnumPerturbations enum_diff_trans_config(
+  //std::cout << "skipping DiffTransConfigEnumOccPerturbations dependent parts" << std::endl;
+  Kinetics::DiffTransConfigEnumOccPerturbations enum_diff_trans_config(
     config, diff_trans_orbits[0], diff_perturb_json["local_bspecs"]);
   for(const auto &diff_trans_config : enum_diff_trans_config) {
     db_diff_trans_config.insert(diff_trans_config);

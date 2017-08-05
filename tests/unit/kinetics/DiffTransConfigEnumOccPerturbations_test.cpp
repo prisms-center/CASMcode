@@ -2,7 +2,7 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-//#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
+//#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 //#include "casm/kinetics/DiffTransEnumEquivalents.hh"
 
 /// What is being used to test it:
@@ -17,7 +17,7 @@
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
-#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
+#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 //#include "casm/casm_io/VaspIO.hh"
 
 using namespace CASM;
@@ -27,7 +27,7 @@ typedef Orbit <
 Kinetics::DiffusionTransformation,
          Kinetics::PrimPeriodicDiffTransSymCompare > PrimPeriodicDiffTransOrbit;
 
-BOOST_AUTO_TEST_SUITE(DiffTransConfigEnumPerturbationsTest)
+BOOST_AUTO_TEST_SUITE(DiffTransConfigEnumOccPerturbationsTest)
 
 BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
 
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
   std::cout << "construct enumerator" << std::endl;
   fs::path local_bspecs_path = "tests/unit/kinetics/ZrO_local_bspecs_0.json";
   jsonParser local_bspecs {local_bspecs_path};
-  Kinetics::DiffTransConfigEnumPerturbations enumerator(
+  Kinetics::DiffTransConfigEnumOccPerturbations enumerator(
     background_config,
     diff_trans_orbits[0],
     local_bspecs);
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(FCCTest) {
     true);
 
   /// Constructor enumerator
-  Kinetics::DiffTransConfigEnumPerturbations enumerator(l12config, diff_trans_orbits[4], l12_local_bspecs);
+  Kinetics::DiffTransConfigEnumOccPerturbations enumerator(l12config, diff_trans_orbits[4], l12_local_bspecs);
   BOOST_CHECK_EQUAL(true, true);
 
   /// Enumerate perturbations (may be duplicates at this point)

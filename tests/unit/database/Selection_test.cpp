@@ -17,7 +17,7 @@
 #include "casm/container/Enumerator_impl.hh"
 #include "casm/app/enum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
-#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
+#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
 
 using namespace CASM;
@@ -88,11 +88,11 @@ BOOST_AUTO_TEST_CASE(Test1) {
     // Generate
     fs::path diffperturb_path = "tests/unit/kinetics/diff_perturb.json";
     jsonParser diff_perturb_json {diffperturb_path};
-    Kinetics::DiffTransConfigEnumPerturbations::run(primclex, diff_perturb_json, enum_opt);
+    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
     BOOST_CHECK_EQUAL(true, true);
 
     // Test
-    Kinetics::DiffTransConfigEnumPerturbations::run(primclex, diff_perturb_json, enum_opt);
+    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
     auto &dict = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>().dict();
     BOOST_CHECK_EQUAL(primclex.db<Kinetics::DiffTransConfiguration>().size(), 2);
     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex);

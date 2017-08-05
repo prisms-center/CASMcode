@@ -9,8 +9,9 @@ namespace CASM {
 
   // --- MakeSubOrbitGenerators ---
 
-  MakeSubOrbitGenerators::MakeSubOrbitGenerators(const SymGroup &group,
-                                                 const SymGroup &subgroup) :
+  inline MakeSubOrbitGenerators::MakeSubOrbitGenerators(
+    const SymGroup &group,
+    const SymGroup &subgroup) :
     m_group(group),
     m_subgroup(subgroup) {}
 
@@ -70,7 +71,8 @@ namespace CASM {
     const SymGroup &subgroup,
     ElementOutputIterator result) {
 
-    return MakeSubOrbitGenerators{group, subgroup}(element, invariant_subgroup, result);
+    MakeSubOrbitGenerators f{group, subgroup};
+    return f(element, invariant_subgroup, result);
   }
 
   /// \brief Output the orbit generators necessary to construct the sub-orbits
@@ -83,7 +85,8 @@ namespace CASM {
     const SymGroup &subgroup,
     ElementOutputIterator result) {
 
-    return MakeSubOrbitGenerators{group, subgroup}(element, sym_compare, result);
+    MakeSubOrbitGenerators f{group, subgroup};
+    return f(element, sym_compare, result);
   }
 
   /// \brief Output the orbit generators necessary to construct the sub-orbits
@@ -95,7 +98,8 @@ namespace CASM {
     const SymGroup &subgroup,
     ElementOutputIterator result) {
 
-    return MakeSubOrbitGenerators{group, subgroup}(orbit, result);
+    MakeSubOrbitGenerators f{group, subgroup};
+    return f(orbit, result);
   }
 
 }

@@ -59,7 +59,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config.init_occupation();
   config.init_displacement();
   config.init_deformation();
-  config.init_specie_id();
   //hardcoded occupation for trans to occur is there a way to do this generally?
   config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1});
 
@@ -67,7 +66,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config2.init_occupation();
   config2.init_displacement();
   config2.init_deformation();
-  config2.init_specie_id();
   //hardcoded occupation for trans to occur is there a way to do this generally?
   config2.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0});
 
@@ -75,7 +73,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config3.init_occupation();
   config3.init_displacement();
   config3.init_deformation();
-  config3.init_specie_id();
   config3.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
 
   //test make attachable

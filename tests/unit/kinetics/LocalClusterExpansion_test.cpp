@@ -3,7 +3,6 @@
 
 /// What is being tested:
 #include "casm/clusterography/ClusterOrbits.hh"
-#include "casm/clusterography/ClusterOrbits_impl.hh"
 
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
@@ -14,7 +13,10 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
+
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/symmetry/InvariantSubgroup_impl.hh"
 
 using namespace CASM;
 using namespace test;
