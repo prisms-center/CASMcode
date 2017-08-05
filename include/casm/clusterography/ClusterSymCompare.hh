@@ -41,24 +41,29 @@ namespace CASM {
   ///
   /// \ingroup Clusterography
   ///
-  template<typename Derived>
-  class ClusterSymCompare : public SymCompare<ClusterSymCompare<Derived> > {
+  template<typename Base>
+  class ClusterSymCompare : public Base {
 
   public:
 
     /// Element refers to Cluster, not element of Cluster
+    /*
     typedef typename traits<Derived>::MostDerived MostDerived;
     typedef typename traits<Derived>::Element Element;
     typedef Element ClusterType;
     typedef typename traits<Element>::InvariantsType InvariantsType;
+    */
+
+    typedef typename Base::MostDerived MostDerived;
+    typedef typename traits<MostDerived>::Element Element;
+    typedef Element ClusterType;
+    typedef typename traits<Element>::InvariantsType InvariantsType;
+    using Base::derived;
 
     /// \brief Return tolerance
     double tol() const;
 
   protected:
-
-    friend class SymCompare<ClusterSymCompare<Derived> >;
-    using SymCompare<ClusterSymCompare<Derived> >::m_integral_tau;
 
     /// \brief Constructor
     ///
@@ -66,7 +71,6 @@ namespace CASM {
     ///
     ClusterSymCompare(double tol);
 
-    // compare_impl : implement in Derived
 
     /// \brief Orders 'prepared' elements in the same orbit
     bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
@@ -112,9 +116,12 @@ namespace CASM {
   ///
   template<typename Element>
   class AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/> :
-    public ClusterSymCompare<AperiodicSymCompare<Element> > {
+    public ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> {
 
   public:
+
+    typedef ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> Base;
+    using Base::position;
 
     /// \brief Constructor
     ///
@@ -123,9 +130,7 @@ namespace CASM {
     AperiodicSymCompare(double tol);
 
   protected:
-
-    friend class SymCompare<ClusterSymCompare<AperiodicSymCompare<Element> > >;
-    using ClusterSymCompare<AperiodicSymCompare<Element> >::m_integral_tau;
+    friend SymCompare<CRTPBase<AperiodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison
     ///
@@ -148,9 +153,12 @@ namespace CASM {
   ///
   template<typename Element>
   class PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/> :
-    public ClusterSymCompare<PrimPeriodicSymCompare<Element> > {
+    public ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> {
 
   public:
+
+    typedef ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> Base;
+    using Base::position;
 
     /// \brief Constructor
     ///
@@ -161,10 +169,7 @@ namespace CASM {
     PrimPeriodicSymCompare(const PrimClex &primclex);
 
   protected:
-
-    friend class SymCompare<ClusterSymCompare<PrimPeriodicSymCompare<Element> > >;
-    using ClusterSymCompare<PrimPeriodicSymCompare<Element> >::m_integral_tau;
-    using ClusterSymCompare<PrimPeriodicSymCompare<Element> >::position;
+    friend SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison
     ///
@@ -186,9 +191,12 @@ namespace CASM {
   ///
   template<typename Element>
   class ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/> :
-    public ClusterSymCompare<ScelPeriodicSymCompare<Element> > {
+    public ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> {
 
   public:
+
+    typedef ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> Base;
+    using Base::position;
 
     /// \brief Constructor
     ///
@@ -200,10 +208,7 @@ namespace CASM {
     ScelPeriodicSymCompare(const Supercell &scel);
 
   protected:
-
-    friend class SymCompare<ClusterSymCompare<ScelPeriodicSymCompare<Element> > >;
-    using ClusterSymCompare<ScelPeriodicSymCompare<Element> >::m_integral_tau;
-    using ClusterSymCompare<ScelPeriodicSymCompare<Element> >::position;
+    friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison
     ///

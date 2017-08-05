@@ -10,9 +10,11 @@ namespace CASM {
   namespace Kinetics {
     class DiffusionTransformation;
     class DiffTransInvariants;
+    typedef PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> PrimPeriodicDiffTransSymCompare;
+    typedef ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> ScelPeriodicDiffTransSymCompare;
   }
-  typedef PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> PrimPeriodicDiffTransSymCompare;
-  typedef ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> ScelPeriodicDiffTransSymCompare;
+  typedef Kinetics::PrimPeriodicDiffTransSymCompare PrimPeriodicDiffTransSymCompare;
+  typedef Kinetics::ScelPeriodicDiffTransSymCompare ScelPeriodicDiffTransSymCompare;
 
   /// Traits necessary for SymCompare
   template<>
@@ -36,9 +38,12 @@ namespace CASM {
 
   typedef OrbitTraits<Kinetics::DiffusionTransformation, PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbitTraits;
 
-  typedef PrimPeriodicOrbit<Kinetics::DiffusionTransformation> PrimPeriodicDiffTransOrbit;
-  typedef ScelPeriodicOrbit<Kinetics::DiffusionTransformation> ScelPeriodicDiffTransOrbit;
-
+  namespace Kinetics {
+    typedef PrimPeriodicOrbit<Kinetics::DiffusionTransformation> PrimPeriodicDiffTransOrbit;
+    typedef ScelPeriodicOrbit<Kinetics::DiffusionTransformation> ScelPeriodicDiffTransOrbit;
+  }
+  typedef Kinetics::PrimPeriodicDiffTransOrbit PrimPeriodicDiffTransOrbit;
+  typedef Kinetics::ScelPeriodicDiffTransOrbit ScelPeriodicDiffTransOrbit;
 
 }
 

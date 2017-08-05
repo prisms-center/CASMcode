@@ -9,8 +9,8 @@
 namespace CASM {
 
   /// \brief Return tolerance
-  template<typename Derived>
-  double ClusterSymCompare<Derived>::tol() const {
+  template<typename Base>
+  double ClusterSymCompare<Base>::tol() const {
     return m_tol;
   }
 
@@ -18,9 +18,8 @@ namespace CASM {
   ///
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
-  template<typename Derived>
-  ClusterSymCompare<Derived>::ClusterSymCompare(double tol):
-    SymCompare<ClusterSymCompare<Derived> >(),
+  template<typename Base>
+  ClusterSymCompare<Base>::ClusterSymCompare(double tol):
     m_tol(tol) {
 
   }
@@ -33,8 +32,8 @@ namespace CASM {
   /// Implementation:
   /// - First compares by number of sites in cluster
   /// - Then compare all displacements, from longest to shortest
-  template<typename Derived>
-  bool ClusterSymCompare<Derived>::invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
+  template<typename Base>
+  bool ClusterSymCompare<Base>::invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
     return CASM::compare(A, B, tol());
   }
 
@@ -43,16 +42,16 @@ namespace CASM {
   /// - Returns 'true' to indicate A < B
   /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
   /// - Assumes elements are 'prepared' before being compared
-  template<typename Derived>
-  bool ClusterSymCompare<Derived>::compare_impl(const Element &A, const Element &B) const {
+  template<typename Base>
+  bool ClusterSymCompare<Base>::compare_impl(const Element &A, const Element &B) const {
     return A < B;
   }
 
   /// \brief type-specific way to get position of element
   ///
   /// - Returns traits<Element>::position(el)
-  template<typename Derived>
-  UnitCellCoord ClusterSymCompare<Derived>::position(const Element &el) {
+  template<typename Base>
+  UnitCellCoord ClusterSymCompare<Base>::position(const Element &el) {
     return traits<Element>::position(el);
   }
 
@@ -66,7 +65,7 @@ namespace CASM {
   template<typename Element>
   AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   AperiodicSymCompare(double tol):
-    ClusterSymCompare<LocalSymCompare<Element> >(tol) {}
+    ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>>(tol) {}
 
   /// \brief Prepare an element for comparison
   ///
@@ -87,7 +86,7 @@ namespace CASM {
   template<typename Element>
   PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   PrimPeriodicSymCompare(double tol):
-    ClusterSymCompare<PrimPeriodicSymCompare<Element> >(tol) {}
+    ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>>(tol) {}
 
   /// \brief Constructor
   ///
@@ -108,8 +107,8 @@ namespace CASM {
       return obj;
     }
     obj.sort();
-    m_integral_tau = -position(obj).unitcell();
-    return obj + m_integral_tau;;
+    this->m_integral_tau = -position(obj).unitcell();
+    return obj + this->m_integral_tau;;
   }
 
 
@@ -122,7 +121,7 @@ namespace CASM {
   template<typename Element>
   ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   ScelPeriodicSymCompare(const PrimGrid &prim_grid, double tol):
-    ClusterSymCompare<ScelPeriodicSymCompare<Element> >(tol),
+    ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>>(tol),
     m_prim_grid(&prim_grid) {}
 
   /// \brief Constructor
@@ -145,8 +144,8 @@ namespace CASM {
     }
     obj.sort();
     auto pos = position(obj);
-    m_integral_tau = pos.unitcell() - m_prim_grid->within(pos).unitcell();
-    return obj + m_integral_tau;
+    this->m_integral_tau = pos.unitcell() - m_prim_grid->within(pos).unitcell();
+    return obj + this->m_integral_tau;
   }
 
 }

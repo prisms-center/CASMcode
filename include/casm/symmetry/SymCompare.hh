@@ -67,13 +67,14 @@ namespace CASM {
   ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///
-  template<typename Derived>
-  class SymCompare {
+  template<typename Base>
+  class SymCompare : public Base {
 
   public:
 
-    typedef typename traits<Derived>::MostDerived MostDerived;
-    typedef typename traits<Derived>::Element Element;
+    typedef typename Base::MostDerived MostDerived;
+    using Base::derived;
+    typedef typename traits<MostDerived>::Element Element;
     typedef typename traits<Element>::InvariantsType InvariantsType;
 
     /// \brief Prepare an element for comparison
@@ -156,16 +157,6 @@ namespace CASM {
     }
 
   protected:
-
-    SymCompare() {}
-
-    MostDerived &derived() {
-      return *static_cast<MostDerived *>(this);
-    }
-
-    const MostDerived &derived() const {
-      return *static_cast<const MostDerived *>(this);
-    }
 
     /// \brief Orders orbit prototypes, breaking invariants_compare ties
     ///
