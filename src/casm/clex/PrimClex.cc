@@ -286,6 +286,16 @@ namespace CASM {
   }
 
   template<typename T>
+  DB::ValDatabase<T> &PrimClex::generic_db() const {
+    return m_data->db_handler->template generic_db<T>();
+  }
+
+  template<typename T>
+  const DB::ValDatabase<T> &PrimClex::const_generic_db() const {
+    return m_data->db_handler->template const_generic_db<T>();
+  }
+
+  template<typename T>
   DB::Database<T> &PrimClex::db() const {
     return m_data->db_handler->template db<T>();
   }
@@ -436,6 +446,8 @@ namespace CASM {
 #define INST_PrimClex(r, data, type) \
 template DB::Database<type> &PrimClex::db<type>() const; \
 template const DB::Database<type> &PrimClex::const_db<type>() const; \
+template DB::ValDatabase<type> &PrimClex::generic_db<type>() const; \
+template const DB::ValDatabase<type> &PrimClex::const_generic_db<type>() const; \
 
 // explicit template instantiations
 #define INST_PrimClexProps(r, data, type) \

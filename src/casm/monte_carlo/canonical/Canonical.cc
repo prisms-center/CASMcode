@@ -4,6 +4,7 @@
 #include "casm/monte_carlo/MonteIO_impl.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
+#include "casm/monte_carlo/canonical/CanonicalSettings_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/misc/algorithm.hh"
 

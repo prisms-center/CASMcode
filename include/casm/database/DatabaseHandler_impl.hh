@@ -28,6 +28,24 @@ namespace CASM {
 
     /// Access default Database<T>
     template<typename T>
+    ValDatabase<T> &DatabaseHandler::generic_db() {
+      return generic_db<T>(m_default_db_name);
+    }
+
+    /// Access default Database<T>
+    template<typename T>
+    const ValDatabase<T> &DatabaseHandler::generic_db() const {
+      return generic_db<T>(m_default_db_name);
+    }
+
+    /// Access default Database<T>
+    template<typename T>
+    const ValDatabase<T> &DatabaseHandler::const_generic_db() {
+      return const_generic_db<T>(m_default_db_name);
+    }
+
+    /// Access default Database<T>
+    template<typename T>
     Database<T> &DatabaseHandler::db() {
       return db<T>(m_default_db_name);
     }
@@ -60,6 +78,28 @@ namespace CASM {
     template<typename T>
     const PropertiesDatabase &DatabaseHandler::const_db_props(std::string calc_type)  {
       return const_db_props<T>(m_default_db_name, calc_type);
+    }
+
+
+    /// Access specified Database<T>
+    template<typename T>
+    ValDatabase<T> &DatabaseHandler::generic_db(std::string db_name) {
+      auto res = _find<T>(db_name);
+      return static_cast<ValDatabase<T>&>(res->second->open());
+    }
+
+    /// Access specified Database<T>
+    template<typename T>
+    const ValDatabase<T> &DatabaseHandler::generic_db(std::string db_name) const {
+      auto res = _find<T>(db_name);
+      return static_cast<ValDatabase<T>&>(res->second->open());
+    }
+
+    /// Access specified Database<T>
+    template<typename T>
+    const ValDatabase<T> &DatabaseHandler::const_generic_db(std::string db_name) {
+      auto res = _find<T>(db_name);
+      return static_cast<ValDatabase<T>&>(res->second->open());
     }
 
 

@@ -1,11 +1,10 @@
 #include "casm/app/select.hh"
-#include "casm/app/DBInterface.hh"
+#include "casm/app/DBInterface_impl.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/DataFormatter_impl.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/clex/Configuration_impl.hh"
+#include "casm/database/Database.hh"
+#include "casm/database/DatabaseTypes.hh"
 #include "casm/database/Selection.hh"
 
 namespace CASM {
@@ -191,7 +190,7 @@ namespace CASM {
   SelectCommandImpl<DataObject>::SelectCommandImpl(const SelectCommand &cmd) :
     SelectCommandImplBase(cmd),
     m_data(cmd),
-    m_Ntot(m_cmd.primclex().template db<DataObject>().size()) {
+    m_Ntot(m_cmd.primclex().template generic_db<DataObject>().size()) {
   }
 
   template<typename DataObject>

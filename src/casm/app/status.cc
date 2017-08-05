@@ -8,8 +8,7 @@
 #include "casm/clex/ECIContainer.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/Selection.hh"
-#include "casm/database/DatabaseTypeDefs.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
   void status_unitialized(const CommandArgs &args) {

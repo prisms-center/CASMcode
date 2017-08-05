@@ -5,9 +5,9 @@
 #include "casm/system/Popen.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/database/Selection.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Configuration.hh"
+#include "casm/database/Selection_impl.hh"
+#include "casm/clex/PrimClex_impl.hh"
+#include "casm/clex/Configuration_impl.hh"
 
 #include "casm/completer/Handlers.hh"
 

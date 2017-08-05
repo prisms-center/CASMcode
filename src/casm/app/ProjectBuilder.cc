@@ -10,7 +10,7 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseTypes.hh"
 
 namespace CASM {
 

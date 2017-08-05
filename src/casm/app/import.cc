@@ -1,6 +1,6 @@
 #include "casm/app/import.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseTypes.hh"
 #include "casm/database/Import.hh"
 #include "casm/app/DBInterface.hh"
 #include "casm/clex/PrimClex.hh"

@@ -19,6 +19,7 @@ namespace CASM {
   class ECIContainer;
 
   namespace DB {
+    template<typename T> class ValDatabase;
     template<typename T> class Database;
     class PropertiesDatabase;
     class DatabaseHandler;
@@ -116,6 +117,13 @@ namespace CASM {
 
 
     // ** Supercell, Configuration, etc. databases **
+
+    template<typename T>
+    DB::ValDatabase<T> &generic_db() const;
+
+    template<typename T>
+    const DB::ValDatabase<T> &const_generic_db() const;
+
 
     template<typename T>
     DB::Database<T> &db() const;

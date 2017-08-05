@@ -11,7 +11,7 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/casm_io/SafeOfstream.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseTypes.hh"
 
 namespace CASM {
 
@@ -801,7 +801,6 @@ namespace CASM {
 }
 
 // explicit instantiations
-#include "casm/database/DatabaseTypeTraits.hh"
 
 #define INST_ProjectSettings_all(r, data, type) \
 template QueryHandler<type> &ProjectSettings::query_handler<type>(); \
