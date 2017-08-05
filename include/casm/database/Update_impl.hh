@@ -3,9 +3,8 @@
 
 #include <boost/filesystem/fstream.hpp>
 #include "casm/database/Update.hh"
-#include "casm/database/Selection.hh"
-#include "casm/database/DatabaseDefs.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/database/Selection_impl.hh"
+#include "casm/clex/PrimClex_impl.hh"
 
 namespace CASM {
   namespace DB {

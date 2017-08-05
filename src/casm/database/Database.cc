@@ -1,8 +1,5 @@
 #include "casm/database/Database_impl.hh"
-#include "casm/database/DatabaseTypeDefs.hh"
-#include "casm/database/DatabaseTypes.hh"
-
-#include "casm/clex/HasPrimClex_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 // explicit template instantiations
 #define INST_ValDatabase(r, data, type) template class ValDatabase<type>;

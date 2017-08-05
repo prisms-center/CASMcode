@@ -1,9 +1,6 @@
 #include <boost/range/iterator_range.hpp>
-#include "casm/clex/PrimClex.hh"
-#include "casm/database/Import.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
-#include "casm/database/DatabaseDefs.hh"
-#include "casm/database/DatabaseTypes.hh"
+#include "casm/database/ConfigData_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
 

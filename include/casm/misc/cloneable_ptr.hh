@@ -153,4 +153,6 @@ struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_ty
   bool operator!=(const cloneable_ptr<Type> &A, const cloneable_ptr<Type> &B);
 }
 
+#include "casm/misc/cloneable_ptr_impl.hh"
+
 #endif

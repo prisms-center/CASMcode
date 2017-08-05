@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <boost/filesystem.hpp>
-#include "casm/clex/PrimClex.hh"
+#include "casm/clex/PrimClex_impl.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/database/DatabaseTypeDefs.hh"

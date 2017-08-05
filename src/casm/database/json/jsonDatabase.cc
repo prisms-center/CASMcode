@@ -4,14 +4,12 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/symmetry/OrbitGeneration.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/clex/PrimClex_impl.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/Database_impl.hh"
-#include "casm/database/DatabaseTypeDefs.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 //for testing:
 #include "casm/casm_io/stream_io/container.hh"

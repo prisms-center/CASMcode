@@ -1,9 +1,11 @@
+#ifndef CASM_QueryHandler_impl
+#define CASM_QueryHandler_impl
+
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
-#include "casm/database/Selection.hh"
-#include "casm/database/Selected.hh"
+#include "casm/casm_io/DataFormatterTools_impl.hh"
+#include "casm/database/Selection_impl.hh"
+#include "casm/database/Selected_impl.hh"
 #include "casm/system/RuntimeLibrary.hh"
 
 namespace CASM {
@@ -159,3 +161,5 @@ namespace CASM {
   }
 
 }
+
+#endif

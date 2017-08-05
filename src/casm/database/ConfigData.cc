@@ -4,9 +4,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/PropertiesDatabase.hh"
-#include "casm/database/DatabaseDefs.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/database/ConfigTypeTraits.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 // explicit template instantiations
 #define INST_Import(r, data, type) \

@@ -3,11 +3,10 @@
 
 #include <boost/filesystem/fstream.hpp>
 #include "casm/database/Import.hh"
-#include "casm/database/Selection.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/Selection_impl.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/import.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/clex/PrimClex_impl.hh"
 
 namespace CASM {
   namespace DB {

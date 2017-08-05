@@ -1,6 +1,6 @@
 #include "casm/database/Remove_impl.hh"
 
-#include "casm/database/ConfigTypeTraits.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 // explicit template instantiations
 #define INST_Remove(r, data, type) \

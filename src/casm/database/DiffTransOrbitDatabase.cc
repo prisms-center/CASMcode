@@ -1,6 +1,5 @@
 #include "casm/database/DiffTransOrbitDatabase.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
 
 namespace CASM {
   namespace DB {
