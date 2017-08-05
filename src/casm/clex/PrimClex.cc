@@ -1,6 +1,7 @@
 #include "casm/clex/PrimClex_impl.hh"
 
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/CompositionConverter.hh"
@@ -9,17 +10,16 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/ECIContainer.hh"
-#include "casm/clex/Supercell.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/database/DatabaseHandler_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
+
 #include "casm/app/AppIO.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/app/EnumeratorHandler.hh"
-#include "casm/app/QueryHandler.hh"
-#include "casm/database/DatabaseHandler_impl.hh"
-#include "casm/casm_io/SafeOfstream.hh"
-#include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/app/EnumeratorHandler_impl.hh"
+#include "casm/app/QueryHandler_impl.hh"
 
 namespace CASM {
 

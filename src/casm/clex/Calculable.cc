@@ -5,7 +5,7 @@
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/jsonParser.hh"
-#include "casm/database/DatabaseTypeDefs.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
 

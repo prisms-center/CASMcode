@@ -1,12 +1,9 @@
 #include "casm/clex/RemoveSupercell.hh"
 #include "casm/app/rm.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/database/Selection.hh"
-#include "casm/database/Remove.hh"
-#include "casm/database/DatabaseDefs.hh"
-#include "casm/database/DatabaseTypes.hh"
+#include "casm/database/Selection_impl.hh"
+#include "casm/database/Remove_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
   namespace DB {
