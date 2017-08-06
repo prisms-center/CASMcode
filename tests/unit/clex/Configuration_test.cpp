@@ -204,10 +204,12 @@ BOOST_AUTO_TEST_CASE(Test3) {
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
+  // a = 0, 2, 2; b = 2, 0, 2; c = 2, 2, 0
+
 
   {
     // supercell (standard cubic FCC)
-    Supercell scel {&primclex, Lattice(a - b + c, a + b - c, b + c - a)};
+    Supercell scel {&primclex, Lattice(b + c - a, a + c - b, a + b - c)};
     std::cout << scel.lattice().lat_column_mat() << std::endl;
     BOOST_CHECK_EQUAL(scel.is_canonical(), true);
 
@@ -239,7 +241,7 @@ BOOST_AUTO_TEST_CASE(Test3) {
 
         auto to_canonical = test.to_canonical();
         BOOST_CHECK_EQUAL(to_canonical.factor_group_index(), 0);
-        BOOST_CHECK_EQUAL(to_canonical.translation_index(), 0);
+        BOOST_CHECK_EQUAL(to_canonical.translation_index(), 1);
         BOOST_CHECK_EQUAL(copy_apply(to_canonical, test) == config, true);
       }
     }

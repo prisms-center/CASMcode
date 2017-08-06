@@ -8,6 +8,8 @@
 /// What is being used to test it:
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/database/Database.hh"
 #include "casm/app/AppIO.hh"
 #include "Common.hh"
 

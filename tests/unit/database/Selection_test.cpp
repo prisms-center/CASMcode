@@ -3,7 +3,6 @@
 
 /// What is being tested:
 #include "casm/database/Selection.hh"
-#include "casm/database/DatabaseDefs.hh"
 
 
 /// What is being used to test it:
@@ -13,9 +12,10 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/ScelEnum.hh"
-#include "casm/app/QueryHandler.hh"
 #include "casm/container/Enumerator_impl.hh"
+#include "casm/app/QueryHandler.hh"
 #include "casm/app/enum.hh"
+#include "casm/database/Database.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // Test Supercell Selection
   {
     auto &dict = primclex.settings().query_handler<Supercell>().dict();
-    BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), 13);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
     DB::Selection<Supercell> selection(primclex);
     BOOST_CHECK_EQUAL(selection.size(), 13);
     BOOST_CHECK_EQUAL(selection.selected_size(), 0);
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   // Test Configuration Selection
   {
-    BOOST_CHECK_EQUAL(primclex.db<Configuration>().size(), 126);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size(), 126);
 
     DB::Selection<Configuration> selection(primclex);
     BOOST_CHECK_EQUAL(selection.size(), 126);
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
     // Test
     auto &dict = primclex.settings().query_handler<Kinetics::PrimPeriodicDiffTransOrbit>().dict();
-    BOOST_CHECK_EQUAL(primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
     DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection(primclex);
     BOOST_CHECK_EQUAL(selection.size(), 28);
     BOOST_CHECK_EQUAL(selection.selected_size(), 0);
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     // Test
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
     auto &dict = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>().dict();
-    BOOST_CHECK_EQUAL(primclex.db<Kinetics::DiffTransConfiguration>().size(), 2);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 2);
     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex);
     BOOST_CHECK_EQUAL(selection.size(), 2);
     BOOST_CHECK_EQUAL(selection.selected_size(), 0);

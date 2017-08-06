@@ -9,7 +9,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/Database.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/enum.hh"
@@ -72,12 +72,12 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsTest) {
 
     // run checks:
     jsonParser json_scel;
-    json_scel = (Index) primclex.db<Supercell>().size();
+    json_scel = (Index) primclex.generic_db<Supercell>().size();
     check("Nscel", j, json_scel, test_cases_path, quiet);
 
     // generate configurations
     jsonParser json = jsonParser::array();
-    for(auto &scel : primclex.db<Supercell>()) {
+    for(auto &scel : primclex.generic_db<Supercell>()) {
       ConfigEnumAllOccupations e(scel);
       json.push_back(std::distance(e.begin(), e.end()));
     }
@@ -108,14 +108,14 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsRunTest) {
     parse_args(opt, "casm enum --method ScelEnum --max 4", primclex);
     ScelEnum::run(primclex, jsonParser(), opt);
   }
-  BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), 13);
+  BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
 
   {
     Completer::EnumOption opt;
     parse_args(opt, "casm enum --method ConfigEnumAllOccupations -a", primclex);
     ConfigEnumAllOccupations::run(primclex, jsonParser(), opt);
   }
-  BOOST_CHECK_EQUAL(primclex.db<Configuration>().size(), 126);
+  BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size(), 126);
 
 }
 

@@ -13,7 +13,7 @@
 
 /// What is being used to test it:
 #include "Common.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 
@@ -62,7 +62,8 @@ BOOST_AUTO_TEST_CASE(Test0) {
     orbits.begin() + 2,
     orbits.begin() + 4,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
 

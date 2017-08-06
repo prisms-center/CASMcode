@@ -11,7 +11,7 @@
 #include "Common.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/symmetry/Orbit_impl.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 
 using namespace CASM;
 

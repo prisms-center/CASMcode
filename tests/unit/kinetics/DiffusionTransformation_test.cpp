@@ -12,6 +12,7 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/enum.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
 
 using namespace CASM;
 using namespace test;

@@ -15,6 +15,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/Selection.hh"
 #include "casm/database/Selected.hh"
+#include "casm/database/Database.hh"
 #include "casm/container/Enumerator_impl.hh"
 #include "casm/app/enum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
@@ -49,7 +50,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // -- Check Supercell --
 
   {
-    BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), 13);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
     DB::Selection<Supercell> selection(primclex, "ALL");
 
     auto &qh = primclex.settings().query_handler<Supercell>();
@@ -67,7 +68,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // -- Check Configuration --
 
   {
-    BOOST_CHECK_EQUAL(primclex.db<Configuration>().size(), 126);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size(), 126);
 
     DB::Selection<Configuration> selection(primclex, "ALL");
 
@@ -91,8 +92,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
     Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
     BOOST_CHECK_EQUAL(true, true);
 
-    BOOST_CHECK_EQUAL(primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
-    primclex.db<Kinetics::PrimPeriodicDiffTransOrbit>().commit();
+    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
+    primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().commit();
     DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection(primclex, "ALL");
 
     auto &qh = primclex.settings().query_handler<Kinetics::PrimPeriodicDiffTransOrbit>();
@@ -114,8 +115,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
     jsonParser diff_perturb_json {diffperturb_path};
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
 
-    BOOST_CHECK_EQUAL(primclex.db<Kinetics::DiffTransConfiguration>().size(), 2);
-    primclex.db<Kinetics::DiffTransConfiguration>().commit();
+    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 2);
+    primclex.generic_db<Kinetics::DiffTransConfiguration>().commit();
     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex, "ALL");
 
     auto &qh = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>();

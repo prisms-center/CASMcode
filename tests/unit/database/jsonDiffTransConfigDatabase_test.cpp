@@ -59,7 +59,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
     orbits.begin() + 2,  // use pairs+
     orbits.begin() + 4,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(true, true);
 
   // Make background config
