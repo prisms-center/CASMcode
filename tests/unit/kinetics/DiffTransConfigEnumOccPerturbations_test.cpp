@@ -2,25 +2,18 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-//#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
-//#include "casm/kinetics/DiffTransEnumEquivalents.hh"
+#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
 #include "Common.hh"
+#include "casm/app/AppIO_impl.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
-
-#include "casm/app/AppIO_impl.hh"
-#include "casm/symmetry/Orbit_impl.hh"
-#include "casm/symmetry/InvariantSubgroup_impl.hh"
-#include "casm/symmetry/SubOrbits_impl.hh"
-#include "casm/clex/HasCanonicalForm_impl.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
+#include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
-#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
-//#include "casm/casm_io/VaspIO.hh"
 
 using namespace CASM;
 using namespace test;
@@ -163,7 +156,7 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
   Configuration _config(_scel);
   _config.set_occupation({0, 0, 1, 0});
 
-  std::cout << "construct background_config" << std::endl;
+  //std::cout << "construct background_config" << std::endl;
   Supercell background_scel {&primclex, Lattice(3 * a, 3 * b, 3 * c)};
   Configuration background_config = _config.
                                     fill_supercell(background_scel, primclex.prim().factor_group()).
@@ -171,7 +164,7 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
   BOOST_CHECK_EQUAL(true, true);
 
   /// Construct enumerator
-  std::cout << "construct enumerator" << std::endl;
+  //std::cout << "construct enumerator" << std::endl;
   fs::path local_bspecs_path = "tests/unit/kinetics/ZrO_local_bspecs_0.json";
   jsonParser local_bspecs {local_bspecs_path};
   Kinetics::DiffTransConfigEnumOccPerturbations enumerator(
@@ -184,17 +177,19 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
   BOOST_CHECK_EQUAL((enumerator.begin() != enumerator.end()), true);
 
   /// Enumerate perturbations (may be duplicates at this point)
-  std::cout << "enumerate" << std::endl;
+  //std::cout << "enumerate" << std::endl;
   std::vector<Kinetics::DiffTransConfiguration> collection;
   Index index = 0;
   for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-    std::cout << "OUTPUT: " << index << std::endl;
-    std::cout << "  diff_trans: \n" << it->diff_trans() << std::endl;
+    //std::cout << "OUTPUT: " << index << std::endl;
+    //std::cout << "  diff_trans: \n" << it->diff_trans() << std::endl;
+    //std::cout << "  occ: " << it->from_config().occupation() << std::endl;
+    //std::cout << "  occ: " << it->to_config().occupation() << std::endl;
     collection.push_back(*it);
     ++index;
   }
-  std::cout << "collection.size(): " << collection.size() << std::endl;
-  BOOST_CHECK_EQUAL(collection.size(), 1);
+  //std::cout << "collection.size(): " << collection.size() << std::endl;
+  BOOST_CHECK_EQUAL(collection.size(), 19);
 
   /*
   for(auto &dtc : collection) {

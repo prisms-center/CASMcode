@@ -26,7 +26,8 @@ namespace CASM {
     ///   the 'base' DiffTransConfigurations that will be perturbed. The subgroup
     ///   of the supercell factor group that leaves the 'base' diff trans invariant
     ///   is the 'diff_trans_g'.
-    /// - For each 'base' diff trans, generate local orbits
+    /// - For each 'base' diff trans, generate local orbits using the base config
+    ///   & diff trans invariant group
     /// - For each local orbit, enumerate perturbations. Only include perturbations
     ///   that modify every site in the cluster to avoid repeats.
     /// - The subgroup of the 'diff_trans_g' that leaves the local orbit protype
@@ -120,11 +121,15 @@ namespace CASM {
         /// m_background_config transformed in the same manner as diff_trans
         Configuration config;
 
-        /// The subgroup of _supercell() leaving diff_trans invariant
+        /// The subgroup of supercell permutations leaving diff_trans invariant
         std::vector<PermuteIterator> diff_trans_g;
 
-        /// Alternative representation of diff_trans_g
-        SymGroup diff_trans_sym_g;
+        /// The subgroup of supercell permutations leaving config and diff_trans invariant
+        /// - Generating group for local clusters / perturbations
+        std::vector<PermuteIterator> generating_g;
+
+        /// Alternative representation of generating_g
+        SymGroup generating_sym_g;
       };
 
     private:

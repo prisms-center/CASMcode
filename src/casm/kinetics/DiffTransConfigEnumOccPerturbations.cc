@@ -13,7 +13,6 @@
 #include "casm/database/DiffTransOrbitDatabase.hh"
 
 
-
 extern "C" {
   CASM::EnumInterfaceBase *make_DiffTransConfigEnumOccPerturbations_interface() {
     return new CASM::EnumInterface<CASM::Kinetics::DiffTransConfigEnumOccPerturbations>();
@@ -36,7 +35,6 @@ namespace CASM {
       m_include_unperturbed(true),
       m_skip_subclusters(true) {
 
-      std::cout << "begin constructor" << std::endl;
       this->_initialize();
 
       // initialize data
@@ -44,26 +42,19 @@ namespace CASM {
       _init_local_orbits();
       _init_perturbations_data();
 
-      std::cout << "check initial perturb" << std::endl;
       // check if initial perturb is valid or not
       auto res = _current_perturb();
       if(!res.second) {
-        std::cout << "initial not valid" << std::endl;
         increment();
       }
       else {
-        std::cout << "initial valid" << std::endl;
         _set_current(res.first);
       }
 
-      std::cout << "initialize" << std::endl;
       if(valid()) {
         this->_set_step(0);
         m_current->set_source(this->source(step()));
       }
-
-      std::cout << "end constructor" << std::endl;
-
     }
 
     const std::string DiffTransConfigEnumOccPerturbations::enumerator_name = "DiffTransConfigEnumOccPerturbations";
@@ -109,7 +100,6 @@ namespace CASM {
 
     void DiffTransConfigEnumOccPerturbations::increment() {
 
-      std::cout << "begin increment" << std::endl;
       // increment occ_counter until a canonical perturb is found
       // if no more occupations, increment m_local_orbit_it
       // if no more local orbits, increment m_base_it
@@ -119,44 +109,32 @@ namespace CASM {
       std::pair<OccPerturbation, bool> curr_perturb {OccPerturbation(_prim()), false};
 
       do {
-        std::cout << "-- increment iteration" << std::endl;
         ++m_occ_counter;
         if(m_occ_counter.valid()) {
-          std::cout << "  next perturbation" << std::endl;
           curr_perturb = _current_perturb();
         }
         else if(++m_local_orbit_it != m_local_orbit.end()) {
-          std::cout << "  next local orbit: " << std::distance(m_local_orbit.begin(), m_local_orbit_it)
-                    << "/" << m_local_orbit.size() << std::endl;
           _init_perturbations_data();
           curr_perturb = _current_perturb();
         }
         else if(++m_base_it != m_base.end()) {
-          std::cout << "  next base: " << std::distance(m_base.begin(), m_base_it)
-                    << "/" << m_base.size() << std::endl;
           _init_local_orbits();
           _init_perturbations_data();
           curr_perturb = _current_perturb();
         }
-        std::cout << "  curr_perturb.second: " << curr_perturb.second << std::endl;
-        std::cout << "  m_base_it != m_base.end(): " << (m_base_it != m_base.end()) << std::endl;
-        std::cout << "  check: " << (!curr_perturb.second && m_base_it != m_base.end()) << std::endl;
       }
       while(!curr_perturb.second && m_base_it != m_base.end());
 
 
       if(curr_perturb.second) {
-        std::cout << "  incr: is valid perturb" << std::endl;
         // find canonical from_config set current
         this->_increment_step();
         _set_current(curr_perturb.first);
       }
       else {
-        std::cout << "  invalidate" << std::endl;
         // if no more base diff trans, we're done
         _invalidate();
       }
-      std::cout << "  end increment" << std::endl;
     };
 
     int DiffTransConfigEnumOccPerturbations::run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
@@ -287,8 +265,6 @@ namespace CASM {
 
     void DiffTransConfigEnumOccPerturbations::_init_base() {
 
-      std::cout << "  begin _init_base" << std::endl;
-
       // Make suborbit generating DiffusionTransformations
       std::vector<DiffusionTransformation> subprototypes;
       make_suborbit_generators(m_diff_trans_orbit, m_background_config, std::back_inserter(subprototypes));
@@ -304,17 +280,7 @@ namespace CASM {
           copy_apply(gen.to_canonical(), m_background_config));
       }
 
-      std::cout << "  m_base.size(): " << m_base.size() << std::endl;
-      std::cout << "Base: " << std::endl;
-      Index index = 0;
-      for(const auto &base : m_base) {
-        std::cout << "  Index: " << index << std::endl;
-        std::cout << "    DiffTrans: \n" << base.diff_trans << std::endl;
-        ++index;
-      }
       m_base_it = m_base.begin();
-
-      std::cout << "  end _init_base" << std::endl;
     }
 
     /// Constructor for data structure holding base diff trans configuration in
@@ -327,14 +293,17 @@ namespace CASM {
       const Configuration &_config) :
       diff_trans(_diff_trans),
       config(make_attachable(diff_trans, _config)),
-      diff_trans_g(make_invariant_subgroup(diff_trans, config.supercell())),
-      diff_trans_sym_g(make_sym_group(diff_trans_g)) {}
+      diff_trans_g(diff_trans.invariant_subgroup(config.supercell())),
+      generating_g(config.invariant_subgroup(diff_trans_g.begin(), diff_trans_g.end())),
+      generating_sym_g(make_sym_group(generating_g)) {}
 
     /// Generate local orbits for current base diff trans
     void DiffTransConfigEnumOccPerturbations::_init_local_orbits() {
 
-      std::cout << "  begin _init_local_orbits" << std::endl;
       /// Make all local orbits
+      ///
+      /// - local orbit generating group is set of operations that leave
+      ///   diff_trans and config invariant
       std::vector<LocalOrbit<IntegralCluster>> _tmp;
       make_local_orbits(
         m_base_it->diff_trans,
@@ -343,7 +312,7 @@ namespace CASM {
         _tol(),
         std::back_inserter(_tmp),
         null_log(),
-        m_base_it->diff_trans_sym_g);
+        m_base_it->generating_sym_g);
 
       /// Exclude orbits that would alter the hop due small supercell size
 
@@ -367,16 +336,13 @@ namespace CASM {
 
       m_local_orbit.clear();
       std::copy_if(_tmp.begin(), _tmp.end(), std::back_inserter(m_local_orbit), orbit_does_not_overlap);
-      std::cout << "  m_local_orbit.size(): " << m_local_orbit.size() << std::endl;
       m_local_orbit_it = m_local_orbit.begin();
 
-      std::cout << "  m_local_orbits: \n" << std::endl;
       print_clust(
         m_local_orbit.begin(),
         m_local_orbit.end(),
         std::cout,
         PrototypePrinter<IntegralCluster>());
-      std::cout << "  end _init_local_orbits" << std::endl;
     }
 
     /// Generate the 'from_value' for the perturbation,
@@ -385,12 +351,8 @@ namespace CASM {
     ///   (w/ respect to base diff trans invariant group)
     void DiffTransConfigEnumOccPerturbations::_init_perturbations_data() {
 
-      std::cout << "  begin _init_perturbations_data" << std::endl;
       const Configuration &from_config = m_base_it->config;
       const IntegralCluster &proto = m_local_orbit_it->prototype();
-
-      std::cout << "    orbit index: " << std::distance(m_local_orbit.begin(), m_local_orbit_it)
-                << "  branch: " << proto.size() << std::endl;
 
       /// Set 'm_from_value'
       m_from_value = Eigen::VectorXi::Zero(proto.size());
@@ -408,15 +370,6 @@ namespace CASM {
                         max_count,
                         Eigen::VectorXi::Constant(proto.size(), 1));
 
-      /// Construct local orbit prototype invariant group
-      ///   (w/ respect to base diff trans invariant group)
-      m_local_orbit_sub_g = make_invariant_subgroup(
-                              proto,
-                              _supercell(),
-                              m_base_it->diff_trans_g.begin(),
-                              m_base_it->diff_trans_g.end());
-
-      std::cout << "  end _init_perturbations_data" << std::endl;
     }
 
     std::pair<OccPerturbation, bool> DiffTransConfigEnumOccPerturbations::_current_perturb() const {
@@ -424,13 +377,8 @@ namespace CASM {
       OccPerturbation perturb {_prim()};
       const auto &proto = m_scel_sym_compare.prepare(m_local_orbit_it->prototype());
 
-      std::cout << "  begin _current_perturb" << std::endl;
-      std::cout << "  from: " << m_from_value.transpose() << std::endl;
-      std::cout << "  to: " << m_occ_counter().transpose() << std::endl;
-
       // check for null perturbation
       if(proto.size() == 0 && m_include_unperturbed) {
-        std::cout << "  perturb: (size: " << perturb.size() << ")\n" << perturb << std::endl;
         return std::make_pair(perturb, true);
       }
 
@@ -438,17 +386,13 @@ namespace CASM {
       for(int i = 0; i < proto.size(); ++i) {
         // check for subcluster perturbation
         if(m_from_value(i) == m_occ_counter()[i] && m_skip_subclusters) {
-          std::cout << "  not valid Perturbation: is subcluster" << std::endl;
           return std::make_pair(perturb, false);
         }
         perturb.elements().emplace_back(proto[i], m_from_value(i), m_occ_counter()[i]);
       }
 
-      auto begin = m_local_orbit_sub_g.begin();
-      auto end = m_local_orbit_sub_g.end();
-
-      std::cout << "  perturb: (size: " << perturb.size() << ")\n" << perturb << std::endl;
-      std::cout << "  is_canonical: " << perturb.is_canonical(_supercell(), begin, end) << std::endl;
+      auto begin = m_base_it->generating_g.begin();
+      auto end = m_base_it->generating_g.end();
 
       // return perturbation and check if canonical wrt local orbit sub group
       return std::make_pair(perturb, perturb.is_canonical(_supercell(), begin, end));
@@ -457,72 +401,43 @@ namespace CASM {
     /// Applies current perturbation to m_base_config and stores result in m_current
     void DiffTransConfigEnumOccPerturbations::_set_current(const OccPerturbation &perturb) {
 
-      std::cout << "  begin _set_current" << std::endl;
       // generate perturbed from_config
       Configuration perturbed_from_config {m_base_it->config};
       perturb.apply_to(perturbed_from_config);
 
-      std::cout << "  find canonical from_config" << std::endl;
-      // - apply operations that leave perturb & diff_trans invariant
-      // - for each, also apply operations that leave diff_trans invariant
-      // - from these candidates, the 'max' config is then the canonical
-      //   from_config for this perturbation
-      ConfigCompare compare(perturbed_from_config, _tol());
-      std::cout << "  get initial" << std::endl;
-      auto max = m_base_it->diff_trans_g[0] * m_local_orbit_sub_g[0];
-      std::cout << "  begin loop" << std::endl;
-      for(const auto &op_i : m_local_orbit_sub_g) {
-        std::cout << "  - op_i" << std::endl;
-        for(const auto &op_j : m_base_it->diff_trans_g) {
-          std::cout << "  - - op_j" << std::endl;
-          //auto test_config = op_j*op_i*(from_config + perturbation)
-          auto test = op_j * op_i;
-          std::cout << "  - - test" << std::endl;
-          if(compare(max, test)) {
-            std::cout << "  - - > new max" << std::endl;
-            max = test;
-          }
-        }
-      }
+      // here we use the group of operations that leaves the diff_trans invariant,
+      // and not necessarily the from_config, to find the canonical perturbed from_config
+      auto to_canonical = perturbed_from_config.to_canonical(
+                            m_base_it->diff_trans_g.begin(),
+                            m_base_it->diff_trans_g.end());
 
-      std::cout << "  construct canonical from_config" << std::endl;
       /// construct canonical DiffTransConfiguration as m_current
       m_current = notstd::make_cloneable<DiffTransConfiguration>(
-                    copy_apply(max, perturbed_from_config),
+                    copy_apply(to_canonical, perturbed_from_config),
                     m_base_it->diff_trans);
-      std::cout << " name: " << m_diff_trans_orbit.name() << std::endl;
       m_current->set_orbit_name("test");
-      std::cout << "  set orbit name" << std::endl;
       m_current->set_orbit_name(m_diff_trans_orbit.name());
-      std::cout << "  orbit name: " << m_current->orbit_name() << std::endl;
-      std::cout << "  set source" << std::endl;
       m_current->set_source(this->source(step()));
-      std::cout << "  set ptr" << std::endl;
       this->_set_current_ptr(&(*m_current));
 
-      std::cout << "  debug check" << std::endl;
+      /*
       // --- debug check ---
       // m_current should be in canonical form at this point
       if(!m_current->is_canonical()) {
-        if(!m_current->diff_trans().is_canonical(
-             _supercell(),
-             _supercell().permute_begin(),
-             _supercell().permute_end())) {
+
+        // diff_trans is canonical wrt all supercell permutations
+        const auto& dt = m_current->diff_trans();
+        if(!dt.is_canonical(_supercell())) {
           throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: diff trans not canonical");
         }
-        auto diff_trans_inv_group = m_current->diff_trans().invariant_subgroup(
-                                      _supercell(),
-                                      _supercell().permute_begin(),
-                                      _supercell().permute_end());
-        if(!m_current->from_config().is_canonical(
-             diff_trans_inv_group.begin(),
-             diff_trans_inv_group.end())) {
+
+        // from_config is canonical wrt all supercell permutations that leave diff_trans invariant
+        if(!m_current->from_config().is_canonical(m_base_it->diff_trans_g.begin(), m_base_it->diff_trans_g.end())) {
           throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: from_config not canonical");
         }
         throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical, for unknown reason");
       }
-      std::cout << "  end _set_current" << std::endl;
-
+      */
     }
 
     bool has_local_bubble_overlap(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, const Supercell &scel) {
