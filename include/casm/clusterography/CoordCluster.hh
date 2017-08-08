@@ -8,6 +8,7 @@
 #include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/clex/HasCanonicalForm.hh"
 
 namespace CASM {
 
@@ -102,7 +103,7 @@ namespace CASM {
 
   template<typename CoordType>
   class CoordCluster : public
-    ElementWiseSymApply<GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>> {
+    CanonicalForm<ElementWiseSymApply<GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>>> {
 
   public:
 

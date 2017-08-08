@@ -18,51 +18,82 @@ namespace CASM {
     typedef typename Base::MostDerived MostDerived;
     using Base::derived;
 
+
+    /// Check if canonical
     template<typename SymCompareType>
     bool is_canonical(
       const SymGroup &g,
       const SymCompareType &sym_compare) const;
 
+    /// Return canonical form
     template<typename SymCompareType>
     MostDerived canonical_form(
       const SymGroup &g,
       const SymCompareType &sym_compare) const;
 
+    /// Check if two elements have the same canonical form
     template<typename SymCompareType>
     bool is_equivalent(
       const MostDerived &other,
       const SymGroup &g,
       const SymCompareType &sym_compare) const;
 
+    /// Return op that transforms this into canonical form
     template<typename SymCompareType>
     SymOp to_canonical(
       const SymGroup &g,
       const SymCompareType &sym_compare) const;
 
+    /// Return op that transforms the canonical form into this
     template<typename SymCompareType>
     SymOp from_canonical(
       const SymGroup &g,
       const SymCompareType &sym_compare) const;
 
+    /// Return subgroup of super_grp that leaves this invariant
     template<typename SymCompareType>
     SymGroup invariant_subgroup(
       const SymGroup &super_grp,
       const SymCompareType &sym_compare) const;
 
 
+    /// Check if canonical in Supercell
+    bool is_canonical(const Supercell &scel) const;
+
+    /// Return canonical form in Supercell
+    MostDerived canonical_form(const Supercell &scel) const;
+
+    /// True if this and B have same canonical form in Supercell
+    bool is_equivalent(
+      const MostDerived &B,
+      const Supercell &scel) const;
+
+    /// Return operation in Supercell that transforms this into canonical form
+    SymOp to_canonical(const Supercell &scel) const;
+
+    /// Return operation in Supercell that transforms canonical form into this
+    SymOp from_canonical(const Supercell &scel) const;
+
+    /// Return subgroup of Supercell permutations that leave this invariant
+    std::vector<PermuteIterator> invariant_subgroup(const Supercell &scel) const;
+
+
+    /// Check if canonical in Supercell, with respect to a subgroup of Supercell permutations
     template<typename PermuteIteratorIt>
     bool is_canonical(
       const Supercell &scel,
       PermuteIteratorIt begin,
       PermuteIteratorIt end) const;
 
+    /// Return canonical form in Supercell, with respect to a subgroup of Supercell permutations
     template<typename PermuteIteratorIt>
     MostDerived canonical_form(
       const Supercell &scel,
       PermuteIteratorIt begin,
       PermuteIteratorIt end) const;
 
-    /// True if this and B have same canonical form
+    /// True if this and B have same canonical form, with respect to a subgroup
+    /// of Supercell permutations
     template<typename PermuteIteratorIt>
     bool is_equivalent(
       const MostDerived &B,
@@ -70,18 +101,24 @@ namespace CASM {
       PermuteIteratorIt begin,
       PermuteIteratorIt end) const;
 
+    /// Return operation in Supercell that transforms this into canonical form,
+    /// with respect to a subgroup of Supercell permutations
     template<typename PermuteIteratorIt>
     SymOp to_canonical(
       const Supercell &scel,
       PermuteIteratorIt begin,
       PermuteIteratorIt end) const;
 
+    /// Return operation in Supercell that transforms canonical form into this,
+    /// with respect to a subgroup of Supercell permutations
     template<typename PermuteIteratorIt>
     SymOp from_canonical(
       const Supercell &scel,
       PermuteIteratorIt begin,
       PermuteIteratorIt end) const;
 
+    /// Return subgroup of Supercell permutations that leave this invariant,
+    /// with respect to a subgroup of Supercell permutations
     template<typename PermuteIteratorIt>
     std::vector<PermuteIterator> invariant_subgroup(
       const Supercell &scel,

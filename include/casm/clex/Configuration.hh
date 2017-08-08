@@ -353,6 +353,7 @@ namespace CASM {
     ///        Configuration unchanged
     std::vector<PermuteIterator> factor_group() const;
 
+    using ConfigurationBase::invariant_subgroup;
     std::vector<PermuteIterator> invariant_subgroup() const;
 
     using ConfigurationBase::is_canonical;

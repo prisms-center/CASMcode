@@ -72,6 +72,47 @@ namespace CASM {
     return make_invariant_subgroup(derived(), super_grp, sym_compare);
   }
 
+
+  template<typename _Base>
+  bool CanonicalForm<_Base>::is_canonical(const Supercell &scel) const {
+
+    return is_canonical(scel, scel.permute_begin(), scel.permute_end());
+  }
+
+  template<typename _Base>
+  typename CanonicalForm<_Base>::MostDerived CanonicalForm<_Base>::canonical_form(
+    const Supercell &scel) const {
+
+    return canonical_form(scel, scel.permute_begin(), scel.permute_end());
+  }
+
+  /// True if this and B have same canonical form
+  template<typename _Base>
+  bool CanonicalForm<_Base>::is_equivalent(
+    const MostDerived &B,
+    const Supercell &scel) const {
+
+    return is_equivalent(scel, scel.permute_begin(), scel.permute_end());
+  }
+
+  template<typename _Base>
+  SymOp CanonicalForm<_Base>::to_canonical(const Supercell &scel) const {
+
+    return to_canonical(scel, scel.permute_begin(), scel.permute_end());
+  }
+
+  template<typename _Base>
+  SymOp CanonicalForm<_Base>::from_canonical(const Supercell &scel) const {
+
+    return from_canonical(scel, scel.permute_begin(), scel.permute_end());
+  }
+
+  template<typename _Base>
+  std::vector<PermuteIterator> CanonicalForm<_Base>::invariant_subgroup(const Supercell &scel) const {
+    return invariant_subgroup(scel, scel.permute_begin(), scel.permute_end());
+  }
+
+
   template<typename _Base>
   template<typename PermuteIteratorIt>
   bool CanonicalForm<_Base>::is_canonical(
@@ -80,7 +121,7 @@ namespace CASM {
     PermuteIteratorIt end) const {
 
     ScelIsCanonical<MostDerived> f(scel);
-    return f(derived());
+    return f(derived(), begin, end);
   }
 
   template<typename _Base>
@@ -195,7 +236,7 @@ namespace CASM {
   template<typename Base>
   template<typename PermuteIteratorIt>
   PermuteIterator ConfigCanonicalForm<Base>::to_canonical(PermuteIteratorIt begin, PermuteIteratorIt end) const {
-    return std::max_element(begin, end, derived().less());
+    return *std::max_element(begin, end, derived().less());
   }
 
   template<typename Base>
