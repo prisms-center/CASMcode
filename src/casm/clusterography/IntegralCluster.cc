@@ -4,7 +4,6 @@
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
-
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 
 namespace CASM {

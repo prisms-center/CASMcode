@@ -96,6 +96,31 @@ BOOST_AUTO_TEST_CASE(Test0) {
       1, 1, 1, 1, 1, 1,
       0, 0, 0, 0, 0, 0
     });
+
+    {
+      std::vector<IntegralCluster> generators;
+      BOOST_CHECK_EQUAL(true, true);
+      make_suborbit_generators(orbits[0], config, std::back_inserter(generators));
+      //std::cout << "orbit 0: \n" << orbits[0].prototype() << std::endl;
+      BOOST_CHECK_EQUAL(generators.size(), 1);
+    }
+
+    {
+      std::vector<IntegralCluster> generators;
+      BOOST_CHECK_EQUAL(true, true);
+      make_suborbit_generators(orbits[1], config, std::back_inserter(generators));
+      //std::cout << "orbit 1: \n" << orbits[1].prototype() << std::endl;
+      BOOST_CHECK_EQUAL(generators.size(), 2);
+    }
+
+    {
+      std::vector<IntegralCluster> generators;
+      BOOST_CHECK_EQUAL(true, true);
+      make_suborbit_generators(orbits[2], config, std::back_inserter(generators));
+      //std::cout << "orbit 2: \n" << orbits[2].prototype() << std::endl;
+      BOOST_CHECK_EQUAL(generators.size(), 1);
+    }
+
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
       config.supercell().prim_grid(),
       config.crystallography_tol());

@@ -67,6 +67,9 @@ namespace CASM {
     const PermuteIterator &operator*() const;
 
     /// Returns the combination of factor_group permutation and translation permutation
+    const PermuteIterator *operator->() const;
+
+    /// Returns the combination of factor_group permutation and translation permutation
     Permutation combined_permute() const;
 
     /// Apply the combined factor_group permutation and translation permutation being pointed at
@@ -128,6 +131,9 @@ namespace CASM {
     bool eq_impl(const PermuteIterator &iter) const;
 
   };
+
+  /// \brief Output PermuteIterator as (fg_index, i, j, k)
+  std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op);
 
   /// \brief Returns a SymGroup generated from a container of PermuteIterator
   ///
