@@ -289,9 +289,35 @@ namespace CASM {
       return std::any_of(m.begin(), m.end(), is_no_change_mol);
     }
 
-    /// \brief Check if occ_transform and specie_traj are valid
+    /// \brief Check if specie_traj() and occ_transform() are consistent
+    ///
+    /// - Checks if specie_traj occ indices match occ_transform indices
+    ///   and that there as many traj as AtomSpecie in a Molecule
+    ///
+    bool DiffusionTransformation::is_self_consistent() const {
+      for(const auto &trans : occ_transform()) {
+        auto is_from_match = [&](const SpecieTrajectory & traj) {
+          return trans.uccoord == traj.from.uccoord && trans.from_mol() == traj.from.mol();
+        };
+        auto from_match_count = std::count_if(specie_traj().begin(), specie_traj().end(), is_from_match);
+        if(from_match_count != trans.from_mol().size()) {
+          return false;
+        }
+
+        auto is_to_match = [&](const SpecieTrajectory & traj) {
+          return trans.uccoord == traj.to.uccoord && trans.to_mol() == traj.to.mol();
+        };
+        auto to_match_count = std::count_if(specie_traj().begin(), specie_traj().end(), is_to_match);
+        if(from_match_count != trans.to_mol().size()) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    /// \brief Check if occ_transform and specie_traj are valid and self consistent
     bool DiffusionTransformation::is_valid() const {
-      return is_valid_occ_transform() && is_valid_specie_traj();
+      return is_valid_occ_transform() && is_valid_specie_traj() && is_self_consistent();
     }
 
     std::vector<OccupationTransformation> &DiffusionTransformation::occ_transform() {

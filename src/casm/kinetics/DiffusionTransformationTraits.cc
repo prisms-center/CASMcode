@@ -23,22 +23,14 @@ namespace CASM {
   };
 
   std::string PrimPeriodicDiffTransOrbitTraits::generate_name_impl(const OrbitType &orbit) {
-    std::cout << "begin PrimPeriodicDiffTransOrbitTraits::generate_name_impl" << std::endl;
     if(orbit.id() == "none") {
-      std::cout << "  get db ref" << std::endl;
       const auto &db = orbit.primclex().db<PrimPeriodicDiffTransOrbit>();
-      std::cout << "  search" << std::endl;
       auto find_it = db.search(orbit);
-      std::cout << "  check if orbit found" << std::endl;
       if(find_it != db.end()) {
-        std::cout << "  name: " << find_it->name() << std::endl;
-        std::cout << "end PrimPeriodicDiffTransOrbitTraits::generate_name_impl 0" << std::endl;
         return find_it->name();
       }
     }
-    std::cout << "end PrimPeriodicDiffTransOrbitTraits::generate_name_impl 1" << std::endl;
     return traits<PrimPeriodicDiffTransOrbit>::orbit_type_name + "/" + orbit.id();
-
   };
 
 

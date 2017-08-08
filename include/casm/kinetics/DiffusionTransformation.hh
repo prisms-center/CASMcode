@@ -173,6 +173,9 @@ namespace CASM {
 
       bool is_subcluster_transformation() const;
 
+      /// \brief Check if specie_traj() and occ_transform() are consistent
+      bool is_self_consistent() const;
+
       bool is_valid() const;
 
       std::vector<OccupationTransformation> &occ_transform();

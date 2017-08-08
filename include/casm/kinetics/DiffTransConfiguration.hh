@@ -62,7 +62,7 @@ namespace CASM {
       DiffTransConfiguration &sort();
 
       /// \brief Returns a sorted version of this DiffTransConfiguration
-      DiffTransConfiguration sorted() const;
+      const DiffTransConfiguration &sorted() const;
 
       /// \brief Returns true if the DiffTransConfiguration is sorted
       bool is_sorted() const;
@@ -122,11 +122,9 @@ namespace CASM {
       /// Should always be 'prepared'
       DiffusionTransformation m_diff_trans;
 
-      /// Points to either m_config_A or m_config_B, to ensure always sorted
-      Configuration *m_from_config;
-
-      /// Points to either m_config_A or m_config_B, to ensure always sorted
-      Configuration *m_to_config;
+      /// If true, m_config_A is 'from_config()' and m_config_B is 'to_config()',
+      /// else it is the reverse
+      bool m_from_config_is_A;
 
       std::string m_orbit_name;
     };

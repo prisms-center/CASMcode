@@ -72,12 +72,22 @@ namespace CASM {
 
     /// \brief Returns the initial configuration
     const Configuration &DiffTransConfiguration::from_config() const {
-      return *m_from_config;
+      if(m_from_config_is_A) {
+        return m_config_A;
+      }
+      else {
+        return m_config_B;
+      }
     }
 
     /// \brief Returns the final configuration
     const Configuration &DiffTransConfiguration::to_config() const {
-      return *m_to_config;
+      if(m_from_config_is_A) {
+        return m_config_B;
+      }
+      else {
+        return m_config_A;
+      }
     }
 
     /// \brief Returns the diffusion transformation that is occurring
@@ -86,24 +96,24 @@ namespace CASM {
     }
 
     /// \brief Compare DiffTransConfiguration
-    /// Compares m_diff_trans first then
-    /// m_from_config if m_diff_trans are equal
+    /// Compares diff_trans first then
+    /// from_config if diff_trans are equal
     /// - Comparison is made using the sorted forms
     bool DiffTransConfiguration::operator<(const DiffTransConfiguration &B) const {
       return less()(B);
     }
 
     /// \brief Compare DiffTransConfiguration
-    /// Compares m_diff_trans first then
-    /// m_from_config if m_diff_trans are equal
+    /// Compares diff_trans first then
+    /// from_config if diff_trans are equal
     /// - Comparison is made using the sorted forms
     DiffTransConfigCompare DiffTransConfiguration::less() const {
       return DiffTransConfigCompare(*this);
     }
 
     /// \brief Check if DiffTransConfiguration are equal
-    /// Compares m_diff_trans first then
-    /// m_from_config if m_diff_trans are equal
+    /// Compares diff_trans first then
+    /// from_config if m_diff_trans are equal
     /// - Comparison is made using the sorted forms
     DiffTransConfigIsEqual DiffTransConfiguration::equal_to() const {
       return DiffTransConfigIsEqual(*this);
@@ -116,7 +126,7 @@ namespace CASM {
     }
 
     /// \brief Returns a sorted version of this DiffTransConfiguration
-    DiffTransConfiguration DiffTransConfiguration::sorted() const {
+    const DiffTransConfiguration &DiffTransConfiguration::sorted() const {
       // now always keeping sorted
       return *this;
     }
@@ -323,12 +333,10 @@ namespace CASM {
     void DiffTransConfiguration::_sort() {
 
       if(m_config_B < m_config_A) {
-        m_from_config = &m_config_B;
-        m_to_config = &m_config_A;
+        m_from_config_is_A = false;
       }
       else {
-        m_from_config = &m_config_A;
-        m_to_config = &m_config_B;
+        m_from_config_is_A = true;
       }
     }
 

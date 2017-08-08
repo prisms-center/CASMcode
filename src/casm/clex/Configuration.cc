@@ -924,7 +924,9 @@ namespace CASM {
       // copy dof from superconfig to this:
 
       // occupation
-      sub_config.configdof().occ(i) = super_config.occ(site_index);
+      if(super_config.has_occupation()) {
+        sub_config.configdof().occ(i) = super_config.occ(site_index);
+      }
 
       // displacement
       if(super_config.has_displacement()) {
