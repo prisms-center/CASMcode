@@ -64,6 +64,8 @@ namespace CASM {
       Configuration prepare_to_config(const Configuration &config, const DiffusionTransformation &diff_trans);
     };
     std::pair<Configuration, Configuration> get_relaxed_endpoints(const DiffTransConfiguration &dfc, std::string calctype);
+    void apply_deformation(const PrimClex primclex, std::string output_configname,
+                           std::string output_path, std::string input_configname, std::string calctype);
   }
 }
 #endif
