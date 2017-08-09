@@ -118,18 +118,18 @@ namespace CASM {
       // Read prim
       Structure prim;
       fs::ifstream primfile(dir.prim());
-      prim = Structure(read_prim(jsonParser(primfile)));
+      prim = Structure(read_prim(jsonParser(primfile), m_crystallography_tol));
       primfile.close();
 
 
       // Calculate symmetry  --------------------
       // get lattice point group and character table
       SymGroup lattice_point_grp;
-      prim.lattice().generate_point_group(lattice_point_grp, m_crystallography_tol);
+      prim.lattice().generate_point_group(lattice_point_grp);
       lattice_point_grp.character_table();
 
       // get factor group
-      prim.generate_factor_group(m_crystallography_tol);
+      prim.generate_factor_group();
       prim.set_site_internals();
 
       // Write symmetry info files

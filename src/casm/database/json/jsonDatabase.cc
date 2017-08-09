@@ -688,6 +688,8 @@ namespace CASM {
 
     void jsonDatabase<Kinetics::DiffTransConfiguration>::commit() {
 
+      std::cout << "begin jsonDatabase<Kinetics::DiffTransConfiguration>::commit()" << std::endl;
+
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
       fs::path diff_trans_config_list_path = dir.obj_list<Kinetics::DiffTransConfiguration>();
       if(primclex().db_handler().db<Supercell>(traits<jsonDB>::name).size() == 0) {
@@ -704,13 +706,21 @@ namespace CASM {
         json.put_obj();
       }
       json["version"] = traits<jsonDB>::version;
+
       //This is going to be problematic Need to figure out how to preserve orbit name source
+      std::cout << "  here 0" << std::endl;
       for(const auto &diff_trans_config : m_diff_trans_config_list) {
+        std::cout << "  here 1" << std::endl;
+        std::cout << "  diff_trans_config.orbit_name(): " << diff_trans_config.orbit_name() << std::endl;
+        std::cout << "  diff_trans_config.from_config().supercell().name(): " << diff_trans_config.from_config().supercell().name() << std::endl;
+        std::cout << "  diff_trans_config.id(): " << diff_trans_config.id() << std::endl;
         std::string dtname = diff_trans_config.orbit_name();
-        diff_trans_config.to_json(json["prototypes"][dtname]
-                                  [diff_trans_config.from_config().supercell().name()][diff_trans_config.id()]);
+        diff_trans_config.to_json(
+          json["prototypes"][dtname][diff_trans_config.from_config().supercell().name()][diff_trans_config.id()]);
+        std::cout << "  here 2" << std::endl;
       }
 
+      std::cout << "  here 3" << std::endl;
       json["config_id"] = m_config_id;
 
       SafeOfstream file;
@@ -722,7 +732,9 @@ namespace CASM {
       json_spirit::write_stream((json_spirit::mValue &) json, file.ofstream(), indent, prec),
                   file.close();
 
+      std::cout << "  here 4" << std::endl;
       this->write_aliases();
+      std::cout << "  here 5 (end)" << std::endl;
     }
 
     void jsonDatabase<Kinetics::DiffTransConfiguration>::close() {

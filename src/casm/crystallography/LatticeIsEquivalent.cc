@@ -5,23 +5,54 @@
 
 namespace CASM {
 
-  LatticeIsEquivalent::LatticeIsEquivalent(const Lattice &lat, double _tol) :
-    m_lat(lat), m_tol(_tol) {}
+  LatticeIsEquivalent::LatticeIsEquivalent(const Lattice &_lat):
+    m_lat(_lat) {}
 
-
-  /// Is this lattice the same, even if they have different lattice vectors
-  bool LatticeIsEquivalent::operator()(const Lattice &B) const {
-    Eigen::Matrix3d T = lat_column_mat().inverse() * B.lat_column_mat();
-    return is_unimodular(T, m_tol);
+  /// Checks if lat = other*U, with unimodular U
+  bool LatticeIsEquivalent::operator()(const Lattice &other) const {
+    Eigen::Matrix3d m_U = m_lat.lat_column_mat().inverse() * other.lat_column_mat();
+    return is_unimodular(m_U, m_lat.tol());
   }
 
+  /// Checks if lat = copy_apply(B,lat)*U, with unimodular U
+  bool LatticeIsEquivalent::operator()(const SymOp &B) const {
+    return (*this)(copy_apply(B, m_lat));
+  }
+
+  /// Checks if copy_apply(A, lat) = copy_apply(B,lat)*U, with unimodular U
+  bool LatticeIsEquivalent::operator()(const SymOp &A, const SymOp &B) const {
+    LatticeIsEquivalent f {copy_apply(A, m_lat)};
+    return f(copy_apply(B, m_lat));
+  }
+
+  /// Checks if lat = apply(B,other)*U, with unimodular U
+  bool LatticeIsEquivalent::operator()(const SymOp &B, const Lattice &other) const {
+    return (*this)(copy_apply(B, other));
+  }
+
+  /// Checks if copy_apply(A, lat) = apply(B,other)*U, with unimodular U
+  bool LatticeIsEquivalent::operator()(const SymOp &A, const SymOp &B, const Lattice &other) const {
+    LatticeIsEquivalent f {copy_apply(A, m_lat)};
+    return (*this)(copy_apply(B, other));
+  }
+
+  /// Returns U found for last check
+  Eigen::Matrix3d LatticeIsEquivalent::U() const {
+    return m_U;
+  }
+
+
+  IsPointGroupOp::IsPointGroupOp(const Lattice &lat) :
+    m_lat(lat) {}
+
+
   /// Is this lattice equivalent to apply(op, *this)
-  bool LatticeIsEquivalent::operator()(const SymOp &op) const {
+  bool IsPointGroupOp::operator()(const SymOp &op) const {
     return (*this)(op.matrix());
   }
 
   /// Is this lattice equivalent to apply(op, *this)
-  bool LatticeIsEquivalent::operator()(const Eigen::Matrix3d &cart_op) const {
+  bool IsPointGroupOp::operator()(const Eigen::Matrix3d &cart_op) const {
     Eigen::Matrix3d tfrac_op;
 
     tfrac_op = lat_column_mat().inverse() * cart_op * lat_column_mat();
@@ -31,18 +62,11 @@ namespace CASM {
       return false;
     }
 
-    //make tfrac_op integer.
-    for(int i = 0; i < 3; i++) {
-      for(int j = 0; j < 3; j++) {
-        tfrac_op(i, j) = round(tfrac_op(i, j));
-      }
-    }
-
-    return _check(tfrac_op);
+    return _check(round(tfrac_op));
   }
 
   /// Is this lattice equivalent to apply(op, *this)
-  bool LatticeIsEquivalent::operator()(const Eigen::Matrix3i &tfrac_op) const {
+  bool IsPointGroupOp::operator()(const Eigen::Matrix3i &tfrac_op) const {
 
     //false if determinant is not 1, because it doesn't preserve volume
     if(std::abs(tfrac_op.determinant()) != 1) {
@@ -52,24 +76,20 @@ namespace CASM {
     return _check(tfrac_op.cast<double>());
   }
 
-  const Lattice &LatticeIsEquivalent::lat() const {
-    return m_lat;
-  }
-
-  double LatticeIsEquivalent::map_error() const {
+  double IsPointGroupOp::map_error() const {
     return m_map_error;
   }
 
-  Eigen::Matrix3d LatticeIsEquivalent::cart_op() const {
+  Eigen::Matrix3d IsPointGroupOp::cart_op() const {
     return m_cart_op;
   }
 
-  SymOp LatticeIsEquivalent::sym_op() const {
+  SymOp IsPointGroupOp::sym_op() const {
     return SymOp(cart_op(), map_error());
   }
 
   ///Find the effect of applying symmetry to the lattice vectors
-  bool LatticeIsEquivalent::_check(const Eigen::Matrix3d &tfrac_op) const {
+  bool IsPointGroupOp::_check(const Eigen::Matrix3d &tfrac_op) const {
 
     // If symmetry is perfect, then ->  cart_op * lat_column_mat() == lat_column_mat() * frac_op  by definition
     // If we assum symmetry is imperfect, then ->   cart_op * lat_column_mat() == F * lat_column_mat() * frac_op
@@ -87,18 +107,19 @@ namespace CASM {
     tMat = tMat * tMat.transpose();
 
     // The diagonal elements of tMat describe the square of the distance by which the transformed vectors 'miss' the original vectors
-    if(tMat(0, 0) < m_tol * m_tol && tMat(1, 1) < m_tol * m_tol && tMat(2, 2) < m_tol * m_tol) {
+    double tol = m_lat.tol();
+    if(tMat(0, 0) < tol * tol && tMat(1, 1) < tol * tol && tMat(2, 2) < tol * tol) {
       m_map_error = sqrt(tMat.diagonal().maxCoeff());
       return true;
     }
     return false;
   }
 
-  const Eigen::Matrix3d &LatticeIsEquivalent::lat_column_mat() const {
+  const Eigen::Matrix3d &IsPointGroupOp::lat_column_mat() const {
     return m_lat.lat_column_mat();
   }
 
-  const Eigen::Matrix3d &LatticeIsEquivalent::inv_lat_column_mat() const {
+  const Eigen::Matrix3d &IsPointGroupOp::inv_lat_column_mat() const {
     return m_lat.inv_lat_column_mat();
   }
 

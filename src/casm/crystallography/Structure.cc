@@ -79,19 +79,19 @@ namespace CASM {
   //***********************************************************
 
 
-  void Structure::generate_factor_group_slow(double map_tol) const {
+  void Structure::generate_factor_group_slow() const {
     m_factor_group.clear();
     m_factor_group.set_lattice(lattice());
-    BasicStructure<Site>::generate_factor_group_slow(m_factor_group, map_tol);
+    BasicStructure<Site>::generate_factor_group_slow(m_factor_group);
     return;
   }
 
   //************************************************************
-  void Structure::generate_factor_group(double map_tol) const {
+  void Structure::generate_factor_group() const {
     m_factor_group.clear();
     m_factor_group.set_lattice(lattice());
     //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &m_factor_group << "\n";
-    BasicStructure<Site>::generate_factor_group(m_factor_group, map_tol);
+    BasicStructure<Site>::generate_factor_group(m_factor_group);
     return;
   }
 
@@ -234,7 +234,7 @@ namespace CASM {
 
   //************************************************************
   void Structure::fg_converge(double large_tol) {
-    BasicStructure<Site>::fg_converge(m_factor_group, TOL, large_tol, (large_tol - TOL) / 10.0);
+    BasicStructure<Site>::fg_converge(m_factor_group, lattice().tol(), large_tol, (large_tol - lattice().tol()) / 10.0);
     return;
   }
 
@@ -265,7 +265,7 @@ namespace CASM {
    */
   //***********************************************************
 
-  void Structure::fill_supercell(const Structure &prim, double map_tol) {
+  void Structure::fill_supercell(const Structure &prim) {
     Index i, j;
 
     SymGroup latvec_pg;
@@ -292,7 +292,7 @@ namespace CASM {
 
         basis.back().within();
         for(Index k = 0; k < basis.size() - 1; k++) {
-          if(basis[k].compare(basis.back(), map_tol)) {
+          if(basis[k].compare(basis.back())) {
             basis.pop_back();
             break;
           }
@@ -337,7 +337,7 @@ namespace CASM {
    */
   //***********************************************************
 
-  Structure Structure::create_superstruc(const Lattice &scel_lat, double map_tol) const {
+  Structure Structure::create_superstruc(const Lattice &scel_lat) const {
     Structure tsuper(scel_lat);
     tsuper.fill_supercell(*this);
     return tsuper;
@@ -563,8 +563,11 @@ namespace CASM {
   //***********************************************************
 
   void Structure::symmetrize(const double &tolerance) {
-    generate_factor_group(tolerance);
+    double orig_tol = lattice().tol();
+    m_lattice.set_tol(tolerance);
+    generate_factor_group();
     symmetrize(factor_group());
+    m_lattice.set_tol(orig_tol);
     return;
   }
 
@@ -641,7 +644,7 @@ namespace CASM {
           std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << ng << "/" << m_factor_group.size() << std::flush;
       }
 
-      basis_permute_group.set_rep(ng, SymBasisPermute(m_factor_group[ng], *this, TOL));
+      basis_permute_group.set_rep(ng, SymBasisPermute(m_factor_group[ng], *this, lattice().tol()));
     }
     // Adds the representation into the master sym group of this structure and returns the rep id
     basis_perm_rep_ID = m_factor_group.add_representation(basis_permute_group);

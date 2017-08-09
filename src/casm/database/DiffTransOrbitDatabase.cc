@@ -16,11 +16,12 @@ namespace CASM {
 
       const auto &g = prim().factor_group();
       PrimPeriodicDiffTransSymCompare sym_compare(crystallography_tol());
-      auto f = [&](const PrimPeriodicDiffTransOrbit & orbit) {
-        return diff_trans.is_equivalent(orbit.prototype(), g, sym_compare);
-      };
+      return diff_trans.find_sym_equivalent(
+               prototype_iterator(begin()),
+               prototype_iterator(end()),
+               g,
+               sym_compare).base();
 
-      return std::find_if(begin(), end(), f);
     }
 
   }

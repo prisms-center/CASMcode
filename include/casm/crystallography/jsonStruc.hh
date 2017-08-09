@@ -13,6 +13,7 @@ namespace CASM {
    *  @{
    */
 
+  /// Used to construct a BasicStructure from a 'properties.calc.json' object
   template< bool IsConst >
   class SimpleJSonSiteStructure {
   public:
@@ -76,7 +77,7 @@ namespace CASM {
         mode = FRAC;
 
       Lattice tlat;
-      CASM::from_json(tlat, json[m_prefix + "lattice"]);
+      CASM::from_json(tlat, json[m_prefix + "lattice"], struc.lattice().tol());
       struc.set_lattice(tlat, FRAC);
       Index l = 0;
 

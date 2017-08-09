@@ -35,12 +35,27 @@ namespace CASM {
 
   template<typename _Base>
   template<typename SymCompareType>
-  bool CanonicalForm<_Base>::is_equivalent(
+  bool CanonicalForm<_Base>::is_sym_equivalent(
     const MostDerived &other,
     const SymGroup &g,
     const SymCompareType &sym_compare) const {
     CanonicalGenerator<Orbit<MostDerived, SymCompareType>> f(g, sym_compare);
     return sym_compare.equal(f(derived()), f(other));
+  }
+
+  template<typename _Base>
+  template<typename ObjIterator, typename SymCompareType>
+  ObjIterator CanonicalForm<_Base>::find_sym_equivalent(
+    ObjIterator begin,
+    ObjIterator end,
+    const SymGroup &g,
+    const SymCompareType &sym_compare) const {
+    CanonicalGenerator<Orbit<MostDerived, SymCompareType>> f(g, sym_compare);
+    auto canon = f(derived());
+    auto is_sym_equiv = [&](const MostDerived & test) {
+      return sym_compare.equal(canon, f(test));
+    };
+    return std::find_if(begin, end, is_sym_equiv);
   }
 
   template<typename _Base>
@@ -88,11 +103,11 @@ namespace CASM {
 
   /// True if this and B have same canonical form
   template<typename _Base>
-  bool CanonicalForm<_Base>::is_equivalent(
+  bool CanonicalForm<_Base>::is_sym_equivalent(
     const MostDerived &B,
     const Supercell &scel) const {
 
-    return is_equivalent(scel, scel.permute_begin(), scel.permute_end());
+    return is_sym_equivalent(scel, scel.permute_begin(), scel.permute_end());
   }
 
   template<typename _Base>
@@ -138,13 +153,30 @@ namespace CASM {
   /// True if this and B have same canonical form
   template<typename _Base>
   template<typename PermuteIteratorIt>
-  bool CanonicalForm<_Base>::is_equivalent(
+  bool CanonicalForm<_Base>::is_sym_equivalent(
     const MostDerived &B,
     const Supercell &scel,
     PermuteIteratorIt begin,
     PermuteIteratorIt end) const {
     ScelCanonicalGenerator<MostDerived> f(scel);
     return f.sym_compare.equal(f(derived(), begin, end), f(B, begin, end));
+  }
+
+  /// Find element that has the same canonical form, with respect to a subgroup
+  template<typename _Base>
+  template<typename ObjIterator, typename PermuteIteratorIt>
+  ObjIterator CanonicalForm<_Base>::find_sym_equivalent(
+    ObjIterator obj_begin,
+    ObjIterator obj_end,
+    const Supercell &scel,
+    PermuteIteratorIt begin,
+    PermuteIteratorIt end) const {
+    ScelCanonicalGenerator<MostDerived> f(scel);
+    auto canon = f(derived(), begin, end);
+    auto is_sym_equiv = [&](const MostDerived & test) {
+      return f.sym_compare.equal(canon, f(test, begin, end));
+    };
+    return std::find_if(obj_begin, obj_end, is_sym_equiv);
   }
 
   template<typename _Base>
@@ -182,8 +214,21 @@ namespace CASM {
   // --- template<typename Base> class ConfigCanonicalForm<Base>
 
   template<typename Base>
-  bool ConfigCanonicalForm<Base>::is_equivalent(const MostDerived &B) const {
+  bool ConfigCanonicalForm<Base>::is_sym_equivalent(const MostDerived &B) const {
     return this->canonical_form() == B.canonical_form();
+  }
+
+  template<typename Base>
+  template<typename ConfigIterator>
+  ConfigIterator ConfigCanonicalForm<Base>::find_sym_equivalent(
+    const MostDerived &B,
+    ConfigIterator obj_begin,
+    ConfigIterator obj_end) const {
+    auto canon = this->canonical_form();
+    auto is_sym_equiv = [&](const MostDerived & test) {
+      return canon == test.canonical_form();
+    };
+    return std::find_if(obj_begin, obj_end, is_sym_equiv);
   }
 
   template<typename Base>
@@ -226,6 +271,30 @@ namespace CASM {
     return std::none_of(begin, end, derived().less());
   }
 
+  /// True if this and B have same canonical form
+  template<typename Base>
+  template<typename PermuteIteratorIt>
+  bool ConfigCanonicalForm<Base>::is_sym_equivalent(
+    const MostDerived &B,
+    PermuteIteratorIt begin,
+    PermuteIteratorIt end) const {
+    return this->canonical_form(begin, end) == B.canonical_form(begin, end);
+  }
+
+  template<typename Base>
+  template<typename ConfigIterator, typename PermuteIteratorIt>
+  ConfigIterator ConfigCanonicalForm<Base>::find_sym_equivalent(
+    ConfigIterator obj_begin,
+    ConfigIterator obj_end,
+    PermuteIteratorIt begin,
+    PermuteIteratorIt end) const {
+    auto canon = this->canonical_form(begin, end);
+    auto is_sym_equiv = [&](const MostDerived & test) {
+      return canon == test.canonical_form(begin, end);
+    };
+    return std::find_if(obj_begin, obj_end, is_sym_equiv);
+  }
+
   template<typename Base>
   template<typename PermuteIteratorIt>
   typename ConfigCanonicalForm<Base>::MostDerived
@@ -260,23 +329,17 @@ namespace CASM {
 
   template<typename Base>
   bool SupercellCanonicalForm<Base>::is_canonical() const {
-    return derived().lattice().is_canonical(
-             derived().prim().point_group(),
-             derived().crystallography_tol());
+    return derived().lattice().is_canonical(derived().prim().point_group());
   }
 
   template<typename Base>
   SymOp SupercellCanonicalForm<Base>::to_canonical() const {
-    return derived().lattice().to_canonical(
-             derived().prim().point_group(),
-             derived().crystallography_tol());
+    return derived().lattice().to_canonical(derived().prim().point_group());
   }
 
   template<typename Base>
   SymOp SupercellCanonicalForm<Base>::from_canonical() const {
-    return derived().lattice().from_canonical(
-             derived().prim().point_group(),
-             derived().crystallography_tol());
+    return to_canonical().inverse();
   }
 
   template<typename Base>
@@ -302,6 +365,7 @@ namespace CASM {
 
     return make_invariant_subgroup(derived(), scel_B, begin, end);
   }
+
 }
 
 #endif

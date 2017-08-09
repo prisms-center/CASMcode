@@ -338,11 +338,13 @@ namespace CASM {
       std::copy_if(_tmp.begin(), _tmp.end(), std::back_inserter(m_local_orbit), orbit_does_not_overlap);
       m_local_orbit_it = m_local_orbit.begin();
 
+      /*
       print_clust(
         m_local_orbit.begin(),
         m_local_orbit.end(),
         std::cout,
         PrototypePrinter<IntegralCluster>());
+      */
     }
 
     /// Generate the 'from_value' for the perturbation,

@@ -365,8 +365,7 @@ namespace CASM {
     /// \param tol Tolerance for generating the point group
     ///
     SupercellEnumerator(UnitType unit,
-                        const ScelEnumProps &enum_props,
-                        double tol);
+                        const ScelEnumProps &enum_props);
 
     /// \brief Construct a SupercellEnumerator using custom point group operations
     ///
@@ -674,8 +673,7 @@ namespace CASM {
 
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    const ScelEnumProps &enum_props,
-                                                    double tol);
+                                                    const ScelEnumProps &enum_props);
 
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,

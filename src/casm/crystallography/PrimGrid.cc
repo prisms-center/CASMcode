@@ -164,7 +164,7 @@ namespace CASM {
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
 
-    auto frac((prim_lattice().inv_lat_column_mat()*_coord.cart()).array() + TOL);
+    auto frac((prim_lattice().inv_lat_column_mat()*_coord.cart()).array() + _coord.lattice().tol());
     UnitCell ijk(frac.unaryExpr(std::ptr_fun(floor)).matrix().cast<long>());
 
     return find(ijk);

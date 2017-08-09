@@ -7,6 +7,7 @@
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/container/Array.hh"
+#include "casm/crystallography/LatticeCanonicalForm.hh"
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,29 +29,32 @@ namespace CASM {
    *  @{
    */
 
-  class Lattice : public Comparisons<CRTPBase<Lattice>> {
+  class Lattice : public LatticeCanonicalForm<Comparisons<CRTPBase<Lattice>>> {
   public:
     typedef Eigen::Matrix3d::ColXpr LatVec;
     typedef Eigen::Matrix3d::ConstColXpr ConstLatVec;
 
-    Lattice(const Eigen::Vector3d &vec1, const Eigen::Vector3d &vec2,
-            const Eigen::Vector3d &vec3);
+    Lattice(const Eigen::Vector3d &vec1,
+            const Eigen::Vector3d &vec2,
+            const Eigen::Vector3d &vec3,
+            double xtal_tol = TOL);
 
     ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
     ///(e.g., lat_mat is equivalent to coord_trans[FRAC])
-    Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat = Eigen::Matrix3d::Identity());
+    Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat = Eigen::Matrix3d::Identity(),
+            double xtal_tol = TOL);
 
     /// \brief Construct FCC primitive cell of unit volume
-    static Lattice fcc();
+    static Lattice fcc(double tol);
 
     /// \brief Construct BCC primitive cell of unit volume
-    static Lattice bcc();
+    static Lattice bcc(double tol);
 
     /// \brief Construct simple cubic primitive cell of unit volume
-    static Lattice cubic();
+    static Lattice cubic(double tol);
 
     /// \brief Construct cubic primitive cell of unit volume
-    static Lattice hexagonal();
+    static Lattice hexagonal(double tol);
 
     /// \brief Get i'th lattice vector as column expression
     LatVec operator[](Index i) {
@@ -125,41 +129,7 @@ namespace CASM {
     /// \param point_group should be empty
     /// \param pg_tol can be increased to find point group of lattice vectors
     /// that are slightly distorted due to numerical noise
-    void generate_point_group(SymGroup &point_group, double pg_tol = TOL) const;
-
-    /// \brief Output the SymOp that leave this lattice invariant
-    template<typename SymOpIterator, typename SymOpOutputIterator>
-    SymOpOutputIterator find_invariant_subgroup(SymOpIterator begin, SymOpIterator end, SymOpOutputIterator result, double pg_tol = TOL) const;
-
-    /// \brief populate \param sub_group with  subset of \param super_group that leaves this lattice invariant
-    /// \param sub_group should be empty
-    void find_invariant_subgroup(const SymGroup &super_group, SymGroup &sub_group, double pg_tol = TOL) const;
-
-
-    /// \brief Check if Lattice is in the canonical form
-    bool is_canonical(double tol = TOL) const;
-
-    /// \brief Check if Lattice is in the canonical form
-    bool is_canonical(const SymGroup &pg, double tol = TOL) const;
-
-    /// \brief Returns the operation that applied to *this returns the canonical form
-    SymOp to_canonical(double tol = TOL) const;
-
-    /// \brief Returns the operation that applied to *this returns the canonical form
-    SymOp to_canonical(const SymGroup &pg, double tol = TOL) const;
-
-    /// \brief Returns the operation that applied to the canonical form returns *this
-    SymOp from_canonical(double tol = TOL) const;
-
-    /// \brief Returns the operation that applied to the canonical form returns *this
-    SymOp from_canonical(const SymGroup &pg, double tol = TOL) const;
-
-    /// \brief Returns the canonical equivalent Lattice, using the point group of the Lattice
-    Lattice canonical_form(double tol = TOL) const;
-
-    /// \brief Returns the canonical equivalent Lattice, using the provided point group
-    Lattice canonical_form(const SymGroup &pg, double tol = TOL) const;
-
+    void generate_point_group(SymGroup &point_group) const;
 
     /// \brief Populate \param supercell with symmetrically distinct supercells of this lattice
     /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
@@ -206,9 +176,6 @@ namespace CASM {
     void read(std::istream &stream);
     void print(std::ostream &stream, int _prec = 8) const;
 
-    /// Are two lattices the same, even if they have different lattice vectors
-    bool is_equivalent(const Lattice &RHS, double tol) const;
-
     /// \brief Compare two Lattice
     bool operator<(const Lattice &RHS) const;
 
@@ -217,12 +184,12 @@ namespace CASM {
 
     //John G 121212
     ///Checks if lattice is a supercell of tile, acting on multiplication matrix. Check is performed applying operations from symlist
-    bool is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat, double _tol = TOL) const;
-    bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist, Eigen::Matrix3d &multimat, double _tol = TOL) const;
+    bool is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat) const;
+    bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist, Eigen::Matrix3d &multimat) const;
 
     ///Checks if lattice is a supercell of tile, applying operations from symlist
-    bool is_supercell_of(const Lattice &tile, double _tol = TOL) const;
-    bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist, double _tol = TOL) const;
+    bool is_supercell_of(const Lattice &tile) const;
+    bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist) const;
 
     ///Return a lattice with diagonal matrix that fits around starting lattice
     Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
@@ -234,7 +201,7 @@ namespace CASM {
     bool is_right_handed() const;
 
     ///Given a normal vector, a Vector3 containing the miller indeces for the lattice is generated
-    Eigen::Vector3i millers(Eigen::Vector3d plane_normal, double tolerance = TOL) const;
+    Eigen::Vector3i millers(Eigen::Vector3d plane_normal) const;
 
     ///Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
     Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
@@ -246,7 +213,16 @@ namespace CASM {
     void symmetrize(const SymGroup &relaxed_pg);
 
     /// \brief Force this lattice to have symmetry of point group calculated based on tolerance \param _tol
+    /// - Does not change internal tol
     void symmetrize(double _tol);
+
+    double tol() const {
+      return m_tol;
+    }
+
+    void set_tol(double _tol) {
+      m_tol = _tol;
+    }
 
   private:
 
@@ -268,15 +244,13 @@ namespace CASM {
     //Word to the wise: coord_trans[FRAC] is the matrix with columns equal to the lattice vectors
     Eigen::Matrix3d m_lat_mat, m_inv_lat_mat;
 
-    //int periodicity_dim;   //dimension of periodicity
-    //int periodicity_axis;  //index of lattice vector that is non-periodic (2d) or periodic (1d)
-
+    double m_tol;
   };
 
 
   // write Lattice in json as array of vectors
   jsonParser &to_json(const Lattice &lat, jsonParser &json);
-  void from_json(Lattice &lat, const jsonParser &json);
+  void from_json(Lattice &lat, const jsonParser &json, double xtal_tol);
 
 
   /* never write a Matrix*Lattice operator, PLEASE
@@ -360,7 +334,7 @@ namespace CASM {
   // lattice vectors of (*this) lattice.
   template <typename T>
   Lattice Lattice::make_supercell(const Eigen::Matrix<T, 3, 3> &trans_mat) const {
-    return Lattice(lat_column_mat() * trans_mat);
+    return Lattice(lat_column_mat() * trans_mat, tol());
   }
 
   /// \brief Returns the volume of a Lattice
@@ -375,7 +349,7 @@ namespace CASM {
 
   /// \brief Returns a super Lattice
   inline Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat) {
-    return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.cast<double>());
+    return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.cast<double>(), lat.tol());
   }
 
   /** @} */

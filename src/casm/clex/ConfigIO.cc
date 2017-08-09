@@ -354,7 +354,7 @@ namespace CASM {
     bool IsDiffTransEndpointOf::evaluate(const Configuration &config) const {
       auto it = config.primclex().db<Kinetics::DiffTransConfiguration>().orbit_range(m_diff_trans_name).begin();
       for(; it != config.primclex().db<Kinetics::DiffTransConfiguration>().orbit_range(m_diff_trans_name).end(); ++it) {
-        if(config.is_equivalent(it->from_config()) || config.is_equivalent(it->to_config())) {
+        if(config.is_sym_equivalent(it->from_config()) || config.is_sym_equivalent(it->to_config())) {
           return true;
         }
       }

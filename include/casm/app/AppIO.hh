@@ -36,9 +36,9 @@ namespace CASM {
 
   // --------- PrimIO Declarations --------------------------------------------------
 
-  BasicStructure<Site> read_prim(fs::path filename);
+  BasicStructure<Site> read_prim(fs::path filename, double xtal_tol);
 
-  BasicStructure<Site> read_prim(const jsonParser &json);
+  BasicStructure<Site> read_prim(const jsonParser &json, double xtal_tol);
 
   /// \brief Write prim.json to file
   void write_prim(const BasicStructure<Site> &prim, fs::path filename, COORD_TYPE mode);

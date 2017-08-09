@@ -250,7 +250,7 @@ namespace CASM {
   bool Configuration::is_diff_trans_endpoint() const {
     auto it = primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).begin();
     for(; it != primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).end(); ++it) {
-      if(is_equivalent(it->from_config()) || is_equivalent(it->to_config())) {
+      if(is_sym_equivalent(it->from_config()) || is_sym_equivalent(it->to_config())) {
         return true;
       }
     }
@@ -262,7 +262,7 @@ namespace CASM {
     std::set<std::string> collection;
     auto it = primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).begin();
     for(; it != primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).end(); ++it) {
-      if(is_equivalent(it->from_config()) || is_equivalent(it->to_config())) {
+      if(is_sym_equivalent(it->from_config()) || is_sym_equivalent(it->to_config())) {
         collection.insert(it->orbit_name());
       }
     }

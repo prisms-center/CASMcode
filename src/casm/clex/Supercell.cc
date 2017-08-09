@@ -458,9 +458,7 @@ namespace CASM {
   }
 
   void Supercell::_generate_factor_group()const {
-    m_lattice.find_invariant_subgroup(prim().factor_group(), m_factor_group);
-    m_factor_group.set_lattice(m_lattice);
-    return;
+    m_factor_group = m_lattice.invariant_subgroup(prim().factor_group());
   }
 
   void Supercell::_generate_permutations()const {
@@ -515,9 +513,13 @@ namespace CASM {
   /// \brief Return supercell name
   ///
   /// - If lattice is the canonical equivalent, then return 'SCELV_A_B_C_D_E_F'
-  /// - Else, return 'SCELV_A_B_C_D_E_F.$FG_INDEX', where $FG_INDEX is the index of the first
-  ///   symmetry operation in the primitive structure's factor group such that the lattice
-  ///   is equivalent to `apply(fg_op, canonical equivalent)`
+  /// - Else, return '$CANON_SCEL.$FG_INDEX', where $CANON_SCEL is a canonical
+  ///   supercell and $FG_INDEX is the index of the first symmetry operation
+  ///   in the primitive structure's factor group such that:
+  ///     is_equiv(copy_apply(op, canon_scel.lattice()) == true
+  ///   where:
+  ///     LatticeIsEquivalent is_equiv(this->lattice(), crystallography_tol());
+  ///
   std::string Supercell::generate_name_impl() const {
     if(is_canonical()) {
       return CASM::generate_name(m_transf_mat);

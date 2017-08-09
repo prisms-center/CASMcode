@@ -143,9 +143,7 @@ namespace CASM {
   /// Check for existing supercells
   bool ScelEnumByProps::_include(const Lattice &lat) const {
     if(m_existing_only) {
-      Lattice canon_lat = m_lat_it->canonical_form(
-                            m_primclex->prim().point_group(),
-                            m_primclex->crystallography_tol());
+      Lattice canon_lat = m_lat_it->canonical_form(m_primclex->prim().point_group());
       Supercell tmp(m_primclex, canon_lat);
       return m_primclex->db<Supercell>().find(tmp.name()) != m_primclex->db<Supercell>().end();
     }

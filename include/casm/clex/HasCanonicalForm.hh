@@ -33,8 +33,16 @@ namespace CASM {
 
     /// Check if two elements have the same canonical form
     template<typename SymCompareType>
-    bool is_equivalent(
+    bool is_sym_equivalent(
       const MostDerived &other,
+      const SymGroup &g,
+      const SymCompareType &sym_compare) const;
+
+    /// Find element that has the same canonical form
+    template<typename ObjIterator, typename SymCompareType>
+    ObjIterator find_sym_equivalent(
+      ObjIterator begin,
+      ObjIterator end,
       const SymGroup &g,
       const SymCompareType &sym_compare) const;
 
@@ -64,7 +72,7 @@ namespace CASM {
     MostDerived canonical_form(const Supercell &scel) const;
 
     /// True if this and B have same canonical form in Supercell
-    bool is_equivalent(
+    bool is_sym_equivalent(
       const MostDerived &B,
       const Supercell &scel) const;
 
@@ -95,8 +103,17 @@ namespace CASM {
     /// True if this and B have same canonical form, with respect to a subgroup
     /// of Supercell permutations
     template<typename PermuteIteratorIt>
-    bool is_equivalent(
+    bool is_sym_equivalent(
       const MostDerived &B,
+      const Supercell &scel,
+      PermuteIteratorIt begin,
+      PermuteIteratorIt end) const;
+
+    /// Find element that has the same canonical form, with respect to a subgroup
+    template<typename ObjIterator, typename PermuteIteratorIt>
+    ObjIterator find_sym_equivalent(
+      ObjIterator obj_begin,
+      ObjIterator obj_end,
       const Supercell &scel,
       PermuteIteratorIt begin,
       PermuteIteratorIt end) const;
@@ -145,7 +162,14 @@ namespace CASM {
 
 
     /// True if this and B have same canonical form
-    bool is_equivalent(const MostDerived &B) const;
+    bool is_sym_equivalent(const MostDerived &B) const;
+
+    /// Find Config that has same canonical form
+    template<typename ConfigIterator>
+    ConfigIterator find_sym_equivalent(
+      const MostDerived &B,
+      ConfigIterator obj_begin,
+      ConfigIterator obj_end) const;
 
     bool is_canonical() const;
 
@@ -160,7 +184,15 @@ namespace CASM {
 
     /// True if this and B have same canonical form
     template<typename PermuteIteratorIt>
-    bool is_equivalent(const MostDerived &B, PermuteIteratorIt begin, PermuteIteratorIt end) const;
+    bool is_sym_equivalent(const MostDerived &B, PermuteIteratorIt begin, PermuteIteratorIt end) const;
+
+    /// True if this and B have same canonical form
+    template<typename ConfigIterator, typename PermuteIteratorIt>
+    ConfigIterator find_sym_equivalent(
+      ConfigIterator obj_begin,
+      ConfigIterator obj_end,
+      PermuteIteratorIt begin,
+      PermuteIteratorIt end) const;
 
     template<typename PermuteIteratorIt>
     bool is_canonical(PermuteIteratorIt begin, PermuteIteratorIt end) const;
@@ -194,10 +226,14 @@ namespace CASM {
 
     SupercellCanonicalForm() : m_canonical(nullptr) {}
 
+    /// True if lattice().is_canonical(g), where g is the prim().point_group()
     bool is_canonical() const;
 
+    /// The first SymOp in the derived().prim().point_group() for which:
+    ///   derived().lattice().is_equivalent(op, canonical_form().lattice())) == true,
     SymOp to_canonical() const;
 
+    /// The inverse of to_canonical()
     SymOp from_canonical() const;
 
     /// \brief Return canonical equivalent Supercell

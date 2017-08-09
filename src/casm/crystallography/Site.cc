@@ -155,8 +155,8 @@ namespace CASM {
    */
   //*******************************************************************************************
 
-  bool Site::compare(const Coordinate &test_coord, double compare_tol) const {
-    return (min_dist(test_coord) < compare_tol);
+  bool Site::compare(const Coordinate &test_coord) const {
+    return (min_dist(test_coord) < lattice().tol());
   }
 
   //*******************************************************************************************
@@ -165,8 +165,8 @@ namespace CASM {
    */
   //*******************************************************************************************
 
-  bool Site::compare(const Site &test_site, double compare_tol) const {
-    return (compare_type(test_site) && min_dist(test_site) < compare_tol);
+  bool Site::compare(const Site &test_site) const {
+    return (compare_type(test_site) && min_dist(test_site) < lattice().tol());
   }
 
   //*******************************************************************************************
@@ -176,9 +176,9 @@ namespace CASM {
    */
   //*******************************************************************************************
 
-  bool Site::compare(const Site &test_site, const Coordinate &shift, double compare_tol) const {
+  bool Site::compare(const Site &test_site, const Coordinate &shift) const {
 
-    return (compare_type(test_site)) && (min_dist(test_site + shift) < compare_tol);
+    return (compare_type(test_site)) && (min_dist(test_site + shift) < lattice().tol());
 
   }
 

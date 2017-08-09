@@ -238,7 +238,7 @@ namespace CASM {
 
     if(hint_ptr != nullptr) {
       const Supercell &scel(hint_ptr->supercell());
-      if(mapped_lat.is_equivalent(scel.lattice(), m_tol)) {
+      if(mapped_lat.is_equivalent(scel.lattice())) {
         if(m_strict_flag && relaxed_occ.occupation() == (hint_ptr->configdof()).occupation()) {
           // mapped config is "hint" config
           is_new_config = false;
@@ -393,7 +393,7 @@ namespace CASM {
 
     bool valid_mapping(false);
     // If structure's lattice is a supercell of the primitive lattice, then import as ideal_structure
-    if(!m_robust_flag && struc.lattice().is_supercell_of(primclex().prim().lattice(), m_tol)) {
+    if(!m_robust_flag && struc.lattice().is_supercell_of(primclex().prim().lattice())) {
       valid_mapping = ideal_struc_to_configdof(struc,
                                                mapped_configdof,
                                                mapped_lat,
@@ -437,7 +437,7 @@ namespace CASM {
     // In the future this may not be the case, so we will assume that struc may
     // be rigidly rotated relative to prim
     Eigen::Matrix3d trans_mat;
-    if(!struc.lattice().is_supercell_of(primclex().prim().lattice(), trans_mat,  m_tol)) {
+    if(!struc.lattice().is_supercell_of(primclex().prim().lattice(), trans_mat)) {
       /*std::cerr << "CRITICAL ERROR: In ideal_struc_to_configdof(), primitive structure does not tile the provided\n"
         << "                superstructure. Please use deformed_struc_to_configdof() instead.\n"
         << "                Exiting...\n";
@@ -449,13 +449,13 @@ namespace CASM {
     // We know struc.lattice() is a supercell of the prim, now we have to
     // reorient 'struc' to match canonical lattice vectors
     mapped_lat = canonical_equivalent_lattice(
-                   Lattice(primclex().prim().lattice().lat_column_mat() * trans_mat),
+                   Lattice(primclex().prim().lattice().lat_column_mat() * trans_mat, m_tol),
                    primclex().prim().point_group(),
                    m_tol);
     Supercell scel(&primclex(), mapped_lat);
 
     // note: trans_mat gets recycled here
-    mapped_lat.is_supercell_of(struc.lattice(), primclex().prim().point_group(), trans_mat,  m_tol);
+    mapped_lat.is_supercell_of(struc.lattice(), primclex().prim().point_group(), trans_mat);
     tstruc.set_lattice(Lattice(tstruc.lattice().lat_column_mat()*trans_mat), CART);
 
     //cart_op goes from imported coordinate system to ideal (PRIM) coordinate system

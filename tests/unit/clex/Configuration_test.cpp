@@ -10,6 +10,7 @@
 #include "FCCTernaryProj.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/database/ConfigDatabase.hh"
 
 using namespace CASM;
 
@@ -78,6 +79,122 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   config.set_deformation(Eigen::Matrix3d::Zero());
   BOOST_CHECK_EQUAL(config.has_deformation(), true);
+
+}
+
+BOOST_AUTO_TEST_CASE(TestConfigurationName) {
+  // test Configuration::generate_name_impl
+  test::FCCTernaryProj proj;
+  proj.check_init();
+
+  PrimClex primclex(proj.dir, null_log());
+  auto &db = primclex.db<Configuration>();
+
+  Eigen::Vector3d a, b, c;
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
+
+  {
+    // prim cell
+    Supercell scel {&primclex, Lattice(a, b, c)};
+    std::cout << "lat: \n" << scel.lattice().lat_column_mat() << std::endl;
+
+    {
+      // canonical scel, canonical primitive occ
+      Configuration config(scel);
+      config.set_occupation({0});
+      // not in datbase
+      std::cout << "name 00: " << config.name() << std::endl;
+
+      auto res = db.insert(config);
+      // still not in datbase
+      std::cout << "name 01: " << config.name() << std::endl;
+      // in datbase
+      std::cout << "name 02: " << res.first->name() << std::endl;
+
+    }
+
+    {
+      // canonical scel, canonical primitive occ
+      Configuration config(scel);
+      config.set_occupation({1});
+      // not in datbase
+      std::cout << "name 1: " << config.name() << std::endl;
+
+      auto res = db.insert(config);
+      // still not in database
+      std::cout << "name 11: " << config.name() << std::endl;
+      // in datbase
+      std::cout << "name 12: " << res.first->name() << std::endl;
+    }
+
+    {
+      // canonical scel, canonical primitive occ
+      Configuration config(scel);
+      config.set_occupation({0});
+      // already in datbase (but not obtained from database)
+      std::cout << "name 20: " << config.name() << std::endl;
+    }
+
+    while(db.size()) {
+      db.erase(db.begin());
+    }
+  }
+
+  {
+    // standard cubic FCC unit cell
+    Supercell scel {&primclex, Lattice(c + b - a, a - b + c, a + b - c)};
+    std::cout << "lat: \n" << scel.lattice().lat_column_mat() << std::endl;
+
+    {
+      // canonical scel, canonical primitive occ
+      Configuration config(scel);
+      config.set_occupation({1, 0, 0, 0});
+      std::cout << "name 3: " << config.name() << std::endl;
+    }
+
+    {
+      // canonical scel, non-canonical primitive occ
+      Configuration config(scel);
+      config.set_occupation({0, 1, 0, 0});
+      std::cout << "name 4: " << config.name() << std::endl;
+    }
+
+    {
+      // canonical scel, canonical non-primitive occ
+      Configuration config(scel);
+      config.set_occupation({0, 0, 0, 0});
+      std::cout << "name 5: " << config.name() << std::endl;
+    }
+  }
+
+  {
+    // non-canonical FCC unit cell, equivalent to standard FCC unit cell (+c added to 'z')
+    Supercell scel {&primclex, Lattice(c + b - a, a - b + c, (a + b - c) + c)};
+    std::cout << "lat: \n" << scel.lattice().lat_column_mat() << std::endl;
+
+    {
+      // non-canonical scel, canonical primitive occ
+      Configuration config(scel);
+      config.set_occupation({1, 0, 0, 0});
+      std::cout << "name 6: " << config.name() << std::endl;
+    }
+
+    {
+      // non-canonical scel, non-canonical primitive occ
+      Configuration config(scel);
+      config.set_occupation({0, 1, 0, 0});
+      std::cout << "name 7: " << config.name() << std::endl;
+    }
+
+    {
+      // non-canonical scel, canonical non-primitive occ
+      Configuration config(scel);
+      config.set_occupation({0, 0, 0, 0});
+      std::cout << "name 8: " << config.name() << std::endl;
+    }
+  }
+
+
 
 }
 
@@ -210,7 +327,7 @@ BOOST_AUTO_TEST_CASE(Test3) {
   {
     // supercell (standard cubic FCC)
     Supercell scel {&primclex, Lattice(b + c - a, a + c - b, a + b - c)};
-    std::cout << scel.lattice().lat_column_mat() << std::endl;
+    //std::cout << scel.lattice().lat_column_mat() << std::endl;
     BOOST_CHECK_EQUAL(scel.is_canonical(), true);
 
     {

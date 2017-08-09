@@ -276,12 +276,27 @@ namespace CASM {
    */
 
   Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
+    return _canonical_equivalent_lattice(in_lat, point_grp, compare_tol).first;
+  }
+
+  /// Return canonical equivalent lattice, and 'to_canonical' SymOp
+  ///
+  /// The 'to_canonical' SymOp, to_canonical_op, satisfies:
+  ///   canonical_lat == niggli(to_canonical_op.matrix() * ref_lat.lat_column_mat())
+  /// to within the specified tolerance.
+  ///   where ref_lat = niggli(in_lat, compare_tol, false)
+  ///
+  std::pair<Lattice, SymOp> _canonical_equivalent_lattice(
+    const Lattice &in_lat,
+    const SymGroup &point_grp,
+    double compare_tol) {
 
     //Ensure you at least get *something* back that's niggli AND right handed
     Lattice most_canonical = niggli(in_lat, compare_tol, false);
     Eigen::Matrix3d most_canonical_lat_mat = most_canonical.lat_column_mat();
 
     Eigen::Matrix3d ref_lat_mat = most_canonical.lat_column_mat();
+    auto to_canonical = point_grp.begin();
 
     for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
 
@@ -291,17 +306,22 @@ namespace CASM {
       Lattice transformed_lat(transformed_lat_mat);
       Eigen::Matrix3d candidate_lat_mat = niggli(transformed_lat, compare_tol).lat_column_mat();
 
+      if(!is_niggli(candidate_lat_mat, compare_tol)) {
+        throw std::runtime_error("Result of 'niggli()' is not a Niggli cell");
+      }
+
       //Skip operations that change the handedness of the lattice
       if(candidate_lat_mat.determinant() < 0.0) {
         continue;
       }
 
-      if(is_niggli(candidate_lat_mat, compare_tol) && standard_orientation_compare(most_canonical_lat_mat, candidate_lat_mat, compare_tol)) {
+      if(standard_orientation_compare(most_canonical_lat_mat, candidate_lat_mat, compare_tol)) {
         most_canonical_lat_mat = candidate_lat_mat;
+        to_canonical = it;
       }
     }
 
-    return Lattice(most_canonical_lat_mat);
+    return std::make_pair(Lattice(most_canonical_lat_mat), *to_canonical);
   }
 
   /**

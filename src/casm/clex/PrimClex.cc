@@ -31,7 +31,7 @@ namespace CASM {
     PrimClexData(const fs::path &_root) :
       dir(_root),
       settings(_root),
-      prim(read_prim(dir.prim())) {}
+      prim(read_prim(dir.prim(), settings.crystallography_tol())) {}
 
     ~PrimClexData() {}
 
@@ -224,7 +224,7 @@ namespace CASM {
 
   /// \brief Get the crystallography_tol
   double PrimClex::crystallography_tol() const {
-    return settings().crystallography_tol();
+    return prim().lattice().tol();
   }
 
   // ** Composition accessors **
@@ -357,8 +357,8 @@ namespace CASM {
         jsonParser(dir().clust(key.bset)),
         prim(),
         prim().factor_group(),
-        PrimPeriodicSymCompare<IntegralCluster>(settings().crystallography_tol()),
-        settings().crystallography_tol()
+        PrimPeriodicSymCompare<IntegralCluster>(crystallography_tol()),
+        crystallography_tol()
       );
 
       jsonParser bspecs_json;
