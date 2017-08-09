@@ -45,16 +45,16 @@ namespace CASM {
             double xtal_tol = TOL);
 
     /// \brief Construct FCC primitive cell of unit volume
-    static Lattice fcc(double tol);
+    static Lattice fcc(double tol = TOL);
 
     /// \brief Construct BCC primitive cell of unit volume
-    static Lattice bcc(double tol);
+    static Lattice bcc(double tol = TOL);
 
     /// \brief Construct simple cubic primitive cell of unit volume
-    static Lattice cubic(double tol);
+    static Lattice cubic(double tol = TOL);
 
     /// \brief Construct cubic primitive cell of unit volume
-    static Lattice hexagonal(double tol);
+    static Lattice hexagonal(double tol = TOL);
 
     /// \brief Get i'th lattice vector as column expression
     LatVec operator[](Index i) {

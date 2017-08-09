@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
     BOOST_CHECK_MESSAGE(j.contains("bspecs"), "test case 'bspecs' is required");
 
     // generate prim
-    Structure prim(read_prim(j["prim"]));
+    Structure prim(read_prim(j["prim"], TOL));
     double crystallography_tol = TOL;
 
     // generate a one site orbit, prim periodic

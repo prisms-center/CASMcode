@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsTest) {
     BOOST_CHECK_MESSAGE(j.contains("max_vol"), "test case 'max_vol' is required");
 
     // generate prim
-    Structure prim(read_prim(j["prim"]));
+    Structure prim(read_prim(j["prim"], tol));
 
     // clean up test proj
     if(fs::exists(test_proj_dir / ".casm")) {

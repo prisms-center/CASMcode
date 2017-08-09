@@ -341,8 +341,8 @@ BOOST_AUTO_TEST_CASE(Test3) {
         Configuration test(scel);
         test.set_occupation({1, 0, 0, 0});
         BOOST_CHECK_EQUAL(config == test, true);
-        BOOST_CHECK_EQUAL(config.is_equivalent(test), true);
-        BOOST_CHECK_EQUAL(test.is_equivalent(config), true);
+        BOOST_CHECK_EQUAL(config.is_sym_equivalent(test), true);
+        BOOST_CHECK_EQUAL(test.is_sym_equivalent(config), true);
         BOOST_CHECK_EQUAL(test < config, false);
         BOOST_CHECK_EQUAL(config < test, false);
       }
@@ -351,8 +351,8 @@ BOOST_AUTO_TEST_CASE(Test3) {
         Configuration test(scel);
         test.set_occupation({0, 1, 0, 0});
         BOOST_CHECK_EQUAL(config == test, false);
-        BOOST_CHECK_EQUAL(config.is_equivalent(test), true);
-        BOOST_CHECK_EQUAL(test.is_equivalent(config), true);
+        BOOST_CHECK_EQUAL(config.is_sym_equivalent(test), true);
+        BOOST_CHECK_EQUAL(test.is_sym_equivalent(config), true);
         BOOST_CHECK_EQUAL(test < config, true);
         BOOST_CHECK_EQUAL(config < test, false);
 

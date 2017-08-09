@@ -17,9 +17,8 @@ BOOST_AUTO_TEST_SUITE(LatticeEnumEquivalentsTest)
 BOOST_AUTO_TEST_CASE(Test1) {
 
   Structure ZrO(ZrO_prim());
-  double tol = CASM::TOL;
 
-  LatticeEnumEquivalents enumerator(ZrO.lattice(), ZrO.factor_group(), tol);
+  LatticeEnumEquivalents enumerator(ZrO.lattice(), ZrO.factor_group());
   BOOST_CHECK_MESSAGE(1, "LatticeEnumEquivalents construction failed");
 
   auto begin = enumerator.begin();
@@ -42,18 +41,17 @@ BOOST_AUTO_TEST_CASE(Test1) {
 BOOST_AUTO_TEST_CASE(Test2) {
 
   Structure ZrO(ZrO_prim());
-  double tol = CASM::TOL;
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = ZrO.lattice().vectors();
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, b, c), ZrO.factor_group(), tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, b, c), ZrO.factor_group());
     BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2 * b, c), ZrO.factor_group(), tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, 2 * b, c), ZrO.factor_group());
     BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
   }
 
@@ -62,26 +60,25 @@ BOOST_AUTO_TEST_CASE(Test2) {
 BOOST_AUTO_TEST_CASE(Test3) {
 
   Lattice lat = Lattice::hexagonal();
-  double tol = CASM::TOL;
 
   MasterSymGroup pg;
-  lat.generate_point_group(pg, tol);
+  lat.generate_point_group(pg);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
 
   {
-    LatticeEnumEquivalents e(lat, pg, tol);
+    LatticeEnumEquivalents e(lat, pg);
     BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg);
     BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2 * b, c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, 2 * b, c), pg);
     BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
   }
 
@@ -90,36 +87,35 @@ BOOST_AUTO_TEST_CASE(Test3) {
 BOOST_AUTO_TEST_CASE(Test4) {
 
   Lattice lat = Lattice::cubic();
-  double tol = CASM::TOL;
 
   MasterSymGroup pg;
-  lat.generate_point_group(pg, tol);
+  lat.generate_point_group(pg);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
 
   {
-    LatticeEnumEquivalents e(lat, pg, tol);
+    LatticeEnumEquivalents e(lat, pg);
     BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg);
     BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, c), pg);
     BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, 2.*c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, 2.*c), pg);
     BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(4.*a, 2.*b, 1.*c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(4.*a, 2.*b, 1.*c), pg);
     BOOST_CHECK_EQUAL(6, std::distance(e.begin(), e.end()));
   }
 
@@ -128,41 +124,40 @@ BOOST_AUTO_TEST_CASE(Test4) {
 BOOST_AUTO_TEST_CASE(Test5) {
 
   Lattice lat = Lattice::fcc();
-  double tol = CASM::TOL;
 
   MasterSymGroup pg;
-  lat.generate_point_group(pg, tol);
+  lat.generate_point_group(pg);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
 
   {
-    LatticeEnumEquivalents e(lat, pg, tol);
+    LatticeEnumEquivalents e(lat, pg);
     BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg);
     BOOST_CHECK_EQUAL(4, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(c, a - b, a + b - c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(c, a - b, a + b - c), pg);
     BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, c), pg);
     BOOST_CHECK_EQUAL(6, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, 2.*c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, 2.*c), pg);
     BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(4.*a, 2.*b, 1.*c), pg, tol);
+    LatticeEnumEquivalents e(Lattice(4.*a, 2.*b, 1.*c), pg);
     BOOST_CHECK_EQUAL(12, std::distance(e.begin(), e.end()));
   }
 
