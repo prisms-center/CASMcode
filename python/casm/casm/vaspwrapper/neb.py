@@ -3,7 +3,23 @@ import pbs
 import vasp
 import casm
 import casm.project
+from casm.project import Project, Selection
 import vaspwrapper
+
+
+class config_properties(object):
+    """ The Object holds all the properties that relate to a configuration """
+    def __init__(self, config_data):
+        sel.configname = config_data["configname"]
+        
+        self.casm_directories = casm.project.DirectoryStructure(configdir)
+        self.casm_settings = casm.project.ProjectSettings(configdir)
+
+    @property
+    def configdir(self): ## check the path
+        return self.casm_directories.configuration_dir(self.configname, self.calc_subdir)
+
+
 
 class Neb(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
@@ -49,16 +65,16 @@ class Neb(object):
         Currently, fixed to self.casm_settings.default_clex.
 
     """
-    def __init__(self, configdir=None, auto=True, sort=True):
+    def __init__(self, selection, auto=True, sort=True):
         """
         Construct a VASP neb job object.
 
         Arguments
         ----------
 
-            configdir: str, optional, default=None
-              Path to configuration directory. If None, uses the current working
-              directory
+            selection: casm.project.Selection object, default= yet to be implemented #todo
+              Selection of all DiffTransConfigurations to submit a NEB calculation. 
+              default should be MASTER selection and yet to be implemented
 
             auto: boolean, optional, default=True,
               Use True to use the pbs module's JobDB to manage pbs jobs
@@ -67,11 +83,11 @@ class Neb(object):
               Use True to sort atoms in POSCAR by type
 
         """
-        print "Construct a casm.vaspwrapper.Relax instance:"
+        # print "Construct a casm.vaspwrapper.Relax instance:"
 
-        if configdir is None:
-            configdir = os.getcwd()
-        print "  Input directory:", configdir
+        # if configdir is None:
+        #     configdir = os.getcwd()
+        # print "  Input directory:", configdir
 
         # get the configname from the configdir path
         #_res = os.path.split(configdir)
@@ -112,7 +128,7 @@ class Neb(object):
         # read the settings json file
         print "  Reading neb.json settings file"
         sys.stdout.flush()
-        setfile = self.casm_directories.settings_path_crawl("neb.json", self.configname, self.clex)
+        setfile = self.casm_directories.settings_path_crawl("neb.json", self.configname, self.clex, self.calc_subdir)
 
         if setfile is None:
             raise vaspwrapper.VaspWrapperError("Could not find \"neb.json\" in an appropriate \"settings\" directory")
@@ -158,10 +174,11 @@ class Neb(object):
         print "  DONE\n"
         sys.stdout.flush()
 
-    @property
-    def configdir(self): ## check the path
-        return self.casm_directories.configuration_dir(self.configname, self.calc_subdir)
 
+    def pre_setup(self):
+        
+
+        
     def setup(self):
         """ Setup initial relaxation run
 
