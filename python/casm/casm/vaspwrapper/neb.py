@@ -7,33 +7,8 @@ from casm.project import Project, Selection
 import vaspwrapper
 
 
-class config_properties(object):
-    """ The Object holds all the properties that relate to a configuration """
-    def __init__(self, config_data):
-        sel.configname = config_data["configname"]
-        
-        self.casm_directories = casm.project.DirectoryStructure(configdir)
-        self.casm_settings = casm.project.ProjectSettings(configdir)
-
-    @property
-    def configdir(self): ## check the path
-        return self.casm_directories.configuration_dir(self.configname, self.calc_subdir)
-
-
-
-class Neb(object):
-    """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
-
-        The relaxation creates the following directory structure:
-        config/
-          calctype.name/
-              run.0/
-              ....
-
-        'run.i' directories are only created when ready.
-
-        This automatically looks for VASP settings files using:
-          casm.project.DirectoryStructure.settings_path_crawl
+class Config_Properties(object):
+    """ The Object holds all the properties that relate to a configuration
 
     Attributes
     ----------
@@ -65,57 +40,14 @@ class Neb(object):
         Currently, fixed to self.casm_settings.default_clex.
 
     """
-    def __init__(self, selection, auto=True, sort=True):
-        """
-        Construct a VASP neb job object.
 
-        Arguments
-        ----------
-
-            selection: casm.project.Selection object, default= yet to be implemented #todo
-              Selection of all DiffTransConfigurations to submit a NEB calculation. 
-              default should be MASTER selection and yet to be implemented
-
-            auto: boolean, optional, default=True,
-              Use True to use the pbs module's JobDB to manage pbs jobs
-
-            sort: boolean, optional, default=True,
-              Use True to sort atoms in POSCAR by type
-
-        """
-        # print "Construct a casm.vaspwrapper.Relax instance:"
-
-        # if configdir is None:
-        #     configdir = os.getcwd()
-        # print "  Input directory:", configdir
-
-        # get the configname from the configdir path
-        #_res = os.path.split(configdir)
-        _res = configdir.strip().split('/')
-        self.configname = _res[-2] + "/" + _res[-1]
-        tmp_index = _res.index("training_data")
-        self.calc_subdir = ""
-        ## anything between "training_data" and "configname" is dumped into calc_subdir
-        if tmp_index < len(_res)-3:
-            for i in range(tmp_index+1, len(_res)-2):
-                self.calc_subdir += _res[i] + "/"
-            self.calc_subdir = self.calc_subdir[:-1] ##remove the trailing "/"
-
-        print "  Configuration:", self.configname
-
-        print "  Reading CASM settings"
-
-        self.casm_directories = casm.project.DirectoryStructure(configdir)
-        self.casm_settings = casm.project.ProjectSettings(configdir)
+    def __init__(self, config_data):
+        self.config_data = config_data
+        self.configname = config_data["configname"]
+        self.casm_directories = casm.project.DirectoryStructure(self.configdir)
+        self.casm_settings = casm.project.ProjectSettings(self.configdir)
         if self.casm_settings is None:
             raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
-
-        if os.path.abspath(configdir) != self.configdir:
-            print ""
-            print "input configdir:", configdir
-            print "determined configname:", self.configname
-            print "expected configdir given configname:", self.configdir
-            raise vaspwrapper.VaspWrapperError("Mismatch between configname and configdir")
 
         # fixed to default_clex for now
         self.clex = self.casm_settings.default_clex
@@ -124,16 +56,10 @@ class Neb(object):
         # will be appended by n_images at the end after reading the settings file
         self.calcdir = self.casm_directories.calctype_dir(self.configname, self.clex, self.calc_subdir)
 
-
-        # read the settings json file
-        print "  Reading neb.json settings file"
-        sys.stdout.flush()
         setfile = self.casm_directories.settings_path_crawl("neb.json", self.configname, self.clex, self.calc_subdir)
-
         if setfile is None:
             raise vaspwrapper.VaspWrapperError("Could not find \"neb.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
-
         else:
             print "  Read settings from:", setfile
         self.settings = vaspwrapper.read_settings(setfile)
@@ -161,24 +87,70 @@ class Neb(object):
         if not "postrun" in self.settings:
             self.settings["postrun"] = None
 
-        self.auto = auto
-        self.sort = sort
         self.n_images = self.settings["n_images"]
         # append the n_images to calcdir
         self.calcdir = os.path.join(self.calcdir, "N_images_{}".format(self.n_images))
-        try:
-            os.makedirs(self.calcdir)
-        except:
-            pass
-        print "  Calculations directory:", self.calcdir
-        print "  DONE\n"
-        sys.stdout.flush()
+            
+    @property
+    def calc_subdir(self):
+        # everything between training_data and configname is dumpded in calc_subdir
+        if self.config_data["configtype"] == "DiffTrans":
+            return "diff_trans"
+        return ""
 
+    @property
+    def configdir(self): ## check the path
+        return self.casm_directories.configuration_dir(self.configname, self.calc_subdir)
+
+class Neb(object):
+    """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
+
+        The relaxation creates the following directory structure:
+        config/
+          calctype.name/
+              run.0/
+              ....
+
+        'run.i' directories are only created when ready.
+
+        This automatically looks for VASP settings files using:
+          casm.project.DirectoryStructure.settings_path_crawl
+
+    """
+    def __init__(self, selection, auto=True, sort=True):
+        """
+        Construct a VASP neb job object.
+
+        Arguments
+        ----------
+
+            selection: casm.project.Selection object, default= yet to be implemented #todo
+              Selection of all DiffTransConfigurations to submit a NEB calculation. 
+              default should be MASTER selection and yet to be implemented
+
+            auto: boolean, optional, default=True,
+              Use True to use the pbs module's JobDB to manage pbs jobs
+
+            sort: boolean, optional, default=True,
+              Use True to sort atoms in POSCAR by type
+
+        """
+        print "Construct a casm.vaspwrapper.Relax instance:"
+
+        self.selection = selection
+        self.auto = auto
+        self.sort = sort
 
     def pre_setup(self):
-        
+        for config_data in self.selection:
+            config_obj = Config_Properties(config_data)
+            try:
+                os.makedirs(config_obj.calcdir)
+                for i in range(config_obj.n_images + 2):
+                    os.makedirs(os.path.join(config_obj.calcdir, str(i).zfill(2)))
+            except:
+                pass
 
-        
     def setup(self):
         """ Setup initial relaxation run
 
@@ -192,6 +164,7 @@ class Neb(object):
                 POS: structure of the configuration to be relaxed
 
         """
+        ## write the selection Interpolation command
         # Find required input files in CASM project directory tree
         vaspfiles = casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname,
                                                            self.clex, self.calc_subdir)
@@ -215,13 +188,6 @@ class Neb(object):
                 raise vasp.VaspError("Neb.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
         sys.stdout.flush()
 
-        #make image folders to store image poscars
-        for i in range(self.settings["n_images"]+2):
-            os.mkdir(os.path.join(self.calcdir, str(i).zfill(2)))
-            ## yet to implement a python wrapper for casm api to enumerate image poscars
-            ##for testing ##TODO
-            shutil.copy(os.path.join(self.configdir, "POSCAR"),
-                        os.path.join(os.path.join(self.calcdir, str(i).zfill(2), "POSCAR")))
         #make vasp input files
         sample_super_poscarfile = os.path.join(self.calcdir, "00", "POSCAR")
         vasp.io.write_vasp_input(self.calcdir, incarfile, prim_kpointsfile, prim_poscarfile,
