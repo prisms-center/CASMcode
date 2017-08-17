@@ -158,7 +158,7 @@ namespace CASM {
 
       GenericDatumFormatter<double, ConfigIO::Result> best_score(PropertiesDatabase &db_props) {
         return GenericDatumFormatter<double, Result>(
-                 "score", "",
+                 "best_score", "",
         [&](const Result & res) {
           return db_props.best_score(res.mapped_props.to);
         },

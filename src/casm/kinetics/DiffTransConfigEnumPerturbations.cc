@@ -100,7 +100,7 @@ namespace CASM {
       "    that exist in your CASM project.\n\n"
       ""
       "  local_bspecs: JSON object (optional,default= {}) \n "
-      "    Indicate the local bspecs hat indicate the clusters around \n"
+      "    Indicate the local bspecs that indicate the clusters around \n"
       "    the transformation that should be perturbed. The string \"local_bspecs\" should be a local bspecs style\n"
       "    initialization used in casm bset enumeration.\n "
       "    This option takes precedence over the following option.\n\n"

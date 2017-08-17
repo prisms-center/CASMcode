@@ -59,12 +59,13 @@ namespace CASM {
       }
 
       SafeOfstream file;
+      fs::create_directories(m_location.parent_path());
       file.open(m_location);
       //json.print(file.ofstream());
       int indent = 0;
       int prec = 12;
-      json_spirit::write_stream((json_spirit::mValue &) json, file.ofstream(), indent, prec),
-                  file.close();
+      json_spirit::write_stream((json_spirit::mValue &) json, file.ofstream(), indent, prec);
+      file.close();
     }
 
     void jsonPropertiesDatabase::close() {

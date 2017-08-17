@@ -74,7 +74,6 @@ namespace CASM {
     }
 
     double ScoreMappedProperties::operator()(const MappedProperties &obj) const {
-
       switch(m_method) {
       case Method::minimum: {
         return obj.mapped[m_propname].get<double>();

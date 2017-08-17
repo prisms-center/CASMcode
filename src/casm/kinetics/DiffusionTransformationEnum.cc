@@ -58,7 +58,7 @@ namespace CASM {
     const std::string DiffusionTransformationEnum::interface_help =
       "DiffusionTransformationEnum: \n\n"
 
-      "  bspecs: JSON object \n"
+      "  cspecs: JSON object \n"
       "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
       "    JSON item \"cspecs\" should be a cspecs style initialization of cluster number and sizes.\n"
       "    See below.          \n\n"
