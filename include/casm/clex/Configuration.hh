@@ -31,6 +31,7 @@ namespace CASM {
   using ConfigCompare = GenericConfigCompare<Configuration, ConfigIsEquivalent>;
 
   struct ConfigInsertResult;
+  struct RefToCanonicalPrim;
 
   /// \defgroup Configuration
   ///
@@ -59,6 +60,8 @@ namespace CASM {
     typedef ConfigDoF::const_displacement_t const_displacement_t;
 
     //********* CONSTRUCTORS *********
+
+    Configuration() {};
 
     /// Construct a default Configuration
     explicit Configuration(const Supercell &_supercell,
@@ -368,6 +371,9 @@ namespace CASM {
     /// \brief Returns the point group that leaves the Configuration unchanged
     std::string point_group_name() const;
 
+    /// \brief Fills supercell 'scel' with configuration
+    Configuration fill_supercell(const Supercell &scel) const;
+
     /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
     Configuration fill_supercell(const Supercell &scel, const SymOp &op) const;
 
@@ -493,13 +499,30 @@ namespace CASM {
 
   };
 
+  /// \brief Operations that transform a canonical primitive configuration to any equivalent
+  ///
+  /// Configuration equiv_prim_config = copy_apply(from_canonical_config, prim_canon_config);
+  /// Configuration config = equiv_prim_config.fill_supercell(config.supercell(), from_canonical_lat);
+  struct RefToCanonicalPrim {
+
+    /// \brief Get operations that transform canonical primitive to this
+    RefToCanonicalPrim(const Configuration &_config);
+
+    std::string name() const;
+
+    Configuration config;
+    Configuration prim_canon_config;
+    SymOp from_canonical_lat;
+    PermuteIterator from_canonical_config;
+    Eigen::Matrix3i transf_mat;
+  };
 
   Configuration sub_configuration(Supercell &sub_scel,
                                   const Configuration &super_config,
                                   const UnitCell &origin = UnitCell(0, 0, 0));
 
   /// \brief Make Configuration from name string
-  Configuration make_configuration(PrimClex &primclex, std::string name);
+  Configuration make_configuration(const PrimClex &primclex, std::string name);
 
   /// \brief Returns correlations using 'clexulator'.
   Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator);
@@ -611,12 +634,19 @@ namespace CASM {
 
   public:
 
-    /// \brief Constructor
+    /// \brief Constructor, for canonical Supercell
     FillSupercell(const Supercell &_scel, const SymOp &_op);
 
     /// \brief Find first SymOp in the prim factor group such that apply(op, motif)
     ///        can be used to fill the Supercell
     FillSupercell(const Supercell &_scel, const Configuration &motif, double tol);
+
+    /// \brief Constructor, for non-canonical Supercell
+    FillSupercell(const std::shared_ptr<Supercell> &_scel, const SymOp &_op);
+
+    /// \brief Find first SymOp in the prim factor group such that apply(op, motif)
+    ///        can be used to fill the non-canonical Supercell
+    FillSupercell(const std::shared_ptr<Supercell> &_scel, const Configuration &motif, double tol);
 
     Configuration operator()(const Configuration &motif) const;
 
@@ -628,11 +658,11 @@ namespace CASM {
       return *m_op;
     }
 
-
   private:
 
     void _init(const Supercell &_motif_scel) const;
 
+    std::shared_ptr<Supercell> m_supercell_ptr;
     const Supercell *m_scel;
     const SymOp *m_op;
 

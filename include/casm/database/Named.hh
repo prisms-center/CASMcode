@@ -2,10 +2,13 @@
 #define CASM_Named
 
 #include <string>
-#include "casm/database/Database.hh"
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
+  class PrimClex;
+
   namespace DB {
+    template<typename T> class ValDatabase;
 
     /// CRTP Mixin for 'named' database objects with no id
     ///
@@ -22,28 +25,24 @@ namespace CASM {
       typedef typename Base::MostDerived MostDerived;
       using Base::derived;
 
-      Named() :
-        m_name("") {}
+      Named() ;
 
-      std::string name() const {
-        if(m_name.empty()) {
-          m_name = derived().generate_name_impl();
-        }
-        return m_name;
-      }
+      std::string name() const;
 
       /// \brief Return "alias" if object stored in database and alias exists,
       ///        return empty string otherwise
-      std::string alias() const {
-        return derived().primclex().template db<MostDerived>().alias(name());
-      }
+      std::string alias() const;
 
     protected:
 
       /// \brief Unset "name", if object is modified
-      void clear_name() const {
-        m_name = "";
-      }
+      void clear_name() const;
+
+      /// \brief Regenerate "name"
+      void regenerate_name() const;
+
+      /// \brief Set "name", explicity
+      void set_name(std::string _name) const;
 
     private:
 
@@ -66,41 +65,32 @@ namespace CASM {
       typedef typename Base::MostDerived MostDerived;
       using Base::derived;
 
-      Indexed() :
-        m_id("none") {}
+      Indexed();
 
-      std::string id() const {
-        return m_id;
-      }
+      // ID for object stored in database. Typically an integer as a string, or 'none'.
+      std::string id() const;
+
+      // If 'id' != 'none', just return configname; else regenerate name
+      std::string name() const;
 
     protected:
 
       /// \brief Unset "id" and "name", if object is modified
-      void clear_name() const {
-        m_id = "none";
-        Named<_Base>::clear_name();
-      }
+      void clear_name() const;
 
       /// \brief Set id
       ///
-      /// Setting id should be done through Database<Derived> implementations of
-      /// insert or emplace.
+      /// Setting id should be done through Database<Derived> implementations
       ///
       /// - protected, to allow reading Derived from database and setting id
-      void set_id(Index _id) const {
-        set_id(std::to_string(_id));
-      }
+      void set_id(Index _id) const;
 
       /// \brief Set id
       ///
-      /// Setting id should be done through Database<Derived> implementations of
-      /// insert or emplace.
+      /// Setting id should be done through Database<Derived> implementations
       ///
       /// - protected, to allow reading Derived from database and setting id
-      void set_id(std::string _id) const {
-        Named<_Base>::clear_name();
-        m_id = _id;
-      }
+      void set_id(std::string _id) const;
 
 
     private:

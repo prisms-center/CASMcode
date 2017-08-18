@@ -10,6 +10,7 @@
 #include "FCCTernaryProj.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/LatticeIsEquivalent.hh"
 
 using namespace CASM;
 
@@ -27,33 +28,32 @@ BOOST_AUTO_TEST_CASE(TestSupercellName) {
 
   {
     Supercell scel {&primclex, Lattice(a, b, c)};
-    std::cout << "lat 0: \n" << scel.lattice().lat_column_mat() << std::endl;
-    std::cout << "scel.name() 0: " << scel.name() << std::endl;
     BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(scel.name(), "SCEL1_1_1_1_0_0_0");
   }
 
   {
     // standard cubic FCC unit cell
     Supercell scel {&primclex, Lattice(c + b - a, a - b + c, a + b - c)};
-    std::cout << "lat 1: \n" << scel.lattice().lat_column_mat() << std::endl;
-    std::cout << "scel.name() 1: " << scel.name() << std::endl;
     BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(scel.name(), "SCEL4_2_2_1_1_1_0");
   }
 
   {
-    // non-standard cubic FCC unit cell (standard w/ z+'c'
-    Supercell scel {&primclex, Lattice(c + b - a, a - b + c, (a + b - c) + c)};
-    std::cout << "lat 2: \n" << scel.lattice().lat_column_mat() << std::endl;
-    std::cout << "scel.name() 2: " << scel.name() << std::endl;
+    // non-standard, but equivalent cubic FCC unit cell (standard w/ c = c+a)
+    Supercell scel {&primclex, Lattice(c + b - a, a - b + c, (a + b - c) + (c + b - a))};
     BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(scel.name(), "SCEL4_2_2_1_1_1_0.0");
+  }
 
-    Index i = 0;
-    for(const auto &op : scel.prim().point_group()) {
-      std::cout << " op: " << i << "  index: " << op.index() << std::endl;
-      ++i;
-    }
-    std::cout << "from_canonical: " << scel.from_canonical().index() << std::endl;
+  {
+    // non-standard, transformed cubic FCC unit cell (standard w/ z+'c')
+    Lattice lat(c + b - a, a - b + c, 2 * (a + b - c));
+    Lattice rotated_lat = copy_apply(primclex.prim().point_group()[10], lat);
 
+    Supercell scel {&primclex, rotated_lat};
+    BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(scel.name(), "SCEL8_4_2_1_1_3_2.5");
   }
 
 }

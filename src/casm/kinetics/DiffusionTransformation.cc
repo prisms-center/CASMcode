@@ -1,7 +1,14 @@
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/database/Named_impl.hh"
+#include "casm/database/DiffTransOrbitDatabase.hh"
 
 namespace CASM {
+
+  namespace DB {
+    template class Named<CRTPBase<PrimPeriodicDiffTransOrbit> >;
+    template class Indexed<CRTPBase<PrimPeriodicDiffTransOrbit> >;
+  }
 
   template class ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Kinetics::DiffusionTransformation> > > >;
   template class AperiodicSymCompare<Kinetics::DiffusionTransformation>;

@@ -5,6 +5,7 @@
 //#include <stdlib.h>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/lexical_cast.hpp>
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/casm_io/stream_io/container.hh"
@@ -16,6 +17,7 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/basis_set/DoF.hh"
+#include "casm/database/Named_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 
 
@@ -23,6 +25,10 @@ namespace CASM {
 
   template class SupercellCanonicalForm<CRTPBase<Supercell> >;
   template class HasPrimClex<DB::Named<Comparisons<SupercellCanonicalForm<CRTPBase<Supercell> > > > >;
+
+  namespace DB {
+    template class DB::Named<Comparisons<SupercellCanonicalForm<CRTPBase<Supercell> > > >;
+  }
 
   bool ConfigMapCompare::operator()(const Configuration *A, const Configuration *B) const {
     return *A < *B;
@@ -400,6 +406,8 @@ namespace CASM {
   }
 
   /// \brief Insert the canonical form of this into the database
+  ///
+  /// Note: does not commit the change in the database
   std::pair<DB::DatabaseIterator<Supercell>, bool> Supercell::insert() const {
     return primclex().db<Supercell>().emplace(
              & primclex(),
@@ -512,22 +520,93 @@ namespace CASM {
 
   /// \brief Return supercell name
   ///
-  /// - If lattice is the canonical equivalent, then return 'SCELV_A_B_C_D_E_F'
-  /// - Else, return '$CANON_SCEL.$FG_INDEX', where $CANON_SCEL is a canonical
-  ///   supercell and $FG_INDEX is the index of the first symmetry operation
-  ///   in the primitive structure's factor group such that:
-  ///     is_equiv(copy_apply(op, canon_scel.lattice()) == true
-  ///   where:
-  ///     LatticeIsEquivalent is_equiv(this->lattice(), crystallography_tol());
+  /// For supercells that are equivalent to the canonical supercell:
+  /// - EQUIV_SCEL_NAME = `$CANON_SCELNAME` = `SCELV_A_B_C_D_E_F`
+  /// - where 'V' is supercell volume (number of unit cells), and
+  ///   'A-F' are the six non-zero elements of the hermite normal form of the
+  ///   supercell transformation matrix (T00*T11*T22, T00, T11, T22, T12, T02, T01)
+  /// - CANON_SCEL is found in the supercell database (or constructed using the HNF
+  ///   for the tranformation matrix and then making the lattice canonical)
+  /// For supercells that are not equivalent to the canonical supercell:
+  /// - NONEQUIV_SCEL_NAME = `$CANON_SCELNAME.$FG_INDEX`
+  /// - The CANON_SCEL is constructed,
+  ///   then the FG_INDEX-th prim factor_group operation is applied
   ///
   std::string Supercell::generate_name_impl() const {
-    if(is_canonical()) {
+    if(lattice().is_equivalent(canonical_form().lattice())) {
       return CASM::generate_name(m_transf_mat);
     }
     else {
       return canonical_form().name() + "." + std::to_string(from_canonical().index());
     }
   }
+
+  /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
+  ///
+  /// Note: does not commit the change in the database
+  const Supercell &make_supercell(const PrimClex &primclex, std::string name) {
+
+    // check if scel is in database
+    const auto &db = primclex.db<Supercell>();
+    auto it = db.find(name);
+
+    // if already in database, return ref
+    if(it != db.end()) {
+      return *it;
+    }
+
+    // else construct transf_mat from name
+    std::vector<std::string> tokens;
+    boost::split(tokens, name, boost::is_any_of("SCEL_"), boost::token_compress_on);
+    if(tokens.size() != 7) {
+      std::string format = "SCELV_T00_T11_T22_T12_T02_T01";
+      primclex.err_log().error("In make_supercell");
+      primclex.err_log() << "expected format: " << format << "\n";
+      primclex.err_log() << "name: " << name << std::endl;
+      primclex.err_log() << "tokens: " << tokens << std::endl;
+      throw std::invalid_argument("Error in make_supercell: supercell name format error");
+    }
+    Eigen::Matrix3i T;
+    auto cast = [](std::string val) {
+      return boost::lexical_cast<Index>(val);
+    };
+    T << cast(tokens[1]), cast(tokens[6]), cast(tokens[5]),
+    0, cast(tokens[2]), cast(tokens[4]),
+    0, 0, cast(tokens[3]);
+
+    // construct supercell, insert into database, and return result
+    Supercell scel(&primclex, T);
+    return *(scel.insert().first);
+  }
+
+  /// \brief Construct non-canonical supercell from name. Uses equivalent niggli lattice.
+  std::shared_ptr<Supercell> make_shared_supercell(const PrimClex &primclex, std::string name) {
+
+    // tokenize name
+    std::vector<std::string> tokens;
+    boost::split(tokens, name, boost::is_any_of("."), boost::token_compress_on);
+
+    // validate name
+    if(tokens.size() != 2) {
+      std::string format = "$CANON_SCEL_NAME.$PRIM_FG_OP";
+      primclex.err_log().error("In make_shared_supercell");
+      primclex.err_log() << "expected format: " << format << "\n";
+      primclex.err_log() << "name: " << name << std::endl;
+      primclex.err_log() << "tokens: " << tokens << std::endl;
+      throw std::invalid_argument("Error in make_shared_supercell: supercell name format error");
+    }
+
+    // generate scel lattice, and put in niggli form
+    Index fg_op_index = boost::lexical_cast<Index>(tokens[1]);
+    Lattice hnf_lat = copy_apply(
+                        primclex.prim().factor_group()[fg_op_index],
+                        make_supercell(primclex, tokens[0]).lattice());
+    Lattice niggli_lat = niggli(hnf_lat, primclex.crystallography_tol());
+
+    // construct Supercell
+    return std::make_shared<Supercell>(&primclex, niggli_lat);
+  }
+
 
   Supercell &apply(const SymOp &op, Supercell &scel) {
     return scel = copy_apply(op, scel);

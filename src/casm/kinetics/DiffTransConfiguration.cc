@@ -7,9 +7,16 @@
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/database/Named_impl.hh"
+#include "casm/database/DiffTransConfigDatabase.hh"
 
 
 namespace CASM {
+
+  namespace DB {
+    template class Named<CRTPBase<Kinetics::DiffTransConfiguration> >;
+    template class Indexed<CRTPBase<Kinetics::DiffTransConfiguration> >;
+  }
 
   namespace Kinetics {
 

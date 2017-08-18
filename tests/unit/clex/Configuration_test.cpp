@@ -10,9 +10,28 @@
 #include "FCCTernaryProj.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Niggli.hh"
 #include "casm/database/ConfigDatabase.hh"
 
 using namespace CASM;
+
+/// Check that name -> configuration recreates an equivalent configuration
+void check_made_from_name(const Configuration &config, std::string name) {
+  BOOST_CHECK_EQUAL(true, true);
+
+  // make configuration from name and database
+  Configuration made_from_name = make_configuration(config.primclex(), name);
+  BOOST_CHECK_EQUAL(true, true);
+
+  // check that Supercell are equivalent (though vectors may be different)
+  BOOST_CHECK_EQUAL(
+    config.supercell().lattice().is_equivalent(made_from_name.supercell().lattice()),
+    true);
+
+  // fill supercell and check that config are identical
+  Configuration in_same_supercell = made_from_name.fill_supercell(config.supercell());
+  BOOST_CHECK_EQUAL((config == in_same_supercell), true);
+}
 
 BOOST_AUTO_TEST_SUITE(ConfigurationTest)
 
@@ -96,43 +115,51 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
   {
     // prim cell
     Supercell scel {&primclex, Lattice(a, b, c)};
-    std::cout << "lat: \n" << scel.lattice().lat_column_mat() << std::endl;
 
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
       config.set_occupation({0});
-      // not in datbase
-      std::cout << "name 00: " << config.name() << std::endl;
+
+      // not in datbase -> id == "none"
+      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/none");
 
       auto res = db.insert(config);
-      // still not in datbase
-      std::cout << "name 01: " << config.name() << std::endl;
-      // in datbase
-      std::cout << "name 02: " << res.first->name() << std::endl;
 
+      // not from database, but now in it -> id == "0"
+      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/0");
+
+      // in datbase -> id == "0"
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL1_1_1_1_0_0_0/0");
+
+      check_made_from_name(config, res.first->name());
     }
 
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
       config.set_occupation({1});
-      // not in datbase
-      std::cout << "name 1: " << config.name() << std::endl;
+      // not in datbase -> id == "none"
+      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/none");
 
       auto res = db.insert(config);
-      // still not in database
-      std::cout << "name 11: " << config.name() << std::endl;
-      // in datbase
-      std::cout << "name 12: " << res.first->name() << std::endl;
+
+      // not from database, but now in it -> id == "1"
+      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/1");
+
+      // in datbase -> id == "1"
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL1_1_1_1_0_0_0/1");
+
+      check_made_from_name(config, res.first->name());
     }
 
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
       config.set_occupation({0});
-      // already in datbase (but not obtained from database)
-      std::cout << "name 20: " << config.name() << std::endl;
+
+      // not from database, but now in it -> id == "0"
+      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/0");
     }
 
     while(db.size()) {
@@ -143,58 +170,191 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
   {
     // standard cubic FCC unit cell
     Supercell scel {&primclex, Lattice(c + b - a, a - b + c, a + b - c)};
-    std::cout << "lat: \n" << scel.lattice().lat_column_mat() << std::endl;
 
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
       config.set_occupation({1, 0, 0, 0});
-      std::cout << "name 3: " << config.name() << std::endl;
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/none");
+
+      auto res = db.insert(config.in_canonical_supercell());
+
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
+
+      check_made_from_name(config, "SCEL4_2_2_1_1_1_0/0");
     }
 
     {
       // canonical scel, non-canonical primitive occ
       Configuration config(scel);
       config.set_occupation({0, 1, 0, 0});
-      std::cout << "name 4: " << config.name() << std::endl;
+
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
+
+      auto res = db.insert(config.in_canonical_supercell());
+      BOOST_CHECK_EQUAL(res.second, false);
+
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
+
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
+
+      check_made_from_name(config, "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
     }
 
     {
       // canonical scel, canonical non-primitive occ
       Configuration config(scel);
       config.set_occupation({0, 0, 0, 0});
-      std::cout << "name 5: " << config.name() << std::endl;
+
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/none");
+
+      auto res = db.insert(config.in_canonical_supercell());
+      BOOST_CHECK_EQUAL(res.second, true);
+
+      // primitive does not yet exist in database
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/1");
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/1");
+
+      // insert primitive
+      res = db.insert(config.primitive().in_canonical_supercell());
+
+      // primitive does exist in database
+      // - it gets index 2, even though it is the only config from this supercell
+      //   in the database, because we don't re-use indices
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL1_1_1_1_0_0_0/2");
+
+      // make config from primitive name
+      check_made_from_name(config, "SCEL4_2_2_1_1_1_0/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
     }
   }
 
   {
-    // non-canonical FCC unit cell, equivalent to standard FCC unit cell (+c added to 'z')
-    Supercell scel {&primclex, Lattice(c + b - a, a - b + c, (a + b - c) + c)};
-    std::cout << "lat: \n" << scel.lattice().lat_column_mat() << std::endl;
+    // non-canonical FCC unit cell, equivalent to standard FCC unit cell
+    Eigen::Vector3d standard_a = c + b - a;
+    Eigen::Vector3d standard_b = a - b + c;
+    Eigen::Vector3d standard_c = a + b - c;
+
+    Supercell scel {&primclex, Lattice(standard_a, standard_b, standard_c + standard_b)};
 
     {
       // non-canonical scel, canonical primitive occ
       Configuration config(scel);
       config.set_occupation({1, 0, 0, 0});
-      std::cout << "name 6: " << config.name() << std::endl;
+
+      // having a different, but equivalent supercell, should not change name ^ see above
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0");
+
+      auto res = db.insert(config.in_canonical_supercell());
+      BOOST_CHECK_EQUAL(res.second, false);
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0");
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
+
+      check_made_from_name(config, "SCEL4_2_2_1_1_1_0/0");
     }
 
     {
       // non-canonical scel, non-canonical primitive occ
       Configuration config(scel);
       config.set_occupation({0, 1, 0, 0});
-      std::cout << "name 7: " << config.name() << std::endl;
+
+      // having a different, but equivalent supercell, should not change name ^ see above
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.3");
+
+      auto res = db.insert(config.in_canonical_supercell());
+      BOOST_CHECK_EQUAL(res.second, false);
+
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.3");
+
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
+
+      check_made_from_name(config, "SCEL4_2_2_1_1_1_0/0.equiv.0.3");
     }
 
     {
-      // non-canonical scel, canonical non-primitive occ
+      // equivalent, but non-canonical scel, canonical non-primitive occ
       Configuration config(scel);
       config.set_occupation({0, 0, 0, 0});
-      std::cout << "name 8: " << config.name() << std::endl;
+
+      // having a different, but equivalent supercell, should not change name ^ see above
+      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/1");
+
+      auto res = db.insert(config.in_canonical_supercell());
+      BOOST_CHECK_EQUAL(res.second, false);
+
+      check_made_from_name(config, "SCEL4_2_2_1_1_1_0/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
+
     }
   }
 
+  {
+    // Test non-canonical equivalent unit cell
+    Eigen::Vector3d standard_a = c + b - a;
+    Eigen::Vector3d standard_b = a - b + c;
+    Eigen::Vector3d standard_c = a + b - c;
 
+    Lattice canon_lat = canonical_equivalent_lattice(
+                          Lattice(standard_a, standard_b, 2 * standard_c),
+                          primclex.prim().point_group(),
+                          primclex.crystallography_tol());
+    Lattice test_lat;
+    Index scel_op_index = 0;
+    for(const auto &op : primclex.prim().point_group()) {
+      test_lat = copy_apply(op, canon_lat);
+      if(!test_lat.is_equivalent(canon_lat)) {
+        break;
+      }
+      ++scel_op_index;
+    }
+
+    Supercell scel {&primclex, test_lat};
+
+    {
+      // non-canonical, non-equivalent, scel, canonical primitive occ
+      Configuration config(scel);
+      config.set_occupation({1, 0, 0, 0, 0, 0, 0, 0});
+
+      // having a different, but equivalent supercell, should not change name ^ see above
+      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/none.equiv.0.0");
+
+      auto res = db.insert(config.in_canonical_supercell());
+      BOOST_CHECK_EQUAL(res.second, true);
+      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.0");
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL8_4_2_1_1_3_2/0");
+
+      check_made_from_name(config, "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.0");
+    }
+
+    {
+      // non-canonical, non-equivalent, scel, non-canonical primitive occ
+      Configuration config(scel);
+      config.set_occupation({0, 1, 0, 0, 0, 0, 0, 0});
+
+      // having a different, but equivalent supercell, should not change name ^ see above
+      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.1");
+
+      auto res = db.insert(config.in_canonical_supercell());
+      BOOST_CHECK_EQUAL(res.second, false);
+
+      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.1");
+      BOOST_CHECK_EQUAL(res.first->name(), "SCEL8_4_2_1_1_3_2/0");
+
+      check_made_from_name(config, "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.1");
+    }
+
+    {
+      // non-canonical, non-equivalent, scel, canonical non-primitive occ
+      Configuration config(scel);
+      config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0});
+
+      // having a different, but equivalent supercell, should not change name ^ see above
+      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
+
+      auto res = db.insert(config.in_canonical_supercell());
+      BOOST_CHECK_EQUAL(res.second, true);
+
+      check_made_from_name(config, "SCEL8_4_2_1_1_3_2.4/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
+    }
+  }
 
 }
 

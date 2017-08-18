@@ -223,6 +223,12 @@ namespace CASM {
 
   };
 
+  /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
+  const Supercell &make_supercell(const PrimClex &primclex, std::string name);
+
+  /// \brief Construct non-canonical supercell from name. Uses equivalent niggli lattice.
+  std::shared_ptr<Supercell> make_shared_supercell(const PrimClex &primclex, std::string name);
+
   Supercell &apply(const SymOp &op, Supercell &scel);
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel);
