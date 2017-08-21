@@ -91,12 +91,12 @@ BOOST_AUTO_TEST_CASE(Test1) {
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
     BOOST_CHECK_EQUAL(true, true);
 
-    // Test
+    // Test (quantity 1856 not checked for accuracy)
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
     auto &dict = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>().dict();
-    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 2);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex);
-    BOOST_CHECK_EQUAL(selection.size(), 2);
+    BOOST_CHECK_EQUAL(selection.size(), 1856);
     BOOST_CHECK_EQUAL(selection.selected_size(), 0);
   }
 }

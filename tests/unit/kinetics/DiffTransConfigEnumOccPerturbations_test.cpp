@@ -145,11 +145,13 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
 
+  /*
   print_clust(
     diff_trans_orbits.begin(),
     diff_trans_orbits.end(),
     std::cout,
     PrototypePrinter<Kinetics::DiffusionTransformation>());
+  */
 
   // Make background config
   Supercell _scel {&primclex, Lattice(1 * a, 1 * b, 1 * c)};

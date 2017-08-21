@@ -12,7 +12,8 @@
 #include "FCCTernaryProj.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
-#include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
+#include "casm/clex/ScelEnum_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/stream_io/container.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
@@ -45,7 +46,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  std::cout << "  here 0" << std::endl;
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
     primclex.prim(),
@@ -57,7 +57,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(true, true);
 
   // Make PrimPeriodicDiffTransOrbit
-  std::cout << "  here 1" << std::endl;
   std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
   Kinetics::make_prim_periodic_diff_trans_orbits(
     orbits.begin() + 2,  // use pairs+
@@ -68,42 +67,36 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(true, true);
 
   // Make background config
-  std::cout << "  here 2" << std::endl;
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = prim.lattice().vectors();
   BOOST_CHECK_EQUAL(true, true);
 
-  std::cout << "  here 3" << std::endl;
   Supercell tscel(
     &primclex,
-    Lattice(2.*a, 2.*b, c));
+    Lattice(3 * (c + b - a), 3 * (a - b + c), 3 * (a + b - c)));
   BOOST_CHECK_EQUAL(true, true);
   const Supercell &scel = *tscel.insert().first;
-  Configuration config(scel, jsonParser(), ConfigDoF({0, 0, 0, 0}));
+  Configuration config(scel);
+  config.init_occupation();
   BOOST_CHECK_EQUAL(true, true);
 
-  std::cout << "  here 4" << std::endl;
   // Make DiffTransConfiguration database
   DB::jsonDatabase<Kinetics::DiffTransConfiguration> db_diff_trans_config(primclex);
   BOOST_CHECK_EQUAL(true, true);
 
-  std::cout << "  here 5" << std::endl;
   // Open DiffTransConfiguration database
   db_diff_trans_config.open();
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
 
-  std::cout << "  here 6" << std::endl;
   // Make DiffTransConfiguration enumerator and enumerate configs
   //std::cout << "skipping DiffTransConfigEnumOccPerturbations dependent parts" << std::endl;
   Kinetics::DiffTransConfigEnumOccPerturbations enum_diff_trans_config(
-    config, diff_trans_orbits[0], diff_perturb_json["local_bspecs"]);
-  std::cout << "  here 6a" << std::endl;
+    config, diff_trans_orbits[0], diff_perturb_json["local_cspecs"]);
   for(const auto &diff_trans_config : enum_diff_trans_config) {
     db_diff_trans_config.insert(diff_trans_config);
   }
-  std::cout << "  here 6b" << std::endl;
   db_diff_trans_config.commit();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
+  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 29); // not checked for accuracy
 
 
   // Check cached properties
@@ -126,15 +119,13 @@ BOOST_AUTO_TEST_CASE(Test1) {
     }
   }
 
-  std::cout << "  here 7" << std::endl;
   // Close DiffTransConfiguration database
   db_diff_trans_config.close();
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
 
-  std::cout << "  here 8" << std::endl;
   // Re-open DiffTransConfiguration database
   db_diff_trans_config.open();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 12);
+  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 29); // not checked for accuracy
 
   //  // Check cached properties
   std::cout << "skipping cache check" << std::endl;
@@ -142,7 +133,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
   ////    BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), true);
   ////  }
 
-  std::cout << "  here 9" << std::endl;
   // Check that the database is sorted
   {
     auto next = db_diff_trans_config.begin();
@@ -153,10 +143,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
     }
   }
 
-  std::cout << "  here 10" << std::endl;
   // Close DiffTransConfiguration database
   db_diff_trans_config.close();
-  //
+  BOOST_CHECK_EQUAL(true, true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
