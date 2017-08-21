@@ -6,5 +6,5 @@
   	"1" : {"cutoff_radius": 6.0},
     "2" : {"max_length" : 6.0, "cutoff_radius": 6.0},
     "3" : {"max_length" : 4.0, "cutoff_radius": 5.0}
- }
+  }
 }

@@ -40,10 +40,10 @@ BOOST_AUTO_TEST_CASE(TestSupercellName) {
   }
 
   {
-    // non-standard, but equivalent cubic FCC unit cell (standard w/ c = c+a)
+    // non-standard, but equivalent cubic FCC unit cell
     Supercell scel {&primclex, Lattice(c + b - a, a - b + c, (a + b - c) + (c + b - a))};
     BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(scel.name(), "SCEL4_2_2_1_1_1_0.0");
+    BOOST_CHECK_EQUAL(scel.name(), "SCEL4_2_2_1_1_1_0");
   }
 
   {

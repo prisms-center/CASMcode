@@ -39,6 +39,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
   Completer::EnumOption enum_opt;
   enum_opt.desc();
 
+  Eigen::Vector3d a, b, c;
+  std::tie(a, b, c) = prim.lattice().vectors();
+
   // -- Generate Supercell & Configuration --
 
   ScelEnumByProps enum_scel(primclex, ScelEnumProps(1, 5));
@@ -110,12 +113,34 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   // -- DiffTransConfiguration --
 
+  // standard cubic FCC unit cell
+  Supercell standard_fcc_unit {&primclex, Lattice(c + b - a, a - b + c, a + b - c)};
+  Supercell background_fcc_unit {&primclex, Lattice(3 * (c + b - a), 3 * (a - b + c), 3 * (a + b - c))};
+
+  // find configurations that can fill 'background_fcc_unit'
+  /*
+  std::cout << "background_fcc_unit.name(): " << background_fcc_unit.name() << std::endl;
+  {
+    auto begin = prim.point_group().begin();
+    auto end = prim.point_group().end();
+    auto tol = primclex.crystallography_tol();
+    for(const auto& config : primclex.db<Configuration>()) {
+      auto res = is_supercell(background_fcc_unit.lattice(), config.ideal_lattice(), begin, end, tol);
+      if(res.first != end) {
+        std::cout << background_fcc_unit.name() << " is a supercell of " << config.name() << std::endl;
+      }
+    }
+  }
+  */
+
   {
     fs::path diffperturb_path = "tests/unit/kinetics/diff_perturb.json";
     jsonParser diff_perturb_json {diffperturb_path};
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
 
-    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 2);
+    /// Not checked for accuracy yet... Would need a simpler test case
+    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
+
     primclex.generic_db<Kinetics::DiffTransConfiguration>().commit();
     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex, "ALL");
 
