@@ -3,6 +3,8 @@
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/symmetry/ConfigSubOrbits_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/clex/FilteredConfigIterator.hh"
 
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/AppIO_impl.hh"
@@ -61,20 +63,35 @@ namespace CASM {
     const std::string DiffTransConfigEnumOccPerturbations::interface_help =
       "DiffTransConfigEnumOccPerturbations: \n\n"
 
-      "  orbits: JSON array of strings \n"
-      "    Indicate which diffusion transformation orbits are of interest. The \n"
-      "    JSON array \"orbits\" should be the names of the orbits of interest.\n\n"
+      "  orbit_names: JSON array of strings \n"
+      "    The names of diffusion transformation orbits whose local environments\n"
+      "    will be perturbed.\n\n"
 
-      "  background_configs: JSON array of strings \n "
-      "    Indicate which configurations will be the background structures for the transformations to occur in.\n"
-      "    The JSON array of strings \"background_configs\" should be names of Configurations\n"
-      "    that exist in your CASM project.\n\n"
+      "  orbit_selection: string \n"
+      "    The names of a selection diffusion transformation orbits whose local \n"
+      "    environments will be perturbed.\n\n"
+
+      "  background_scel: string (optional, default=None)\n"
+      "    The name of the supercell in which DiffTransConfiguration should be \n"
+      "    created. If given, the supercell must be a supercell that can contain \n"
+      "    all of the configurations specified by \"background_confignames\" and \n"
+      "    \"background_selection\". Prim point group operations are allowed to \n"
+      "    transform configurations so that they fit into the supercell. Newly \n"
+      "    created configurations in the background supercell will be added to \n"
+      "    the configuration database.\n\n"
+
+      "  background_confignames: JSON array of string \n "
+      "    Names of background configurations to be perturbed. Should be names of \n"
+      "    Configurations that exist in your CASM project.\n\n"
+
+      "  background_selection: string\n "
+      "    The name of a selection of background configurations to be perturbed.\n\n"
 
       "  local_cspecs: JSON object (optional,default= {}) \n "
-      "    Specify the clusters around the transformation that should be \n"
-      "    perturbed. The string \"local_cspecs\" should be a local cspecs style\n"
-      "    initialization used in casm bset enumeration.\n "
-      "    This option takes precedence over the following option.\n\n"
+      "    Specify the clusters that should be use for perturbations. The string \n"
+      "    \"local_cspecs\" should be a local cspecs style initialization as used \n "
+      "    in 'casm bset' local basis function enumeration. This option takes \n"
+      "    precedence over the following option.\n\n"
 
       "  local_cspecs_filepath: string (optional,default=\"\") \n "
       "    Indicate the local cspecs file that specifies the clusters around \n"
@@ -84,19 +101,233 @@ namespace CASM {
 
       "  Example:\n"
       "  {\n"
-      "   \"orbits\":[\"diff_trans/0\",\"diff_trans/1\"],\n"
-      "   \"background_configs\":[\"SCEL8_2_2_2_0_0_0/2\"],\n"
-      "    \"local_cspecs\":{\n"
-      "       \"basis_functions\" : {\n"
-      "        \"site_basis_functions\" : \"occupation\"\n"
-      "      },\n"
+      "    \"orbit_names\": [\n"
+      "      \"diff_trans/0\",\n"
+      "      \"diff_trans/1\"\n"
+      "    ],\n"
+      "    \"orbit_selection\": \"low_barrier_diff_trans\",\n"
+      "    \"background_configs\": [\n"
+      "      \"SCEL8_2_2_2_0_0_0/2\"\n"
+      "      \"SCEL8_2_2_2_0_0_0/13\"\n"
+      "     ],\n"
+      "    \"background_selection\": \"groundstates\",\n"
+      "    \"local_cspecs\": {\n"
       "      \"orbit_branch_specs\" : { \n"
-      "       \"1\" : {\"cutoff_radius\" : 6.0},\n"
-      "       \"2\" : {\"max_length\" : 6.01,\"cutoff_radius\" : 6.0},\n"
-      "       \"3\" : {\"max_length\" : 4.01,\"cutoff_radius\" : 5.0}\n"
+      "        \"1\" : {\"cutoff_radius\" : 6.0},\n"
+      "        \"2\" : {\"max_length\" : 6.01,\"cutoff_radius\" : 6.0},\n"
+      "        \"3\" : {\"max_length\" : 4.01,\"cutoff_radius\" : 5.0}\n"
       "      }\n"
       "    }\n"
       "  }\n\n";
+
+
+    namespace {
+
+      /// --- Implementation for 'run' ---
+
+      /// Take input selection of background configurations, make each fill the
+      /// background supercell, and return updated selection with just configurations
+      /// in the background supercell selected.
+      ///
+      /// - Will saved newly created configurations in database
+      /// - Throws if any will not fill supercell
+      DB::Selection<Configuration> _fill_background_scel(
+        const DB::Selection<Configuration> &background_sel,
+        const Supercell &background_scel) {
+
+        const PrimClex &primclex = background_sel.primclex();
+        Log &log = primclex.log();
+        std::string scelname = background_scel.name();
+        std::string enum_name = DiffTransConfigEnumOccPerturbations::enumerator_name;
+
+        log << "Checking if configurations will tile supercell " << scelname << std::endl;
+
+        // Construct a selection to store background configurations in
+        DB::Selection<Configuration> tmp_sel(primclex, "EMPTY");
+
+        // Check if all requested configurations will fill the background scel
+        auto begin = primclex.prim().factor_group().begin();
+        auto end = primclex.prim().factor_group().end();
+        auto tol = primclex.crystallography_tol();
+        for(const auto &config : background_sel.selected()) {
+
+          // Check if configuration can tile background scel
+          auto res = is_supercell(background_scel.lattice(), config.ideal_lattice(), begin, end, tol);
+          if(res.first == end) {
+            std::string msg = "Error in " + enum_name + ": Configuration "
+                              + config.name() + " cannot tile supercell " + scelname;
+            throw std::runtime_error(msg);
+          }
+
+          // Insert configuration in background scel
+          Configuration background_config = config.fill_supercell(background_scel, *res.first);
+          auto insert_res = background_config.insert();
+
+          log << config.name() << " fills the supercell as " << insert_res.canonical_it.name() << std::endl;
+
+          // Store in selection
+          tmp_sel.data()[insert_res.canonical_it.name()] = true;
+        }
+
+        log << "Writing configuration database..." << std::endl;
+        primclex.db<Configuration>().commit();
+        log << "  DONE" << std::endl;
+
+        return tmp_sel;
+      }
+
+      /// Parse input to get local_cspecs JSON
+      jsonParser _parse_local_cspecs(
+        const jsonParser &kwargs) {
+
+        if(kwargs.contains("local_cspecs")) {
+          // nothing necessary
+          return kwargs["local_cspecs"].get<jsonParser>();
+        }
+        else if(kwargs.contains("local_cspecs_filepath")) {
+          //look for filepath given and load it
+          fs::path local_cspecs_filepath = kwargs["local_cspecs_filepath"].get<fs::path>();
+          if(!fs::exists(local_cspecs_filepath)) {
+            std::string msg = "Error in "
+                              + DiffTransConfigEnumOccPerturbations::enumerator_name + ": "
+                              "\"local_cspecs_filepath\" file: " + local_cspecs_filepath.string()
+                              + "does not exist.";
+            throw std::runtime_error(msg);
+          }
+          return jsonParser{local_cspecs_filepath};
+        }
+
+        std::string msg = "Error in " + DiffTransConfigEnumOccPerturbations::enumerator_name + ": One of "
+                          "\"local_cspecs\" or \"local_cspecs_filepath\" must be given.";
+        throw std::runtime_error(msg);
+      }
+
+      /// Check if local clusters overlap
+      void _check_overlap(
+        const PrimClex &primclex,
+        const Configuration &bg_config,
+        const PrimPeriodicDiffTransOrbit &dtorbit,
+        const jsonParser &local_cspecs) {
+
+        /// check if configuration is big enough for local cspecs here
+        /// give warning if not
+        std::vector<LocalOrbit<IntegralCluster>> local_orbits;
+        make_local_orbits(
+          dtorbit.prototype(),
+          local_cspecs,
+          alloy_sites_filter,
+          primclex.crystallography_tol(),
+          std::back_inserter(local_orbits),
+          null_log());
+        if(has_local_bubble_overlap(local_orbits, bg_config.supercell())) {
+          std::string msg = "Warning in " +
+                            DiffTransConfigEnumOccPerturbations::enumerator_name + ": Choice of background "
+                            "configuration " + bg_config.name() + " results in an overlap in the local "
+                            "clusters of " + dtorbit.name() + " with their periodic images. Consider "
+                            "choosing a larger background configuration or smaller set of local clusters.";
+          primclex.log() << msg << std::endl;
+        }
+      }
+
+      /// Construct and execute enumerator
+      void _enumerate(
+        const PrimClex &primclex,
+        const Configuration &bg_config,
+        const PrimPeriodicDiffTransOrbit &dtorbit,
+        const jsonParser &local_cspecs,
+        std::vector<std::string> filter_expr) {
+
+        auto &db = primclex.db<DiffTransConfiguration>();
+        primclex.log() << "\tUsing " << dtorbit.name() << "... " << std::flush;
+        Index Ninit_spec = db.size();
+
+        DiffTransConfigEnumOccPerturbations enumerator(bg_config, dtorbit, local_cspecs);
+        auto begin = enumerator.begin();
+        auto end = enumerator.end();
+        if(!filter_expr.empty()) {
+          try {
+            auto fbegin = filter_begin(
+                            begin,
+                            end,
+                            filter_expr,
+                            primclex.settings().query_handler<DiffTransConfiguration>().dict());
+            auto fend = filter_end(enumerator.end());
+            db.insert(fbegin, fend);
+          }
+          catch(std::exception &e) {
+            std::string msg = "Cannot filter " + traits<DiffTransConfiguration>::name
+                              + " using the expression provided: " + e.what();
+            throw std::runtime_error(msg);
+          }
+        }
+        else {
+          db.insert(begin, end);
+        }
+
+        Index Nfinal_spec = db.size();
+        primclex.log() << "Found " << Nfinal_spec - Ninit_spec
+                       << " new " << traits<DiffTransConfiguration>::short_name << std::endl;
+      }
+
+    }
+
+    int DiffTransConfigEnumOccPerturbations::run(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      const Completer::EnumOption &enum_opt) {
+
+      Log &log = primclex.log();
+
+      // Validate and construct input
+      DB::Selection<PrimPeriodicDiffTransOrbit> dtorbit_sel = make_selection<PrimPeriodicDiffTransOrbit>(
+                                                                primclex, kwargs, "orbit_names", "orbit_selection", enumerator_name, OnError::THROW);
+
+      DB::Selection<Configuration> background_sel = make_selection<Configuration>(
+                                                      primclex, kwargs, "background_confignames", "background_selection", enumerator_name, OnError::THROW);
+
+      // If requested, fill all configurations into background supercell
+      if(kwargs.contains("background_scel")) {
+        // Get requested background scel
+        std::string scelname = kwargs["background_scel"].get<std::string>();
+        const auto &background_scel = make_supercell(primclex, scelname);
+        background_sel = _fill_background_scel(background_sel, background_scel);
+      }
+
+      jsonParser local_cspecs = _parse_local_cspecs(kwargs);
+
+      std::vector<std::string> filter_expr = make_enumerator_filter_expr(kwargs, enum_opt);
+      auto &db = primclex.db<DiffTransConfiguration>();
+      std::string type_name = traits<DiffTransConfiguration>::name;
+
+      Index Ninit = db.size();
+      log << "# " << type_name << " in this project: " << Ninit << "\n" << std::endl;
+
+      log.begin(enumerator_name);
+      for(auto bg_config : background_sel.selected()) {
+        auto prim_config = bg_config.primitive().in_canonical_supercell();
+        log << "Searching in " << bg_config.name()
+            << " (primitive = " << prim_config.name() << ") ..." << std::endl;
+
+        for(const auto &dtorbit : dtorbit_sel.selected()) {
+          _check_overlap(primclex, bg_config, dtorbit, local_cspecs);
+          _enumerate(primclex, bg_config, dtorbit, local_cspecs, filter_expr);
+        }
+      }
+
+      log << "  DONE." << std::endl << std::endl;
+
+      Index Nfinal = db.size();
+
+      log << "# new " << type_name << ": " << Nfinal - Ninit << "\n";
+      log << "# " << type_name << " in this project: " << Nfinal << "\n" << std::endl;
+
+      log << "Writing " << type_name << " database..." << std::endl;
+      db.commit();
+      log << "  DONE" << std::endl;
+      return 0;
+    }
+
+    ///------------------------------------Internal functions-------------------------------///
 
     void DiffTransConfigEnumOccPerturbations::increment() {
 
@@ -125,7 +356,6 @@ namespace CASM {
       }
       while(!curr_perturb.second && m_base_it != m_base.end());
 
-
       if(curr_perturb.second) {
         // find canonical from_config set current
         this->_increment_step();
@@ -136,118 +366,6 @@ namespace CASM {
         _invalidate();
       }
     };
-
-    int DiffTransConfigEnumOccPerturbations::run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
-
-      jsonParser orbitnames;
-      if(!_kwargs.get_if(orbitnames, "orbits")) {
-        std::cerr << "DiffTransConfigEnumOccPerturbations currently has no default and requires a correct JSON with a orbits tag within it" << std::endl;
-        std::cerr << "Core dump will occur because cannot find proper input" << std::endl;
-      }
-
-      jsonParser confignames;
-      if(!_kwargs.get_if(confignames, "background_configs")) {
-        std::cerr << "DiffTransConfigEnumOccPerturbations currently has no default and requires a correct JSON with a background_configs tag within it" << std::endl;
-        std::cerr << "Core dump will occur because cannot find proper input" << std::endl;
-      }
-
-      jsonParser kwargs;
-      jsonParser local_cspecs;
-      if(_kwargs.get_if(kwargs, "local_cspecs")) {
-        local_cspecs = kwargs;
-      }
-      else if(_kwargs.get_if(kwargs, "local_cspecs_filepath")) {
-        //look for filepath given and load it
-        fs::path local_cspecs_path = _kwargs.get<std::string>();
-        jsonParser tmp {local_cspecs_path};
-        local_cspecs = tmp;
-      }
-      else {
-        //look for default local cspecs file.
-        fs::path local_cspecs_path = "default/path/to/local_cspecs.json";
-        jsonParser tmp {local_cspecs_path};
-        local_cspecs = tmp;
-      }
-
-
-      Log &log = primclex.log();
-      auto &db_diff_trans_configs = primclex.db<DiffTransConfiguration>();
-
-      Index Ninit = db_diff_trans_configs.size();
-      log << "# DiffTransConfiguration in this project: " << Ninit << "\n" << std::endl;
-
-      log.begin(enumerator_name);
-      for(const auto &configname_parser : confignames) {
-        std::string configname = configname_parser.get<std::string>();
-        log << "Searching in " << configname << "..." << std::endl;
-
-        Configuration bg_config = *primclex.db<Configuration>().find(configname);
-        for(const auto &orbitname_parser : orbitnames) {
-          std::string orbitname = orbitname_parser.get<std::string>();
-          log << "\tUsing " << orbitname << "..." << std::flush;
-          Index Ninit_spec = db_diff_trans_configs.size() ;
-
-          PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
-          /// check if configuration is big enough for local cspecs here
-          /// give warning if not
-
-          std::vector<LocalOrbit<IntegralCluster>> local_orbits;
-          make_local_orbits(
-            dtorbit.prototype(),
-            local_cspecs,
-            alloy_sites_filter,
-            primclex.crystallography_tol(),
-            std::back_inserter(local_orbits),
-            null_log());
-          if(has_local_bubble_overlap(local_orbits, bg_config.supercell())) {
-            log << "WARNING!!! CHOICE OF BACKGROUND CONFIGURATION " << configname <<
-                "\nRESULTS IN AN OVERLAP IN THE LOCAL CLUSTERS OF " << orbitname <<
-                "\nWITH ITS PERIODIC IMAGES. CONSIDER CHOOSING \n" <<
-                "A LARGER BACKGROUND CONFIGURATION." << std::endl;
-          }
-          DiffTransConfigEnumOccPerturbations enumerator(bg_config, dtorbit, local_cspecs);
-          auto enum_it = enumerator.begin();
-          std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
-          if(!filter_expr.empty()) {
-            try {
-              DataFormatter<DiffTransConfiguration> filter = primclex.settings().query_handler<DiffTransConfiguration>().dict().parse(filter_expr);
-              while(enum_it != enumerator.end()) {
-                ValueDataStream<bool> _stream;
-                _stream << filter(*enum_it);
-                if(_stream.value()) {
-                  db_diff_trans_configs.insert(enum_it->canonical_form());
-                }
-                ++enum_it;
-              }
-            }
-            catch(std::exception &e) {
-              primclex.err_log() << "Cannot filter difftransconfigs using the expression provided: \n" << e.what() << "\nExiting...\n";
-              return ERR_INVALID_ARG;
-            }
-          }
-          else {
-            primclex.db<DiffTransConfiguration>().insert(enumerator.begin(), enumerator.end());
-          }
-
-          Index Nfinal_spec = db_diff_trans_configs.size();
-          log << "Found " << Nfinal_spec - Ninit_spec << " new difftransconfigs" << std::endl;
-        }
-      }
-
-      log << "  DONE." << std::endl << std::endl;
-
-      Index Nfinal = db_diff_trans_configs.size();
-
-      log << "# new DiffTransConfiguration: " << Nfinal - Ninit << "\n";
-      log << "# DiffTransConfiguration in this project: " << Nfinal << "\n" << std::endl;
-
-      log << "Writing DiffTransConfiguration database..." << std::endl;
-      db_diff_trans_configs.commit();
-      log << "  DONE" << std::endl;
-      return 0;
-    }
-
-    ///------------------------------------Internal functions-------------------------------///
 
     double DiffTransConfigEnumOccPerturbations::_tol() const {
       return m_background_config.primclex().crystallography_tol();
@@ -319,7 +437,16 @@ namespace CASM {
       // get list of linear indices of hopping sites
       std::set<Index> hop_cluster_indices;
       for(auto &traj : m_base_it->diff_trans.specie_traj()) {
-        hop_cluster_indices.insert(_supercell().linear_index(traj.from.uccoord));
+        auto res = hop_cluster_indices.insert(_supercell().linear_index(traj.from.uccoord));
+        if(!res.second) {
+          std::string msg = "Error in " + enumerator_name + ": Background "
+                            "configuration is too small to contain the requested diffusion transformation.\n";
+          auto &err_log = _supercell().primclex().err_log();
+          err_log << "Background config: " << m_background_config.name() << std::endl;
+          err_log << "Diff trans: \n" << m_diff_trans_orbit.prototype() << std::endl;
+
+          throw std::runtime_error(msg);
+        }
       }
 
       // lambda function returns true if uccoord is not in hop cluster
