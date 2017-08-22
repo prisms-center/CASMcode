@@ -99,7 +99,6 @@ namespace CASM {
         // Outputs one or more mapping results from the structure located at specied path
         //   See _import documentation for more.
         m_structure_mapper.map(*it, db_config().end(), std::back_inserter(tvec));
-
         for(auto &res : tvec) {
 
           results.push_back(res);
@@ -131,7 +130,6 @@ namespace CASM {
           }
 
           // else we will try to import data
-
           // for import we currently don't have a way to get the initial config,
           // so set from = to, if not already so
           //   could support properties.calc.json: "ideal_" or "initial_" DoF
@@ -163,7 +161,6 @@ namespace CASM {
               continue;
             }
           }
-
           // note which structure is the latest import to configuration in case of conflicts
           data_res.last_insert = res.pos;
 
@@ -182,7 +179,6 @@ namespace CASM {
         }
 
       }
-
       _import_report(results, data_results);
 
       db_supercell().commit();
@@ -201,7 +197,6 @@ namespace CASM {
       // import_data_conflicts: conflicts with other in import batch && preexisting
       // - pos, config, score_method, chosen?, overwrite?, import data?, import additional files?, score, best_score, is_preexisting?
 
-
       // list of structures that could not be mapped
       std::vector<ConfigIO::Result> map_fail;
 
@@ -215,13 +210,16 @@ namespace CASM {
       prefix += traits<ConfigType>::short_name;
 
       for(long i = 0; i < results.size(); ++i) {
+
         const auto &res = results[i];
         if(res.mapped_props.to.empty()) {
           map_fail.push_back(res);
+
         }
         else {
           map_success.push_back(res);
-          if(res.has_data && db_props().score(res.mapped_props) < db_props().best_score(res.mapped_props.to)) {
+          if(res.has_data && m_import_data && db_props().find_via_to(res.mapped_props.to) != db_props().end()
+             && db_props().score(res.mapped_props) < db_props().best_score(res.mapped_props.to)) {
             import_data_fail.push_back(res);
           }
         }
@@ -230,7 +228,6 @@ namespace CASM {
       // list of conflicts (multiple config with same 'from')
       std::map<std::string, std::vector<long> > conflict_count;
       std::vector<ConfigIO::Result> conflict;
-
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
         auto it = conflict_count.find(res.mapped_props.from);
@@ -241,6 +238,7 @@ namespace CASM {
           it->second.push_back(i);
         }
       }
+
       for(const auto &val : conflict_count) {
         if(val.second.size() > 1) {
           for(const auto &i : val.second) {
@@ -306,6 +304,7 @@ namespace CASM {
 
         sout << formatter(conflict.begin(), conflict.end());
       }
+
     }
 
   }

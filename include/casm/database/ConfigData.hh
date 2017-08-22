@@ -151,6 +151,7 @@ namespace CASM {
       /// Uses primclex().settings().default_clex().calctype
       virtual PropertiesDatabase &db_props() const = 0;
 
+
       /// \brief Path to default calctype training_data directory for config
       fs::path calc_dir(const std::string configname) const;
 

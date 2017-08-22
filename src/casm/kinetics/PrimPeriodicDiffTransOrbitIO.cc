@@ -98,6 +98,14 @@ namespace CASM {
       });
     }
 
+    GenericDiffTransOrbitFormatter<bool> path_collision() {
+      return GenericDiffTransOrbitFormatter<bool>("path_collision",
+                                                  "Returns true(1) if there is a chance that two moving species would collide on the designated path",
+      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> bool {
+        return path_collision(orbit.prototype());
+      });
+    }
+
     GenericDiffTransOrbitFormatter<std::string> species_list() {
       return GenericDiffTransOrbitFormatter<std::string>("species_list",
                                                          "Returns the species that move in this diffusion transformation",
@@ -158,7 +166,8 @@ namespace CASM {
     BooleanAttributeDictionary<PrimPeriodicDiffTransOrbit> dict;
 
     dict.insert(
-      Contains()
+      Contains(),
+      path_collision()
     );
 
     return dict;

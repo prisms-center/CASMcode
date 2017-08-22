@@ -108,7 +108,6 @@ namespace CASM {
       fs::path p,
       DatabaseIterator<Configuration> hint,
       map_result_inserter result) const {
-
       // need to set Result data (w/ defaults):
       // - fs::path pos = "";
       // - MappedProperties mapped_props {from:"", to:"", unmapped:{}, mapped:{}};
@@ -148,10 +147,19 @@ namespace CASM {
         *result++ = res;
         return result;
       }
-
+      // if the result was a success, need to populate relaxed energy in
+      // map_result.relaxation_properties["best_mapping"]["relaxed_energy"]
+      if(res.pos.extension() == ".json" || res.pos.extension() == ".JSON") {
+        jsonParser json(res.pos);
+        if(json.contains("relaxed_energy")) {
+          map_result.relaxation_properties["best_mapping"]["relaxed_energy"] = json["relaxed_energy"];
+        }
+      }
       // insert in database (note that this also/only inserts primitive)
       ConfigInsertResult insert_result = map_result.config->insert(m_primitive_only);
+
       res.is_new_config = insert_result.insert_canonical;
+
       res.mapped_props.to = insert_result.canonical_it.name();
 
       // check for and read raw 'unmapped' data, adds 'data_timestamp'
@@ -366,7 +374,9 @@ namespace CASM {
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
       // the 'used' settings
       std::vector<std::string> dof {"occupation"};
-      StructureMap<Configuration> mapper(primclex, kwargs["mapping"], primitive_only, dof);
+      jsonParser map_json;
+      kwargs.get_else(map_json, "mapping", jsonParser());
+      StructureMap<Configuration> mapper(primclex, map_json, primitive_only, dof);
       used["mapping"] = mapper.used();
 
       // 'data' subsettings
@@ -572,7 +582,7 @@ namespace CASM {
         "configname", "selected", "pos", "has_data", "has_complete_data",
         "preexisting_data", "import_data", "import_additional_files",
         "score", "best_score", "is_best",
-        "lattice_deformation_cost", "basis_deformation_cost", "deformation_cost",
+        "lattice_deformation_cost", "basis_deformation_cost",
         "relaxed_energy"
       };
 
@@ -618,7 +628,9 @@ namespace CASM {
       // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values
       // still need to figure out how to specify this in general
       std::vector<std::string> dof {"occupation"};
-      StructureMap<Configuration> mapper(primclex, kwargs["mapping"], primitive_only, dof);
+      jsonParser map_json;
+      kwargs.get_else(map_json, "mapping", jsonParser());
+      StructureMap<Configuration> mapper(primclex, map_json, primitive_only, dof);
       used["mapping"] = mapper.used();
 
       // 'data' subsettings
@@ -655,7 +667,7 @@ namespace CASM {
       std::vector<std::string> col = {
         "configname", "selected", "to_configname", "has_data", "has_complete_data",
         "score", "best_score", "is_best",
-        "lattice_deformation_cost", "basis_deformation_cost", "deformation_cost",
+        "lattice_deformation_cost", "basis_deformation_cost",
         "relaxed_energy"
       };
 

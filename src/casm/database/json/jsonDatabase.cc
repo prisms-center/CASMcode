@@ -105,7 +105,7 @@ namespace CASM {
       else if(fs::exists(primclex().dir().SCEL())) {
         _read_SCEL();
       }
-
+      master_selection() = Selection<Supercell>(*this);
       this->read_aliases();
 
       m_is_open = true;
@@ -129,10 +129,19 @@ namespace CASM {
       file.close();
 
       this->write_aliases();
+      auto handler = primclex().settings().query_handler<Supercell>();
+      handler.set_selected(master_selection());
+      master_selection().write(
+        handler.dict(),
+        true,
+        primclex().dir().template master_selection<Supercell>(),
+        false,
+        false);
     }
 
     void jsonDatabase<Supercell>::close() {
       m_is_open = false;
+
       this->clear();
     }
 
@@ -248,7 +257,7 @@ namespace CASM {
 
       // read next config id for each supercell
       from_json(m_config_id, json["config_id"]);
-
+      master_selection() = Selection<Configuration>(*this);
       this->read_aliases();
 
       m_is_open = true;
@@ -290,12 +299,21 @@ namespace CASM {
                   file.close();
 
       this->write_aliases();
+      auto handler = primclex().settings().query_handler<Configuration>();
+      handler.set_selected(master_selection());
+      master_selection().write(
+        handler.dict(),
+        true,
+        primclex().dir().template master_selection<Configuration>(),
+        false,
+        false);
     }
 
     void jsonDatabase<Configuration>::close() {
       m_name_to_config.clear();
       m_config_list.clear();
       m_scel_range.clear();
+
       m_is_open = false;
     }
 
@@ -338,7 +356,7 @@ namespace CASM {
 
       // erase name & alias
       m_name_to_config.erase(base_it->name());
-
+      master_selection().data().erase(base_it->name());
       // update scel_range
       auto _scel_range_it = m_scel_range.find(base_it->supercell().name());
       if(_scel_range_it->second.first == _scel_range_it->second.second) {
@@ -430,6 +448,8 @@ namespace CASM {
         else if(_scel_range_it->second.second == std::prev(result.first)) {
           _scel_range_it->second.second = result.first;
         }
+
+        master_selection().data().emplace(config.name(), 0);
       }
 
       return std::make_pair(_iterator(result.first), result.second);
@@ -478,6 +498,7 @@ namespace CASM {
 
       //read next orbit id
       from_json(m_orbit_id, json["orbit_id"]);
+      master_selection() = Selection<Kinetics::PrimPeriodicDiffTransOrbit>(*this);
 
       this->read_aliases();
 
@@ -517,12 +538,21 @@ namespace CASM {
                   file.close();*/
       file.close();
       this->write_aliases();
+      auto handler = primclex().settings().query_handler<Kinetics::PrimPeriodicDiffTransOrbit>();
+      handler.set_selected(master_selection());
+      master_selection().write(
+        handler.dict(),
+        true,
+        primclex().dir().template master_selection<Kinetics::PrimPeriodicDiffTransOrbit>(),
+        false,
+        false);
     }
 
     void jsonDatabase<PrimPeriodicDiffTransOrbit>::close() {
       m_name_to_orbit.clear();
       m_orbit_list.clear();
       m_is_open = false;
+
     }
 
     jsonDatabase<PrimPeriodicDiffTransOrbit>::iterator
@@ -564,6 +594,7 @@ namespace CASM {
 
       // erase name & alias
       m_name_to_orbit.erase(base_it->name());
+      master_selection().data().erase(base_it->name());
 
       // erase PrimPeriodicDiffTransOrbit
       return _iterator(m_orbit_list.erase(base_it));
@@ -612,6 +643,7 @@ namespace CASM {
 
         // update name -> orbit
         m_name_to_orbit.insert(std::make_pair(orbit.name(), result.first));
+        master_selection().data().emplace(orbit.name(), 0);
 
       }
       return std::make_pair(_iterator(result.first), result.second);
@@ -679,6 +711,7 @@ namespace CASM {
 
       // read next config id for each supercell
       from_json(m_config_id, json["config_id"]);
+      master_selection() = Selection<Kinetics::DiffTransConfiguration>(*this);
 
       this->read_aliases();
 
@@ -725,6 +758,14 @@ namespace CASM {
                   file.close();
 
       this->write_aliases();
+      auto handler = primclex().settings().query_handler<Kinetics::DiffTransConfiguration>();
+      handler.set_selected(master_selection());
+      master_selection().write(
+        handler.dict(),
+        true,
+        primclex().dir().template master_selection<Kinetics::DiffTransConfiguration>(),
+        false,
+        false);
     }
 
     void jsonDatabase<Kinetics::DiffTransConfiguration>::close() {
@@ -734,6 +775,7 @@ namespace CASM {
       m_orbit_range.clear();
       m_orbit_scel_range.clear();
       m_is_open = false;
+
     }
 
     jsonDatabase<Kinetics::DiffTransConfiguration>::iterator jsonDatabase<Kinetics::DiffTransConfiguration>::begin() const {
@@ -776,6 +818,7 @@ namespace CASM {
 
       // erase name & alias
       m_name_to_diff_trans_config.erase(base_it->name());
+      master_selection().data().erase(base_it->name());
 
       // update scel_range
       auto _scel_range_it = m_scel_range.find(base_it->from_config().supercell().name());
@@ -907,7 +950,7 @@ namespace CASM {
 
         // update name -> config
         m_name_to_diff_trans_config.insert(std::make_pair(diff_trans_config.name(), result.first));
-
+        master_selection().data().emplace(diff_trans_config.name(), 0);
         // check if scel_range needs updating
         auto _scel_range_it = m_scel_range.find(diff_trans_config.from_config().supercell().name());
 

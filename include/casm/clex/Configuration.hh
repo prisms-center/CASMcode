@@ -524,6 +524,12 @@ namespace CASM {
   /// \brief Make Configuration from name string
   Configuration make_configuration(const PrimClex &primclex, std::string name);
 
+  /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
+  Configuration &apply_properties(Configuration &config, std::string calctype);
+
+  /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
+  Configuration copy_apply_properties(const Configuration &config, std::string calctype);
+
   /// \brief Returns correlations using 'clexulator'.
   Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator);
 

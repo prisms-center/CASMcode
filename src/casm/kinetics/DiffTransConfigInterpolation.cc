@@ -24,47 +24,18 @@ namespace CASM {
     /// \param n_images number of images excluding end points
     DiffTransConfigInterpolation::DiffTransConfigInterpolation(
       const DiffTransConfiguration &_diff_trans_config,
-      const int n_images):
+      const int n_images, std::string calctype):
       RandomAccessEnumeratorBase<Configuration>(n_images + 2),
-      m_current(_diff_trans_config.from_config()),
-      m_diff_trans_config(_diff_trans_config) {
-
-      Configuration from_config = m_diff_trans_config.from_config();
-      PermuteIterator it = from_config.from_canonical();
-      from_config = from_config.canonical_form();
-      // set displacements from the properties.
-      bool has_data, is_complete_data;
-      jsonParser myjson;
-      std::tie(myjson, has_data, is_complete_data) = read_calc_properties(from_config);
-      if(!is_complete_data) {
-        std::cerr << "Incomplete calculation data for from config!" << std::endl;
-      }
-      //deformations and displacements are set up on canonical configurations
-      Eigen::Matrix3d deform;
-      Eigen::MatrixXd disp;
-      myjson.get_if(deform, "relaxed_deformation");
-      myjson.get_if(disp, "relaxed_displacement");
-      from_config.set_deformation(deform);
-      from_config.set_displacement(disp);
-      //return from config to reference frame of the canonical diff_trans_config
-      from_config = copy_apply(it, from_config);
-
-      Configuration to_config = get_relaxed_to_config(m_diff_trans_config);
+      m_current(_diff_trans_config.sorted().from_config()),
+      m_diff_trans_config(_diff_trans_config.sorted()) {
+      auto configs = get_relaxed_endpoints(m_diff_trans_config, calctype);
+      Configuration from_config = configs.first;
+      Configuration to_config = configs.second;
       DiffusionTransformation diff_trans  = m_diff_trans_config.diff_trans();
       Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
       m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
-                                                                            to_config_mutated, n_images + 2); // +2 for end states
-
-      // Index i = 0;
-      // for(const auto &tconfig : *m_config_enum_interpol) {
-      //   Configuration con = tconfig;
-      //   // con.write_pos(std::cout);
-      //   Configuration::displacement_matrix_t config_disp = con.displacement();
-      //   std::cout << "Image #:" << i << "\n";
-      //   std::cout << config_disp << "\n";
-      //   ++i;
-      // }
-
+                                                                            to_config_mutated,
+                                                                            n_images + 2); // +2 for end states
       this->_initialize(&m_current);
       m_current.set_source(this->source(step()));
     }
@@ -102,69 +73,31 @@ namespace CASM {
         Index l = config.supercell().linear_index(traj.to.uccoord);
         result.set_occ(k, traj.from.occ);
         Eigen::Vector3d displacement = config.disp(l);
-        const Eigen::Vector3d from_pos = config.supercell().coord(k).frac();
-        const Eigen::Vector3d to_pos = config.supercell().coord(l).frac();
+        const Eigen::Vector3d from_pos = config.supercell().coord(k).const_cart();
+        const Eigen::Vector3d to_pos = config.supercell().coord(l).const_cart();
         Eigen::Vector3d ideal_pos_inc = to_pos - from_pos;
         Eigen::Vector3d final_disp = displacement + ideal_pos_inc;
         result.set_disp(k, final_disp);
       }
-
       return result;
     }
 
     const Configuration *DiffTransConfigInterpolation::at_step(step_type n) {
       Configuration result = (*m_config_enum_interpol)[n];
       m_current.set_displacement(result.displacement());
+      m_current.set_deformation(result.deformation());
       return &m_current;
     }
 
-    // In namespace Kinetics
-    Configuration get_relaxed_to_config(const DiffTransConfiguration &dfc) {
-      Configuration to_config = dfc.to_config();
+    /// Returns copies of from and to config updated such they reflect the relaxed structures from the properties database
+    std::pair<Configuration, Configuration> get_relaxed_endpoints(const DiffTransConfiguration &dfc, std::string calctype) {
+      Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
 
-      PermuteIterator p_it = to_config.from_canonical();
-      to_config = to_config.canonical_form();
+      Configuration rlx_to = copy_apply_properties(make_configuration(dfc.primclex(), dfc.to_configname()), calctype);
 
-      // find the configname THIS IS TRICKY may have to alter this function call here
-      auto scel_range = dfc.primclex().db<Configuration>().scel_range(to_config.supercell().name());
-      auto it = scel_range.begin();
-      for(; it != scel_range.end(); ++it) {
-        //This may not be correct equivalence syntax
-        if(*it == to_config) {
-          break;
-        }
-      }
-      if(it == scel_range.end()) {
-        std::cerr << "No match for to_config in Configuration database" << std::endl;
-      }
-      auto to_calc_tuple = read_calc_properties(*it);
-      if(!std::get<2>(to_calc_tuple)) {
-        std::cerr << "Incomplete calculation data for to config!" << std::endl;
-      }
-      //deformations and displacements are set up on canonical configurations
-      Eigen::Matrix3d deform;
-      Eigen::MatrixXd disp;
-      std::get<0>(to_calc_tuple).get_if(deform, "relaxed_deformation");
-      std::get<0>(to_calc_tuple).get_if(disp, "relaxed_displacement");
-      to_config.set_deformation(deform);
-      to_config.set_displacement(disp);
-      //return from config to reference frame of the canonical diff_trans_config
-      to_config = copy_apply(p_it, to_config);
+      return std::make_pair(copy_apply(dfc.from_config_from_canonical(), rlx_frm),
+                            copy_apply(dfc.to_config_from_canonical(), rlx_to));
 
-
-      // for testing purposes
-      // include displacements & deformation
-      Eigen::Vector3d zero(0., 0., 0.);
-      Eigen::Vector3d dx(0.001, 0., 0.);
-      Eigen::Vector3d dy(0., 0.001, 0.);
-      Eigen::Vector3d dz(0., 0., 0.001);
-      to_config.set_disp(5, dx * 4);
-      to_config.set_disp(6, dx * 3);
-      to_config.set_disp(26, dy * 3);
-      to_config.set_disp(30, dx * 1 + dy * 4);
-      to_config.set_disp(31, dz * 4 + dy * 2);
-
-      return to_config;
     }
   }
 }

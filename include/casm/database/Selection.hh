@@ -15,6 +15,8 @@ namespace CASM {
   class jsonParser;
 
   namespace DB {
+    template<typename ValueType>
+    class Database;
 
     template<typename ValueType> class Database;
 

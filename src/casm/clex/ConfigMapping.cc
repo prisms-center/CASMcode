@@ -41,7 +41,6 @@ namespace CASM {
 
       double best_cost = 10e10;
 
-      //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
       for(auto it = from_range.cbegin(); it != from_range.cend(); ++it) {
         //Supercell matches size, now check to see see if lattices are related to each other
         LatticeMap strainmap(*it, relaxed_lat, 1, _tol, 1);
@@ -52,7 +51,6 @@ namespace CASM {
           best_lat = *it;
         }
       }
-      //std::cout << "Best strain mapping is " << best_cost << " with F = \n" << deformation << "\n";
 
       return best_lat;
     }
@@ -75,9 +73,8 @@ namespace CASM {
       SupercellEnumerator<Lattice> enumerator(prim_lat, sym_group, ScelEnumProps(min_vol, max_vol + 1));
 
       Index l = 0;
-      //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
       for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-        //std::cout << "Enumeration step " << l++ << " best cost is " << best_cost << "\n";
+
         Lattice tlat = canonical_equivalent_lattice(*it, sym_group, _tol);
 
         //Supercell matches size, now check to see see if lattices are related to each other
@@ -89,7 +86,6 @@ namespace CASM {
           best_lat = tlat;
         }
       }
-      //std::cout << "Best strain mapping is " << best_cost << " with F = \n" << deformation << "\n";
 
       return best_lat;
     }
@@ -242,6 +238,8 @@ namespace CASM {
         if(m_strict_flag && relaxed_occ.occupation() == (hint_ptr->configdof()).occupation()) {
           // mapped config is "hint" config
           is_new_config = false;
+          result.config = notstd::make_unique<Configuration>(*hint_ptr);
+
           it_canon = hint_ptr->supercell().permute_begin();
         }
         else {
@@ -253,6 +251,8 @@ namespace CASM {
           if(relaxed_occ.occupation() == copy_apply(it_canon.inverse(), *hint_ptr).occupation()) {
             // mapped config is "hint" config
             is_new_config = false;
+            result.config = notstd::make_unique<Configuration>(*hint_ptr);
+
           }
         }
       }
@@ -399,7 +399,6 @@ namespace CASM {
                                                mapped_lat,
                                                best_assignment,
                                                cart_op);
-      //std::cout << "valid_mapping is " << valid_mapping << "\n";
       valid_mapping = valid_mapping && ConfigMapping::basis_cost(mapped_configdof, struc.basis.size()) < (10 * m_tol);
     }
 
@@ -610,7 +609,6 @@ namespace CASM {
 
     //Second pass: Find the absolute best mapping
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
-      //std::cout << "  vol = " << i_vol << "\n";
       const std::vector<Lattice> &lat_vec = _lattices_of_vol(i_vol);
 
       for(auto it = lat_vec.cbegin(); it != lat_vec.cend(); ++it) {
@@ -625,10 +623,7 @@ namespace CASM {
       }
     }
 
-    //std::cout << "best_cost = " << best_cost << "    best_strain_cost = " << best_strain_cost << "    best_basis_cost = " << best_basis_cost << "\n";
     if(best_cost > 1e9) {
-      //std::cerr << "WARNING: In Supercell::import_deformed_structure(), no successful mapping was found for Structure " << src << "\n"
-      //        << "         This Structure may be incompatible with the ideal crystal specified by the PRIM file. \n";
       return false;
     }
 
@@ -680,10 +675,8 @@ namespace CASM {
         return false;
 
       basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
-      //std::cout << "\n**Starting strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
       tot_cost = strain_cost + basis_cost;
 
-      //std::cout << "    scel.name = " << scel.get_name()  << "  simple map: strain_cost " << strain_cost << "   best_cost " << best_cost << "    tot_cost " << tot_cost << "\n";
       if(tot_cost < best_cost) {
         best_cost = tot_cost - m_tol;
         //best_strain_cost = strain_cost;
@@ -691,7 +684,6 @@ namespace CASM {
         swap(best_assignment, assignment);
         cart_op = rotF * tF.inverse();
         //best_trans = Matrix3<double>::identity();
-        //std::cout << "tF is:\n" << tF << "\n and N is:\n" << best_trans << "\n";
         swap(mapped_configdof, tdof);
         mapped_lat = imposed_lat;
       }
@@ -729,21 +721,16 @@ namespace CASM {
         //throw std::runtime_error("Unexpected error in deformed_struc_to_config_dof(). This should never happen!\n");
       }
       basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
-      //std::cout << "New strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
-      //std::cout << "  Compare -> best_cost = " << best_cost << "\n";
 
       tot_cost = strain_cost + basis_cost;
-      //std::cout << "      complex map: best_cost " << best_cost << "    strain_cost " << strain_cost << "    tot_cost " << tot_cost << "\n";
 
       if(tot_cost < best_cost) {
-        //std::cout << "Old best_trans, with cost " << best_cost << ":\n" << best_trans << "\n";
         best_cost = tot_cost - m_tol;
         swap(best_assignment, assignment);
         //best_strain_cost = strain_cost;
         //best_basis_cost = basis_cost;
         cart_op = rotF * tF.inverse();
         //best_trans = strainmap.matrixN();
-        //std::cout << "New best_trans, with cost " << best_cost << ":\n" << best_trans << "\n";
         swap(mapped_configdof, tdof);
         mapped_lat = imposed_lat;
       }
@@ -771,9 +758,7 @@ namespace CASM {
       ScelEnumProps(prim_vol, prim_vol + 1));
 
     Index l = 0;
-    //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-      //std::cout << "Enumeration step " << l++ << " best cost is " << best_cost << "\n";
       lat_vec.push_back(canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol));
     }
 
@@ -982,9 +967,6 @@ namespace CASM {
                                            std::vector<Index> &best_assignments,
                                            const bool translate_flag,
                                            const double _tol) {
-      //std::cout << "CONVERTING TO CONFIGDOF:\n";
-      //rstruc.print(std::cout);
-      //std::cout << std::endl;
       // clear config_dof and set its deformation
       config_dof.clear();
 
@@ -1008,7 +990,6 @@ namespace CASM {
       if(rstruc.basis.size())
         num_translations += scel.prim().basis.size();
 
-      //std::cout << "num_translations is " << num_translations << "\n";
       for(Index n = 0; n < num_translations; n++) {
         double mean;
 
@@ -1047,7 +1028,6 @@ namespace CASM {
         mean += _tol * translation.const_cart().norm() / 10.0;
 
         if(mean < min_mean) {
-          //std::cout << "mean " << mean << " is better than min_mean " << min_mean <<"\n";
 
           // new best
           swap(best_assignments, optimal_assignments);
@@ -1091,8 +1071,6 @@ namespace CASM {
           Coordinate ideal_coord(scel.coord(i).frac(), rstruc.lattice(), FRAC);
 
           (rstruc.basis[best_assignments[i]] + best_trans).min_dist(ideal_coord, disp_coord);
-          //std::cout << "min_dist" << std::endl;
-          //std::cout << rstruc.basis[optimal_assignments(i)].min_dist(pos_coord, disp_coord);
           config_dof.disp(i) = disp_coord.const_cart();
 
           avg_disp += config_dof.disp(i);
@@ -1132,12 +1110,6 @@ namespace CASM {
 
         // set occupant and check for errors
         if(!scel.prim().basis[scel.sublat(i)].contains(rel_basis_atom, config_dof.occ(i))) {
-          //std::cout << "best_assignments is " << best_assignments << "\n";
-          //std::cout << "at site " << i << " corresponding to basis " << scel.sublat(i) << "  attempting to assign type " << rel_basis_atom << "\n";
-          //std::cout << "Cost Matrix is \n" << cost_matrix << "\n";
-          //std::cerr << "CRITICAL ERROR: In Supercell::struc_to_configdof atoms of relaxed/custom structure are incompatible\n"
-          //        << "                with the number or type of atomic species allowed in PRIM. Exiting...\n";
-          //exit(1);
 
           return false;
         }
@@ -1189,7 +1161,6 @@ namespace CASM {
       num_translations += rstruc.basis.size();
 
       //num_translations = rstruc.basis.size();
-      //std::cout << "num_translations is " << num_translations << "\n";
       for(Index n = 0; n < num_translations; n++) {
         double mean;
 
@@ -1221,11 +1192,9 @@ namespace CASM {
           return false;
         }
 
-        //std::cout << "mean is " << mean << " and stddev is " << stddev << "\n";
         // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
         mean += _tol * translation.const_cart().norm() / 10.0;
         if(mean < min_mean) {
-          //std::cout << "mean " << mean << " is better than min_mean " << min_mean <<"\n";
 
           // new best
           swap(best_assignments, optimal_assignments);
@@ -1269,8 +1238,7 @@ namespace CASM {
           Coordinate ideal_coord(scel.coord(i).frac(), rstruc.lattice(), FRAC);
 
           (rstruc.basis[best_assignments[i]] + best_trans).min_dist(ideal_coord, disp_coord);
-          //std::cout << "min_dist" << std::endl;
-          //std::cout << rstruc.basis[optimal_assignments(i)].min_dist(pos_coord, disp_coord);
+
           config_dof.disp(i) = disp_coord.const_cart();
 
           avg_disp += config_dof.disp(i);

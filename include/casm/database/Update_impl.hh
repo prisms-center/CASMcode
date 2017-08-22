@@ -14,10 +14,8 @@ namespace CASM {
     /// \brief Re-parse calculations 'from' all selected configurations
     template<typename _ConfigType>
     void UpdateT<_ConfigType>::update(const DB::Selection<ConfigType> &selection, bool force) {
-
       // vector of Mapping results
       std::vector<ConfigIO::Result> results;
-
       for(const auto &val : selection.data()) {
 
         // if not selected, skip
@@ -43,12 +41,13 @@ namespace CASM {
         //       update props
         //
 
-        if(!has_existing_files(name) || (!force && no_change(name))) {
+        if(!has_existing_files(name) || !fs::exists(pos) || (!force && no_change(name))) {
           continue;
         }
 
         // erase existing data (not files), unlinking relaxation mappings && resetting 'best' data
         db_props().erase_via_from(name);
+
 
         std::vector<ConfigIO::Result> tvec;
         auto config_it = db_config().find(name);
@@ -66,7 +65,6 @@ namespace CASM {
         }
 
       }
-
       _update_report(results, selection);
 
       db_supercell().commit();
@@ -110,7 +108,7 @@ namespace CASM {
 
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
-        if(all_to.count(res.mapped_props.to)) {
+        if(all_to.count(res.mapped_props.to) > 1) {
           conflict.push_back(res);
           if(res.mapped_props.from != res.mapped_props.to) {
             unstable.push_back(res);

@@ -222,6 +222,11 @@ namespace CASM {
         //_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       }
       while(_input >> tname_or_alias >> tselect) {
+        // skip unknown quietly (not sure what is best)
+        // this typically arises in cases an object was deleted
+        if(db().find(db().name(tname_or_alias)) == db().end()) {
+          continue;
+        }
         m_data[db().name(tname_or_alias)] = tselect;
         _input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       }

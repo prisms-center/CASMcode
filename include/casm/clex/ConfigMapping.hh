@@ -40,6 +40,7 @@ namespace CASM {
     /// - 'volume_relaxation': V/V_ideal
     /// - 'relaxation_deformation': 3x3 tensor describing cell relaxation
     /// - 'relaxation_displacement': Nx3 matrix describing basis displacements
+    /// - 'relaxed_energy': the energy of the relaxed configuration
     jsonParser relaxation_properties;
 
     /// best_assignment is populated by the permutation of sites in the imported

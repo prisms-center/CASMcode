@@ -420,58 +420,6 @@ namespace CASM {
       return cluster().max_length();
     }
 
-    /*
-    DiffusionTransformation DiffusionTransformation::copy_apply_sym(const SymOp &op) const {
-      DiffusionTransformation t {*this};
-      t.apply_sym(op);
-      return t;
-    }
-    */
-    /*
-    std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit) {
-      Structure prim(orbit.prototype().specie_traj().begin()->from.uccoord.unit());
-      std::set<int> sublat_indices;
-      for(int i = 0; i < prim.basis.size(); i++) {
-        sublat_indices.insert(i);
-      }
-
-      // construct
-      PrimNeighborList nlist(
-        PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, TOL),
-        sublat_indices.begin(),
-        sublat_indices.end()
-      );
-      int prev_size;
-      int post_size;
-      std::map<int, std::map<int, std::map<int, int>>> unique_inds;
-      //May need to sort first?
-      DiffusionTransformation s_this = orbit.prototype().sorted();
-      std::string result = "DT" + std::to_string(orbit.prototype().size());
-      std::vector<int> totals = {0, 0, 0, 0};
-      for(auto it = s_this.specie_traj().begin(); it != s_this.specie_traj().end(); it++) {
-        prev_size = nlist.size();
-        nlist.expand(it->from.uccoord);
-        nlist.expand(it->to.uccoord);
-        post_size = nlist.size();
-        if(prev_size != post_size) {
-          int idx = 0;
-          for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
-            unique_inds[(*n_it)(0)][(*n_it)(1)][(*n_it)(2)] = idx;
-            idx++;
-          }
-        }
-        result += "_" + it->from.specie().name + "-" + std::to_string(unique_inds[it->from.uccoord.unitcell(0)]
-                                                                      [it->from.uccoord.unitcell(1)]
-                                                                      [it->from.uccoord.unitcell(2)] + it->from.uccoord.sublat() * nlist.size()) ;
-
-        result += ",";
-        result += std::to_string(unique_inds[it->to.uccoord.unitcell(0)]
-                                 [it->to.uccoord.unitcell(1)]
-                                 [it->to.uccoord.unitcell(2)] + it->to.uccoord.sublat() * nlist.size()) + "-";
-      }
-      return result;
-    }*/
-
     Configuration &DiffusionTransformation::apply_to(Configuration &config) const {
       // transform the occupation variables
       for(const auto &t : m_occ_transform) {
@@ -582,7 +530,14 @@ namespace CASM {
     /// \brief Returns the distance from uccoord to the closest point on a linearly
     /// interpolated diffusion path. (Could be an end point)
     double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
+      return vector_to_path(diff_trans, uccoord).norm();
+    }
+
+    /// \brief Returns the vector from uccoord to the closest point on a linearly
+    /// interpolated diffusion path. (Could be an end point)
+    Eigen::Vector3d vector_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
       double dist = std::numeric_limits<double>::max();
+      Eigen::Vector3d result;
       for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
         //vector from -> input
         Coordinate v1 = (uccoord.coordinate() - it->from.uccoord.coordinate());
@@ -591,28 +546,34 @@ namespace CASM {
         // projection of v1 onto v2
         Eigen::Vector3d v3 = v1.const_cart().dot(v2.const_cart()) / (v1.const_cart().norm()) / (v2.const_cart().norm()) * v2.const_cart();
         double curr_dist;
+        Eigen::Vector3d curr_vec;
         //if v3 length is greater than v2 then input is closer to "to" than the path
         if(v3.norm() > v2.const_cart().norm()) {
-          curr_dist = (uccoord.coordinate().const_cart() - it->to.uccoord.coordinate().const_cart()).norm();
+          curr_vec = it->to.uccoord.coordinate().const_cart() - uccoord.coordinate().const_cart();
+          curr_dist = curr_vec.norm();
         }
         //if v3 is in opposite direction of v2 then input is closer to "from" than the path
         else if(v3.dot(v2.const_cart()) < 0) {
-          curr_dist = v1.const_cart().norm();
+          curr_vec = -v1.const_cart();
+          curr_dist = curr_vec.norm();
         }
         else {
           // find magnitude of v1-v3 and set to current distance
-          curr_dist = (v1.const_cart() - v3).norm();
+          curr_vec = v3 - v1.const_cart();
+          curr_dist = curr_vec.norm();
         }
         if(curr_dist < dist) {
           dist = curr_dist;
+          result = curr_vec;
         }
       }
-      return dist;
+      return result;
     }
 
     /// \brief Determines the nearest site distance to the diffusion path
-    std::pair<UnitCellCoord, double> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
+    std::pair<UnitCellCoord, Eigen::Vector3d> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
       double dist = std::numeric_limits<double>::max();
+      Eigen::Vector3d ret_vec;
       Structure prim(diff_trans.specie_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
       for(int i = 0; i < prim.basis.size(); i++) {
@@ -626,7 +587,7 @@ namespace CASM {
         sublat_indices.end()
       );
       UnitCell pos(1, 1, 1);
-      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
+      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); ++it) {
         UnitCellCoord fromcoord = it->from.uccoord;
         UnitCellCoord tocoord = it->to.uccoord;
 
@@ -655,15 +616,17 @@ namespace CASM {
 
           if(!in_diff_trans) {
             double curr_dist = dist_to_path(diff_trans, uccoord);
+            Eigen::Vector3d curr_vec = vector_to_path(diff_trans, uccoord);
             if(curr_dist < dist) {
               dist = curr_dist;
+              ret_vec = curr_vec;
               ret_coord = uccoord;
             }
           }
         }
       }
 
-      std::pair<UnitCellCoord, double> pair(ret_coord, dist);
+      std::pair<UnitCellCoord, Eigen::Vector3d> pair(ret_coord, ret_vec);
       return pair;
     }
 
@@ -674,7 +637,74 @@ namespace CASM {
 
     /// \brief Determines the nearest site distance to the diffusion path
     double min_dist_to_path(const DiffusionTransformation &diff_trans) {
+      return _path_nearest_neighbor(diff_trans).second.norm();
+    }
+
+    /// \brief Determines the vector from the nearest site to the diffusion path
+    Eigen::Vector3d min_vector_to_path(const DiffusionTransformation &diff_trans) {
       return _path_nearest_neighbor(diff_trans).second;
+    }
+
+    /// \brief Determines whether the atoms moving in the diffusion transformation will collide on a linearly interpolated path
+    bool path_collision(const DiffusionTransformation &diff_trans) {
+      std::vector<SpecieTrajectory> paths_to_check;
+      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); ++it) {
+        if(!is_vacancy(it->from.specie().name())) {
+          paths_to_check.push_back(*it);
+        }
+      }
+      for(int i = 0; i < paths_to_check.size(); ++i) {
+        for(int j = i + 1; j < paths_to_check.size(); ++j) {
+          //vector from -> to path 1
+          Eigen::Vector3d v1 = (paths_to_check[i].to.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()).const_cart();
+          //vector from -> to path 2
+          Eigen::Vector3d v2 = (paths_to_check[j].to.uccoord.coordinate() - paths_to_check[j].from.uccoord.coordinate()).const_cart();
+          // simplification of the following problem
+          // parametric representation of path 1 = parametric representation of path 2
+          // paths_to_check[i].from.uccoord.coordinate() + t*v1 = paths_to_check[j].from.uccoord.coordinate() + s*v2
+          // v3 =  paths_to_check[j].from.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()
+          Eigen::Vector3d v3 = (paths_to_check[j].from.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()).const_cart();
+          Eigen::MatrixXd soln(2, 1);
+          Eigen::Matrix2d m;
+          Eigen::MatrixXd b(2, 1);
+          m << v1[0], v2[0],
+          v1[1], v2[1];
+          b << v3[0],
+          v3[1];
+          int excluded_index = 2;
+          try {
+            Eigen::FullPivLU<Eigen::Matrix2d> lu(m);
+            if(lu.rank() < 2) {
+              m << v1[1], v2[1],
+              v1[2], v2[2];
+              b << v3[1],
+              v3[2];
+              excluded_index = 0;
+              Eigen::FullPivLU<Eigen::Matrix2d> lu2(m);
+              if(lu2.rank() < 2) {
+                return true;
+              }
+            }
+            soln = m.inverse() * b;
+            if(soln(0, 0)*v1[excluded_index] + soln(1, 0)*v2[excluded_index] != v3[excluded_index]) {
+              continue; //if solution for x and y coordinates but not z solution is not viable
+            }
+            if(soln(0, 0) < 1 && soln(0, 0) > 0 && soln(1, 0) < 0 && soln(1, 0) > -1) {
+              return true;  // there is an intersection of paths not at the end points
+            }
+
+            if(soln(0, 0) == 1 || soln(0, 0) == 0 || soln(1, 0) == 0 || soln(1, 0) == -1) {
+              if(v1 == -v2) {
+                return true; // the paths are overlapping in opposition directions perfectly
+              }
+            }
+          }
+          catch(...) {
+            throw;
+          }
+        }
+      }
+      return false;
     }
   }
 

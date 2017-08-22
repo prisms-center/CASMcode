@@ -311,8 +311,8 @@ namespace CASM {
         fs::create_directories(dir.configuration_dir(name()));
       }
       catch(const fs::filesystem_error &ex) {
-        std::cerr << "Error in DiffTransConfiguration::write_pos()." << std::endl;
-        std::cerr << ex.what() << std::endl;
+        default_err_log() << "Error in DiffTransConfiguration::write_pos()." << std::endl;
+        default_err_log() << ex.what() << std::endl;
       }
 
       fs::ofstream file(dir.POS(name()));
@@ -364,8 +364,8 @@ namespace CASM {
             result.set_occ(l, traj.from.occ);
           }
           else {
+            default_err_log() << "Diffusion Transformation does not have valid starting occupant for this position in this Configuration" << std::endl;
             throw std::runtime_error("Error in make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config)");
-            std::cerr << "Diffusion Transformation does not have valid starting occupant for this position in this Configuration" << std::endl;
           }
         }
       }
