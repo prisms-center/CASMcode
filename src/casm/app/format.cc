@@ -818,7 +818,7 @@ LCHARG = .FALSE.\n";
 
       args.log << "EXAMPLE: SPECIES \n";
       args.log << "-------\n" <<
-               "PSEUDO_DIR_PATH = /absolute/path/to/vasp_potentials\n" <<
+               "PSEUDO_DIR_PATH = /absolute/path/to/quantumespresso_potentials\n" <<
                "SPECIES    ALIAS    UPF  UPF_location\n" <<
                "Ni         Ni       1       PAW_PBE/Ni.UPF \n" <<
                "Al        Al       1       PAW_PBE/Al.UPF \n";

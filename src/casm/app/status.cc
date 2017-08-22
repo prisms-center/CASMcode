@@ -97,10 +97,10 @@ namespace CASM {
 
     args.log <<
              "Enumerate supercells\n\
-- Execute: 'casm enum --supercells --max V' to enumerate supercells up to \n\
+- Execute: 'casm enum --method ScelEnum --max V' to enumerate supercells up to \n\
   volume V (units: number of primitive cells).                            \n\
 - Supercells are listed in the SCEL file.\n\
-- See 'casm enum --desc' for extended help documentation on how to use the\n\
+- See 'casm enum --desc ScelEnum' for extended help documentation on how to use the\n\
   '--matrix' and '--lattice-directions' options to perform restricted     \n\
   supercell enumeration (i.e. 2d, 1d, multiples of other supercells).     \n\
 - See 'casm format' for a description and location of the  \n\
@@ -115,18 +115,18 @@ namespace CASM {
     args.log <<
              "Enumerate configurations\n\
 - Several options are possible:                                        \n\
-- Execute: 'casm enum --configs --all' to enumerate configurations for \n\
-  for all supercells.                                                  \n\
-- Execute: 'casm enum --configs --min MINV --max MAXV' to enumerate    \n\
-  configurations for supercells ranging in volume from MINV to MAXV    \n\
-  (units: number of primitive cells).                                  \n\
-- Execute: 'casm enum --configs --scellname NAME' to enumerate         \n\
-  configurations for a particular supercell.                           \n\
+- Execute: 'casm enum --method ConfigEnumAllOccupations --all' \n\
+  to enumerate configurations for for all supercells.                  \n\
+- Execute: 'casm enum --method ConfigEnumAllOccupations --min MINV --max MAXV'\n\
+  to enumerate configurations for supercells ranging in volume    \n\
+   from MINV to MAXV (units: number of primitive cells).            \n\
+- Execute: 'casm enum ---method ConfigEnumAllOccupations --scelname NAME'\n\
+  to enumerate  configurations for a particular supercell.    \n\
 - Generated configurations are listed in the 'config_list.json' file.  \n\
   This file should not usually be edited manually.                     \n\
 - Use the 'casm view' command to quickly view configurations in your   \n\
   favorite visualization program. See 'casm view -h' for help.         \n\
-- See 'casm enum --desc' for extended help documentation on how to use \n\
+- See 'casm enum --desc ConfigEnumAllOccupations' for extended help documentation on how to use \n\
   '--filter' command to perform restricted enumeration of              \n\
   configurations.                                                      \n\
 - Once you have a cluster expansion, see 'casm format --monte' for     \n\
