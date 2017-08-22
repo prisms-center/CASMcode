@@ -131,7 +131,6 @@ namespace CASM {
           }
 
           // else we will try to import data
-
           // for import we currently don't have a way to get the initial config,
           // so set from = to, if not already so
           //   could support properties.calc.json: "ideal_" or "initial_" DoF
@@ -163,7 +162,6 @@ namespace CASM {
               continue;
             }
           }
-
           // note which structure is the latest import to configuration in case of conflicts
           data_res.last_insert = res.pos;
 
@@ -221,7 +219,8 @@ namespace CASM {
         }
         else {
           map_success.push_back(res);
-          if(res.has_data && m_import_data && db_props().score(res.mapped_props) < db_props().best_score(res.mapped_props.to)) {
+          if(res.has_data && m_import_data && db_props().find_via_to(res.mapped_props.to) != db_props().end()
+             && db_props().score(res.mapped_props) < db_props().best_score(res.mapped_props.to)) {
             import_data_fail.push_back(res);
           }
         }
