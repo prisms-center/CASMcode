@@ -6,12 +6,14 @@
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/database/Selection_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
+#include "casm/kinetics/DiffTransConfigInterpolation.hh"
 
 
 #include "casm/completer/Handlers.hh"
-#include "casm/database/ConfigTypeTraits.hh"
+#include "casm/database/DatabaseTypesTraits.hh"
 
 // need to add specializations here
 #include "casm/database/ConfigImport.hh"

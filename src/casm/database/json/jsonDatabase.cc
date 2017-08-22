@@ -4,6 +4,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/app/QueryHandler_impl.hh"
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/json_io/container.hh"

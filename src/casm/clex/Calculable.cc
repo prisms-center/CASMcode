@@ -6,59 +6,46 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
+#include "casm/database/PropertiesDatabase.hh"
 
 namespace CASM {
 
-  template<typename Derived>
-  const jsonParser Calculable<Derived>::calc_properties(std::string calctype) const {
-    const PrimClex &primclex = (this->primclex());
-    auto it = m_calc_properties_map.find(calctype);
-    if(it != m_calc_properties_map.end()) {
-      if(it->second.is_null()) {
-        return it->second;
-      }
-    }
-    if(calctype == "") {
-      calctype = primclex.settings().default_clex().calctype;
-    }
-    if(primclex.const_db_props<Derived>(calctype).find_via_from(this->name()) != primclex.const_db_props<Derived>(calctype).end()) {
-      return primclex.const_db_props<Derived>(calctype).find_via_from(this->name())->mapped;
-    }
-    return jsonParser().put_obj();
-  }
-
-  template<typename Derived>
-  void Calculable<Derived>::set_calc_properties(const jsonParser &json, std::string calctype) {
-    const PrimClex &primclex = (this->primclex());
-    if(calctype == "") {
-      calctype = primclex.settings().default_clex().calctype;
+  /// \brief Return calculated properties JSON for requested calctype
+  ///
+  /// - If nothing calculated, returns empty JSON object
+  template<typename _Base>
+  jsonParser Calculable<_Base>::calc_properties(std::string calctype) const {
+    if(calctype.empty()) {
+      calctype = derived().primclex().settings().default_clex().calctype;
     }
     auto it = m_calc_properties_map.find(calctype);
     if(it == m_calc_properties_map.end()) {
-      m_calc_properties_map.insert(std::make_pair(calctype, json));
+      _refresh_calc_properties(calctype);
+      it = m_calc_properties_map.find(calctype);
     }
-    else {
-      m_calc_properties_map[calctype] = json;
-    }
+    return it->second;
   }
 
-  template<typename Derived>
-  void Calculable<Derived>::refresh_calc_properties(std::string calctype) {
-    const PrimClex &primclex = (this->primclex());
-    if(calctype == "") {
-      calctype = primclex.settings().default_clex().calctype;
+  template<typename _Base>
+  void Calculable<_Base>::set_calc_properties(const jsonParser &json, std::string calctype) {
+    if(calctype.empty()) {
+      calctype = derived().primclex().settings().default_clex().calctype;
     }
-    set_calc_properties(primclex.const_db_props<Derived>(calctype).find_via_from(this->name())->mapped, calctype);
-    return;
+    m_calc_properties_map[calctype] = json;
   }
 
-  template<typename Derived>
-  const jsonParser &Calculable<Derived>::source() const {
+  template<typename _Base>
+  void Calculable<_Base>::refresh_calc_properties(std::string calctype) {
+    static_cast<const Calculable<_Base>*>(this)->_refresh_calc_properties(calctype);
+  }
+
+  template<typename _Base>
+  const jsonParser &Calculable<_Base>::source() const {
     return m_source;
   }
 
-  template<typename Derived>
-  void Calculable<Derived>::set_source(const jsonParser &source) {
+  template<typename _Base>
+  void Calculable<_Base>::set_source(const jsonParser &source) {
     if(source.is_null() || source.size() == 0) {
       m_source.put_array();
     }
@@ -71,8 +58,8 @@ namespace CASM {
     }
   }
 
-  template<typename Derived>
-  void Calculable<Derived>::push_back_source(const jsonParser &source) {
+  template<typename _Base>
+  void Calculable<_Base>::push_back_source(const jsonParser &source) {
 
     if(source.is_null() || source.size() == 0) {
       return;
@@ -111,9 +98,9 @@ namespace CASM {
     }
   }
 
-  /// Call in Derived any time DoF may be modified
-  template<typename Derived>
-  void Calculable<Derived>::_modify_dof() {
+  /// Call in _Base any time DoF may be modified
+  template<typename _Base>
+  void Calculable<_Base>::_modify_dof() {
     this->clear_name();
     m_calc_properties_map.clear();
 
@@ -122,6 +109,22 @@ namespace CASM {
     }
 
     m_source.put_null();
+  }
+
+  template<typename _Base>
+  void Calculable<_Base>::_refresh_calc_properties(std::string calctype) const {
+    const PrimClex &primclex = derived().primclex();
+    const auto &db = primclex.const_db_props<MostDerived>(calctype);
+    if(calctype.empty()) {
+      calctype = primclex.settings().default_clex().calctype;
+    }
+    auto it = db.find_via_from(this->name());
+    if(it != db.end()) {
+      m_calc_properties_map[calctype] = *it;
+    }
+    else {
+      m_calc_properties_map[calctype] = jsonParser::object();
+    }
   }
 
   /// \brief Return true if all required properties have been been calculated for

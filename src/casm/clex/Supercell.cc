@@ -193,7 +193,7 @@ namespace CASM {
       }
 
       // check that the Molecule in superstruc is allowed on the site in 'prim'
-      if(!prim.basis[b].contains(superstruc.basis[i].occ_name(), val)) {
+      if(!prim().basis[b].contains(superstruc.basis[i].occ_name(), val)) {
         default_err_log() << "Error in Supercell::config." << std::endl;
         default_err_log() << "  The molecule: " << superstruc.basis[i].occ_name() << " is not allowed on basis site " << b << " of the Supercell prim." << std::endl;
         throw std::runtime_error("Error in Supercell::configuration: molecule site mapping not allowed");

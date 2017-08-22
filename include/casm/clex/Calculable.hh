@@ -24,14 +24,16 @@ namespace CASM {
   public:
 
     typedef typename DB::Indexed<_Base> Base;
+    typedef typename Base::MostDerived MostDerived;
     using Base::derived;
 
-    const jsonParser calc_properties(std::string calctype = "") const;
+    /// \brief Return calculated properties JSON for requested calctype
+    jsonParser calc_properties(std::string calctype = "") const;
 
-    void set_calc_properties(const jsonParser &json, std::string calctype);
+    void set_calc_properties(const jsonParser &json, std::string calctype = "");
 
     /// \brief grabs properties from the indicated calctype and adds info to calc_properties_map
-    void refresh_calc_properties(std::string calctype);
+    void refresh_calc_properties(std::string calctype = "");
 
     const jsonParser &source() const;
 
@@ -44,9 +46,12 @@ namespace CASM {
     /// Call in MostDerived any time DoF may be modified
     void _modify_dof();
 
+    /// \brief grabs properties from the indicated calctype and adds info to calc_properties_map
+    void _refresh_calc_properties(std::string calctype = "") const;
+
   private:
 
-    std::map<std::string, jsonParser> m_calc_properties_map;
+    mutable std::map<std::string, jsonParser> m_calc_properties_map;
     jsonParser m_source;
   };
 
