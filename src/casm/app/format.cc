@@ -20,6 +20,7 @@ namespace CASM {
       ("config_list", "Description and location of 'config_list.json' file")
       ("sym", "Description and location of 'lattice_point_group.json', 'factor_group.json' and 'crystal_point_group.json' files")
       ("vasp", "Description and location of VASP settings files")
+      ("properties", "Description and location of properties.calc.json files")
       ("qe", "Description and location of Quantum Espresso settings files")
       ("comp", "Description and location of 'composition_axes.json' file")
       ("bspecs", "Description and location of 'bspecs.json' file")
@@ -616,54 +617,6 @@ LCHARG = .FALSE.\n";
                "  calculate the kpoint mesh for a supercell, such that it has an    \n" <<
                "  equal or greater kpoint density than in the reference POSCAR.     \n\n";
 
-      args.log << "properties.calc.json:                                               \n" <<
-               "  Results of calculations for a particular configuration should be  \n" <<
-               "  stored in the directory                                           \n" <<
-               "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE,         \n" <<
-               "  and calculated properties summarized in the file                  \n" <<
-               "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json \n" <<
-               "  The 'properties.calc.json' file is read by CASM to extract the    \n" <<
-               "  first-principles calculted properties of interest. If the         \n" <<
-               "  'properties.calc.json' file does not exist in the                 \n" <<
-               "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE directory\n" <<
-               "  CASM assumes that no data is available for that configuration.    \n\n";
-
-      args.log << "EXAMPLE:\n";
-      args.log << "-------\n";
-      args.log << "{\n\
-    \"atom_type\": [\n\
-        \"A\", \n\
-        \"B\"\n\
-    ], \n\
-    \"atoms_per_type\": [\n\
-        1, \n\
-        2\n\
-    ], \n\
-    \"coord_mode\": \"direct\", \n\
-    \"is_complete\": true, \n\
-    \"relaxed_basis\": [\n\
-        [0.6666667, 0.6666667, 0.6666667],\n\
-        [0.00255632, 0.99488736, 0.00255632],\n\
-        [0.33077698, 0.33844594, 0.33077698]\n\
-    ], \n\
-    \"relaxed_energy\": -16.27773537, \n\
-    \"relaxed_mag_basis\": [\n\
-        -3.93,\n\
-         3.82,\n\
-         1.198\n\
-    ], \n\
-    \"relaxed_magmom\": -1.3086, \n\
-    \"relaxed_forces\": [\n\
-        [0.0, 0.0, 0.0], \n\
-        [0.0, 0.00987362, -0.00987362], \n\
-        [0.0, -0.00987362, 0.00987362]\n\
-    ], \n\
-    \"relaxed_lattice\": [\n\
-        [0.0, 1.9174843, 1.9174843], \n\
-        [1.61158655, -1.88219884, 3.79968315], \n\
-        [3.22317311, 0.0, 0.0]\n\
-    ]\n\
-}\n";
       args.log << "-------\n";
 
     }
@@ -831,6 +784,11 @@ LCHARG = .FALSE.\n";
                "  some settings might be added or changed if certain errors are     \n" <<
                "  during calculation. The actual input file used for each calculation is \n" <<
                "  saved.                                                            \n\n";
+      args.log << "Note:                                                    \n" <<
+               "  K_POINTS will be adjusted accordingly such that the density is maintained\n" <<
+               "  over all configurations in the project for all Quantum Espresso calculations\n"<<
+               "  this uses the CELL_PARAMETERS and the K_POINTS cards in the input file to calculate\n"<<
+               "  a density and rescale configurations k-point mesh accordingly\n";
 
       args.log << "EXAMPLE: Mg2Ti4S8.in \n";
       args.log << "-------\n" <<
@@ -898,11 +856,11 @@ K_POINTS automatic\n\
 \n";
       args.log << "-------\n\n\n";
 
-      args.log << "Note:                                                    \n" <<
-               "  K_POINTS will be adjusted accordingly such that the density is maintained\n" <<
-               "  over all configurations in the project for all Quantum Espresso calculations\n";
+    }
+    if (vm.count("properties")){
+            args.log << "\n### properties.calc.json ##################\n\n";
 
-      args.log << "properties.calc.json:                                               \n" <<
+            args.log << "properties.calc.json:                                               \n" <<
                "  Results of calculations for a particular configuration should be  \n" <<
                "  stored in the directory                                           \n" <<
                "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE,         \n" <<
@@ -913,48 +871,47 @@ K_POINTS automatic\n\
                "  'properties.calc.json' file does not exist in the                 \n" <<
                "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE directory\n" <<
                "  CASM assumes that no data is available for that configuration.    \n"<<
-               "  The 'properties.calc.json' used CASM standard units eV and Angstroms\n\n" ;
+               "  The 'properties.calc.json' uses CASM standard units eV and Angstroms\n\n" ;
 
-      args.log << "EXAMPLE:\n";
-      args.log << "-------\n";
-      args.log << "{\n\
-    \"atom_type\": [\n\
-        \"A\", \n\
-        \"B\"\n\
-    ], \n\
-    \"atoms_per_type\": [\n\
-        1, \n\
-        2\n\
-    ], \n\
-    \"coord_mode\": \"direct\", \n\
-    \"is_complete\": true, \n\
-    \"relaxed_basis\": [\n\
-        [0.6666667, 0.6666667, 0.6666667],\n\
-        [0.00255632, 0.99488736, 0.00255632],\n\
-        [0.33077698, 0.33844594, 0.33077698]\n\
-    ], \n\
-    \"relaxed_energy\": -16.27773537, \n\
-    \"relaxed_mag_basis\": [\n\
-        -3.93,\n\
-         3.82,\n\
-         1.198\n\
-    ], \n\
-    \"relaxed_magmom\": -1.3086, \n\
-    \"relaxed_forces\": [\n\
-        [0.0, 0.0, 0.0], \n\
-        [0.0, 0.00987362, -0.00987362], \n\
-        [0.0, -0.00987362, 0.00987362]\n\
-    ], \n\
-    \"relaxed_lattice\": [\n\
-        [0.0, 1.9174843, 1.9174843], \n\
-        [1.61158655, -1.88219884, 3.79968315], \n\
-        [3.22317311, 0.0, 0.0]\n\
-    ]\n\
-}\n";
-      args.log << "-------\n";
+            args.log << "EXAMPLE:\n";
+            args.log << "-------\n";
+            args.log << "{\n\
+          \"atom_type\": [\n\
+              \"A\", \n\
+              \"B\"\n\
+          ], \n\
+          \"atoms_per_type\": [\n\
+              1, \n\
+              2\n\
+          ], \n\
+          \"coord_mode\": \"direct\", \n\
+          \"is_complete\": true, \n\
+          \"relaxed_basis\": [\n\
+              [0.6666667, 0.6666667, 0.6666667],\n\
+              [0.00255632, 0.99488736, 0.00255632],\n\
+              [0.33077698, 0.33844594, 0.33077698]\n\
+          ], \n\
+          \"relaxed_energy\": -16.27773537, \n\
+          \"relaxed_mag_basis\": [\n\
+              -3.93,\n\
+               3.82,\n\
+               1.198\n\
+          ], \n\
+          \"relaxed_magmom\": -1.3086, \n\
+          \"relaxed_forces\": [\n\
+              [0.0, 0.0, 0.0], \n\
+              [0.0, 0.00987362, -0.00987362], \n\
+              [0.0, -0.00987362, 0.00987362]\n\
+          ], \n\
+          \"relaxed_lattice\": [\n\
+              [0.0, 1.9174843, 1.9174843], \n\
+              [1.61158655, -1.88219884, 3.79968315], \n\
+              [3.22317311, 0.0, 0.0]\n\
+          ]\n\
+      }\n";
+            args.log << "-------\n";
 
     }
-
     if(vm.count("comp")) {
       args.log << "\n### composition_axes.json ##################\n\n";
 
