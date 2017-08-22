@@ -168,6 +168,7 @@ class Relax(object):
         print "id:", id
         sys.stdout.flush()
         if id != []:
+            db.update()
             for j in id:
                 job = db.select_job(j)
                 # taskstatus = ["Incomplete","Complete","Continued","Check","Error:.*","Aborted"]
