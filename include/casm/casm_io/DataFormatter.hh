@@ -20,8 +20,42 @@ namespace CASM {
 
   /// \defgroup DataFormatter
   ///
-  /// \brief Functions and classes related to formatting data
+  /// \brief Functions and classes related to calculating properties and formatting data
   ///
+  /// DataFormatter act on ranges of 'DataObject', extracting or calculating data,
+  /// and outputting it in various formats (csv, JSON, Eigen::MatrixXd, etc.)
+  ///
+  /// A DataFormatter contains a set of 'DatumFormatter', class methods derived
+  /// from BaseDatumFormatter, specialized to extract or calculate particular
+  /// properties. A range of intermediate classes (\see ::DataFormatterTypes)
+  /// exist with the basic implementation details for extracting boolean, scalar,
+  /// vector, matrix, etc. data, ready to be specialized for a particular property.
+  ///
+  /// DatumFormatters can be constructed and initialized as normal c++ types, but
+  /// they must also provide an implementation ::BaseDatumFormatter::parse_args
+  /// that enables initialization from a string command.
+  ///
+  /// The set of DatumFormatter that exist for operating on a particular type
+  /// of DataObject are stored in a DataFormatterDictionary. The
+  /// DataFormatterDictionary can parse a string or collection of strings used
+  /// to specify particular DatumFormatters and any required or optional arguments,
+  /// and construct and initialize a DataFormatter containing those DatumFormatters.
+  /// This enables the functionality available through the 'casm query' and
+  /// 'casm select' commands.
+  ///
+  /// For the set of DatumFormatter available to act on Configuration, \see ConfigIO.
+  /// There currently only exist DatumFormatter that act on Configuration, but
+  /// DatumFormatter acting on other DataObjects are planned.
+  ///
+  ///
+  /// \ingroup casmIO
+
+
+  /// \defgroup DataFormatterTypes Basic Types
+  ///
+  /// \brief Base types for creating data formatters
+  ///
+  /// \ingroup DataFormatter
 
 
   class DataStream;
@@ -42,31 +76,8 @@ namespace CASM {
                                   std::vector<std::string> &tag_names,
                                   std::vector<std::string> &sub_exprs);
 
-  /* A DataFormatter performs extraction of disparate types of data from a 'DataObject' class that contains
-   * various types of unasociated 'chunks' of data.
-   * The DataFormatter is composed of one or more 'DatumFormatters', with each DatumFormatter knowing how to
-   * access and format a particular type of data from the 'DataObject'.
-   * BaseDatumFormatter<DataObject> is a virtual class from which all DatumFormatters that access the particular
-   * DataObject derive.
-   *
-   * As an example consider a Configuration object, which has numerous attributes (name, energy, composition, etc).
-   * These attributes can be accessed and formatted using a DataFormatter<Configuration>, which contains a number of
-   *
-   * DatumFormatter<Configuration> objects.  For example
-   *      NameConfigDatumFormatter        (derived from DatumFormatter<Configuration>)
-   *      EnergyConfigDatumFormatter      (derived from DatumFormatter<Configuration>)
-   *      CompositionConfigDatumFormatter (derived from DatumFormatter<Configuration>)
-   *
-   *  Example usage case:
-   *        DataFormatter<DataObject> my_data_formatter;
-   *        initialize_data_formatter_from_user_input(my_data_formatter, user_input);
-   *        std::cout << my_data_formatter(primclex.config_begin(), primclex.config_end());
-   *        my_json_parser = my_data_formatter(primclex.config_begin(), primclex.config_end());
-   *
-   * \ingroup DataFormatter
-   */
 
-  /// \brief Functions and classes related to formatting data
+  /// \brief Extract data from objects of 'DataObject' class
   ///
   /// A DataFormatter performs extraction of disparate types of data from objects
   /// of 'DataObject' class. The DataFormatter is composed of one or more
@@ -76,10 +87,6 @@ namespace CASM {
   /// BaseDatumFormatter<DataObject> is a virtual class from which all DatumFormatters
   /// that access the particular DataObject derive.
   ///
-  /// DataFormatterParser<DataObject> is a singleton that can be specialized for
-  /// creating and using a DataFormatterDictionary<DataObject> containing all of
-  /// the DatumFormatter that exist for a particular DataObject.
-  ///
   ///
   /// As an example, consider a Configuration object, which has numerous attributes
   /// (name, energy, composition, etc) which can either be accessed or calculated.
@@ -88,9 +95,9 @@ namespace CASM {
   /// objects.
   ///
   /// Example DatumFormatter<Configuration> include:
-  /// - ConfigData::Name             (derived from DatumFormatter<Configuration>)
-  /// - ConfigData::Comp             (derived from DatumFormatter<Configuration>)
-  /// - ConfigData::FormationEnergy  (derived from DatumFormatter<Configuration>)
+  /// - ConfigIO::Name             (derived from DatumFormatter<Configuration>)
+  /// - ConfigIO::Comp             (derived from DatumFormatter<Configuration>)
+  /// - ConfigIO::FormationEnergy  (derived from DatumFormatter<Configuration>)
   ///
   ///
   ///
@@ -103,9 +110,9 @@ namespace CASM {
   ///
   /// Explicit construction example:
   /// \code
-  /// DataFormatter<Configuration> formatter( ConfigData::Name(),
-  ///                                         ConfigData::Comp(),
-  ///                                         ConfigData::FormationEnergy());
+  /// DataFormatter<Configuration> formatter( ConfigIO::Name(),
+  ///                                         ConfigIO::Comp(),
+  ///                                         ConfigIO::FormationEnergy());
   /// \endcode
   ///
   /// Construction via DataFormatterDictionary and a string with arguments:
@@ -120,8 +127,8 @@ namespace CASM {
   ///
   /// Adding additional DatumFormatter:
   /// \code
-  /// formatter.push_back(ConfigData::Comp());
-  /// formatter << ConfigData::Comp();
+  /// formatter.push_back(ConfigIO::Comp());
+  /// formatter << ConfigIO::Comp();
   /// \endcode
   ///
   /// Once a DataFormatter has been constructed, it can be used to output formatted
@@ -143,7 +150,7 @@ namespace CASM {
   ///
   /// \ingroup DataFormatter
   ///
-  template<typename DataObject>
+  template<typename _DataObject>
   class DataFormatter {
     // These are private classes that sweeten the I/O syntax
     // they have to be forward declared ahead of DataFormatter::operator()
@@ -152,6 +159,9 @@ namespace CASM {
 
     class FormattedObject;
   public:
+
+    typedef _DataObject DataObject;
+
     DataFormatter(int _sep = 4, int _precision = 12, std::string _comment = "#") :
       m_initialized(false), m_prec(_precision), m_sep(_sep), m_indent(0), m_comment(_comment) {
       m_data_formatters.reserve(100);
@@ -225,6 +235,9 @@ namespace CASM {
     ///print the header, using _tmplt_obj to inspect array sizes, etc.
     void print_header(const DataObject &_tmplt_obj, std::ostream &_stream) const;
 
+    ///\brief Returns all column header strings as std::vector<std::string>
+    std::vector<std::string> col_header(const DataObject &_template_obj) const;
+
     /// Add a particular BaseDatumFormatter to *this
     /// If the previous Formatter matches the new formatter, try to just parse the new args into it
     void push_back(const BaseDatumFormatter<DataObject> &new_formatter, const std::string &args) {
@@ -291,12 +304,13 @@ namespace CASM {
   /// The job of a DatumFormatter is to access and format a particular type of
   /// data that is stored in a <DataObject> class, which is a template paramter.
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
-  template<typename DataObject>
+  template<typename _DataObject>
   class BaseDatumFormatter {
   public:
 
+    typedef _DataObject DataObject;
     enum FormatterType {Property, Operator};
     typedef long difference_type;
     typedef DataFormatterDictionary<DataObject, BaseDatumFormatter<DataObject> > DictType;
@@ -350,12 +364,34 @@ namespace CASM {
       return true;
     }
 
+    ///\brief Returns a header string for each scalar produced by the formatter
+    /// parsing the entries in the col_header should reproduce the exact query
+    /// described by the formatter.
+    /// Ex: "clex(formation_energy)" or "comp(a)", "comp(c)"
+    ///
+    /// - Default uses col_header
+    virtual std::vector<std::string> col_header(const DataObject &_template_obj) const {
+      return std::vector<std::string> {this->short_header(_template_obj)};
+    }
+
     ///\brief Returns a long expression for each scalar produced by the formatter
     /// parsing the long_header should reproduce the exact query described by the formatter
     /// Ex: "clex(formation_energy)" or "comp(a)    comp(c)"
+    ///
+    /// - Default uses col_header
     virtual std::string long_header(const DataObject &_template_obj) const {
-      return short_header(_template_obj);
-    };
+      auto _col = col_header(_template_obj);
+      if(_col.size() == 1) {
+        return _col[0];
+      }
+
+      std::stringstream t_ss;
+      for(Index i = 0; i < _col.size(); i++) {
+        t_ss << "       " << _col[i];
+      }
+
+      return t_ss.str();
+    }
 
     ///\brief Returns a short expression for the formatter
     /// parsing the short_header should allow the formatter to be recreated
@@ -585,12 +621,14 @@ namespace CASM {
   ///
   /// \ingroup DataFormatter
   ///
-  template<typename DataObject, typename DatumFormatterType = BaseDatumFormatter<DataObject> >
+  template<typename _DataObject, typename _DatumFormatterType = BaseDatumFormatter<_DataObject> >
   class DataFormatterDictionary :
-    public notstd::unique_cloneable_map<std::string, DatumFormatterType> {
+    public notstd::unique_cloneable_map<std::string, _DatumFormatterType> {
 
   public:
 
+    typedef _DataObject DataObject;
+    typedef _DatumFormatterType DatumFormatterType;
     typedef notstd::unique_cloneable_map<std::string, DatumFormatterType> UniqueMapType;
     typedef typename UniqueMapType::key_type key_type;
     typedef typename UniqueMapType::value_type value_type;
@@ -679,59 +717,6 @@ namespace CASM {
 
     return dict;
   }
-
-  /*
-    /// \brief A singleton for creating and using a DataFormatterDictionary<DataObject>
-    template<typename DataObject>
-    class DataFormatterParser {
-
-    public:
-
-      static const BaseDatumFormatter<DataObject> &lookup(const std::string &_name) {
-        return *dictionary().lookup(_name);
-      }
-
-      static DataFormatter<DataObject> parse(const std::string &input) {
-        return dictionary().parse(input);
-      }
-
-      static DataFormatter<DataObject> parse(const std::vector<std::string> &input) {
-        return dictionary().parse(input);
-      }
-
-      static void add_custom_formatter(const BaseDatumFormatter<DataObject> &new_formatter) {
-        if(dictionary().contains(new_formatter.name()))
-          throw std::runtime_error(std::string("Naming collision: Parsing dictionary already contains entry for '") + new_formatter.name() + "'.\n");
-        dictionary().insert(new_formatter);
-      }
-
-      static void load_aliases(const fs::path &alias_path);
-
-      static void print_help(std::ostream &_stream,
-                             typename BaseDatumFormatter<DataObject>::FormatterType ftype = BaseDatumFormatter<DataObject>::Property,
-                             int width = 60, int separation = 8) {
-        dictionary().print_help(_stream, ftype, width, separation);
-      }
-
-      static DataFormatterDictionary<DataObject> &dictionary() {
-        // Guaranteed to be destroyed, instantiated on first use.
-        static DataFormatterDictionary<DataObject> m_dict = make_dictionary<DataObject>();
-
-        return m_dict;
-      }
-
-    private:
-
-      /// \brief Constructor
-      DataFormatterParser() {}
-
-      /// \brief Prevent creating copies
-      DataFormatterParser(const DataFormatterParser &) = delete;
-
-      /// \brief Prevent creating copies
-      void operator=(const DataFormatterParser &)  = delete;
-    };
-  */
 
   // ******************************************************************************
 

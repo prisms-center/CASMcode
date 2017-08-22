@@ -72,7 +72,7 @@ class Selection(object):
         """
         if self._data is None:
           if self.path in ["MASTER", "ALL", "CALCULATED"]:
-            self._data = query(self.proj, ['configname', 'selected'], self)
+            self._data = query(self.proj, ['configname', 'selected'], self, all=self.all)
           elif self._is_json():
             self._data = pandas.read_json(self.path, orient='records')
           else:

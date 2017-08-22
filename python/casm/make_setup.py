@@ -17,7 +17,7 @@ setup(name='casm',
       author='CASM developers',
       author_email='casm-developers@lists.engr.ucsb.edu',
       license='LGPL2.1',
-      packages=['casm','casm.vaspwrapper','casm.qewrapper', 'casm.learn', 'casm.project', 'casm.plotting','tests.test_wrappers'],
+      packages=['casm','casm.vaspwrapper','casm.qewrapper', 'casm.questwrapper', 'casm.learn', 'casm.project', 'casm.plotting'],
       scripts=glob.glob('scripts/*')
       )
 """.format(version, url)

@@ -1,19 +1,40 @@
+#include "casm/clex/ConfigEnumStrain.hh"
 #include <algorithm>
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clex/ConfigEnumStrain.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/algorithm.hh"
 
+extern "C" {
+  CASM::EnumInterfaceBase *make_ConfigEnumStrain_interface() {
+    return new CASM::EnumInterface<CASM::ConfigEnumStrain>();
+  }
+}
+
 namespace CASM {
 
-  template<typename ConfigType>
-  ConfigEnumStrain<ConfigType>::ConfigEnumStrain(Supercell &_scel,
-                                                 const value_type &_init,
-                                                 const std::vector<Index> &linear_partitions,
-                                                 const std::vector<double> &magnitudes,
-                                                 std::string _mode) :
-    ConfigEnum<ConfigType>(_init, _init, -1),
-    //m_counter(_init_vec, _final_vec, Eigen::VectorXd::Constant(_init_vec.size(), _inc)),
+  const std::string ConfigEnumStrain::enumerator_name = "ConfigEnumStrain";
+
+  const std::string ConfigEnumStrain::interface_help =
+    "ConfigEnumStrain: \n\n"
+
+    "  ... include help documentation here ... \n\n";
+
+  int ConfigEnumStrain::run(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) {
+    throw std::runtime_error("EnumInterface<Strain>::run is not implemented");
+  }
+
+  ConfigEnumStrain::ConfigEnumStrain(Supercell &_scel,
+                                     const Configuration &_init,
+                                     const std::vector<Index> &linear_partitions,
+                                     const std::vector<double> &magnitudes,
+                                     std::string _mode) :
+    m_current(_init),
     m_equiv_ind(0),
     m_strain_calc(_mode),
     m_perm_begin(_scel.permute_begin()),
@@ -127,7 +148,6 @@ namespace CASM {
 
 
     m_counter = EigenCounter<Eigen::VectorXd>(init, final, inc);
-    _source() = "strain_enumeration";
 
     std::cout << "Project matrices are \n";
     for(Index i = 0; i < m_trans_mats.size(); i++)
@@ -139,19 +159,17 @@ namespace CASM {
       ++m_counter;
     }
 
+    reset_properties(m_current);
+    this->_initialize(&m_current);
+
     if(!m_counter.valid()) {
-      std::cout << "COUNTER IS INVALID\n";
-      _step() = -1;
+      this->_invalidate();
     }
-    else {
-      _step() = 0;
-    }
+    _current().set_source(this->source(step()));
   }
-  //*******************************************************************************************
-  // **** Mutators ****
-  // increment m_current and return a reference to it
-  template<typename ConfigType>
-  const typename ConfigEnumStrain<ConfigType>::value_type &ConfigEnumStrain<ConfigType>::increment() {
+
+  // Implements _increment
+  void ConfigEnumStrain::increment() {
     //bool is_valid_config(false);
     //std::cout << "Incrementing...\n";
 
@@ -179,27 +197,16 @@ namespace CASM {
       //is_valid_config = current().is_canonical(_perm_begin(), _perm_end());
       //std::cout << "counter() is: " << m_counter() << ";  is_valid_config: " << is_valid_config
       //<< ";  is_valid_counter: " << m_counter.valid() << "\n";
-      _step()++;
+      _increment_step();
     }
     else {
       //std::cout << "REACHED END OF THE LINE!\n";
-      _step() = -1;
+      _invalidate();
     }
+    _current().set_source(this->source(step()));
     //std::cout << "--FINISHED SEARCH " << _step()<< "--\n";
-    _current().set_source(source());
-    return current();
+    return;
   }
 
-  //*******************************************************************************************
-  // set m_current to correct value at specified step and return a reference to it
-  template<typename ConfigType>
-  const typename ConfigEnumStrain<ConfigType>::value_type &ConfigEnumStrain<ConfigType>::goto_step(step_type _step) {
-    std::cerr << "CRITICAL ERROR: Class ConfigEnumStrain does not implement a goto_step() method. \n"
-              << "                You may be using a ConfigEnumIterator in an unsafe way!\n"
-              << "                Exiting...\n";
-    assert(0);
-    exit(1);
-    return current();
-  };
 }
 

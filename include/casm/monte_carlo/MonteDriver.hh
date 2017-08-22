@@ -187,7 +187,10 @@ namespace CASM {
         ConfigDoF configdof = m_mc.configdof();
         from_json(configdof, jsonParser(m_dir.final_state_json(start_i - 1)));
 
-        m_mc.set_configdof(configdof, std::string("Using: ") + m_dir.final_state_json(start_i - 1).string());
+        m_mc.set_state(
+          m_conditions_list[start_i],
+          configdof,
+          std::string("Using: ") + m_dir.final_state_json(start_i - 1).string());
       }
     }
 
@@ -196,13 +199,16 @@ namespace CASM {
       if(!m_settings.dependent_runs()) {
         m_mc.set_state(m_conditions_list[i], m_settings);
       }
-      else {
+      else if(i != start_i) {
+
         m_mc.set_conditions(m_conditions_list[i]);
 
         m_log.custom("Continue with existing DoF");
         m_log << std::endl;
       }
+
       single_run(i);
+
       m_log << std::endl;
     }
 
@@ -359,12 +365,12 @@ namespace CASM {
         else {
 
           if(m_mc.check_convergence_time()) {
-            
+
             m_log.require<Log::verbose>() << "\n";
             m_log.custom<Log::verbose>("Begin convergence checks");
             m_log << "samples: " << m_mc.sample_times().size() << std::endl;
             m_log << std::endl;
-            
+
             if(m_mc.is_converged()) {
               break;
             }
@@ -394,7 +400,7 @@ namespace CASM {
               << "step: " << run_counter.step() << "  "
               << "take sample " << m_mc.sample_times().size() << "\n" << std::endl;
 
-        m_mc.sample_data(run_counter.pass(), run_counter.step());
+        m_mc.sample_data(run_counter);
         run_counter.increment_samples();
         if(m_enum && m_enum->on_sample()) {
           m_enum->insert(m_mc.config());

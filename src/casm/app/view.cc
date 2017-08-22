@@ -3,6 +3,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/clex/ConfigSelection.hh"
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/jsonStruc.hh"
 
 #include "casm/completer/Handlers.hh"
 
@@ -16,7 +17,8 @@ namespace CASM {
       add_help_suboption();
       add_confignames_suboption();
       add_configlist_nodefault_suboption();
-
+      m_desc.add_options()
+      ("relaxed,r", "Attempt to display corresponding relaxed structures to the given configurations.");
       return;
     }
   }
@@ -44,24 +46,24 @@ namespace CASM {
       /** --help option
       */
       if(vm.count("help")) {
-        std::cout << "\n";
-        std::cout << view_opt.desc() << std::endl;
+        args.log << "\n";
+        args.log << view_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << view_opt.desc() << std::endl;
-        std::cout << "This allows opening visualization programs directly from \n"
-                  "CASM. It iterates over all selected configurations and   \n"
-                  "one by one writes a POSCAR and executes                  \n"
-                  "   '$VIEW_COMMAND /path/to/POSCAR'                       \n"
-                  "where $VIEW_COMMAND is set via 'casm settings --set-view-command'.\n"
-                  "A script 'casm.view' is included with can be used to run \n"
-                  "a command and then pause 1s, which is useful for opening \n"
-                  "POSCARs with VESTA.  An example on Mac might look like:  \n"
-                  "  casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"' \n\n";
+        args.log << "\n";
+        args.log << view_opt.desc() << std::endl;
+        args.log << "This allows opening visualization programs directly from \n"
+                 "CASM. It iterates over all selected configurations and   \n"
+                 "one by one writes a POSCAR and executes                  \n"
+                 "   '$VIEW_COMMAND /path/to/POSCAR'                       \n"
+                 "where $VIEW_COMMAND is set via 'casm settings --set-view-command'.\n"
+                 "A script 'casm.view' is included with can be used to run \n"
+                 "a command and then pause 1s, which is useful for opening \n"
+                 "POSCARs with VESTA.  An example on Mac might look like:  \n"
+                 "  casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"' \n\n";
 
         return 0;
       }
@@ -73,13 +75,13 @@ namespace CASM {
       confignames = view_opt.config_strs();
     }
     catch(po::error &e) {
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      std::cerr << view_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << view_opt.desc() << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << "Unhandled Exception reached the top of main: "
-                << e.what() << ", application will now exit" << std::endl;
+      args.err_log << "Unhandled Exception reached the top of main: "
+                   << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
 
     }
@@ -94,10 +96,10 @@ namespace CASM {
     DirectoryStructure dir(root);
     ProjectSettings set(root);
     if(set.view_command().empty()) {
-      std::cerr << "Error in 'casm view': No command set. Use 'casm settings "
-                "--set-view-command' to set the command to open visualization "
-                "software. It should take one argument, the path to a POSCAR "
-                "to be visualized. For example, to use VESTA on Mac: casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'.\n";
+      args.err_log << "Error in 'casm view': No command set. Use 'casm settings "
+                   "--set-view-command' to set the command to open visualization "
+                   "software. It should take one argument, the path to a POSCAR "
+                   "to be visualized. For example, to use VESTA on Mac: casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'.\n";
       return ERR_MISSING_DEPENDS;
     }
 
@@ -127,19 +129,48 @@ namespace CASM {
 
     // execute the 'casm view' command for each selected configuration
     for(auto it = config_select.selected_config_cbegin(); it != config_select.selected_config_cend(); ++it) {
-      // write '.casm/tmp/POSCAR'
-      fs::ofstream file;
-      fs::path POSCARpath = tmp_dir / "POSCAR";
-      file.open(POSCARpath);
-      VaspIO::PrintPOSCAR p(*it);
-      p.sort();
-      p.print(file);
-      file.close();
+      //for relaxed structure
+      if(vm.count("relaxed") && is_calculated(*it)) {
+        fs::ofstream file;
+        fs::path POSCARpath = tmp_dir / "POSCAR";
 
-      std::cout << it->name() << ":\n";
-      Popen popen;
-      popen.popen(set.view_command() + " " + POSCARpath.string());
-      popen.print(std::cout);
+        //Make pos_path the path to properties.calc.json constructed from it
+        fs::path pos_path = it->calc_properties_path();
+        args.log << "Obtaining relaxed structure from:\n";
+        args.log << pos_path.string() << std::endl;
+        BasicStructure<Site> import_struc;
+        jsonParser datajson(pos_path);
+        from_json(simple_json(import_struc, "relaxed_"), datajson);
+
+        file.open(POSCARpath);
+        VaspIO::PrintPOSCAR p(import_struc);
+        p.sort();
+        p.print(file);
+        file.close();
+
+        args.log << it->name() << " relaxed" << ":\n";
+        Popen popen;
+        popen.popen(set.view_command() + " " + POSCARpath.string());
+        popen.print(std::cout);
+      }
+
+      else {
+        // write '.casm/tmp/POSCAR'
+        fs::ofstream file;
+        fs::path POSCARpath = tmp_dir / "POSCAR";
+        file.open(POSCARpath);
+        VaspIO::PrintPOSCAR p(*it);
+        p.sort();
+        p.print(file);
+        file.close();
+        if(vm.count("relaxed")) {
+          args.log << "No relaxed structure found." << "\n";
+        }
+        args.log << it->name() << ":\n";
+        Popen popen;
+        popen.popen(set.view_command() + " " + POSCARpath.string());
+        popen.print(args.log);
+      }
 
     }
 

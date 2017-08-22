@@ -1,0 +1,6 @@
+#!/bin/bash
+export PATH=@abs_top_builddir@:$PATH
+cd @abs_top_srcdir@
+mkdir -p @abs_top_srcdir@/tests/unit/test_projects
+rm -r @abs_top_srcdir@/tests/unit/test_projects/*
+@abs_top_builddir@/casm_units --log_level=test_suite --catch_system_errors=no

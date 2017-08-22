@@ -13,13 +13,13 @@
 #include "casm/monte_carlo/MonteCounter.hh"
 
 namespace CASM {
-  
+
   struct SamplerNameCompare {
-    
+
     SamplerNameCompare() {};
-    
-    bool operator()(const std::string& A, const std::string& B) const;
-    
+
+    bool operator()(const std::string &A, const std::string &B) const;
+
   };
 
 
@@ -130,7 +130,7 @@ namespace CASM {
     // ---- Data sampling -------------
 
     /// \brief Samples all requested property data, and stores pass and step number sample was taken at
-    void sample_data(MonteCounter::size_type pass, MonteCounter::size_type step);
+    void sample_data(const MonteCounter &counter);
 
     /// \brief Clear all data from all samplers
     void clear_samples();
@@ -301,9 +301,6 @@ namespace CASM {
     bool m_debug;
 
   };
-
-  /// \brief Fill supercell with motif, applying a factor group operation if necessary
-  Configuration fill_supercell(Supercell &mc_scel, const Configuration &motif);
 
   /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
   template<typename MonteTypeSettings>

@@ -172,10 +172,15 @@ def lib_name(prefix, includename, libname):
   Uses re.match('lib(' + libname + '.*)\.(dylib|a|so).*',string) on all files
   in the prefix/lib directory to get the libname to use. If none found, return None.
   """
-  for p in os.listdir(lib_path(prefix, includename)):
-    m = re.match('lib(' + libname + '.*)\.(dylib|a|so).*',p)
-    if m:
-      return m.group(1)
+  try:
+    for p in os.listdir(lib_path(prefix, includename)):
+      if p is None:
+        continue
+      m = re.match('lib(' + libname + '.*)\.(dylib|a|so).*',p)
+      if m:
+        return m.group(1)
+  except TypeError:
+    pass
   return None
 
 def debug_level():
@@ -243,7 +248,7 @@ def compile_flags():
 
 ##### Set version_number
 
-version_number = version('0.2.0')
+version_number = version('0.2.1')
 url = 'https://github.com/prisms-center/CASMcode'
 Export('version_number', 'url')
 
@@ -315,10 +320,16 @@ env['ENV']['TERM'] = os.environ['TERM']
 # set testing environment (for running tests)
 env['ENV']['PATH'] = env['BINDIR'] + ":" + env['ENV']['PATH']
 
-# set LD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH (for running configuration tests)
-for x in ['LD_LIBRARY_PATH', 'DYLD_LIBRARY_FALLBACK_PATH']:
-  if x in os.environ:
-    env['ENV'][x] = os.environ[x]
+# set execution environment variables (for running tests)
+casm_var = ['CXX', 'CASM_CXX', 'CASM_CXXFLAGS', 'CASM_SOFLAGS',
+  'CASM_BOOST_PREFIX', 'CASM_BOOST_INCLUDEDIR', 'CASM_BOOST_LIBDIR',
+  'LD_LIBRARY_PATH', 'DYLD_LIBRARY_FALLBACK_PATH']
+for var in casm_var:
+  if var in os.environ:
+    env['ENV'][var] = os.environ[var]
+
+env['ENV']['CASM_INCLUDEDIR'] = env['INCDIR']
+env['ENV']['CASM_LIBDIR'] = env['LIBDIR']
 
 # add methods to use elsewhre
 env.AddMethod(include_path)

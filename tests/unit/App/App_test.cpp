@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
     Checks("composition", "-d", "-h"),
     Checks("sym", "", "-h"),
     Checks("bset", "", "-h"),
-    Checks("enum", "--supercells --max 1", "-h"),
+    Checks("enum", "", "-h"),
     Checks("select", "", "-h"),
     Checks("query", "", "-h")
   };
@@ -84,8 +84,6 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
     log << "testing 'casm query'" << std::endl;
     (*proj_it)->check_query();
 
-    //log << "removing test project" << std::endl;
-    //rm_project(**proj_it);
     log << std::endl;
 
   }

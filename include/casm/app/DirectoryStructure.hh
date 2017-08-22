@@ -4,8 +4,20 @@
 #include <string>
 #include <vector>
 
+#include "casm/CASM_global_definitions.hh"
+
 
 namespace CASM {
+
+  /**
+   * \ingroup Project
+   *
+   * @{
+   */
+
+  template<typename DataObject>
+  class QueryTraits;
+  class Log;
 
   /// return path to current or parent directory containing ".casm" directory
   ///   if none found, return empty path
@@ -35,6 +47,9 @@ namespace CASM {
     }
     return relpath;
   };
+
+  /// \brief Remove files recursively
+  void recurs_rm_files(fs::path p, bool dry_run, Log &log);
 
   /// \brief Specification of CASM project directory structure
   class DirectoryStructure {
@@ -117,6 +132,17 @@ namespace CASM {
     /// \brief Return master config_list.json file path
     fs::path config_list() const {
       return m_root / m_casm_dir / "config_list.json";
+    }
+
+    /// \brief Return enumerators plugin dir
+    fs::path enumerator_plugins() const {
+      return m_root / m_casm_dir / "enumerators";
+    }
+
+    /// \brief Return enumerators plugin dir
+    template<typename DataObject>
+    fs::path query_plugins() const {
+      return m_root / m_casm_dir / "query" / QueryTraits<DataObject>::name;
     }
 
     // -- Symmetry --------
@@ -235,6 +261,11 @@ namespace CASM {
     /// \brief Return calculation settings directory path, for configuration specific settings
     fs::path configuration_calc_settings_dir(std::string configname, std::string calctype) const {
       return configuration_dir(configname) / m_set_dir / _calctype(calctype);
+    }
+
+    /// \brief Return calculated properties file path
+    fs::path configuration_calc_dir(std::string configname, std::string calctype) const {
+      return configuration_dir(configname) / _calctype(calctype);
     }
 
     /// \brief Return calculated properties file path
@@ -381,6 +412,8 @@ namespace CASM {
     std::string m_clex_dir;
 
   };
+
+  /** @} */
 }
 
 #endif

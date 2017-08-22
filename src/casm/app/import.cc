@@ -28,6 +28,13 @@ namespace CASM {
       return m_vol_tolerance;
     }
 
+    double ImportOption::min_va_frac() const {
+      return m_min_va_frac;
+    }
+
+    double ImportOption::max_va_frac() const {
+      return m_max_va_frac;
+    }
     const std::vector<fs::path> &ImportOption::pos_vec() const {
       return m_pos_vec;
     }
@@ -46,16 +53,26 @@ namespace CASM {
       ("min-energy", "Resolve mapping conflicts based on energy rather than deformation.")
       ("max-vol-change", po::value<double>(&m_vol_tolerance)->default_value(0.25),
        "Adjusts range of SCEL volumes searched while mapping imported structure onto ideal crystal (only necessary if the presence of vacancies makes the volume ambiguous). Default is +/- 25% of relaxed_vol/prim_vol. Smaller values yield faster import, larger values may yield more accurate mapping.")
+      ("max-va-frac", po::value<double>(&m_max_va_frac)->default_value(0.5),
+       "Places upper bound on the fraction of sites that are allowed to be vacant after imported structure is mapped onto the ideal crystal. Smaller values yield faster execution, larger values may yield more accurate mapping. Has no effect if supercell volume can be inferred from the number of atoms in the structure. Default value allows up to 50% of sites to be vacant.")
+      ("min-va-frac", po::value<double>(&m_min_va_frac)->default_value(0.),
+       "Places lower bound on the fraction of sites that are allowed to be vacant after imported structure is mapped onto the ideal crystal. Nonzero values may yield faster execution if updating configurations that are known to have a large number of vacancies, at potential sacrifice of mapping accuracy.  Has no effect if supercell volume can be inferred from the number of atoms in the structure. Default value allows as few as 0% of sites to be vacant.")
       ("batch,b", po::value<fs::path>(&m_batch_path)->value_name(ArgHandler::path()), "Path to batch file, which should list one structure file path per line (can be used in combination with --pos)")
       ("rotate,r", "Rotate structure to be consistent with setting of PRIM")
       ("ideal,i", "Assume imported structures are unstrained (ideal) for faster importing. Can be slower if used on deformed structures, in which case more robust methods will be used")
       //("strict,s", "Request that symmetrically equivalent configurations be treated as distinct.")
-      ("data,d", "Attempt to extract calculation data from the enclosing directory of the structure files, if it is available");
+      ("data,d", "Attempt to extract calculation data (properties.calc.json file) from the enclosing directory of the structure files, if it is available")
+      ("copy-additional-files", "Recursively copy other files from the same directory as the properties.calc.json file.");
 
       return;
     }
 
   }
+
+  bool _has_existing_files(fs::path p);
+  fs::path _calc_properties_path(const PrimClex &primclex, fs::path pos_path);
+  void _cp_files(const fs::path &pos_path, const Configuration &config, bool copy_additional_files, Log &log);
+  void _recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir, Log &log);
 
   // ///////////////////////////////////////
   // 'import' function for casm
@@ -96,19 +113,19 @@ namespace CASM {
       /** --help option
        */
       if(vm.count("help")) {
-        std::cout << std::endl;
-        std::cout << import_opt.desc() << std::endl;
+        args.log << std::endl;
+        args.log << import_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << import_opt.desc() << std::endl;
+        args.log << "\n";
+        args.log << import_opt.desc() << std::endl;
 
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Import structure specified by --pos. If it doesn't exist make a directory for it and copy data over" << std::endl;
-        std::cout << "    If a *.json file is specified, it will be interpreted as a 'calc.properties.json' file." << std::endl;
+        args.log << "DESCRIPTION" << std::endl;
+        args.log << "    Import structure specified by --pos. If it doesn't exist make a directory for it and copy data over" << std::endl;
+        args.log << "    If a *.json file is specified, it will be interpreted as a 'calc.properties.json' file." << std::endl;
         return 0;
       }
 
@@ -122,27 +139,27 @@ namespace CASM {
 
     }
     catch(po::error &e) {
-      std::cerr << import_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << import_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return 3;
     }
     catch(std::exception &e) {
-      std::cerr << import_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << import_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return 4;
 
     }
 
     if(!vm.count("pos") && !vm.count("batch")) {
-      std::cerr << import_opt.desc() << std::endl;
-      std::cerr << "No structures specified for import (specify structures using --pos or --batch)." << std::endl;
+      args.err_log << import_opt.desc() << std::endl;
+      args.err_log << "No structures specified for import (specify structures using --pos or --batch)." << std::endl;
       return 5;
     }
 
     //read all the import paths
     if(vm.count("batch")) {
       if(!fs::exists(batch_path)) {
-        std::cerr << "ERROR: Batch import file does not exist at " << batch_path << "\n";
+        args.err_log << "ERROR: Batch import file does not exist at " << batch_path << "\n";
         return 6;
       }
       fs::ifstream batchfile(batch_path);
@@ -156,18 +173,18 @@ namespace CASM {
     }
     {
       if(pos_paths.size() == 0) {
-        std::cerr <<   "ERROR: No files specified for import.\n";
+        args.err_log <<   "ERROR: No files specified for import.\n";
         if(vm.count("batch"))
-          std::cerr << "       Check batch file for errors.\n";
+          args.err_log << "       Check batch file for errors.\n";
         return 7;
       }
       bool missing_files(false);
       for(auto it = pos_paths.cbegin(); it != pos_paths.cend(); ++it) {
         if(!fs::exists(*it)) {
           if(!missing_files)
-            std::cerr << "*** ERROR: Missing file(s):\n";
+            args.err_log << "*** ERROR: Missing file(s):\n";
           missing_files = true;
-          std::cerr   << "           " << fs::absolute(*it) << "\n";
+          args.err_log   << "           " << fs::absolute(*it) << "\n";
         }
       }
       if(missing_files)
@@ -194,6 +211,8 @@ namespace CASM {
     if(vm.count("strict")) map_opt |= ConfigMapper::strict;
     if(!vm.count("ideal")) map_opt |= ConfigMapper::robust;
     ConfigMapper configmapper(primclex, lattice_weight, vol_tol, map_opt, tol);
+    configmapper.set_min_va_frac(import_opt.min_va_frac());
+    configmapper.set_max_va_frac(import_opt.max_va_frac());
 
 
     // import_map keeps track of mapping collisions -- only used if vm.count("data")
@@ -203,10 +222,10 @@ namespace CASM {
     std::vector<std::string > error_log;
     Index n_unique(0);
     // iterate over structure files
-    std::cout << "  Beginning import of " << pos_paths.size() << " configuration" << (pos_paths.size() > 1 ? "s" : "") << "...\n" << std::endl;
+    args.log << "  Beginning import of " << pos_paths.size() << " configuration" << (pos_paths.size() > 1 ? "s" : "") << "...\n" << std::endl;
     for(auto it = pos_paths.begin(); it != pos_paths.end(); ++it) {
       if(it != pos_paths.begin())
-        std::cout << "\n***************************\n" << std::endl;
+        args.log << "\n***************************\n" << std::endl;
 
       fs::path pos_path, import_path;
 
@@ -216,22 +235,12 @@ namespace CASM {
 
       // If user requested data import, try to get structural data from properties.calc.json, instead of POS, etc.
       // Since properties.calc.json would be used during 'casm update' to validate relaxation
-      if(vm.count("data") && pos_path.extension() != ".json" && pos_path.extension() != ".JSON") {
-        fs::path dft_path = pos_path;
-        dft_path.remove_filename();
-        (dft_path /= ("calctype." + primclex.settings().default_clex().calctype)) /= "properties.calc.json";
-        if(!fs::exists(dft_path)) {
-          dft_path = pos_path;
-          dft_path.remove_filename();
-          dft_path /= "properties.calc.json";
-          if(!fs::exists(dft_path)) {
-            dft_path = fs::path();
-          }
-        }
-        if(!dft_path.empty())
+      if(vm.count("data")) {
+        fs::path dft_path = _calc_properties_path(primclex, pos_path);
+        if(!dft_path.empty()) {
           pos_path = dft_path;
+        }
       }
-
 
       //Import structure and make note of path
       bool new_import = false;
@@ -255,23 +264,23 @@ namespace CASM {
         std::vector<Index> best_assignment;
         jsonParser fullrelax_data;
         if(configmapper.import_structure_occupation(import_struc, imported_name, fullrelax_data, best_assignment, cart_op, true)) {
-          std::cout << "  " << pos_path << "\n  was imported successfully as " << imported_name << std::endl << std::endl;
+          args.log << "  " << pos_path << "\n  was imported successfully as " << imported_name << std::endl << std::endl;
           n_unique++;
           new_import = true;
         }
         else {
-          std::cout << "  " << pos_path << "\n  mapped onto pre-existing equivalent structure " << imported_name << std::endl << std::endl;
+          args.log << "  " << pos_path << "\n  mapped onto pre-existing equivalent structure " << imported_name << std::endl << std::endl;
         }
         relax_data = fullrelax_data["best_mapping"];
-        std::cout << "  Relaxation stats -> lattice_deformation = " << relax_data["lattice_deformation"].get<double>()
-                  << "      basis_deformation = " << relax_data["basis_deformation"].get<double>() << std::endl << std::endl;;
+        args.log << "  Relaxation stats -> lattice_deformation = " << relax_data["lattice_deformation"].get<double>()
+                 << "      basis_deformation = " << relax_data["basis_deformation"].get<double>() << std::endl << std::endl;;
       }
       catch(std::exception &e) {
-        std::cerr << "  ERROR: Unable to import " << pos_path << " because \n"
-                  << "    -> " << e.what() << "\n\n";
+        args.err_log << "  ERROR: Unable to import " << pos_path << " because \n"
+                     << "    -> " << e.what() << "\n\n";
         error_log.push_back(it->string() + "\n     -> " + e.what());
         if(it != pos_paths.cend()) {
-          std::cout << "  Continuing...\n";
+          args.log << "  Continuing...\n";
         }
         continue;
       }
@@ -295,7 +304,7 @@ namespace CASM {
     // All the mapping is finished; now we migrate data, if requested
     std::stringstream conflict_log;
     if(vm.count("data")) {
-      std::cout << "  Attempting to import data..." << std::endl;
+      args.log << "  Attempting to import data..." << std::endl;
       auto it(import_map.begin()), end_it(import_map.end());
       for(; it != end_it; ++it) {
         Configuration &imported_config = *(it->first);
@@ -303,8 +312,9 @@ namespace CASM {
 
         fs::path import_path = fs::absolute(imported_config.get_path(), pwd);
         bool preexisting(false);
-        if(fs::exists(imported_config.calc_properties_path()))
+        if(_has_existing_files(imported_config.calc_dir())) {
           preexisting = true;
+        }
         Index mult = data_vec.size() + Index(preexisting);
         double best_weight(1e19);
         double best_energy(1e19);
@@ -395,17 +405,15 @@ namespace CASM {
 
         fs::path pos_path = std::get<Import_impl::path>(data_vec[best_ind]);
         if(pos_path.extension() != ".json" && pos_path.extension() != ".JSON") {
-          std::cout << "  No calculation data was found in the enclosing directory of \n"
-                    << "    " << pos_path << std::endl
-                    << "  Continuing..." << std::endl;
+          args.log << "  No calculation data was found in the enclosing directory of \n"
+                   << "    " << pos_path << std::endl
+                   << "  Continuing..." << std::endl;
           continue;
         }
 
         fs::path import_target = import_path / ("calctype." + primclex.settings().default_clex().calctype);
-        if(!fs::exists(import_target))
-          fs::create_directories(import_target);
 
-        fs::copy_file(pos_path, imported_config.calc_properties_path());
+        _cp_files(pos_path, imported_config, vm.count("copy_additional_files"), args.log);
 
         if(!fs::exists(imported_config.get_pos_path()))
           imported_config.write_pos();
@@ -417,7 +425,7 @@ namespace CASM {
 
         jsonParser calc_data;
         if(!imported_config.read_calc_properties(calc_data)) {
-          std::cout << "  WARNING: Some properties from " << pos_path << " were not valid. Viable values will still be recorded.\n";
+          args.log << "  WARNING: Some properties from " << pos_path << " were not valid. Viable values will still be recorded.\n";
         }
 
         jsonParser &relaxjson = std::get<Import_impl::relaxjson>(data_vec[best_ind]);
@@ -432,43 +440,135 @@ namespace CASM {
 
       }
     }
-    std::cout << "\n***************************\n" << std::endl;
+    args.log << "\n***************************\n" << std::endl;
 
-    std::cout << "  Finished importing " << pos_paths.size() <<  " structures";
+    args.log << "  Finished importing " << pos_paths.size() <<  " structures";
     if(n_unique == 0)
-      std::cout << " (none of these are new or unique)";
+      args.log << " (none of these are new or unique)";
     else if(n_unique < pos_paths.size())
-      std::cout << " (only " << n_unique << " of these " << (n_unique == 1 ? "is" : "are") << " new and unique)";
-    std::cout << "." <<  std::endl;
+      args.log << " (only " << n_unique << " of these " << (n_unique == 1 ? "is" : "are") << " new and unique)";
+    args.log << "." <<  std::endl;
 
     //Update directories
-    std::cout << "  Writing SCEL..." << std::endl;
+    args.log << "  Writing SCEL..." << std::endl;
     primclex.print_supercells();
-    std::cout << "  Writing config_list..." << std::endl << std::endl;
+    args.log << "  Writing config_list..." << std::endl << std::endl;
     primclex.write_config_list();
-    std::cout << "  DONE" << std::endl << std::endl;
+    args.log << "  DONE" << std::endl << std::endl;
 
     if(error_log.size() > 0) {
-      std::cout << "  WARNING: --The following paths could not be imported due to errors:\n";
+      args.log << "  WARNING: --The following paths could not be imported due to errors:\n";
       for(auto it = error_log.cbegin(); it != error_log.cend(); ++it) {
-        std::cout << *it
-                  << "\n        ----------------------------------------------\n" << std::endl;
+        args.log << *it
+                 << "\n        ----------------------------------------------\n" << std::endl;
       }
-      std::cout << "\n" << std::endl;
+      args.log << "\n" << std::endl;
     }
     if(conflict_log.str().size()) {
-      std::cout << "  WARNING: -- The following conflicts were found\n" << std::endl
-                << conflict_log.str() << std::endl;
+      args.log << "  WARNING: -- The following conflicts were found\n" << std::endl
+               << conflict_log.str() << std::endl;
 
-      std::cout << "  Please review these conflicts.  A different resolution can be obtained by removing datafiles from\n"
-                << "  the training_data directory and performing an import using a manually reduced set of files.\n";
+      args.log << "  Please review these conflicts.  A different resolution can be obtained by removing datafiles from\n"
+               << "  the training_data directory and performing an import using a manually reduced set of files.\n";
     }
-    std::cout << "  DONE" << std::endl << std::endl;
+    args.log << "  DONE" << std::endl << std::endl;
 
-    std::cout << std::endl;
+    args.log << std::endl;
 
     return 0;
   };
 
+  bool _has_existing_files(fs::path p) {
+    if(!fs::exists(p)) {
+      return false;
+    }
+    return std::distance(fs::directory_iterator(p), fs::directory_iterator());
+  }
+
+  /// \brief Return path to properties.calc.json that will be imported
+  ///        checking a couple possible locations relative to pos_path
+  ///
+  /// checks:
+  /// 1) is a JSON file? is pos_path ends in ".json" or ".JSON", return pos_path
+  /// 2) assume pos_path is /path/to/POS, checks for /path/to/calctype.current/properties.calc.json
+  /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
+  /// else returns empty path
+  ///
+  fs::path _calc_properties_path(const PrimClex &primclex, fs::path pos_path) {
+
+    // check 1: is a JSON file
+    if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
+      return pos_path;
+    }
+
+    // check 2: /path/to/POS -> /path/to/calctype.current/properties.calc.json
+    {
+      fs::path dft_path = pos_path;
+      dft_path.remove_filename();
+      (dft_path /= ("calctype." + primclex.settings().default_clex().calctype)) /= "properties.calc.json";
+      if(fs::exists(dft_path)) {
+        return dft_path;
+      }
+    }
+
+    // check 3: /path/to/POS -> /path/to/properties.calc.json
+    {
+      fs::path dft_path = pos_path;
+      dft_path.remove_filename();
+      dft_path /= "properties.calc.json";
+      if(fs::exists(dft_path)) {
+        return dft_path;
+      }
+    }
+
+    // not found, return empty path
+    return fs::path();
+  }
+
+  /// \brief Copy files in the same directory as properties.calc.json into the
+  ///        traning_data directory for a particular configuration
+  ///
+  /// - First: calc_props_path = _calc_properties_path(pos_path) to get properties.calc.json location
+  /// - If calc_props_path.empty(), return
+  /// - else if !copy_additional_files copy properties.calc.json file only and return
+  /// - else, recursively copy all files from calc_props_path.remove_filename()
+  ///   to the training data directory for the current calctype
+  void _cp_files(const fs::path &pos_path, const Configuration &config, bool copy_additional_files, Log &log) {
+    fs::path p = config.calc_dir();
+    if(!fs::exists(p)) {
+      fs::create_directories(p);
+    }
+
+    fs::path calc_props_path = _calc_properties_path(config.get_primclex(), pos_path);
+    if(calc_props_path.empty()) {
+      return;
+    }
+
+    log.custom(std::string("Copy calculation files: ") + config.name());
+    if(!copy_additional_files) {
+      log << "cp " << calc_props_path << " " << p << std::endl;
+      fs::copy_file(calc_props_path, p / calc_props_path.filename());
+    }
+    else {
+      _recurs_cp_files(calc_props_path.remove_filename(), p, log);
+    }
+    log << std::endl;
+  }
+
+  void _recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir, Log &log) {
+    auto it = fs::directory_iterator(from_dir);
+    auto end = fs::directory_iterator();
+    for(; it != end; ++it) {
+      if(fs::is_regular_file(*it)) {
+        log << "cp " << *it << " " << to_dir << std::endl;
+        fs::copy_file(*it, to_dir / it->path().filename());
+      }
+      else {
+        fs::path new_to_dir = to_dir / it->path().filename();
+        fs::create_directories(new_to_dir);
+        _recurs_cp_files(*it, new_to_dir, log);
+      }
+    }
+  }
 }
 

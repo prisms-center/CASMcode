@@ -47,16 +47,13 @@ namespace CASM {
       }
     }
 
-    /// \brief Long header returns: 'name(Au)   name(Pt)   ...'
-    std::string MolDependent::long_header(const Configuration &_tmplt) const {
-      std::string t_header;
+    /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
+    std::vector<std::string> MolDependent::col_header(const Configuration &_tmplt) const {
+      std::vector<std::string> col;
       for(Index c = 0; c < m_mol_names.size(); c++) {
-        t_header += name() + "(" + m_mol_names[c] + ")";
-        if(c != m_mol_names.size() - 1) {
-          t_header += "   ";
-        }
+        col.push_back(name() + "(" + m_mol_names[c] + ")");
       }
-      return t_header;
+      return col;
     }
   }
 
@@ -92,18 +89,13 @@ namespace CASM {
       return true;
     }
 
-    /// \brief Long header returns: 'comp(a)   comp(b)   ...'
-    std::string Comp::long_header(const Configuration &_tmplt) const {
-      std::string t_header;
+    /// \brief col_header returns: {'comp(a)', 'comp(b)', ...}
+    std::vector<std::string> Comp::col_header(const Configuration &_tmplt) const {
+      std::vector<std::string> col;
       for(Index c = 0; c < _index_rules().size(); c++) {
-        t_header += name() + "(";
-        t_header.push_back((char)('a' + _index_rules()[c][0]));
-        t_header.push_back(')');
-        if(c != _index_rules().size() - 1) {
-          t_header += "   ";
-        }
+        col.push_back(name() + "(" + (char)('a' + _index_rules()[c][0]) + ")");
       }
-      return t_header;
+      return col;
     }
 
 
@@ -148,6 +140,22 @@ namespace CASM {
       return species_frac(config);
     }
 
+    // --- MagBase implementations ---
+
+    const std::string MagBase::Name = "relaxed_mag";
+
+    const std::string MagBase::Desc =
+      "Relaxed magnetic moment on each basis site. " ;
+
+    /// \brief Returns true if the Configuration has relaxed_mag
+    bool MagBase::validate(const Configuration &config) const {
+      return config.calc_properties().contains("relaxed_mag");
+    }
+
+    /// \brief Returns the atom fraction
+    Eigen::VectorXd MagBase::evaluate(const Configuration &config) const {
+      return relaxed_mag(config);
+    }
 
     // --- Corr implementations -----------
 
@@ -374,10 +382,17 @@ namespace CASM {
       return GenericConfigFormatter<Index>("multiplicity",
                                            "Symmetric multiplicity of the configuration, excluding translational equivalents.",
       [](const Configuration & config)->Index {
-        return config.get_prim().factor_group().size() / config.factor_group(config.get_supercell().permute_begin(), config.get_supercell().permute_end()).size();
+        return config.get_prim().factor_group().size() / config.factor_group().size();
       });
     }
 
+    GenericConfigFormatter<std::string> pointgroup_name() {
+      return GenericConfigFormatter<std::string>("pointgroup_name",
+                                                 "Name of the configuration's point group.",
+      [](const Configuration & config)->std::string{
+        return config.point_group().get_name();
+      });
+    }
 
     /*
     GenericConfigFormatter<bool> selected() {
@@ -495,6 +510,22 @@ namespace CASM {
                                             has_volume_relaxation);
     }
 
+    GenericConfigFormatter<double> relaxed_magmom() {
+      return GenericConfigFormatter<double>("relaxed_magmom",
+                                            "Relaxed magnetic moment, normalized per primative cell.",
+                                            CASM::relaxed_magmom,
+                                            has_relaxed_magmom);
+    }
+
+    GenericConfigFormatter<double> relaxed_magmom_per_species() {
+      return GenericConfigFormatter<double>("relaxed_magmom_per_atom",
+                                            "Relaxed magnetic moment, normalized per atom.",
+                                            CASM::relaxed_magmom_per_species,
+                                            has_relaxed_magmom);
+    }
+
+
+
     /*End ConfigIO*/
   }
 
@@ -508,7 +539,8 @@ namespace CASM {
       configname(),
       scelname(),
       calc_status(),
-      failure_type()
+      failure_type(),
+      pointgroup_name()
     );
 
     return dict;
@@ -567,7 +599,9 @@ namespace CASM {
       rms_force(),
       basis_deformation(),
       lattice_deformation(),
-      volume_relaxation()
+      volume_relaxation(),
+      relaxed_magmom(),
+      relaxed_magmom_per_species()
     );
 
     return dict;
@@ -587,7 +621,8 @@ namespace CASM {
       RelaxationStrain(),
       DoFStrain(),
       SiteFrac(),
-      StrucScore()
+      StrucScore(),
+      MagBase()
     );
 
     return dict;

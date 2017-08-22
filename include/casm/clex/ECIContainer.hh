@@ -7,6 +7,8 @@
 namespace CASM {
 
   /// \brief A sparse container of ECI values and their corresponding orbit indices.
+  ///
+  /// \ingroup ClexClex
   class ECIContainer {
 
   public:

@@ -64,13 +64,8 @@ namespace CASM {
 
 
   /// \brief Sample data from a MonteCarlo calculation
-  void ScalarMonteSampler::sample(const MonteCarlo &mc) {
+  void ScalarMonteSampler::sample(const MonteCarlo &mc, const MonteCounter &counter) {
     data().push_back(mc.scalar_property(m_property_name));
-  }
-
-  /// \brief Clone this object
-  std::unique_ptr<MonteSampler> ScalarMonteSampler::clone() const {
-    return std::unique_ptr<MonteSampler>(new ScalarMonteSampler(*this));
   }
 
 
@@ -114,15 +109,58 @@ namespace CASM {
 
 
   /// \brief Sample data from a MonteCarlo calculation
-  void VectorMonteSampler::sample(const MonteCarlo &mc) {
+  void VectorMonteSampler::sample(const MonteCarlo &mc, const MonteCounter &counter) {
     data().push_back(mc.vector_property(m_property_name)(m_index));
   }
 
-  /// \brief Clone this object
-  std::unique_ptr<MonteSampler> VectorMonteSampler::clone() const {
-    return std::unique_ptr<MonteSampler>(new VectorMonteSampler(*this));
+
+  // ---- QueryMonteSampler Definitions --------------------------------
+
+  /// \brief Construct sampler that does not need to converge
+  QueryMonteSampler::Formatter::Formatter(const DataFormatter<Configuration> &formatter) :
+    m_formatter(formatter),
+    m_last_sample(
+      std::numeric_limits<MonteCounter::size_type>::max(),
+      std::numeric_limits<MonteCounter::size_type>::max()) {}
+
+  /// \brief Evaluate datum formatters, if necessary, and return result
+  const Eigen::VectorXd &QueryMonteSampler::Formatter::sample(const MonteCarlo &mc, const MonteCounter &counter) {
+    auto curr_sample = std::make_pair(counter.pass(), counter.step());
+    if(curr_sample != m_last_sample) {
+      m_value = m_formatter.evaluate_as_matrix(mc.config()).row(0);
+      m_last_sample = curr_sample;
+    }
+    return m_value;
   }
 
+  /// \brief Construct sampler that does not need to converge
+  QueryMonteSampler::QueryMonteSampler(
+    std::shared_ptr<QueryMonteSampler::Formatter> formatter,
+    size_type _index,
+    std::string print_name,
+    double data_confidence,
+    size_type data_initsize) :
+    MonteSampler(print_name, data_confidence, data_initsize),
+    m_index(_index),
+    m_formatter(formatter) {}
+
+  /// \brief Construct sampler that must converge
+  QueryMonteSampler::QueryMonteSampler(
+    std::shared_ptr<QueryMonteSampler::Formatter> formatter,
+    size_type _index,
+    std::string print_name,
+    double data_prec,
+    double data_confidence,
+    size_type data_initsize) :
+    MonteSampler(print_name, data_prec, data_confidence, data_initsize),
+    m_index(_index),
+    m_formatter(formatter) {}
+
+
+  /// \brief Sample data from a MonteCarlo calculation
+  void QueryMonteSampler::sample(const MonteCarlo &mc, const MonteCounter &counter) {
+    data().push_back(m_formatter->sample(mc, counter)[m_index]);
+  }
 
 
   // ---- CompMonteSampler Definitions ---------------------------------
@@ -164,18 +202,13 @@ namespace CASM {
 
 
   /// \brief Sample data from a MonteCarlo calculation
-  void CompMonteSampler::sample(const MonteCarlo &mc) {
+  void CompMonteSampler::sample(const MonteCarlo &mc, const MonteCounter &counter) {
 
     auto comp_n = mc.vector_property("comp_n");
     auto comp = m_comp_converter.param_composition(comp_n);
 
     data().push_back(comp(m_index));
 
-  }
-
-  /// \brief Clone this object
-  std::unique_ptr<MonteSampler> CompMonteSampler::clone() const {
-    return std::unique_ptr<MonteSampler>(new CompMonteSampler(*this));
   }
 
 
@@ -218,13 +251,8 @@ namespace CASM {
 
 
   /// \brief Sample data from a MonteCarlo calculation
-  void SiteFracMonteSampler::sample(const MonteCarlo &mc) {
+  void SiteFracMonteSampler::sample(const MonteCarlo &mc, const MonteCounter &counter) {
     data().push_back(mc.vector_property("comp_n")(m_index) / m_basis_size);
-  }
-
-  /// \brief Clone this object
-  std::unique_ptr<MonteSampler> SiteFracMonteSampler::clone() const {
-    return std::unique_ptr<MonteSampler>(new SiteFracMonteSampler(*this));
   }
 
 
@@ -267,7 +295,7 @@ namespace CASM {
 
 
   /// \brief Sample data from a MonteCarlo calculation
-  void AtomFracMonteSampler::sample(const MonteCarlo &mc) {
+  void AtomFracMonteSampler::sample(const MonteCarlo &mc, const MonteCounter &counter) {
 
     double atom_sum = 0.0;
     for(size_type i = 0; i < mc.vector_property("comp_n").size(); ++i) {
@@ -278,12 +306,6 @@ namespace CASM {
 
     data().push_back(mc.vector_property("comp_n")(m_index) / atom_sum);
   }
-
-  /// \brief Clone this object
-  std::unique_ptr<MonteSampler> AtomFracMonteSampler::clone() const {
-    return std::unique_ptr<MonteSampler>(new AtomFracMonteSampler(*this));
-  }
-
 
 }
 

@@ -6,7 +6,7 @@
 
 namespace CASM {
 
-  /** \defgroup IsoCounter
+  /** \ingroup Counter
 
       @{
   */

@@ -4,8 +4,11 @@
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/clex/ConfigSelection.hh"
+//#include "casm/app/casm_functions.hh"
 
 namespace CASM {
+  class Configuration;
+
   namespace ConfigIO {
 
     /// \brief Returns true if configuration is specified in given selection (default: MASTER)

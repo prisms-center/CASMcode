@@ -2,6 +2,7 @@
 #define CASM_GrandCanonicalSettings
 
 #include "casm/monte_carlo/MonteSettings.hh"
+#include "casm/external/boost.hh"
 
 namespace CASM {
 
@@ -15,7 +16,7 @@ namespace CASM {
     GrandCanonicalSettings() {}
 
     /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
-    GrandCanonicalSettings(const fs::path &read_path);
+    GrandCanonicalSettings(const PrimClex &primclex, const fs::path &read_path);
 
 
     // --- GrandCanonicalConditions settings ---------------------
@@ -57,7 +58,7 @@ namespace CASM {
     GrandCanonicalConditions _conditions(const jsonParser &json) const;
 
     template<typename jsonParserIteratorType>
-    std::tuple<bool, double> _get_precision(jsonParserIteratorType it, std::string input_name) const;
+    std::tuple<bool, double> _get_precision(jsonParserIteratorType it) const;
 
     template<typename jsonParserIteratorType, typename SamplerInsertIterator>
     SamplerInsertIterator _make_comp_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
@@ -77,6 +78,9 @@ namespace CASM {
     template<typename jsonParserIteratorType, typename SamplerInsertIterator>
     SamplerInsertIterator _make_non_zero_eci_correlations_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
 
+    template<typename jsonParserIteratorType, typename SamplerInsertIterator>
+    SamplerInsertIterator _make_query_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
+
   };
 
 
@@ -86,7 +90,9 @@ namespace CASM {
   ///   std::pair<std::string, notstd::cloneable_ptr<MonteSampler> >
   ///
   template<typename SamplerInsertIterator>
-  SamplerInsertIterator GrandCanonicalSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result) const {
+  SamplerInsertIterator GrandCanonicalSettings::samplers(
+    const PrimClex &primclex,
+    SamplerInsertIterator result) const {
 
     if(method() == Monte::METHOD::LTE1) {//hack
       return result;
@@ -128,125 +134,110 @@ namespace CASM {
 
 
 
-    // construct scalar property samplers
-    {
-      std::vector<std::string> possible = {
-        "formation_energy",
-        "potential_energy"
-      };
+    try {
 
+      for(auto it = t_measurements.cbegin(); it != t_measurements.cend(); it++) {
 
-      try {
+        prop_name = (*it)["quantity"].get<std::string>();
 
-        for(auto it = t_measurements.cbegin(); it != t_measurements.cend(); it++) {
-          prop_name = (*it)["quantity"].get<std::string>();
+        // scalar quantities that we incrementally update
+        std::vector<std::string> scalar_possible = {
+          "formation_energy",
+          "potential_energy"
+        };
 
-          // check if property found is in list of possible scalar properties
-          if(std::find(possible.cbegin(), possible.cend(), prop_name) != possible.cend()) {
+        // check if property found is in list of possible scalar properties
+        if(std::find(scalar_possible.cbegin(), scalar_possible.cend(), prop_name) != scalar_possible.cend()) {
 
-            std::tie(must_converge, prec) = _get_precision(it, prop_name);
+          std::tie(must_converge, prec) = _get_precision(it);
 
-            // if 'must converge'
-            if(must_converge) {
-              ptr = new ScalarMonteSampler(prop_name, prop_name, prec, confidence(), data_maxlength);
-            }
-            else {
-              ptr = new ScalarMonteSampler(prop_name, prop_name, confidence(), data_maxlength);
-            }
+          // if 'must converge'
+          if(must_converge) {
+            ptr = new ScalarMonteSampler(prop_name, prop_name, prec, confidence(), data_maxlength);
+          }
+          else {
+            ptr = new ScalarMonteSampler(prop_name, prop_name, confidence(), data_maxlength);
+          }
 
-            *result++ = std::make_pair(prop_name, notstd::cloneable_ptr<MonteSampler>(ptr));
+          *result++ = std::make_pair(prop_name, notstd::cloneable_ptr<MonteSampler>(ptr));
+          continue;
+        }
+
+        // scalar quantities that we incrementally update
+        std::vector<std::string> vector_possible = {
+          "comp",
+          "comp_n",
+          "site_frac",
+          "atom_frac",
+          "all_correlations",
+          "non_zero_eci_correlations"
+        };
+
+        // check if property found is in list of possible vector properties
+        if(std::find(vector_possible.cbegin(), vector_possible.cend(), prop_name) != vector_possible.cend()) {
+
+          // construct MonteSamplers for 'comp'
+          if(prop_name == "comp") {
+
+            result = _make_comp_samplers(primclex, it, result);
 
           }
 
+          // construct MonteSamplers for 'comp_n'
+          else if(prop_name == "comp_n") {
+
+            result = _make_comp_n_samplers(primclex, it, result);
+
+          }
+
+          // construct MonteSamplers for 'site_frac'
+          else if(prop_name == "site_frac") {
+
+            result = _make_site_frac_samplers(primclex, it, result);
+
+          }
+
+          // construct MonteSamplers for 'atom_frac'
+          else if(prop_name == "atom_frac") {
+
+            result = _make_atom_frac_samplers(primclex, it, result);
+
+          }
+
+          // construct MonteSamplers for 'all_correlations'
+          else if(prop_name == "all_correlations") {
+
+            result = _make_all_correlations_samplers(primclex, it, result);
+
+          }
+
+          // construct MonteSamplers for 'non_zero_eci_correlations'
+          else if(prop_name == "non_zero_eci_correlations") {
+
+            result = _make_non_zero_eci_correlations_samplers(primclex, it, result);
+
+          }
+          continue;
         }
 
+        // custom query
+        _make_query_samplers(primclex, it, result);
+
       }
-      catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
-        err_log.error<Log::standard>("'MonteSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result)'");
-        err_log << "Error reading [\"" << level1 << "\"][\"" << level2 << "\"]\n" << std::endl;
-        throw;
-      }
+
     }
-
-
-    // construct vector properties to sample
-    {
-      std::vector<std::string> possible = {
-        "comp",
-        "comp_n",
-        "site_frac",
-        "atom_frac",
-        "all_correlations",
-        "non_zero_eci_correlations"
-      };
-
-      try {
-
-        for(auto it = t_measurements.cbegin(); it != t_measurements.cend(); it++) {
-
-          std::string input_name = (*it)["quantity"].get<std::string>();
-
-          // check if property found is in list of possible vector properties
-          if(std::find(possible.cbegin(), possible.cend(), input_name) != possible.cend()) {
-
-            // construct MonteSamplers for 'comp'
-            if(input_name == "comp") {
-
-              result = _make_comp_samplers(primclex, it, result);
-
-            }
-
-            // construct MonteSamplers for 'comp_n'
-            else if(input_name == "comp_n") {
-
-              result = _make_comp_n_samplers(primclex, it, result);
-
-            }
-
-            // construct MonteSamplers for 'site_frac'
-            else if(input_name == "site_frac") {
-
-              result = _make_site_frac_samplers(primclex, it, result);
-
-            }
-
-            // construct MonteSamplers for 'atom_frac'
-            else if(input_name == "atom_frac") {
-
-              result = _make_atom_frac_samplers(primclex, it, result);
-
-            }
-
-            // construct MonteSamplers for 'all_correlations'
-            else if(input_name == "all_correlations") {
-
-              result = _make_all_correlations_samplers(primclex, it, result);
-
-            }
-
-            // construct MonteSamplers for 'non_zero_eci_correlations'
-            else if(input_name == "non_zero_eci_correlations") {
-
-              result = _make_non_zero_eci_correlations_samplers(primclex, it, result);
-
-            }
-          }
-        }
-      }
-      catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
-        err_log.error<Log::standard>("'MonteSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result)'");
-        err_log << "Error reading [\"" << level1 << "\"][\"" << level2 << "\"]\n" << std::endl;
-        throw;
-      }
+    catch(std::runtime_error &e) {
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("'MonteSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result)'");
+      err_log << "Error reading [\"" << level1 << "\"][\"" << level2 << "\"]\n" << std::endl;
+      throw;
     }
 
     return result;
   }
 
   template<typename jsonParserIteratorType>
-  std::tuple<bool, double> GrandCanonicalSettings::_get_precision(jsonParserIteratorType it, std::string input_name) const {
+  std::tuple<bool, double> GrandCanonicalSettings::_get_precision(jsonParserIteratorType it) const {
     if(it->contains("precision")) {
       return std::make_tuple(true, (*it)["precision"]. template get<double>());
     }
@@ -271,7 +262,7 @@ namespace CASM {
 
       print_name = std::string("comp(") + std::string(1, (char)(i + ((int) 'a'))) + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "comp");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -307,7 +298,7 @@ namespace CASM {
 
       print_name = std::string("comp_n(") + primclex.composition_axes().components()[i] + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "comp_n");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -341,7 +332,7 @@ namespace CASM {
       // SiteFracMonteSampler uses 'comp_n' to calculate 'site_frac'
       print_name = std::string("site_frac(") + primclex.composition_axes().components()[i] + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "site_frac");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -391,7 +382,7 @@ namespace CASM {
 
         print_name = std::string("atom_frac(") + primclex.composition_axes().components()[i] + ")";
 
-        std::tie(must_converge, prec) = _get_precision(it, "atom_frac");
+        std::tie(must_converge, prec) = _get_precision(it);
 
         // if 'must converge'
         if(must_converge) {
@@ -427,7 +418,7 @@ namespace CASM {
       prop_name = "corr";
       print_name = std::string("corr(") + std::to_string(i) + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "all_correlations");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -469,7 +460,7 @@ namespace CASM {
 
       print_name = std::string("corr(") + std::to_string(i) + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "non_zero_eci_correlations");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -484,6 +475,64 @@ namespace CASM {
     }
 
     return result;
+  }
+
+  template<typename jsonParserIteratorType, typename SamplerInsertIterator>
+  SamplerInsertIterator GrandCanonicalSettings::_make_query_samplers(
+    const PrimClex &primclex,
+    jsonParserIteratorType it,
+    SamplerInsertIterator result) const {
+
+    size_type data_maxlength = max_data_length();
+    double must_converge;
+    double prec;
+    std::string prop_name = (*it)["quantity"].template get<std::string>();
+    MonteSampler *ptr;
+
+    const auto &dict = primclex.settings().query_handler<Configuration>().dict();
+
+    typedef QueryMonteSampler::Formatter FormatterType;
+    std::shared_ptr<FormatterType> formatter = std::make_shared<FormatterType>(
+                                                 dict.parse(prop_name));
+
+    // make example config to test:
+    Supercell tscel(const_cast<PrimClex *>(&primclex), simulation_cell_matrix());
+    Configuration config(tscel);
+    config.init_occupation();
+    Eigen::VectorXd test = formatter->get().evaluate_as_matrix(config).row(0);
+    auto col = formatter->get().col_header(config);
+
+    if(test.size() != col.size()) {
+      std::stringstream ss;
+      ss << "Error constructing Monte Carlo samplers from query: '" << prop_name << "'";
+      Log &err_log = primclex.err_log();
+      primclex.err_log() << ss.str();
+      primclex.err_log() << "headers: " << col << std::endl;
+      primclex.err_log() << "  Some queries may not be available for sampling at this time." << std::endl;
+      throw std::runtime_error(ss.str());
+    }
+
+    for(int i = 0; i < col.size(); ++i) {
+
+      std::string print_name = col[i];
+      boost::algorithm::trim(print_name);
+
+      std::tie(must_converge, prec) = _get_precision(it);
+
+      // if 'must converge'
+      if(must_converge) {
+        ptr = new QueryMonteSampler(formatter, i, print_name, prec, confidence(), data_maxlength);
+      }
+      else {
+        ptr = new QueryMonteSampler(formatter, i, print_name, confidence(), data_maxlength);
+      }
+
+      *result++ = std::make_pair(print_name, notstd::cloneable_ptr<MonteSampler>(ptr));
+
+    }
+
+    return result;
+
   }
 
 

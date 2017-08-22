@@ -33,7 +33,7 @@ class IncarError(Exception):
     def __str__(self):
         return self.msg
 
-class Incar:
+class Incar(object):
     """
     The INCAR class contains:
         tags: a dict of all INCAR settings
@@ -91,7 +91,12 @@ class Incar:
                     temp = []
                     for value in self.tags[tag].split():
                         try:
-                            temp.append(float(value))
+                            item=value.split('*')
+                            if len(item)==1:
+                                temp.append(float(value))
+                            else:
+                                if item[0] != 0:
+                                    temp.append(str(item[0])+'*'+str(float(item[1])))
                         except ValueError:
                             raise IncarError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to float list")
                     self.tags[tag] = temp
@@ -131,33 +136,53 @@ class Incar:
         if sort == False:
             # for each 'tag' in the IndividualSpecies, create a list in self.tags
             for key in species.values()[0].tags.keys():
-                self.tags[key] = []
-                if key.lower() in (VASP_TAG_SPECF_LIST + VASP_TAG_SPECI_LIST):
-                    # add the value of the 'tag' for each species into the self.tags list
-                    for spec in poscar.type_atoms_alias:
-                        self.tags[key].append(species[spec].tags[key])
-                else:
-                    # add the value of the 'tag' for each atom into the self.tags list
+                if key.lower() in (VASP_TAG_INT_LIST + VASP_TAG_FLOAT_LIST):
+                    self.tags[key] = 0.
                     for site in poscar.basis:
-                        self.tags[key].append( species[site.occupant].tags[key] )
+                        self.tags[key] += float(species[site.occupant].tags[key])
+                    if key.lower() in VASP_TAG_INT_LIST:
+                        self.tags[key] = int(self.tags[key])
+                else:
+                    self.tags[key] = []
+                    if key.lower() in (VASP_TAG_SPECF_LIST + VASP_TAG_SPECI_LIST):
+                        # add the value of the 'tag' for each species into the self.tags list
+                        for spec in poscar.type_atoms_alias:
+                            self.tags[key].append(species[spec].tags[key])
+                    else:
+                        # add the value of the 'tag' for each atom into the self.tags list
+                        for site in poscar.basis:
+                            self.tags[key].append( species[site.occupant].tags[key] )
         else:
             pos = poscar.basis_dict()
             # for each 'tag' in the IndividualSpecies, create a list in self.tags
             for key in species.values()[0].tags.keys():
             # for key in species[species.keys()[0]].tags.keys():
-                self.tags[key] = []
-                # add the value of the 'tag' for each atom into the self.tags list
-                for alias in sorted(pos.keys()):
-                    if key.lower() in (VASP_TAG_SPECF_LIST + VASP_TAG_SPECI_LIST):
-                      # for species-specific tags, use the value specified for the
-                      # species whose pseudopotential is being used for this alias
-                      for name in species.keys():
-                        if species[name].alias == alias and species[name].write_potcar:
-                          self.tags[key].append(species[name].tags[key])
-                          break
-                    else:
-                        for site in pos[alias]:
-                            self.tags[key].append( species[site.occupant].tags[key] )
+                if key.lower() in (VASP_TAG_INT_LIST + VASP_TAG_FLOAT_LIST):
+                    self.tags[key] = 0.
+                    for site in poscar.basis:
+                        self.tags[key] += float(species[site.occupant].tags[key])
+                    if key.lower() in VASP_TAG_INT_LIST:
+                        self.tags[key] = int(self.tags[key])
+                else:
+                    self.tags[key] = []
+                    # add the value of the 'tag' for each atom into the self.tags list
+                    for alias in sorted(pos.keys()):
+                        if key.lower() in (VASP_TAG_SPECF_LIST + VASP_TAG_SPECI_LIST):
+                          # for species-specific tags, use the value specified for the
+                          # species whose pseudopotential is being used for this alias
+                          for name in species.keys():
+                            if species[name].alias == alias and species[name].write_potcar:
+                              self.tags[key].append(species[name].tags[key])
+                              break
+                        else:
+                            for name in species.keys():
+                                count=0
+                                for site in pos[alias]:
+                                    if site.occupant == name:
+                                        count += 1
+                                if species[name].alias == alias:
+                                    if count > 0:
+                                        self.tags[key].append( str(count) + "*" + str(species[name].tags[key]) )
 
     def write(self, filename):
         try:

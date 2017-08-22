@@ -20,14 +20,11 @@ namespace CASM {
   }
 
   /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
-  GrandCanonicalSettings::GrandCanonicalSettings(const fs::path &read_path) :
+  GrandCanonicalSettings::GrandCanonicalSettings(const PrimClex &primclex, const fs::path &read_path) :
     EquilibriumMonteSettings(read_path) {
 
-    DirectoryStructure dir(root());
-    CompositionAxes axes(dir.composition_axes());
-
-    if(axes.has_current_axes) {
-      m_comp_converter = axes.curr;
+    if(primclex.has_composition_axes()) {
+      m_comp_converter = primclex.composition_axes();
     }
     else {
       throw std::runtime_error("No composition axes selected.");

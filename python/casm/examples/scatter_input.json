@@ -1,0 +1,30 @@
+{
+  "figure_kwargs": {
+    "plot_height": 400,
+    "plot_width": 800,
+    "tools": "crosshair,pan,reset,resize,box_zoom"
+  },
+  "series": [
+    {
+      "project": null,
+      "selection": null,
+      "x": "comp(a)",
+      "y": "formation_energy",
+      "tooltips": [
+        "scel_size",
+        "volume_relaxation"
+      ],
+      "legend":"formation_energy"
+    },
+    {
+      "project": null,
+      "selection": null,
+      "x": "comp(a)",
+      "y": "clex(formation_energy)",
+      "tooltips": [
+        "scel_size",
+        "volume_relaxation"
+      ]
+    }
+  ]
+}

@@ -1,21 +1,28 @@
 ### Set environment variables recognized by CASM during installation and use
 
-#  Recognized by install scripts and 'casm' CLI executable for CASM install location (headers and shared libraries)
+#  Recognized by scons install scripts and 'casm' CLI executable for CASM install
+#  location assuming $CASM_PREFIX/include for headers and $CASM_PREFIX/lib for libcasm
 #  Order of precedence:
-#    1) $CASM_PREFIX
-#    2) "/usr/local"
+#    1) $CASM_INCLUDEDIR, $CASM_LIBDIR
+#    2) $CASM_PREFIX/include, $CASM_PREFIX/lib
+#    3) "/usr/local"
 #
 #export CASM_PREFIX="/usr/local"
+#export CASM_INCLUDEDIR="/usr/local/include"
+#export CASM_LIBDIR="/usr/local/lib"
 
 
-#  Recognized by install scripts and 'casm' CLI executable for locating boost install location
+#  Recognized by install scripts and 'casm' CLI executable for locating boost 
+#  install location
 #  Order of precedence:
-#    1) $CASM_BOOST_PREFIX
-#    2) "" (default uses system defaults)
+#    1) $CASM_BOOST_INCLUDEDIR, $CASM_BOOST_LIBDIR
+#    2) $CASM_BOOST_PREFIX/include $CASM_BOOST_PREFIX/lib
+#    3) "" (default uses system defaults)
 #
 #export CASM_BOOST_PREFIX=""
-
-# 
+#export CASM_BOOST_INCLUDEDIR=""
+#export CASM_BOOST_LIBDIR=""
+ 
 
 #  Recognized by install scripts. Use this if linking to boost libraries compiled without c++11. If defined, (i.e. CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1) will compile with -DBOOST_NO_CXX11_SCOPED_ENUMS option.
 #  Order of precedence:
