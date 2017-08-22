@@ -88,12 +88,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::tie(a, b, c) = primclex.prim().lattice().vectors();
     Supercell scel_vol2 {&primclex, Lattice(2 * a, 1 * b, 1 * c)};
     Configuration config(scel_vol2);
+    config.init_occupation();
 
     // Scel sym_compare
-    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(
-      scel_vol2.prim_grid(),
-      scel_vol2.crystallography_tol());
-
+    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2);
 
     // Get the config factor group (should just be all Supercell operations)
     std::vector<PermuteIterator> _config_fg = config.factor_group();
@@ -108,7 +106,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::vector<Index> cluster_group_size;
     Index index = 0;
     for(const auto &orbit : orbits) {
-
       // Test make_invariant_subgroup using orbit generators
       {
         SymGroup cluster_group = make_invariant_subgroup(
@@ -135,7 +132,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
       index++;
     }
-    //test::print_computed_result(std::cout, "cluster_group_size", cluster_group_size);
+    test::print_computed_result(std::cout, "cluster_group_size", cluster_group_size);
     BOOST_CHECK_EQUAL(true, true);
   }
 }
