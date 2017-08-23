@@ -876,7 +876,7 @@ namespace CASM {
   template<typename DataObject>
   GenericDatumFormatter<std::string, DataObject> alias_or_name() {
     return GenericDatumFormatter<std::string, DataObject>(
-             "name_or_alias",
+             "alias_or_name",
              traits<DataObject>::name + " alias (if exists), else name",
     [](const DataObject & obj)->std::string {
       std::string alias = obj.alias();

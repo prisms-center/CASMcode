@@ -41,19 +41,13 @@ namespace CASM {
       SelectionIterator() {}
 
       /// \brief Name of object the iterator points at
-      std::string name() const {
-        return m_it->first;
-      }
+      std::string name() const;
 
       /// \brief Reference to value 'is_selected'
-      bool_type &is_selected() {
-        return m_it->second;
-      }
+      bool_type &is_selected();
 
       /// \brief Reference to value 'is_selected'
-      bool is_selected() const {
-        return m_it->second;
-      }
+      bool is_selected() const;
 
     private:
 
@@ -62,38 +56,19 @@ namespace CASM {
       friend Selection<ObjType>;
 
       /// Construct iterator
-      SelectionIterator(const Selection<ObjType> &_list, BaseIterator _it, bool _selected_only) :
-        m_list(&_list),
-        m_it(_it),
-        m_selected_only(_selected_only) {
-        if(m_selected_only && m_it != m_list->data().end() && m_it->second == false) {
-          increment();
-        }
-      }
+      SelectionIterator(const Selection<ObjType> &_list, BaseIterator _it, bool _selected_only);
 
       /// boost::iterator_facade implementation
-      void increment() {
-        ++m_it;
-        while(m_selected_only && m_it != m_list->data().end() && m_it->second == false) {
-          ++m_it;
-        }
-      }
+      void increment();
 
       /// boost::iterator_facade implementation
-      void decrement() {
-        --m_it;
-        while(m_selected_only && m_it != m_list->data().begin() && m_it->second == false) {
-          --m_it;
-        }
-      }
+      void decrement();
 
       /// boost::iterator_facade implementation
       const ObjType &dereference() const;
 
       /// boost::iterator_facade implementation
-      bool equal(const SelectionIterator &B) const {
-        return m_it == B.m_it;
-      }
+      bool equal(const SelectionIterator &B) const;
 
       /*
       long distance_to(const SelectionIterator &B) const {
@@ -139,7 +114,7 @@ namespace CASM {
       typedef Index size_type;
 
       /// \brief Default construct into invalid state
-      Selection() {};
+      Selection();
 
       /// \brief Use default ObjType database
       Selection(const PrimClex &_primclex, fs::path selection_path = "MASTER");
@@ -147,62 +122,30 @@ namespace CASM {
       /// \brief Use specified ObjType database
       Selection(Database<ObjType> &_db, fs::path selection_path = "MASTER");
 
-      const PrimClex &primclex() const {
-        return *m_primclex;
-      }
+      const PrimClex &primclex() const;
 
-      Database<ObjType> &db() const {
-        return *m_db;
-      }
+      Database<ObjType> &db() const;
 
-      boost::iterator_range<iterator> all() {
-        return boost::make_iterator_range(
-                 iterator(*this, m_data.begin(), false),
-                 iterator(*this, m_data.end(), false));
-      }
+      boost::iterator_range<iterator> all();
 
-      boost::iterator_range<const_iterator> all() const {
-        return boost::make_iterator_range(
-                 const_iterator(*this, m_data.begin(), false),
-                 const_iterator(*this, m_data.end(), false));
-      }
+      boost::iterator_range<const_iterator> all() const;
 
-      boost::iterator_range<iterator> selected() {
-        return boost::make_iterator_range(
-                 iterator(*this, m_data.begin(), true),
-                 iterator(*this, m_data.end(), true));
-      }
+      boost::iterator_range<iterator> selected();
 
-      boost::iterator_range<const_iterator> selected() const {
-        return boost::make_iterator_range(
-                 const_iterator(*this, m_data.begin(), true),
-                 const_iterator(*this, m_data.end(), true));
-      }
+      boost::iterator_range<const_iterator> selected() const;
 
 
-      map_type &data() {
-        return m_data;
-      }
+      map_type &data();
 
-      const map_type &data() const {
-        return m_data;
-      }
+      const map_type &data() const;
 
-      Index size() const {
-        return m_data.size();
-      }
+      Index size() const;
 
       Index selected_size() const;
 
+      const std::vector<std::string> &col_headers() const;
 
-
-      const std::vector<std::string> &col_headers() const {
-        return m_col_headers;
-      }
-
-      const std::string &name() const {
-        return m_name;
-      }
+      const std::string &name() const;
 
 
       /// \brief True if obj is in Selection and is selected; false otherwise

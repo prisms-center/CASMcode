@@ -218,6 +218,7 @@ namespace CASM {
 
       if(!fs::exists(config_list_path)) {
         m_is_open = true;
+        master_selection() = Selection<Configuration>(*this);
         return *this;
       }
 
@@ -267,6 +268,10 @@ namespace CASM {
 
     void jsonDatabase<Configuration>::commit() {
 
+      if(!m_is_open) {
+        throw std::runtime_error("Error in jsonDatabase<Configuration>::commit(): Database not open");
+      }
+
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
       fs::path config_list_path = dir.obj_list<Configuration>();
       if(primclex().db_handler().db<Supercell>(traits<jsonDB>::name).size() == 0) {
@@ -275,7 +280,6 @@ namespace CASM {
       }
 
       jsonParser json;
-
       if(fs::exists(config_list_path)) {
         json.read(config_list_path);
       }
@@ -302,12 +306,16 @@ namespace CASM {
       this->write_aliases();
       auto handler = primclex().settings().query_handler<Configuration>();
       handler.set_selected(master_selection());
+
+      bool force = true;
+      bool write_json = false;
+      bool only_selected = false;
       master_selection().write(
         handler.dict(),
-        true,
+        force,
         primclex().dir().template master_selection<Configuration>(),
-        false,
-        false);
+        write_json,
+        only_selected);
     }
 
     void jsonDatabase<Configuration>::close() {
@@ -473,6 +481,7 @@ namespace CASM {
       fs::path diff_trans_list_path = dir.obj_list<PrimPeriodicDiffTransOrbit>();
       if(!fs::exists(diff_trans_list_path)) {
         m_is_open = true;
+        master_selection() = Selection<Kinetics::PrimPeriodicDiffTransOrbit>(*this);
         return *this;
       }
       jsonParser json(diff_trans_list_path);
@@ -665,6 +674,7 @@ namespace CASM {
 
       if(!fs::exists(diff_trans_config_list_path)) {
         m_is_open = true;
+        master_selection() = Selection<Kinetics::DiffTransConfiguration>(*this);
         return *this;
       }
 

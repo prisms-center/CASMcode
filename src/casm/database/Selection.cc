@@ -48,11 +48,75 @@ namespace CASM {
     }
 
 
+
+    // --- template<typename ObjType, typename BaseIterator> class SelectionIterator ---
+
+    /// \brief Name of object the iterator points at
+    template<typename ObjType, typename BaseIterator>
+    std::string SelectionIterator<ObjType, BaseIterator>::name() const {
+      return m_it->first;
+    }
+
+    /// \brief Reference to value 'is_selected'
+    template<typename ObjType, typename BaseIterator>
+    typename SelectionIterator<ObjType, BaseIterator>::bool_type &
+    SelectionIterator<ObjType, BaseIterator>::is_selected() {
+      return m_it->second;
+    }
+
+    /// \brief Reference to value 'is_selected'
+    template<typename ObjType, typename BaseIterator>
+    bool SelectionIterator<ObjType, BaseIterator>::is_selected() const {
+      return m_it->second;
+    }
+
+    /// Construct iterator
+    template<typename ObjType, typename BaseIterator>
+    SelectionIterator<ObjType, BaseIterator>::SelectionIterator(const Selection<ObjType> &_list, BaseIterator _it, bool _selected_only) :
+      m_list(&_list),
+      m_it(_it),
+      m_selected_only(_selected_only) {
+      if(m_selected_only && m_it != m_list->data().end() && m_it->second == false) {
+        increment();
+      }
+    }
+
+    /// boost::iterator_facade implementation
+    template<typename ObjType, typename BaseIterator>
+    void SelectionIterator<ObjType, BaseIterator>::increment() {
+      ++m_it;
+      while(m_selected_only && m_it != m_list->data().end() && m_it->second == false) {
+        ++m_it;
+      }
+    }
+
+    /// boost::iterator_facade implementation
+    template<typename ObjType, typename BaseIterator>
+    void SelectionIterator<ObjType, BaseIterator>::decrement() {
+      --m_it;
+      while(m_selected_only && m_it != m_list->data().begin() && m_it->second == false) {
+        --m_it;
+      }
+    }
+
     /// boost::iterator_facade implementation
     template<typename ObjType, typename BaseIterator>
     const ObjType &SelectionIterator<ObjType, BaseIterator>::dereference() const {
       return *(m_list->db().find(m_it->first));
     }
+
+    /// boost::iterator_facade implementation
+    template<typename ObjType, typename BaseIterator>
+    bool SelectionIterator<ObjType, BaseIterator>::equal(const SelectionIterator &B) const {
+      return m_it == B.m_it;
+    }
+
+
+    // --- template<typename ObjType> class Selection ---
+
+    /// \brief Default construct into invalid state
+    template<typename ObjType>
+    Selection<ObjType>::Selection() : m_db(nullptr), m_primclex(nullptr) {};
 
     /// \brief Use default ObjType database
     template<typename ObjType>
@@ -114,6 +178,72 @@ namespace CASM {
           select_file.close();
         }
       }
+    }
+
+    template<typename ObjType>
+    const PrimClex &Selection<ObjType>::primclex() const {
+      return *m_primclex;
+    }
+
+    template<typename ObjType>
+    Database<ObjType> &Selection<ObjType>::db() const {
+      if(!m_db) {
+        throw std::runtime_error("Error in Selection<ObjType>::db(): Database pointer invalid");
+      }
+      return *m_db;
+    }
+
+    template<typename ObjType>
+    boost::iterator_range<typename Selection<ObjType>::iterator> Selection<ObjType>::all() {
+      return boost::make_iterator_range(
+               iterator(*this, m_data.begin(), false),
+               iterator(*this, m_data.end(), false));
+    }
+
+    template<typename ObjType>
+    boost::iterator_range<typename Selection<ObjType>::const_iterator> Selection<ObjType>::all() const {
+      return boost::make_iterator_range(
+               const_iterator(*this, m_data.begin(), false),
+               const_iterator(*this, m_data.end(), false));
+    }
+
+    template<typename ObjType>
+    boost::iterator_range<typename Selection<ObjType>::iterator> Selection<ObjType>::selected() {
+      return boost::make_iterator_range(
+               iterator(*this, m_data.begin(), true),
+               iterator(*this, m_data.end(), true));
+    }
+
+    template<typename ObjType>
+    boost::iterator_range<typename Selection<ObjType>::const_iterator> Selection<ObjType>::selected() const {
+      return boost::make_iterator_range(
+               const_iterator(*this, m_data.begin(), true),
+               const_iterator(*this, m_data.end(), true));
+    }
+
+    template<typename ObjType>
+    typename Selection<ObjType>::map_type &Selection<ObjType>::data() {
+      return m_data;
+    }
+
+    template<typename ObjType>
+    const typename Selection<ObjType>::map_type &Selection<ObjType>::data() const {
+      return m_data;
+    }
+
+    template<typename ObjType>
+    Index Selection<ObjType>::size() const {
+      return m_data.size();
+    }
+
+    template<typename ObjType>
+    const std::vector<std::string> &Selection<ObjType>::col_headers() const {
+      return m_col_headers;
+    }
+
+    template<typename ObjType>
+    const std::string &Selection<ObjType>::name() const {
+      return m_name;
     }
 
     template<typename ObjType>
@@ -330,7 +460,6 @@ namespace CASM {
       else {
         _out << tformat(all().begin(), all().end());
       }
-
     }
 
     /// \brief Write selection to file

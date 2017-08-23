@@ -10,6 +10,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
+#include "casm/clex/ConfigIO.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -24,6 +25,79 @@
 using namespace CASM;
 
 BOOST_AUTO_TEST_SUITE(DataFormatterDictionaryTest)
+
+BOOST_AUTO_TEST_CASE(Test0) {
+  DataFormatterDictionary<Configuration> dict;
+  dict.insert(ConfigIO::configname(), ConfigIO::scel_size(), alias_or_name<Configuration>());
+
+  test::FCCTernaryProj proj;
+  proj.check_init();
+
+  PrimClex primclex(proj.dir, null_log());
+  const Structure &prim(primclex.prim());
+  primclex.settings().set_crystallography_tol(1e-5);
+
+  Eigen::Vector3d a, b, c;
+  std::tie(a, b, c) = prim.lattice().vectors();
+
+  // format one config
+  {
+    Supercell scel(&primclex, Lattice(a, b, c));
+    std::vector<Configuration> config_vec;
+    for(Index i = 0; i < 3; ++i) {
+      config_vec.emplace_back(scel);
+      config_vec.back().init_occupation();
+    }
+
+    DataFormatter<Configuration> formatter {dict.parse("configname scel_size alias_or_name")};
+
+    {
+      std::stringstream ss;
+      ss << formatter(config_vec[0]);
+
+      std::string result =
+        "#               configname    scel_size             alias_or_name\n"
+        "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n";
+      BOOST_CHECK_EQUAL(ss.str(), result);
+    }
+
+    {
+      std::stringstream ss;
+      ss << formatter(config_vec.begin(), config_vec.end());
+
+      std::string result =
+        "#               configname    scel_size             alias_or_name\n"
+        "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n"
+        "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n"
+        "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n";
+      BOOST_CHECK_EQUAL(ss.str(), result);
+    }
+
+    {
+      jsonParser json;
+      json = formatter(config_vec[0]);
+
+      jsonParser result;
+      result["configname"] = "SCEL1_1_1_1_0_0_0/none";
+      result["scel_size"] = 1;
+      result["alias_or_name"] = "SCEL1_1_1_1_0_0_0/none";
+      BOOST_CHECK_EQUAL(json, result);
+    }
+
+    {
+      jsonParser json;
+      json = formatter(config_vec.begin(), config_vec.end());
+
+      jsonParser result = jsonParser::array(3, jsonParser::object());
+      for(int i = 0; i < 3; ++i) {
+        result[i]["configname"] = "SCEL1_1_1_1_0_0_0/none";
+        result[i]["scel_size"] = 1;
+        result[i]["alias_or_name"] = "SCEL1_1_1_1_0_0_0/none";
+      }
+      BOOST_CHECK_EQUAL(json, result);
+    }
+  }
+}
 
 BOOST_AUTO_TEST_CASE(Test1) {
 
