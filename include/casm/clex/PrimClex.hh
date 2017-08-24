@@ -1,6 +1,7 @@
 #ifndef CASM_PrimClex
 #define CASM_PrimClex
 
+#include <memory>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
 

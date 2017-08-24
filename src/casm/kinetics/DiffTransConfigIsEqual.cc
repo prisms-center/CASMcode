@@ -290,13 +290,13 @@ namespace CASM {
 
     /// \brief Check if dtconfig == A*dtconfig
     bool DiffTransConfigIsEqualSimple::operator()(const PermuteIterator &A) const {
-      auto tmp {copy_apply(A, *m_dtconfig)};
+      DiffTransConfiguration tmp {copy_apply(A, *m_dtconfig)};
       return (*this)(tmp);
     }
 
     /// \brief Check if A*dtconfig == B*dtconfig
     bool DiffTransConfigIsEqualSimple::operator()(const PermuteIterator &A, const PermuteIterator &B) const {
-      auto tmp {copy_apply(A, *m_dtconfig)};
+      DiffTransConfiguration tmp {copy_apply(A, *m_dtconfig)};
       DiffTransConfigIsEqualSimple f(tmp);
       if(!f(copy_apply(B, *m_dtconfig))) {
         m_is_less = f.is_less();
@@ -309,7 +309,7 @@ namespace CASM {
     bool DiffTransConfigIsEqualSimple::operator()(
       const PermuteIterator &A,
       const DiffTransConfiguration &other) const {
-      auto tmp {copy_apply(A, other)};
+      DiffTransConfiguration tmp {copy_apply(A, other)};
       return (*this)(tmp);
     }
 
@@ -318,7 +318,7 @@ namespace CASM {
       const PermuteIterator &A,
       const PermuteIterator &B,
       const DiffTransConfiguration &other) const {
-      auto tmp {copy_apply(A, *m_dtconfig)};
+      DiffTransConfiguration tmp {copy_apply(A, *m_dtconfig)};
       DiffTransConfigIsEqualSimple f(tmp);
       if(!f(copy_apply(B, other))) {
         m_is_less = f.is_less();

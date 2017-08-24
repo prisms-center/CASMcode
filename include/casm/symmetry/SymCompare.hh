@@ -77,6 +77,9 @@ namespace CASM {
     typedef typename traits<MostDerived>::Element Element;
     typedef typename traits<Element>::InvariantsType InvariantsType;
 
+
+    SymCompare() : m_integral_tau(Eigen::Vector3l::Zero(3)) {}
+
     /// \brief Prepare an element for comparison
     ///
     /// - For instance, sort and/or translate a cluster so comparison may be
@@ -185,7 +188,7 @@ namespace CASM {
       return *this;
     }
 
-    mutable UnitCell m_integral_tau = Eigen::Vector3l::Zero(3);
+    mutable UnitCell m_integral_tau;
   };
 
 
