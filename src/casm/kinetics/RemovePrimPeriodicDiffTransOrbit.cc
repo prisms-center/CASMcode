@@ -11,22 +11,25 @@ namespace CASM {
     Remove<PrimPeriodicDiffTransOrbit>::Remove(const PrimClex &_primclex, fs::path report_dir, Log &_file_log) :
       m_primclex(_primclex), m_report_dir(report_dir), m_file_log(_file_log) {}
 
-    const std::string Remove<PrimPeriodicDiffTransOrbit>::desc =
+    std::string Remove<PrimPeriodicDiffTransOrbit>::desc() {
 
-      "Remove a difftrans, including all enumerated difftransconfigurations and calculation results: \n\n"
+      std::string res =
+        "Remove a difftrans, including all enumerated difftransconfigurations and calculation results: \n\n"
 
-      "  'casm remove --type diff_trans' options: \n\n"
+        "  'casm remove --type diff_trans' options: \n\n"
 
-      "  - Diffusion transformations to be erased can be specified with the --names and \n"
-      "    --selection options.\n"
-      "  - Use without additional options to remove all enumerated difftransconfigurations\n"
-      "    that do not have any associated files or data for each specified diffusion transformation.\n"
-      "    If no data or files, erase diffusion transformation.\n"
-      "  - Use --data (-d) to remove all difftransconfiguration data, but not enumerated \n"
-      "    configurations, for each specified diffusion transformation. \n"
-      "  - Use --force (-f) to remove specified diffusion transformations including all data and \n"
-      "    enumerated configurations. \n"
-      "  - Use --dry-run (-n) to do a \"dry-run\". \n\n";
+        "  - Diffusion transformations to be erased can be specified with the --names and \n"
+        "    --selection options.\n"
+        "  - Use without additional options to remove all enumerated difftransconfigurations\n"
+        "    that do not have any associated files or data for each specified diffusion transformation.\n"
+        "    If no data or files, erase diffusion transformation.\n"
+        "  - Use --data (-d) to remove all difftransconfiguration data, but not enumerated \n"
+        "    configurations, for each specified diffusion transformation. \n"
+        "  - Use --force (-f) to remove specified diffusion transformations including all data and \n"
+        "    enumerated configurations. \n"
+        "  - Use --dry-run (-n) to do a \"dry-run\". \n\n";
+      return res;
+    }
 
     /// Helper struct base class
     struct ErasePrimPeriodicDiffTransOrbitConfigsBase {

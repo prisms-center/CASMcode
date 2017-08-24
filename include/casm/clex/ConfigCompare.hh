@@ -19,9 +19,8 @@ namespace CASM {
 
   public:
 
-    template<typename... Args>
-    explicit GenericConfigCompare(Args &&... args) :
-      m_eq(std::forward<Args>(args)...) {}
+    explicit GenericConfigCompare(const IsEqualImpl &_eq) :
+      m_eq(_eq) {}
 
     template<typename... Args>
     bool operator()(Args &&... args) const {

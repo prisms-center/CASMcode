@@ -67,7 +67,7 @@ namespace CASM {
     class Remove : public RemoveT<ConfigType> {
     public:
       Remove(const PrimClex &primclex, fs::path report_dir, Log &_file_log);
-      static const std::string desc;
+      static std::string desc();
       static int run(const PrimClex &, const Completer::RmOption &opt);
     };
   }

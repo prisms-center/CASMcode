@@ -85,22 +85,25 @@ namespace CASM {
       RemoveT<ConfigType>(primclex, report_dir, _file_log) {}
 
     template<typename ConfigType>
-    const std::string Remove<ConfigType>::desc = std::string("") +
+    std::string Remove<ConfigType>::desc() {
+      std::string res =
+        "Remove enumerated configurations and calculation results: \n\n"
 
-                                                 "Remove enumerated configurations and calculation results: \n\n"
+        "  'casm remove --type " + traits<ConfigType>::short_name + "' options: \n\n"
 
-                                                 "  'casm remove --type " + traits<ConfigType>::short_name + "' options: \n\n"
+        "  - Configurations to be erased can be specified with the --names and \n"
+        "    --selection options.\n"
+        "  - Use without additional options to only remove enumerated configurations\n"
+        "    that do not have any associated files or data.\n"
+        "  - Use --data (-d) to remove data only, not enumerated configurations. \n"
+        "  - Use --force (-f) to remove data and enumerated configurations. \n"
+        "  - Use --dry-run (-n) to do a \"dry-run\". \n\n"
 
-                                                 "  - Configurations to be erased can be specified with the --names and \n"
-                                                 "    --selection options.\n"
-                                                 "  - Use without additional options to only remove enumerated configurations\n"
-                                                 "    that do not have any associated files or data.\n"
-                                                 "  - Use --data (-d) to remove data only, not enumerated configurations. \n"
-                                                 "  - Use --force (-f) to remove data and enumerated configurations. \n"
-                                                 "  - Use --dry-run (-n) to do a \"dry-run\". \n\n"
+        "  After removing a configuration it may be re-enumerated but will have a new\n"
+        "  index because indices will not be repeated.\n\n";
 
-                                                 "  After removing a configuration it may be re-enumerated but will have a new\n"
-                                                 "  index because indices will not be repeated.\n\n";
+      return res;
+    }
 
     template<typename ConfigType>
     int Remove<ConfigType>::run(
