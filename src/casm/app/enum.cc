@@ -22,7 +22,7 @@ namespace CASM {
        "Print extended usage description. "
        "Use '--desc MethodName [MethodName2...]' for detailed option description. "
        "Partial matches of method names will be included.")
-      ("method", po::value<std::string>(&m_method), "Method to use")
+      ("method,m", po::value<std::string>(&m_method), "Method to use: Can use number shortcuts in this option.")
       ("min", po::value<int>(&m_min_volume)->default_value(1), "Min volume")
       ("max", po::value<int>(&m_max_volume), "Max volume")
       ("filter",
@@ -96,8 +96,10 @@ namespace CASM {
         if(!root.empty()) {
           args.log << "The enumeration methods are:\n\n";
 
+          int counter = 0;
           for(const auto &e : *enumerators) {
-            args.log << "  " << e.name() << std::endl;
+            args.log << "  " << counter << ") " << e.name() << std::endl;
+            ++counter;
           }
         }
 
@@ -127,8 +129,10 @@ namespace CASM {
           if(!root.empty()) {
             args.log << "No match found. The enumeration methods are:\n\n";
 
+            int counter = 0;
             for(const auto &e : *enumerators) {
-              args.log << "  " << e.name() << std::endl;
+              args.log << "  " << counter << ") " << e.name() << std::endl;
+              ++counter;
             }
           }
         }
@@ -159,8 +163,10 @@ namespace CASM {
         if(!root.empty()) {
           args.log << "The enumeration methods are:\n\n";
 
+          int counter = 0;
           for(const auto &e : *enumerators) {
-            args.log << "  " << e.name() << std::endl;
+            args.log << "  " << counter << ") " << e.name() << std::endl;
+            ++counter;
           }
 
 
@@ -193,11 +199,47 @@ namespace CASM {
     else if(vm.count("input")) {
       input = jsonParser::parse(enum_opt.input_str());
     }
-    int res = enumerators->find(enum_opt.method())->run(*primclex, input, enum_opt);
+    //int res = enumerators->find(enum_opt.method())->run(*primclex, input, enum_opt);
+    auto lambda = [&](const EnumInterfaceBase & e) {
+      return e.name().substr(0, enum_opt.method().size()) == enum_opt.method();
+    };
+    int count = std::count_if(enumerators->begin(), enumerators->end(), lambda);
 
-    args.log << std::endl;
+    if(count == 1) {
+      auto it = std::find_if(enumerators->begin(), enumerators->end(), lambda);
 
-    return res;
+      return it->run(*primclex, input, enum_opt);
+    }
+    else if(count < 1) {
+      // allows for number aliasing
+      try {
+        int m = stoi(enum_opt.method());
+        if(m < std::distance(enumerators->begin(), enumerators->end()) &&
+           m >= 0) {
+          auto it = enumerators->begin();
+          for(int k = 0; k < m; ++k) {
+            ++it;
+          }
+          return it->run(*primclex, input, enum_opt);
+        }
+      }
+      catch(...) {}
+      args.log << "No match found. The enumeration methods are:\n\n";
+
+      int counter = 0;
+      for(const auto &e : *enumerators) {
+        args.log << "  " << counter << ") " << e.name() << std::endl;
+        ++counter;
+      }
+      return ERR_INVALID_ARG;
+
+    }
+    else if(count > 1) {
+      args.err_log << "Multiple matches found for --method " << std::endl;
+      return ERR_INVALID_ARG;
+    }
+    throw std::runtime_error("Unknown error in EnumCommand::run");
+
   };
 
 }
