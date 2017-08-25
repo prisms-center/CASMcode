@@ -97,11 +97,11 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::vector<PermuteIterator> _config_fg = config.factor_group();
     SymGroup config_fg = make_sym_group(_config_fg.begin(), _config_fg.end());
 
-    // - these values have not been checked for correctness, they just check for consistency
-    std::vector<Index> expected_cluster_group_size = {16, 4, 4, 4, 2, 4, 2, 2, 1,
-                                                      4, 2, 2, 2, 4, 2, 2, 2, 1, 2, 1, 1, 2, 4, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1,
-                                                      1, 1, 2, 1, 1, 1, 1, 4, 2, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-                                                      2, 4, 2, 1, 2, 2, 2, 1, 2, 1, 1, 1, 2, 2, 1
+    // - these values make sense with the above expectations hexagonal symmetry has been broken by super cell nothing else
+    std::vector<Index> expected_cluster_group_size = {16, 4, 4, 4, 2, 4, 4, 2, 2,
+                                                      4, 2, 4, 4, 4, 2, 2, 2, 1, 2, 1, 2, 2, 4, 2, 2, 1, 2, 1, 1, 1, 2, 2, 1, 1,
+                                                      1, 2, 2, 1, 1, 2, 1, 4, 2, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,
+                                                      2, 4, 2, 2, 2, 2, 2, 2, 4, 1, 1, 2, 2, 2, 1
                                                      };
     std::vector<Index> cluster_group_size;
     Index index = 0;

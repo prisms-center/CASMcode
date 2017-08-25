@@ -51,12 +51,13 @@ namespace CASM {
       if(result.second) {
 
         const value_type &obj = *result.first;
-
+        std::cout << obj.name() << std::endl;
         // update
         m_name_to_scel.insert(std::make_pair(obj.name(), result.first));
+        std::cout << obj.name() << std::endl;
         master_selection().data().emplace(obj.name(), 0);
 
-
+        std::cout << obj.name() << std::endl;
       }
 
       return std::make_pair(_iterator(result.first), result.second);
