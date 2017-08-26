@@ -165,6 +165,12 @@ class Neb(object):
 
         """
         ## write the selection Interpolation command
+        proj = self.selection.proj
+        args = "enum --method DiffTransConfigInterpolation -i "
+        dict = {"n_images" : self.n_images, "calctype" : self.calctype}
+        args += json.dumps(dict)
+        output = proj.command(args)
+
         # Find required input files in CASM project directory tree
         vaspfiles = casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname,
                                                            self.clex, self.calc_subdir)

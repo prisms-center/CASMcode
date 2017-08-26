@@ -73,6 +73,7 @@ namespace CASM {
                                           const Completer::EnumOption &enum_optconst) {
 
       // get selection filename from json/enumoption // do json for now
+      // selcection by names
       // Constrct a DB selection of DiffTransConfiguration from json and enumoption inputs
       DB::Selection<DiffTransConfiguration> sel(primclex);
       int n_images = kwargs["n_images"].get<int>(); // set defaults with get_else
