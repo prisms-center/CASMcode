@@ -345,9 +345,9 @@ namespace CASM {
    * then the symmetry operation matrix will be printed out.
    */
 
-  void Structure::print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag = 1) {
+  void Structure::print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag = 1, double tol = TOL) {
     GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-    asym_unit.generate_asymmetric_unit(basis, factor_group());
+    asym_unit.generate_asymmetric_unit(basis, factor_group(), tol);
 
     stream <<  " Printing symmetry operations that leave each site unchanged:\n \n";
     for(Index i = 0; i < asym_unit.size(); i++) {
@@ -407,7 +407,7 @@ namespace CASM {
    * entire flowertree has the same pivot.
    */
   //***********************************************************
-  void Structure::generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees) {
+  void Structure::generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees, double tol) {
     if(out_trees.size() != 0) {
       std::cerr << "WARNING in Structure::generate_flowertrees_safe" << std::endl;
       std::cerr << "The provided array of SiteOrbitree wasn't empty! Hope nothing important was there..." << std::endl;
@@ -417,7 +417,7 @@ namespace CASM {
 
     //Theres a flowertree for each basis site b
     for(Index b = 0; b < basis.size(); b++) {
-      SiteOrbitree ttree(lattice());    //Weird behavior without this
+      SiteOrbitree ttree(lattice(), tol);   //Weird behavior without this
       ttree.reserve(in_tree.size());
       out_trees.push_back(ttree);
       //We want clusters of every size in the tree, except the 0th term (...right guys?)
@@ -431,7 +431,7 @@ namespace CASM {
         //Push back flower onto tree
         out_trees[b].push_back(tbranch);
         //Get one flower for a given basis site
-        in_tree[s].extract_orbits_including(tsiteclust, out_trees[b].back());   //couldn't get it to work withough directly passing tree.back() (i.e. can't make branch then push_back)
+        in_tree[s].extract_orbits_including(tsiteclust, out_trees[b].back(), tol);  //couldn't get it to work withough directly passing tree.back() (i.e. can't make branch then push_back)
       }
       out_trees[b].get_index();
       out_trees[b].collect_basis_info(*this);
@@ -443,7 +443,7 @@ namespace CASM {
   //***********************************************************
   // Fills an orbitree such that each OrbitBranch corresponds to a basis site and contains all orbits
   // that include that basis site
-  void Structure::generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites) {
+  void Structure::generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites, double tol) {
     Index na, np, nb, ne;
 
     out_tree.clear(); //Added by Ivy 11/07/12
@@ -456,7 +456,7 @@ namespace CASM {
 
     //get asymmetric unit
     GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-    asym_unit.generate_asymmetric_unit(basis, factor_group());
+    asym_unit.generate_asymmetric_unit(basis, factor_group(), tol);
 
 
     for(na = 0; na < asym_unit.size(); na++) {
@@ -472,7 +472,7 @@ namespace CASM {
           continue;
         }
         //std::cout << "Starting to extract petals from OrbitBranch " << np << '\n';
-        in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back());
+        in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back(), tol);
       }
 
 
@@ -498,14 +498,14 @@ namespace CASM {
    */
   //***********************************************************
   // Added by Ivy 10/17/12
-  void Structure::generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites) {
+  void Structure::generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites, double tol) {
     Index na, np;//, nb;
 
     out_tree.clear();
 
     //get asymmetric unit
     GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-    asym_unit.generate_asymmetric_unit(basis, factor_group());
+    asym_unit.generate_asymmetric_unit(basis, factor_group(), tol);
 
     //make room in out_tree for flowers
     out_tree.reserve(asym_unit.size());
@@ -526,7 +526,7 @@ namespace CASM {
         }
 
         //prototype of na orbit
-        in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back());
+        in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back(), tol);
       }
 
     }
@@ -559,7 +559,7 @@ namespace CASM {
    * each of which has clusters from size 1 to n.
    */
   //***********************************************************
-  void Structure::generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees) {  //can we make it const? It would require generate_basis_bouquet to also be const
+  void Structure::generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees, double tol) { //can we make it const? It would require generate_basis_bouquet to also be const
     if(out_trees.size() != 0) {
       std::cerr << "WARNING in Structure::generate_flowertrees_safe" << std::endl;
       std::cerr << "The provided array of SiteOrbitree wasn't empty! Hope nothing important was there..." << std::endl;
@@ -572,14 +572,14 @@ namespace CASM {
     Array<SiteOrbitree> bouquets;
 
     for(Index i = 1; i < (max_clust_size + 1); i++) {
-      SiteOrbitree tbouquet(lattice());
-      generate_basis_bouquet(in_tree, tbouquet, i);
+      SiteOrbitree tbouquet(lattice(), tol);
+      generate_basis_bouquet(in_tree, tbouquet, i, tol);
       bouquets.push_back(tbouquet);
     }
 
     //Pluck a branch off each bouquet for a given basis site and stuff it into a SiteOribitree (this is a flowertree)
     //SiteOrbitree tbouquet=in_tree;   //This is so I don't have to worry about initializing things I'm scared of
-    SiteOrbitree tbouquet(lattice());
+    SiteOrbitree tbouquet(lattice(), tol);
 
     //How many flowertrees do we need? As many as there are basis sites, i.e. bouquet[i].size();
     for(Index i = 0; i < basis.size(); i++) {
@@ -790,13 +790,13 @@ namespace CASM {
    * This function is meant for averaging atoms of the same type!
    */
   //***********************************************************
-  void Structure::clump_atoms(double mindist) {
+  void Structure::clump_atoms(double mindist, double tol) {
 
     // Warning, I don't think we want to do this here, but I'm leaving it in for now - JCT 03/07/14
     update();
 
     //Define Orbitree just for pairs
-    SiteOrbitree siamese(lattice());
+    SiteOrbitree siamese(lattice(), tol);
     siamese.max_num_sites = 2;
     siamese.max_length.push_back(0);
     siamese.max_length.push_back(0);
@@ -962,15 +962,15 @@ namespace CASM {
    */
   //***********************************************************
 
-  Array<Array<Array<double> > > Structure::get_NN_table(const double &maxr, SiteOrbitree &bouquet) {
+  Array<Array<Array<double> > > Structure::get_NN_table(const double &maxr, SiteOrbitree &bouquet, double tol) {
     if(!bouquet.size()) {
       std::cerr << "WARNING in Structure::get_NN_table" << std::endl;
       std::cerr << "The provided SiteOrbitree is about to be rewritten!" << std::endl;
     }
 
     Array<Array<Array<double> > > NN;
-    SiteOrbitree normtree(lattice());
-    SiteOrbitree tbouquet(lattice());
+    SiteOrbitree normtree(lattice(), tol);
+    SiteOrbitree tbouquet(lattice(), tol);
     bouquet = tbouquet;
     normtree.min_num_components = 1;
     normtree.max_num_sites = 2;
@@ -980,7 +980,7 @@ namespace CASM {
 
     normtree.generate_orbitree(*this);
     normtree.print_full_clust(std::cout);
-    generate_basis_bouquet(normtree, bouquet, 2);
+    generate_basis_bouquet(normtree, bouquet, 2, tol);
 
     Array<Array<double> > oneNN;
     oneNN.resize(2);
@@ -1005,9 +1005,9 @@ namespace CASM {
    */
   //***********************************************************
 
-  Array<Array<Array<double> > > Structure::get_NN_table(const double &maxr) {
-    SiteOrbitree bouquet(lattice());
-    return get_NN_table(maxr, bouquet);
+  Array<Array<Array<double> > > Structure::get_NN_table(const double &maxr, double tol) {
+    SiteOrbitree bouquet(lattice(), tol);
+    return get_NN_table(maxr, bouquet, tol);
   }
 
   //***********************************************************

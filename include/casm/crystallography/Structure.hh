@@ -147,18 +147,18 @@ namespace CASM {
     /// create an orbit of all equivalent clusters that also contain the basis site
     /// and store each of these orbits in out_tree
     /// num_sites specifies what size of clusters are desired (e.g., pairs, triplets, etc)
-    void generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites);
+    void generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites, double tol);
 
     /// For each asymmetric unit site, find each cluster in 'in_tree' that contain that basis site,
     /// create an orbit of all equivalent clusters that also contain the basis site
     /// and store each of these orbits in out_tree
     /// num_sites specifies what size of clusters are desired (e.g., pairs, triplets, etc)
-    void generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites);
+    void generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites, double tol);
 
     //John G 230913
     /// Gets clusters of every size radiating from one site and saves them to a flowertree. A garland for each site is constructed.
-    void generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
-    void generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
+    void generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees, double tol = TOL);
+    void generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees, double tol = TOL);
     //\John G 230913
 
 
@@ -170,7 +170,7 @@ namespace CASM {
     /// Return reflection of structure
     Structure get_reflection() const;
     /// If atoms are too close together, average their distance and make them one
-    void clump_atoms(double maxdist); //Only for same atom types
+    void clump_atoms(double maxdist, double tol); //Only for same atom types
     /// Rearrange basis by grouping atoms by type
     void sort_basis();
     //\John G 121212
@@ -178,8 +178,8 @@ namespace CASM {
     //John G 050513
     Structure stamp_with(SiteCluster stamp, bool lat_override = 0, bool im_override = 0) const;
     Array<Structure> bedazzle(Array<SiteCluster> stamps, bool lat_override = 0, bool im_override = 0) const;
-    Array<Array<Array<double> > > get_NN_table(const double &maxr, SiteOrbitree &bouquet);
-    Array<Array<Array<double> > > get_NN_table(const double &maxr);
+    Array<Array<Array<double> > > get_NN_table(const double &maxr, SiteOrbitree &bouquet, double tol);
+    Array<Array<Array<double> > > get_NN_table(const double &maxr, double tol);
     //\John G 050513
 
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
@@ -198,7 +198,7 @@ namespace CASM {
     // ****Input/Output****
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
-    void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag);
+    void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag, double tol);
     //void print_factor_group(std::ostream &stream) const;
 
     bool read_species(); //Ivy 11/27/12

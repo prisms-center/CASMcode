@@ -96,10 +96,10 @@ namespace CASM {
     GenericCluster &apply_sym_no_trans(const SymOp &op);
 
     /// Finds the sub_group of super_group that is the point group of the cluster
-    void generate_clust_group(const SymGroup &super_group, std::vector<Permutation> *perm_array_ptr = nullptr);
+    void generate_clust_group(const SymGroup &super_group, std::vector<Permutation> *perm_array_ptr = nullptr, double tol = TOL);
 
     /// Finds the Permutation corresponding to each element of clust_group
-    std::vector<Permutation> clust_group_permutations() const;
+    std::vector<Permutation> clust_group_permutations(double tol) const;
 
     /// gets max_length and min_length
     void calc_properties();  //Alex do this
@@ -123,17 +123,21 @@ namespace CASM {
     bool contains(const GenericCluster &test_cluster) const;
 
     /// Like Array<CoordType>::contains(), but takes periodicity mode into account
-    bool contains_periodic(const CoordType &test_coord) const;
+    bool contains_periodic(const CoordType &test_coord, double tol) const;
+
+    /// \brief is test_cluster a subcluster of (*this), and how do the indices map
+    /// points of test_cluster
+    Index find(const CoordType &test_elem, double tol) const;
 
     /// \brief is test_cluster a subcluster of (*this), and how do the indices map
     /// 'index' is populated with the indices of (*this) that correspond to the
     /// points of test_cluster
-    bool find(const GenericCluster &test_cluster, Array<Index> &index) const;
+    bool find(const GenericCluster &test_cluster, Array<Index> &index, double tol) const;
 
     /// if pivot is a sub_cluster, return true and translate (*this) by a lattice translation
     /// so that the points of 'pivot' are coincident with subcluster points in (*this)
-    bool map_onto_subcluster(const GenericCluster &pivot);
-    bool map_onto_subcluster(const GenericCluster &pivot, int num_maps);
+    bool map_onto_subcluster(const GenericCluster &pivot, double tol = TOL);
+    bool map_onto_subcluster(const GenericCluster &pivot, int num_maps, double tol = TOL);
 
     /// Figure out which basis atoms in basis correspond to the points in cluster (*this)
     void collect_basis_info(const Array<CoordType> &basis);
@@ -175,11 +179,11 @@ namespace CASM {
     bool is_equivalent(const GenericCluster &test_clust, Coordinate &trans) const;
 
     /// if is_equivalent(test_clust) is true, return true and map (*this) onto test_clust
-    bool map_onto(const GenericCluster &test_clust);
+    bool map_onto(const GenericCluster &test_clust, double tol);
 
     /// if is_equivalent(test_clust) is true, return true and map (*this) onto test_clust
     /// translation that maps clusters is stored in 'trans'
-    bool map_onto(const GenericCluster &test_clust, Coordinate &trans);
+    bool map_onto(const GenericCluster &test_clust, Coordinate &trans, double tol);
 
     /// Write GenericCluster to json. Does not write lattice.
     jsonParser &to_json(jsonParser &json) const;
@@ -212,6 +216,10 @@ namespace CASM {
   ///create translated cluster
   template <typename CoordType>
   GenericCluster<CoordType> operator-(const GenericCluster<CoordType> &LHS, const Coordinate &RHS);
+
+  template <typename CoordType>
+  bool almost_equal(const GenericCluster<CoordType> &LHS, const GenericCluster<CoordType> &RHS, double tol);
+
 
 
   /// Write GenericCluster to json. Does not write lattice.

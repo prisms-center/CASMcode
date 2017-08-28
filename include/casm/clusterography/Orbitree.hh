@@ -41,6 +41,7 @@ namespace CASM {
 
     Lattice lattice;
 
+    double m_tol;
     //generative properties of Orbitree
 
     Index max_num_sites, min_num_components;
@@ -73,10 +74,12 @@ namespace CASM {
 
     //BEGIN METHODS OF ORBITREE:
 
-    GenericOrbitree<ClustType>(const Lattice &t_lat) : lattice(t_lat), min_length(TOL), m_asym_unit(lattice) { };
+    GenericOrbitree<ClustType>(const Lattice &t_lat, double _tol) : lattice(t_lat), m_tol(_tol), min_length(TOL), m_asym_unit(lattice) { };
     //John G 011013 COPY CONSTRUCTOR
     GenericOrbitree<ClustType>(const GenericOrbitree<ClustType> &starttree);
 
+    ///Access orbitree tolerance
+    double tol() const;
 
     ///Access orbits using 2-D indexing
     GenericOrbit<ClustType> &orbit(Index np, Index no);

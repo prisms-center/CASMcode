@@ -996,7 +996,7 @@ namespace CASM {
 
     auto it = m_orbitree.find(key);
     if(it == m_orbitree.end()) {
-      it = m_orbitree.insert(std::make_pair(key, SiteOrbitree(get_prim().lattice()))).first;
+      it = m_orbitree.insert(std::make_pair(key, SiteOrbitree(get_prim().lattice(), crystallography_tol()))).first;
       SiteOrbitree &tree = it->second;
 
       // these could be specified via settings
@@ -1081,18 +1081,18 @@ namespace CASM {
   ///
   /// \param prim Primitive Structure. non-const due to Structure::set_site_internals.
   /// \param json bspecs.json file
-  SiteOrbitree make_orbitree(Structure &prim, const jsonParser &json) {
+  SiteOrbitree make_orbitree(Structure &prim, const jsonParser &json, double _tol) {
 
     try {
 
-      SiteOrbitree tree(prim.lattice());
+      SiteOrbitree tree(prim.lattice(), _tol);
       tree.set_bspecs(json);
       // --- first generate global orbitree -------------
 
 
       //global_orbitree.read_CSPECS(in_clust);
       tree.min_num_components = 2;
-      tree.min_length = -CASM::TOL;
+      tree.min_length = -1.5 * _tol;
 
       tree.max_length.clear();
       auto update_max_length = [&](int branch, double max_length) {
