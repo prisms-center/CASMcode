@@ -6,7 +6,8 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/Selection_impl.hh"
-
+#include "casm/kinetics/DiffusionTransformation.hh"
+#include "casm/kinetics/DiffTransConfiguration.hh"
 
 // extern "C" {
 //   CASM::EnumInterfaceBase *make_DiffTransConfigInterpolation_interface() {
@@ -26,14 +27,33 @@ namespace CASM {
       const DiffTransConfiguration &_diff_trans_config,
       const int n_images, std::string calctype):
       RandomAccessEnumeratorBase<Configuration>(n_images + 2),
-      m_current(_diff_trans_config.sorted().from_config()),
-      m_diff_trans_config(_diff_trans_config.sorted()) {
-      auto configs = get_relaxed_endpoints(m_diff_trans_config, calctype);
+      m_current(_diff_trans_config.sorted().from_config()) {
+      auto diff_trans_config = _diff_trans_config.sorted();
+      auto configs = get_relaxed_endpoints(diff_trans_config, calctype);
       Configuration from_config = configs.first;
       Configuration to_config = configs.second;
-      DiffusionTransformation diff_trans  = m_diff_trans_config.diff_trans();
+      DiffusionTransformation diff_trans  = diff_trans_config.diff_trans();
       Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
       m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
+                                                                            to_config_mutated,
+                                                                            n_images + 2); // +2 for end states
+      this->_initialize(&m_current);
+      m_current.set_source(this->source(step()));
+    }
+
+    /// \brief Construct with a Supercell, using all permutations
+    ///
+    /// \param _diff_trans_config abcdcd
+    /// \param n_images number of images excluding end points
+    DiffTransConfigInterpolation::DiffTransConfigInterpolation(
+      const DiffusionTransformation &diff_trans,
+      const Configuration from_config,
+      const Configuration to_config,
+      const int n_images):
+      RandomAccessEnumeratorBase<Configuration>(n_images + 2),
+      m_current(make_attachable(diff_trans, from_config)) {
+      Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
+      m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(make_attachable(diff_trans, from_config),
                                                                             to_config_mutated,
                                                                             n_images + 2); // +2 for end states
       this->_initialize(&m_current);
@@ -51,16 +71,25 @@ namespace CASM {
                                           const jsonParser &kwargs,
                                           const Completer::EnumOption &enum_optconst) {
 
+      // get selection filename from json/enumoption // do json for now
       // Constrct a DB selection of DiffTransConfiguration from json and enumoption inputs
-      // DB::Selection<DiffTransConfiguration> sel(primclex);
-      // int n_images = 4; // For Testing purposes
-      // for (const auto &config : sel.selected()){
-      //   // Create a interpolation object
-      //   DiffTransConfigInterpolation enumerator(config, n_images);
-      //   for (const auto &thing: enumerator){
-      //     //do a print of things
-      //   }
-      // }
+      DB::Selection<DiffTransConfiguration> sel(primclex);
+      int n_images = kwargs["n_images"].get<int>(); // set defaults with get_else
+      std::string calctype = kwargs["calctype"].get<std::string>();
+      Index i;
+      for(const auto &config : sel.selected()) {
+        // Create a interpolation object
+        DiffTransConfigInterpolation enumerator(config, n_images, calctype);
+        i = 0;
+        for(const auto &img_config : enumerator) {
+          // file_path = $project_dir/training_data/diff_trans/$diff_trans_name/$scelname/$configid/$image_number/POSCAR
+          auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
+          file_path += "N_images_" + std::to_string(n_images) + "/0" + std::to_string(i) + "/POSCAR";
+          fs::ofstream file(file_path);
+          img_config.write_pos(file);
+          i++;
+        }
+      }
       // setup error methods
       return 0;
     }
@@ -92,12 +121,21 @@ namespace CASM {
     /// Returns copies of from and to config updated such they reflect the relaxed structures from the properties database
     std::pair<Configuration, Configuration> get_relaxed_endpoints(const DiffTransConfiguration &dfc, std::string calctype) {
       Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
-
       Configuration rlx_to = copy_apply_properties(make_configuration(dfc.primclex(), dfc.to_configname()), calctype);
-
       return std::make_pair(copy_apply(dfc.from_config_from_canonical(), rlx_frm),
                             copy_apply(dfc.to_config_from_canonical(), rlx_to));
+    }
 
+    /// applies deformation from input config onto outpur_config and prints it to a file.
+    void apply_deformation(const PrimClex primclex, std::string output_configname, std::string output_path,
+                           std::string input_configname, std::string calctype) {
+      Configuration input_config = copy_apply_properties(make_configuration(primclex, input_configname), calctype);
+      Eigen::Matrix3d deformation = input_config.deformation();
+      Configuration final_config = make_configuration(primclex, output_configname);
+      final_config.set_deformation(deformation);
+      fs::ofstream file(output_path);
+      final_config.write_pos(file);
+      return;
     }
   }
 }

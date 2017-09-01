@@ -517,6 +517,14 @@ class Neb(object):
             with open(outputfile, 'w') as file:
                 file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
             print "Wrote " + outputfile
+            all_image_folders = [int(i.strip().split('_')[-1]) for i in os.listdir(self.calcdir) if "N_images" in i]
+            num_images = [int(self.calcdir.strip().split('_')[-1])]
+            if num_images == all_image_folders:
+                shutil.copy(os.path.join(self.calcdir, "properties.calc.json"),
+                            os.path.join(os.path.split(self.calcdir)[0], "properties.calc.json"))
+                print "As the present run has highest number of images copied {0} to {1}".format(os.path.join(self.calcdir, "properties.calc.json"),
+                                                                                             os.path.join(os.path.split(self.calcdir)[0],
+                                                                                                          "properties.calc.json"))
             sys.stdout.flush()
             self.report_status('complete')
 
