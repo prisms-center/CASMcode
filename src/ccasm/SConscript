@@ -9,7 +9,7 @@ ccasm_lib_src = ['api.cc']
 #include path
 candidates = [
   env['INCDIR'],
-  env.include_path(env['BOOST_PREFIX'], 'boost')
+  env.include_path(env['BOOST_INCLUDEDIR'], 'boost')
 ]
 cpppath = [x for x in candidates if x is not None]
 
