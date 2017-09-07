@@ -64,8 +64,24 @@ namespace CASM {
 
     const std::string DiffTransConfigInterpolation::interface_help =
       "DiffTransConfigInterpolation: \n\n"
+      "  n_images: integer \n"
+      "    The number of images to interpolate for each diff_trans_config\n\n"
 
-      "      }' \n\n";
+      "  selection: string (optional, default=MASTER) \n"
+      "    The names of a selection of diff_trans_configs to interpolate images \n"
+      "    within.\n\n"
+
+      "  calctype: string (optional, default=$current_calctype)\n"
+      "    The name of the calctype to obtain the fixed lattice calculations for  \n"
+      "    the endpoints of the diff_trans_configs. \n\n"
+
+      "  Example:\n"
+      "  {\n"
+      "    \"n_images\": 4,\n"
+      "    \"selection\": \"low_barrier_diff_trans\",\n"
+      "    \"calctype\": \"fixed_lattice\""
+      "    }\n"
+      "  }\n\n";
 
     int DiffTransConfigInterpolation::run(const PrimClex &primclex,
                                           const jsonParser &kwargs,
