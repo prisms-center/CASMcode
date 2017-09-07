@@ -97,7 +97,7 @@ namespace CASM {
   // Find them, alter the translations, and store them in clust_group
 
   template <typename _CoordType>
-  void GenericCluster<_CoordType>::generate_clust_group(const SymGroup &super_group, std::vector<Permutation> *perm_array_ptr) {
+  void GenericCluster<_CoordType>::generate_clust_group(const SymGroup &super_group, std::vector<Permutation> *perm_array_ptr, double tol) {
     Coordinate trans(home());
     _clust_group().clear();
     if(perm_array_ptr)
@@ -108,7 +108,7 @@ namespace CASM {
       tclust.apply_sym(super_group[ng]);
       if(tclust.map_onto(*this, trans)) {
         _clust_group().push_back(SymOp::translation(trans.cart())*super_group[ng]);
-        find(tclust, iperm);
+        find(tclust, iperm, tol);
 
         if(perm_array_ptr)
           perm_array_ptr->push_back(Permutation(iperm));
@@ -121,13 +121,13 @@ namespace CASM {
   //*******************************************************************************************
 
   template <typename _CoordType>
-  std::vector<Permutation> GenericCluster<_CoordType>::clust_group_permutations() const {
+  std::vector<Permutation> GenericCluster<_CoordType>::clust_group_permutations(double tol) const {
     std::vector<Permutation> tperms;
     tperms.reserve(clust_group().size());
     Array<Index> iperm(size());
     for(Index i = 0; i < clust_group().size(); i++) {
       for(Index j = 0; j < size(); j++)
-        iperm[j] = find(clust_group()[i] * at(j));
+        iperm[j] = find(clust_group()[i] * at(j), tol);
       tperms.push_back(Permutation(iperm));
     }
     return tperms;
@@ -248,9 +248,9 @@ namespace CASM {
   //********************************************
 
   template <typename CoordType>
-  bool GenericCluster<CoordType>::contains_periodic(const CoordType &test_site) const {
+  bool GenericCluster<CoordType>::contains_periodic(const CoordType &test_site, double tol) const {
     for(Index i = 0; i < size(); i++) {
-      if(at(i).compare(test_site))
+      if(at(i).compare(test_site, tol))
         return true;
     }
     return false;
@@ -259,13 +259,27 @@ namespace CASM {
   //returns true if test_cluster is a subcluster of cluster (*this)
   //Array 'index' holds indices of (*this) that yield test_cluster
   template <typename CoordType>
-  bool GenericCluster<CoordType>::find(const GenericCluster<CoordType> &test_cluster, Array<Index> &index) const {
+  Index GenericCluster<CoordType>::find(const CoordType &test_elem, double tol) const {
+    Index i, j;
+
+    for(j = 0; j < size(); j++) {
+      if(test_elem.compare(at(j), tol))
+        return j;
+    }
+
+    return j;
+  }
+  //********************************************
+  //returns true if test_cluster is a subcluster of cluster (*this)
+  //Array 'index' holds indices of (*this) that yield test_cluster
+  template <typename CoordType>
+  bool GenericCluster<CoordType>::find(const GenericCluster<CoordType> &test_cluster, Array<Index> &index, double tol) const {
     Index i, j;
     index.clear();
     index.reserve(test_cluster.size());
     for(i = 0; i < test_cluster.size(); i++) {
       for(j = 0; j < size(); j++) {
-        if(test_cluster[i] == at(j) && !index.contains(j))
+        if(test_cluster[i].compare(at(j), tol) && !index.contains(j))
           break;
       }
       if(j == size()) {
@@ -282,7 +296,7 @@ namespace CASM {
   //the cluster basis functions are updated to reflect the change in order
 
   template <typename CoordType>
-  bool GenericCluster<CoordType>::map_onto_subcluster(const GenericCluster<CoordType> &pivot) {
+  bool GenericCluster<CoordType>::map_onto_subcluster(const GenericCluster<CoordType> &pivot, double tol) {
     Index i, j, tsize;
 
     if(!(home() == pivot.home())) {
@@ -311,7 +325,7 @@ namespace CASM {
       //if condition is true, then sites are reordered so that first N sites of current cluster
       //match the N sites of 'pivot', in order
 
-      if(find(pivot, tarray)) {
+      if(find(pivot, tarray, tol)) {
         Index t_ind, n_switch(0);
         for(j = 0; j < tperm.size(); j++) {
           t_ind = tarray.find(j);
@@ -338,7 +352,7 @@ namespace CASM {
   //num_maps should be from 0 to size of the cluster
   //returns true if successful maps == num_maps
   template <typename CoordType>
-  bool GenericCluster<CoordType>::map_onto_subcluster(const GenericCluster<CoordType> &pivot, int num_maps) {
+  bool GenericCluster<CoordType>::map_onto_subcluster(const GenericCluster<CoordType> &pivot, int num_maps, double tol) {
     Index i, j, tsize;
 
     if(!(home() == pivot.home())) {
@@ -366,7 +380,7 @@ namespace CASM {
       //if condition is true, then sites are reordered so that first N sites of current cluster
       //match the N sites of 'pivot', in order
 
-      if(!find(pivot, tarray))continue;
+      if(!find(pivot, tarray, tol))continue;
       if(tmaps != num_maps) {
         tmaps++;
         continue;
@@ -612,7 +626,7 @@ namespace CASM {
   //If it returns false, the cluster is unchanged.
 
   template <typename CoordType>
-  bool GenericCluster<CoordType>::map_onto(const GenericCluster<CoordType> &test_clust) {
+  bool GenericCluster<CoordType>::map_onto(const GenericCluster<CoordType> &test_clust, double tol) {
     if(size() != test_clust.size()) return false;
     if(size() == 0) return true;
 
@@ -623,10 +637,10 @@ namespace CASM {
     Coordinate tshift(*m_lat_ptr), trans(*m_lat_ptr);
     for(Index i = 0; i < size(); i++) {
       tshift = test_clust[0] - at(i);
-      if(tshift.is_lattice_shift()) {
+      if(tshift.is_lattice_shift(tol)) {
         (*this) += tshift;
         trans += tshift;
-        if((*this) == test_clust)
+        if(almost_equal((*this), test_clust, tol))
           return true;
       }
     }
@@ -637,7 +651,7 @@ namespace CASM {
   //********************************************
 
   template <typename CoordType>
-  bool GenericCluster<CoordType>::map_onto(const GenericCluster<CoordType> &test_clust, Coordinate &trans) {
+  bool GenericCluster<CoordType>::map_onto(const GenericCluster<CoordType> &test_clust, Coordinate &trans, double tol) {
     if(size() != test_clust.size()) return false;
     trans.frac() = Eigen::Vector3d::Zero();
     if(size() == 0) return true;
@@ -649,10 +663,10 @@ namespace CASM {
     Coordinate tshift(*m_lat_ptr);
     for(Index i = 0; i < size(); i++) {
       tshift = test_clust[0] - at(i);
-      if(tshift.is_lattice_shift()) {
+      if(tshift.is_lattice_shift(tol)) {
         (*this) += tshift;
         trans += tshift;
-        if((*this) == test_clust)
+        if(almost_equal((*this), test_clust, tol))
           return true;
       }
     }
@@ -868,6 +882,29 @@ namespace CASM {
   GenericCluster<CoordType> operator-(const GenericCluster<CoordType> &LHS, const Coordinate &RHS) {
     return GenericCluster<CoordType>(LHS) -= RHS;
   }
+
+  //****************************************************
+  template <typename CoordType>
+  bool almost_equal(const GenericCluster<CoordType> &LHS, const GenericCluster<CoordType> &RHS, double tol) {
+    if(LHS.size() != RHS.size()) return false;
+
+    Array<bool> check_ind(LHS.size(), false);
+    Index i, j;
+    for(i = 0; i < LHS.size(); i++) {
+      for(j = 0; j < RHS.size(); j++) {
+        if((LHS[i].compare(RHS[j], tol)) && (!check_ind[j])) {
+          check_ind[j] = true;
+          break;
+        }
+      }
+      if(j == RHS.size())
+        return false;
+    }
+    return true;
+
+
+  }
+
 
 
 }

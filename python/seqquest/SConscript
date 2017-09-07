@@ -10,7 +10,7 @@ pyquest_setup = env.Command('setup.py', ['make_setup.py'], 'cd python/seqquest &
 env.NoClean(pyquest_setup)
 
 cmd = 'cd python/seqquest && ' + find_executable('python') + ' setup.py install'
-cmd += ' --prefix=' + env['PREFIX']
+cmd += ' --prefix=' + env['CASM_PYTHON_PREFIX']
 cmd += ' --record installed.txt'
 
 pyquest_install = env.Command('installed.txt', [pyquest_setup], cmd)

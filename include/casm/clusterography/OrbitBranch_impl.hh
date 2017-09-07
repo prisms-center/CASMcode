@@ -167,9 +167,9 @@ namespace CASM {
   //*******************************
 
   template<typename ClustType>
-  Index GenericOrbitBranch<ClustType>::find(const ClustType &test_clust) const {
+  Index GenericOrbitBranch<ClustType>::find(const ClustType &test_clust, double tol) const {
     for(Index i = 0; i < size(); i++) {
-      if(orbit(i).contains(test_clust))
+      if(orbit(i).contains(test_clust, tol))
         return i;
     }
     return size();
@@ -178,10 +178,10 @@ namespace CASM {
   //*******************************
 
   template<typename ClustType>
-  bool GenericOrbitBranch<ClustType>::contains(const ClustType &test_clust) const {
+  bool GenericOrbitBranch<ClustType>::contains(const ClustType &test_clust, double tol) const {
     if(size() == 0) return false;
 
-    if(find(test_clust) < size()) {
+    if(find(test_clust, tol) < size()) {
       return true;
     }
     return false;
@@ -191,7 +191,7 @@ namespace CASM {
   //***********************************************************
 
   template<typename ClustType>
-  void GenericOrbitBranch<ClustType>::generate_asymmetric_unit(const Array<typename ClustType::WhichCoordType > &basis, const SymGroup &factor_group) {
+  void GenericOrbitBranch<ClustType>::generate_asymmetric_unit(const Array<typename ClustType::WhichCoordType > &basis, const SymGroup &factor_group, double tol) {
     m_num_sites = 1;
     if(size() != 0) { //Added by Ivy 11/19/13
 
@@ -220,7 +220,7 @@ namespace CASM {
 
       //Check if that point is among the asymmetric points already found
       for(no = 0; no < size(); no++) {
-        if(at(no).contains(tclust)) {
+        if(at(no).contains(tclust, tol)) {
           break;
         }
       }
@@ -231,7 +231,7 @@ namespace CASM {
       //and get symmetrically equivalent points to fill orbit
       if(no >= size()) {
         push_back(GenericOrbit<ClustType >(tclust));
-        back().get_equivalent(factor_group);
+        back().get_equivalent(factor_group, tol);
       }
     }
     for(no = 0; no < size(); no++) {
@@ -248,7 +248,7 @@ namespace CASM {
   // with 'pivot' at the center
 
   template<typename ClustType>
-  bool GenericOrbitBranch<ClustType>::extract_orbits_including(const ClustType &pivot, GenericOrbitBranch<ClustType> &flowerbranch) const {
+  bool GenericOrbitBranch<ClustType>::extract_orbits_including(const ClustType &pivot, GenericOrbitBranch<ClustType> &flowerbranch, double tol) const {
     Index no, ne;
     ClustType tclust(pivot.home());
     bool found_any = false;
@@ -267,7 +267,7 @@ namespace CASM {
           tmaps++;
           //turn off periodicity, so Orbit::contains preserves locality of pivot
           PERIODICITY_MODE temp_mode(LOCAL);
-          if(!torbit.contains(tclust)) {
+          if(!torbit.contains(tclust, tol)) {
             if(torbit.size() == 0) {
               torbit.prototype = tclust;
             }

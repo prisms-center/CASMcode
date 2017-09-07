@@ -10,7 +10,7 @@ Import('env', 'casm_lib', 'ccasm_lib', 'build_lib_paths')
 # include paths
 candidates = [
   env['INCDIR'], 
-  env.include_path(env['BOOST_PREFIX'], 'boost')
+  env.include_path(env['BOOST_INCLUDEDIR'], 'boost')
 ]
 cpppath = [x for x in candidates if x is not None]
 
@@ -51,7 +51,7 @@ Export('casm')
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [casm]
 
 # Install instructions
-casm_install = env.Install(os.path.join(env['PREFIX'],'bin'), casm)
+casm_install = env.Install(env['CASM_BINDIR'], casm)
 env.Alias('casm_install', casm_install)
 Export('casm_install')
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_install]

@@ -357,15 +357,15 @@ namespace CASM {
   // Checks to see if coordinate describes shift by a general lattice vector l*V1+m*V2+n*V3, where l, m, n are integer
   //********************************************************************
 
-  bool Coordinate::is_lattice_shift() const {
+  bool Coordinate::is_lattice_shift(double tol) const {
 
     //If mode is local, return true only if coordinate describes origin
     if(PERIODICITY_MODE::IS_LOCAL())
-      return std::abs(m_frac_coord[0]) < TOL && std::abs(m_frac_coord[1]) < TOL && std::abs(m_frac_coord[2]) < TOL;
+      return std::abs(m_frac_coord[0]) < tol && std::abs(m_frac_coord[1]) < tol && std::abs(m_frac_coord[2]) < tol;
 
-    return (std::abs(m_frac_coord[0] - round(m_frac_coord[0])) < TOL
-            && std::abs(m_frac_coord[1] - round(m_frac_coord[1])) < TOL
-            && std::abs(m_frac_coord[2] - round(m_frac_coord[2])) < TOL);
+    return (std::abs(m_frac_coord[0] - round(m_frac_coord[0])) < tol
+            && std::abs(m_frac_coord[1] - round(m_frac_coord[1])) < tol
+            && std::abs(m_frac_coord[2] - round(m_frac_coord[2])) < tol);
   }
 
 

@@ -10,7 +10,7 @@ pycasm_setup = env.Command('setup.py', ['make_setup.py'], 'cd python/casm && pyt
 env.NoClean(pycasm_setup)
 
 cmd = 'cd python/casm && ' + find_executable('python') + ' setup.py install'
-cmd += ' --prefix=' + env['PREFIX']
+cmd += ' --prefix=' + env['CASM_PYTHON_PREFIX']
 cmd += ' --record installed.txt'
 
 pycasm_install = env.Command('installed.txt', [pycasm_setup], cmd)

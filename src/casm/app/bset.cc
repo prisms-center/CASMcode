@@ -157,14 +157,14 @@ namespace CASM {
         }
       }
 
-      SiteOrbitree tree(prim.lattice());
+      SiteOrbitree tree(prim.lattice(), primclex.crystallography_tol());
 
       try {
         jsonParser bspecs_json(dir.bspecs(bset));
 
         args.log.generate("Cluster orbits");
         args.log.begin_lap();
-        tree = make_orbitree(prim, bspecs_json);
+        tree = make_orbitree(prim, bspecs_json, primclex.crystallography_tol());
         if(tree.min_num_components < 2) {
           args.err_log.error("Generating orbitree");
           args.err_log << "Custom clusters include a site with only 1 allowed component. \n";
