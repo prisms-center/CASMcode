@@ -9,7 +9,8 @@ namespace CASM {
 
     /// \brief Monte Carlo ensemble type
     enum class ENSEMBLE {
-      GrandCanonical
+      GrandCanonical,
+      Canonical
     };
 
     ENUM_IO(CASM::Monte::ENSEMBLE)

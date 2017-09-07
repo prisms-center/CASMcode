@@ -20,17 +20,19 @@ namespace CASM {
 
     /// \brief Constructor
     ///
+    /// \param _primclex PrimClex
     /// \param _temperature in K
     /// \param _param_chem_pot Parametric composition chemical potential
-    /// \param _comp_converter CompositionConverter for converting from parametric chem_pot to species chem_pot
     /// \param _tol tolerance for comparing conditions
     ///
-    GrandCanonicalConditions(double _temperature,
+    GrandCanonicalConditions(const PrimClex &_primclex,
+                             double _temperature,
                              const Eigen::VectorXd &_param_chem_pot,
-                             const CompositionConverter &_comp_converter,
                              double _tol);
 
     // ***************************************ACCESSORS********************************************** //
+
+    const PrimClex &primclex() const;
 
     double temperature() const;
 
@@ -89,9 +91,7 @@ namespace CASM {
 
   protected:
 
-
-    /// Convert between num atoms per prim cell and parametric composition
-    CompositionConverter m_comp_converter;
+    const PrimClex *m_primclex;
 
     ///Temperature
     double m_temperature;

@@ -67,9 +67,14 @@ namespace CASM {
     sum2 = observations.segment(start2, N - start2).sum();
     // mean2 = sum2 / (N - start2)
 
+    //std::cout << observations << std::endl;
+
     // increment start1 (and update start2, sum1, and sum2) until abs(mean1 - mean2) < prec
     while(std::abs((sum1 / (start2 - start1)) - (sum2 / (N - start2))) > prec && start1 < N - 2) {
-
+      /*std::cout << "  start1: " << start1 << "  start2: " << start2 << "  N: " << N
+                << "  mean1: " << (sum1 / (start2 - start1)) << "  mean2: " << (sum2 / (N - start2))
+                << "  diff: " << std::abs((sum1 / (start2 - start1)) - (sum2 / (N - start2)))
+                << "  prec: " << prec << std::endl;*/
       if(is_even) {
         sum1 -= observations(start1);
         sum1 += observations(start2);

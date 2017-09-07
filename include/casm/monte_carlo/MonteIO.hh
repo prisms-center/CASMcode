@@ -3,9 +3,8 @@
 
 #include <string>
 #include "casm/CASM_global_definitions.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/monte_carlo/MonteCarlo.hh"
+#include "casm/monte_carlo/MonteSampler.hh"
+#include "casm/monte_carlo/MonteCounter.hh"
 
 namespace CASM {
 
@@ -109,6 +108,15 @@ namespace CASM {
       return conditions_dir(cond_index) / "final_state.json";
     }
 
+    /// \brief "output_dir/occupation_key.csv"
+    fs::path occupation_key_csv() const {
+      return output_dir() / "occupation_key.csv";
+    }
+
+    /// \brief "output_dir/occupation_key.csv"
+    fs::path occupation_key_json() const {
+      return output_dir() / "occupation_key.json";
+    }
 
   private:
 
@@ -116,6 +124,12 @@ namespace CASM {
 
   };
 
+  class Log;
+  template<typename ValueType, typename DataObject> class GenericDatumFormatter;
+  template<typename DataObject> class DataFormatter;
+
+  class MonteCarlo;
+  class MonteSettings;
 
   /// \brief const pointer to const MonteCarlo
   typedef const MonteCarlo *ConstMonteCarloPtr;
@@ -164,6 +178,38 @@ namespace CASM {
   template<typename MonteType>
   GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloChemPotFormatter(const MonteType &mc, int index);
 
+  /// \brief Print comp(x)
+  template<typename MonteType>
+  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloCompFormatter(const MonteType &mc, int index);
+
+  /// \brief Print comp_n(N)
+  template<typename MonteType>
+  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloCompNFormatter(const MonteType &mc, int index);
+
+  /// \brief Print heat capacity, 'heat_capacity'
+  template<typename MonteType>
+  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloHeatCapacityFormatter();
+
+  /// \brief Print parametric susceptibility, 'susc_x(a,b)'
+  template<typename MonteType>
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
+  MonteCarloSuscXFormatter(std::string comp_var_i, std::string comp_var_j);
+
+  /// \brief Print susceptibility, 'susc_n(A,B)'
+  template<typename MonteType>
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
+  MonteCarloSuscNFormatter(std::string species_i, std::string species_j);
+
+  /// \brief Print parametric thermo-chemical susceptibility, 'susc_x(S,a)'
+  template<typename MonteType>
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
+  MonteCarloThermoChemSuscXFormatter(std::string comp_var_i);
+
+  /// \brief Print thermo-chemical susceptibility, 'susc_n(S,A)'
+  template<typename MonteType>
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
+  MonteCarloThermoChemSuscNFormatter(std::string species_i);
+
   /// \brief Print number of samples used for equilibration (not counting explicitly requested equilibration)
   GenericDatumFormatter<MonteSampler::size_type, ConstMonteCarloPtr> MonteCarloNEquilSamplesFormatter();
 
@@ -182,55 +228,34 @@ namespace CASM {
   /// \brief Print value of a particular occupation variable
   GenericDatumFormatter<int, std::pair<ConstMonteCarloPtr, Index> > MonteCarloOccFormatter(Index occ_index);
 
+  /// \brief Make a observation formatter
+  DataFormatter<std::pair<ConstMonteCarloPtr, Index> > make_observation_formatter(const MonteCarlo &mc);
 
-  // --- Template definitions ---------------------
+  /// \brief Make a trajectory formatter
+  DataFormatter<std::pair<ConstMonteCarloPtr, Index> > make_trajectory_formatter(const MonteCarlo &mc);
 
-  /// \brief Print Temperature for any class MonteType with valid 'double MonteType::conditions().temperature()'
+  /// \brief Will create new file or append to existing file results of the latest run
   template<typename MonteType>
-  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloTFormatter() {
-    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
-      ConstMonteCarloPtr ptr = mc;
-      return static_cast<const MonteType *>(ptr)->conditions().temperature();
-    };
-    return GenericDatumFormatter<double, ConstMonteCarloPtr>("T", "Temperature", evaluator);
-  }
+  void write_results(const MonteSettings &settings, const MonteType &mc, Log &_log);
 
-  /// \brief Print Beta for any class MonteType with valid 'double MonteType::conditions().beta()'
+  /// \brief Write conditions to conditions.cond_index directory
   template<typename MonteType>
-  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloBetaFormatter() {
-    typedef const MonteType *ConstMonteTypePtr;
-    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
-      ConstMonteCarloPtr ptr = mc;
-      return static_cast<const MonteType *>(ptr)->conditions().beta();
-    };
-    return GenericDatumFormatter<double, ConstMonteCarloPtr>("Beta", "Beta", evaluator);
-  }
+  void write_conditions_json(const MonteSettings &settings, const MonteType &mc, Index cond_index, Log &_log);
 
-  /// \brief Print param_chem_pot(x) for any class MonteType with valid 'double MonteType::conditions().param_chem_pot()(index)'
-  template<typename MonteType>
-  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloParamChemPotFormatter(const MonteType &mc, int index) {
-    typedef const MonteType *ConstMonteTypePtr;
-    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
-      ConstMonteCarloPtr ptr = mc;
-      return static_cast<const MonteType *>(ptr)->conditions().param_chem_pot()(index);
-    };
-    std::string header = std::string("param_chem_pot(") + CompositionConverter::comp_var(index) + ")";
-    return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator);
-  }
+  /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
+  void write_observations(const MonteSettings &settings, const MonteCarlo &mc, Index cond_index, Log &_log);
 
-  /// \brief Print chem_pot(N) for any class MonteType with valid 'double MonteType::conditions().chem_pot(index)'
-  template<typename MonteType>
-  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloChemPotFormatter(const MonteType &mc, int index) {
-    typedef const MonteType *ConstMonteTypePtr;
-    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
-      ConstMonteCarloPtr ptr = mc;
-      return static_cast<const MonteType *>(ptr)->conditions().chem_pot(index);
-    };
-    std::string header = std::string("chem_pot(") + mc.primclex().get_prim().get_struc_molecule_name()[index] + ")";
-    return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator);
-  }
+  /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
+  void write_trajectory(const MonteSettings &settings, const MonteCarlo &mc, Index cond_index, Log &_log);
 
+  /// \brief For the initial state, write a POSCAR file.
+  void write_POSCAR_initial(const MonteCarlo &mc, Index cond_index, Log &_log);
 
+  /// \brief For the final state, write a POSCAR file.
+  void write_POSCAR_final(const MonteCarlo &mc, Index cond_index, Log &_log);
+
+  /// \brief For every snapshot taken, write a POSCAR file.
+  void write_POSCAR_trajectory(const MonteCarlo &mc, Index cond_index, Log &_log);
 
 }
 

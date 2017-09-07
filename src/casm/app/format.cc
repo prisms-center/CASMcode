@@ -741,9 +741,9 @@ LCHARG = .FALSE.\n";
                 << "   \"composition\" : {\"Au\" : 0.25, \"Cu\" : 0.75} \n"
                 << "The site basis functions will then be constructed as to be optimized for that composition.\n\n"
 
-               << "To specify different compositions on multiple sublattices, an array can be used. \n"
-               << "As an example, the following specifies a different composition on sublattice 0 than\n"
-               << "on sublattices 1 and 3: \n\n"
+                << "To specify different compositions on multiple sublattices, an array can be used. \n"
+                << "As an example, the following specifies a different composition on sublattice 0 than\n"
+                << "on sublattices 1 and 3: \n\n"
 
                 << "   \"site_basis_functions\" : [\n"
                 << "                                {\n"
@@ -756,11 +756,11 @@ LCHARG = .FALSE.\n";
                 << "                                }\n"
                 << "                             ]\n\n"
 
-               << "Sublattices are specified in the same order as in prim.json. Sublattice compositions\n"
-               << "are not allowed to break the symmetry of the crystal. If equivalent sublattices are\n"
-               << "assigned inequivalent compositions, one will be chosen arbitrarily and propagated to\n"
-               << "all equivalent sublattices.  The resulting site basis functions can be reviewed using\n"
-               << "'casm bset --functions'\n\n";
+                << "Sublattices are specified in the same order as in prim.json. Sublattice compositions\n"
+                << "are not allowed to break the symmetry of the crystal. If equivalent sublattices are\n"
+                << "assigned inequivalent compositions, one will be chosen arbitrarily and propagated to\n"
+                << "all equivalent sublattices.  The resulting site basis functions can be reviewed using\n"
+                << "'casm bset --functions'\n\n";
 
 
       args.log << "The JSON object 'orbit_branch_specs' specifies the maximum size of pair,   \n" <<
@@ -1151,18 +1151,26 @@ Direct\n\
 
                "\"ensemble\" (string):                                             \n\n" <<
 
-               "  Possible options for \"ensemble\" are:                           \n" <<
-               "    \"GrandCanonical\" or \"grand_canonical\": Currently the only  \n" <<
-               "    option. Semi-grand canonical Monte Carlo calculation in which  \n" <<
-               "    the total number of sites is fixed, but the occupants on each  \n" <<
-               "    site may vary. One occupant change at a time is attempted.     \n\n\n" <<
+               "  Possible options for \"ensemble\" are:                           \n\n" <<
+
+               "    \"GrandCanonical\" or \"grand_canonical\": Semi-grand canonical\n" <<
+               "    Monte Carlo calculation in which the total number of sites is  \n" <<
+               "    fixed, but the occupants on each site may vary. One occupant   \n" <<
+               "    change at a time is attempted.                                 \n\n" <<
+
+               "    \"Canonical\" or \"canonical\": Canonical Monte Carlo \n" <<
+               "    calculation in which the total number of each type of occupant \n"
+               "    is fixed. Each Monte Carlo step attempts to swap a pair of     \n"
+               "    occupants.                                                     \n\n\n" <<
 
 
                "\"method\" (string):                                               \n\n" <<
 
-               "  Possible options for \"method\" are:                             \n" <<
+               "  Possible options for \"method\" are:                             \n\n" <<
+
                "    \"Metropolis\" or \"metropolis\": Run Monte Carlo calculations \n" <<
                "    using the Metropolis algorithm.                                \n\n" <<
+
                "    \"LTE1\" or \"lte1\": Single spin flip low temperature         \n" <<
                "    expansion calculations.                                        \n\n\n" <<
 
@@ -1322,6 +1330,10 @@ Direct\n\
                "  /\"motif\": (JSON object)                                        \n" <<
                "      Specifies the initial occupation of the supercell.           \n\n" <<
 
+               "      For canonical ensemble Monte Carlo calculations an additional\n" <<
+               "      step changes the occupants on random sites to make the actual\n" <<
+               "      composition as close as possible to the requested composition.\n\n" <<
+
                "    /\"configname\": (string, optional)                            \n" <<
                "      A configuration name, \"auto\", \"restricted_auto\", or      \n" <<
                "      \"default\".                                                 \n\n" <<
@@ -1329,19 +1341,20 @@ Direct\n\
                "      Specifies the configuration that is tiled to fill the        \n" <<
                "      supercell. If necessary, symmetry operations may be applied  \n" <<
                "      An error is thrown if the specified configuration can not be \n" <<
-               "      used to fill the \"supercell\".     \n\n" <<
+               "      used to fill the \"supercell\".                              \n\n" <<
 
                "      Possible options for \"configname\" are:                     \n" <<
                "        A configuration name (ex. \"SCEL3_3_1_1_0_2_2/0\")         \n" <<
-               "        \"auto\": If the value \"auto\" is used, the enumerated    \n" <<
+               "        \"auto\": (\"grand_canonical\" ensemble only) Enumerated   \n" <<
                "        configurations will be searched for the configuration with \n" <<
                "        the lowest potential energy to use as the motif.           \n" <<
                "        \"default\": If the value \"default\" is used, the initial \n" <<
                "        motif occupation is determined from the occupation order in\n" <<
                "        the PRIM.                                                  \n" <<
-               "        \"restricted_auto\": Same as \"auto\", but only            \n" <<
-               "        configurations that can fill the supercell are considered. \n" <<
-               "        As a last resort, \"default\" is used.                     \n\n" <<
+               "        \"restricted_auto\": (\"grand_canonical\" ensemble only)   \n" <<
+               "        Same as \"auto\", but only configurations that can tile the\n" <<
+               "        supercell are considered. As a last resort, \"default\" is \n" <<
+               "        used.                     \n\n" <<
 
                "    /\"configdof\": (string, optional)                             \n" <<
                "      Specifies the path to a configdof JSON file, such as         \n" <<
@@ -1377,13 +1390,45 @@ Direct\n\
                "    /\"temperature\": (number)                                      \n" <<
                "      The temperature in K.                                         \n\n" <<
 
-               "    /\"param_chem_pot\" (JSON object)                               \n" <<
+               "    /\"param_chem_pot\" (JSON object, \"grand_canonical\" ensemble only)\n" <<
                "      The parametric chemical potential(s)                          \n\n" <<
 
                "      /\"a\", /\"b\", ...: (number)                                 \n" <<
                "      The parametric chemical potentials conjugate to the parametric\n" <<
                "      compositions. The number of parametric chemical potentials    \n" <<
                "      provided must match the number of independent compositions.   \n\n" <<
+
+               "    /\"comp\" (JSON object, \"canonical\" ensemble only, option 1)\n" <<
+               "      The parametric composition(s)                          \n\n" <<
+
+               "      /\"a\", /\"b\", ...: (number)                                 \n" <<
+               "      The parametric composition. The number of entries provided    \n" <<
+               "      must match the number of independent compositions.            \n\n" <<
+
+               "    /\"comp\" (JSON array, \"canonical\" ensemble only, option 2)\n" <<
+               "      The parametric composition(s)                          \n\n" <<
+
+               "      [number, ...]                                                 \n" <<
+               "      An array containing the parametric composition. The number of \n" <<
+               "      entries provided must match the number of independent         \n" <<
+               "      compositions.                                                 \n\n" <<
+
+               "    /\"comp_n\" (JSON object, \"canonical\" ensemble only, option 3)\n" <<
+               "      The mol composition per unitcell                          \n\n" <<
+
+               "      /\"A\", /\"B\", ...: (number)                                 \n" <<
+               "      The mol composition per unitcell. The entries provided must   \n" <<
+               "      match occupant names in the 'prim.json' file. The values are  \n" <<
+               "      summed, normalized, and then converted to parametric composition.\n\n" <<
+
+               "    /\"comp_n\" (JSON array, \"canonical\" ensemble only, option 4)\n" <<
+               "      The mol composition per unitcell                          \n\n" <<
+
+               "      [number, ...]                                                 \n" <<
+               "      An array containing the mol composition per unitcell. The     \n" <<
+               "      number of entries provided must match the number components.  \n" <<
+               "      The values are summed, normalized, and converted to parametric\n" <<
+               "      composition.  \n\n" <<
 
                "    /\"tolerance\": (number)                                        \n" <<
                "      Specifies a numerical tolerance for comparing conditions.     \n\n" <<

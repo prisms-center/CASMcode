@@ -235,6 +235,10 @@ namespace CASM {
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
   std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<std::string> mol_name_list);
 
+  /// Returns 'converter_inverse' which converts 'mol_name_list' indices to Site::site_occupant indices:
+  ///  site_occupant_index = converter_inverse[basis_site][mol_name_list_index]
+  std::vector< std::vector<Index> > get_index_converter_inverse(const Structure &struc, std::vector<std::string> mol_name_list);
+
   /** @} */
 };
 
