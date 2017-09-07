@@ -37,8 +37,8 @@ Help("""
         setup.py --prefix option for installing python packages.
       
       $CASM_BOOST_PREFIX
-      $CASM_BOOST_INCLUDEDIR
-      $CASM_BOOST_LIBDIR:
+      $CASM_BOOST_INCLUDEDIR (=$CASM_BOOST_PREFIX/include)
+      $CASM_BOOST_LIBDIR (=$CASM_BOOST_PREFIX/lib)
         Search path for Boost. '$CASM_BOOST_INCLUDEDIR' is searched for header files, and
         '$CASM_BOOST_LIBDIR' for libraries. 
         Boost and CASM should be compiled with the same compiler.
@@ -592,19 +592,18 @@ if 'configure' in COMMAND_LINE_TARGETS:
     """ % version_n, '.cpp')[0]
     conf.Result(ret)
     
-    if not ret:
-      print "Found Boost version:", conf.TryRun("""
-      #include <boost/version.hpp>
-      #include <iostream>
-      int main() 
-      {
-          std::cout << BOOST_VERSION / 100000 << "."      // major version
-                    << BOOST_VERSION / 100 % 1000 << "."  // minor version
-                    << BOOST_VERSION % 100                // patch level
-                    << std::endl;
-          return 0;
-      }
-      """, ".cpp")[1],
+    print "Found Boost version:", conf.TryRun("""
+    #include <boost/version.hpp>
+    #include <iostream>
+    int main() 
+    {
+        std::cout << BOOST_VERSION / 100000 << "."      // major version
+                  << BOOST_VERSION / 100 % 1000 << "."  // minor version
+                  << BOOST_VERSION % 100                // patch level
+                  << std::endl;
+        return 0;
+    }
+    """, ".cpp")[1],
     
     return ret
   
