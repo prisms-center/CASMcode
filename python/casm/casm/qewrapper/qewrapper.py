@@ -63,7 +63,7 @@ def read_settings(filename):
 
     optional = ["account","pmem","priority","message","email","qos","npar","ncore", "kpar", "ncpus","vasp_cmd","quantumespresso_cmd","run_limit","nrg_convergence", \
                 "encut", "kpoints","extra_input_files", "move", "copy", "remove", "compress", "backup", "initial", "final", "strict_kpoints", "err_types", \
-                "infilename","outfilename","calculator"]
+                "infilename","outfilename","software"]
     for key in required:
         if not key in settings:
             raise QEWrapperError( key + "' missing from: '" + filename + "'")

@@ -6,5 +6,5 @@
   "run_limit":20,
   "infilename":"ZrO.in",
   "outfilename":"ZrO.out",
-  "calculator":"quantumespresso"
+  "software":"quantumespresso"
 }
