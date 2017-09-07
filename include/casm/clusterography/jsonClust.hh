@@ -12,8 +12,9 @@ namespace CASM {
   class ClustJsonHelper {
     ValueType &m_value;
     const Structure &m_struc;
+    double m_tol;
   public:
-    ClustJsonHelper(ValueType &_value, const Structure &_struc) :
+    ClustJsonHelper(ValueType &_value, const Structure &_struc, double _tol = TOL) :
       m_value(_value), m_struc(_struc) {};
 
     ValueType &value() {
@@ -25,6 +26,11 @@ namespace CASM {
     const Structure &struc()const {
       return m_struc;
     }
+
+    double tol() const {
+      return m_tol;
+    }
+
     operator ClustJsonHelper<const ValueType>()const {
       return ClustJsonHelper<const ValueType>(m_value, m_struc);
     };
@@ -53,8 +59,8 @@ namespace CASM {
   jsonParser &to_json(const ConstSiteOrbitreeJsonHelper &tree_helper, jsonParser &json);
 
   template<typename ValueType>
-  ClustJsonHelper<ValueType> jsonHelper(ValueType &_value, const Structure &_struc) {
-    return ClustJsonHelper<ValueType>(_value, _struc);
+  ClustJsonHelper<ValueType> jsonHelper(ValueType &_value, const Structure &_struc, double tol = TOL) {
+    return ClustJsonHelper<ValueType>(_value, _struc, tol);
   }
 }
 #endif

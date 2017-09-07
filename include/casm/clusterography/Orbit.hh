@@ -60,7 +60,7 @@ namespace CASM {
     ///Also, fill equivalence_map
     ///example:  GenericOrbit<SiteCluster> my_orbit(my_cluster); //specifies prototype
     ///          my_orbit.get_equivalent(my_point_group);      //maps protype onto all its equivalents
-    void get_equivalent(const SymGroup &sym_group); //Hang will do this
+    void get_equivalent(const SymGroup &sym_group, double tol);
 
     ///Apply symmetry to prototype and all the clusters in the orbit
     GenericOrbit &apply_sym(const SymOp &op);
@@ -68,17 +68,17 @@ namespace CASM {
     ///go through all cluster in orbit array and see if test_clust is among them,
     /// to within a lattice translation
     ///only translates if the periodicity flag is on
-    bool contains(const ClustType  &test_clust) const;
+    bool contains(const ClustType  &test_clust, double tol) const;
     /// check if test_site is contained in any of the equivalent clusters,
     /// to within a lattice translation
     /// only translates if the periodicity flag is on
-    bool contains(const typename ClustType::WhichCoordType &test_site) const;
+    bool contains(const typename ClustType::WhichCoordType &test_site, double tol) const;
 
     /// Same as contains, but returns index of equivalent cluster that maps onto test_clust
-    Index find(const ClustType  &test_clust) const;
+    Index find(const ClustType  &test_clust, double tol) const;
     /// Same as contains, but returns index of equivalent cluster that maps onto test_clust
     /// translation that maps equivalent cluster onto test_clust is stored in 'trans'
-    Index find(const ClustType  &test_clust, Coordinate &trans) const;
+    Index find(const ClustType  &test_clust, Coordinate &trans, double tol) const;
 
     /// calls collect_basis_info on all clusters in orbit
     void collect_basis_info(const Array<typename ClustType::WhichCoordType> &basis, const Coordinate &shift);

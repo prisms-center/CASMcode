@@ -25,6 +25,7 @@ namespace CASM {
     subcluster = starttree.subcluster;
     m_bspecs = starttree.bspecs();
     m_b2asym = starttree.m_b2asym;
+    m_tol = starttree.m_tol;
 
     //copy all orbitbranches over
     m_asym_unit = starttree._asym_unit();
@@ -33,6 +34,13 @@ namespace CASM {
       push_back(starttree[b]);
     }
   };
+  //********************************************************************
+
+  template<typename ClustType>
+  double GenericOrbitree<ClustType>::tol() const {
+    return m_tol;
+  }
+
   //********************************************************************
 
   template<typename ClustType>
@@ -234,7 +242,7 @@ namespace CASM {
 
         //Loop through all j Orbits in i Orbitbranch:
         for(j = 0; j < at(i).size(); j++) {
-          if(orbit(i, j).contains(test_clust))
+          if(orbit(i, j).contains(test_clust, tol()))
             return ind + j; //Return the linear orbit index test_clust is found in
         }
       }
@@ -254,7 +262,7 @@ namespace CASM {
 
     //Loop through all i Orbits in Orbitbranch with index nb:
     for(i = 0; i < at(nb).size(); i++) {
-      if(orbit(nb, i).contains(test_clust))
+      if(orbit(nb, i).contains(test_clust, tol()))
         return i; //Return the Orbit test_clust is found in
     }
 
@@ -408,7 +416,7 @@ namespace CASM {
 
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
-    at(0).back().get_equivalent(prim.factor_group());
+    at(0).back().get_equivalent(prim.factor_group(), tol());
 
 
     //for each cluster of the previous size, add points from gridstruc
@@ -450,12 +458,12 @@ namespace CASM {
 
           if(np == 1 && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
-            at(np).back().get_equivalent(prim.factor_group());
+            at(np).back().get_equivalent(prim.factor_group(), tol());
           }
           else if(tclust.max_length() < max_length[np] && tclust.min_length() > min_length && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
 
-            at(np).back().get_equivalent(prim.factor_group());
+            at(np).back().get_equivalent(prim.factor_group(), tol());
           }
           tclust.pop_back();
         }
@@ -531,7 +539,7 @@ namespace CASM {
 
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
-    at(0).back().get_equivalent(prim.factor_group());
+    at(0).back().get_equivalent(prim.factor_group(), tol());
 
 
     //for each cluster of the previous size, add points from gridstruc
@@ -577,7 +585,7 @@ namespace CASM {
                 std::cout << "Found a new cluster.... adding to Orbitree!\n";
                 std::cout << "The minimum length is " << min_length << "\n";
                 at(np).push_back(GenericOrbit<ClustType>(tclust));
-                at(np).back().get_equivalent(prim.factor_group());
+                at(np).back().get_equivalent(prim.factor_group(), tol());
                 numClust = numClust + 1;
                 if(maxClustLength < tclust.max_length()) {
                   maxClustLength = tclust.max_length();
@@ -647,7 +655,7 @@ namespace CASM {
 
           if(np == 1 && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
-            at(np).back().get_equivalent(prim.factor_group());
+            at(np).back().get_equivalent(prim.factor_group(), tol());
           }
           else if(tclust.max_length() < max_length[np] && tclust.min_length() > min_length && !contains(tclust)) {
             std::cout << "Found a new cluster.... adding to Orbitree!\n";
@@ -658,7 +666,7 @@ namespace CASM {
             std::cout << "The tclust we pushed back is \n"
                       << tclust << "\n";
 #endif //DEBUG
-            at(np).back().get_equivalent(prim.factor_group());
+            at(np).back().get_equivalent(prim.factor_group(), tol());
           }
           tclust.pop_back();
         }
@@ -716,7 +724,7 @@ namespace CASM {
 
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
-    at(0).back().get_equivalent(prim.factor_group());
+    at(0).back().get_equivalent(prim.factor_group(), tol());
 
     //for each cluster of the previous size, add points from gridstruc
     //   - see if the new cluster satisfies the size requirements
@@ -760,7 +768,7 @@ namespace CASM {
 
               if(tclust.min_length() > min_length && !contains(tclust)) {
                 at(np).push_back(GenericOrbit<ClustType>(tclust));
-                at(np).back().get_equivalent(prim.factor_group());
+                at(np).back().get_equivalent(prim.factor_group(), tol());
                 if(maxClustLength < tclust.max_length()) {
                   maxClustLength = tclust.max_length();
                 }
@@ -843,11 +851,11 @@ namespace CASM {
 
           if(np == 1 && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
-            at(np).back().get_equivalent(prim.factor_group());
+            at(np).back().get_equivalent(prim.factor_group(), tol());
           }
           else if((tclust.max_length() < max_length[np] || almost_zero(tclust.max_length() - max_length[np]))  && tclust.min_length() > min_length && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
-            at(np).back().get_equivalent(prim.factor_group());
+            at(np).back().get_equivalent(prim.factor_group(), tol());
           }
           tclust.pop_back();
         }
@@ -880,7 +888,7 @@ namespace CASM {
 
     // add empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
-    at(0).back().get_equivalent(symgroup);
+    at(0).back().get_equivalent(symgroup, tol());
 
     Index np, no, i;
     //Array<Array<int> > full_decor_map;
@@ -910,7 +918,7 @@ namespace CASM {
 
           // add orbit
           at(np).push_back(GenericOrbit<ClustType>(tclust));
-          at(np).back().get_equivalent(symgroup);
+          at(np).back().get_equivalent(symgroup, tol());
 
         } // unique decorations
 
@@ -1059,7 +1067,7 @@ namespace CASM {
               // if 'tclust' has not already been found
               at(np).push_back(GenericOrbit<ClustType>(tclust));
               //std::cout << "        get_equivalent()" << std::endl;
-              at(np).back().get_equivalent(prim.factor_group());
+              at(np).back().get_equivalent(prim.factor_group(), tol());
 
               // // write HopClusters & HopGroup to file
               // for(ne = 0; ne < at(np).back().size(); ne++)
@@ -1203,7 +1211,7 @@ namespace CASM {
       //std::cout << "        Add orbit!" << std::endl;
       at(prototype_list[i].size()).push_back(GenericOrbit<ClustType>(prototype_list[i]));
       //std::cout << "        get_equivalent()" << std::endl;
-      at(prototype_list[i].size()).back().get_equivalent(sym_group);
+      at(prototype_list[i].size()).back().get_equivalent(sym_group, tol());
 
       if(n_equiv[i] != at(prototype_list[i].size()).back().size()) {
         std::cerr << "Error in Orbitree::generate_orbitree_from_proto_file()." << std::endl
@@ -1279,7 +1287,7 @@ namespace CASM {
 
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
-    at(0).back().get_equivalent(prim.factor_group());
+    at(0).back().get_equivalent(prim.factor_group(), tol());
 
     //for each cluster of the previous size, add points from gridstruc
     //   - see if the new cluster satisfies the size requirements
@@ -1318,7 +1326,7 @@ namespace CASM {
           tclust.calc_properties();
           if(!contains(tclust) && tclust.min_length() > min_length) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
-            at(np).back().get_equivalent(prim.factor_group());
+            at(np).back().get_equivalent(prim.factor_group(), tol());
           }
 
           tclust.pop_back();
@@ -2013,7 +2021,7 @@ namespace CASM {
 
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
-    at(0).back().get_equivalent(phenom_clust.clust_group);
+    at(0).back().get_equivalent(phenom_clust.clust_group, tol());
 
     // loop through OrbitBranches of Orbits of clusters of np sites
     for(np = 1; np <= max_num_sites; np++) {
@@ -2072,7 +2080,7 @@ namespace CASM {
           if(np == 1 && !contains(tclust)) {
             //std::cout << "-- add point cluster" << std::endl << std::endl;
             at(np).push_back(GenericOrbit<ClustType>(tclust));
-            at(np).back().get_equivalent(phenom_clust.clust_group);
+            at(np).back().get_equivalent(phenom_clust.clust_group, tol());
           }
           else if(tclust.max_length() < max_length[np] && tclust.min_length() > min_length && !contains(tclust)) {
             //std::cout << "-- Found a new cluster.... adding to Orbitree!\n" << std::flush;
@@ -2083,7 +2091,7 @@ namespace CASM {
             std::cout << "The tclust we pushed back is \n" << tclust << "\n" << std::flush;
 #endif //DEBUG
 
-            at(np).back().get_equivalent(phenom_clust.clust_group);
+            at(np).back().get_equivalent(phenom_clust.clust_group, tol());
           }
 
           tclust.pop_back();
@@ -2237,7 +2245,7 @@ namespace CASM {
     //Gets the equivalent clusters and the cluster symmetry
     for(np = 0; np < (*this).size(); np++) {
       for(no = 0; no < at(np).size(); no++) {
-        at(np).at(no).get_equivalent(sym_group);
+        at(np).at(no).get_equivalent(sym_group, tol());
         // std::cout<<"Sym Group of np: "<<np<<"  no:"<<no<<std::endl;
         // at(np).at(no).prototype.clust_group.print(std::cout,FRAC);
         // std::cout<<"Permute group of the same"<<std::endl;
@@ -2377,7 +2385,7 @@ namespace CASM {
       //std::cout << "        Add orbit!" << std::endl;
       at(proto_clust[i].size()).push_back(GenericOrbit<ClustType>(proto_clust[i]));
       //std::cout << "        get_equivalent()" << std::endl;
-      at(proto_clust[i].size()).back().get_equivalent(sym_group);
+      at(proto_clust[i].size()).back().get_equivalent(sym_group, tol());
 
       bool include_subclusters;
       // check if should include_subclusters.  default is true
@@ -2443,7 +2451,7 @@ namespace CASM {
         if(!contains(test_clust)) {
           if(verbose) std::cout << "Adding this cluster: " << test_clust << std::endl;
           at(i).push_back(GenericOrbit< ClustType >(test_clust));
-          at(i).back().get_equivalent(prim.factor_group());
+          at(i).back().get_equivalent(prim.factor_group(), tol());
         }
       }
       while(choose.next_permute());
@@ -2527,9 +2535,9 @@ namespace CASM {
       tclust.within();
       tclust.calc_properties();
 
-      if(!_asym_unit().contains(tclust)) {
+      if(!_asym_unit().contains(tclust, tol())) {
         m_asym_unit.push_back(GenericOrbit<ClustType>(tclust));
-        m_asym_unit.back().get_equivalent(struc.factor_group());
+        m_asym_unit.back().get_equivalent(struc.factor_group(), tol());
         m_asym_unit.back().collect_basis_info(struc.basis);
         for(Index ne = 0; ne < m_asym_unit.back().size(); ne++) {
           m_b2asym[_asym_unit().back()[ne][0].basis_ind()][0] = _asym_unit().size() - 1;
