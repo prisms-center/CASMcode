@@ -121,6 +121,8 @@ namespace CASM {
       return !(*this == RHS);
     }
 
+    bool almost_equal(const Coordinate &RHS, double tol) const;
+
     /// Returns true if this->min_dist(RHS)<tol
     bool compare(const Coordinate &RHS, double tol = TOL) const;
 

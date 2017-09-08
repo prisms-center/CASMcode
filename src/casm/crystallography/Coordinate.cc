@@ -42,7 +42,7 @@ namespace CASM {
 
   //********************************************************************
 
-  Coordinate &Coordinate::operator -=(const Coordinate &RHS) {
+  Coordinate &Coordinate::operator-=(const Coordinate &RHS) {
     cart() -= RHS.cart();
     return *this;
 
@@ -57,7 +57,14 @@ namespace CASM {
   //********************************************************************
 
   bool Coordinate::operator==(const Coordinate &RHS) const {
-    return almost_equal(m_cart_coord, RHS.m_cart_coord);
+    return CASM::almost_equal(m_cart_coord, RHS.m_cart_coord);
+  }
+
+
+  //********************************************************************
+
+  bool Coordinate::almost_equal(const Coordinate &RHS, double tol) const {
+    return dist(RHS) < tol;
   }
 
 

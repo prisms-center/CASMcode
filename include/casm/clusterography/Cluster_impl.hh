@@ -263,7 +263,7 @@ namespace CASM {
     Index i, j;
 
     for(j = 0; j < size(); j++) {
-      if(test_elem.compare(at(j), tol))
+      if(test_elem.almost_equal(at(j), tol))
         return j;
     }
 
@@ -279,7 +279,7 @@ namespace CASM {
     index.reserve(test_cluster.size());
     for(i = 0; i < test_cluster.size(); i++) {
       for(j = 0; j < size(); j++) {
-        if(test_cluster[i].compare(at(j), tol) && !index.contains(j))
+        if(test_cluster[i].almost_equal(at(j), tol) && !index.contains(j))
           break;
       }
       if(j == size()) {
@@ -892,7 +892,7 @@ namespace CASM {
     Index i, j;
     for(i = 0; i < LHS.size(); i++) {
       for(j = 0; j < RHS.size(); j++) {
-        if((LHS[i].compare(RHS[j], tol)) && (!check_ind[j])) {
+        if((LHS[i].almost_equal(RHS[j], tol)) && (!check_ind[j])) {
           check_ind[j] = true;
           break;
         }
