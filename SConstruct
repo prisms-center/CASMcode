@@ -386,9 +386,7 @@ candidates = [
 cpppath = [x for x in candidates if x is not None]
 
 # link paths
-build_lib_paths = [env['LIBDIR']]
-if 'BOOST_PREFIX' in env and env['BOOST_PREFIX'] is not None:
-  build_lib_paths.append(join(env['BOOST_PREFIX'], 'lib'))
+build_lib_paths = [env['LIBDIR'], env['BOOST_LIBDIR']]
 Export('build_lib_paths')
 
 # link flags
