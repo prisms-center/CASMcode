@@ -658,7 +658,7 @@ if 'configure' in COMMAND_LINE_TARGETS:
   def if_failed(msg):
     print "\nConfiguration checks failed."
     print msg
-    exit()
+    exit(1)
   
   # Note: CheckLib with autoadd=1 (default), because some libraries depend on each other
   
@@ -693,5 +693,5 @@ if 'configure' in COMMAND_LINE_TARGETS:
   
   
   print "Configuration checks passed."
-  exit()
+  exit(0)
   
