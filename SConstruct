@@ -386,9 +386,7 @@ candidates = [
 cpppath = [x for x in candidates if x is not None]
 
 # link paths
-build_lib_paths = [env['LIBDIR']]
-if 'BOOST_PREFIX' in env and env['BOOST_PREFIX'] is not None:
-  build_lib_paths.append(join(env['BOOST_PREFIX'], 'lib'))
+build_lib_paths = [env['LIBDIR'], env['BOOST_LIBDIR']]
 Export('build_lib_paths')
 
 # link flags
@@ -660,7 +658,7 @@ if 'configure' in COMMAND_LINE_TARGETS:
   def if_failed(msg):
     print "\nConfiguration checks failed."
     print msg
-    exit()
+    exit(1)
   
   # Note: CheckLib with autoadd=1 (default), because some libraries depend on each other
   
@@ -695,5 +693,5 @@ if 'configure' in COMMAND_LINE_TARGETS:
   
   
   print "Configuration checks passed."
-  exit()
+  exit(0)
   
