@@ -5,6 +5,7 @@
 #include "casm/clusterography/Orbitree.hh"
 
 /// What is being used to test it:
+#include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
@@ -33,6 +34,7 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
   // read test file
   fs::path test_cases_path("tests/unit/clusterography/test_cases.json");
   jsonParser tests(test_cases_path);
+  double tol = TOL;
 
   for(auto test_it = tests.begin(); test_it != tests.end(); ++test_it) {
 
@@ -51,8 +53,8 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
     Structure prim(read_prim(j["prim"]));
 
     // generate cluster orbits
-    SiteOrbitree tree(prim.lattice());
-    tree = make_orbitree(prim, j["bspecs"]);
+    SiteOrbitree tree(prim.lattice(), tol);
+    tree = make_orbitree(prim, j["bspecs"], tol);
 
     jsonParser clust_json;
     to_json(jsonHelper(tree, prim), clust_json);

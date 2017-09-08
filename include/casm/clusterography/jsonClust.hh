@@ -15,7 +15,7 @@ namespace CASM {
     double m_tol;
   public:
     ClustJsonHelper(ValueType &_value, const Structure &_struc, double _tol = TOL) :
-      m_value(_value), m_struc(_struc) {};
+      m_value(_value), m_struc(_struc), m_tol(TOL) {};
 
     ValueType &value() {
       return m_value;

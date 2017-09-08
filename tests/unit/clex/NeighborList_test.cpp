@@ -129,6 +129,8 @@ BOOST_AUTO_TEST_CASE(Proj) {
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
+  primclex.settings().set_crystallography_tol(TOL);
+  double tol = primclex.crystallography_tol();
   Structure prim = primclex.get_prim();
   const DirectoryStructure &dir = primclex.dir();
   const ProjectSettings &set = primclex.settings();
@@ -141,9 +143,9 @@ BOOST_AUTO_TEST_CASE(Proj) {
   );
 
   // generate orbitree
-  SiteOrbitree tree(prim.lattice());
+  SiteOrbitree tree(prim.lattice(), tol);
   jsonParser bspecs_json(proj.bspecs());
-  tree = make_orbitree(prim, bspecs_json);
+  tree = make_orbitree(prim, bspecs_json, tol);
 
   // expand the nlist to contain 'tree'
   std::set<UnitCellCoord> nbors;
