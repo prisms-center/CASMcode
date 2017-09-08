@@ -332,6 +332,14 @@ namespace CASM {
           return dtconfig.orbit_name();
         });
       }
+
+      GenericDiffTransConfigFormatter<std::string> bg_configname() {
+        return GenericDiffTransConfigFormatter<std::string>("bg_configname",
+                                                            "canonical Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#', that represents the background configuration this was generated from",
+        [](const DiffTransConfiguration & dtconfig)->std::string {
+          return dtconfig.bg_configname();
+        });
+      }
     }
   }
 
@@ -345,6 +353,7 @@ namespace CASM {
       name<Kinetics::DiffTransConfiguration>(),
       from_configname(),
       to_configname(),
+      bg_configname(),
       scelname(),
       orbitname()
     );

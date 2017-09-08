@@ -161,6 +161,10 @@ namespace CASM {
       m_orbit_name = orbit_name;
     }
 
+    void DiffTransConfiguration::set_bg_configname(const std::string &configname) {
+      m_bg_configname = configname;
+    }
+
     /// Writes the DiffTransConfiguration to JSON
     jsonParser &DiffTransConfiguration::to_json(jsonParser &json) const {
       json.put_obj();

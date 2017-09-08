@@ -82,8 +82,14 @@ namespace CASM {
 
       void set_orbit_name(const std::string &orbit_name);
 
+      void set_bg_configname(const std::string &configname);
+
       std::string orbit_name() const {
         return m_orbit_name;
+      }
+
+      std::string orbit_name() const {
+        return m_bg_configname;
       }
 
       /// States whether the diffusion transformation is possible with the given Configuration
@@ -127,6 +133,7 @@ namespace CASM {
       bool m_from_config_is_A;
 
       std::string m_orbit_name;
+      std::string m_bg_configname;
     };
 
     /// \brief prints this DiffTransConfiguration

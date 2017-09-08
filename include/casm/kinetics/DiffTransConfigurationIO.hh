@@ -345,6 +345,8 @@ namespace CASM {
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> orbitname();
 
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> bg_configname();
+
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> calc_status();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> failure_type();
