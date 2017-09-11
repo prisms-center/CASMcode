@@ -765,16 +765,17 @@ LCHARG = .FALSE.\n";
                "  column must contain the path that should be appended to the       \n" <<
                "  PSEUDO_DIR_PATH to specify the UPF file for that species.      \n\n" <<
 
-               "  Additional columns, such as 'magnetic moment' in the example below are     \n\n" <<
+               "  Additional columns, such as 'if_pos' in the example below are     \n\n" <<
                "  and used to specify the value used for a particular species in the\n" <<
-               "  infile. The column heading must match a valid quantum espress input setting.  \n\n";
+               "  infile. The column heading must match a valid quantum espresso input setting.\n"
+               "  For now only supported additional tag is if_pos, a way to fixed certain lattice positions.\n\n";
 
       args.log << "EXAMPLE: SPECIES \n";
       args.log << "-------\n" <<
                "PSEUDO_DIR_PATH = /absolute/path/to/quantumespresso_potentials\n" <<
-               "SPECIES    ALIAS    UPF  UPF_location\n" <<
-               "Ni         Ni       1       PAW_PBE/Ni.UPF \n" <<
-               "Al        Al       1       PAW_PBE/Al.UPF \n";
+               "SPECIES    ALIAS    UPF  UPF_location     if_pos\n" <<
+               "Ni         Ni       1       PAW_PBE/Ni.UPF     1,1,1\n" <<
+               "Al        Al       1       PAW_PBE/Al.UPF      1,1,1\n";
       args.log << "-------\n\n\n";
 
       args.log << "$infilename:                                                              \n" <<

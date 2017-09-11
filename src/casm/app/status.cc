@@ -154,7 +154,7 @@ Instructions for volume relaxed Quantum Espresso energies:             \n\n\
   settings files.                                                      \n\n\
 For either of the choices above do the following:             \n\n\
 - Select which configurations to calculate properties for using the    \n\
-  'casm select' command. Use 'casm select --set on' to select all      \n\
+  'casm select' command. Use 'casm select --set-on' to select all      \n\
   configurations. By default, the 'selected' state of each             \n\
   configuration is stored by CASM in the master config_list.json file, \n\
   located in the hidden '.casm' directory. The standard selections     \n\

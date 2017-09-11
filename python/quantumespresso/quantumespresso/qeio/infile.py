@@ -1010,12 +1010,19 @@ class Infile:
             coords=[]
             for specie in poscar.basis:
                 if specie.SD_FLAG !="":
-                    flags=SD_FLAG.split()
+                    flags=specie.SD_FLAG.split()
                     int_flags=[]
                     for flag in flags:
                         int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
-                    coords+= [(specie.occupant,specie.position,int_flags)]
-                coords+= [(specie.occupant,specie.position)]
+                    coords+= [(specie.occ_alias,specie.position,int_flags)]
+                elif species[specie.occupant].tags["if_pos"] !="":
+                    flags=species[specie.occupant].tags["if_pos"].split(',')
+                    int_flags=[]
+                    for flag in flags:
+                        int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
+                    coords+= [(specie.occ_alias,specie.position,int_flags)]
+                else:
+                    coords+= [(specie.occ_alias,specie.position)]
             self.cards["ATOMIC_POSITIONS"].coords=coords
             if "SYSTEM" in self.namelists.keys():
                 self.namelists["SYSTEM"].tags["nat"]=len(poscar.basis)
@@ -1035,8 +1042,10 @@ class Infile:
                                         print "Found! " + specie + " in SPECIES file with pseudopotential at " + species[entry].pseudodir
                                     else: 
                                         print "WARNING: PSEUDO_DIR_PATH in SPECIES file does not match 'pseudo_dir' tag in &CONTROL namelist of Infile"
+                                        print "WILL ASSUME 'pseudo_dir' tag is correct"
+                                        self.cards["ATOMIC_SPECIES"].pseudos+= [species[entry].pseudo_location]
                                 else:
-                                    print "Search failed! No data for " + species + " to be found" 
+                                    print "Search failed! No data for " + specie + " to be found" 
                 for specie in self.cards["ATOMIC_SPECIES"].species:
                     if specie not in poscar.basis_dict().keys():
                         index= self.cards["ATOMIC_SPECIES"].species.index(specie)
