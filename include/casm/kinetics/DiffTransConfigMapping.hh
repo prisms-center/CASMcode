@@ -35,7 +35,7 @@ namespace CASM {
     std::vector<BasicStructure<Site>> structures;
 
     /// The configuration the input structure was mapped onto
-    std::unique_ptr<DiffTransConfiguration> config;
+    //std::unique_ptr<Kinetics::DiffTransConfiguration> config;
 
     /// relaxation_properties is populated by relaxation properties:
     ///
@@ -173,7 +173,7 @@ namespace CASM {
     ///\endparblock
     ///
     DiffTransConfigMapperResult import_structure_occupation(const fs::path &pos_path,
-                                                            const DiffTransConfiguration *hint_ptr) const;
+                                                            const Kinetics::DiffTransConfiguration *hint_ptr) const;
 
 
     ///\brief imports structure specified by 'pos_path' into primclex() by finding optimal mapping

@@ -88,7 +88,7 @@ namespace CASM {
         return m_orbit_name;
       }
 
-      std::string orbit_name() const {
+      std::string bg_configname() const {
         return m_bg_configname;
       }
 

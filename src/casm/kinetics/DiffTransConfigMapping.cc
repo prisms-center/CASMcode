@@ -1,4 +1,4 @@
-#include "casm/clex/DiffTransConfigMapping.hh"
+#include "casm/kinetics/DiffTransConfigMapping.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/json_io/container.hh"
@@ -51,7 +51,7 @@ namespace CASM {
 
   DiffTransConfigMapperResult DiffTransConfigMapper::import_structure_occupation(
     const fs::path &pos_path,
-    const Configuration *hint_ptr) const {
+    const Kinetics::DiffTransConfiguration *hint_ptr) const {
 
     DiffTransConfigMapperResult result;
     //result.structures = _get_structures(pos_path);
@@ -72,4 +72,5 @@ namespace CASM {
     return result;
   }
 
-  //*******************************************************************************************
+}
+//*******************************************************************************************
