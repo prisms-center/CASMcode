@@ -23,6 +23,9 @@ namespace CASM {
       _refresh_calc_properties(calctype);
       it = m_calc_properties_map.find(calctype);
     }
+    if((it->second).contains("mapped")) {
+      return it->second["mapped"];
+    }
     return it->second;
   }
 
