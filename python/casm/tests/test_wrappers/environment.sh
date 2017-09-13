@@ -1,0 +1,2 @@
+export CASM_TEST_PROJECTS=$PWD
+

@@ -97,10 +97,10 @@ namespace CASM {
 
     args.log <<
              "Enumerate supercells\n\
-- Execute: 'casm enum --supercells --max V' to enumerate supercells up to \n\
+- Execute: 'casm enum --method ScelEnum --max V' to enumerate supercells up to \n\
   volume V (units: number of primitive cells).                            \n\
 - Supercells are listed in the SCEL file.\n\
-- See 'casm enum --desc' for extended help documentation on how to use the\n\
+- See 'casm enum --desc ScelEnum' for extended help documentation on how to use the\n\
   '--matrix' and '--lattice-directions' options to perform restricted     \n\
   supercell enumeration (i.e. 2d, 1d, multiples of other supercells).     \n\
 - See 'casm format' for a description and location of the  \n\
@@ -115,18 +115,18 @@ namespace CASM {
     args.log <<
              "Enumerate configurations\n\
 - Several options are possible:                                        \n\
-- Execute: 'casm enum --configs --all' to enumerate configurations for \n\
-  for all supercells.                                                  \n\
-- Execute: 'casm enum --configs --min MINV --max MAXV' to enumerate    \n\
-  configurations for supercells ranging in volume from MINV to MAXV    \n\
-  (units: number of primitive cells).                                  \n\
-- Execute: 'casm enum --configs --scellname NAME' to enumerate         \n\
-  configurations for a particular supercell.                           \n\
+- Execute: 'casm enum --method ConfigEnumAllOccupations --all' \n\
+  to enumerate configurations for for all supercells.                  \n\
+- Execute: 'casm enum --method ConfigEnumAllOccupations --min MINV --max MAXV'\n\
+  to enumerate configurations for supercells ranging in volume    \n\
+   from MINV to MAXV (units: number of primitive cells).            \n\
+- Execute: 'casm enum ---method ConfigEnumAllOccupations --scelname NAME'\n\
+  to enumerate  configurations for a particular supercell.    \n\
 - Generated configurations are listed in the 'config_list.json' file.  \n\
   This file should not usually be edited manually.                     \n\
 - Use the 'casm view' command to quickly view configurations in your   \n\
   favorite visualization program. See 'casm view -h' for help.         \n\
-- See 'casm enum --desc' for extended help documentation on how to use \n\
+- See 'casm enum --desc ConfigEnumAllOccupations' for extended help documentation on how to use \n\
   '--filter' command to perform restricted enumeration of              \n\
   configurations.                                                      \n\
 - Once you have a cluster expansion, see 'casm format --monte' for     \n\
@@ -147,8 +147,14 @@ Instructions for volume relaxed VASP energies:                         \n\n\
   VASP in: '$ROOT/training_data/settings/$CURR_CALCTYPE'. See          \n\
   'casm format --vasp' for a description and location of the VASP      \n\
   settings files.                                                      \n\
+Instructions for volume relaxed Quantum Espresso energies:             \n\n\
+- Create $inputfile, SPECIES, and 'relax.json' (with calculator tag set) files for\n\
+  Quantum Espresso in: '$ROOT/training_data/settings/$CURR_CALCTYPE'. See\n\
+  'casm format --qe' for a description and location of the Quantum Espresso\n\
+  settings files.                                                      \n\n\
+For either of the choices above do the following:             \n\n\
 - Select which configurations to calculate properties for using the    \n\
-  'casm select' command. Use 'casm select --set on' to select all      \n\
+  'casm select' command. Use 'casm select --set-on' to select all      \n\
   configurations. By default, the 'selected' state of each             \n\
   configuration is stored by CASM in the master config_list.json file, \n\
   located in the hidden '.casm' directory. The standard selections     \n\
@@ -163,15 +169,16 @@ Instructions for volume relaxed VASP energies:                         \n\n\
 - Selections may be used to query the properties of particular         \n\
   configurations using the 'casm query' command. See 'casm query -h'   \n\
   for the complete list of options.                                    \n\
-- Execute: 'casm-calc --setup' to setup VASP input files for all       \n\
-  selected configuration, but not submit the jobs. This is often a     \n\
+    '$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json'\n\
+- Execute: 'casm-calc --setup' to setup VASP/QuantumEspresso input files for all\n\
+  selected configurations, but not submit the jobs. This is often a     \n\
   useful first step to check that input files have been prepared       \n\
   correctly.                                                           \n\
-- Execute: 'casm-calc --submit' to submit VASP jobs for all selected   \n\
+- Execute: 'casm-calc --submit' to submit VASP/QuantumEspresso jobs for all selected   \n\
   configurations. Only configurations which have not yet been          \n\
   calculated will run.                                                 \n\
 - See 'casm-calc -h' for help and other options.                       \n\
-- VASP results will be stored at:                                      \n\
+- VASP/QuantumEspresso results will be stored at:                      \n\
     '$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json'\n\
   Results in 'properties.calc.json' are expected to be ordered to match\n\
   the 'POS' file at '$ROOT/training_data/$SCELNAME/$CONFIGID/POS'      \n\

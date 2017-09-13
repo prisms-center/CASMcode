@@ -10,16 +10,14 @@ setup_string = \
 """
 from distutils.core import setup
 import glob
-setup(name='casm',
+setup(name='quantumespresso',
       version='{0}',
       url='{1}',
-      description='CASM Python API and interface with DFT codes.',
+      description='A wrapper for submitting and collecting Quantum Espresso jobs developed for CASM',
       author='CASM developers',
       author_email='casm-developers@lists.engr.ucsb.edu',
       license='LGPL2.1',
-      packages=['casm','casm.vaspwrapper', 'casm.questwrapper', 'casm.qewrapper', 'casm.learn', 'casm.project', 'casm.plotting'],
-      scripts=glob.glob('scripts/*'),
-      install_requires=['prisms_jobs', 'scipy', 'pandas', 'scikit-learn', 'bokeh', 'tornado==4.3']
+      packages=['quantumespresso','quantumespresso.qeio']
       )
 """.format(version, url)
 
