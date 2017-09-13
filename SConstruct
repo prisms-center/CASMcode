@@ -680,16 +680,21 @@ if 'configure' in COMMAND_LINE_TARGETS:
     if_failed("Please check your boost version") 
   if not conf.CheckBOOST_NO_CXX11_SCOPED_ENUMS():
     if_failed("Please check your boost installation or the CASM_BOOST_NO_CXX11_SCOPED_ENUMS environment variable")
-  for module_name in ['numpy', 'sklearn', 'deap', 'pandas']:
+  for module_name in ['numpy', 'sklearn', 'deap', 'pandas', 'bokeh', 'tornado']:
     if not check_module(module_name):
       if_failed("Python module '" + module_name + "' is not installed")
-  if not check_module('pbs'):
-      print """
-      Python module 'pbs' is not installed
-        This module is only necessary for setting up and submitting DFT jobs
-        **It is not the module available from pip**"
-        It is available from: https://github.com/prisms-center/pbs
-      """
+  if not check_module('prisms_jobs'):
+      if not check_module('pbs'):
+        if_failed("Python module '" + 'prisms_jobs' + "' is not installed")
+      else:
+        print """
+        Warning: Use of the Python module 'pbs' is deprecated. 
+          It has been replaced by 'prisms-jobs' (https://github.com/prisms-center/prisms_jobs)
+          Install via:
+            conda install -c prisms-center prisms-jobs
+              or
+            pip install prisms-jobs
+        """
   
   
   print "Configuration checks passed."

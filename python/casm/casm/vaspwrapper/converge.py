@@ -7,7 +7,13 @@ import sys
 import json
 # import re
 # import warnings
-import pbs
+try:
+  from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
+except ImportError:
+  # use of the pbs module is deprecated after CASM v0.2.1
+  from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
+  from pbs import PBSError as JobsError
+
 
 ### Local ###
 import vasp
@@ -58,7 +64,7 @@ class Converge(object):
         CASM project directory hierarchy
 
       settings: dict
-        Settings for pbs and the relaxation, see vaspwrapper.read_settings
+        Settings for job submission and the relaxation, see vaspwrapper.read_settings
 
       configdir: str
         Directory where configuration results are stored. The result of:
@@ -68,7 +74,7 @@ class Converge(object):
         The name of the configuration to be calculated
 
       auto: boolean
-        True if using pbs module's JobDB to manage pbs jobs
+        True if using prisms_jobs module's JobDB to manage jobs
 
       sort: boolean
         True if sorting atoms in POSCAR by type
@@ -89,7 +95,7 @@ class Converge(object):
               Path to configuration directory. If None, uses the current working
               directory
             auto: boolean, optional, default=True,
-              Use True to use the pbs module's JobDB to manage pbs jobs
+              Use True to use the prisms_jobs module's JobDB to manage jobs
 
             sort: boolean, optional, default=True,
               Use True to sort atoms in POSCAR by type
@@ -547,7 +553,7 @@ class Converge(object):
         sys.stdout.flush()
 
     def submit(self):
-        """Submit PBS jobs for this VASP convergence"""
+        """Submit jobs for this VASP convergence"""
 
         print "Submitting..."
         print "Configuration:", self.configname
@@ -562,7 +568,7 @@ class Converge(object):
                 self.prop = prop
                 print "Value:", self.prop
                 # first, check if the job has already been submitted and is not completed
-                db = pbs.JobDB()    #pylint: disable=invalid-name
+                db = JobDB()    #pylint: disable=invalid-name
                 print "Calculation directory:", propdir
                 jobid = db.select_regex_id("rundir", propdir)
                 print "JobID:", jobid
@@ -601,8 +607,8 @@ class Converge(object):
                             job = db.select_job(j)
                             if job["taskstatus"] == "Incomplete":
                                 try:
-                                    pbs.complete_job(jobid=j)
-                                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as my_error:
+                                    complete_job(jobid=j)
+                                except (JobsError, JobDBError, EligibilityError) as my_error:
                                     print str(my_error)
                                     sys.stdout.flush()
 
@@ -623,7 +629,7 @@ class Converge(object):
                     # continue
 
 
-                print "Preparing to submit a VASP Convergence PBS job"
+                print "Preparing to submit a VASP Convergence job"
                 sys.stdout.flush()
 
                 # cd to configdir, submit jobs from configdir, then cd back to currdir
@@ -651,10 +657,10 @@ class Converge(object):
                 if self.settings["postrun"] is not None:
                     cmd += self.settings["postrun"] + "\n"
 
-                print "  Constructing a PBS job"
+                print "  Constructing a job"
                 sys.stdout.flush()
-                # construct a pbs.Job
-                job = pbs.Job(name=casm.jobname(self.configdir) + "_" + casm.jobname(propdir),\
+                # construct a Job
+                job = Job(name=casm.jobname(self.configdir) + "_" + casm.jobname(propdir),\
                               account=self.settings["account"],\
                               nodes=int(ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                               ppn=int(self.settings["ppn"]),\
@@ -682,7 +688,7 @@ class Converge(object):
             except UserWarning:
                 continue
 
-        print "CASM VASPWrapper Convergence PBS job submission complete\n"
+        print "CASM VASPWrapper Convergence job submission complete\n"
         sys.stdout.flush()
 
 
@@ -746,8 +752,8 @@ class Converge(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as my_error:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as my_error:
                     print str(my_error)
                     sys.stdout.flush()
 
@@ -783,8 +789,8 @@ class Converge(object):
             # mark error
             if self.auto:
                 try:
-                    pbs.error_job("Not converging")
-                except (pbs.PBSError, pbs.JobDBError) as my_error:
+                    error_job("Not converging")
+                except (JobsError, JobDBError) as my_error:
                     print str(my_error)
                     sys.stdout.flush()
 
@@ -811,8 +817,8 @@ class Converge(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as my_error:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as my_error:
                     print str(my_error)
                     sys.stdout.flush()
 

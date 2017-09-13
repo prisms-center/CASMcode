@@ -18,7 +18,8 @@ setup(name='casm',
       author_email='casm-developers@lists.engr.ucsb.edu',
       license='LGPL2.1',
       packages=['casm','casm.vaspwrapper', 'casm.questwrapper', 'casm.learn', 'casm.project', 'casm.plotting'],
-      scripts=glob.glob('scripts/*')
+      scripts=glob.glob('scripts/*'),
+      install_requires=['prisms_jobs', 'scipy', 'pandas', 'scikit-learn', 'bokeh', 'tornado==4.3']
       )
 """.format(version, url)
 

@@ -56,18 +56,6 @@ before_install:
   - pip install --upgrade pip
   - pip install --user -r python/casm/requirements.txt
   
-  # install pbs
-  - git clone https://github.com/prisms-center/pbs.git
-  - export PYINSTALL=/home/travis/.local
-  - export BIN=/home/travis/.local/bin
-  - echo $PYINSTALL
-  - echo $BIN
-  - cd pbs && git checkout v2.0.0 && make install && cd ..  
-  - unset BIN
-  - unset PYINSTALL
-  - export PATH=$PATH:$BIN
-  - export PYTHONPATH=/home/travis/.local/lib/python2.7/site-packages:$PYTHONPATH
-  
   # check env
   - printenv
   

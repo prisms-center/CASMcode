@@ -1,5 +1,10 @@
 import os, math, sys, json, re, warnings
-import pbs
+try:
+  from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
+except ImportError:
+  # use of the pbs module is deprecated after CASM v0.2.1
+  from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
+  from pbs import PBSError as JobsError
 import vasp
 import casm
 import casm.project
@@ -32,7 +37,7 @@ class Relax(object):
         CASM project directory hierarchy
 
       settings: dict
-        Settings for pbs and the relaxation, see vaspwrapper.read_settings
+        Settings for job submission and the relaxation, see vaspwrapper.read_settings
 
       configdir: str
         Directory where configuration results are stored. The result of:
@@ -42,7 +47,7 @@ class Relax(object):
         The name of the configuration to be calculated
 
       auto: boolean
-        True if using pbs module's JobDB to manage pbs jobs
+        True if using prisms_jobs module's JobDB to manage jobs
 
       sort: boolean
         True if sorting atoms in POSCAR by type
@@ -64,7 +69,7 @@ class Relax(object):
               directory
 
             auto: boolean, optional, default=True,
-              Use True to use the pbs module's JobDB to manage pbs jobs
+              Use True to use the prisms_jobs module's JobDB to manage jobs
 
             sort: boolean, optional, default=True,
               Use True to sort atoms in POSCAR by type
@@ -184,12 +189,12 @@ class Relax(object):
 
 
     def submit(self):
-        """Submit a PBS job for this VASP relaxation"""
+        """Submit a job for this VASP relaxation"""
 
         print "Submitting..."
         print "Configuration:", self.configname
         # first, check if the job has already been submitted and is not completed
-        db = pbs.JobDB()
+        db = JobDB()
         print "Calculation directory:", self.calcdir
         id = db.select_regex_id("rundir", self.calcdir)
         print "JobID:", id
@@ -227,8 +232,8 @@ class Relax(object):
                   job = db.select_job(j)
                   if job["taskstatus"] == "Incomplete":
                       try:
-                          pbs.complete_job(jobid=j)
-                      except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                          complete_job(jobid=j)
+                      except (JobsError, JobDBError, EligibilityError) as e:
                           print str(e)
                           sys.stdout.flush()
 
@@ -249,7 +254,7 @@ class Relax(object):
             return
 
 
-        print "Preparing to submit a VASP relaxation PBS job"
+        print "Preparing to submit a VASP relaxation job"
         sys.stdout.flush()
 
         # cd to configdir, submit jobs from configdir, then cd back to currdir
@@ -276,10 +281,10 @@ class Relax(object):
         if self.settings["postrun"] is not None:
           cmd += self.settings["postrun"] + "\n"
 
-        print "Constructing a PBS job"
+        print "Constructing a job"
         sys.stdout.flush()
-        # construct a pbs.Job
-        job = pbs.Job(name=casm.jobname(self.configdir),\
+        # construct a Job
+        job = Job(name=casm.jobname(self.configdir),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -302,7 +307,7 @@ class Relax(object):
         # return to current directory
         os.chdir(currdir)
 
-        print "CASM VASPWrapper relaxation PBS job submission complete\n"
+        print "CASM VASPWrapper relaxation job submission complete\n"
         sys.stdout.flush()
 
 
@@ -366,8 +371,8 @@ class Relax(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
                     print str(e)
                     sys.stdout.flush()
 
@@ -403,8 +408,8 @@ class Relax(object):
             # mark error
             if self.auto:
                 try:
-                    pbs.error_job("Not converging")
-                except (pbs.PBSError, pbs.JobDBError) as e:
+                    error_job("Not converging")
+                except (JobsError, JobDBError) as e:
                     print str(e)
                     sys.stdout.flush()
 
@@ -434,8 +439,8 @@ class Relax(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
                     print str(e)
                     sys.stdout.flush()
 

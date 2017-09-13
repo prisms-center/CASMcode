@@ -1,6 +1,7 @@
+prisms_jobs
 numpy
 pandas
 scikit-learn
-scoop
 deap
 bokeh
+tornado==4.3
