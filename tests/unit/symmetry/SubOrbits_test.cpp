@@ -13,7 +13,7 @@
 
 /// What is being used to test it:
 #include "Common.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 
@@ -64,7 +64,8 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
     orbits.begin() + 2,
     orbits.begin() + 4,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
   // O-O pair within layer and O-O pair between layers
@@ -99,6 +100,31 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
       1, 1, 1, 1, 1, 1,
       0, 0, 0, 0, 0, 0
     });
+
+    {
+      std::vector<IntegralCluster> generators;
+      BOOST_CHECK_EQUAL(true, true);
+      make_suborbit_generators(orbits[0], config, std::back_inserter(generators));
+      //std::cout << "orbit 0: \n" << orbits[0].prototype() << std::endl;
+      BOOST_CHECK_EQUAL(generators.size(), 1);
+    }
+
+    {
+      std::vector<IntegralCluster> generators;
+      BOOST_CHECK_EQUAL(true, true);
+      make_suborbit_generators(orbits[1], config, std::back_inserter(generators));
+      //std::cout << "orbit 1: \n" << orbits[1].prototype() << std::endl;
+      BOOST_CHECK_EQUAL(generators.size(), 2);
+    }
+
+    {
+      std::vector<IntegralCluster> generators;
+      BOOST_CHECK_EQUAL(true, true);
+      make_suborbit_generators(orbits[2], config, std::back_inserter(generators));
+      //std::cout << "orbit 2: \n" << orbits[2].prototype() << std::endl;
+      BOOST_CHECK_EQUAL(generators.size(), 1);
+    }
+
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
       config.supercell().prim_grid(),
       config.crystallography_tol());

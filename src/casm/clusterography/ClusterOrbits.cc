@@ -1,8 +1,10 @@
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clusterography/ClusterInvariants_impl.hh"
-#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clusterography/CoordCluster.hh"
+#include "casm/clusterography/ClusterDecl.hh"
 #include "casm/symmetry/Orbit_impl.hh"
-#include "casm/basis_set/DoF.hh"
+#include "casm/crystallography/Site.hh"
 
 namespace CASM {
 
@@ -118,7 +120,7 @@ namespace CASM {
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator
 #define _VECTOR_INSERTER(ORBIT) std::back_insert_iterator<std::vector<ORBIT> >
 
-#define _ORBIT(ELEMENT,SYMCOMPARE) Orbit<ELEMENT,SYMCOMPARE>
+#define _ORBIT(ELEMENT,SYMCOMPARE) GenericOrbit<ELEMENT,SYMCOMPARE>
 
 #define CLUSTER_ORBITS_VECTOR_INST(ELEMENT,SYMCOMPARE) \
   CLUSTER_ORBITS_INST( \

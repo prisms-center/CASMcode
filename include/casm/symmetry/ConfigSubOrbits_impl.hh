@@ -11,17 +11,6 @@ namespace CASM {
 
   // --- MakeConfigSubOrbitGenerators ---
 
-  MakeConfigSubOrbitGenerators::MakeConfigSubOrbitGenerators(const Configuration &_config) :
-    m_config(_config),
-    m_prim_config(m_config.primitive().in_canonical_supercell()),
-    m_prim_config_fg(m_prim_config.factor_group()),
-    m_config_subgroup(
-      make_invariant_subgroup(
-        m_config.supercell(),
-        m_prim_config.supercell(),
-        m_prim_config_fg.begin(),
-        m_prim_config_fg.end())) {}
-
   template<typename OrbitType, typename ElementOutputIterator>
   ElementOutputIterator MakeConfigSubOrbitGenerators::operator()(
     const OrbitType &orbit,

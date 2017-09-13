@@ -9,8 +9,8 @@
 using namespace CASM;
 
 void coordinate_constructor_test() {
-  Lattice lat(Lattice::hexagonal());
   double tol = 1e-5;
+  Lattice lat(Lattice::hexagonal());
   Coordinate::vector_type tvec(0.1, 0.2, 0.3);
 
   {
@@ -57,8 +57,8 @@ void coordinate_constructor_test() {
 }
 
 void coordinate_operation_test() {
-  Lattice lat(Lattice::hexagonal());
   double tol = 1e-5;
+  Lattice lat(Lattice::hexagonal());
 
   Coordinate::vector_type vec1(0.1, 0.2, 0.3);
   Coordinate::vector_type vec2(0.6, 0.4, 0.2);
@@ -168,8 +168,8 @@ void coordinate_operation_test() {
 }
 
 void coordinate_periodicity_test() {
-  Lattice lat(Lattice::hexagonal());
   double tol = 1e-5;
+  Lattice lat(Lattice::hexagonal());
 
   /// min_dist
   {

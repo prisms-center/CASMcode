@@ -2,23 +2,18 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-//#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
-//#include "casm/kinetics/DiffTransEnumEquivalents.hh"
+#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
-#include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
+#include "casm/app/AppIO_impl.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
-#include "casm/symmetry/Orbit_impl.hh"
-#include "casm/symmetry/InvariantSubgroup_impl.hh"
-#include "casm/symmetry/SubOrbits_impl.hh"
-#include "casm/kinetics/DiffTransConfigEnumPerturbations.hh"
-//#include "casm/casm_io/VaspIO.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
+#include "casm/kinetics/DiffTransConfiguration_impl.hh"
+#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 
 using namespace CASM;
 using namespace test;
@@ -27,7 +22,7 @@ typedef Orbit <
 Kinetics::DiffusionTransformation,
          Kinetics::PrimPeriodicDiffTransSymCompare > PrimPeriodicDiffTransOrbit;
 
-BOOST_AUTO_TEST_SUITE(DiffTransConfigEnumPerturbationsTest)
+BOOST_AUTO_TEST_SUITE(DiffTransConfigEnumOccPerturbationsTest)
 
 BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
 
@@ -67,7 +62,8 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
     orbits.begin() + 2,
     orbits.begin() + 4,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
 
@@ -144,22 +140,25 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
     orbits.begin() + 2,
     orbits.begin() + 4,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
 
+  /*
   print_clust(
     diff_trans_orbits.begin(),
     diff_trans_orbits.end(),
     std::cout,
     PrototypePrinter<Kinetics::DiffusionTransformation>());
+  */
 
   // Make background config
   Supercell _scel {&primclex, Lattice(1 * a, 1 * b, 1 * c)};
   Configuration _config(_scel);
   _config.set_occupation({0, 0, 1, 0});
 
-  std::cout << "construct background_config" << std::endl;
+  //std::cout << "construct background_config" << std::endl;
   Supercell background_scel {&primclex, Lattice(3 * a, 3 * b, 3 * c)};
   Configuration background_config = _config.
                                     fill_supercell(background_scel, primclex.prim().factor_group()).
@@ -167,10 +166,10 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
   BOOST_CHECK_EQUAL(true, true);
 
   /// Construct enumerator
-  std::cout << "construct enumerator" << std::endl;
+  //std::cout << "construct enumerator" << std::endl;
   fs::path local_bspecs_path = "tests/unit/kinetics/ZrO_local_bspecs_0.json";
   jsonParser local_bspecs {local_bspecs_path};
-  Kinetics::DiffTransConfigEnumPerturbations enumerator(
+  Kinetics::DiffTransConfigEnumOccPerturbations enumerator(
     background_config,
     diff_trans_orbits[0],
     local_bspecs);
@@ -180,10 +179,19 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
   BOOST_CHECK_EQUAL((enumerator.begin() != enumerator.end()), true);
 
   /// Enumerate perturbations (may be duplicates at this point)
-  std::cout << "enumerate" << std::endl;
+  //std::cout << "enumerate" << std::endl;
   std::vector<Kinetics::DiffTransConfiguration> collection;
-  std::copy(enumerator.begin(), enumerator.end(), std::back_inserter(collection));
-  BOOST_CHECK_EQUAL(collection.size(), 1);
+  Index index = 0;
+  for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
+    //std::cout << "OUTPUT: " << index << std::endl;
+    //std::cout << "  diff_trans: \n" << it->diff_trans() << std::endl;
+    //std::cout << "  occ: " << it->from_config().occupation() << std::endl;
+    //std::cout << "  occ: " << it->to_config().occupation() << std::endl;
+    collection.push_back(*it);
+    ++index;
+  }
+  //std::cout << "collection.size(): " << collection.size() << std::endl;
+  BOOST_CHECK_EQUAL(collection.size(), 19);
 
   /*
   for(auto &dtc : collection) {
@@ -229,7 +237,8 @@ BOOST_AUTO_TEST_CASE(FCCTest) {
     orbits.begin() + 2,
     orbits.begin() + 4,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 12);
 
   print_clust(
@@ -278,7 +287,7 @@ BOOST_AUTO_TEST_CASE(FCCTest) {
     true);
 
   /// Constructor enumerator
-  Kinetics::DiffTransConfigEnumPerturbations enumerator(l12config, diff_trans_orbits[4], l12_local_bspecs);
+  Kinetics::DiffTransConfigEnumOccPerturbations enumerator(l12config, diff_trans_orbits[4], l12_local_bspecs);
   BOOST_CHECK_EQUAL(true, true);
 
   /// Enumerate perturbations (may be duplicates at this point)

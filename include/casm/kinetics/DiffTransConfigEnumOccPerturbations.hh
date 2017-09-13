@@ -1,33 +1,18 @@
-#ifndef CASM_DiffTransConfigEnumPerturbations
-#define CASM_DiffTransConfigEnumPerturbations
+#ifndef CASM_DiffTransConfigEnumOccPerturbations
+#define CASM_DiffTransConfigEnumOccPerturbations
 
 #include "casm/container/InputEnumerator.hh"
 #include "casm/container/Counter.hh"
+#include "casm/symmetry/Orbit.hh"
+#include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/symmetry/OrbitGeneration.hh"
-#include "casm/kinetics/DiffTransEnumEquivalents.hh"
+#include "casm/kinetics/OccPerturbation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
 
 namespace CASM {
 
   namespace Kinetics {
-
-    class Perturbation : public std::set<OccupationTransformation> {
-
-    public:
-
-      Perturbation();
-
-      Perturbation(std::set<OccupationTransformation> &from_set);
-
-      Perturbation &apply_sym(const SymOp &op);
-
-      Configuration &apply_to(Configuration &config) const;
-
-      template<typename PermuteIteratorIt>
-      bool is_canonical(PermuteIteratorIt begin, PermuteIteratorIt end) const;
-    };
-
 
     /// \brief Enumerate DiffTransConfiguration for a particular DiffusionTransformation,
     ///        set of local clusters, and a particular initial Configuration
@@ -41,7 +26,8 @@ namespace CASM {
     ///   the 'base' DiffTransConfigurations that will be perturbed. The subgroup
     ///   of the supercell factor group that leaves the 'base' diff trans invariant
     ///   is the 'diff_trans_g'.
-    /// - For each 'base' diff trans, generate local orbits
+    /// - For each 'base' diff trans, generate local orbits using the base config
+    ///   & diff trans invariant group
     /// - For each local orbit, enumerate perturbations. Only include perturbations
     ///   that modify every site in the cluster to avoid repeats.
     /// - The subgroup of the 'diff_trans_g' that leaves the local orbit protype
@@ -51,14 +37,14 @@ namespace CASM {
     ///   form of the 'from_config'.
     /// - Enumerate DiffTransConfiguration using the base diff trans and the
     ///   canonical 'from_config'.
-    class DiffTransConfigEnumPerturbations : public InputEnumeratorBase<DiffTransConfiguration> {
+    class DiffTransConfigEnumOccPerturbations : public InputEnumeratorBase<DiffTransConfiguration> {
 
       // -- Required members -------------------
-      //class Perturbation;
+      //class OccPerturbation;
     public:
 
       /// \brief Construct with an IntegralCluster
-      DiffTransConfigEnumPerturbations(
+      DiffTransConfigEnumOccPerturbations(
         const Configuration &background_config,
         const PrimPeriodicDiffTransOrbit &diff_trans_orbit, // or const DiffusionTransformation &diff_trans
         const jsonParser &local_cspecs // or iterators over IntegralClusters
@@ -82,6 +68,9 @@ namespace CASM {
       double _tol() const;
 
       /// Supercell
+      const Structure &_prim() const;
+
+      /// Supercell
       const Supercell &_supercell() const;
 
 
@@ -97,11 +86,13 @@ namespace CASM {
       ///   (w/ respect to base diff trans invariant group)
       void _init_perturbations_data();
 
-      /// Generate the current Perturbation (non-canonical) and whether it is valid
-      std::pair<Perturbation, bool> _current_perturb() const;
+      /// Generate the current OccPerturbation (non-canonical) and whether it is valid
+      ///
+      /// - If not valid, the OccPerturbation itself may not be complete
+      std::pair<OccPerturbation, bool> _current_perturb() const;
 
       /// Apply perturbation, find canonical 'from_config' and set current DiffTransConfiguration
-      void _set_current(const Perturbation &perturb);
+      void _set_current(const OccPerturbation &perturb);
 
 
       /// The background configuration which will be perturbed
@@ -110,6 +101,9 @@ namespace CASM {
       /// The DiffusingTransformation to be applied in all symmetrically unique
       /// places in the background config
       const PrimPeriodicDiffTransOrbit m_diff_trans_orbit;
+
+      /// Include the base DiffTransConfiguration in the output
+      bool m_include_unperturbed;
 
       /// Avoid repeating perturbations
       bool m_skip_subclusters;
@@ -127,11 +121,15 @@ namespace CASM {
         /// m_background_config transformed in the same manner as diff_trans
         Configuration config;
 
-        /// The subgroup of _supercell() leaving diff_trans invariant
+        /// The subgroup of supercell permutations leaving diff_trans invariant
         std::vector<PermuteIterator> diff_trans_g;
 
-        /// Alternative representation of diff_trans_g
-        SymGroup diff_trans_sym_g;
+        /// The subgroup of supercell permutations leaving config and diff_trans invariant
+        /// - Generating group for local clusters / perturbations
+        std::vector<PermuteIterator> generating_g;
+
+        /// Alternative representation of generating_g
+        SymGroup generating_sym_g;
       };
 
     private:
@@ -147,11 +145,14 @@ namespace CASM {
       /// Local orbit specs
       const jsonParser m_local_cspecs;
 
+      /// SymCompare to translate local orbits into the supercell
+      ScelPeriodicSymCompare<IntegralCluster> m_scel_sym_compare;
+
       /// Local orbits for the current base diff trans
-      std::vector<LocalIntegralClusterOrbit> m_local_orbit;
+      std::vector<LocalOrbit<IntegralCluster>> m_local_orbit;
 
       /// The current local orbit
-      std::vector<LocalIntegralClusterOrbit>::iterator m_local_orbit_it;
+      std::vector<LocalOrbit<IntegralCluster>>::iterator m_local_orbit_it;
 
       /// The subgroup of the current diff trans group that leaves the local orbit prototype invariant
       /// - i.e. The subgroup of m_base_it->diff_trans_g that leaves
@@ -169,9 +170,9 @@ namespace CASM {
       notstd::cloneable_ptr<DiffTransConfiguration> m_current;
     };
 
-    bool has_local_bubble_overlap(std::vector<LocalIntegralClusterOrbit> &local_orbits, const Supercell &scel);
+    bool has_local_bubble_overlap(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, const Supercell &scel);
 
-    std::vector<Supercell> viable_supercells(std::vector<LocalIntegralClusterOrbit> &local_orbits, std::vector<Supercell>);
+    std::vector<Supercell> viable_supercells(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, std::vector<Supercell>);
 
 
   }

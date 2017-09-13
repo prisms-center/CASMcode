@@ -95,6 +95,33 @@ namespace CASM {
    *  @{
   */
 
+  // --- std::map<K, V> --------------
+
+  /// Converts to a JSON object
+  template<typename K, typename V>
+  jsonParser &to_json(const std::map<K, V> &map, jsonParser &json) {
+    json.put_array();
+    for(const auto &val : map) {
+      jsonParser tmp = jsonParser::array();
+      tmp.push_back(val.first);
+      tmp.push_back(val.second);
+      json.push_back(tmp);
+    }
+    return json;
+  }
+
+  /// Read map from JSON
+  ///
+  /// Clears any previous contents
+  template<typename K, typename V>
+  void from_json(std::map<K, V> &map, const jsonParser &json) {
+    map.clear();
+    for(auto it = json.begin(); it != json.end(); ++it) {
+      const jsonParser &tmp = *it;
+      map.emplace(tmp[0].get<K>(), tmp[1].get<V>());
+    }
+  }
+
   // --- std::map<std::string, T> --------------
 
   /// Converts to a JSON object

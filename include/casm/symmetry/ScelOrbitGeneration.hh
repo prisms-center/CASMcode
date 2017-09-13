@@ -59,6 +59,39 @@ namespace CASM {
     mutable PermuteIterator m_to_canonical;
   };
 
+  /// \brief Functor to find to check if element is in canonical form
+  ///
+  /// - Uses generating SymGroup, SymCompareType::prepare, SymCompareType::compare
+  ///
+  /// \ingroup OrbitGeneration
+  ///
+  template<typename _ElementType>
+  struct ScelIsCanonical {
+
+    typedef _ElementType Element;
+    typedef ScelPeriodicSymCompare<Element> SymCompareType;
+
+    ScelIsCanonical(const Supercell &_scel);
+
+    const Supercell &supercell() const;
+
+    const SymCompareType &sym_compare() const;
+
+    /// \brief Applies symmetry to check if any Element is greater than e
+    /// - Use [supercell().permute_begin(), supercell().permute_end()) to canonicalize
+    bool operator()(const Element &e) const;
+
+    /// \brief Applies symmetry to check if any Element is greater than e
+    template<typename PermuteIteratorIt>
+    bool operator()(
+      const Element &e,
+      PermuteIteratorIt begin,
+      PermuteIteratorIt end) const;
+
+    const Supercell *m_scel;
+    SymCompareType m_sym_compare;
+  };
+
 }
 
 #endif

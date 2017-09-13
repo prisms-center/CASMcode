@@ -1,60 +1,61 @@
 #ifndef CASM_Comparisons
 #define CASM_Comparisons
 
+#include "casm/misc/CRTPBase.hh"
+
 namespace CASM {
 
   /// \brief Implements other comparisons in terms of '<'
   ///
   /// If
   /// \code
-  /// Derived::operator<(const Derived& B) const
+  /// Derived::operator<(const MostDerived& B) const
   /// \endcode
-  /// is implemented, then Comparisons<Derived> implements:
+  /// is implemented, then Comparisons implements:
   /// - '>', '<=', '>=', '==', '!='
-  /// - '==' and '!=' can be specialized in Derived by implementing private
+  /// - '==' and '!=' can be specialized in MostDerived by implementing private
   ///   methods '_eq' and '_ne'
   ///
-  /// The Derived class definition needs to include:
+  /// The MostDerived class definition needs to include:
   /// \code
-  /// friend Comparisons<Derived>;
+  /// template<typename T> friend class Comparisons;
   /// \endcode
   ///
-  template<typename Derived>
-  struct Comparisons {
+  template<typename Base>
+  struct Comparisons : public Base {
 
-    bool operator>(const Derived &B) const {
+    using Base::derived;
+    typedef typename Base::MostDerived MostDerived;
+
+    bool operator>(const MostDerived &B) const {
       return B < derived();
     };
 
-    bool operator<=(const Derived &B) const {
+    bool operator<=(const MostDerived &B) const {
       return !(B < derived());
     };
 
-    bool operator>=(const Derived &B) const {
+    bool operator>=(const MostDerived &B) const {
       return !(derived() < B);
     };
 
-    bool operator==(const Derived &B) const {
-      return derived()._eq(B);
+    bool operator==(const MostDerived &B) const {
+      return derived().eq_impl(B);
     };
 
-    bool operator!=(const Derived &B) const {
-      return derived()._ne(B);
+    bool operator!=(const MostDerived &B) const {
+      return derived().ne_impl(B);
     };
 
 
   protected:
 
-    const Derived &derived() const {
-      return *static_cast<const Derived *>(this);
-    }
-
-    bool _eq(const Derived &B) const {
+    bool eq_impl(const MostDerived &B) const {
       return (!(derived() < B) && !(B < derived()));
     };
 
-    bool _ne(const Derived &B) const {
-      return !derived()._eq(B);
+    bool ne_impl(const MostDerived &B) const {
+      return !derived().eq_impl(B);
     };
 
   };

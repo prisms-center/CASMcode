@@ -7,15 +7,14 @@
 #include <iostream>
 
 #include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clusterography/IntegralCluster.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
+#include "casm/clusterography/ClusterDecl.hh"
+#include "casm/kinetics/DiffusionTransformationTraits.hh"
+#include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
 
-  /*class SymGroup;
-  class Index;
   class Structure;
-  class Site;*/
+  class Site;
 
   /** \defgroup IntegralCluster
 

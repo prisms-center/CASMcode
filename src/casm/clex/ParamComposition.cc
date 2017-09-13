@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <unistd.h>
-#include "casm/external/boost.hh"
+
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Structure.hh"

@@ -2,13 +2,18 @@
 #define CASM_DiffTransConfigurationTraits
 
 #include <string>
-#include <vector>
-#include "casm/kinetics/DiffTransConfiguration.hh"
+
 namespace CASM {
   template<typename T> struct traits;
+  template<typename ConfigType, typename IsEqualImpl> class GenericConfigCompare;
 
   namespace Kinetics {
+    class DiffTransConfigIsEqualFast;
+    class DiffTransConfigIsEqualSimple;
     class DiffTransConfiguration;
+
+    using DiffTransConfigIsEqual = DiffTransConfigIsEqualSimple;
+    using DiffTransConfigCompare = GenericConfigCompare<DiffTransConfiguration, DiffTransConfigIsEqual>;
   }
 
   template<>

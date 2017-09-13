@@ -1,38 +1,59 @@
-#include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/symmetry/Orbit_impl.hh"
-#include "casm/kinetics/DiffTransConfiguration.hh"
-#include "casm/clex/Clexulator.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/clex/NeighborList.hh"
-#include "casm/database/ConfigDatabase.hh"
-#include "casm/app/AppIO.hh"
-#include "casm/clex/ChemicalReference.hh"
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+
+#include "casm/kinetics/DiffTransConfiguration_impl.hh"
+
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/symmetry/Orbit_impl.hh"
+#include "casm/clex/Clexulator.hh"
+#include "casm/database/Named_impl.hh"
+#include "casm/database/DiffTransConfigDatabase.hh"
+
 
 namespace CASM {
 
+  namespace DB {
+    template class Named<CRTPBase<Kinetics::DiffTransConfiguration> >;
+    template class Indexed<CRTPBase<Kinetics::DiffTransConfiguration> >;
+  }
+
   namespace Kinetics {
 
+    // --- DiffTransConfiguration ---
+
+    DiffTransConfiguration::DiffTransConfiguration(const Configuration &_from_config,
+                                                   const PrimPeriodicDiffTransOrbit &_dtorbit) :
+      m_config_A(_from_config),
+      m_config_B(_from_config),
+      m_sym_compare(_from_config.supercell()),
+      m_diff_trans(m_sym_compare.prepare(_dtorbit.prototype())),
+      m_orbit_name(_dtorbit.name()) {
+
+      m_diff_trans.apply_to(m_config_B);
+      _sort();
+    }
 
     DiffTransConfiguration::DiffTransConfiguration(const Configuration &_from_config,
                                                    const DiffusionTransformation &_diff_trans) :
-      m_diff_trans(_diff_trans), m_from_config(_from_config), Calculable(_from_config.primclex()) {
-      ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
-                                                 m_from_config.supercell().crystallography_tol());
-      m_diff_trans = symcompare.prepare(m_diff_trans);
+      m_config_A(_from_config),
+      m_config_B(_from_config),
+      m_sym_compare(_from_config.supercell()),
+      m_diff_trans(m_sym_compare.prepare(_diff_trans)) {
+
+      m_diff_trans.apply_to(m_config_B);
+      _sort();
     }
 
     /// Construct a DiffTransConfiguration from JSON data
     DiffTransConfiguration::DiffTransConfiguration(
       const Supercell &_supercell,
       const jsonParser &_data) :
-      m_diff_trans(_supercell.prim()),
-      m_from_config(_supercell),
-      Calculable(_supercell.primclex()) {
+
+      m_config_A(_supercell),
+      m_config_B(_supercell),
+      m_sym_compare(_supercell),
+      m_diff_trans(_supercell.prim()) {
 
       this->from_json(_data, _supercell);
 
@@ -42,110 +63,103 @@ namespace CASM {
     DiffTransConfiguration::DiffTransConfiguration(
       const PrimClex &_primclex,
       const jsonParser &_data) :
-      m_diff_trans(_primclex.prim()),
-      m_from_config(Supercell(& _primclex, _primclex.prim().lattice())),
-      Calculable(_primclex) {
+
+      m_config_A(Supercell(&_primclex, _primclex.prim().lattice())),
+      m_config_B(Supercell(&_primclex, _primclex.prim().lattice())),
+      m_sym_compare(supercell()),
+      m_diff_trans(_primclex.prim()) {
 
       this->from_json(_data, _primclex);
 
     }
 
+    const Supercell &DiffTransConfiguration::supercell() const {
+      return from_config().supercell();
+    }
+
+    /// \brief Returns the initial configuration
+    const Configuration &DiffTransConfiguration::from_config() const {
+      if(m_from_config_is_A) {
+        return m_config_A;
+      }
+      else {
+        return m_config_B;
+      }
+    }
+
+    /// \brief Returns the final configuration
+    const Configuration &DiffTransConfiguration::to_config() const {
+      if(m_from_config_is_A) {
+        return m_config_B;
+      }
+      else {
+        return m_config_A;
+      }
+    }
+
+    /// \brief Returns the diffusion transformation that is occurring
+    const DiffusionTransformation &DiffTransConfiguration::diff_trans() const {
+      return m_diff_trans;
+    }
+
+    /// \brief Compare DiffTransConfiguration
+    /// Compares diff_trans first then
+    /// from_config if diff_trans are equal
+    /// - Comparison is made using the sorted forms
+    bool DiffTransConfiguration::operator<(const DiffTransConfiguration &B) const {
+      return less()(B);
+    }
+
+    /// \brief Compare DiffTransConfiguration
+    /// Compares diff_trans first then
+    /// from_config if diff_trans are equal
+    /// - Comparison is made using the sorted forms
+    DiffTransConfigCompare DiffTransConfiguration::less() const {
+      return DiffTransConfigCompare(*this);
+    }
+
+    /// \brief Check if DiffTransConfiguration are equal
+    /// Compares diff_trans first then
+    /// from_config if m_diff_trans are equal
+    /// - Comparison is made using the sorted forms
+    DiffTransConfigIsEqual DiffTransConfiguration::equal_to() const {
+      return DiffTransConfigIsEqual(*this);
+    }
+
     /// \brief sort DiffTransConfiguration in place
     DiffTransConfiguration &DiffTransConfiguration::sort() {
-      Configuration to = to_config();
-      if(to < m_from_config) {
-        m_from_config = to;
-        m_diff_trans.reverse();
-      }
+      // now always keeping sorted
       return *this;
     }
 
     /// \brief Returns a sorted version of this DiffTransConfiguration
-    DiffTransConfiguration DiffTransConfiguration::sorted() const {
-      DiffTransConfiguration tmp {*this};
-      return tmp.sort();
-    }
-
-    bool DiffTransConfiguration::is_sorted() const {
-      Configuration to = to_config();
-      return m_from_config < to;
-    }
-
-    PermuteIterator DiffTransConfiguration::to_canonical() const {
-      // check which supercell factor group operations
-      // when applied to m_diff_trans results in the greatest
-      // DiffusionTransformation
-      std::vector<PermuteIterator> checklist;
-      ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
-                                                 m_from_config.supercell().crystallography_tol());
-      DiffusionTransformation greatest = symcompare.prepare(m_diff_trans);
-      for(auto it = m_from_config.supercell().permute_begin();
-          it != m_from_config.supercell().permute_end(); ++it) {
-        DiffusionTransformation tmp = symcompare.prepare(copy_apply(it.sym_op(), m_diff_trans));
-        if(tmp == greatest) {
-          checklist.push_back(it);
-        }
-        else if(tmp > greatest) {
-          checklist.clear();
-          greatest = tmp;
-          checklist.push_back(it);
-        }
-      }
-
-      // of these operations check which one maximizes
-      // the result of applying to m_from_config
-      auto it = checklist.begin();
-      DiffTransConfiguration max_dtc(copy_apply(*it, from_config()), greatest);
-      PermuteIterator canon_op_it {*it};
-      ++it;
-      for(; it != checklist.end(); ++it) {
-
-        Configuration tmp = copy_apply(*it, from_config());
-
-        DiffTransConfiguration dtc_tmp(tmp, greatest);
-        if((dtc_tmp >= max_dtc || !max_dtc.has_valid_from_occ()) && dtc_tmp.has_valid_from_occ()) {
-          max_dtc = dtc_tmp.sorted();
-          canon_op_it = *it;
-        }
-      }
-      // return the operation that transforms this to canonical form
-      return canon_op_it;
-    }
-
-    DiffTransConfiguration DiffTransConfiguration::canonical_form() const {
-      return copy_apply(this->to_canonical(), *this);
-    }
-
-    bool DiffTransConfiguration::is_canonical() const {
-      return std::all_of(m_from_config.supercell().permute_begin(),
-                         m_from_config.supercell().permute_end(),
-      [&](const PermuteIterator & p) {
-        return (copy_apply(p, *this) <= *this);
-      });
-    }
-
-    DiffTransConfiguration &DiffTransConfiguration::apply_sym(const PermuteIterator &it) {
-      ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
-                                                 m_from_config.supercell().crystallography_tol());
-      m_from_config = apply(it, m_from_config);
-
-      m_diff_trans = apply(it, m_diff_trans);
-
-      m_diff_trans = symcompare.prepare(m_diff_trans);
-
+    const DiffTransConfiguration &DiffTransConfiguration::sorted() const {
+      // now always keeping sorted
       return *this;
     }
 
-    std::string DiffTransConfiguration::_generate_name() const {
+    bool DiffTransConfiguration::is_sorted() const {
+      // now always keeping sorted
+      return true;
+    }
+
+    /// \brief Apply symmetry, does not sort
+    DiffTransConfiguration &DiffTransConfiguration::apply_sym(const PermuteIterator &it) {
+      m_diff_trans = m_sym_compare.prepare(m_diff_trans.apply_sym(it));
+      m_config_A.apply_sym(it);
+      m_config_B = m_config_A;
+      m_diff_trans.apply_to(m_config_B);
+      _sort();
+      return *this;
+    }
+
+    std::string DiffTransConfiguration::generate_name_impl() const {
       return m_orbit_name + "/" + from_config().supercell().name() + "/" + id();
     }
 
     void DiffTransConfiguration::set_orbit_name(const std::string &orbit_name) {
       m_orbit_name = orbit_name;
     }
-
-
-
 
     /// Writes the DiffTransConfiguration to JSON
     jsonParser &DiffTransConfiguration::to_json(jsonParser &json) const {
@@ -162,22 +176,73 @@ namespace CASM {
     }
 
     /// Reads the DiffTransConfiguration from JSON
-    void DiffTransConfiguration::from_json(const jsonParser &json, const Supercell &scel) {
-      m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], scel.prim());
+    void DiffTransConfiguration::from_json(const jsonParser &json, const Supercell &_scel) {
+
+      // get cache
+      CASM::from_json(cache(), json["cache"]);
+
+      // get config
       std::vector<std::string> splt_vec;
       std::string configname = json["from_configname"].get<std::string>();
       boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
-      m_from_config = Configuration(scel, splt_vec[1], json["from_config_data"]);
+      m_config_A = Configuration(_scel, splt_vec[1], json["from_config_data"]);
+      m_config_B = m_config_A;
+
+      // get diff trans
+      m_sym_compare = ScelPeriodicDiffTransSymCompare(_scel);
+      m_diff_trans = m_sym_compare.prepare(
+                       jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim()));
+      m_diff_trans.apply_to(m_config_B);
       set_orbit_name(json["orbit_name"].get<std::string>());
+
+      _sort();
     }
 
     /// Reads the DiffTransConfiguration from JSON
-    void DiffTransConfiguration::from_json(const jsonParser &json, const PrimClex &primclex) {
-      m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], primclex.prim());
-      m_from_config = Configuration(primclex, json["from_configname"].get<std::string>(), json["from_config_data"]);
+    void DiffTransConfiguration::from_json(const jsonParser &json, const PrimClex &_primclex) {
+
+      // get cache
+      CASM::from_json(cache(), json["cache"]);
+
+      // get config
+      m_config_A = Configuration(
+                     _primclex,
+                     json["from_configname"].get<std::string>(),
+                     json["from_config_data"]);
+      m_config_B = m_config_A;
+
+      // get diff trans
+      m_sym_compare = ScelPeriodicDiffTransSymCompare(supercell());
+      m_diff_trans = m_sym_compare.prepare(
+                       jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim()));
+      m_diff_trans.apply_to(m_config_B);
       set_orbit_name(json["orbit_name"].get<std::string>());
+
+      _sort();
     }
 
+    /*
+    /// Reads the DiffTransConfiguration from JSON
+    void DiffTransConfiguration::from_json(const jsonParser &json, const PrimClex &_primclex) {
+
+      // get cache
+      CASM::from_json(cache(), json["cache"]);
+
+      // get from_config
+      m_config_A = make_configuration(_primclex, json["from_config"].get<std::string>());
+      m_config_B = m_config_A;
+
+      // get diff_trans
+      m_sym_compare = ScelPeriodicDiffTransSymCompare(supercell());
+      m_diff_trans = m_sym_compare.prepare(
+        make_diff_trans(_primclex, json["diff_trans"].get<std::string>()));
+
+      _sort();
+    }
+    */
+
+    /// Check that DiffTrans does not include a single supercell site twice due
+    /// to small supercell size
     bool DiffTransConfiguration::is_valid() const {
       std::set<Index> unique_indices;
       for(auto &traj : diff_trans().specie_traj()) {
@@ -188,11 +253,6 @@ namespace CASM {
     }
 
     bool DiffTransConfiguration::has_valid_from_occ() const {
-      ScelPeriodicDiffTransSymCompare symcompare(from_config().supercell().prim_grid(),
-                                                 from_config().supercell().crystallography_tol());
-      if(diff_trans() != symcompare.prepare(diff_trans())) {
-        std::cerr << "Diffusion Transformation is not based in this Configuration's supercell!" << std::endl;
-      }
       for(auto traj : diff_trans().specie_traj()) {
         Index l = from_config().supercell().linear_index(traj.from.uccoord);
         if(from_config().occ(l) != traj.from.occ) {
@@ -205,34 +265,44 @@ namespace CASM {
 
     /// The name of the canonical form of the from config
     std::string DiffTransConfiguration::from_configname() const {
-      auto it = primclex().db<Configuration>().scel_range(from_config().supercell().name()).begin();
-      for(; it != primclex().db<Configuration>().scel_range(from_config().supercell().name()).end(); ++it) {
-        if(it->is_equivalent(from_config())) {
-          return it->name();
-        }
+      auto cache_it = cache().find("from_configname");
+      if(cache_it == cache().end()) {
+        std::string result = from_config().canonical_form().name();
+        cache_insert("from_configname", result);
+        return result;
       }
-      return "not_in_project";
+      return cache_it->get<std::string>();
     }
 
     /// The name of the canonical form of the to config
     std::string DiffTransConfiguration::to_configname() const {
-      auto it = primclex().db<Configuration>().scel_range(from_config().supercell().name()).begin();
-      for(; it != primclex().db<Configuration>().scel_range(from_config().supercell().name()).end(); ++it) {
-        if(it->is_equivalent(to_config())) {
-          return it->name();
-        }
+      auto cache_it = cache().find("to_configname");
+      if(cache_it == cache().end()) {
+        std::string result = to_config().canonical_form().name();
+        cache_insert("to_configname", result);
+        return result;
       }
-      return "not_in_project";
+      return cache_it->get<std::string>();
     }
 
     /// A permute iterator it such that from_config = copy_apply(it,from_config.canonical_form())
     PermuteIterator DiffTransConfiguration::from_config_from_canonical() const {
-      return from_config().from_canonical();
+      if(!cache().contains("from_config_from_canonical")) {
+        PermuteIterator result = from_config().from_canonical();
+        cache_insert("from_config_from_canonical", result);
+        return result;
+      }
+      return cache()["from_config_from_canonical"].get<PermuteIterator>(supercell());
     }
 
     /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
     PermuteIterator DiffTransConfiguration::to_config_from_canonical() const {
-      return to_config().from_canonical();
+      if(!cache().contains("to_config_from_canonical")) {
+        PermuteIterator result = from_config().from_canonical();
+        cache_insert("to_config_from_canonical", result);
+        return result;
+      }
+      return cache()["to_config_from_canonical"].get<PermuteIterator>(supercell());
     }
 
     void DiffTransConfiguration::write_pos() const {
@@ -241,8 +311,8 @@ namespace CASM {
         fs::create_directories(dir.configuration_dir(name()));
       }
       catch(const fs::filesystem_error &ex) {
-        std::cerr << "Error in DiffTransConfiguration::write_pos()." << std::endl;
-        std::cerr << ex.what() << std::endl;
+        default_err_log() << "Error in DiffTransConfiguration::write_pos()." << std::endl;
+        default_err_log() << ex.what() << std::endl;
       }
 
       fs::ofstream file(dir.POS(name()));
@@ -267,13 +337,25 @@ namespace CASM {
       return sout;
     }
 
+    void DiffTransConfiguration::_sort() {
+
+      if(m_config_B < m_config_A) {
+        m_from_config_is_A = false;
+      }
+      else {
+        m_from_config_is_A = true;
+      }
+    }
+
     /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
     Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
       Configuration result = bg_config;
-      ScelPeriodicDiffTransSymCompare symcompare(bg_config.supercell().prim_grid(),
-                                                 bg_config.supercell().crystallography_tol());
-      if(diff_trans != symcompare.prepare(diff_trans)) {
-        std::cerr << "Diffusion Transformation is not based in this Configuration's supercell!" << std::endl;
+      ScelPeriodicDiffTransSymCompare sym_compare(bg_config.supercell());
+      if(diff_trans != sym_compare.prepare(diff_trans)) {
+        std::cout << "diff_trans: \n" << diff_trans << std::endl;
+        std::cout << "sym_compare.prepare(diff_trans): \n" << sym_compare.prepare(diff_trans) << std::endl;
+
+        throw std::runtime_error("Error in make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config)");
       }
       for(auto traj : diff_trans.specie_traj()) {
         Index l = bg_config.supercell().linear_index(traj.from.uccoord);
@@ -282,7 +364,8 @@ namespace CASM {
             result.set_occ(l, traj.from.occ);
           }
           else {
-            std::cerr << "Diffusion Transformation does not have valid starting occupant for this position in this Configuration" << std::endl;
+            default_err_log() << "Diffusion Transformation does not have valid starting occupant for this position in this Configuration" << std::endl;
+            throw std::runtime_error("Error in make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config)");
           }
         }
       }

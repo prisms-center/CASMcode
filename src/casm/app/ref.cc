@@ -1,3 +1,4 @@
+#include <boost/filesystem.hpp>
 #include "casm/app/casm_functions.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -173,7 +174,7 @@ namespace CASM {
     if(!root.empty()) {
       std::stringstream ss;
       DirectoryStructure dir(root);
-      Structure prim(read_prim(dir.prim()));
+      Structure prim(read_prim(dir.prim(), TOL));
 
       ss << "       For this project, the expected order is:\n"
          << "        '[";

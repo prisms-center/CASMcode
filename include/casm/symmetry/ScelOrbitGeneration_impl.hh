@@ -31,6 +31,7 @@ namespace CASM {
     Element result = m_sym_compare.prepare(e);
     auto it = supercell().permute_begin();
     auto end = supercell().permute_end();
+    m_to_canonical = it;
     while(it != end) {
       auto test = m_sym_compare.prepare(copy_apply(it, e));
       if(m_sym_compare.compare(result, test)) {
@@ -50,8 +51,10 @@ namespace CASM {
   template<typename PermuteIteratorIt>
   typename ScelCanonicalGenerator<_ElementType>::Element
   ScelCanonicalGenerator<_ElementType>::operator()(const Element &e, PermuteIteratorIt begin, PermuteIteratorIt end) const {
+    std::cout << "begin ScelCanonicalGenerator<_ElementType>::operator()" << std::endl;
     Element result = m_sym_compare.prepare(e);
     auto it = begin;
+    m_to_canonical = *it;
     while(it != end) {
       auto test = m_sym_compare.prepare(copy_apply(*it, e));
       if(m_sym_compare.compare(result, test)) {
@@ -60,6 +63,7 @@ namespace CASM {
       }
       ++it;
     }
+    std::cout << "end ScelCanonicalGenerator<_ElementType>::operator()" << std::endl;
     return result;
   }
 
@@ -73,6 +77,45 @@ namespace CASM {
   template<typename _ElementType>
   PermuteIterator ScelCanonicalGenerator<_ElementType>::from_canonical() const {
     return to_canonical().inverse();
+  }
+
+
+  template<typename _ElementType>
+  ScelIsCanonical<_ElementType>::ScelIsCanonical(
+    const Supercell &_scel) :
+    m_scel(&_scel),
+    m_sym_compare(_scel.prim_grid(), _scel.crystallography_tol()) {}
+
+  template<typename _ElementType>
+  const Supercell &ScelIsCanonical<_ElementType>::supercell() const {
+    return *m_scel;
+  }
+
+  template<typename _ElementType>
+  const typename ScelIsCanonical<_ElementType>::SymCompareType &
+  ScelIsCanonical<_ElementType>::sym_compare() const {
+    return m_sym_compare;
+  }
+
+  /// \brief Applies symmetry to check if any Element is greater than e
+  template<typename _ElementType>
+  bool ScelIsCanonical<_ElementType>::operator()(const Element &e) const {
+    return (*this)(e, supercell().permute_begin(), supercell().permute_end());
+  }
+
+  /// \brief Applies symmetry to check if any Element is greater than e
+  template<typename _ElementType>
+  template<typename PermuteIteratorIt>
+  bool ScelIsCanonical<_ElementType>::operator()(
+    const Element &e,
+    PermuteIteratorIt begin,
+    PermuteIteratorIt end) const {
+
+    auto less_than = [&](const PermuteIterator & op) {
+      auto test = m_sym_compare.prepare(copy_apply(op, e));
+      return m_sym_compare.compare(e, test);
+    };
+    return std::none_of(begin, end, less_than);
   }
 
 }

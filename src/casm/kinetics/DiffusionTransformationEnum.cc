@@ -1,10 +1,12 @@
-#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
-#include "casm/app/AppIO_impl.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
+
+#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/app/AppIO_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_DiffusionTransformationEnum_interface() {
@@ -58,7 +60,7 @@ namespace CASM {
     const std::string DiffusionTransformationEnum::interface_help =
       "DiffusionTransformationEnum: \n\n"
 
-      "  bspecs: JSON object \n"
+      "  cspecs: JSON object \n"
       "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
       "    JSON item \"cspecs\" should be a cspecs style initialization of cluster number and sizes.\n"
       "    See below.          \n\n"
@@ -161,7 +163,11 @@ namespace CASM {
 
       std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
       auto end2 = make_prim_periodic_diff_trans_orbits(
-                    orbits.begin(), orbits.end(), primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+                    orbits.begin(),
+                    orbits.end(),
+                    primclex.crystallography_tol(),
+                    std::back_inserter(diff_trans_orbits),
+                    &primclex);
 
       for(auto &diff_trans_orbit : diff_trans_orbits) {
         auto speciemap = diff_trans_orbit.prototype().specie_count();
@@ -295,7 +301,8 @@ namespace CASM {
       CLUSTER_IT begin, \
       CLUSTER_IT end, \
       double xtal_tol, \
-      INSERTER result); \
+      INSERTER result, \
+      const PrimClex*); \
     \
 
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator

@@ -5,5 +5,5 @@
   "orbit_branch_specs" : {
   	"1" : {"cutoff_radius": 6.0},
     "2" : {"max_length" : 3.0, "cutoff_radius": 3.0}
- }
+  }
 }

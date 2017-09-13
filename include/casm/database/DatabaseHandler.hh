@@ -14,6 +14,7 @@ namespace CASM {
 
     class DatabaseBase;
     template<typename T> class Database;
+    template<typename T> class ValDatabase;
     class PropertiesDatabase;
 
     /// \brief Provides access to all databases
@@ -35,6 +36,19 @@ namespace CASM {
       ~DatabaseHandler();
 
       const PrimClex &primclex() const;
+
+
+      /// Access default Database<T>
+      template<typename T>
+      ValDatabase<T> &generic_db();
+
+      /// Access default Database<T>
+      template<typename T>
+      const ValDatabase<T> &generic_db() const;
+
+      /// Access default Database<T>
+      template<typename T>
+      const ValDatabase<T> &const_generic_db();
 
 
       /// Access default Database<T>
@@ -79,6 +93,19 @@ namespace CASM {
       // --- Access non-default database (i.e. jsonDB, lmdbDB, mongoDB) ---
       //  - This would be used to migrate from one to the other, so it it not
       //    a common use case
+
+      /// Access specified ValDatabase<T>
+      template<typename T>
+      ValDatabase<T> &generic_db(std::string db_name);
+
+      /// Access specified ValDatabase<T>
+      template<typename T>
+      const ValDatabase<T> &generic_db(std::string db_name) const;
+
+      /// Access specified ValDatabase<T>
+      template<typename T>
+      const ValDatabase<T> &const_generic_db(std::string db_name);
+
 
       /// Access specified Database<T>
       template<typename T>

@@ -11,7 +11,7 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/casm_io/SafeOfstream.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseTypes.hh"
 
 namespace CASM {
 
@@ -102,7 +102,7 @@ namespace CASM {
     }
 
     // generate default nlist settings
-    Structure prim(read_prim(m_dir.prim()));
+    Structure prim(read_prim(m_dir.prim(), TOL));
     m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, TOL);
     m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
   }
@@ -191,6 +191,7 @@ namespace CASM {
 
         // other options
         settings.get_if(m_view_command, "view_command");
+        settings.get_if(m_view_command_video, "view_command_video");
         from_json(m_name, settings["name"]);
 
         // precision options
@@ -204,7 +205,7 @@ namespace CASM {
         bool and_commit = false;
         if(!settings.contains("nlist_weight_matrix") || !settings.contains("nlist_sublat_indices")) {
           _reset_clexulators();
-          prim = Structure(read_prim(m_dir.prim()));
+          prim = Structure(read_prim(m_dir.prim(), crystallography_tol()));
           and_commit = true;
         }
 
@@ -396,6 +397,11 @@ namespace CASM {
   /// \brief Get current command used by 'casm view'
   std::string ProjectSettings::view_command() const {
     return m_view_command;
+  }
+
+  /// \brief Get current command used by 'casm view'
+  std::string ProjectSettings::view_command_video() const {
+    return m_view_command_video;
   }
 
   /// \brief Get current project crystallography tolerance
@@ -608,6 +614,12 @@ namespace CASM {
     return true;
   }
 
+  /// \brief Set command used by 'casm view'
+  bool ProjectSettings::set_view_command_video(std::string opt) {
+    m_view_command_video = opt;
+    return true;
+  }
+
   /// \brief Set crystallography tolerance
   bool ProjectSettings::set_crystallography_tol(double _tol) {
     m_crystallography_tol = _tol;
@@ -688,6 +700,7 @@ namespace CASM {
     _write_if("so_options", m_depr_so_options);
 
     json["view_command"] = view_command();
+    json["view_command_video"] = view_command_video();
     json["crystallography_tol"] = crystallography_tol();
     json["crystallography_tol"].set_scientific();
     json["lin_alg_tol"] = lin_alg_tol();
@@ -791,6 +804,7 @@ namespace CASM {
 
     log.custom<Log::standard>("'casm view'");
     log << "command: '" << view_command() << "'\n\n";
+    log << "video command: '" << view_command_video() << "'\n\n";
 
   }
 
@@ -801,7 +815,6 @@ namespace CASM {
 }
 
 // explicit instantiations
-#include "casm/database/DatabaseTypeTraits.hh"
 
 #define INST_ProjectSettings_all(r, data, type) \
 template QueryHandler<type> &ProjectSettings::query_handler<type>(); \

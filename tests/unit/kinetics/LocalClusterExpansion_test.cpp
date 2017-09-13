@@ -3,7 +3,6 @@
 
 /// What is being tested:
 #include "casm/clusterography/ClusterOrbits.hh"
-#include "casm/clusterography/ClusterOrbits_impl.hh"
 
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
@@ -14,7 +13,10 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
+
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/symmetry/InvariantSubgroup_impl.hh"
 
 using namespace CASM;
 using namespace test;
@@ -44,7 +46,12 @@ BOOST_AUTO_TEST_CASE(Test0) {
     primclex.log());
 
   std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 2, orbits.begin() + 3, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+  Kinetics::make_prim_periodic_diff_trans_orbits(
+    orbits.begin() + 2,
+    orbits.begin() + 3,
+    primclex.crystallography_tol(),
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   Kinetics::DiffusionTransformation trans = diff_trans_orbits[0].prototype();
 
   fs::path local_bspecs_path = "tests/unit/kinetics/local_bspecs_0.json";

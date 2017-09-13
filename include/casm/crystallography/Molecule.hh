@@ -26,7 +26,7 @@ namespace CASM {
   /// For now, it only contains the name, but in future other properties
   /// may be needed (mass, atomic number, etc).
   // Additional fields should only be added if absolutely necessary!
-  class AtomSpecie : public Comparisons<AtomSpecie> {
+  class AtomSpecie : public Comparisons<CRTPBase<AtomSpecie>> {
   public:
 
     AtomSpecie(std::string const &_name) :

@@ -143,11 +143,9 @@ namespace CASM {
   /// Check for existing supercells
   bool ScelEnumByProps::_include(const Lattice &lat) const {
     if(m_existing_only) {
-      Lattice canon_lat = m_lat_it->canonical_form(
-                            m_primclex->prim().point_group(),
-                            m_primclex->crystallography_tol());
+      Lattice canon_lat = m_lat_it->canonical_form(m_primclex->prim().point_group());
       Supercell tmp(m_primclex, canon_lat);
-      return m_primclex->db<Supercell>().find(tmp) != m_primclex->db<Supercell>().end();
+      return m_primclex->db<Supercell>().find(tmp.name()) != m_primclex->db<Supercell>().end();
     }
     return true;
   }
@@ -212,16 +210,16 @@ namespace CASM {
     "Examples:\n"
     "\n"
     "    To enumerate supercells up to and including size 4:\n"
-    "      casm enum --method SuperConfigEnum -i '{\"max\": 4}' \n"
+    "      casm enum --method ScelEnum -i '{\"max\": 4}' \n"
     "\n"
     "    To enumerate 2d supercells up to and including size 4:\n"
-    "      casm enum --method SuperConfigEnum -i '{\"max\": 4, \"dirs\": \"ab\"}' \n"
+    "      casm enum --method ScelEnum -i '{\"max\": 4, \"dirs\": \"ab\"}' \n"
     "\n"
     "    If the prim is primitive FCC, two dimensional supercells of the \n"
     "    conventional FCC unit cell up to and including 4x the unit cell volume\n"
     "    could be enumerated using:\n"
     "\n"
-    "     casm enum --method SuperConfigEnum -i \n"
+    "     casm enum --method ScelEnum -i \n"
     "     '{\n"
     "        \"min\": 1,\n"
     "        \"max\": 4,\n"

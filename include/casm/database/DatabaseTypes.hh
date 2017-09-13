@@ -6,10 +6,10 @@
 #include <boost/preprocessor/seq/enum.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_TMP.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseTypesTraits.hh"
 
 // 1) add Database types here
-#define CASM_DB_NONCONFIG_TYPES (Supercell) (Kinetics::PrimPeriodicDiffTransOrbit)
+#define CASM_DB_NONCONFIG_TYPES (Supercell) (PrimPeriodicOrbit<Kinetics::DiffusionTransformation>)
 #define CASM_DB_CONFIG_TYPES (Configuration) (Kinetics::DiffTransConfiguration)
 
 // 2) add #include locations as appropriate to:

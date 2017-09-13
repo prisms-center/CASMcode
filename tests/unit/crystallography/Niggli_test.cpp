@@ -136,7 +136,7 @@ namespace CASM {
 
     // there will be 7
     int scel_list_size = 7;
-    BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), scel_list_size);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), scel_list_size);
 
     // check if the canonical equivalent lattice of this volume 5 left handed
     // lattice is among the enumerated lattices
@@ -150,7 +150,7 @@ namespace CASM {
     // since we already enumerated supercells the supercell list size should
     // not increase
     Supercell(&primclex, test_lat).insert();
-    BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), scel_list_size);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), scel_list_size);
   }
 
   void ZrO_supercell_enum_test2() {

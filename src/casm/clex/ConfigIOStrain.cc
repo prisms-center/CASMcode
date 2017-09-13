@@ -1,5 +1,5 @@
 #include <functional>
-#include "casm/external/boost.hh"
+
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/Configuration.hh"

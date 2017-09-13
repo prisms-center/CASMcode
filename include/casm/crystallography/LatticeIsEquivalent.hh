@@ -6,7 +6,14 @@
 
 namespace CASM {
 
-  /// \brief Putting all the Lattice comparisons in one place
+  /// \brief Lattice comparisons
+  ///
+  /// Does comparisons of the form:
+  ///     copy_apply(A, lat) ?= copy_apply(B, other)*U,
+  ///
+  ///   where lat and other are lattices, represented as column matrices
+  ///   A & B are symmetry operations
+  ///   U is a unimodular (3x3, integer, w/ abs(det(T))==1) transformation matrix
   ///
   /// \ingroup Lattice
   /// \ingroup IsEquivalent
@@ -15,30 +22,55 @@ namespace CASM {
 
   public:
 
-    LatticeIsEquivalent(const Lattice &lat, double _tol = TOL);
+    LatticeIsEquivalent(const Lattice &_lat);
+
+    /// Checks if lat = other*U, with unimodular U
+    bool operator()(const Lattice &other) const;
+
+    /// Checks if lat = copy_apply(B,lat)*U, with unimodular U
+    bool operator()(const SymOp &B) const;
+
+    /// Checks if copy_apply(A, lat) = copy_apply(B,lat)*U, with unimodular U
+    bool operator()(const SymOp &A, const SymOp &B) const;
+
+    /// Checks if lat = apply(B,other)*U, with unimodular U
+    bool operator()(const SymOp &B, const Lattice &other) const;
+
+    /// Checks if copy_apply(A, lat) = apply(B,other)*U, with unimodular U
+    bool operator()(const SymOp &A, const SymOp &B, const Lattice &other) const;
+
+    /// Returns U found for last check
+    Eigen::Matrix3d U() const;
+
+  private:
+
+    Lattice m_lat;
+    mutable Eigen::Matrix3d m_U;
+
+  };
 
 
-    /// Is this lattice the same, even if they have different lattice vectors
-    bool operator()(const Lattice &B) const;
+  /// Checks if operations are point group operations
+  class IsPointGroupOp {
+  public:
 
-    /// Is this lattice equivalent to apply(op, *this)
-    bool operator()(const SymOp &op) const;
+    IsPointGroupOp(const Lattice &lat);
 
-    /// Is this lattice equivalent to apply(op, *this)
+    /// Checks if ref_lat = cart_op*ref_lat*transf_mat(), for any transf_mat()
+    bool operator()(const SymOp &cart_op) const;
+
+    /// Checks if ref_lat = cart_op*ref_lat*transf_mat(), for any transf_mat()
     bool operator()(const Eigen::Matrix3d &cart_op) const;
 
-    /// Is this lattice equivalent to apply(op, *this)
-    bool operator()(const Eigen::Matrix3i &tfrac_op) const;
-
-    const Lattice &lat() const;
+    /// Checks if ref_lat = (ref_lat*frac_op)*transf_mat(), for any transf_mat()
+    bool operator()(const Eigen::Matrix3i &frac_op) const;
 
     /// Return the mapping error, calculated after performing an equivalence check
     double map_error() const;
 
-    /// Return the cartesian SymOp matrix, stored after performing an equivalence check
+    /// If evaluates true, then ref_lat == cart_op()*L*transf_mat() to the specified tolerance
     Eigen::Matrix3d cart_op() const;
 
-    /// Return the SymOp, constructed from the map_error and cart_op stored after performing an equivalence check
     SymOp sym_op() const;
 
   private:
@@ -51,7 +83,6 @@ namespace CASM {
     const Eigen::Matrix3d &inv_lat_column_mat() const;
 
     Lattice m_lat;
-    double m_tol;
     mutable double m_map_error;
     mutable Eigen::Matrix3d m_cart_op;
 

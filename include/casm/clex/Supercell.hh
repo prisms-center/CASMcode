@@ -8,6 +8,8 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/clex/SupercellTraits.hh"
+#include "casm/clex/HasPrimClex.hh"
+#include "casm/clex/HasCanonicalForm.hh"
 #include "casm/database/Named.hh"
 
 namespace CASM {
@@ -38,7 +40,12 @@ namespace CASM {
 
   /// \brief Represents a supercell of the primitive parent crystal structure
   ///
-  class Supercell : public Comparisons<Supercell>, public DB::Named<Supercell> {
+  class Supercell : public
+    HasPrimClex <
+    DB::Named <
+    Comparisons <
+    SupercellCanonicalForm <
+    CRTPBase<Supercell >>> >> {
 
   public:
 
@@ -85,12 +92,9 @@ namespace CASM {
 
     // **** Accessors ****
 
-    /// \brief Get the PrimClex crystallography_tol
-    double crystallography_tol() const;
+    const PrimClex &primclex() const;
 
     const PrimGrid &prim_grid() const;
-
-    const Structure &prim() const;
 
     ///Return number of primitive cells that fit inside of *this
     Index volume() const;
@@ -143,18 +147,8 @@ namespace CASM {
     permute_const_iterator permute_begin() const;
     permute_const_iterator permute_end() const;
     permute_const_iterator permute_it(Index fg_index, Index trans_index) const;
+    permute_const_iterator permute_it(Index fg_index, UnitCell trans) const;
 
-
-    bool is_canonical() const;
-
-    SymOp to_canonical() const;
-
-    SymOp from_canonical() const;
-
-    /// \brief Return canonical equivalent Supercell
-    ///
-    /// - Will be inserted in Database if necessary
-    const Supercell &canonical_form() const;
 
     bool operator<(const Supercell &B) const;
 
@@ -172,10 +166,10 @@ namespace CASM {
 
   private:
 
-    friend Comparisons<Supercell>;
-    friend Named<Supercell>;
+    friend Comparisons<SupercellCanonicalForm<CRTPBase<Supercell>>>;
+    friend DB::Named<Comparisons<SupercellCanonicalForm<CRTPBase<Supercell>>>>;
 
-    bool _eq(const Supercell &B) const;
+    bool eq_impl(const Supercell &B) const;
 
     // **** Generating functions ****
 
@@ -185,7 +179,10 @@ namespace CASM {
     // Populate m_trans_permute -- probably should be private
     void _generate_permutations() const;
 
-    std::string _generate_name() const;
+    std::string generate_name_impl() const;
+
+
+    const PrimClex *m_primclex;
 
     // lattice of supercell in real space
     Lattice m_lattice;
@@ -222,12 +219,15 @@ namespace CASM {
     /// to enable checking if SuperNeighborList should be re-constructed
     mutable Index m_nlist_size_at_construction;
 
-    /// Store a pointer to the canonical equivalent Supercell
-    mutable const Supercell *m_canonical;
-
     Eigen::Matrix3i m_transf_mat;
 
   };
+
+  /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
+  const Supercell &make_supercell(const PrimClex &primclex, std::string name);
+
+  /// \brief Construct non-canonical supercell from name. Uses equivalent niggli lattice.
+  std::shared_ptr<Supercell> make_shared_supercell(const PrimClex &primclex, std::string name);
 
   Supercell &apply(const SymOp &op, Supercell &scel);
 

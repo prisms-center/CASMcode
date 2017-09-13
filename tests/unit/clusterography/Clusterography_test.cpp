@@ -8,6 +8,8 @@
 /// What is being used to test it:
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/database/Database.hh"
 #include "casm/app/AppIO.hh"
 #include "Common.hh"
 
@@ -73,7 +75,7 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
     BOOST_CHECK_MESSAGE(j.contains("bspecs"), "test case 'bspecs' is required");
 
     // generate prim
-    Structure prim(read_prim(j["prim"]));
+    Structure prim(read_prim(j["prim"], TOL));
     double crystallography_tol = TOL;
 
     // generate a one site orbit, prim periodic
@@ -82,10 +84,10 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
       BOOST_CHECK_MESSAGE(true, "IntegralCluster constructed");
       clust.elements().push_back(UnitCellCoord(prim, 0, UnitCell(0, 0, 0)));
       BOOST_CHECK_MESSAGE(clust.size() == 1, "site added");
-      PrimPeriodicIntegralClusterOrbit orbit(
+      PrimPeriodicOrbit<IntegralCluster> orbit(
         clust,
         prim.factor_group(),
-        PrimPeriodicIntegralClusterSymCompare(crystallography_tol));
+        PrimPeriodicSymCompare<IntegralCluster>(crystallography_tol));
       BOOST_CHECK_MESSAGE(orbit.prototype().size() == 1, "orbit generated");
 
       check("first_prim_periodic_orbit", j, expected_first_prim_periodic_orbit(orbit), test_cases_path, quiet);
@@ -93,7 +95,7 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
 
     // generate asym unit
     {
-      std::vector<PrimPeriodicIntegralClusterOrbit> asym_unit;
+      std::vector<PrimPeriodicOrbit<IntegralCluster>> asym_unit;
       make_prim_periodic_asymmetric_unit(
         prim,
         alloy_sites_filter,
@@ -107,7 +109,7 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
 
     // generate cluster orbits
     {
-      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+      std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
       make_prim_periodic_orbits(
         prim,
         j["bspecs"],

@@ -107,10 +107,10 @@ namespace CASM {
 
     /// determines primitive cell, finds its factor group using generate_factor_group_slow, and then
     /// expands the factor group into the supercell using lattice translations
-    void generate_factor_group(double map_tol = TOL) const; // TOL is max distance for site equivalence, in Angstr.
+    void generate_factor_group() const; // TOL is max distance for site equivalence, in Angstr.
 
     /// Obtain factor group by testing all operations of the lattice point_group and keep
-    void generate_factor_group_slow(double map_tol = TOL) const; // TOL is max distance for site equivalence, in Angstr.
+    void generate_factor_group_slow() const; // TOL is max distance for site equivalence, in Angstr.
 
     /// generate factor groups for a range of tol values, prints results to screen (for now)
     void fg_converge(double large_tol);
@@ -124,10 +124,10 @@ namespace CASM {
 
 
     /// fill an empty structure with the basis of its corresponding primitive cell - performs optimized factor_group expansion
-    void fill_supercell(const Structure &prim, double map_tol = TOL); //Ivy
+    void fill_supercell(const Structure &prim); //Ivy
 
     ///  Shortcut routine to create a supercell structure and fill it with sites
-    Structure create_superstruc(const Lattice &scel_lat, double map_tol = TOL) const;
+    Structure create_superstruc(const Lattice &scel_lat) const;
 
     /// Figures out which prim basis each superstructure basis corresponds to
     void map_superstruc_to_prim(Structure &prim); //Added by Ivy 06/29/2013
@@ -193,7 +193,5 @@ namespace CASM {
 
   /** @} */
 };
-
-//#include "casm/clusterography/Orbitree_impl.hh"
 
 #endif

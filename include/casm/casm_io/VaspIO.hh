@@ -194,6 +194,10 @@ namespace CASM {
           return m_ignore;
         }
 
+        /// \brief const Access lattice
+        const Lattice &lattice() const {
+          return m_lat;
+        }
 
       protected:
 

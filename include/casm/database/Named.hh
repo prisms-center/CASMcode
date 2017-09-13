@@ -2,129 +2,100 @@
 #define CASM_Named
 
 #include <string>
-#include "casm/database/Database.hh"
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
+  class PrimClex;
+
   namespace DB {
+    template<typename T> class ValDatabase;
 
-    template<typename Derived> class Indexed;
-
-    /// Derived should implement:
-    /// - std::string _generate_name() const
-    /// - const PrimClex& primclex() const
+    /// CRTP Mixin for 'named' database objects with no id
     ///
-    template<typename Derived>
-    class Named {
+    /// - MostDerived should implement:
+    ///   - std::string MostDerived::generate_name_impl() const
+    ///   - const PrimClex& MostDerived::primclex_impl() const
+    /// - Use one of Indexed or Named
+    ///
+    template<typename Base>
+    class Named : public Base {
 
     public:
 
-      Named() :
-        m_primclex(nullptr),
-        m_name("") {}
+      typedef typename Base::MostDerived MostDerived;
+      using Base::derived;
 
-      Named(const PrimClex &_primclex) :
-        m_primclex(&_primclex),
-        m_name("") {}
+      Named() ;
 
-      std::string name() const {
-        if(m_name.empty()) {
-          m_name = derived()._generate_name();
-        }
-        return m_name;
-      }
+      std::string name() const;
 
       /// \brief Return "alias" if object stored in database and alias exists,
       ///        return empty string otherwise
-      std::string alias() const {
-        return primclex().template db<Derived>().alias(name());
-      }
+      std::string alias() const;
+
+    protected:
 
       /// \brief Unset "name", if object is modified
-      void clear_name() {
-        m_name = "";
-      }
+      void clear_name() const;
 
-      /// \brief Get PrimClex
-      const PrimClex &primclex() const {
-        if(!m_primclex) {
-          throw std::runtime_error("Error in Orbit::primclex(): PrimClex not valid");
-        }
-        return *m_primclex;
-      }
+      /// \brief Regenerate "name"
+      void regenerate_name() const;
+
+      /// \brief Set "name", explicity
+      void set_name(std::string _name) const;
 
     private:
 
-      friend ValDatabase<Derived>;
-      friend Indexed<Derived>;
-
-      const Derived &derived() const {
-        return *static_cast<const Derived *>(this);
-      }
-
-      /// \brief Add PrimClex pointer to objects constructed from Database
-      void set_primclex(const PrimClex &_primclex) const {
-        m_primclex = &_primclex;
-      }
-
       mutable std::string m_name;
-      mutable const PrimClex *m_primclex;
 
     };
 
     /// Similar to 'Named', but includes an incrementing 'id' string
     ///
-    /// Setting id should be done through Database<Derived> implementations of
+    /// - Setting id should be done through Database<Derived> implementations of
     /// insert or emplace.
+    /// - Use one of Indexed or Named
     ///
-    template<typename Derived>
-    class Indexed : public Named<Derived> {
+    template<typename _Base>
+    class Indexed : public Named<_Base> {
 
     public:
-      Indexed(const PrimClex &_primclex) :
-        Named<Derived>::Named(_primclex),
-        m_id("none") {}
 
-      Indexed() :
-        m_id("none") {}
+      typedef Named<_Base> Base;
+      typedef typename Base::MostDerived MostDerived;
+      using Base::derived;
 
-      std::string id() const {
-        return m_id;
-      }
+      Indexed();
 
-      /// \brief Unset "id" and "name", if object is modified
-      void clear_name() {
-        m_id = "none";
-        Named<Derived>::clear_name();
-      }
+      // ID for object stored in database. Typically an integer as a string, or 'none'.
+      std::string id() const;
+
+      // If 'id' != 'none', just return configname; else regenerate name
+      std::string name() const;
 
     protected:
 
-      /// \brief Set id
-      ///
-      /// Setting id should be done through Database<Derived> implementations of
-      /// insert or emplace.
-      ///
-      /// - protected, to allow reading Derived from database and setting id
-      void set_id(Index _id) const {
-        m_id = std::to_string(_id);
-        this->m_name = "";
-      }
+      /// \brief Unset "id" and "name", if object is modified
+      void clear_name() const;
 
       /// \brief Set id
       ///
-      /// Setting id should be done through Database<Derived> implementations of
-      /// insert or emplace.
+      /// Setting id should be done through Database<Derived> implementations
       ///
       /// - protected, to allow reading Derived from database and setting id
-      void set_id(std::string _id) const {
-        m_id = _id;
-        this->m_name = "";
-      }
+      void set_id(Index _id) const;
+
+      /// \brief Set id
+      ///
+      /// Setting id should be done through Database<Derived> implementations
+      ///
+      /// - protected, to allow reading Derived from database and setting id
+      void set_id(std::string _id) const;
 
 
     private:
 
-      friend ValDatabase<Derived>;
+      friend ValDatabase<MostDerived>;
 
       mutable std::string m_id;
     };

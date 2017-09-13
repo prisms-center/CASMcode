@@ -56,6 +56,12 @@ namespace CASM {
       /// \brief Return A*config == B*config
       virtual bool operator()(const PermuteIterator &A, const PermuteIterator &B) const = 0;
 
+      /// \brief Return config == A*other
+      virtual bool operator()(const PermuteIterator &A, const ConfigDoF &other) const = 0;
+
+      /// \brief Return A*config == B*other
+      virtual bool operator()(const PermuteIterator &A, const PermuteIterator &B, const ConfigDoF &other) const = 0;
+
       std::unique_ptr<ConfigDoFIsEquivalentBase> clone() const {
         return std::unique_ptr<ConfigDoFIsEquivalentBase>(this->_clone());
       }
@@ -173,6 +179,28 @@ namespace CASM {
         });
       }
 
+      /// \brief Return config == A*other, store config < A*other
+      bool operator()(const PermuteIterator &A, const ConfigDoF &other) const override {
+        return _for_each(
+        [&](Index i) {
+          return this->configdof().occ(i);
+        },
+        [&](Index i) {
+          return other.occ(A.permute_ind(i));
+        });
+      }
+
+      /// \brief Return A*config == B*other, store A*config < B*other
+      bool operator()(const PermuteIterator &A, const PermuteIterator &B, const ConfigDoF &other) const override {
+        return _for_each(
+        [&](Index i) {
+          return this->configdof().occ(A.permute_ind(i));
+        },
+        [&](Index i) {
+          return other.occ(B.permute_ind(i));
+        });
+      }
+
       std::unique_ptr<Occupation> clone() const {
         return std::unique_ptr<Occupation>(this->_clone());
       }
@@ -245,6 +273,31 @@ namespace CASM {
         });
       }
 
+      /// \brief Return config == A*other, store config < A*other
+      bool operator()(const PermuteIterator &A, const ConfigDoF &other) const override {
+        _update_other(A, other);
+        return _for_each(
+        [&](Index i, Index j) {
+          return this->configdof().disp(i)[j];
+        },
+        [&](Index i, Index j) {
+          return this->new_disp_other(A.permute_ind(i), j);
+        });
+      }
+
+      /// \brief Return A*config == B*other, store A*config < B*other
+      bool operator()(const PermuteIterator &A, const PermuteIterator &B, const ConfigDoF &other) const override {
+        _update_A(A);
+        _update_other(B, other);
+        return _for_each(
+        [&](Index i, Index j) {
+          return this->new_disp_A(A.permute_ind(i), j);
+        },
+        [&](Index i, Index j) {
+          return this->new_disp_other(B.permute_ind(i), j);
+        });
+      }
+
       std::unique_ptr<Displacement> clone() const {
         return std::unique_ptr<Displacement>(this->_clone());
       }
@@ -265,12 +318,23 @@ namespace CASM {
         }
       }
 
+      void _update_other(const PermuteIterator &A, const ConfigDoF &other) const {
+        if(A.factor_group_index() != m_fg_index_other) {
+          m_fg_index_other = A.factor_group_index();
+          m_new_disp_other = A.sym_op().matrix() * other.displacement();
+        }
+      }
+
       double new_disp_A(Index i, Index j) const {
         return m_new_disp_A(i, j);
       }
 
       double new_disp_B(Index i, Index j) const {
         return m_new_disp_B(i, j);
+      }
+
+      double new_disp_other(Index i, Index j) const {
+        return m_new_disp_other(i, j);
       }
 
       template<typename F, typename G>
@@ -295,6 +359,9 @@ namespace CASM {
 
       mutable Index m_fg_index_B;
       mutable Eigen::MatrixXd m_new_disp_B;
+
+      mutable Index m_fg_index_other;
+      mutable Eigen::MatrixXd m_new_disp_other;
     };
 
 
@@ -348,6 +415,35 @@ namespace CASM {
         },
         [&](Index i, Index j) {
           return this->_def_tensor_B(i, j);
+        });
+      }
+
+      /// \brief Return config == A*other, store config < A*other
+      bool operator()(const PermuteIterator &A, const ConfigDoF &other) const override {
+        Eigen::MatrixXd other_def_tensor =
+          A.sym_op().matrix() * other.deformation().transpose() *
+          other.deformation() * A.sym_op().matrix().transpose();
+        return _for_each(
+        [&](Index i, Index j) {
+          return this->_def_tensor(i, j);
+        },
+        [&](Index i, Index j) {
+          return other_def_tensor(i, j);
+        });
+      }
+
+      /// \brief Return A*config == B*other, store A*config < B*other
+      bool operator()(const PermuteIterator &A, const PermuteIterator &B, const ConfigDoF &other) const override {
+        _update_A(A);
+        Eigen::MatrixXd other_def_tensor =
+          B.sym_op().matrix() * other.deformation().transpose() *
+          other.deformation() * B.sym_op().matrix().transpose();
+        return _for_each(
+        [&](Index i, Index j) {
+          return this->_def_tensor_A(i, j);
+        },
+        [&](Index i, Index j) {
+          return other_def_tensor(i, j);
         });
       }
 
@@ -460,6 +556,26 @@ namespace CASM {
     /// \brief Return A*config == B*config
     bool operator()(const PermuteIterator &A, const PermuteIterator &B) const {
       return (*m_f)(A, B);
+    }
+
+    /// \brief Return config == A*other
+    bool operator()(const PermuteIterator &A, const Configuration &other) const {
+      return (*m_f)(A, other.configdof());
+    }
+
+    /// \brief Return config == A*other
+    bool operator()(const PermuteIterator &A, const ConfigDoF &other) const {
+      return (*m_f)(A, other);
+    }
+
+    /// \brief Return A*config == B*other
+    bool operator()(const PermuteIterator &A, const PermuteIterator &B, const Configuration &other) const {
+      return (*m_f)(A, B, other.configdof());
+    }
+
+    /// \brief Return A*config == B*other
+    bool operator()(const PermuteIterator &A, const PermuteIterator &B, const ConfigDoF &other) const {
+      return (*m_f)(A, B, other);
     }
 
   private:

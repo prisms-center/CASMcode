@@ -32,7 +32,7 @@ namespace CASM {
       /// \brief Removes supercell, including all configurations, data, and files (permanently)
       void erase_all(const DB::Selection<Supercell> &selection, bool dry_run);
 
-      static const std::string desc;
+      static std::string desc();
       static int run(const PrimClex &primclex, const Completer::RmOption &opt);
 
       const PrimClex &primclex() const;

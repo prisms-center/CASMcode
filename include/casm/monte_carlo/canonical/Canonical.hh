@@ -9,7 +9,7 @@
 #include "casm/monte_carlo/OccLocation.hh"
 #include "casm/monte_carlo/canonical/CanonicalEvent.hh"
 #include "casm/monte_carlo/canonical/CanonicalConditions.hh"
-#include "casm/monte_carlo/canonical/CanonicalSettings_impl.hh"
+#include "casm/monte_carlo/canonical/CanonicalSettings.hh"
 
 
 namespace CASM {

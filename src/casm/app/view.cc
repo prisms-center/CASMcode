@@ -1,14 +1,25 @@
+#include <boost/filesystem/fstream.hpp>
 #include "casm/app/casm_functions.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/system/Popen.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/database/Selection.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Configuration.hh"
+#include "casm/database/Selection_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
+#include "casm/clex/PrimClex_impl.hh"
+#include "casm/clex/Configuration_impl.hh"
+#include "casm/kinetics/DiffTransConfigInterpolation.hh"
+
 
 #include "casm/completer/Handlers.hh"
+#include "casm/database/DatabaseTypesTraits.hh"
+
+// need to add specializations here
+#include "casm/database/ConfigImport.hh"
+#include "casm/database/DiffTransConfigImport.hh"
+
+
 
 namespace CASM {
 
@@ -19,7 +30,10 @@ namespace CASM {
     void ViewOption::initialize() {
       add_help_suboption();
       add_confignames_suboption();
+      add_configtype_suboption(traits<Configuration>::short_name, DB::config_types_short());
       add_configlist_nodefault_suboption();
+      m_desc.add_options()
+      ("images,i", po::value<int>(&m_images)->default_value(0), "Number of images between initial and final state when viewing diff_trans_configs.");
 
       return;
     }
@@ -109,6 +123,81 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+
+    if(view_opt.configtype() == traits<Kinetics::DiffTransConfiguration>::short_name) {
+      if(set.view_command_video().empty()) {
+        args.err_log() << "Error in 'casm view': No video command set. Use 'casm settings "
+                       "--set-view-command-video' to set the command to open video visualization "
+                       "software. It should take one argument, the path to a POSCAR00 "
+                       "to be visualized. For example, to use ovito on Linux: casm settings --set-view-command-video 'casm.view \"ovito\"'.\n";
+        return ERR_MISSING_DEPENDS;
+      }
+
+      DB::Selection<Kinetics::DiffTransConfiguration> config_select;
+      if(!vm.count("config")) {
+        config_select = DB::Selection<Kinetics::DiffTransConfiguration>(primclex, "NONE");
+      }
+      else if(selection == "MASTER") {
+        config_select = DB::Selection<Kinetics::DiffTransConfiguration>(primclex);
+      }
+      else {
+        config_select = DB::Selection<Kinetics::DiffTransConfiguration>(primclex, selection);
+      }
+
+      // add --confignames (or positional) input
+      for(int i = 0; i < confignames.size(); i++) {
+        config_select.data()[confignames[i]] = true;
+      }
+
+      fs::path tmp_dir = root / ".casm" / "tmp";
+      fs::remove_all(tmp_dir);
+      fs::create_directory(tmp_dir);
+
+      // execute the 'casm view' command for each selected configuration
+      for(const auto &config : config_select.selected()) {
+        // write '.casm/tmp/POSCAR'
+        if(view_opt.m_images) {
+          Kinetics::DiffTransConfigInterpolation interpol(config, view_opt.m_images);
+          for(int count = 0; count != (view_opt.m_images + 2); ++count) {
+            fs::ofstream file;
+            std::ostringstream ostr;
+            ostr << std::setfill('0') << std::setw(2) << count;
+            fs::path POSCARpath = tmp_dir / ("POSCAR" + ostr.str());
+            file.open(POSCARpath);
+            VaspIO::PrintPOSCAR p(interpol.config_enum_interpol()[count]);
+            p.print(file);
+            file.close();
+          }
+          fs::path POSCARpath_i = tmp_dir / "POSCAR00";
+          args.log() << config.name() << ":\n";
+          Popen popen;
+          popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
+          popen.print(args.log());
+        }
+        else {
+          fs::ofstream file_i;
+          fs::path POSCARpath_i = tmp_dir / "POSCAR00";
+          file_i.open(POSCARpath_i);
+          VaspIO::PrintPOSCAR p_i(config.sorted().from_config());
+          p_i.print(file_i);
+          file_i.close();
+
+          fs::ofstream file_f;
+          fs::path POSCARpath_f = tmp_dir / "POSCAR01";
+          file_f.open(POSCARpath_f);
+          VaspIO::PrintPOSCAR p_f(config.sorted().to_config());
+          p_f.print(file_f);
+          file_f.close();
+
+          args.log() << config.name() << ":\n";
+          Popen popen;
+          popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
+          popen.print(args.log());
+        }
+      }
+    }
+
+
 
     DB::Selection<Configuration> config_select;
     if(!vm.count("config")) {

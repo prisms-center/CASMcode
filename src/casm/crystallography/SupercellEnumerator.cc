@@ -1,6 +1,5 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 
-#include "casm/external/boost.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
@@ -545,8 +544,7 @@ namespace CASM {
 
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    const ScelEnumProps &enum_props,
-                                                    double tol) :
+                                                    const ScelEnumProps &enum_props) :
     m_unit(unit),
     m_lat(unit),
     m_begin_volume(enum_props.begin_volume()),
@@ -558,7 +556,7 @@ namespace CASM {
       throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
     }
 
-    m_lat.generate_point_group(m_point_group, tol);
+    m_lat.generate_point_group(m_point_group);
 
   }
 

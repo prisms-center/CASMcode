@@ -2,30 +2,50 @@
 
 #include <algorithm>
 #include <boost/filesystem.hpp>
-#include "casm/clex/PrimClex.hh"
+#include "casm/clex/PrimClex_impl.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/jsonParser.hh"
-#include "casm/database/DatabaseTypeDefs.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
+#include "casm/database/PropertiesDatabase.hh"
 
 namespace CASM {
 
-  template<typename Derived>
-  const jsonParser &Calculable<Derived>::calc_properties() const {
-    return m_calc_properties;
+  /// \brief Return calculated properties JSON for requested calctype
+  ///
+  /// - If nothing calculated, returns empty JSON object
+  template<typename _Base>
+  jsonParser Calculable<_Base>::calc_properties(std::string calctype) const {
+    if(calctype.empty()) {
+      calctype = derived().primclex().settings().default_clex().calctype;
+    }
+    auto it = m_calc_properties_map.find(calctype);
+    if(it == m_calc_properties_map.end()) {
+      _refresh_calc_properties(calctype);
+      it = m_calc_properties_map.find(calctype);
+    }
+    return it->second;
   }
 
-  template<typename Derived>
-  void Calculable<Derived>::set_calc_properties(const jsonParser &json) {
-    m_calc_properties = json;
+  template<typename _Base>
+  void Calculable<_Base>::set_calc_properties(const jsonParser &json, std::string calctype) {
+    if(calctype.empty()) {
+      calctype = derived().primclex().settings().default_clex().calctype;
+    }
+    m_calc_properties_map[calctype] = json;
   }
 
-  template<typename Derived>
-  const jsonParser &Calculable<Derived>::source() const {
+  template<typename _Base>
+  void Calculable<_Base>::refresh_calc_properties(std::string calctype) {
+    static_cast<const Calculable<_Base>*>(this)->_refresh_calc_properties(calctype);
+  }
+
+  template<typename _Base>
+  const jsonParser &Calculable<_Base>::source() const {
     return m_source;
   }
 
-  template<typename Derived>
-  void Calculable<Derived>::set_source(const jsonParser &source) {
+  template<typename _Base>
+  void Calculable<_Base>::set_source(const jsonParser &source) {
     if(source.is_null() || source.size() == 0) {
       m_source.put_array();
     }
@@ -38,8 +58,8 @@ namespace CASM {
     }
   }
 
-  template<typename Derived>
-  void Calculable<Derived>::push_back_source(const jsonParser &source) {
+  template<typename _Base>
+  void Calculable<_Base>::push_back_source(const jsonParser &source) {
 
     if(source.is_null() || source.size() == 0) {
       return;
@@ -78,11 +98,11 @@ namespace CASM {
     }
   }
 
-  /// Call in Derived any time DoF may be modified
-  template<typename Derived>
-  void Calculable<Derived>::_modify_dof() {
+  /// Call in _Base any time DoF may be modified
+  template<typename _Base>
+  void Calculable<_Base>::_modify_dof() {
     this->clear_name();
-    m_calc_properties.put_null();
+    m_calc_properties_map.clear();
 
     if(cache_updated()) {
       cache_clear();
@@ -91,17 +111,33 @@ namespace CASM {
     m_source.put_null();
   }
 
+  template<typename _Base>
+  void Calculable<_Base>::_refresh_calc_properties(std::string calctype) const {
+    const PrimClex &primclex = derived().primclex();
+    const auto &db = primclex.const_db_props<MostDerived>(calctype);
+    if(calctype.empty()) {
+      calctype = primclex.settings().default_clex().calctype;
+    }
+    auto it = db.find_via_from(this->name());
+    if(it != db.end()) {
+      m_calc_properties_map[calctype] = *it;
+    }
+    else {
+      m_calc_properties_map[calctype] = jsonParser::object();
+    }
+  }
+
   /// \brief Return true if all required properties have been been calculated for
-  /// the configuration
+  /// the configuration in the default calctype
   template<typename ConfigType>
   bool is_calculated(const ConfigType &config) {
     const auto &props = config.primclex().settings().template properties<ConfigType>();
-    return is_calculated(config.calc_properties(), props);
+    return is_calculated(config.calc_properties(config.primclex().settings().default_clex().calctype), props);
   }
 
   template<typename ConfigType>
   void reset_properties(ConfigType &config) {
-    config.set_calc_properties(jsonParser());
+    config.set_calc_properties(jsonParser(), "");
   }
 
   /// \brief Status of calculation
@@ -237,7 +273,7 @@ template fs::path pos_path(const type &config); \
 template fs::path calc_status_path(const type &config); \
 template std::tuple<jsonParser, bool, bool> read_calc_properties<type>(const type &config); \
 template std::tuple<jsonParser, bool, bool> read_calc_properties<type>(const PrimClex &primclex, const fs::path &filepath); \
-template class Calculable<type>;
+template class Calculable<CRTPBase<type>>;
 
   BOOST_PP_SEQ_FOR_EACH(INST_ConfigType, _, CASM_DB_CONFIG_TYPES)
 

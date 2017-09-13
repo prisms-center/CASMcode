@@ -55,9 +55,9 @@ namespace CASM {
     /// If you only need to know occupant name or whether site is vacant, use Site::is_vacant() or Site::occ_name() instead
     const Molecule &occ() const;
 
-    bool compare(const Coordinate &test_coord, double compare_tol = TOL) const;
-    bool compare(const Site &test_site, double compare_tol = TOL) const; //Ivy
-    bool compare(const Site &test_site, const Coordinate &shift, double compare_tol = TOL) const;
+    bool compare(const Coordinate &test_coord) const;
+    bool compare(const Site &test_site) const; //Ivy
+    bool compare(const Site &test_site, const Coordinate &shift) const;
     bool compare_type(const Site &test_site) const; //Ivy
     bool operator==(const Site &test_site) const;
 

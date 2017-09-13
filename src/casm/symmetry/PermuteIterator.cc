@@ -1,6 +1,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/casm_io/jsonParser.hh"
 
@@ -37,9 +38,14 @@ namespace CASM {
     return *this;
   }
 
-  /// Returns a copy
+  /// Returns a reference to this
   const PermuteIterator &PermuteIterator::operator*() const {
     return *this;
+  }
+
+  /// Returns a reference to this
+  const PermuteIterator *PermuteIterator::operator->() const {
+    return this;
   }
 
   /// Returns the combination of factor_group permutation and translation permutation
@@ -102,7 +108,7 @@ namespace CASM {
     return this->factor_group_index() < iter.factor_group_index();
   }
 
-  bool PermuteIterator::_eq(const PermuteIterator &iter) const {
+  bool PermuteIterator::eq_impl(const PermuteIterator &iter) const {
     if(m_fg_permute_rep == iter.m_fg_permute_rep &&
        m_prim_grid == iter.m_prim_grid &&
        m_factor_group_index == iter.m_factor_group_index &&
@@ -183,6 +189,11 @@ namespace CASM {
     return it;
   }
 
+  std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op) {
+    sout << "(" << op.factor_group_index() << ", " << op.prim_grid().unitcell(op.translation_index()).transpose() << ")";
+    return sout;
+  }
+
   /// \brief Returns a SymGroup generated from a range of PermuteIterator
   ///
   /// \param begin,end A range of PermuteIterator
@@ -201,6 +212,9 @@ namespace CASM {
     return sym_group;
   }
 
+  template SymGroup make_sym_group(
+    PermuteIterator begin,
+    PermuteIterator end);
   template SymGroup make_sym_group(
     std::vector<PermuteIterator>::const_iterator begin,
     std::vector<PermuteIterator>::const_iterator end);

@@ -64,15 +64,15 @@ namespace CASM {
 
   //********************************************************************
 
-  bool Coordinate::compare(const Coordinate &RHS, double compare_tol) const {
-    return (compare_type(RHS)) && (min_dist(RHS) < compare_tol);
+  bool Coordinate::compare(const Coordinate &RHS) const {
+    return (compare_type(RHS)) && (min_dist(RHS) < lattice().tol());
 
   }
 
   //********************************************************************
 
-  bool Coordinate::compare(const Coordinate &RHS, Coordinate &translation, double compare_tol) const {
-    return (compare_type(RHS)) && (min_dist(RHS + translation) < compare_tol);
+  bool Coordinate::compare(const Coordinate &RHS, Coordinate &translation) const {
+    return (compare_type(RHS)) && (min_dist(RHS + translation) < lattice().tol());
   }
 
   //********************************************************************

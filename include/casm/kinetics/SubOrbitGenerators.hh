@@ -1,3 +1,4 @@
+/*
 #ifndef CASM_SubOrbitGenerators
 #define CASM_SubOrbitGenerators
 
@@ -73,3 +74,4 @@ namespace CASM {
   }
 }
 #endif
+*/

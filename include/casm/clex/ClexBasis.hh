@@ -4,7 +4,7 @@
 #include <string>
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/CASM_global_enum.hh"
-
+#include "casm/clusterography/ClusterDecl.hh"
 
 namespace CASM {
   class Site;
@@ -17,13 +17,6 @@ namespace CASM {
   class PrimNeighborList;
 
   class BasisBuilder;
-
-  // This is a hack to forward-declare IntegralCluster.  Forward declarations
-  // of typedefs should probably get their own *.hh files, without any dependencies
-  template<typename CoordType>
-  class CoordCluster;
-  class UnitCellCoord;
-  typedef CoordCluster<UnitCellCoord> IntegralCluster;
 
   class ClexBasis {
   public:
@@ -184,5 +177,5 @@ namespace CASM {
                                                                  IntegralClusterSymCompareType const &sym_compare);
   }
 }
-#include "casm/clex/ClexBasis_impl.hh"
+
 #endif

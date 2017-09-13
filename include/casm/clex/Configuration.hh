@@ -8,6 +8,8 @@
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/clex/HasCanonicalForm.hh"
+#include "casm/clex/HasSupercell.hh"
 #include "casm/clex/Calculable.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigurationTraits.hh"
@@ -24,8 +26,12 @@ namespace CASM {
   class UnitCellCoord;
   class Clexulator;
   class FillSupercell;
+  class ConfigIsEquivalent;
+  template<typename ConfigType, typename IsEqualImpl> class GenericConfigCompare;
+  using ConfigCompare = GenericConfigCompare<Configuration, ConfigIsEquivalent>;
 
   struct ConfigInsertResult;
+  struct RefToCanonicalPrim;
 
   /// \defgroup Configuration
   ///
@@ -34,6 +40,8 @@ namespace CASM {
   /// \ingroup Clex
   ///
   /// @{
+
+  typedef ConfigCanonicalForm<HasSupercell<Comparisons<Calculable<CRTPBase<Configuration>>>>> ConfigurationBase;
 
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
@@ -44,9 +52,7 @@ namespace CASM {
   /// - "rms_force" -> double
   /// - "volume_relaxation" -> double
   /// - "lattice_deformation" -> double
-  class Configuration :
-    public Comparisons<Configuration>,
-    public Calculable<Configuration> {
+  class Configuration : public ConfigurationBase {
 
   public:
     typedef ConfigDoF::displacement_matrix_t displacement_matrix_t;
@@ -54,6 +60,8 @@ namespace CASM {
     typedef ConfigDoF::const_displacement_t const_displacement_t;
 
     //********* CONSTRUCTORS *********
+
+    Configuration() {};
 
     /// Construct a default Configuration
     explicit Configuration(const Supercell &_supercell,
@@ -77,9 +85,6 @@ namespace CASM {
                   const jsonParser &_data);
 
     // ******** Supercell **********************
-
-    /// \brief Get the primitive Structure for this Configuration
-    const Structure &prim() const;
 
     /// \brief Get the Supercell for this Configuration
     const Supercell &supercell() const;
@@ -211,46 +216,6 @@ namespace CASM {
     void clear_occupation();
 
 
-    // ----- Specie ID ------------
-
-    /// \brief Hold vectors of specie ids, for each occupant molecule
-    ///
-    /// - This will invalidate the Configuration's id
-    /// - specie id vectors for each site will be sized to match the current
-    ///   occupant molecule and set with value 0
-    void init_specie_id();
-
-    /// \brief Access specie ids
-    ///
-    /// - No guarantee is made that these vectors are the correct size
-    std::vector<std::vector<Index> > &specie_id();
-
-    /// \brief const Access specie ids
-    ///
-    /// - No guarantee is made that these vectors are the correct size
-    const std::vector<std::vector<Index> > &specie_id() const;
-
-    /// \brief Access specie ids
-    ///
-    /// - No guarantee is made that these vectors are the correct size
-    std::vector<Index> &specie_id(Index site_l);
-
-    /// \brief const Access specie ids
-    ///
-    /// - No guarantee is made that these vectors are the correct size
-    const std::vector<Index> &specie_id(Index site_l) const;
-
-    /// \brief True if Configuration has occupation DoF
-    bool has_specie_id() const {
-      return configdof().has_specie_id();
-    }
-
-    /// \brief Clear specie ids
-    ///
-    /// - This will invalidate the Configuration's id
-    void clear_specie_id();
-
-
     // ----- Displacement ------------
 
     /// \brief Set all occupant displacements to (0.,0.,0.)
@@ -359,23 +324,14 @@ namespace CASM {
 
     // ******** Comparisons, Symmetry, Crystallography  ******
 
-    /// \brief Get the PrimClex crystallography_tol
-    double crystallography_tol() const;
-
-    /// \brief Check if Configuration are equivalent wrt the prim's factor group
-    ///
-    /// Equivalent to:
-    /// \code
-    /// this->primitive() == B.primitive()
-    /// \endcode
-    /// - Must have the same PrimClex
-    ///
-    bool is_equivalent(const Configuration &B) const;
-
     /// \brief Compare Configuration, via ConfigCompare
     ///
     /// - Must have the same Supercell
     bool operator<(const Configuration &B) const;
+
+    ConfigCompare less() const;
+
+    ConfigIsEquivalent equal_to() const;
 
     /// \brief Check if this is a primitive Configuration
     bool is_primitive() const;
@@ -387,23 +343,11 @@ namespace CASM {
     /// \brief Return the primitive Configuration
     Configuration primitive() const;
 
-    /// \brief Check if Configuration is in the canonical form
-    bool is_canonical() const;
-
     /// \brief Check if Configuration is an endpoint of any existing diff_trans_config
     bool is_diff_trans_endpoint() const;
 
     /// \brief Returns which diff_trans Configuration is an endpoint of
     std::string diff_trans_endpoint_of() const;
-
-    /// \brief Returns the operation that applied to *this returns the canonical form
-    PermuteIterator to_canonical() const;
-
-    /// \brief Returns the operation that applied to the the canonical form returns *this
-    PermuteIterator from_canonical() const;
-
-    /// \brief Returns the canonical form Configuration in the same Supercell
-    Configuration canonical_form() const;
 
     /// \brief Returns the canonical form Configuration in the canonical Supercell
     Configuration in_canonical_supercell() const;
@@ -411,6 +355,12 @@ namespace CASM {
     /// \brief Returns the subgroup of the Supercell factor group that leaves the
     ///        Configuration unchanged
     std::vector<PermuteIterator> factor_group() const;
+
+    using ConfigurationBase::invariant_subgroup;
+    std::vector<PermuteIterator> invariant_subgroup() const;
+
+    using ConfigurationBase::is_canonical;
+    bool is_canonical() const;
 
     /// \brief Get symmetric multiplicity, excluding translations
     int multiplicity() const;
@@ -421,12 +371,17 @@ namespace CASM {
     /// \brief Returns the point group that leaves the Configuration unchanged
     std::string point_group_name() const;
 
+    /// \brief Fills supercell 'scel' with configuration
+    Configuration fill_supercell(const Supercell &scel) const;
+
     /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
     Configuration fill_supercell(const Supercell &scel, const SymOp &op) const;
 
     /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
     Configuration fill_supercell(const Supercell &scel, const SymGroup &g) const;
 
+    /// \brief Transform Configuration from PermuteIterator via *this = permute_iterator * *this
+    Configuration &apply_sym(const PermuteIterator &it);
 
     //********** Composition ***********
 
@@ -483,16 +438,16 @@ namespace CASM {
 
   private:
 
-    friend Named<Configuration>;
-    std::string _generate_name() const;
+    friend class Comparisons<Calculable<CRTPBase<Configuration>>>;
+    friend class DB::Named<CRTPBase<Configuration>>;
 
-    friend Comparisons<Configuration>;
+    std::string generate_name_impl() const;
 
-    /// \brief Equality comparison of Configuration, via ConfigEqual
+    /// \brief operator== comparison of Configuration, via ConfigEqual
     ///
     /// - Must have the same Supercell
     /// - Checks that all DoF are the same, within tolerance
-    bool _eq(const Configuration &B) const;
+    bool eq_impl(const Configuration &B) const;
 
     /// const pointer to the (non-const) Supercell for this Configuration
     const Supercell *m_supercell;
@@ -544,17 +499,36 @@ namespace CASM {
 
   };
 
+  /// \brief Operations that transform a canonical primitive configuration to any equivalent
+  ///
+  /// Configuration equiv_prim_config = copy_apply(from_canonical_config, prim_canon_config);
+  /// Configuration config = equiv_prim_config.fill_supercell(config.supercell(), from_canonical_lat);
+  struct RefToCanonicalPrim {
 
-  // Calculate transformed ConfigDoF from PermuteIterator via
-  //   apply(permute_iterator, dof)
-  Configuration &apply(const PermuteIterator &it, Configuration &config);
+    /// \brief Get operations that transform canonical primitive to this
+    RefToCanonicalPrim(const Configuration &_config);
+
+    std::string name() const;
+
+    Configuration config;
+    Configuration prim_canon_config;
+    SymOp from_canonical_lat;
+    PermuteIterator from_canonical_config;
+    Eigen::Matrix3i transf_mat;
+  };
 
   Configuration sub_configuration(Supercell &sub_scel,
                                   const Configuration &super_config,
                                   const UnitCell &origin = UnitCell(0, 0, 0));
 
   /// \brief Make Configuration from name string
-  Configuration make_configuration(PrimClex &primclex, std::string name);
+  Configuration make_configuration(const PrimClex &primclex, std::string name);
+
+  /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
+  Configuration &apply_properties(Configuration &config, std::string calctype);
+
+  /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
+  Configuration copy_apply_properties(const Configuration &config, std::string calctype);
 
   /// \brief Returns correlations using 'clexulator'.
   Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator);
@@ -666,12 +640,19 @@ namespace CASM {
 
   public:
 
-    /// \brief Constructor
+    /// \brief Constructor, for canonical Supercell
     FillSupercell(const Supercell &_scel, const SymOp &_op);
 
     /// \brief Find first SymOp in the prim factor group such that apply(op, motif)
     ///        can be used to fill the Supercell
     FillSupercell(const Supercell &_scel, const Configuration &motif, double tol);
+
+    /// \brief Constructor, for non-canonical Supercell
+    FillSupercell(const std::shared_ptr<Supercell> &_scel, const SymOp &_op);
+
+    /// \brief Find first SymOp in the prim factor group such that apply(op, motif)
+    ///        can be used to fill the non-canonical Supercell
+    FillSupercell(const std::shared_ptr<Supercell> &_scel, const Configuration &motif, double tol);
 
     Configuration operator()(const Configuration &motif) const;
 
@@ -683,11 +664,11 @@ namespace CASM {
       return *m_op;
     }
 
-
   private:
 
     void _init(const Supercell &_motif_scel) const;
 
+    std::shared_ptr<Supercell> m_supercell_ptr;
     const Supercell *m_scel;
     const SymOp *m_op;
 

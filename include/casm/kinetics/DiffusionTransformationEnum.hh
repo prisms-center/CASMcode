@@ -83,7 +83,8 @@ namespace CASM {
       IntegralClusterOrbitInputIterator begin,
       IntegralClusterOrbitInputIterator end,
       double xtal_tol,
-      OrbitOutputIterator result);
+      OrbitOutputIterator result,
+      const PrimClex *primclex);
   }
 }
 
