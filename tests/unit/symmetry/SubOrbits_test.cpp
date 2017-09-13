@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
     // Configuration with every other layer of O filled
 
 
-    Configuration prim_config = config.primitive();
+    Configuration prim_config = config.primitive().in_canonical_supercell();
     std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> prim_sym_compare(
       prim_config.supercell().prim_grid(),
@@ -298,7 +298,8 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
     orbits.begin() + 2,
     orbits.begin() + 3,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 6);
   // nearest neighbor A-A, A-B, A-C, B-B, B-C, C-C pairs; total of 6
@@ -344,7 +345,7 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
     //   p.print(file);
     //   file.close();
 
-    Configuration prim_config = config.primitive();
+    Configuration prim_config = config.primitive().in_canonical_supercell();
     std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> prim_sym_compare(
       prim_config.supercell().prim_grid(),
@@ -512,7 +513,8 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
     orbits.begin() + 8,
     orbits.begin() + 9,
     primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits));
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 10);
   // Nearest neighbor triplet
@@ -557,7 +559,7 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
       config.crystallography_tol());
 
 
-    Configuration prim_config = bg_config.primitive();
+    Configuration prim_config = bg_config.primitive().in_canonical_supercell();
     std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> prim_sym_compare(
       prim_config.supercell().prim_grid(),
@@ -659,13 +661,13 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
       BOOST_CHECK_EQUAL(true, true);
       BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 7);
       // LB = B site on long side; SB = B site on short site; A = A site
-      // Index 0: Cluster of LB-SB-A with A species moving from SB to LB site
-      // Index 1: Cluster of LB-LB-A with A species moving from LB to LB site
-      // Index 2: Cluster of SB-LB-LB with A species moving from LB to SB site
-      // Index 3: Cluster of SB-LB-LB with A species moving from LB to LB site
-      // Index 4: Cluster of LB-LB-A with A species moving from LB to A site
-      // Index 5: Cluster of LB-SB-A with A species moving from A to LB site
-      // Index 6: Cluster of LB-SB-A with A species moving from A to SB site
+      // Cluster of LB-SB-A with A species moving from SB to LB site
+      // Cluster of LB-LB-A with A species moving from LB to LB site
+      // Cluster of SB-LB-LB with A species moving from LB to SB site
+      // Cluster of SB-LB-LB with A species moving from LB to LB site
+      // Cluster of LB-LB-A with A species moving from LB to A site
+      // Cluster of LB-SB-A with A species moving from A to LB site
+      // Cluster of LB-SB-A with A species moving from A to SB site
       // total of 7 unique diff_trans
 
       //print_res("config_suborbit_generators 0", config_suborbit_generators, scel_sym_compare);
