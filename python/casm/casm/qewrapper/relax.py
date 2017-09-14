@@ -1,9 +1,10 @@
 import os, math, sys, json, re, warnings
 import pbs
-import quantumespresso
-import casm
-import casm.project
-import qewrapper
+
+from casm import quantumespresso
+from casm.misc import noindent
+from casm.project import DirectoryStructure, ProjectSettings
+from casm.qewrapper import qewrapper
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a Quantum Espresso relaxation.
@@ -51,11 +52,11 @@ class Relax(object):
         print "  Configuration:", self.configname
 
         print "Reading CASM settings"
-        self.casm_settings = casm.project.ProjectSettings()
+        self.casm_settings = ProjectSettings()
         if self.casm_settings == None:
             raise qewrapper.QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
-        self.casm_directories=casm.project.DirectoryStructure()
+        self.casm_directories=DirectoryStructure()
 
         print "Constructing a CASM QEWrapper Relax object"
         sys.stdout.flush()
@@ -66,7 +67,7 @@ class Relax(object):
         # store path to .../config, if not existing raise
         self.configdir = os.path.abspath(configdir)
         if not os.path.isdir(self.configdir):
-            raise quantumespresso.QuantumEspressoError("Error in casm.quantumespresso.relax: Did not find directory: " + self.configdir)
+            raise quantumespresso.QuantumEspressoError("Error in casm.qewrapper.Relax: Did not find directory: " + self.configdir)
             sys.stdout.flush()
 
         # store path to .../config/calctype.name, and create if not existing
@@ -133,7 +134,7 @@ class Relax(object):
         """
         # Find required input files in CASM project directory tree
         infilename=self.settings["infilename"]
-        qefiles=casm.qewrapper.qe_input_file_names(self.casm_directories,self.configname,self.casm_settings.default_clex,infilename)
+        qefiles=qewrapper.qe_input_file_names(self.casm_directories,self.configname,self.casm_settings.default_clex,infilename)
         infilename,super_poscarfile,speciesfile=qefiles
 
 
@@ -243,7 +244,7 @@ class Relax(object):
         print "  Constructing a PBS job"
         sys.stdout.flush()
         # construct a pbs.Job
-        job = pbs.Job(name=casm.jobname(self.configdir),\
+        job = pbs.Job(name=casm.wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -423,7 +424,7 @@ class Relax(object):
 
         outputfile = os.path.join(self.calcdir, "status.json")
         with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+            file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
         print "Wrote " + outputfile
         sys.stdout.flush()
 
@@ -437,7 +438,7 @@ class Relax(object):
             output = self.properties(qedir, outfilename)
             outputfile = os.path.join(self.calcdir, "properties.calc.json")
             with open(outputfile, 'w') as file:
-                file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+                file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
             print "Wrote " + outputfile
             sys.stdout.flush()
             self.report_status('complete')
@@ -484,11 +485,11 @@ class Relax(object):
         else:
             output["coord_mode"] = "cartesian" + qrun.coord_mode
 
-        output["relaxed_forces"] = [casm.NoIndent(v) for v in (map(lambda y: map(lambda x: x*13.605698066/0.52918,y), qrun.forces ))] #convert Ry/bohr to eV/angst
+        output["relaxed_forces"] = [noindent.NoIndent(v) for v in (map(lambda y: map(lambda x: x*13.605698066/0.52918,y), qrun.forces ))] #convert Ry/bohr to eV/angst
 
-        output["relaxed_lattice"] = [casm.NoIndent(v) for v in (map(lambda y: map(lambda x: x* 0.52918,y),qrun.lattice) )] #convert bohr to angst
+        output["relaxed_lattice"] = [noindent.NoIndent(v) for v in (map(lambda y: map(lambda x: x* 0.52918,y),qrun.lattice) )] #convert bohr to angst
 
-        output["relaxed_basis"] = [casm.NoIndent(v) for v in qrun.basis]
+        output["relaxed_basis"] = [noindent.NoIndent(v) for v in qrun.basis]
 
         output["relaxed_energy"] = qrun.total_energy * 13.605698066 #convert Ry to eV
 

@@ -1,7 +1,8 @@
+mock
 prisms_jobs
 numpy
 pandas
 scikit-learn
 deap
-bokeh
+bokeh==0.12.3
 tornado==4.3

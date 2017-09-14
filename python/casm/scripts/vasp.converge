@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """ Script for running vasp convergences """
 import argparse
-import casm
 import casm.vaspwrapper
 
 def main():

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import casm, vasp
+from casm import noindent
 import casm.vaspwrapper
 import sys
 import json
@@ -20,6 +20,6 @@ except:
   raise
 
 with open('properties.calc.json', 'w') as file:
-  file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+  file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
 
 print "Finish vasp.relax.report\n\n"

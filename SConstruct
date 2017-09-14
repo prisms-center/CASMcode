@@ -349,6 +349,7 @@ env['ENV']['TERM'] = os.environ['TERM']
 
 # set testing environment (for running tests)
 env['ENV']['PATH'] = env['BINDIR'] + ":" + env['ENV']['PATH']
+print 'env PATH:', env['ENV']['PATH']
 
 # set execution environment variables (for running tests)
 casm_var = ['CXX', 'CASM_CXX', 'CASM_CXXFLAGS', 'CASM_SOFLAGS',
@@ -489,12 +490,6 @@ SConscript(['tests/unit/SConscript'], {'env': env})
 
 # install python packages and scripts
 SConscript(['python/casm/SConscript'], {'env':env})
-SConscript(['python/vasp/SConscript'], {'env':env})
-SConscript(['python/quantumespresso/SConscript'], {'env':env})
-
-# python/casm/tests
-SConscript(['python/casm/tests/SConscript'], {'env':env})
-
 
 
 ##### Make combined alias 'test'
@@ -509,7 +504,7 @@ if 'test' in COMMAND_LINE_TARGETS:
 ##### Make combined alias 'install'
 
 # Execute 'scons install' to install all binaries, scripts and python modules
-installable = ['casm_include_install', 'casm_lib_install', 'ccasm_lib_install', 'casm_install', 'pycasm_install', 'pyvasp_install','pyquantumespresso_install']
+installable = ['casm_include_install', 'casm_lib_install', 'ccasm_lib_install', 'casm_install', 'pycasm_install']
 env.Alias('install', installable)
 
 if 'install' in COMMAND_LINE_TARGETS:

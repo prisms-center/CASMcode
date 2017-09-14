@@ -4,16 +4,13 @@
 import os
 from distutils.spawn import find_executable
 
-Import('env', 'version_number', 'url')
-
-pycasm_setup = env.Command('setup.py', ['make_setup.py'], 'cd python/casm && python make_setup.py ' + version_number + ' ' + url)
-env.NoClean(pycasm_setup)
+Import('env')
 
 cmd = 'cd python/casm && ' + find_executable('python') + ' setup.py install'
 cmd += ' --prefix=' + env['CASM_PYTHON_PREFIX']
 cmd += ' --record installed.txt'
 
-pycasm_install = env.Command('installed.txt', [pycasm_setup], cmd)
+pycasm_install = env.Command('installed.txt', 'setup.py', cmd)
 AlwaysBuild(pycasm_install)
 Alias('pycasm_install', pycasm_install)  
 

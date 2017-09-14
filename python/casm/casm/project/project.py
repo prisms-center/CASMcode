@@ -1,5 +1,5 @@
 import warnings
-from casm import project_path, API
+from casm.project.api import API
 import os, subprocess, json
 from os.path import join
 from casm.project import syminfo
@@ -7,6 +7,31 @@ import numpy as np
 import math
 from string import ascii_lowercase
 
+def project_path(dir=None):
+    """
+    Crawl up from dir to find '.casm'. If found returns the directory containing the '.casm' directory.
+    If not found, return None.
+
+    Args:
+    If dir == None, set to os.getcwd()
+    """
+    if dir == None:
+      dir = os.getcwd()
+    else:
+      dir = os.path.abspath(dir)
+    if not os.path.isdir(dir):
+      raise Exception("Error, no directory named: " + dir)
+    curr = dir
+    cont = True
+    while cont == True:
+        test_path = os.path.join(curr,".casm")
+        if os.path.isdir(test_path):
+            return curr
+        elif curr == os.path.dirname(curr):
+            return None
+        else:
+            curr = os.path.dirname(curr)
+    return None
 
 class ClexDescription(object):
     """

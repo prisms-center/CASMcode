@@ -4,7 +4,7 @@ import argparse, json, sys
 import casm.qewrapper
 from os import getcwd
 from os.path import join, abspath
-from casm import NoIndentEncoder
+from casm.misc.noindent import NoIndentEncoder
 from casm.project import Project, Selection
 from casm.vaspwrapper import Relax
 

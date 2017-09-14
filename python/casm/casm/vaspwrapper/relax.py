@@ -1,14 +1,21 @@
-import os, math, sys, json, re, warnings
+import os
+import math
+import sys
+import json
+import re
+import warnings
+
 try:
   from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
 except ImportError:
   # use of the pbs module is deprecated after CASM v0.2.1
   from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
   from pbs import PBSError as JobsError
-import vasp
-import casm
-import casm.project
-import vaspwrapper
+
+from casm import vasp
+from casm.misc import noindent
+from casm.project import DirectoryStructure, ProjectSettings
+from casm.vaspwrapper import vasp_input_file_names
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
@@ -87,8 +94,8 @@ class Relax(object):
         print "  Configuration:", self.configname
 
         print "  Reading CASM settings"
-        self.casm_directories=casm.project.DirectoryStructure(configdir)
-        self.casm_settings = casm.project.ProjectSettings(configdir)
+        self.casm_directories = DirectoryStructure(configdir)
+        self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings is None:
             raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
@@ -166,7 +173,7 @@ class Relax(object):
 
         """
         # Find required input files in CASM project directory tree
-        vaspfiles=casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname, self.clex)
+        vaspfiles=vasp_input_file_names(self.casm_directories, self.configname, self.clex)
         incarfile,prim_kpointsfile,prim_poscarfile,super_poscarfile,speciesfile=vaspfiles
 
         # Find optional input files
@@ -284,7 +291,7 @@ class Relax(object):
         print "Constructing a job"
         sys.stdout.flush()
         # construct a Job
-        job = Job(name=casm.jobname(self.configdir),\
+        job = Job(name=casm.wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -473,7 +480,7 @@ class Relax(object):
 
         outputfile = os.path.join(self.calcdir, "status.json")
         with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+            file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
         print "Wrote " + outputfile
         sys.stdout.flush()
 
@@ -486,7 +493,7 @@ class Relax(object):
         output = self.properties(vaspdir, super_poscarfile, speciesfile)
         outputfile = os.path.join(self.calcdir, "properties.calc.json")
         with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+            file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
         print "Wrote " + outputfile
         sys.stdout.flush()
         self.report_status('complete')
@@ -554,13 +561,13 @@ class Relax(object):
         # as lists
         output["relaxed_forces"] = [ None for i in range(len(vrun.forces))]
         for i, v in enumerate(vrun.forces):
-            output["relaxed_forces"][unsort_dict[i] ] = casm.NoIndent(vrun.forces[i])
+            output["relaxed_forces"][unsort_dict[i] ] = noindent.NoIndent(vrun.forces[i])
 
-        output["relaxed_lattice"] = [casm.NoIndent(v) for v in vrun.lattice]
+        output["relaxed_lattice"] = [noindent.NoIndent(v) for v in vrun.lattice]
 
         output["relaxed_basis"] = [ None for i in range(len(vrun.basis))]
         for i, v in enumerate(vrun.basis):
-            output["relaxed_basis"][unsort_dict[i] ] = casm.NoIndent(vrun.basis[i])
+            output["relaxed_basis"][unsort_dict[i] ] = noindent.NoIndent(vrun.basis[i])
 
         output["relaxed_energy"] = vrun.total_energy
 
@@ -571,7 +578,7 @@ class Relax(object):
             if ocar.lorbit in [1, 2, 11, 12]:
                 output["relaxed_mag_basis"] = [ None for i in range(len(vrun.basis))]
                 for i, v in enumerate(vrun.basis):
-                    output["relaxed_mag_basis"][unsort_dict[i]] = casm.NoIndent(ocar.mag[i])
+                    output["relaxed_mag_basis"][unsort_dict[i]] = noindent.NoIndent(ocar.mag[i])
         # if output["relaxed_magmom"] is None:
         #     output.pop("relaxed_magmom", None)
         # if output["relaxed_mag_basis"][0] is None:
