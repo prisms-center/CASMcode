@@ -188,6 +188,8 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
     //std::cout << "  occ: " << it->from_config().occupation() << std::endl;
     //std::cout << "  occ: " << it->to_config().occupation() << std::endl;
     collection.push_back(*it);
+    BOOST_CHECK_EQUAL(it->has_valid_from_occ(), true);
+    BOOST_CHECK_EQUAL(it->is_valid(), true);
     ++index;
   }
   //std::cout << "collection.size(): " << collection.size() << std::endl;

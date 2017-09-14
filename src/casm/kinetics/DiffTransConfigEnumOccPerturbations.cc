@@ -107,7 +107,7 @@ namespace CASM {
       "    ],\n"
       "    \"orbit_selection\": \"low_barrier_diff_trans\",\n"
       "    \"background_configs\": [\n"
-      "      \"SCEL8_2_2_2_0_0_0/2\"\n"
+      "      \"SCEL8_2_2_2_0_0_0/2\",\n"
       "      \"SCEL8_2_2_2_0_0_0/13\"\n"
       "     ],\n"
       "    \"background_selection\": \"groundstates\",\n"
@@ -394,7 +394,7 @@ namespace CASM {
       for(const auto &diff_trans : subprototypes) {
         auto canonical_diff_trans = gen(diff_trans);
         m_base.emplace_back(
-          canonical_diff_trans,
+          canonical_diff_trans.sorted(),
           copy_apply(gen.to_canonical(), m_background_config));
       }
 
@@ -413,7 +413,8 @@ namespace CASM {
       config(make_attachable(diff_trans, _config)),
       diff_trans_g(diff_trans.invariant_subgroup(config.supercell())),
       generating_g(config.invariant_subgroup(diff_trans_g.begin(), diff_trans_g.end())),
-      generating_sym_g(make_sym_group(generating_g)) {}
+      generating_sym_g(make_sym_group(generating_g)) {
+    }
 
     /// Generate local orbits for current base diff trans
     void DiffTransConfigEnumOccPerturbations::_init_local_orbits() {
@@ -533,12 +534,21 @@ namespace CASM {
       // generate perturbed from_config
       Configuration perturbed_from_config {m_base_it->config};
       perturb.apply_to(perturbed_from_config);
-
       // here we use the group of operations that leaves the diff_trans invariant,
       // and not necessarily the from_config, to find the canonical perturbed from_config
-      auto to_canonical = perturbed_from_config.to_canonical(
+
+      /*auto to_canonical = perturbed_from_config.to_canonical(
                             m_base_it->diff_trans_g.begin(),
-                            m_base_it->diff_trans_g.end());
+                            m_base_it->diff_trans_g.end()); */
+      PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
+      Configuration greatest = perturbed_from_config;
+      for(auto it = m_base_it->diff_trans_g.begin(); it != m_base_it->diff_trans_g.end(); ++it) {
+        DiffTransConfiguration tmp(copy_apply(*it, perturbed_from_config), m_base_it->diff_trans);
+        if(copy_apply(*it, perturbed_from_config) > greatest && tmp.has_valid_from_occ()) {
+          greatest = copy_apply(*it, perturbed_from_config);
+          to_canonical = *it;
+        }
+      }
 
       /// construct canonical DiffTransConfiguration as m_current
       m_current = notstd::make_cloneable<DiffTransConfiguration>(
@@ -546,6 +556,7 @@ namespace CASM {
                     m_base_it->diff_trans);
       m_current->set_orbit_name("test");
       m_current->set_orbit_name(m_diff_trans_orbit.name());
+      m_current->set_bg_configname(m_background_config.primitive().name());
       m_current->set_source(this->source(step()));
       this->_set_current_ptr(&(*m_current));
 

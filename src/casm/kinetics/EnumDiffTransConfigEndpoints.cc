@@ -40,8 +40,10 @@ namespace CASM {
     const std::string EnumDiffTransConfigEndpoints::interface_help =
       "EnumDiffTransConfigEndpoints: \n\n"
       "  selection: string (optional, default=MASTER) \n"
-      "    The names of a selection of diff_trans_configs to interpolate images \n"
-      "    within.\n\n"
+      "    The name of a selection of diff_trans_configs for which to enumerate endpoints \n"
+      "  names: JSON array of strings (optional, default=[]) \n"
+      "    The names of diff_trans_configs for which to enumerate endpoints \n"
+      "  NOTE: although both of these are considered optional one of them must be specified.\n\n"
       "  Example:\n"
       "  {\n"
       "    \"names\": [\"diff_trans/0/SCEL8_2_2_2_0_0_0/2\",\"diff_trans/0/SCEL8_2_2_2_0_0_0/4\"],\n"
@@ -65,6 +67,7 @@ namespace CASM {
 
         db_config.insert(config.from_config().canonical_form());
         db_config.insert(config.to_config().canonical_form());
+        config.cache_clear();
 
       }
 
@@ -74,6 +77,10 @@ namespace CASM {
 
       log << "# new configurations: " << Nfinal - Ninit << "\n";
       log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
+
+      log << "Writing config database..." << std::endl;
+      db_config.commit();
+      log << "  DONE" << std::endl;
       // setup error methods
       return 0;
     }
