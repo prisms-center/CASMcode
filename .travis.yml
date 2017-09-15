@@ -51,10 +51,8 @@ before_install:
   - python --version
   - python -c "import sys; print sys.path"
   
-  
-  # install other python dependencies
+  # upgrade pip
   - pip install --upgrade pip
-  - pip install --user -r python/casm/requirements.txt
   
   # check env
   - printenv
@@ -63,6 +61,13 @@ before_install:
 script: 
   - set -e
   - 'echo "CASM_NCPU: $CASM_NCPU"'
+  
+  # C++ and CLI
   - scons configure
   - scons -j $CASM_NCPU
   - scons unit -j $CASM_NCPU
+
+  # Python
+  - cd python/casm
+  - pip install .
+  - pytest -r ap -s test_casm
