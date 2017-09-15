@@ -69,5 +69,5 @@ script:
 
   # Python
   - cd python/casm
-  - pip install .
+  - pip install --user .
   - pytest -r ap -s test_casm
