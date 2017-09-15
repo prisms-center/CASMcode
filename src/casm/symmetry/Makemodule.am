@@ -1,8 +1,0 @@
-libcasm_la_SOURCES += ./src/casm/symmetry/PermuteIterator.cc\
-                      ./src/casm/symmetry/SymGroup.cc\
-                      ./src/casm/symmetry/SymGroupRep.cc\
-                      ./src/casm/symmetry/SymMatrixXd.cc\
-                      ./src/casm/symmetry/SymOp.cc\
-                      ./src/casm/symmetry/SymOpRepresentation.cc\
-                      ./src/casm/symmetry/SymPermutation.cc\
-                      ./src/casm/symmetry/SymInfo.cc

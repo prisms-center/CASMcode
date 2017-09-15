@@ -1,2 +1,0 @@
-ccasmincludedir=$(includedir)/ccasm
-ccasminclude_HEADERS=./include/ccasm/api.hh

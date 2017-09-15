@@ -1,3 +1,0 @@
-libcasm_la_SOURCES += ./src/casm/clusterography/ClusterFunctions.cc\
-                      ./src/casm/clusterography/jsonClust.cc\
-                      ./src/casm/clusterography/SiteCluster.cc
