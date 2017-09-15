@@ -1,5 +1,4 @@
 """A Python package for interacting with VASP"""
-from casm.vasp import io
 from casm.vasp.error import \
     VaspError,\
     VaspWarning,\

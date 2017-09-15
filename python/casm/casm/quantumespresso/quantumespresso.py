@@ -1,5 +1,5 @@
 import os, shutil, re, subprocess, sys, time, gzip, warnings
-import qeio
+from casm.quantumespresso import qeio
 
 
 class QuantumEspressoError(Exception):

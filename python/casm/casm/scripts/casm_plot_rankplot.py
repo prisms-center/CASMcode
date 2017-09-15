@@ -14,7 +14,7 @@ import bokeh.models
 input_help = "Input file"
 desc_help = "Print extended usage description"
 usage_desc = """
-Scatter plot of CASM query output
+Rank plot of CASM query output
 
 Before running you must start the bokeh server:
 - install bokeh with: 'pip install bokeh'
@@ -29,8 +29,7 @@ Input file attributes:
     Input arguments for bokeh.models.Figure
   
   series: JSON array of JSON objects
-    An array of JSON objects, each containing information for one series to be
-    plotted:
+    An array with one JSON object:
 
     project: str (optional, default=os.getcwd())
       Path to CASM project to get data from
@@ -38,14 +37,20 @@ Input file attributes:
     selection: str (optional, default="MASTER")
       Path to selection to use
     
-    x: str
-      Query to use for x-values
+    to_query: List[str] (optional, default=[])
+      List of queries to be made, for instance if necessary for scoring.
     
-    y: str
-      Query to use for y-values
+    scoring_query: str
+      Query to use for scoring. If not in 'query', will be added automatically
     
-    legend: str (optional, default=<y>)
-      String to use for legend, default uses 'y' value
+    scoring_module: str (optional, default=None)
+      If 'scoring_query' is None, will attempt load the 'scoring_function' from
+      the 'scoring_module' and use that for scoring.
+    
+    scoring_function: str (optional, default=None)
+      If 'scoring_query' is None, will attempt load the 'scoring_function' from
+      the 'scoring_module' and use that for scoring. Expected signature is:
+        pandas.Series = f(casm.project.Selection)
     
     tooltips: JSON array of str (optional, default=[])
       Additional properties to query and include in 'tooltips' info that appears
@@ -68,22 +73,11 @@ Example input file:
     {
       "project": null,
       "selection": "MASTER",
-      "x": "comp(a)",
-      "y": "formation_energy",
-      "tooltips": [
-        "scel_size",
-        "volume_relaxation"
-      ],
-      "legend":"formation_energy"
-    },
-    {
-      "project": null,
-      "selection": "MASTER",
-      "x": "comp(a)",
-      "y": "clex(formation_energy)",
-      "tooltips": [
-        "scel_size",
-        "volume_relaxation"
+      "scoring_query": "hull_dist(CALCULATED)",
+      "to_query": [
+        "configname",
+        "basis_deformation",
+        "lattice_deformation"
       ]
     }
   ]
@@ -115,9 +109,8 @@ Example input file:
 
 """
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description = 'Scatter plot')
+def main():
+    parser = argparse.ArgumentParser(description = 'Rank plot')
     parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
     parser.add_argument('input', nargs='?', help=input_help, type=str)
     
@@ -139,7 +132,7 @@ if __name__ == "__main__":
     renderers = []
     
     for index, series in enumerate(input['series']):
-        series['self'] = casm.plotting.Scatter(data=data, index=index, **series)
+        series['self'] = casm.plotting.RankPlot(data=data, index=index, **series)
     
     # first query data necessary for all series
     for series in input['series']:
@@ -160,3 +153,5 @@ if __name__ == "__main__":
     session.show() # open the document in a browser
     session.loop_until_closed() # run forever
 
+if __name__ == "__main__":
+    main()

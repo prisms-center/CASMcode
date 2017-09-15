@@ -1,6 +1,6 @@
 import os, shutil, re, subprocess, json
 import warnings
-import quantumespresso.qeio
+import casm.quantumespresso.qeio as qeio
 
 class QEWrapperError(Exception):
     def __init__(self,msg):
@@ -77,10 +77,10 @@ def read_settings(filename):
 
     if type(settings["remove"]) == list:
         if 'default' in settings["remove"]:
-            settings["remove"] += quantumespresso.qeio.DEFAULT_QE_REMOVE_LIST
+            settings["remove"] += qeio.DEFAULT_QE_REMOVE_LIST
     elif type(settings["remove"]) == str:
         if settings["remove"].lower() == 'default':
-            settings["remove"] = quantumespresso.qeio.DEFAULT_QE_REMOVE_LIST
+            settings["remove"] = qeio.DEFAULT_QE_REMOVE_LIST
         else:
             settings["remove"] = [settings["remove"]]
     if settings["priority"] == None:

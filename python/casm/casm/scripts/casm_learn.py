@@ -6,8 +6,7 @@ import argparse
 import deap.tools
   
 
-if __name__ == "__main__":
-  
+def main():  
   parser = argparse.ArgumentParser(description = 'Fit cluster expansion coefficients (ECI)')
   parser.add_argument('--desc', help='Print extended usage description', action="store_true")
   parser.add_argument('-s', '--settings', nargs=1, help='Settings input filename', type=str)
@@ -304,5 +303,6 @@ if __name__ == "__main__":
     
     parser.print_help()
 
-
+if __name__ == "__main__":
+  main()
 

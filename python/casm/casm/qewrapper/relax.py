@@ -1,5 +1,10 @@
 import os, math, sys, json, re, warnings
-import pbs
+try:
+  from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
+except ImportError:
+  # use of the pbs module is deprecated after CASM v0.2.1
+  from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
+  from pbs import PBSError as JobsError
 
 from casm import quantumespresso
 from casm.misc import noindent
@@ -27,9 +32,9 @@ class Relax(object):
             self.configdir (.../config)
             self.calcdir   (.../config/calctype.name)
 
-            self.settings = dictionary of settings for pbs and the relaxation, see qewrapper.read_settings
+            self.settings = dictionary of settings for job submission and the relaxation, see qewrapper.read_settings
 
-            self.auto = True if using pbs module's JobDB to manage pbs jobs
+            self.auto = True if using prisms_jobs module's JobDB to manage jobs
             self.sort = True if sorting atoms in POSCAR by type
     """
     def __init__(self, configdir=None, auto = True, sort = True):
@@ -38,7 +43,7 @@ class Relax(object):
 
         Args:
             configdir: path to configuration
-            auto: True if using pbs module's JobDB to manage pbs jobs
+            auto: True if using prisms_jobs module's JobDB to manage jobs
 
         """
         if configdir == None:
@@ -163,7 +168,7 @@ class Relax(object):
         """Submit a PBS job for this Quantum Espresso relaxation"""
 
         # first, check if the job has already been submitted and is not completed
-        db = pbs.JobDB()
+        db = JobDB()
         print "rundir", self.calcdir
         id = db.select_regex_id("rundir", self.calcdir)
         print "id:", id
@@ -206,8 +211,8 @@ class Relax(object):
                   job = db.select_job(j)
                   if job["taskstatus"] == "Incomplete":
                       try:
-                          pbs.complete_job(jobid=j)
-                      except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                          complete_job(jobid=j)
+                      except (JobsError, JobDBError, EligibilityError) as e:
                           print str(e)
                           sys.stdout.flush()
 
@@ -243,8 +248,8 @@ class Relax(object):
 
         print "  Constructing a PBS job"
         sys.stdout.flush()
-        # construct a pbs.Job
-        job = pbs.Job(name=casm.wrapper.jobname(self.configname),\
+        # construct a Job
+        job = Job(name=casm.wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -325,8 +330,8 @@ class Relax(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
                     print str(e)
                     sys.stdout.flush()
 
@@ -362,8 +367,8 @@ class Relax(object):
             # mark error
             if self.auto:
                 try:
-                    pbs.error_job("Not converging")
-                except (pbs.PBSError, pbs.JobDBError) as e:
+                    error_job("Not converging")
+                except (JobsError, JobDBError) as e:
                     print str(e)
                     sys.stdout.flush()
 
@@ -390,8 +395,8 @@ class Relax(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
                     print str(e)
                     sys.stdout.flush()
 

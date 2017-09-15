@@ -78,8 +78,7 @@ Example input file:
 
 """
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(description = 'Histogram plot')
     parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
     parser.add_argument('input', nargs='?', help=input_help, type=str)
@@ -123,3 +122,5 @@ if __name__ == "__main__":
     session.show() # open the document in a browser
     session.loop_until_closed() # run forever
 
+if __name__ == "__main__":
+    main()

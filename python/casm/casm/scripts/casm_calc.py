@@ -37,8 +37,7 @@ report_help = """
 Report calculation results (print calc.properties.json file) for all selected configurations.
 """
 
-
-if __name__ == "__main__":
+def main():
   parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
   parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
   parser.add_argument('--path', help=path_help, type=str, default=None)
@@ -125,5 +124,6 @@ if __name__ == "__main__":
   except Exception as e:
     print e
     sys.exit(1)
-      
-      
+
+if __name__ == "__main__":
+  main()

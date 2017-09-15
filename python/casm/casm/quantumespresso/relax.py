@@ -1,6 +1,7 @@
 import os, math, sys, shutil, gzip
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-import quantumespresso, qeio
+import casm.quantumespresso
+from casm.quantumespresso import qeio
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a Quantum Espresso relaxation.
@@ -33,11 +34,11 @@ class Relax(object):
                         the json file: .../relaxdir/relax.json
 
                 possible settings keys are:
-                    used by quantumespresso.run() function:
+                    used by casm.quantumespresso.run() function:
                         "ncpus": number of ncpus to run mpi on
 			"npar" or "ncore": number of ways to parallelize
                         "kpar": number of ways to parallelize k-points
-                        "quantumespresso_cmd": (default, see quantumespresso.run) shell command to execute quantumespresso, or None to use default mpirun
+                        "quantumespresso_cmd": (default, see casm.quantumespresso.run) shell command to execute quantumespresso, or None to use default mpirun
                         "strict_kpoint": force strict copying of KPOINTS file, otherwise kpoints are scaled based on supercell size
                     used by not_converging():
                         "run_limit": (default 10) maximum number of runs to allow before setting status to "not_converging"
@@ -239,11 +240,11 @@ class Relax(object):
 
             elif task == "relax":
                 self.add_rundir()
-                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
+                casm.quantumespresso.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
             elif task == "constant":
                 self.add_rundir()
-                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1],self.settings)
+                casm.quantumespresso.continue_job(self.rundir[-2], self.rundir[-1],self.settings)
 
                 # set Infile to calculation = relax
                 if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["final"]))):
@@ -264,11 +265,11 @@ class Relax(object):
             else:
                 # probably hit walltime
                 self.add_rundir()
-                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
+                casm.quantumespresso.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
             while True:
                 # run quantum espresso
-                result = quantumespresso.run(infilename,outfilename,self.rundir[-1],command=self.settings["qe_cmd"],ncpus=self.settings["ncpus"],err_types=self.settings["err_types"])
+                result = casm.quantumespresso.run(infilename,outfilename,self.rundir[-1],command=self.settings["qe_cmd"],ncpus=self.settings["ncpus"],err_types=self.settings["err_types"])
 
                 # if no errors, continue
                 if result == None or self.not_converging():
@@ -311,7 +312,7 @@ class Relax(object):
                 sys.stdout.flush()
                 os.rename(self.rundir[-1], self.finaldir)
                 self.rundir.pop()
-                quantumespresso.complete_job(self.finaldir, self.settings)
+                casm.quantumespresso.complete_job(self.finaldir, self.settings)
 
         return (status, task)
 
