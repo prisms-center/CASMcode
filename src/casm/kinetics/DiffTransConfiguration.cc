@@ -307,7 +307,7 @@ namespace CASM {
     /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
     PermuteIterator DiffTransConfiguration::to_config_from_canonical() const {
       if(!cache().contains("to_config_from_canonical")) {
-        PermuteIterator result = from_config().from_canonical();
+        PermuteIterator result = to_config().from_canonical();
         cache_insert("to_config_from_canonical", result);
         return result;
       }

@@ -6,8 +6,11 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/Selection_impl.hh"
+#include "casm/app/AppIO_impl.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/database/DiffTransConfigDatabase.hh"
+
 
 // extern "C" {
 //   CASM::EnumInterfaceBase *make_DiffTransConfigInterpolation_interface() {
@@ -33,6 +36,18 @@ namespace CASM {
       Configuration from_config = configs.first;
       Configuration to_config = configs.second;
       DiffusionTransformation diff_trans  = diff_trans_config.diff_trans();
+      if(!from_config.has_displacement()) {
+        from_config.init_displacement();
+      }
+      if(!from_config.has_deformation()) {
+        from_config.init_deformation();
+      }
+      if(!to_config.has_displacement()) {
+        to_config.init_displacement();
+      }
+      if(!to_config.has_deformation()) {
+        to_config.init_deformation();
+      }
       Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
       m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
                                                                             to_config_mutated,
@@ -80,7 +95,6 @@ namespace CASM {
       "    \"n_images\": 4,\n"
       "    \"selection\": \"low_barrier_diff_trans\",\n"
       "    \"calctype\": \"fixed_lattice\""
-      "    }\n"
       "  }\n\n";
 
     int DiffTransConfigInterpolation::run(const PrimClex &primclex,
@@ -89,11 +103,12 @@ namespace CASM {
 
       // get selection filename from json/enumoption // do json for now
       // Constrct a DB selection of DiffTransConfiguration from json and enumoption inputs
-      DB::Selection<DiffTransConfiguration> sel(primclex);
+      DB::Selection<DiffTransConfiguration> dtc_sel = make_selection<DiffTransConfiguration>(
+                                                        primclex, kwargs, "names", "selection", enumerator_name, OnError::THROW);
       int n_images = kwargs["n_images"].get<int>(); // set defaults with get_else
       std::string calctype = kwargs["calctype"].get<std::string>();
       Index i;
-      for(const auto &config : sel.selected()) {
+      for(const auto &config : dtc_sel.selected()) {
         // Create a interpolation object
         DiffTransConfigInterpolation enumerator(config, n_images, calctype);
         i = 0;
@@ -116,13 +131,18 @@ namespace CASM {
       for(auto traj : diff_trans.specie_traj()) {
         Index k = config.supercell().linear_index(traj.from.uccoord);
         Index l = config.supercell().linear_index(traj.to.uccoord);
+
         result.set_occ(k, traj.from.occ);
+
         Eigen::Vector3d displacement = config.disp(l);
+
         const Eigen::Vector3d from_pos = config.supercell().coord(k).const_cart();
         const Eigen::Vector3d to_pos = config.supercell().coord(l).const_cart();
         Eigen::Vector3d ideal_pos_inc = to_pos - from_pos;
         Eigen::Vector3d final_disp = displacement + ideal_pos_inc;
+
         result.set_disp(k, final_disp);
+
       }
       return result;
     }
