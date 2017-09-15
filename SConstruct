@@ -349,7 +349,6 @@ env['ENV']['TERM'] = os.environ['TERM']
 
 # set testing environment (for running tests)
 env['ENV']['PATH'] = env['BINDIR'] + ":" + env['ENV']['PATH']
-print 'PATH=', env['ENV']['PATH']
 
 # set execution environment variables (for running tests)
 casm_var = ['CXX', 'CASM_CXX', 'CASM_CXXFLAGS', 'CASM_SOFLAGS',
@@ -484,12 +483,6 @@ SConscript(['apps/casm/SConscript'], {'env':env})
 
 # tests/unit
 SConscript(['tests/unit/SConscript'], {'env': env})
-
-
-##### Python packages
-
-# install python packages and scripts
-SConscript(['python/casm/SConscript'], {'env':env})
 
 
 ##### Make combined alias 'test'
@@ -679,22 +672,6 @@ if 'configure' in COMMAND_LINE_TARGETS:
     if_failed("Please check your boost version") 
   if not conf.CheckBOOST_NO_CXX11_SCOPED_ENUMS():
     if_failed("Please check your boost installation or the CASM_BOOST_NO_CXX11_SCOPED_ENUMS environment variable")
-  for module_name in ['numpy', 'sklearn', 'deap', 'pandas', 'bokeh', 'tornado']:
-    if not check_module(module_name):
-      if_failed("Python module '" + module_name + "' is not installed")
-  if not check_module('prisms_jobs'):
-      if not check_module('pbs'):
-        if_failed("Python module '" + 'prisms_jobs' + "' is not installed")
-      else:
-        print """
-        Warning: Use of the Python module 'pbs' is deprecated. 
-          It has been replaced by 'prisms-jobs' (https://github.com/prisms-center/prisms_jobs)
-          Install via:
-            conda install -c prisms-center prisms-jobs
-              or
-            pip install prisms-jobs
-        """
-  
   
   print "Configuration checks passed."
   exit(0)
