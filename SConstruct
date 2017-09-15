@@ -349,7 +349,7 @@ env['ENV']['TERM'] = os.environ['TERM']
 
 # set testing environment (for running tests)
 env['ENV']['PATH'] = env['BINDIR'] + ":" + env['ENV']['PATH']
-print 'env PATH:', env['ENV']['PATH']
+print 'PATH=', env['ENV']['PATH']
 
 # set execution environment variables (for running tests)
 casm_var = ['CXX', 'CASM_CXX', 'CASM_CXXFLAGS', 'CASM_SOFLAGS',

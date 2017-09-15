@@ -1,4 +1,7 @@
 
+CASM C++ library and `casm` CLI program
+=======================================
+
 ## Dependencies
 
 ### Compilation ###
@@ -76,20 +79,7 @@ Boost can be downloaded and installed from source following instructions found a
 
 ### Python
 
-CASM includes python modules for automating the submission and analysis of VASP calculations. They have been most extensively tested using Python 2.7.5, and should be compatible with versions 2.x+. (*Note however that for recent versions of SCons, support for Python versions before 2.7 has been deprecated.*) The latest version can be obtained from the Python website: [https://www.python.org](https://www.python.org)
-
-Individual module dependencies include:
-
-- **SciPy** ([https://www.scipy.org](https://www.scipy.org)), which can be obtained using one of the methods described on their website:  [http://www.scipy.org/install.html](http://www.scipy.org/install.html). The particular SciPy packages needed are:
-	- **numpy**  ([http://www.numpy.org](http://www.numpy.org))
-	- **pandas** ([http://pandas.pydata.org](http://pandas.pydata.org))
-
-- **scikit-learn** ([http://scikit-learn.org](http://scikit-learn.org))
-
-- **deap** ([http://deap.readthedocs.io/en/master/](http://deap.readthedocs.io/en/master/)), the Distributed Evolutionary Algorithm Package, used for genetic algorithms.
-	- **scoop** ([http://scoop.readthedocs.io/en/latest/](http://scoop.readthedocs.io/en/latest/)), required for deap. 		
-
-- **pbs** The Python module pbs is used to automate submission and management of PBS batch jobs on a cluster. It can be obtained from its GitHub repository: [https://github.com/prisms-center/pbs](https://github.com/prisms-center/pbs). *Note: This is not the pbs module available for installation via pip.*
+See python/casm/README.md for installation of the CASM Python packages.
 
 
 ### Included with CASM
@@ -107,7 +97,7 @@ CASM is distributed with the following dependencies:
 - **gzstream, v1.5**: [http://www.cs.unc.edu/Research/compgeom/gzstream/](http://www.cs.unc.edu/Research/compgeom/gzstream/)
 
 
-## Installation
+## Installation from source
 
 #### Getting CASM
 
