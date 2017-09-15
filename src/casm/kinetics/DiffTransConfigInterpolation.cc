@@ -82,7 +82,10 @@ namespace CASM {
       "  n_images: integer \n"
       "    The number of images to interpolate for each diff_trans_config\n\n"
 
-      "  selection: string (optional, default=MASTER) \n"
+      "  selection: string (optional, default="") \n"
+      "    The names of a selection of diff_trans_configs to interpolate images \n"
+      "    within.\n\n"
+      "  names: JSON array of strings (optional, default=[]) \n"
       "    The names of a selection of diff_trans_configs to interpolate images \n"
       "    within.\n\n"
 
@@ -156,10 +159,17 @@ namespace CASM {
 
     /// Returns copies of from and to config updated such they reflect the relaxed structures from the properties database
     std::pair<Configuration, Configuration> get_relaxed_endpoints(const DiffTransConfiguration &dfc, std::string calctype) {
-      Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
-      Configuration rlx_to = copy_apply_properties(make_configuration(dfc.primclex(), dfc.to_configname()), calctype);
-      return std::make_pair(copy_apply(dfc.from_config_from_canonical(), rlx_frm),
-                            copy_apply(dfc.to_config_from_canonical(), rlx_to));
+      Configuration ret_frm = dfc.from_config();
+      Configuration ret_to = dfc.to_config();
+      if(dfc.from_configname().find("none") == std::string::npos) {
+        Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
+        ret_frm = copy_apply(dfc.from_config_from_canonical(), rlx_frm);
+      }
+      if(dfc.to_configname().find("none") == std::string::npos) {
+        Configuration rlx_to = copy_apply_properties(make_configuration(dfc.primclex(), dfc.to_configname()), calctype);
+        ret_to = copy_apply(dfc.to_config_from_canonical(), rlx_to);
+      }
+      return std::make_pair(ret_frm, ret_to);
     }
 
     /// applies deformation from input config onto outpur_config and prints it to a file.

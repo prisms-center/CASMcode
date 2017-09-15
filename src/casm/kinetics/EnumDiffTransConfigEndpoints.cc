@@ -39,7 +39,7 @@ namespace CASM {
 
     const std::string EnumDiffTransConfigEndpoints::interface_help =
       "EnumDiffTransConfigEndpoints: \n\n"
-      "  selection: string (optional, default=MASTER) \n"
+      "  selection: string (optional, default="") \n"
       "    The name of a selection of diff_trans_configs for which to enumerate endpoints \n"
       "  names: JSON array of strings (optional, default=[]) \n"
       "    The names of diff_trans_configs for which to enumerate endpoints \n"
