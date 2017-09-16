@@ -51,9 +51,9 @@ before_install:
   - python --version
   - python -c "import sys; print sys.path"
   
-  # upgrade pip
+  # upgrade pip and install testing requirements
   - pip install --upgrade pip
-  - pip install --user pytest
+  - pip install --user -r test_requirements.txt
   
   # check env
   - printenv
