@@ -26,7 +26,7 @@ class Selection(object):
         'configname' and 'selected' (as bool) columns.
       
     """
-    def __init__(self, proj=None, path="MASTER", all=True):
+    def __init__(self, proj=None, path="MASTER", type="config", all=True):
         """
         Construct a CASM Project representation.
 
@@ -38,6 +38,9 @@ class Selection(object):
           
           path: string, optional, default="MASTER"
             path to selection file, or "MASTER" (Default="MASTER")
+
+          type: string, optional, default="config"
+            type of configuration "config"(Default), "scel", "diff_trans" etc
           
           all: bool, optional, default=True
             if True, self.data will include all configurations, whether selected or
@@ -55,6 +58,7 @@ class Selection(object):
         if os.path.isfile(path):
           self.path = os.path.abspath(path)
 
+        self.type = type
         self.all = all
         
         self._data = None
@@ -88,7 +92,7 @@ class Selection(object):
         return self._data
     
     
-    def save(self, data=None, force=False):
+    def save(self, data=None, force=False): #make it generalized ##todo
         """
         Save the current selection. Also allows completely replacing the 'data'
         describing the selected configurations.
@@ -100,35 +104,36 @@ class Selection(object):
           force: Boolean, force overwrite existing files
         """
         if self.path == "MASTER":
-          
-          if data is not None:
-            self._data = data
-            self._clean_data()
+          raise Exception("Cannot save the '" + self.path + "' Selection")
+
+          # if data is not None:
+          #   self._data = data
+          #   self._clean_data()
         
-          if self._data is None:
-            return
+          # if self._data is None:
+          #   return
           
-          clist = self.proj.dir.config_list()
-          backup = clist + ".tmp"
-          if os.path.exists(backup):
-            raise Exception("File: " + backup + " already exists")
+          # clist = self.proj.dir.config_list()
+          # backup = clist + ".tmp"
+          # if os.path.exists(backup):
+          #   raise Exception("File: " + backup + " already exists")
           
-          # read
-          j = json.load(open(clist, 'r'))
+          # # read
+          # j = json.load(open(clist, 'r'))
           
-          for sk, sv in j["supercells"].iteritems():
-            for ck, cv in sv.iteritems():
-              sv[ck]["selected"] = False
+          # for sk, sv in j["supercells"].iteritems():
+          #   for ck, cv in sv.iteritems():
+          #     sv[ck]["selected"] = False
           
-          # set selection
-          for index, row in self._data.iterrows():
-            scelname, configid = row["configname"].split('/')
-            j["supercells"][scelname][configid]["selected"] = row["selected"]
+          # # set selection
+          # for index, row in self._data.iterrows():
+          #   scelname, configid = row["configname"].split('/')
+          #   j["supercells"][scelname][configid]["selected"] = row["selected"]
             
-          # write
-          f = open(backup, 'w')
-          json.dump(j, f)
-          os.rename(backup, clist)
+          # # write
+          # f = open(backup, 'w')
+          # json.dump(j, f)
+          # os.rename(backup, clist)
           
         elif self.path in ["ALL", "CALCULATED"]:
           raise Exception("Cannot save the '" + self.path + "' Selection")
@@ -251,7 +256,3 @@ class Selection(object):
             self.query([name], force)
           else:
             self.data.loc[:,name] = data
-
-
-
-        
