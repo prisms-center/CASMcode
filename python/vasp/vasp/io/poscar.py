@@ -413,5 +413,8 @@ class Poscar:
 
         return
 
-
+    def apply_deformation(self, deformation = np.ones((3,3))):
+        """ applies a deformation which is array of size 3 X 3
+        """
+        self._lattice = np.dot(self._lattice, np.array(deformation).T)
 
