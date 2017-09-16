@@ -144,8 +144,7 @@ class Relax(object):
 
     @property
     def configdir(self):
-      return self.casm_directories.configuration_dir(self.configname)
-
+        return self.casm_directories.configuration_dir(self.configname)
 
     def setup(self):
         """ Setup initial relaxation run
@@ -163,6 +162,13 @@ class Relax(object):
         # Find required input files in CASM project directory tree
         vaspfiles=casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname, self.clex)
         incarfile,prim_kpointsfile,prim_poscarfile,super_poscarfile,speciesfile=vaspfiles
+
+        if "initial_deformation" in self.settings:
+            import vasp.io.poscar
+            deformation = self.settings["initial_deformation"]
+            poscar_obj = vasp.io.poscar.Poscar(super_poscarfile)
+            poscar_obj.apply_deformation(deformation)
+            poscar_obj.write(super_poscarfile)
 
         # Find optional input files
         extra_input_files = []
