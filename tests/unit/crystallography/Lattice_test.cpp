@@ -19,64 +19,62 @@ void lattice_pg_test() {
 
   {
     SymGroup pg;
-    Lattice::fcc().generate_point_group(pg, tol);
+    Lattice::fcc().generate_point_group(pg);
     BOOST_CHECK_EQUAL(pg.size(), 48);
   }
   {
     SymGroup pg;
-    Lattice::bcc().generate_point_group(pg, tol);
+    Lattice::bcc().generate_point_group(pg);
     BOOST_CHECK_EQUAL(pg.size(), 48);
   }
   {
     SymGroup pg;
-    Lattice::cubic().generate_point_group(pg, tol);
+    Lattice::cubic(tol).generate_point_group(pg);
     BOOST_CHECK_EQUAL(pg.size(), 48);
   }
   {
     SymGroup pg;
-    Lattice::hexagonal().generate_point_group(pg, tol);
+    Lattice::hexagonal().generate_point_group(pg);
     BOOST_CHECK_EQUAL(pg.size(), 24);
   }
 }
 
 void lattice_is_equivalent_test() {
 
-  double tol = TOL;
-
   {
     SymGroup pg;
     Lattice fcc = Lattice::fcc();
-    fcc.generate_point_group(pg, tol);
+    fcc.generate_point_group(pg);
 
     for(const auto &op : pg) {
-      BOOST_CHECK_EQUAL(fcc.is_equivalent(copy_apply(op, fcc), tol), 1);
+      BOOST_CHECK_EQUAL(fcc.is_equivalent(copy_apply(op, fcc)), 1);
     }
   }
   {
     SymGroup pg;
     Lattice bcc = Lattice::bcc();
-    bcc.generate_point_group(pg, tol);
+    bcc.generate_point_group(pg);
 
     for(const auto &op : pg) {
-      BOOST_CHECK_EQUAL(bcc.is_equivalent(copy_apply(op, bcc), tol), 1);
+      BOOST_CHECK_EQUAL(bcc.is_equivalent(copy_apply(op, bcc)), 1);
     }
   }
   {
     SymGroup pg;
     Lattice cubic = Lattice::cubic();
-    cubic.generate_point_group(pg, tol);
+    cubic.generate_point_group(pg);
 
     for(const auto &op : pg) {
-      BOOST_CHECK_EQUAL(cubic.is_equivalent(copy_apply(op, cubic), tol), 1);
+      BOOST_CHECK_EQUAL(cubic.is_equivalent(copy_apply(op, cubic)), 1);
     }
   }
   {
     SymGroup pg;
     Lattice hex = Lattice::hexagonal();
-    hex.generate_point_group(pg, tol);
+    hex.generate_point_group(pg);
 
     for(const auto &op : pg) {
-      BOOST_CHECK_EQUAL(hex.is_equivalent(copy_apply(op, hex), tol), 1);
+      BOOST_CHECK_EQUAL(hex.is_equivalent(copy_apply(op, hex)), 1);
     }
   }
 }

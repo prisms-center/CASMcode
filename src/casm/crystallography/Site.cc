@@ -1,5 +1,6 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
+#include "casm/casm_io/Log.hh"
 
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
@@ -155,8 +156,8 @@ namespace CASM {
    */
   //*******************************************************************************************
 
-  bool Site::compare(const Coordinate &test_coord, double compare_tol) const {
-    return (min_dist(test_coord) < compare_tol);
+  bool Site::compare(const Coordinate &test_coord) const {
+    return (min_dist(test_coord) < lattice().tol());
   }
 
   //*******************************************************************************************
@@ -165,8 +166,8 @@ namespace CASM {
    */
   //*******************************************************************************************
 
-  bool Site::compare(const Site &test_site, double compare_tol) const {
-    return (compare_type(test_site) && min_dist(test_site) < compare_tol);
+  bool Site::compare(const Site &test_site) const {
+    return (compare_type(test_site) && min_dist(test_site) < lattice().tol());
   }
 
   //*******************************************************************************************
@@ -176,9 +177,9 @@ namespace CASM {
    */
   //*******************************************************************************************
 
-  bool Site::compare(const Site &test_site, const Coordinate &shift, double compare_tol) const {
+  bool Site::compare(const Site &test_site, const Coordinate &shift) const {
 
-    return (compare_type(test_site)) && (min_dist(test_site + shift) < compare_tol);
+    return (compare_type(test_site)) && (min_dist(test_site + shift) < lattice().tol());
 
   }
 
@@ -327,12 +328,12 @@ namespace CASM {
             break;
           }
         if(index == tocc.size()) {
-          std::cerr << "ERROR in Site::read(). Occupying molecule not listed in possible occupants" << std::endl;
-          std::cout << "  occupying molecule name: " << mol_name << "  index: " << index << std::endl;
-          std::cout << "  possible occupants: ";
+          default_err_log() << "ERROR in Site::read(). Occupying molecule not listed in possible occupants" << std::endl;
+          default_err_log() << "  occupying molecule name: " << mol_name << "  index: " << index << std::endl;
+          default_err_log() << "  possible occupants: ";
           for(Index i = 0; i < tocc.size(); i++)
-            std::cout << tocc[i].name() << " ";
-          std::cout << " " << std::endl;
+            default_err_log() << tocc[i].name() << " ";
+          default_err_log() << " " << std::endl;
           exit(1);
         }
         else
@@ -340,7 +341,7 @@ namespace CASM {
 
       }
       else {
-        std::cerr << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
+        default_err_log() << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
       }
       m_type_ID = -1;
       return;
@@ -350,7 +351,7 @@ namespace CASM {
       m_site_occupant->set_domain(tocc);
     }
     else {
-      std::cerr << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
+      default_err_log() << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
     }
     stream.ignore(1000, '\n');
 
@@ -388,7 +389,7 @@ namespace CASM {
       m_site_occupant->set_domain(tocc);
     }
     else {
-      std::cerr << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
+      default_err_log() << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
     }
     stream.ignore(1000, '\n');
 

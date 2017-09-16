@@ -466,7 +466,7 @@ namespace CASM {
 
 }
 
-#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseTypes.hh"
 
 // explicit instantiations
 #define INST_DirectoryStructure_all(r, data, type) \

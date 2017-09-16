@@ -6,9 +6,7 @@
 
 namespace CASM {
 
-  template<typename _Element, typename _SymCompareType>
-  class Orbit;
-
+  class PrimClex;
   class SymGroup;
 
   /** \defgroup OrbitGeneration
@@ -63,14 +61,19 @@ namespace CASM {
     /// \brief Construct Orbit from all generating elements
     template<typename OrbitOutputIterator>
     OrbitOutputIterator make_orbits(OrbitOutputIterator result) {
-
-      // orbit generating elements should already by sorted
-      std::vector<OrbitType> orbits;
       for(const auto &e : elements) {
-        orbits.emplace_back(e, group, sym_compare);
+        *result++ = OrbitType(e, group, sym_compare);
       }
-      // output Orbits
-      return std::move(orbits.begin(), orbits.end(), result);
+      return result;
+    }
+
+    /// \brief Construct Orbit from all generating elements, including PrimClex pointer
+    template<typename OrbitOutputIterator>
+    OrbitOutputIterator make_orbits(OrbitOutputIterator result, const PrimClex &primclex) {
+      for(const auto &e : elements) {
+        *result++ = OrbitType(e, group, sym_compare, &primclex);
+      }
+      return result;
     }
 
     const SymGroup &group;

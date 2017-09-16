@@ -1,7 +1,9 @@
-#ifndef DOFTRAITS_HH
-#define DOFTRAITS_HH
+#ifndef CASM_DoFTraits
+#define CASM_DoFTraits
 
 #include "casm/basis_set/DoF.hh"
+#include "casm/symmetry/OrbitDecl.hh"
+#include "casm/clusterography/ClusterDecl.hh"
 
 // remove these once implementation of derived classes gets moved out of this file
 #include "casm/crystallography/Site.hh"
@@ -23,19 +25,6 @@ namespace CASM {
 
     notstd::cloneable_ptr<typename DoF_impl::BasicTraits> occupation();
   }
-
-  // This is a hack to forward-declare IntegralCluster.  Forward declarations
-  // of typedefs should probably get their own *.hh files, without any dependencies
-  template<typename CoordType>
-  class CoordCluster;
-  class UnitCellCoord;
-  typedef CoordCluster<UnitCellCoord> IntegralCluster;
-
-  template <typename ClustType, typename SymCompareType>
-  class Orbit;
-
-  template <typename ClustType>
-  class PrimPeriodicSymCompare;
 
   namespace DoF_impl {
     /// \brief Collection of all the traits specific to a DoF type

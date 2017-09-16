@@ -12,7 +12,7 @@
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigMapping.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/Database.hh"
 #include "casm/database/Selected.hh"
 #include "Common.hh"
 
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(AllTest) {
 
   log << "---- Comp -------------" << std::endl;
   ConfigIO::Comp comp;
-  for(const auto &config : primclex.db<Configuration>()) {
+  for(const auto &config : primclex.generic_db<Configuration>()) {
     log << "name: " << config.name() << "  comp: " << comp(config).transpose() << "  print: ";
     comp.print(config, log);
     log << std::endl;
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(AllTest) {
 
   log << "---- BaseValueFormatter Ptr -------------" << std::endl;
   BaseValueFormatter<Eigen::VectorXd, Configuration> *value_ptr = &comp;
-  for(const auto &config : primclex.db<Configuration>()) {
+  for(const auto &config : primclex.generic_db<Configuration>()) {
     log << "name: " << config.name() << "  value: " << (*value_ptr)(config).transpose() << "  print: ";
     value_ptr->print(config, log);
     log << std::endl;
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(AllTest) {
 
   log << "---- BaseDatumFormatter Ptr -------------" << std::endl;
   BaseDatumFormatter<Configuration> *datum_ptr = &comp;
-  for(const auto &config : primclex.db<Configuration>()) {
+  for(const auto &config : primclex.generic_db<Configuration>()) {
     log << "name: " << config.name() << "  print: ";
     datum_ptr->print(config, log);
     log << std::endl;

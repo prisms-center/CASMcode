@@ -86,11 +86,11 @@ namespace CASM {
 
     DirectoryStructure dir(root);
     ProjectSettings set(root);
-    Structure prim(read_prim(dir.prim()));
+    Structure prim(read_prim(dir.prim(), set.crystallography_tol()));
 
     args.log() << "Generating lattice point group. " << std::endl << std::endl;
     SymGroup prim_pg;
-    prim.lattice().generate_point_group(prim_pg, set.crystallography_tol());
+    prim.lattice().generate_point_group(prim_pg);
     prim_pg.character_table();
 
 
@@ -99,7 +99,7 @@ namespace CASM {
 
     args.log() << "Generating factor group. " << std::endl << std::endl;
 
-    prim.generate_factor_group(set.crystallography_tol());
+    prim.generate_factor_group();
     prim.set_site_internals();
 
     args.log() << "  Factor group size: " << prim.factor_group().size() << std::endl;

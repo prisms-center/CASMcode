@@ -6,6 +6,7 @@
 namespace CASM {
   class Lattice;
   class SymGroup;
+  class SymOp;
 
   /** \ingroup Lattice
    *  @{
@@ -116,6 +117,12 @@ namespace CASM {
 
   ///Find the niggli, most standard oriented version of the given orbit (defined by the given SymGroup) of lattices
   Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol);
+
+  /// Return canonical equivalent lattice, and 'to_canonical' SymOp
+  std::pair<Lattice, SymOp> _canonical_equivalent_lattice(
+    const Lattice &in_lat,
+    const SymGroup &point_grp,
+    double compare_tol);
 
   ///Convert the given lattice into it's niggli reduced form, with the most standard orientation possilbe
   Lattice niggli(const Lattice &in_lat, double compare_tol, bool keep_handedness = false);

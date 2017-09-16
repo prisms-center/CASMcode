@@ -25,13 +25,14 @@ namespace CASM {
   public:
     using pointer = typename IteratorType::pointer;
     using reference = typename IteratorType::reference;
+    using DataObject = typename IteratorType::value_type;
 
     FilteredConfigIterator() {};
 
     FilteredConfigIterator(const IteratorType &_begin,
                            const IteratorType &_end,
                            const std::string &filter_expr,
-                           const DataFormatterDictionary<Configuration> &_dict): m_it(_begin), m_end(_end) {
+                           const DataFormatterDictionary<DataObject> &_dict): m_it(_begin), m_end(_end) {
       m_filter = _dict.parse(filter_expr);
       ValueDataStream<bool> _stream;
       if(m_it != m_end) {
@@ -44,7 +45,7 @@ namespace CASM {
     FilteredConfigIterator(const IteratorType &_begin,
                            const IteratorType &_end,
                            const std::vector<std::string> &filter_expr,
-                           const DataFormatterDictionary<Configuration> &_dict): m_it(_begin), m_end(_end) {
+                           const DataFormatterDictionary<DataObject> &_dict): m_it(_begin), m_end(_end) {
       m_filter = _dict.parse(filter_expr);
       ValueDataStream<bool> _stream;
       if(m_it != m_end) {
@@ -55,7 +56,7 @@ namespace CASM {
     }
 
     FilteredConfigIterator(const IteratorType &_end):
-      m_it(_end), m_end(_end), m_filter(ConstantValueFormatter<bool, Configuration>("invalid", false)) {
+      m_it(_end), m_end(_end), m_filter(ConstantValueFormatter<bool, DataObject>("invalid", false)) {
 
     }
 
@@ -97,7 +98,7 @@ namespace CASM {
 
   private:
     IteratorType m_it, m_end;
-    DataFormatter<Configuration> m_filter;
+    DataFormatter<DataObject> m_filter;
   };
 
 
@@ -111,12 +112,12 @@ namespace CASM {
     swap(a.m_filter, b.m_filter);
   }
 
-  template<typename IteratorType>
+  template<typename IteratorType, typename DataObject>
   FilteredConfigIterator<IteratorType> filter_begin(
     const IteratorType &it,
     const IteratorType &it_end,
     const std::vector<std::string> &filter_expr,
-    const DataFormatterDictionary<Configuration> &_dict) {
+    const DataFormatterDictionary<DataObject> &_dict) {
     return FilteredConfigIterator<IteratorType>(it, it_end, filter_expr, _dict);
   }
 

@@ -21,7 +21,7 @@ namespace CASM {
     public EnumEquivalents<Lattice, Array<SymOp>::const_iterator, SymOp, SymRepIndexCompare> {
 
   public:
-    LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g, double tol);
+    LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g);
 
     std::string name() const override {
       return enumerator_name;

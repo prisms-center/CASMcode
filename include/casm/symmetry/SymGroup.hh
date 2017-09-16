@@ -60,8 +60,10 @@ namespace CASM {
     virtual void clear();
     virtual void clear_tables();
 
+    /// \brief Lattice used for periodic comparisons (for instance, to generate multiplcation table)
     void set_lattice(const Lattice &new_lat);
 
+    /// \brief Lattice used for periodic comparisons (for instance, to generate multiplcation table)
     const Lattice &lattice() const;
 
     const MasterSymGroup &master_group() const {

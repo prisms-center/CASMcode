@@ -2,26 +2,210 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-#include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffusionTransformationEnum.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 
 /// What is being used to test it:
-#include "casm/clex/PrimClex.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/enum.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
 
 using namespace CASM;
 using namespace test;
 
 BOOST_AUTO_TEST_SUITE(DiffusionTransformationTest)
 
-BOOST_AUTO_TEST_CASE(Test0) {
+BOOST_AUTO_TEST_CASE(BasicsTest0) {
+
+  typedef Kinetics::SpecieLocation SpecieLocation;
+
+  /// Make test project
+  BOOST_CHECK_EQUAL(true, true);
+  test::ZrOProj proj;
+  proj.check_init();
+  proj.check_composition();
+
+  Logging logging = Logging::null();
+  PrimClex primclex(proj.dir, logging);
+  const Structure &prim = primclex.prim();
+  const Lattice &lat = prim.lattice();
+  Eigen::Vector3d a, b, c;
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
+  BOOST_CHECK_EQUAL(true, true);
+
+  // Make background config
+  Supercell _scel {&primclex, Lattice(1 * a, 1 * b, 1 * c)};
+  Configuration _config(_scel);
+  _config.set_occupation({0, 0, 1, 0});
+
+  Supercell background_scel {&primclex, Lattice(3 * a, 3 * b, 3 * c)};
+  Configuration background_config = _config.
+                                    fill_supercell(background_scel, primclex.prim().factor_group()).
+                                    in_canonical_supercell();
+  BOOST_CHECK_EQUAL(true, true);
+
+  {
+    // Construct
+    Kinetics::DiffusionTransformation diff_trans(prim);
+    BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(diff_trans.occ_transform().size(), 0);
+
+    UnitCellCoord uccoordA(prim, 3, 1, 1, 1);
+    UnitCellCoord uccoordB(prim, 2, 1, 1, 2);
+    Index iVa = 0;
+    Index iO = 1;
+
+    // Add transform (so that it's not sorted as constructed)
+    diff_trans.occ_transform().emplace_back(uccoordB, iO, iVa);
+    diff_trans.occ_transform().emplace_back(uccoordA, iVa, iO);
+    BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(diff_trans.is_valid_occ_transform(), true);
+
+    // Add non-self consistent trajectory
+    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
+    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordB, iVa, 0), SpecieLocation(uccoordA, iVa, 0));
+    BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(diff_trans.is_valid_specie_traj(), true);
+    BOOST_CHECK_EQUAL(diff_trans.specie_types_map(), true);
+    BOOST_CHECK_EQUAL(diff_trans.breaks_indivisible_mol(), false);
+    BOOST_CHECK_EQUAL(diff_trans.is_subcluster_transformation(), false);
+    BOOST_CHECK_EQUAL(diff_trans.is_self_consistent(), false);
+    BOOST_CHECK_EQUAL(diff_trans.is_valid(), false);
+    diff_trans.specie_traj().clear();
+
+    // Add valid trajectory
+    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
+    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordB, iO, 0), SpecieLocation(uccoordA, iO, 0));
+    BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(diff_trans.is_valid_specie_traj(), true);
+    BOOST_CHECK_EQUAL(diff_trans.specie_types_map(), true);
+    BOOST_CHECK_EQUAL(diff_trans.breaks_indivisible_mol(), false);
+    BOOST_CHECK_EQUAL(diff_trans.is_subcluster_transformation(), false);
+    BOOST_CHECK_EQUAL(diff_trans.is_self_consistent(), true);
+    BOOST_CHECK_EQUAL(diff_trans.is_valid(), true);
+
+    // Check sorting
+    BOOST_CHECK_EQUAL((diff_trans.occ_transform()[0].uccoord == uccoordA), false);
+    BOOST_CHECK_EQUAL(diff_trans.is_sorted(), false);
+    diff_trans.sort();
+    BOOST_CHECK_EQUAL((diff_trans.occ_transform()[0].uccoord == uccoordA), true);
+    BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(diff_trans.is_sorted(), true);
+
+    // Copy
+    Kinetics::DiffusionTransformation other(diff_trans);
+
+    // Compare
+    BOOST_CHECK_EQUAL((other == diff_trans), true);
+
+    // Check canonical form
+    BOOST_CHECK_EQUAL(diff_trans.is_canonical(background_scel), false);
+
+    {
+      ScelIsCanonical<Kinetics::DiffusionTransformation> f(background_scel);
+      BOOST_CHECK_EQUAL(f(diff_trans), false);
+    }
+
+    // Translate (to canonical form)
+    other = diff_trans + UnitCell(1, 1, 1);
+
+    // Compare
+    BOOST_CHECK_EQUAL((diff_trans < other), true);
+
+    // Check canonical form
+    BOOST_CHECK_EQUAL(other.is_canonical(background_scel), true);
+    BOOST_CHECK_EQUAL((diff_trans.canonical_form(background_scel) == other), true);
+
+    {
+      ScelIsCanonical<Kinetics::DiffusionTransformation> f(background_scel);
+      BOOST_CHECK_EQUAL(f(other), true);
+    }
+
+    // Check invariant subgroup (haven't checked for accuracy)
+    BOOST_CHECK_EQUAL(
+      other.invariant_subgroup(
+        prim.factor_group(),
+        PrimPeriodicDiffTransSymCompare(primclex)).size(), 12);
+    BOOST_CHECK_EQUAL(other.invariant_subgroup(background_scel).size(), 12);
+  }
+
+}
+
+BOOST_AUTO_TEST_CASE(SpeedTest0) {
+
+  test::ZrOProj proj;
+  proj.check_init();
+
+  Logging logging = Logging::null();
+  PrimClex primclex(proj.dir, logging);
+
+  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  jsonParser bspecs {bspecs_path};
+
+  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+  make_prim_periodic_orbits(
+    primclex.prim(),
+    bspecs,
+    alloy_sites_filter,
+    primclex.crystallography_tol(),
+    std::back_inserter(orbits),
+    primclex.log());
+
+  const auto &generating_grp = primclex.prim().factor_group();
+  PrimPeriodicDiffTransSymCompare sym_compare {primclex.crystallography_tol()};
+
+  OrbitGenerators<PrimPeriodicDiffTransOrbit> generators {generating_grp, sym_compare};
+
+  for(auto orbit_it = orbits.begin(); orbit_it != orbits.end(); ++orbit_it) {
+    Kinetics::DiffusionTransformationEnum e {orbit_it->prototype()};
+    for(auto it = e.begin(); it != e.end(); ++it) {
+      // generators.insert generates the sorted canonical form and inserts it
+      generators.insert(*it);
+    }
+  }
+
+  BOOST_CHECK_EQUAL(generators.elements.size(), 507);
+}
+
+BOOST_AUTO_TEST_CASE(SpeedTest1) {
+
+  test::ZrOProj proj;
+  proj.check_init();
+
+  Logging logging = Logging::null();
+  PrimClex primclex(proj.dir, logging);
+
+  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  jsonParser bspecs {bspecs_path};
+
+  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+  make_prim_periodic_orbits(
+    primclex.prim(),
+    bspecs,
+    alloy_sites_filter,
+    primclex.crystallography_tol(),
+    std::back_inserter(orbits),
+    primclex.log());
+
+  // make orbits of DiffTrans
+  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
+  Kinetics::make_prim_periodic_diff_trans_orbits(
+    orbits.begin(),
+    orbits.end(),
+    primclex.crystallography_tol(),
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
+  BOOST_CHECK_EQUAL(true, true);
+
+  BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 507);
+}
+
+
+BOOST_AUTO_TEST_CASE(EnumTest0) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -100,11 +284,13 @@ BOOST_AUTO_TEST_CASE(Test0) {
   auto expected_mult_it = expected_mult.begin();
 
 
+  BOOST_CHECK_EQUAL(true, true);
   for(auto it = orbits.begin(); it != orbits.end(); ++it) {
 
     // print the IntegralCluster prototype used to generate DiffTrans
-    //std::cout << "----------------\n";
-    //std::cout << "IntegralCluster: \n" << it->prototype() << std::endl;
+    // std::cout << "----------------\n";
+    // std::cout << "IntegralCluster: \n" << it->prototype() << std::endl;
+    // BOOST_CHECK_EQUAL(true, true);
 
     // check the number of valid DiffTrans
     Kinetics::DiffusionTransformationEnum e {it->prototype()};
@@ -112,7 +298,13 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
     // make orbits of DiffTrans
     std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-    Kinetics::make_prim_periodic_diff_trans_orbits(it, it + 1, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+    Kinetics::make_prim_periodic_diff_trans_orbits(
+      it,
+      it + 1,
+      primclex.crystallography_tol(),
+      std::back_inserter(diff_trans_orbits),
+      &primclex);
+    BOOST_CHECK_EQUAL(true, true);
 
     // check how many DiffTrans orbits there are for each IntegralCluster orbit
     orbit_count.push_back(diff_trans_orbits.size());

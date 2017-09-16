@@ -2,19 +2,12 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-#include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/kinetics/DiffTransConfiguration_impl.hh"
 
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
-#include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/kinetics/DoFTransformation.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 
@@ -46,7 +39,12 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   //print_clust(orbits.begin(), orbits.end(), primclex.log(), ProtoSitesPrinter());
   std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 4, orbits.begin() + 7, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+  Kinetics::make_prim_periodic_diff_trans_orbits(
+    orbits.begin() + 4,
+    orbits.begin() + 7,
+    primclex.crystallography_tol(),
+    std::back_inserter(diff_trans_orbits),
+    &primclex);
   Kinetics::DiffusionTransformation trans = diff_trans_orbits[0].prototype();
   Kinetics::DiffusionTransformation trans2 = diff_trans_orbits[2].prototype();
 
@@ -59,7 +57,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config.init_occupation();
   config.init_displacement();
   config.init_deformation();
-  config.init_specie_id();
   //hardcoded occupation for trans to occur is there a way to do this generally?
   config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1});
 
@@ -67,7 +64,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config2.init_occupation();
   config2.init_displacement();
   config2.init_deformation();
-  config2.init_specie_id();
   //hardcoded occupation for trans to occur is there a way to do this generally?
   config2.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0});
 
@@ -75,7 +71,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config3.init_occupation();
   config3.init_displacement();
   config3.init_deformation();
-  config3.init_specie_id();
   config3.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
 
   //test make attachable

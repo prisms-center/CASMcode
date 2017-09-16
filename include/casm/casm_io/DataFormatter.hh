@@ -10,6 +10,7 @@
 #include "casm/container/multivector.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/unique_cloneable_map.hh"
+#include "casm/casm_io/DataFormatterDecl.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/DataStream.hh"
 #include "casm/casm_io/FormatFlag.hh"
@@ -56,14 +57,6 @@ namespace CASM {
   ///
   /// \ingroup DataFormatter
 
-
-  class DataStream;
-
-  template<typename DataObject>
-  class BaseDatumFormatter;
-
-  template<typename DataObject, typename DatumFormatterType>
-  class DataFormatterDictionary;
 
   // Given expression string
   //   "subexpr1 subexpr2(subsub1) subexpr3(subsub2(subsubsub1))"
@@ -464,11 +457,6 @@ namespace CASM {
     mutable const DictType *m_home;
   };
 
-  template<typename T>
-  bool always_true(const T &) {
-    return true;
-  };
-
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -622,7 +610,9 @@ namespace CASM {
   ///
   /// \ingroup DataFormatter
   ///
-  template<typename _DataObject, typename _DatumFormatterType = BaseDatumFormatter<_DataObject> >
+  template <
+    typename _DataObject,
+    typename _DatumFormatterType /* note: = BaseDatumFormatter<_DataObject> */ >
   class DataFormatterDictionary :
     public notstd::unique_cloneable_map<std::string, _DatumFormatterType> {
 

@@ -1,29 +1,33 @@
 #ifndef CASM_DiffTransConfiguration
 #define CASM_DiffTransConfiguration
 
-#include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/symmetry/Orbit_impl.hh"
 #include "casm/misc/Comparisons.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/clex/HasCanonicalForm.hh"
+#include "casm/clex/HasSupercell.hh"
+#include "casm/clex/Calculable.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/clex/ConfigCompare.hh"
 #include "casm/kinetics/DiffTransConfigurationTraits.hh"
-#include "casm/database/Cache.hh"
-#include "casm/database/Named.hh"
-#include "casm/database/Database.hh"
-
+#include "casm/kinetics/DiffusionTransformation.hh"
 
 namespace CASM {
+  class PermuteIterator;
 
   namespace Kinetics {
 
-
     class DiffTransConfiguration :
-      public Comparisons<DiffTransConfiguration>,
-      public Calculable<DiffTransConfiguration> {
+      public ConfigCanonicalForm<HasSupercell<Comparisons<Calculable<CRTPBase<DiffTransConfiguration>>>>> {
 
     public:
 
       /// \brief Constructor
-      DiffTransConfiguration(const Configuration &_from_config, const DiffusionTransformation &_diff_trans);
+      DiffTransConfiguration(const Configuration &_from_config,
+                             const PrimPeriodicDiffTransOrbit &_dtorbit);
+
+      /// \brief Constructor
+      DiffTransConfiguration(const Configuration &_from_config,
+                             const DiffusionTransformation &_diff_trans);
 
       /// Construct a DiffTransConfiguration from JSON data
       DiffTransConfiguration(const Supercell &_supercell,
@@ -33,52 +37,35 @@ namespace CASM {
       DiffTransConfiguration(const PrimClex &_primclex,
                              const jsonParser &_data);
 
+      const Supercell &supercell() const;
+
       /// \brief Returns the initial configuration
-      const Configuration &from_config() const {
-        return m_from_config;
-      }
+      const Configuration &from_config() const;
 
       /// \brief Returns the final configuration
-      const Configuration to_config() const {
-        Configuration tmp {m_from_config};
-        return m_diff_trans.apply_to(tmp);
-      }
+      const Configuration &to_config() const;
 
       /// \brief Returns the diffusion transformation that is occurring
-      const DiffusionTransformation &diff_trans() const {
-        return m_diff_trans;
-      }
+      const DiffusionTransformation &diff_trans() const;
 
       /// \brief Compare DiffTransConfiguration
       /// Compares m_diff_trans first then
       /// m_from_config if m_diff_trans are equal
       /// - Comparison is made using the sorted forms
-      bool operator<(const DiffTransConfiguration &B) const {
-        return this->sorted()._lt(B.sorted());
-      }
+      bool operator<(const DiffTransConfiguration &B) const;
+
+      DiffTransConfigCompare less() const;
+
+      DiffTransConfigIsEqual equal_to() const;
 
       /// \brief sort DiffTransConfiguration in place
       DiffTransConfiguration &sort();
 
       /// \brief Returns a sorted version of this DiffTransConfiguration
-      DiffTransConfiguration sorted() const;
+      const DiffTransConfiguration &sorted() const;
 
       /// \brief Returns true if the DiffTransConfiguration is sorted
       bool is_sorted() const;
-
-      /// \brief Returns a DiffTransConfiguration that is the canonical form of this
-      DiffTransConfiguration canonical_form() const;
-
-      /// \brief Returns a PermuteIterator that takes this to canonical form
-      PermuteIterator to_canonical() const;
-
-      /// \brief Returns a PermuteIterator that takes the canonical form of this to this
-      PermuteIterator from_canonical() const {
-        return to_canonical().inverse();
-      }
-
-      /// \brief States if this DiffTransConfiguration is in canonical form
-      bool is_canonical() const;
 
       /// \brief applies the symmetry op corresponding to the PermuteIterator to the
       /// DiffTransConfiguration in place
@@ -100,7 +87,7 @@ namespace CASM {
       }
 
       /// States whether the diffusion transformation is possible with the given Configuration
-      bool is_valid_neb() const;
+      bool is_valid() const;
 
       /// States whether the from specie locations in the diff_trans match the from_config
       bool has_valid_from_occ() const;
@@ -117,32 +104,27 @@ namespace CASM {
       /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
       PermuteIterator to_config_from_canonical() const;
 
-
+      void write_pos() const;
+      std::ostream &write_pos(std::ostream &sout) const;
 
     private:
 
-      bool _lt(const DiffTransConfiguration &B) const {
-        // compare diff_trans
-        if(this->diff_trans() < B.diff_trans()) {
-          return true;
-        }
-        else if(B.diff_trans() < this->diff_trans()) {
-          return false;
-        }
+      friend Named<CRTPBase<DiffTransConfiguration>>;
+      std::string generate_name_impl() const;
 
-        // if diff_trans are equal, compare 'from_config'
-        return this->from_config() < B.from_config();
-      }
+      void _sort();
 
-      friend Named<DiffTransConfiguration>;
-      std::string _generate_name() const;
+      Configuration m_config_A;
+      Configuration m_config_B;
 
-      Configuration m_from_config;
+      ScelPeriodicDiffTransSymCompare m_sym_compare;
 
-      // not necessary to store, could be determined by applying m_diff_trans
-      //Configuration m_to_config;
-
+      /// Should always be 'prepared'
       DiffusionTransformation m_diff_trans;
+
+      /// If true, m_config_A is 'from_config()' and m_config_B is 'to_config()',
+      /// else it is the reverse
+      bool m_from_config_is_A;
 
       std::string m_orbit_name;
     };

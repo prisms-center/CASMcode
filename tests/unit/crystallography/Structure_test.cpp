@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(PRIM1Test) {
   write_prim(struc, tmp_file, FRAC);
 
   // Read new file and run tests again
-  Structure struc2(read_prim(tmp_file));
+  Structure struc2(read_prim(tmp_file, TOL));
   prim1_read_test(struc2);
 
 }
@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(POS1jsonPrimTest) {
   sout.close();
 
   // Read new file and run tests again
-  struc = Structure(read_prim(tmp_file));
+  struc = Structure(read_prim(tmp_file, TOL));
   pos1_read_test(struc);
 
 }

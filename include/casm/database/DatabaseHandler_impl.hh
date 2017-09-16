@@ -4,9 +4,8 @@
 #include <sstream>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/database/DatabaseHandler.hh"
-#include "casm/database/Database.hh"
+#include "casm/database/Database_impl.hh"
 #include "casm/database/PropertiesDatabase.hh"
-#include "casm/database/DatabaseDefs.hh"
 
 namespace CASM {
   namespace DB {
@@ -25,6 +24,24 @@ namespace CASM {
       m_db_props.emplace(
         PropDBKey(traits<T>::name, db_name, calc_type),
         std::move(value));
+    }
+
+    /// Access default Database<T>
+    template<typename T>
+    ValDatabase<T> &DatabaseHandler::generic_db() {
+      return generic_db<T>(m_default_db_name);
+    }
+
+    /// Access default Database<T>
+    template<typename T>
+    const ValDatabase<T> &DatabaseHandler::generic_db() const {
+      return generic_db<T>(m_default_db_name);
+    }
+
+    /// Access default Database<T>
+    template<typename T>
+    const ValDatabase<T> &DatabaseHandler::const_generic_db() {
+      return const_generic_db<T>(m_default_db_name);
     }
 
     /// Access default Database<T>
@@ -61,6 +78,28 @@ namespace CASM {
     template<typename T>
     const PropertiesDatabase &DatabaseHandler::const_db_props(std::string calc_type)  {
       return const_db_props<T>(m_default_db_name, calc_type);
+    }
+
+
+    /// Access specified Database<T>
+    template<typename T>
+    ValDatabase<T> &DatabaseHandler::generic_db(std::string db_name) {
+      auto res = _find<T>(db_name);
+      return static_cast<ValDatabase<T>&>(res->second->open());
+    }
+
+    /// Access specified Database<T>
+    template<typename T>
+    const ValDatabase<T> &DatabaseHandler::generic_db(std::string db_name) const {
+      auto res = _find<T>(db_name);
+      return static_cast<ValDatabase<T>&>(res->second->open());
+    }
+
+    /// Access specified Database<T>
+    template<typename T>
+    const ValDatabase<T> &DatabaseHandler::const_generic_db(std::string db_name) {
+      auto res = _find<T>(db_name);
+      return static_cast<ValDatabase<T>&>(res->second->open());
     }
 
 

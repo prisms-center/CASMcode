@@ -7,7 +7,9 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/clex/Supercell_impl.hh"
+#include "casm/clex/Configuration_impl.hh"
+#include "casm/database/Database.hh"
 
 using namespace CASM;
 
@@ -146,7 +148,7 @@ namespace test {
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
-        BOOST_CHECK_MESSAGE(primclex.db<Supercell>().size() == 147, m_p.gets());
+        BOOST_CHECK_MESSAGE(primclex.generic_db<Supercell>().size() == 147, m_p.gets());
       }
 
       {
@@ -154,7 +156,7 @@ namespace test {
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
-        BOOST_CHECK_MESSAGE(primclex.db<Configuration>().size() == 5763, m_p.gets());
+        BOOST_CHECK_MESSAGE(primclex.generic_db<Configuration>().size() == 5763, m_p.gets());
       }
     }
 

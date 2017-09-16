@@ -1,24 +1,17 @@
-#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
-#include "casm/app/AppIO_impl.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
+
+#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/app/AppIO_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_DiffusionTransformationEnum_interface() {
     return new CASM::EnumInterface<CASM::Kinetics::DiffusionTransformationEnum>();
   }
-}
-
-namespace {
-  class tmpBuff : public std::streambuf {
-  public:
-    int overflow(int c) {
-      return c;
-    }
-  };
 }
 
 namespace CASM {
@@ -67,10 +60,10 @@ namespace CASM {
     const std::string DiffusionTransformationEnum::interface_help =
       "DiffusionTransformationEnum: \n\n"
 
-      "  bspecs: JSON object \n"
+      "  cspecs: JSON object \n"
       "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
-      "    JSON item \"bspecs\" should be a bspecs style initialization of cluster number and sizes.\n"
-      "              \n\n"
+      "    JSON item \"cspecs\" should be a cspecs style initialization of cluster number and sizes.\n"
+      "    See below.          \n\n"
       ""
       "  require: JSON array of strings (optional,default=[]) \n "
       "    Indicate required species to enforce that a given species must be a part of the diffusion \n"
@@ -84,10 +77,7 @@ namespace CASM {
       "  {\n"
       "   \"require\":[\"Va\"],\n"
       "   \"exclude\":[],\n"
-      "    \"bspecs\":{\n"
-      "       \"basis_functions\" : {\n"
-      "        \"site_basis_functions\" : \"occupation\"\n"
-      "      },\n"
+      "    \"cspecs\":{\n"
       "      \"orbit_branch_specs\" : { \n"
       "       \"2\" : {\"max_length\" : 5.01},\n"
       "       \"3\" : {\"max_length\" : 5.01}\n"
@@ -139,29 +129,28 @@ namespace CASM {
     int DiffusionTransformationEnum::run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
 
       jsonParser kwargs;
-      if(!_kwargs.get_if(kwargs, "bspecs")) {
-        std::cerr << "DiffusionTransformationEnum currently has no default and requires a correct JSON with a bspecs tag within it" << std::endl;
-        std::cerr << "Core dump will occur because cannot find proper input" << std::endl;
+      if(!_kwargs.contains("cspecs")) {
+        primclex.err_log() << "DiffusionTransformationEnum currently has no default and requires a correct JSON with a bspecs tag within it" << std::endl;
+        throw std::runtime_error("Error in DiffusionTransformationEnum: cspecs not found");
       }
 
       std::vector<std::string> require;
       std::vector<std::string> exclude;
-      if(_kwargs.get_if(kwargs, "require")) {
+      if(_kwargs.contains("require")) {
         for(auto it = _kwargs["require"].begin(); it != _kwargs["require"].end(); ++it) {
           require.push_back(from_json<std::string>(*it));
         }
       }
-      if(_kwargs.get_if(kwargs, "exclude")) {
+      if(_kwargs.contains("exclude")) {
         for(auto it = _kwargs["exclude"].begin(); it != _kwargs["exclude"].end(); ++it) {
           exclude.push_back(from_json<std::string>(*it));
         }
       }
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
-      tmpBuff streambuff;
-      std::ostream dead(&streambuff);
+
       auto end = make_prim_periodic_orbits(
-                   primclex.prim(), _kwargs["bspecs"], alloy_sites_filter, primclex.crystallography_tol(), std::back_inserter(orbits), dead);
+                   primclex.prim(), _kwargs["cspecs"], alloy_sites_filter, primclex.crystallography_tol(), std::back_inserter(orbits), primclex.log());
 
       Log &log = primclex.log();
       auto &db_orbits = primclex.db<PrimPeriodicDiffTransOrbit>();
@@ -174,7 +163,11 @@ namespace CASM {
 
       std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
       auto end2 = make_prim_periodic_diff_trans_orbits(
-                    orbits.begin(), orbits.end(), primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+                    orbits.begin(),
+                    orbits.end(),
+                    primclex.crystallography_tol(),
+                    std::back_inserter(diff_trans_orbits),
+                    &primclex);
 
       for(auto &diff_trans_orbit : diff_trans_orbits) {
         auto speciemap = diff_trans_orbit.prototype().specie_count();
@@ -301,6 +294,28 @@ namespace CASM {
         t.to = *it++;
       }
     }
+
+#define  PRIM_PERIODIC_DIFF_TRANS_ORBITS_INST(INSERTER, CLUSTER_IT) \
+    \
+    template INSERTER make_prim_periodic_diff_trans_orbits<INSERTER, CLUSTER_IT>( \
+      CLUSTER_IT begin, \
+      CLUSTER_IT end, \
+      double xtal_tol, \
+      INSERTER result, \
+      const PrimClex*); \
+    \
+
+#define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator
+#define _VECTOR_INSERTER(ORBIT) std::back_insert_iterator<std::vector<ORBIT> >
+
+#define  PRIM_PERIODIC_DIFF_TRANS_ORBITS_VECTOR_INST(DIFF_TRANS_ORBIT, CLUSTER_ORBIT) \
+      PRIM_PERIODIC_DIFF_TRANS_ORBITS_INST( \
+        _VECTOR_INSERTER(DIFF_TRANS_ORBIT), \
+        _VECTOR_IT(CLUSTER_ORBIT))
+
+    PRIM_PERIODIC_DIFF_TRANS_ORBITS_VECTOR_INST(
+      PrimPeriodicDiffTransOrbit,
+      PrimPeriodicIntegralClusterOrbit)
 
   }
 }

@@ -1,6 +1,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/casm_io/jsonParser.hh"
 
@@ -28,14 +29,23 @@ namespace CASM {
     m_translation_index(_translation_index) {
   }
 
+  const PrimGrid &PermuteIterator::prim_grid() const {
+    return *m_prim_grid;
+  }
+
   PermuteIterator &PermuteIterator::operator=(PermuteIterator iter) {
     swap(*this, iter);
     return *this;
   }
 
-  /// Returns a copy
+  /// Returns a reference to this
   const PermuteIterator &PermuteIterator::operator*() const {
     return *this;
+  }
+
+  /// Returns a reference to this
+  const PermuteIterator *PermuteIterator::operator->() const {
+    return this;
   }
 
   /// Returns the combination of factor_group permutation and translation permutation
@@ -78,7 +88,7 @@ namespace CASM {
   }
 
   SymOp PermuteIterator::sym_op()const {
-    return (*m_prim_grid).sym_op(m_translation_index) * m_fg_permute_rep.sym_op(m_factor_group_index);
+    return prim_grid().sym_op(m_translation_index) * m_fg_permute_rep.sym_op(m_factor_group_index);
   }
 
   Index PermuteIterator::permute_ind(Index i) const {
@@ -98,7 +108,7 @@ namespace CASM {
     return this->factor_group_index() < iter.factor_group_index();
   }
 
-  bool PermuteIterator::_eq(const PermuteIterator &iter) const {
+  bool PermuteIterator::eq_impl(const PermuteIterator &iter) const {
     if(m_fg_permute_rep == iter.m_fg_permute_rep &&
        m_prim_grid == iter.m_prim_grid &&
        m_factor_group_index == iter.m_factor_group_index &&
@@ -159,7 +169,7 @@ namespace CASM {
     // untranslated symop (described by m_fg_permute_rep.sym_op(it.m_factor_group_index))
     // Result is the portion of the inverse sym_op that needs to be described by a prim_grid translation
     it.m_translation_index =
-      m_prim_grid->find_cart(sym_op().inverse().tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
+      prim_grid().find_cart(sym_op().inverse().tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
 
     return it;
   }
@@ -174,26 +184,43 @@ namespace CASM {
     // untranslated symop product (described by m_fg_permute_rep.sym_op(it.factor_group_index()))
     // Result is the portion of the product sym_op that needs to be described by a prim_grid translation
     it.m_translation_index =
-      m_prim_grid->find_cart((sym_op() * RHS.sym_op()).tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
+      prim_grid().find_cart((sym_op() * RHS.sym_op()).tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
 
     return it;
   }
 
+  std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op) {
+    sout << "(" << op.factor_group_index() << ", " << op.prim_grid().unitcell(op.translation_index()).transpose() << ")";
+    return sout;
+  }
+
+  /// \brief Returns a SymGroup generated from a range of PermuteIterator
+  ///
+  /// \param begin,end A range of PermuteIterator
+  ///
+  /// - The result is sorted
+  /// - The result sses the Supercell lattice for periodic comparisons
   template<typename PermuteIteratorIt>
-  SymGroup make_sym_group(const Lattice &lat, PermuteIteratorIt begin, PermuteIteratorIt end) {
+  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end) {
     SymGroup sym_group;
-    sym_group.set_lattice(lat);
+    sym_group.set_lattice(begin->prim_grid().scel_lattice());
     while(begin != end) {
       sym_group.push_back(begin->sym_op());
       ++begin;
     }
+    sym_group.sort();
     return sym_group;
   }
 
   template SymGroup make_sym_group(
-    const Lattice &lat,
+    PermuteIterator begin,
+    PermuteIterator end);
+  template SymGroup make_sym_group(
     std::vector<PermuteIterator>::const_iterator begin,
     std::vector<PermuteIterator>::const_iterator end);
+  template SymGroup make_sym_group(
+    std::vector<PermuteIterator>::iterator begin,
+    std::vector<PermuteIterator>::iterator end);
 
   void swap(PermuteIterator &a, PermuteIterator &b) {
     std::swap(a.m_fg_permute_rep, b.m_fg_permute_rep);

@@ -2,8 +2,6 @@
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/symmetry/Orbit.hh"
-#include "casm/symmetry/Orbit_impl.hh"
-
 
 namespace CASM {
 
@@ -73,6 +71,8 @@ namespace CASM {
     PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> diff_trans_orbitname();
 
     PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_dist_to_path();
+
+    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<bool> path_collision();
 
     PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> activation_barrier();
   }

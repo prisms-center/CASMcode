@@ -1,12 +1,18 @@
 #include "casm/symmetry/Orbit_impl.hh"
-#include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
 
 namespace CASM {
+  namespace Orbit_impl {
 
-  template<>
-  std::string _generate_orbit_name(const Kinetics::PrimPeriodicDiffTransOrbit &orbit) {
-    return traits<Kinetics::PrimPeriodicDiffTransOrbit>::orbit_type_name + "/" + orbit.id();
+    std::ostream &operator<<(std::ostream &sout, const RelEqMap &map) {
+      sout << "RelEqMap  a: " << map.a << std::endl;
+      for(const auto &row : map.map) {
+        sout << "  b: " << row.b << "  op: ";
+        for(const auto &val : row.values) {
+          sout << val << " ";
+        }
+        sout << std::endl;
+      }
+      return sout;
+    }
   }
-
 }

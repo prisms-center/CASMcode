@@ -1,6 +1,5 @@
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/clex/PrimClex.hh"
-
 #include "casm/database/json/jsonDatabase.hh"
 #include "casm/app/ProjectSettings.hh"
 

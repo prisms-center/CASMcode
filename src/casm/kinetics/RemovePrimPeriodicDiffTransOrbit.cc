@@ -1,62 +1,61 @@
 #include "casm/kinetics/RemovePrimPeriodicDiffTransOrbit.hh"
 #include "casm/app/rm.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/database/Selection.hh"
-#include "casm/database/Remove.hh"
-#include "casm/database/DatabaseDefs.hh"
-#include "casm/database/DatabaseTypes.hh"
+#include "casm/database/Selection_impl.hh"
+#include "casm/database/Remove_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
   namespace DB {
 
-    Remove<Kinetics::PrimPeriodicDiffTransOrbit>::Remove(const PrimClex &_primclex, fs::path report_dir, Log &_file_log) :
+    Remove<PrimPeriodicDiffTransOrbit>::Remove(const PrimClex &_primclex, fs::path report_dir, Log &_file_log) :
       m_primclex(_primclex), m_report_dir(report_dir), m_file_log(_file_log) {}
 
-    const std::string Remove<Kinetics::PrimPeriodicDiffTransOrbit>::desc =
+    std::string Remove<PrimPeriodicDiffTransOrbit>::desc() {
 
-      "Remove a difftrans, including all enumerated difftransconfigurations and calculation results: \n\n"
+      std::string res =
+        "Remove a difftrans, including all enumerated difftransconfigurations and calculation results: \n\n"
 
-      "  'casm remove --type diff_trans' options: \n\n"
+        "  'casm remove --type diff_trans' options: \n\n"
 
-      "  - Diffusion transformations to be erased can be specified with the --names and \n"
-      "    --selection options.\n"
-      "  - Use without additional options to remove all enumerated difftransconfigurations\n"
-      "    that do not have any associated files or data for each specified diffusion transformation.\n"
-      "    If no data or files, erase diffusion transformation.\n"
-      "  - Use --data (-d) to remove all difftransconfiguration data, but not enumerated \n"
-      "    configurations, for each specified diffusion transformation. \n"
-      "  - Use --force (-f) to remove specified diffusion transformations including all data and \n"
-      "    enumerated configurations. \n"
-      "  - Use --dry-run (-n) to do a \"dry-run\". \n\n";
-    /*
+        "  - Diffusion transformations to be erased can be specified with the --names and \n"
+        "    --selection options.\n"
+        "  - Use without additional options to remove all enumerated difftransconfigurations\n"
+        "    that do not have any associated files or data for each specified diffusion transformation.\n"
+        "    If no data or files, erase diffusion transformation.\n"
+        "  - Use --data (-d) to remove all difftransconfiguration data, but not enumerated \n"
+        "    configurations, for each specified diffusion transformation. \n"
+        "  - Use --force (-f) to remove specified diffusion transformations including all data and \n"
+        "    enumerated configurations. \n"
+        "  - Use --dry-run (-n) to do a \"dry-run\". \n\n";
+      return res;
+    }
+
     /// Helper struct base class
-    struct EraseDifftransConfigsBase {
+    struct ErasePrimPeriodicDiffTransOrbitConfigsBase {
 
-      EraseDiffTransConfigsBase(Remove<PrimPeriodicDiffTransOrbit> &_remover, std::string _orbitname, bool _dry_run) :
+      ErasePrimPeriodicDiffTransOrbitConfigsBase(Remove<Kinetics::PrimPeriodicDiffTransOrbit> &_remover, std::string _orbitname, bool _dry_run) :
         primclex(_remover.primclex()), remover(_remover), orbitname(_orbitname),
         dry_run(_dry_run), remaining(0) {}
 
-      template<typename T>
-      DB::Selection<T> make_selection() const {
-        DB::Selection<T> selection(remover.primclex(), "NONE");
-        auto it = primclex.db<T>().scel_range(scelname).begin();
-        auto end = primclex.db<T>().scel_range(scelname).end();
+      DB::Selection<Kinetics::DiffTransConfiguration> make_selection() const {
+        DB::Selection<Kinetics::DiffTransConfiguration> selection(remover.primclex(), "NONE");
+        auto it = primclex.db<Kinetics::DiffTransConfiguration>().orbit_range(orbitname).begin();
+        auto end = primclex.db<Kinetics::DiffTransConfiguration>().orbit_range(orbitname).end();
         for(; it != end; ++it) {
           selection.data()[it.name()] = true;
         }
         return selection;
       }
 
-      template<typename T>
       void count_remaining() {
         if(!dry_run) {
-          remaining += boost::distance(remover.primclex().db<T>().scel_range(scelname));
+          remaining += boost::distance(remover.primclex().db<Kinetics::DiffTransConfiguration>().orbit_range(orbitname));
         }
         else {
-          ConfigData<T> data(remover.primclex(), null_log());
-          auto it = primclex.db<T>().scel_range(scelname).begin();
-          auto end = primclex.db<T>().scel_range(scelname).end();
+          ConfigData<Kinetics::DiffTransConfiguration> data(remover.primclex(), null_log());
+          auto it = primclex.db<Kinetics::DiffTransConfiguration>().orbit_range(orbitname).begin();
+          auto end = primclex.db<Kinetics::DiffTransConfiguration>().orbit_range(orbitname).end();
           for(; it != end; ++it) {
             if(data.has_existing_data_or_files(it.name())) {
               remaining++;
@@ -66,81 +65,77 @@ namespace CASM {
       }
 
       const PrimClex &primclex;
-      const Remove<Supercell> &remover;
+      const Remove<Kinetics::PrimPeriodicDiffTransOrbit> &remover;
       std::string orbitname;
       bool dry_run;
       Index remaining;
 
     };
-    */
-    /*
-    /// Helper struct that calls Remove<ConfigType>::erase for all configs in a supercell
-    struct EraseScelConfigs : public EraseScelConfigsBase {
-      EraseScelConfigs(Remove<Supercell> &_remover, std::string _scelname, bool _dry_run) :
-        EraseScelConfigsBase(_remover, _scelname, _dry_run) {}
 
-      template<typename T>
+
+    /// Helper struct that calls Remove<ConfigType>::erase for all diff_trans_configs in a orbit
+    struct ErasePrimPeriodicDiffTransOrbitConfigs : public ErasePrimPeriodicDiffTransOrbitConfigsBase {
+      ErasePrimPeriodicDiffTransOrbitConfigs(Remove<Kinetics::PrimPeriodicDiffTransOrbit> &_remover, std::string _orbitname, bool _dry_run) :
+        ErasePrimPeriodicDiffTransOrbitConfigsBase(_remover, _orbitname, _dry_run) {}
+
       void eval() {
-        Remove<T> f(primclex, remover.report_dir(), remover.file_log());
-        DB::Selection<T> selection = make_selection<T>();
+        Remove<Kinetics::DiffTransConfiguration> f(primclex, remover.report_dir(), remover.file_log());
+        DB::Selection<Kinetics::DiffTransConfiguration> selection = make_selection();
         f.erase(selection, dry_run);
-        count_remaining<T>();
+        count_remaining();
       }
     };
-    */
-    /*
+
+
     /// Helper struct that calls Remove<ConfigType>::erase_data for all configs in a supercell
-    struct EraseDataScelConfigs : public EraseScelConfigsBase {
-      EraseDataScelConfigs(Remove<Supercell> &_remover, std::string _scelname, bool _dry_run) :
-        EraseScelConfigsBase(_remover, _scelname, _dry_run) {}
+    struct EraseDataPrimPeriodicDiffTransOrbitConfigs : public ErasePrimPeriodicDiffTransOrbitConfigsBase {
+      EraseDataPrimPeriodicDiffTransOrbitConfigs(Remove<Kinetics::PrimPeriodicDiffTransOrbit> &_remover, std::string _orbitname, bool _dry_run) :
+        ErasePrimPeriodicDiffTransOrbitConfigsBase(_remover, _orbitname, _dry_run) {}
 
-      template<typename T>
       void eval() {
-        Remove<T> f(primclex, remover.report_dir(), remover.file_log());
-        DB::Selection<T> selection = make_selection<T>();
+        Remove<Kinetics::DiffTransConfiguration> f(primclex, remover.report_dir(), remover.file_log());
+        DB::Selection<Kinetics::DiffTransConfiguration> selection = make_selection();
         f.erase_data(selection, dry_run);
-        count_remaining<T>();
+        count_remaining();
       }
     };
-    */
-    /*
+
+
     /// Helper struct that calls Remove<ConfigType>::erase_all for all configs in a supercell
-    struct EraseAllScelConfigs : public EraseScelConfigsBase {
+    struct EraseAllPrimPeriodicDiffTransOrbitConfigs : public ErasePrimPeriodicDiffTransOrbitConfigsBase {
 
-      EraseAllScelConfigs(Remove<Supercell> &_remover, std::string _scelname, bool _dry_run) :
-        EraseScelConfigsBase(_remover, _scelname, _dry_run) {}
+      EraseAllPrimPeriodicDiffTransOrbitConfigs(Remove<Kinetics::PrimPeriodicDiffTransOrbit> &_remover, std::string _orbitname, bool _dry_run) :
+        ErasePrimPeriodicDiffTransOrbitConfigsBase(_remover, _orbitname, _dry_run) {}
 
-      template<typename T>
       void eval() {
-        Remove<T> f(primclex, remover.report_dir(), remover.file_log());
-        DB::Selection<T> selection = make_selection<T>();
+        Remove<Kinetics::DiffTransConfiguration> f(primclex, remover.report_dir(), remover.file_log());
+        DB::Selection<Kinetics::DiffTransConfiguration> selection = make_selection();
         f.erase_all(selection, dry_run);
-        count_remaining<T>();
+        count_remaining();
       }
 
     };
-    */
 
-    /*
-    /// \brief Erase all enumerated configs that have no data; if no data, erase supercell
-    void Remove<Supercell>::erase(
-      const DB::Selection<Supercell> &selection,
+
+    /// \brief Erase all enumerated diff_trans_configs that have no data; if no data, erase diff_trans
+    void Remove<Kinetics::PrimPeriodicDiffTransOrbit>::erase(
+      const DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> &selection,
       bool dry_run) {
 
       bool did_erase = false;
 
-      // call Remove<ConfigType>::erase for each ConfigType
+      // call Remove<Kinetics::DiffTransConfiguration>::erase
       auto it = selection.selected().begin();
       auto end = selection.selected().end();
       for(; it != end; ++it) {
-        EraseScelConfigs f(*this, it.name(), dry_run);
-        for_each_config_type(f);
+        ErasePrimPeriodicDiffTransOrbitConfigs f(*this, it.name(), dry_run);
+        f.eval();
 
-        // if no existing data or files, erase Supercell ...
+        // if no existing data or files, erase PrimPeriodicDiffTransOrbit ...
         if(!f.remaining) {
           primclex().log() << "will erase " << it.name() << "\n";
           if(!dry_run) {
-            primclex().db<Supercell>().erase(it.name());
+            primclex().db<Kinetics::PrimPeriodicDiffTransOrbit>().erase(it.name());
             did_erase = true;
           }
         }
@@ -151,45 +146,44 @@ namespace CASM {
       }
 
       if(did_erase) {
-        primclex().db<Supercell>().commit();
+        primclex().db<Kinetics::PrimPeriodicDiffTransOrbit>().commit();
       }
     }
-    */
 
-    /*
-    /// \brief Erase all data ; if no data, erase supercell
-    void Remove<Supercell>::erase_data(
-      const DB::Selection<Supercell> &selection,
+
+
+    /// \brief Erase all data from diff_trans_configs from orbitname
+    void Remove<Kinetics::PrimPeriodicDiffTransOrbit>::erase_data(
+      const DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> &selection,
       bool dry_run) {
 
-      // call Remove<ConfigType>::erase for each ConfigType
+      // call Remove<Kinetics::DiffTransConfiguration>::erase
       auto it = selection.selected().begin();
       auto end = selection.selected().end();
       for(; it != end; ++it) {
-        EraseDataScelConfigs f(*this, it.name(), dry_run);
-        for_each_config_type(f);
+        EraseDataPrimPeriodicDiffTransOrbitConfigs f(*this, it.name(), dry_run);
+        f.eval();
       }
     }
-    */
 
-    /*
-    /// \brief Erase all enumerated configs that have no data; if no data, erase supercell
-    void Remove<Supercell>::erase_all(
-      const DB::Selection<Supercell> &selection,
+
+    /// \brief Erase all enumerated diff_trans_configs ; erase diff_trans
+    void Remove<Kinetics::PrimPeriodicDiffTransOrbit>::erase_all(
+      const DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> &selection,
       bool dry_run) {
 
-      // call Remove<ConfigType>::erase for each ConfigType
+      // call Remove<Kinetics::DiffTransConfiguration>::erase_all
       auto it = selection.selected().begin();
       auto end = selection.selected().end();
       for(; it != end; ++it) {
-        EraseAllScelConfigs f(*this, it.name(), dry_run);
-        for_each_config_type(f);
+        EraseAllPrimPeriodicDiffTransOrbitConfigs f(*this, it.name(), dry_run);
+        f.eval();
 
-        // if no existing data or files, erase Supercell ...
+        // if no existing data or files, erase PrimPeriodicDiffTransOrbit ...
         if(!f.remaining) {
           primclex().log() << "will erase " << it.name() << "\n";
           if(dry_run) {
-            primclex().db<Supercell>().erase(it.name());
+            primclex().db<Kinetics::PrimPeriodicDiffTransOrbit>().erase(it.name());
           }
         }
         else {
@@ -200,16 +194,15 @@ namespace CASM {
         }
       }
 
-      primclex().db<Supercell>().commit();
+      primclex().db<Kinetics::PrimPeriodicDiffTransOrbit>().commit();
     }
-    */
 
-    int Remove<Kinetics::PrimPeriodicDiffTransOrbit>::run(
+    int Remove<PrimPeriodicDiffTransOrbit>::run(
       const PrimClex &primclex,
       const Completer::RmOption &opt) {
 
       // -- read selection --
-      DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection(primclex, opt.selection_path());
+      DB::Selection<PrimPeriodicDiffTransOrbit> selection(primclex, opt.selection_path());
       for(const auto &name : opt.name_strs()) {
         if(primclex.db<PrimPeriodicDiffTransOrbit>().count(name)) {
           selection.data()[name] = true;
@@ -227,7 +220,7 @@ namespace CASM {
 
       // -- erase --
       Remove<Kinetics::PrimPeriodicDiffTransOrbit> f(primclex, report_dir, primclex.log());
-      /*
+
       if(opt.force()) {
         f.erase_all(selection, opt.dry_run());
       }
@@ -236,19 +229,19 @@ namespace CASM {
       }
       else {
         f.erase(selection, opt.dry_run());
-      }*/
+      }
       return 0;
     }
 
-    const PrimClex &Remove<Kinetics::PrimPeriodicDiffTransOrbit>::primclex() const {
+    const PrimClex &Remove<PrimPeriodicDiffTransOrbit>::primclex() const {
       return m_primclex;
     }
 
-    fs::path Remove<Kinetics::PrimPeriodicDiffTransOrbit>::report_dir() const {
+    fs::path Remove<PrimPeriodicDiffTransOrbit>::report_dir() const {
       return m_report_dir;
     }
 
-    Log &Remove<Kinetics::PrimPeriodicDiffTransOrbit>::file_log() const {
+    Log &Remove<PrimPeriodicDiffTransOrbit>::file_log() const {
       return m_file_log;
     }
 

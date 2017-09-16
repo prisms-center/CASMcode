@@ -109,7 +109,8 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group, double map_tol) const {
+  void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
+
     //std::cout << "SLOW GENERATION OF FACTOR GROUP " << &factor_group << "\n";
     //std::cout << "begin generate_factor_group_slow() " << this << std::endl;
 
@@ -120,7 +121,7 @@ namespace CASM {
 
     SymGroup point_group;
     //reset();
-    lattice().generate_point_group(point_group, map_tol);
+    lattice().generate_point_group(point_group);
 
     if(factor_group.size() != 0) {
       std::cerr << "WARNING in BasicStructure<CoordType>::generate_factor_group_slow" << std::endl;
@@ -155,7 +156,7 @@ namespace CASM {
           for(b2 = 0; b2 < trans_basis.size(); b2++) { //Loop over symmetrically transformed basis sites
 
             //see if translation successfully maps the two sites
-            if(basis[b1].compare(trans_basis[b2], t_tau, map_tol)) {
+            if(basis[b1].compare(trans_basis[b2], t_tau)) {
               tdist = basis[b1].min_dist(Coordinate(trans_basis[b2]) + t_tau);
               if(tdist > max_error) {
                 max_error = tdist;
@@ -183,7 +184,7 @@ namespace CASM {
         }
       }
     } //End loop over point_group operations
-    factor_group.enforce_group(map_tol);
+    factor_group.enforce_group(lattice().tol());
     factor_group.sort();
     factor_group.max_error();
 
@@ -194,14 +195,14 @@ namespace CASM {
   //************************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::generate_factor_group(SymGroup &factor_group, double map_tol) const {
+  void BasicStructure<CoordType>::generate_factor_group(SymGroup &factor_group) const {
     //std::cout << "begin generate_factor_group() " << this << std::endl;
     BasicStructure<CoordType> tprim;
     factor_group.clear();
     factor_group.set_lattice(lattice());
     // CASE 1: Structure is primitive
-    if(is_primitive(tprim, map_tol)) {
-      generate_factor_group_slow(factor_group, map_tol);
+    if(is_primitive(tprim)) {
+      generate_factor_group_slow(factor_group);
       return;
     }
 
@@ -212,11 +213,11 @@ namespace CASM {
     //std::cout << "FAST GENERATION OF FACTOR GROUP " << &factor_group << " FOR STRUCTURE OF VOLUME " << prim_grid.size() << "\n";
 
     SymGroup prim_fg;
-    tprim.generate_factor_group_slow(prim_fg, map_tol);
+    tprim.generate_factor_group_slow(prim_fg);
 
     SymGroup point_group;
-    lattice().generate_point_group(point_group, map_tol);
-    point_group.enforce_group(map_tol);
+    lattice().generate_point_group(point_group);
+    point_group.enforce_group(lattice().tol());
 
     for(Index i = 0; i < prim_fg.size(); i++) {
       if(point_group.find_no_trans(prim_fg[i]) == point_group.size()) {
@@ -251,10 +252,13 @@ namespace CASM {
     Array<int> num_ops, num_enforced_ops;
     Array<std::string> name;
 
+    double orig_tol = lattice().tol();
     for(double i = small_tol; i < large_tol; i += increment) {
       tols.push_back(i);
+      m_lattice.set_tol(i);
+
       factor_group.clear();
-      generate_factor_group(factor_group, i);
+      generate_factor_group(factor_group);
       factor_group.get_multi_table();
       num_ops.push_back(factor_group.size());
       is_group.push_back(factor_group.is_group(i));
@@ -263,6 +267,7 @@ namespace CASM {
       factor_group.character_table();
       name.push_back(factor_group.get_name());
     }
+    m_lattice.set_tol(orig_tol);
 
     for(Index i = 0; i < tols.size(); i++) {
       std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
@@ -287,7 +292,7 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::fill_supercell(const BasicStructure<CoordType> &prim, double map_tol) {
+  void BasicStructure<CoordType>::fill_supercell(const BasicStructure<CoordType> &prim) {
     Index i, j;
 
     copy_attributes_from(prim);
@@ -330,7 +335,7 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  BasicStructure<CoordType> BasicStructure<CoordType>::create_superstruc(const Lattice &scel_lat, double map_tol) const {
+  BasicStructure<CoordType> BasicStructure<CoordType>::create_superstruc(const Lattice &scel_lat) const {
     BasicStructure<CoordType> tsuper(scel_lat);
     tsuper.fill_supercell(*this);
     return tsuper;
@@ -344,7 +349,7 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  bool BasicStructure<CoordType>::is_primitive(double prim_tol) const {
+  bool BasicStructure<CoordType>::is_primitive() const {
     Coordinate tshift(lattice());//, bshift(lattice);
     Index b1, b2, b3, num_suc_maps;
 
@@ -357,8 +362,8 @@ namespace CASM {
       num_suc_maps = 0;
       for(b2 = 0; b2 < basis.size(); b2++) {
         for(b3 = 0; b3 < basis.size(); b3++) {
-          //if(basis[b3].compare_type(basis[b2], bshift) && tshift.min_dist(bshift) < prim_tol) {
-          if(basis[b3].compare(basis[b2], tshift, prim_tol)) {
+          //if(basis[b3].compare_type(basis[b2], bshift) && tshift.min_dist(bshift) < lattice().tol()) {
+          if(basis[b3].compare(basis[b2], tshift)) {
             num_suc_maps++;
             break;
           }
@@ -386,7 +391,7 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  bool BasicStructure<CoordType>::is_primitive(BasicStructure<CoordType> &new_prim, double prim_tol) const {
+  bool BasicStructure<CoordType>::is_primitive(BasicStructure<CoordType> &new_prim) const {
     Coordinate tshift(lattice());//, bshift(lattice);
     Eigen::Vector3d prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);
     Array<Eigen::Vector3d > shift;
@@ -403,7 +408,7 @@ namespace CASM {
       num_suc_maps = 0;
       for(b2 = 0; b2 < basis.size(); b2++) {
         for(b3 = 0; b3 < basis.size(); b3++) {
-          if(basis[b3].compare(basis[b2], tshift, prim_tol)) {
+          if(basis[b3].compare(basis[b2], tshift)) {
             num_suc_maps++;
             break;
           }
@@ -447,7 +452,7 @@ namespace CASM {
 
 
     Lattice new_lat(prim_vec0, prim_vec1, prim_vec2);
-    Lattice reduced_new_lat = niggli(new_lat, prim_tol);
+    Lattice reduced_new_lat = niggli(new_lat, lattice().tol());
 
     //The lattice so far is OK, but it's noisy enough to matter for large
     //superstructures. We eliminate the noise by reconstructing it now via
@@ -455,7 +460,7 @@ namespace CASM {
 
     Eigen::Matrix3d transmat, invtransmat, reduced_new_lat_mat;
     SymGroup pgroup;
-    reduced_new_lat.generate_point_group(pgroup, prim_tol);
+    reduced_new_lat.generate_point_group(pgroup);
 
     //Do not check to see if it returned true, it very well may not!
     lattice().is_supercell_of(reduced_new_lat, pgroup, transmat);
@@ -479,7 +484,7 @@ namespace CASM {
     for(Index nb = 0; nb < basis.size(); nb++) {
       tsite = basis[nb];
       tsite.set_lattice(new_prim.lattice(), CART);
-      if(new_prim.find(tsite, prim_tol) == new_prim.basis.size()) {
+      if(new_prim.find(tsite) == new_prim.basis.size()) {
         tsite.within();
         new_prim.basis.push_back(tsite);
       }
@@ -515,9 +520,9 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType> template<typename CoordType2>
-  Index BasicStructure<CoordType>::find(const CoordType2 &test_site, double tol) const {
+  Index BasicStructure<CoordType>::find(const CoordType2 &test_site) const {
     for(Index i = 0; i < basis.size(); i++) {
-      if(basis[i].compare(test_site, tol)) {
+      if(basis[i].compare(test_site)) {
         return i;
       }
     }
@@ -527,9 +532,9 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType> template<typename CoordType2>
-  Index BasicStructure<CoordType>::find(const CoordType2 &test_site, const Coordinate &shift, double tol) const {
+  Index BasicStructure<CoordType>::find(const CoordType2 &test_site, const Coordinate &shift) const {
     for(Index i = 0; i < basis.size(); i++) {
-      if(basis[i].compare(test_site, shift, tol)) {
+      if(basis[i].compare(test_site, shift)) {
         return i;
       }
     }
@@ -627,8 +632,11 @@ namespace CASM {
   template<typename CoordType>
   void BasicStructure<CoordType>::symmetrize(const double &tolerance) {
     SymGroup factor_group;
-    generate_factor_group(factor_group, tolerance);
+    double orig_tol = lattice().tol();
+    m_lattice.set_tol(tolerance);
+    generate_factor_group(factor_group);
     symmetrize(factor_group);
+    m_lattice.set_tol(orig_tol);
     return;
   }
 
@@ -947,7 +955,7 @@ namespace CASM {
       CASM::from_json(title, json["title"]);
 
       // Lattice lattice;
-      CASM::from_json(m_lattice, json["lattice"]);
+      CASM::from_json(m_lattice, json["lattice"], lattice().tol());
 
       // Array<CoordType> basis;
       basis.clear();

@@ -106,6 +106,12 @@ namespace CASM {
              const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
              Index NB);
 
+    const Lattice &prim_lattice() const;
+
+    const Lattice &scel_lattice() const;
+
+    const Lattice &lattice(CELL_TYPE lat_mode) const;
+
     Index size() const {
       return m_N_vol;
     }

@@ -1,6 +1,7 @@
 #ifndef CASM_ClusterInvariants_impl
 #define CASM_ClusterInvariants_impl
 
+#include <iomanip>
 #include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/misc/CASM_math.hh"
 

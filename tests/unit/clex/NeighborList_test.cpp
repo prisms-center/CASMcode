@@ -11,6 +11,9 @@
 #include "casm/crystallography/Structure.hh"
 #include "Common.hh"
 
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/IntegralCluster_impl.hh"
+
 using namespace CASM;
 
 BOOST_AUTO_TEST_SUITE(NeighborListTest)

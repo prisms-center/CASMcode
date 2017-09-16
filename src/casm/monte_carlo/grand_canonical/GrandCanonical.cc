@@ -9,6 +9,8 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings_impl.hh"
+
 
 namespace CASM {
   namespace Monte {

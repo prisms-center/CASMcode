@@ -3,6 +3,7 @@
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
+#include "casm/crystallography/Molecule.hh"
 
 namespace CASM {
   namespace Monte {

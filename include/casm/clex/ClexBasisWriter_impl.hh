@@ -1,3 +1,7 @@
+#ifndef CASM_ClexBasisWriter_impl
+#define CASM_ClexBasisWriter_impl
+
+#include "casm/clex/ClexBasisWriter.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
@@ -741,3 +745,5 @@ namespace CASM {
 
   }
 }
+
+#endif

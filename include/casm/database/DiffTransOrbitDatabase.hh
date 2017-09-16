@@ -2,8 +2,9 @@
 #define CASM_DiffTransOrbitDatabase
 
 #include "casm/database/Database.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
+#include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/symmetry/Orbit.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
 
 namespace CASM {
 
@@ -16,14 +17,20 @@ namespace CASM {
     /// Orbits are always generated in some sort of canonical form?
     ///
     template<>
-    class Database<CASM::PrimPeriodicDiffTransOrbit> : public ValDatabase<CASM::PrimPeriodicDiffTransOrbit> {
+    class Database<PrimPeriodicDiffTransOrbit> : public ValDatabase<PrimPeriodicDiffTransOrbit> {
 
     public:
 
       Database(const PrimClex &_primclex) :
-        ValDatabase<CASM::PrimPeriodicDiffTransOrbit>(_primclex) {}
+        ValDatabase<PrimPeriodicDiffTransOrbit>(_primclex) {}
 
       virtual ~Database() {}
+
+      /// Find PrimPeriodicDiffTransOrbit in database by comparing prototype
+      virtual iterator search(const PrimPeriodicDiffTransOrbit &orbit) const;
+
+      /// Find DiffusionTransformation in database by comparing to orbit prototypes
+      virtual iterator search(const Kinetics::DiffusionTransformation &diff_trans) const;
 
       /// Range of PrimPeriodicDiffTransOrbit that were created from a given IntegralCluster
       ///

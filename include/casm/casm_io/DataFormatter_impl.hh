@@ -3,6 +3,7 @@
 #include "casm/casm_io/DataFormatter.hh"
 
 #include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
 #include "casm/casm_io/DataStream.hh"
 #include "casm/container/Counter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"

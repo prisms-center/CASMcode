@@ -1,9 +1,11 @@
 #include "casm/app/query.hh"
 #include "casm/app/DBInterface.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/app/QueryHandler.hh"
+#include "casm/app/QueryHandler_impl.hh"
+#include "casm/casm_io/FormatFlag.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/database/DatabaseTypeDefs.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/database/Selection.hh"
 
 namespace CASM {
@@ -269,11 +271,10 @@ namespace CASM {
     }
   }
 
-  //_write_pos should only be an option for configurations
   template<typename DataObject>
   int QueryCommandImpl<DataObject>::_write_pos() const {
-    for(const auto &config : _sel().selected()) {
-      //config.write_pos();
+    for(const auto &obj : _sel().selected()) {
+      obj.write_pos();
     }
     return 0;
   }

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
 
 namespace CASM {
 

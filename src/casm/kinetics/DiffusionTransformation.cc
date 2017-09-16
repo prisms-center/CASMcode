@@ -1,18 +1,23 @@
-#include "casm/kinetics/DiffusionTransformation.hh"
-
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/container.hh"
-#include "casm/symmetry/Orbit_impl.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Molecule.hh"
-#include "casm/basis_set/DoF.hh"
-#include "casm/clex/Configuration.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/clex/NeighborList.hh"
-
+#include "casm/database/Named_impl.hh"
+#include "casm/database/DiffTransOrbitDatabase.hh"
 
 namespace CASM {
 
-  template class Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare>;
+  namespace DB {
+    template class Named<CRTPBase<PrimPeriodicDiffTransOrbit> >;
+    template class Indexed<CRTPBase<PrimPeriodicDiffTransOrbit> >;
+  }
+
+  template class ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Kinetics::DiffusionTransformation> > > >;
+  template class AperiodicSymCompare<Kinetics::DiffusionTransformation>;
+
+  template class ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> > > >;
+  template class PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>;
+
+  template class ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> > > >;
+  template class ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>;
 
   namespace Kinetics {
 
@@ -48,7 +53,7 @@ namespace CASM {
       return std::make_tuple(uccoord, occ, pos);
     }
 
-    /// \brief Print DiffusionTransformationInvariants
+    /// \brief Print DiffTransInvariants
     std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj) {
       sout << obj.uccoord << " : " << obj.occ << " " << obj.pos;
       return sout;
@@ -113,11 +118,12 @@ namespace CASM {
       return _tuple() < B._tuple();
     }
 
-    void SpecieTrajectory::apply_sym(const SymOp &op) {
+    SpecieTrajectory &SpecieTrajectory::apply_sym(const SymOp &op) {
       from.uccoord.apply_sym(op);
       to.uccoord.apply_sym(op);
 
       //MOLECULE_SUPPORT: apply permutation to to/from_value & to/from_specie_index
+      return *this;
     }
 
     void SpecieTrajectory::reverse() {
@@ -153,22 +159,22 @@ namespace CASM {
   namespace Kinetics {
 
 
-    // DiffusionTransformationInvariants
+    // DiffTransInvariants
 
-    DiffusionTransformationInvariants::DiffusionTransformationInvariants(
+    DiffTransInvariants::DiffTransInvariants(
       const DiffusionTransformation &trans) :
       cluster_invariants(trans.cluster().invariants()),
       specie_count(trans.specie_count()) {}
   }
 
-  /// \brief Check if DiffusionTransformationInvariants are equal
-  bool almost_equal(const Kinetics::DiffusionTransformationInvariants &A, const Kinetics::DiffusionTransformationInvariants &B, double tol) {
+  /// \brief Check if DiffTransInvariants are equal
+  bool almost_equal(const Kinetics::DiffTransInvariants &A, const Kinetics::DiffTransInvariants &B, double tol) {
     return almost_equal(A.cluster_invariants, B.cluster_invariants, tol) &&
            A.specie_count == B.specie_count;
   }
 
-  /// \brief Compare DiffusionTransformationInvariants
-  bool compare(const Kinetics::DiffusionTransformationInvariants &A, const Kinetics::DiffusionTransformationInvariants &B, double tol) {
+  /// \brief Compare DiffTransInvariants
+  bool compare(const Kinetics::DiffTransInvariants &A, const Kinetics::DiffTransInvariants &B, double tol) {
     if(compare(A.cluster_invariants, B.cluster_invariants, tol)) {
       return true;
     }
@@ -178,8 +184,8 @@ namespace CASM {
     return A.specie_count < B.specie_count;
   }
 
-  /// \brief Print DiffusionTransformationInvariants
-  std::ostream &operator<<(std::ostream &sout, const Kinetics::DiffusionTransformationInvariants &obj) {
+  /// \brief Print DiffTransInvariants
+  std::ostream &operator<<(std::ostream &sout, const Kinetics::DiffTransInvariants &obj) {
     sout << obj.cluster_invariants;
     if(obj.specie_count.size() > 0) {
       for(const auto &t : obj.specie_count) {
@@ -189,104 +195,17 @@ namespace CASM {
     return sout;
   }
 
-  PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::PrimPeriodicSymCompare(double _tol) :
-    Kinetics::DiffTransSymCompare<PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> >(_tol) {}
-
-  PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::Element
-  PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::prepare_impl(const Element &A) const {
-    if(A.occ_transform().size()) {
-      Element tmp = A.sorted();
-      m_integral_tau = -(tmp.occ_transform()[0].uccoord.unitcell());
-      tmp -= tmp.occ_transform()[0].uccoord.unitcell();
-      return tmp;
-    }
-    else {
-      return A;
-    }
-  }
-
-  bool PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::compare_impl(
-    const Element &A,
-    const Element &B) const {
-    return A < B;
-  }
-
-  bool PrimPeriodicSymCompare<Kinetics::DiffusionTransformation>::invariants_compare_impl(
-    const InvariantsType &A,
-    const InvariantsType &B) const {
-    return CASM::compare(A, B, tol());
-  }
-
-  // LocalDiffTransSymCompare
-
-  LocalSymCompare<Kinetics::DiffusionTransformation>::LocalSymCompare(double _tol) :
-    DiffTransSymCompare<LocalSymCompare<Kinetics::DiffusionTransformation> >(_tol) {}
-
-  LocalSymCompare<Kinetics::DiffusionTransformation>::Element
-  LocalSymCompare<Kinetics::DiffusionTransformation>::prepare_impl(const Element &A) const {
-    if(A.occ_transform().size()) {
-      Element tmp = A.sorted();
-      return tmp;
-    }
-    else {
-      return A;
-    }
-  }
-
-  bool LocalSymCompare<Kinetics::DiffusionTransformation>::compare_impl(
-    const Element &A,
-    const Element &B) const {
-    return A < B;
-  }
-
-  bool LocalSymCompare<Kinetics::DiffusionTransformation>::invariants_compare_impl(
-    const InvariantsType &A,
-    const InvariantsType &B) const {
-    return CASM::compare(A, B, tol());
-  }
-
-
-  // ScelPeriodicDiffTransSymCompare
-
-  ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::ScelPeriodicSymCompare(
-    const PrimGrid &prim_grid,
-    double _tol) :
-    DiffTransSymCompare<ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> >(_tol),
-    m_prim_grid(prim_grid) {}
-
-  ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::Element
-  ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::prepare_impl(const Element &A) const {
-    if(A.occ_transform().size()) {
-      Element tmp = A.sorted();
-      m_integral_tau = (m_prim_grid.within(tmp.occ_transform()[0].uccoord).unitcell())
-                       - tmp.occ_transform()[0].uccoord.unitcell();
-      tmp += m_integral_tau;
-      return tmp;
-    }
-    else {
-      return A;
-    }
-  }
-
-  bool ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::compare_impl(
-    const Element &A, const Element &B) const {
-    return A < B;
-  }
-
-  bool ScelPeriodicSymCompare<Kinetics::DiffusionTransformation>::invariants_compare_impl(
-    const InvariantsType &A,
-    const InvariantsType &B) const {
-    return CASM::compare(A, B, tol());
-  }
-
   namespace Kinetics {
 
     // DiffusionTransformation
 
-    DiffusionTransformation::DiffusionTransformation(const PrimType &prim) :
-      DoFTransformation(prim) {
+    DiffusionTransformation::DiffusionTransformation(const Structure &_prim) :
+      m_prim_ptr(&_prim) {
     }
 
+    const Structure &DiffusionTransformation::prim() const {
+      return *m_prim_ptr;
+    }
 
     DiffusionTransformation &DiffusionTransformation::operator+=(UnitCell frac) {
       for(auto &t : m_occ_transform) {
@@ -297,21 +216,6 @@ namespace CASM {
         t += frac;
       }
       return *this;
-    }
-
-    DiffusionTransformation &DiffusionTransformation::operator-=(UnitCell frac) {
-      for(auto &t : m_occ_transform) {
-        t -= frac;
-      }
-
-      for(auto &t : m_specie_traj) {
-        t -= frac;
-      }
-      return *this;
-    }
-
-    std::unique_ptr<DiffusionTransformation> DiffusionTransformation::clone() const {
-      return std::unique_ptr<DiffusionTransformation>(this->_clone());
     }
 
     /// \brief Check if valid occupation transform
@@ -392,13 +296,39 @@ namespace CASM {
       return std::any_of(m.begin(), m.end(), is_no_change_mol);
     }
 
-    /// \brief Check if occ_transform and specie_traj are valid
+    /// \brief Check if specie_traj() and occ_transform() are consistent
+    ///
+    /// - Checks if specie_traj occ indices match occ_transform indices
+    ///   and that there as many traj as AtomSpecie in a Molecule
+    ///
+    bool DiffusionTransformation::is_self_consistent() const {
+      for(const auto &trans : occ_transform()) {
+        auto is_from_match = [&](const SpecieTrajectory & traj) {
+          return trans.uccoord == traj.from.uccoord && trans.from_mol() == traj.from.mol();
+        };
+        auto from_match_count = std::count_if(specie_traj().begin(), specie_traj().end(), is_from_match);
+        if(from_match_count != trans.from_mol().size()) {
+          return false;
+        }
+
+        auto is_to_match = [&](const SpecieTrajectory & traj) {
+          return trans.uccoord == traj.to.uccoord && trans.to_mol() == traj.to.mol();
+        };
+        auto to_match_count = std::count_if(specie_traj().begin(), specie_traj().end(), is_to_match);
+        if(from_match_count != trans.to_mol().size()) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    /// \brief Check if occ_transform and specie_traj are valid and self consistent
     bool DiffusionTransformation::is_valid() const {
-      return is_valid_occ_transform() && is_valid_specie_traj();
+      return is_valid_occ_transform() && is_valid_specie_traj() && is_self_consistent();
     }
 
     std::vector<OccupationTransformation> &DiffusionTransformation::occ_transform() {
-      _reset_invariants();
+      reset_invariants();
       return m_occ_transform;
     }
 
@@ -407,7 +337,7 @@ namespace CASM {
     }
 
     std::vector<SpecieTrajectory> &DiffusionTransformation::specie_traj() {
-      _reset_invariants();
+      reset_invariants();
       return m_specie_traj;
     }
 
@@ -490,251 +420,46 @@ namespace CASM {
       return cluster().max_length();
     }
 
-    /*
-    DiffusionTransformation DiffusionTransformation::copy_apply_sym(const SymOp &op) const {
-      DiffusionTransformation t {*this};
-      t.apply_sym(op);
-      return t;
-    }
-    */
-    /*
-    std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit) {
-      Structure prim(orbit.prototype().specie_traj().begin()->from.uccoord.unit());
-      std::set<int> sublat_indices;
-      for(int i = 0; i < prim.basis.size(); i++) {
-        sublat_indices.insert(i);
-      }
-
-      // construct
-      PrimNeighborList nlist(
-        PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, TOL),
-        sublat_indices.begin(),
-        sublat_indices.end()
-      );
-      int prev_size;
-      int post_size;
-      std::map<int, std::map<int, std::map<int, int>>> unique_inds;
-      //May need to sort first?
-      DiffusionTransformation s_this = orbit.prototype().sorted();
-      std::string result = "DT" + std::to_string(orbit.prototype().size());
-      std::vector<int> totals = {0, 0, 0, 0};
-      for(auto it = s_this.specie_traj().begin(); it != s_this.specie_traj().end(); it++) {
-        prev_size = nlist.size();
-        nlist.expand(it->from.uccoord);
-        nlist.expand(it->to.uccoord);
-        post_size = nlist.size();
-        if(prev_size != post_size) {
-          int idx = 0;
-          for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
-            unique_inds[(*n_it)(0)][(*n_it)(1)][(*n_it)(2)] = idx;
-            idx++;
-          }
-        }
-        result += "_" + it->from.specie().name + "-" + std::to_string(unique_inds[it->from.uccoord.unitcell(0)]
-                                                                      [it->from.uccoord.unitcell(1)]
-                                                                      [it->from.uccoord.unitcell(2)] + it->from.uccoord.sublat() * nlist.size()) ;
-
-        result += ",";
-        result += std::to_string(unique_inds[it->to.uccoord.unitcell(0)]
-                                 [it->to.uccoord.unitcell(1)]
-                                 [it->to.uccoord.unitcell(2)] + it->to.uccoord.sublat() * nlist.size()) + "-";
-      }
-      return result;
-    }*/
-
-    /// \brief Returns the distance from uccoord to the closest point on a linearly
-    /// interpolated diffusion path. (Could be an end point)
-    double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
-      double dist = std::numeric_limits<double>::max();
-      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
-        //vector from -> input
-        Coordinate v1 = (uccoord.coordinate() - it->from.uccoord.coordinate());
-        //vector from -> to
-        Coordinate v2 = (it->to.uccoord.coordinate() - it->from.uccoord.coordinate());
-        // projection of v1 onto v2
-        Eigen::Vector3d v3 = v1.const_cart().dot(v2.const_cart()) / (v1.const_cart().norm()) / (v2.const_cart().norm()) * v2.const_cart();
-        double curr_dist;
-        //if v3 length is greater than v2 then input is closer to "to" than the path
-        if(v3.norm() > v2.const_cart().norm()) {
-          curr_dist = (uccoord.coordinate().const_cart() - it->to.uccoord.coordinate().const_cart()).norm();
-        }
-        //if v3 is in opposite direction of v2 then input is closer to "from" than the path
-        else if(v3.dot(v2.const_cart()) < 0) {
-          curr_dist = v1.const_cart().norm();
-        }
-        else {
-          // find magnitude of v1-v3 and set to current distance
-          curr_dist = (v1.const_cart() - v3).norm();
-        }
-        if(curr_dist < dist) {
-          dist = curr_dist;
-        }
-      }
-      return dist;
-    }
-
-    /// \brief Determines the nearest site distance to the diffusion path
-    std::pair<UnitCellCoord, double> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
-      double dist = std::numeric_limits<double>::max();
-      Structure prim(diff_trans.specie_traj().begin()->from.uccoord.unit());
-      std::set<int> sublat_indices;
-      for(int i = 0; i < prim.basis.size(); i++) {
-        sublat_indices.insert(i);
-      }
-      UnitCellCoord ret_coord(prim);
-      // construct
-      PrimNeighborList nlist(
-        PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, TOL),
-        sublat_indices.begin(),
-        sublat_indices.end()
-      );
-      UnitCell pos(1, 1, 1);
-      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
-        UnitCellCoord fromcoord = it->from.uccoord;
-        UnitCellCoord tocoord = it->to.uccoord;
-
-        nlist.expand(fromcoord);
-        fromcoord += pos;
-        nlist.expand(fromcoord);
-        fromcoord -= pos;
-        fromcoord -= pos;
-        nlist.expand(fromcoord);
-        nlist.expand(tocoord);
-        tocoord += pos;
-        nlist.expand(tocoord);
-        tocoord -= pos;
-        tocoord -= pos;
-        nlist.expand(tocoord);
-      }
-      for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
-        for(int b = 0; b < prim.basis.size(); b++) {
-          UnitCellCoord uccoord(prim, b, *n_it);
-          bool in_diff_trans = false;
-          for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
-            if(uccoord == it->from.uccoord || uccoord == it->to.uccoord) {
-              in_diff_trans = true;
-            }
-          }
-
-          if(!in_diff_trans) {
-            double curr_dist = dist_to_path(diff_trans, uccoord);
-            if(curr_dist < dist) {
-              dist = curr_dist;
-              ret_coord = uccoord;
-            }
-          }
-        }
-      }
-
-      std::pair<UnitCellCoord, double> pair(ret_coord, dist);
-      return pair;
-    }
-
-    /// \brief Determines which site is closest to the diffusion transformation
-    UnitCellCoord path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
-      return _path_nearest_neighbor(diff_trans).first;
-    }
-
-    /// \brief Determines the nearest site distance to the diffusion path
-    double min_dist_to_path(const DiffusionTransformation &diff_trans) {
-      return _path_nearest_neighbor(diff_trans).second;
-    }
-
-    Configuration &DiffusionTransformation::apply_to_impl(Configuration &config) const {
-
-      if(config.has_specie_id()) {
-        // create the final specie id vectors in a temporary map
-
-        // map of 'to' linear index -> 'to' specie_id
-        std::map<Index, std::vector<Index> > _specie_id;
-        for(const auto &t : m_specie_traj) {
-
-          // linear indices of 'from' and 'to' sites
-          Index from_l = config.linear_index(t.from.uccoord);
-          Index to_l = config.linear_index(t.to.uccoord);
-          // if 'to' linear index not yet in _specie_id, construct with correct length
-          auto it = _specie_id.find(to_l);
-          if(it == _specie_id.end()) {
-            it = _specie_id.insert(std::make_pair(to_l, std::vector<Index>(t.to.mol().size()))).first;
-          }
-          // copy the specie id
-          it->second[t.to.pos] = config.specie_id(from_l)[t.from.pos];
-        }
-
-        // copy the temporary specie_id
-        for(const auto &t : _specie_id) {
-          config.specie_id(t.first) = t.second;
-        }
-      }
-
+    Configuration &DiffusionTransformation::apply_to(Configuration &config) const {
       // transform the occupation variables
       for(const auto &t : m_occ_transform) {
         t.apply_to(config);
       }
-
-
       return config;
     }
 
-    Configuration &DiffusionTransformation::apply_reverse_to_impl(Configuration &config) const {
-
-      if(config.has_specie_id()) {
-        // create the final specie id vectors in a temporary map
-
-        // map of 'from' linear index -> 'from' specie_id
-        std::map<Index, std::vector<Index> > _specie_id;
-
-        for(const auto &t : m_specie_traj) {
-
-          // linear indices of 'from' and 'to' sites
-          Index from_l = config.linear_index(t.from.uccoord);
-          Index to_l = config.linear_index(t.to.uccoord);
-
-          // if 'from' linear index not yet in _specie_id, construct with correct length
-          auto it = _specie_id.find(from_l);
-          if(it == _specie_id.end()) {
-            it = _specie_id.insert(std::make_pair(from_l, std::vector<Index>(t.from.mol().size()))).first;
-          }
-
-          // copy the specie id
-          it->second[t.from.pos] = config.specie_id(to_l)[t.to.pos];
-        }
-        // copy the temporary specie_id
-        for(const auto &t : _specie_id) {
-          config.specie_id(t.first) = t.second;
-        }
+    DiffusionTransformation &DiffusionTransformation::apply_sym(const SymOp &op) {
+      for(auto &t : m_occ_transform) {
+        t.apply_sym(op);
       }
+
+      for(auto &t : m_specie_traj) {
+        t.apply_sym(op);
+      }
+      return *this;
+    }
+
+    DiffusionTransformation &DiffusionTransformation::apply_sym(const PermuteIterator &it) {
+      apply_sym(it.sym_op());
+      return *this;
+    }
+
+    void DiffusionTransformation::reverse() {
+      for(auto &t : m_occ_transform) {
+        t.reverse();
+      }
+
+      for(auto &t : m_specie_traj) {
+        t.reverse();
+      }
+    }
+
+    Configuration &DiffusionTransformation::apply_reverse_to_impl(Configuration &config) const {
       // transform the occupation variables
       for(const auto &t : m_occ_transform) {
         t.apply_reverse_to(config);
       }
-
-
       return config;
-    }
-
-    void DiffusionTransformation::apply_sym_impl(const SymOp &op) {
-      for(auto &t : m_occ_transform) {
-        t.apply_sym(op);
-      }
-
-      for(auto &t : m_specie_traj) {
-        t.apply_sym(op);
-      }
-    }
-
-    void DiffusionTransformation::reverse_impl() {
-      for(auto &t : m_occ_transform) {
-        t.reverse();
-      }
-
-      for(auto &t : m_specie_traj) {
-        t.reverse();
-      }
-    }
-
-    DiffusionTransformation *DiffusionTransformation::_clone() const {
-      return new DiffusionTransformation(*this);
     }
 
     /// \brief Puts this in a sorted form, without considering the reverse
@@ -783,39 +508,16 @@ namespace CASM {
     /// \brief Reset mutable members, cluster and invariants, when necessary
     void DiffusionTransformation::_reset() {
       m_cluster.reset();
-      _reset_invariants();
+      reset_invariants();
       m_specie_count.reset();
     }
 
     std::map<AtomSpecie, Index> DiffusionTransformation::_from_specie_count() const {
-      std::map<AtomSpecie, Index> _specie_count = _empty_specie_count();
-      for(const auto &t : m_occ_transform) {
-        const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.from_value];
-        for(const AtomPosition &specie_pos : mol.atoms()) {
-          _specie_count[specie_pos.specie()]++;
-        }
-      }
-      return _specie_count;
+      return from_specie_count(m_occ_transform.begin(), m_occ_transform.end());
     }
 
     std::map<AtomSpecie, Index> DiffusionTransformation::_to_specie_count() const {
-      std::map<AtomSpecie, Index> _specie_count = _empty_specie_count();
-      for(const auto &t : m_occ_transform) {
-        const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.to_value];
-        for(const AtomPosition &specie_pos : mol.atoms()) {
-          _specie_count[specie_pos.specie()]++;
-        }
-      }
-      return _specie_count;
-    }
-
-    std::map<AtomSpecie, Index> DiffusionTransformation::_empty_specie_count() const {
-      auto struc_specie = prim().struc_specie();
-      std::map<AtomSpecie, Index> _specie_count;
-      for(const AtomSpecie &s : struc_specie) {
-        _specie_count[s] = 0;
-      }
-      return _specie_count;
+      return to_specie_count(m_occ_transform.begin(), m_occ_transform.end());
     }
 
     /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
@@ -823,6 +525,186 @@ namespace CASM {
       Printer<Kinetics::DiffusionTransformation> printer;
       printer.print(trans, sout);
       return sout;
+    }
+
+    /// \brief Returns the distance from uccoord to the closest point on a linearly
+    /// interpolated diffusion path. (Could be an end point)
+    double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
+      return vector_to_path(diff_trans, uccoord).norm();
+    }
+
+    /// \brief Returns the vector from uccoord to the closest point on a linearly
+    /// interpolated diffusion path. (Could be an end point)
+    Eigen::Vector3d vector_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
+      double dist = std::numeric_limits<double>::max();
+      Eigen::Vector3d result;
+      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
+        //vector from -> input
+        Coordinate v1 = (uccoord.coordinate() - it->from.uccoord.coordinate());
+        //vector from -> to
+        Coordinate v2 = (it->to.uccoord.coordinate() - it->from.uccoord.coordinate());
+        // projection of v1 onto v2
+        Eigen::Vector3d v3 = v1.const_cart().dot(v2.const_cart()) / (v1.const_cart().norm()) / (v2.const_cart().norm()) * v2.const_cart();
+        double curr_dist;
+        Eigen::Vector3d curr_vec;
+        //if v3 length is greater than v2 then input is closer to "to" than the path
+        if(v3.norm() > v2.const_cart().norm()) {
+          curr_vec = it->to.uccoord.coordinate().const_cart() - uccoord.coordinate().const_cart();
+          curr_dist = curr_vec.norm();
+        }
+        //if v3 is in opposite direction of v2 then input is closer to "from" than the path
+        else if(v3.dot(v2.const_cart()) < 0) {
+          curr_vec = -v1.const_cart();
+          curr_dist = curr_vec.norm();
+        }
+        else {
+          // find magnitude of v1-v3 and set to current distance
+          curr_vec = v3 - v1.const_cart();
+          curr_dist = curr_vec.norm();
+        }
+        if(curr_dist < dist) {
+          dist = curr_dist;
+          result = curr_vec;
+        }
+      }
+      return result;
+    }
+
+    /// \brief Determines the nearest site distance to the diffusion path
+    std::pair<UnitCellCoord, Eigen::Vector3d> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
+      double dist = std::numeric_limits<double>::max();
+      Eigen::Vector3d ret_vec;
+      Structure prim(diff_trans.specie_traj().begin()->from.uccoord.unit());
+      std::set<int> sublat_indices;
+      for(int i = 0; i < prim.basis.size(); i++) {
+        sublat_indices.insert(i);
+      }
+      UnitCellCoord ret_coord(prim);
+      // construct
+      PrimNeighborList nlist(
+        PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, TOL),
+        sublat_indices.begin(),
+        sublat_indices.end()
+      );
+      UnitCell pos(1, 1, 1);
+      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); ++it) {
+        UnitCellCoord fromcoord = it->from.uccoord;
+        UnitCellCoord tocoord = it->to.uccoord;
+
+        nlist.expand(fromcoord);
+        fromcoord += pos;
+        nlist.expand(fromcoord);
+        fromcoord -= pos;
+        fromcoord -= pos;
+        nlist.expand(fromcoord);
+        nlist.expand(tocoord);
+        tocoord += pos;
+        nlist.expand(tocoord);
+        tocoord -= pos;
+        tocoord -= pos;
+        nlist.expand(tocoord);
+      }
+      for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
+        for(int b = 0; b < prim.basis.size(); b++) {
+          UnitCellCoord uccoord(prim, b, *n_it);
+          bool in_diff_trans = false;
+          for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
+            if(uccoord == it->from.uccoord || uccoord == it->to.uccoord) {
+              in_diff_trans = true;
+            }
+          }
+
+          if(!in_diff_trans) {
+            double curr_dist = dist_to_path(diff_trans, uccoord);
+            Eigen::Vector3d curr_vec = vector_to_path(diff_trans, uccoord);
+            if(curr_dist < dist) {
+              dist = curr_dist;
+              ret_vec = curr_vec;
+              ret_coord = uccoord;
+            }
+          }
+        }
+      }
+
+      std::pair<UnitCellCoord, Eigen::Vector3d> pair(ret_coord, ret_vec);
+      return pair;
+    }
+
+    /// \brief Determines which site is closest to the diffusion transformation
+    UnitCellCoord path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
+      return _path_nearest_neighbor(diff_trans).first;
+    }
+
+    /// \brief Determines the nearest site distance to the diffusion path
+    double min_dist_to_path(const DiffusionTransformation &diff_trans) {
+      return _path_nearest_neighbor(diff_trans).second.norm();
+    }
+
+    /// \brief Determines the vector from the nearest site to the diffusion path
+    Eigen::Vector3d min_vector_to_path(const DiffusionTransformation &diff_trans) {
+      return _path_nearest_neighbor(diff_trans).second;
+    }
+
+    /// \brief Determines whether the atoms moving in the diffusion transformation will collide on a linearly interpolated path
+    bool path_collision(const DiffusionTransformation &diff_trans) {
+      std::vector<SpecieTrajectory> paths_to_check;
+      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); ++it) {
+        if(!is_vacancy(it->from.specie().name())) {
+          paths_to_check.push_back(*it);
+        }
+      }
+      for(int i = 0; i < paths_to_check.size(); ++i) {
+        for(int j = i + 1; j < paths_to_check.size(); ++j) {
+          //vector from -> to path 1
+          Eigen::Vector3d v1 = (paths_to_check[i].to.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()).const_cart();
+          //vector from -> to path 2
+          Eigen::Vector3d v2 = (paths_to_check[j].to.uccoord.coordinate() - paths_to_check[j].from.uccoord.coordinate()).const_cart();
+          // simplification of the following problem
+          // parametric representation of path 1 = parametric representation of path 2
+          // paths_to_check[i].from.uccoord.coordinate() + t*v1 = paths_to_check[j].from.uccoord.coordinate() + s*v2
+          // v3 =  paths_to_check[j].from.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()
+          Eigen::Vector3d v3 = (paths_to_check[j].from.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()).const_cart();
+          Eigen::MatrixXd soln(2, 1);
+          Eigen::Matrix2d m;
+          Eigen::MatrixXd b(2, 1);
+          m << v1[0], v2[0],
+          v1[1], v2[1];
+          b << v3[0],
+          v3[1];
+          int excluded_index = 2;
+          try {
+            Eigen::FullPivLU<Eigen::Matrix2d> lu(m);
+            if(lu.rank() < 2) {
+              m << v1[1], v2[1],
+              v1[2], v2[2];
+              b << v3[1],
+              v3[2];
+              excluded_index = 0;
+              Eigen::FullPivLU<Eigen::Matrix2d> lu2(m);
+              if(lu2.rank() < 2) {
+                return true;
+              }
+            }
+            soln = m.inverse() * b;
+            if(soln(0, 0)*v1[excluded_index] + soln(1, 0)*v2[excluded_index] != v3[excluded_index]) {
+              continue; //if solution for x and y coordinates but not z solution is not viable
+            }
+            if(soln(0, 0) < 1 && soln(0, 0) > 0 && soln(1, 0) < 0 && soln(1, 0) > -1) {
+              return true;  // there is an intersection of paths not at the end points
+            }
+
+            if(soln(0, 0) == 1 || soln(0, 0) == 0 || soln(1, 0) == 0 || soln(1, 0) == -1) {
+              if(v1 == -v2) {
+                return true; // the paths are overlapping in opposition directions perfectly
+              }
+            }
+          }
+          catch(...) {
+            throw;
+          }
+        }
+      }
+      return false;
     }
   }
 

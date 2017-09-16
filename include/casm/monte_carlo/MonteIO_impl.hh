@@ -1,6 +1,9 @@
 #ifndef CASM_MonteIO_impl_HH
 #define CASM_MonteIO_impl_HH
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/casm_io/DataFormatterTools.hh"

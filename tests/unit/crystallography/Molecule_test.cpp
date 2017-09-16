@@ -82,11 +82,13 @@ BOOST_AUTO_TEST_CASE(MoleculeTest1) {
   BOOST_CHECK_EQUAL(mol_Zr2.is_divisible(), true);
   BOOST_CHECK_EQUAL(mol_Zr2.is_indivisible(), false);
 
-  BOOST_CHECK_EQUAL(mol_va.size(), 0);
+  //BOOST_CHECK_EQUAL(mol_va.size(), 0); // if Molecule empty for Va
+  BOOST_CHECK_EQUAL(mol_va.size(), 1);
   BOOST_CHECK_EQUAL(mol_va.name(), "Va");
   BOOST_CHECK_EQUAL(mol_va.is_vacancy(), true);
 
-  BOOST_CHECK_EQUAL(mol_va2.size(), 0);
+  //BOOST_CHECK_EQUAL(mol_va2.size(), 0); // if Molecule empty for Va
+  BOOST_CHECK_EQUAL(mol_va2.size(), 1);
   BOOST_CHECK_EQUAL(mol_va2.name(), "Va");
   BOOST_CHECK_EQUAL(mol_va2.is_vacancy(), true);
 

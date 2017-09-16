@@ -1,4 +1,5 @@
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/casm_io/VaspIO.hh"

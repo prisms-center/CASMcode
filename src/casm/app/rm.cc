@@ -3,7 +3,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/database/Import.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseTypes.hh"
 
 // need to add specializations here
 #include "casm/clex/RemoveSupercell.hh"

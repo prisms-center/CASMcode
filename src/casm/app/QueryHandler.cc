@@ -1,5 +1,5 @@
 #include "casm/app/QueryHandler_impl.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseTypes.hh"
 
 namespace CASM {
   namespace {

@@ -8,6 +8,8 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/clex/HasPrimClex.hh"
+#include "casm/database/Selection_impl.hh"
 
 namespace CASM {
 
@@ -15,8 +17,11 @@ namespace CASM {
 
   namespace DB {
 
+    template<typename ObjType>
+    class Selection;
+
     /// Fully generic database interface for use by DatabaseHandler
-    class DatabaseBase {
+    class DatabaseBase : public HasPrimClex<CRTPBase<DatabaseBase>> {
 
     public:
 
@@ -298,11 +303,22 @@ namespace CASM {
       }
 
       virtual iterator find(const std::string &name_or_alias) const = 0;
+
+      /* Don't do this, it's confusing. Use find(obj.name) or insert(obj):
       iterator find(const ValueType &obj) const {
         return find(obj.name());
       }
+      */
 
       virtual void commit() = 0;
+
+      Selection<ValueType> &master_selection() {
+        return m_master_selection;
+      }
+
+      const Selection<ValueType> &master_selection() const {
+        return m_master_selection;
+      }
 
     protected:
 
@@ -322,12 +338,6 @@ namespace CASM {
         obj.set_id(id);
       }
 
-      /// Only ValDatabase<ValueType> is allowed to do set_primclex
-      template<typename _ValueType>
-      void set_primclex(const _ValueType &obj) const {
-        obj.set_primclex(primclex());
-      }
-
 
     private:
 
@@ -336,6 +346,9 @@ namespace CASM {
 
       // enable lookup of alias -> name
       std::map<std::string, std::string> m_alias_to_name;
+
+      //Master selection to update upon insertion or removal.
+      Selection<ValueType> m_master_selection;
 
     };
 

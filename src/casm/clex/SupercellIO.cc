@@ -3,11 +3,9 @@
 #include "casm/casm_io/DataFormatterTools_impl.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/database/Selected.hh"
-#include "casm/database/DatabaseDefs.hh"
-#include "casm/database/ConfigTypeDefs.hh"
+#include "casm/clex/Supercell_impl.hh"
+#include "casm/database/Selected_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
 

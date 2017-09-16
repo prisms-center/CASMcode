@@ -1,6 +1,7 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/CASM_global_enum.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
+#include "casm/crystallography/LatticeCanonicalForm_impl.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/container/Counter.hh"
 
@@ -73,19 +74,6 @@ namespace CASM {
     }
     return best;
   }
-
-  /// \brief Output the SymOp that leave this lattice invariant
-  template<typename SymOpIterator, typename SymOpOutputIterator>
-  SymOpOutputIterator Lattice::find_invariant_subgroup(
-    SymOpIterator begin,
-    SymOpIterator end,
-    SymOpOutputIterator result,
-    double pg_tol) const {
-
-    LatticeIsEquivalent is_equiv(*this, pg_tol);
-    return std::copy_if(begin, end, result, is_equiv);
-  }
-
 
   /// Check if there is a symmetry operation, op, and transformation matrix T,
   ///   such that scel is a supercell of the result of applying op to unit

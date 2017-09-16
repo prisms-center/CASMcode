@@ -13,6 +13,20 @@ namespace test {
              bool quiet,
              double tol = 0.0);
 
+  template<typename Container1DType>
+  void print_computed_result(std::ostream &sout, std::string name, const Container1DType &vec) {
+    sout << name << " = {";
+    auto it = vec.begin();
+    auto end = vec.end();
+    while(it != end) {
+      sout << *it;
+      ++it;
+      if(it != end) {
+        sout << ", ";
+      }
+    }
+    sout << "};" << std::endl;
+  }
 }
 
 #endif

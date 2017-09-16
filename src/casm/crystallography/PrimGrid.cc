@@ -5,6 +5,7 @@
 #include <cassert>
 
 #include "casm/container/Counter.hh"
+#include "casm/casm_io/Log.hh"
 
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Coordinate.hh"
@@ -29,23 +30,13 @@ namespace CASM {
       }
     }
     if(m_trans_mat.determinant() == 0) {
-      std::cerr << "CRITICAL ERROR:  Attempting to construct a PrimGrid for a superlattice that is smaller than lattice passed as its prim.\n"
-                << "floating-point transformation matrix:\n" << dtrans_mat << "\n was rounded to integer matrix:\n" << m_trans_mat << "\n\n"
-                << "This usage of PrimGrid is not supported. Exiting...\n";
+      default_err_log() << "CRITICAL ERROR:  Attempting to construct a PrimGrid for a superlattice that is smaller than lattice passed as its prim.\n"
+                        << "floating-point transformation matrix:\n" << dtrans_mat << "\n was rounded to integer matrix:\n" << m_trans_mat << "\n\n"
+                        << "This usage of PrimGrid is not supported. Exiting...\n";
       assert(0);
       exit(1);
     }
-    /*
-    std::cerr << "prim_lat is:\n";
-    m_lat[PRIM]->print(std::cerr);
-    std::cerr << '\n';
 
-    std::cerr << "scel_lat is:\n";
-    m_lat[SCEL]->print(std::cerr);
-    std::cerr << '\n';
-
-    std::cerr << "dtrans_mat is\n" << dtrans_mat << '\n';
-    */
     matrix_type Smat, V;
     smith_normal_form(m_trans_mat, m_U, Smat, V);
 
@@ -53,8 +44,6 @@ namespace CASM {
 
     m_S = Smat.diagonal();
 
-    //std::cerr << "Smith decomposition is:\n";
-    //std::cerr << m_U << "\n\n" << Smat << "\n\n" << V << "\n\n";
     m_stride[0] = m_S[0];
     m_stride[1] = m_S[0] * m_S[1];
     m_N_vol = m_S[0] * m_S[1] * m_S[2];
@@ -66,19 +55,7 @@ namespace CASM {
     Smat(2, 2) = m_N_vol / Smat(2, 2);
     m_plane_mat = inverse(V) * Smat * inverse(m_U);
 
-    /*
-    std::cerr << "trans_mat is:\n" << m_trans_mat << "\n\nplane_mat is:\n" << m_plane_mat << "\n\n";
 
-    std::cerr << "Testing PrimGrid:\n"
-            << "UnitCellCoords:\n";
-    for(int i = 0; i < size(); i++)
-    std::cerr << uccoord(i);
-
-    std::cerr << "\n\nSupercell Coordinates:\n";
-    for(int i = 0; i < size(); i++)
-      std::cerr << coord(i, SCEL)(FRAC) << '\n';
-    std::cerr << "\n";
-    */
   }
 
   //**********************************************************************************************
@@ -102,9 +79,9 @@ namespace CASM {
     }
 
     if(m_trans_mat.determinant() == 0) {
-      std::cerr << "CRITICAL ERROR:  Attempting to construct a PrimGrid for a superlattice that is smaller than lattice passed as its prim.\n"
-                << "floating-point transformation matrix:\n" << dtrans_mat << "\n was rounded to integer matrix:\n" << m_trans_mat << "\n\n"
-                << "This usage of PrimGrid is not supported. Exiting...\n";
+      default_err_log() << "CRITICAL ERROR:  Attempting to construct a PrimGrid for a superlattice that is smaller than lattice passed as its prim.\n"
+                        << "floating-point transformation matrix:\n" << dtrans_mat << "\n was rounded to integer matrix:\n" << m_trans_mat << "\n\n"
+                        << "This usage of PrimGrid is not supported. Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -115,27 +92,34 @@ namespace CASM {
       m_S[i] = Smat(i, i);
     }
 
-    //std::cerr << "Smith decomposition is:\n";
+    //default_err_log() << "Smith decomposition is:\n";
     m_stride[0] = m_S[0];
     m_stride[1] = m_S[0] * m_S[1];
     m_N_vol = m_S[0] * m_S[1] * m_S[2];
 
     m_plane_mat = adjugate(m_trans_mat);
 
-    /*
-    std::cerr << "trans_mat is:\n" << m_trans_mat << "\n\nplane_mat is:\n" << m_plane_mat << "\n\n";
 
-    std::cerr << "Testing PrimGrid:\n"
-            << "UnitCellCoords:\n";
-    for(int i = 0; i < size(); i++)
-    std::cerr << uccoord(i);
-
-    std::cerr << "\n\nSupercell Coordinates:\n";
-    for(int i = 0; i < size(); i++)
-      std::cerr << coord(i, SCEL)(FRAC) << '\n';
-    std::cerr << "\n";
-    */
   }
+
+  //**********************************************************************************************
+
+  const Lattice &PrimGrid::prim_lattice() const {
+    return *m_lat[static_cast<int>(PRIM)];
+  }
+
+  //**********************************************************************************************
+
+  const Lattice &PrimGrid::scel_lattice() const {
+    return *m_lat[static_cast<int>(SCEL)];
+  }
+
+  //**********************************************************************************************
+
+  const Lattice &PrimGrid::lattice(CELL_TYPE lat_mode) const {
+    return *m_lat[static_cast<int>(lat_mode)];
+  }
+
 
   //**********************************************************************************************
 
@@ -145,7 +129,7 @@ namespace CASM {
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
 
-    auto frac((m_lat[static_cast<int>(PRIM)]->inv_lat_column_mat()*_coord.cart()).array() + TOL);
+    auto frac((prim_lattice().inv_lat_column_mat()*_coord.cart()).array() + _coord.lattice().tol());
     UnitCell ijk(frac.unaryExpr(std::ptr_fun(floor)).matrix().cast<long>());
 
     return find(ijk);
@@ -161,7 +145,7 @@ namespace CASM {
   //**********************************************************************************************
 
   Index PrimGrid::find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const {
-    return find(Coordinate(_cart_coord, *m_lat[static_cast<int>(PRIM)], CART));
+    return find(Coordinate(_cart_coord, prim_lattice(), CART));
   }
 
   //**********************************************************************************************
@@ -213,9 +197,9 @@ namespace CASM {
 
   Coordinate PrimGrid::coord(const UnitCell &ijk, CELL_TYPE lat_mode)const {
 
-    Coordinate tcoord(ijk.cast<double>(), *(m_lat[static_cast<int>(PRIM)]), FRAC);
+    Coordinate tcoord(ijk.cast<double>(), prim_lattice(), FRAC);
 
-    tcoord.set_lattice(*(m_lat[static_cast<int>(lat_mode)]), CART);
+    tcoord.set_lattice(lattice(lat_mode), CART);
     return tcoord;
   }
 
@@ -247,9 +231,9 @@ namespace CASM {
     for(Index ng = 0; ng < group.size(); ng++) {
       SymBasisPermute const *rep = group[ng].get_basis_permute_rep(basis_permute_ID);
       if(!rep) {
-        std::cerr << "CRITICAL ERROR: In PrimGrid::make_permutation_representation, BasisPermute representation is incorrectly initialized!\n"
-                  << "                basis_permute_ID is " << basis_permute_ID << " and op index is " << group[ng].index() << "\n"
-                  << "                Exiting...\n";
+        default_err_log() << "CRITICAL ERROR: In PrimGrid::make_permutation_representation, BasisPermute representation is incorrectly initialized!\n"
+                          << "                basis_permute_ID is " << basis_permute_ID << " and op index is " << group[ng].index() << "\n"
+                          << "                Exiting...\n";
 
         exit(1);
       }
@@ -259,10 +243,10 @@ namespace CASM {
       std::vector<UnitCellCoord> const &b_permute = rep->data();
 
       std::vector<Index> ipermute(b_permute.size()*size());
-      //std::cerr << "PRINTING b_permute array for op " << ng << ":\n";
+      //default_err_log() << "PRINTING b_permute array for op " << ng << ":\n";
       //begin loop over sites
       for(Index nb = 0; nb < b_permute.size(); nb++) {
-        //std::cerr << b_permute.at(nb) << '\n';
+        //default_err_log() << b_permute.at(nb) << '\n';
         mnp_shift = to_canonical(b_permute.at(nb).unitcell());
 
         vector_type old_mnp, new_mnp;
@@ -288,7 +272,7 @@ namespace CASM {
           ipermute[new_l] = old_l;
         }
       }//end loop over sites
-      //std::cerr << "\\end " << ng << '\n';
+      //default_err_log() << "\\end " << ng << '\n';
       group[ng].set_rep(perm_rep_ID, SymPermutation(ipermute));
     }
     return perm_rep_ID;
@@ -304,25 +288,21 @@ namespace CASM {
     perms.reserve(size());
     std::vector<Index> ipermute(NB * size(), 0);
     UnitCell shift_mnp, mnp;
-    //std::cerr << "In PrimGrid::make_translation_permutations:\n";
     Index new_l;
     for(Index shift_l = 0; shift_l < size(); shift_l++) {
       //shift_mnp describes translation by uccoord(shift_l)
       shift_mnp[0] = (shift_l % m_stride[1]) % m_stride[0];
       shift_mnp[1] = (shift_l % m_stride[1]) / m_stride[0];
       shift_mnp[2] =   shift_l / m_stride[1];
-      //std::cerr << "shift_mnp " << shift_l << " is " << shift_mnp;
       for(Index old_l = 0; old_l < size(); old_l++) {
         mnp[0] = (old_l % m_stride[1]) % m_stride[0];
         mnp[1] = (old_l % m_stride[1]) / m_stride[0];
         mnp[2] = old_l / m_stride[1];
-        //std::cerr << "old_mnp " << old_l << " is " << mnp;
 
         mnp[0] = (mnp[0] + shift_mnp[0]) % m_S[0];
         mnp[1] = (mnp[1] + shift_mnp[1]) % m_S[1];
         mnp[2] = (mnp[2] + shift_mnp[2]) % m_S[2];
 
-        //std::cerr << "new_mnp " << mnp[1] + mnp[2] * m_stride[0] + mnp[3] * m_stride[1] << " is " << mnp;
         for(Index nb = 0; nb < NB; nb++) {
           new_l = mnp[0] + mnp[1] * m_stride[0] + mnp[2] * m_stride[1];
 
