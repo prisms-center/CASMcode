@@ -161,6 +161,10 @@ namespace CASM {
       m_orbit_name = orbit_name;
     }
 
+    void DiffTransConfiguration::set_bg_configname(const std::string &configname) {
+      m_bg_configname = configname;
+    }
+
     /// Writes the DiffTransConfiguration to JSON
     jsonParser &DiffTransConfiguration::to_json(jsonParser &json) const {
       json.put_obj();
@@ -168,6 +172,7 @@ namespace CASM {
       from_config().to_json(json["from_config_data"]);
       CASM::to_json(diff_trans(), json["diff_trans"]);
       json["orbit_name"] = orbit_name();
+      json["bg_configname"] = bg_configname();
       json["cache"].put_obj();
       if(cache_updated()) {
         json["cache"] = cache();
@@ -194,6 +199,8 @@ namespace CASM {
                        jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim()));
       m_diff_trans.apply_to(m_config_B);
       set_orbit_name(json["orbit_name"].get<std::string>());
+      set_bg_configname(json["bg_configname"].get<std::string>());
+
 
       _sort();
     }
@@ -217,6 +224,7 @@ namespace CASM {
                        jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim()));
       m_diff_trans.apply_to(m_config_B);
       set_orbit_name(json["orbit_name"].get<std::string>());
+      set_bg_configname(json["bg_configname"].get<std::string>());
 
       _sort();
     }
@@ -255,6 +263,7 @@ namespace CASM {
     bool DiffTransConfiguration::has_valid_from_occ() const {
       for(auto traj : diff_trans().specie_traj()) {
         Index l = from_config().supercell().linear_index(traj.from.uccoord);
+        //std::cout << "comparing " << from_config().occ(l) << " to " << traj.from.occ << " on site " << l << std::endl;
         if(from_config().occ(l) != traj.from.occ) {
           return false;
         }
@@ -298,7 +307,7 @@ namespace CASM {
     /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
     PermuteIterator DiffTransConfiguration::to_config_from_canonical() const {
       if(!cache().contains("to_config_from_canonical")) {
-        PermuteIterator result = from_config().from_canonical();
+        PermuteIterator result = to_config().from_canonical();
         cache_insert("to_config_from_canonical", result);
         return result;
       }
@@ -341,6 +350,7 @@ namespace CASM {
 
       if(m_config_B < m_config_A) {
         m_from_config_is_A = false;
+        m_diff_trans.reverse();
       }
       else {
         m_from_config_is_A = true;

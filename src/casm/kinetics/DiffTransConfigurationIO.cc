@@ -4,6 +4,7 @@
 #include "casm/casm_io/DataFormatterTools_impl.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/database/Selected.hh"
 
 namespace CASM {
 
@@ -332,6 +333,14 @@ namespace CASM {
           return dtconfig.orbit_name();
         });
       }
+
+      GenericDiffTransConfigFormatter<std::string> bg_configname() {
+        return GenericDiffTransConfigFormatter<std::string>("bg_configname",
+                                                            "canonical Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#', that represents the background configuration this was generated from",
+        [](const DiffTransConfiguration & dtconfig)->std::string {
+          return dtconfig.bg_configname();
+        });
+      }
     }
   }
 
@@ -345,6 +354,7 @@ namespace CASM {
       name<Kinetics::DiffTransConfiguration>(),
       from_configname(),
       to_configname(),
+      bg_configname(),
       scelname(),
       orbitname()
     );
@@ -356,6 +366,9 @@ namespace CASM {
 
     using namespace Kinetics::DiffTransConfigIO;
     BooleanAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
+    dict.insert(
+      DB::Selected<Kinetics::DiffTransConfiguration>()
+    );
     return dict;
   }
 

@@ -239,12 +239,16 @@ namespace CASM {
 
       /// \brief Return config == other, store config < other
       bool operator()(const ConfigDoF &other) const override {
+        ConfigDoF tmp = other;
+        if(!other.has_displacement()) {
+          tmp.set_displacement(Eigen::MatrixXd::Zero(3, configdof().size()));
+        }
         return _for_each(
         [&](Index i, Index j) {
           return this->configdof().disp(i)[j];
         },
         [&](Index i, Index j) {
-          return other.disp(i)[j];
+          return tmp.disp(i)[j];
         });
       }
 
@@ -275,7 +279,11 @@ namespace CASM {
 
       /// \brief Return config == A*other, store config < A*other
       bool operator()(const PermuteIterator &A, const ConfigDoF &other) const override {
-        _update_other(A, other);
+        ConfigDoF tmp = other;
+        if(!other.has_displacement()) {
+          tmp.set_displacement(Eigen::MatrixXd::Zero(3, configdof().size()));
+        }
+        _update_other(A, tmp);
         return _for_each(
         [&](Index i, Index j) {
           return this->configdof().disp(i)[j];
@@ -287,8 +295,12 @@ namespace CASM {
 
       /// \brief Return A*config == B*other, store A*config < B*other
       bool operator()(const PermuteIterator &A, const PermuteIterator &B, const ConfigDoF &other) const override {
+        ConfigDoF tmp = other;
+        if(!other.has_displacement()) {
+          tmp.set_displacement(Eigen::MatrixXd::Zero(3, configdof().size()));
+        }
         _update_A(A);
-        _update_other(B, other);
+        _update_other(B, tmp);
         return _for_each(
         [&](Index i, Index j) {
           return this->new_disp_A(A.permute_ind(i), j);
@@ -383,7 +395,11 @@ namespace CASM {
 
       /// \brief Return config == other, store config < other
       bool operator()(const ConfigDoF &other) const override {
-        Eigen::MatrixXd other_def_tensor = other.deformation().transpose() * other.deformation();
+        ConfigDoF tmp = other;
+        if(!other.has_deformation()) {
+          tmp.set_deformation(Eigen::Matrix3d::Identity());
+        }
+        Eigen::MatrixXd other_def_tensor = tmp.deformation().transpose() * tmp.deformation();
         return _for_each(
         [&](Index i, Index j) {
           return this->_def_tensor(i, j);
@@ -420,9 +436,13 @@ namespace CASM {
 
       /// \brief Return config == A*other, store config < A*other
       bool operator()(const PermuteIterator &A, const ConfigDoF &other) const override {
+        ConfigDoF tmp = other;
+        if(!other.has_deformation()) {
+          tmp.set_deformation(Eigen::Matrix3d::Identity());
+        }
         Eigen::MatrixXd other_def_tensor =
-          A.sym_op().matrix() * other.deformation().transpose() *
-          other.deformation() * A.sym_op().matrix().transpose();
+          A.sym_op().matrix() * tmp.deformation().transpose() *
+          tmp.deformation() * A.sym_op().matrix().transpose();
         return _for_each(
         [&](Index i, Index j) {
           return this->_def_tensor(i, j);
@@ -435,9 +455,13 @@ namespace CASM {
       /// \brief Return A*config == B*other, store A*config < B*other
       bool operator()(const PermuteIterator &A, const PermuteIterator &B, const ConfigDoF &other) const override {
         _update_A(A);
+        ConfigDoF tmp = other;
+        if(!other.has_deformation()) {
+          tmp.set_deformation(Eigen::Matrix3d::Identity());
+        }
         Eigen::MatrixXd other_def_tensor =
-          B.sym_op().matrix() * other.deformation().transpose() *
-          other.deformation() * B.sym_op().matrix().transpose();
+          B.sym_op().matrix() * tmp.deformation().transpose() *
+          tmp.deformation() * B.sym_op().matrix().transpose();
         return _for_each(
         [&](Index i, Index j) {
           return this->_def_tensor_A(i, j);

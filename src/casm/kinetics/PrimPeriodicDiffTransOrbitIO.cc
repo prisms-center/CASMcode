@@ -1,5 +1,6 @@
 #include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/kinetics/PrimPeriodicDiffTransOrbitIO.hh"
+#include "casm/database/Selected.hh"
 
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/casm_io/DataFormatter_impl.hh"
@@ -167,6 +168,7 @@ namespace CASM {
 
     dict.insert(
       Contains(),
+      DB::Selected<PrimPeriodicDiffTransOrbit>(),
       path_collision()
     );
 

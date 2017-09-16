@@ -510,7 +510,6 @@ namespace CASM {
   ///   - When generating the NONCANON_CONFIG_NAME, the primitive configuration is used
   ///
   std::string Configuration::generate_name_impl() const {
-
     /// if 'id' is known
     if(id() != "none") {
       return supercell().name() + "/" + id();
@@ -1502,11 +1501,11 @@ namespace CASM {
   }
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c) {
-
     sout << c.name() << "\n";
     if(c.has_deformation()) {
       sout << "Deformation:\n" << c.deformation() << std::endl;
     }
+
     for(Index i = 0; i < c.size(); ++i) {
       sout << "Linear index: " << i << "  UnitCellCoord: " << c.uccoord(i) << std::endl;
       if(c.has_occupation()) {
@@ -1516,6 +1515,7 @@ namespace CASM {
         sout << "  Displacement: " << c.disp(i).transpose() << "\n";
       }
     }
+
     return sout;
   }
 
