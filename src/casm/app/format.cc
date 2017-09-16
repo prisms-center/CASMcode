@@ -19,6 +19,8 @@ namespace CASM {
       ("prim", "Description and location of 'prim.json' and 'PRIM' files")
       ("sym", "Description and location of 'lattice_point_group.json', 'factor_group.json' and 'crystal_point_group.json' files")
       ("vasp", "Description and location of VASP settings files")
+      ("properties", "Description and location of properties.calc.json files")
+      ("qe", "Description and location of Quantum Espresso settings files")
       ("comp", "Description and location of 'composition_axes.json' file")
       ("bspecs", "Description and location of 'bspecs.json' file")
       ("local_bspecs", "Description and location of 'local_bspecs.json' file")
@@ -132,7 +134,7 @@ namespace CASM {
       args.log() << "    $ROOT/training_data/$SCELNAME/$CONFIGID                         \n";
       args.log() << "      POS                                                           \n";
       args.log() << "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE          \n";
-      args.log() << "      (VASP results)                                                \n";
+      args.log() << "      (DFT results)                                                 \n";
       args.log() << "      properties.calc.json                                          \n";
       args.log() << "    $ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI\n";
       args.log() << "      eci.json                                                      \n";
@@ -548,57 +550,302 @@ LCHARG = .FALSE.\n";
                  "  calculate the kpoint mesh for a supercell, such that it has an    \n" <<
                  "  equal or greater kpoint density than in the reference POSCAR.     \n\n";
 
-      args.log() << "properties.calc.json:                                               \n" <<
-                 "  Results of calculations for a particular configuration should be  \n" <<
-                 "  stored in the directory                                           \n" <<
-                 "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE,         \n" <<
-                 "  and calculated properties summarized in the file                  \n" <<
-                 "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json \n" <<
-                 "  The 'properties.calc.json' file is read by CASM to extract the    \n" <<
-                 "  first-principles calculted properties of interest. If the         \n" <<
-                 "  'properties.calc.json' file does not exist in the                 \n" <<
-                 "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE directory\n" <<
-                 "  CASM assumes that no data is available for that configuration.    \n\n";
-
-      args.log() << "EXAMPLE:\n";
-      args.log() << "-------\n";
-      args.log() << "{\n\
-    \"atom_type\": [\n\
-        \"A\", \n\
-        \"B\"\n\
-    ], \n\
-    \"atoms_per_type\": [\n\
-        1, \n\
-        2\n\
-    ], \n\
-    \"coord_mode\": \"direct\", \n\
-    \"relaxed_basis\": [\n\
-        [0.6666667, 0.6666667, 0.6666667],\n\
-        [0.00255632, 0.99488736, 0.00255632],\n\
-        [0.33077698, 0.33844594, 0.33077698]\n\
-    ], \n\
-    \"relaxed_energy\": -16.27773537, \n\
-    \"relaxed_mag_basis\": [\n\
-        -3.93,\n\
-         3.82,\n\
-         1.198\n\
-    ], \n\
-    \"relaxed_magmom\": -1.3086, \n\
-    \"relaxed_forces\": [\n\
-        [0.0, 0.0, 0.0], \n\
-        [0.0, 0.00987362, -0.00987362], \n\
-        [0.0, -0.00987362, 0.00987362]\n\
-    ], \n\
-    \"relaxed_lattice\": [\n\
-        [0.0, 1.9174843, 1.9174843], \n\
-        [1.61158655, -1.88219884, 3.79968315], \n\
-        [3.22317311, 0.0, 0.0]\n\
-    ]\n\
-}\n";
-      args.log() << "-------\n";
+      args.log << "-------\n";
 
     }
 
+    if(vm.count("qe")) {
+      args.log << "\n### quantum espresso ##################\n\n";
+
+      args.log << "LOCATION WHEN GENERATED:\n\n";
+
+      args.log << "INPUT SETTINGS:\n";
+      args.log << "$CALC_SETTINGS/relax.json\n";
+      args.log << "$CALC_SETTINGS/$CUSTOM_INFILE_NAME\n";
+      args.log << "$CALC_SETTINGS/SPECIES\n";
+
+      args.log << "For global settings:\n";
+      args.log << "  CALC_SETTINGS = $ROOT/training_data/settings/$CURR_CALCTYPE\n";
+      args.log << "For supercell specific settings:\n";
+      args.log << "  CALC_SETTINGS = $ROOT/training_data/$SCELNAME/settings/$CURR_CALCTYPE\n";
+      args.log << "For configuration specific settings:\n";
+      args.log << "  CALC_SETTINGS = $ROOT/training_data/$SCELNAME/$CONFIGID/settings/$CURR_CALCTYPE\n\n";
+
+      args.log << "RESULTS:\n";
+      args.log << "$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/(quantum espresso results)\n";
+      args.log << "$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json (read)\n";
+
+      args.log << "\n\n";
+
+      args.log << "DESCRIPTION:\n";
+      args.log << "CASM comes with wrappers for using Quantum Espresso to calculate the properties \n" <<
+               "of configurations, but is designed so that any type of calculation  \n" <<
+               "software or method could be used if an appropriate set of wrapper   \n" <<
+               "scripts are available. By convention, input settings for software   \n" <<
+               "used to calculate the properties of a particular configuration      \n" <<
+               "should be checked for in the following directories:                 \n" <<
+               "  1) $ROOT/training_data/$SCELNAME/$CONFIGID/settings/$CURR_CALCTYPE\n" <<
+               "  2) $ROOT/training_data/$SCELNAME/settings/$CURR_CALCTYPE          \n" <<
+               "  3) $ROOT/training_data/settings/$CURR_CALCTYPE                    \n\n" <<
+
+               "The Quantum Espresso wrappers included with CASM check for input settings files \n" <<
+               "in the above directories, using the most local settings for a       \n" <<
+               "particular configuration. In most cases, the global settings files  \n" <<
+               "are stored in $ROOT/training_data/settings/$CURR_CALCTYPE and used  \n" <<
+               "for all configurations. Settings files are searched for on a file-by-file\n" <<
+               "basis, so to set supercell or configuration specific settings it is \n" <<
+               "sufficient to only include the particular files necessary in the    \n" <<
+               "supercell or configuration level settings folder.                   \n\n" <<
+
+               "PBS job submission using the Quantum Espresso wrappers depends on using the pbs \n" <<
+               "python module available here: https://github.com/prisms-center/pbs  \n\n" <<
+
+               "Included with CASM, the 'qe.relax' script can be executed by the  \n" <<
+               "'casm run' command to submit a batch of Quantum Espresso jobs that for selected \n" <<
+               "configurations. For each selected configuration, Quantum Espresso is re-run\n" <<
+               "using the output of the previous calculation until full convergence \n" <<
+               "is achieved. The convergence criteria is: if the cell shape and     \n" <<
+               "volume remain constant (calculation != vc-relax) then a single calculation  \n" <<
+               "is performed; else the calculation is converged if at least 2 jobs  \n" <<
+               "are complete, and: 1) the last job completed with <= 3 ionic steps  \n" <<
+               " or, if \"nrg_convergence\" is set in the 'relax.json' file, 2) the \n" <<
+               "last two calculations had final energy differ by less than the value of \n" <<
+               " \"nrg_convergence\". Once converged, a final constant volume       \n" <<
+               "calculation is performed with the following setting: (calculation = 'relax')\n" <<
+
+               "relax.json:                                                         \n" <<
+               "  This JSON file contains a single JSON object which contains       \n" <<
+               "  parameters used to control PBS job submission settings.           \n" <<
+               "  Required keys are:                                                \n" <<
+               "    \"queue\": queue to submit job in                               \n" <<
+               "    \"ppn\": processors (cores) per node to request                 \n" <<
+               "    \"atom_per_proc\": max number of atoms per processor (core)     \n" <<
+               "    \"walltime\": walltime to request (ex. \"48:00:00\")            \n\n" <<
+               "    \"software\": needs to be quantumespresso for quantum espresso to be used\n\n" <<
+
+               " Optional keys are:                                                 \n" <<
+               "    \"account\": account to submit job under (default None)         \n" <<
+               "    \"pmem\": string for requested memory (default None)            \n" <<
+               "    \"priority\": requested job priority (default \"0\")            \n" <<
+               "    \"message\": when to send messages about jobs (ex. \"abe\",     \n" <<
+               "               default \"a\")                                       \n" <<
+               "    \"email\": where to send messages (ex. \"me@fake.com\", default \n" <<
+               "             None)                                                  \n" <<
+               "    \"qos\": quality of service, 'qos' option (ex. \"fluxoe\")      \n" <<
+               "    \"qe_cmd\": quantum espresso execution command (default is \"vasp\" if    \n" <<
+               "                ncpus=1, else \"mpirun -np {NCPUS} vasp\"           \n" <<
+               "    \"infile\": quantum espresso input file name (default is \"std.in\"\n" <<
+               "    \"outfile\": quantum espresso output file name (default is \"std.out\"\n" <<
+               "    \"ncpus\": number of cpus (cores) to run on (default $PBS_NP)   \n" <<
+               "    \"run_limit\": number of vasp runs until \"not_converging\"     \n" <<
+               "                 (default 10)                                       \n" <<
+               "    \"nrg_convergence\": converged if last two runs complete and    \n" <<
+               "                       differ in energy by less than this amount    \n" <<
+               "                       (default None)                               \n" <<
+               "    \"move\": files to move at the end of a run (ex. \"\",    \n" <<
+               "            \".wfc\"], default [])                     \n" <<
+               "    \"copy\": files to copy from run to run  default [$infilename]) \n" <<
+               "    \"remove\": files to remove at the end of a run                \n" <<
+               "               default [\".wfc\", \".igk\", \".save\"]             \n" <<
+               "    \"compress\": files to compress at the end of a run (ex.        \n" <<
+               "                [$outfilename], default [])          \n" <<
+               "    \"backup\": files to compress to backups at the end of a run,   \n" <<
+               "              used in conjunction with move (ex. [\".wfc\"])     \n" <<
+               "    \"extra_input_files\": extra input files to be copied from the  \n" <<
+               "                         settings directory, e.g., an OCCUPATIONS     \n" <<
+               "                         file.                                      \n" <<
+               "    \"initial\": location of $infile with tags for the initial run,   \n" <<
+               "               if desired                                            \n" <<
+               "    \"final\": location of $infile with tags for the final run, if  \n" <<
+               "             desired                                                \n" <<
+               "    \"err_types\": list of errors to check for. Not Implemented yet  \n" <<
+               "\n";
+
+      args.log << "EXAMPLE: relax.json \n";
+      args.log << "-------\n";
+      args.log <<
+               "{\n\
+  \"account\":\"prismsprojectdebug_flux\",\n\
+  \"queue\":\"flux\",\n\
+  \"priority\":\"-200\",\n\
+  \"walltime\":\"1:00:00\",\n\
+  \"pmem\":\"3800mb\",\n\
+  \"email\":\"username@univ.edu\",\n\
+  \"ppn\":\"16\",\n\
+  \"atom_per_proc\":\"2\",\n\
+  \"run_limit\":10,\n\
+  \"nrg_convergence\":0.002\n\
+  \"calculator\":\"quantumespresso\"\n\
+  \"infilename\":\"LixCoO2.in\"\n\
+  \"outfilename\":\"LixCoO2.out\"\n\
+}\n";
+      args.log << "-------\n\n\n";
+
+
+      args.log << "SPECIES:                                                            \n" <<
+               "  This file contains information for selecting pseudopotentials and specifing\n" <<
+               "  parameters that must be set on an atom-by-atom basis in the infile,\n" <<
+               "  such as magnetic moment (non currently implemented).\n" <<
+               "  The first line in the file specifies the value of \n" <<
+               "  'PSEUDO_DIR_PATH', which is the base path used to find UPF     \n" <<
+               "  files. The second line contains column headings (at least 4), and \n" <<
+               "  then there are lines for each distinct species. The first column  \n" <<
+               "  specifies the 'SPECIES' and must match a species names in the PRIM\n" <<
+               "  file. The second column gives an 'ALIAS' name for the species which\n" <<
+               "  is used for ordering like atoms in the generated input files. The\n" <<
+               "  third column should be either '0' or '1', such that only one      \n" <<
+               "  species with a given ALIAS has a '1'. For that species the fourth \n" <<
+               "  column must contain the path that should be appended to the       \n" <<
+               "  PSEUDO_DIR_PATH to specify the UPF file for that species.      \n\n" <<
+
+               "  Additional columns, such as 'if_pos' in the example below are     \n\n" <<
+               "  and used to specify the value used for a particular species in the\n" <<
+               "  infile. The column heading must match a valid quantum espresso input setting.\n"
+               "  For now only supported additional tag is if_pos, a way to fixed certain lattice positions.\n\n";
+
+      args.log << "EXAMPLE: SPECIES \n";
+      args.log << "-------\n" <<
+               "PSEUDO_DIR_PATH = /absolute/path/to/quantumespresso_potentials\n" <<
+               "SPECIES    ALIAS    UPF  UPF_location     if_pos\n" <<
+               "Ni         Ni       1       PAW_PBE/Ni.UPF     1,1,1\n" <<
+               "Al        Al       1       PAW_PBE/Al.UPF      1,1,1\n";
+      args.log << "-------\n\n\n";
+
+      args.log << "$infilename:                                                              \n" <<
+               "  This is a template input file used for Quantum Espresso calculations. The settings \n" <<
+               "  are generally used as given though some may be automatically set  \n" <<
+               "  based on settings in the 'relax.json' or 'SPECIES' files. Also,   \n" <<
+               "  some settings might be added or changed if certain errors are     \n" <<
+               "  during calculation. The actual input file used for each calculation is \n" <<
+               "  saved.                                                            \n\n";
+      args.log << "Note:                                                    \n" <<
+               "  K_POINTS will be adjusted accordingly such that the density is maintained\n" <<
+               "  over all configurations in the project for all Quantum Espresso calculations\n" <<
+               "  this uses the CELL_PARAMETERS and the K_POINTS cards in the input file to calculate\n" <<
+               "  a density and rescale configurations k-point mesh accordingly\n";
+
+      args.log << "EXAMPLE: Mg2Ti4S8.in \n";
+      args.log << "-------\n" <<
+               "System = Test of Quantum Espresso submission\n\
+&CONTROL\n\
+ calculation = 'vc-relax',\n\
+ pseudo_dir = '/home/skolli/quantum_espresso/pseudo/',\n\
+ tprnfor = .true.,\n\
+ prefix = 'Mg2Ti4S8',\n\
+ restart_mode = 'from_scratch',\n\
+ tstress = .true.,\n\
+/\n\
+&SYSTEM\n\
+ ecutwfc = 45.0,\n\
+ occupations = 'fixed',\n\
+ celldm(1) = 7.3794,\n\
+ ibrav = 0,\n\
+ nat = 14,\n\
+ ntyp = 3,\n\
+ ecutrho = 200.0,\n\
+/\n\
+&ELECTRONS\n\
+ diagonalization = 'cg',\n\
+ mixing_mode = 'plain',\n\
+ mixing_beta = 0.7,\n\
+ conv_thr = 1e-08,\n\
+/\n\
+&IONS\n\
+ ion_dynamics = 'bfgs',\n\
+/\n\
+&CELL\n\
+ press = 0.1,\n\
+ cell_factor = 1.6,\n\
+ cell_dynamics = 'bfgs',\n\
+/\n\
+\n\
+ATOMIC_SPECIES\n\
+ Mg 24.31 Mg.pbe-nsp-bpaw.UPF\n\
+ Ti 47.88 Ti.pbe-sp-hgh.UPF\n\
+ S 32.07 S.pbe-n-kjpaw_psl.0.1.UPF\n\
+\n\
+CELL_PARAMETERS angstrom\n\
+ 0.0000000000000000 5.1756022947592379 5.1756022947592388\n\
+ 5.1756022947592388 0.0000000000000000 5.1756022947592388\n\
+ 5.1756022947592388 5.1756022947592379 0.0000000000000000\n\
+\n\
+ATOMIC_POSITIONS crystal\n\
+Mg 0.000000000 0.000000000 0.000000000\n\
+Mg 0.250000000 0.250000000 0.250000000\n\
+Ti 0.625000000 0.625000000 0.625000000\n\
+Ti 0.125000000 0.625000000 0.625000000\n\
+Ti 0.625000000 0.125000000 0.625000000\n\
+Ti 0.625000000 0.625000000 0.125000000\n\
+S 0.3842989149764762 0.3842989149764762 0.3842989149764762\n\
+S 0.8657010850235238 0.8657010850235238 0.8657010850235238\n\
+S 0.3842989149764762 0.8471032550705786 0.3842989149764762\n\
+S 0.3842989149764762 0.3842989149764762 0.8471032550705786\n\
+S 0.8471032550705786 0.3842989149764762 0.3842989149764762\n\
+S 0.8657010850235238 0.8657010850235238 0.4028967449294214\n\
+S 0.8657010850235238 0.4028967449294214 0.8657010850235238\n\
+S 0.4028967449294214 0.8657010850235238 0.8657010850235238\n\
+\n\
+K_POINTS automatic\n\
+ 6 6 6 0 0 0\n\
+\n";
+      args.log << "-------\n\n\n";
+
+    }
+    if(vm.count("properties")) {
+      args.log << "\n### properties.calc.json ##################\n\n";
+
+      args.log << "properties.calc.json:                                               \n" <<
+               "  Results of calculations for a particular configuration should be  \n" <<
+               "  stored in the directory                                           \n" <<
+               "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE,         \n" <<
+               "  and calculated properties summarized in the file                  \n" <<
+               "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json \n" <<
+               "  The 'properties.calc.json' file is read by CASM to extract the    \n" <<
+               "  first-principles calculted properties of interest. If the         \n" <<
+               "  'properties.calc.json' file does not exist in the                 \n" <<
+               "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE directory\n" <<
+               "  CASM assumes that no data is available for that configuration.    \n" <<
+               "  The 'properties.calc.json' uses CASM standard units eV and Angstroms\n\n" ;
+
+      args.log << "EXAMPLE:\n";
+      args.log << "-------\n";
+      args.log << "{\n\
+          \"atom_type\": [\n\
+              \"A\", \n\
+              \"B\"\n\
+          ], \n\
+          \"atoms_per_type\": [\n\
+              1, \n\
+              2\n\
+          ], \n\
+          \"coord_mode\": \"direct\", \n\
+          \"is_complete\": true, \n\
+          \"relaxed_basis\": [\n\
+              [0.6666667, 0.6666667, 0.6666667],\n\
+              [0.00255632, 0.99488736, 0.00255632],\n\
+              [0.33077698, 0.33844594, 0.33077698]\n\
+          ], \n\
+          \"relaxed_energy\": -16.27773537, \n\
+          \"relaxed_mag_basis\": [\n\
+              -3.93,\n\
+               3.82,\n\
+               1.198\n\
+          ], \n\
+          \"relaxed_magmom\": -1.3086, \n\
+          \"relaxed_forces\": [\n\
+              [0.0, 0.0, 0.0], \n\
+              [0.0, 0.00987362, -0.00987362], \n\
+              [0.0, -0.00987362, 0.00987362]\n\
+          ], \n\
+          \"relaxed_lattice\": [\n\
+              [0.0, 1.9174843, 1.9174843], \n\
+              [1.61158655, -1.88219884, 3.79968315], \n\
+              [3.22317311, 0.0, 0.0]\n\
+          ]\n\
+      }\n";
+      args.log << "-------\n";
+
+    }
     if(vm.count("comp")) {
       args.log() << "\n### composition_axes.json ##################\n\n";
 
@@ -1156,18 +1403,26 @@ Direct\n\
 
                  "\"ensemble\" (string):                                             \n\n" <<
 
-                 "  Possible options for \"ensemble\" are:                           \n" <<
-                 "    \"GrandCanonical\" or \"grand_canonical\": Currently the only  \n" <<
-                 "    option. Semi-grand canonical Monte Carlo calculation in which  \n" <<
-                 "    the total number of sites is fixed, but the occupants on each  \n" <<
-                 "    site may vary. One occupant change at a time is attempted.     \n\n\n" <<
+                 "  Possible options for \"ensemble\" are:                           \n\n" <<
+
+                 "    \"GrandCanonical\" or \"grand_canonical\": Semi-grand canonical\n" <<
+                 "    Monte Carlo calculation in which the total number of sites is  \n" <<
+                 "    fixed, but the occupants on each site may vary. One occupant   \n" <<
+                 "    change at a time is attempted.                                 \n\n" <<
+
+                 "    \"Canonical\" or \"canonical\": Canonical Monte Carlo \n" <<
+                 "    calculation in which the total number of each type of occupant \n"
+                 "    is fixed. Each Monte Carlo step attempts to swap a pair of     \n"
+                 "    occupants.                                                     \n\n\n" <<
 
 
                  "\"method\" (string):                                               \n\n" <<
 
-                 "  Possible options for \"method\" are:                             \n" <<
+                 "  Possible options for \"method\" are:                             \n\n" <<
+
                  "    \"Metropolis\" or \"metropolis\": Run Monte Carlo calculations \n" <<
                  "    using the Metropolis algorithm.                                \n\n" <<
+
                  "    \"LTE1\" or \"lte1\": Single spin flip low temperature         \n" <<
                  "    expansion calculations.                                        \n\n\n" <<
 
@@ -1327,6 +1582,10 @@ Direct\n\
                  "  /\"motif\": (JSON object)                                        \n" <<
                  "      Specifies the initial occupation of the supercell.           \n\n" <<
 
+                 "      For canonical ensemble Monte Carlo calculations an additional\n" <<
+                 "      step changes the occupants on random sites to make the actual\n" <<
+                 "      composition as close as possible to the requested composition.\n\n" <<
+
                  "    /\"configname\": (string, optional)                            \n" <<
                  "      A configuration name, \"auto\", \"restricted_auto\", or      \n" <<
                  "      \"default\".                                                 \n\n" <<
@@ -1334,19 +1593,20 @@ Direct\n\
                  "      Specifies the configuration that is tiled to fill the        \n" <<
                  "      supercell. If necessary, symmetry operations may be applied  \n" <<
                  "      An error is thrown if the specified configuration can not be \n" <<
-                 "      used to fill the \"supercell\".     \n\n" <<
+                 "      used to fill the \"supercell\".                              \n\n" <<
 
                  "      Possible options for \"configname\" are:                     \n" <<
                  "        A configuration name (ex. \"SCEL3_3_1_1_0_2_2/0\")         \n" <<
-                 "        \"auto\": If the value \"auto\" is used, the enumerated    \n" <<
+                 "        \"auto\": (\"grand_canonical\" ensemble only) Enumerated   \n" <<
                  "        configurations will be searched for the configuration with \n" <<
                  "        the lowest potential energy to use as the motif.           \n" <<
                  "        \"default\": If the value \"default\" is used, the initial \n" <<
                  "        motif occupation is determined from the occupation order in\n" <<
                  "        the PRIM.                                                  \n" <<
-                 "        \"restricted_auto\": Same as \"auto\", but only            \n" <<
-                 "        configurations that can fill the supercell are considered. \n" <<
-                 "        As a last resort, \"default\" is used.                     \n\n" <<
+                 "        \"restricted_auto\": (\"grand_canonical\" ensemble only)   \n" <<
+                 "        Same as \"auto\", but only configurations that can tile the\n" <<
+                 "        supercell are considered. As a last resort, \"default\" is \n" <<
+                 "        used.                     \n\n" <<
 
                  "    /\"configdof\": (string, optional)                             \n" <<
                  "      Specifies the path to a configdof JSON file, such as         \n" <<
@@ -1382,13 +1642,45 @@ Direct\n\
                  "    /\"temperature\": (number)                                      \n" <<
                  "      The temperature in K.                                         \n\n" <<
 
-                 "    /\"param_chem_pot\" (JSON object)                               \n" <<
+                 "    /\"param_chem_pot\" (JSON object, \"grand_canonical\" ensemble only)\n" <<
                  "      The parametric chemical potential(s)                          \n\n" <<
 
                  "      /\"a\", /\"b\", ...: (number)                                 \n" <<
                  "      The parametric chemical potentials conjugate to the parametric\n" <<
                  "      compositions. The number of parametric chemical potentials    \n" <<
                  "      provided must match the number of independent compositions.   \n\n" <<
+
+                 "    /\"comp\" (JSON object, \"canonical\" ensemble only, option 1)\n" <<
+                 "      The parametric composition(s)                          \n\n" <<
+
+                 "      /\"a\", /\"b\", ...: (number)                                 \n" <<
+                 "      The parametric composition. The number of entries provided    \n" <<
+                 "      must match the number of independent compositions.            \n\n" <<
+
+                 "    /\"comp\" (JSON array, \"canonical\" ensemble only, option 2)\n" <<
+                 "      The parametric composition(s)                          \n\n" <<
+
+                 "      [number, ...]                                                 \n" <<
+                 "      An array containing the parametric composition. The number of \n" <<
+                 "      entries provided must match the number of independent         \n" <<
+                 "      compositions.                                                 \n\n" <<
+
+                 "    /\"comp_n\" (JSON object, \"canonical\" ensemble only, option 3)\n" <<
+                 "      The mol composition per unitcell                          \n\n" <<
+
+                 "      /\"A\", /\"B\", ...: (number)                                 \n" <<
+                 "      The mol composition per unitcell. The entries provided must   \n" <<
+                 "      match occupant names in the 'prim.json' file. The values are  \n" <<
+                 "      summed, normalized, and then converted to parametric composition.\n\n" <<
+
+                 "    /\"comp_n\" (JSON array, \"canonical\" ensemble only, option 4)\n" <<
+                 "      The mol composition per unitcell                          \n\n" <<
+
+                 "      [number, ...]                                                 \n" <<
+                 "      An array containing the mol composition per unitcell. The     \n" <<
+                 "      number of entries provided must match the number components.  \n" <<
+                 "      The values are summed, normalized, and converted to parametric\n" <<
+                 "      composition.  \n\n" <<
 
                  "    /\"tolerance\": (number)                                        \n" <<
                  "      Specifies a numerical tolerance for comparing conditions.     \n\n" <<

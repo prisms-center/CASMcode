@@ -150,7 +150,7 @@ namespace CASM {
     // ****Input/Output****
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
-    void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag);
+    void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag, double tol);
     //void print_factor_group(std::ostream &stream) const;
 
     bool read_species(); //Ivy 11/27/12

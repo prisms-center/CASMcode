@@ -60,6 +60,7 @@ namespace CASM {
     bool compare(const Site &test_site, const Coordinate &shift) const;
     bool compare_type(const Site &test_site) const; //Ivy
     bool operator==(const Site &test_site) const;
+    bool almost_equal(const Site &test_site, double tol) const;
 
     //checks to see if species with name 'name' is allowed at site.
     bool contains(const std::string &name) const;

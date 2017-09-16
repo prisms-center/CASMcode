@@ -26,16 +26,22 @@ Help("""
       $CASM_CXX, $CXX:
         Explicitly set the C++ compiler. If not set, scons chooses a default compiler.
       
-      $CASM_PREFIX:
-        Where to install CASM. By default, this uses '/usr/local'. Then header files are
-        installed in '$CASM_PREFIX/include', shared libraries in '$CASM_PREFIX/lib', executables
-        in '$CASM_PREFIX/bin', and the path is used for the setup.py --prefix option for 
-        installing python packages.
+      $CASM_PREFIX
+      $CASM_INCLUDEDIR (=$CASM_PREFIX/include)
+      $CASM_LIBDIR (=$CASM_PREFIX/lib)
+      $CASM_BINDIR (=$CASM_PREFIX/bin)
+      $CASM_PYTHON_PREFIX (=$CASM_PREFIX)
+        Where to install CASM. By default, this uses 'CASM_PREFIX=/usr/local'. Header 
+        files are installed in '$CASM_INCLUDEDIR', shared libraries in '$CASM_LIBDIR', 
+        executables in '$CASM_BINDIR', and $CASM_PYTHON_PREFIX is used for the 
+        setup.py --prefix option for installing python packages.
       
-      $CASM_BOOST_PREFIX:
-        Search path for Boost. '$CASM_BOOST_PREFIX/include' is searched for header files, and
-        '$CASM_BOOST_PREFIX/lib' for libraries. Boost and CASM should be compiled with the 
-        same compiler.
+      $CASM_BOOST_PREFIX
+      $CASM_BOOST_INCLUDEDIR (=$CASM_BOOST_PREFIX/include)
+      $CASM_BOOST_LIBDIR (=$CASM_BOOST_PREFIX/lib)
+        Search path for Boost. '$CASM_BOOST_INCLUDEDIR' is searched for header files, and
+        '$CASM_BOOST_LIBDIR' for libraries. 
+        Boost and CASM should be compiled with the same compiler.
 
       $CASM_OPTIMIZATIONLEVEL:
         Sets the -O optimization compiler option. If not set, uses -O3.
@@ -45,8 +51,8 @@ Help("""
         set to -O0, and NDEBUG does not get set.
 
       $LD_LIBRARY_PATH (Linux) or $DYLD_FALLBACK_LIBRARY_PATH (Mac):
-        Search path for dynamic libraries, may need $CASM_BOOST_PREFIX/lib 
-        and $CASM_PREFIX/lib added to it.
+        Search path for dynamic libraries, may need $CASM_BOOST_LIBDIR 
+        and $CASM_LIBDIR added to it.
         This should be added to your ~/.bash_profile (Linux) or ~/.profile (Mac).
       
       $CASM_BOOST_NO_CXX11_SCOPED_ENUMS:
@@ -61,7 +67,7 @@ Help("""
           'debug=X' with X=0 to use '-DNDEBUG', 
              or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
              Overrides $CASM_DEBUGSTATE.
-          'prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASM_PREFIX.
+          'casm_prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASM_PREFIX.
           'boost_prefix=X' set boost search path. Overrides $CASM_BOOST_PPREFIX.
           'boost_no_cxx11_scoped_enums=1' to use '-DBOOST_NO_CXX11_SCOPED_ENUMS'.
              Overrides $CASM_BOOST_NO_CXX11_SCOPED_ENUMS.
@@ -115,7 +121,7 @@ def cxx():
     return os.environ['CXX']
   return "g++"
 
-def prefix():
+def casm_prefix():
   """Install location"""
   if 'prefix' in ARGUMENTS:
     return ARGUMENTS.get('prefix')
@@ -123,57 +129,77 @@ def prefix():
     return os.environ['CASM_PREFIX']
   return  '/usr/local'
 
+def casm_includedir():
+  if 'CASM_INCLUDEDIR' in os.environ:
+    return os.environ['CASM_INCLUDEDIR']
+  else:
+    return join(casm_prefix(), 'include')
+
+def casm_libdir():
+  if 'CASM_LIBDIR' in os.environ:
+    return os.environ['CASM_LIBDIR']
+  else:
+    return join(casm_prefix(), 'lib')
+
+def casm_bindir():
+  if 'CASM_BINDIR' in os.environ:
+    return os.environ['CASM_BINDIR']
+  else:
+    return join(casm_prefix(), 'bin')
+
+def casm_python_prefix():
+  if 'CASM_PYTHON_PREFIX' in os.environ:
+    return os.environ['CASM_PYTHON_PREFIX']
+  else:
+    return casm_prefix()
+  
+
 def boost_prefix():
   """Boost location"""
   if 'boost_prefix' in ARGUMENTS:
     return ARGUMENTS.get('boost_prefix')
   elif 'CASM_BOOST_PREFIX' in os.environ:
     return os.environ['CASM_BOOST_PREFIX']
-  return None
+  return '/usr/local'
 
-def include_path(self, prefix, name):
-  """
-  Return prefix/include where prefix/include/name exists, or None
-  
-  If prefix is None, check /usr and /usr/local, else just check prefix
-  
-  """
-  if prefix is None:
-    for path in ['/usr', '/usr/local']:
-      dirpath = join(path, 'include', name)
-      if os.path.isdir(dirpath) and os.access(dirpath, os.R_OK):
-        return join(path, 'include')
+def boost_includedir():
+  if 'CASM_BOOST_INCLUDEDIR' in os.environ:
+    return os.environ['CASM_BOOST_INCLUDEDIR']
   else:
-    dirpath = join(prefix, 'include', name)
-    if os.path.isdir(dirpath) and os.access(dirpath, os.R_OK):
-      return join(prefix, 'include')
-  return None
+    return join(boost_prefix(), 'include')
 
-def lib_path(prefix, name):
-  """
-  Return prefix/lib where prefix/include/name exists, or None
-  
-  If prefix is None, check /usr and /usr/local, else just check prefix
-  
-  """
-  if prefix is None:
-    for path in ['/usr', '/usr/local']:
-      dirpath = join(path, 'include', name)
-      if os.path.isdir(dirpath) and os.access(dirpath, os.R_OK):
-        return join(path, 'lib')
+def boost_libdir():
+  if 'CASM_BOOST_LIBDIR' in os.environ:
+    return os.environ['CASM_BOOST_LIBDIR']
   else:
-    dirpath = join(prefix, 'include', name)
+    return join(boost_prefix(), 'lib')
+
+
+def include_path(self, includedir, name):
+  """
+  Return includedir where includedir/name exists, or None
+  
+  If includedir is None, check /usr/include and /usr/local/include, else just check includedir
+  
+  """
+  if includedir is None:
+    for path in ['/usr/include', '/usr/local/include']:
+      dirpath = join(includedir, name)
+      if os.path.isdir(dirpath) and os.access(dirpath, os.R_OK):
+        return path
+  else:
+    dirpath = join(includedir, name)
     if os.path.isdir(dirpath) and os.access(dirpath, os.R_OK):
-      return join(prefix, 'lib')
+      return includedir
   return None
 
-def lib_name(prefix, includename, libname):
+def lib_name(libdir, libname):
   """
   Uses re.match('lib(' + libname + '.*)\.(dylib|a|so).*',string) on all files
-  in the prefix/lib directory to get the libname to use. If none found, return None.
+  in the libdir directory to get the libname to use. If none found, return None.
   """
   try:
-    for p in os.listdir(lib_path(prefix, includename)):
+    for p in os.listdir(libdir):
       if p is None:
         continue
       m = re.match('lib(' + libname + '.*)\.(dylib|a|so).*',p)
@@ -248,7 +274,7 @@ def compile_flags():
 
 ##### Set version_number
 
-version_number = version('0.3a0')
+version_number = version('0.3a1')
 url = 'https://github.com/prisms-center/CASMcode'
 Export('version_number', 'url')
 
@@ -264,16 +290,16 @@ env.Replace(CXX=cxx())
 ccflags, cxxflags = compile_flags()
 env.Replace(CCFLAGS=ccflags, CXXFLAGS=cxxflags)
 
-# where the shared libraries should go
+# where the shared libraries should be built
 env.Append(LIBDIR = join(os.getcwd(), 'lib'))
 
-# where the compiled binary should go
+# where the compiled binary should be built
 env.Append(BINDIR = join(os.getcwd(), 'bin'))
 
 # where the headers are
 env.Append(INCDIR = join(os.getcwd(), 'include'))
 
-# where test binaries should go
+# where test binaries should be built
 env.Append(UNIT_TEST_BINDIR = join(os.getcwd(), 'tests', 'unit', 'bin'))
 
 # collect header files
@@ -292,11 +318,15 @@ env.Append(INSTALL_TARGETS = [])
 env.Append(IS_TEST = 0)
 env.Append(IS_INSTALL = 0)
 
-# collect casm prefix
-env.Replace(PREFIX=prefix())
+# collect casm directories
+env.Replace(CASM_INCLUDEDIR=casm_includedir())
+env.Replace(CASM_LIBDIR=casm_libdir())
+env.Replace(CASM_BINDIR=casm_bindir())
+env.Replace(CASM_PYTHON_PREFIX=casm_python_prefix())
 
-# collect boost prefix
-env.Replace(BOOST_PREFIX=boost_prefix())
+# collect boost directories
+env.Replace(BOOST_INCLUDEDIR=boost_includedir())
+env.Replace(BOOST_LIBDIR=boost_libdir())
 
 # collect library names
 env.Replace(z='z') 
@@ -312,7 +342,7 @@ boost_libs = [
   'boost_unit_test_framework'
 ]
 for x in boost_libs:
-  env[x] = lib_name(env['BOOST_PREFIX'], 'boost', x)
+  env[x] = lib_name(env['BOOST_LIBDIR'], x)
 
 # make compiler errors and warnings in color
 env['ENV']['TERM'] = os.environ['TERM']
@@ -351,14 +381,12 @@ SConscript(['src/ccasm/SConscript'], {'env':env})
 # include paths
 candidates = [
   env['INCDIR'], 
-  env.include_path(env['BOOST_PREFIX'], 'boost')
+  env.include_path(env['BOOST_INCLUDEDIR'], 'boost')
 ]
 cpppath = [x for x in candidates if x is not None]
 
 # link paths
-build_lib_paths = [env['LIBDIR']]
-if 'BOOST_PREFIX' in env and env['BOOST_PREFIX'] is not None:
-  build_lib_paths.append(join(env['BOOST_PREFIX'], 'lib'))
+build_lib_paths = [env['LIBDIR'], env['BOOST_LIBDIR']]
 Export('build_lib_paths')
 
 # link flags
@@ -388,7 +416,7 @@ Export('casm_lib')
 env.Alias('libcasm', casm_lib)
 
 # Library Install instructions
-casm_lib_install = env.SharedLibrary(join(env['PREFIX'], 'lib', 'casm'), 
+casm_lib_install = env.SharedLibrary(join(env['CASM_LIBDIR'], 'casm'), 
                                      env['CASM_SOBJ'], 
                                      CPPPATH=cpppath,
                                      LIBPATH=build_lib_paths, 
@@ -408,7 +436,7 @@ linkflags = ""
 if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libccasm.dylib']
 
-install_lib_paths = build_lib_paths + [join(env['PREFIX'], 'lib')]
+install_lib_paths = build_lib_paths + [env['CASM_LIBDIR']]
 
 # build casm shared library from all shared objects
 ccasm_lib = env.SharedLibrary(join(env['LIBDIR'], 'ccasm'), 
@@ -423,7 +451,7 @@ Export('ccasm_lib')
 env.Alias('libccasm', ccasm_lib)
 
 # Library Install instructions
-ccasm_lib_install = env.SharedLibrary(join(env['PREFIX'], 'lib', 'ccasm'), 
+ccasm_lib_install = env.SharedLibrary(join(env['CASM_LIBDIR'], 'ccasm'), 
                                       env['CCASM_SOBJ'], 
                                       CPPPATH=cpppath,
                                       LIBPATH=install_lib_paths, 
@@ -438,11 +466,11 @@ if 'ccasm_lib_install' in COMMAND_LINE_TARGETS:
 
 
 # Include Install instructions
-casm_include_install = env.Install(join(env['PREFIX'], 'include'), join(env['INCDIR'], 'casm'))
+casm_include_install = env.Install(env['CASM_INCLUDEDIR'], join(env['INCDIR'], 'casm'))
 
 Export('casm_include_install')
 env.Alias('casm_include_install', casm_include_install)
-env.Clean('casm_include_install', join(env['PREFIX'], 'include','casm'))
+env.Clean('casm_include_install', join(env['CASM_INCLUDEDIR'],'casm'))
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + casm_include_install
 
 if 'casm_include_install' in COMMAND_LINE_TARGETS:
@@ -457,14 +485,6 @@ SConscript(['apps/casm/SConscript'], {'env':env})
 SConscript(['tests/unit/SConscript'], {'env': env})
 
 
-##### Python packages
-
-# install python packages and scripts
-SConscript(['python/casm/SConscript'], {'env':env})
-SConscript(['python/vasp/SConscript'], {'env':env})
-
-
-
 ##### Make combined alias 'test'
 
 # Execute 'scons test' to compile & run integration and unit tests
@@ -477,7 +497,7 @@ if 'test' in COMMAND_LINE_TARGETS:
 ##### Make combined alias 'install'
 
 # Execute 'scons install' to install all binaries, scripts and python modules
-installable = ['casm_include_install', 'casm_lib_install', 'ccasm_lib_install', 'casm_install', 'pycasm_install', 'pyvasp_install']
+installable = ['casm_include_install', 'casm_lib_install', 'ccasm_lib_install', 'casm_install', 'pycasm_install']
 env.Alias('install', installable)
 
 if 'install' in COMMAND_LINE_TARGETS:
@@ -487,7 +507,7 @@ if 'install' in COMMAND_LINE_TARGETS:
 # if we're supposed to install them, rm -r include_dir/casm
 would_install_include = ['casm_include_install', 'install']
 if [i for i in would_install_include if i in COMMAND_LINE_TARGETS]:
-  path = join(env['PREFIX'], 'include', 'casm')
+  path = join(env['CASM_INCLUDEDIR'], 'casm')
   if os.path.exists(path):
     print "rm", path
     shutil.rmtree(path)
@@ -517,10 +537,10 @@ if 'configure' in COMMAND_LINE_TARGETS:
     conf.Result(ret)
     return ret
   
-  def CheckBoost_prefix(conf, boost_prefix):
-    conf.Message('BOOST_PREFIX: ' + str(boost_prefix) + '\n')
+  def CheckBoost_includedir(conf, boost_includedir):
+    conf.Message('BOOST_INCLUDEDIR: ' + str(boost_includedir) + '\n')
     conf.Message('Checking for boost headers... ') 
-    _path = conf.env.include_path(boost_prefix, 'boost')
+    _path = conf.env.include_path(boost_includedir, 'boost')
     if _path is not None:
       conf.Message('found ' + join(_path, 'boost') + '... ')
       res = 1
@@ -562,19 +582,18 @@ if 'configure' in COMMAND_LINE_TARGETS:
     """ % version_n, '.cpp')[0]
     conf.Result(ret)
     
-    if not ret:
-      print "Found Boost version:", conf.TryRun("""
-      #include <boost/version.hpp>
-      #include <iostream>
-      int main() 
-      {
-          std::cout << BOOST_VERSION / 100000 << "."      // major version
-                    << BOOST_VERSION / 100 % 1000 << "."  // minor version
-                    << BOOST_VERSION % 100                // patch level
-                    << std::endl;
-          return 0;
-      }
-      """, ".cpp")[1],
+    print "Found Boost version:", conf.TryRun("""
+    #include <boost/version.hpp>
+    #include <iostream>
+    int main() 
+    {
+        std::cout << BOOST_VERSION / 100000 << "."      // major version
+                  << BOOST_VERSION / 100 % 1000 << "."  // minor version
+                  << BOOST_VERSION % 100                // patch level
+                  << std::endl;
+        return 0;
+    }
+    """, ".cpp")[1],
     
     return ret
   
@@ -623,7 +642,7 @@ if 'configure' in COMMAND_LINE_TARGETS:
               CPPPATH=cpppath),
     custom_tests = {
       'CheckCXX11' : CheckCXX11,
-      'CheckBoost_prefix' : CheckBoost_prefix,
+      'CheckBoost_includedir' : CheckBoost_includedir,
       'CheckBoost_libname' : CheckBoost_libname,
       'CheckBoost_version' : CheckBoost_version,
       'CheckBOOST_NO_CXX11_SCOPED_ENUMS': CheckBOOST_NO_CXX11_SCOPED_ENUMS})
@@ -631,7 +650,7 @@ if 'configure' in COMMAND_LINE_TARGETS:
   def if_failed(msg):
     print "\nConfiguration checks failed."
     print msg
-    exit()
+    exit(1)
   
   # Note: CheckLib with autoadd=1 (default), because some libraries depend on each other
   
@@ -642,29 +661,18 @@ if 'configure' in COMMAND_LINE_TARGETS:
       if_failed("Please check your installation")
   if not conf.CheckLib(env['dl']):
     if_failed("Please check your installation")
-  if not conf.CheckBoost_prefix(env['BOOST_PREFIX']):
-    if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+  if not conf.CheckBoost_includedir(env['BOOST_INCLUDEDIR']):
+    if_failed("Please check your boost installation or the CASM_BOOST_INCLUDEDIR environment variable")
   for i in boost_libs:
     if not conf.CheckBoost_libname(i):
-      if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+      if_failed("Please check your boost installation or the CASM_BOOST_LIBDIR environment variable")
     if not conf.CheckLib(env[i]):
-      if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+      if_failed("Please check your boost installation or the CASM_BOOST_LIBDIR environment variable")
   if not conf.CheckBoost_version('1.54'):
     if_failed("Please check your boost version") 
   if not conf.CheckBOOST_NO_CXX11_SCOPED_ENUMS():
     if_failed("Please check your boost installation or the CASM_BOOST_NO_CXX11_SCOPED_ENUMS environment variable")
-  for module_name in ['numpy', 'sklearn', 'deap', 'pandas']:
-    if not check_module(module_name):
-      if_failed("Python module '" + module_name + "' is not installed")
-  if not check_module('pbs'):
-      print """
-      Python module 'pbs' is not installed
-        This module is only necessary for setting up and submitting DFT jobs
-        **It is not the module available from pip**"
-        It is available from: https://github.com/prisms-center/pbs
-      """
-  
   
   print "Configuration checks passed."
-  exit()
+  exit(0)
   

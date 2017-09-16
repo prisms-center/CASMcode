@@ -1,0 +1,74 @@
+sudo: false
+
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+          - ubuntu-toolchain-r-test
+          packages:
+          - gcc-4.8
+          - g++-4.8
+          - libboost-all-dev
+      env:
+        - CC=gcc-4.8
+        - CXX=g++-4.8
+        
+        # set environment variables for boost
+        - CASM_BOOST_INCLUDEDIR="/usr/include/"
+        - CASM_BOOST_LIBDIR="/usr/lib/x86_64-linux-gnu/"
+        - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
+
+    - os: osx
+      compiler: clang
+      env:
+        - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
+        
+
+before_install:
+
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
+        CASM_NCPU=2;
+    fi
+  
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 
+        brew install boost@1.55 scons;
+        CASM_NCPU=2;
+    fi
+  
+  # check g++ version
+  - g++ --version
+  
+  # check scons
+  - scons --version
+  
+  # check python
+  - python --version
+  - python -c "import sys; print sys.path"
+  
+  # upgrade pip
+  - pip install --upgrade pip
+  - pip install --user pytest
+  
+  # check env
+  - printenv
+  
+
+script: 
+  - set -e
+  - 'echo "CASM_NCPU: $CASM_NCPU"'
+  
+  # C++ and CLI
+  - scons configure
+  - scons -j $CASM_NCPU
+  - scons unit -j $CASM_NCPU
+
+  # Python
+  - cd python/casm
+  - pip install --user .
+  - pytest -r ap -s test_casm

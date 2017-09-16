@@ -1,6 +1,6 @@
 import os, shutil, re, subprocess, json
 import warnings
-import vasp.io
+import casm.vasp.io
 
 class VaspWrapperError(Exception):
     def __init__(self,msg):
@@ -75,7 +75,8 @@ def read_settings(filename):
                 "encut", "kpoints","extra_input_files", "move", "copy", "remove",
                 "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
                 "preamble", "prerun", "postrun", "prop", "prop_start", "prop_stop",
-                "prop_step", "tol", "tol_amount", "name", "fine_ngx", "CI_neb", "n_images"]
+                "prop_step", "tol", "tol_amount", "name", "fine_ngx","calculator",
+                "CI_neb", "n_images"]
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")
@@ -89,20 +90,20 @@ def read_settings(filename):
             if key.lower() in ["extra_input_files", "remove", "compress", "backup"]:
                 settings[key] = []
             elif key.lower() in ["move"]:
-                settings[key] = vasp.io.DEFAULT_VASP_MOVE_LIST
+                settings[key] = casm.vasp.io.DEFAULT_VASP_MOVE_LIST
             elif key.lower() in ["copy"]:
-                settings[key] = vasp.io.DEFAULT_VASP_COPY_LIST
+                settings[key] = casm.vasp.io.DEFAULT_VASP_COPY_LIST
             # elif key.lower() in ["remove"]:
-            #     settings[key] = vasp.io.DEFAULT_VASP_REMOVE_LIST
+            #     settings[key] = casm.vasp.io.DEFAULT_VASP_REMOVE_LIST
             else:
                 settings[key] = None
 
     if type(settings["remove"]) == list:
         if 'default' in settings["remove"]:
-            settings["remove"] += vasp.io.DEFAULT_VASP_REMOVE_LIST
+            settings["remove"] += casm.vasp.io.DEFAULT_VASP_REMOVE_LIST
     elif type(settings["remove"]) == str:
         if settings["remove"].lower() == 'default':
-            settings["remove"] = vasp.io.DEFAULT_VASP_REMOVE_LIST
+            settings["remove"] = casm.vasp.io.DEFAULT_VASP_REMOVE_LIST
         else:
             settings["remove"] = [settings["remove"]]
     if settings["priority"] == None:

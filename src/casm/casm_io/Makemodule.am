@@ -1,8 +1,0 @@
-libcasm_la_SOURCES += ./src/casm/casm_io/Args.cc\
-                      ./src/casm/casm_io/DataFormatter.cc\
-                      ./src/casm/casm_io/DataStream.cc\
-                      ./src/casm/casm_io/FormatFlag.cc\
-                      ./src/casm/casm_io/json_io/clex.cc\
-                      ./src/casm/casm_io/jsonParser.cc\
-                      ./src/casm/casm_io/Log.cc\
-                      ./src/casm/casm_io/VaspIO.cc

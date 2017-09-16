@@ -1,4 +1,4 @@
-import casm
+import casm.misc.noindent as noindent
 import json
 
 def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
@@ -44,12 +44,12 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
       if entry["basis"] != None:
         basis = entry["basis"]
         for key, val in basis.items():
-          basis[key] = casm.NoIndent(val)
+          basis[key] = noindent.NoIndent(val)
     for entry in j["cluster_functions"]:
-      entry["orbit"] = casm.NoIndent(entry["orbit"])
+      entry["orbit"] = noindent.NoIndent(entry["orbit"])
       sites = entry["prototype"]["sites"]
       for i in range(len(sites)):
-        sites[i] = casm.NoIndent(sites[i])
+        sites[i] = noindent.NoIndent(sites[i])
     
     # write eci.json
     filename = dir.eci(clex)
@@ -57,7 +57,7 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     if verbose:
       print "Writing:", filename, "\n"
     with open(filename, 'w') as f:
-      f.write(json.dumps(j, indent=2, cls=casm.NoIndentEncoder))
+      f.write(json.dumps(j, indent=2, cls=noindent.NoIndentEncoder))
     
     # refresh proj to reflect new eci
     proj.refresh(clear_clex=True)

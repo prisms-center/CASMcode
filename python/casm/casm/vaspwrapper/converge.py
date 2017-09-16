@@ -7,13 +7,19 @@ import sys
 import json
 # import re
 # import warnings
-import pbs
+try:
+  from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
+except ImportError:
+  # use of the pbs module is deprecated after CASM v0.2.1
+  from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
+  from pbs import PBSError as JobsError
+
 
 ### Local ###
-import vasp
-import casm
-import casm.project
-import vaspwrapper  #pylint: disable=relative-import
+from casm import vasp
+from casm.misc import noindent
+from casm.project import DirectoryStructure, ProjectSettings
+from casm.vaspwrapper import vasp_input_file_names
 
 ### Globals ###
 VALID_PROP_TYPES = ["KPOINTS", "ENCUT", "NBANDS", "SIGMA"]
@@ -58,7 +64,7 @@ class Converge(object):
         CASM project directory hierarchy
 
       settings: dict
-        Settings for pbs and the relaxation, see vaspwrapper.read_settings
+        Settings for job submission and the relaxation, see vaspwrapper.read_settings
 
       configdir: str
         Directory where configuration results are stored. The result of:
@@ -68,7 +74,7 @@ class Converge(object):
         The name of the configuration to be calculated
 
       auto: boolean
-        True if using pbs module's JobDB to manage pbs jobs
+        True if using prisms_jobs module's JobDB to manage jobs
 
       sort: boolean
         True if sorting atoms in POSCAR by type
@@ -89,7 +95,7 @@ class Converge(object):
               Path to configuration directory. If None, uses the current working
               directory
             auto: boolean, optional, default=True,
-              Use True to use the pbs module's JobDB to manage pbs jobs
+              Use True to use the prisms_jobs module's JobDB to manage jobs
 
             sort: boolean, optional, default=True,
               Use True to sort atoms in POSCAR by type
@@ -117,8 +123,8 @@ class Converge(object):
         print "  Configuration:", self.configname
 
         print "Reading CASM settings"
-        self.casm_directories=casm.project.DirectoryStructure(configdir)
-        self.casm_settings = casm.project.ProjectSettings(configdir)
+        self.casm_directories = DirectoryStructure(configdir)
+        self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings is None:
             raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
@@ -429,7 +435,7 @@ class Converge(object):
         conv_file_name = "convergence.calc.json"
         outputfile = os.path.join(self.calcdir, conv_file_name)
         with open(outputfile, 'w') as my_file:
-            my_file.write(json.dumps(conv_dict, my_file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+            my_file.write(json.dumps(conv_dict, my_file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
         print "Wrote " + outputfile
         sys.stdout.flush()
 
@@ -452,7 +458,7 @@ class Converge(object):
 
         """
         # Find required input files in CASM project directory tree
-        vaspfiles = casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname, self.clex)
+        vaspfiles = vasp_input_file_names(self.casm_directories, self.configname, self.clex)
         incarfile, kpointsfile, _, poscarfile, speciesfile = vaspfiles
 
         # Verify that required input files exist
@@ -501,21 +507,21 @@ class Converge(object):
             try:
                 incar.tags["ENCUT"] = int(self.prop)
             except:
-                raise ConvergeError("Error in casm.vasp.converge: something has gone wrong and the run-specific property %s could not be cast as int!" % self.prop)
+                raise ConvergeError("Error in Cconverge.collect: something has gone wrong and the run-specific property %s could not be cast as int!" % self.prop)
         elif self.settings["prop"].upper() == "NBANDS":
             try:
                 incar.tags["NBANDS"] = int(self.prop)
             except:
-                raise ConvergeError("Error in casm.vasp.converge: something has gone wrong and the run-specific property %s could not be cast as int!" % self.prop)
+                raise ConvergeError("Error in Converge.collect: something has gone wrong and the run-specific property %s could not be cast as int!" % self.prop)
         elif self.settings["prop"].upper() == "SIGMA":
             try:
                 incar.tags["SIGMA"] = float(self.prop)
             except:
-                raise ConvergeError("Error in casm.vasp.converge: something has gone wrong and the run-specific property %s could not be cast as int!" % self.prop)
+                raise ConvergeError("Error in Converge.collect: something has gone wrong and the run-specific property %s could not be cast as int!" % self.prop)
         elif self.settings["prop"].upper() == "KPOINTS":
             if isinstance(self.prop, list):
                 if kpoints.automode[0].lower() == "a":
-                    raise ConvergeError("Error in casm.vasp.converge: An \"Automatic\" k-point generation scheme was supplied in %s, but you gave me 3 k-points values: %i, %i, %i!" % (kpointsfile, self.prop[0], self.prop[1], self.prop[2]))
+                    raise ConvergeError("Error in Converge.collect: An \"Automatic\" k-point generation scheme was supplied in %s, but you gave me 3 k-points values: %i, %i, %i!" % (kpointsfile, self.prop[0], self.prop[1], self.prop[2]))
                 kpoints.subdivisions = self.prop
             else:
                 if kpoints.automode[0].lower() == "a":
@@ -524,7 +530,7 @@ class Converge(object):
                     kpoints.subdivisions = [self.prop, self.prop, self.prop]
 
         else:
-            raise ConvergeError("Error in casm.vasp.converge: \"prop: %s\" not a valid convergence prop type!\nCurrently supported convergence prop types are %s" % (self.settings["prop"], VALID_PROP_TYPES))
+            raise ConvergeError("Error in Converge.collect: \"prop: %s\" not a valid convergence prop type!\nCurrently supported convergence prop types are %s" % (self.settings["prop"], VALID_PROP_TYPES))
 
         # write main input files
         print "  Writing supercell POSCAR:", os.path.join(self.propdir, 'POSCAR')
@@ -547,7 +553,7 @@ class Converge(object):
         sys.stdout.flush()
 
     def submit(self):
-        """Submit PBS jobs for this VASP convergence"""
+        """Submit jobs for this VASP convergence"""
 
         print "Submitting..."
         print "Configuration:", self.configname
@@ -562,7 +568,7 @@ class Converge(object):
                 self.prop = prop
                 print "Value:", self.prop
                 # first, check if the job has already been submitted and is not completed
-                db = pbs.JobDB()    #pylint: disable=invalid-name
+                db = JobDB()    #pylint: disable=invalid-name
                 print "Calculation directory:", propdir
                 jobid = db.select_regex_id("rundir", propdir)
                 print "JobID:", jobid
@@ -601,8 +607,8 @@ class Converge(object):
                             job = db.select_job(j)
                             if job["taskstatus"] == "Incomplete":
                                 try:
-                                    pbs.complete_job(jobid=j)
-                                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as my_error:
+                                    complete_job(jobid=j)
+                                except (JobsError, JobDBError, EligibilityError) as my_error:
                                     print str(my_error)
                                     sys.stdout.flush()
 
@@ -623,7 +629,7 @@ class Converge(object):
                     # continue
 
 
-                print "Preparing to submit a VASP Convergence PBS job"
+                print "Preparing to submit a VASP Convergence job"
                 sys.stdout.flush()
 
                 # cd to configdir, submit jobs from configdir, then cd back to currdir
@@ -651,10 +657,11 @@ class Converge(object):
                 if self.settings["postrun"] is not None:
                     cmd += self.settings["postrun"] + "\n"
 
-                print "  Constructing a PBS job"
+                print "  Constructing a job"
                 sys.stdout.flush()
-                # construct a pbs.Job
-                job = pbs.Job(name=casm.jobname(self.configdir) + "_" + casm.jobname(propdir),\
+                
+                # construct a Job
+                job = Job(name=casm.wrapper.jobname(self.configname) + "_" + '.'.join(propdir.split(os.sep)[-2:]),\
                               account=self.settings["account"],\
                               nodes=int(ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                               ppn=int(self.settings["ppn"]),\
@@ -682,7 +689,7 @@ class Converge(object):
             except UserWarning:
                 continue
 
-        print "CASM VASPWrapper Convergence PBS job submission complete\n"
+        print "CASM VASPWrapper Convergence job submission complete\n"
         sys.stdout.flush()
 
 
@@ -746,8 +753,8 @@ class Converge(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as my_error:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as my_error:
                     print str(my_error)
                     sys.stdout.flush()
 
@@ -783,8 +790,8 @@ class Converge(object):
             # mark error
             if self.auto:
                 try:
-                    pbs.error_job("Not converging")
-                except (pbs.PBSError, pbs.JobDBError) as my_error:
+                    error_job("Not converging")
+                except (JobsError, JobDBError) as my_error:
                     print str(my_error)
                     sys.stdout.flush()
 
@@ -811,8 +818,8 @@ class Converge(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as my_error:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as my_error:
                     print str(my_error)
                     sys.stdout.flush()
 
@@ -845,7 +852,7 @@ class Converge(object):
 
         outputfile = os.path.join(self.propdir, "status.json")
         with open(outputfile, 'w') as my_file:
-            my_file.write(json.dumps(output, my_file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+            my_file.write(json.dumps(output, my_file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
         print "Wrote " + outputfile
         sys.stdout.flush()
 
@@ -860,7 +867,7 @@ class Converge(object):
             prop_file_name = "properties.calc.json"
             outputfile = os.path.join(self.propdir, prop_file_name)
             with open(outputfile, 'w') as my_file:
-                my_file.write(json.dumps(output, my_file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+                my_file.write(json.dumps(output, my_file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
             print "Wrote " + outputfile
             sys.stdout.flush()
             self.report_status('complete')
@@ -899,51 +906,51 @@ class Converge(object):
         # Check for required settings having sane values
         try:
             if not self.settings["prop"].upper() in VALID_PROP_TYPES:
-                raise ConvergeError("Error in casm.vasp.converge: \"prop: %s\" not a valid convergence prop type!\nCurrently supported convergence prop types are %s" % (self.settings["prop"], VALID_PROP_TYPES))
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): \"prop: %s\" not a valid convergence prop type!\nCurrently supported convergence prop types are %s" % (self.settings["prop"], VALID_PROP_TYPES))
         except:
-            raise ConvergeError("Error in casm.vasp.converge: \"prop: %s\" missing, or could not be converted to a string!\nCurrently supported convergence prop types are %s" % (self.settings["prop"], VALID_PROP_TYPES))
+            raise ConvergeError("Error in casm.vaspwrapper.Converge(): \"prop: %s\" missing, or could not be converted to a string!\nCurrently supported convergence prop types are %s" % (self.settings["prop"], VALID_PROP_TYPES))
         # ENCUT requires an int for start, stop, and step
         if self.settings["prop"].upper() == "ENCUT":
             try:
                 self.settings["prop_start"] = int(self.settings["prop_start"])
             except:
-                raise ConvergeError("Error in casm.vasp.converge: converge.json must contain integer prop_start for prop ENCUT. I found: %s" % self.settings["prop_start"])
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain integer prop_start for prop ENCUT. I found: %s" % self.settings["prop_start"])
             try:
                 self.settings["prop_step"] = int(self.settings["prop_step"])
             except:
-                raise ConvergeError("Error in casm.vasp.converge: converge.json must contain integer prop_step for prop ENCUT. I found: %s" % self.settings["prop_step"])
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain integer prop_step for prop ENCUT. I found: %s" % self.settings["prop_step"])
             try:
                 self.settings["prop_stop"] = int(self.settings["prop_stop"])
             except:
-                raise ConvergeError("Error in casm.vasp.converge: converge.json must contain integer prop_stop for prop ENCUT. I found: %s" % self.settings["prop_step"])
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain integer prop_stop for prop ENCUT. I found: %s" % self.settings["prop_step"])
         # NBANDS requires an int for start, stop, and step
         elif self.settings["prop"].upper() == "NBANDS":
             try:
                 self.settings["prop_start"] = int(self.settings["prop_start"])
             except:
-                raise ConvergeError("Error in casm.vasp.converge: converge.json must contain integer prop_start for prop NBANDS. I found: %s" % self.settings["prop_start"])
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain integer prop_start for prop NBANDS. I found: %s" % self.settings["prop_start"])
             try:
                 self.settings["prop_step"] = int(self.settings["prop_step"])
             except:
-                raise ConvergeError("Error in casm.vasp.converge: converge.json must contain integer prop_step for prop NBANDS. I found: %s" % self.settings["prop_step"])
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain integer prop_step for prop NBANDS. I found: %s" % self.settings["prop_step"])
             try:
                 self.settings["prop_stop"] = int(self.settings["prop_stop"])
             except:
-                raise ConvergeError("Error in casm.vasp.converge: converge.json must contain integer prop_stop for prop NBANDS. I found: %s" % self.settings["prop_step"])
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain integer prop_stop for prop NBANDS. I found: %s" % self.settings["prop_step"])
         # SIGMA requires a float for start, stop, and step
         elif self.settings["prop"].upper() == "SIGMA":
             try:
                 self.settings["prop_start"] = float(self.settings["prop_start"])
             except:
-                raise ConvergeError("Error in casm.vasp.converge: converge.json must contain float prop_start for prop SIGMA. I found: %s" % self.settings["prop_start"])
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain float prop_start for prop SIGMA. I found: %s" % self.settings["prop_start"])
             try:
                 self.settings["prop_step"] = float(self.settings["prop_step"])
             except:
-                raise ConvergeError("Error in casm.vasp.converge: converge.json must contain float prop_step for prop SIGMA. I found: %s" % self.settings["prop_step"])
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain float prop_step for prop SIGMA. I found: %s" % self.settings["prop_step"])
             try:
                 self.settings["prop_stop"] = float(self.settings["prop_stop"])
             except:
-                raise ConvergeError("Error in casm.vasp.converge: converge.json must contain float prop_stop for prop SIGMA. I found: %s" % self.settings["prop_step"])
+                raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain float prop_stop for prop SIGMA. I found: %s" % self.settings["prop_step"])
         # KPOINTS requires either an int or a length-3 list of ints for start, stop, and step
         elif self.settings["prop"].upper() == "KPOINTS":
             try:
@@ -952,54 +959,54 @@ class Converge(object):
                 try:
                     self.settings["prop_start"] = [int(k) for k in self.settings["prop_start"]]
                 except:
-                    raise ConvergeError("Error in casm.vasp.converge: converge.json must contain integer or 3-list of integer prop_start for prop KPOINTS. I found: %s" % self.settings["prop_start"])
+                    raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain integer or 3-list of integer prop_start for prop KPOINTS. I found: %s" % self.settings["prop_start"])
             if isinstance(self.settings["prop_start"], list):
                 try:
                     self.settings["prop_step"] = [int(k) for k in self.settings["prop_step"]]
                 except:
-                    raise ConvergeError("Error in casm.vasp.converge: converge.json must contain prop_step of the same type as prop_start for prop KPOINTS. I found: %s" % self.settings["prop_step"])
+                    raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain prop_step of the same type as prop_start for prop KPOINTS. I found: %s" % self.settings["prop_step"])
                 try:
                     self.settings["prop_stop"] = [int(k) for k in self.settings["prop_stop"]]
                 except:
-                    raise ConvergeError("Error in casm.vasp.converge: converge.json must contain prop_stop of the same type as prop_start for prop KPOINTS. I found: %s" % self.settings["prop_stop"])
+                    raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain prop_stop of the same type as prop_start for prop KPOINTS. I found: %s" % self.settings["prop_stop"])
             else:
                 try:
                     self.settings["prop_step"] = int(self.settings["prop_step"])
                 except:
-                    raise ConvergeError("Error in casm.vasp.converge: converge.json must contain prop_step of the same type as prop_start for prop KPOINTS. I found: %s" % self.settings["prop_step"])
+                    raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain prop_step of the same type as prop_start for prop KPOINTS. I found: %s" % self.settings["prop_step"])
                 try:
                     self.settings["prop_stop"] = int(self.settings["prop_stop"])
                 except:
-                    raise ConvergeError("Error in casm.vasp.converge: converge.json must contain prop_stop of the same type as prop_start for prop KPOINTS. I found: %s" % self.settings["prop_stop"])
+                    raise ConvergeError("Error in casm.vaspwrapper.Converge(): converge.json must contain prop_stop of the same type as prop_start for prop KPOINTS. I found: %s" % self.settings["prop_stop"])
 
         # If "tol" is present, check for a valid tol type and "tol_amount" value
         if self.settings["tol"] is not None:
             if isinstance(self.settings["tol"], list):
                 if len(self.settings["tol"]) != len(self.settings["tol_amount"]) or not isinstance(self.settings["tol_amount"], list):
-                    raise ConvergeError("Error in casm.vasp.converge: \"tol\" and \"tol_amount\" must have the same number of entries! However, you have %s and %s" % (str(self.settings["tol"]), str(self.settings["tol_amount"])))
+                    raise ConvergeError("Error in casm.vaspwrapper.Converge(): \"tol\" and \"tol_amount\" must have the same number of entries! However, you have %s and %s" % (str(self.settings["tol"]), str(self.settings["tol_amount"])))
                 for my_tol, my_tol_amount in zip(self.settings["tol"], self.settings["tol_amount"]):
                     try:
                         if not my_tol.lower() in VALID_TOL_TYPES:
-                            raise ConvergeError("Error in casm.vasp.converge: \"tol: %s\" not a valid convergence tolerance type!\nCurrently supported convergence tolerance types are %s" % (self.settings["tol"], VALID_TOL_TYPES))
+                            raise ConvergeError("Error in casm.vaspwrapper.Converge(): \"tol: %s\" not a valid convergence tolerance type!\nCurrently supported convergence tolerance types are %s" % (self.settings["tol"], VALID_TOL_TYPES))
                     except:
-                        raise ConvergeError("Error in casm.vasp.converge: \"tol: %s\" not a valid convergence tolerance type!\nCurrently supported convergence tolerance types are %s" % (self.settings["tol"], VALID_TOL_TYPES))
+                        raise ConvergeError("Error in casm.vaspwrapper.Converge(): \"tol: %s\" not a valid convergence tolerance type!\nCurrently supported convergence tolerance types are %s" % (self.settings["tol"], VALID_TOL_TYPES))
                     try:
                         my_tol_amount = abs(float(my_tol_amount))
                     except:
-                        raise ConvergeError("Error in casm.vasp.converge: \"tol_amount: %s\" cannot be converted to float, but a float is needed!" % self.settings["tol_amount"])
+                        raise ConvergeError("Error in casm.vaspwrapper.Converge(): \"tol_amount: %s\" cannot be converted to float, but a float is needed!" % self.settings["tol_amount"])
             else:
                 try:
                     if not self.settings["tol"].lower() in VALID_TOL_TYPES:
-                        raise ConvergeError("Error in casm.vasp.converge: \"tol: %s\" not a valid convergence tolerance type!\nCurrently supported convergence tolerance types are %s" % (self.settings["tol"], VALID_TOL_TYPES))
+                        raise ConvergeError("Error in casm.vaspwrapper.Converge(): \"tol: %s\" not a valid convergence tolerance type!\nCurrently supported convergence tolerance types are %s" % (self.settings["tol"], VALID_TOL_TYPES))
                     else:
                         self.settings["tol"] = [self.settings["tol"]]
                 except:
-                    raise ConvergeError("Error in casm.vasp.converge: \"tol: %s\" not a valid convergence tolerance type!\nCurrently supported convergence tolerance types are %s" % (self.settings["tol"], VALID_TOL_TYPES))
+                    raise ConvergeError("Error in casm.vaspwrapper.Converge(): \"tol: %s\" not a valid convergence tolerance type!\nCurrently supported convergence tolerance types are %s" % (self.settings["tol"], VALID_TOL_TYPES))
 
                 try:
                     self.settings["tol_amount"] = [abs(float(self.settings["tol_amount"]))]
                 except:
-                    raise ConvergeError("Error in casm.vasp.converge: \"tol_amount: %s\" cannot be converted to float, but a float is needed!" % self.settings["tol_amount"])
+                    raise ConvergeError("Error in casm.vaspwrapper.Converge(): \"tol_amount: %s\" cannot be converted to float, but a float is needed!" % self.settings["tol_amount"])
 
     @property
     def configdir(self):
@@ -1038,13 +1045,13 @@ class Converge(object):
         # as lists
         output["relaxed_forces"] = [None for i in range(len(vrun.forces))]
         for i, v in enumerate(vrun.forces): #pylint: disable=invalid-name
-            output["relaxed_forces"][unsort_dict[i]] = casm.NoIndent(vrun.forces[i])
+            output["relaxed_forces"][unsort_dict[i]] = noindent.NoIndent(vrun.forces[i])
 
-        output["relaxed_lattice"] = [casm.NoIndent(v) for v in vrun.lattice]
+        output["relaxed_lattice"] = [noindent.NoIndent(v) for v in vrun.lattice]
 
         output["relaxed_basis"] = [None for i in range(len(vrun.basis))]
         for i, v in enumerate(vrun.basis):  #pylint: disable=invalid-name
-            output["relaxed_basis"][unsort_dict[i]] = casm.NoIndent(vrun.basis[i])
+            output["relaxed_basis"][unsort_dict[i]] = noindent.NoIndent(vrun.basis[i])
 
         output["relaxed_energy"] = vrun.total_energy
 

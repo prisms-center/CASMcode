@@ -1,2 +1,0 @@
-hullincludedir=$(includedir)/casm/hull
-hullinclude_HEADERS=./include/casm/hull/Hull.hh

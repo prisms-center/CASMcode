@@ -4,11 +4,18 @@ import os
 import math
 import sys
 import json
-import pbs
-import seqquest
-import casm
-import casm.project
-from . import questwrapper
+
+try:
+  from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
+except ImportError:
+  # use of the pbs module is deprecated after CASM v0.2.1
+  from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
+  from pbs import PBSError as JobsError
+
+from casm import seqquest
+from casm.misc import noindent
+from casm.project import DirectoryStructure, ProjectSettings
+from casm.questwrapper import questwrapper
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a SeqQuest relaxation.
@@ -37,7 +44,7 @@ class Relax(object):
         CASM project directory hierarchy
 
       settings: dict
-        Settings for pbs and the relaxation, see questwrapper.read_settings
+        Settings for job submission and the relaxation, see questwrapper.read_settings
 
       configdir: str
         Directory where configuration results are stored. The result of:
@@ -47,7 +54,7 @@ class Relax(object):
         The name of the configuration to be calculated
 
       auto: boolean
-        True if using pbs module's JobDB to manage pbs jobs
+        True if using prisms_jobs module's JobDB to manage jobs
 
       sort: boolean
         True if sorting atoms in POSCAR by type
@@ -69,7 +76,7 @@ class Relax(object):
               directory
 
             auto: boolean, optional, default=True,
-              Use True to use the pbs module's JobDB to manage pbs jobs
+              Use True to use the prisms_jobs module's JobDB to manage jobs
 
             sort: boolean, optional, default=True,
               Use True to sort atoms in POSCAR by type
@@ -87,8 +94,8 @@ class Relax(object):
         print "  Configuration:", self.configname
 
         print "  Reading CASM settings"
-        self.casm_directories = casm.project.DirectoryStructure(configdir)
-        self.casm_settings = casm.project.ProjectSettings(configdir)
+        self.casm_directories = DirectoryStructure(configdir)
+        self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings is None:
             raise questwrapper.QuestWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
@@ -158,7 +165,7 @@ class Relax(object):
 
         """
         # Find required input files in CASM project directory tree
-        questfiles=casm.questwrapper.quest_input_file_names(self.casm_directories, self.configname, self.clex)
+        questfiles=questwrapper.quest_input_file_names(self.casm_directories, self.configname, self.clex)
         lcao_in,super_poscarfile,speciesfile=questfiles
 
         # Find optional input files
@@ -209,12 +216,12 @@ class Relax(object):
         seqquest.seqquest_io.SeqquestIO(lcao_in, super_poscarfile, speciesfile, extra_input_files).write(self.calcdir)
 
     def submit(self):   #pylint: disable=too-many-statements
-        """Submit a PBS job for this SeqQuest relaxation"""
+        """Submit a job for this SeqQuest relaxation"""
 
         print "Submitting..."
         print "Configuration:", self.configname
         # first, check if the job has already been submitted and is not completed
-        db = pbs.JobDB()
+        db = JobDB()
         print "Calculation directory:", self.calcdir
         id = db.select_regex_id("rundir", self.calcdir)
         print "JobID:", id
@@ -245,8 +252,8 @@ class Relax(object):
                     job = db.select_job(j)
                     if job["taskstatus"] == "Incomplete":
                         try:
-                            pbs.complete_job(jobid=j)
-                        except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                            complete_job(jobid=j)
+                        except (JobsError, JobDBError, EligibilityError) as e:
                             print str(e)
                             sys.stdout.flush()
 
@@ -268,7 +275,7 @@ class Relax(object):
             # sys.stdout.flush()
             # return
 
-        print "Preparing to submit a SeqQuest relaxation PBS job"
+        print "Preparing to submit a SeqQuest relaxation job"
         sys.stdout.flush()
 
         # cd to configdir, submit jobs from configdir, then cd back to currdir
@@ -290,14 +297,14 @@ class Relax(object):
                 cmd += "".join(my_preamble) + "\n"
         if self.settings["prerun"] is not None:
             cmd += self.settings["prerun"] + "\n"
-        cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"\n"
+        cmd += "python -c \"import casm.questwrapper; casm.questwrapper.Relax('" + self.configdir + "').run()\"\n"
         if self.settings["postrun"] is not None:
             cmd += self.settings["postrun"] + "\n"
 
-        print "Constructing a PBS job"
+        print "Constructing a job"
         sys.stdout.flush()
-        # construct a pbs.Job
-        job = pbs.Job(name=casm.jobname(self.configdir),\
+        # construct a Job
+        job = Job(name=casm.wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -320,7 +327,7 @@ class Relax(object):
         # return to current directory
         os.chdir(currdir)
 
-        print "CASM QuestWrapper relaxation PBS job submission complete\n"
+        print "CASM QuestWrapper relaxation job submission complete\n"
         sys.stdout.flush()
 
 
@@ -361,8 +368,8 @@ class Relax(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
                     print str(e)
                     sys.stdout.flush()
 
@@ -398,8 +405,8 @@ class Relax(object):
             # mark error
             if self.auto:
                 try:
-                    pbs.error_job("Not converging")
-                except (pbs.PBSError, pbs.JobDBError) as e:
+                    error_job("Not converging")
+                except (JobsError, JobDBError) as e:
                     print str(e)
                     sys.stdout.flush()
 
@@ -429,8 +436,8 @@ class Relax(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
                     print str(e)
                     sys.stdout.flush()
 
@@ -464,7 +471,7 @@ class Relax(object):
 
         outputfile = os.path.join(self.calcdir, "status.json")
         with open(outputfile, 'w') as stream:
-            stream.write(json.dumps(output, stream, cls=casm.NoIndentEncoder, indent=4,
+            stream.write(json.dumps(output, stream, cls=noindent.NoIndentEncoder, indent=4,
                                     sort_keys=True))
         print "Wrote " + outputfile
         sys.stdout.flush()
@@ -477,7 +484,7 @@ class Relax(object):
             output = self.properties(rundir)
             outputfile = os.path.join(self.calcdir, "properties.calc.json")
             with open(outputfile, 'w') as stream:
-                stream.write(json.dumps(output, stream, cls=casm.NoIndentEncoder, indent=4,
+                stream.write(json.dumps(output, stream, cls=noindent.NoIndentEncoder, indent=4,
                                         sort_keys=True))
             print "Wrote " + outputfile
             sys.stdout.flush()
@@ -486,28 +493,6 @@ class Relax(object):
     def is_converged(self):
         """Check for electronic convergence in completed calculations. Returns True or False."""
         # Not currently implemented for SeqQuest
-
-        # # Verify that the last relaxation reached electronic convergence
-        # relaxation = vasp.Relax(self.calcdir, self.run_settings())
-        # for i in range(len(relaxation.rundir)):
-        #   try:
-        #     vrun = vasp.io.Vasprun( os.path.join(self.calcdir, relaxation.rundir[-i-1], "vasprun.xml"))
-        #     if len(vrun.all_e_0[-1]) >= vrun.nelm:
-        #       print('The last relaxation run (' +
-        #           os.path.basename(relaxation.rundir[-i-1]) +
-        #           ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
-        #       self.report_status('failed','electronic_convergence')
-        #       return False
-        #     break
-        #   except:
-        #     pass
-
-        # # Verify that the final static run reached electronic convergence
-        # vrun = vasp.io.Vasprun( os.path.join(self.calcdir, "run.final", "vasprun.xml") )
-        # if len(vrun.all_e_0[0]) >= vrun.nelm:
-        #     print('The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n')
-        #     self.report_status('failed','electronic_convergence')
-        #     return False
 
         return True
 
@@ -531,15 +516,15 @@ class Relax(object):
         # as lists
         output["relaxed_forces"] = [None for i in range(len(ofile.forces))]
 
-        print casm.NoIndent(ofile.forces[0])
+        print noindent.NoIndent(ofile.forces[0])
         for i, v in enumerate(ofile.forces):
-            output["relaxed_forces"][unsort_dict[i]] = casm.NoIndent(ofile.forces[i])
+            output["relaxed_forces"][unsort_dict[i]] = noindent.NoIndent(ofile.forces[i])
 
-        output["relaxed_lattice"] = [casm.NoIndent(v) for v in ofile.cell.lattice]
+        output["relaxed_lattice"] = [noindent.NoIndent(v) for v in ofile.cell.lattice]
 
         output["relaxed_basis"] = [None for i in range(len(ogeom.basis))]
         for i, v in enumerate(ogeom.basis):
-            output["relaxed_basis"][unsort_dict[i]] = casm.NoIndent(ogeom.basis[i].position)
+            output["relaxed_basis"][unsort_dict[i]] = noindent.NoIndent(ogeom.basis[i].position)
 
         output["relaxed_energy"] = ofile.total_energy
 

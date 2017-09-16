@@ -1,2 +1,0 @@
-strainincludedir=$(includedir)/casm/strain
-straininclude_HEADERS=./include/casm/strain/StrainConverter.hh

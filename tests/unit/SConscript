@@ -20,7 +20,7 @@ if not os.path.exists(test_dir):
 # include paths
 candidates = [
   env['INCDIR'], 
-  env.include_path(env['BOOST_PREFIX'], 'boost'),
+  env.include_path(env['BOOST_INCLUDEDIR'], 'boost'),
   os.getcwd()
 ]
 cpppath = [x for x in candidates if x is not None]

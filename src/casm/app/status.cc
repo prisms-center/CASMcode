@@ -120,18 +120,18 @@ namespace CASM {
     args.log() <<
                "Enumerate configurations\n\
 - Several options are possible:                                        \n\
-- Execute: 'casm enum --method ConfigEnumAllOccupations' to enumerate  \n\
-  configurations for all supercells                                    \n\
+- Execute: 'casm enum --method ConfigEnumAllOccupations --all' \n\
+  to enumerate configurations for for all supercells.                  \n\
 - Execute: 'casm enum --method ConfigEnumAllOccupations --min MINV --max MAXV'\n\
-  to enumerate configurations for supercells ranging in volume         \n\
-  from MINV to MAXV (units: number of primitive cells).                \n\
-- Execute: 'casm enum --method ConfigEnumAllOccupations --scelname NAME'\n\
-  to enumerate configurations for a particular supercell.              \n\
+  to enumerate configurations for supercells ranging in volume    \n\
+   from MINV to MAXV (units: number of primitive cells).            \n\
+- Execute: 'casm enum ---method ConfigEnumAllOccupations --scelname NAME'\n\
+  to enumerate  configurations for a particular supercell.    \n\
 - Generated configurations are listed in the 'config_list.json' file.  \n\
   This file should not usually be edited manually.                     \n\
 - Use the 'casm view' command to quickly view configurations in your   \n\
   favorite visualization program. See 'casm view -h' for help.         \n\
-- See 'casm enum --desc' for extended help documentation on how to use \n\
+- See 'casm enum --desc ConfigEnumAllOccupations' for extended help documentation on how to use \n\
   '--filter' command to perform restricted enumeration of              \n\
   configurations.                                                      \n\
 - Once you have a cluster expansion, see 'casm format --monte' for     \n\
@@ -151,6 +151,12 @@ Instructions for volume relaxed VASP energies:                         \n\n\
   VASP in: '$ROOT/training_data/settings/$CURR_CALCTYPE'. See          \n\
   'casm format --vasp' for a description and location of the VASP      \n\
   settings files.                                                      \n\
+Instructions for volume relaxed Quantum Espresso energies:             \n\n\
+- Create $inputfile, SPECIES, and 'relax.json' (with calculator tag set) files for\n\
+  Quantum Espresso in: '$ROOT/training_data/settings/$CURR_CALCTYPE'. See\n\
+  'casm format --qe' for a description and location of the Quantum Espresso\n\
+  settings files.                                                      \n\n\
+For either of the choices above do the following:             \n\n\
 - Select which configurations to calculate properties for using the    \n\
   'casm select' command. Use 'casm select --set-on -c ALL' to select all\n\
   configurations. By default, the 'selected' state of each             \n\
@@ -167,15 +173,16 @@ Instructions for volume relaxed VASP energies:                         \n\n\
 - Selections may be used to query the properties of particular         \n\
   configurations using the 'casm query' command. See 'casm query -h'   \n\
   for the complete list of options.                                    \n\
-- Execute: 'casm-calc --setup' to setup VASP input files for all       \n\
-  selected configuration, but not submit the jobs. This is often a     \n\
+    '$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json'\n\
+- Execute: 'casm-calc --setup' to setup VASP/QuantumEspresso input files for all\n\
+  selected configurations, but not submit the jobs. This is often a     \n\
   useful first step to check that input files have been prepared       \n\
   correctly.                                                           \n\
-- Execute: 'casm-calc --submit' to submit VASP jobs for all selected   \n\
+- Execute: 'casm-calc --submit' to submit VASP/QuantumEspresso jobs for all selected   \n\
   configurations. Only configurations which have not yet been          \n\
   calculated will run.                                                 \n\
 - See 'casm-calc -h' for help and other options.                       \n\
-- VASP results will be stored at:                                      \n\
+- VASP/QuantumEspresso results will be stored at:                      \n\
     '$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json'\n\
   Results in 'properties.calc.json' are expected to be ordered to match\n\
   the 'POS' file at '$ROOT/training_data/$SCELNAME/$CONFIGID/POS'      \n\
@@ -351,6 +358,36 @@ Instructions for fitting ECI:                                          \n\n\
 
       return;
     }
+  }
+
+  void print_details(const CommandArgs &args, const PrimClex &primclex) {
+    int tot_gen = 0;
+    int tot_calc = 0;
+    int tot_sel = 0;
+
+    //args.log << std::setw(6) << " " << " " << std::setw(30) << " " << "     " << "#CONFIGS" << std::endl;
+    args.log << std::setw(6) << "INDEX" << " " << std::setw(30) << "SUPERCELL" << "     " << "#CONFIGS G / C / S" << std::endl;
+    args.log << "---------------------------------------------------------------------------" << std::endl;
+    for(int i = 0; i < primclex.get_supercell_list().size(); i++) {
+      int gen = primclex.get_supercell(i).get_config_list().size();
+      int calc = 0, sel = 0;
+      const Supercell &scel = primclex.get_supercell(i);
+      for(int j = 0; j < scel.get_config_list().size(); j++) {
+        if(scel.get_config(j).selected()) {
+          sel++;
+        }
+        if(scel.get_config(j).calc_properties().contains("relaxed_energy")) {
+          calc++;
+        }
+      }
+      tot_gen += gen;
+      tot_calc += calc;
+      tot_sel += sel;
+      args.log << std::setw(6) << i << " " << std::setw(30) << primclex.get_supercell(i).get_name() << "     " << gen << " / " << calc << " / " << sel << std::endl;
+    }
+    args.log << "---------------------------------------------------------------------------" << std::endl;
+    args.log << std::setw(6) << " " << " " << std::setw(30) << "TOTAL" << "     " << tot_gen << " / " << tot_calc << " / " << tot_sel << std::endl;
+    args.log << "\nG:Generated, C:Calculated, S:Selected" << std::endl << std::endl;
   }
 
   int status_command(const CommandArgs &args) {
@@ -566,6 +603,13 @@ Instructions for fitting ECI:                                          \n\n\
         args.log() << "For next steps, run 'casm status -n'\n\n";
       }
 
+      if(vm.count("details")) {
+        print_details(args, primclex);
+      }
+      else {
+        args.log << "For the number of configurations generated, calculated,\n and selected by supercell, run 'casm status -d'\n\n";
+      }
+
       return 0;
     }
 
@@ -587,29 +631,7 @@ Instructions for fitting ECI:                                          \n\n\
     args.log() << "- Number of configurations calculated: " << tot_calc << " / " << tot_gen << " generated (Update with 'casm update')\n\n";
 
     if(vm.count("details")) {
-      //args.log() << std::setw(6) << " " << " " << std::setw(30) << " " << "     " << "#CONFIGS" << std::endl;
-      args.log() << std::setw(6) << "INDEX" << " " << std::setw(30) << "SUPERCELL" << "     " << "#CONFIGS G / C / S" << std::endl;
-      args.log() << "---------------------------------------------------------------------------" << std::endl;
-      int i = 0;
-      for(const auto &scel : primclex.db<Supercell>()) {
-
-        Index gen = 0;
-        Index calc = 0;
-        Index sel = 0;
-        for(const auto &config : primclex.db<Configuration>().scel_range(scel.name())) {
-          gen++;
-          calc += is_calculated(config);
-          sel += master_selection.is_selected(config.name());
-        }
-
-        args.log() << std::setw(6) << i << " " << std::setw(30)
-                   << scel.name() << "     "
-                   << gen << " / " << calc << " / " << sel << std::endl;
-        ++i;
-      }
-      args.log() << "---------------------------------------------------------------------------" << std::endl;
-      args.log() << std::setw(6) << " " << " " << std::setw(30) << "TOTAL" << "     " << tot_gen << " / " << tot_calc << " / " << tot_sel << std::endl;
-      args.log() << "\nG:Generated, C:Calculated, S:Selected" << std::endl << std::endl;
+      print_details(args, primclex);
     }
     else {
       args.log() << "For the number of configurations generated, calculated,\n and selected by supercell, run 'casm status -d'\n\n";

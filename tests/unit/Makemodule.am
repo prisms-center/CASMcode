@@ -1,7 +1,0 @@
-noinst_LIBRARIES+=libcasmtesting.a
-
-libcasmtesting_a_SOURCES=./tests/unit/Common.cpp\
-						 ./tests/unit/Common.hh\
-						 ./tests/unit/Proj.hh\
-						 ./tests/unit/FCCTernaryProj.hh\
-						 ./tests/unit/ZrOProj.hh
