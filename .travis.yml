@@ -53,6 +53,7 @@ before_install:
   
   # upgrade pip
   - pip install --upgrade pip
+  - pip install --user pytest
   
   # check env
   - printenv
