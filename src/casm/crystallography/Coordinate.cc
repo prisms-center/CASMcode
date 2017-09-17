@@ -64,8 +64,8 @@ namespace CASM {
 
   //********************************************************************
 
-  bool Coordinate::almost_equal(const Coordinate &RHS, double tol) const {
-    return dist(RHS) < tol;
+  bool Coordinate::almost_equal(const Coordinate &RHS) const {
+    return dist(RHS) < lattice().tol();
   }
 
 

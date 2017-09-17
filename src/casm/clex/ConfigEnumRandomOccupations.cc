@@ -60,7 +60,7 @@ namespace CASM {
     "      }' \n\n";
 
   int ConfigEnumRandomOccupations::run(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 
@@ -75,7 +75,7 @@ namespace CASM {
     _kwargs.get_if(primitive_only, "primitive_only");
 
 
-    auto lambda = [&](Supercell & scel) {
+    auto lambda = [&](const Supercell & scel) {
       return notstd::make_unique<ConfigEnumRandomOccupations>(scel, n_config, mtrand);
     };
 
@@ -101,7 +101,7 @@ namespace CASM {
   ///   which points past-the-final element, as is typical
   /// - `_size` will be equal to \code std::distance(this->begin(), this->end()) \endcode
   ConfigEnumRandomOccupations::ConfigEnumRandomOccupations(
-    Supercell &_scel,
+    const Supercell &_scel,
     Index _n_config,
     MTRand &_mtrand):
     m_n_config(_n_config),
@@ -125,7 +125,7 @@ namespace CASM {
     // Make initial random config
     this->randomize();
     _set_step(0);
-    _current().set_source(this->source(step()));
+    m_current->set_source(this->source(step()));
   }
 
   /// Set m_current to correct value at specified step and return a reference to it
@@ -134,7 +134,7 @@ namespace CASM {
     this->_increment_step();
     if(step() < m_n_config) {
       this->randomize();
-      _current().set_source(this->source(step()));
+      m_current->set_source(this->source(step()));
     }
     else {
       this->_invalidate();

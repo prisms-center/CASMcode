@@ -360,35 +360,46 @@ Instructions for fitting ECI:                                          \n\n\
     }
   }
 
-  void print_details(const CommandArgs &args, const PrimClex &primclex) {
-    int tot_gen = 0;
-    int tot_calc = 0;
-    int tot_sel = 0;
+  struct PrintDetails {
+    PrintDetails(const CommandArgs &_args, const PrimClex &_primclex):
+      args(_args), primclex(_primclex) {}
 
-    //args.log << std::setw(6) << " " << " " << std::setw(30) << " " << "     " << "#CONFIGS" << std::endl;
-    args.log << std::setw(6) << "INDEX" << " " << std::setw(30) << "SUPERCELL" << "     " << "#CONFIGS G / C / S" << std::endl;
-    args.log << "---------------------------------------------------------------------------" << std::endl;
-    for(int i = 0; i < primclex.get_supercell_list().size(); i++) {
-      int gen = primclex.get_supercell(i).get_config_list().size();
-      int calc = 0, sel = 0;
-      const Supercell &scel = primclex.get_supercell(i);
-      for(int j = 0; j < scel.get_config_list().size(); j++) {
-        if(scel.get_config(j).selected()) {
-          sel++;
+    const CommandArgs &args;
+    const PrimClex &primclex;
+
+    template<typename ConfigType>
+    void eval() const {
+      int tot_gen = 0;
+      int tot_calc = 0;
+      int tot_sel = 0;
+
+      args.log() << traits<ConfigType>::name << ":" << std::endl;
+      args.log() << std::setw(6) << "INDEX" << " " << std::setw(30) << "SUPERCELL" << "     " << "#CONFIGS G / C / S" << std::endl;
+      args.log() << "---------------------------------------------------------------------------" << std::endl;
+      Index i = 0;
+      DB::Selection<ConfigType> master_selection(primclex);
+      for(const Supercell &scel : primclex.db<Supercell>()) {
+        int gen = primclex.db<ConfigType>().scel_range_size(scel.name());
+        int calc = 0, sel = 0;
+        for(const auto &config : primclex.db<ConfigType>().scel_range(scel.name())) {
+          if(master_selection.data()[config.name()]) {
+            sel++;
+          }
+          if(is_calculated(config)) {
+            calc++;
+          }
         }
-        if(scel.get_config(j).calc_properties().contains("relaxed_energy")) {
-          calc++;
-        }
+        tot_gen += gen;
+        tot_calc += calc;
+        tot_sel += sel;
+        args.log() << std::setw(6) << i << " " << std::setw(30) << scel.name() << "     " << gen << " / " << calc << " / " << sel << std::endl;
+        ++i;
       }
-      tot_gen += gen;
-      tot_calc += calc;
-      tot_sel += sel;
-      args.log << std::setw(6) << i << " " << std::setw(30) << primclex.get_supercell(i).get_name() << "     " << gen << " / " << calc << " / " << sel << std::endl;
+      args.log() << "---------------------------------------------------------------------------" << std::endl;
+      args.log() << std::setw(6) << " " << " " << std::setw(30) << "TOTAL" << "     " << tot_gen << " / " << tot_calc << " / " << tot_sel << std::endl;
+      args.log() << "\nG:Generated, C:Calculated, S:Selected" << std::endl << std::endl;
     }
-    args.log << "---------------------------------------------------------------------------" << std::endl;
-    args.log << std::setw(6) << " " << " " << std::setw(30) << "TOTAL" << "     " << tot_gen << " / " << tot_calc << " / " << tot_sel << std::endl;
-    args.log << "\nG:Generated, C:Calculated, S:Selected" << std::endl << std::endl;
-  }
+  };
 
   int status_command(const CommandArgs &args) {
 
@@ -604,10 +615,10 @@ Instructions for fitting ECI:                                          \n\n\
       }
 
       if(vm.count("details")) {
-        print_details(args, primclex);
+        DB::for_each_config_type(PrintDetails(args, primclex));
       }
       else {
-        args.log << "For the number of configurations generated, calculated,\n and selected by supercell, run 'casm status -d'\n\n";
+        args.log() << "For the number of configurations generated, calculated,\n and selected by supercell, run 'casm status -d'\n\n";
       }
 
       return 0;
@@ -631,7 +642,7 @@ Instructions for fitting ECI:                                          \n\n\
     args.log() << "- Number of configurations calculated: " << tot_calc << " / " << tot_gen << " generated (Update with 'casm update')\n\n";
 
     if(vm.count("details")) {
-      print_details(args, primclex);
+      DB::for_each_config_type(PrintDetails(args, primclex));
     }
     else {
       args.log() << "For the number of configurations generated, calculated,\n and selected by supercell, run 'casm status -d'\n\n";

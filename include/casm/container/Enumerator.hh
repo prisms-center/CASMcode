@@ -67,7 +67,7 @@ namespace CASM {
    *
    *  Functions:
    *  - public: std::string name() const override { return enumerator_name; } \endcode
-   *  - public: static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt); \endcode
+   *  - public: static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt); \endcode
    *
    *  To enable use as a plugin:
    *  - \code
@@ -458,7 +458,7 @@ namespace CASM {
   template<typename ScelIterator, typename ConfigEnumConstructor>
   int insert_configs(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     ScelIterator begin,
     ScelIterator end,
     ConfigEnumConstructor f,
@@ -469,7 +469,7 @@ namespace CASM {
   template<typename LatticeIterator, typename ConfigEnumConstructor>
   int insert_configs_via_lattice_enum(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     LatticeIterator begin,
     LatticeIterator end,
     ConfigEnumConstructor f,

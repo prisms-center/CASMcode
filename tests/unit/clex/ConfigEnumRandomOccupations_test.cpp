@@ -9,7 +9,9 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/external/MersenneTwister/MersenneTwister.h"
+#include "casm/app/enum.hh"
 #include "casm/clex/ScelEnum.hh"
+#include "casm/database/Database.hh"
 #include "casm/completer/Handlers.hh"
 
 using namespace CASM;
@@ -24,7 +26,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   PrimClex primclex(proj.dir, null_log());
 
   Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.get_prim().lattice().vectors();
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
   Supercell scel = Supercell(&primclex, Lattice {2.*a, 2.*b, 2.*c}).canonical_form();
 
@@ -44,7 +46,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
     ScelEnum e(primclex, json);
     for(const auto &scel : e) {}
-    BOOST_CHECK_EQUAL(primclex.get_supercell_list().size(), 14);
+    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 14);
   }
 
   {
@@ -52,9 +54,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     jsonParser json;
     json["n_configs"] = 200;
     ConfigEnumRandomOccupations::run(primclex, json, enum_opt);
-    for(const auto &scel : primclex.get_supercell_list()) {
-      BOOST_CHECK_EQUAL(scel.get_config_list().size() > 0, true);
-    }
+    BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size() > 0, true);
   }
 
 }

@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
     diff_trans_orbits.end(),
     std::cout,
     PrototypePrinter<Kinetics::DiffusionTransformation>());
-  /**/
+  */
 
   Printer<Kinetics::DiffusionTransformation> diff_trans_printer;
   typedef std::vector<Kinetics::DiffusionTransformation> DiffTransVec;
@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
     diff_trans_orbits.end(),
     std::cout,
     PrototypePrinter<Kinetics::DiffusionTransformation>());
-  /**/
+  */
 
   Printer<Kinetics::DiffusionTransformation> diff_trans_printer;
   typedef std::vector<Kinetics::DiffusionTransformation> DiffTransVec;

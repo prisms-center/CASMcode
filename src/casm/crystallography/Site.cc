@@ -206,8 +206,8 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  bool Site::almost_equal(const Site &test_site, double tol) const {
-    return (compare_type(test_site) && dist(test_site) < tol);
+  bool Site::almost_equal(const Site &test_site) const {
+    return (compare_type(test_site) && dist(test_site) < lattice().tol());
   }
 
   //****************************************************
