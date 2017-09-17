@@ -3,7 +3,35 @@ import pbs
 import vasp
 import casm
 import casm.project
+from casm.project import Project, Selection
 import vaspwrapper
+import configproperties
+
+class ConfigProperties(ConfigPropertiesBase):
+    """ Derived class with additional configuration properties and errors
+
+    Additional Attributes
+    --------------------
+
+      n_images: int
+        number of images in the calculation
+
+    """
+
+    def __init__(self, config_data):
+        """ 
+             Add additional properties and error messages
+        """
+        ConfigPropertiesBase.__init__(self, config_data)
+
+        ## Error message if "n_images" not present in settings
+        if not "n_images" in self.settings:
+            raise vaspwrapper.VaspWrapperError("Could not find \"n_images\" in \"calc.json\" in an appropriate \"settings\" directory")
+            sys.stdout.flush()
+
+        self.n_images = self.settings["n_images"]
+        # append the n_images to calcdir
+        self.calcdir = os.path.join(self.calcdir, "N_images_{}".format(self.n_images))
 
 class Neb(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
@@ -19,46 +47,17 @@ class Neb(object):
         This automatically looks for VASP settings files using:
           casm.project.DirectoryStructure.settings_path_crawl
 
-    Attributes
-    ----------
-
-      casm_settings: casm.project.ProjectSettings instance
-        CASM project settings
-
-      casm_directories: casm.project.DirectoryStructure instance
-        CASM project directory hierarchy
-
-      settings: dict
-        Settings for pbs and the relaxation, see vaspwrapper.read_settings
-
-      configdir: str
-        Directory where configuration results are stored. The result of:
-          casm.project.DirectoryStructure.configuration_dir(self.configname)
-
-      configname: str
-        The name of the configuration to be calculated
-
-      auto: boolean
-        True if using pbs module's JobDB to manage pbs jobs
-
-      sort: boolean
-        True if sorting atoms in POSCAR by type
-
-      clex: casm.project.ClexDescription instance
-        The cluster expansion being worked on. Used for the 'calctype' settings.
-        Currently, fixed to self.casm_settings.default_clex.
-
     """
-    def __init__(self, configdir=None, auto=True, sort=True):
+    def __init__(self, selection, auto=True, sort=True):
         """
         Construct a VASP neb job object.
 
         Arguments
         ----------
 
-            configdir: str, optional, default=None
-              Path to configuration directory. If None, uses the current working
-              directory
+            selection: casm.project.Selection object, default= yet to be implemented #todo
+              Selection of all DiffTransConfigurations to submit a NEB calculation. 
+              default should be MASTER selection and yet to be implemented
 
             auto: boolean, optional, default=True,
               Use True to use the pbs module's JobDB to manage pbs jobs
@@ -69,98 +68,19 @@ class Neb(object):
         """
         print "Construct a casm.vaspwrapper.Relax instance:"
 
-        if configdir is None:
-            configdir = os.getcwd()
-        print "  Input directory:", configdir
-
-        # get the configname from the configdir path
-        #_res = os.path.split(configdir)
-        _res = configdir.strip().split('/')
-        self.configname = _res[-2] + "/" + _res[-1]
-        tmp_index = _res.index("training_data")
-        self.calc_subdir = ""
-        ## anything between "training_data" and "configname" is dumped into calc_subdir
-        if tmp_index < len(_res)-3:
-            for i in range(tmp_index+1, len(_res)-2):
-                self.calc_subdir += _res[i] + "/"
-            self.calc_subdir = self.calc_subdir[:-1] ##remove the trailing "/"
-
-        print "  Configuration:", self.configname
-
-        print "  Reading CASM settings"
-
-        self.casm_directories = casm.project.DirectoryStructure(configdir)
-        self.casm_settings = casm.project.ProjectSettings(configdir)
-        if self.casm_settings is None:
-            raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
-
-        if os.path.abspath(configdir) != self.configdir:
-            print ""
-            print "input configdir:", configdir
-            print "determined configname:", self.configname
-            print "expected configdir given configname:", self.configdir
-            raise vaspwrapper.VaspWrapperError("Mismatch between configname and configdir")
-
-        # fixed to default_clex for now
-        self.clex = self.casm_settings.default_clex
-
-        # store path to .../config/calctype.name, and create if not existing
-        # will be appended by n_images at the end after reading the settings file
-        self.calcdir = self.casm_directories.calctype_dir(self.configname, self.clex, self.calc_subdir)
-
-
-        # read the settings json file
-        print "  Reading neb.json settings file"
-        sys.stdout.flush()
-        setfile = self.casm_directories.settings_path_crawl("neb.json", self.configname, self.clex)
-
-        if setfile is None:
-            raise vaspwrapper.VaspWrapperError("Could not find \"neb.json\" in an appropriate \"settings\" directory")
-            sys.stdout.flush()
-
-        else:
-            print "  Read settings from:", setfile
-        self.settings = vaspwrapper.read_settings(setfile)
-
-        ## write a error message if "n_images" not present in settings
-        if not "n_images" in self.settings:
-            raise vaspwrapper.VaspWrapperError("Could not find \"n_images\" in \"neb.json\" in an appropriate \"settings\" directory")
-            sys.stdout.flush()
-
-        # set default settings if not present
-        if not "ncore" in self.settings:
-            self.settings["ncore"] = None
-        if not "npar" in self.settings:
-            self.settings["npar"] = None
-        if not "kpar" in self.settings:
-            self.settings["kpar"] = None
-        if not "vasp_cmd" in self.settings:
-            self.settings["vasp_cmd"] = None
-        if not "ncpus" in self.settings:
-            self.settings["ncpus"] = None
-        if not "run_limit" in self.settings:
-            self.settings["run_limit"] = None
-        if not "prerun" in self.settings:
-            self.settings["prerun"] = None
-        if not "postrun" in self.settings:
-            self.settings["postrun"] = None
-
+        self.selection = selection
         self.auto = auto
         self.sort = sort
-        self.n_images = self.settings["n_images"]
-        # append the n_images to calcdir
-        self.calcdir = os.path.join(self.calcdir, "N_images_{}".format(self.n_images))
-        try:
-            os.makedirs(self.calcdir)
-        except:
-            pass
-        print "  Calculations directory:", self.calcdir
-        print "  DONE\n"
-        sys.stdout.flush()
 
-    @property
-    def configdir(self): ## check the path
-        return self.casm_directories.configuration_dir(self.configname, self.calc_subdir)
+    def _pre_setup(self):
+        for config_data in self.selection.data:
+            config_obj = ConfigProperties(config_data)
+            try:
+                os.makedirs(config_obj.calcdir)
+                for i in range(config_obj.n_images + 2):
+                    os.makedirs(os.path.join(config_obj.calcdir, str(i).zfill(2)))
+            except:
+                pass
 
     def setup(self):
         """ Setup initial relaxation run
@@ -175,47 +95,67 @@ class Neb(object):
                 POS: structure of the configuration to be relaxed
 
         """
-        # Find required input files in CASM project directory tree
-        vaspfiles = casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname,
-                                                           self.clex, self.calc_subdir)
-        incarfile, prim_kpointsfile, prim_poscarfile, temp_poscarfile, speciesfile = vaspfiles
+        self._pre_setup()
+        ## write the selection Interpolation command
+        proj = self.selection.proj
+        dict = {}
+        for config_data in self.selection.data:
+            config_obj = ConfigProperties(config_data)
+            conf_dict = {"n_images" : self.n_images, "calctype" : self.calctype}
+            dict[config_obj.configname] = conf_dict
+        args = "enum --method DiffTransConfigInterpolation -j neb_tmp.json"
+        args += json.dumps(dict)
+        output = proj.command(args)
+        #remove the tmp file
 
-        # Find optional input files
-        extra_input_files = []
-        for s in self.settings["extra_input_files"]:
-            extra_input_files.append(self.casm_directories.settings_path_crawl(s, self.configname, self.clex, self.calc_subdir))
-            if extra_input_files[-1] is None:
-                raise vasp.VaspError("Neb.setup failed. Extra input file " + s + " not found in CASM project.")
-        if self.settings["initial"]:
-            extra_input_files += [self.casm_directories.settings_path_crawl(self.settings["initial"],
-                                                                            self.configname, self.clex, self.calc_subdir)]
-            if extra_input_files[-1] is None:
-                raise vasp.VaspError("Neb.setup failed. No initial INCAR file " + self.settings["initial"] + " found in CASM project.")
-        if self.settings["final"]:
-            extra_input_files += [self.casm_directories.settings_path_crawl(self.settings["final"],
-                                                                            self.configname, self.clex, self.calc_subdir)]
-            if extra_input_files[-1] is None:
-                raise vasp.VaspError("Neb.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
-        sys.stdout.flush()
+        for config_data in self.selection.data:
+            config_obj = ConfigProperties(config_data)
+            # Find required input files in CASM project directory tree
+            vaspfiles = casm.vaspwrapper.vasp_input_file_names(config_obj.casm_directories, config_obj.configname,
+                                                               config_obj.clex, config_obj.calc_subdir)
+            incarfile, prim_kpointsfile, prim_poscarfile, temp_poscarfile, speciesfile = vaspfiles
+            # Find optional input files
+            extra_input_files = []
+            for s in config_obj.settings["extra_input_files"]:
+                extra_input_files.append(config_obj.casm_directories.settings_path_crawl(s, config_obj.configname,
+                                                                                         config_obj.clex, config_obj.calc_subdir))
+                if extra_input_files[-1] is None:
+                    raise vasp.VaspError("Neb.setup failed. Extra input file " + s + " not found in CASM project.")
+            if config_obj.settings["initial"]:
+                extra_input_files += [config_obj.casm_directories.settings_path_crawl(config_obj.settings["initial"],
+                                                                                      config_obj.configname, config_obj.clex,
+                                                                                      config_obj.calc_subdir)]
+                if extra_input_files[-1] is None:
+                    raise vasp.VaspError("Neb.setup failed. No initial INCAR file " + config_obj.settings["initial"] + " found in CASM project.")
+            if config_obj.settings["final"]:
+                extra_input_files += [config_obj.casm_directories.settings_path_crawl(config_obj.settings["final"],
+                                                                                      config_obj.configname, config_obj.clex,
+                                                                                      config_obj.calc_subdir)]
+                if extra_input_files[-1] is None:
+                    raise vasp.VaspError("Neb.setup failed. No final INCAR file " + config_obj.settings["final"] + " found in CASM project.")
+            sys.stdout.flush()
 
-        #make image folders to store image poscars
-        for i in range(self.settings["n_images"]+2):
-            os.mkdir(os.path.join(self.calcdir, str(i).zfill(2)))
-            ## yet to implement a python wrapper for casm api to enumerate image poscars
-            ##for testing ##TODO
-            shutil.copy(os.path.join(self.configdir, "POSCAR"),
-                        os.path.join(os.path.join(self.calcdir, str(i).zfill(2), "POSCAR")))
-        #make vasp input files
-        sample_super_poscarfile = os.path.join(self.calcdir, "00", "POSCAR")
-        vasp.io.write_vasp_input(self.calcdir, incarfile, prim_kpointsfile, prim_poscarfile,
-                                 sample_super_poscarfile, speciesfile, self.sort, extra_input_files,
-                                 self.settings["strict_kpoints"])
-        ## settings the images tag in incar file
-        tmp_dict = {"images": self.settings["n_images"]}
-        vasp.io.set_incar_tag(tmp_dict, self.calcdir)
+            #make vasp input files
+            sample_super_poscarfile = os.path.join(config_obj.calcdir, "00", "POSCAR")
+            vasp.io.write_vasp_input(config_obj.calcdir, incarfile, prim_kpointsfile, prim_poscarfile,
+                                     sample_super_poscarfile, speciesfile, self.sort, extra_input_files,
+                                     config_obj.settings["strict_kpoints"])
+            ## settings the images tag in incar file
+            tmp_dict = {"images": config_obj.settings["n_images"]}
+            vasp.io.set_incar_tag(tmp_dict, config_obj.calcdir)
 
-    def submit(self):
-        """Submit a PBS job for this VASP relaxation"""
+
+
+######################
+
+            
+class submit(object):
+
+    def __init__(self, selection = None):
+        self.selection = selection
+
+    
+    """Submit a PBS job for this VASP relaxation"""
 
         print "Submitting..."
         print "Configuration:", self.configname
@@ -384,9 +324,10 @@ class Neb(object):
 
         return settings
 
-    def run(self):
+class run(object):
         """ Setup input files, run a vasp relaxation, and report results """
-
+    def __init__(self, configdir):
+        self.configdir = configdir
         # construct the Neb object
         calculation = vasp.Neb(self.calcdir, self.run_settings())
 

@@ -56,6 +56,7 @@ def _query_args(proj, columns, selection=None, verbatim=True, all=False, api=Fal
     args += "'"
   if selection.path != "MASTER":
     args += " -c " + selection.path
+  args += " -t " + selection.type
   if verbatim == True:
     args += " -v"
   if all and (selection.path not in ["CALCULATED", "ALL"]):

@@ -139,6 +139,7 @@ class DirectoryStructure(object):
             raise Exception("No CASM project found using " + path)
         self.path = project_path(path)
         self.__casm_dir = ".casm"
+        self.__casmdb_dir = "jsonDB"
         self.__bset_dir = "basis_sets"
         self.__calc_dir = "training_data"
         self.__set_dir = "settings"
@@ -188,17 +189,21 @@ class DirectoryStructure(object):
       """Return hidden .casm dir path"""
       return join(self.path, self.__casm_dir)
 
+    def casmdb_dir(self):
+      """Return .casm/jsonDB path"""
+      return join(self.casm_dir, self.__casmdb_dir)
+
     def project_settings(self):
       """Return project_settings.json path"""
       return join(self.casm_dir(), "project_settings.json")
 
     def scel_list(self, scelname):
       """Return master scel_list.json path"""
-      return join(self.casm_dir(), "scel_list.json")
+      return join(self.casmdb_dir(), "scel_list.json")
 
     def config_list(self):
       """Return master config_list.json file path"""
-      return join(self.casm_dir(), "config_list.json")
+      return join(self.casm_dbdir(), "config_list.json")
 
 
     # -- Symmetry --------

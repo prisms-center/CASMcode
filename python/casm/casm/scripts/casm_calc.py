@@ -1,20 +1,36 @@
 #!/usr/bin/env python
 
-import argparse, json, sys
-import casm.qewrapper
+import argparse
+import json
+import sys
 from os import getcwd
 from os.path import join, abspath
 from casm.misc.noindent import NoIndentEncoder
 from casm.project import Project, Selection
-from casm.vaspwrapper import Relax
+import casm.qewrapper
+import casm.vaspwrapper
 
 # casm-calc --configs selection
-#           --software "quantumespresso" "vasp"
+#           --type "config", "diff_trans", etc.
+#           --software "vasp", "quantumexpresso", "sequest" etc. ## shift to calc.json?
+#           --method "relax", "neb", etc.
 #           --scheduler "pbs"
 #           --run / --submit / --setup / --report
 
 configs_help = """
 CASM selection file or one of 'CALCULATED', 'ALL', or 'MASTER' (Default)
+"""
+
+configtype_help = """
+Type of configuartions 'config' (Default), 'diff_trans', 'diff_trans_config' or scel
+"""
+
+software_help = """
+Warpper for a python package to be used 'vasp' (Default), 'quantumexpressso' or 'sequest'
+"""
+
+method_help = """
+Calculator type to be used 'relax' (Default) or 'neb'
 """
 
 path_help = """
@@ -36,10 +52,33 @@ Setup calculation for all selected configurations.
 report_help = """
 Report calculation results (print calc.properties.json file) for all selected configurations.
 """
+available_calculators = {
+  "vasp":{
+    "relax": casm.vaspwrapper.Relax,
+    "neb": casm.vaspwrapper.Neb
+  },
+  "quantumexpresso":{
+    "relax": casm.qewrapper.Relax,
+    "neb": casm.qewrapper.Neb
+  }
+}
 
-def main():
+submit_cls = {
+  "vasp": casm.vaspwarpper.Submit,
+  "quantumexpresso": casm.qewrapper.Submit
+}
+
+run_cls = {
+  "vasp": casm.vaspwarpper.Run,
+  "quantumexpresso": casm.qewrapper.Run
+}
+
+if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
   parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
+  parser.add_argument('-t', '--type', help=configtype_help, type=str, default="config")
+  parser.add_argument('-w', '--software', help=software_help, type=str, default="vasp")
+  parser.add_argument('-m', '--method', help=method_help, type=str, default="relax")
   parser.add_argument('--path', help=path_help, type=str, default=None)
   parser.add_argument('--run', help=run_help, action="store_true", default=False)
   parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
@@ -52,61 +91,35 @@ def main():
   
   try:
     proj = Project(abspath(args.path))
-    sel = Selection(proj, args.configs, all=False)
-    if sel.data["configname"] is not None:
-      configname=sel.data["configname"][0]
-      casm_settings=proj.settings
-      if casm_settings == None:
-        raise casm.qewrapper.QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
-      casm_directories=proj.dir
-      print "  Reading relax.json settings file"
-      sys.stdout.flush()
-      setfile = casm_directories.settings_path_crawl("relax.json",configname,casm_settings.default_clex)
-      if setfile == None:
-          raise casm.qewrapper.QEWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
-          sys.stdout.flush()
-      else:
-          print "Using "+str(setfile)+" as settings..."
-      settings = casm.qewrapper.read_settings(setfile)
-      if settings["software"] is None:
-        settings["software"]="vasp"
-      software=settings["software"]
-      print "Relevant software is:", software
+    sel = Selection(proj, args.configs, args.type, all=False) 
+
+    # Construct with Selection:
+    # - This provides access to the Project, via sel.proj
+    # - From the project you can make calls to run interpolation and query lattice relaxations
+    calculator = available_calculators[args.software][args.calculator](sel)
+
     if args.setup:
-      sel.write_pos()
-      for configname in sel.data["configname"]:
-        if software == "quantumespresso":
-          relaxation = casm.qewrapper.Relax(proj.dir.configuration_dir(configname))
-        else:
-          relaxation = Relax(proj.dir.configuration_dir(configname))
-        relaxation.setup()
-    
+      calculator.setup()
+
     elif args.submit:
-      sel.write_pos()
-      for configname in sel.data["configname"]:
-        if software == "quantumespresso":
-          relaxation = casm.qewrapper.Relax(proj.dir.configuration_dir(configname))
-        else:
-          relaxation = Relax(proj.dir.configuration_dir(configname))
-        relaxation.submit()
-    
+      calculator.setup()
+      submit_cls[args.software](sel, args.methodA)
+
     elif args.run:
-      sel.write_pos()
+      calculator.setup()
       for configname in sel.data["configname"]:
-        if software == "quantumespresso":
-          relaxation = casm.qewrapper.Relax(proj.dir.configuration_dir(configname))
-        else:
-          relaxation = Relax(proj.dir.configuration_dir(configname))
-        relaxation.run()
+        relaxation = run_cls[args.software](proj.dir.configuration_dir(configname))
     
     elif args.report:
+
+      #also convert into a class with selection as input
       for configname in sel.data["configname"]:
         configdir = proj.dir.configuration_dir(configname)
         clex = proj.settings.default_clex
         calcdir = proj.dir.calctype_dir(configname, clex)
         finaldir = join(calcdir, "run.final")
         try:
-          if software == "quantumespresso":
+          if args.software == "quantumespresso":
             if settings["outfilename"] is None:
                 print "WARNING: No output file specified in relax.json using default outfilename of std.out"
                 settings["outfilename"]="std.out"
