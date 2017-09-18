@@ -23,10 +23,6 @@ int_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
 float_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
 numerics = int_dtypes + float_dtypes
 
-class Generic(object):
-    def __init__(self):
-        pass
-
 class Session(object):
   def __init__(self, doc=None):
     if doc is None:

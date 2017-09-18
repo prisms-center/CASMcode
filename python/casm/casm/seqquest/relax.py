@@ -8,8 +8,6 @@ import shutil
 from . import seqquest
 from . import seqquest_io
 
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-
 class RelaxError(Exception):
     """ Relax-specific errors """
     pass

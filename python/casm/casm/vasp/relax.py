@@ -1,5 +1,4 @@
 import os, math, sys, shutil, gzip
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 import casm.vasp
 from casm.vasp import io
 
