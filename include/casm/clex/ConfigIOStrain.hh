@@ -31,7 +31,9 @@ namespace CASM {
     class RelaxationStrain: public VectorXdAttribute<Configuration> {
     public:
       RelaxationStrain() :
-        VectorXdAttribute<Configuration>("relaxation_strain", "The strain of the configuration due to relaxation, measured relative to ideal lattice vectors. Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)]. Accepts strain convention as argument ('GL' [Green-Lagrange, Default], 'EA' [Euler-Almansi], 'B' [Biot], 'H' [Hencky], or 'U' [stretch tensor]). Accepts index as argument on interval [0,5]"),
+        VectorXdAttribute<Configuration>("relaxation_strain", "The strain of the configuration due to relaxation, measured relative to ideal lattice vectors.
+         Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)]. Accepts strain convention as first argument ('GL' [Green-Lagrange, Default], 'EA' [Euler-Almansi],
+          'B' [Biot], 'H' [Hencky], or 'U' [stretch tensor]). Accepts index as second argument on interval [0,5]. Accepts calctype as third argument."),
         m_straincalc(true) {};
 
 
@@ -65,6 +67,7 @@ namespace CASM {
     protected:
       mutable StrainConverter m_straincalc;
       mutable std::string m_metric_name;
+      mutable std::string m_calctype;
 
     private:
       /// \brief Clone
@@ -94,7 +97,9 @@ namespace CASM {
     class DoFStrain: public VectorXdAttribute<Configuration> {
     public:
       DoFStrain() :
-        VectorXdAttribute<Configuration>("dof_strain", "The imposed strain of the configuration due to relaxation, measured relative to ideal lattice vectors. Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)]. Accepts strain convention as argument ('GL' [Green-Lagrange, Default], 'EA' [Euler-Almansi], 'B' [Biot], 'H' [Hencky], or 'U' [stretch tensor]). Accepts index as argument on interval [0,5]"),
+        VectorXdAttribute<Configuration>("dof_strain", "The imposed strain of the configuration due to relaxation, measured relative to ideal lattice vectors. Ordered as
+         [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)]. Accepts strain convention as first argument ('GL' [Green-Lagrange, Default], 'EA' [Euler-Almansi], 
+         'B' [Biot], 'H' [Hencky], or 'U' [stretch tensor]). Accepts index as second argument on interval [0,5]."),
         m_straincalc(true) {};
 
 
