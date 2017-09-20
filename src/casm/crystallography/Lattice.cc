@@ -961,10 +961,10 @@ namespace CASM {
 
     Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat);
     tMat = Eigen::Matrix3d::Zero();
-    for(int i = 0; i < 3; i++) {
+    /*for(int i = 0; i < 3; i++) {
       tMat(i, i) = tSVD.singularValues()[i];
-    }
-
+    }*/
+    tMat.diagonal() = tSVD.singularValues().cwiseSqrt();
     tMat2 = tSVD.matrixU() * tMat * tSVD.matrixV().transpose();
 
     tMat = lat_column_mat();
