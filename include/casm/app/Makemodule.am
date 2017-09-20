@@ -1,10 +1,38 @@
 appincludedir=$(includedir)/casm/app
-appinclude_HEADERS=./include/casm/app/AppIO.hh\
-				   ./include/casm/app/casm_functions.hh\
-				   ./include/casm/app/EnumeratorHandler.hh\
-				   ./include/casm/app/EnumeratorHandler_impl.hh\
-				   ./include/casm/app/DirectoryStructure.hh\
-				   ./include/casm/app/ProjectBuilder.hh\
-				   ./include/casm/app/ProjectSettings.hh\
-			           ./include/casm/app/QueryHandler.hh\
-				   ./include/casm/app/QueryHandler_impl.hh
+appinclude_HEADERS=\
+./include/casm/app/run.hh\
+./include/casm/app/QueryHandler_impl.hh\
+./include/casm/app/CLIParse.hh\
+./include/casm/app/AppIO_impl.hh\
+./include/casm/app/composition.hh\
+./include/casm/app/files.hh\
+./include/casm/app/EnumeratorHandler.hh\
+./include/casm/app/import.hh\
+./include/casm/app/bset.hh\
+./include/casm/app/ProjectBuilder.hh\
+./include/casm/app/DBInterface.hh\
+./include/casm/app/status.hh\
+./include/casm/app/ClexDescription.hh\
+./include/casm/app/QueryHandler.hh\
+./include/casm/app/APICommand_impl.hh\
+./include/casm/app/init.hh\
+./include/casm/app/enum.hh\
+./include/casm/app/AppIO.hh\
+./include/casm/app/update.hh\
+./include/casm/app/super.hh\
+./include/casm/app/sym.hh\
+./include/casm/app/DBInterface_impl.hh\
+./include/casm/app/ProjectSettings.hh\
+./include/casm/app/monte.hh\
+./include/casm/app/rm.hh\
+./include/casm/app/EnumeratorHandler_impl.hh\
+./include/casm/app/format.hh\
+./include/casm/app/DirectoryStructure.hh\
+./include/casm/app/APICommand.hh\
+./include/casm/app/select.hh\
+./include/casm/app/ref.hh\
+./include/casm/app/view.hh\
+./include/casm/app/query.hh\
+./include/casm/app/casm_functions.hh\
+./include/casm/app/settings.hh
+

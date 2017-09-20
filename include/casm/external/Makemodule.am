@@ -1,7 +1,3 @@
-includecasmexternaldir=$(includedir)/casm/external
-includecasmexternal_HEADERS=include/casm/external/boost.hh\
-							include/casm/external/Makemodule.am
-
 includecasmexternalMersenneTwisterdir=$(includedir)/casm/external/MersenneTwister
 includecasmexternalMersenneTwister_HEADERS=include/casm/external/MersenneTwister/MersenneTwister.h
 
