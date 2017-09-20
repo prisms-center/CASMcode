@@ -1,7 +1,3 @@
-
-CASM C++ library and `casm` CLI program
-=======================================
-
 ## Dependencies
 
 ### Compilation ###
