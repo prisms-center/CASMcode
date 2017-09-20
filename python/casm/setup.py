@@ -24,5 +24,14 @@ setup(name='casm',
       entry_points={
           'console_scripts': console_scripts
       },
-      install_requires=['prisms_jobs', 'scipy', 'pandas', 'scikit-learn', 'bokeh==0.12.3', 'tornado==4.3']
+      install_requires=[
+          'bokeh==0.12.3',
+          'deap',
+          'mock', 
+          'pandas',
+          'prisms-jobs',
+          'scikit-learn==0.19',
+          'scipy==0.19',
+          'tornado==4.3'
+      ]
       )

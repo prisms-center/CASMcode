@@ -1,9 +1,8 @@
-scipy
-mock
-prisms_jobs
-numpy
-pandas
-scikit-learn
+bokeh ==0.12.3
 deap
-bokeh==0.12.3
-tornado==4.3
+mock
+pandas
+prisms-jobs
+scikit-learn ==0.19
+scipy ==0.19
+tornado ==4.3
