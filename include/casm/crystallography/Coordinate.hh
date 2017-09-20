@@ -121,6 +121,8 @@ namespace CASM {
       return !(*this == RHS);
     }
 
+    bool almost_equal(const Coordinate &RHS, double tol) const;
+
     /// Returns true if this->min_dist(RHS)<tol
     bool compare(const Coordinate &RHS, double tol = TOL) const;
 
@@ -161,7 +163,7 @@ namespace CASM {
     bool voronoi_within(Coordinate &translation);
 
     ///Checks to see if coordinate is at a lattice translation with respect to the origin
-    bool is_lattice_shift() const;
+    bool is_lattice_shift(double tol = TOL) const;
 
     /// \brief  Change the home lattice of the coordinate, selecting one representation
     ///         (either CART or FRAC) that remains invariant

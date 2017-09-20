@@ -9,16 +9,18 @@ namespace CASM {
 
   /// \brief Constructor
   ///
+  /// \param _primclex PrimClex
   /// \param _temperature in K
   /// \param _param_chem_pot Parametric composition chemical potential
-  /// \param _comp_converter CompositionConverter for converting from parametric chem_pot to atomic chem_pot
   /// \param _tol tolerance for comparing conditions
   ///
-  GrandCanonicalConditions::GrandCanonicalConditions(double _temperature,
-                                                     const Eigen::VectorXd &_param_chem_pot,
-                                                     const CompositionConverter &_comp_converter,
-                                                     double _tol) :
-    m_comp_converter(_comp_converter),
+  GrandCanonicalConditions::GrandCanonicalConditions(
+    const PrimClex &_primclex,
+    double _temperature,
+    const Eigen::VectorXd &_param_chem_pot,
+    double _tol) :
+
+    m_primclex(&_primclex),
     m_tolerance(_tol) {
 
     // -- set T ----
@@ -31,6 +33,10 @@ namespace CASM {
   }
 
   // ***************************************ACCESSORS********************************************** //
+
+  const PrimClex &GrandCanonicalConditions::primclex() const {
+    return *m_primclex;
+  }
 
   double GrandCanonicalConditions::temperature() const {
     return m_temperature;
@@ -71,16 +77,17 @@ namespace CASM {
 
   void GrandCanonicalConditions::set_param_chem_pot(const Eigen::VectorXd &in_param_chem_pot) {
     m_param_chem_pot = in_param_chem_pot;
-    m_chem_pot = m_comp_converter.dparam_dmol().transpose() * m_param_chem_pot;
+    m_chem_pot = primclex().composition_axes().dparam_dmol().transpose() * m_param_chem_pot;
 
-    int Ncomp = m_comp_converter.components().size();
+    int Ncomp = primclex().composition_axes().components().size();
     m_exchange_chem_pot = Eigen::MatrixXd(Ncomp, Ncomp);
     for(int index_new = 0; index_new < Ncomp; ++index_new) {
       for(int index_curr = 0; index_curr < Ncomp; ++index_curr) {
         Eigen::VectorXl dn = Eigen::VectorXl::Zero(Ncomp);
         dn(index_new) += 1;
         dn(index_curr) -= 1;
-        m_exchange_chem_pot(index_new, index_curr) = m_param_chem_pot.transpose() * m_comp_converter.dparam_dmol() * dn.cast<double>();
+        m_exchange_chem_pot(index_new, index_curr) =
+          m_param_chem_pot.transpose() * primclex().composition_axes().dparam_dmol() * dn.cast<double>();
       }
     }
 

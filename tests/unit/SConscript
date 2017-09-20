@@ -20,7 +20,7 @@ if not os.path.exists(test_dir):
 # include paths
 candidates = [
   env['INCDIR'], 
-  env.include_path(env['BOOST_PREFIX'], 'boost'),
+  env.include_path(env['BOOST_INCLUDEDIR'], 'boost'),
   os.getcwd()
 ]
 cpppath = [x for x in candidates if x is not None]
@@ -51,6 +51,7 @@ unit_test = lenv.Program(os.path.join(lenv['UNIT_TEST_BINDIR'],'unit_test'),
                           lenv['boost_filesystem'],
                           lenv['boost_regex'],
                           lenv['boost_chrono'],
+                          lenv['boost_program_options'],
                           lenv['dl'],
                           'casm'])
 
@@ -102,6 +103,7 @@ for i, src_name in enumerate(test_name):
                          lenv['boost_system'], 
                          lenv['boost_filesystem'],
                          lenv['boost_regex'],
+                         lenv['boost_program_options'],
                          lenv['dl'],
                          'casm'])
   

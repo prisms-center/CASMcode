@@ -12,7 +12,8 @@ namespace CASM {
   ///
   /// - read_path is expected to be within a CASM project directory
   ///
-  MonteSettings::MonteSettings(const fs::path &read_path):
+  MonteSettings::MonteSettings(const PrimClex &_primclex, const fs::path &read_path):
+    m_primclex(&_primclex),
     jsonParser(read_path) {
 
     m_root = find_casmroot(fs::absolute(read_path));
@@ -25,6 +26,10 @@ namespace CASM {
 
   fs::path MonteSettings::root() const {
     return m_root;
+  }
+
+  const PrimClex &MonteSettings::primclex() const {
+    return *m_primclex;
   }
 
 

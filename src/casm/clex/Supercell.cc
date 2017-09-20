@@ -240,7 +240,7 @@ namespace CASM {
 
     // generate the background config & orbitree
     //   std::cout << "generate background config and orbitree" << std::endl;
-    SiteOrbitree background_tree(background_scel.lattice());
+    SiteOrbitree background_tree(background_scel.lattice(), primclex->crystallography_tol());
 
     //fs::ifstream cspecsfile(CSPECS);
     //background_tree.read_CSPECS(cspecsfile);

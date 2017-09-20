@@ -349,7 +349,7 @@ namespace CASM {
 
 
   /// \brief Make orbitree. For now specifically global.
-  SiteOrbitree make_orbitree(Structure &prim, const jsonParser &json);
+  SiteOrbitree make_orbitree(Structure &prim, const jsonParser &json, double _tol);
 
   /// \brief Print clexulator
   void print_clexulator(const Structure &prim,

@@ -35,7 +35,7 @@ namespace CASM {
     const SiteOrbit &orbit = orbit_helper.value();
     const Structure &struc = orbit_helper.struc();
 
-    json["prototype"] = jsonHelper(orbit.prototype, struc);
+    json["prototype"] = jsonHelper(orbit.prototype, struc, orbit_helper.tol());
     return json;
 
   }
@@ -61,7 +61,7 @@ namespace CASM {
       from_json(jsonHelper(tproto, struc), json["orbits"][i]["prototype"]);
       tproto.calc_properties();
       branch.push_back(SiteOrbit(tproto));
-      branch.back().get_equivalent(struc.factor_group());
+      branch.back().get_equivalent(struc.factor_group(), branch_helper.tol());
     }
 
 
@@ -78,7 +78,7 @@ namespace CASM {
 
     json["orbits"].put_array();
     for(Index i = 0; i < branch.size(); i++) {
-      json["orbits"].push_back(jsonHelper(branch[i], struc));
+      json["orbits"].push_back(jsonHelper(branch[i], struc, branch_helper.tol()));
     }
     return json;
   }
@@ -94,7 +94,7 @@ namespace CASM {
 
     tree.resize(json["branches"].size());
     for(Index i = 0; i < json["branches"].size(); i++) {
-      from_json(jsonHelper(tree[i], struc), json["branches"][i]);
+      from_json(jsonHelper(tree[i], struc, tree.tol()), json["branches"][i]);
     }
     if(json.contains("bspecs")) {
       tree.set_bspecs(json["bspecs"]);
@@ -114,7 +114,7 @@ namespace CASM {
     json["branches"].put_array();
 
     for(Index i = 0; i < tree.size(); i++) {
-      json["branches"].push_back(jsonHelper(tree[i], struc));
+      json["branches"].push_back(jsonHelper(tree[i], struc, tree.tol()));
     }
     json["bspecs"] = tree.bspecs();
     return json;

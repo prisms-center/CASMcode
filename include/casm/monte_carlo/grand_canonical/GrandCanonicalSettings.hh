@@ -52,8 +52,6 @@ namespace CASM {
 
   private:
 
-    CompositionConverter m_comp_converter;
-
     GrandCanonicalConditions _conditions(std::string name) const;
     GrandCanonicalConditions _conditions(const jsonParser &json) const;
 

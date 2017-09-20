@@ -10,23 +10,20 @@ namespace CASM {
       "For GrandCanonicalConditions, expect a JSON object of form:\n"
       "  {\n"
       "    \"param_chem_pot\": {\n"
-      "    \"a\" : -1.0,\n"
-      "    ...\n"
-      "  },\n"
-      "  \"temperature\" : 350.0,\n"
-      "  \"tolerance\" : 0.001\n"
-      "}\n";
+      "      \"a\" : -1.0,\n"
+      "      ...\n"
+      "    },\n"
+      "    \"temperature\" : 350.0,\n"
+      "    \"tolerance\" : 0.001\n"
+      "  }\n";
     return s;
   }
 
   /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
-  GrandCanonicalSettings::GrandCanonicalSettings(const PrimClex &primclex, const fs::path &read_path) :
-    EquilibriumMonteSettings(read_path) {
+  GrandCanonicalSettings::GrandCanonicalSettings(const PrimClex &_primclex, const fs::path &read_path) :
+    EquilibriumMonteSettings(_primclex, read_path) {
 
-    if(primclex.has_composition_axes()) {
-      m_comp_converter = primclex.composition_axes();
-    }
-    else {
+    if(!_primclex.has_composition_axes()) {
       throw std::runtime_error("No composition axes selected.");
     }
 
@@ -175,7 +172,7 @@ namespace CASM {
 
   GrandCanonicalConditions GrandCanonicalSettings::_conditions(const jsonParser &json) const {
     GrandCanonicalConditions result;
-    from_json(result, m_comp_converter, json);
+    from_json(result, primclex(), json);
     return result;
   }
 

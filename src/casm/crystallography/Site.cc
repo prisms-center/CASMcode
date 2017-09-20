@@ -170,6 +170,12 @@ namespace CASM {
     return (compare_type(test_site) && Coordinate::operator==(test_site));
   }
 
+  //*******************************************************************************************
+
+  bool Site::almost_equal(const Site &test_site, double tol) const {
+    return (compare_type(test_site) && dist(test_site) < tol);
+  }
+
   //****************************************************
 
   bool Site::contains(const std::string &name) const {

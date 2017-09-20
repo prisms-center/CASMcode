@@ -1,6 +1,7 @@
 #include "casm/app/EnumeratorHandler_impl.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/ConfigEnumRandomOccupations.hh"
 #include "casm/clex/SuperConfigEnum.hh"
 
 namespace CASM {
@@ -12,7 +13,8 @@ namespace CASM {
     m_enumerator.insert(
       EnumInterface<ScelEnum>(),
       EnumInterface<ConfigEnumAllOccupations>(),
-      EnumInterface<SuperConfigEnum>()
+      EnumInterface<SuperConfigEnum>(),
+      EnumInterface<ConfigEnumRandomOccupations>()
     );
 
     load_enumerator_plugins(

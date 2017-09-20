@@ -124,7 +124,7 @@ namespace test {
         auto end = boost::sregex_iterator();
         auto count = std::distance(begin, end);
 
-        BOOST_CHECK_EQUAL(count, 5);
+        BOOST_CHECK_MESSAGE(count == 5, m_p.gets());
       }
 
       // check that you can't overwrite without using -f

@@ -187,7 +187,10 @@ namespace CASM {
         ConfigDoF configdof = m_mc.configdof();
         from_json(configdof, jsonParser(m_dir.final_state_json(start_i - 1)));
 
-        m_mc.set_configdof(configdof, std::string("Using: ") + m_dir.final_state_json(start_i - 1).string());
+        m_mc.set_state(
+          m_conditions_list[start_i],
+          configdof,
+          std::string("Using: ") + m_dir.final_state_json(start_i - 1).string());
       }
     }
 
@@ -196,13 +199,16 @@ namespace CASM {
       if(!m_settings.dependent_runs()) {
         m_mc.set_state(m_conditions_list[i], m_settings);
       }
-      else {
+      else if(i != start_i) {
+
         m_mc.set_conditions(m_conditions_list[i]);
 
         m_log.custom("Continue with existing DoF");
         m_log << std::endl;
       }
+
       single_run(i);
+
       m_log << std::endl;
     }
 
@@ -389,10 +395,12 @@ namespace CASM {
       run_counter++;
 
       if(run_counter.sample_time()) {
-        m_log.custom<Log::debug>("Sample data");
-        m_log << "pass: " << run_counter.pass() << "  "
-              << "step: " << run_counter.step() << "  "
-              << "take sample " << m_mc.sample_times().size() << "\n" << std::endl;
+        if(debug()) {
+          m_log.custom<Log::debug>("Sample data");
+          m_log << "pass: " << run_counter.pass() << "  "
+                << "step: " << run_counter.step() << "  "
+                << "take sample " << m_mc.sample_times().size() << "\n" << std::endl;
+        }
 
         m_mc.sample_data(run_counter);
         run_counter.increment_samples();
@@ -452,7 +460,7 @@ namespace CASM {
 
         CondType existing;
         jsonParser json(m_dir.conditions_json(i));
-        from_json(existing, primclex.composition_axes(), json);
+        from_json(existing, primclex, json);
         if(existing != custom_cond[i]) {
           m_err_log.error("Conditions mismatch");
           m_err_log << "existing conditions: " << m_dir.conditions_json(i) << "\n";
@@ -487,7 +495,7 @@ namespace CASM {
 
         CondType existing;
         jsonParser json(m_dir.conditions_json(i));
-        from_json(existing, primclex.composition_axes(), json);
+        from_json(existing, primclex, json);
         if(existing != conditions_list[i]) {
           m_err_log.error("Conditions mismatch");
           m_err_log << "existing conditions: " << m_dir.conditions_json(i) << "\n";

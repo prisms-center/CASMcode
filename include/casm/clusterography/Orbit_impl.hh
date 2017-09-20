@@ -31,7 +31,7 @@ namespace CASM {
   //If it is already in the orbit array, record the SymOp that mapped the prototype onto that cluster
 
   template<typename ClustType>
-  void GenericOrbit<ClustType>::get_equivalent(const SymGroup &sym_group) {
+  void GenericOrbit<ClustType>::get_equivalent(const SymGroup &sym_group, double tol) {
     if(sym_group.size() == 0) {
       std::cerr << "WARNING: In Orbit::get_equivalent, sym_group must at least have one element (identity).\n";
       assert(0);
@@ -55,7 +55,7 @@ namespace CASM {
     for(i = 0; i < sym_group.size(); i++) {
       t_cluster = sym_group[i] * prototype; // apply current sym_op to prototype, using the overloaded *
 
-      map_ind = find(t_cluster, map_shift);
+      map_ind = find(t_cluster, map_shift, tol);
 
       //Case 1: Cluster already exists in orbit; update equivalence map to record
       //        symmetry operation that maps prototype onto equivalent cluster
@@ -79,7 +79,7 @@ namespace CASM {
     // record symmetry info for all equivalent clusters
     prototype.set_clust_group(equivalence_map[0]);
     at(0).set_clust_group(equivalence_map[0]);
-    std::vector<Permutation> proto_perms(prototype.clust_group_permutations());
+    std::vector<Permutation> proto_perms(prototype.clust_group_permutations(tol));
     SymGroupRepID perm_rep_ID(sym_group.add_empty_representation());
     prototype.set_permute_rep(perm_rep_ID);
     at(0).set_permute_rep(perm_rep_ID);
@@ -121,10 +121,10 @@ namespace CASM {
   //HINT:  only translate if the periodicity flag is on
 
   template<typename ClustType>
-  bool GenericOrbit<ClustType>::contains(const ClustType  &test_clust) const {
+  bool GenericOrbit<ClustType>::contains(const ClustType  &test_clust, double tol) const {
     ClustType  tclust(test_clust);
     for(Index i = 0; i < size(); i++) {
-      if(tclust.map_onto(at(i))) {
+      if(tclust.map_onto(at(i), tol)) {
         return true;
       }
     }
@@ -137,10 +137,10 @@ namespace CASM {
   //go through all cluster in orbit array and see if test_site is contained in any of them, accounting for translation
 
   template<typename ClustType>
-  bool GenericOrbit<ClustType>::contains(const typename ClustType::WhichCoordType &test_coord) const {
+  bool GenericOrbit<ClustType>::contains(const typename ClustType::WhichCoordType &test_coord, double tol) const {
 
     for(Index i = 0; i < size(); i++) {
-      if(at(i).contains_periodic(test_coord))
+      if(at(i).contains_periodic(test_coord, tol))
         return true;
     }
 
@@ -153,11 +153,11 @@ namespace CASM {
   //HINT:  only translate if the periodicity flag is on
 
   template<typename ClustType>
-  Index GenericOrbit<ClustType>::find(const ClustType  &test_clust) const {
+  Index GenericOrbit<ClustType>::find(const ClustType  &test_clust, double tol) const {
     Index i;
     ClustType  tclust(test_clust);
     for(i = 0; i < size(); i++) {
-      if(tclust.map_onto(at(i)))
+      if(tclust.map_onto(at(i), tol))
         break;
     }
     return i;
@@ -169,12 +169,12 @@ namespace CASM {
   //HINT:  only translate if the periodicity flag is on
 
   template<typename ClustType>
-  Index GenericOrbit<ClustType>::find(const ClustType  &test_clust, Coordinate &trans) const {
+  Index GenericOrbit<ClustType>::find(const ClustType  &test_clust, Coordinate &trans, double tol) const {
     Index i;
     trans.frac() = Eigen::Vector3d::Zero();
     ClustType tclust(test_clust);
     for(i = 0; i < size(); i++) {
-      if(tclust.map_onto(at(i), trans)) {
+      if(tclust.map_onto(at(i), trans, tol)) {
         break;
       }
     }
