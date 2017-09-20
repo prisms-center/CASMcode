@@ -1,4 +1,7 @@
 
+CASM C++ library and `casm` CLI program
+=======================================
+
 ## Dependencies
 
 ### Compilation ###
@@ -76,20 +79,7 @@ Boost can be downloaded and installed from source following instructions found a
 
 ### Python
 
-CASM includes python modules for automating the submission and analysis of VASP calculations. They have been most extensively tested using Python 2.7.5, and should be compatible with versions 2.x+. (*Note however that for recent versions of SCons, support for Python versions before 2.7 has been deprecated.*) The latest version can be obtained from the Python website: [https://www.python.org](https://www.python.org)
-
-Individual module dependencies include:
-
-- **SciPy** ([https://www.scipy.org](https://www.scipy.org)), which can be obtained using one of the methods described on their website:  [http://www.scipy.org/install.html](http://www.scipy.org/install.html). The particular SciPy packages needed are:
-	- **numpy**  ([http://www.numpy.org](http://www.numpy.org))
-	- **pandas** ([http://pandas.pydata.org](http://pandas.pydata.org))
-
-- **scikit-learn** ([http://scikit-learn.org](http://scikit-learn.org))
-
-- **deap** ([http://deap.readthedocs.io/en/master/](http://deap.readthedocs.io/en/master/)), the Distributed Evolutionary Algorithm Package, used for genetic algorithms.
-	- **scoop** ([http://scoop.readthedocs.io/en/latest/](http://scoop.readthedocs.io/en/latest/)), required for deap. 		
-
-- **pbs** The Python module pbs is used to automate submission and management of PBS batch jobs on a cluster. It can be obtained from its GitHub repository: [https://github.com/prisms-center/pbs](https://github.com/prisms-center/pbs). *Note: This is not the pbs module available for installation via pip.*
+See python/casm/README.md for installation of the CASM Python packages.
 
 
 ### Included with CASM
@@ -107,7 +97,7 @@ CASM is distributed with the following dependencies:
 - **gzstream, v1.5**: [http://www.cs.unc.edu/Research/compgeom/gzstream/](http://www.cs.unc.edu/Research/compgeom/gzstream/)
 
 
-## Installation
+## Installation from source
 
 #### Getting CASM
 
@@ -149,16 +139,22 @@ and is also reproduced here:
       $CASM_CXX, $CXX:
         Explicitly set the C++ compiler. If not set, scons chooses a default compiler.
       
-      $CASM_PREFIX:
-        Where to install CASM. By default, this uses '/usr/local'. Then header files are
-        installed in '$CASM_PREFIX/include', shared libraries in '$CASM_PREFIX/lib', executables
-        in '$CASM_PREFIX/bin', and the path is used for the setup.py --prefix option for 
-        installing python packages.
+      $CASM_PREFIX
+      $CASM_INCLUDEDIR (=$CASM_PREFIX/include)
+      $CASM_LIBDIR (=$CASM_PREFIX/lib)
+      $CASM_BINDIR (=$CASM_PREFIX/bin)
+      $CASM_PYTHON_PREFIX (=$CASM_PREFIX)
+        Where to install CASM. By default, this uses 'CASM_PREFIX=/usr/local'. Header 
+        files are installed in '$CASM_INCLUDEDIR', shared libraries in '$CASM_LIBDIR', 
+        executables in '$CASM_BINDIR', and $CASM_PYTHON_PREFIX is used for the 
+        setup.py --prefix option for installing python packages.
       
-      $CASM_BOOST_PREFIX:
-        Search path for Boost. '$CASM_BOOST_PREFIX/include' is searched for header files, and
-        '$CASM_BOOST_PREFIX/lib' for libraries. Boost and CASM should be compiled with the 
-        same compiler.
+      $CASM_BOOST_PREFIX
+      $CASM_BOOST_INCLUDEDIR (=$CASM_BOOST_PREFIX/include)
+      $CASM_BOOST_LIBDIR (=$CASM_BOOST_PREFIX/lib)
+        Search path for Boost. '$CASM_BOOST_INCLUDEDIR' is searched for header files, and
+        '$CASM_BOOST_LIBDIR' for libraries. 
+        Boost and CASM should be compiled with the same compiler.
 
       $CASM_OPTIMIZATIONLEVEL:
         Sets the -O optimization compiler option. If not set, uses -O3.
@@ -167,14 +163,14 @@ and is also reproduced here:
         Sets to compile with debugging symbols. In this case, the optimization level gets 
         set to -O0, and NDEBUG does not get set.
 
-      $LD_LIBRARY_PATH (Linux) or $DYLD_FALLBACK_LIBRARY_PATH (Mac):
-        Search path for dynamic libraries, may need $CASM_BOOST_PREFIX/lib 
-        and $CASM_PREFIX/lib added to it.
-        This should be added to your ~/.bash_profile (Linux) or ~/.profile (Mac).
-      
       $CASM_BOOST_NO_CXX11_SCOPED_ENUMS:
         If defined, will compile with -DCASM_BOOST_NO_CXX11_SCOPED_ENUMS. Use this
         if linking to boost libraries compiled without c++11.
+      
+      $CASM_BASH_COMPLETION_DIR:
+        If defined, bash-completion scripts for CASM will be installed in the 
+        location given. If not defined, standard locations will be searched for
+        'bash_completion'. 
       
       
       Additional options that override environment variables:
@@ -184,12 +180,12 @@ and is also reproduced here:
           'debug=X' with X=0 to use '-DNDEBUG', 
              or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
              Overrides $CASM_DEBUGSTATE.
-          'prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASM_PREFIX.
+          'casm_prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASM_PREFIX.
           'boost_prefix=X' set boost search path. Overrides $CASM_BOOST_PPREFIX.
           'boost_no_cxx11_scoped_enums=1' to use '-DBOOST_NO_CXX11_SCOPED_ENUMS'.
              Overrides $CASM_BOOST_NO_CXX11_SCOPED_ENUMS.
      
-	  Use scons -H for help about command-line options.
+Use scons -H for help about command-line options.
 
 
 The script ``casmenv.sh`` provides a list of environment variables that you are recogized by CASM during installation and use.  A copy of this file can be used to configure your environment before installing or using CASM. For instance:
@@ -231,6 +227,7 @@ This will compile and install:
 - ``$CASM_PREFIX/lib/libccasm.*`` a shared library providing a C interface to ``libcasm.*`` used by the ``casm`` Python package
 - ``$CASM_PREFIX/lib/pythonX.Y/site-packages/casm`` a python package that provides an interface between ``casm`` and the software used to calculate training data. Currently only VASP is supported.
 - ``$CASM_PREFIX/lib/pythonX.Y/site-packages/vasp`` a python package for running VASP calculations.
+- (optional) ``$CASM_PREFIX/bin/casm-complete`` implements bash-completion
 
 The functionality provided by ``casm-calc`` is also provided by the legacy scripts:
 
