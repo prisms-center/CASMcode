@@ -1,7 +1,7 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: Sconstruct
 
-import sys, os, glob, copy, shutil, subprocess, imp, re
+import sys, os, glob, copy, shutil, subprocess, imp, re, textwrap
 
 from os.path import join
 
@@ -50,14 +50,14 @@ Help("""
         Sets to compile with debugging symbols. In this case, the optimization level gets 
         set to -O0, and NDEBUG does not get set.
 
-      $LD_LIBRARY_PATH (Linux) or $DYLD_FALLBACK_LIBRARY_PATH (Mac):
-        Search path for dynamic libraries, may need $CASM_BOOST_LIBDIR 
-        and $CASM_LIBDIR added to it.
-        This should be added to your ~/.bash_profile (Linux) or ~/.profile (Mac).
-      
       $CASM_BOOST_NO_CXX11_SCOPED_ENUMS:
         If defined, will compile with -DCASM_BOOST_NO_CXX11_SCOPED_ENUMS. Use this
         if linking to boost libraries compiled without c++11.
+      
+      $CASM_BASH_COMPLETION_DIR:
+        If defined, bash-completion scripts for CASM will be installed in the 
+        location given. If not defined, standard locations will be searched for
+        'bash_completion'. 
       
       
       Additional options that override environment variables:
@@ -272,6 +272,35 @@ def compile_flags():
   
   return (ccflags, cxxflags)
 
+def set_bash_completion_dir(env):
+  if 'CASM_BASH_COMPLETION_DIR' in os.environ:
+    result = os.environ['CASM_BASH_COMPLETION_DIR']
+  else:
+    try:
+      args = ['pkg-config', '--variable=completionsdir', 'bash-completion']
+      stderr = subprocess.PIPE
+      result = subprocess.check_output(args, stderr=stderr).rstrip()
+    except:
+      try:
+        args = ['pkg-config', '--variable=completionsdir', 'bash-completion']
+        stderr = subprocess.PIPE
+        result = subprocess.check_output(args, stderr=stderr).rstrip()
+      except:
+        path = os.environ['PATH']
+        path += os.pathsep + '/etc' # debian location?
+        path += os.pathsep + join('/usr', 'local', 'etc') # brew location
+        path += os.pathsep + join('/sw', 'etc') # git location
+        
+        path = path.split(os.pathsep)
+        result = None 
+        for d in path:
+            test = join(d, 'bash_completion')
+            if os.path.isfile(test):
+                result = test + ".d"
+                break
+  if result is not None:
+    env['BASH_COMPLETION_DIR'] = result
+
 ##### Set version_number
 
 version_number = version('0.2.1')
@@ -331,6 +360,9 @@ env.Replace(BOOST_LIBDIR=boost_libdir())
 # collect library names
 env.Replace(z='z') 
 env.Replace(dl='dl') 
+
+# bash-completion
+set_bash_completion_dir(env)
 
 boost_libs = [
   'boost_system', 
@@ -424,7 +456,7 @@ casm_lib_install = env.SharedLibrary(join(env['CASM_LIBDIR'], 'casm'),
                                      LIBS=libs)
 Export('casm_lib_install')
 env.Alias('casm_lib_install', casm_lib_install)
-env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_lib_install]
+env.Append(INSTALL_TARGETS = [casm_lib_install])
 
 if 'casm_lib_install' in COMMAND_LINE_TARGETS:
     env['IS_INSTALL'] = 1
@@ -459,7 +491,7 @@ ccasm_lib_install = env.SharedLibrary(join(env['CASM_LIBDIR'], 'ccasm'),
                                       LIBS=libs + ['casm'])
 Export('ccasm_lib_install')
 env.Alias('ccasm_lib_install', ccasm_lib_install)
-env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [ccasm_lib_install]
+env.Append(INSTALL_TARGETS = [ccasm_lib_install])
 
 if 'ccasm_lib_install' in COMMAND_LINE_TARGETS:
     env['IS_INSTALL'] = 1
@@ -471,7 +503,7 @@ casm_include_install = env.Install(env['CASM_INCLUDEDIR'], join(env['INCDIR'], '
 Export('casm_include_install')
 env.Alias('casm_include_install', casm_include_install)
 env.Clean('casm_include_install', join(env['CASM_INCLUDEDIR'],'casm'))
-env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + casm_include_install
+env.Append(INSTALL_TARGETS = [casm_include_install])
 
 if 'casm_include_install' in COMMAND_LINE_TARGETS:
   env['IS_INSTALL'] = 1
@@ -480,6 +512,7 @@ if 'casm_include_install' in COMMAND_LINE_TARGETS:
 
 # build apps/casm
 SConscript(['apps/casm/SConscript'], {'env':env})
+SConscript(['apps/completer/SConscript'], {'env':env})
 
 # tests/unit
 SConscript(['tests/unit/SConscript'], {'env': env})
@@ -497,8 +530,7 @@ if 'test' in COMMAND_LINE_TARGETS:
 ##### Make combined alias 'install'
 
 # Execute 'scons install' to install all binaries, scripts and python modules
-installable = ['casm_include_install', 'casm_lib_install', 'ccasm_lib_install', 'casm_install', 'pycasm_install']
-env.Alias('install', installable)
+env.Alias('install', env['INSTALL_TARGETS'])
 
 if 'install' in COMMAND_LINE_TARGETS:
     env['IS_INSTALL'] = 1
@@ -637,6 +669,36 @@ if 'configure' in COMMAND_LINE_TARGETS:
     print "no"
     return 0
   
+  def CheckBashCompletion(conf):
+    """Optional casm implemenation for 'bash-completion'"""
+    
+    if 'BASH_COMPLETION_DIR' not in conf.env:
+      print "Checking for 'bash-completion'... ",
+      msg = """ 'bash-completion' is not found. To use tab completion with the 
+      'casm' executable please install 'bash-completion'. If installed in a 
+      non-standard location set the CASM_BASH_COMPLETION_DIR environment variable.
+      """
+      conf.Result(0)
+      return 0, msg
+    elif not os.access(conf.env['BASH_COMPLETION_DIR'], os.W_OK):
+      print "Found 'bash-completion' dir:", conf.env['BASH_COMPLETION_DIR'], \
+        "but it is not writeable... ",
+      msg = textwrap.dedent(
+          """
+          To use 'bash-completion', please setup your ~/.bash_completion configuration  
+          file to 'source' bash-completion files from a custom location, i.e.:
+          
+              for f in $HOME/completions/*; do source $f; done
+          
+          and set the CASM_BASH_COMPLETION_DIR environment variable to specify that location.
+          """)
+      conf.Result(0)
+      return 0, msg
+    else:
+      print "Found 'bash-completion' dir:", conf.env['BASH_COMPLETION_DIR'], "... ",
+      conf.Result(1)
+      return 1, None
+  
   conf = Configure(
     env.Clone(LIBPATH=install_lib_paths,
               CPPPATH=cpppath),
@@ -645,7 +707,8 @@ if 'configure' in COMMAND_LINE_TARGETS:
       'CheckBoost_includedir' : CheckBoost_includedir,
       'CheckBoost_libname' : CheckBoost_libname,
       'CheckBoost_version' : CheckBoost_version,
-      'CheckBOOST_NO_CXX11_SCOPED_ENUMS': CheckBOOST_NO_CXX11_SCOPED_ENUMS})
+      'CheckBOOST_NO_CXX11_SCOPED_ENUMS': CheckBOOST_NO_CXX11_SCOPED_ENUMS,
+      'CheckBashCompletion': CheckBashCompletion})
   
   def if_failed(msg):
     print "\nConfiguration checks failed."
@@ -672,6 +735,10 @@ if 'configure' in COMMAND_LINE_TARGETS:
     if_failed("Please check your boost version") 
   if not conf.CheckBOOST_NO_CXX11_SCOPED_ENUMS():
     if_failed("Please check your boost installation or the CASM_BOOST_NO_CXX11_SCOPED_ENUMS environment variable")
+  result = conf.CheckBashCompletion()
+  if not result[0]:
+      print result[1]
+      
   
   print "Configuration checks passed."
   exit(0)

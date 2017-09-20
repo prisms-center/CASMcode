@@ -3,13 +3,15 @@
 #  Recognized by scons install scripts and 'casm' CLI executable for CASM install
 #  location assuming $CASM_PREFIX/include for headers and $CASM_PREFIX/lib for libcasm
 #  Order of precedence:
-#    1) $CASM_INCLUDEDIR, $CASM_LIBDIR
-#    2) $CASM_PREFIX/include, $CASM_PREFIX/lib
-#    3) "/usr/local"
+#    1) $CASM_INCLUDEDIR, $CASM_LIBDIR, $CASM_BINDIR, $CASM_PYTHON_PREFIX
+#    2) $CASM_PREFIX/include, $CASM_PREFIX/lib, $CASM_PREFIX/bin
+#    3) CASM_PREFIX="/usr/local"
 #
 #export CASM_PREFIX="/usr/local"
-#export CASM_INCLUDEDIR="/usr/local/include"
-#export CASM_LIBDIR="/usr/local/lib"
+#export CASM_INCLUDEDIR=$CASM_PREFIX/include
+#export CASM_LIBDIR=$CASM_PREFIX/lib
+#export CASM_BINDIR=$CASM_PREFIX/bin
+#export CASM_PYTHON_PREFIX=$CASM_PREFIX
 
 
 #  Recognized by install scripts and 'casm' CLI executable for locating boost 
@@ -91,6 +93,15 @@
 #
 #export LIBCCASM="/usr/local/lib/libccasm.so"
 
+#  bash-completion script install location, overrides pkg-config and standard 
+#  location search path. If no valid directory found, will not install.
+#  Order of preference:
+#    1) $CASM_BASH_COMPLETION_DIR
+#    2) pkg-config --variable=completionsdir bash-completion
+#    3) pkg-config --variable=compatdir bash-completion
+#    4) $BASH_COMPLETION/bash_completion.d, where $BASH_COMPLETION is a directory
+#       containing 'bash_completion' on $PATH:/etc:/usr/etc:/sw/etc
+#export CASM_BASH_COMPLETION_DIR="/usr/local/etc/bash_completion.d"
 
 ### Testing environment
 
