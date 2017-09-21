@@ -6,7 +6,7 @@
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
-  namespace Completer {
+  /*namespace Completer {
 
     /// Options set for `casm select`.
     class SelectOption : public OptionHandlerBase {
@@ -32,7 +32,7 @@ namespace CASM {
 
     };
 
-  }
+  }*/
 }
 
 namespace CASM {
