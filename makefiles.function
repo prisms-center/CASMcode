@@ -29,6 +29,7 @@ _simple_include_makemodule()
     local target=$1
     #find all subdirectories inside a particular include set, such as monte_carlo
     searchdir=./include/casm/$target
+    local d
     for d in $(find $searchdir -type d); do
         #Strip the path from all the slashes to get a unique name
         long=$(_smushdir $d)
@@ -77,7 +78,8 @@ _simple_subdirs()
     echo "\
     app\
     basis_set\
-    casm_io clex\
+    casm_io\
+    clex\
     clusterography\
     completer\
     container\
@@ -97,8 +99,8 @@ _simple_subdirs()
 #for both include and src, and overwrite whatever currently exists
 _rewrite_simple_makemodules()
 {
+    local d
     for d in $(_simple_subdirs); do
-        # echo $d
         _simple_include_makemodule $d > ./include/casm/$d/Makemodule.am
         _simple_src_makemodule $d > ./src/casm/$d/Makemodule.am
     done
