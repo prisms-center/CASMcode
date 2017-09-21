@@ -1,0 +1,47 @@
+package:
+  name: casm
+  version: "0.2.dev"
+
+source:
+  path: ../..
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - scons
+    - setuptools
+    - gcc >=4.8
+    - boost
+    - python
+    - bokeh 0.12.*
+    - deap
+    - mock 2.0.0 py27_0
+    - funcsigs 1.0.2 py27_0
+    - six 1.10.0 py27_1
+    - pandas 0.20.*
+    - prisms-jobs
+    - scikit-learn 0.19.*
+    - scipy 0.19.*
+    - tornado ==4.3
+    
+  run:
+    - gcc >=4.8
+    - boost
+    - python
+    - bokeh 0.12.*
+    - deap
+    - mock 2.0.0 py27_0
+    - funcsigs 1.0.2 py27_0
+    - six 1.10.0 py27_1
+    - pandas 0.20.*
+    - prisms-jobs
+    - scikit-learn 0.19.*
+    - scipy 0.19.*
+    - tornado ==4.3
+
+about:
+  home: https://github.com/bpuchala/CASMcode.git
+  license: LGPLv2
+  license_file: LICENSE

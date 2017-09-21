@@ -27,7 +27,6 @@ setup(name='casm',
       install_requires=[
           'bokeh==0.12.3',
           'deap',
-          'funcsigs >=1',
           'mock', 
           'pandas',
           'prisms-jobs',
