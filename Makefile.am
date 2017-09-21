@@ -63,7 +63,7 @@ include $(srcdir)/include/ccasm/Makemodule.am
 #============================================================#
 #Take care of applications
 include $(srcdir)/apps/casm/Makemodule.am
-# include $(srcdir)/apps/completer/Makemodule.am
+include $(srcdir)/apps/completer/Makemodule.am
 
 #============================================================#
 #Take care of tests

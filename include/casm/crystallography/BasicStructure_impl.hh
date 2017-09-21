@@ -152,6 +152,7 @@ namespace CASM {
 
         double tdist = 0.0;
         double max_error = 0.0;
+        std::vector<Index> mappings(basis.size(), basis.size());
         for(b1 = 0; b1 < basis.size(); b1++) { //Loop over original basis sites
           for(b2 = 0; b2 < trans_basis.size(); b2++) { //Loop over symmetrically transformed basis sites
 
@@ -161,6 +162,7 @@ namespace CASM {
               if(tdist > max_error) {
                 max_error = tdist;
               }
+              mappings[b1] = b2;
               num_suc_maps++;
               break;
             }
@@ -171,39 +173,34 @@ namespace CASM {
             break;
           }
         }
-
-        //If all atoms in the basis are mapped successfully, try to add the corresponding
-        //symmetry operation to the factor_group
-        /*
-        Coordinate center_of_mass(lattice());
-        for(Index b = 0; b < basis.size(); b++) {
-          //for each basis site loop through all trans_basis to find the closest one
-          double smallest = 1000000;
-          Coordinate bshift(lattice()), tshift(lattice());
-          for(Index tb = 0; tb < trans_basis.size(); tb++) {
-            double dist = trans_basis[tb].min_dist(basis[b], tshift);
+        std::set<Index> unique_mappings;
+        for(auto &e : mappings)
+          unique_mappings.insert(e);
+        if(num_suc_maps == basis.size() && unique_mappings.size() == mappings.size()) {
+          //If all atoms in the basis are mapped successfully, try to add the corresponding
+          //symmetry operation to the factor_group
+          Coordinate center_of_mass(lattice());
+          for(Index b = 0; b < basis.size(); b++) {
+            //for each basis site loop through all trans_basis to find the closest one
+            double smallest = 1000000;
+            Coordinate tshift(lattice());
+            double dist = trans_basis[mappings[b]].min_dist(basis[b] - t_tau, tshift);
             //in tshift is stored trans_basis - basis
-            if(dist < smallest) {
-              //bshift is current best shift (closest)
-              bshift = tshift;
-              //smallest is current closest distance
-              smallest = dist;
-            }
+            tshift.cart() *= (1.0 / basis.size());
+            center_of_mass += tshift;
           }
-          bshift.cart() *= (1.0 / basis.size());
-          center_of_mass += bshift;
-        }
-        /*
-        point_group[pg] operates on all of basis and save = trans_basis
-        //t_shift is the vector from basis to op_basis magnitude of tshift=min_dist
-        average all t_shifts and add/subtract to t_tau
 
-        if t_shift is b-> ob then subtract
-        if t_shift is ob -> b then add
-        matrix * basis + tau = operbasis
-        *//*
-t_tau -= center_of_mass;*/
-        if(num_suc_maps == basis.size()) {
+          /*
+          point_group[pg] operates on all of basis and save = trans_basis
+          //t_shift is the vector from basis to op_basis magnitude of tshift=min_dist
+          average all t_shifts and add/subtract to t_tau
+
+          if t_shift is b-> ob then subtract
+          if t_shift is ob -> b then add
+          matrix * basis + tau = operbasis
+          */
+          t_tau -= center_of_mass;/**/
+
           SymOp tSym(SymOp::translation(t_tau.cart())*point_group[pg]);
           tSym.set_map_error(max_error);
 
