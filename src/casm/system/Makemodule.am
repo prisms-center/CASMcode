@@ -1,2 +1,3 @@
-libcasm_la_SOURCES += ./src/casm/system/Popen.cc\
-                      ./src/casm/system/RuntimeLibrary.cc
+libcasm_la_SOURCES +=\
+./src/casm/system/Popen.cc\
+./src/casm/system/RuntimeLibrary.cc
