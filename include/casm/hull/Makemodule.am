@@ -1,2 +1,4 @@
 hullincludedir=$(includedir)/casm/hull
-hullinclude_HEADERS=./include/casm/hull/Hull.hh
+hullinclude_HEADERS=\
+./include/casm/hull/Hull.hh
+
