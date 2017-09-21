@@ -19,11 +19,17 @@ _echo_with_backslash()
 }
 
 #Create Makemodule.am file for headers, pass clex, monte_carlo, etc as parameter
-_make_for_include()
+_simple_include_makemodule()
 {
+    if [ "$#" -ne 1 ]; then
+            echo "Illegal number of parameters"
+            exit
+    fi
+
     local target=$1
     #find all subdirectories inside a particular include set, such as monte_carlo
     searchdir=./include/casm/$target
+    local d
     for d in $(find $searchdir -type d); do
         #Strip the path from all the slashes to get a unique name
         long=$(_smushdir $d)
@@ -31,7 +37,7 @@ _make_for_include()
         basename=${long#*includecasm}include
 
         #If there's no hh files carry on
-        headers=$(find $d -type f -name "*.hh")
+        headers=$(find $d -maxdepth 1 -type f -name "*.hh")
         if [[ $(echo $headers | wc -w) == 0 ]]; then
             continue
         fi
@@ -48,8 +54,13 @@ _make_for_include()
     done
 }
 
-_make_for_src()
+_simple_src_makemodule()
 {
+    if [ "$#" -ne 1 ]; then
+            echo "Illegal number of parameters"
+            exit
+    fi
+
     local target=$1
     #find all files inside a particular src folder
     searchdir=./src/casm/$target
@@ -60,25 +71,37 @@ _make_for_src()
     echo -e
 }
 
-###############################################################################
+#Returns names of the subdirectories that can have Makemodule.am files made directly
+#via simple_src_makemodule and simple_include_makemodule
+_simple_subdirs()
+{
+    echo "\
+    app\
+    basis_set\
+    casm_io\
+    clex\
+    clusterography\
+    completer\
+    container\
+    crystallography\
+    database\
+    hull\
+    kinetics\
+    misc\
+    monte_carlo\
+    strain\
+    symmetry\
+    system\
+    "
+}
 
-
-#You must run this script from the git root directory
-amtype=$1   #src vs inc
-target=$2   #clex, monte_carlo, etc
-
-#Deal with the src files here
-if [[ "$amtype" == "src" ]]; then
-    _make_for_src $target
-
-#Deal with the header files here
-elif [[ "$amtype" == "inc" ]]; then
-    _make_for_include $target
-
-#Invalid request
-else
-    echo "Usage:"
-    echo "bash makecasmmake.sh amtype target"
-    echo "amtype: src or inc"
-    echo "target: one of clex, monte_carlo, etc"
-fi
+#Create new Makemodule.am files for all the directories from _simple_subdirs
+#for both include and src, and overwrite whatever currently exists
+_rewrite_simple_makemodules()
+{
+    local d
+    for d in $(_simple_subdirs); do
+        _simple_include_makemodule $d > ./include/casm/$d/Makemodule.am
+        _simple_src_makemodule $d > ./src/casm/$d/Makemodule.am
+    done
+}

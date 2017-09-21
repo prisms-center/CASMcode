@@ -12,8 +12,6 @@ databaseinclude_HEADERS=\
 ./include/casm/database/ScelDatabase.hh\
 ./include/casm/database/ConfigImport.hh\
 ./include/casm/database/Remove.hh\
-./include/casm/database/json/jsonDatabase.hh\
-./include/casm/database/json/jsonPropertiesDatabase.hh\
 ./include/casm/database/DiffTransConfigDatabase.hh\
 ./include/casm/database/Named_impl.hh\
 ./include/casm/database/DiffTransOrbitDatabase.hh\
