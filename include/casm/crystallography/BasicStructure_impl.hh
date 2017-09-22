@@ -487,7 +487,7 @@ namespace CASM {
     reduced_new_lat.generate_point_group(pgroup);
 
     //Do not check to see if it returned true, it very well may not!
-    lattice().is_supercell_of(reduced_new_lat, pgroup, transmat)
+    lattice().is_supercell_of(reduced_new_lat, pgroup, transmat);
     //Round transformation elements to integers
     for(int i = 0; i < 3; i++) {
       for(int j = 0; j < 3; j++) {
