@@ -41,7 +41,6 @@ namespace CASM {
         }
         if(min_dist < max_radius) {
           gridstruc.push_back(tatom);
-          //          std::cout<<"tatom"<<tatom<<"\t Min Dist"<<min_dist<<"\n";
         }
       }
     }

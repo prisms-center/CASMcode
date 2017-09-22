@@ -92,7 +92,6 @@ namespace CASM {
   void Structure::generate_factor_group() const {
     m_factor_group.clear();
     m_factor_group.set_lattice(lattice());
-    //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &m_factor_group << "\n";
     BasicStructure<Site>::generate_factor_group(m_factor_group);
     return;
   }
@@ -301,7 +300,6 @@ namespace CASM {
         }
       }
     }
-    //std::cout << "WORKING ON FACTOR GROUP " << &m_factor_group << " for structure with volume " << prim_grid.size() << ":\n";
     //trans_and_expand primitive factor_group
     for(i = 0; i < prim.factor_group().size(); i++) {
       if(latvec_pg.find_no_trans(prim.factor_group()[i]) == latvec_pg.size()) {
@@ -322,7 +320,6 @@ namespace CASM {
 #endif
       m_factor_group.invalidate_multi_tables();
     }
-    //std::cout << "Final size is: " << m_factor_group.size() << "\n";
     update();
 
     return;
@@ -390,8 +387,6 @@ namespace CASM {
   //***********************************************************
 
   void Structure::reset() {
-    //std::cout << "begin reset() " << this << std::endl;
-
     for(Index nb = 0; nb < basis.size(); nb++) {
       basis[nb].set_basis_ind(nb);
     }
@@ -403,7 +398,6 @@ namespace CASM {
       basis[i].site_occupant.set_value(-1);
     }
     */
-    //std::cout << "finish reset()" << std::endl;
     return;
   }
 
@@ -529,8 +523,6 @@ namespace CASM {
       operbasis.clear();
       for(Index b = 0; b < basis.size(); b++) {
         operbasis.push_back(relaxed_factors[rf]*basis[b]);
-        operbasis.back().print(std::cout);
-        std::cout << std::endl;
       }
       //Now that you have a transformed basis, find the closest mapping of atoms
       //Then average the distance and add it to the average basis
