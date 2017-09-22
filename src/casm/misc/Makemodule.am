@@ -1,4 +1,4 @@
 libcasm_la_SOURCES +=\
-./src/casm/misc/CASM_Eigen_math.cc\
+./src/casm/misc/CASM_math.cc\
 ./src/casm/misc/CASM_Array_math.cc\
-./src/casm/misc/CASM_math.cc
+./src/casm/misc/CASM_Eigen_math.cc

@@ -1,14 +1,14 @@
 libcasm_la_SOURCES +=\
-./src/casm/symmetry/PermuteIterator.cc\
-./src/casm/symmetry/SymOp.cc\
 ./src/casm/symmetry/InvariantSubgroup.cc\
-./src/casm/symmetry/SymGroupRepID.cc\
-./src/casm/symmetry/SymPermutation.cc\
+./src/casm/symmetry/SymGroup.cc\
 ./src/casm/symmetry/SymInfo.cc\
-./src/casm/symmetry/SymOpRepresentation.cc\
-./src/casm/symmetry/SymBasisPermute.cc\
-./src/casm/symmetry/SymGroupRep.cc\
-./src/casm/symmetry/ConfigSubOrbits.cc\
 ./src/casm/symmetry/Orbit.cc\
 ./src/casm/symmetry/SymMatrixXd.cc\
-./src/casm/symmetry/SymGroup.cc
+./src/casm/symmetry/SymGroupRepID.cc\
+./src/casm/symmetry/SymOpRepresentation.cc\
+./src/casm/symmetry/SymOp.cc\
+./src/casm/symmetry/SymPermutation.cc\
+./src/casm/symmetry/SymBasisPermute.cc\
+./src/casm/symmetry/PermuteIterator.cc\
+./src/casm/symmetry/ConfigSubOrbits.cc\
+./src/casm/symmetry/SymGroupRep.cc

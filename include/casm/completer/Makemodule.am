@@ -1,5 +1,5 @@
 completerincludedir=$(includedir)/casm/completer
 completerinclude_HEADERS=\
-./include/casm/completer/Handlers.hh\
-./include/casm/completer/Complete.hh
+./include/casm/completer/Complete.hh\
+./include/casm/completer/Handlers.hh
 
