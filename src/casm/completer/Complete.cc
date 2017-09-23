@@ -225,6 +225,14 @@ namespace CASM {
         //ArgHandler::coord_mode_to_bash();
         break;
 
+      case ARG_TYPE::DBTYPE:
+        ArgHandler::dbtype_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::ENUMMETHOD:
+        ArgHandler::enummethod_to_bash(arguments);
+        break;
+
       default:
         break;
       }

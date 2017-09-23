@@ -6,6 +6,7 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/database/DatabaseTypes.hh"
+#include "casm/container/Enumerator.hh"
 
 namespace CASM {
   namespace Completer {
@@ -66,6 +67,13 @@ namespace CASM {
       return m_argument_table[6].first;
     }
 
+    std::string ArgHandler::dbtype() {
+      return m_argument_table[7].first;
+    }
+
+    std::string ArgHandler::enummethod() {
+      return m_argument_table[8].first;
+    }
 
     void ArgHandler::void_to_bash(std::vector<std::string> &arguments) {
       return;
@@ -107,6 +115,20 @@ namespace CASM {
       return;
     }
 
+    void ArgHandler::dbtype_to_bash(std::vector<std::string> &arguments) {
+      for(auto &item : DB::types_short()) {
+        arguments.push_back(item);
+      }
+      return;
+    }
+
+    void ArgHandler::enummethod_to_bash(std::vector<std::string> &arguments) {
+      for(auto &e : *make_standard_enumerator_map()) {
+        arguments.push_back(e.name());
+      }
+      return;
+    }
+
 
     /**
      * This construction right here determines what the value_name of the boost options
@@ -121,7 +143,9 @@ namespace CASM {
       std::make_pair("<query>", ARG_TYPE::QUERY),
       std::make_pair("<operation>", ARG_TYPE::OPERATOR),
       std::make_pair("<configuration>", ARG_TYPE::CONFIGNAME),
-      std::make_pair("<type>", ARG_TYPE::COORDTYPE)
+      std::make_pair("<type>", ARG_TYPE::COORDTYPE),
+      std::make_pair("<dbtype>", ARG_TYPE::DBTYPE),
+      std::make_pair("<enummethod>", ARG_TYPE::ENUMMETHOD)
     });
 
 
@@ -366,7 +390,7 @@ namespace CASM {
 
       m_desc.add_options()
       ("type,t",
-       po::value<std::string>(&m_db_type)->default_value(_default),
+       po::value<std::string>(&m_db_type)->default_value(_default)->value_name(ArgHandler::dbtype()),
        help.str().c_str());
     }
 

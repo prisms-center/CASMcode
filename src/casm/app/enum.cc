@@ -27,7 +27,7 @@ namespace CASM {
        "Print extended usage description. "
        "Use '--desc MethodName [MethodName2...]' for detailed option description. "
        "Partial matches of method names will be included.")
-      ("method,m", po::value<std::string>(&m_method), "Method to use: Can use number shortcuts in this option.")
+      ("method,m", po::value<std::string>(&m_method)->value_name(ArgHandler::enummethod()), "Method to use: Can use number shortcuts in this option.")
       ("min", po::value<int>(&m_min_volume)->default_value(1), "Min volume")
       ("max", po::value<int>(&m_max_volume), "Max volume")
       ("filter",
