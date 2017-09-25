@@ -37,7 +37,7 @@ namespace CASM {
     class ArgHandler {
     public:
 
-      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR, CONFIGNAME, COORDTYPE, DBTYPE, ENUMMETHOD};
+      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR, CONFIGNAME, COORDTYPE, DBTYPE, ENUMMETHOD, CONFIGTYPE};
 
       ///Translate the stored boost value_name into an ARG_TYPE for the completer engine
       static ARG_TYPE determine_type(const po::option_description &boost_option);
@@ -69,6 +69,9 @@ namespace CASM {
       ///Get value_type string for enummethod mode completion
       static std::string enummethod();
 
+      ///Get value_type string for configtype mode completion
+      static std::string configtype();
+
 
       ///Fill the output strings with bash completion appropriate values for VOID (i.e. do nothing)
       static void void_to_bash(std::vector<std::string> &arguments);
@@ -93,6 +96,9 @@ namespace CASM {
 
       ///Fill the output strings with bash completion appropriate values for ENUMMETHOD
       static void enummethod_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for CONFIGTYPE
+      static void configtype_to_bash(std::vector<std::string> &arguments);
 
 
     private:

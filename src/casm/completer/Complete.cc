@@ -233,6 +233,10 @@ namespace CASM {
         ArgHandler::enummethod_to_bash(arguments);
         break;
 
+      case ARG_TYPE::CONFIGTYPE:
+        ArgHandler::configtype_to_bash(arguments);
+        break;
+
       default:
         break;
       }

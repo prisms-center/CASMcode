@@ -75,6 +75,10 @@ namespace CASM {
       return m_argument_table[8].first;
     }
 
+    std::string ArgHandler::configtype() {
+      return m_argument_table[9].first;
+    }
+
     void ArgHandler::void_to_bash(std::vector<std::string> &arguments) {
       return;
     }
@@ -130,6 +134,12 @@ namespace CASM {
       return;
     }
 
+    void ArgHandler::configtype_to_bash(std::vector<std::string> &arguments) {
+      for(auto &item : DB::config_types_short()) {
+        arguments.push_back(item);
+      }
+      return;
+    }
 
     /**
      * This construction right here determines what the value_name of the boost options
@@ -146,7 +156,8 @@ namespace CASM {
       std::make_pair("<configuration>", ARG_TYPE::CONFIGNAME),
       std::make_pair("<type>", ARG_TYPE::COORDTYPE),
       std::make_pair("<dbtype>", ARG_TYPE::DBTYPE),
-      std::make_pair("<enummethod>", ARG_TYPE::ENUMMETHOD)
+      std::make_pair("<enummethod>", ARG_TYPE::ENUMMETHOD),
+      std::make_pair("<configtype>", ARG_TYPE::CONFIGTYPE)
     });
 
 
@@ -353,7 +364,7 @@ namespace CASM {
 
       m_desc.add_options()
       ("type,t",
-       po::value<std::string>(&m_configtype)->default_value(_default),
+       po::value<std::string>(&m_configtype)->default_value(_default)->value_name(ArgHandler::configtype()),
        help.str().c_str());
     }
 
