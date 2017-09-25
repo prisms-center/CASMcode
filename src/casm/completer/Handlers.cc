@@ -94,6 +94,12 @@ namespace CASM {
     }
 
     void scelname_to_bash(std::vector<std::string> &arguments) {
+      /*if (in_project()){
+        auto db_scel = primclex().const_db<Supercell>();
+        for (const auto &scel : db_scel){
+          arguments.push_back(scel->name());
+        }
+      }*/
       return;
     }
 

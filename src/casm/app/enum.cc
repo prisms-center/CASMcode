@@ -23,7 +23,7 @@ namespace CASM {
       m_desc.add_options()
       ("help,h", "Print help message.")
       ("desc",
-       po::value<std::vector<std::string> >(&m_desc_vec)->multitoken()->zero_tokens(),
+       po::value<std::vector<std::string> >(&m_desc_vec)->multitoken()->zero_tokens()->value_name(ArgHandler::enummethod()),
        "Print extended usage description. "
        "Use '--desc MethodName [MethodName2...]' for detailed option description. "
        "Partial matches of method names will be included.")

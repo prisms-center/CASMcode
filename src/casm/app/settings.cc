@@ -50,7 +50,7 @@ namespace CASM {
       ("set-default-clex", po::value<std::string>(&m_input_str), "Set the cluster expansion that CASM uses or acts on by default")
       ("erase-clex", po::value<std::string>(&m_input_str), "Erase the specified cluster expansion. Does not erase underlying bset, eci, etc.")
       ("clex", po::value<std::string>(), "The cluster expansion for which to set property, bset, calctype, ref, or eci")
-      ("set-property", po::value<std::string>(&m_input_str), "Set the current basis set")
+      ("set-property", po::value<std::string>(&m_input_str), "Set the property being cluster expanded")
       ("set-bset", po::value<std::string>(&m_input_str), "Set the basis set")
       ("set-calctype", po::value<std::string>(&m_input_str), "Set the calculation type")
       ("set-ref", po::value<std::string>(&m_input_str), "Set the calculation reference")
