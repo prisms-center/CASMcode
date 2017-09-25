@@ -123,7 +123,8 @@ namespace CASM {
     }
 
     void ArgHandler::enummethod_to_bash(std::vector<std::string> &arguments) {
-      for(auto &e : *make_standard_enumerator_map()) {
+      const EnumeratorMap map = *(make_standard_enumerator_map().get());
+      for(const auto &e : map) {
         arguments.push_back(e.name());
       }
       return;
