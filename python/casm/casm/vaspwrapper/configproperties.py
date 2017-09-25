@@ -41,9 +41,8 @@ class ConfigPropertiesBase(object):
 
     """
 
-    def __init__(self, config_data):
-        self.config_data = config_data
-        self.configname = config_data["configname"]
+    def __init__(self, configname, calctype=None):
+        self.configname = configname
         self.casm_directories = casm.project.DirectoryStructure(self.configdir)
         self.casm_settings = casm.project.ProjectSettings(self.configdir)
         if self.casm_settings is None:
@@ -51,11 +50,13 @@ class ConfigPropertiesBase(object):
 
         # fixed to default_clex for now
         self.clex = self.casm_settings.default_clex
+        if calctype:
+            self.clex.calctype = calctype
 
         # store path to .../config/calctype.name, and create if not existing
         # will be appended by n_images at the end after reading the settings file
         self.calcdir = self.casm_directories.calctype_dir(self.configname, self.clex, self.calc_subdir)
-
+        self.results_subdir = '' #everything between $(calcdir)/run.*/ and OSZICAR and OUTCAR files
         setfile = self.casm_directories.settings_path_crawl("calc.json", self.configname, self.clex, self.calc_subdir)
         if setfile is None:
             raise vaspwrapper.VaspWrapperError("Could not find \"calc.json\" in an appropriate \"settings\" directory")
@@ -88,5 +89,5 @@ class ConfigPropertiesBase(object):
 
     @property
     def calc_subdir(self):
-        # everything between training_data and configname is dumpded in calc_subdir
+        # everything between training_data and configname is dumpded in calc_subdir #redundent
         return ""

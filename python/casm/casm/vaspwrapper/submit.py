@@ -36,7 +36,7 @@ class Submit(object):
         db = pbs.JobDB()
         db.update()
         for config_data in self.selection.data:
-            config_obj = ConfigProperties(config_data)
+            config_obj = ConfigProperties(config_data["configname"])
             print "Submitting..."
             print "Configuration:", config_obj.configname
             #first, check if the job has already been submitted and is not completed

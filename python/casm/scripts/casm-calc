@@ -10,10 +10,8 @@ import casm.vaspwrapper.Relax,casm.vaspwrapper.Neb
 
 # casm-calc --configs selection
 #           --type "config", "diff_trans", etc.
-#           --software "vasp", "quantum_expresso", "sequest" etc. ## shift to calc.json?
-#           --method "relax", "neb", etc.
-#           --scheduler "pbs"
-#           --run / --submit / --setup / --report
+#           --calctype "default"
+#           --setup /  --run / --submit / --report
 
 configs_help = """
 CASM selection file or one of 'CALCULATED', 'ALL', or 'MASTER' (Default)
@@ -23,12 +21,8 @@ configtype_help = """
 Type of configuartions 'config' (Default), 'diff_trans', 'diff_trans_config' or scel
 """
 
-software_help = """
-Warpper for a python package to be used 'vasp' (Default), 'quantum_expressso' or 'sequest'
-"""
-
-method_help = """
-Calculator type to be used 'relax' (Default) or 'neb'
+calctype_help = """
+calctype on which to run the calculations
 """
 
 path_help = """
@@ -71,12 +65,16 @@ run_cls = {
   "quantum_expresso": casm.qewrapper.Run
 }
 
+report_cls = {
+  "vasp": casm.vaspwarpper.Report,
+  "quantum_expresso": casm.qewrapper.Report
+}
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
   parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
   parser.add_argument('-t', '--type', help=configtype_help, type=str, default="config")
-  parser.add_argument('-w', '--software', help=software_help, type=str, default="vasp")
-  parser.add_argument('-m', '--method', help=method_help, type=str, default="relax")
+  parser.add_argument('--calctype', help=calctype_help, type=str, default="")
   parser.add_argument('--path', help=path_help, type=str, default=None)
   parser.add_argument('--run', help=run_help, action="store_true", default=False)
   parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
@@ -90,25 +88,30 @@ if __name__ == "__main__":
   try:
     proj = Project(abspath(args.path))
     sel = Selection(proj, args.configs, args.type, all=False) 
-
+    if clactype = "":
+      get_calctype from proj
+    
+    global_settings = json.loads(os.path.join(proj.dir.settings.calctype_settings_dir(args.calctype), "calc.json"))
+    software = global_settings["software"]
+    method = global_settings["method"]
     # Construct with Selection:
     # - This provides access to the Project, via sel.proj
     # - From the project you can make calls to run interpolation and query lattice relaxations
-    calculator = available_calculators[args.wrapper][args.calculator](sel)
+    calculator = available_calculators[software][method](sel, args.calctype)
 
     if args.setup:
       calculator.setup()
 
     elif args.submit:
       calculator.setup()
-      submit_cls[args.wrapper](sel, args.methodA)
+      submit_obj = submit_cls[software](sel, args.method)
 
     elif args.run:
       calculator.setup()
       for configname in sel.data["configname"]:
-        relaxation = run_cls[args.wrapper](proj.dir.configuration_dir(configname))
+        run_obj = run_cls[software](proj.dir.configuration_dir(configname))
     
-    elif args.report:
+    elif args.report: #TODO
 
       #also convert into a class with selection as input
       for configname in sel.data["configname"]:

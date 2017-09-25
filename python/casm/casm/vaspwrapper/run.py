@@ -5,15 +5,20 @@ import casm
 import casm.project
 from casm.project import Project, Selection
 import vaspwrapper
+from casm.vaspwrapper.submit import run_settings
 
+class Run(object):
+    """ Setup input files, run a vasp relaxation, and report results 
+    """
+    def __init__(self, configname, method='relax', calctype=None, auto=True):
 
-class run(object):
-    """ Setup input files, run a vasp relaxation, and report results """
-    def __init__(self, configdir):
-        self.configdir = configdir
-        # construct the Neb object
-        calculation = vasp.Neb(self.calcdir, self.run_settings())
+        available_methods = {'relax': vasp.Relax, 'neb': vasp.Neb}
+        from available_methods[method] import Container ##TODO
+        self.config_obj, self.finalize_obj , self.properties_obj = Container(configname, calctype)
+        self.calculation = available_methods[method](self.config_obj.calcdir, run_settings(self.config_obj.settings))
 
+    def run(self):
+        """run the job"""
         # check the current status
         (status, task) = calculation.status()
 
@@ -30,12 +35,12 @@ class run(object):
                     sys.stdout.flush()
 
             # write results to properties.calc.json
-            self.finalize()
+            self.finalize_obj.finalize()
             return
 
         elif status == "not_converging":
             print "Status:", status
-            self.report_status("failed","run_limit")
+            self.finalize_obj.report_status("failed","run_limit")
             print "Returning"
             sys.stdout.flush()
             return
@@ -43,13 +48,13 @@ class run(object):
         elif status == "incomplete":
 
             if task == "setup":
-                self.setup()
+                self.setup() #TODO
 
-            self.report_status("started")
+            self.finalize_obj.report_status("started")
             (status, task) = calculation.run()
 
         else:
-            self.report_status("failed", "unknown")
+            self.finalize_obj.report_status("failed", "unknown")
             raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
@@ -68,19 +73,21 @@ class run(object):
 
             print "Not Converging!"
             sys.stdout.flush()
-            self.report_status("failed", "run_limit")
+            self.finalize_obj.report_status("failed", "run_limit")
 
             # print a local settings file, so that the run_limit can be extended if the
             #   convergence problems are fixed
 
-            config_set_dir = self.casm_directories.configuration_calc_settings_dir(self.configname, self.clex, self.calc_subdir)
+            config_set_dir = self.config_obj.casm_directories.configuration_calc_settings_dir(self.config_obj.configname,
+                                                                                              self.config_obj.clex,
+                                                                                              self.config_obj.calc_subdir)
 
             try:
                 os.makedirs(config_set_dir)
             except:
                 pass
-            settingsfile = os.path.join(config_set_dir, "neb.json")
-            vaspwrapper.write_settings(self.settings, settingsfile)
+            settingsfile = os.path.join(config_set_dir, "calc.json")
+            vaspwrapper.write_settings(self.config_obj.settings, settingsfile)
 
             print "Writing:", settingsfile
             print "Edit the 'run_limit' property if you wish to continue."
@@ -98,9 +105,9 @@ class run(object):
                     sys.stdout.flush()
 
             # write results to properties.calc.json
-            self.finalize()
+            self.finalize_obj.finalize()
 
         else:
-            self.report_status("failed", "unknown")
+            self.finalize_obj.report_status("failed", "unknown")
             raise vaspwrapper.VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
