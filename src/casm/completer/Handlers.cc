@@ -7,6 +7,11 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/container/Enumerator.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/app/APICommand.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/casm_io/Log.hh"
 
 namespace CASM {
   namespace Completer {
@@ -93,13 +98,23 @@ namespace CASM {
       return;
     }
 
-    void scelname_to_bash(std::vector<std::string> &arguments) {
-      /*if (in_project()){
-        auto db_scel = primclex().const_db<Supercell>();
-        for (const auto &scel : db_scel){
-          arguments.push_back(scel->name());
+    void ArgHandler::scelname_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(const auto &scel : pclex.const_db<Supercell>()) {
+          arguments.push_back(scel.name());
         }
-      }*/
+      }
+      return;
+    }
+
+    void ArgHandler::configname_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(const auto &config : pclex.const_db<Configuration>()) {
+          arguments.push_back(config.name());
+        }
+      }
       return;
     }
 

@@ -57,11 +57,11 @@ namespace CASM {
     //result.structures = _get_structures(pos_path);
     result.relaxation_properties.put_obj();
 
-    //Map first and last structure using ConfigMapping
-    ////first is the from config last is the to config
     //Find out which species are moving from which basis site to the other
     ////if this isn't a closed loop one of the species is a vacancy
     //From the moving species and basis sites, should be able to create hop
+    //Map first and last structure using ConfigMapping
+    ////first is the from config last is the to config <--(This may get flipped flopped upon sorting of DiffTransConfiguration)
     //Attach hop to ideal from config in same orientation
     //use this to interpolate same amount of images
     //calculate strain scores and basis scores for every image and sum/average/sumsq

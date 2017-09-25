@@ -82,8 +82,11 @@ namespace CASM {
       ///Fill the output strings with bash completion appropriate values for COMMAND
       static void command_to_bash(std::vector<std::string> &arguments);
 
-      ///Fill the output strings with bash completion appropriate values for SCELNAME   TODO: This routine is currently unimplemented
+      ///Fill the output strings with bash completion appropriate values for SCELNAME
       static void scelname_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for CONFIGNAME
+      static void configname_to_bash(std::vector<std::string> &arguments);
 
       ///Fill the output strings with bash completion appropriate values for QUERY
       static void query_to_bash(std::vector<std::string> &arguments);
