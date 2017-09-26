@@ -4,6 +4,9 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/container/Enumerator.hh"
@@ -118,7 +121,7 @@ namespace CASM {
       return;
     }
 
-    void ArgHandler::query_to_bash(std::vector<std::string> &arguments) {
+    void ArgHandler::operator_to_bash(std::vector<std::string> &arguments) {
       DataFormatterDictionary<Configuration> dict = make_dictionary<Configuration>();
 
       for(auto it = dict.begin(); it != dict.cend(); ++it) {
@@ -129,12 +132,33 @@ namespace CASM {
       return;
     }
 
-    void ArgHandler::operator_to_bash(std::vector<std::string> &arguments) {
-      DataFormatterDictionary<Configuration> dict = make_dictionary<Configuration>();
+    void ArgHandler::query_to_bash(std::vector<std::string> &arguments) {
+      DataFormatterDictionary<Configuration> config_dict = make_dictionary<Configuration>();
 
-      for(auto it = dict.begin(); it != dict.cend(); ++it) {
+      for(auto it = config_dict.begin(); it != config_dict.cend(); ++it) {
         if(it->type() ==  BaseDatumFormatter<Configuration>::Property) {
-          arguments.push_back(it->name());
+          arguments.push_back("config:" + it->name());
+        }
+      }
+      DataFormatterDictionary<Supercell> scel_dict = make_dictionary<Supercell>();
+
+      for(auto it = scel_dict.begin(); it != scel_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Supercell>::Property) {
+          arguments.push_back("scel:" + it->name());
+        }
+      }
+      DataFormatterDictionary<Kinetics::PrimPeriodicDiffTransOrbit> dt_dict = make_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>();
+
+      for(auto it = dt_dict.begin(); it != dt_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Kinetics::PrimPeriodicDiffTransOrbit>::Property) {
+          arguments.push_back("diff_trans:" + it->name());
+        }
+      }
+      DataFormatterDictionary<Kinetics::DiffTransConfiguration> dtc_dict = make_dictionary<Kinetics::DiffTransConfiguration>();
+
+      for(auto it = dtc_dict.begin(); it != dtc_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Kinetics::DiffTransConfiguration>::Property) {
+          arguments.push_back("diff_trans_config:" + it->name());
         }
       }
       return;

@@ -11,15 +11,29 @@ last_suboption()
     echo "${last_sub}"
 }
 
+get_dbtype()
+{
+    local dbtype
+    dbtype="config"
+    for i in "${!COMP_WORDS[@]}"; do
+        if ([[ "${COMP_WORDS[$i]}" == "-t" ]] || [[ "${COMP_WORDS[$i]}" == "--type" ]]) && [[ "$i" != "$((${#COMP_WORDS[@]}-1))" ]] ; then
+            dbtype="${COMP_WORDS[$(($i+1))]}"
+        fi
+    done
+
+    echo "${dbtype}"
+}
+
 _casm()
 {
-    local first cur prev opts rootopts numargs complete last_sub
+    local first cur prev opts rootopts numargs complete last_sub prefix opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     numargs="${#COMP_WORDS[@]}"
     last_sub="$(last_suboption)"
-
+    prefix="$(get_dbtype):"
+    opts=()
     if [[ ${numargs} == 2 ]]; then
         complete="$(casm-complete)"
 
@@ -40,10 +54,20 @@ _casm()
 
     elif [[ "$complete" == "BASH_COMP_BIN"* ]]; then
 		COMPREPLY=( $(compgen -W "$(compgen -c)" -- ${cur}) )
-    
-    elif [[ "$complete" != "[empty]"* ]]; then
-        COMPREPLY=( $(compgen -W "${complete}" -- ${cur}) )
 
+    elif [[ "$complete" != "[empty]"* ]]; then
+        if [[ "$last_sub" == "-k" ]] || [[ "$last_sub" == "--columns" ]]; then
+            for item in $(echo $complete | tr " " "\n")
+            do
+                if [[ "$item" == "$prefix"* ]]; then
+                    opts+="${item##*:} "
+                fi
+            done
+            COMPREPLY=( $(compgen -W "${opts}" -- ${curr}) )
+        else
+            COMPREPLY=( $(compgen -W "${complete}" -- ${cur}) )
+
+        fi
     fi
 
 
