@@ -10,18 +10,35 @@ last_suboption()
 
     echo "${last_sub}"
 }
-
+#this gets the database type from previously completed words if it exists
 get_dbtype()
 {
-    local dbtype
+    local dbtype argistype notlast
+    #efault is config
     dbtype="config"
     for i in "${!COMP_WORDS[@]}"; do
-        if ([[ "${COMP_WORDS[$i]}" == "-t" ]] || [[ "${COMP_WORDS[$i]}" == "--type" ]]) && [[ "$i" != "$((${#COMP_WORDS[@]}-1))" ]] ; then
+        argistype=true
+        #if neither of the first two pass, set argistype to false
+        [[ "${COMP_WORDS[$i]}" == "-t" ]] || [[ "${COMP_WORDS[$i]}" == "--type" ]] || argistype=false
+        notlast=true 
+        #if condition is not satisfied set notlast to false
+        [[ "$i" != "$((${#COMP_WORDS[@]}-1))" ]] || notlast=false
+        if "$argistype" && "$notlast" ; then
             dbtype="${COMP_WORDS[$(($i+1))]}"
         fi
     done
 
     echo "${dbtype}"
+}
+#this function returns true if the last suboption requires database type information
+req_type()
+{
+    local needstype last_sub
+    last_sub="$(last_suboption)"
+    needstype=true
+    #right now only queries are checked for
+    [[ "$last_sub" == "-k" ]] || [[ "$last_sub" == "--columns" ]] || needstype=false
+    echo "${needstype}"
 }
 
 _casm()
@@ -56,14 +73,16 @@ _casm()
 		COMPREPLY=( $(compgen -W "$(compgen -c)" -- ${cur}) )
 
     elif [[ "$complete" != "[empty]"* ]]; then
-        if [[ "$last_sub" == "-k" ]] || [[ "$last_sub" == "--columns" ]]; then
-            for item in $(echo $complete | tr " " "\n")
-            do
+        #if the last suboption requires type to select options
+        if "$(req_type)"; then
+            #parse completer output to only give type specific options
+            #completer output expects $dbtype:$complete_suggestion
+            for item in $(echo $complete);  do
                 if [[ "$item" == "$prefix"* ]]; then
                     opts+="${item##*:} "
                 fi
             done
-            COMPREPLY=( $(compgen -W "${opts}" -- ${curr}) )
+            COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         else
             COMPREPLY=( $(compgen -W "${complete}" -- ${cur}) )
 

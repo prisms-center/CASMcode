@@ -10,11 +10,13 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/container/Enumerator.hh"
+#include "casm/app/EnumeratorHandler.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/APICommand.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/app/ProjectSettings.hh"
 
 namespace CASM {
   namespace Completer {
@@ -85,6 +87,30 @@ namespace CASM {
 
     std::string ArgHandler::configtype() {
       return m_argument_table[9].first;
+    }
+
+    std::string ArgHandler::calctype() {
+      return m_argument_table[10].first;
+    }
+
+    std::string ArgHandler::bset() {
+      return m_argument_table[11].first;
+    }
+
+    std::string ArgHandler::clex() {
+      return m_argument_table[12].first;
+    }
+
+    std::string ArgHandler::ref() {
+      return m_argument_table[13].first;
+    }
+
+    std::string ArgHandler::eci() {
+      return m_argument_table[14].first;
+    }
+
+    std::string ArgHandler::property() {
+      return m_argument_table[15].first;
     }
 
     void ArgHandler::void_to_bash(std::vector<std::string> &arguments) {
@@ -186,6 +212,67 @@ namespace CASM {
       return;
     }
 
+    void ArgHandler::calctype_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        for(auto &item : dir.all_calctype()) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::bset_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        for(auto &item : dir.all_bset()) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::clex_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(auto &item : set.cluster_expansions()) {
+          arguments.push_back(item.first);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::ref_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(auto &item : set.dir().all_ref(set.default_clex().calctype)) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::eci_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+        const ClexDescription d = set.default_clex();
+        for(auto &item : set.dir().all_eci(d.property, d.calctype, d.ref, d.bset)) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::property_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        for(auto &item : dir.all_property()) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
     /**
      * This construction right here determines what the value_name of the boost options
      * should be named. It is through these strings that bash completion can
@@ -202,7 +289,13 @@ namespace CASM {
       std::make_pair("<type>", ARG_TYPE::COORDTYPE),
       std::make_pair("<dbtype>", ARG_TYPE::DBTYPE),
       std::make_pair("<enummethod>", ARG_TYPE::ENUMMETHOD),
-      std::make_pair("<configtype>", ARG_TYPE::CONFIGTYPE)
+      std::make_pair("<configtype>", ARG_TYPE::CONFIGTYPE),
+      std::make_pair("<calctype>", ARG_TYPE::CALCTYPE),
+      std::make_pair("<bset>", ARG_TYPE::BSET),
+      std::make_pair("<clex>", ARG_TYPE::CLEX),
+      std::make_pair("<ref>", ARG_TYPE::REF),
+      std::make_pair("<eci>", ARG_TYPE::ECI),
+      std::make_pair("<property>", ARG_TYPE::PROPERTY)
     });
 
 

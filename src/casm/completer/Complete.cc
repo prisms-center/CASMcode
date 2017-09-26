@@ -238,6 +238,30 @@ namespace CASM {
         ArgHandler::configtype_to_bash(arguments);
         break;
 
+      case ARG_TYPE::CALCTYPE:
+        ArgHandler::calctype_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::BSET:
+        ArgHandler::bset_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::CLEX:
+        ArgHandler::clex_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::REF:
+        ArgHandler::ref_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::ECI:
+        ArgHandler::eci_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::PROPERTY:
+        ArgHandler::property_to_bash(arguments);
+        break;
+
       default:
         break;
       }
