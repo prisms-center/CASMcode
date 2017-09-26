@@ -109,14 +109,14 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
+  void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup &starter_group) const {
     Array<CoordType> trans_basis;
     Index pg, b0, b1, b2;
     Coordinate t_tau(lattice());
     Index num_suc_maps;
 
-    SymGroup point_group;
-    lattice().generate_point_group(point_group);
+    SymGroup point_group = starter_group;
+
 
     if(factor_group.size() != 0) {
       std::cerr << "WARNING in BasicStructure<CoordType>::generate_factor_group_slow" << std::endl;
@@ -209,6 +209,17 @@ namespace CASM {
     factor_group.sort();
     factor_group.max_error();
 
+    return;
+  }
+
+  //************************************************************
+  //***********************************************************
+
+  template<typename CoordType>
+  void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
+    SymGroup point_group;
+    lattice().generate_point_group(point_group);
+    _generate_factor_group_slow(factor_group, point_group);
     return;
   }
 
@@ -367,36 +378,10 @@ namespace CASM {
 
   template<typename CoordType>
   bool BasicStructure<CoordType>::is_primitive() const {
-    Coordinate tshift(lattice());//, bshift(lattice);
-    Index b1, b2, b3, num_suc_maps;
-
-    for(b1 = 1; b1 < basis.size(); b1++) {
-      if(!basis[0].compare_type(basis[b1])) {
-        continue;
-      }
-
-      tshift = basis[0] - basis[b1];
-      num_suc_maps = 0;
-      for(b2 = 0; b2 < basis.size(); b2++) {
-        for(b3 = 0; b3 < basis.size(); b3++) {
-          //if(basis[b3].compare_type(basis[b2], bshift) && tshift.min_dist(bshift) < lattice().tol()) {
-          if(basis[b3].compare(basis[b2], tshift)) {
-            num_suc_maps++;
-            break;
-          }
-        }
-        if(b3 == basis.size()) {
-          break;
-        }
-      }
-
-      if(num_suc_maps == basis.size()) {
-        return false;
-      }
-
-    }
-
-    return true;
+    SymGroup valid_translations, identity_group;
+    identity_group.push_back(SymOp());
+    _generate_factor_group_slow(valid_translations, identity_group);
+    return (valid_translations.size() == 1);
   }
 
 
@@ -409,42 +394,24 @@ namespace CASM {
 
   template<typename CoordType>
   bool BasicStructure<CoordType>::is_primitive(BasicStructure<CoordType> &new_prim) const {
+    SymGroup valid_translations, identity_group;
+    identity_group.push_back(SymOp());
+    _generate_factor_group_slow(valid_translations, identity_group);
 
-    Coordinate tshift(lattice());//, bshift(lattice);
+
     Eigen::Vector3d prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);
     Array<Eigen::Vector3d > shift;
-    Index b1, b2, b3, sh, sh1, sh2;
-    Index num_suc_maps;
     double tvol, min_vol;
     bool prim_flag = true;
     double prim_vol_tol = std::abs(0.5 * lattice().vol() / double(basis.size())); //sets a hard lower bound for the minimum value of the volume of the primitive cell
 
-
-    for(b1 = 1; b1 < basis.size(); b1++) {
-
-      tshift = basis[0] - basis[b1];
-
-      if(almost_zero(tshift.min_dist(Coordinate::origin(lattice()))))
-        continue;
-
-      num_suc_maps = 0;
-      for(b2 = 0; b2 < basis.size(); b2++) {
-        for(b3 = 0; b3 < basis.size(); b3++) {
-          if(basis[b3].compare(basis[b2], tshift)) {
-            num_suc_maps++;
-            break;
-          }
-        }
-        if(b3 == basis.size()) {
-          break;
-        }
-      }
-
-      if(num_suc_maps == basis.size()) {
-        prim_flag = false;
-        shift.push_back(tshift.cart());
+    if(valid_translations.size() > 1) {
+      prim_flag = false;
+      for(auto &trans : valid_translations) {
+        shift.push_back(trans.tau());
       }
     }
+
 
 
     if(prim_flag) {
@@ -460,9 +427,9 @@ namespace CASM {
     //We want to minimize the volume of the primitivized cell, but to make it not a weird shape
     //that leads to noise we also minimize the dot products like reduced cell would
     min_vol = std::abs(lattice().vol());
-    for(sh = 0; sh < shift.size(); sh++) {
-      for(sh1 = sh + 1; sh1 < shift.size(); sh1++) {
-        for(sh2 = sh1 + 1; sh2 < shift.size(); sh2++) {
+    for(Index sh = 0; sh < shift.size(); sh++) {
+      for(Index sh1 = sh + 1; sh1 < shift.size(); sh1++) {
+        for(Index sh2 = sh1 + 1; sh2 < shift.size(); sh2++) {
           tvol = std::abs(triple_prod(shift[sh], shift[sh1], shift[sh2]));
           if(tvol < min_vol && tvol > prim_vol_tol) {
             min_vol = tvol;
