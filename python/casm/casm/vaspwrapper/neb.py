@@ -7,33 +7,6 @@ import vaspwrapper
 from configproperties import ConfigPropertiesBase
 from report import FinalizeBase, PropertiesBase, ContainerBase
 
-class ConfigProperties(ConfigPropertiesBase):
-    """ Derived class with additional configuration properties and errors
-
-    Additional Attributes
-    --------------------
-
-      n_images: int
-        number of images in the calculation
-
-    """
-
-    def __init__(self, configname, calctype):
-        """
-             Add additional properties and error messages
-        """
-        ConfigPropertiesBase.__init__(self, configname, calctype)
-
-        ## Error message if "n_images" not present in settings
-        if not "n_images" in self.settings:
-            raise vaspwrapper.VaspWrapperError("Could not find \"n_images\" in \"calc.json\" in an appropriate \"settings\" directory")
-            sys.stdout.flush()
-
-        self.n_images = self.settings["n_images"]
-        # append the n_images to calcdir
-        self.calcdir = os.path.join(self.calcdir, "N_images_{}".format(self.n_images))
-        self.results_subdir = '01'
-
 class Neb(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
 
@@ -52,35 +25,30 @@ class Neb(object):
     def __init__(self, selection, calctype=None, auto=True, sort=True):
         """
         Construct a VASP neb job object.
-
-        Arguments
-        ----------
-
-            selection: casm.project.Selection object, default= yet to be implemented #todo
-              Selection of all DiffTransConfigurations to submit a NEB calculation. 
-              default should be MASTER selection and yet to be implemented
-
-            sort: boolean, optional, default=True,
-              Use True to sort atoms in POSCAR by type
-
         """
-        print "Construct a casm.vaspwrapper.Relax instance:"
+        print "Construct a casm.vaspwrapper.Neb instance:"
+        VaspCalculatorBase.__init__(selection, calctype, auto, sort)
+        self.append_selection_data()
+        self.results_subdir = '01'
 
-        self.selection = selection
-        self.calctype = calctype
-        self.auto = auto
-        self.sort = sort
-
-    def _pre_setup(self):
+    def append_selection_data(self):
+        """append configproperties to selection.data"""
         for config_data in self.selection.data:
-            config_obj = ConfigProperties(config_data["configname"], self.calctype)
-            try:
-                os.makedirs(config_obj.calcdir)
-                for i in range(config_obj.n_images + 2):
-                    os.makedirs(os.path.join(config_obj.calcdir, str(i).zfill(2)))
-            except:
-                pass
+            selection.data.append(self.config_properties(config_data))
 
+    def config_properties(self, config_data):
+        """configuration properties as a dict"""
+        config_dict = super(Neb, self).config_properties(config_data)
+        config_data["calcdir"] =  os.path.join(config_data["calcdir"], "N_images_{}".format(n_images))
+        try:
+            n_images = json.load(config_data["setfile"])["n_images"]
+        except:
+            ## Error message if "n_images" not present in settings
+            raise vaspwrapper.VaspWrapperError("Could not find \"n_images\" in \"calc.json\" in an appropriate \"settings\" directory")
+            sys.stdout.flush()
+        config_data["n_images"] = n_images
+        return config_dict
+        
     def setup(self):
         """ Setup initial relaxation run
 
@@ -97,14 +65,13 @@ class Neb(object):
         proj = self.selection.proj
         dict = {}
         for config_data in self.selection.data:
-            config_obj = ConfigProperties(config_data["configname"], self.calctype)
-            conf_dict = {"n_images" : config_obj.n_images,
-                         "calctype" : config_obj.clex.calctype}
-            dict[config_obj.configname] = conf_dict
+            conf_dict = {"n_images" : config_data["n_images"],
+                         "calctype" : config_data["calctype"]}
+            dict[config_data["configname"] = conf_dict
             try:
-                os.makedirs(config_obj.calcdir)
-                for i in range(config_obj.n_images + 2):
-                    os.makedirs(os.path.join(config_obj.calcdir, str(i).zfill(2)))
+                os.makedirs(config_data["calcdir"])
+                for i in range(config_data["n_images"] + 2):
+                    os.makedirs(os.path.join(config_data["calcdir"], str(i).zfill(2)))
             except:
                 pass
 
@@ -118,49 +85,42 @@ class Neb(object):
         os.remove(filename)
 
         for config_data in self.selection.data:
-            config_obj = ConfigProperties(config_data["configname"], self.calctype)
             # Find required input files in CASM project directory tree
-            vaspfiles = casm.vaspwrapper.vasp_input_file_names(config_obj.casm_directories,
-                                                               config_obj.configname,
-                                                               config_obj.clex,
-                                                               config_obj.calc_subdir)
+            vaspfiles = casm.vaspwrapper.vasp_input_file_names(self.casm_directories,
+                                                               config_data["configname"],
+                                                               self.clex,
+                                                               self.calc_subdir)
             incarfile, prim_kpointsfile, prim_poscarfile, temp_poscarfile, speciesfile = vaspfiles
+            settings = self.read_settings(config_data["setfile"])
             # Find optional input files
             extra_input_files = []
-            for s in config_obj.settings["extra_input_files"]:
-                extra_input_files.append(config_obj.casm_directories.settings_path_crawl(s, config_obj.configname,
-                                                                                         config_obj.clex, config_obj.calc_subdir))
+            for s in settings["extra_input_files"]:
+                extra_input_files.append(self.casm_directories.settings_path_crawl(s, config_data["configname"],
+                                                                                   self.clex, self.calc_subdir))
                 if extra_input_files[-1] is None:
                     raise vasp.VaspError("Neb.setup failed. Extra input file " + s + " not found in CASM project.")
             if config_obj.settings["initial"]:
-                extra_input_files += [config_obj.casm_directories.settings_path_crawl(config_obj.settings["initial"],
-                                                                                      config_obj.configname, config_obj.clex,
-                                                                                      config_obj.calc_subdir)]
+                extra_input_files += [self.casm_directories.settings_path_crawl(settings["initial"],
+                                                                                config_data["configname"],
+                                                                                self.clex, self.calc_subdir)]
                 if extra_input_files[-1] is None:
-                    raise vasp.VaspError("Neb.setup failed. No initial INCAR file " + config_obj.settings["initial"] + " found in CASM project.")
+                    raise vasp.VaspError("Neb.setup failed. No initial INCAR file " + settings["initial"] + " found in CASM project.")
             if config_obj.settings["final"]:
-                extra_input_files += [config_obj.casm_directories.settings_path_crawl(config_obj.settings["final"],
-                                                                                      config_obj.configname, config_obj.clex,
-                                                                                      config_obj.calc_subdir)]
+                extra_input_files += [config_obj.casm_directories.settings_path_crawl(settings["final"],
+                                                                                      config_data["configname"],
+                                                                                      self.clex, self.calc_subdir)]
                 if extra_input_files[-1] is None:
                     raise vasp.VaspError("Neb.setup failed. No final INCAR file " + config_obj.settings["final"] + " found in CASM project.")
             sys.stdout.flush()
 
             #make vasp input files
             sample_super_poscarfile = os.path.join(config_obj.calcdir, "00", "POSCAR")
-            vasp.io.write_vasp_input(config_obj.calcdir, incarfile, prim_kpointsfile, prim_poscarfile,
+            vasp.io.write_vasp_input(config_data["calcdir"], incarfile, prim_kpointsfile, prim_poscarfile,
                                      sample_super_poscarfile, speciesfile, self.sort, extra_input_files,
-                                     config_obj.settings["strict_kpoints"])
+                                     settings["strict_kpoints"])
             ## settings the images tag in incar file
             tmp_dict = {"images": config_obj.n_images}
-            vasp.io.set_incar_tag(tmp_dict, config_obj.calcdir)
-
-class Finalize(FinalizeBase):
-    """Finalize object specific to this class"""
-
-    def __init__(self, config_obj):
-        """initialze the Finalize object"""
-        FinalizeBase.__init__(self, config_obj)
+            vasp.io.set_incar_tag(tmp_dict, config_data["calcdir"])
 
     def finalize(self):
         if self.is_converged():
@@ -179,11 +139,6 @@ class Finalize(FinalizeBase):
                                                                                                               "properties.calc.json"))
             sys.stdout.flush()
 
-class Properties(PropertiesBase):
-
-    def __init__(self, config_obj):
-        PropertiesBase.__init__(self, config_obj)
-
     def properties(self, super_poscarfile=None, speciesfile=None):
         """Make properties output as a list of dict of each image properties"""
         final_output = []
@@ -194,8 +149,3 @@ class Properties(PropertiesBase):
             output["Image_number"] = img
             final_output.append(output)
         return final_output
-
-class Container(ContainerBase):
-
-    def __init__(self, configname, calctype=None):
-        ContainerBase.__init__(self, configname, calctype, ConfigProperties, Finalize, Properties)

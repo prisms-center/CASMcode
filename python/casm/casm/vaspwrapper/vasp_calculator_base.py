@@ -1,33 +1,66 @@
-import os, math, sys
-import pbs
+import os, math, sys, json, re, warnings, shutil
 import vasp
 import casm
 import casm.project
 from casm.project import Project, Selection
 import vaspwrapper
-import vasp.Neb,vasp.Relax
+import pbs
+from casm.vaspwrapper import Submit, Run, Report
 
-class Submit(object):
-    """Submit a PBS job for this VASP relaxation"""
-
-    def __init__(self, selection, auto=True):
+class VaspCalculatorBase(Submit, Run, Report):
+    """ Base class containing all the basic functions that methods can inherit
+    """
+    def __init__(self, selection, calctype=None, auto=True, sort=True):
+        """ set up attributes for the base class
         """
-        Construct a VASP submit job object.
-
-        Arguments
-        ----------
-
-            selection: casm.project.Selection object, default= yet to be implemented #todo
-              Selection of all DiffTransConfigurations to submit calculations.
-              default should be MASTER selection and yet to be implemented
-
-            auto: boolean, optional, default=True,
-              Use True to use the pbs module's JobDB to manage pbs jobs
-
-        """
-
         self.selection = selection
+        self.calctype = calctype
         self.auto = auto
+        self.sort = sort
+        self.casm_directories = self.selection.proj.dir
+        self.casm_settings = self.selection.settings
+        if self.casm_settings is None:
+            raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+
+        self.clex = self.casm_settings.default_clex
+        if calctype:
+            self.clex.calctype = calctype
+        self.calc_subdir = ""
+        self.results_subdir = '' #everything between $(calcdir)/run.*/ and OSZICAR and OUTCAR files
+
+    def config_properties(self, config_data):
+        """read properties directories of a specific configuration"""
+        config_dict = dict(config_data)
+        config_dict["configdir"] =  self.casm_directories.configuration_dir(configname, self.calc_subdir)
+        config_dict["calcdir"] = self.casm_directories.calctype_dir(configname, self.clex, self.calc_subdir)
+        config_dict["setfile"] = self.casm_directories.settings_path_crawl("calc.json", configname, self.clex, self.calc_subdir)
+
+        return config_dict
+
+    @staticmethod
+    def read_settings(setfile):
+        """ Read settings from a settings calc.json file"""
+
+        settings = vaspwrapper.read_settings(setfile)
+        # set default settings if not present
+        if not "ncore" in settings:
+            settings["ncore"] = None
+        if not "npar" in settings:
+            settings["npar"] = None
+        if not "kpar" in settings:
+            settings["kpar"] = None
+        if not "vasp_cmd" in settings:
+            settings["vasp_cmd"] = None
+        if not "ncpus" in settings:
+            settings["ncpus"] = None
+        if not "run_limit" in settings:
+            settings["run_limit"] = None
+        if not "prerun" in settings:
+            settings["prerun"] = None
+        if not "postrun" in settings:
+            settings["postrun"] = None
+
+        return settings
 
     def submit(self, calculator):
         """ submit a job
@@ -156,43 +189,43 @@ class Submit(object):
         else:
             raise vaspwrapper.VaspWrapperError("Not enough information to determine nodes and ppn information")
 
-    @staticmethod
-    def run_settings(settings):
-        """ Set default values based on runtime environment"""
 
-        # set default values
-        if settings["npar"] == "CASM_DEFAULT":
-            if "PBS_NUM_NODES" in os.environ:
-                settings["npar"] = int(os.environ["PBS_NUM_NODES"])
-            elif "SLURM_JOB_NUM_NODES" in os.environ:
-                settings["npar"] = int(os.environ["SLURM_JOB_NUM_NODES"])
-            else:
-                settings["npar"] = None
-        elif settings["npar"] == "VASP_DEFAULT":
-            settings["npar"] = None
+def run_settings(settings):
+    """ Set default values based on runtime environment"""
 
-        if settings["npar"] is None:
-            if settings["ncore"] == "CASM_DEFAULT":
-                if "PBS_NUM_PPN" in os.environ:
-                    settings["ncore"] = int(os.environ["PBS_NUM_PPN"])
-                elif "SLURM_CPUS_ON_NODE" in os.environ:
-                    settings["ncore"] = int(os.environ["SLURM_CPUS_ON_NODE"])
-                else:
-                    settings["ncore"] = None
-            elif settings["ncore"] == "VASP_DEFAULT":
-                settings["ncore"] = 1
+    # set default values
+    if settings["npar"] == "CASM_DEFAULT":
+        if "PBS_NUM_NODES" in os.environ:
+            settings["npar"] = int(os.environ["PBS_NUM_NODES"])
+        elif "SLURM_JOB_NUM_NODES" in os.environ:
+            settings["npar"] = int(os.environ["SLURM_JOB_NUM_NODES"])
         else:
-            settings["ncore"] = None
+            settings["npar"] = None
+    elif settings["npar"] == "VASP_DEFAULT":
+        settings["npar"] = None
 
-        if settings["ncpus"] is None or settings["ncpus"] == "CASM_DEFAULT":
-            if "PBS_NP" in os.environ:
-                settings["ncpus"] = int(os.environ["PBS_NP"])
-            elif "SLURM_NTASKS" in os.environ:
-                settings["ncpus"] = int(os.environ["SLURM_NTASKS"])
+    if settings["npar"] is None:
+        if settings["ncore"] == "CASM_DEFAULT":
+            if "PBS_NUM_PPN" in os.environ:
+                settings["ncore"] = int(os.environ["PBS_NUM_PPN"])
+            elif "SLURM_CPUS_ON_NODE" in os.environ:
+                settings["ncore"] = int(os.environ["SLURM_CPUS_ON_NODE"])
             else:
-                settings["ncpus"] = None
+                settings["ncore"] = None
+        elif settings["ncore"] == "VASP_DEFAULT":
+            settings["ncore"] = 1
+    else:
+        settings["ncore"] = None
 
-        if settings["run_limit"] is None or settings["run_limit"] == "CASM_DEFAULT":
-            settings["run_limit"] = 10
+    if settings["ncpus"] is None or settings["ncpus"] == "CASM_DEFAULT":
+        if "PBS_NP" in os.environ:
+            settings["ncpus"] = int(os.environ["PBS_NP"])
+        elif "SLURM_NTASKS" in os.environ:
+            settings["ncpus"] = int(os.environ["SLURM_NTASKS"])
+        else:
+            settings["ncpus"] = None
 
-        return settings
+    if settings["run_limit"] is None or settings["run_limit"] == "CASM_DEFAULT":
+        settings["run_limit"] = 10
+
+    return settings
