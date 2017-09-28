@@ -1,0 +1,31 @@
+#fooincludedir=		directory to place in your --prefix include
+#fooinclude_HEADERS	what files to put in the directory you just specified
+#always give the full path, don't use things like $(srcdir)
+
+montecarloincludedir=$(includedir)/casm/monte_carlo
+montecarloinclude_HEADERS=./include/casm/monte_carlo/SiteExchanger.hh\
+						  ./include/casm/monte_carlo/DoFMod.hh\
+						  ./include/casm/monte_carlo/MonteSampler.hh\
+						  ./include/casm/monte_carlo/MonteCarloEnum.hh\
+						  ./include/casm/monte_carlo/MonteCarloEnum_impl.hh\
+						  ./include/casm/monte_carlo/MonteCounter.hh\
+						  ./include/casm/monte_carlo/MonteIO.hh\
+						  ./include/casm/monte_carlo/MonteSettings.hh\
+						  ./include/casm/monte_carlo/MonteDefinitions.hh\
+						  ./include/casm/monte_carlo/MonteDriver.hh\
+						  ./include/casm/monte_carlo/MonteCarlo.hh\
+						  ./include/casm/monte_carlo/MCData.hh
+
+montecarlogrand_canonicalincludedir=$(montecarloincludedir)/grand_canonical
+montecarlogrand_canonicalinclude_HEADERS=./include/casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonical.hh
+
+montecarlo_canonicalincludedir=$(montecarloincludedir)/canonical
+montecarlo_canonicalinclude_HEADERS=./include/casm/monte_carlo/canonical/CanonicalEvent.hh\
+						  ./include/casm/monte_carlo/canonical/CanonicalSettings.hh\
+						  ./include/casm/monte_carlo/canonical/CanonicalIO.hh\
+						  ./include/casm/monte_carlo/canonical/CanonicalConditions.hh\
+						  ./include/casm/monte_carlo/canonical/Canonical.hh
