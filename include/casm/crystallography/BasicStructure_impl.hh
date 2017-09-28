@@ -464,7 +464,7 @@ namespace CASM {
     invtransmat = transmat.inverse();
     reduced_new_lat_mat = lattice().lat_column_mat();
     //When constructing this, why are we using *this as the primitive cell? Seems like I should only specify the vectors
-    Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat * invtransmat);
+    Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat * invtransmat, lattice().tol());
     reconstructed_reduced_new_lat.make_right_handed();
     //Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat*invtransmat,lattice);
 
