@@ -5,6 +5,7 @@ libcasm_la_SOURCES += ./src/casm/clex/ChemicalReference.cc\
                       ./src/casm/clex/ConfigEnumAllOccupations.cc\
                       ./src/casm/clex/ConfigEnumEquivalents.cc\
                       ./src/casm/clex/ConfigEnumInterpolation.cc\
+                      ./src/casm/clex/ConfigEnumRandomOccupations.cc\
                       ./src/casm/clex/ConfigEnumStrain.cc\
                       ./src/casm/clex/ConfigIO.cc\
                       ./src/casm/clex/ConfigIOHull.cc\
