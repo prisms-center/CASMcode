@@ -42,7 +42,8 @@ EXTRA_DIST=
 EXTRA_DIST+=./build-aux/casm_version.txt\
 			./man\
 			./casmenv.sh\
-			./sample_input_files
+			./sample_input_files\
+      LICENSE
 
 #Extra files that should be cleaned up upon `distclean`
 DISTCLEANFILES=
