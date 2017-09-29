@@ -70,10 +70,6 @@ include $(srcdir)/apps/completer/Makemodule.am
 include $(srcdir)/tests/Makemodule.am
 
 #============================================================#
-#Take care of python stuff
-include $(srcdir)/python/Makemodule.am
-
-#============================================================#
 #Misc targets
 .FORCE:
 

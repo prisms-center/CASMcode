@@ -11,6 +11,7 @@ montecarloinclude_HEADERS=./include/casm/monte_carlo/SiteExchanger.hh\
               ./include/casm/monte_carlo/MonteCarloEnum_impl.hh\
               ./include/casm/monte_carlo/MonteCounter.hh\
               ./include/casm/monte_carlo/MonteIO.hh\
+              ./include/casm/monte_carlo/MonteIO_impl.hh\
               ./include/casm/monte_carlo/MonteSettings.hh\
               ./include/casm/monte_carlo/MonteDefinitions.hh\
               ./include/casm/monte_carlo/MonteDriver.hh\
