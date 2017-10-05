@@ -29,6 +29,7 @@ matrix:
     - os: osx
       compiler: clang
       env:
+        - CASM_BOOST_LIBDIR="/usr/local/"
         - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
         
 
@@ -40,9 +41,9 @@ before_install:
     fi
   
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 
-        brew install boost@1.55 bash-completion autoconf-archive;
-        CASM_NCPU=2;
-        . /sw/etc/bash_completion;
+        brew install boost@1.55 bash-completion autoconf-archive
+        CASM_NCPU=2
+        . /usr/local/etc/bash_completion
     fi
   
   # check g++ version
@@ -67,7 +68,9 @@ script:
   
   # C++ and CLI
   - ./bootstrap.sh
-  - ./configure CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-declarations" --with-bash-completion-dir=$BASH_COMPLETION_DIR
+  - ./configure CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-declarations" \
+      --with-bash-completion-dir=$BASH_COMPLETION_DIR
+      --with-boost-libdir=$CASM_BOOST_LIBDIR
   - make -j $CASM_NCPU
   - make check -j $CASM_NCPU
 
