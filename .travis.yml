@@ -15,6 +15,7 @@ matrix:
           - gcc-4.8
           - g++-4.8
           - libboost-all-dev
+          - bash-completion
       env:
         - CC=gcc-4.8
         - CXX=g++-4.8
@@ -34,18 +35,17 @@ before_install:
 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
         CASM_NCPU=2;
+        . /usr/share/bash-completion/bash_completion;
     fi
   
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 
-        brew install boost@1.55 scons;
+        brew install boost@1.55 bash-completion;
         CASM_NCPU=2;
+        . /sw/etc/bash_completion;
     fi
   
   # check g++ version
   - g++ --version
-  
-  # check scons
-  - scons --version
   
   # check python
   - python --version
@@ -65,9 +65,9 @@ script:
   - 'echo "CASM_NCPU: $CASM_NCPU"'
   
   # C++ and CLI
-  - scons configure
-  - scons -j $CASM_NCPU
-  - scons unit -j $CASM_NCPU
+  - ./configure CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-declarations" --with-bash-completion-dir=$BASH_COMPLETION_DIR
+  - make -j $CASM_NCPU
+  - make check -j $CASM_NCPU
 
   # Python
   - cd python/casm
