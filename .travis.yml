@@ -41,9 +41,9 @@ before_install:
     fi
   
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 
-        brew install boost@1.55 bash-completion autoconf-archive
-        CASM_NCPU=2
-        . /usr/local/etc/bash_completion
+        brew install boost@1.55 bash-completion autoconf-archive;
+        CASM_NCPU=2;
+        . /usr/local/etc/bash_completion;
     fi
   
   # check g++ version
