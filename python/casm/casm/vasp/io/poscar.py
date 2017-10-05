@@ -20,9 +20,8 @@ class Site:
             self.occupant = CASM specie name, empty string by default
             self.occ_alias = alias (POTCAR) name, empty string by default
             self.position = np.array coordinate
-            self.mag = MAGMOM value, None by default
     """
-    def __init__(self, cart, position, mag = None, SD_FLAG = "", occupant = "", occ_alias = ""):
+    def __init__(self, cart, position, SD_FLAG = "", occupant = "", occ_alias = ""):
         """ Site constructor """
         self.cart = cart
         self.SD_FLAG = SD_FLAG
