@@ -65,6 +65,7 @@ script:
   - 'echo "CASM_NCPU: $CASM_NCPU"'
   
   # C++ and CLI
+  - ./bootstrap
   - ./configure CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-declarations" --with-bash-completion-dir=$BASH_COMPLETION_DIR
   - make -j $CASM_NCPU
   - make check -j $CASM_NCPU
