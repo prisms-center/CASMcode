@@ -29,7 +29,7 @@ matrix:
     - os: osx
       compiler: clang
       env:
-        - CASM_BOOST_LIBDIR="/usr/local/"
+        - CASM_BOOST_LIBDIR="/usr/local/opt/boost@1.55/lib/"
         - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
         
 
