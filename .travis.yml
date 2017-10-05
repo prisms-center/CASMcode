@@ -68,7 +68,7 @@ script:
   
   # C++ and CLI
   - ./bootstrap.sh
-  - ./configure CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-declarations" \
+  - ./configure CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-declarations"
       --with-bash-completion-dir=$BASH_COMPLETION_DIR
       --with-boost-libdir=$CASM_BOOST_LIBDIR
   - make -j $CASM_NCPU
