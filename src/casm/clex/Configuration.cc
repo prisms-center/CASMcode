@@ -1123,7 +1123,7 @@ namespace CASM {
     if(calc_props.contains("relaxation_displacement")) {
       Eigen::MatrixXd disp;
       disp = calc_props["relaxation_displacement"].get<Eigen::MatrixXd>();
-      config.set_displacement(disp);
+      config.set_displacement(disp.transpose());
     }
     if(calc_props.contains("relaxation_deformation")) {
       Eigen::Matrix3d deform;
