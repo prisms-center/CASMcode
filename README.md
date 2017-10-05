@@ -56,9 +56,9 @@ CASM is developed by the Van der Ven group, originally at the University of Mich
 
 **Lead developers**:  John C. Thomas and Brian Puchala
 
-**Developers**:  John Goiri and Anirudh Natarajan.
+**Developers**:  John Goiri and Anirudh Natarajan
 
-**Other contributors**: Min-Hua Chen, Jonathon Bechtel, Max Radin, Elizabeth Decolvenaere, Anna Belak, Liang Tian, and Naga Sri Harsha Gunda, Julija Vinckeviciute, Sanjeev Kolli
+**Other contributors**: Min-Hua Chen, Jonathon Bechtel, Max Radin, Elizabeth Decolvenaere, Anna Belak, Liang Tian, Naga Sri Harsha Gunda, Julija Vinckeviciute, Sanjeev Kolli
 
 #### Acknowledgements ####
 

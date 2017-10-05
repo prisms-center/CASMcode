@@ -18,7 +18,7 @@ No differences from installation.
 Writing Tests
 -------------
 
-See unit tests examples in ``tests/unit/<category>/test_<name>.cpp``:
+See unit tests examples in ``tests/unit/<category>/<name>_test.cpp``:
 
 - Boost unit test framework [documentation](http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/index.html)
 - Tests are organized by category into directories matching the CASM source code. Within a category there is typically one test suite per file with a name matching the name used for header and source files of the code being tested.
@@ -36,7 +36,7 @@ using namespace CASM;
 
 BOOST_AUTO_TEST_SUITE(MyClassTest)
 
-BOOST_AUTO_TEST_CASE(Test1) {
+BOOST_AUTO_TEST_CASE(Test1_ZrO) {
 
     test::ZrOProj proj;
     proj.check_init();
@@ -93,3 +93,16 @@ The default ``TEST_FLAGS`` are:
     TEST_FLAGS="--log_level=test_suite --catch_system_errors=no"
 ```
 
+Clean test output
+-----------------
+From ``CASMcode`` directory:
+
+```
+    ./checkclean.sh
+```
+
+CI Testing
+----------
+Latest release: [![Build Status](https://travis-ci.org/prisms-center/CASMcode.svg?branch=master)](https://travis-ci.org/prisms-center/CASMcode)
+
+Development: [![Build Status](https://travis-ci.org/prisms-center/CASMcode.svg?branch=0.2.X)](https://travis-ci.org/prisms-center/CASMcode)

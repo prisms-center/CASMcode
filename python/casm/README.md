@@ -45,6 +45,22 @@ From ``CASMcode/python/casm`` directory:
 
 	pip install .
 
+This will install:
+
+- required dependencies
+- ``casm`` a collection of python packages that provide a Python interface to the CASM libraries, implement wrappers to fitting methods and DFT software, and provide other tools for plotting and analysis.
+- ``casm-learn`` a program for fitting effective cluster interactions (ECI)
+- ``casm-calc`` a program that helps setup and run high throughput *ab initio* calculations
+- ``casm.plot.<type>`` programs to generate ``bokeh`` plots
+
+
+
+The functionality provided by ``casm-calc`` is also provided by the legacy scripts:
+
+- ``$CASM_PREFIX/bin/vasp.setup`` a script for setting up VASP jobs
+- ``$CASM_PREFIX/bin/vasp.relax`` a script for setting up and submitting VASP jobs
+- ``$CASM_PREFIX/bin/vasp.relax.report`` a script for setting up and submitting VASP jobs
+
 
 Uninstall
 ---------
@@ -68,7 +84,7 @@ Testing configuration
 
 Environment variables:
 
-- CASM_VASP_POTCAR_DIR: Location of VASP POTCAR files
+- ``CASM_VASP_POTCAR_DIR``: Location of VASP POTCAR files
 	- required for some casm.vasp and casm.vaspwrapper tests
 
 
