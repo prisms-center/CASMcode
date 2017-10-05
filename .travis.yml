@@ -14,6 +14,7 @@ matrix:
           packages:
           - gcc-4.8
           - g++-4.8
+          # boost1.54
           - libboost-all-dev
           - autoconf-archive
           - bash-completion
@@ -22,8 +23,6 @@ matrix:
         - CXX=g++-4.8
         
         # set environment variables for boost
-        - CASM_BOOST_INCLUDEDIR="/usr/include/"
-        - CASM_BOOST_LIBDIR="/usr/lib/x86_64-linux-gnu/"
         - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
 
     - os: osx
@@ -38,11 +37,11 @@ before_install:
         CASM_NCPU=2;
         . /usr/share/bash-completion/bash_completion;
         CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations";
-        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR --with-boost-libdir=$CASM_BOOST_LIBDIR";
+        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR";
     fi
   
+  # boost1.61 is installed at /usr/local
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        # boost1.61 is installed at /usr/local
         brew install bash-completion autoconf-archive;
         CASM_NCPU=2;
         . /usr/local/etc/bash_completion;
