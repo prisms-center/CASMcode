@@ -15,6 +15,7 @@ cmd += ' --record installed.txt'
 
 pyquest_install = env.Command('installed.txt', [pyquest_setup], cmd)
 AlwaysBuild(pyquest_install)
+env.Append(INSTALL_TARGETS = [pyquest_install])
 Alias('pyquest_install', pyquest_install)  
 
 # with setup.py, must uninstall files manually, 
@@ -23,7 +24,7 @@ installed_files = []
 if os.path.isfile('installed.txt'):
   installed_files = [line.rstrip('\n') for line in open('installed.txt')]
 
-env.Clean('pyquest_install', installed_files + ['build', 'dist', 'seqquest.egg-info'])
+env.Clean(pyquest_install, installed_files + ['build', 'dist', 'seqquest.egg-info'])
 
 if 'pyquest_install' in COMMAND_LINE_TARGETS:
   env['IS_INSTALL'] = 1
