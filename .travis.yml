@@ -15,6 +15,7 @@ matrix:
           - gcc-4.8
           - g++-4.8
           - libboost-all-dev
+          - autoconf-archive
           - bash-completion
       env:
         - CC=gcc-4.8
@@ -39,7 +40,7 @@ before_install:
     fi
   
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 
-        brew install boost@1.55 bash-completion;
+        brew install boost@1.55 bash-completion autoconf-archive;
         CASM_NCPU=2;
         . /sw/etc/bash_completion;
     fi
