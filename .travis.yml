@@ -29,7 +29,6 @@ matrix:
     - os: osx
       compiler: clang
       env:
-        - CASM_BOOST_LIBDIR="/usr/local/opt/boost@1.55/lib/"
         - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
         
 
@@ -38,12 +37,17 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
         CASM_NCPU=2;
         . /usr/share/bash-completion/bash_completion;
+        CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations";
+        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR --with-boost-libdir=$CASM_BOOST_LIBDIR";
     fi
   
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 
-        brew install boost@1.55 bash-completion autoconf-archive;
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        # boost1.61 is installed at /usr/local
+        brew install bash-completion autoconf-archive;
         CASM_NCPU=2;
         . /usr/local/etc/bash_completion;
+        CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations";
+        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR";
     fi
   
   # check g++ version
@@ -68,9 +72,7 @@ script:
   
   # C++ and CLI
   - ./bootstrap.sh
-  - ./configure CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-declarations"
-      --with-bash-completion-dir=$BASH_COMPLETION_DIR
-      --with-boost-libdir=$CASM_BOOST_LIBDIR
+  - ./configure CXXFLAGS="${CXXFLAGS}" ${CONFIGFLAGS}
   - make -j $CASM_NCPU
   - make check -j $CASM_NCPU
 
