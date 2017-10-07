@@ -52,7 +52,7 @@ before_install:
   - wget http://prdownloads.sourceforge.net/scons/scons-2.5.1.tar.gz
     && tar -xzf scons-2.5.1.tar.gz
     && cd scons-2.5.1
-    && python setup.py install --user
+    && python setup.py install --user --prefix=
     && cd ..
   - export PYINSTALL=`python -m site --user-site`
   - export BIN="$PYINSTALL/../../../bin"
