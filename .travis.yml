@@ -58,15 +58,15 @@ before_install:
   
   # install pbs
   - git clone https://github.com/prisms-center/pbs.git
-  - export PYINSTALL=/home/travis/.local
-  - export BIN=/home/travis/.local/bin
+  - export PYINSTALL=`python -m site --user-site`
+  - export BIN="$PYINSTALL/bin"
   - echo $PYINSTALL
   - echo $BIN
   - cd pbs && git checkout v2.0.0 && make install && cd ..  
+  - export PATH=$PATH:$BIN
+  - export PYTHONPATH=$PYINSTALL/../lib/python2.7/site-packages:$PYTHONPATH
   - unset BIN
   - unset PYINSTALL
-  - export PATH=$PATH:$BIN
-  - export PYTHONPATH=/home/travis/.local/lib/python2.7/site-packages:$PYTHONPATH
   
   # check env
   - printenv
