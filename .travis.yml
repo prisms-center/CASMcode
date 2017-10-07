@@ -53,6 +53,7 @@ before_install:
     && tar -xzf scons-2.5.1.tar.gz
     && cd scons-2.5.1
     && python setup.py install --user
+    && cd ..
   - export PYINSTALL=`python -m site --user-site`
   - export BIN="$PYINSTALL/../../../bin"
   - echo $PYINSTALL
