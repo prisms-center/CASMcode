@@ -54,10 +54,13 @@ namespace CASM {
     const Kinetics::DiffTransConfiguration *hint_ptr) const {
 
     DiffTransConfigMapperResult result;
-    //result.structures = _get_structures(pos_path);
+    result.structures = _get_structures(pos_path);
     result.relaxation_properties.put_obj();
 
     //Find out which species are moving from which basis site to the other
+    // For image 00 set reference of POSCAR index to  basis site linear index
+    Configuration from_config(result.structures[0]);
+    // For last image  find POSCAR index to basis site linear index
     ////if this isn't a closed loop one of the species is a vacancy
     //From the moving species and basis sites, should be able to create hop
     //Map first and last structure using ConfigMapping
@@ -71,6 +74,40 @@ namespace CASM {
 
     return result;
   }
+
+  std::vector<Structure> DiffTransConfigMapper::_get_structures(const fs::path &pos_path) const {
+    std::map<Index, Structure> bins;
+    std::vector<Structure> images;
+    for(auto &dir_path : fs::directory_iterator(pos_path)) {
+      try {
+        int img_no = std::stoi(dir_path.path().filename().string());
+        if(fs::is_directory(dir_path)) {
+          if(fs::is_regular(dir_path / "CONTCAR")) {
+            bins.insert(std::make_pair(img_no, Structure(dir_path / "CONTCAR")));
+          }
+          else if(fs::is_regular(dir_path / "POSCAR")) {
+            bins.insert(std::make_pair(img_no, Structure(dir_path / "POSCAR")));
+
+          }
+          else {
+            std::cerr << "NO POSCAR OR CONTCAR FOUND IN " << dir_path << std::endl;
+          }
+        }
+      }
+      catch(...) {
+      }
+    }
+    for(int i = 0 ; i < bins.size(); i++) {
+      try {
+        images.push_back(bins[i]);
+      }
+      catch(...) {
+        std::cerr << "IMAGE NUMBERS NOT CONSECUTIVE IN " << pos_path << std::endl;
+      }
+    }
+    return images;
+  }
+
 
 }
 //*******************************************************************************************
