@@ -37,20 +37,29 @@ before_install:
     fi
   
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 
-        brew install boost@1.55 scons;
+        brew install boost@1.55;
         CASM_NCPU=2;
     fi
   
   # check g++ version
   - g++ --version
   
-  # check scons
-  - scons --version
-  
   # check python
   - python --version
   - python -c "import sys; print sys.path"
   
+  # get scons-2.5.1
+  - wget http://prdownloads.sourceforge.net/scons/scons-2.5.1.tar.gz
+    && tar -xzf scons-2.5.1.tar.gz
+    && cd scons-2.5.1
+    && python setup.py install --user
+  - export PYINSTALL=`python -m site --user-site`
+  - export BIN="$PYINSTALL/../../../bin"
+  - echo $PYINSTALL
+  - echo $BIN
+  - export PATH=$BIN:$PATH
+  - export PYTHONPATH=$PYINSTALL:$PYTHONPATH
+  - scons --version
   
   # install other python dependencies
   - pip install --upgrade pip
@@ -58,13 +67,7 @@ before_install:
   
   # install pbs
   - git clone https://github.com/prisms-center/pbs.git
-  - export PYINSTALL=`python -m site --user-site`
-  - export BIN="$PYINSTALL/bin"
-  - echo $PYINSTALL
-  - echo $BIN
   - cd pbs && git checkout v2.0.0 && make install && cd ..  
-  - export PATH=$PATH:$BIN
-  - export PYTHONPATH=$PYINSTALL:$PYTHONPATH
   - unset BIN
   - unset PYINSTALL
   
