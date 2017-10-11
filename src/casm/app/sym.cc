@@ -72,7 +72,10 @@ namespace CASM {
         args.log() << "Symmetrizing: " << poscar_path << std::endl;
         args.log() << "with tolerance: " << tol << std::endl;
         Structure struc(poscar_path);
-
+        Structure tprim;
+        if(!struc.is_primitive(tprim)) {
+          struc = tprim;
+        }
         int biggest = struc.factor_group().size();
         Structure tmp = struc;
         // a) symmetrize the lattice vectors
@@ -95,6 +98,9 @@ namespace CASM {
         tmp.symmetrize(g);
         if(tmp.factor_group().is_group(tol) && (tmp.factor_group().size() > biggest)) {
           struc = tmp;
+        }
+        if(!struc.is_primitive(tprim)) {
+          struc = tprim;
         }
         fs::ofstream file_i;
         fs::path POSCARpath_i = "POSCAR_sym";
