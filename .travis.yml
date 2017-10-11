@@ -44,6 +44,10 @@ before_install:
   
   # boost1.61 is installed at /usr/local
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update;
+      brew list;
+    fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         brew install bash-completion autoconf-archive;
         CASM_NCPU=2;
         . /usr/local/etc/bash_completion;
