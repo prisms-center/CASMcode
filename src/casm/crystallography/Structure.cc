@@ -524,6 +524,7 @@ namespace CASM {
       for(Index b = 0; b < basis.size(); b++) {
         operbasis.push_back(relaxed_factors[rf]*basis[b]);
       }
+
       //Now that you have a transformed basis, find the closest mapping of atoms
       //Then average the distance and add it to the average basis
       for(Index b = 0; b < basis.size(); b++) {
@@ -541,6 +542,7 @@ namespace CASM {
       }
 
     }
+    basis = avg_basis;
     //generate_factor_group();
     update();
     return;
@@ -560,7 +562,8 @@ namespace CASM {
     double orig_tol = lattice().tol();
     m_lattice.set_tol(tolerance);
     generate_factor_group();
-    symmetrize(factor_group());
+    SymGroup g = factor_group();
+    symmetrize(g);
     m_lattice.set_tol(orig_tol);
     return;
   }

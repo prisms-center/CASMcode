@@ -562,6 +562,7 @@ namespace CASM {
   void BasicStructure<CoordType>::symmetrize(const SymGroup &relaxed_factors) {
     //First make a copy of your current basis
     //This copy will eventually become the new average basis.
+    reset();
     Array<CoordType> avg_basis = basis;
 
     //Loop through given symmetry group an fill a temporary "operated basis"
@@ -590,7 +591,8 @@ namespace CASM {
       }
 
     }
-
+    basis = avg_basis;
+    update();
     return;
   }
 

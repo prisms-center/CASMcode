@@ -54,12 +54,12 @@ namespace CASM {
     const Kinetics::DiffTransConfiguration *hint_ptr) const {
 
     DiffTransConfigMapperResult result;
-    result.structures = _get_structures(pos_path);
+    //result.structures = _get_structures(pos_path);
     result.relaxation_properties.put_obj();
 
     //Find out which species are moving from which basis site to the other
     // For image 00 set reference of POSCAR index to  basis site linear index
-    Configuration from_config(result.structures[0]);
+    //Configuration from_config(result.structures[0]);
     // For last image  find POSCAR index to basis site linear index
     ////if this isn't a closed loop one of the species is a vacancy
     //From the moving species and basis sites, should be able to create hop

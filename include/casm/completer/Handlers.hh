@@ -716,6 +716,8 @@ namespace CASM {
       using OptionHandlerBase::coordtype_enum;
 
       SymOption();
+      double m_tol;
+      fs::path m_poscar_path;
 
     private:
 
