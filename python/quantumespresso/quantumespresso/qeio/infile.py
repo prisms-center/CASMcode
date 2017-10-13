@@ -777,7 +777,8 @@ class KPoints:
                 prim: Poscar object for the prim OR None
                 super: a Poscar object for the supercell 
         """
-        
+        backup_prim=copy.deepcopy(prim)
+        backup_super=copy.deepcopy(super)
         super_kpoints = copy.deepcopy(self)
         
         
@@ -791,6 +792,23 @@ class KPoints:
             pass
         if prim.scaling != super.scaling:
             print ("WARNING: The reference lattice vectors and newly scaled lattice vectors are not of same units!!!!")
+            if super.scaling != "angstrom":
+                if super.scaling == "alat":
+                    super._lattice = super.celldm*super._lattice
+                    super.scaling = "bohr"
+                if super.scaling == "bohr":
+                    super._lattice = 0.52918*super._lattice
+                    super.scaling = "angstrom"
+                super._reciprocal_lattice = 2.0*math.pi*np.linalg.inv(np.transpose(super._lattice))
+            if prim.scaling != "angstrom":
+                if prim.scaling == "alat":
+                    prim._lattice = prim.celldm*prim._lattice
+                    prim.scaling = "bohr"
+                if prim.scaling == "bohr":
+                    prim._lattice = 0.52918*prim._lattice
+                    prim.scaling = "angstrom"
+                prim._reciprocal_lattice = 2.0*math.pi*np.linalg.inv(np.transpose(prim._lattice))
+
 
         super_kpoints.coords = [1, 1, 1, self.coords[3], self.coords[4], self.coords[5]] #4th 5th and 6th numbers are shifts
         
@@ -812,9 +830,9 @@ class KPoints:
             scale = super_kpoints.coords[min_index] / super_recip_vec_lengths[min_index]
             for i in range(3):
                 super_kpoints.coords[i] = int(math.ceil(scale * super_recip_vec_lengths[i]-0.1))
-        
         # end while
-        
+        prim = backup_prim
+        super = backup_super
         return super_kpoints
     
     
@@ -992,12 +1010,19 @@ class Infile:
             coords=[]
             for specie in poscar.basis:
                 if specie.SD_FLAG !="":
-                    flags=SD_FLAG.split()
+                    flags=specie.SD_FLAG.split()
                     int_flags=[]
                     for flag in flags:
                         int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
-                    coords+= [(specie.occupant,specie.position,int_flags)]
-                coords+= [(specie.occupant,specie.position)]
+                    coords+= [(specie.occ_alias,specie.position,int_flags)]
+                elif species[specie.occupant].tags["if_pos"] !="":
+                    flags=species[specie.occupant].tags["if_pos"].split(',')
+                    int_flags=[]
+                    for flag in flags:
+                        int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
+                    coords+= [(specie.occ_alias,specie.position,int_flags)]
+                else:
+                    coords+= [(specie.occ_alias,specie.position)]
             self.cards["ATOMIC_POSITIONS"].coords=coords
             if "SYSTEM" in self.namelists.keys():
                 self.namelists["SYSTEM"].tags["nat"]=len(poscar.basis)
@@ -1017,8 +1042,10 @@ class Infile:
                                         print "Found! " + specie + " in SPECIES file with pseudopotential at " + species[entry].pseudodir
                                     else: 
                                         print "WARNING: PSEUDO_DIR_PATH in SPECIES file does not match 'pseudo_dir' tag in &CONTROL namelist of Infile"
+                                        print "WILL ASSUME 'pseudo_dir' tag is correct"
+                                        self.cards["ATOMIC_SPECIES"].pseudos+= [species[entry].pseudo_location]
                                 else:
-                                    print "Search failed! No data for " + species + " to be found" 
+                                    print "Search failed! No data for " + specie + " to be found" 
                 for specie in self.cards["ATOMIC_SPECIES"].species:
                     if specie not in poscar.basis_dict().keys():
                         index= self.cards["ATOMIC_SPECIES"].species.index(specie)

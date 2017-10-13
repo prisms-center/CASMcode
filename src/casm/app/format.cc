@@ -688,7 +688,7 @@ LCHARG = .FALSE.\n";
                "    \"ppn\": processors (cores) per node to request                 \n" <<
                "    \"atom_per_proc\": max number of atoms per processor (core)     \n" <<
                "    \"walltime\": walltime to request (ex. \"48:00:00\")            \n\n" <<
-               "    \"calculator\": needs to be quantumespresso for quantum espresso to be used\n\n" <<
+               "    \"software\": needs to be quantumespresso for quantum espresso to be used\n\n" <<
 
                " Optional keys are:                                                 \n" <<
                "    \"account\": account to submit job under (default None)         \n" <<
@@ -752,7 +752,7 @@ LCHARG = .FALSE.\n";
       args.log << "SPECIES:                                                            \n" <<
                "  This file contains information for selecting pseudopotentials and specifing\n" <<
                "  parameters that must be set on an atom-by-atom basis in the infile,\n" <<
-               "  such as magnetic moment (non currently implemented).\n"<<
+               "  such as magnetic moment (non currently implemented).\n" <<
                "  The first line in the file specifies the value of \n" <<
                "  'PSEUDO_DIR_PATH', which is the base path used to find UPF     \n" <<
                "  files. The second line contains column headings (at least 4), and \n" <<
@@ -765,16 +765,17 @@ LCHARG = .FALSE.\n";
                "  column must contain the path that should be appended to the       \n" <<
                "  PSEUDO_DIR_PATH to specify the UPF file for that species.      \n\n" <<
 
-               "  Additional columns, such as 'magnetic moment' in the example below are     \n\n" <<
+               "  Additional columns, such as 'if_pos' in the example below are     \n\n" <<
                "  and used to specify the value used for a particular species in the\n" <<
-               "  infile. The column heading must match a valid quantum espress input setting.  \n\n";
+               "  infile. The column heading must match a valid quantum espresso input setting.\n"
+               "  For now only supported additional tag is if_pos, a way to fixed certain lattice positions.\n\n";
 
       args.log << "EXAMPLE: SPECIES \n";
       args.log << "-------\n" <<
                "PSEUDO_DIR_PATH = /absolute/path/to/quantumespresso_potentials\n" <<
-               "SPECIES    ALIAS    UPF  UPF_location\n" <<
-               "Ni         Ni       1       PAW_PBE/Ni.UPF \n" <<
-               "Al        Al       1       PAW_PBE/Al.UPF \n";
+               "SPECIES    ALIAS    UPF  UPF_location     if_pos\n" <<
+               "Ni         Ni       1       PAW_PBE/Ni.UPF     1,1,1\n" <<
+               "Al        Al       1       PAW_PBE/Al.UPF      1,1,1\n";
       args.log << "-------\n\n\n";
 
       args.log << "$infilename:                                                              \n" <<
@@ -786,8 +787,8 @@ LCHARG = .FALSE.\n";
                "  saved.                                                            \n\n";
       args.log << "Note:                                                    \n" <<
                "  K_POINTS will be adjusted accordingly such that the density is maintained\n" <<
-               "  over all configurations in the project for all Quantum Espresso calculations\n"<<
-               "  this uses the CELL_PARAMETERS and the K_POINTS cards in the input file to calculate\n"<<
+               "  over all configurations in the project for all Quantum Espresso calculations\n" <<
+               "  this uses the CELL_PARAMETERS and the K_POINTS cards in the input file to calculate\n" <<
                "  a density and rescale configurations k-point mesh accordingly\n";
 
       args.log << "EXAMPLE: Mg2Ti4S8.in \n";
@@ -857,10 +858,10 @@ K_POINTS automatic\n\
       args.log << "-------\n\n\n";
 
     }
-    if (vm.count("properties")){
-            args.log << "\n### properties.calc.json ##################\n\n";
+    if(vm.count("properties")) {
+      args.log << "\n### properties.calc.json ##################\n\n";
 
-            args.log << "properties.calc.json:                                               \n" <<
+      args.log << "properties.calc.json:                                               \n" <<
                "  Results of calculations for a particular configuration should be  \n" <<
                "  stored in the directory                                           \n" <<
                "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE,         \n" <<
@@ -870,12 +871,12 @@ K_POINTS automatic\n\
                "  first-principles calculted properties of interest. If the         \n" <<
                "  'properties.calc.json' file does not exist in the                 \n" <<
                "    $ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE directory\n" <<
-               "  CASM assumes that no data is available for that configuration.    \n"<<
+               "  CASM assumes that no data is available for that configuration.    \n" <<
                "  The 'properties.calc.json' uses CASM standard units eV and Angstroms\n\n" ;
 
-            args.log << "EXAMPLE:\n";
-            args.log << "-------\n";
-            args.log << "{\n\
+      args.log << "EXAMPLE:\n";
+      args.log << "-------\n";
+      args.log << "{\n\
           \"atom_type\": [\n\
               \"A\", \n\
               \"B\"\n\
@@ -909,7 +910,7 @@ K_POINTS automatic\n\
               [3.22317311, 0.0, 0.0]\n\
           ]\n\
       }\n";
-            args.log << "-------\n";
+      args.log << "-------\n";
 
     }
     if(vm.count("comp")) {

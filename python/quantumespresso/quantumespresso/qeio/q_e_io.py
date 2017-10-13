@@ -144,7 +144,7 @@ def write_quantum_espresso_input(dirpath, infilename, super_poscarfile, speciesf
 
     # write main input file
     print "  Writing supercell positions to Infile"
-    myinfile.rewrite_poscar_info(super)
+    myinfile.rewrite_poscar_info(super,species_settings)
     print "  Writing supercell K_POINTS to Infile"
     myinfile.cards["K_POINTS"]=super_kpoints
     print "  Writing Infile:", os.path.join(dirpath,infilename)
