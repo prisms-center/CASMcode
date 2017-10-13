@@ -570,7 +570,7 @@ class AtomicSpecies:
         line_segments=re.split('\n',cardstring)
         # parse card into self.species, self.masses, self.pseudos
         for line in line_segments:
-                line = re.split(' ',line.strip())
+                line = line.strip().split()
                 line=filter(bool,line)
                 if len(line) == 3:
                     self.species = self.species + [line[0].strip()]
@@ -623,7 +623,7 @@ class AtomicPositions:
         # parse card into self.coords
         # NOTE: This function has trouble because it assumes integer and float arithmetic are separate unlike the documentation of Quantum Espresso indicates.
         for line in line_segments:
-                line = re.split(' ',line.strip())
+                line = line.strip().split()
                 if len(line) == 4:
                     try:
                         self.coords = self.coords + [(line[0].strip(),[float(eval(line[1].strip().replace('d','e'))),float(eval(line[2].strip().replace('d','e'))),float(eval(line[3].strip().replace('d','e')))])]
@@ -681,7 +681,7 @@ class CellParameters:
         line_segments=re.split('\n',cardstring)
         # parse card into self.vectors
         for line in line_segments:
-                line = re.split(' ',line.strip())
+                line = line.strip().split()
                 if len(line) == 3:
                     try:
                         self.vectors = self.vectors + [[float((line[0].strip().replace('d','e'))),float(line[1].strip().replace('d','e')),float(line[2].strip().replace('d','e'))]]
@@ -738,7 +738,7 @@ class KPoints:
         if self.units == "gamma":
             pass
         elif self.units == "automatic":
-            line=re.split(" ",line_segments[0].strip())
+            line=line_segments[0].strip().split()
             if len(line)==6:
                 try: #automatic mesh settings are stored as [nk1,nk2,nk3,sk1,sk2,sk3]
                     self.coords=[int(line[0].strip()),int(line[1].strip()),int(line[2].strip()),int(line[3].strip()),int(line[4].strip()),int(line[5].strip())]
@@ -753,7 +753,7 @@ class KPoints:
                 raise KPointsError("Non integer number of kpoints")
             line_segments=line_segments[1:]
             for line in line_segments:
-                line = re.split(' ',line.strip())
+                line = line.strip().split()
                 if len(line) == 4:
                     try:
                         self.coords = self.coords + [((float(line[0].strip()),float(line[1].strip()),float(line[2].strip())),float(line[3].strip()))]
@@ -929,7 +929,7 @@ class Infile:
                     nameliststring=nameliststring + line + '\n'
             else:
                 if not card_open:
-                    line = re.split(' ',line)
+                    line = line.split()
                     if line[0].isupper():
                         card_open = True
                         cardstring=""
