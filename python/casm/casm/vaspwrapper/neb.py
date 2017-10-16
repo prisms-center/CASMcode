@@ -1,44 +1,89 @@
-import os, math, sys, json, re, warnings, shutil
+"""Defines the neb module methods"""
+
+import os
+import sys
+import json
+import shutil
 import vasp
 import casm
-import casm.project
-from casm.project import Project, Selection
+from casm.project import Selection
 import vaspwrapper
 from casm.vaspwrapper import VaspCalculatorBase
 import vasp.Neb
 
 class Neb(VaspCalculatorBase):
-    """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
+    """
+    The Neb class contains functions for setting up, executing, and parsing a VASP neb calculation.
 
-        The relaxation creates the following directory structure:
-        config/
-          calctype.name/
-              run.0/
-              ....
+    Attributes
+    ----------
+    selection : casm.project.Selection
+        selection of configuration
+    calctype : string
+        calctype to setup and run the neb calculations
+    auto : bool
+    sort : bool
 
-        'run.i' directories are only created when ready.
+    Methods
+    -------
+    neb(configdir='string', calctype='string', bool, bool)
+        returns a instance of the Neb class instantited with a single configuration
+    config_properties(config_data=dict/Panda.DataFrame)
+        return a dict of the properties required to setup a configuration
+    pre_setup
+        creates folder and makes POS files for each image
+    setup
+        sets up the input vasp files for the selection
+    config_setup
+        sets up the input vasp files for a single configuration
+    get_vasp_input_files(config_data=dict/Pandas.DataFrame, settings=dict)
+        returns filenames of a vasp neb calculation
+    submit
+        submit a job for each configuration
+    run
+        runs the neb calcutation on the selection
+    report
+        reports results for the selection
+    run_cmd(configdir='string', calctype='string')
+        return a string of command to run a single configuration
+    finalize(config_data=dict/pandas_data, super_poscarfile='string')
+        checks convergnce and write a properties file for the selection
+    properties(calcdir='string', super_poscarfile='string', speciesfile='string')
+        return a dict containing all the relaxed properties for a configuration
 
-        This automatically looks for VASP settings files using:
-          casm.project.DirectoryStructure.settings_path_crawl
+    Notes
+    -----
+    The calculation creates the following directory structure for each configuration:
+    config/
+        calctype.name/
+            N_images_`n_images`\
+                run.0/
+                ....
+
+    'run.i' directories are only created when ready.
+
+    This automatically looks for VASP settings files using:
+    casm.project.DirectoryStructure.settings_path_crawl
+
+    The class inhertes from VaspCalculatorbase and methods overload the functionality in the parent
 
     """
     def __init__(self, selection, calctype=None, auto=True, sort=True):
-        """
-        Construct a VASP neb job object.
-        """
+        """Construct a VASP neb job object."""
         print "Construct a casm.vaspwrapper.Neb instance:"
         VaspCalculatorBase.__init__(selection, calctype, auto, sort)
         self.results_subdir = '01'
         self.calculator = vasp.Neb
 
     @classmethod
-    def neb(cls, configname, calctype, auto=True, sort=True):
-        sel = Selection.selection_from_confignames([configname])
+    def neb(cls, configdir, calctype, auto=True, sort=True):
+        """returns a instance of the Neb class instantited with a single configuration"""
+        sel = Selection.selection_from_confignames([configdir])
         obj = cls(sel, calctype, auto, sort)
         return obj
 
     def config_properties(self, config_data):
-        """configuration properties as a dict"""
+        """return configuration properties as a dict"""
         config_dict = super(Neb, self).config_properties(config_data)
         try:
             n_images = json.load(config_data["setfile"])["n_images"]
@@ -51,6 +96,7 @@ class Neb(VaspCalculatorBase):
         return config_dict
 
     def pre_setup(self):
+        """creates folder and makes POS files for each image"""
         proj = self.selection.proj
         dict = {}
         for config_data in self.selection.data:
@@ -97,25 +143,31 @@ class Neb(VaspCalculatorBase):
         vasp.io.set_incar_tag(tmp_dict, config_data["calcdir"])
 
     def get_vasp_input_files(self, config_data, settings):
+        """returns filenames of a vasp neb calculation"""
         vaspfiles = super(Neb, self).get_vasp_input_files(config_data, settings)
         incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files = vaspfiles
         super_poscarfile = os.path.join(config_data["calcdir"], "00", "POSCAR")
         return incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files
 
     def submit(self):
+        """submit a job for each configuration"""
         super(Neb, self).submit()
 
     def run(self):
+        """runs the neb calcutation on the selection"""
         super(Neb, self).run()
 
     def report(self):
+        """reports results for the selection"""
         super(Neb, self).report()
 
     @staticmethod
     def run_cmd(configdir, calctype):
+        """return a string of command to run a single configuration"""
         return "python -c \"import casm.vaspwrapper; obj = casm.vaspwrapper.Neb.neb('{0}', '{1}'); obj.run()\"\n".format(configdir, calctype)
 
     def finalize(self, config_data, super_poscarfile=None):
+        """checks convergnce and write a properties file for the selection"""
         if super_poscarfile is None:
             super_poscarfile = os.path.join(config_data["calcdir"], "00/POSCAR")
         super(Neb, self).finalize(config_data, super_poscarfile)

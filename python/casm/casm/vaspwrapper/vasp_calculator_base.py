@@ -1,17 +1,28 @@
-import os, math, sys, json, re, warnings, shutil
+"""implements the parent class for vasp calculations"""
+
+import os, math, sys, json, shutil
 import vasp
 import casm
 import casm.project
-from casm.project import Project, Selection
 import vaspwrapper
 import pbs
 
 class VaspCalculatorBase(object):
-    """ Base class containing all the basic functions that method classes can inherit
+    """
+    Base class containing all the basic functions that method classes can inherit
+    
+    Attributes
+    ----------
+    selection : casm.project.Selection
+        selection of configuration
+    calctype : string
+        calctype to setup and run the neb calculations
+    auto : bool
+    sort : bool
+
     """
     def __init__(self, selection, calctype=None, auto=True, sort=True):
-        """ set up attributes for the base class
-        """
+        """set up attributes for the base class"""
         self.selection = selection
         self.calctype = calctype
         self.auto = auto
@@ -56,8 +67,7 @@ class VaspCalculatorBase(object):
         pass
 
     def setup(self):
-        """ Setup initial relaxation run for the selection
-        """
+        """Setup initial relaxation run for the selection"""
         self.pre_setup()
         for config_data in self.selection.data:
             self.config_setup(config_data)
@@ -138,9 +148,7 @@ class VaspCalculatorBase(object):
         return incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files
 
     def submit(self):
-        """ submit a job
-        """
-
+        """ submit jobs for a selection"""
         db = pbs.JobDB()
         db.update()
         for config_data in self.selection.data:
