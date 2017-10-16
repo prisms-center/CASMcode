@@ -1,5 +1,4 @@
 import os, math, sys, shutil
-#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) ##sets unbuffered output
 import vasp
 import io
 
