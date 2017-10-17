@@ -601,7 +601,7 @@ namespace CASM {
   /// - equal to prim.factor_group().size() / this->factor_group().size()
   int Configuration::multiplicity() const {
     if(!cache().contains("multiplicity")) {
-      this->factor_group();
+      cache()["multiplicity"] = this->prim().factor_group().size() / this->factor_group().size();
     }
     return cache()["multiplicity"].get<int>();
   }
