@@ -1,11 +1,14 @@
-import warnings
-from casm.project.api import API
-import os, subprocess, json
-from os.path import join
-from casm.project import syminfo
-import numpy as np
+import json
+import os
 import math
+import warnings
+from os.path import join
 from string import ascii_lowercase
+
+import numpy as np
+
+from casm.project import syminfo
+from casm.project.api import API
 
 def project_path(dir=None):
     """
