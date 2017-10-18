@@ -84,8 +84,11 @@ Testing configuration
 
 Environment variables:
 
+- ``PYTHONPATH``: Set as necessary to find test requirements
 - ``CASM_VASP_POTCAR_DIR``: Location of VASP POTCAR files
 	- required for some casm.vasp and casm.vaspwrapper tests
+- ``CASM_TEST_PROJECTS_DIR``: Location of test CASM projects
+	- required for some tests
 
 
 Writing Tests
