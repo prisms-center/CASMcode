@@ -114,7 +114,8 @@ class Selection(object):
             raise Exception("File: " + backup + " already exists")
           
           # read
-          j = json.load(open(clist, 'r'))
+          with open(clist, 'r') as f:
+              j = json.load(f)
           
           for sk, sv in j["supercells"].iteritems():
             for ck, cv in sv.iteritems():
@@ -126,9 +127,12 @@ class Selection(object):
             j["supercells"][scelname][configid]["selected"] = row["selected"]
             
           # write
-          f = open(backup, 'w')
-          json.dump(j, f)
+          with open(backup, 'w') as f:
+              json.dump(j, f, indent=2)
           os.rename(backup, clist)
+          
+          # refresh proj config list
+          self.proj.refresh(read_configs=True)
           
         elif self.path in ["ALL", "CALCULATED"]:
           raise Exception("Cannot save the '" + self.path + "' Selection")
@@ -178,8 +182,8 @@ class Selection(object):
     
     
     def _clean_data(self):
-        self._data.loc[:,'selected'].astype(bool)
-        
+        self._data.loc[:,'selected'] = self._data.loc[:,'selected'].astype(bool)
+
     
     def query(self, columns, force=False, verbose=False):
         """
@@ -252,6 +256,3 @@ class Selection(object):
           else:
             self.data.loc[:,name] = data
 
-
-
-        

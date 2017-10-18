@@ -582,8 +582,7 @@ class Project(object):
       Refresh PrimClex properties to reflect changes to CASM project files.
       """
       if read_settings:
-        self.dir = DirectoryStructure(self.path)
-        self.settings = ProjectSettings(self.path)
+        self.__refresh()
       if self._ptr is not None:
         self._api.primclex_refresh(
           self.data(), 
