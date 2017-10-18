@@ -16,10 +16,11 @@ except ImportError:
 
 
 ### Local ###
-from casm import vasp
+from casm import vasp, wrapper
 from casm.misc import noindent
 from casm.project import DirectoryStructure, ProjectSettings
-from casm.vaspwrapper import vasp_input_file_names
+from casm.vaspwrapper import VaspWrapperError, read_settings, write_settings, \
+  vasp_input_file_names
 
 ### Globals ###
 VALID_PROP_TYPES = ["KPOINTS", "ENCUT", "NBANDS", "SIGMA"]
@@ -126,14 +127,14 @@ class Converge(object):
         self.casm_directories = DirectoryStructure(configdir)
         self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings is None:
-            raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+            raise VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
         if os.path.abspath(configdir) != self.configdir:
             print ""
             print "input configdir:", configdir
             print "determined configname:", self.configname
             print "expected configdir given configname:", self.configdir
-            raise vaspwrapper.VaspWrapperError("Mismatch between configname and configdir")
+            raise VaspWrapperError("Mismatch between configname and configdir")
 
         # fixed to default_clex for now
         self.clex = self.casm_settings.default_clex
@@ -154,11 +155,11 @@ class Converge(object):
                                                             self.clex)
 
         if setfile is None:
-            raise vaspwrapper.VaspWrapperError("Could not find \"converge.json\" in an appropriate \"settings\" directory")
+            raise VaspWrapperError("Could not find \"converge.json\" in an appropriate \"settings\" directory")
 
         else:
             print "  Read settings from:", setfile
-        self.settings = vaspwrapper.read_settings(setfile)
+        self.settings = read_settings(setfile)
 
         # add required keys to settings if not present
         if not "ncore" in self.settings:
@@ -280,7 +281,7 @@ class Converge(object):
                     self.propdir = store_propdir
 
                 # Collect job data
-                my_properties = vaspwrapper.read_properties(os.path.join(propdir, "properties.calc.json"))
+                my_properties = read_properties(os.path.join(propdir, "properties.calc.json"))
 
                 nrg_data += [float(my_properties["relaxed_energy"])/sum(my_properties["atoms_per_type"])] #Energy per atom!!!
                 vol_data += [self.volume(my_properties["relaxed_lattice"])]
@@ -440,7 +441,7 @@ class Converge(object):
         sys.stdout.flush()
 
         # Copy our converge.json so we can revisit it later
-        vaspwrapper.write_settings(self.settings, os.path.join(self.calcdir, "converge.json"))
+        write_settings(self.settings, os.path.join(self.calcdir, "converge.json"))
         print "Wrote " + os.path.join(self.calcdir, "converge.json")
         sys.stdout.flush()
 
@@ -624,7 +625,7 @@ class Converge(object):
                     continue
 
                 elif status != "incomplete":
-                    raise vaspwrapper.VaspWrapperError("unexpected convergence status: '" + status + "' and task: '" + task + "'")
+                    raise VaspWrapperError("unexpected convergence status: '" + status + "' and task: '" + task + "'")
                     # sys.stdout.flush()        ### Liz: Why is this here? Its unreachable.
                     # continue
 
@@ -661,7 +662,7 @@ class Converge(object):
                 sys.stdout.flush()
                 
                 # construct a Job
-                job = Job(name=casm.wrapper.jobname(self.configname) + "_" + '.'.join(propdir.split(os.sep)[-2:]),\
+                job = Job(name=wrapper.jobname(self.configname) + "_" + '.'.join(propdir.split(os.sep)[-2:]),\
                               account=self.settings["account"],\
                               nodes=int(ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                               ppn=int(self.settings["ppn"]),\
@@ -779,7 +780,7 @@ class Converge(object):
 
         else:
             self.report_status("failed", "unknown")
-            raise vaspwrapper.VaspWrapperError("unexpected convergence status: '" + status + "' and task: '" + task + "'")
+            raise VaspWrapperError("unexpected convergence status: '" + status + "' and task: '" + task + "'")
             # sys.stdout.flush()
 
 
@@ -806,7 +807,7 @@ class Converge(object):
             except OSError:
                 pass
             settingsfile = os.path.join(self.configdir, "settings", self.casm_settings["curr_calctype"], self.settings["prop"] + "_converge", "converge.json")
-            vaspwrapper.write_settings(self.settings, settingsfile)
+            write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
             print "Edit the 'run_limit' property if you wish to continue."
@@ -828,7 +829,7 @@ class Converge(object):
 
         else:
             self.report_status("failed", "unknown")
-            raise vaspwrapper.VaspWrapperError("vasp convergence complete with unexpected status: '" + status + "' and task: '" + task + "'")
+            raise VaspWrapperError("vasp convergence complete with unexpected status: '" + status + "' and task: '" + task + "'")
             #sys.stdout.flush()
 
     def report_status(self, status, failure_type=None):

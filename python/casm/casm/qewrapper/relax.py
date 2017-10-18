@@ -6,10 +6,10 @@ except ImportError:
   from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
   from pbs import PBSError as JobsError
 
-from casm import quantumespresso
+from casm import quantumespresso, wrapper
 from casm.misc import noindent
 from casm.project import DirectoryStructure, ProjectSettings
-from casm.qewrapper import qewrapper
+from casm.qewrapper import QEWrapperError, qe_input_file_names, read_settings, write_settings
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a Quantum Espresso relaxation.
@@ -59,7 +59,7 @@ class Relax(object):
         print "Reading CASM settings"
         self.casm_settings = ProjectSettings()
         if self.casm_settings == None:
-            raise qewrapper.QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+            raise QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
         self.casm_directories=DirectoryStructure()
 
@@ -89,13 +89,13 @@ class Relax(object):
         setfile = self.casm_directories.settings_path_crawl("relax.json",self.configname,self.casm_settings.default_clex)
 
         if setfile == None:
-            raise qewrapper.QEWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
+            raise QEWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
 
         else:
             print "Using "+str(setfile)+" as settings..."
 
-        self.settings = qewrapper.read_settings(setfile)
+        self.settings = read_settings(setfile)
 
         # add required keys to settings if not present
         if not "ncore" in self.settings:
@@ -139,7 +139,7 @@ class Relax(object):
         """
         # Find required input files in CASM project directory tree
         infilename=self.settings["infilename"]
-        qefiles=qewrapper.qe_input_file_names(self.casm_directories,self.configname,self.casm_settings.default_clex,infilename)
+        qefiles=qe_input_file_names(self.casm_directories,self.configname,self.casm_settings.default_clex,infilename)
         infilename,super_poscarfile,speciesfile=qefiles
 
 
@@ -228,7 +228,7 @@ class Relax(object):
             return
 
         elif status != "incomplete":
-            raise qewrapper.QEWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise QEWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
             return
 
@@ -249,7 +249,7 @@ class Relax(object):
         print "  Constructing a PBS job"
         sys.stdout.flush()
         # construct a Job
-        job = Job(name=casm.wrapper.jobname(self.configname),\
+        job = Job(name=wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -356,7 +356,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise qewrapper.QEWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise QEWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
 
@@ -383,7 +383,7 @@ class Relax(object):
             except:
                 pass
             settingsfile = os.path.join(self.casm_directories.configuration_calc_settings_dir(self.casm_settings.default_clex), "relax.json")
-            qewrapper.write_settings(self.settings, settingsfile)
+            write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
             print "Edit the 'run_limit' property if you wish to continue."
@@ -405,7 +405,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise qewrapper.QEWrapperError("Quantum Espresso relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
+            raise QEWrapperError("Quantum Espresso relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
     def report_status(self, status, failure_type=None):

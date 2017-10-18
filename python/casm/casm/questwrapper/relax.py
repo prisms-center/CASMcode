@@ -12,10 +12,11 @@ except ImportError:
   from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
   from pbs import PBSError as JobsError
 
-from casm import seqquest
+from casm import seqquest, wrapper
 from casm.misc import noindent
 from casm.project import DirectoryStructure, ProjectSettings
-from casm.questwrapper import questwrapper
+from casm.questwrapper import QuestWrapperError, read_settings, write_settings, \
+  quest_input_file_names
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a SeqQuest relaxation.
@@ -97,14 +98,14 @@ class Relax(object):
         self.casm_directories = DirectoryStructure(configdir)
         self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings is None:
-            raise questwrapper.QuestWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+            raise QuestWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
         if os.path.abspath(configdir) != self.configdir:
             print ""
             print "input configdir:", configdir
             print "determined configname:", self.configname
             print "expected configdir given configname:", self.configdir
-            raise questwrapper.QuestWrapperError("Mismatch between configname and configdir")
+            raise QuestWrapperError("Mismatch between configname and configdir")
 
         # fixed to default_clex for now
         self.clex = self.casm_settings.default_clex
@@ -123,12 +124,12 @@ class Relax(object):
         setfile = self.casm_directories.settings_path_crawl("relax.json", self.configname, self.clex)
 
         if setfile is None:
-            raise questwrapper.QuestWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
+            raise QuestWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
 
         else:
             print "  Read settings from:", setfile
-        self.settings = questwrapper.read_settings(setfile)
+        self.settings = read_settings(setfile)
 
         # set default settings if not present
         if not "run_cmd" in self.settings:
@@ -165,7 +166,7 @@ class Relax(object):
 
         """
         # Find required input files in CASM project directory tree
-        questfiles=questwrapper.quest_input_file_names(self.casm_directories, self.configname, self.clex)
+        questfiles=quest_input_file_names(self.casm_directories, self.configname, self.clex)
         lcao_in,super_poscarfile,speciesfile=questfiles
 
         # Find optional input files
@@ -269,7 +270,7 @@ class Relax(object):
             return
 
         elif status != "incomplete":
-            raise questwrapper.QuestWrapperError("unexpected relaxation status: '" + status
+            raise QuestWrapperError("unexpected relaxation status: '" + status
                                                  + "' and task: '" + task + "'")
             # This code can never be reached...
             # sys.stdout.flush()
@@ -304,7 +305,7 @@ class Relax(object):
         print "Constructing a job"
         sys.stdout.flush()
         # construct a Job
-        job = Job(name=casm.wrapper.jobname(self.configname),\
+        job = Job(name=wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -394,7 +395,7 @@ class Relax(object):
 
         else:
             self.report_status("failed", "unknown")
-            raise questwrapper.QuestWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise QuestWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
 
@@ -424,7 +425,7 @@ class Relax(object):
             except OSError:
                 pass
             settingsfile = os.path.join(config_set_dir, "relax.json")
-            questwrapper.write_settings(self.settings, settingsfile)
+            write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
             print "Edit the 'run_limit' property if you wish to continue."
@@ -446,7 +447,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise questwrapper.QuestWrapperError("quest relaxation complete with unexpected status: '"
+            raise QuestWrapperError("quest relaxation complete with unexpected status: '"
                                                  + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 

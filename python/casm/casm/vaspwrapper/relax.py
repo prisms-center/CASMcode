@@ -12,10 +12,11 @@ except ImportError:
   from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
   from pbs import PBSError as JobsError
 
-from casm import vasp
+from casm import vasp, wrapper
 from casm.misc import noindent
 from casm.project import DirectoryStructure, ProjectSettings
-from casm.vaspwrapper import vasp_input_file_names
+from casm.vaspwrapper import VaspWrapperError, read_settings, write_settings, \
+  vasp_input_file_names
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
@@ -97,14 +98,14 @@ class Relax(object):
         self.casm_directories = DirectoryStructure(configdir)
         self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings is None:
-            raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+            raise VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
         if os.path.abspath(configdir) != self.configdir:
             print ""
             print "input configdir:", configdir
             print "determined configname:", self.configname
             print "expected configdir given configname:", self.configdir
-            raise vaspwrapper.VaspWrapperError("Mismatch between configname and configdir")
+            raise VaspWrapperError("Mismatch between configname and configdir")
 
         # fixed to default_clex for now
         self.clex = self.casm_settings.default_clex
@@ -123,12 +124,12 @@ class Relax(object):
         setfile = self.casm_directories.settings_path_crawl("relax.json", self.configname, self.clex)
 
         if setfile is None:
-            raise vaspwrapper.VaspWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
+            raise VaspWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
 
         else:
             print "  Read settings from:", setfile
-        self.settings = vaspwrapper.read_settings(setfile)
+        self.settings = read_settings(setfile)
 
         # set default settings if not present
         if not "ncore" in self.settings:
@@ -256,7 +257,7 @@ class Relax(object):
             return
 
         elif status != "incomplete":
-            raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
             return
 
@@ -291,7 +292,7 @@ class Relax(object):
         print "Constructing a job"
         sys.stdout.flush()
         # construct a Job
-        job = Job(name=casm.wrapper.jobname(self.configname),\
+        job = Job(name=wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -404,7 +405,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
 
@@ -434,7 +435,7 @@ class Relax(object):
             except:
                 pass
             settingsfile = os.path.join(config_set_dir, "relax.json")
-            vaspwrapper.write_settings(self.settings, settingsfile)
+            write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
             print "Edit the 'run_limit' property if you wish to continue."
@@ -456,7 +457,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise vaspwrapper.VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
+            raise VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
     def report_status(self, status, failure_type=None):
