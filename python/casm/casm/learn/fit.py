@@ -2,14 +2,17 @@ import sklearn.linear_model
 import sklearn.cross_validation
 import sklearn.metrics
 import random, re, time, os, types, json, pickle, copy, uuid, shutil, tempfile
-from os.path import splitext, basename, join
 import numpy as np
+import pandas
+
 from math import sqrt
-from casm.project import Project, Selection, query, write_eci
+from os.path import splitext, basename, join
+
 import casm.learn.linear_model
 import casm.learn.tools
 import casm.learn.selection_wrapper
-import pandas
+from casm.misc.noindent import NoIndent, NoIndentEncoder
+from casm.project import Project, Selection, query, write_eci
 
 def _find_method(mods, attrname):
   for m in mods:
@@ -393,9 +396,9 @@ def example_input_DirectSelection():
   d = {
     "use_saved_estimator" : False,
     "population" : [
-      {"from_halloffame" : "my_halloffame.pkl", "individuals" : casm.NoIndent([0, 2, 5]) },
+      {"from_halloffame" : "my_halloffame.pkl", "individuals" : NoIndent([0, 2, 5]) },
       {"bitstring": "111000"},
-      {"indices" : casm.NoIndent([1, 2, 3, 12, 13, 21])}
+      {"indices" : NoIndent([1, 2, 3, 12, 13, 21])}
     ]
   }
   input["feature_selection"]["kwargs"] = d
@@ -2325,8 +2328,8 @@ def to_json(index, indiv):
   Note
   ----
   
-    ECI are serialized using cls=casm.NoIndent, so when writing with json.dump or 
-    json.dumps, include 'cls=casm.NoIndentEncoder'.
+    ECI are serialized using cls=casm.misc.noident.NoIndent, so when writing with json.dump or 
+    json.dumps, include 'cls=casm.misc.noindent.NoIndentEncoder'.
   
   """
   d = dict()
@@ -2353,7 +2356,7 @@ def to_json(index, indiv):
       d[attr] = json.loads(getattr(indiv, attr).to_json(orient='records'))
   d["eci"] = []
   for bfunc in indiv.eci:
-    d["eci"].append(casm.NoIndent(bfunc))
+    d["eci"].append(NoIndent(bfunc))
   
   return d
 
@@ -2403,7 +2406,7 @@ def to_dataframe(indices, hall):
   """
   data = [to_json(i, hall[i]) for i in indices]
   for d in data:
-    d["eci"] = json.dumps(d["eci"], cls=casm.NoIndentEncoder)
+    d["eci"] = json.dumps(d["eci"], cls=NoIndentEncoder)
   return pandas.DataFrame.from_records(data)
     
 
@@ -2430,7 +2433,7 @@ def _print_individual(index, indiv, format=None):
     return
     
   elif format.lower() == "json":
-    print json.dumps(to_json(index,indiv), indent=2, cls=casm.NoIndentEncoder)
+    print json.dumps(to_json(index,indiv), indent=2, cls=NoIndentEncoder)
     return
     
   elif format.lower() == "details":
@@ -2513,7 +2516,7 @@ def print_individual(hall, indices, format=None):
     for index in indices:
       d = to_json(index, hall[index])
       h.append(d)
-    print json.dumps(h, indent=2, cls=casm.NoIndentEncoder)
+    print json.dumps(h, indent=2, cls=NoIndentEncoder)
   
   elif format.lower() == "csv":
     df = to_dataframe(range(len(hall)), hall) 
@@ -2555,7 +2558,7 @@ def print_halloffame(hall, format=None):
     for index, indiv in enumerate(hall):
       d = to_json(index, indiv)
       h.append(d)
-    print json.dumps(h, indent=2, cls=casm.NoIndentEncoder)
+    print json.dumps(h, indent=2, cls=NoIndentEncoder)
       
     
   elif format.lower() == "csv":

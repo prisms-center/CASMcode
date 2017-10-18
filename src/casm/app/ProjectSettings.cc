@@ -33,7 +33,7 @@ namespace CASM {
   }
 
   void ClexDescription::print(std::ostream &sout, bool is_default, int indent) const {
-    std::string in(' ', indent);
+    std::string in(indent, ' ');
     sout << in << name;
     if(is_default) {
       sout << "*";

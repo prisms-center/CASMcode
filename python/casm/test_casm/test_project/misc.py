@@ -9,7 +9,7 @@ from os.path import join
 import test_casm
 
 def casm_project_setup(self):
-    """Implements common setup for casm.vasp tests
+    """Implements common setup for casm.project tests
       - check for 'skip' or 'skip_MyTestCase' files
       - check for 'CASM_TEST_PROJECTS_DIR' and set 'self.has_projects'
     

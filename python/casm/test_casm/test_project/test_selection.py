@@ -13,7 +13,6 @@ from test_casm.test_project import CasmProjectTestCase
 class TestCasmSelection(CasmProjectTestCase):
   
     def setUp(self):
-        print "TestCasmSelection.setUp()"
         pass
     
     def test_init(self):

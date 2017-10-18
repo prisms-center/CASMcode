@@ -1,12 +1,15 @@
 #!/usr/bin/env python
-import os, json, pickle
-from casm.project import Project, Selection, write_eci
-import casm.learn
 import argparse
 import deap.tools
+import json
+import os
+import sys
+
+import casm.learn
+from casm.project import Project, Selection, write_eci
   
 
-def main():  
+def main():
   parser = argparse.ArgumentParser(description = 'Fit cluster expansion coefficients (ECI)')
   parser.add_argument('--desc', help='Print extended usage description', action="store_true")
   parser.add_argument('-s', '--settings', nargs=1, help='Settings input filename', type=str)
@@ -32,29 +35,29 @@ def main():
   
   if args.settings_format:
     casm.learn.print_input_help()
-    exit()
+    return
   
   if args.exLasso:
     print json.dumps(casm.learn.example_input_Lasso(), indent=2)
-    exit()
+    return
   elif args.exLassoCV:
     print json.dumps(casm.learn.example_input_LassoCV(), indent=2)
-    exit()
+    return
   elif args.exRFE:
     print json.dumps(casm.learn.example_input_RFE(), indent=2)
-    exit()
+    return
   elif args.exGeneticAlgorithm:
     print json.dumps(casm.learn.example_input_GeneticAlgorithm(), indent=2)
-    exit()
+    return
   elif args.exIndividualBestFirst:
     print json.dumps(casm.learn.example_input_IndividualBestFirst(), indent=2)
-    exit()
+    return
   elif args.exPopulationBestFirst:
     print json.dumps(casm.learn.example_input_PopulationBestFirst(), indent=2)
-    exit()
+    return
   elif args.exDirectSelection:
     print json.dumps(casm.learn.example_input_DirectSelection(), indent=2, cls=casm.NoIndentEncoder)
-    exit()
+    return
   
   if args.settings:
     

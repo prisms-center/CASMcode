@@ -153,7 +153,7 @@ class Selection(object):
           if self._is_json():
             self._data.to_json(path_or_buf=backup, orient='records')
           else:
-            self.data.loc[:,"selected"].astype(int)
+            self.data.loc[:,"selected"] = self.data.loc[:,"selected"].astype(int)
             f = open(backup, 'w')
             f.write('#')
             self.data.to_csv(path_or_buf=f, sep=' ', index=False)

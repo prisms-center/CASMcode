@@ -89,6 +89,7 @@ Environment variables:
 	- required for some casm.vasp and casm.vaspwrapper tests
 - ``CASM_TEST_PROJECTS_DIR``: Location of test CASM projects
 	- required for some tests
+	- ask the CASM developers for access to the test projects at <casm-developers@lists.engr.ucsb.edu>
 
 
 Writing Tests
@@ -99,6 +100,7 @@ See documentation for basics on writing tests:
 - [pytest documentation](https://docs.pytest.org/en/latest/)
 - pytest can run [unittest](https://docs.python.org/2/library/unittest.html) tests, and includes additional features
 - See ``test_casm/test_vasp/misc.py`` and ``test_casm/test_vasp/test_relax.py`` for an (incomplete) example implementing and using a base TestCase class that performs common setup for all ``casm.vasp`` tests. This includes checking if the ``vasp`` executable or pseudopotentials exist, and enables using ``skip`` files as described below to provide some additional control over which tests get run.
+- Installation of the `casm` CLI and shared libraries is required for testing, but installation of the Python package should not be required for testing
 
 
 Skip tests
