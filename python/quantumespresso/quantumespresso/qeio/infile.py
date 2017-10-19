@@ -363,10 +363,6 @@ class AtomicSpecies:
                     except ValueError:
                         raise AtomicSpeciesError("Could not convert mass to float")
                     self.pseudos = self.pseudos + [line[2].strip()]
-
-
-
-
     
     def make_string(self):
         """Convert card to string for writing"""
@@ -619,7 +615,6 @@ class KPoints:
         super = backup_super
         return super_kpoints
     
-    
     def density(self, poscar):
         """ Return the kpoint density with respect to a Poscar.
             
@@ -627,7 +622,6 @@ class KPoints:
                 poscar: a Poscar object
         """
         return (self.coords[0] * self.coords[1] * self.coords[2]) / poscar.reciprocal_volume() 
-    
     
     def make_string(self):
         """Convert card to string for writing"""
@@ -665,9 +659,6 @@ QUANTUM_ESPRESSO_CARD_LIST = ['ATOMIC_SPECIES','ATOMIC_POSITIONS','K_POINTS','CE
 QUANTUM_ESPRESSO_CARD_OBJ_LIST = ['ATOMIC_SPECIES','ATOMIC_POSITIONS','K_POINTS','CELL_PARAMETERS']
 
 QUANTUM_ESPRESSO_BLOCK_LIST= QUANTUM_ESPRESSO_NAMELIST_LIST + QUANTUM_ESPRESSO_CARD_LIST
-
-
-
 
 class InfileError(Exception):
     def __init__(self,msg):
@@ -707,6 +698,7 @@ class Infile:
         # parse Infile into self.namelist and self.cards
         for line in file:
             if line[0] == '&':
+                #The check a new namelist is a line starting with &
                 if namelist_open:
                     raise InfileError("namelist embedding...Please check '" + filename + "' for proper formatting")
                 namelist_open = True
@@ -714,6 +706,7 @@ class Infile:
                 line = re.split('&',line)
                 curr_namelist = line[1].strip()
             elif line[0] == '/':
+                #The end of a namelist is denoted by /
                 if not namelist_open:
                     raise InfileError("namelist embedding...Please check '" + filename + "' for proper formatting")
                 namelist_open = False
@@ -728,11 +721,14 @@ class Infile:
 
                 self.namelists[curr_namelist]=namelistobj
             elif namelist_open:
+                    # white space in name list is removed later on
                     nameliststring=nameliststring + line + '\n'
             else:
                 if not card_open:
                     line = line.split()
+                    #if a card isn't open for reading and empty line is found skip to next line
                     if len(line) > 0: 
+                        #this check for the start of a card is a Capitalized phrase
                         if line[0].isupper():
                             card_open = True
                             cardstring=""
@@ -741,6 +737,8 @@ class Infile:
                             if curr_card in ["ATOMIC_POSITIONS","K_POINTS","CELL_PARAMETERS"] and len(line)>=2:
                                 extratag=line[1].strip()
                 elif line.strip()=='':
+                    #the only way to check for end of card is an empty line
+                    # new line type white space in card is detrimental because it ends the card prematurely
                     card_open = False
                     cardobj={
                       'ATOMIC_SPECIES': lambda x : AtomicSpecies(x),
@@ -751,7 +749,6 @@ class Infile:
                     self.cards[curr_card]=cardobj
                 else:
                     cardstring=cardstring + line + '\n'
-
 
         self._verify_blocks()
 
@@ -772,6 +769,9 @@ class Infile:
 
     def rewrite_poscar_info(self,poscar,species=None):
         """Update Infile object to a new set of coordinates and lattice vectors"""
+        ## This function is called on subsequent runs of quantum espresso i.e. moving from run.0 to run.1 etc.
+        ## Knowing what is going on here is dependent on knowledge of quantumespresso/qeio/poscar.py
+        ## Knowing what is going on here is dependent on knowledge of quantumespresso/qeio/species.py
         if "CELL_PARAMETERS" not in self.cards.keys():
             self.cards["CELL_PARAMETERS"]=CellParameters("0.0 0.0 0.0 \n  0.0 0.0 0.0 \n 0.0 0.0 0.0")
         if poscar.scaling in ['alat','bohr','angstrom']:
@@ -784,7 +784,6 @@ class Infile:
             if "celldm(1)" in self.namelists["SYSTEM"].tags.keys():
                 del self.namelists["SYSTEM"].tags["celldm(1)"]
         
-
         if "ATOMIC_POSITIONS" in self.cards.keys():
             if poscar.coord_mode in ['alat','bohr','angstrom','crystal']:
                 self.cards["ATOMIC_POSITIONS"].units=poscar.coord_mode
@@ -800,12 +799,13 @@ class Infile:
                     for flag in flags:
                         int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
                     coords+= [(specie.occ_alias,specie.position,int_flags)]
-                elif species[specie.occupant].tags["if_pos"] !="":
-                    flags=species[specie.occupant].tags["if_pos"].split(',')
-                    int_flags=[]
-                    for flag in flags:
-                        int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
-                    coords+= [(specie.occ_alias,specie.position,int_flags)]
+                elif species!=None:
+                    if "if_pos" in species[specie.occupant].tags.keys() and species[specie.occupant].tags["if_pos"] !="":
+                        flags=species[specie.occupant].tags["if_pos"].split(',')
+                        int_flags=[]
+                        for flag in flags:
+                            int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
+                        coords+= [(specie.occ_alias,specie.position,int_flags)]
                 else:
                     coords+= [(specie.occ_alias,specie.position)]
             self.cards["ATOMIC_POSITIONS"].coords=coords
@@ -853,6 +853,7 @@ class Infile:
                     infile_write.write('{}'.format(self.namelists[namelist].make_string()).translate(None,"[]"))
                     infile_write.write('/\n')
                 else:
+                    #This branch is for namelists unrecognized by the qe wrapper
                     infile_write.write('&{}\n'.format(namelist).translate(None,"[],'"))
                     infile_write.write('{}'.format(self.namelists[namelist]).translate(None,"[]"))
                     infile_write.write('/\n')
@@ -868,6 +869,7 @@ class Infile:
                     infile_write.write('{}'.format(self.cards[card].make_string()).translate(None,"[]"))
                     infile_write.write('\n')
                 else:
+                    #This branch is for cards unrecognized by the qe wrapper
                     infile_write.write('{}\n'.format(card))
                     infile_write.write('{}'.format(self.cards[card]).translate(None,"[]"))
                     infile_write.write('\n')
