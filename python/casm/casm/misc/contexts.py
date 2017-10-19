@@ -52,5 +52,5 @@ def captured_output(wd=None):
             sys.stdout, sys.stderr = old_out, old_err
 
 def print_stringIO(strio):
-    print "\n----\n", strio.getvalue(), "\n----"
+    print("\n----\n", strio.getvalue(), "\n----")
 

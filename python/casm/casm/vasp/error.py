@@ -38,7 +38,7 @@ def continue_job(jobdir, contdir, settings):
          to contdir/POSCAR. jobdir/POSCAR and jobdir/CONTCAR are always kept.
     """
 
-    print "Continue VASP job:\n  Original: " + jobdir + "\n  Continuation: " + contdir
+    print("Continue VASP job:\n  Original: " + jobdir + "\n  Continuation: " + contdir)
     sys.stdout.flush()
 
     # remove duplicates
@@ -116,10 +116,10 @@ def continue_job(jobdir, contdir, settings):
         pass
 
     # make compressed backups of files sensitive to corruption (e.g. WAVECAR)
-    print " backup:"
+    print(" backup:")
     for file in backup:
         if os.path.isfile(os.path.join(jobdir, file)):
-            print file,
+            print(file, end=' ')
             # Open target file, target file.gz
             f_in = open(os.path.join(jobdir, file), 'rb')
             f_out = gzip.open(os.path.join(jobdir, file)+'_BACKUP.gz', 'wb')
@@ -127,51 +127,51 @@ def continue_job(jobdir, contdir, settings):
             f_out.writelines(f_in)
             f_out.close()
             f_in.close()
-    print ""
+    print("")
 
     # copy CONTCAR/POSCAR/etc
     if os.path.isfile(os.path.join(jobdir, "CONTCAR")) and os.path.getsize(os.path.join(jobdir, "CONTCAR")) > 0:
         shutil.copyfile(os.path.join(jobdir, "CONTCAR"), os.path.join(contdir, "POSCAR"))
-        print "  cp CONTCAR -> POSCAR"
+        print("  cp CONTCAR -> POSCAR")
     else:
         shutil.copyfile(os.path.join(jobdir, "POSCAR"), os.path.join(contdir, "POSCAR"))
-        print "  no CONTCAR: cp POSCAR -> POSCAR"
+        print("  no CONTCAR: cp POSCAR -> POSCAR")
 
     # move files
-    print "  mv:",
+    print("  mv:", end=' ')
     for file in move:
-        print file,
+        print(file, end=' ')
         # This prevents a missing file from crashing the vasprun (e.g. a missing WAVECAR)
         if os.path.isfile(os.path.join(jobdir, file)):
             os.rename(os.path.join(jobdir, file), os.path.join(contdir, file))
         else:
-            print "Could not find file %s, skipping!" % file
-    print ""
+            print("Could not find file %s, skipping!" % file)
+    print("")
 
     # copy files
-    print "  cp:",
+    print("  cp:", end=' ')
     for file in copy:
-        print file,
+        print(file, end=' ')
         # This prevents a missing file from crashing the vasprun (e.g. a missing WAVECAR)
         if os.path.isfile(os.path.join(jobdir, file)):
             shutil.copyfile(os.path.join(jobdir, file), os.path.join(contdir, file))
         else:
-            print "Could not find file %s, skipping!" % file
-    print ""
+            print("Could not find file %s, skipping!" % file)
+    print("")
 
     # remove files
-    print "  rm:",
+    print("  rm:", end=' ')
     for file in remove:
         if os.path.isfile(os.path.join(jobdir, file)):
-            print file,
+            print(file, end=' ')
             os.remove(os.path.join(jobdir, file))
-    print ""
+    print("")
 
     # compress files
-    print " gzip:",
+    print(" gzip:", end=' ')
     for file in compress:
         if os.path.isfile(os.path.join(jobdir,file)):
-            print file,
+            print(file, end=' ')
             # Open target file, target file.gz
             f_in = open(os.path.join(jobdir, file), 'rb')
             f_out = gzip.open(os.path.join(jobdir, file)+'.gz', 'wb')
@@ -181,8 +181,8 @@ def continue_job(jobdir, contdir, settings):
             f_in.close()
             # Remove original target file
             os.remove(os.path.join(jobdir,file))
-    print ""
-    print ""
+    print("")
+    print("")
     sys.stdout.flush()
 
 
@@ -280,7 +280,7 @@ class IbzkptError(_RunError):
             kpt.automode = "GAMMA"
             kpt.subdivisions = [max_k, max_k, max_k]
             kpt.shift = [0.0, 0.0, 0.0]
-            print "  Changed KPOINTS from AUTO (%s) to GAMMA (%s)" % (old_kpt, kpt.subdivisions)
+            print("  Changed KPOINTS from AUTO (%s) to GAMMA (%s)" % (old_kpt, kpt.subdivisions))
             kpt.write(os.path.join(new_jobdir, "KPOINTS"))
 
         else:
@@ -291,7 +291,7 @@ class IbzkptError(_RunError):
                     kpt.subdivisions[i] += 1
 
             if odd == False:
-                print "  Set KPOINTS subdivision to be odd:", kpt.subdivisions, "and mode to Gamma"
+                print("  Set KPOINTS subdivision to be odd:", kpt.subdivisions, "and mode to Gamma")
                 kpt.automode = "Gamma"
                 kpt.write(os.path.join(new_jobdir, "KPOINTS"))
 #        else:
@@ -327,14 +327,14 @@ class FEXCFError(_RunError):
         """
         continue_job(err_jobdir, new_jobdir, settings)
         if io.get_incar_tag("IBRION", jobdir=new_jobdir) != 2:
-            print "  Set IBRION = 2"
+            print("  Set IBRION = 2")
             io.set_incar_tag({"IBRION":2}, jobdir=new_jobdir)
         elif io.get_incar_tag("POTIM", jobdir=new_jobdir) > 0.1:
-            print "  Set POTIM = 0.1"
+            print("  Set POTIM = 0.1")
             sys.stdout.flush()
             io.set_incar_tag({"POTIM":0.1}, jobdir=new_jobdir)
         elif io.get_incar_tag("POTIM", jobdir=new_jobdir) > 0.01:
-            print "  Set POTIM = 0.01"
+            print("  Set POTIM = 0.01")
             sys.stdout.flush()
             io.set_incar_tag({"POTIM":0.01}, jobdir=new_jobdir)
 
@@ -364,18 +364,18 @@ class SubSpaceMatrixError(_RunError):
         """
         continue_job(err_jobdir, new_jobdir, settings)
         if io.get_incar_tag("ALGO", jobdir=new_jobdir) != "VeryFast":
-            print "  Set Algo = VeryFast, and Unset IALGO"
+            print("  Set Algo = VeryFast, and Unset IALGO")
             io.set_incar_tag({"IALGO":None, "ALGO":"VeryFast"}, jobdir=new_jobdir)
         elif io.get_incar_tag("IBRION", jobdir=new_jobdir) != 1:
-            print "  Set IBRION = 1 and POTIM = 0.1"
+            print("  Set IBRION = 1 and POTIM = 0.1")
             sys.stdout.flush()
             io.set_incar_tag({"IBRION":1, "POTIM":0.1}, jobdir=new_jobdir)
         elif io.get_incar_tag("LREAL", jobdir=new_jobdir) != "False":
-            print "  Set LREAL = .FALSE."
+            print("  Set LREAL = .FALSE.")
             sys.stdout.flush()
             io.set_incar_tag({"LREAL":False}, jobdir=new_jobdir)
         else:
-            print "  Set Algo = Normal, and Unset IALGO"
+            print("  Set Algo = Normal, and Unset IALGO")
             sys.stdout.flush()
             io.set_incar_tag({"IALGO":None, "ALGO":"Normal"}, jobdir=new_jobdir)
 
@@ -388,10 +388,10 @@ class InisymError(_CrashError):
         continue_job(err_jobdir, new_jobdir, settings)
         symprec = io.get_incar_tag("SYMPREC", jobdir = new_jobdir)
         if symprec is None or symprec > 1.1e-8:
-            print "  Set SYMPREC = 1e-8"
+            print("  Set SYMPREC = 1e-8")
             io.set_incar_tag({"SYMPREC": 1e-8}, jobdir = new_jobdir)
         elif io.get_incar_tag("ISYM", jobdir = new_jobdir) != 0:
-            print "  Set ISYM = 0"
+            print("  Set ISYM = 0")
             io.set_incar_tag({"ISYM": 0}, jobdir = new_jobdir)
 
 class SgrconError(_CrashError):
@@ -403,10 +403,10 @@ class SgrconError(_CrashError):
         continue_job(err_jobdir, new_jobdir, settings)
         symprec = io.get_incar_tag("SYMPREC", jobdir = new_jobdir)
         if symprec is None or symprec > 1.1e-8:
-            print "  Set SYMPREC = 1e-8"
+            print("  Set SYMPREC = 1e-8")
             io.set_incar_tag({"SYMPREC": 1e-8}, jobdir = new_jobdir)
         elif io.get_incar_tag("ISYM", jobdir = new_jobdir) != 0:
-            print "  Set ISYM = 0"
+            print("  Set ISYM = 0")
             io.set_incar_tag({"ISYM": 0}, jobdir = new_jobdir)
 
 class WavecarError(_CrashError):
@@ -450,12 +450,12 @@ class NbandsError(_RunError):
             if "NBANDS" in line:
                 nbands_line.append(line)
         if len(nbands_line)<1:
-            print "SERIOUS WARNING :  "
-            print "        Couldn't find any reference to nbands in the OUTCAR. Continuing without fixing"
+            print("SERIOUS WARNING :  ")
+            print("        Couldn't find any reference to nbands in the OUTCAR. Continuing without fixing")
         else:
             for l in nbands_line:
                 if 'k-points' in l.strip().split():
-                    print "  Set NBANDS = "+str(int(1.1 * float(l.strip().split()[-1])))
+                    print("  Set NBANDS = "+str(int(1.1 * float(l.strip().split()[-1]))))
                     sys.stdout.flush()
                     io.set_incar_tag({"NBANDS":int(1.1 * float(l.strip().split()[-1]))}, jobdir=new_jobdir)
                     break
@@ -496,14 +496,14 @@ class NoConvergeError(_RunError):
         curr_algo = io.get_incar_tag("ALGO", new_jobdir).upper()
         if curr_algo == 'FAST':
             io.set_incar_tag({"ALGO":"Normal", "IALGO":None}, jobdir=new_jobdir)
-            print "  Set ALGO = Normal"
+            print("  Set ALGO = Normal")
         elif curr_algo == 'NORMAL':
             io.set_incar_tag({"ALGO":"All", "IALGO":None}, jobdir=new_jobdir)
-            print "  Set ALGO = All"
+            print("  Set ALGO = All")
         elif curr_algo == 'ALL':
             io.set_incar_tag({"ALGO":"Damped", "IALGO":None}, jobdir=new_jobdir)
             io.set_incar_tag({"TIME":"0.4"}, jobdir=new_jobdir)
-            print "  Set ALGO = Damped, TIME = 0.4"
+            print("  Set ALGO = Damped, TIME = 0.4")
 
 class FreezeError(_FreezeError):
     """VASP appears frozen"""
@@ -534,20 +534,20 @@ class FreezeError(_FreezeError):
                 most_recent = t
                 most_recent_file = f
 
-        print "Most recent file output (" + most_recent_file + "):", most_recent, " seconds ago."
+        print("Most recent file output (" + most_recent_file + "):", most_recent, " seconds ago.")
         sys.stdout.flush()
         if t < 300:
             return False
 
         outcar = io.Outcar(os.path.join(jobdir, "OUTCAR"))
         if outcar.complete:
-            print "outcar.complete:", outcar.complete
+            print("outcar.complete:", outcar.complete)
             sys.stdout.flush()
             return False
         elif outcar.slowest_loop != None and most_recent > 5.0*outcar.slowest_loop:
-            print "slowest_loop:", outcar.slowest_loop
-            print "5.0*slowest_loop:", 5.0*outcar.slowest_loop
-            print "most_recent:", most_recent
+            print("slowest_loop:", outcar.slowest_loop)
+            print("5.0*slowest_loop:", 5.0*outcar.slowest_loop)
+            print("most_recent:", most_recent)
             sys.stdout.flush()
             return True
         return False
@@ -557,7 +557,7 @@ class FreezeError(_FreezeError):
         """ Fix by killing the job and resubmitting.
         """
         continue_job(err_jobdir, new_jobdir, settings)
-        print "  Kill job and try to continue"
+        print("  Kill job and try to continue")
 
 def error_check(jobdir, stdoutfile, err_types):
     """ Check vasp stdout for errors """

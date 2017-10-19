@@ -109,11 +109,11 @@ class Converge(object):
               Name of an INCAR property that is being converged
 
         """
-        print "Construct a casm.vaspwrapper.Converge instance:"
+        print("Construct a casm.vaspwrapper.Converge instance:")
 
         if configdir is None:
             configdir = os.getcwd()
-        print "  Input directory:", configdir
+        print("  Input directory:", configdir)
 
         self.propdir = propdir
         self.prop = prop
@@ -121,19 +121,19 @@ class Converge(object):
         # get the configname from the configdir path
         _res = os.path.split(configdir)
         self.configname = os.path.split(_res[0])[1] + "/" + _res[1]
-        print "  Configuration:", self.configname
+        print("  Configuration:", self.configname)
 
-        print "Reading CASM settings"
+        print("Reading CASM settings")
         self.casm_directories = DirectoryStructure(configdir)
         self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings is None:
             raise VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
         if os.path.abspath(configdir) != self.configdir:
-            print ""
-            print "input configdir:", configdir
-            print "determined configname:", self.configname
-            print "expected configdir given configname:", self.configdir
+            print("")
+            print("input configdir:", configdir)
+            print("determined configname:", self.configname)
+            print("expected configdir given configname:", self.configdir)
             raise VaspWrapperError("Mismatch between configname and configdir")
 
         # fixed to default_clex for now
@@ -145,10 +145,10 @@ class Converge(object):
             os.mkdir(self.calcdir)
         except:
             pass
-        print "  Calculations directory:", self.calcdir
+        print("  Calculations directory:", self.calcdir)
 
         # read the settings json file
-        print "  Reading converge.json settings file"
+        print("  Reading converge.json settings file")
         sys.stdout.flush()
         setfile = self.casm_directories.settings_path_crawl("converge.json",
                                                             self.configname,
@@ -158,7 +158,7 @@ class Converge(object):
             raise VaspWrapperError("Could not find \"converge.json\" in an appropriate \"settings\" directory")
 
         else:
-            print "  Read settings from:", setfile
+            print("  Read settings from:", setfile)
         self.settings = read_settings(setfile)
 
         # add required keys to settings if not present
@@ -239,7 +239,7 @@ class Converge(object):
             except OSError:
                 pass
 
-        print "  DONE\n"
+        print("  DONE\n")
         sys.stdout.flush()
 
     def collect(self):
@@ -260,10 +260,10 @@ class Converge(object):
 
             # If any job isn't done, we should abort
             if status == "incomplete":
-                print "Directory " + propdir + " Has Status:" + status + "  Please wait for the job to finish."
+                print("Directory " + propdir + " Has Status:" + status + "  Please wait for the job to finish.")
                 return
             elif status != "complete":
-                print "Directory " + propdir + " Has Status:" + status + "  Please inspect for errors, then re-submit."
+                print("Directory " + propdir + " Has Status:" + status + "  Please inspect for errors, then re-submit.")
                 return
             else:
                 # ensure results report written
@@ -437,12 +437,12 @@ class Converge(object):
         outputfile = os.path.join(self.calcdir, conv_file_name)
         with open(outputfile, 'w') as my_file:
             my_file.write(json.dumps(conv_dict, my_file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
-        print "Wrote " + outputfile
+        print("Wrote " + outputfile)
         sys.stdout.flush()
 
         # Copy our converge.json so we can revisit it later
         write_settings(self.settings, os.path.join(self.calcdir, "converge.json"))
-        print "Wrote " + os.path.join(self.calcdir, "converge.json")
+        print("Wrote " + os.path.join(self.calcdir, "converge.json"))
         sys.stdout.flush()
 
     def setup(self):
@@ -488,18 +488,18 @@ class Converge(object):
                 raise vasp.VaspError("Converge.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
         sys.stdout.flush()
 
-        print "Setting up VASP input files:", self.propdir
+        print("Setting up VASP input files:", self.propdir)
 
         # read prim and prim kpoints
-        print "  Reading KPOINTS:", kpointsfile
+        print("  Reading KPOINTS:", kpointsfile)
         kpoints = vasp.io.Kpoints(kpointsfile)
 
         # read species, super poscar, incar, and generate super kpoints
-        print "  Reading SPECIES:", speciesfile
+        print("  Reading SPECIES:", speciesfile)
         species_settings = vasp.io.species_settings(speciesfile)
-        print "  Reading supercell POS:", poscarfile
+        print("  Reading supercell POS:", poscarfile)
         poscar = vasp.io.Poscar(poscarfile, species_settings)
-        print "  Reading INCAR:", incarfile
+        print("  Reading INCAR:", incarfile)
         incar = vasp.io.Incar(incarfile, species_settings, poscar, True)
 
 
@@ -534,31 +534,31 @@ class Converge(object):
             raise ConvergeError("Error in Converge.collect: \"prop: %s\" not a valid convergence prop type!\nCurrently supported convergence prop types are %s" % (self.settings["prop"], VALID_PROP_TYPES))
 
         # write main input files
-        print "  Writing supercell POSCAR:", os.path.join(self.propdir, 'POSCAR')
+        print("  Writing supercell POSCAR:", os.path.join(self.propdir, 'POSCAR'))
         poscar.write(os.path.join(self.propdir, 'POSCAR'), True)
-        print "  Writing INCAR:", os.path.join(self.propdir, 'INCAR')
+        print("  Writing INCAR:", os.path.join(self.propdir, 'INCAR'))
         incar.write(os.path.join(self.propdir, 'INCAR'))
-        print "  Writing supercell KPOINTS:", os.path.join(self.propdir, 'KPOINTS')
+        print("  Writing supercell KPOINTS:", os.path.join(self.propdir, 'KPOINTS'))
         kpoints.write(os.path.join(self.propdir, 'KPOINTS'))
-        print "  Writing POTCAR:", os.path.join(self.propdir, 'POTCAR')
+        print("  Writing POTCAR:", os.path.join(self.propdir, 'POTCAR'))
         vasp.io.write_potcar(os.path.join(self.propdir, 'POTCAR'), poscar, species_settings, True)
 
         # copy extra input files
-        print "  Copying extra input files",
+        print("  Copying extra input files", end=' ')
         for my_input_file in extra_input_files:
-            print my_input_file,
+            print(my_input_file, end=' ')
             shutil.copy(my_input_file, self.propdir)
-        print ""
+        print("")
 
-        print "VASP input files complete\n"
+        print("VASP input files complete\n")
         sys.stdout.flush()
 
     def submit(self):
         """Submit jobs for this VASP convergence"""
 
-        print "Submitting..."
-        print "Configuration:", self.configname
-        print "Property:", self.settings["prop"]
+        print("Submitting...")
+        print("Configuration:", self.configname)
+        print("Property:", self.settings["prop"])
         # Iterate over each individual value of the property, since parallelism!
         for prop, propdir in zip(self.prop_list, self.prop_dir_list):
             try:
@@ -567,12 +567,12 @@ class Converge(object):
                 store_prop = self.prop
                 self.propdir = propdir
                 self.prop = prop
-                print "Value:", self.prop
+                print("Value:", self.prop)
                 # first, check if the job has already been submitted and is not completed
                 db = JobDB()    #pylint: disable=invalid-name
-                print "Calculation directory:", propdir
+                print("Calculation directory:", propdir)
                 jobid = db.select_regex_id("rundir", propdir)
-                print "JobID:", jobid
+                print("JobID:", jobid)
                 sys.stdout.flush()
                 if jobid != []:
                     for j in jobid:
@@ -580,7 +580,7 @@ class Converge(object):
                         # taskstatus = ["Incomplete", "Complete", "Continued", "Check", "Error:.*", "Aborted"]
                         # jobstatus = ["C", "Q", "R", "E", "W", "H", "M"]
                         if job["jobstatus"] != "C":
-                            print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
+                            print("JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting.")
                             sys.stdout.flush()
                             raise UserWarning()
                         #elif job["taskstatus"] in ["Complete", "Check"] or re.match("Error:.*", job["taskstatus"]):
@@ -599,7 +599,7 @@ class Converge(object):
                 (status, task) = convergence.status()
 
                 if status == "complete":
-                    print "Status:", status, "  Not submitting."
+                    print("Status:", status, "  Not submitting.")
                     sys.stdout.flush()
 
                     # ensure job marked as complete in db
@@ -610,7 +610,7 @@ class Converge(object):
                                 try:
                                     complete_job(jobid=j)
                                 except (JobsError, JobDBError, EligibilityError) as my_error:
-                                    print str(my_error)
+                                    print(str(my_error))
                                     sys.stdout.flush()
 
                     # ensure results report written
@@ -620,7 +620,7 @@ class Converge(object):
                     continue
 
                 elif status == "not_converging":
-                    print "Status:", status, "  Not submitting."
+                    print("Status:", status, "  Not submitting.")
                     sys.stdout.flush()
                     continue
 
@@ -630,7 +630,7 @@ class Converge(object):
                     # continue
 
 
-                print "Preparing to submit a VASP Convergence job"
+                print("Preparing to submit a VASP Convergence job")
                 sys.stdout.flush()
 
                 # cd to configdir, submit jobs from configdir, then cd back to currdir
@@ -638,7 +638,7 @@ class Converge(object):
                 os.chdir(propdir)
 
                 # determine the number of atoms in the configuration
-                print "  Counting atoms in the POSCAR"
+                print("  Counting atoms in the POSCAR")
                 sys.stdout.flush()
                 pos = vasp.io.Poscar(os.path.join(self.configdir, "POS"))
                 N = len(pos.basis) #pylint: disable=invalid-name
@@ -658,7 +658,7 @@ class Converge(object):
                 if self.settings["postrun"] is not None:
                     cmd += self.settings["postrun"] + "\n"
 
-                print "  Constructing a job"
+                print("  Constructing a job")
                 sys.stdout.flush()
                 
                 # construct a Job
@@ -676,7 +676,7 @@ class Converge(object):
                               command=cmd,\
                               auto=self.auto)
 
-                print "  Submitting"
+                print("  Submitting")
                 sys.stdout.flush()
                 # submit the job
                 job.submit()
@@ -690,7 +690,7 @@ class Converge(object):
             except UserWarning:
                 continue
 
-        print "CASM VASPWrapper Convergence job submission complete\n"
+        print("CASM VASPWrapper Convergence job submission complete\n")
         sys.stdout.flush()
 
 
@@ -748,7 +748,7 @@ class Converge(object):
 
 
         if status == "complete":
-            print "Status:", status
+            print("Status:", status)
             sys.stdout.flush()
 
             # mark job as complete in db
@@ -756,7 +756,7 @@ class Converge(object):
                 try:
                     complete_job()
                 except (JobsError, JobDBError, EligibilityError) as my_error:
-                    print str(my_error)
+                    print(str(my_error))
                     sys.stdout.flush()
 
             # write results to properties.calc.json
@@ -764,9 +764,9 @@ class Converge(object):
             return
 
         elif status == "not_converging":
-            print "Status:", status
+            print("Status:", status)
             self.report_status("failed", "run_limit")
-            print "Returning"
+            print("Returning")
             sys.stdout.flush()
             return
 
@@ -793,10 +793,10 @@ class Converge(object):
                 try:
                     error_job("Not converging")
                 except (JobsError, JobDBError) as my_error:
-                    print str(my_error)
+                    print(str(my_error))
                     sys.stdout.flush()
 
-            print "Not Converging!"
+            print("Not Converging!")
             sys.stdout.flush()
             self.report_status("failed", "run_limit")
 
@@ -809,8 +809,8 @@ class Converge(object):
             settingsfile = os.path.join(self.configdir, "settings", self.casm_settings["curr_calctype"], self.settings["prop"] + "_converge", "converge.json")
             write_settings(self.settings, settingsfile)
 
-            print "Writing:", settingsfile
-            print "Edit the 'run_limit' property if you wish to continue."
+            print("Writing:", settingsfile)
+            print("Edit the 'run_limit' property if you wish to continue.")
             sys.stdout.flush()
             return
 
@@ -821,7 +821,7 @@ class Converge(object):
                 try:
                     complete_job()
                 except (JobsError, JobDBError, EligibilityError) as my_error:
-                    print str(my_error)
+                    print(str(my_error))
                     sys.stdout.flush()
 
             # write results to properties.calc.json
@@ -854,7 +854,7 @@ class Converge(object):
         outputfile = os.path.join(self.propdir, "status.json")
         with open(outputfile, 'w') as my_file:
             my_file.write(json.dumps(output, my_file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
-        print "Wrote " + outputfile
+        print("Wrote " + outputfile)
         sys.stdout.flush()
 
     def finalize(self):
@@ -869,7 +869,7 @@ class Converge(object):
             outputfile = os.path.join(self.propdir, prop_file_name)
             with open(outputfile, 'w') as my_file:
                 my_file.write(json.dumps(output, my_file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
-            print "Wrote " + outputfile
+            print("Wrote " + outputfile)
             sys.stdout.flush()
             self.report_status('complete')
 
@@ -880,12 +880,12 @@ class Converge(object):
         convergence = vasp.Converge(self.propdir, self.run_settings())
         for i in range(len(convergence.rundir)):
             try:
-                print self.propdir
+                print(self.propdir)
                 vrun = vasp.io.Vasprun(os.path.join(self.propdir, convergence.rundir[-i-1], "vasprun.xml"))
                 if len(vrun.all_e_0[-1]) >= vrun.nelm:
-                    print('The last convergence run (' +
+                    print(('The last convergence run (' +
                           os.path.basename(convergence.rundir[-i-1]) +
-                          ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+                          ') failed to achieve electronic convergence; properties.calc.json will not be written.\n'))
                     self.report_status('failed', 'electronic_convergence')
                     return False
                 break
@@ -896,7 +896,7 @@ class Converge(object):
         # Verify that the final static run reached electronic convergence
         vrun = vasp.io.Vasprun(os.path.join(self.propdir, "run.final", "vasprun.xml"))
         if len(vrun.all_e_0[0]) >= vrun.nelm:
-            print 'The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n'
+            print('The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n')
             self.report_status('failed', 'electronic_convergence')
             return False
 

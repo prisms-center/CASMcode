@@ -59,19 +59,19 @@ def main():
       if casm_settings == None:
         raise casm.qewrapper.QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
       casm_directories=proj.dir
-      print "  Reading relax.json settings file"
+      print("  Reading relax.json settings file")
       sys.stdout.flush()
       setfile = casm_directories.settings_path_crawl("relax.json",configname,casm_settings.default_clex)
       if setfile == None:
           raise casm.qewrapper.QEWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
           sys.stdout.flush()
       else:
-          print "Using "+str(setfile)+" as settings..."
+          print("Using "+str(setfile)+" as settings...")
       settings = casm.qewrapper.read_settings(setfile)
       if settings["software"] is None:
         settings["software"]="vasp"
       software=settings["software"]
-      print "Relevant software is:", software
+      print("Relevant software is:", software)
     if args.setup:
       sel.write_pos()
       for configname in sel.data["configname"]:
@@ -108,7 +108,7 @@ def main():
         try:
           if software == "quantumespresso":
             if settings["outfilename"] is None:
-                print "WARNING: No output file specified in relax.json using default outfilename of std.out"
+                print("WARNING: No output file specified in relax.json using default outfilename of std.out")
                 settings["outfilename"]="std.out"
             outfilename = settings["outfilename"]
             output = casm.qewrapper.Relax.properties(finaldir,outfilename)
@@ -116,13 +116,13 @@ def main():
             output = Relax.properties(finaldir)
           calc_props = proj.dir.calculated_properties(configname, clex)
           with open(calc_props, 'w') as file:
-            print "writing:", calc_props
+            print("writing:", calc_props)
             file.write(json.dumps(output, file, cls=NoIndentEncoder, indent=4, sort_keys=True))
         except:
-          print("Unable to report properties for directory {}.\n" 
-                "Please verify that it contains a completed calculation.".format(configdir))
+          print(("Unable to report properties for directory {}.\n" 
+                "Please verify that it contains a completed calculation.".format(configdir)))
   except Exception as e:
-    print e
+    print(e)
     sys.exit(1)
 
 if __name__ == "__main__":

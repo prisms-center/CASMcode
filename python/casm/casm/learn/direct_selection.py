@@ -72,8 +72,8 @@ def make_population(n_features, input_options):
           population.append(indiv)
     
     else:
-      print "Unrecognized option:\n"
-      print opt
+      print("Unrecognized option:\n")
+      print(opt)
       raise Exception("Error making DirectSelection population: unrecognized option")
   
   return population
@@ -123,7 +123,7 @@ def direct_fit(input, save=True, verbose=True, read_existing=True, hall=None):
   for indiv_i, indiv in enumerate(population):
     
     if verbose:
-      print "Begin fitting individual", indiv_i, "of", len(population)
+      print("Begin fitting individual", indiv_i, "of", len(population))
     
     _input = copy.deepcopy(input)
     use_saved_estimator = kwargs.get("use_saved_estimator", False)
@@ -139,10 +139,10 @@ def direct_fit(input, save=True, verbose=True, read_existing=True, hall=None):
     add_individual_detail(indiv, estimator, fdata, _input, selector=None)
     
     if verbose:
-      print "  DONE\n"
+      print("  DONE\n")
   
   if verbose:
-    print "Result:"
+    print("Result:")
     print_halloffame(population);
   
   if hall is not None:

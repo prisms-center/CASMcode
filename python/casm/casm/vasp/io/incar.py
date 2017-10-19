@@ -127,7 +127,7 @@ class Incar(object):
             if tag.lower() in VASP_TAG_LIST:
                 continue
             else:
-                print("Warning: unknown INCAR tag '" + tag + "' with value '" + str(self.tags[tag]) + "'")
+                print(("Warning: unknown INCAR tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
 
 
     def update(self, species, poscar, sort=True):

@@ -18,21 +18,21 @@ def main():
 
     args = parser.parse_args()
 
-    print "Begin vasp.converge"
+    print("Begin vasp.converge")
 
     if args.collect:
         convergence = casm.vaspwrapper.Converge(args.configdir)
 
         convergence.collect()
 
-        print "Finish vasp.converge\n\n"
+        print("Finish vasp.converge\n\n")
     else:
 
         convergence = casm.vaspwrapper.Converge(args.configdir)
 
         convergence.submit()
 
-        print "Finish vasp.converge\n\n"
+        print("Finish vasp.converge\n\n")
 
 
 if __name__ == '__main__':

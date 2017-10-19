@@ -213,7 +213,7 @@ def initialize_population(n_population, toolbox, filename=None, verbose=True):
   
   if filename is not None and os.path.exists(filename):
     if verbose:
-      print "Loading initial population:", filename
+      print("Loading initial population:", filename)
     with open(filename, 'rb') as f:
       pop = pickle.load(f)
     if isinstance(pop, HallOfFame):
@@ -221,7 +221,7 @@ def initialize_population(n_population, toolbox, filename=None, verbose=True):
       pop = [indiv for indiv in pop]
   else:
     if verbose:
-      print "Constructing initial population"
+      print("Constructing initial population")
     pop = toolbox.population(n_population)
   
   return pop
@@ -229,7 +229,7 @@ def initialize_population(n_population, toolbox, filename=None, verbose=True):
 
 def save_population(pop, filename, verbose=False):
   if verbose:
-    print "\nPickling population to:", filename
+    print("\nPickling population to:", filename)
   with open(filename, 'wb') as f:
     pickle.dump(pop, f)
 
@@ -237,20 +237,20 @@ def save_population(pop, filename, verbose=False):
 def initialize_halloffame(filename=None, n_halloffame=25, verbose=False):
   hall = casm.learn.create_halloffame(n_halloffame)
   if verbose:
-    print "# Hall of Fame size:", n_halloffame, "\n"
+    print("# Hall of Fame size:", n_halloffame, "\n")
   
   if os.path.exists(filename):
     with open(filename, 'rb') as f:
       existing_hall = pickle.load(f)
     if verbose:
-      print "Loading Hall of Fame:", filename
+      print("Loading Hall of Fame:", filename)
     hall.update(existing_hall)
   return hall
 
 
 def save_halloffame(hall, filename, verbose=False):
   if verbose:
-    print "\nPickling Hall of Fame to:", filename
+    print("\nPickling Hall of Fame to:", filename)
   with open(filename, 'wb') as f:
     pickle.dump(hall, f)
 
@@ -455,7 +455,7 @@ class Log(object):
     record = self.stats.compile(pop) if self.stats else {}
     self.logbook.record(gen=gen, nevals=nevals, **record)
     if verbose:
-      print self.logbook.stream
+      print(self.logbook.stream)
 
 
 def single_flip_children(parent):
@@ -824,10 +824,10 @@ class EvolutionaryFeatureSelection(BaseEstimator, SelectorMixin):
     for rep in range(self.evolve_params.n_repetition):
       
       if self.verbose:
-        print "Begin", rep+1, "of", self.evolve_params.n_repetition, "repetitions"
+        print("Begin", rep+1, "of", self.evolve_params.n_repetition, "repetitions")
       
       if self.verbose:
-        print "Begin", self.evolve_params.n_generation, "generations"
+        print("Begin", self.evolve_params.n_generation, "generations")
         t = time.clock()
       
       in_args = [f(self) for f in self.alg_args]
@@ -839,18 +839,18 @@ class EvolutionaryFeatureSelection(BaseEstimator, SelectorMixin):
       self.pop_end = copy.deepcopy(self.pop)
       
       if self.verbose:
-        print "Runtime:", time.clock() - t, "(s)\n"
+        print("Runtime:", time.clock() - t, "(s)\n")
       
       ## Print end population
       if self.verbose:
-        print "\nFinal population:"
+        print("\nFinal population:")
         casm.learn.print_population(self.pop_end)
       
       save_population(self.pop, filename=self.evolve_params.pop_end_filename, verbose=self.verbose)
       
       ## Print hall of fame
       if self.verbose:
-        print "\nHall of Fame:"
+        print("\nHall of Fame:")
         casm.learn.print_population(self.halloffame)
 
       save_halloffame(self.halloffame, filename=self.evolve_params.halloffame_filename, verbose=self.verbose)

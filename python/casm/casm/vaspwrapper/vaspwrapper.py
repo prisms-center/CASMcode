@@ -63,7 +63,7 @@ def read_settings(filename):
         settings = json.load(file)
         file.close()
     except (IOError, ValueError) as e:
-        print "Error reading settings file:", filename
+        print("Error reading settings file:", filename)
         raise e
 
     required = ["queue", "ppn", "atom_per_proc", "walltime"]

@@ -111,12 +111,12 @@ class IndividualSpecies(object):    #pylint: disable=too-many-instance-attribute
 
     def print_all(self):
         """ Print contents of SPECIES """
-        print self.name
-        print self.alias
-        print self.tags
-        print self.atm_dir
-        print self.atm_location
-        print self.atm_file
+        print(self.name)
+        print(self.alias)
+        print(self.tags)
+        print(self.atm_dir)
+        print(self.atm_location)
+        print(self.atm_file)
 
 def species_settings(filename): #pylint: disable=too-many-locals, too-many-branches
     """ Returns a dict of IndividualSpecies objects, with keys equal to their names. """

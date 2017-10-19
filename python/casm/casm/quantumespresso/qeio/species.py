@@ -80,13 +80,13 @@ class IndividualSpecies:
         
 
     def print_all(self):
-        print self.name
-        print self.alias
-        print self.tags
-        print self.use_upf
-        print self.pseudo_base
-        print self.pseudo_location
-        print self.pseudodir
+        print(self.name)
+        print(self.alias)
+        print(self.tags)
+        print(self.use_upf)
+        print(self.pseudo_base)
+        print(self.pseudo_location)
+        print(self.pseudodir)
 
 def species_settings(filename):
     """ Returns a dict of IndividualSpecies objects, with keys equal to their names. """

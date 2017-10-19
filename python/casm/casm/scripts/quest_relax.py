@@ -3,10 +3,10 @@ import casm.questwrapper
 import sys
 
 def main():
-    print "Begin quest.relax"
+    print("Begin quest.relax")
 
     if len(sys.argv) != 2:
-        print "Usage: quest.relax configdir"
+        print("Usage: quest.relax configdir")
         sys.exit()
 
     configdir = sys.argv[1]
@@ -15,7 +15,7 @@ def main():
 
     relaxation.submit()
 
-    print "Finish quest.relax\n\n"
+    print("Finish quest.relax\n\n")
 
 if __name__ == "__main__":
     main()

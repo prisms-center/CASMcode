@@ -38,7 +38,7 @@ def continue_job(jobdir, contdir, settings):
          to contdir/POSCAR. jobdir/POSCAR and jobdir/CONTCAR are always kept.
     """
 
-    print "Continue SeqQuest job:\n  Original: " + jobdir + "\n  Continuation: " + contdir
+    print("Continue SeqQuest job:\n  Original: " + jobdir + "\n  Continuation: " + contdir)
     sys.stdout.flush()
 
     # remove duplicates
@@ -61,10 +61,10 @@ def continue_job(jobdir, contdir, settings):
         pass
 
     # make compressed backups of files sensitive to corruption (e.g. WAVECAR)
-    print " backup:"
+    print(" backup:")
     for file in backup:
         if os.path.isfile(os.path.join(jobdir, file)):
-            print file,
+            print(file, end=' ')
             # Open target file, target file.gz
             f_in = open(os.path.join(jobdir, file), 'rb')
             f_out = gzip.open(os.path.join(jobdir, file)+'_BACKUP.gz', 'wb')
@@ -72,7 +72,7 @@ def continue_job(jobdir, contdir, settings):
             f_out.writelines(f_in)
             f_out.close()
             f_in.close()
-    print ""
+    print("")
 
 
     # copy geom/lcao.in/etc
@@ -80,13 +80,13 @@ def continue_job(jobdir, contdir, settings):
     if "lcao.geom" in os.listdir(jobdir):
         if os.path.getsize(os.path.join(jobdir, "lcao.geom")) > 0:
             shutil.copyfile(os.path.join(jobdir, "lcao.geom"), os.path.join(contdir, "lcao.geom_in"))
-            print "  cp lcao.geom -> lcao.geom_in"
+            print("  cp lcao.geom -> lcao.geom_in")
         else:
             shutil.copyfile(os.path.join(jobdir, "lcao.geom_in"), os.path.join(contdir, "lcao.geom_in"))
-            print "  no lcao.geom : cp lcao.geom_in -> lcao.geom_in"
+            print("  no lcao.geom : cp lcao.geom_in -> lcao.geom_in")
     else:
         shutil.copyfile(os.path.join(jobdir, "lcao.geom_in"), os.path.join(contdir, "lcao.geom_in"))
-        print "  no lcao.geom : cp lcao.geom_in -> lcao.geom_in"
+        print("  no lcao.geom : cp lcao.geom_in -> lcao.geom_in")
 
     # copy .atm files
     for atm in os.listdir(jobdir):
@@ -97,31 +97,31 @@ def continue_job(jobdir, contdir, settings):
                 shutil.copy(os.path.join(jobdir, atm), os.path.join(contdir, atm))
 
     # move files
-    print "  mv:",
+    print("  mv:", end=' ')
     # for file in move:
     #     print file,
     #     os.rename(os.path.join(jobdir, file), os.path.join(contdir, file))
     for mname in move:
         for mfile in os.listdir(jobdir):
             if re.match(mname, mfile):
-                print mfile,
+                print(mfile, end=' ')
                 os.rename(os.path.join(jobdir, mfile), os.path.join(contdir, mfile))
-    print ""
+    print("")
 
     # copy files
-    print "  cp:",
+    print("  cp:", end=' ')
     # for file in copy:
     #     print file,
     #     shutil.copyfile(os.path.join(jobdir, file), os.path.join(contdir, file))
     for cname in copy:
         for cfile in os.listdir(jobdir):
             if re.match(cname, cfile):
-                print cfile,
+                print(cfile, end=' ')
                 shutil.copyfile(os.path.join(jobdir, cfile), os.path.join(contdir, cfile))
-    print ""
+    print("")
 
     # remove files
-    print "  rm:",
+    print("  rm:", end=' ')
     # for file in remove:
     #     if os.path.isfile(os.path.join(jobdir, file)):
     #         print file,
@@ -129,12 +129,12 @@ def continue_job(jobdir, contdir, settings):
     for rname in remove:
         for rfile in os.listdir(jobdir):
             if re.match(rname, rfile):
-                print rfile,
+                print(rfile, end=' ')
                 os.remove(os.path.join(jobdir, rfile))
-    print ""
+    print("")
 
     # compress files
-    print " gzip:",
+    print(" gzip:", end=' ')
     # for file in compress:
     #     if os.path.isfile(os.path.join(jobdir, file)):
     #         print file,
@@ -150,7 +150,7 @@ def continue_job(jobdir, contdir, settings):
     for cname in compress:
         for cfile in os.listdir(jobdir):
             if re.match(cname, cfile):
-                print cfile,
+                print(cfile, end=' ')
                 # Open target file, target file.gz
                 f_in = open(os.path.join(jobdir, cfile), 'rb')
                 f_out = gzip.open(os.path.join(jobdir, cfile)+'.gz', 'wb')
@@ -160,8 +160,8 @@ def continue_job(jobdir, contdir, settings):
                 f_in.close()
                 # Remove original target file
                 os.remove(os.path.join(jobdir, cfile))
-    print ""
-    print ""
+    print("")
+    print("")
     sys.stdout.flush()
 
 def complete_job(jobdir, settings):
@@ -180,27 +180,27 @@ def complete_job(jobdir, settings):
          remove: Deletes listed files
     """
 
-    print "Complete SeqQuest job: " + jobdir
+    print("Complete SeqQuest job: " + jobdir)
     sys.stdout.flush()
 
     # remove files
-    print "  rm:",
+    print("  rm:", end=' ')
     for f in settings["remove"]:
         if not f in (settings["copy"] + settings["move"] + settings["compress"] + settings["backup"]):
             if os.path.isfile(os.path.join(jobdir,f)):
-                print f,
+                print(f, end=' ')
                 os.remove(os.path.join(jobdir,f))
     for f in settings["extra_input_files"]:
         if os.path.isfile(os.path.join(jobdir, f)):
-            print f,
+            print(f, end=' ')
             os.remove(os.path.join(jobdir,f))
-    print ""
+    print("")
 
     # compress files
-    print " gzip:",
+    print(" gzip:", end=' ')
     for file in settings["compress"]:
         if os.path.isfile(os.path.join(jobdir,file)):
-            print file,
+            print(file, end=' ')
             # Open target file, target file.gz
             f_in = open(os.path.join(jobdir, file), 'rb')
             f_out = gzip.open(os.path.join(jobdir, file)+'.gz', 'wb')
@@ -210,8 +210,8 @@ def complete_job(jobdir, settings):
             f_in.close()
             # Remove original target file
             os.remove(os.path.join(jobdir,file))
-    print ""
-    print ""
+    print("")
+    print("")
     sys.stdout.flush()
 
 def run(jobdir=None, stdout="std.out", stderr="std.err", command=None, ncpus=None, poll_check_time=5.0, err_check_time=60.0, err_types=None):
@@ -234,7 +234,7 @@ def run(jobdir=None, stdout="std.out", stderr="std.err", command=None, ncpus=Non
             err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
 
     """
-    print "Begin quest run:"
+    print("Begin quest run:")
     sys.stdout.flush()
 
     if jobdir is None:
@@ -263,8 +263,8 @@ def run(jobdir=None, stdout="std.out", stderr="std.err", command=None, ncpus=Non
     ### Expand remaining environment variables
     command = os.path.expandvars(command)
 
-    print "  jobdir:", jobdir
-    print "  exec:", command
+    print("  jobdir:", jobdir)
+    print("  exec:", command)
     sys.stdout.flush()
 
     sout = open(os.path.join(jobdir, stdout), 'w')
@@ -325,7 +325,7 @@ def run(jobdir=None, stdout="std.out", stderr="std.err", command=None, ncpus=Non
 
     os.chdir(currdir)
 
-    print "Run complete"
+    print("Run complete")
     sys.stdout.flush()
 
     # check finished job for errors

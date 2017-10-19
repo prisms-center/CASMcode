@@ -117,7 +117,7 @@ def main():
     args = parser.parse_args(sys.argv[1:])
     
     if args.desc:
-        print usage_desc
+        print(usage_desc)
         sys.exit(1)
     
     with open(args.input, 'r') as f:

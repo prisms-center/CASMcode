@@ -4,10 +4,10 @@ import casm.vaspwrapper
 import sys
 
 def main():
-    print "Begin vasp.setup"
+    print("Begin vasp.setup")
 
     if len(sys.argv) != 2:
-        print "Usage: vasp.setup configdir"
+        print("Usage: vasp.setup configdir")
         sys.exit()
 
     configdir = sys.argv[1]
@@ -15,7 +15,7 @@ def main():
     relaxation = casm.vaspwrapper.Relax(configdir)
     relaxation.setup()
 
-    print "Finish vasp.setup\n\n"
+    print("Finish vasp.setup\n\n")
 
 if __name__ == "__main__":
     main()

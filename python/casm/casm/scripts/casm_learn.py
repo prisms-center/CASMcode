@@ -38,31 +38,31 @@ def main():
     return
   
   if args.exLasso:
-    print json.dumps(casm.learn.example_input_Lasso(), indent=2)
+    print(json.dumps(casm.learn.example_input_Lasso(), indent=2))
     return
   elif args.exLassoCV:
-    print json.dumps(casm.learn.example_input_LassoCV(), indent=2)
+    print(json.dumps(casm.learn.example_input_LassoCV(), indent=2))
     return
   elif args.exRFE:
-    print json.dumps(casm.learn.example_input_RFE(), indent=2)
+    print(json.dumps(casm.learn.example_input_RFE(), indent=2))
     return
   elif args.exGeneticAlgorithm:
-    print json.dumps(casm.learn.example_input_GeneticAlgorithm(), indent=2)
+    print(json.dumps(casm.learn.example_input_GeneticAlgorithm(), indent=2))
     return
   elif args.exIndividualBestFirst:
-    print json.dumps(casm.learn.example_input_IndividualBestFirst(), indent=2)
+    print(json.dumps(casm.learn.example_input_IndividualBestFirst(), indent=2))
     return
   elif args.exPopulationBestFirst:
-    print json.dumps(casm.learn.example_input_PopulationBestFirst(), indent=2)
+    print(json.dumps(casm.learn.example_input_PopulationBestFirst(), indent=2))
     return
   elif args.exDirectSelection:
-    print json.dumps(casm.learn.example_input_DirectSelection(), indent=2, cls=casm.NoIndentEncoder)
+    print(json.dumps(casm.learn.example_input_DirectSelection(), indent=2, cls=casm.NoIndentEncoder))
     return
   
   if args.settings:
     
     if args.verbose:
-      print "Loading", args.settings[0]
+      print("Loading", args.settings[0])
     
     input = casm.learn.open_input(args.settings[0])
     
@@ -114,7 +114,7 @@ def main():
       halloffame_size = input["n_halloffame"]
       hall = casm.learn.create_halloffame(halloffame_size)
       if args.verbose:
-        print "# Hall of Fame size:", halloffame_size, "\n"
+        print("# Hall of Fame size:", halloffame_size, "\n")
       
       if os.path.exists(halloffame_filename):
         existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
@@ -131,8 +131,7 @@ def main():
     
   elif args.desc:
     
-    print \
-    """
+    print("""
     
     1) Specify the problem:
       
@@ -300,7 +299,7 @@ def main():
       Once an 'eci.json' file has been written, you can run Monte Carlo 
       calculations. See 'casm monte -h' and 'casm format --monte' for help. 
       
-    """
+    """)
     
   else:
     

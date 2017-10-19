@@ -529,8 +529,8 @@ class ConvexHullPlot(object):
     
     prim = proj.prim
     if prim.n_independent_compositions != 1:
-        print "in project:", proj.path
-        print "n_independent_compositions:", prim.n_independent_compositions
+        print("in project:", proj.path)
+        print("n_independent_compositions:", prim.n_independent_compositions)
         raise Exception("Currently ConvexHullPlot only works for binary alloys")
     
     if selection is None:
@@ -1163,7 +1163,7 @@ class GridPlot(object):
           casm_row.append(_type(self.sel, x=_x, y=_y, **_kwargs))
           row.append(casm_row[-1].p)
         else:
-          print "Unknown or unsupported plot type:", _type.name
+          print("Unknown or unsupported plot type:", _type.name)
           casm_row.append(None)
           row.append(None)
       
@@ -1523,7 +1523,7 @@ class RankSelect(object):
       self.df = pandas.DataFrame(self.scoring(self.sel), columns=['score'])
       self.df.loc[:,'selected'] = self.sel.data.loc[:,'selected']
     except:
-      print "Error applying scoring function"
+      print("Error applying scoring function")
       raise
       
     # add 'score' to src, as self.score_id
@@ -2014,9 +2014,9 @@ class ECISelect(object):
       """
       Change viewed individual on tap
       """
-      print "tap!"
+      print("tap!")
       if len(sel.src.selected['1d']['indices']) == 1:
-        print "update!"
+        print("update!")
         index = sel.src.selected['1d']['indices'][0]
         sel.eci_src.data["current"] = sel.eci_src.data[str(index)]
     

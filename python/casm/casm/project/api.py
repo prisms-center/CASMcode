@@ -46,15 +46,15 @@ class API(object):
           self.lib_casm = ctypes.CDLL(libcasm_path, mode=ctypes.RTLD_GLOBAL)
           self.lib_ccasm = ctypes.CDLL(libccasm_path, mode=ctypes.RTLD_GLOBAL)
       except Exception as e:
-          print "Error loading casm libraries"
+          print("Error loading casm libraries")
           casm_path = find_executable('casm')
-          print "Find 'casm':", casm_path
+          print("Find 'casm':", casm_path)
           if platform == 'darwin':
-              print "Find 'libcasm':"
-              print sh.otool('-L', casm_path)
+              print("Find 'libcasm':")
+              print(sh.otool('-L', casm_path))
           else:
-              print "Find 'libcasm':"
-              print sh.ldd(casm_path)
+              print("Find 'libcasm':")
+              print(sh.ldd(casm_path))
           raise e
       
       #### Argument types

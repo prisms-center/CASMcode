@@ -55,7 +55,7 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     filename = dir.eci(clex)
     
     if verbose:
-      print "Writing:", filename, "\n"
+      print("Writing:", filename, "\n")
     with open(filename, 'w') as f:
       f.write(json.dumps(j, indent=2, cls=noindent.NoIndentEncoder))
     

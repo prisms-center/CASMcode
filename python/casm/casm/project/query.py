@@ -22,14 +22,14 @@ def query(proj, columns, selection=None, verbatim=True, all=False):
   try:
     return pandas.read_csv(StringIO.StringIO(stdout[1:]), sep=' *', engine='python')
   except:
-    print "Error in casm.query"
-    print "  proj:", proj.path
-    print "  Attempted to execute: '" + args + "'"
-    print "---- stdout: ---------------------"
-    print stdout
-    print "---- stderr: ---------------------"
-    print stderr
-    print "----------------------------------"
+    print("Error in casm.query")
+    print("  proj:", proj.path)
+    print("  Attempted to execute: '" + args + "'")
+    print("---- stdout: ---------------------")
+    print(stdout)
+    print("---- stderr: ---------------------")
+    print(stderr)
+    print("----------------------------------")
     raise
     
 

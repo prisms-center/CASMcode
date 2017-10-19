@@ -127,25 +127,25 @@ def write_stopcar(mode='e', jobdir=None):
 
 def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, sort=True, extra_input_files=[], strict_kpoints=False):
     """ Write VASP input files in directory 'dirpath' """
-    print "Setting up VASP input files:", dirpath
+    print("Setting up VASP input files:", dirpath)
 
     # read prim and prim kpoints
-    print "  Reading KPOINTS:", prim_kpointsfile
+    print("  Reading KPOINTS:", prim_kpointsfile)
     prim_kpoints = kpoints.Kpoints(prim_kpointsfile)
     if prim_poscarfile != None:
-        print "  Reading KPOINTS reference POSCAR:", prim_poscarfile
+        print("  Reading KPOINTS reference POSCAR:", prim_poscarfile)
         prim = poscar.Poscar(prim_poscarfile)
     else:
         prim = None
 
     # read species, super poscar, incar, and generate super kpoints
-    print "  Reading SPECIES:", speciesfile
+    print("  Reading SPECIES:", speciesfile)
     species_settings = species.species_settings(speciesfile)
-    print "  Reading supercell POS:", super_poscarfile
+    print("  Reading supercell POS:", super_poscarfile)
     super = poscar.Poscar(super_poscarfile, species_settings)
-    print "  Reading INCAR:", incarfile
+    print("  Reading INCAR:", incarfile)
     super_incar = incar.Incar(incarfile, species_settings, super, sort)
-    print "  Generating supercell KPOINTS"
+    print("  Generating supercell KPOINTS")
     if strict_kpoints:
         super_kpoints = prim_kpoints
     else:
@@ -153,23 +153,23 @@ def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, supe
 
 
     # write main input files
-    print "  Writing supercell POSCAR:", os.path.join(dirpath,'POSCAR')
+    print("  Writing supercell POSCAR:", os.path.join(dirpath,'POSCAR'))
     super.write(os.path.join(dirpath,'POSCAR'), sort)
-    print "  Writing INCAR:", os.path.join(dirpath,'INCAR')
+    print("  Writing INCAR:", os.path.join(dirpath,'INCAR'))
     super_incar.write(os.path.join(dirpath,'INCAR'))
-    print "  Writing supercell KPOINTS:", os.path.join(dirpath,'KPOINTS')
+    print("  Writing supercell KPOINTS:", os.path.join(dirpath,'KPOINTS'))
     super_kpoints.write(os.path.join(dirpath,'KPOINTS'))
-    print "  Writing POTCAR:", os.path.join(dirpath,'POTCAR')
+    print("  Writing POTCAR:", os.path.join(dirpath,'POTCAR'))
     write_potcar(os.path.join(dirpath,'POTCAR'), super, species_settings, sort)
 
     # copy extra input files
     if len(extra_input_files):
-        print "  Copying extra input files",
+        print("  Copying extra input files", end=' ')
     for s in extra_input_files:
-        print "    ", s
+        print("    ", s)
         shutil.copy(s,dirpath)
 
-    print "  DONE\n"
+    print("  DONE\n")
     sys.stdout.flush()
 
 
