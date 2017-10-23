@@ -228,7 +228,7 @@ namespace CASM {
           return this->configdof().disp(i)[j];
         },
         [&](Index i, Index j) {
-          return this->new_disp_A(A.permute_ind(i), j);
+          return this->new_disp_A(j, A.permute_ind(i));
         });
       }
 
@@ -238,10 +238,10 @@ namespace CASM {
         _update_B(B);
         return _for_each(
         [&](Index i, Index j) {
-          return this->new_disp_A(A.permute_ind(i), j);
+          return this->new_disp_A(j, A.permute_ind(i));
         },
         [&](Index i, Index j) {
-          return this->new_disp_B(B.permute_ind(i), j);
+          return this->new_disp_B(j, B.permute_ind(i));
         });
       }
 
@@ -309,7 +309,7 @@ namespace CASM {
         FloatIsEquivalent(_configdof, _tol),
         m_fg_index_A(-1),
         m_fg_index_B(-1),
-        m_def_tensor(_configdof.deformation().transpose()*_configdof.deformation()) {}
+        m_def_tensor(_configdof.deformation().transpose() * _configdof.deformation()) {}
 
       Strain(const Configuration &_config, double _tol) :
         Strain(_config.configdof(), _tol) {}
