@@ -341,8 +341,10 @@ namespace CASM {
   ///        Configuration unchanged
   std::vector<PermuteIterator> Configuration::invariant_subgroup() const {
     std::vector<PermuteIterator> fg = ConfigurationBase::invariant_subgroup();
-    int mult = this->prim().factor_group().size() / fg.size();
-    cache_insert("multiplicity", mult);
+    if(fg.size() != 0) {
+      int mult = this->prim().factor_group().size() / fg.size();
+      cache_insert("multiplicity", mult);
+    }
     return fg;
   }
 
