@@ -37,19 +37,19 @@ def get_infile_tag(key, infilename,jobdir=None):
     if jobdir == None:
         jobdir = os.getcwd()
     tinfile = infile.Infile(os.path.join(jobdir,infilename))
-    if key in infile.QUANTUM_ESPRESSO_CONTROL_LIST:
+    if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['CONTROL']:
         if ("CONTROL" in tinfile.namelists.keys()) and (key in tinfile.namelists["CONTROL"].tags.keys()):
             return tinfile.namelists["CONTROL"].tags[key]
-    if key in infile.QUANTUM_ESPRESSO_SYSTEM_LIST:
+    if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['SYSTEM']:
         if ("SYSTEM" in tinfile.namelists.keys()) and (key in tinfile.namelists["SYSTEM"].tags.keys()):
             return tinfile.namelists["SYSTEM"].tags[key]
-    if key in infile.QUANTUM_ESPRESSO_ELECTRONS_LIST:
+    if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['ELECTRONS']:
         if ("ELECTRONS" in tinfile.namelists.keys()) and (key in tinfile.namelists["ELECTRONS"].tags.keys()):
             return tinfile.namelists["ELECTRONS"].tags[key]
-    if key in infile.QUANTUM_ESPRESSO_IONS_LIST:
+    if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['IONS']:
         if ("IONS" in tinfile.namelists.keys()) and (key in tinfile.namelists["IONS"].tags.keys()):
             return tinfile.namelists["IONS"].tags[key]
-    if key in infile.QUANTUM_ESPRESSO_CELL_LIST:
+    if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['CELL']:
         if ("CELL" in tinfile.namelists.keys()) and (key in tinfile.namelists["CELL"].tags.keys()):
             return tinfile.namelists["CELL"].tags[key]    
     return None
@@ -66,35 +66,35 @@ def set_infile_tag(tag_dict,infilename,jobdir=None):
     tinfile = infile.Infile(myinfile)
 
     for key, val in tag_dict.iteritems():
-        if key in infile.QUANTUM_ESPRESSO_CONTROL_LIST:
+        if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['CONTROL']:
             if ("CONTROL" in tinfile.namelists.keys()):
                 if (val == None) or (str(val).strip() == ""):
                     if (key in tinfile.namelists["CONTROL"].tags.keys()):
                         del tinfile.namelists["CONTROL"].tags[key]
                 else:
                     tinfile.namelists["CONTROL"].tags[key] = val
-        if key in infile.QUANTUM_ESPRESSO_SYSTEM_LIST:
+        if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['SYSTEM']:
             if ("SYSTEM" in tinfile.namelists.keys()):
                 if (val == None) or (str(val).strip() == ""):
                     if (key in tinfile.namelists["SYSTEM"].tags.keys()):
                         del tinfile.namelists["SYSTEM"].tags[key]
                 else:
                     tinfile.namelists["SYSTEM"].tags[key] = val
-        if key in infile.QUANTUM_ESPRESSO_ELECTRONS_LIST:
+        if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['ELECTRONS']:
             if ("ELECTRONS" in tinfile.namelists.keys()):
                 if (val == None) or (str(val).strip() == ""):
                     if (key in tinfile.namelists["ELECTRONS"].tags.keys()):
                         del tinfile.namelists["ELECTRONS"].tags[key]
                 else:
                     tinfile.namelists["ELECTRONS"].tags[key] = val
-        if key in infile.QUANTUM_ESPRESSO_IONS_LIST:
+        if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['IONS']:
             if ("IONS" in tinfile.namelists.keys()):
                 if (val == None) or (str(val).strip() == ""):
                     if (key in tinfile.namelists["IONS"].tags.keys()):
                         del tinfile.namelists["IONS"].tags[key]
                 else:
                     tinfile.namelists["IONS"].tags[key] = val
-        if key in infile.QUANTUM_ESPRESSO_CELL_LIST:
+        if key in infile.QUANTUM_ESPRESSO_TOTAL_LIST['CELL']:
             if ("CELL" in tinfile.namelists.keys()):
                 if (val == None) or (str(val).strip() == ""):
                     if (key in tinfile.namelists["CELL"].tags.keys()):
