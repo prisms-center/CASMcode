@@ -63,6 +63,7 @@ class VaspCalculatorBase(object):
             self.selection.add_data(key, properites_dict[key])
 
     def pre_setup(self):
+        """has to be overloaded in the child class"""
         pass
 
     def setup(self):
@@ -263,12 +264,13 @@ class VaspCalculatorBase(object):
 
     @staticmethod
     def _calc_submit_node_info(config_data, settings):
+        """return nodes, ppn from settings of a configuration"""
         if "nodes" in settings and "ppn" in settings:
             return int(settings["nodes"]), int(settings["ppn"])
         elif "atoms_per_proc" in settings and "ppn" in settings:
             pos = vasp.io.Poscar(os.path.join(config_data["calcdir"], "POSCAR"))
-            N = len(pos.basis)
-            nodes = int(math.ceil(float(N)/float(settings["atom_per_proc"])/float(settings["ppn"])))
+            num = len(pos.basis)
+            nodes = int(math.ceil(float(num)/float(settings["atom_per_proc"])/float(settings["ppn"])))
             return nodes, int(settings["ppn"])
         elif "nodes_per_image" in settings and "ppn" in settings:
             nodes = int(config_data["n_images"]) * float(settings["nodes_per_image"])
@@ -443,6 +445,13 @@ class VaspCalculatorBase(object):
         sys.stdout.flush()
 
     def report(self):
+        """
+        report status for the selection
+        Notes
+        -----
+        checks for convergence
+        calls the finalize function to write the approprite properties files.
+        """
         for config_data in self.selection.data:
             try:
                 settings = self.read_settings(config_data["setfile"])
