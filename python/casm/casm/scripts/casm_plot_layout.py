@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 from casm.project import Project, Selection
 import casm.plotting
@@ -104,7 +105,7 @@ Example input file:
 def make_layout(val, n_plots_each_row):
     layout = []
     for n in n_plots_each_row:
-        layout.append([copy.deepcopy(val) for i in xrange(n)])
+        layout.append([copy.deepcopy(val) for i in range(n)])
     return layout
 
 def main():

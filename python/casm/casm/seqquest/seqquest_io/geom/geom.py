@@ -1,4 +1,7 @@
 """ Object and functions for handling atom geometries """
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 #pylint: disable=too-many-lines
 
 import re

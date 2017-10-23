@@ -1,5 +1,5 @@
 """Tools for Quantum espresso input and output"""
-from infile import \
+from casm.quantumespresso.qeio.infile import \
     QUANTUM_ESPRESSO_CONTROL_INT_LIST,\
     QUANTUM_ESPRESSO_CONTROL_FLOAT_LIST,\
     QUANTUM_ESPRESSO_CONTROL_BOOL_LIST,\
@@ -51,11 +51,11 @@ from infile import \
     InfileError,\
     Infile
 
-from outfile import OutfileError, Outfile
+from casm.quantumespresso.qeio.outfile import OutfileError, Outfile
 
-from poscar import PoscarError, Site, Poscar
+from casm.quantumespresso.qeio.poscar import PoscarError, Site, Poscar
 
-from q_e_io import \
+from casm.quantumespresso.qeio.q_e_io import \
     DEFAULT_QE_MOVE_LIST,\
     DEFAULT_QE_COPY_LIST,\
     DEFAULT_QE_REMOVE_LIST,\
@@ -66,13 +66,13 @@ from q_e_io import \
     ionic_steps,\
     write_quantum_espresso_input
 
-from species import \
+from casm.quantumespresso.qeio.species import \
     SpeciesError,\
     IndividualSpecies,\
     species_settings,\
     write_species_settings
 
-from qerun import QErunError, QErun
+from casm.quantumespresso.qeio.qerun import QErunError, QErun
 
 __all__= [\
     'QUANTUM_ESPRESSO_CONTROL_INT_LIST',  

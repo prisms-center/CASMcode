@@ -1,5 +1,11 @@
-import os, sys, shutil
-import infile, outfile, species, poscar,re
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import os
+import shutil
+import six
+import sys
+from casm.quantumespresso.qeio import infile, outfile, species, poscar, re
 
 #VASP_INPUT_FILE_LIST = ["INCAR", "STOPCAR", "POTCAR", "KPOINTS", "POSCAR",\
 #                        "EXHCAR", "CHGCAR", "WAVECAR", "TMPCAR"]
@@ -65,7 +71,7 @@ def set_infile_tag(tag_dict,infilename,jobdir=None):
     myinfile = os.path.join(jobdir,infilename)
     tinfile = infile.Infile(myinfile)
 
-    for key, val in tag_dict.iteritems():
+    for key, val in six.iteritems(tag_dict):
         if key in infile.QUANTUM_ESPRESSO_CONTROL_LIST:
             if ("CONTROL" in tinfile.namelists.keys()):
                 if (val == None) or (str(val).strip() == ""):

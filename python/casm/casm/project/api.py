@@ -1,7 +1,11 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import ctypes
 import glob
 import json
 import os
+import six
 from distutils.spawn import find_executable
 from os.path import dirname, join
 from sys import platform
@@ -206,7 +210,7 @@ class API(object):
       ptr: CASM::PrimClex pointer
 
     """
-    return API.__api.lib_ccasm.casm_primclex_new(path, log, debug_log, err_log)
+    return API.__api.lib_ccasm.casm_primclex_new(six.b(path), log, debug_log, err_log)
 
   def primclex_refresh(self, ptr, read_settings=False, read_composition=False, read_chem_ref=False, read_configs=False, clear_clex=False):
     """
@@ -330,5 +334,5 @@ class API(object):
             Unknown attempting to overwrite another CASM project
 
     """
-    return API.__api.lib_ccasm.casm_capi(args, primclex, root, log, debug_log, err_log)
+    return API.__api.lib_ccasm.casm_capi(six.b(args), primclex, six.b(root), log, debug_log, err_log)
 

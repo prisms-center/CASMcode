@@ -1,4 +1,4 @@
-"""test_casm/test_project/misc.py"""
+"""test_casm/test_learn/misc.py"""
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
@@ -10,34 +10,23 @@ from distutils.spawn import find_executable
 from os.path import join
 
 import test_casm
+from test_casm.test_project import casm_project_setup
 
-def casm_project_setup(self):
-    """Implements common setup for casm.project tests
+def casm_learn_setup(self):
+    """Implements common setup for casm.learn tests
       - check for 'skip' or 'skip_MyTestCase' files
       - check for 'CASM_TEST_PROJECTS_DIR' and set 'self.has_projects'
     
     Notes:
-        Standalone implementation to allow easier use by subpackages
+        Uses test_casm.test_project.casm_project_setup
     """
     
-    # First run common setup for 'casm'
-    test_casm.casm_setup(self)
+    # Use same setup as casm.project tests
+    casm_project_setup(self)
     
-    # Check for 'casm' executable
-    self.has_casm = find_executable('casm') is not None
-    if not self.has_casm:
-        warnings.warn("\n'casm' executable not detected: will test behaviour that does not require libcasm")
-
-    # Check for 'CASM_TEST_PROJECTS_DIR' environment variable
-    self.has_projects = 'CASM_TEST_PROJECTS_DIR' in os.environ
-    if not self.has_projects:
-        warnings.warn("\n'CASM_TEST_PROJECTS_DIR' environment variable not found: will test behaviour that does not require a test project")
-    else:
-        self.test_projects_dir = os.environ['CASM_TEST_PROJECTS_DIR']
-        self.ZrO_dir = join(self.test_projects_dir, '0.2.X', 'ZrO.0')
     
-class CasmProjectTestCase(unittest.TestCase):
-    """test_casm.test_project base unittest class
+class CasmLearnTestCase(unittest.TestCase):
+    """test_casm.test_learn base unittest class
     
     Attributes:
         has_projects (bool): True if 'CASM_TEST_PROJECTS_DIR' exists. Some tests 
@@ -51,10 +40,10 @@ class CasmProjectTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """On inherited classes, run our `setUp` method"""
-        if cls is not CasmProjectTestCase and cls.setUp is not CasmProjectTestCase.setUp:
+        if cls is not CasmLearnTestCase and cls.setUp is not CasmLearnTestCase.setUp:
             orig_setUp = cls.setUp
             def setUpOverride(self, *args, **kwargs):
-                CasmProjectTestCase.setUp(self)
+                CasmLearnTestCase.setUp(self)
                 return orig_setUp(self, *args, **kwargs)
             cls.setUp = setUpOverride
 
@@ -63,4 +52,4 @@ class CasmProjectTestCase(unittest.TestCase):
           - check for 'skip' or 'skip_MyTestCase' files
           - check for 'CASM_TEST_PROJECTS_DIR' and set 'self.has_projects'
         """
-        casm_project_setup(self)
+        casm_learn_setup(self)

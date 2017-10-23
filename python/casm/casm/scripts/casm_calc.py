@@ -1,11 +1,15 @@
-#!/usr/bin/env python
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
-import argparse, json, sys
-import casm.qewrapper
+import argparse
+import json
 from os import getcwd
 from os.path import join, abspath
-from casm.misc.noindent import NoIndentEncoder
+import sys
+
+from casm.misc import compat, noindent
 from casm.project import Project, Selection
+import casm.qewrapper
 from casm.vaspwrapper import Relax
 
 # casm-calc --configs selection
@@ -115,9 +119,8 @@ def main():
           else:
             output = Relax.properties(finaldir)
           calc_props = proj.dir.calculated_properties(configname, clex)
-          with open(calc_props, 'w') as file:
-            print("writing:", calc_props)
-            file.write(json.dumps(output, file, cls=NoIndentEncoder, indent=4, sort_keys=True))
+          print("writing:", calc_props)
+          compat.dump(json, output, calc_props, 'w', cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)
         except:
           print(("Unable to report properties for directory {}.\n" 
                 "Please verify that it contains a completed calculation.".format(configdir)))

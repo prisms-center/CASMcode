@@ -1,4 +1,6 @@
-import json, uuid
+import json
+import six
+import uuid
 
 # ---------------------------------------------------
 # Some code to keep parts of a json string from being spread across multiple lines
@@ -28,7 +30,7 @@ class NoIndentEncoder(json.JSONEncoder):
 
     def encode(self, o):
         result = super(NoIndentEncoder, self).encode(o)
-        for k, v in self._replacement_map.iteritems():
+        for k, v in six.iteritems(self._replacement_map):
             result = result.replace('"@@%s@@"' % (k,), v)
         return result
 # ---------------------------------------------------

@@ -1,8 +1,11 @@
-#!/usr/bin/env python
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import argparse
 import deap.tools
 import json
 import os
+import six
 import sys
 
 import casm.learn
@@ -38,25 +41,25 @@ def main():
     return
   
   if args.exLasso:
-    print(json.dumps(casm.learn.example_input_Lasso(), indent=2))
+    print(six.u(json.dumps(casm.learn.example_input_Lasso(), indent=2)))
     return
   elif args.exLassoCV:
-    print(json.dumps(casm.learn.example_input_LassoCV(), indent=2))
+    print(six.u(json.dumps(casm.learn.example_input_LassoCV(), indent=2)))
     return
   elif args.exRFE:
-    print(json.dumps(casm.learn.example_input_RFE(), indent=2))
+    print(six.u(json.dumps(casm.learn.example_input_RFE(), indent=2)))
     return
   elif args.exGeneticAlgorithm:
-    print(json.dumps(casm.learn.example_input_GeneticAlgorithm(), indent=2))
+    print(six.u(json.dumps(casm.learn.example_input_GeneticAlgorithm(), indent=2)))
     return
   elif args.exIndividualBestFirst:
-    print(json.dumps(casm.learn.example_input_IndividualBestFirst(), indent=2))
+    print(six.u(json.dumps(casm.learn.example_input_IndividualBestFirst(), indent=2)))
     return
   elif args.exPopulationBestFirst:
-    print(json.dumps(casm.learn.example_input_PopulationBestFirst(), indent=2))
+    print(six.u(json.dumps(casm.learn.example_input_PopulationBestFirst(), indent=2)))
     return
   elif args.exDirectSelection:
-    print(json.dumps(casm.learn.example_input_DirectSelection(), indent=2, cls=casm.NoIndentEncoder))
+    print(six.u(json.dumps(casm.learn.example_input_DirectSelection(), indent=2, cls=casm.NoIndentEncoder)))
     return
   
   if args.settings:

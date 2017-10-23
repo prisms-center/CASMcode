@@ -1,5 +1,11 @@
-import os, sys, shutil
-import incar, kpoints, oszicar, outcar, species, poscar
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import os
+import shutil
+import six
+import sys
+from casm.vasp.io import incar, kpoints, oszicar, outcar, species, poscar
 
 VASP_INPUT_FILE_LIST = ["INCAR", "STOPCAR", "POTCAR", "KPOINTS", "POSCAR",\
                         "EXHCAR", "CHGCAR", "WAVECAR", "TMPCAR"]
@@ -54,7 +60,7 @@ def set_incar_tag(tag_dict,jobdir=None, name=None):
     incarfile = os.path.join(jobdir,name)
     tincar = incar.Incar(incarfile)
 
-    for key, val in tag_dict.iteritems():
+    for key, val in six.iteritems(tag_dict):
         for k in tincar.tags:
             if key.lower() == k.lower():
                 if (val is None) or (str(val).strip() == ""):

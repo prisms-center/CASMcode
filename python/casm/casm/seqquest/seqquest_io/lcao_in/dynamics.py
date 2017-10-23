@@ -1,4 +1,6 @@
 """Setup and helpers for Dynamics block from lcao.in"""
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 class Dynamics(dict): #pylint: disable=too-few-public-methods
     """ Container for Dynamics part of Lcao.in """

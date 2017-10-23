@@ -1,6 +1,9 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import os, gzip,re
 import numpy as np
-import outfile,poscar
+from casm.quantumespresso.qeio import outfile, poscar
 
 class QErunError(Exception):
     def __init__(self,msg):

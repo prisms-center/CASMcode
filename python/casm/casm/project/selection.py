@@ -1,8 +1,19 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import copy
+from io import StringIO
+import json
+import os
+import subprocess
+
+import numpy as np
+import pandas
+import six
+
 from casm.project.project import Project
 from casm.project.query import query
-import os, subprocess, json, copy
-import pandas
-import numpy as np
+from casm.misc import compat
 
 class Selection(object):
     """
@@ -74,11 +85,12 @@ class Selection(object):
           if self.path in ["MASTER", "ALL", "CALCULATED"]:
             self._data = query(self.proj, ['configname', 'selected'], self, all=self.all)
           elif self._is_json():
-            self._data = pandas.read_json(self.path, orient='records')
+            self._data = pandas.read_json(self.path, 'r', orient='records')
           else:
-            f = open(self.path, 'r')
-            f.read(1)
-            self._data = pandas.read_csv(f, sep=' *', engine='python')
+            with open(self.path, compat.pandas_rmode()) as f:
+                if compat.peek(f) == '#':
+                    f.read(1)
+                self._data = pandas.read_csv(f, sep=compat.str(' +'), engine='python')
           
           self._clean_data()
           
@@ -117,8 +129,8 @@ class Selection(object):
           with open(clist, 'r') as f:
               j = json.load(f)
           
-          for sk, sv in j["supercells"].iteritems():
-            for ck, cv in sv.iteritems():
+          for sk, sv in six.iteritems(j["supercells"]):
+            for ck, cv in six.iteritems(sv):
               sv[ck]["selected"] = False
           
           # set selection
@@ -127,8 +139,8 @@ class Selection(object):
             j["supercells"][scelname][configid]["selected"] = row["selected"]
             
           # write
-          with open(backup, 'w') as f:
-              json.dump(j, f, indent=2)
+          with open(backup, 'wb') as f:
+              f.write(six.u(json.dumps(j, indent=2)).encode('utf-8'))
           os.rename(backup, clist)
           
           # refresh proj config list
@@ -151,12 +163,12 @@ class Selection(object):
             raise Exception("File: " + backup + " already exists")
           
           if self._is_json():
-            self._data.to_json(path_or_buf=backup, orient='records')
+            self._data.to_json(backup, orient='records')
           else:
-            self.data.loc[:,"selected"] = self.data.loc[:,"selected"].astype(int)
-            f = open(backup, 'w')
-            f.write('#')
-            self.data.to_csv(path_or_buf=f, sep=' ', index=False)
+            self.data.loc[:,"selected"] = self.data.loc[:,"selected"].astype(np.int_)
+            with open(backup, compat.pandas_wmode()) as f:
+                f.write('# ')  # will make this optional in a future version
+                self._data.to_csv(f, sep=compat.str(' '), index=False)
           os.rename(backup, self.path)
         
     

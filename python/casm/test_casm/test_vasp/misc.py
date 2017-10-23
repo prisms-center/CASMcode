@@ -1,4 +1,7 @@
 """test_casm/test_vasp/misc.py"""
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import distutils.spawn
 import os
 from os.path import exists, dirname

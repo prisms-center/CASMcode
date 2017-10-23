@@ -1,8 +1,15 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import os
 import sys
-from mock import patch
 from contextlib import contextmanager
-from StringIO import StringIO
+from io import StringIO
+import six
+if six.PY2:
+    from mock import patch
+else:
+    from unittest.mock import patch
 
 @contextmanager
 def working_dir(wd):

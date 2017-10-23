@@ -1,4 +1,7 @@
-from evolve import *
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import time
 from casm.learn.fit import make_fitting_data, make_estimator, make_selector, \
   add_individual_detail, print_halloffame
 import casm.learn.cross_validation
@@ -80,7 +83,7 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
       if verbose:
         print("Adding statistics...")
       selector_hall = selector.get_halloffame()
-      for i in xrange(len(selector_hall)):
+      for i in range(len(selector_hall)):
         add_individual_detail(selector_hall[i], estimator, fdata, input, selector=selector)
       if verbose:
         print("  DONE\n")

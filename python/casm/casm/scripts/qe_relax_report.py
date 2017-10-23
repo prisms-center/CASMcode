@@ -1,10 +1,13 @@
-#!/usr/bin/env python
-from casm import noindent
-import casm.qewrapper
-import casm.project
-import sys
-import os
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import json
+import os
+import sys
+
+from casm.misc import compat, noindent
+import casm.project
+import casm.qewrapper
 
 def main():
     print("Begin qe.relax.report")
@@ -57,8 +60,8 @@ def main():
         print(("Unable to report properties for directory %s. Please verify that it contains a completed Quantum Espresso calculation with name %s" %(qedir, outfilename)))
         raise
 
-    with open('properties.calc.json', 'w') as file:
-        file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
+    compat.dump(json, output, 'properties.calc.json', 'w', cls=noindent.NoIndentEncoder, 
+                indent=4, sort_keys=True)
 
     print("Finish qe.relax.report")
 

@@ -1,4 +1,8 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import re
+import six
 
 # Note: This could use double-checking
 
@@ -153,7 +157,7 @@ def crystal_system(schoenflies_symbol):
     """ 
     Determine crystal system from crystal symmetry
     """
-    for key, val in xtalsysmap.iteritems():
+    for key, val in six.iteritems(xtalsysmap):
         if schoenflies_symbol in val:
             return key
     return None
@@ -162,7 +166,7 @@ def crystal_family(schoenflies_symbol):
     """ 
     Determine crystal family from crystal symmetry
     """
-    for key, val in xtalfamilymap.iteritems():
+    for key, val in six.iteritems(xtalfamilymap):
         if schoenflies_symbol in val:
             return key
     return None

@@ -1,15 +1,23 @@
-import os, time, pickle, copy, random
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
-import casm.learn
-import numpy as np
-from sklearn.base import BaseEstimator
-from sklearn.feature_selection.base import SelectorMixin
+import copy
+from operator import attrgetter
+import os
+import pickle
+import random
+import time
+
 import deap
 import deap.tools
-import deap.algorithms
-from operator import attrgetter
 from deap.tools import HallOfFame
+import deap.algorithms
+import numpy as np
+import six
+from sklearn.base import BaseEstimator
+from sklearn.feature_selection.base import SelectorMixin
 
+import casm.learn
 
 def initNRandomOn(container, n_features, n_features_init):
   """ 
@@ -231,7 +239,7 @@ def save_population(pop, filename, verbose=False):
   if verbose:
     print("\nPickling population to:", filename)
   with open(filename, 'wb') as f:
-    pickle.dump(pop, f)
+      pickle.dump(pop, f, protocol=2)
 
 
 def initialize_halloffame(filename=None, n_halloffame=25, verbose=False):
@@ -252,7 +260,7 @@ def save_halloffame(hall, filename, verbose=False):
   if verbose:
     print("\nPickling Hall of Fame to:", filename)
   with open(filename, 'wb') as f:
-    pickle.dump(hall, f)
+      pickle.dump(hall, f, protocol=2)
 
 
 def evaluate_all(pop, toolbox):
@@ -404,7 +412,7 @@ def default_stats(funcs=None):
   if funcs is None:
     funcs = {"avg":np.mean, "std":np.std, "min":np.min, "max":np.max}
   stats = deap.tools.Statistics(key=lambda ind: ind.fitness.values)
-  for key, val in funcs.iteritems():
+  for key, val in six.iteritems(funcs):
     stats.register(key, val)
   return stats
     
@@ -478,7 +486,7 @@ def single_flip_children(parent):
    
   """
   offspring = []
-  for index in xrange(len(parent)):
+  for index in range(len(parent)):
     child = copy.deepcopy(parent)
     del child.fitness.values
     child[index] = not child[index]
@@ -797,7 +805,7 @@ class EvolutionaryFeatureSelection(BaseEstimator, SelectorMixin):
             in_args = [f(self) for f in alg_args]
             
             in_kwargs = dict()
-            for key, f in alg_kwargs.iteritems():
+            for key, f in six.iteritems(alg_kwargs):
               in_kwargs[key] = f(self)
             
             self.pop, self.logbook = algorithm(*in_args, **in_kwargs)
@@ -832,7 +840,7 @@ class EvolutionaryFeatureSelection(BaseEstimator, SelectorMixin):
       
       in_args = [f(self) for f in self.alg_args]
       in_kwargs = dict()
-      for key, f in self.alg_kwargs.iteritems():
+      for key, f in six.iteritems(self.alg_kwargs):
         in_kwargs[key] = f(self)
       
       self.pop, self.logbook = self.algorithm(*in_args, **in_kwargs)
