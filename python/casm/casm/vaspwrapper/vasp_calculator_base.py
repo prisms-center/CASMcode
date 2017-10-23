@@ -1,6 +1,6 @@
 """implements the parent class for vasp calculations"""
 
-import os, math, sys, json, shutil
+import os, math, sys, json
 import vasp
 import casm
 import casm.project
@@ -28,7 +28,7 @@ class VaspCalculatorBase(object):
         self.auto = auto
         self.sort = sort
         self.casm_directories = self.selection.proj.dir
-        self.casm_settings = self.selection.settings
+        self.casm_settings = self.selection.proj.settings
         if self.casm_settings is None:
             raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
@@ -46,7 +46,6 @@ class VaspCalculatorBase(object):
         config_dict["configdir"] =  self.casm_directories.configuration_dir(config_data["configname"], self.calc_subdir)
         config_dict["calcdir"] = self.casm_directories.calctype_dir(config_data["configname"], self.clex, self.calc_subdir)
         config_dict["setfile"] = self.casm_directories.settings_path_crawl("calc.json", config_data["configname"], self.clex, self.calc_subdir)
-
         return config_dict
 
     def append_selection_data(self):
@@ -225,7 +224,7 @@ class VaspCalculatorBase(object):
             # Or just execute a single prerun line, if given
             if settings["prerun"] is not None:
                 cmd += settings["prerun"] + "\n"
-            #cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + config_obj.configdir + "')\"\n" #TODO
+            #cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + config_obj.configdir + "').run()\"\n" #TODO
             cmd += self.run_cmd(config_data["configdir"], self.calctype)
             if settings["postrun"] is not None:
                 cmd += settings["postrun"] + "\n"
@@ -258,7 +257,7 @@ class VaspCalculatorBase(object):
             print "CASM VASPWrapper relaxation PBS job submission complete\n"
             sys.stdout.flush()
 
-    def run_cmd(self, configname, calctype):
+    def run_cmd(self, configdir, calctype):
         """has to be overloaded in the method class"""
         return None
 
@@ -445,10 +444,15 @@ class VaspCalculatorBase(object):
 
     def report(self):
         for config_data in self.selection.data:
-            settings = self.read_settings(config_data["setfile"])
-            calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
-            if self.is_converged(calculation):
-                self.finalize(config_data)
+            try:
+                settings = self.read_settings(config_data["setfile"])
+                calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
+                if self.is_converged(calculation):
+                    self.finalize(config_data)
+            except:
+                print("Unable to report properties for directory {}.\n"
+                      "Please verify that it contains a completed VASP calculation.".format(config_data["configdir"]))
+                raise
 
     def finalize(self, config_data, super_poscarfile=None):
         # write properties.calc.json
