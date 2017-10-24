@@ -1,4 +1,5 @@
-from __future__ import division
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 import numpy as np
 import math,re
@@ -71,7 +72,7 @@ class Poscar:
                 try:
                     self.read_from_outfile(filename,species)
                 except PoscarError as f:
-                    print e
+                    print(e)
                     raise f
 
 
@@ -264,13 +265,13 @@ class Poscar:
             else:
                 basis_dict[atom] += range(start,end)
 
-        print basis_dict
+        print(basis_dict)
 
         orig_pos = []
         for atom in sorted(basis_dict.keys()):
             orig_pos += basis_dict[atom]
 
-        print orig_pos
+        print(orig_pos)
 
         new_pos = range(0,len(self.basis))
 
@@ -626,7 +627,7 @@ class Poscar:
         m = re.search("ATOMIC_POSITIONS.*",line)
         if not m:
             while not m:
-               print line
+               print(line)
                line = file.readline()
                
                if line=='':

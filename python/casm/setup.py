@@ -13,7 +13,7 @@ def script_str(file):
 console_scripts = [script_str(x) for x in glob.glob('casm/scripts/*') if x != 'casm/scripts/__init__.py']
 print console_scripts
 
-setup(name='casm',
+setup(name='casm-python',
       version=__version__,
       url='https://github.com/prisms-center/CASMcode',
       description='CASM Python interface, tools, and wrappers.',
@@ -24,5 +24,24 @@ setup(name='casm',
       entry_points={
           'console_scripts': console_scripts
       },
-      install_requires=['prisms_jobs', 'scipy', 'pandas', 'scikit-learn', 'bokeh==0.12.3', 'tornado==4.3']
+      install_requires=[
+          'bokeh==0.12.3',
+          'deap',
+          'mock', 
+          'pandas',
+          'prisms-jobs',
+          'scikit-learn==0.19',
+          'scipy',
+          'sh',
+          'tornado==4.3'
+      ],
+      classifiers=[
+        'Development Status :: 4 - Beta',
+        'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Topic :: Scientific/Engineering'
+      ],
+      data_files = [('', ['LICENSE'])]
       )

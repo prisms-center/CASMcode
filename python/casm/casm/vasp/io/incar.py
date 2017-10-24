@@ -1,4 +1,6 @@
-from __future__ import division
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import re
 
 # List of tags in VASP sorted by the data type associated with it
@@ -128,7 +130,7 @@ class Incar(object):
             if tag.lower() in VASP_TAG_LIST:
                 continue
             else:
-                print("Warning: unknown INCAR tag '" + tag + "' with value '" + str(self.tags[tag]) + "'")
+                print(("Warning: unknown INCAR tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
 
 
     def update(self, species, poscar, sort=True):

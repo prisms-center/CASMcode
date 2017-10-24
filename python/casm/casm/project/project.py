@@ -1,11 +1,18 @@
-import warnings
-from casm.project.api import API
-import os, subprocess, json
-from os.path import join
-from casm.project import syminfo
-import numpy as np
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import json
+import os
 import math
+import warnings
+from os.path import join
 from string import ascii_lowercase
+
+import numpy as np
+import six
+
+from casm.project import syminfo
+from casm.project.api import API
 
 def project_path(dir=None):
     """
@@ -99,7 +106,7 @@ class ProjectSettings(object):
 
         self._clex = [
           ClexDescription(d[1]["name"], d[1]["property"], d[1]["calctype"], d[1]["ref"], d[1]["bset"], d[1]["eci"]) 
-          for d in self.data["cluster_expansions"].iteritems()
+          for d in six.iteritems(self.data["cluster_expansions"])
         ]
         
         d = self.data["cluster_expansions"].get("formation_energy", None)
@@ -518,10 +525,10 @@ class Project(object):
           with open(self.dir.composition_axes(), 'r') as f:
               data = json.load(f)
               if "standard_axes" in data:
-                  for key, val in data["standard_axes"].iteritems():
+                  for key, val in six.iteritems(data["standard_axes"]):
                       self.all_composition_axes[key] = CompositionAxes(key, val)
               if "custom_axes" in data:
-                  for key, val in data["custom_axes"].iteritems():
+                  for key, val in six.iteritems(data["custom_axes"]):
                       self.all_composition_axes[key] = CompositionAxes(key, val)
               self.composition_axes = self.all_composition_axes[data["current_axes"]]
     
@@ -584,8 +591,7 @@ class Project(object):
       Refresh PrimClex properties to reflect changes to CASM project files.
       """
       if read_settings:
-        self.dir = DirectoryStructure(self.path)
-        self.settings = ProjectSettings(self.path)
+        self.__refresh()
       if self._ptr is not None:
         self._api.primclex_refresh(
           self.data(), 
@@ -625,7 +631,9 @@ class Project(object):
         args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
       
       Returns:
-        (stdout, stderr, returncode): The result of running the command via the command line iterface
+        (stdout, stderr, returncode): The result of running the command via the 
+            command line iterface. 'stdout' and 'stderr' are in text type ('unicode'/'str').
+            
       """
       # this also ensures self._api is not None
       data = self.data()
@@ -647,7 +655,7 @@ class Project(object):
       self._api.ostringstream_delete(ss_err)
       
       self.__refresh()
-      return (stdout, stderr, res)
+      return (stdout.decode('utf-8'), stderr.decode('utf-8'), res)
 
 
 class Prim(object):

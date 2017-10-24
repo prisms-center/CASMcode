@@ -1,4 +1,6 @@
 """ Relax class """
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 import os
 import re
@@ -7,8 +9,6 @@ import sys
 import shutil
 from . import seqquest
 from . import seqquest_io
-
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 class RelaxError(Exception):
     """ Relax-specific errors """
@@ -54,7 +54,7 @@ class Relax(object):
 
         """
 
-        print "Constructing a VASP Relax object"
+        print("Constructing a VASP Relax object")
         sys.stdout.flush()
 
         # store path to .../relaxdir, and create if not existing
@@ -62,7 +62,7 @@ class Relax(object):
             relaxdir = os.getcwd()
         self.relaxdir = os.path.abspath(relaxdir)
 
-        print "  Relax directory:", self.relaxdir
+        print("  Relax directory:", self.relaxdir)
         sys.stdout.flush()
 
         # find existing .../relaxdir/run.run_index directories, store paths in self.rundir list
@@ -90,7 +90,7 @@ class Relax(object):
         if "err_types" not in self.settings:
             self.settings["err_types"] = ['SubSpaceMatrixError']
 
-        print "SeqQuest Relax object constructed\n"
+        print("SeqQuest Relax object constructed\n")
         sys.stdout.flush()
 
 
@@ -133,7 +133,7 @@ class Relax(object):
     def setup(self, initdir, _):
         """ mv all files and directories (besides initdir) into initdir """
 
-        print "Moving files into initial run directory:", initdir
+        print("Moving files into initial run directory:", initdir)
         initdir = os.path.abspath(initdir)
         for ifile in os.listdir(self.relaxdir):
             if ((ifile in seqquest_io.QUEST_INPUT_FILE_LIST + self.settings["extra_input_files"])
@@ -147,7 +147,7 @@ class Relax(object):
             elif ifile == "lcao.geom_in":
                 os.rename(os.path.join(self.relaxdir, ifile), os.path.join(initdir, ifile))
 
-        print ""
+        print("")
         sys.stdout.flush()
 
         # Keep a backup copy of the base lcao.in
@@ -232,12 +232,12 @@ class Relax(object):
             in lcao.in file pointed to by "final" if present.
         """
 
-        print "Begin SeqQuest relaxation run"
+        print("Begin SeqQuest relaxation run")
         sys.stdout.flush()
 
         # get current status of the relaxation:
         (status, task) = self.status()
-        print "\n++  status:", status, "  next task:", task
+        print("\n++  status:", status, "  next task:", task)
         sys.stdout.flush()
 
         while status == "incomplete":
@@ -283,7 +283,7 @@ class Relax(object):
 
                 final_lcao.write(os.path.join(self.rundir[-1], "lcao.in"))
 
-                print "  Set lcao.in tags:", new_values, "\n"
+                print("  Set lcao.in tags:", new_values, "\n")
                 sys.stdout.flush()
 
             else:
@@ -309,12 +309,12 @@ class Relax(object):
                 # self.add_rundir()
                 err = result.itervalues().next()
 
-                print "\n++  status:", "error", "  next task:", "fix_error"
+                print("\n++  status:", "error", "  next task:", "fix_error")
                 sys.stdout.flush()
 
-                print "Attempting to fix error:", str(err)
+                print("Attempting to fix error:", str(err))
                 err.fix(self.errdir[-1], self.rundir[-1], self.settings)
-                print ""
+                print("")
                 sys.stdout.flush()
 
                 # backup files are NOT yet supported!
@@ -334,13 +334,13 @@ class Relax(object):
                 #     sys.stdout.flush()
 
             (status, task) = self.status()
-            print "\n++  status:", status, "  next task:", task
+            print("\n++  status:", status, "  next task:", task)
             sys.stdout.flush()
 
         if status == "complete":
             if not os.path.isdir(self.finaldir):
                 # mv final results to relax.final
-                print "mv", os.path.basename(self.rundir[-1]), os.path.basename(self.finaldir)
+                print("mv", os.path.basename(self.rundir[-1]), os.path.basename(self.finaldir))
                 sys.stdout.flush()
                 os.rename(self.rundir[-1], self.finaldir)
                 self.rundir.pop()

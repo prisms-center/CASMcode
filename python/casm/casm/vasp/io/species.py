@@ -1,4 +1,5 @@
-from __future__ import division
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 import numpy as np
 import os, re
@@ -86,13 +87,13 @@ class IndividualSpecies:
 
 
     def print_all(self):
-        print self.name
-        print self.alias
-        print self.tags
-        print self.write_potcar
-        print self.potcardir_base
-        print self.potcar_location
-        print self.potcardir
+        print(self.name)
+        print(self.alias)
+        print(self.tags)
+        print(self.write_potcar)
+        print(self.potcardir_base)
+        print(self.potcar_location)
+        print(self.potcardir)
 
 # replacing Species class with 'species_settings' function that returns a dict of IndividualSpecies
 

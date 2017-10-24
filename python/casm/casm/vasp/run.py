@@ -1,4 +1,6 @@
 """ Job manipuation routines for VASP"""
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 import os
 import shutil
@@ -26,27 +28,27 @@ def complete_job(jobdir, settings):
          remove: Deletes listed files
     """
 
-    print "Complete VASP job: " + jobdir
+    print("Complete VASP job: " + jobdir)
     sys.stdout.flush()
 
     # remove files
-    print "  rm:",
+    print("  rm:", end=' ')
     for f in settings["remove"]:
         if not f in (settings["copy"] + settings["move"] + settings["compress"] + settings["backup"]):
             if os.path.isfile(os.path.join(jobdir,f)):
-                print f,
+                print(f, end=' ')
                 os.remove(os.path.join(jobdir,f))
     for f in settings["extra_input_files"]:
         if os.path.isfile(os.path.join(jobdir, f)):
-            print f,
+            print(f, end=' ')
             os.remove(os.path.join(jobdir,f))
-    print ""
+    print("")
 
     # compress files
-    print " gzip:",
+    print(" gzip:", end=' ')
     for file in settings["compress"]:
         if os.path.isfile(os.path.join(jobdir,file)):
-            print file,
+            print(file, end=' ')
             # Open target file, target file.gz
             f_in = open(os.path.join(jobdir, file), 'rb')
             f_out = gzip.open(os.path.join(jobdir, file)+'.gz', 'wb')
@@ -56,8 +58,8 @@ def complete_job(jobdir, settings):
             f_in.close()
             # Remove original target file
             os.remove(os.path.join(jobdir,file))
-    print ""
-    print ""
+    print("")
+    print("")
     sys.stdout.flush()
 
 def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=None, command=None, ncpus=None, kpar=None, poll_check_time = 5.0, err_check_time = 60.0, err_types=None):
@@ -83,7 +85,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
             err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError', 'NbandsError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
 
     """
-    print "Begin vasp run:"
+    print("Begin vasp run:")
     sys.stdout.flush()
 
     if jobdir is None:
@@ -121,8 +123,8 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     if kpar is not None:
         io.set_incar_tag({"KPAR":kpar}, jobdir)
 
-    print "  jobdir:", jobdir
-    print "  exec:", command
+    print("  jobdir:", jobdir)
+    print("  exec:", command)
     sys.stdout.flush()
 
     sout = open(os.path.join(jobdir,stdout),'w')
@@ -143,7 +145,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
             if err != None:
                 # FreezeErrors are fatal and usually not helped with STOPCAR
                 if "FreezeError" in err.keys():
-                    print "  VASP is frozen, killing job"
+                    print("  VASP is frozen, killing job")
                     sys.stdout.flush()
                     # Sometimes p.kill doesn't work if the process is on multiple nodes
                     os.kill(p.pid, signal.SIGKILL)
@@ -154,17 +156,17 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
                     time.sleep(30)
                 # Other errors can be killed with STOPCAR, which is safer
                 elif stopcar_time is None:
-                    print "  Found errors:",
+                    print("  Found errors:", end=' ')
                     for e in err:
-                        print e,
-                    print "\n  Killing job with STOPCAR"
+                        print(e, end=' ')
+                    print("\n  Killing job with STOPCAR")
                     sys.stdout.flush()
                     io.write_stopcar('e', jobdir)
                     stopcar_time = time.time()
                     time.sleep(30)
                 # If the STOPCAR exists, wait 5 min before manually killing the job
                 elif time.time() - stopcar_time > 300:
-                    print "  VASP is non-responsive, killing job"
+                    print("  VASP is non-responsive, killing job")
                     sys.stdout.flush()
                     os.kill(p.pid, signal.SIGKILL)
                     p.kill()
@@ -181,7 +183,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
     os.chdir(currdir)
 
-    print "Run complete"
+    print("Run complete")
     sys.stdout.flush()
 
     # check finished job for errors
@@ -191,9 +193,9 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
         if err is None:
             err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
     if err != None:
-        print "  Found errors:",
+        print("  Found errors:", end=' ')
         for e in err:
-            print e,
-    print "\n"
+            print(e, end=' ')
+    print("\n")
 
     return err

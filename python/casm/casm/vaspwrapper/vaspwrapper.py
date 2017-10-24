@@ -1,3 +1,6 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import os, shutil, re, subprocess, json
 import warnings
 import casm.vasp.io
@@ -63,7 +66,7 @@ def read_settings(filename):
         settings = json.load(file)
         file.close()
     except (IOError, ValueError) as e:
-        print "Error reading settings file:", filename
+        print("Error reading settings file:", filename)
         raise e
 
     required = ["queue", "ppn", "walltime"]

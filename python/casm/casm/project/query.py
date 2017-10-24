@@ -1,5 +1,11 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+from io import StringIO
+import pandas
+import six
 import casm
-import pandas, StringIO
+from casm.misc import compat
 
 def query(proj, columns, selection=None, verbatim=True, all=False):
   """Return a pandas DataFrame object containing the output of a 
@@ -20,16 +26,19 @@ def query(proj, columns, selection=None, verbatim=True, all=False):
   stdout, stderr, returncode = proj.command(args)
   
   try:
-    return pandas.read_csv(StringIO.StringIO(stdout[1:]), sep=' *', engine='python')
+    sout = StringIO(stdout)
+    if compat.peek(sout) == '#':
+        sout.read(1)
+    return pandas.read_csv(sout, sep=compat.str(' +'), engine='python')
   except:
-    print "Error in casm.query"
-    print "  proj:", proj.path
-    print "  Attempted to execute: '" + args + "'"
-    print "---- stdout: ---------------------"
-    print stdout
-    print "---- stderr: ---------------------"
-    print stderr
-    print "----------------------------------"
+    print("Error in casm.query")
+    print("  proj:", proj.path)
+    print("  Attempted to execute: '" + args + "'")
+    print("---- stdout: ---------------------")
+    print(stdout)
+    print("---- stderr: ---------------------")
+    print(stderr)
+    print("----------------------------------")
     raise
     
 

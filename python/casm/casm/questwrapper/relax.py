@@ -1,4 +1,6 @@
 """ FIXME """
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 import os
 import math
@@ -12,10 +14,11 @@ except ImportError:
   from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
   from pbs import PBSError as JobsError
 
-from casm import seqquest
+from casm import seqquest, wrapper
 from casm.misc import noindent
 from casm.project import DirectoryStructure, ProjectSettings
-from casm.questwrapper import questwrapper
+from casm.questwrapper import QuestWrapperError, read_settings, write_settings, \
+  quest_input_file_names
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a SeqQuest relaxation.
@@ -82,29 +85,29 @@ class Relax(object):
               Use True to sort atoms in POSCAR by type
 
         """
-        print "Construct a casm.questwrapper.Relax instance:"
+        print("Construct a casm.questwrapper.Relax instance:")
 
         if configdir is None:
             configdir = os.getcwd()
-        print "  Input directory:", configdir
+        print("  Input directory:", configdir)
 
         # get the configname from the configdir path
         _res = os.path.split(configdir)
         self.configname = os.path.split(_res[0])[1] + "/" + _res[1]
-        print "  Configuration:", self.configname
+        print("  Configuration:", self.configname)
 
-        print "  Reading CASM settings"
+        print("  Reading CASM settings")
         self.casm_directories = DirectoryStructure(configdir)
         self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings is None:
-            raise questwrapper.QuestWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+            raise QuestWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
         if os.path.abspath(configdir) != self.configdir:
-            print ""
-            print "input configdir:", configdir
-            print "determined configname:", self.configname
-            print "expected configdir given configname:", self.configdir
-            raise questwrapper.QuestWrapperError("Mismatch between configname and configdir")
+            print("")
+            print("input configdir:", configdir)
+            print("determined configname:", self.configname)
+            print("expected configdir given configname:", self.configdir)
+            raise QuestWrapperError("Mismatch between configname and configdir")
 
         # fixed to default_clex for now
         self.clex = self.casm_settings.default_clex
@@ -115,20 +118,20 @@ class Relax(object):
             os.mkdir(self.calcdir)
         except OSError:
             pass
-        print "  Calculations directory:", self.calcdir
+        print("  Calculations directory:", self.calcdir)
 
         # read the settings json file
-        print "  Reading relax.json settings file"
+        print("  Reading relax.json settings file")
         sys.stdout.flush()
         setfile = self.casm_directories.settings_path_crawl("relax.json", self.configname, self.clex)
 
         if setfile is None:
-            raise questwrapper.QuestWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
+            raise QuestWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
 
         else:
-            print "  Read settings from:", setfile
-        self.settings = questwrapper.read_settings(setfile)
+            print("  Read settings from:", setfile)
+        self.settings = read_settings(setfile)
 
         # set default settings if not present
         if not "run_cmd" in self.settings:
@@ -144,7 +147,7 @@ class Relax(object):
 
         self.auto = auto
         self.sort = sort
-        print "  DONE\n"
+        print("  DONE\n")
         sys.stdout.flush()
 
 
@@ -165,7 +168,7 @@ class Relax(object):
 
         """
         # Find required input files in CASM project directory tree
-        questfiles=questwrapper.quest_input_file_names(self.casm_directories, self.configname, self.clex)
+        questfiles=quest_input_file_names(self.casm_directories, self.configname, self.clex)
         lcao_in,super_poscarfile,speciesfile=questfiles
 
         # Find optional input files
@@ -218,19 +221,19 @@ class Relax(object):
     def submit(self):   #pylint: disable=too-many-statements
         """Submit a job for this SeqQuest relaxation"""
 
-        print "Submitting..."
-        print "Configuration:", self.configname
+        print("Submitting...")
+        print("Configuration:", self.configname)
         # first, check if the job has already been submitted and is not completed
         db = JobDB()
-        print "Calculation directory:", self.calcdir
+        print("Calculation directory:", self.calcdir)
         id = db.select_regex_id("rundir", self.calcdir)
-        print "JobID:", id
+        print("JobID:", id)
         sys.stdout.flush()
         if id != []:
             for j in id:
                 job = db.select_job(j)
                 if job["jobstatus"] != "C":
-                    print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
+                    print("JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting.")
                     sys.stdout.flush()
                     return
 
@@ -243,7 +246,7 @@ class Relax(object):
         (status, task) = relaxation.status()
 
         if status == "complete":
-            print "Status:", status, "  Not submitting."
+            print("Status:", status, "  Not submitting.")
             sys.stdout.flush()
 
             # ensure job marked as complete in db
@@ -254,7 +257,7 @@ class Relax(object):
                         try:
                             complete_job(jobid=j)
                         except (JobsError, JobDBError, EligibilityError) as e:
-                            print str(e)
+                            print(str(e))
                             sys.stdout.flush()
 
             # ensure results report written
@@ -264,18 +267,18 @@ class Relax(object):
             return
 
         elif status == "not_converging":
-            print "Status:", status, "  Not submitting."
+            print("Status:", status, "  Not submitting.")
             sys.stdout.flush()
             return
 
         elif status != "incomplete":
-            raise questwrapper.QuestWrapperError("unexpected relaxation status: '" + status
+            raise QuestWrapperError("unexpected relaxation status: '" + status
                                                  + "' and task: '" + task + "'")
             # This code can never be reached...
             # sys.stdout.flush()
             # return
 
-        print "Preparing to submit a SeqQuest relaxation job"
+        print("Preparing to submit a SeqQuest relaxation job")
         sys.stdout.flush()
 
         # cd to configdir, submit jobs from configdir, then cd back to currdir
@@ -283,7 +286,7 @@ class Relax(object):
         os.chdir(self.calcdir)
 
         # determine the number of atoms in the configuration
-        print "Counting atoms in the POSCAR"
+        print("Counting atoms in the POSCAR")
         sys.stdout.flush()
         geom = seqquest.seqquest_io.Geom.POS(os.path.join(self.configdir, "POS"))
         N = len(geom.basis)
@@ -301,10 +304,10 @@ class Relax(object):
         if self.settings["postrun"] is not None:
             cmd += self.settings["postrun"] + "\n"
 
-        print "Constructing a job"
+        print("Constructing a job")
         sys.stdout.flush()
         # construct a Job
-        job = Job(name=casm.wrapper.jobname(self.configname),\
+        job = Job(name=wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -318,7 +321,7 @@ class Relax(object):
                       command=cmd,\
                       auto=self.auto)
 
-        print "Submitting"
+        print("Submitting")
         sys.stdout.flush()
         # submit the job
         job.submit()
@@ -327,7 +330,7 @@ class Relax(object):
         # return to current directory
         os.chdir(currdir)
 
-        print "CASM QuestWrapper relaxation job submission complete\n"
+        print("CASM QuestWrapper relaxation job submission complete\n")
         sys.stdout.flush()
 
 
@@ -362,7 +365,7 @@ class Relax(object):
 
 
         if status == "complete":
-            print "Status:", status
+            print("Status:", status)
             sys.stdout.flush()
 
             # mark job as complete in db
@@ -370,7 +373,7 @@ class Relax(object):
                 try:
                     complete_job()
                 except (JobsError, JobDBError, EligibilityError) as e:
-                    print str(e)
+                    print(str(e))
                     sys.stdout.flush()
 
             # write results to properties.calc.json
@@ -378,9 +381,9 @@ class Relax(object):
             return
 
         elif status == "not_converging":
-            print "Status:", status
+            print("Status:", status)
             self.report_status("failed","run_limit")
-            print "Returning"
+            print("Returning")
             sys.stdout.flush()
             return
 
@@ -394,7 +397,7 @@ class Relax(object):
 
         else:
             self.report_status("failed", "unknown")
-            raise questwrapper.QuestWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise QuestWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
 
@@ -407,10 +410,10 @@ class Relax(object):
                 try:
                     error_job("Not converging")
                 except (JobsError, JobDBError) as e:
-                    print str(e)
+                    print(str(e))
                     sys.stdout.flush()
 
-            print "Not Converging!"
+            print("Not Converging!")
             sys.stdout.flush()
             self.report_status("failed","run_limit")
 
@@ -424,10 +427,10 @@ class Relax(object):
             except OSError:
                 pass
             settingsfile = os.path.join(config_set_dir, "relax.json")
-            questwrapper.write_settings(self.settings, settingsfile)
+            write_settings(self.settings, settingsfile)
 
-            print "Writing:", settingsfile
-            print "Edit the 'run_limit' property if you wish to continue."
+            print("Writing:", settingsfile)
+            print("Edit the 'run_limit' property if you wish to continue.")
             sys.stdout.flush()
             return
 
@@ -438,7 +441,7 @@ class Relax(object):
                 try:
                     complete_job()
                 except (JobsError, JobDBError, EligibilityError) as e:
-                    print str(e)
+                    print(str(e))
                     sys.stdout.flush()
 
             # write results to properties.calc.json
@@ -446,7 +449,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise questwrapper.QuestWrapperError("quest relaxation complete with unexpected status: '"
+            raise QuestWrapperError("quest relaxation complete with unexpected status: '"
                                                  + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
@@ -473,7 +476,7 @@ class Relax(object):
         with open(outputfile, 'w') as stream:
             stream.write(json.dumps(output, stream, cls=noindent.NoIndentEncoder, indent=4,
                                     sort_keys=True))
-        print "Wrote " + outputfile
+        print("Wrote " + outputfile)
         sys.stdout.flush()
 
     def finalize(self):
@@ -486,7 +489,7 @@ class Relax(object):
             with open(outputfile, 'w') as stream:
                 stream.write(json.dumps(output, stream, cls=noindent.NoIndentEncoder, indent=4,
                                         sort_keys=True))
-            print "Wrote " + outputfile
+            print("Wrote " + outputfile)
             sys.stdout.flush()
             self.report_status('complete')
 
@@ -516,7 +519,7 @@ class Relax(object):
         # as lists
         output["relaxed_forces"] = [None for i in range(len(ofile.forces))]
 
-        print noindent.NoIndent(ofile.forces[0])
+        print(noindent.NoIndent(ofile.forces[0]))
         for i, v in enumerate(ofile.forces):
             output["relaxed_forces"][unsort_dict[i]] = noindent.NoIndent(ofile.forces[i])
 

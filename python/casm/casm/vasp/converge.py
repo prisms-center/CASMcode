@@ -1,4 +1,6 @@
 """ Converge class, methods, and errors """
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 # External
 import os
@@ -56,7 +58,7 @@ class Converge(object):
 
         """
 
-        print "Constructing a VASP Converge object"
+        print("Constructing a VASP Converge object")
         sys.stdout.flush()
 
         # store path to .../prop/propdir, and create if not existing
@@ -64,7 +66,7 @@ class Converge(object):
             propdir = os.getcwd()
         self.propdir = os.path.abspath(propdir)
 
-        print "  Converge directory:", self.propdir
+        print("  Converge directory:", self.propdir)
         sys.stdout.flush()
 
         # find existing .../prop/propdir/run.run_index directories, store paths in self.rundir list
@@ -102,7 +104,7 @@ class Converge(object):
         if "err_types" not in self.settings:
             self.settings["err_types"] = ['SubSpaceMatrixError']
 
-        print "VASP Converge object constructed\n"
+        print("VASP Converge object constructed\n")
         sys.stdout.flush()
 
 
@@ -143,12 +145,12 @@ class Converge(object):
     def setup(self, initdir):
         """ mv all files and directories (besides initdir) into initdir """
 
-        print "Moving files into initial run directory:", initdir
+        print("Moving files into initial run directory:", initdir)
         initdir = os.path.abspath(initdir)
         for my_prop in os.listdir(self.propdir):
             if (my_prop in io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"]) and (os.path.join(self.propdir, my_prop) != initdir):
                 os.rename(os.path.join(self.propdir, my_prop), os.path.join(initdir, my_prop))
-        print ""
+        print("")
         sys.stdout.flush()
 
         # Keep a backup copy of the base INCAR
@@ -158,7 +160,7 @@ class Converge(object):
         if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.propdir, self.settings["initial"]))):
             new_values = io.Incar(os.path.join(self.propdir, self.settings["initial"])).tags
             io.set_incar_tag(new_values, initdir)
-            print "  Set INCAR tags:", new_values, "\n"
+            print("  Set INCAR tags:", new_values, "\n")
             sys.stdout.flush()
 
     def complete(self):
@@ -215,12 +217,12 @@ class Converge(object):
             {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}.
         """
 
-        print "Begin VASP convergence run"
+        print("Begin VASP convergence run")
         sys.stdout.flush()
 
         # get current status of the relaxation:
         (status, task) = self.status()
-        print "\n++  status:", status, "  next task:", task
+        print("\n++  status:", status, "  next task:", task)
         sys.stdout.flush()
 
         while status == "incomplete":
@@ -250,7 +252,7 @@ class Converge(object):
                     new_values["SYSTEM"] = io.get_incar_tag("SYSTEM", self.rundir[-1]) + " final"
 
                 io.set_incar_tag(new_values, self.rundir[-1])
-                print "  Set INCAR tags:", new_values, "\n"
+                print("  Set INCAR tags:", new_values, "\n")
                 sys.stdout.flush()
 
             else:
@@ -286,7 +288,7 @@ class Converge(object):
                                         "ngx" : init_outcar.ngx*2,
                                         "ngy" : init_outcar.ngy*2,
                                         "ngz" : init_outcar.ngz*2}
-                                    print ng_tags
+                                    print(ng_tags)
                                     io.set_incar_tag(ng_tags, self.propdir, "INCAR.base")
 
                     break
@@ -297,16 +299,16 @@ class Converge(object):
                 # self.add_rundir()
                 err = result.itervalues().next()
 
-                print "\n++  status:", "error", "  next task:", "fix_error"
+                print("\n++  status:", "error", "  next task:", "fix_error")
                 sys.stdout.flush()
 
-                print "Attempting to fix error:", str(err)
+                print("Attempting to fix error:", str(err))
                 err.fix(self.errdir[-1], self.rundir[-1], self.settings)
-                print ""
+                print("")
                 sys.stdout.flush()
 
                 if (self.settings["backup"] != None) and len(self.rundir) > 1:
-                    print "Restoring from backups:"
+                    print("Restoring from backups:")
                     for my_file in self.settings["backup"]:
                         if os.path.isfile(os.path.join(self.rundir[-2], my_file + "_BACKUP.gz")):
                             f_in = gzip.open(os.path.join(self.rundir[-2], my_file + "_BACKUP.gz", 'rb'))
@@ -314,17 +316,17 @@ class Converge(object):
                             f_out.write(f_in.read())
                             f_in.close()
                             f_out.close()
-                            print my_file, " restored!"
+                            print(my_file, " restored!")
                     sys.stdout.flush()
 
             (status, task) = self.status()
-            print "\n++  status:", status, "  next task:", task
+            print("\n++  status:", status, "  next task:", task)
             sys.stdout.flush()
 
         if status == "complete":
             if not os.path.isdir(self.finaldir):
                 # mv final results to relax.final
-                print "mv", os.path.basename(self.rundir[-1]), os.path.basename(self.finaldir)
+                print("mv", os.path.basename(self.rundir[-1]), os.path.basename(self.finaldir))
                 sys.stdout.flush()
                 os.rename(self.rundir[-1], self.finaldir)
                 self.rundir.pop()

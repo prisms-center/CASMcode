@@ -1,3 +1,6 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import xml.etree.cElementTree as etree
 import os, gzip
 import numpy as np
@@ -160,9 +163,9 @@ class Vasprun:
 
                                     total_array = np.zeros([spins, points, fields])
 
-                                    for s in xrange(spins):
+                                    for s in range(spins):
                                         my_set = total.find('set').findall('set')[s].findall('r')
-                                        for r in xrange(points):
+                                        for r in range(points):
                                              total_array[s,r] = map(float, my_set[r].text.split())
 
                                     self.dos = total_array
@@ -182,11 +185,11 @@ class Vasprun:
 
                                         partial_array = np.zeros([ions, spins, points, fields])
 
-                                        for i in xrange(ions):
+                                        for i in range(ions):
                                             i_set = partial.find('set').findall('set')[i].findall('set')
-                                            for s in xrange(spins):
+                                            for s in range(spins):
                                                 my_set = i_set[s].findall('r')
-                                                for r in xrange(points):
+                                                for r in range(points):
                                                      partial_array[i,s,r] = map(float, my_set[r].text.split())
 
                                         self.dos_lm = partial_array
@@ -214,7 +217,7 @@ class Vasprun:
                                                 for i, row in enumerate(kp_parse_vals):
                                                         kpoint_list[i,:] = [float(val) for val in row.text.strip().split()]
                                                 self.kpoint_divisions = np.empty([2*num_paths, 3])
-                                                for i in xrange(num_paths):
+                                                for i in range(num_paths):
                                                         self.kpoint_divisions[2*i] = kpoint_list[i*self.num_divisions,:]
                                                         self.kpoint_divisions[2*i+1] = kpoint_list[(i+1)*self.num_divisions-1, :]
                                                 kp_parse_vals.clear()

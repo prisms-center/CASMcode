@@ -1,3 +1,6 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import os, shutil, re, subprocess, sys, time, gzip, warnings
 from casm.quantumespresso import qeio
 
@@ -40,7 +43,7 @@ def continue_job(jobdir, contdir, settings):
          to contdir/POSCAR. jobdir/POSCAR and jobdir/CONTCAR are always kept.
     """
 
-    print "Continue Quantum Espresso job:\n  Original: " + jobdir + "\n  Continuation: " + contdir
+    print("Continue Quantum Espresso job:\n  Original: " + jobdir + "\n  Continuation: " + contdir)
     sys.stdout.flush()
 
     infilename=settings["infilename"]
@@ -100,10 +103,10 @@ def continue_job(jobdir, contdir, settings):
         pass
 
     # make compressed backups of files sensitive to corruption
-    print " backup:"
+    print(" backup:")
     for file in backup:
         if os.path.isfile(os.path.join(jobdir,file)):
-            print file,
+            print(file, end=' ')
             # Open target file, target file.gz
             f_in = open(os.path.join(jobdir, file), 'rb')
             f_out = gzip.open(os.path.join(jobdir, file)+'_BACKUP.gz', 'wb')
@@ -111,22 +114,22 @@ def continue_job(jobdir, contdir, settings):
             f_out.writelines(f_in)
             f_out.close()
             f_in.close()
-    print ""
+    print("")
 
 
     # move files
-    print "  mv:",
+    print("  mv:", end=' ')
     for file in move:
-        print file,
+        print(file, end=' ')
         os.rename(os.path.join(jobdir,file),os.path.join(contdir,file))
-    print ""
+    print("")
 
     # copy files
-    print "  cp:",
+    print("  cp:", end=' ')
     for file in copy:
-        print file,
+        print(file, end=' ')
         shutil.copyfile(os.path.join(jobdir,file),os.path.join(contdir,file))
-    print ""
+    print("")
 
     # Rewrite new positions into infile if necessary 
     if os.path.isfile(os.path.join(jobdir,outfilename)) and os.path.isfile(os.path.join(contdir,infilename)):
@@ -134,23 +137,23 @@ def continue_job(jobdir, contdir, settings):
         newinfile=qeio.Infile(os.path.join(contdir,infilename))
         newinfile.rewrite_poscar_info(postpos)
         newinfile.write(os.path.join(contdir,infilename))
-        print "Overwrote " + infilename + " positions and lattice with positions and lattice from " + outfilename
+        print("Overwrote " + infilename + " positions and lattice with positions and lattice from " + outfilename)
     else:
-        print "  no calculated positions to overwrite"
+        print("  no calculated positions to overwrite")
 
     # remove files
-    print "  rm:",
+    print("  rm:", end=' ')
     for file in remove:
         if os.path.isfile(os.path.join(jobdir,file)):
-            print file,
+            print(file, end=' ')
             os.remove(os.path.join(jobdir,file))
-    print ""
+    print("")
 
     # compress files
-    print " gzip:",
+    print(" gzip:", end=' ')
     for file in compress:
         if os.path.isfile(os.path.join(jobdir,file)):
-            print file,
+            print(file, end=' ')
             # Open target file, target file.gz
             f_in = open(os.path.join(jobdir, file), 'rb')
             f_out = gzip.open(os.path.join(jobdir, file)+'.gz', 'wb')
@@ -160,8 +163,8 @@ def continue_job(jobdir, contdir, settings):
             f_in.close()
             # Remove original target file
             os.remove(os.path.join(jobdir,file))
-    print ""
-    print ""
+    print("")
+    print("")
     sys.stdout.flush()
 
 
@@ -181,27 +184,27 @@ def complete_job(jobdir, settings):
          remove: Deletes listed files
     """
 
-    print "Complete Quantum Espresso job: " + jobdir
+    print("Complete Quantum Espresso job: " + jobdir)
     sys.stdout.flush()
 
     # remove files
-    print "  rm:",
+    print("  rm:", end=' ')
     for f in settings["remove"]:
         if not f in (settings["copy"] + settings["move"] + settings["compress"] + settings["backup"]):
             if os.path.isfile(os.path.join(jobdir,f)):
-                print f,
+                print(f, end=' ')
                 os.remove(os.path.join(jobdir,f))
     for f in settings["extra_input_files"]:
         if os.path.isfile(os.path.join(jobdir, f)):
-            print f,
+            print(f, end=' ')
             os.remove(os.path.join(jobdir,f))
-    print ""
+    print("")
 
     # compress files
-    print " gzip:",
+    print(" gzip:", end=' ')
     for file in settings["compress"]:
         if os.path.isfile(os.path.join(jobdir,file)):
-            print file,
+            print(file, end=' ')
             # Open target file, target file.gz
             f_in = open(os.path.join(jobdir, file), 'rb')
             f_out = gzip.open(os.path.join(jobdir, file)+'.gz', 'wb')
@@ -211,8 +214,8 @@ def complete_job(jobdir, settings):
             f_in.close()
             # Remove original target file
             os.remove(os.path.join(jobdir,file))
-    print ""
-    print ""
+    print("")
+    print("")
     sys.stdout.flush()
 
 
@@ -247,20 +250,20 @@ class FreezeError(object):
                 most_recent = t
                 most_recent_file = f
 
-        print "Most recent file output (" + f + "):", most_recent, " seconds ago."
+        print("Most recent file output (" + f + "):", most_recent, " seconds ago.")
         sys.stdout.flush()
         if t < 300:
             return False
 
         myoutfile = qeio.Outfile(os.path.join(jobdir, outfilename))
         if myoutfile.complete:
-            print "outfile.complete:", myoutfile.complete
+            print("outfile.complete:", myoutfile.complete)
             sys.stdout.flush()
             return False
         elif myoutfile.slowest_loop != None and most_recent > 5.0*myoutfile.slowest_loop:
-            print "slowest_loop:", myoutfile.slowest_loop
-            print "5.0*slowest_loop:", 5.0*myoutfile.slowest_loop
-            print "most_recent:", most_recent
+            print("slowest_loop:", myoutfile.slowest_loop)
+            print("5.0*slowest_loop:", 5.0*myoutfile.slowest_loop)
+            print("most_recent:", most_recent)
             sys.stdout.flush()
             return True
         return False
@@ -270,7 +273,7 @@ class FreezeError(object):
         """ Fix by killing the job and resubmitting.
         """
         continue_job(err_jobdir, new_jobdir, settings)
-        print "  Kill job and try to continue"
+        print("  Kill job and try to continue")
 
 
 class NbandsError(object):
@@ -301,12 +304,12 @@ class NbandsError(object):
             if "NBANDS" in line:
                 nbands_line.append(line)
         if len(nbands_line)<1:
-            print "SERIOUS WARNING :  "
-            print "        Couldn't find any reference to nbands in the Outfile. Continuing without fixing"
+            print("SERIOUS WARNING :  ")
+            print("        Couldn't find any reference to nbands in the Outfile. Continuing without fixing")
         else:
             for l in nbands_line:
                 if 'k-points' in l.strip().split():
-                    print "  Set NBANDS = "+str(int(1.1 * float(l.strip().split()[-1])))
+                    print("  Set NBANDS = "+str(int(1.1 * float(l.strip().split()[-1]))))
                     sys.stdout.flush()
                     qeio.set_infile_tag({"NBANDS":int(1.1 * float(l.strip().split()[-1]))}, infilename,jobdir=new_jobdir)
                     break
@@ -363,7 +366,7 @@ def run(infilename, outfilename, jobdir = None, stdout = "std.out", stderr = "st
             
 
     """
-    print "Begin quantum espresso run:"
+    print("Begin quantum espresso run:")
     sys.stdout.flush()
 
     if jobdir == None:
@@ -390,8 +393,8 @@ def run(infilename, outfilename, jobdir = None, stdout = "std.out", stderr = "st
     command = command.format(INFILE=infilename,OUTFILE=outfilename)
 
 
-    print "  jobdir:", jobdir
-    print "  exec:", command
+    print("  jobdir:", jobdir)
+    print("  exec:", command)
     sys.stdout.flush()
 
     sout = open(os.path.join(jobdir,stdout),'w')
@@ -412,7 +415,7 @@ def run(infilename, outfilename, jobdir = None, stdout = "std.out", stderr = "st
             if err != None:
                 # FreezeErrors are fatal and usually not helped with STOPCAR
                 if "FreezeError" in err.keys():
-                    print "  Quantum Espresso is frozen, killing job"
+                    print("  Quantum Espresso is frozen, killing job")
                     sys.stdout.flush()
                     p.kill()
         poll = p.poll()
@@ -423,17 +426,17 @@ def run(infilename, outfilename, jobdir = None, stdout = "std.out", stderr = "st
 
     os.chdir(currdir)
 
-    print "Run complete"
+    print("Run complete")
     sys.stdout.flush()
 
     # check finished job for errors
     if err == None:
         #err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
         if err != None:
-            print "  Found errors:",
+            print("  Found errors:", end=' ')
             for e in err:
-                print e,
-        print "\n"
+                print(e, end=' ')
+        print("\n")
 
     return err
 

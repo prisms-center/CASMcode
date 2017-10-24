@@ -1,5 +1,11 @@
-import os, sys, shutil
-import infile, outfile, species, poscar,re
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import os
+import shutil
+import six
+import sys
+from casm.quantumespresso.qeio import infile, outfile, species, poscar, re
 
 #VASP_INPUT_FILE_LIST = ["INCAR", "STOPCAR", "POTCAR", "KPOINTS", "POSCAR",\
 #                        "EXHCAR", "CHGCAR", "WAVECAR", "TMPCAR"]
@@ -65,7 +71,7 @@ def set_infile_tag(tag_dict,infilename,jobdir=None):
     myinfile = os.path.join(jobdir,infilename)
     tinfile = infile.Infile(myinfile)
 
-    for key, val in tag_dict.iteritems():
+    for key, val in six.iteritems(tag_dict):
         if key in infile.QUANTUM_ESPRESSO_CONTROL_LIST:
             if ("CONTROL" in tinfile.namelists.keys()):
                 if (val == None) or (str(val).strip() == ""):
@@ -117,21 +123,21 @@ def ionic_steps(outfilename,jobdir=None):
 
 def write_quantum_espresso_input(dirpath, infilename, super_poscarfile, speciesfile, sort=True, extra_input_files=[], strict_kpoints=False):
     """ Write Quantum Espresso input files in directory 'dirpath' """
-    print "Setting up Quantum Espresso input files:", dirpath
+    print("Setting up Quantum Espresso input files:", dirpath)
 
 
     # read Infile for K_POINTS, CELL_PARAMETERS, and generate super kpoints
-    print "  Reading Infile:", infilename
+    print("  Reading Infile:", infilename)
     myinfile = infile.Infile(infilename, None, None, sort)
-    print "  Reading SPECIES:", speciesfile
+    print("  Reading SPECIES:", speciesfile)
     species_settings = species.species_settings(speciesfile)
-    print "  Reading K_POINTS from:", infilename
+    print("  Reading K_POINTS from:", infilename)
     prim_kpoints = myinfile.cards["K_POINTS"]
-    print "  Reading K_POINTS reference positions from CELL_PARAMETERS:", infilename
+    print("  Reading K_POINTS reference positions from CELL_PARAMETERS:", infilename)
     prim = poscar.Poscar(infilename,species_settings)
-    print "  Reading supercell POS:", super_poscarfile
+    print("  Reading supercell POS:", super_poscarfile)
     super = poscar.Poscar(super_poscarfile, species_settings)
-    print "  Generating supercell KPOINTS"
+    print("  Generating supercell KPOINTS")
     if strict_kpoints:
         super_kpoints = prim_kpoints
     else:
@@ -143,21 +149,21 @@ def write_quantum_espresso_input(dirpath, infilename, super_poscarfile, speciesf
         infilename=directories[-1]
 
     # write main input file
-    print "  Writing supercell positions to Infile"
+    print("  Writing supercell positions to Infile")
     myinfile.rewrite_poscar_info(super,species_settings)
-    print "  Writing supercell K_POINTS to Infile"
+    print("  Writing supercell K_POINTS to Infile")
     myinfile.cards["K_POINTS"]=super_kpoints
-    print "  Writing Infile:", os.path.join(dirpath,infilename)
+    print("  Writing Infile:", os.path.join(dirpath,infilename))
     myinfile.write(os.path.join(dirpath,infilename))
 
     # copy extra input files
-    print "  Copying extra input files",
+    print("  Copying extra input files", end=' ')
     for s in extra_input_files:
-        print s,
+        print(s, end=' ')
         shutil.copy(s,dirpath)
-    print ""
+    print("")
 
-    print "Quantum Espresso input files complete\n"
+    print("Quantum Espresso input files complete\n")
     sys.stdout.flush()
 
 

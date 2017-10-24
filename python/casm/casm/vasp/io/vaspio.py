@@ -1,7 +1,8 @@
-from __future__ import division
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 import numpy as np
-import poscar, kpoints, species, incar
+from casm.vasp.io import poscar, kpoints, species, incar
 
 class VaspIO:
     """ Generate a set of VASP input files from settings files

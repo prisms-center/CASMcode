@@ -1,4 +1,9 @@
 """A wrapper for running quantum espresso through casm"""
-from qewrapper import *
-from relax import *
-__all__ = dir()
+from casm.qewrapper.qewrapper import QEWrapperError, qe_input_file_names, read_settings, write_settings
+from casm.qewrapper.relax import Relax
+__all__ = [
+    'QEWrapperError',
+    'Relax',
+    'qe_input_file_names',
+    'read_settings',
+    'write_settings']

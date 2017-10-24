@@ -1,8 +1,16 @@
-import os
-import json
-import glob
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import ctypes
-from os.path import join
+import glob
+import json
+import os
+import six
+from distutils.spawn import find_executable
+from os.path import dirname, join
+from sys import platform
+
+import sh
 
 class API(object):
   """
@@ -28,36 +36,31 @@ class API(object):
 
     """
     def __init__(self):
-      """
-      Loads dynamic libraries
-
-      Order of priority for libcasm.*:
-        1) $LIBCASM
-        2) $CASM_PREFIX/lib/libcasm.*
-        3) /usr/local/lib/libcasm.*
-
-      Order of priority for libccasm.*:
-        1) $LIBCCASM
-        2) $CASM_PREFIX/lib/libccasm.*
-        3) /usr/local/lib/libccasm.*
-
-      """
-      if 'LIBCASM' in os.environ:
-        libname = os.environ['LIBCASM']
-      elif 'CASM_PREFIX' in os.environ:
-        libname = glob.glob(join(os.environ['CASM_PREFIX'], 'lib', 'libcasm.*'))[0]
-      else:
-        libname = glob.glob(join('/usr', 'local', 'lib', 'libcasm.*'))[0]
-      self.lib_casm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
-
-      if 'LIBCCASM' in os.environ:
-        libname = os.environ['LIBCCASM']
-      elif 'CASM_PREFIX' in os.environ:
-        libname = glob.glob(join(os.environ['CASM_PREFIX'], 'lib', 'libccasm.*'))[0]
-      else:
-        libname = glob.glob(join('/usr', 'local', 'lib', 'libccasm.*'))[0]
-      self.lib_ccasm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
-
+      """Loads dynamic libraries"""
+      
+      try:
+          casm_path = find_executable('casm')
+          if platform == 'darwin':
+              libcasm_path = sh.grep(sh.otool('-L', casm_path), 'libcasm').split()[0]
+              libcasm_path = libcasm_path.replace('@loader_path', dirname(casm_path))
+          else:
+              libcasm_path = sh.grep(sh.ldd(casm_path), 'libcasm').split()[2]
+          libccasm_path = libcasm_path.replace('libcasm', 'libccasm')
+          
+          self.lib_casm = ctypes.CDLL(libcasm_path, mode=ctypes.RTLD_GLOBAL)
+          self.lib_ccasm = ctypes.CDLL(libccasm_path, mode=ctypes.RTLD_GLOBAL)
+      except Exception as e:
+          print("Error loading casm libraries")
+          casm_path = find_executable('casm')
+          print("Find 'casm':", casm_path)
+          if platform == 'darwin':
+              print("Find 'libcasm':")
+              print(sh.otool('-L', casm_path))
+          else:
+              print("Find 'libcasm':")
+              print(sh.ldd(casm_path))
+          raise e
+      
       #### Argument types
 
       self.lib_ccasm.casm_STDOUT.restype = ctypes.c_void_p
@@ -207,7 +210,7 @@ class API(object):
       ptr: CASM::PrimClex pointer
 
     """
-    return API.__api.lib_ccasm.casm_primclex_new(path, log, debug_log, err_log)
+    return API.__api.lib_ccasm.casm_primclex_new(six.b(path), log, debug_log, err_log)
 
   def primclex_refresh(self, ptr, read_settings=False, read_composition=False, read_chem_ref=False, read_configs=False, clear_clex=False):
     """
@@ -331,5 +334,5 @@ class API(object):
             Unknown attempting to overwrite another CASM project
 
     """
-    return API.__api.lib_ccasm.casm_capi(args, primclex, root, log, debug_log, err_log)
+    return API.__api.lib_ccasm.casm_capi(six.b(args), primclex, six.b(root), log, debug_log, err_log)
 

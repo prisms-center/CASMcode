@@ -1,4 +1,5 @@
-from __future__ import division
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 import numpy as np
 import math
@@ -20,9 +21,8 @@ class Site:
             self.occupant = CASM specie name, empty string by default
             self.occ_alias = alias (POTCAR) name, empty string by default
             self.position = np.array coordinate
-            self.mag = MAGMOM value, None by default
     """
-    def __init__(self, cart, position, mag = None, SD_FLAG = "", occupant = "", occ_alias = ""):
+    def __init__(self, cart, position, SD_FLAG = "", occupant = "", occ_alias = ""):
         """ Site constructor """
         self.cart = cart
         self.SD_FLAG = SD_FLAG
@@ -209,13 +209,13 @@ class Poscar:
             else:
                 basis_dict[atom] += range(start,end)
 
-        # print basis_dict
+        # print(basis_dict)
 
         orig_pos = []
         for atom in sorted(basis_dict.keys()):
             orig_pos += basis_dict[atom]
 
-        # print orig_pos
+        # print(orig_pos)
 
         new_pos = range(0,len(self.basis))
 

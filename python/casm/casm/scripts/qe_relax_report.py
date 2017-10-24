@@ -1,16 +1,19 @@
-#!/usr/bin/env python
-from casm import noindent
-import casm.qewrapper
-import casm.project
-import sys
-import os
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import json
+import os
+import sys
+
+from casm.misc import compat, noindent
+import casm.project
+import casm.qewrapper
 
 def main():
-    print "Begin qe.relax.report"
+    print("Begin qe.relax.report")
 
     if len(sys.argv) != 2:
-        print "Usage: qe.relax.report configdir"
+        print("Usage: qe.relax.report configdir")
         sys.exit()
 
     configdir = sys.argv[1]
@@ -30,7 +33,7 @@ def main():
 
     calcdir=casm_directories.calctype_dir(configname,casm_settings.default_clex)
 
-    print "  Reading relax.json settings file"
+    print("  Reading relax.json settings file")
     sys.stdout.flush()
     setfile = casm_directories.settings_path_crawl("relax.json",configname,casm_settings.default_clex)
 
@@ -39,12 +42,12 @@ def main():
         sys.stdout.flush()
 
     else:
-        print "Using "+str(setfile)+" as settings..."
+        print("Using "+str(setfile)+" as settings...")
 
     settings = casm.qewrapper.read_settings(setfile)
 
     if not "outfilename" in settings:
-        print "WARNING: No output file specified in relax.json using default outfilename of std.out"
+        print("WARNING: No output file specified in relax.json using default outfilename of std.out")
         settings["outfilename"]="std.out"
 
     outfilename = settings["outfilename"]
@@ -54,13 +57,13 @@ def main():
     try:
         output = casm.qewrapper.Relax.properties(qedir,outfilename)
     except:
-        print("Unable to report properties for directory %s. Please verify that it contains a completed Quantum Espresso calculation with name %s" %(qedir, outfilename))
+        print(("Unable to report properties for directory %s. Please verify that it contains a completed Quantum Espresso calculation with name %s" %(qedir, outfilename)))
         raise
 
-    with open('properties.calc.json', 'w') as file:
-        file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
+    compat.dump(json, output, 'properties.calc.json', 'w', cls=noindent.NoIndentEncoder, 
+                indent=4, sort_keys=True)
 
-    print "Finish qe.relax.report"
+    print("Finish qe.relax.report")
 
 if __name__ == "__main__":
     main()

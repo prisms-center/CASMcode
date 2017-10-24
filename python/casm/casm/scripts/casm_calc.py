@@ -1,14 +1,16 @@
-#!/usr/bin/env python
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 import argparse
 import json
-import sys
 from os import getcwd
 from os.path import join, abspath
-from casm.misc.noindent import NoIndentEncoder
+import sys
+
+from casm.misc import compat, noindent
 from casm.project import Project, Selection
 import casm.qewrapper
-import casm.vaspwrapper
+from casm.vaspwrapper import Relax
 
 # casm-calc --configs selection
 #           --type "config", "diff_trans", etc.
@@ -121,7 +123,7 @@ if __name__ == "__main__":
         try:
           if args.software == "quantumespresso":
             if settings["outfilename"] is None:
-                print "WARNING: No output file specified in relax.json using default outfilename of std.out"
+                print("WARNING: No output file specified in relax.json using default outfilename of std.out")
                 settings["outfilename"]="std.out"
             outfilename = settings["outfilename"]
             output = casm.qewrapper.Relax.properties(finaldir,outfilename)
@@ -129,13 +131,13 @@ if __name__ == "__main__":
             output = Relax.properties(finaldir)
           calc_props = proj.dir.calculated_properties(configname, clex)
           with open(calc_props, 'w') as file:
-            print "writing:", calc_props
-            file.write(json.dumps(output, file, cls=NoIndentEncoder, indent=4, sort_keys=True))
+            print("writing:", calc_props)
+            file.write(six.u(json.dumps(output, cls=NoIndentEncoder, indent=4, sort_keys=True)))
         except:
-          print("Unable to report properties for directory {}.\n" 
-                "Please verify that it contains a completed calculation.".format(configdir))
+          print(("Unable to report properties for directory {}.\n" 
+                "Please verify that it contains a completed calculation.".format(configdir)))
   except Exception as e:
-    print e
+    print(e)
     sys.exit(1)
 
 if __name__ == "__main__":

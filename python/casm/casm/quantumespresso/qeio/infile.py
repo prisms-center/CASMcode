@@ -1,4 +1,6 @@
-from __future__ import division
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import numpy as np
 import re,copy,math
 
@@ -74,7 +76,7 @@ class Control:
             if tag in QUANTUM_ESPRESSO_CONTROL_LIST:
                 continue
             else:
-                print("Warning: unknown Control tag '" + tag + "' with value '" + str(self.tags[tag]) + "'")
+                print(("Warning: unknown Control tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
 
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
@@ -188,7 +190,7 @@ class Sys:
             if tag in QUANTUM_ESPRESSO_SYSTEM_LIST:
                 continue
             else:
-                print("Warning: unknown System tag '" + tag + "' with value '" + str(self.tags[tag]) + "'")
+                print(("Warning: unknown System tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
 
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
@@ -306,7 +308,7 @@ class Electrons:
             if tag in QUANTUM_ESPRESSO_ELECTRONS_LIST:
                 continue
             else:
-                print("Warning: unknown Electrons tag '" + tag + "' with value '" + str(self.tags[tag]) + "'")
+                print(("Warning: unknown Electrons tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
 
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
@@ -412,7 +414,7 @@ class Ions:
             if tag in QUANTUM_ESPRESSO_IONS_LIST:
                 continue
             else:
-                print("Warning: unknown Ions tag '" + tag + "' with value '" + str(self.tags[tag]) + "'")
+                print(("Warning: unknown Ions tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
 
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
@@ -519,7 +521,7 @@ class Cell:
             if tag in QUANTUM_ESPRESSO_CELL_LIST:
                 continue
             else:
-                print("Warning: unknown Cell tag '" + tag + "' with value '" + str(self.tags[tag]) + "'")
+                print(("Warning: unknown Cell tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
 
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
@@ -978,12 +980,12 @@ class Infile:
             if namelist in QUANTUM_ESPRESSO_NAMELIST_LIST:
                 continue
             else:
-                print("Warning: unknown Infile namelist: " + namelist)
+                print(("Warning: unknown Infile namelist: " + namelist))
         for card in self.cards:
             if card in QUANTUM_ESPRESSO_CARD_LIST:
                 continue
             else:
-                print("Warning: unknown Infile card: " + card)
+                print(("Warning: unknown Infile card: " + card))
 
     def rewrite_poscar_info(self,poscar,species=None):
         """Update Infile object to a new set of coordinates and lattice vectors"""
@@ -1030,22 +1032,22 @@ class Infile:
             if "ATOMIC_SPECIES" in self.cards.keys():
                 for specie in poscar.basis_dict().keys():
                     if specie not in self.cards["ATOMIC_SPECIES"].species:
-                        print "WARNING: " + specie + " in ATOMIC_POSITIONS does not have corresponding entry in ATOMIC_SPECIES"
+                        print("WARNING: " + specie + " in ATOMIC_POSITIONS does not have corresponding entry in ATOMIC_SPECIES")
                         if species!=None:
-                            print "Attempting to retrieve data for " + specie + " from SPECIES file...."
+                            print("Attempting to retrieve data for " + specie + " from SPECIES file....")
                             for entry in species.keys():
                                 if species[entry].alias == specie:
                                     self.cards["ATOMIC_SPECIES"].species+= [specie]
                                     self.cards["ATOMIC_SPECIES"].masses+= [0.0] #look up masses here????
                                     if self.namelists["CONTROL"].tags["pseudo_dir"] == ("'" + species[entry].pseudo_base + "'"):
                                         self.cards["ATOMIC_SPECIES"].pseudos+= [species[entry].pseudo_location]
-                                        print "Found! " + specie + " in SPECIES file with pseudopotential at " + species[entry].pseudodir
+                                        print("Found! " + specie + " in SPECIES file with pseudopotential at " + species[entry].pseudodir)
                                     else: 
-                                        print "WARNING: PSEUDO_DIR_PATH in SPECIES file does not match 'pseudo_dir' tag in &CONTROL namelist of Infile"
-                                        print "WILL ASSUME 'pseudo_dir' tag is correct"
+                                        print("WARNING: PSEUDO_DIR_PATH in SPECIES file does not match 'pseudo_dir' tag in &CONTROL namelist of Infile")
+                                        print("WILL ASSUME 'pseudo_dir' tag is correct")
                                         self.cards["ATOMIC_SPECIES"].pseudos+= [species[entry].pseudo_location]
                                 else:
-                                    print "Search failed! No data for " + specie + " to be found" 
+                                    print("Search failed! No data for " + specie + " to be found") 
                 for specie in self.cards["ATOMIC_SPECIES"].species:
                     if specie not in poscar.basis_dict().keys():
                         index= self.cards["ATOMIC_SPECIES"].species.index(specie)

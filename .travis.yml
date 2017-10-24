@@ -14,7 +14,10 @@ matrix:
           packages:
           - gcc-4.8
           - g++-4.8
+          # boost1.54
           - libboost-all-dev
+          - autoconf-archive
+          - bash-completion
       env:
         - CC=gcc-4.8
         - CXX=g++-4.8
@@ -34,26 +37,35 @@ before_install:
 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
         CASM_NCPU=2;
+        . /usr/share/bash-completion/bash_completion;
+        CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations";
+        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR --with-boost-libdir=$CASM_BOOST_LIBDIR";
     fi
   
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 
-        brew install boost@1.55 scons;
+  # boost1.61 is installed at /usr/local
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update;
+      brew list;
+    fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        brew install bash-completion autoconf-archive;
         CASM_NCPU=2;
+        . /usr/local/etc/bash_completion;
+        CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations";
+        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR";
     fi
   
   # check g++ version
   - g++ --version
   
-  # check scons
-  - scons --version
-  
   # check python
   - python --version
   - python -c "import sys; print sys.path"
   
-  # upgrade pip
+  # upgrade pip and install testing requirements
+  - export PATH=`python -m site --user-site`/../../../bin:$PATH
   - pip install --upgrade pip
-  - pip install --user pytest
+  - pip install --user -r python/casm/test_requirements.txt
   
   # check env
   - printenv
@@ -64,9 +76,10 @@ script:
   - 'echo "CASM_NCPU: $CASM_NCPU"'
   
   # C++ and CLI
-  - scons configure
-  - scons -j $CASM_NCPU
-  - scons unit -j $CASM_NCPU
+  - ./bootstrap.sh
+  - ./configure CXXFLAGS="${CXXFLAGS}" ${CONFIGFLAGS}
+  - make -j $CASM_NCPU
+  - make check -j $CASM_NCPU
 
   # Python
   - cd python/casm

@@ -1,5 +1,7 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import os, math, sys, shutil, gzip
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 import casm.vasp
 from casm.vasp import io
 
@@ -45,7 +47,7 @@ class Relax(object):
 
         """
 
-        print "Constructing a VASP Relax object"
+        print("Constructing a VASP Relax object")
         sys.stdout.flush()
 
         # store path to .../relaxdir, and create if not existing
@@ -53,7 +55,7 @@ class Relax(object):
             relaxdir = os.getcwd()
         self.relaxdir = os.path.abspath(relaxdir)
 
-        print "  Relax directory:", self.relaxdir
+        print("  Relax directory:", self.relaxdir)
         sys.stdout.flush()
 
         # find existing .../relaxdir/run.run_index directories, store paths in self.rundir list
@@ -103,7 +105,7 @@ class Relax(object):
         if not "err_types" in self.settings:
             self.settings["err_types"] = ['SubSpaceMatrixError']
 
-        print "VASP Relax object constructed\n"
+        print("VASP Relax object constructed\n")
         sys.stdout.flush()
 
 
@@ -144,12 +146,12 @@ class Relax(object):
     def setup(self, initdir, settings):
         """ mv all files and directories (besides initdir) into initdir """
 
-        print "Moving files into initial run directory:", initdir
+        print("Moving files into initial run directory:", initdir)
         initdir = os.path.abspath(initdir)
         for p in os.listdir(self.relaxdir):
             if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.relaxdir, p) != initdir):
                 os.rename(os.path.join(self.relaxdir,p), os.path.join(initdir,p))
-        print ""
+        print("")
         sys.stdout.flush()
 
         # Keep a backup copy of the base INCAR
@@ -159,7 +161,7 @@ class Relax(object):
         if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["initial"]))):
             new_values = io.Incar(os.path.join(self.relaxdir,self.settings["initial"])).tags
             io.set_incar_tag(new_values, initdir)
-            print "  Set INCAR tags:", new_values, "\n"
+            print("  Set INCAR tags:", new_values, "\n")
             sys.stdout.flush()
 
     def complete(self):
@@ -216,12 +218,12 @@ class Relax(object):
             {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}.
         """
 
-        print "Begin VASP relaxation run"
+        print("Begin VASP relaxation run")
         sys.stdout.flush()
 
         # get current status of the relaxation:
         (status, task) = self.status()
-        print "\n++  status:", status, "  next task:", task
+        print("\n++  status:", status, "  next task:", task)
         sys.stdout.flush()
 
         while status == "incomplete":
@@ -251,7 +253,7 @@ class Relax(object):
                     new_values["SYSTEM"] = io.get_incar_tag("SYSTEM", self.rundir[-1]) + " final"
 
                 io.set_incar_tag( new_values, self.rundir[-1])
-                print "  Set INCAR tags:", new_values, "\n"
+                print("  Set INCAR tags:", new_values, "\n")
                 sys.stdout.flush()
 
             else:
@@ -287,7 +289,7 @@ class Relax(object):
                                         "ngx" : init_outcar.ngx*2,
                                         "ngy" : init_outcar.ngy*2,
                                         "ngz" : init_outcar.ngz*2}
-                                    print ng_tags
+                                    print(ng_tags)
                                     io.set_incar_tag(ng_tags, self.relaxdir, "INCAR.base")
                     break
 
@@ -297,16 +299,16 @@ class Relax(object):
                 # self.add_rundir()
                 err = result.itervalues().next()
 
-                print "\n++  status:", "error", "  next task:", "fix_error"
+                print("\n++  status:", "error", "  next task:", "fix_error")
                 sys.stdout.flush()
 
-                print "Attempting to fix error:", str(err)
+                print("Attempting to fix error:", str(err))
                 err.fix(self.errdir[-1],self.rundir[-1], self.settings)
-                print ""
+                print("")
                 sys.stdout.flush()
 
                 if (self.settings["backup"] != None) and len(self.rundir) > 1:
-                    print "Restoring from backups:"
+                    print("Restoring from backups:")
                     for f in self.settings["backup"]:
                         if os.path.isfile(os.path.join(self.rundir[-2], f + "_BACKUP.gz")):
                             f_in = gzip.open(os.path.join(self.rundir[-2], f + "_BACKUP.gz", 'rb'))
@@ -314,17 +316,17 @@ class Relax(object):
                             f_out.write(f_in.read())
                             f_in.close()
                             f_out.close()
-                            print f, " restored!"
+                            print(f, " restored!")
                     sys.stdout.flush()
 
             (status, task) = self.status()
-            print "\n++  status:", status, "  next task:", task
+            print("\n++  status:", status, "  next task:", task)
             sys.stdout.flush()
 
         if status == "complete":
             if not os.path.isdir(self.finaldir):
                 # mv final results to relax.final
-                print "mv", os.path.basename(self.rundir[-1]), os.path.basename(self.finaldir)
+                print("mv", os.path.basename(self.rundir[-1]), os.path.basename(self.finaldir))
                 sys.stdout.flush()
                 os.rename(self.rundir[-1], self.finaldir)
                 self.rundir.pop()

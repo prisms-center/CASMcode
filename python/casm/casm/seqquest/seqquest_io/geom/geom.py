@@ -1,4 +1,7 @@
 """ Object and functions for handling atom geometries """
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 #pylint: disable=too-many-lines
 
 import re
@@ -732,13 +735,13 @@ class Geom(object): #pylint: disable=too-many-instance-attributes
             else:
                 basis_dict[atom] += range(start, end)
 
-        print basis_dict
+        print(basis_dict)
 
         orig_pos = []
         for atom in sorted(basis_dict.keys()):
             orig_pos += basis_dict[atom]
 
-        print orig_pos
+        print(orig_pos)
 
         new_pos = range(0, len(self.basis))
 

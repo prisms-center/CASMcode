@@ -1,0 +1,11 @@
+miscincludedir=$(includedir)/casm/misc
+miscinclude_HEADERS=./include/casm/misc/algorithm.hh\
+					./include/casm/misc/CASM_math.hh\
+					./include/casm/misc/CASM_TMP.hh\
+					./include/casm/misc/cloneable_ptr.hh\
+					./include/casm/misc/Comparisons.hh\
+					./include/casm/misc/HallOfFame.hh\
+					./include/casm/misc/HierarchyID.hh\
+					./include/casm/misc/PCA.hh\
+					./include/casm/misc/unique_cloneable_map.hh\
+					./include/casm/misc/unique_map.hh

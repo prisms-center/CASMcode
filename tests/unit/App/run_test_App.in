@@ -1,0 +1,7 @@
+#!/bin/bash
+NAME=App
+export PATH=@abs_top_builddir@:$PATH
+cd @abs_top_srcdir@
+mkdir -p @abs_top_srcdir@/tests/unit/test_projects
+: ${TEST_FLAGS:="--log_level=test_suite --catch_system_errors=no"}
+@abs_top_builddir@/casm_unit_$NAME ${TEST_FLAGS}

@@ -120,13 +120,13 @@ namespace CASM {
     args.log() <<
                "Enumerate configurations\n\
 - Several options are possible:                                        \n\
-- Execute: 'casm enum --method ConfigEnumAllOccupations --all' \n\
-  to enumerate configurations for for all supercells.                  \n\
-- Execute: 'casm enum --method ConfigEnumAllOccupations --min MINV --max MAXV'\n\
-  to enumerate configurations for supercells ranging in volume    \n\
-   from MINV to MAXV (units: number of primitive cells).            \n\
-- Execute: 'casm enum ---method ConfigEnumAllOccupations --scelname NAME'\n\
-  to enumerate  configurations for a particular supercell.    \n\
+- Execute: 'casm enum --method ConfigEnumAllOccupations --all' to      \n\
+  enumerate configurations for all supercells.                         \n\
+- Execute: 'casm enum --method ConfigEnumAllOccupations --min MINV --max MAXV' \n\
+  to enumerate configurations for supercells ranging in volume from    \n\
+  MINV to MAXV (units: number of primitive cells).                     \n\
+- Execute: 'casm enum --method ConfigEnumAllOccupations --scelnames NAME' \n\
+  to enumerate configurations for a particular supercell.              \n\
 - Generated configurations are listed in the 'config_list.json' file.  \n\
   This file should not usually be edited manually.                     \n\
 - Use the 'casm view' command to quickly view configurations in your   \n\
