@@ -18,10 +18,10 @@ No differences from installation.
 Writing Tests
 -------------
 
-See unit tests examples in ``tests/unit/<category>/<name>_test.cpp``:
+See unit tests examples in ``tests/unit/<group>/<name>_test.cpp``:
 
 - Boost unit test framework [documentation](http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/index.html)
-- Tests are organized by category into directories matching the CASM source code. Within a category there is typically one test suite per file with a name matching the name used for header and source files of the code being tested.
+- Tests are grouped into directories matching the CASM source code. Within a group there is typically one test suite per file with a name matching the name used for header and source files of the code being tested.
 - Test projects, either ZrO (``test::ZrOProj``) or a generic FCC ternary (``test::FCCTernary``),  and their associated ``PrimClex`` can be constructed to use for testing.
 - An example test using the ZrO test project:
 
