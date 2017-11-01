@@ -182,9 +182,9 @@ namespace CASM {
     ///
     DiffTransConfigMapperResult import_structure(const fs::path &pos_path) const;
 
-  private:
+    //private:
 
-    std::vector<Structure> _get_structures(const fs::path &pos_path) const;
+    std::vector<BasicStructure<Site>> _get_structures(const fs::path &pos_path) const;
 
   private:
 
