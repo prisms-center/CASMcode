@@ -1,5 +1,5 @@
 #!/bin/bash
-GROUP=App
+GROUP=misc
 export PATH=@abs_top_builddir@:$PATH
 cd @abs_top_srcdir@
 mkdir -p @abs_top_srcdir@/tests/unit/test_projects

@@ -19,8 +19,10 @@ BOOST_AUTO_TEST_SUITE(ScelDatabase_Test)
 
 BOOST_AUTO_TEST_CASE(Test1) {
 
+  BOOST_CHECK_EQUAL(1, 1);
   test::FCCTernaryProj proj;
   proj.check_init();
+  BOOST_CHECK_EQUAL(1, 1);
 
   PrimClex primclex(proj.dir, null_log());
   const Structure &prim(primclex.prim());

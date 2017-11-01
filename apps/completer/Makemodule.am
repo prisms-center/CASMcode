@@ -1,14 +1,22 @@
 if ENABLE_BASH_COMPLETION
+
 bashcompletiondir=$(BASH_COMPLETION_DIR)
-dist_bashcompletion_DATA=./apps/completer/casm
 
-bin_PROGRAMS += casm-complete
+dist_bashcompletion_DATA = \
+  apps/completer/casm
 
-casm_complete_SOURCES = ./apps/completer/complete.cpp
-casm_complete_LDADD=libcasm.la\
-           $(BOOST_SYSTEM_LIB)\
-           $(BOOST_FILESYSTEM_LIB)\
-           $(BOOST_PROGRAM_OPTIONS_LIB)\
-           $(BOOST_REGEX_LIB)\
-           $(BOOST_CHRONO_LIB)
+bin_PROGRAMS += \
+  casm-complete
+
+casm_complete_SOURCES = \
+  apps/completer/complete.cpp
+
+casm_complete_LDADD = \
+  libcasm.la\
+  $(BOOST_SYSTEM_LIB)\
+  $(BOOST_FILESYSTEM_LIB)\
+  $(BOOST_PROGRAM_OPTIONS_LIB)\
+  $(BOOST_REGEX_LIB)\
+  $(BOOST_CHRONO_LIB)
+
 endif
