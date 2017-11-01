@@ -54,9 +54,9 @@ AX_BOOST_UNIT_TEST_FRAMEWORK
 #Where to install bash completion
 AC_ARG_WITH([bash-completion-dir],
     AS_HELP_STRING([--with-bash-completion-dir[=PATH]],
-        [Install the bash auto-completion script in this directory. @<:@default=yes@:>@]),
+        [Install the bash auto-completion script in this directory. @<:@default=no@:>@]),
     [],
-    [with_bash_completion_dir=yes])
+    [with_bash_completion_dir=no])
 
 if test "x$with_bash_completion_dir" = "xyes"; then
     PKG_CHECK_MODULES([BASH_COMPLETION], [bash-completion >= 2.0],

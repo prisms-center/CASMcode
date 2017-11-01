@@ -601,7 +601,9 @@ namespace CASM {
   /// - equal to prim.factor_group().size() / this->factor_group().size()
   int Configuration::multiplicity() const {
     if(!cache().contains("multiplicity")) {
-      this->factor_group();
+      int result = this->prim().factor_group().size() / this->factor_group().size();
+      cache_insert("multiplicity", result);
+      return result;
     }
     return cache()["multiplicity"].get<int>();
   }
@@ -1123,7 +1125,7 @@ namespace CASM {
     if(calc_props.contains("relaxation_displacement")) {
       Eigen::MatrixXd disp;
       disp = calc_props["relaxation_displacement"].get<Eigen::MatrixXd>();
-      config.set_displacement(disp);
+      config.set_displacement(disp.transpose());
     }
     if(calc_props.contains("relaxation_deformation")) {
       Eigen::Matrix3d deform;

@@ -104,7 +104,7 @@ namespace CASM {
     /// \brief Check if config == A*config, store config < A*config
     bool operator()(const PermuteIterator &A) const {
       for(const auto &g : global_eq()) {
-        // check if config == other, for this global DoF type
+        // check if config == A*config, for this global DoF type
         if(!g(A)) {
           m_less = g.is_less();
           return false;
@@ -112,7 +112,7 @@ namespace CASM {
       }
 
       for(const auto &s : site_eq()) {
-        // check if config == other, for this site DoF type
+        // check if config == A*config, for this site DoF type
         if(!s(A)) {
           m_less = s.is_less();
           return false;

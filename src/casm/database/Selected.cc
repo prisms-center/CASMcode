@@ -52,7 +52,7 @@ namespace CASM {
 
     template<typename ObjType>
     bool Selected<ObjType>::parse_args(const std::string &args) {
-      if((m_selection && m_selection->data().size())|| m_selection_name.size()) {
+      if((m_selection && m_selection->data().size()) || m_selection_name.size()) {
         return false;
       }
 

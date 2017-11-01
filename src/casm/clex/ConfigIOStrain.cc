@@ -8,27 +8,24 @@ namespace CASM {
 
   namespace ConfigIO {
     bool RelaxationStrain::parse_args(const std::string &args) {
-
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
       std::string tmetric_name = "GL";
       std::string index_expr;
-      auto it = args.cbegin(), it_end = args.cend();
-      while(it != it_end) {
-        if(std::isdigit(*it) || (*it) == ':') {
-          auto it2 = it;
-          while(it2 != it_end && (std::isdigit(*it2) || isspace(*it2) || (*it2) == ':'))
-            ++it2;
-          index_expr = std::string(it, it2);
-          it = it2;
-        }
-        if(it != it_end && std::isalpha(*it)) {
-          auto it2 = it;
-          while(it2 != it_end && std::isalpha(*it2))
-            ++it2;
-          tmetric_name = std::string(it, it2);
-          it = it2;
-        }
-        while(it != it_end && !std::isalnum(*it) && *it != ':')
-          ++it;
+
+      if(splt_vec.size()) {
+        tmetric_name = splt_vec[0];
+      }
+      if(splt_vec.size() >= 2) {
+        index_expr = splt_vec[1];
+      }
+      if(splt_vec.size() == 3) {
+        m_calctype = splt_vec[2];
+      }
+      if(splt_vec.size() > 3) {
+        std::stringstream ss;
+        ss << "Too many arguments for 'relaxation_strain'.  Received: " << args << "\n";
+        throw std::runtime_error(ss.str());
       }
       if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
         return false;
@@ -57,7 +54,7 @@ namespace CASM {
     //****************************************************************************************
 
     bool RelaxationStrain::validate(const Configuration &_config) const {
-      return _config.calc_properties().contains("relaxation_deformation");
+      return _config.calc_properties(m_calctype).contains("relaxation_deformation");
     }
 
     //****************************************************************************************
@@ -68,7 +65,7 @@ namespace CASM {
       Index s = max(8 - int(name().size()), 0);
       for(; it != end_it; ++it) {
         std::stringstream t_ss;
-        t_ss << "    " << name() << '(' << m_metric_name << ',' << (*it)[0] << ')';
+        t_ss << "    " << name() << '(' << m_metric_name << ',' << (*it)[0] << ',' << m_calctype << ')';
         col.push_back(t_ss.str());
       }
       return col;
@@ -83,33 +80,27 @@ namespace CASM {
 
     //****************************************************************************************
     Eigen::VectorXd RelaxationStrain::evaluate(const Configuration &_config) const {
-      return m_straincalc.unrolled_strain_metric(_config.calc_properties()["relaxation_deformation"].get<Eigen::Matrix3d>());
+      return m_straincalc.unrolled_strain_metric(_config.calc_properties(m_calctype)["relaxation_deformation"].get<Eigen::Matrix3d>());
     }
 
     //****************************************************************************************
 
     bool DoFStrain::parse_args(const std::string &args) {
-
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
       std::string tmetric_name = "GL";
       std::string index_expr;
-      auto it = args.cbegin(), it_end = args.cend();
-      while(it != it_end) {
-        if(std::isdigit(*it) || (*it) == ':') {
-          auto it2 = it;
-          while(it2 != it_end && (std::isdigit(*it2) || isspace(*it2) || (*it2) == ':'))
-            ++it2;
-          index_expr = std::string(it, it2);
-          it = it2;
-        }
-        if(it != it_end && std::isalpha(*it)) {
-          auto it2 = it;
-          while(it2 != it_end && std::isalpha(*it2))
-            ++it2;
-          tmetric_name = std::string(it, it2);
-          it = it2;
-        }
-        while(it != it_end && !std::isalnum(*it) && *it != ':')
-          ++it;
+
+      if(splt_vec.size()) {
+        tmetric_name = splt_vec[0];
+      }
+      if(splt_vec.size() == 2) {
+        index_expr = splt_vec[1];
+      }
+      if(splt_vec.size() > 2) {
+        std::stringstream ss;
+        ss << "Too many arguments for 'dof_strain'.  Received: " << args << "\n";
+        throw std::runtime_error(ss.str());
       }
       if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
         return false;

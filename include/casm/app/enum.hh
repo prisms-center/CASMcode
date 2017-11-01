@@ -4,7 +4,7 @@
 #include "casm/app/APICommand.hh"
 #include "casm/completer/Handlers.hh"
 
-namespace CASM {
+/*namespace CASM {
   namespace Completer {
 
     /// Options set for `casm enum`.
@@ -57,7 +57,7 @@ namespace CASM {
     };
 
   }
-}
+}*/
 
 namespace CASM {
 

@@ -140,8 +140,8 @@ namespace CASM {
 
         Eigen::Vector3d displacement = config.disp(l);
 
-        const Eigen::Vector3d from_pos = config.supercell().coord(k).const_cart();
-        const Eigen::Vector3d to_pos = config.supercell().coord(l).const_cart();
+        const Eigen::Vector3d from_pos = traj.from.uccoord.coordinate().const_cart();
+        const Eigen::Vector3d to_pos = traj.to.uccoord.coordinate().const_cart();
         Eigen::Vector3d ideal_pos_inc = to_pos - from_pos;
         Eigen::Vector3d final_disp = displacement + ideal_pos_inc;
 
