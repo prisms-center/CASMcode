@@ -36,7 +36,7 @@ namespace CASM {
     std::vector<BasicStructure<Site>> structures;
 
     /// The configuration the input structure was mapped onto
-    //std::unique_ptr<Kinetics::DiffTransConfiguration> config;
+    std::unique_ptr<Kinetics::DiffTransConfiguration> config;
 
     /// relaxation_properties is populated by relaxation properties:
     ///

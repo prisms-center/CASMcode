@@ -17,6 +17,9 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
+#include "casm/kinetics/DiffTransConfiguration.hh"
+
 
 namespace CASM {
 
@@ -64,17 +67,17 @@ namespace CASM {
                         m_robust_flag || m_rotate_flag || m_strict_flag,
                         primclex().crystallography_tol());
     //Find out which species are moving from which basis site to the other
-
+    //A map from structure[0] to the prim needs to be made if they are not oriented similarly!!! This has not been done yet
     ConfigDoF from_dof;
     Lattice from_lat;
     mapper.struc_to_configdof(result.structures[0], from_dof, from_lat);
     Supercell scel(&(mapper.primclex()), from_lat);
-    Configuration from(scel, jsonParser(), from_dof);
+    Configuration from_config(scel, jsonParser(), from_dof);
     std::vector<UnitCellCoord> from_uccoords;
     std::vector<UnitCellCoord> to_uccoords;
     //Maybe check coordinate similarity after applying deformations
     //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config
-    double max_displacement = primclex().crystallography_tol();
+    double max_displacement = primclex().crystallography_tol(); //crystallography tol for now since testing on ideal stuff
     // For image 00 set reference of POSCAR index to  basis site linear index
     for(auto &site : result.structures[0].basis) {
       from_uccoords.emplace_back(primclex().prim(), site, max_displacement);
@@ -86,7 +89,6 @@ namespace CASM {
     //ConfigMapperResult to_config_result = mapper.import_structure_occupation(result.structures[result.structures.size()-1]);
     std::vector<Index> moving_atoms;
     for(int i = 0 ; i < from_uccoords.size(); i++) {
-      std::cout << from_uccoords[i] << to_uccoords[i] << std::endl;
       if(from_uccoords[i] != to_uccoords[i]) {
         moving_atoms.push_back(i);
       }
@@ -108,20 +110,58 @@ namespace CASM {
         vacancy_to.erase(vacancy_to.find(from_uccoords[moving_atoms[i]]));
       }
     }
-    if(vacancy_from.size() && vacancy_to.size()) {
-      std::cout << "Vacancy path" << std::endl;
-      std::cout << *vacancy_from.begin() << *vacancy_to.begin() << std::endl;
-    }
     //From the moving species and basis sites, should be able to create hop
-
-    //Map first and last structure using ConfigMapping
-    ////first is the from config last is the to config <--(This may get flipped flopped upon sorting of DiffTransConfiguration)
+    Kinetics::DiffusionTransformation diff_trans(primclex().prim());
+    for(int i = 0; i < moving_atoms.size(); i++) {
+      diff_trans.occ_transform().emplace_back(from_uccoords[moving_atoms[i]], 0, 0);
+    }
+    if(vacancy_from.size() && vacancy_to.size()) {
+      diff_trans.occ_transform().emplace_back(*vacancy_from.begin(), 0, 0);
+    }
+    for(int i = 0; i < moving_atoms.size(); i++) {
+      std::vector<std::string> allowed_from_occs = primclex().prim().basis[from_uccoords[moving_atoms[i]].sublat()].allowed_occupants();
+      Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), result.structures[0].basis[moving_atoms[i]].occ_name()));
+      //for now pos is 0 because Molecules are hard
+      Kinetics::SpecieLocation from_loc(from_uccoords[moving_atoms[i]], from_occ_index, 0);
+      std::vector<std::string> allowed_to_occs = primclex().prim().basis[to_uccoords[moving_atoms[i]].sublat()].allowed_occupants();
+      Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), result.structures[0].basis[moving_atoms[i]].occ_name()));
+      //for now pos is 0 because Molecules are hard
+      Kinetics::SpecieLocation to_loc(to_uccoords[moving_atoms[i]], to_occ_index, 0);
+      diff_trans.specie_traj().emplace_back(from_loc, to_loc);
+      for(auto &occ_trans : diff_trans.occ_transform()) {
+        if(occ_trans.uccoord == from_uccoords[moving_atoms[i]]) {
+          occ_trans.from_value = from_occ_index;
+        }
+        if(occ_trans.uccoord == to_uccoords[moving_atoms[i]]) {
+          occ_trans.to_value = to_occ_index;
+        }
+      }
+    }
+    if(vacancy_from.size() && vacancy_to.size()) {
+      std::vector<std::string> allowed_from_occs = primclex().prim().basis[vacancy_from.begin()->sublat()].allowed_occupants();
+      Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), "Va"));
+      Kinetics::SpecieLocation from_loc(*vacancy_from.begin(), from_occ_index, 0);
+      std::vector<std::string> allowed_to_occs = primclex().prim().basis[vacancy_to.begin()->sublat()].allowed_occupants();
+      Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), "Va"));
+      Kinetics::SpecieLocation to_loc(*vacancy_to.begin(), to_occ_index, 0);
+      diff_trans.specie_traj().emplace_back(from_loc, to_loc);
+      for(auto &occ_trans : diff_trans.occ_transform()) {
+        if(occ_trans.uccoord == *vacancy_from.begin()) {
+          occ_trans.from_value = from_occ_index;
+        }
+        if(occ_trans.uccoord == *vacancy_to.begin()) {
+          occ_trans.to_value = to_occ_index;
+        }
+      }
+    }
     //Attach hop to ideal from config in same orientation
+    result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
+
     //use this to interpolate same amount of images
     //calculate strain scores and basis scores for every image and sum/average/sumsq
     // set relaxation properties and indicate successful mapping or not
 
-
+    result.success = true;
 
     return result;
   }
