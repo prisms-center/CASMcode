@@ -7,17 +7,14 @@ from os import getcwd
 from os.path import join, abspath
 import sys
 
+from casm import qewrapper, questwrapper, vaspwrapper
 from casm.misc import compat, noindent
 from casm.project import Project, Selection
-import casm.qewrapper
-from casm.vaspwrapper import Relax
 
 # casm-calc --configs selection
 #           --type "config", "diff_trans", etc.
-#           --software "vasp", "quantumexpresso", "sequest" etc. ## shift to calc.json?
-#           --method "relax", "neb", etc.
-#           --scheduler "pbs"
-#           --run / --submit / --setup / --report
+#           --calctype "default"
+#           --setup /  --run / --submit / --report
 
 configs_help = """
 CASM selection file or one of 'CALCULATED', 'ALL', or 'MASTER' (Default)
@@ -27,12 +24,8 @@ configtype_help = """
 Type of configuartions 'config' (Default), 'diff_trans', 'diff_trans_config' or scel
 """
 
-software_help = """
-Warpper for a python package to be used 'vasp' (Default), 'quantumexpressso' or 'sequest'
-"""
-
-method_help = """
-Calculator type to be used 'relax' (Default) or 'neb'
+calctype_help = """
+calctype on which to run the calculations
 """
 
 path_help = """
@@ -54,33 +47,25 @@ Setup calculation for all selected configurations.
 report_help = """
 Report calculation results (print calc.properties.json file) for all selected configurations.
 """
+
 available_calculators = {
   "vasp":{
-    "relax": casm.vaspwrapper.Relax,
-    "neb": casm.vaspwrapper.Neb
+    "relax": vaspwrapper.Relax,
+    "neb": vaspwrapper.Neb
   },
   "quantumexpresso":{
-    "relax": casm.qewrapper.Relax,
-    "neb": casm.qewrapper.Neb
+    "relax": qewrapper.Relax
+  },
+  "seqquest":{
+    "relax": questwrapper.Relax
   }
 }
 
-submit_cls = {
-  "vasp": casm.vaspwarpper.Submit,
-  "quantumexpresso": casm.qewrapper.Submit
-}
-
-run_cls = {
-  "vasp": casm.vaspwarpper.Run,
-  "quantumexpresso": casm.qewrapper.Run
-}
-
-if __name__ == "__main__":
+def main():
   parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
   parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
   parser.add_argument('-t', '--type', help=configtype_help, type=str, default="config")
-  parser.add_argument('-w', '--software', help=software_help, type=str, default="vasp")
-  parser.add_argument('-m', '--method', help=method_help, type=str, default="relax")
+  parser.add_argument('--calctype', help=calctype_help, type=str, default="")
   parser.add_argument('--path', help=path_help, type=str, default=None)
   parser.add_argument('--run', help=run_help, action="store_true", default=False)
   parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
@@ -90,52 +75,36 @@ if __name__ == "__main__":
   
   if args.path is None:
     args.path = getcwd()
-  
+
   try:
     proj = Project(abspath(args.path))
     sel = Selection(proj, args.configs, args.type, all=False) 
+    if args.calctype == "":
+      #get default calctype
+      args.calctype = proj.settings.default_clex.calctype 
 
+    global_settings = json.loads(os.path.join(proj.dir.settings.calctype_settings_dir(args.calctype), "calc.json"))
+    software = global_settings["software"]
+    method = global_settings["method"]
     # Construct with Selection:
     # - This provides access to the Project, via sel.proj
     # - From the project you can make calls to run interpolation and query lattice relaxations
-    calculator = available_calculators[args.software][args.calculator](sel)
+    calculator = available_calculators[software][method](sel, args.calctype)
 
     if args.setup:
       calculator.setup()
 
     elif args.submit:
       calculator.setup()
-      submit_cls[args.software](sel, args.methodA)
+      calculator.submit()
 
     elif args.run:
       calculator.setup()
-      for configname in sel.data["configname"]:
-        relaxation = run_cls[args.software](proj.dir.configuration_dir(configname))
-    
-    elif args.report:
+      calculator.run()
 
-      #also convert into a class with selection as input
-      for configname in sel.data["configname"]:
-        configdir = proj.dir.configuration_dir(configname)
-        clex = proj.settings.default_clex
-        calcdir = proj.dir.calctype_dir(configname, clex)
-        finaldir = join(calcdir, "run.final")
-        try:
-          if args.software == "quantumespresso":
-            if settings["outfilename"] is None:
-                print("WARNING: No output file specified in relax.json using default outfilename of std.out")
-                settings["outfilename"]="std.out"
-            outfilename = settings["outfilename"]
-            output = casm.qewrapper.Relax.properties(finaldir,outfilename)
-          else:
-            output = Relax.properties(finaldir)
-          calc_props = proj.dir.calculated_properties(configname, clex)
-          with open(calc_props, 'w') as file:
-            print("writing:", calc_props)
-            file.write(six.u(json.dumps(output, cls=NoIndentEncoder, indent=4, sort_keys=True)))
-        except:
-          print(("Unable to report properties for directory {}.\n" 
-                "Please verify that it contains a completed calculation.".format(configdir)))
+    elif args.report:
+      calculator.report()
+
   except Exception as e:
     print(e)
     sys.exit(1)

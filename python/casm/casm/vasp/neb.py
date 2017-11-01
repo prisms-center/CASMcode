@@ -1,7 +1,13 @@
-import os, math, sys, shutil
-#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) ##sets unbuffered output
-import vasp
-import io
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import math
+import os
+import shutil
+import sys
+
+import casm.vasp
+from casm.vasp import io
 
 class Neb(object):
     """The class contains all the funtions for performing Nudged Elastic Band(NEB) Calcutations with VASP
@@ -17,7 +23,7 @@ class Neb(object):
            Reads the settings from a neb.json """
         ## write more intro
         
-        print "Constructing a VASP NEB  calculation object"
+        print("Constructing a VASP NEB  calculation object")
         sys.stdout.flush()
 
         if calcdir is None:
@@ -25,7 +31,7 @@ class Neb(object):
         self.calcdir = os.path.abspath(calcdir)
         ## calcdir example : $ROOT/training_data/$(calc_subdir)/$(config_info)/calctype.default/N_images_X
 
-        print "  NEB directory:", self.calcdir
+        print("  NEB directory:", self.calcdir)
         sys.stdout.flush()
 
         # find existing .../calcdir/run.run_index directories, store paths in self.rundir list
@@ -75,7 +81,7 @@ class Neb(object):
 
         ##make sure all the defaults are set in self.settings
 
-        print "VASP NEB object constructed\n"
+        print("VASP NEB object constructed\n")
         sys.stdout.flush()
 
 
@@ -116,7 +122,7 @@ class Neb(object):
         """ mv all files and directories (besides initdir) into initdir """
         ### still has to handle the images
 
-        print "Moving files and directories into initial run directory:", initdir
+        print("Moving files and directories into initial run directory:", initdir)
         initdir = os.path.abspath(initdir)
         for p in os.listdir(self.calcdir):
             if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.calcdir, p) != initdir):
@@ -126,7 +132,7 @@ class Neb(object):
             folder_name = str(i).zfill(2) #max(2, len(str(settings["n_images"]))+1 )) ##too fancy!!!
             shutil.move(os.path.join(self.calcdir,folder_name),initdir)
 
-        print ""
+        print("")
         sys.stdout.flush()
 
         # Keep a backup copy of the base INCAR
@@ -136,7 +142,7 @@ class Neb(object):
         if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.calcdir, self.settings["initial"]))):
             new_values = io.Incar(os.path.join(self.calcdir, self.settings["initial"])).tags
             io.set_incar_tag(new_values, initdir)
-            print "  Set INCAR tags:", new_values, "\n"
+            print("  Set INCAR tags:", new_values, "\n")
             sys.stdout.flush()
 
 
@@ -177,12 +183,12 @@ class Neb(object):
             convergence is reached according to the criteria in 'status()'.
         """
 
-        print "Begin VASP relaxation run"
+        print("Begin VASP relaxation run")
         sys.stdout.flush()
 
         # get current status of the relaxation:
         (status, task) = self.status()
-        print "\n++  status:", status, "  next task:", task
+        print("\n++  status:", status, "  next task:", task)
         sys.stdout.flush()
 
         while status == "incomplete":
@@ -193,13 +199,13 @@ class Neb(object):
             elif task == "new_run":
                 self.add_rundir()
                 # if "n_images" in settings then image CONTCARs will be copied
-                vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
+                casm.vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
                 shutil.copyfile(os.path.join(self.calcdir, "INCAR.base"),
                                 os.path.join(self.rundir[-1], "INCAR")) ## should it be enforced??
             elif task == "constant":
                 self.add_rundir()
                 # if "n_images" in settings then image CONTCARs will be copied
-                vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
+                casm.vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
                 # set INCAR to ISIF = 2, ISMEAR = -5, NSW = 0, IBRION = -1
                 if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.calcdir, self.settings["final"]))):
@@ -214,16 +220,16 @@ class Neb(object):
                     new_values["SYSTEM"] = io.get_incar_tag("SYSTEM", self.rundir[-1]) + " final"
 
                 io.set_incar_tag(new_values, self.rundir[-1])
-                print "  Set INCAR tags:", new_values, "\n"
+                print("  Set INCAR tags:", new_values, "\n")
                 sys.stdout.flush()
 
             else: ## redundent
                 self.add_rundir()
-                vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
+                casm.vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
             while True:
                 # run vasp
-                result = vasp.run(self.rundir[-1], stdout="stdout",
+                result = casm.vasp.run(self.rundir[-1], stdout="stdout",
                                   npar=self.settings["npar"], ncore=self.settings["ncore"],
                                   command=self.settings["vasp_cmd"], ncpus=self.settings["ncpus"],
                                   kpar=self.settings["kpar"], err_types=self.settings["err_types"],
@@ -239,26 +245,26 @@ class Neb(object):
                 # self.add_rundir()
                 err = result.itervalues().next()
 
-                print "\n++  status:", "error", "  next task:", "fix_error"
+                print("\n++  status:", "error", "  next task:", "fix_error")
                 sys.stdout.flush()
 
-                print "Attempting to fix error:", str(err)
+                print("Attempting to fix error:", str(err))
                 err.fix(self.errdir[-1], self.rundir[-1], self.settings)
-                print ""
+                print("")
                 sys.stdout.flush()
 
             (status, task) = self.status()
-            print "\n++  status:", status, "  next task:", task
+            print("\n++  status:", status, "  next task:", task)
             sys.stdout.flush()
 
         if status == "complete":
             if not os.path.isdir(self.finaldir):
                 # mv final results to relax.final
-                print "mv", os.path.basename(self.rundir[-1]), os.path.basename(self.finaldir)
+                print("mv", os.path.basename(self.rundir[-1]), os.path.basename(self.finaldir))
                 sys.stdout.flush()
                 os.rename(self.rundir[-1], self.finaldir)
                 self.rundir.pop()
-                vasp.complete_job(self.finaldir, self.settings)
+                casm.vasp.complete_job(self.finaldir, self.settings)
 
         return (status, task)
 

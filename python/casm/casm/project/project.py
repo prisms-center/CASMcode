@@ -66,7 +66,7 @@ class ClexDescription(object):
         ECI set name
       
     """
-    def __init__(self, name, property, calctype, ref, bset, eci, calc_subdir = ""): ## clean it up
+    def __init__(self, name, property, calctype, ref, bset, eci):
       self.name = name
       self.property = property
       self.calctype = calctype
@@ -334,8 +334,12 @@ class DirectoryStructure(object):
       return join(self.configuration_dir(configname,calc_subdir),self.__calctype(clex.calctype))
 
     def calc_settings_dir(self, clex):
-      """Return calculation settings directory path, for global settings"""
+      """Return calculation settings directory path, for global settings from clex"""
       return join(self.path, self.__calc_dir, self.__set_dir, self.__calctype(clex.calctype))
+
+    def calctype_settings_dir(self, calctype):
+      """Return calculation settings directory path, for global settings from calctype"""
+      return join(self.path, self.__calc_dir, self.__set_dir, self.__calctype(calctype))
 
     def supercell_calc_settings_dir(self, scelname, clex, calc_subdir = "" ):
       """Return calculation settings directory path, for supercell specific settings"""
