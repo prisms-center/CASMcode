@@ -118,7 +118,6 @@ casminclude_HEADERS = \
   include/casm/kinetics/DiffTransConfigurationIO.hh\
   include/casm/kinetics/SubOrbitGenerators.hh\
   include/casm/kinetics/DiffusionTransformationTraits.hh\
-  include/casm/kinetics/#DiffTransConfigEnumPerturbations.hh#\
   include/casm/kinetics/OccPerturbationEnum.hh\
   include/casm/hull/Hull.hh\
   include/casm/crystallography/Structure.hh\
