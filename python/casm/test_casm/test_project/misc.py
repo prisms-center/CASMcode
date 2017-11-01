@@ -34,7 +34,7 @@ def casm_project_setup(self):
         warnings.warn("\n'CASM_TEST_PROJECTS_DIR' environment variable not found: will test behaviour that does not require a test project")
     else:
         self.test_projects_dir = os.environ['CASM_TEST_PROJECTS_DIR']
-        self.ZrO_dir = join(self.test_projects_dir, '0.2.X', 'ZrO.0')
+        self.ZrO_dir = join(self.test_projects_dir, '0.3a1', 'ZrO.0')
     
 class CasmProjectTestCase(unittest.TestCase):
     """test_casm.test_project base unittest class
