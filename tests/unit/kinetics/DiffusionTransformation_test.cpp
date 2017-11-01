@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(SpeedTest0) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
 
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(SpeedTest1) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
 
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
 
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
@@ -344,11 +344,12 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
     //}
   }
 
-  fs::path difftrans_path = "tests/unit/kinetics/diff_trans.json";
+  fs::path difftrans_path = "tests/unit/kinetics/ZrO_diff_trans_0.json";
   jsonParser diff_trans_json {difftrans_path};
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
   BOOST_CHECK_EQUAL(success, 0);
 
   /*

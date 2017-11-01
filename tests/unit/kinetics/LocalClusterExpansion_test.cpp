@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
 
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
 
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     &primclex);
   Kinetics::DiffusionTransformation trans = diff_trans_orbits[0].prototype();
 
-  fs::path local_bspecs_path = "tests/unit/kinetics/local_bspecs_0.json";
+  fs::path local_bspecs_path = "tests/unit/kinetics/ZrO_local_bspecs_1.json";
   jsonParser local_bspecs {local_bspecs_path};
 
   // in ZrO we are looking at the hop from octahedral interstitial (O-site) to nearest octahedral interstitial (O-site):

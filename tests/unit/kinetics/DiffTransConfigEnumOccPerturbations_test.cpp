@@ -8,7 +8,11 @@
 #include "casm/clex/PrimClex.hh"
 #include "Common.hh"
 #include "casm/app/AppIO_impl.hh"
+#include "casm/app/enum.hh"
+#include "casm/app/QueryHandler.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
+#include "casm/clex/ScelEnum.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
@@ -41,7 +45,7 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
   BOOST_CHECK_EQUAL(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -70,7 +74,7 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
   Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[0].prototype();
 
   ///make local orbits
-  fs::path local_bspecs_path = "tests/unit/kinetics/local_bspecs_0.json";
+  fs::path local_bspecs_path = "tests/unit/kinetics/ZrO_local_bspecs_1.json";
   jsonParser local_bspecs {local_bspecs_path};
   std::vector<LocalIntegralClusterOrbit> local_orbits;
   make_local_orbits(
@@ -101,7 +105,7 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
 
 }
 
-BOOST_AUTO_TEST_CASE(ZrOTest) {
+BOOST_AUTO_TEST_CASE(ZrOTest_Components) {
 
   /// Make test project
   BOOST_CHECK_EQUAL(true, true);
@@ -119,7 +123,7 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
 
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -201,6 +205,58 @@ BOOST_AUTO_TEST_CASE(ZrOTest) {
     std::cout << "To config " << dtc.sorted().to_config() << std::endl;
   }
   */
+}
+
+BOOST_AUTO_TEST_CASE(ZrOTest_run) {
+
+  /// Make test project
+  BOOST_CHECK_EQUAL(true, true);
+  test::ZrOProj proj;
+  proj.check_init();
+
+  PrimClex primclex(proj.dir, null_log());
+  const Structure &prim(primclex.prim());
+  primclex.settings().set_crystallography_tol(1e-5);
+
+  Completer::EnumOption enum_opt;
+  enum_opt.desc();
+
+  // -- Generate Supercell & Configuration --
+
+  ScelEnumByProps enum_scel(primclex, ScelEnumProps(1, 5));
+  BOOST_CHECK_EQUAL(true, true);
+
+  ConfigEnumAllOccupations::run(primclex, enum_scel.begin(), enum_scel.end());
+  BOOST_CHECK_EQUAL(true, true);
+
+  // Test Kinetics::DiffTransConfigEnumOccPerturbations::run
+  {
+    Completer::EnumOption enum_opt;
+    enum_opt.desc();
+
+    // Generate DiffTrans
+    fs::path difftrans_path = "tests/unit/kinetics/ZrO_diff_trans_0.json";
+    jsonParser diff_trans_json {difftrans_path};
+    int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+    const auto &diff_trans_db = primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>();
+    BOOST_CHECK_EQUAL(diff_trans_db.size(), 3);
+    BOOST_CHECK_EQUAL(success, 0);
+
+    //print DiffTrans prototypes
+    {
+      PrototypePrinter<Kinetics::DiffusionTransformation> printer;
+      print_clust(diff_trans_db.begin(), diff_trans_db.end(), std::cout, printer);
+    }
+
+    // Generate perturbations
+    fs::path diffperturb_path = "tests/unit/kinetics/ZrO_diff_perturb_0.json";
+    jsonParser diff_perturb_json {diffperturb_path};
+    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
+    BOOST_CHECK_EQUAL(true, true);
+
+    // Test (quantity 1856 not checked for accuracy)
+    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
+  }
 }
 
 /*

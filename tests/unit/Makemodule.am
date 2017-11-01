@@ -129,13 +129,15 @@ casm_unit_kinetics_LDADD = \
   libcasmtesting.a
 
 EXTRA_DIST += \
-  tests/unit/kinetics/diff_trans.json\
   tests/unit/kinetics/l12_local_bspecs_0.json\
-  tests/unit/kinetics/bspecs_1.json\
-  tests/unit/kinetics/diff_perturb.json\
-  tests/unit/kinetics/bspecs_0.json\
-  tests/unit/kinetics/local_bspecs_0.json\
-  tests/unit/kinetics/ZrO_local_bspecs_0.json
+  tests/unit/kinetics/ZrO_diff_perturb_0.json\
+  tests/unit/kinetics/FCCTernary_diff_trans_0.json\
+  tests/unit/kinetics/FCCTernary_diff_perturb_0.json\
+  tests/unit/kinetics/FCCTernary_bspecs_0.json\
+  tests/unit/kinetics/ZrO_diff_trans_0.json\
+  tests/unit/kinetics/ZrO_local_bspecs_1.json\
+  tests/unit/kinetics/ZrO_local_bspecs_0.json\
+  tests/unit/kinetics/ZrO_bspecs_0.json
 
 TESTS += \
   tests/unit/kinetics/run_test_kinetics
