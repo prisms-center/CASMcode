@@ -154,13 +154,18 @@ namespace CASM {
         }
       }
     }
+
+    //THIS IS THE FIRST CASE IN WHICH WE DON'T WANT TO SORT DIFFTRANS ON CONSTRUCTION -speak with brian about removing sorting from prepare
+    //or stick with prepareless workaround. Alternatively check if sorted, if not then sort diff trans and flip from/to then create.
+    //Need to somehow only use occupation from the config to construct diff_trans_config
+
     //Attach hop to ideal from config in same orientation
-    result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
+    result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans, false);
 
     //use this to interpolate same amount of images
     //calculate strain scores and basis scores for every image and sum/average/sumsq
     // set relaxation properties and indicate successful mapping or not
-
+    std::cout << *result.config << std::endl;
     result.success = true;
 
     return result;

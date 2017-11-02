@@ -29,6 +29,11 @@ namespace CASM {
       DiffTransConfiguration(const Configuration &_from_config,
                              const DiffusionTransformation &_diff_trans);
 
+      /// \brief Constructor
+      DiffTransConfiguration(const Configuration &_from_config,
+                             const DiffusionTransformation &_diff_trans,
+                             bool prepare_flag);
+
       /// Construct a DiffTransConfiguration from JSON data
       DiffTransConfiguration(const Supercell &_supercell,
                              const jsonParser &_data);

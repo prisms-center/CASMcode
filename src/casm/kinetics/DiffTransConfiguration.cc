@@ -40,7 +40,20 @@ namespace CASM {
       m_config_B(_from_config),
       m_sym_compare(_from_config.supercell()),
       m_diff_trans(m_sym_compare.prepare(_diff_trans)) {
+      m_diff_trans.apply_to(m_config_B);
+      _sort();
+    }
 
+    DiffTransConfiguration::DiffTransConfiguration(const Configuration &_from_config,
+                                                   const DiffusionTransformation &_diff_trans,
+                                                   bool prepare_flag) :
+      m_config_A(_from_config),
+      m_config_B(_from_config),
+      m_sym_compare(_from_config.supercell()),
+      m_diff_trans(_diff_trans) {
+      if(prepare_flag) {
+        m_diff_trans = m_sym_compare.prepare(_diff_trans);
+      }
       m_diff_trans.apply_to(m_config_B);
       _sort();
     }
@@ -347,7 +360,6 @@ namespace CASM {
     }
 
     void DiffTransConfiguration::_sort() {
-
       if(m_config_B < m_config_A) {
         m_from_config_is_A = false;
         m_diff_trans.reverse();
