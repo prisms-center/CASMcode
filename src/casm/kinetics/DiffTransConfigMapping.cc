@@ -161,6 +161,8 @@ namespace CASM {
     //Need to somehow only use occupation from the config to construct diff_trans_config
 
     //Attach hop to ideal from config in same orientation
+    from_config.clear_deformation();
+    from_config.clear_displacement();
     result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans, false);
 
     //use this to interpolate same amount of images
