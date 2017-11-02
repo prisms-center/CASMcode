@@ -7,8 +7,12 @@ noinst_LIBRARIES += \
 libcasmtesting_a_SOURCES = \
   tests/unit/Common.cpp\
   tests/unit/unit_test.cpp\
+  tests/unit/TestConfiguration.cc\
+  tests/unit/TestSupercell.cc\
   tests/unit/Common.hh\
   tests/unit/Proj.hh\
+  tests/unit/TestSupercell.hh\
+  tests/unit/TestConfiguration.hh\
   tests/unit/FCCTernaryProj.hh\
   tests/unit/ZrOProj.hh
 
@@ -199,7 +203,8 @@ casm_unit_symmetry_SOURCES = \
   tests/unit/unit_test.cpp\
   tests/unit/symmetry/Orbit_test.cpp\
   tests/unit/symmetry/SubOrbits_test.cpp\
-  tests/unit/symmetry/InvariantSubgroup_test.cpp
+  tests/unit/symmetry/InvariantSubgroup_test.cpp\
+  tests/unit/symmetry/SymBasisPermute_test.cpp
 
 casm_unit_symmetry_LDADD = \
   libcasm.la\

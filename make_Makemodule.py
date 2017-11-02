@@ -288,6 +288,7 @@ def main():
         # SOURCES
         libcasmtesting_files = []
         libcasmtesting_files += glob(join(unittest_dir,'*.cpp'))
+        libcasmtesting_files += glob(join(unittest_dir,'*.cc'))
         libcasmtesting_files += glob(join(unittest_dir,'*.hh'))
         write_option(f, 'libcasmtesting_a', 'SOURCES', libcasmtesting_files)
         

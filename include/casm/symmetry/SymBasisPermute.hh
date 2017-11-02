@@ -22,8 +22,21 @@ namespace CASM {
   ///    Lu' = R*L*u + T
   ///     u' = L.inv*R*L*u + L.inv*T, where L is the lattice, as a column vector matrix
   /// - For transforming basis sites, a lookup table is stored that maps
-  ///     UnitCellSite(UnitCell(0,0,0), b) -> UnitCellSite'
+  ///     UnitCellCoord(struc, b, UnitCell(0,0,0)) -> UnitCellCoord'
   ///   which is used to set the sublat and is added to u' along with L.inv*T
+  /// - L.inv*R*L is stored as SymBasisPermute::matrix()
+  /// - The result of transforming (b,0,0,0) is stored in SymBasisPermute::data()[b]
+  /// - So a UnitCellCoord, u, is transformed by a SymOp, op, like:
+  ///   \code
+  ///   const SymBasisPermute &rep = *op.get_basis_permute_rep(u.unit().basis_permutation_symrep_ID());
+  ///   u.unitcell() = rep.matrix()*u.unitcell() + rep.data()[u.sublat()].unitcell();
+  ///   u.sublat() = rep.data()[u.sublat()].sublat();
+  ///   \endcode
+  /// - Additional translations, such as those in supercell factor group operations,
+  ///   may be stored in SymOp::integral_tau(). Those additional contributions
+  ///   can be included with:
+  ///   - u.unitcell() += (u.unit().lattice().inv_lat_column_mat() * op.integral_tau()).cast<long>();
+  ///
   class SymBasisPermute: public SymOpRepresentation {
   private:
 

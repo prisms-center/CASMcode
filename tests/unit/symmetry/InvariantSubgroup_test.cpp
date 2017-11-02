@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   BOOST_CHECK_EQUAL(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
@@ -132,7 +132,8 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
       index++;
     }
-    test::print_computed_result(std::cout, "cluster_group_size", cluster_group_size);
+    //test::print_computed_result(std::cout, "expected_cluster_group_size", expected_cluster_group_size);
+    //test::print_computed_result(std::cout, "cluster_group_size", cluster_group_size);
     BOOST_CHECK_EQUAL(true, true);
   }
 }

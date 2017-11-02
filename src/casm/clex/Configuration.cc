@@ -1499,7 +1499,6 @@ namespace CASM {
         m_index_table[s].push_back(m_scel->linear_index(mc_uccoord));
       }
     }
-
   }
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c) {

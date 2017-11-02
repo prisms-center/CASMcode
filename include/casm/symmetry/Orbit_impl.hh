@@ -9,6 +9,8 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
+#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/Named.hh"
 #include "casm/database/Database.hh"
@@ -32,9 +34,16 @@ namespace CASM {
 
       EqMapRow(Index _a, Index _b, const std::vector<std::vector<Index>> &tmp_eq_map, const SymGroup &g):
         a(_a), b(_b) {
-        Index a2proto = g.ind_inverse(tmp_eq_map[a][0]);
-        for(Index j = 0; j < tmp_eq_map[b].size(); ++j) {
-          values.emplace(g.ind_prod(tmp_eq_map[b][j], a2proto));
+        try {
+          Index a2proto = g.ind_inverse(tmp_eq_map[a][0]);
+          for(Index j = 0; j < tmp_eq_map[b].size(); ++j) {
+            values.emplace(g.ind_prod(tmp_eq_map[b][j], a2proto));
+          }
+        }
+        catch(const std::exception &e) {
+          default_err_log() << "Error in GenericOrbit constructor: \n"
+                            << "  Failed constructing EqMapRow." << std::endl;
+          throw e;
         }
       };
 
@@ -52,15 +61,22 @@ namespace CASM {
       /// generate eq_map row for tmp_element[b] relative to tmp_element[a]
       RelEqMap(Index _a, const std::vector<std::vector<Index>> &tmp_eq_map, const SymGroup &g):
         a(_a) {
-        for(Index b = 0; b < tmp_eq_map.size(); ++b) {
-          map.emplace(a, b, tmp_eq_map, g);
-        }
-        col.resize(map.begin()->values.size());
-        for(const auto &row : map) {
-          Index c = 0;
-          for(const auto &val : row.values) {
-            col[c++].push_back(val);
+        try {
+          for(Index b = 0; b < tmp_eq_map.size(); ++b) {
+            map.emplace(a, b, tmp_eq_map, g);
           }
+          col.resize(map.begin()->values.size());
+          for(const auto &row : map) {
+            Index c = 0;
+            for(const auto &val : row.values) {
+              col[c++].push_back(val);
+            }
+          }
+        }
+        catch(const std::exception &e) {
+          default_err_log() << "Error in GenericOrbit constructor: \n"
+                            << "  Failed constructing RelEqMap." << std::endl;
+          throw e;
         }
       }
 
@@ -122,39 +138,78 @@ namespace CASM {
 
     // generate equivalents, using std::set to remove duplicates
     std::set<Element, decltype(compare)> t_equiv(compare);
-    for(const auto &op : g) {
-      t_equiv.insert(prepare(op, generating_element));
-    }
     std::vector<Element> tmp_element;
-    std::copy(t_equiv.begin(), t_equiv.end(), std::back_inserter(tmp_element));
+    try {
+      for(const auto &op : g) {
+        t_equiv.insert(prepare(op, generating_element));
+      }
+      std::copy(t_equiv.begin(), t_equiv.end(), std::back_inserter(tmp_element));
+    }
+    catch(const std::exception &e) {
+      default_err_log() << "Error in GenericOrbit constructor: \n"
+                        << "  Failed generating unique equivalents." << std::endl;
+      throw e;
+    }
 
     // generate equivalence_map w/ tmp ordering
     std::vector<std::vector<Index>> tmp_equivalence_map;
-    tmp_equivalence_map.resize(tmp_element.size());
-    for(Index op_i = 0; op_i < g.size(); ++op_i) {
-      Index i = find_index(tmp_element, prepare(g[op_i], tmp_element[0]), equal);
-      tmp_equivalence_map[i].push_back(op_i);
+    try {
+      tmp_equivalence_map.resize(tmp_element.size());
+      for(Index op_i = 0; op_i < g.size(); ++op_i) {
+        Index i = find_index(tmp_element, prepare(g[op_i], tmp_element[0]), equal);
+        tmp_equivalence_map[i].push_back(op_i);
+      }
+
+      // sanity check that equivalence_map is rectangular
+      for(Index j = 1; j < tmp_equivalence_map.size(); ++j) {
+        if(tmp_equivalence_map[0].size() != tmp_equivalence_map[j].size()) {
+          jsonParser json;
+          default_err_log() << "SymGroup, Symmetry application, or SymCompareType error: "
+                            "initial equivalence map is not rectangular: \n"
+                            << to_json(tmp_equivalence_map, json) << std::endl;
+          throw std::runtime_error("Error in GenericOrbit constructor: equivalence map is not rectangular");
+        }
+      }
+    }
+    catch(const std::exception &e) {
+      default_err_log() << "Error in GenericOrbit constructor: \n"
+                        << "  Failed generating initial equivalence map." << std::endl;
+      throw e;
     }
 
     /// find the best equivalence map out of all possible
     ///   (lowest lexicographical sorting columnwise)
     Index best_a = 0;
     Orbit_impl::RelEqMap best(best_a, tmp_equivalence_map, g);
-    for(Index a = 1; a < tmp_equivalence_map.size(); ++a) {
-      Orbit_impl::RelEqMap test(a, tmp_equivalence_map, g);
-      if(test < best) {
-        best_a = a;
-        best = std::move(test);
+    try {
+      for(Index a = 1; a < tmp_equivalence_map.size(); ++a) {
+        Orbit_impl::RelEqMap test(a, tmp_equivalence_map, g);
+        if(test < best) {
+          best_a = a;
+          best = std::move(test);
+        }
       }
+    }
+    catch(const std::exception &e) {
+      default_err_log() << "Error in GenericOrbit constructor: \n"
+                        << "  Failed generating sorted equivalence map." << std::endl;
+      throw e;
     }
 
     /// copy results
-    m_equivalence_map.resize(tmp_element.size());
-    for(const auto &row : best.map) {
-      m_element.push_back(tmp_element[row.b]);
-      for(const auto &value : row.values) {
-        m_equivalence_map[row.b].push_back(g[value]);
+    try {
+      m_equivalence_map.resize(tmp_element.size());
+      for(const auto &row : best.map) {
+        m_element.push_back(tmp_element[row.b]);
+        for(const auto &value : row.values) {
+          m_equivalence_map[row.b].push_back(g[value]);
+        }
       }
+    }
+    catch(const std::exception &e) {
+      default_err_log() << "Error in GenericOrbit constructor: \n"
+                        << "  Failed copying sorted elements and equivalence map." << std::endl;
+      throw e;
     }
   }
 

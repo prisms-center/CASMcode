@@ -199,7 +199,7 @@ namespace CASM {
   /// \param begin,end A range of PermuteIterator
   ///
   /// - The result is sorted
-  /// - The result sses the Supercell lattice for periodic comparisons
+  /// - The result uses the Supercell lattice for periodic comparisons
   template<typename PermuteIteratorIt>
   SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end) {
     SymGroup sym_group;

@@ -22,7 +22,7 @@ namespace CASM {
       ("factor-group", "Pretty print factor group")
       ("crystal-point-group", "Pretty print crystal point group")
       ("tol", po::value<double>(&m_tol)->default_value(1.0e-5), "tolerance to use with symmetrize in Angstroms default (1e-5)")
-      ("symmetrize", po::value<fs::path>(&m_poscar_path)->required()->value_name(ArgHandler::path()), "symmetrize a POSCAR specified by path to a given tolerance");
+      ("symmetrize", po::value<fs::path>(&m_poscar_path)->value_name(ArgHandler::path()), "symmetrize a POSCAR specified by path to a given tolerance");
 
       return;
     }

@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // -- DiffusionTransformation --
 
   {
-    fs::path difftrans_path = "tests/unit/kinetics/diff_trans.json";
+    fs::path difftrans_path = "tests/unit/kinetics/FCCTernary_diff_trans_0.json";
     jsonParser diff_trans_json {difftrans_path};
     BOOST_CHECK_EQUAL(true, true);
     Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   */
 
   {
-    fs::path diffperturb_path = "tests/unit/kinetics/diff_perturb.json";
+    fs::path diffperturb_path = "tests/unit/kinetics/FCCTernary_diff_perturb_0.json";
     jsonParser diff_perturb_json {diffperturb_path};
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
 
