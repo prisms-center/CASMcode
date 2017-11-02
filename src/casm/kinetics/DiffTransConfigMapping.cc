@@ -67,7 +67,7 @@ namespace CASM {
                         m_robust_flag || m_rotate_flag || m_strict_flag,
                         primclex().crystallography_tol());
     //Find out which species are moving from which basis site to the other
-    //A map from structure[0] to the prim needs to be made if they are not oriented similarly!!! This has not been done yet
+
     ConfigDoF from_dof;
     Lattice from_lat;
     mapper.struc_to_configdof(result.structures[0], from_dof, from_lat);
@@ -75,9 +75,10 @@ namespace CASM {
     Configuration from_config(scel, jsonParser(), from_dof);
     std::vector<UnitCellCoord> from_uccoords;
     std::vector<UnitCellCoord> to_uccoords;
+
     //Maybe check coordinate similarity after applying deformations
     //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config
-    double max_displacement = primclex().crystallography_tol(); //crystallography tol for now since testing on ideal stuff
+    double max_displacement = from_config.displacement().colwise().norm().maxCoeff() + primclex().crystallography_tol();
     // For image 00 set reference of POSCAR index to  basis site linear index
     for(auto &site : result.structures[0].basis) {
       from_uccoords.emplace_back(primclex().prim(), site, max_displacement);
