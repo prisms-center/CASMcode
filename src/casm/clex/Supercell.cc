@@ -549,14 +549,19 @@ namespace CASM {
       return *it;
     }
 
-    // else construct transf_mat from name (make sure to remove any empty tokens)
     std::vector<std::string> tmp, tokens;
-    boost::split(tmp, name, boost::is_any_of("SCEL_"), boost::token_compress_on);
-    std::copy_if(tmp.begin(), tmp.end(), std::back_inserter(tokens),
-    [](const std::string & val) {
-      return !val.empty();
-    });
-    if(tokens.size() != 7) {
+    try {
+      // else construct transf_mat from name (make sure to remove any empty tokens)
+      boost::split(tmp, name, boost::is_any_of("SCEL_"), boost::token_compress_on);
+      std::copy_if(tmp.begin(), tmp.end(), std::back_inserter(tokens),
+      [](const std::string & val) {
+        return !val.empty();
+      });
+      if(tokens.size() != 7) {
+        throw std::invalid_argument("Error in make_supercell: supercell name format error");
+      }
+    }
+    catch(std::exception &e) {
       std::string format = "SCELV_T00_T11_T22_T12_T02_T01";
       primclex.err_log().error("In make_supercell");
       primclex.err_log() << "expected format: " << format << "\n";
@@ -566,15 +571,27 @@ namespace CASM {
         std::cout << "|" << val << "|" << std::endl;
       }
       primclex.err_log() << "tokens.size(): " << tokens.size() << std::endl;
-      throw std::invalid_argument("Error in make_supercell: supercell name format error");
+      primclex.err_log() << e.what() << std::endl;
+      throw e;
     }
+
     Eigen::Matrix3i T;
-    auto cast = [](std::string val) {
-      return boost::lexical_cast<Index>(val);
-    };
-    T << cast(tokens[1]), cast(tokens[6]), cast(tokens[5]),
-    0, cast(tokens[2]), cast(tokens[4]),
-    0, 0, cast(tokens[3]);
+    try {
+      auto cast = [](std::string val) {
+        return boost::lexical_cast<Index>(val);
+      };
+      T << cast(tokens[1]), cast(tokens[6]), cast(tokens[5]),
+      0, cast(tokens[2]), cast(tokens[4]),
+      0, 0, cast(tokens[3]);
+    }
+    catch(std::exception &e) {
+      primclex.err_log().error("In make_supercell");
+      primclex.err_log() << "Could not construct transformation matrix from supercell name" << std::endl;
+      primclex.err_log() << "  name: " << name << std::endl;
+      primclex.err_log() << "  tokens: " << tokens << std::endl;
+      primclex.err_log() << e.what() << std::endl;
+      throw e;
+    }
 
     // construct supercell, insert into database, and return result
     Supercell scel(&primclex, T);

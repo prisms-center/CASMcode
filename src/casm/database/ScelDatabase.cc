@@ -1,4 +1,5 @@
 #include "casm/database/ScelDatabase.hh"
+#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
   namespace DB {
@@ -28,6 +29,7 @@ namespace CASM {
     Database<Supercell>::iterator Database<Supercell>::erase(iterator pos) {
       typedef DatabaseSetIterator<Supercell, Database<Supercell> > it_type;
       base_iterator base_it = static_cast<it_type *>(pos.get())->base();
+      m_name_to_scel.erase(base_it->name());
       master_selection().data().erase(base_it->name());
       return _iterator(m_scel_list.erase(base_it));
     }
@@ -51,13 +53,10 @@ namespace CASM {
       if(result.second) {
 
         const value_type &obj = *result.first;
-        //std::cout << obj.name() << std::endl;
+
         // update
         m_name_to_scel.insert(std::make_pair(obj.name(), result.first));
-        //std::cout << obj.name() << std::endl;
-        master_selection().data().emplace(obj.name(), 0);
-
-        //std::cout << obj.name() << std::endl;
+        master_selection().data().emplace(obj.name(), false);
       }
 
       return std::make_pair(_iterator(result.first), result.second);
