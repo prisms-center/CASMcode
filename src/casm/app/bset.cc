@@ -179,8 +179,16 @@ namespace CASM {
           args.log() << std::endl;
           std::string orbitname = bspecs_json["diff_trans"].get<std::string>();
           PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
+
+          const SymGroup &prim_grp = primclex.prim().factor_group();
+          PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(primclex.crystallography_tol());
+          SymGroup generating_grp {
+            make_invariant_subgroup(dtorbit.prototype(), prim_grp, dt_sym_compare)};
+
           make_local_orbits(
             dtorbit.prototype(),
+            generating_grp,
+            LocalSymCompare<IntegralCluster>(primclex.crystallography_tol()),
             bspecs_json["local_bspecs"],
             alloy_sites_filter,
             primclex.crystallography_tol(),

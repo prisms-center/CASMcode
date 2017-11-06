@@ -11,6 +11,7 @@
 #include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/Named.hh"
 #include "casm/database/Database.hh"
@@ -157,6 +158,10 @@ namespace CASM {
       tmp_equivalence_map.resize(tmp_element.size());
       for(Index op_i = 0; op_i < g.size(); ++op_i) {
         Index i = find_index(tmp_element, prepare(g[op_i], tmp_element[0]), equal);
+        if(i == tmp_equivalence_map.size()) {
+          throw std::runtime_error("Error in GenericOrbit constructor: "
+                                   "comparison failure while constructing the equivalance map");
+        }
         tmp_equivalence_map[i].push_back(op_i);
       }
 

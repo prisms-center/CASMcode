@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   proj.check_init();
   proj.check_composition();
 
-  PrimClex primclex(proj.dir, default_log());
+  PrimClex primclex(proj.dir, null_log());
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
 

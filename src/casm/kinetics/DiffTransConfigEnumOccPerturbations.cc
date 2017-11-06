@@ -33,7 +33,7 @@ namespace CASM {
       m_background_config(background_config),
       m_diff_trans_orbit(diff_trans_orbit),
       m_local_cspecs(local_cspecs),
-      m_scel_sym_compare(_supercell().prim_grid(), _tol()),
+      m_scel_sym_compare(_supercell()),
       m_include_unperturbed(true),
       m_skip_subclusters(true) {
 
@@ -60,65 +60,69 @@ namespace CASM {
     }
 
     const std::string DiffTransConfigEnumOccPerturbations::enumerator_name = "DiffTransConfigEnumOccPerturbations";
-    const std::string DiffTransConfigEnumOccPerturbations::interface_help =
-      "DiffTransConfigEnumOccPerturbations: \n\n"
 
-      "  orbit_names: JSON array of strings \n"
-      "    The names of diffusion transformation orbits whose local environments\n"
-      "    will be perturbed.\n\n"
+    std::string _interface_help() {
+      return "DiffTransConfigEnumOccPerturbations: \n\n"
 
-      "  orbit_selection: string \n"
-      "    The names of a selection diffusion transformation orbits whose local \n"
-      "    environments will be perturbed.\n\n"
+             "  orbit_names: JSON array of strings \n"
+             "    The names of diffusion transformation orbits whose local environments\n"
+             "    will be perturbed.\n\n"
 
-      "  background_scel: string (optional, default=None)\n"
-      "    The name of the supercell in which DiffTransConfiguration should be \n"
-      "    created. If given, the supercell must be a supercell that can contain \n"
-      "    all of the configurations specified by \"background_confignames\" and \n"
-      "    \"background_selection\". Prim point group operations are allowed to \n"
-      "    transform configurations so that they fit into the supercell. Newly \n"
-      "    created configurations in the background supercell will be added to \n"
-      "    the configuration database.\n\n"
+             "  orbit_selection: string \n"
+             "    The names of a selection diffusion transformation orbits whose local \n"
+             "    environments will be perturbed.\n\n"
 
-      "  background_confignames: JSON array of string \n "
-      "    Names of background configurations to be perturbed. Should be names of \n"
-      "    Configurations that exist in your CASM project.\n\n"
+             "  background_scel: string (optional, default=None)\n"
+             "    The name of the supercell in which DiffTransConfiguration should be \n"
+             "    created. If given, the supercell must be a supercell that can contain \n"
+             "    all of the configurations specified by \"background_confignames\" and \n"
+             "    \"background_selection\". Prim point group operations are allowed to \n"
+             "    transform configurations so that they fit into the supercell. Newly \n"
+             "    created configurations in the background supercell will be added to \n"
+             "    the configuration database.\n\n"
 
-      "  background_selection: string\n "
-      "    The name of a selection of background configurations to be perturbed.\n\n"
+             "  background_confignames: JSON array of string \n "
+             "    Names of background configurations to be perturbed. Should be names of \n"
+             "    Configurations that exist in your CASM project.\n\n"
 
-      "  local_cspecs: JSON object (optional,default= {}) \n "
-      "    Specify the clusters that should be use for perturbations. The string \n"
-      "    \"local_cspecs\" should be a local cspecs style initialization as used \n "
-      "    in 'casm bset' local basis function enumeration. This option takes \n"
-      "    precedence over the following option.\n\n"
+             "  background_selection: string\n "
+             "    The name of a selection of background configurations to be perturbed.\n\n"
 
-      "  local_cspecs_filepath: string (optional,default=\"\") \n "
-      "    Indicate the local cspecs file that specifies the clusters around \n"
-      "    the transformation that should be perturbed. The string \n"
-      "    \"local_cspecs_filepath\" should be the file path to a JSON file \n"
-      "    containing the local cspecs.\n\n"
+             "  local_cspecs: JSON object (optional,default= {}) \n "
+             "    Specify the clusters that should be use for perturbations. The string \n"
+             "    \"local_cspecs\" should be a local cspecs style initialization as used \n "
+             "    in 'casm bset' local basis function enumeration. This option takes \n"
+             "    precedence over the following option.\n\n"
 
-      "  Example:\n"
-      "  {\n"
-      "    \"orbit_names\": [\n"
-      "      \"diff_trans/0\",\n"
-      "      \"diff_trans/1\"\n"
-      "    ],\n"
-      "    \"orbit_selection\": \"low_barrier_diff_trans\",\n"
-      "    \"background_configs\": [\n"
-      "      \"SCEL8_2_2_2_0_0_0/2\",\n"
-      "      \"SCEL8_2_2_2_0_0_0/13\"\n"
-      "     ],\n"
-      "    \"background_selection\": \"groundstates\",\n"
-      "    \"local_cspecs\": {\n"
-      "      \"orbit_branch_specs\" : { \n"
-      "        \"1\" : {\"cutoff_radius\" : 6.0},\n"
-      "        \"2\" : {\"max_length\" : 6.01,\"cutoff_radius\" : 6.0},\n"
-      "        \"3\" : {\"max_length\" : 4.01,\"cutoff_radius\" : 5.0}\n"
-      "      }\n"
-      "    }\n"
-      "  }\n\n";
+             "  local_cspecs_filepath: string (optional,default=\"\") \n "
+             "    Indicate the local cspecs file that specifies the clusters around \n"
+             "    the transformation that should be perturbed. The string \n"
+             "    \"local_cspecs_filepath\" should be the file path to a JSON file \n"
+             "    containing the local cspecs.\n\n"
+
+             "  Example:\n"
+             "  {\n"
+             "    \"orbit_names\": [\n"
+             "      \"diff_trans/0\",\n"
+             "      \"diff_trans/1\"\n"
+             "    ],\n"
+             "    \"orbit_selection\": \"low_barrier_diff_trans\",\n"
+             "    \"background_configs\": [\n"
+             "      \"SCEL8_2_2_2_0_0_0/2\",\n"
+             "      \"SCEL8_2_2_2_0_0_0/13\"\n"
+             "     ],\n"
+             "    \"background_selection\": \"groundstates\",\n"
+             "    \"local_cspecs\": {\n"
+             "      \"orbit_branch_specs\" : { \n"
+             "        \"1\" : {\"cutoff_radius\" : 6.0},\n"
+             "        \"2\" : {\"max_length\" : 6.01,\"cutoff_radius\" : 6.0},\n"
+             "        \"3\" : {\"max_length\" : 4.01,\"cutoff_radius\" : 5.0}\n"
+             "      }\n"
+             "    }\n"
+             "  }\n\n";
+    }
+
+    const std::string DiffTransConfigEnumOccPerturbations::interface_help = _interface_help();
 
 
     namespace {
@@ -209,17 +213,26 @@ namespace CASM {
         const PrimPeriodicDiffTransOrbit &dtorbit,
         const jsonParser &local_cspecs) {
 
-        /// check if configuration is big enough for local cspecs here
+        /// check if supercell is big enough for local cspecs here
         /// give warning if not
-        std::vector<LocalOrbit<IntegralCluster>> local_orbits;
+
+        std::vector<ScelPeriodicOrbit<IntegralCluster>> local_orbits;
+        std::vector<PermuteIterator> diff_trans_g {
+          dtorbit.prototype().invariant_subgroup(bg_config.supercell())};
+        SymGroup diff_trans_sym_g { make_sym_group(diff_trans_g) };
+        ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare {bg_config.supercell()};
+
         make_local_orbits(
           dtorbit.prototype(),
+          diff_trans_sym_g,
+          scel_sym_compare,
           local_cspecs,
           alloy_sites_filter,
           primclex.crystallography_tol(),
           std::back_inserter(local_orbits),
           null_log());
-        if(has_local_bubble_overlap(local_orbits, bg_config.supercell())) {
+
+        if(has_local_neighborhood_overlap(local_orbits, bg_config.supercell())) {
           std::string msg = "Warning in " +
                             DiffTransConfigEnumOccPerturbations::enumerator_name + ": Choice of background "
                             "configuration " + bg_config.name() + " results in an overlap in the local "
@@ -423,15 +436,16 @@ namespace CASM {
       ///
       /// - local orbit generating group is set of operations that leave
       ///   diff_trans and config invariant
-      std::vector<LocalOrbit<IntegralCluster>> _tmp;
+      std::vector<ScelPeriodicOrbit<IntegralCluster>> _tmp;
       make_local_orbits(
         m_base_it->diff_trans,
+        m_base_it->generating_sym_g,
+        m_scel_sym_compare,
         m_local_cspecs,
         alloy_sites_filter,
         _tol(),
         std::back_inserter(_tmp),
-        null_log(),
-        m_base_it->generating_sym_g);
+        null_log());
 
       /// Exclude orbits that would alter the hop due small supercell size
 
@@ -457,7 +471,7 @@ namespace CASM {
       };
 
       // lambda function returns true if no overlap between hop cluster and local cluster
-      auto orbit_does_not_overlap = [&](const LocalOrbit<IntegralCluster> &test) {
+      auto orbit_does_not_overlap = [&](const ScelPeriodicOrbit<IntegralCluster> &test) {
         const auto &proto = test.prototype();
         return std::all_of(proto.begin(), proto.end(), uccoord_does_not_overlap);
       };
@@ -578,35 +592,6 @@ namespace CASM {
         throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical, for unknown reason");
       }
       */
-    }
-
-    bool has_local_bubble_overlap(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, const Supercell &scel) {
-      std::set<int> present;
-      std::set<UnitCellCoord> coords;
-      for(auto &orbit : local_orbits) {
-        for(auto &cluster : orbit) {
-          for(int i = 0; i < cluster.size(); ++i) {
-            coords.insert(cluster[i]);
-          }
-        }
-      }
-      for(auto &coord : coords) {
-        if(!present.insert(scel.linear_index(coord)).second) {
-          return true;
-        }
-      }
-      //If no set insertion collision then no problems
-      return false;
-    }
-
-    std::vector<Supercell> viable_supercells(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, std::vector<Supercell> scel_options) {
-      std::vector<Supercell> results;
-      for(auto &scel : scel_options) {
-        if(!has_local_bubble_overlap(local_orbits, scel)) {
-          results.push_back(scel);
-        }
-      }
-      return results;
     }
 
   }

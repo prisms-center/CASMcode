@@ -14,7 +14,7 @@
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
@@ -77,8 +77,16 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
   fs::path local_bspecs_path = "tests/unit/kinetics/ZrO_local_bspecs_1.json";
   jsonParser local_bspecs {local_bspecs_path};
   std::vector<LocalIntegralClusterOrbit> local_orbits;
+  SymGroup generating_grp {
+    diff_trans_prototype.invariant_subgroup(
+      primclex.prim().factor_group(),
+      PrimPeriodicDiffTransSymCompare(primclex.crystallography_tol()))};
+  LocalSymCompare<IntegralCluster> sym_compare(primclex.crystallography_tol());
+
   make_local_orbits(
     diff_trans_prototype,
+    generating_grp,
+    sym_compare,
     local_bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -96,11 +104,11 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
   scel_list.push_back(scel3);
   scel_list.push_back(scel4);
 
-  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel1), 1);
-  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel2), 0);
-  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel3), 1);
-  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel4), 1);
-  std::vector<Supercell> result = Kinetics::viable_supercells(local_orbits, scel_list);
+  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_orbits, scel1), 1);
+  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_orbits, scel2), 0);
+  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_orbits, scel3), 1);
+  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_orbits, scel4), 1);
+  std::vector<Supercell> result = viable_supercells(local_orbits, scel_list);
   BOOST_CHECK_EQUAL(*(result.begin()) == scel2, 1);
 
 }
@@ -242,11 +250,11 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
     BOOST_CHECK_EQUAL(diff_trans_db.size(), 3);
     BOOST_CHECK_EQUAL(success, 0);
 
-    //print DiffTrans prototypes
-    {
-      PrototypePrinter<Kinetics::DiffusionTransformation> printer;
-      print_clust(diff_trans_db.begin(), diff_trans_db.end(), std::cout, printer);
-    }
+//    //print DiffTrans prototypes
+//    {
+//      PrototypePrinter<Kinetics::DiffusionTransformation> printer;
+//      print_clust(diff_trans_db.begin(), diff_trans_db.end(), std::cout, printer);
+//    }
 
     // Generate perturbations
     fs::path diffperturb_path = "tests/unit/kinetics/ZrO_diff_perturb_0.json";
@@ -341,7 +349,7 @@ BOOST_AUTO_TEST_CASE(FCCTest) {
 
   /// Check for neighborhood overlap
   BOOST_CHECK_EQUAL(
-    Kinetics::has_local_bubble_overlap(local_orbits, l12config.supercell()),
+    has_local_neighborhood_overlap(local_orbits, l12config.supercell()),
     true);
 
   /// Constructor enumerator

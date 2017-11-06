@@ -27,7 +27,10 @@ namespace CASM {
     ///   of the supercell factor group that leaves the 'base' diff trans invariant
     ///   is the 'diff_trans_g'.
     /// - For each 'base' diff trans, generate local orbits using the base config
-    ///   & diff trans invariant group
+    ///   & diff trans invariant group. Note: local orbits are actually
+    ///   ScelPeriodicOrbit<IntegralCluster> because we take supercell symmetry
+    ///   into account. This means there may be more perturbations then the local
+    ///   basis functions may indicate.
     /// - For each local orbit, enumerate perturbations. Only include perturbations
     ///   that modify every site in the cluster to avoid repeats.
     /// - The subgroup of the 'diff_trans_g' that leaves the local orbit protype
@@ -149,10 +152,10 @@ namespace CASM {
       ScelPeriodicSymCompare<IntegralCluster> m_scel_sym_compare;
 
       /// Local orbits for the current base diff trans
-      std::vector<LocalOrbit<IntegralCluster>> m_local_orbit;
+      std::vector<ScelPeriodicOrbit<IntegralCluster>> m_local_orbit;
 
       /// The current local orbit
-      std::vector<LocalOrbit<IntegralCluster>>::iterator m_local_orbit_it;
+      std::vector<ScelPeriodicOrbit<IntegralCluster>>::iterator m_local_orbit_it;
 
       /// The subgroup of the current diff trans group that leaves the local orbit prototype invariant
       /// - i.e. The subgroup of m_base_it->diff_trans_g that leaves
@@ -169,11 +172,6 @@ namespace CASM {
       /// The base DiffTransConfiguration with the current perturbation applied
       notstd::cloneable_ptr<DiffTransConfiguration> m_current;
     };
-
-    bool has_local_bubble_overlap(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, const Supercell &scel);
-
-    std::vector<Supercell> viable_supercells(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, std::vector<Supercell>);
-
 
   }
 }

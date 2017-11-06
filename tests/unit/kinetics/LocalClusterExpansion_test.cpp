@@ -110,8 +110,16 @@ BOOST_AUTO_TEST_CASE(Test0) {
   auto expected_mult_it = expected_mult.begin();
 
   std::vector<LocalIntegralClusterOrbit> local_orbits;
+  SymGroup generating_grp {
+    trans.invariant_subgroup(
+      primclex.prim().factor_group(),
+      PrimPeriodicDiffTransSymCompare(primclex.crystallography_tol()))};
+  LocalSymCompare<IntegralCluster> sym_compare(primclex.crystallography_tol());
+
   make_local_orbits(
     trans,
+    generating_grp,
+    sym_compare,
     local_bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
