@@ -179,29 +179,16 @@ namespace CASM {
       result.relaxation_properties.push_back(jsonParser());
       result.relaxation_properties[image_no].put_obj();
       Structure pseudoprim = make_deformed_struc(*it);
-
-      const PrimClex &pclex = PrimClex(pseudoprim, null_log());
-
-      ConfigMapper tmp_mapper(pclex,
-                              lattice_weight(),
-                              m_max_volume_change,
-                              m_robust_flag || m_rotate_flag || m_strict_flag,
-                              pclex.crystallography_tol());
-
-      ConfigDoF tmp_dof;
-      Lattice tmp_lat;
-      tmp_mapper.struc_to_configdof(result.structures[image_no], tmp_dof, tmp_lat);
-      result.relaxation_properties[image_no]["lattice_deformation"] = ConfigMapping::strain_cost(result.structures[image_no].lattice(),
-                                                                      tmp_dof,
-                                                                      result.structures[image_no].basis.size());
-      result.relaxation_properties[image_no]["basis_deformation"] = ConfigMapping::basis_cost(tmp_dof,
-                                                                    result.structures[image_no].basis.size());
+      Structure img = Structure(result.structures[image_no]);
+      ConfigMapperResult tmp_result = ConfigMapping::structure_mapping(pseudoprim, img, lattice_weight());
+      result.relaxation_properties[image_no]["lattice_deformation"] = tmp_result.relaxation_properties["best_mapping"]["lattice_deformation"];
+      result.relaxation_properties[image_no]["basis_deformation"] = tmp_result.relaxation_properties["best_mapping"]["basis_deformation"];
       image_no++;
     }
     //Structure config.supercell().superstructure(config) //<---how to get structure from ideal config
     //calculate strain scores and basis scores for every image and sum/average/sumsq
     // set relaxation properties and indicate successful mapping or not
-    std::cout << *result.config << std::endl;
+
     result.success = true;
 
     return result;

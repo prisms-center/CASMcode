@@ -90,7 +90,11 @@ namespace CASM {
       return best_lat;
     }
 
-
+    ConfigMapperResult structure_mapping(Structure &host, Structure &other, double lattice_weight) {
+      const PrimClex &pclex = PrimClex(host, null_log());
+      ConfigMapper tmp_mapper(pclex, lattice_weight);
+      return tmp_mapper.import_structure(other);
+    }
   }
 
   //*******************************************************************************************

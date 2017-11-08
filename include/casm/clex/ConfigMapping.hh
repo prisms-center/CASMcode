@@ -5,6 +5,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/casm_io/jsonParser.hh"
 
@@ -368,6 +369,7 @@ namespace CASM {
                                        double _tol);
 
 
+    ConfigMapperResult structure_mapping(Structure &host, Structure &other, double lattice_weight);
   }
 
 
