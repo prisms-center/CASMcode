@@ -678,7 +678,7 @@ namespace CASM {
   };
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c);
-
+  Structure make_deformed_struc(const Configuration &c);
   /** @} */
 
 }

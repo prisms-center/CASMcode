@@ -19,6 +19,7 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/kinetics/DiffTransConfigInterpolation.hh"
 
 
 namespace CASM {
@@ -60,7 +61,6 @@ namespace CASM {
 
     DiffTransConfigMapperResult result;
     result.structures = _get_structures(pos_path);
-    result.relaxation_properties.put_obj();
     ConfigMapper mapper(primclex(),
                         lattice_weight(),
                         m_max_volume_change,
@@ -76,16 +76,22 @@ namespace CASM {
     std::vector<UnitCellCoord> from_uccoords;
     std::vector<UnitCellCoord> to_uccoords;
 
+    ConfigMapperResult from_res = mapper.import_structure_occupation(result.structures[0]);
+    Coordinate rigid_shift = result.structures[0].basis[0] - Coordinate(from_config.uccoord(from_res.best_assignment[0]));
+    Coordinate com_disp(from_config.displacement().rowwise().sum() / from_config.occupation().size(), primclex().prim().lattice(), CART);
     //Maybe check coordinate similarity after applying deformations
     //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config
-    double max_displacement = from_config.displacement().colwise().norm().maxCoeff() + primclex().crystallography_tol();
+    //This max_displacement is not considering rigid translational shifts of the structures's basis to the primclex's basis
+    double max_displacement = from_config.displacement().colwise().norm().maxCoeff() * 2 + primclex().crystallography_tol();
     // For image 00 set reference of POSCAR index to  basis site linear index
     for(auto &site : result.structures[0].basis) {
-      from_uccoords.emplace_back(primclex().prim(), site, max_displacement);
+      //should apply cartop here too
+      from_uccoords.emplace_back(primclex().prim(), site - rigid_shift, max_displacement);
     }
+
     // For last image  find POSCAR index to basis site linear index
     for(auto &site : result.structures[result.structures.size() - 1].basis) {
-      to_uccoords.emplace_back(primclex().prim(), site, max_displacement);
+      to_uccoords.emplace_back(primclex().prim(), site - rigid_shift, max_displacement);
     }
     //ConfigMapperResult to_config_result = mapper.import_structure_occupation(result.structures[result.structures.size()-1]);
     std::vector<Index> moving_atoms;
@@ -162,10 +168,37 @@ namespace CASM {
 
     //Attach hop to ideal from config in same orientation
     from_config.clear_deformation();
+    from_config.init_deformation();
     from_config.clear_displacement();
+    from_config.init_displacement();
     result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans, false);
-
     //use this to interpolate same amount of images
+    Kinetics::DiffTransConfigInterpolation interpolater(result.config->diff_trans(), result.config->from_config(), result.config->to_config(), result.structures.size() - 2); //<- using current calctype here
+    int image_no = 0;
+    for(auto it = interpolater.begin(); it != interpolater.end(); ++it) {
+      result.relaxation_properties.push_back(jsonParser());
+      result.relaxation_properties[image_no].put_obj();
+      Structure pseudoprim = make_deformed_struc(*it);
+
+      const PrimClex &pclex = PrimClex(pseudoprim, null_log());
+
+      ConfigMapper tmp_mapper(pclex,
+                              lattice_weight(),
+                              m_max_volume_change,
+                              m_robust_flag || m_rotate_flag || m_strict_flag,
+                              pclex.crystallography_tol());
+
+      ConfigDoF tmp_dof;
+      Lattice tmp_lat;
+      tmp_mapper.struc_to_configdof(result.structures[image_no], tmp_dof, tmp_lat);
+      result.relaxation_properties[image_no]["lattice_deformation"] = ConfigMapping::strain_cost(result.structures[image_no].lattice(),
+                                                                      tmp_dof,
+                                                                      result.structures[image_no].basis.size());
+      result.relaxation_properties[image_no]["basis_deformation"] = ConfigMapping::basis_cost(tmp_dof,
+                                                                    result.structures[image_no].basis.size());
+      image_no++;
+    }
+    //Structure config.supercell().superstructure(config) //<---how to get structure from ideal config
     //calculate strain scores and basis scores for every image and sum/average/sumsq
     // set relaxation properties and indicate successful mapping or not
     std::cout << *result.config << std::endl;
