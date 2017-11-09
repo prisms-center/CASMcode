@@ -171,7 +171,7 @@ namespace CASM {
     from_config.init_deformation();
     from_config.clear_displacement();
     from_config.init_displacement();
-    result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans, false);
+    result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
     //use this to interpolate same amount of images
     Kinetics::DiffTransConfigInterpolation interpolater(result.config->diff_trans(), result.config->from_config(), result.config->to_config(), result.structures.size() - 2); //<- using current calctype here
     int image_no = 0;

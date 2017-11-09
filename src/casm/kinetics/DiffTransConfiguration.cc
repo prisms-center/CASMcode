@@ -39,20 +39,15 @@ namespace CASM {
       m_config_A(_from_config),
       m_config_B(_from_config),
       m_sym_compare(_from_config.supercell()),
-      m_diff_trans(m_sym_compare.prepare(_diff_trans)) {
-      m_diff_trans.apply_to(m_config_B);
-      _sort();
-    }
-
-    DiffTransConfiguration::DiffTransConfiguration(const Configuration &_from_config,
-                                                   const DiffusionTransformation &_diff_trans,
-                                                   bool prepare_flag) :
-      m_config_A(_from_config),
-      m_config_B(_from_config),
-      m_sym_compare(_from_config.supercell()),
       m_diff_trans(_diff_trans) {
-      if(prepare_flag) {
-        m_diff_trans = m_sym_compare.prepare(_diff_trans);
+      if(_diff_trans != m_sym_compare.prepare(_diff_trans)) {
+        throw std::runtime_error("Error in DiffTransConfiguration constructor diff trans not prepared");
+      }
+      if(!is_valid(_diff_trans, _from_config)) {
+        throw std::runtime_error("Error in DiffTransConfiguration constructor repeated linear indeces");
+      }
+      if(!has_valid_from_occ(_diff_trans, _from_config)) {
+        throw std::runtime_error("Error in DiffTransConfiguration constructor diff_trans and from_config inconsistent");
       }
       m_diff_trans.apply_to(m_config_B);
       _sort();
@@ -265,23 +260,11 @@ namespace CASM {
     /// Check that DiffTrans does not include a single supercell site twice due
     /// to small supercell size
     bool DiffTransConfiguration::is_valid() const {
-      std::set<Index> unique_indices;
-      for(auto &traj : diff_trans().specie_traj()) {
-        Index l = from_config().supercell().linear_index(traj.from.uccoord);
-        unique_indices.insert(l);
-      }
-      return (diff_trans().specie_traj().size() == unique_indices.size());
+      return is_valid(diff_trans(), from_config());
     }
 
     bool DiffTransConfiguration::has_valid_from_occ() const {
-      for(auto traj : diff_trans().specie_traj()) {
-        Index l = from_config().supercell().linear_index(traj.from.uccoord);
-        //std::cout << "comparing " << from_config().occ(l) << " to " << traj.from.occ << " on site " << l << std::endl;
-        if(from_config().occ(l) != traj.from.occ) {
-          return false;
-        }
-      }
-      return true;
+      return has_valid_from_occ(diff_trans(), from_config());
     }
 
 
@@ -368,6 +351,30 @@ namespace CASM {
         m_from_config_is_A = true;
       }
     }
+
+    /// Check that DiffTrans does not include a single supercell site twice due
+    /// to small supercell size
+    bool DiffTransConfiguration::is_valid(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
+      std::set<Index> unique_indices;
+      for(auto &traj : diff_trans.specie_traj()) {
+        Index l = bg_config.supercell().linear_index(traj.from.uccoord);
+        unique_indices.insert(l);
+      }
+      return (diff_trans.specie_traj().size() == unique_indices.size());
+    }
+
+    bool DiffTransConfiguration::has_valid_from_occ(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
+      for(auto traj : diff_trans.specie_traj()) {
+        Index l = bg_config.supercell().linear_index(traj.from.uccoord);
+        //std::cout << "comparing " << from_config().occ(l) << " to " << traj.from.occ << " on site " << l << std::endl;
+        if(bg_config.occ(l) != traj.from.occ) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+
 
     /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
     Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
