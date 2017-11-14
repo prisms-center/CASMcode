@@ -20,7 +20,7 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/kinetics/DiffTransConfigInterpolation.hh"
-
+#include "casm/crystallography/jsonStruc.hh"
 
 namespace CASM {
 
@@ -185,10 +185,25 @@ namespace CASM {
       result.relaxation_properties[image_no]["basis_deformation"] = tmp_result.relaxation_properties["best_mapping"]["basis_deformation"];
       image_no++;
     }
+
     //Structure config.supercell().superstructure(config) //<---how to get structure from ideal config
     //calculate strain scores and basis scores for every image and sum/average/sumsq
     // set relaxation properties and indicate successful mapping or not
-
+    if(fs::exists(pos_path / "properties.calc.json")) {
+      jsonParser all_strucs;
+      to_json(pos_path / "properties.calc.json", all_strucs);
+      int count = 0;
+      std::vector<double> energies;
+      for(auto &img : all_strucs) {
+        energies.push_back(img["relaxed_energy"].get<double>());
+        result.relaxation_properties[count]["relaxed_energy"] = img["relaxed_energy"];
+        count++;
+      }
+      if(!all_strucs.contains("kra")) {
+        all_strucs["kra"] = *(std::max_element(energies.begin(), energies.end())) - (energies[0] + energies[count - 1]) / 2.0;
+      }
+      result.kra = all_strucs["kra"].get<double>();
+    }
     result.success = true;
 
     return result;
@@ -197,23 +212,36 @@ namespace CASM {
   std::vector<BasicStructure<Site>> DiffTransConfigMapper::_get_structures(const fs::path &pos_path) const {
     std::map<Index, BasicStructure<Site>> bins;
     std::vector<BasicStructure<Site>> images;
-    for(auto &dir_path : fs::directory_iterator(pos_path)) {
-      try {
-        int img_no = std::stoi(dir_path.path().filename().string());
-        if(fs::is_directory(dir_path)) {
-          if(fs::is_regular(dir_path / "CONTCAR")) {
-            bins.insert(std::make_pair(img_no, BasicStructure<Site>(dir_path / "CONTCAR")));
-          }
-          else if(fs::is_regular(dir_path / "POSCAR")) {
-            bins.insert(std::make_pair(img_no, BasicStructure<Site>(dir_path / "POSCAR")));
-
-          }
-          else {
-            std::cerr << "NO POSCAR OR CONTCAR FOUND IN " << dir_path << std::endl;
+    if(fs::exists(pos_path / "properties.calc.json")) {
+      jsonParser all_strucs;
+      to_json(pos_path / "properties.calc.json", all_strucs);
+      int count = 0;
+      for(auto &img : all_strucs) {
+        std::cout << img << std::endl;
+        BasicStructure<Site> struc;
+        from_json(simple_json(struc, "relaxed_"), img);
+        bins.insert(std::make_pair(count, struc));
+        count++;
+      }
+    }
+    else {
+      for(auto &dir_path : fs::directory_iterator(pos_path)) {
+        try {
+          int img_no = std::stoi(dir_path.path().filename().string());
+          if(fs::is_directory(dir_path)) {
+            if(fs::is_regular(dir_path / "CONTCAR")) {
+              bins.insert(std::make_pair(img_no, BasicStructure<Site>(dir_path / "CONTCAR")));
+            }
+            else if(fs::is_regular(dir_path / "POSCAR")) {
+              bins.insert(std::make_pair(img_no, BasicStructure<Site>(dir_path / "POSCAR")));
+            }
+            else {
+              std::cerr << "NO POSCAR OR CONTCAR FOUND IN " << dir_path << std::endl;
+            }
           }
         }
-      }
-      catch(...) {
+        catch(...) {
+        }
       }
     }
     for(int i = 0 ; i < bins.size(); i++) {

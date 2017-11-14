@@ -51,7 +51,7 @@ namespace CASM {
     /// best_assignment is populated by the permutation of sites in the imported
     /// structure that maps them onto sites of the ideal crystal (excluding vacancies)
     std::vector<Index> best_assignment;
-
+    double kra;
     /// cart_op is populated by the cartesian isometry that rotates the imported
     /// structure onto the coordinate system of the ideal crystal
     Eigen::Matrix3d cart_op;
