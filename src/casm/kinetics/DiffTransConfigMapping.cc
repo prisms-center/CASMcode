@@ -200,8 +200,7 @@ namespace CASM {
         count++;
       }
       if(!all_strucs.contains("kra")) {
-        all_strucs["kra"] = *(std::max_element(energies.begin(), energies.end())) - (energies[0] + energies[count - 1]) / 2.0;
-        all_strucs.write(pos_path / "properties.calc.json");
+        all_strucs["kra"] = *(std::max_element(energies.begin(), energies.end())) - (energies.front() + energies.back()) / 2.0;
       }
       result.kra = all_strucs["kra"].get<double>();
     }
