@@ -21,8 +21,8 @@ namespace {
       0, 0,  0, 0,  1, 1,  0, 0
     }) {
 
-      BOOST_CHECK_EQUAL(this->scel_fg.size(), 16);
-      BOOST_CHECK_EQUAL(this->config_sym_fg.size(), 8);
+      BOOST_CHECK_EQUAL(this->scel_fg().size(), 16);
+      BOOST_CHECK_EQUAL(this->config_sym_fg().size(), 8);
     }
 
   };
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     UnitCellCoord u = td.config.uccoord(l);
 
     //std::cout << "coord: " << u.coordinate().const_cart().transpose() << std::endl;
-    const SymGroup &g = td.config_sym_fg;
+    const SymGroup &g = td.config_sym_fg();
     BOOST_CHECK_EQUAL(true, true);
     for(Index op_i = 0; op_i < g.size(); ++op_i) {
 

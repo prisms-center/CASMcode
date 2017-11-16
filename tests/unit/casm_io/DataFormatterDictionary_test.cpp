@@ -7,6 +7,7 @@
 #include <sstream>
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
+#include "casm/casm_io/jsonFile.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
@@ -163,8 +164,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // -- DiffusionTransformation --
 
   {
-    fs::path difftrans_path = "tests/unit/kinetics/FCCTernary_diff_trans_0.json";
-    jsonParser diff_trans_json {difftrans_path};
+    jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
     BOOST_CHECK_EQUAL(true, true);
     Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
     BOOST_CHECK_EQUAL(true, true);
@@ -208,8 +208,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   */
 
   {
-    fs::path diffperturb_path = "tests/unit/kinetics/FCCTernary_diff_perturb_0.json";
-    jsonParser diff_perturb_json {diffperturb_path};
+    jsonFile diff_perturb_json {"tests/unit/kinetics/FCCTernary_diff_perturb_0.json"};
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
 
     /// Not checked for accuracy yet... Would need a simpler test case

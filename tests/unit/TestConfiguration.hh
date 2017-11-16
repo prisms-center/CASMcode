@@ -11,6 +11,10 @@ namespace test {
 
     TestConfiguration(
       const PrimClex &primclex,
+      const Configuration &_config);
+
+    TestConfiguration(
+      const PrimClex &primclex,
       const Eigen::Matrix3i &T,
       const std::vector<int> &_occupation);
 
@@ -19,9 +23,18 @@ namespace test {
       const Lattice &lat,
       const std::vector<int> &_occupation);
 
+    TestConfiguration(
+      const PrimClex &primclex,
+      const Configuration &unit,
+      const Eigen::Matrix3i &T,
+      double tol = TOL);
+
     Configuration config;
-    std::vector<PermuteIterator> config_permute_fg;
-    SymGroup config_sym_fg;
+    const std::vector<PermuteIterator> &config_permute_fg() const;
+    const SymGroup &config_sym_fg() const;
+
+    mutable std::vector<PermuteIterator> m_config_permute_fg;
+    mutable SymGroup m_config_sym_fg;
   };
 }
 

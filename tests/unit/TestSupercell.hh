@@ -15,11 +15,11 @@ namespace test {
     TestSupercell(const PrimClex &primclex, const Lattice &lat);
 
     Supercell scel;
-    Configuration config;
     PrimPeriodicSymCompare<IntegralCluster> prim_sym_compare;
     ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare;
-    SymGroup scel_fg;
+    const SymGroup &scel_fg() const;
 
+    mutable SymGroup m_scel_fg;
   };
 }
 

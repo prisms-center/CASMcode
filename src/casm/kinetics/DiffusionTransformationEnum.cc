@@ -126,7 +126,12 @@ namespace CASM {
     }
 
     /// Implements run
-    int DiffusionTransformationEnum::run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
+    template<typename DatabaseType>
+    int DiffusionTransformationEnum::run(
+        const PrimClex &primclex,
+        const jsonParser &_kwargs,
+        const Completer::EnumOption &enum_opt,
+        DatabaseType& db) {
 
       jsonParser kwargs;
       if(!_kwargs.contains("cspecs")) {
@@ -150,12 +155,16 @@ namespace CASM {
       std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
       auto end = make_prim_periodic_orbits(
-                   primclex.prim(), _kwargs["cspecs"], alloy_sites_filter, primclex.crystallography_tol(), std::back_inserter(orbits), primclex.log());
+        primclex.prim(),
+        _kwargs["cspecs"],
+        alloy_sites_filter,
+        primclex.crystallography_tol(),
+        std::back_inserter(orbits),
+        primclex.log());
 
       Log &log = primclex.log();
-      auto &db_orbits = primclex.db<PrimPeriodicDiffTransOrbit>();
 
-      Index Ninit = db_orbits.size();
+      Index Ninit = db.size();
       log << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
 
       log.begin(enumerator_name);
@@ -182,23 +191,42 @@ namespace CASM {
         }
         if(it == speciemap.end()) {
           //insert current into database
-          db_orbits.insert(diff_trans_orbit);
+          db.insert(diff_trans_orbit);
         }
       }
 
       log << "  DONE." << std::endl << std::endl;
 
-      Index Nfinal = db_orbits.size();
+      Index Nfinal = db.size();
 
       log << "# new diffusion transformations: " << Nfinal - Ninit << "\n";
       log << "# diffusion transformations in this project: " << Nfinal << "\n" << std::endl;
 
-      log << "Writing diffusion transformation database..." << std::endl;
-      db_orbits.commit();
-      log << "  DONE" << std::endl;
+      return 0;
+    }
+
+    /// Implements run
+    int DiffusionTransformationEnum::run(
+        const PrimClex &primclex,
+        const jsonParser &_kwargs,
+        const Completer::EnumOption &enum_opt) {
+
+      auto& db = primclex.db<PrimPeriodicDiffTransOrbit>();
+
+      DiffusionTransformationEnum::run(primclex, _kwargs, enum_opt, db);
+
+      primclex.log() << "Writing diffusion transformation database..." << std::endl;
+      db.commit();
+      primclex.log() << "  DONE" << std::endl;
 
       return 0;
     }
+
+    template int DiffusionTransformationEnum::run<std::set<PrimPeriodicDiffTransOrbit>>(
+        const PrimClex&,
+        const jsonParser&,
+        const Completer::EnumOption&,
+        std::set<PrimPeriodicDiffTransOrbit>&);
 
     // -- Unique -------------------
 

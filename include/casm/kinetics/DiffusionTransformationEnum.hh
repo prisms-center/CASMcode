@@ -17,7 +17,7 @@ namespace CASM {
     /// - Outputs all valid DiffusionTransformation for a particular
     ///   IntegralCluster. Results may include duplicates, non-canonical, unsorted forms.
     /// -
-    /// - To get unique orbits, see for example make_prim_periodic_diffusion_transformation_orbits
+    /// - To get unique orbits, see for example make_prim_periodic_diff_trans_orbits
     ///
     class DiffusionTransformationEnum : public InputEnumeratorBase<DiffusionTransformation> {
 
@@ -34,6 +34,15 @@ namespace CASM {
 
       static const std::string enumerator_name;
       static const std::string interface_help;
+
+      /// Implements run
+      template<typename DatabaseType>
+      static int run(
+        const PrimClex &primclex,
+        const jsonParser &_kwargs,
+        const Completer::EnumOption &enum_opt,
+        DatabaseType &db);
+
       /// Implements run
       static int run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
 
