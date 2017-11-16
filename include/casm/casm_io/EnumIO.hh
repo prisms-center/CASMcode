@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include "casm/misc/CASM_TMP.hh"
+#include "casm/casm_io/Log.hh"
 
 namespace CASM {
 
@@ -36,7 +37,7 @@ namespace CASM {
   /// \ingroup EnumIO
   ///
   template<typename ENUM>
-  std::string help() {
+  std::string multiline_enum_help() {
     std::stringstream ss;
     ss << "Options are:\n";
     for(auto it = traits<ENUM>::strval.begin(); it != traits<ENUM>::strval.end(); ++it) {
@@ -52,6 +53,45 @@ namespace CASM {
       ss << "\n";
     }
     return ss.str();
+  }
+
+  /// \brief Print help message describing recognized strings for allowed enum values
+  ///
+  /// Of form:
+  /// \code
+  /// Options are: {'CART', 'cart'}, {'FRAC', 'frac', 'DIRECT', 'direct'}, {'INTEGRAL', 'integral'}
+  /// \endcode
+  ///
+  /// \ingroup EnumIO
+  ///
+  template<typename ENUM>
+  std::string singleline_enum_help() {
+    std::stringstream ss;
+    ss << "Options are:";
+    for(auto it = traits<ENUM>::strval.begin(); it != traits<ENUM>::strval.end(); ++it) {
+      ss << "  ";
+      for(auto sit = it->second.begin(); sit != it->second.end(); sit++) {
+        if(sit != it->second.begin()) {
+          ss << " or " << *sit;
+        }
+        else {
+          ss << *sit;
+        }
+      }
+      ss << "\n";
+    }
+    return ss.str();
+  }
+
+  template<typename T>
+  std::string multiline_help();
+
+  template<typename T>
+  std::string singleline_help();
+
+  template<typename T> // deprecated
+  std::string help() {
+    return multiline_help<T>();
   }
 
   /// \brief Throw invalid_argument error for unrecognized strings
@@ -99,8 +139,8 @@ namespace CASM {
       }
     }
 
-    invalid_enum_string<ENUM>(val, std::cerr);
-    return traits<ENUM>::strval.begin()->first;
+    invalid_enum_string<ENUM>(val, default_err_log()); // throws and prints multiline error message
+    return traits<ENUM>::strval.begin()->first; // never reached
   }
 
 #define ENUM_TRAITS(ENUM) \
@@ -111,7 +151,9 @@ namespace CASM {
   \
     static const std::multimap<ENUM, std::vector<std::string> > strval; \
   \
-  };
+  };  \
+  template<> inline std::string singleline_help<ENUM>(){return singleline_enum_help<ENUM>();} \
+  template<> inline std::string multiline_help<ENUM>(){return multiline_enum_help<ENUM>();} \
 
 #define ENUM_IO_DECL(ENUM) \
   std::ostream &operator<<(std::ostream &sout, const ENUM& val); \

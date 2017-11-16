@@ -7,13 +7,17 @@ noinst_LIBRARIES += \
 libcasmtesting_a_SOURCES = \
   tests/unit/Common.cpp\
   tests/unit/unit_test.cpp\
+  tests/unit/TestOrbits.cc\
   tests/unit/TestConfiguration.cc\
   tests/unit/TestSupercell.cc\
+  tests/unit/TestOrbits.hh\
   tests/unit/Common.hh\
   tests/unit/Proj.hh\
   tests/unit/TestSupercell.hh\
   tests/unit/TestConfiguration.hh\
+  tests/unit/TestDiffTransConfigOccPerturbations.hh\
   tests/unit/FCCTernaryProj.hh\
+  tests/unit/TestDiffusionTransformationOrbits.hh\
   tests/unit/ZrOProj.hh
 
 check_PROGRAMS += \
@@ -376,6 +380,7 @@ casm_unit_casm_io_CXXFLAGS = \
 
 casm_unit_casm_io_SOURCES = \
   tests/unit/unit_test.cpp\
+  tests/unit/casm_io/EnumIO_test.cpp\
   tests/unit/casm_io/DataFormatterDictionary_test.cpp\
   tests/unit/casm_io/jsonParser_test.cpp
 

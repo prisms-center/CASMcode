@@ -128,10 +128,10 @@ namespace CASM {
     /// Implements run
     template<typename DatabaseType>
     int DiffusionTransformationEnum::run(
-        const PrimClex &primclex,
-        const jsonParser &_kwargs,
-        const Completer::EnumOption &enum_opt,
-        DatabaseType& db) {
+      const PrimClex &primclex,
+      const jsonParser &_kwargs,
+      const Completer::EnumOption &enum_opt,
+      DatabaseType &db) {
 
       jsonParser kwargs;
       if(!_kwargs.contains("cspecs")) {
@@ -155,12 +155,12 @@ namespace CASM {
       std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
       auto end = make_prim_periodic_orbits(
-        primclex.prim(),
-        _kwargs["cspecs"],
-        alloy_sites_filter,
-        primclex.crystallography_tol(),
-        std::back_inserter(orbits),
-        primclex.log());
+                   primclex.prim(),
+                   _kwargs["cspecs"],
+                   alloy_sites_filter,
+                   primclex.crystallography_tol(),
+                   std::back_inserter(orbits),
+                   primclex.log());
 
       Log &log = primclex.log();
 
@@ -207,11 +207,11 @@ namespace CASM {
 
     /// Implements run
     int DiffusionTransformationEnum::run(
-        const PrimClex &primclex,
-        const jsonParser &_kwargs,
-        const Completer::EnumOption &enum_opt) {
+      const PrimClex &primclex,
+      const jsonParser &_kwargs,
+      const Completer::EnumOption &enum_opt) {
 
-      auto& db = primclex.db<PrimPeriodicDiffTransOrbit>();
+      auto &db = primclex.db<PrimPeriodicDiffTransOrbit>();
 
       DiffusionTransformationEnum::run(primclex, _kwargs, enum_opt, db);
 
@@ -223,10 +223,10 @@ namespace CASM {
     }
 
     template int DiffusionTransformationEnum::run<std::set<PrimPeriodicDiffTransOrbit>>(
-        const PrimClex&,
-        const jsonParser&,
-        const Completer::EnumOption&,
-        std::set<PrimPeriodicDiffTransOrbit>&);
+      const PrimClex &,
+      const jsonParser &,
+      const Completer::EnumOption &,
+      std::set<PrimPeriodicDiffTransOrbit> &);
 
     // -- Unique -------------------
 

@@ -14,6 +14,7 @@ casminclude_HEADERS = \
   include/casm/misc/Comparisons.hh\
   include/casm/misc/cloneable_ptr_impl.hh\
   include/casm/misc/algorithm.hh\
+  include/casm/misc/TypeInfo.hh\
   include/casm/misc/HierarchyID.hh\
   include/casm/misc/CASM_Array_math.hh\
   include/casm/misc/HallOfFame.hh\
@@ -672,6 +673,7 @@ casminclude_HEADERS = \
   include/casm/casm_io/FormatFlag.hh\
   include/casm/casm_io/jsonParser.hh\
   include/casm/casm_io/DataFormatter.hh\
+  include/casm/casm_io/jsonFile.hh\
   include/casm/casm_io/EnumIO.hh\
   include/casm/casm_io/EigenDataStream.hh\
   include/casm/casm_io/FileEnumerator.hh\

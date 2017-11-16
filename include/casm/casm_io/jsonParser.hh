@@ -203,10 +203,16 @@ namespace CASM {
     const jsonParser &at(const fs::path &path) const;
 
     /// Return a reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
-    jsonParser &operator[](const int &element);
+    jsonParser &operator[](const size_type &element);
 
     /// Return a const reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
-    const jsonParser &operator[](const int &element) const;
+    const jsonParser &operator[](const size_type &element) const;
+
+    /// Return a reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
+    jsonParser &at(const size_type &element);
+
+    /// Return a const reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
+    const jsonParser &at(const size_type &element) const;
 
     /// Returns array size if *this is a JSON array, object size if *this is a JSON object, 1 otherwise
     size_type size() const;
@@ -235,6 +241,12 @@ namespace CASM {
 
     /// Return const_iterator to JSON object value with 'name'
     const_iterator find(const std::string &name) const;
+
+    /// Return iterator to sub-object or element, or 'end' if not found
+    jsonParser::iterator find_at(const fs::path &path);
+
+    /// Return iterator to sub-object or element, or 'end' if not found
+    jsonParser::const_iterator find_at(const fs::path &path) const;
 
     /// Return true if JSON object contains 'name'
     bool contains(const std::string &name) const;
