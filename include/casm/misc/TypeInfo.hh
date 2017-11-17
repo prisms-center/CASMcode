@@ -1,3 +1,6 @@
+#ifndef CASM_TypeInfo
+#define CASM_TypeInfo
+
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
@@ -12,7 +15,7 @@ namespace CASM {
   ///
   /// - Thanks to: https://stackoverflow.com/a/20170989
   template<typename T>
-  constexpr std::string type_name() {
+  std::string type_name() {
     typedef typename std::remove_reference<T>::type TR;
     std::unique_ptr<char, void(*)(void *)> name(
       abi::__cxa_demangle(typeid(TR).name(), nullptr, nullptr, nullptr),
@@ -33,3 +36,5 @@ namespace CASM {
     return res;
   }
 }
+
+#endif
