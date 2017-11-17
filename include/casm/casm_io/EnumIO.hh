@@ -9,6 +9,7 @@
 #include <vector>
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/Help.hh"
 
 namespace CASM {
 
@@ -81,17 +82,6 @@ namespace CASM {
       ss << "\n";
     }
     return ss.str();
-  }
-
-  template<typename T>
-  std::string multiline_help();
-
-  template<typename T>
-  std::string singleline_help();
-
-  template<typename T> // deprecated
-  std::string help() {
-    return multiline_help<T>();
   }
 
   /// \brief Throw invalid_argument error for unrecognized strings
