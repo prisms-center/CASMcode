@@ -554,7 +554,7 @@ namespace CASM {
       : parser(j), type(json_spirit::null_type), val_iter(iter) {
     }
 
-    reference operator*() {
+    reference operator*() const {
       if(type == json_spirit::obj_type)
         return (reference) obj_iter->second;
       else if(type == json_spirit::array_type)
@@ -563,7 +563,7 @@ namespace CASM {
         return *parser;
     }
 
-    pointer operator->() {
+    pointer operator->() const {
       if(type == json_spirit::obj_type)
         return (pointer) &obj_iter->second;
       else if(type == json_spirit::array_type)
@@ -573,7 +573,7 @@ namespace CASM {
     }
 
 
-    bool operator==(const jsonParserIterator &iter) {
+    bool operator==(const jsonParserIterator &iter) const {
       if(parser != iter.parser)
         return false;
 
@@ -585,7 +585,7 @@ namespace CASM {
         return true;
     }
 
-    bool operator!=(const jsonParserIterator &iter) {
+    bool operator!=(const jsonParserIterator &iter) const {
       return !(*this == iter);
     }
 
@@ -655,7 +655,7 @@ namespace CASM {
       }
     }
 
-    operator jsonParser::const_iterator() {
+    operator jsonParser::const_iterator() const {
       if(type == json_spirit::obj_type)
         return jsonParser::const_iterator(parser, obj_iter);
       else if(type == json_spirit::array_type)
@@ -665,7 +665,7 @@ namespace CASM {
     }
 
     /// When iterating over a JSON object, returns the 'name' of the 'name':value pair the iterator is pointing at
-    std::string name() {
+    std::string name() const {
       if(type == json_spirit::obj_type)
         return obj_iter->first;
       else
