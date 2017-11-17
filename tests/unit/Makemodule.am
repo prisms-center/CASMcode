@@ -353,6 +353,7 @@ casm_unit_clusterography_CXXFLAGS = \
 
 casm_unit_clusterography_SOURCES = \
   tests/unit/unit_test.cpp\
+  tests/unit/clusterography/ClusterSpecsParser_test.cpp\
   tests/unit/clusterography/Clusterography_test.cpp
 
 casm_unit_clusterography_LDADD = \

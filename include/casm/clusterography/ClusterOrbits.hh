@@ -17,6 +17,8 @@ namespace CASM {
   class Site;
   class Supercell;
 
+  template<typename OrbitType> class OrbitGenerators;
+
   /** \defgroup IntegralCluster
 
       \brief Functions and classes related to IntegralCluster
@@ -137,6 +139,7 @@ namespace CASM {
   std::vector<Supercell> viable_supercells(std::vector<OrbitType> &local_orbits, std::vector<Supercell>);
 
 
+
   /* -- Cluster Orbit generating function declarations ------------------------------------- */
 
   /// \brief Generate the asymmetric unit, using OrbitBranchSpecs
@@ -164,6 +167,14 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status);
 
+  /* -- Custom clusters --- */
+
+  /// \brief Given a cluster, generate all subcluster generators
+  template<typename OrbitType>
+  OrbitGenerators<OrbitType> &insert_subcluster_generators(
+    typename OrbitType::Element cluster,
+    OrbitGenerators<OrbitType> &generators,
+    std::ostream &status);
 
   /* -- Generate prim periodic orbits --------------------------------------- */
 

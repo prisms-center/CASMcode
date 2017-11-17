@@ -182,6 +182,7 @@ libcasm_la_SOURCES = \
   src/casm/clex/CompositionConverter.cc\
   src/casm/clex/Calculable.cc\
   src/casm/clex/PrimClex.cc\
+  src/casm/clusterography/ClusterSpecsParser.cc\
   src/casm/clusterography/ClusterOrbits.cc\
   src/casm/clusterography/IntegralCluster.cc\
   src/casm/external/gzstream/gzstream.C\
@@ -219,6 +220,7 @@ libcasm_la_SOURCES = \
   src/casm/external/qhull/libqhullcpp/QhullStat.cpp\
   src/casm/external/qhull/libqhullcpp/QhullPoints.cpp\
   src/casm/external/qhull/libqhullcpp/RboxPoints.cpp\
+  src/casm/casm_io/InputParser.cc\
   src/casm/casm_io/FormatFlag.cc\
   src/casm/casm_io/DataFormatter.cc\
   src/casm/casm_io/jsonParser.cc\

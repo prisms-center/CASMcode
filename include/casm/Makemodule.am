@@ -287,6 +287,7 @@ casminclude_HEADERS = \
   include/casm/clex/SuperConfigEnum.hh\
   include/casm/clusterography/SubClusterGenerator.hh\
   include/casm/clusterography/CoordCluster.hh\
+  include/casm/clusterography/ClusterSpecsParser.hh\
   include/casm/clusterography/IntegralCluster_impl.hh\
   include/casm/clusterography/ClusterInvariants.hh\
   include/casm/clusterography/ClusterSymCompare_impl.hh\
@@ -297,6 +298,7 @@ casminclude_HEADERS = \
   include/casm/clusterography/ClusterDecl.hh\
   include/casm/clusterography/GenericCluster.hh\
   include/casm/clusterography/ClusterSymCompare.hh\
+  include/casm/clusterography/ClusterSpecsParser_impl.hh\
   include/casm/external/MersenneTwister/MersenneTwister.h\
   include/casm/external/Eigen/CholmodSupport\
   include/casm/external/Eigen/StdVector\
@@ -676,6 +678,8 @@ casminclude_HEADERS = \
   include/casm/casm_io/jsonFile.hh\
   include/casm/casm_io/EnumIO.hh\
   include/casm/casm_io/EigenDataStream.hh\
+  include/casm/casm_io/InputParser.hh\
+  include/casm/casm_io/Help.hh\
   include/casm/casm_io/FileEnumerator.hh\
   include/casm/casm_io/Log.hh\
   include/casm/casm_io/DataStream.hh\
