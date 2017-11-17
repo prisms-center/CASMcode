@@ -4,6 +4,8 @@
 #include <utility>
 #include <set>
 
+#include "casm/symmetry/SymGroup.hh"
+
 namespace CASM {
 
   class PrimClex;
