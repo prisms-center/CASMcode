@@ -550,7 +550,7 @@ namespace CASM {
         "Error in jsonParser::operator[](const fs::path &path): path must be relative");
     }
     jsonParser *curr = this;
-    jsonParser::iterator res;
+    jsonParser::iterator res = this->end();
     for(auto it = path.begin(); it != path.end(); ++it) {
       if(curr->is_array()) {
         int index = std::stoi(it->string());
