@@ -7,14 +7,18 @@
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
 #include "Common.hh"
+#include "TestConfiguration.hh"
+#include "TestOrbits.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "casm/app/enum.hh"
 #include "casm/app/QueryHandler.hh"
+#include "casm/casm_io/jsonFile.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/container/multivector.hh"
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
@@ -25,6 +29,244 @@ using namespace test;
 typedef Orbit <
 Kinetics::DiffusionTransformation,
          Kinetics::PrimPeriodicDiffTransSymCompare > PrimPeriodicDiffTransOrbit;
+
+namespace {
+
+  struct TestOrbits0 : test::TestPrimPeriodicDiffusionTransformationOrbits {
+    TestOrbits0(const PrimClex &primclex) :
+      test::TestPrimPeriodicDiffusionTransformationOrbits(
+        primclex,
+        jsonFile("tests/unit/kinetics/ZrO_bspecs_0.json"),
+        2, 4) { // orbit_branches [2,4)
+      std::cout << "cluster orbit specs: \n" << specs << std::endl;
+      BOOST_CHECK_EQUAL(orbits.size(), 74);
+      BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
+    }
+  };
+
+  struct TestUnitConfig0 : test::TestConfiguration {
+
+    TestUnitConfig0(const PrimClex &primclex) :
+      TestConfiguration(
+        primclex,
+        Eigen::Vector3i(1, 1, 1).asDiagonal(), {
+      0, 0, 1, 0
+    }) {}
+
+  };
+
+  struct TestBackgroundConfig0 : test::TestConfiguration {
+
+    TestBackgroundConfig0(const PrimClex &primclex) :
+      TestConfiguration(primclex, background_config(primclex)) {}
+
+    static Configuration background_config(const PrimClex &primclex) {
+      Supercell background_scel {&primclex, Eigen::Matrix3i(Eigen::Vector3i(3, 3, 3).asDiagonal())};
+      TestUnitConfig0 tu(primclex);
+      return tu.config.fill_supercell(background_scel, primclex.prim().factor_group()).in_canonical_supercell();
+    }
+
+  };
+
+  struct TestEnumComponents {
+
+    typedef Kinetics::DiffTransConfigEnumOccPerturbations EnumType;
+    typedef EnumType::CurrentPerturbation CurrentPerturbation;
+
+    Log &log;
+    std::unique_ptr<EnumType> enumerator;
+
+    // for each base, collect multiplicity of local orbits:
+    //   local_orbit_size[base_index][local_orbit_index] =
+    //     enumerator->local_orbit()[local_orbit_index].size()
+    multivector<int>::X<2> local_orbit_mult;
+    multivector<int>::X<2> local_orbit_branch;
+
+    // for each (base, orbit, occ), collect proposed perturbation:
+    //   all_perturb[base_index][local_orbit_index][occ_counter_index] =
+    //      enumerator->current_perturb()
+    multivector<CurrentPerturbation>::X<3> all_perturb; //base, orbit, occ
+
+    // for each base, collect unique canonical perturbations:
+    //    unique_canon_perturb[base] = enumerator->current_perturb().perturb
+    multivector<OccPerturbation>::X<2> unique_canon_perturb;
+
+    TestEnumComponents(
+      const Configuration &bg_config,
+      const PrimPeriodicDiffTransOrbit &dt_orbit,
+      jsonParser local_specs,
+      Log &_log = null_log()):
+      log(_log) {
+
+      log.begin("TestEnumComponents");
+      log << "bg_config: \n" << bg_config << std::endl;
+      log << "diff_trans: \n" << dt_orbit.prototype() << std::endl;
+      log << "local_specs: \n" << local_specs << std::endl;
+
+      /// Construct enumerator
+      log.construct("Kinetics::DiffTransConfigEnumOccPerturbations");
+      enumerator.reset(new Kinetics::DiffTransConfigEnumOccPerturbations(
+                         bg_config,
+                         dt_orbit,
+                         local_specs));
+      log << "done" << std::endl;
+      BOOST_CHECK_EQUAL(true, true);
+      BOOST_CHECK_EQUAL(enumerator->valid(), true);
+      BOOST_CHECK_EQUAL(enumerator->step(), 0);
+      BOOST_CHECK_EQUAL((enumerator->begin() != enumerator->end()), true);
+      log << "basic checks ok" << std::endl;
+
+      run();
+    }
+
+    void print_info() {
+      log << "base: " << enumerator->base_index()
+          << "/" << enumerator->base().size()
+          << "  local_orbit: " << enumerator->local_orbit_index()
+          << "/" << enumerator->local_orbit().size()
+          << "  occupation: " << enumerator->occ_counter_index()
+          << std::endl;
+      const auto &curr = enumerator->current_perturb();
+      log << "  current_perturb: "
+          << curr.is_not_subcluster << " " << curr.is_canonical
+          << " :: valid perturbation?: " << (curr.is_not_subcluster && curr.is_canonical) << std::endl
+          << curr.perturb;
+    }
+
+    bool step() {
+
+      const auto &base = enumerator->base();
+      Index base_i = enumerator->base_index();
+      Index orbit_i = enumerator->local_orbit_index();
+      Index occ_i = enumerator->occ_counter_index();
+
+      if(enumerator->valid()) {
+        // first time at base, print info
+        if(base_i == all_perturb.size()) {
+          log << "base[" << base_i << "].config: \n"
+              << base[base_i].config << std::endl;
+          log << "base[" << base_i << "].diff_trans: \n"
+              << base[base_i].diff_trans << std::endl;
+          log << "base[" << base_i << "].diff_tran_g.size(): "
+              << base[base_i].diff_trans_g.size() << std::endl;
+          log << "base[" << base_i << "].generating_sym_g.size(): "
+              << base[base_i].generating_sym_g.size() << std::endl;
+
+          // print symgroup
+          const auto &g = base[base_i].generating_sym_g;
+          auto frac = [&](const Eigen::VectorXd & vec) {
+            return base[base_i].diff_trans.prim().lattice().lat_column_mat().inverse() * vec;
+          };
+          for(Index op_i = 0; op_i < g.size(); ++op_i) {
+            log << "  op " << op_i << "/" << g.size() << ":\n"
+                << "master group index: " << g[op_i].index() << std::endl
+                << "matrix: \n" << g[op_i].matrix() << std::endl
+                << "tau: " << frac(g[op_i].tau()).transpose() << std::endl
+                << "integral_tau: " << frac(g[op_i].integral_tau()).transpose()
+                << std::endl << std::endl;
+          }
+        }
+
+        // first time at local orbit, print clusters
+        if(occ_i == 0) {
+          log << "local_orbit " << orbit_i << "/" << enumerator->local_orbit().size() << ":\n";
+          Index clust_i = 0;
+          for(const auto &clust : enumerator->local_orbit()[orbit_i]) {
+            log << "cluster " << clust_i++ << "/" << enumerator->local_orbit()[orbit_i].size() << ":\n"
+                << clust;
+          }
+          log << std::endl;
+
+          log << "check " << orbit_i << "/" << enumerator->local_orbit().size() << ":\n";
+          const auto &g = base[base_i].generating_sym_g;
+          auto proto = enumerator->local_orbit()[orbit_i].prototype();
+          ScelPeriodicSymCompare<IntegralCluster> sym_compare(base[base_i].config.supercell());
+
+          for(Index op_i = 0; op_i < g.size(); ++op_i) {
+            log << "op " << op_i << "/" << g.size() << ":\n"
+                << sym_compare.prepare(copy_apply(g[op_i], proto));
+          }
+          log << std::endl;
+        }
+      }
+
+      print_info();
+
+      log << "do check increment" << std::endl;
+      bool check = enumerator->check_increment();
+      log << "  done: " << check << std::endl;
+
+      if(enumerator->valid()) {
+
+        // expand all_perturb as necessary and add current perturb
+        if(base_i == all_perturb.size()) {
+          all_perturb.push_back(multivector<CurrentPerturbation>::X<2>());
+        }
+        if(orbit_i == all_perturb.back().size()) {
+          all_perturb.back().push_back(multivector<CurrentPerturbation>::X<1>());
+        }
+        all_perturb[base_i][orbit_i].push_back(enumerator->current_perturb());
+
+        // collect multiplicity, branch of local orbits, for each base config
+        if(base_i == local_orbit_mult.size()) {
+          local_orbit_mult.push_back(multivector<int>::X<1>());
+          local_orbit_branch.push_back(multivector<int>::X<1>());
+          for(const auto &local_orbit : enumerator->local_orbit()) {
+            local_orbit_mult[base_i].push_back(local_orbit.size());
+            local_orbit_branch[base_i].push_back(local_orbit.prototype().size());
+          }
+        }
+
+        // collect unique, canonical perturbations, for each base config
+        if(check) {
+          if(base_i == unique_canon_perturb.size()) {
+            unique_canon_perturb.push_back(multivector<OccPerturbation>::X<1>());
+          }
+          unique_canon_perturb.back().push_back(enumerator->current_perturb().perturb);
+        }
+      }
+
+      return check;
+    }
+
+    void run() {
+      log.custom("Initialization");
+      log << std::endl << std::endl;
+
+      step();
+
+      do {
+        log.begin("Increment");
+        log << std::endl;
+
+        bool check;
+        do {
+
+          log.begin("Partial Increment");
+          log << "do partial increment" << std::endl;
+          enumerator->partial_increment(true);
+          log << "  done" << std::endl;
+
+          check = step();
+
+          log << std::endl;
+
+        }
+        while(!check);
+
+        log.custom("Finish Increment");
+        log << "enumerator valid: " << enumerator->valid() << std::endl << std::endl;
+
+      }
+      while(enumerator->valid());
+
+      log.end("TestEnumComponents");
+      BOOST_CHECK_EQUAL(enumerator->valid(), false);
+
+    }
+  };
+
+}
 
 BOOST_AUTO_TEST_SUITE(DiffTransConfigEnumOccPerturbationsTest)
 
@@ -44,54 +286,14 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
   BOOST_CHECK_EQUAL(true, true);
 
-  // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
-  jsonParser bspecs {bspecs_path};
-  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-  make_prim_periodic_orbits(
-    primclex.prim(),
-    bspecs,
-    alloy_sites_filter,
-    primclex.crystallography_tol(),
-    std::back_inserter(orbits),
-    primclex.log());
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(orbits.size(), 74);
+  // Make orbits
+  TestOrbits0 to(primclex);
 
-  //print_clust(orbits.begin(), orbits.end(), std::cout, PrototypePrinter<IntegralCluster>());
-
-  // Make PrimPeriodicDiffTransOrbit
-  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(
-    orbits.begin() + 2,
-    orbits.begin() + 4,
-    primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits),
-    &primclex);
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
-
-  Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[0].prototype();
-
-  ///make local orbits
-  fs::path local_bspecs_path = "tests/unit/kinetics/ZrO_local_bspecs_1.json";
-  jsonParser local_bspecs {local_bspecs_path};
-  std::vector<LocalIntegralClusterOrbit> local_orbits;
-  SymGroup generating_grp {
-    diff_trans_prototype.invariant_subgroup(
-      primclex.prim().factor_group(),
-      PrimPeriodicDiffTransSymCompare(primclex.crystallography_tol()))};
-  LocalSymCompare<IntegralCluster> sym_compare(primclex.crystallography_tol());
-
-  make_local_orbits(
-    diff_trans_prototype,
-    generating_grp,
-    sym_compare,
-    local_bspecs,
-    alloy_sites_filter,
-    primclex.crystallography_tol(),
-    std::back_inserter(local_orbits),
-    primclex.log());
+  // Make local orbits
+  TestLocalOrbits local_to(
+    primclex,
+    to.diff_trans_orbits[0].prototype(),
+    jsonFile("tests/unit/kinetics/ZrO_local_bspecs_1.json"));
 
   ///Make various supercells
   Supercell scel1 {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
@@ -104,11 +306,11 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
   scel_list.push_back(scel3);
   scel_list.push_back(scel4);
 
-  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_orbits, scel1), 1);
-  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_orbits, scel2), 0);
-  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_orbits, scel3), 1);
-  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_orbits, scel4), 1);
-  std::vector<Supercell> result = viable_supercells(local_orbits, scel_list);
+  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_to.orbits, scel1), 1);
+  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_to.orbits, scel2), 0);
+  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_to.orbits, scel3), 1);
+  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_to.orbits, scel4), 1);
+  std::vector<Supercell> result = viable_supercells(local_to.orbits, scel_list);
   BOOST_CHECK_EQUAL(*(result.begin()) == scel2, 1);
 
 }
@@ -116,103 +318,56 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
 BOOST_AUTO_TEST_CASE(ZrOTest_Components) {
 
   /// Make test project
-  BOOST_CHECK_EQUAL(true, true);
   test::ZrOProj proj;
   proj.check_init();
-  proj.check_composition();
-
-  Logging logging = Logging::null();
-  PrimClex primclex(proj.dir, logging);
-  const Structure &prim = primclex.prim();
-  const Lattice &lat = prim.lattice();
-  Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.prim().lattice().vectors();
+  Log &log = default_log();
+  PrimClex primclex(proj.dir, null_log());
   BOOST_CHECK_EQUAL(true, true);
 
+  // Make orbits & background config
+  log.construct("TestOrbits0");
+  TestOrbits0 to(primclex);
+  log << "  DONE" << std::endl;
 
-  // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
-  jsonParser bspecs {bspecs_path};
-  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-  make_prim_periodic_orbits(
-    primclex.prim(),
-    bspecs,
-    alloy_sites_filter,
-    primclex.crystallography_tol(),
-    std::back_inserter(orbits),
-    primclex.log());
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(orbits.size(), 74);
+  /// background config 0
+  {
+    log.construct("TestBackgroundConfig0");
+    log << "ZrO 3x3x3 supercell, alternating filled and empty O layers" << std::endl;
+    TestBackgroundConfig0 tc(primclex);
+    BOOST_CHECK_EQUAL(true, true);
+    log << "  DONE" << std::endl;
 
-  //print_clust(orbits.begin(), orbits.end(), std::cout, PrototypePrinter<IntegralCluster>());
+    /// Step-by-step checks
+    {
+      /// Common local cluster specs
+      jsonFile local_specs("tests/unit/kinetics/ZrO_local_bspecs_0.json");
 
-  // Make PrimPeriodicDiffTransOrbit
-  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(
-    orbits.begin() + 2,
-    orbits.begin() + 4,
-    primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits),
-    &primclex);
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
+      {
+        log.check("DiffTrans orbit 0");
+        log << "hop along c-axis" << std::endl;
+        TestEnumComponents te(tc.config, to.diff_trans_orbits[0], local_specs, log);
+        log << "- expected base configurations:" << 1 << std::endl;
+        log << "  - base 0: c-axis hop between neighboring filled and empty layer" << std::endl;
+        BOOST_CHECK_EQUAL(te.enumerator->base().size(), 1);
+        log << "- expected local orbit branch, multiplicity:" << std::endl;
+        log << "  - base config 0:" << std::endl;
+        log << "    - 1: null perturbation" << std::endl;
+        log << "    - 6: nearest point cluster in O layer" << std::endl;
+        log << "    - 6: nearest point cluster in Va layer" << std::endl;
+        BOOST_CHECK_EQUAL(te.local_orbit_branch[0], std::vector<int>({0, 1, 1}));
+        BOOST_CHECK_EQUAL(te.local_orbit_mult[0], std::vector<int>({1, 6, 6}));
+        log << "- expected unique, canonical DiffTransConfigurations:" << std::endl;
+        log << "  - base config 0:" << std::endl;
+        log << "    - 0: null perturbation" << std::endl;
+        log << "    - 1: nearest Va in O layer" << std::endl;
+        log << "    - 2: nearest O in Va layer" << std::endl;
+        BOOST_CHECK_EQUAL(te.unique_canon_perturb[0].size(), 3);
+        log << "done" << std::endl;
 
-  /*
-  print_clust(
-    diff_trans_orbits.begin(),
-    diff_trans_orbits.end(),
-    std::cout,
-    PrototypePrinter<Kinetics::DiffusionTransformation>());
-  */
+      }
+    } // end Step-by-step checks
 
-  // Make background config
-  Supercell _scel {&primclex, Lattice(1 * a, 1 * b, 1 * c)};
-  Configuration _config(_scel);
-  _config.set_occupation({0, 0, 1, 0});
-
-  //std::cout << "construct background_config" << std::endl;
-  Supercell background_scel {&primclex, Lattice(3 * a, 3 * b, 3 * c)};
-  Configuration background_config = _config.
-                                    fill_supercell(background_scel, primclex.prim().factor_group()).
-                                    in_canonical_supercell();
-  BOOST_CHECK_EQUAL(true, true);
-
-  /// Construct enumerator
-  //std::cout << "construct enumerator" << std::endl;
-  fs::path local_bspecs_path = "tests/unit/kinetics/ZrO_local_bspecs_0.json";
-  jsonParser local_bspecs {local_bspecs_path};
-  Kinetics::DiffTransConfigEnumOccPerturbations enumerator(
-    background_config,
-    diff_trans_orbits[0],
-    local_bspecs);
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(enumerator.valid(), true);
-  BOOST_CHECK_EQUAL(enumerator.step(), 0);
-  BOOST_CHECK_EQUAL((enumerator.begin() != enumerator.end()), true);
-
-  /// Enumerate perturbations (may be duplicates at this point)
-  //std::cout << "enumerate" << std::endl;
-  std::vector<Kinetics::DiffTransConfiguration> collection;
-  Index index = 0;
-  for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-    //std::cout << "OUTPUT: " << index << std::endl;
-    //std::cout << "  diff_trans: \n" << it->diff_trans() << std::endl;
-    //std::cout << "  occ: " << it->from_config().occupation() << std::endl;
-    //std::cout << "  occ: " << it->to_config().occupation() << std::endl;
-    collection.push_back(*it);
-    BOOST_CHECK_EQUAL(it->has_valid_from_occ(), true);
-    BOOST_CHECK_EQUAL(it->is_valid(), true);
-    ++index;
   }
-  //std::cout << "collection.size(): " << collection.size() << std::endl;
-  BOOST_CHECK_EQUAL(collection.size(), 19);
-
-  /*
-  for(auto &dtc : collection) {
-    std::cout << "From config" << dtc.sorted().from_config() << std::endl;
-    std::cout << "To config " << dtc.sorted().to_config() << std::endl;
-  }
-  */
 }
 
 BOOST_AUTO_TEST_CASE(ZrOTest_run) {
@@ -225,9 +380,6 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
   PrimClex primclex(proj.dir, null_log());
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
-
-  Completer::EnumOption enum_opt;
-  enum_opt.desc();
 
   // -- Generate Supercell & Configuration --
 
@@ -243,22 +395,20 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
     enum_opt.desc();
 
     // Generate DiffTrans
-    fs::path difftrans_path = "tests/unit/kinetics/ZrO_diff_trans_0.json";
-    jsonParser diff_trans_json {difftrans_path};
+    jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
     int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
     const auto &diff_trans_db = primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>();
     BOOST_CHECK_EQUAL(diff_trans_db.size(), 3);
     BOOST_CHECK_EQUAL(success, 0);
 
-//    //print DiffTrans prototypes
-//    {
-//      PrototypePrinter<Kinetics::DiffusionTransformation> printer;
-//      print_clust(diff_trans_db.begin(), diff_trans_db.end(), std::cout, printer);
-//    }
+    //    //print DiffTrans prototypes
+    //    {
+    //      PrototypePrinter<Kinetics::DiffusionTransformation> printer;
+    //      print_clust(diff_trans_db.begin(), diff_trans_db.end(), std::cout, printer);
+    //    }
 
     // Generate perturbations
-    fs::path diffperturb_path = "tests/unit/kinetics/ZrO_diff_perturb_0.json";
-    jsonParser diff_perturb_json {diffperturb_path};
+    jsonFile diff_perturb_json {"tests/unit/kinetics/ZrO_diff_perturb_0.json"};
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
     BOOST_CHECK_EQUAL(true, true);
 
@@ -266,108 +416,5 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
     BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
   }
 }
-
-/*
-BOOST_AUTO_TEST_CASE(FCCTest) {
-
-  // Make test project
-  BOOST_CHECK_EQUAL(true, true);
-  test::FCCTernaryProj proj;
-  proj.check_init();
-  proj.check_composition();
-
-  Logging logging = Logging::null();
-  PrimClex primclex(proj.dir, logging);
-  const Structure &prim = primclex.prim();
-  const Lattice &lat = prim.lattice();
-
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
-  jsonParser bspecs {bspecs_path};
-
-  // Make PrimPeriodicIntegralClusterOrbit
-  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-  make_prim_periodic_orbits(
-    primclex.prim(),
-    bspecs,
-    alloy_sites_filter,
-    primclex.crystallography_tol(),
-    std::back_inserter(orbits),
-    primclex.log());
-  BOOST_CHECK_EQUAL(orbits.size(), 71);
-
-  //print_clust(orbits.begin(), orbits.end(), std::cout, PrototypePrinter<IntegralCluster>());
-
-  // Make PrimPeriodicDiffTransOrbit
-  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(
-    orbits.begin() + 2,
-    orbits.begin() + 4,
-    primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits),
-    &primclex);
-  BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 12);
-
-  print_clust(
-    diff_trans_orbits.begin(),
-    diff_trans_orbits.end(),
-    std::cout,
-    PrototypePrinter<Kinetics::DiffusionTransformation>());
-
-  Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[4].prototype();
-  Eigen::Vector3d a1, b1, c1;
-  std::tie(a1, b1, c1) = primclex.prim().lattice().vectors();
-  Supercell scel {&primclex, Lattice(2 * a1, 2 * b1, 2 * c1)};
-  Configuration l12config(scel);
-  l12config.init_occupation();
-  BOOST_CHECK_EQUAL(true, true);
-
-  //std::cout << l12config << std::endl;
-  //In this config there should be 2 options to place the nearest neighbor hop
-  // one toward the majority L12 atom and one towards minority L12 atom
-  //given a cutoff radius of 5 angstroms and only looking at local point and pair clusters
-  //There are the following unique perturbations: (This project still has 3 possible occupants)
-  // Hop towards minority L12 surround 5 angst radius with Majority L12
-  // Hop towards minority L12 surround 5 angst radius with Minority L12
-  // Hop towards minority L12 1/3 of sites around hop with Minority L12 on multiplicity 2 site
-  // Hop towards minority L12 1/3 of sites around hop with Minority L12 on one multiplicity 4 site
-  // Hop towards minority L12 2/3 of sites around hop with Minority L12 on multiplicity 4 sites
-  // Hop towards minority L12 2/3 of sites around hop with Minority L12 on one multiplicity 2 site and one multiplicity 4 site
-  //Due to high incidence of periodicity the other orientation of the hop results in the same DiffTransConfigs
-
-  /// Make local clusters
-  fs::path l12_local_bspecs_path = "tests/unit/kinetics/l12_local_bspecs_0.json";
-  jsonParser l12_local_bspecs {l12_local_bspecs_path};
-  std::vector<LocalIntegralClusterOrbit> local_orbits;
-  make_local_orbits(
-    diff_trans_orbits[4].prototype(),
-    l12_local_bspecs,
-    alloy_sites_filter,
-    primclex.crystallography_tol(),
-    std::back_inserter(local_orbits),
-    std::cout);
-  BOOST_CHECK_EQUAL(true, true);
-
-  /// Check for neighborhood overlap
-  BOOST_CHECK_EQUAL(
-    has_local_neighborhood_overlap(local_orbits, l12config.supercell()),
-    true);
-
-  /// Constructor enumerator
-  Kinetics::DiffTransConfigEnumOccPerturbations enumerator(l12config, diff_trans_orbits[4], l12_local_bspecs);
-  BOOST_CHECK_EQUAL(true, true);
-
-  /// Enumerate perturbations (may be duplicates at this point)
-  std::vector<Kinetics::DiffTransConfiguration> collection {
-    enumerator.begin(),
-    enumerator.end()};
-  BOOST_CHECK_EQUAL(collection.size(), 1);
-
-  for(auto &dtc : collection) {
-    std::cout << "From config" << dtc.sorted().from_config() << std::endl;
-    std::cout << "To config " << dtc.sorted().to_config() << std::endl;
-  }
-
-}
-*/
 
 BOOST_AUTO_TEST_SUITE_END();

@@ -35,7 +35,8 @@ namespace CASM {
       m_local_cspecs(local_cspecs),
       m_scel_sym_compare(_supercell()),
       m_include_unperturbed(true),
-      m_skip_subclusters(true) {
+      m_skip_subclusters(true),
+      m_curr(OccPerturbation(_prim())) {
 
       this->_initialize();
 
@@ -45,12 +46,13 @@ namespace CASM {
       _init_perturbations_data();
 
       // check if initial perturb is valid or not
-      auto res = _current_perturb();
-      if(!res.second) {
+      // (currently null perturbation is valid, so I think this should always be valid)
+      _update_current_perturb();
+      if(!check_increment()) {
         increment();
       }
       else {
-        _set_current(res.first);
+        _set_current(m_curr.perturb);
       }
 
       if(valid()) {
@@ -243,14 +245,15 @@ namespace CASM {
       }
 
       /// Construct and execute enumerator
+      template<typename DatabaseType>
       void _enumerate(
         const PrimClex &primclex,
         const Configuration &bg_config,
         const PrimPeriodicDiffTransOrbit &dtorbit,
         const jsonParser &local_cspecs,
-        std::vector<std::string> filter_expr) {
+        std::vector<std::string> filter_expr,
+        DatabaseType &db) {
 
-        auto &db = primclex.db<DiffTransConfiguration>();
         primclex.log() << "\tUsing " << dtorbit.name() << "... " << std::flush;
         Index Ninit_spec = db.size();
 
@@ -284,10 +287,13 @@ namespace CASM {
 
     }
 
+    /// Enumerate DiffTransConfigEnumOccPerturbations into any std::set-like database
+    template<typename DatabaseType>
     int DiffTransConfigEnumOccPerturbations::run(
       const PrimClex &primclex,
       const jsonParser &kwargs,
-      const Completer::EnumOption &enum_opt) {
+      const Completer::EnumOption &enum_opt,
+      DatabaseType &db) {
 
       Log &log = primclex.log();
 
@@ -309,7 +315,6 @@ namespace CASM {
       jsonParser local_cspecs = _parse_local_cspecs(kwargs);
 
       std::vector<std::string> filter_expr = make_enumerator_filter_expr(kwargs, enum_opt);
-      auto &db = primclex.db<DiffTransConfiguration>();
       std::string type_name = traits<DiffTransConfiguration>::name;
 
       Index Ninit = db.size();
@@ -323,7 +328,7 @@ namespace CASM {
 
         for(const auto &dtorbit : dtorbit_sel.selected()) {
           _check_overlap(primclex, bg_config, dtorbit, local_cspecs);
-          _enumerate(primclex, bg_config, dtorbit, local_cspecs, filter_expr);
+          _enumerate(primclex, bg_config, dtorbit, local_cspecs, filter_expr, db);
         }
       }
 
@@ -334,13 +339,84 @@ namespace CASM {
       log << "# new " << type_name << ": " << Nfinal - Ninit << "\n";
       log << "# " << type_name << " in this project: " << Nfinal << "\n" << std::endl;
 
-      log << "Writing " << type_name << " database..." << std::endl;
-      db.commit();
-      log << "  DONE" << std::endl;
       return 0;
     }
 
+    /// Enumerate DiffTransConfigEnumOccPerturbations into the project database
+    int DiffTransConfigEnumOccPerturbations::run(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      const Completer::EnumOption &enum_opt) {
+
+      auto &db = primclex.db<DiffTransConfiguration>();
+      std::string type_name = traits<DiffTransConfiguration>::name;
+
+      return DiffTransConfigEnumOccPerturbations::run(
+               primclex,
+               kwargs,
+               enum_opt,
+               primclex.db<DiffTransConfiguration>());
+
+      primclex.log() << "Writing " << type_name << " database..." << std::endl;
+      db.commit();
+      primclex.log() << "  DONE" << std::endl;
+
+      return 0;
+    }
+
+    template int DiffTransConfigEnumOccPerturbations::run<std::set<DiffTransConfiguration>>(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      const Completer::EnumOption &,
+      std::set<DiffTransConfiguration> &);
+
     ///------------------------------------Internal functions-------------------------------///
+
+    void DiffTransConfigEnumOccPerturbations::partial_increment(bool complete_perturb) {
+      // increment occ_counter once
+      // if no more occupations, increment m_local_orbit_it
+      // if no more local orbits, increment m_base_it
+      // if no more base diff trans, _invalidate
+
+      ++m_occ_counter;
+      ++m_occ_counter_index;
+      if(m_occ_counter.valid()) {
+        _update_current_perturb(complete_perturb);
+      }
+      else if(++m_local_orbit_it != m_local_orbit.end()) {
+        _init_perturbations_data();
+        _update_current_perturb(complete_perturb);
+      }
+      else if(++m_base_it != m_base.end()) {
+        _init_local_orbits();
+        _init_perturbations_data();
+        _update_current_perturb(complete_perturb);
+      }
+      else {
+        // at this point m_base_it == m_base.end(): pass
+      }
+      return;
+    }
+
+    /// \returns True if current perturb is valid and canonical or enumerator is complete
+    bool DiffTransConfigEnumOccPerturbations::check_increment() {
+
+      bool valid = m_curr.is_not_subcluster && m_curr.is_canonical;
+      if(!valid && m_base_it != m_base.end()) {
+        return false;
+      }
+
+      if(valid) {
+        // find canonical from_config set current
+        this->_increment_step();
+        _set_current(m_curr.perturb);
+      }
+      else {
+        // if no more base diff trans, we're done
+        _invalidate();
+      }
+      return true;
+    }
 
     void DiffTransConfigEnumOccPerturbations::increment() {
 
@@ -350,34 +426,11 @@ namespace CASM {
       // if no more base diff trans, _invalidate
 
       // current Perturbation & 'is_valid'
-      std::pair<OccPerturbation, bool> curr_perturb {OccPerturbation(_prim()), false};
 
       do {
-        ++m_occ_counter;
-        if(m_occ_counter.valid()) {
-          curr_perturb = _current_perturb();
-        }
-        else if(++m_local_orbit_it != m_local_orbit.end()) {
-          _init_perturbations_data();
-          curr_perturb = _current_perturb();
-        }
-        else if(++m_base_it != m_base.end()) {
-          _init_local_orbits();
-          _init_perturbations_data();
-          curr_perturb = _current_perturb();
-        }
+        partial_increment();
       }
-      while(!curr_perturb.second && m_base_it != m_base.end());
-
-      if(curr_perturb.second) {
-        // find canonical from_config set current
-        this->_increment_step();
-        _set_current(curr_perturb.first);
-      }
-      else {
-        // if no more base diff trans, we're done
-        _invalidate();
-      }
+      while(!check_increment());
     };
 
     double DiffTransConfigEnumOccPerturbations::_tol() const {
@@ -427,6 +480,40 @@ namespace CASM {
       diff_trans_g(diff_trans.invariant_subgroup(config.supercell())),
       generating_g(config.invariant_subgroup(diff_trans_g.begin(), diff_trans_g.end())),
       generating_sym_g(make_sym_group(generating_g)) {
+    }
+
+    const std::vector<DiffTransConfigEnumOccPerturbations::Base> &
+    DiffTransConfigEnumOccPerturbations::base() const {
+      return m_base;
+    }
+
+    Index DiffTransConfigEnumOccPerturbations::base_index() const {
+      return std::distance(
+               m_base.begin(),
+               std::vector<Base>::const_iterator(m_base_it));
+    }
+
+    const std::vector<ScelPeriodicOrbit<IntegralCluster>> &
+    DiffTransConfigEnumOccPerturbations::local_orbit() const {
+      return m_local_orbit;
+    }
+
+    Index DiffTransConfigEnumOccPerturbations::local_orbit_index() const {
+      return std::distance(
+               m_local_orbit.begin(),
+               std::vector<ScelPeriodicOrbit<IntegralCluster>>::const_iterator(m_local_orbit_it));
+    }
+
+    Index DiffTransConfigEnumOccPerturbations::occ_counter_index() const {
+      return m_occ_counter_index;
+    }
+
+    /// Return the current OccPerturbation (non-canonical) and whether it is valid
+    ///
+    /// - If not valid, the OccPerturbation itself may not be complete
+    const DiffTransConfigEnumOccPerturbations::CurrentPerturbation &
+    DiffTransConfigEnumOccPerturbations::current_perturb() const {
+      return m_curr;
     }
 
     /// Generate local orbits for current base diff trans
@@ -513,33 +600,41 @@ namespace CASM {
                         Eigen::VectorXi::Zero(proto.size()),
                         max_count,
                         Eigen::VectorXi::Constant(proto.size(), 1));
-
+      m_occ_counter_index = 0;
     }
 
-    std::pair<OccPerturbation, bool> DiffTransConfigEnumOccPerturbations::_current_perturb() const {
+    void DiffTransConfigEnumOccPerturbations::_update_current_perturb(bool complete_perturb) {
 
-      OccPerturbation perturb {_prim()};
+      m_curr.perturb.elements().clear();
       const auto &proto = m_scel_sym_compare.prepare(m_local_orbit_it->prototype());
 
       // check for null perturbation
       if(proto.size() == 0 && m_include_unperturbed) {
-        return std::make_pair(perturb, true);
+        m_curr.is_not_subcluster = true;
+        m_curr.is_canonical = true;
       }
 
       // generate next perturbation consistent with from_config
+      m_curr.is_not_subcluster = true;
       for(int i = 0; i < proto.size(); ++i) {
         // check for subcluster perturbation
         if(m_from_value(i) == m_occ_counter()[i] && m_skip_subclusters) {
-          return std::make_pair(perturb, false);
+          m_curr.is_not_subcluster = false;
+          m_curr.is_canonical = false;
+          if(!complete_perturb) {
+            return;
+          }
         }
-        perturb.elements().emplace_back(proto[i], m_from_value(i), m_occ_counter()[i]);
+        m_curr.perturb.elements().emplace_back(proto[i], m_from_value(i), m_occ_counter()[i]);
       }
 
       auto begin = m_base_it->generating_g.begin();
       auto end = m_base_it->generating_g.end();
 
       // return perturbation and check if canonical wrt local orbit sub group
-      return std::make_pair(perturb, perturb.is_canonical(_supercell(), begin, end));
+      if(m_curr.is_not_subcluster) {
+        m_curr.is_canonical = m_curr.perturb.is_canonical(_supercell(), begin, end);
+      }
     }
 
     /// Applies current perturbation to m_base_config and stores result in m_current
