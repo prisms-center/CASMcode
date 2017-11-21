@@ -89,6 +89,8 @@ namespace CASM {
   }
 
 
+  // --- PrimPeriodicOrbitBranchSpecsParser ---
+
   PrimPeriodicOrbitBranchSpecsParser::PrimPeriodicOrbitBranchSpecsParser(
     jsonParser &_input,
     fs::path _path,
@@ -130,6 +132,7 @@ namespace CASM {
   }
 
 
+  // --- PrimPeriodicOrbitSpecsParser ---
 
   PrimPeriodicOrbitSpecsParser::PrimPeriodicOrbitSpecsParser(
     const PrimClex &_primclex,
@@ -194,6 +197,8 @@ namespace CASM {
   }
 
 
+  // --- PrimPeriodicClustersByMaxLength ---
+
   PrimPeriodicClustersByMaxLength::PrimPeriodicClustersByMaxLength(
     const PrimClex &_primclex,
     const SymGroup &_generating_grp,
@@ -234,6 +239,36 @@ namespace CASM {
 
   const PrimPeriodicOrbitSpecsParser &PrimPeriodicClustersByMaxLength::orbit_specs() const {
     return static_cast<const PrimPeriodicOrbitSpecsParser &>(*this->kwargs.find("orbit_specs")->second);
+  }
+
+
+  // --- LocalOrbitBranchSpecsParser ---
+
+  LocalOrbitBranchSpecsParser::LocalOrbitBranchSpecsParser(
+    jsonParser &_input, fs::path _path, bool _required) {
+    // ... todo ...
+  }
+
+  bool LocalOrbitBranchSpecsParser::max_length_including_phenomenal() const {
+    bool result;
+    self_it->get_else<bool>(result, "max_length_including_phenomenal", false);
+    return result;
+  }
+
+  double LocalOrbitBranchSpecsParser::max_length(int branch_i) const {
+    if(branch_i < 1 || branch_i > max_branch) {
+      throw std::invalid_argument(std::string("Error: ")
+                                  + "Requested max_length for invalid branch: " + branch_to_string(branch_i));
+    }
+    return branch(branch_i)->find("max_length")->get<double>();
+  }
+
+  double LocalOrbitBranchSpecsParser::cutoff_radius(int branch_i) const {
+    if(branch_i < 1 || branch_i > max_branch) {
+      throw std::invalid_argument(std::string("Error: ")
+                                  + "Requested cutoff_radius for invalid branch: " + branch_to_string(branch_i));
+    }
+    return branch(branch_i)->find("cutoff_radius")->get<double>();
   }
 }
 

@@ -441,7 +441,7 @@ namespace CASM {
   }
 
 
-  /// \brief Output the neighborhood of DiffusionTransformation within max_radius of any site in transformation
+  /// \brief Output the neighborhood of DiffusionTransformation within max_radius of dist_to_path
   ///
   /// \param diff_trans DiffusionTransformation
   /// \param max_radius The neighborhood distance cutoff
