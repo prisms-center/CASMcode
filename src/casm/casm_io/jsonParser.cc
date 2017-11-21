@@ -186,10 +186,11 @@ namespace CASM {
 
   std::istream &operator>>(std::istream &stream, jsonParser &json) {
     if(!json.read(stream)) {
-      std::cerr << "ERROR: Unable to successfully parse JSON file.  File parsed as:\n"
-                << json
-                << "\nPlease correct input file and try again. Exiting...\n";
-      exit(1);
+      std::stringstream msg;
+      msg << "Error: Unable to successfully parse JSON file.  File parsed as:\n"
+          << json
+          << "\nPlease correct input file and try again. Exiting...\n";
+      throw std::invalid_argument(msg.str());
     }
     return stream;
   }
@@ -352,11 +353,12 @@ namespace CASM {
           curr = &((*curr)[index]);
         }
         else {
-          std::string msg = "Error in jsonParser::at: attempted to access element outside of array range";
-          std::cerr << "path: " << path << std::endl;
-          std::cerr << "index: " << index << std::endl;
-          std::cerr << "curr->size(): " << curr->size() << std::endl;
-          throw std::invalid_argument(msg);
+          std::stringstream msg;
+          msg << "Error in jsonParser::at: attempted to access element outside of array range. "
+              << "path: '" << path << "' "
+              << "index: " << index << " "
+              << "curr->size(): " << curr->size();
+          throw std::invalid_argument(msg.str());
         }
       }
       else {
@@ -365,10 +367,10 @@ namespace CASM {
           curr = &((*curr)[it->string()]);
         }
         else {
-          std::string msg = "Error in jsonParser::at: key not found";
-          std::cerr << "path: " << path << std::endl;
-          std::cerr << "key: " << it->string() << std::endl;
-          throw std::invalid_argument(msg);
+          std::stringstream msg;
+          msg << "Error in jsonParser::at: key '" << it->string() << "' not found at '"
+              << path << "'.";
+          throw std::invalid_argument(msg.str());
         }
       }
     }
