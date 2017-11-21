@@ -134,4 +134,12 @@ namespace CASM {
     return clust;
   }
 
+  IntegralCluster jsonConstructor<IntegralCluster>::from_json(
+    const jsonParser &json,
+    const PrimClex &primclex) {
+    IntegralCluster clust(primclex.prim());
+    CASM::from_json(clust, json, primclex.crystallography_tol());
+    return clust;
+  }
+
 }

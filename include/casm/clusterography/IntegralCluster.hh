@@ -36,6 +36,7 @@ namespace CASM {
 
     /// \brief Construct from JSON
     static IntegralCluster from_json(const jsonParser &json, const Structure &prim, double xtal_tol);
+    static IntegralCluster from_json(const jsonParser &json, const PrimClex &primclex);
   };
 
 

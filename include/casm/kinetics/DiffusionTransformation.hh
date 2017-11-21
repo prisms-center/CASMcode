@@ -284,6 +284,7 @@ namespace CASM {
   struct jsonConstructor<Kinetics::DiffusionTransformation> {
 
     static Kinetics::DiffusionTransformation from_json(const jsonParser &json, const Structure &prim);
+    static Kinetics::DiffusionTransformation from_json(const jsonParser &json, const PrimClex &primclex);
   };
 
   /// \brief Read from JSON

@@ -722,6 +722,13 @@ namespace CASM {
     return trans;
   }
 
+  Kinetics::DiffusionTransformation jsonConstructor<Kinetics::DiffusionTransformation>::from_json(
+    const jsonParser &json, const PrimClex &primclex) {
+    Kinetics::DiffusionTransformation trans {primclex.prim()};
+    CASM::from_json(trans, json, primclex.prim());
+    return trans;
+  }
+
   /// \brief Read from JSON
   void from_json(Kinetics::DiffusionTransformation &trans, const jsonParser &json, const Structure &prim) {
     if(json["occ_transform"].size() > 0) {
