@@ -98,11 +98,11 @@ namespace CASM {
   /// \ingroup EnumIO
   ///
   template<typename ENUM>
-  void invalid_enum_string(std::string val, std::ostream &serr) {
+  void invalid_enum_string(std::string val) {
     std::stringstream s;
-    s << "Invalid " << traits<ENUM>::name << ": " << val;
-    serr << s.str() << "\n";
-    serr << help<ENUM>();
+    s << "Invalid " << traits<ENUM>::name << ": " << val << ". " << singleline_help<ENUM>();
+    //serr << s.str() << "\n";
+    //serr << help<ENUM>();
     throw std::invalid_argument(std::string("ERROR: ") + s.str());
   }
 
@@ -129,7 +129,7 @@ namespace CASM {
       }
     }
 
-    invalid_enum_string<ENUM>(val, default_err_log()); // throws and prints multiline error message
+    invalid_enum_string<ENUM>(val); // throws
     return traits<ENUM>::strval.begin()->first; // never reached
   }
 
