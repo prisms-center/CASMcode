@@ -684,6 +684,7 @@ casminclude_HEADERS = \
   include/casm/casm_io/Log.hh\
   include/casm/casm_io/DataStream.hh\
   include/casm/casm_io/DataFormatter_impl.hh\
+  include/casm/casm_io/InputParser_impl.hh\
   include/casm/casm_io/DataFormatterTools.hh\
   include/casm/casm_io/VaspIO.hh\
   include/casm/casm_io/DataFormatterTools_impl.hh\

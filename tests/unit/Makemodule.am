@@ -381,6 +381,7 @@ casm_unit_casm_io_CXXFLAGS = \
 
 casm_unit_casm_io_SOURCES = \
   tests/unit/unit_test.cpp\
+  tests/unit/casm_io/EnumIO_test.cpp\
   tests/unit/casm_io/DataFormatterDictionary_test.cpp\
   tests/unit/casm_io/jsonParser_test.cpp
 
