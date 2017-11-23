@@ -75,7 +75,8 @@ def read_settings(filename):
                 "encut", "kpoints","extra_input_files", "move", "copy", "remove",
                 "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
                 "preamble", "prerun", "postrun", "prop", "prop_start", "prop_stop",
-                "prop_step", "tol", "tol_amount", "name", "fine_ngx", "CI_neb", "n_images"]
+                "prop_step", "tol", "tol_amount", "name", "fine_ngx", "CI_neb", "n_images",
+                "software","method"]
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")

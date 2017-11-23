@@ -9,8 +9,8 @@ import casm
 import pandas
 from casm.project import Project, Selection
 import vaspwrapper
-from casm.vaspwrapper import VaspCalculatorBase
-import vasp.Neb
+from casm.vaspwrapper.vasp_calculator_base import VaspCalculatorBase
+#import vasp.Neb
 
 class Neb(VaspCalculatorBase):
     """

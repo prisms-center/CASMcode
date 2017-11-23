@@ -51,7 +51,7 @@ class VaspCalculatorBase(object):
     def append_selection_data(self):
         """append configproperties to selection.data"""
         config_dicts = []
-        for config_data in self.selection.data:
+        for index,config_data in self.selection.data.iterrows():
             config_dicts.append(self.config_properties(config_data))
         properites_dict = {}
         for key in config_dicts[0].keys():
@@ -69,7 +69,7 @@ class VaspCalculatorBase(object):
     def setup(self):
         """Setup initial relaxation run for the selection"""
         self.pre_setup()
-        for config_data in self.selection.data:
+        for index, config_data in self.selection.data.iterrows():
             self.config_setup(config_data)
 
     def config_setup(self, config_data):
@@ -88,6 +88,10 @@ class VaspCalculatorBase(object):
         settings = self.read_settings(config_data["setfile"])
         vaspfiles = self.get_vasp_input_files(config_data, settings)
         incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files = vaspfiles
+        try:
+            os.mkdirs(config_data["calcdir"])
+        except:
+            pass
         vasp.io.write_vasp_input(config_data["calcdir"], incarfile,
                                  prim_kpointsfile, prim_poscarfile,
                                  super_poscarfile, speciesfile,
@@ -151,7 +155,7 @@ class VaspCalculatorBase(object):
         """ submit jobs for a selection"""
         db = pbs.JobDB()
         db.update()
-        for config_data in self.selection.data:
+        for index,config_data in self.selection.data.iterrows():
             print "Submitting..."
             print "Configuration:", config_data["configname"]
             #first, check if the job has already been submitted and is not completed
@@ -225,7 +229,6 @@ class VaspCalculatorBase(object):
             # Or just execute a single prerun line, if given
             if settings["prerun"] is not None:
                 cmd += settings["prerun"] + "\n"
-            #cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + config_obj.configdir + "').run()\"\n" #TODO
             cmd += self.run_cmd(config_data["configdir"], self.calctype)
             if settings["postrun"] is not None:
                 cmd += settings["postrun"] + "\n"
@@ -321,7 +324,7 @@ class VaspCalculatorBase(object):
 
     def run(self):
         """run the job of a selection"""
-        for config_data in self.selection.data:
+        for index,config_data in self.selection.data.iterrows():
             settings = self.read_settings(config_data["setfile"])
             calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
 
@@ -452,7 +455,7 @@ class VaspCalculatorBase(object):
         checks for convergence
         calls the finalize function to write the approprite properties files.
         """
-        for config_data in self.selection.data:
+        for index,config_data in self.selection.data.iterrows():
             try:
                 settings = self.read_settings(config_data["setfile"])
                 calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))

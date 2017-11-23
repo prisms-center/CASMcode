@@ -4,7 +4,8 @@ import argparse, json, sys
 from os import getcwd
 from os.path import join, abspath
 from casm.project import Project, Selection
-import casm.vaspwrapper.Relax, casm.vaspwrapper.Neb
+from casm.vaspwrapper import Relax as vasp_relax
+from casm.vaspwrapper import Neb as vasp_neb
 
 # casm-calc --configs selection
 #           --type "config", "diff_trans", etc.
@@ -45,12 +46,8 @@ Report calculation results (print calc.properties.json file) for all selected co
 
 available_calculators = {
   "vasp":{
-    "relax": casm.vaspwrapper.Relax,
-    "neb": casm.vaspwrapper.Neb
-  },
-  "quantum_expresso":{
-    "relax": casm.qewrapper.Relax,
-    "neb": casm.qewrapper.Neb
+    "relax": vasp_relax,
+    "neb": vasp_neb
   }
 }
 
@@ -76,7 +73,7 @@ if __name__ == "__main__":
       #get default calctype
       args.calctype = proj.settings.default_clex.calctype 
 
-    global_settings = json.loads(os.path.join(proj.dir.settings.calctype_settings_dir(args.calctype), "calc.json"))
+    global_settings = json.load(open(join(proj.dir.calctype_settings_dir(args.calctype), "calc.json")))
     software = global_settings["software"]
     method = global_settings["method"]
     # Construct with Selection:
