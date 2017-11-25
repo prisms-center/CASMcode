@@ -82,14 +82,14 @@ if __name__ == "__main__":
         calculator = available_calculators[software][method](sel, args.calctype)
 
         if args.setup:
-            calculator.setup()
+            calculator.pre_setup()
 
         elif args.submit:
-            calculator.setup()
+            calculator.pre_setup()
             calculator.submit()
 
         elif args.run:
-            calculator.setup()
+            calculator.pre_setup()
             calculator.run()
 
         elif args.report:
