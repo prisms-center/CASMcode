@@ -92,6 +92,11 @@ class Selection(object):
         return self._data
     
     
+    @data.setter
+    def data(self, input):
+        self._data = input
+
+
     def save(self, data=None, force=False): #make it generalized ##todo
         """
         Save the current selection. Also allows completely replacing the 'data'

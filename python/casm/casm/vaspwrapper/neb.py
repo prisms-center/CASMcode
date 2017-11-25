@@ -6,11 +6,9 @@ import json
 import shutil
 import vasp
 import casm
-import pandas
-from casm.project import Project, Selection
 import vaspwrapper
 from casm.vaspwrapper.vasp_calculator_base import VaspCalculatorBase
-#import vasp.Neb
+from vasp import Neb as calculator
 
 class Neb(VaspCalculatorBase):
     """
@@ -29,7 +27,7 @@ class Neb(VaspCalculatorBase):
     -------
     from_configuration_dir(configdir='string', calctype='string', bool, bool)
         returns a instance of the Neb class instantited with a single configuration
-    config_properties(config_data=dict/Panda.DataFrame)
+    config_properties(config_data=dict/Pandas.DataFrame)
         return a dict of the properties required to setup a configuration
     pre_setup
         creates folder and makes POS files for each image
@@ -74,21 +72,7 @@ class Neb(VaspCalculatorBase):
         print "Construct a casm.vaspwrapper.Neb instance:"
         VaspCalculatorBase.__init__(self, selection, calctype, auto, sort)
         self.results_subdir = '01'
-        self.calculator = vasp.Neb
-
-    @classmethod
-    def from_configuration_dir(cls, configuration_dir, calctype, auto=True, sort=True):
-        """returns a instance of the Neb class instantited with a single configuration"""
-        # change config_dir to configuration_dir all over
-        proj = Project(configuration_dir)
-        sel = Selection(proj, "EMPTY", "diff_trans_config", False)
-        split_path = configuration_dir.split(os.path.sep)
-        index = split_path.index("training_data")
-        configname = '/'.join(split_path[index+1:])
-        sel.data = pandas.DataFrame({"configname":configname, "selected":1}, index=range(2))
-        sel_config = sel.saveas(os.path.join(proj.path, ".casm/tmp", configname.replace('/', '.')), True)
-        obj = cls(sel_config, calctype, auto, sort)
-        return obj
+        self.calculator = calculator
 
     def config_properties(self, config_data):
         """return configuration properties as a dict"""

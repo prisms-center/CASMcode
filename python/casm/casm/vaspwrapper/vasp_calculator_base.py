@@ -1,9 +1,11 @@
 """implements the parent class for vasp calculations"""
 
 import os, math, sys, json
+import pandas
 import vasp
 import casm
 import casm.project
+from casm.project import Project, Selection
 import vaspwrapper
 import pbs
 
@@ -39,6 +41,24 @@ class VaspCalculatorBase(object):
         self.results_subdir = '' #everything between $(calcdir)/run.*/ and OSZICAR and OUTCAR files
         self.calculator = None
         self.append_selection_data()
+
+    @classmethod
+    def from_configuration_dir(cls, configuration_dir, calctype, auto=True, sort=True):
+        """returns a instance of the Neb class instantited with a single configuration"""
+        # change config_dir to configuration_dir all over
+        proj = Project(configuration_dir)
+        sel = Selection(proj, "EMPTY", "config", False)
+        split_path = configuration_dir.split(os.path.sep)
+        index = split_path.index("training_data")
+        configname = '/'.join(split_path[index+1:])
+        sel.data = pandas.DataFrame({"configname":configname, "selected":1}, index=range(1))
+        # try:
+        #     os.mkdir(os.path.join(proj.path, ".casm/tmp"))
+        # except:
+        #     pass
+        # sel_config = sel.saveas(os.path.join(proj.path, ".casm/tmp", configname.replace('/', '.')), True)
+        obj = cls(sel, calctype, auto, sort)
+        return obj
 
     def config_properties(self, config_data):
         """read properties directories of a specific configuration"""
@@ -89,7 +109,7 @@ class VaspCalculatorBase(object):
         vaspfiles = self.get_vasp_input_files(config_data, settings)
         incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files = vaspfiles
         try:
-            os.mkdirs(config_data["calcdir"])
+            os.makedirs(config_data["calcdir"])
         except:
             pass
         vasp.io.write_vasp_input(config_data["calcdir"], incarfile,
@@ -154,7 +174,6 @@ class VaspCalculatorBase(object):
     def submit(self):
         """ submit jobs for a selection"""
         db = pbs.JobDB()
-        db.update()
         for index,config_data in self.selection.data.iterrows():
             print "Submitting..."
             print "Configuration:", config_data["configname"]
@@ -166,6 +185,7 @@ class VaspCalculatorBase(object):
             if id != []:
                 for j in id:
                     job = db.select_job(j)
+                    #db.update()
                     if job["jobstatus"] != "C":
                         print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
                         sys.stdout.flush()
@@ -253,7 +273,7 @@ class VaspCalculatorBase(object):
             sys.stdout.flush()
             # submit the job
             job.submit()
-            self.report_status(calculation.calcdir, "submitted")
+            self.report_status(config_data["calcdir"], "submitted")
 
             # return to current directory
             os.chdir(currdir)
@@ -266,7 +286,7 @@ class VaspCalculatorBase(object):
         return None
 
     @staticmethod
-    def _calc_submit_node_info(config_data, settings):
+    def _calc_submit_node_info(settings, config_data):
         """return nodes, ppn from settings of a configuration"""
         if "nodes" in settings and "ppn" in settings:
             return int(settings["nodes"]), int(settings["ppn"])
