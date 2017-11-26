@@ -178,14 +178,16 @@ class VaspCalculatorBase(object):
             id = db.select_regex_id("rundir", config_data["calcdir"])
             print "JobID:", id
             sys.stdout.flush()
-            if id != []:
-                for j in id:
-                    job = db.select_job(j)
-                    #db.update()
-                    if job["jobstatus"] != "C":
-                        print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
-                        sys.stdout.flush()
-                        continue
+            try:
+                if id != []:
+                    for j in id:
+                        job = db.select_job(j)
+                        #db.update()
+                        if job["jobstatus"] != "C":
+                            print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
+                            sys.stdout.flush()
+            except BreakException:
+                continue
             settings = self.read_settings(config_data["setfile"])
             # construct the Relax object
             calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
@@ -361,14 +363,14 @@ class VaspCalculatorBase(object):
 
                 # write results to properties.calc.json
                 self.finalize(config_data)
-                return
+                continue
 
             elif status == "not_converging":
                 print "Status:", status
                 self.report_status(config_data["calcdir"], "failed", "run_limit")
                 print "Returning"
                 sys.stdout.flush()
-                return
+                continue
 
             elif status == "incomplete":
 
@@ -417,7 +419,7 @@ class VaspCalculatorBase(object):
                 print "Writing:", settingsfile
                 print "Edit the 'run_limit' property if you wish to continue."
                 sys.stdout.flush()
-                return
+                continue
 
             elif status == "complete":
 
@@ -582,3 +584,7 @@ class VaspCalculatorBase(object):
                     output["relaxed_mag_basis"][unsort_dict[i]] = casm.NoIndent(ocar.mag[i])
 
         return output
+
+class BreakException(Exception):
+    """use this exception to break an outer loop"""
+    pass
