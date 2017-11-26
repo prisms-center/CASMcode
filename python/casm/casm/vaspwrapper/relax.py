@@ -75,6 +75,11 @@ class Relax(VaspCalculatorBase):
     def pre_setup(self):
         """Setus up folders and writes POS files"""
         self.selection.write_pos()
+        for index,config_data in self.selection.data.iterrows():
+            try:
+                os.makedirs(config_data["calcdir"])
+            except:
+                pass
 
     def setup(self):
         """Setup initial relaxation run for the selection"""

@@ -68,7 +68,7 @@ def read_settings(filename):
 
     required = ["queue", "ppn", "walltime"]
 
-    either_or = [["atom_per_proc","nodes_per_image"]]
+    either_or = []
 
     optional = ["account","pmem","priority","message","email","qos","npar","ncore",
                 "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence",
@@ -76,14 +76,16 @@ def read_settings(filename):
                 "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
                 "preamble", "prerun", "postrun", "prop", "prop_start", "prop_stop",
                 "prop_step", "tol", "tol_amount", "name", "fine_ngx", "CI_neb", "n_images",
-                "software","method"]
+                "software","method","nodes"]
+
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")
 
-    for key_list in either_or:
-        if not [key in settings for key in key_list].count(True) == 1:
-            raise VaspWrapperError("Declare one and only of the following options: '" + "' or '".join(key_list) + "' in file: '" + filename + "'")
+    if len(either_or):
+        for key_list in either_or:
+            if not [key in settings for key in key_list].count(True) == 1:
+                raise VaspWrapperError("Declare one and only of the following options: '" + "' or '".join(key_list) + "' in file: '" + filename + "'")
 
     for key in optional:
         if not key in settings:

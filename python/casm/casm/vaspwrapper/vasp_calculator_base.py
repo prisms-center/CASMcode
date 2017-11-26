@@ -108,10 +108,6 @@ class VaspCalculatorBase(object):
         settings = self.read_settings(config_data["setfile"])
         vaspfiles = self.get_vasp_input_files(config_data, settings)
         incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files = vaspfiles
-        try:
-            os.makedirs(config_data["calcdir"])
-        except:
-            pass
         vasp.io.write_vasp_input(config_data["calcdir"], incarfile,
                                  prim_kpointsfile, prim_poscarfile,
                                  super_poscarfile, speciesfile,
