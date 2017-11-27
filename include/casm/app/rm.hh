@@ -5,31 +5,32 @@
 #include "casm/app/APICommand.hh"
 
 namespace CASM {
-  namespace Completer {
+  /*  namespace Completer {
 
-    class RmOption : public OptionHandlerBase {
+      class RmOption : public OptionHandlerBase {
 
-    public:
+      public:
 
-      using OptionHandlerBase::selection_path;
-      using OptionHandlerBase::name_strs;
-      using OptionHandlerBase::db_type;
-      using OptionHandlerBase::db_type_opts;
+        using OptionHandlerBase::selection_path;
+        using OptionHandlerBase::name_strs;
+        using OptionHandlerBase::db_type;
+        using OptionHandlerBase::db_type_opts;
 
-      RmOption();
+        RmOption();
 
-      bool force() const;
+        bool force() const;
 
-      bool data() const;
+        bool data() const;
 
-      bool dry_run() const;
+        bool dry_run() const;
 
-    private:
+      private:
 
-      void initialize() override;
+        void initialize() override;
 
-    };
-  }
+      };
+    }
+  */
 
   class RmCommandImplBase;
   template<typename T> class RmCommandImpl;

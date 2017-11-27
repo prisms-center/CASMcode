@@ -1,9 +1,11 @@
-basissetincludedir=$(includedir)/casm/basis_set
-basissetinclude_HEADERS=./include/casm/basis_set/BasisFunction.hh\
-						./include/casm/basis_set/BasisSet.hh\
-						./include/casm/basis_set/chebychev.m\
-						./include/casm/basis_set/DoF.hh\
-						./include/casm/basis_set/FunctionVisitor.hh\
-						./include/casm/basis_set/OccupantFunction.hh\
-						./include/casm/basis_set/PolynomialFunction.hh\
-						./include/casm/basis_set/Variable.hh
+basis_setincludedir=$(includedir)/casm/basis_set
+basis_setinclude_HEADERS=\
+./include/casm/basis_set/BasisSet.hh\
+./include/casm/basis_set/DoF.hh\
+./include/casm/basis_set/DoFTraits.hh\
+./include/casm/basis_set/BasisFunction.hh\
+./include/casm/basis_set/FunctionVisitor.hh\
+./include/casm/basis_set/PolynomialFunction.hh\
+./include/casm/basis_set/OccupantFunction.hh\
+./include/casm/basis_set/Variable.hh
+

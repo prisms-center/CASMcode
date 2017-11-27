@@ -109,19 +109,14 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
-
-    //std::cout << "SLOW GENERATION OF FACTOR GROUP " << &factor_group << "\n";
-    //std::cout << "begin generate_factor_group_slow() " << this << std::endl;
-
+  void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup &starter_group) const {
     Array<CoordType> trans_basis;
     Index pg, b0, b1, b2;
     Coordinate t_tau(lattice());
     Index num_suc_maps;
 
-    SymGroup point_group;
-    //reset();
-    lattice().generate_point_group(point_group);
+    SymGroup point_group = starter_group;
+
 
     if(factor_group.size() != 0) {
       std::cerr << "WARNING in BasicStructure<CoordType>::generate_factor_group_slow" << std::endl;
@@ -152,15 +147,17 @@ namespace CASM {
 
         double tdist = 0.0;
         double max_error = 0.0;
+        std::vector<Index> mappings(basis.size(), basis.size());
         for(b1 = 0; b1 < basis.size(); b1++) { //Loop over original basis sites
           for(b2 = 0; b2 < trans_basis.size(); b2++) { //Loop over symmetrically transformed basis sites
 
-            //see if translation successfully maps the two sites
-            if(basis[b1].compare(trans_basis[b2], t_tau)) {
+            //see if translation successfully maps the two sites uniquely
+            if(basis[b1].compare(trans_basis[b2], t_tau)) {// maybe nuke this with Hungarian
               tdist = basis[b1].min_dist(Coordinate(trans_basis[b2]) + t_tau);
               if(tdist > max_error) {
                 max_error = tdist;
               }
+              mappings[b1] = b2;
               num_suc_maps++;
               break;
             }
@@ -171,10 +168,34 @@ namespace CASM {
             break;
           }
         }
+        std::set<Index> unique_mappings;
+        for(auto &e : mappings)
+          unique_mappings.insert(e);
+        if(num_suc_maps == basis.size() && unique_mappings.size() == mappings.size()) {
+          //If all atoms in the basis are mapped successfully, try to add the corresponding
+          //symmetry operation to the factor_group
+          Coordinate center_of_mass(lattice());
+          for(Index b = 0; b < basis.size(); b++) {
+            //for each basis site loop through all trans_basis to find the closest one
+            double smallest = 1000000;
+            Coordinate tshift(lattice());
+            double dist = trans_basis[mappings[b]].min_dist(basis[b] - t_tau, tshift);
+            //in tshift is stored trans_basis - basis
+            tshift.cart() *= (1.0 / basis.size());
+            center_of_mass += tshift;
+          }
 
-        //If all atoms in the basis are mapped successfully, try to add the corresponding
-        //symmetry operation to the factor_group
-        if(num_suc_maps == basis.size()) {
+          /*
+          point_group[pg] operates on all of basis and save = trans_basis
+          //t_shift is the vector from basis to op_basis magnitude of tshift=min_dist
+          average all t_shifts and add/subtract to t_tau
+
+          if t_shift is b-> ob then subtract
+          if t_shift is ob -> b then add
+          matrix * basis + tau = operbasis
+          */
+          t_tau -= center_of_mass;/**/
+
           SymOp tSym(SymOp::translation(t_tau.cart())*point_group[pg]);
           tSym.set_map_error(max_error);
 
@@ -188,7 +209,17 @@ namespace CASM {
     factor_group.sort();
     factor_group.max_error();
 
-    //std::cout << "finish generate_factor_group_slow() " << this << std::endl;
+    return;
+  }
+
+  //************************************************************
+  //***********************************************************
+
+  template<typename CoordType>
+  void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
+    SymGroup point_group;
+    lattice().generate_point_group(point_group);
+    _generate_factor_group_slow(factor_group, point_group);
     return;
   }
 
@@ -196,7 +227,6 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::generate_factor_group(SymGroup &factor_group) const {
-    //std::cout << "begin generate_factor_group() " << this << std::endl;
     BasicStructure<CoordType> tprim;
     factor_group.clear();
     factor_group.set_lattice(lattice());
@@ -210,8 +240,6 @@ namespace CASM {
     // CASE 2: Structure is not primitive
 
     PrimGrid prim_grid(tprim.lattice(), lattice());
-    //std::cout << "FAST GENERATION OF FACTOR GROUP " << &factor_group << " FOR STRUCTURE OF VOLUME " << prim_grid.size() << "\n";
-
     SymGroup prim_fg;
     tprim.generate_factor_group_slow(prim_fg);
 
@@ -350,36 +378,10 @@ namespace CASM {
 
   template<typename CoordType>
   bool BasicStructure<CoordType>::is_primitive() const {
-    Coordinate tshift(lattice());//, bshift(lattice);
-    Index b1, b2, b3, num_suc_maps;
-
-    for(b1 = 1; b1 < basis.size(); b1++) {
-      if(!basis[0].compare_type(basis[b1])) {
-        continue;
-      }
-
-      tshift = basis[0] - basis[b1];
-      num_suc_maps = 0;
-      for(b2 = 0; b2 < basis.size(); b2++) {
-        for(b3 = 0; b3 < basis.size(); b3++) {
-          //if(basis[b3].compare_type(basis[b2], bshift) && tshift.min_dist(bshift) < lattice().tol()) {
-          if(basis[b3].compare(basis[b2], tshift)) {
-            num_suc_maps++;
-            break;
-          }
-        }
-        if(b3 == basis.size()) {
-          break;
-        }
-      }
-
-      if(num_suc_maps == basis.size()) {
-        return false;
-      }
-
-    }
-
-    return true;
+    SymGroup valid_translations, identity_group;
+    identity_group.push_back(SymOp());
+    _generate_factor_group_slow(valid_translations, identity_group);
+    return (valid_translations.size() == 1);
   }
 
 
@@ -392,41 +394,31 @@ namespace CASM {
 
   template<typename CoordType>
   bool BasicStructure<CoordType>::is_primitive(BasicStructure<CoordType> &new_prim) const {
-    Coordinate tshift(lattice());//, bshift(lattice);
+    SymGroup valid_translations, identity_group;
+    identity_group.push_back(SymOp());
+    _generate_factor_group_slow(valid_translations, identity_group);
+
+
     Eigen::Vector3d prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);
     Array<Eigen::Vector3d > shift;
-    Index b1, b2, b3, sh, sh1, sh2;
-    Index num_suc_maps;
     double tvol, min_vol;
     bool prim_flag = true;
     double prim_vol_tol = std::abs(0.5 * lattice().vol() / double(basis.size())); //sets a hard lower bound for the minimum value of the volume of the primitive cell
 
-    for(b1 = 1; b1 < basis.size(); b1++) {
-      tshift = basis[0] - basis[b1];
-      if(almost_zero(tshift.min_dist(Coordinate::origin(lattice()))))
-        continue;
-      num_suc_maps = 0;
-      for(b2 = 0; b2 < basis.size(); b2++) {
-        for(b3 = 0; b3 < basis.size(); b3++) {
-          if(basis[b3].compare(basis[b2], tshift)) {
-            num_suc_maps++;
-            break;
-          }
-        }
-        if(b3 == basis.size()) {
-          break;
-        }
-      }
-      if(num_suc_maps == basis.size()) {
-        prim_flag = false;
-        shift.push_back(tshift.cart());
+    if(valid_translations.size() > 1) {
+      prim_flag = false;
+      for(auto &trans : valid_translations) {
+        shift.push_back(trans.tau());
       }
     }
+
+
 
     if(prim_flag) {
       new_prim = (*this);
       return true;
     }
+
 
     shift.push_back(lattice()[0]);
     shift.push_back(lattice()[1]);
@@ -435,9 +427,9 @@ namespace CASM {
     //We want to minimize the volume of the primitivized cell, but to make it not a weird shape
     //that leads to noise we also minimize the dot products like reduced cell would
     min_vol = std::abs(lattice().vol());
-    for(sh = 0; sh < shift.size(); sh++) {
-      for(sh1 = sh + 1; sh1 < shift.size(); sh1++) {
-        for(sh2 = sh1 + 1; sh2 < shift.size(); sh2++) {
+    for(Index sh = 0; sh < shift.size(); sh++) {
+      for(Index sh1 = sh + 1; sh1 < shift.size(); sh1++) {
+        for(Index sh2 = sh1 + 1; sh2 < shift.size(); sh2++) {
           tvol = std::abs(triple_prod(shift[sh], shift[sh1], shift[sh2]));
           if(tvol < min_vol && tvol > prim_vol_tol) {
             min_vol = tvol;
@@ -453,7 +445,6 @@ namespace CASM {
 
     Lattice new_lat(prim_vec0, prim_vec1, prim_vec2);
     Lattice reduced_new_lat = niggli(new_lat, lattice().tol());
-
     //The lattice so far is OK, but it's noisy enough to matter for large
     //superstructures. We eliminate the noise by reconstructing it now via
     //rounded to integer transformation matrix.
@@ -464,18 +455,16 @@ namespace CASM {
 
     //Do not check to see if it returned true, it very well may not!
     lattice().is_supercell_of(reduced_new_lat, pgroup, transmat);
-
     //Round transformation elements to integers
     for(int i = 0; i < 3; i++) {
       for(int j = 0; j < 3; j++) {
         transmat(i, j) = floor(transmat(i, j) + 0.5);
       }
     }
-
     invtransmat = transmat.inverse();
     reduced_new_lat_mat = lattice().lat_column_mat();
     //When constructing this, why are we using *this as the primitive cell? Seems like I should only specify the vectors
-    Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat * invtransmat);
+    Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat * invtransmat, lattice().tol());
     reconstructed_reduced_new_lat.make_right_handed();
     //Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat*invtransmat,lattice);
 
@@ -490,16 +479,6 @@ namespace CASM {
       }
     }
 
-    //std::cout<<"%%%%%%%%%%%%%%%%"<<std::endl;
-    //std::cout<<"new_lat"<<std::endl;
-    //new_lat.print(std::cout);
-    //std::cout<<"reduced_new_lat"<<std::endl;
-    //reduced_new_lat.print(std::cout);
-    //std::cout<<"reconstructed_reduced_new_lat"<<std::endl;
-    //reconstructed_reduced_new_lat.print(std::cout);
-    //std::cout<<"transmat (rounded)"<<std::endl;
-    //std::cout<<transmat<<std::endl;
-    //std::cout<<"%%%%%%%%%%%%%%%%"<<std::endl;
     return false;
   }
 
@@ -507,7 +486,6 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::set_site_internals() {
-    //std::cout << "begin set_site_internals() " << this << std::endl;
     Index nb;
 
 
@@ -584,6 +562,7 @@ namespace CASM {
   void BasicStructure<CoordType>::symmetrize(const SymGroup &relaxed_factors) {
     //First make a copy of your current basis
     //This copy will eventually become the new average basis.
+    //reset();
     Array<CoordType> avg_basis = basis;
 
     //Loop through given symmetry group an fill a temporary "operated basis"
@@ -594,8 +573,6 @@ namespace CASM {
       operbasis.clear();
       for(Index b = 0; b < basis.size(); b++) {
         operbasis.push_back(relaxed_factors[rf]*basis[b]);
-        operbasis.back().print(std::cout);
-        std::cout << std::endl;
       }
       //Now that you have a transformed basis, find the closest mapping of atoms
       //Then average the distance and add it to the average basis
@@ -614,7 +591,8 @@ namespace CASM {
       }
 
     }
-
+    basis = avg_basis;
+    //update();
     return;
   }
 

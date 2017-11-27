@@ -1,0 +1,107 @@
+#Strip all the '/' characters from a string
+_smushdir()
+{
+    local name=$1
+    echo "${name///}"
+}
+
+#Print each argument passed followed by '\', except the last member
+_echo_with_backslash()
+{
+    local last="${@: -1}"
+    for e in $@; do
+        echo -ne $e
+        #No \ if it's the last file (end of the set)
+        if [[ $e != $last ]]; then
+            echo "\\"
+        fi
+    done
+}
+
+#Create Makemodule.am file for headers, pass clex, monte_carlo, etc as parameter
+_simple_include_makemodule()
+{
+    if [ "$#" -ne 1 ]; then
+            echo "Illegal number of parameters"
+            exit
+    fi
+
+    local target=$1
+    #find all subdirectories inside a particular include set, such as monte_carlo
+    searchdir=./include/casm/$target
+    local d
+    for d in $(find $searchdir -type d); do
+        #Strip the path from all the slashes to get a unique name
+        long=$(_smushdir $d)
+        #Shorten that name so that it doesn't have "includecasm"
+        basename=${long#*includecasm}include
+
+        #If there's no hh files carry on
+        headers=$(find $d -maxdepth 1 -type f -name "*.hh")
+        if [[ $(echo $headers | wc -w) == 0 ]]; then
+            continue
+        fi
+
+        #Declare the directory a set of header files has to go in
+        echo "${basename}dir=\$(includedir)"/${d#*include\/}
+        #Begin listing all the header files that go in the directory
+        echo "${basename}_HEADERS=\\"
+
+        _echo_with_backslash $headers
+        echo -e
+        echo -e
+
+    done
+}
+
+_simple_src_makemodule()
+{
+    if [ "$#" -ne 1 ]; then
+            echo "Illegal number of parameters"
+            exit
+    fi
+
+    local target=$1
+    #find all files inside a particular src folder
+    searchdir=./src/casm/$target
+
+    srcs=$(find $searchdir -type f -name "*.cc")
+    echo "libcasm_la_SOURCES +=\\"
+    _echo_with_backslash $srcs
+    echo -e
+}
+
+#Returns names of the subdirectories that can have Makemodule.am files made directly
+#via simple_src_makemodule and simple_include_makemodule
+_simple_subdirs()
+{
+    echo "\
+    app\
+    basis_set\
+    casm_io\
+    clex\
+    clusterography\
+    completer\
+    container\
+    crystallography\
+    database\
+    hull\
+    kinetics\
+    misc\
+    monte_carlo\
+    strain\
+    symmetry\
+    system\
+    "
+}
+
+#Create new Makemodule.am files for all the directories from _simple_subdirs
+#for both include and src, and overwrite whatever currently exists
+_rewrite_simple_makemodules()
+{
+    local d
+    for d in $(_simple_subdirs); do
+        _simple_include_makemodule $d > ./include/casm/$d/Makemodule.am
+        _simple_src_makemodule $d > ./src/casm/$d/Makemodule.am
+    done
+}

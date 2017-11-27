@@ -18,8 +18,6 @@ namespace CASM {
       add_general_help_suboption();
       add_selection_suboption();
       add_db_type_suboption(traits<Configuration>::short_name, DB::types_short());
-      //add_db_type_suboption(traits<Supercell>::short_name, DB::types_short());
-      //add_db_type_suboption(traits<PrimPeriodicDiffTransOrbit>::short_name, DB::types_short());
       add_output_suboption();
       add_gzip_suboption();
 

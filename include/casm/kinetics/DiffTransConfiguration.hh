@@ -113,6 +113,10 @@ namespace CASM {
       void write_pos() const;
       std::ostream &write_pos(std::ostream &sout) const;
 
+      static bool is_valid(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
+
+      static bool has_valid_from_occ(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
+
     private:
 
       friend Named<CRTPBase<DiffTransConfiguration>>;

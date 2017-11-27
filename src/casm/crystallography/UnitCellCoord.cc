@@ -14,7 +14,9 @@ namespace CASM {
     m_unit(&unit) {
     for(Index b = 0; b < unit.basis.size(); ++b) {
       auto diff = coord - unit.basis[b];
-      if(is_integer(diff.const_frac(), tol)) {
+      Coordinate tmp = diff;
+      tmp.frac() = round(diff.const_frac());
+      if((diff - tmp).const_cart().norm() < tol) {
         *this = UnitCellCoord(unit, b, lround(diff.const_frac()));
         return;
       }

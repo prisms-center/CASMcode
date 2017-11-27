@@ -1,10 +1,31 @@
 kineticsincludedir=$(includedir)/casm/kinetics
-kineticsinclude_HEADERS=./include/casm/kinetics/DiffusionTransformation.hh\
-                        ./include/casm/kinetics/DiffusionTransformationEnum.hh\
-                        ./include/casm/kinetics/DiffusionTransformationEnum_impl.hh\
-                        ./include/casm/kinetics/DoFTransformation.hh\
-                        ./include/casm/kinetics/DiffTransOrbitQuery.hh\
-                        ./include/casm/kinetics/OccupationTransformation.hh
-                        ./include/casm/kinetics/DiffTransConfiguration.hh\
-                        ./include/casm/kinetics/DiffTransConfigEnumPerturbations.hh
-					
+kineticsinclude_HEADERS=\
+./include/casm/kinetics/DiffTransConfiguration_impl.hh\
+./include/casm/kinetics/EnumDiffTransConfigEndpoints.hh\
+./include/casm/kinetics/RemovePrimPeriodicDiffTransOrbit.hh\
+./include/casm/kinetics/KineticsOrbits.hh\
+./include/casm/kinetics/DoFTransformation_impl.hh\
+./include/casm/kinetics/KineticsDecl.hh\
+./include/casm/kinetics/DiffTransConfigInterpolation.hh\
+./include/casm/kinetics/OccupationTransformation.hh\
+./include/casm/kinetics/DiffTransConfigEnumOccPerturbations.hh\
+./include/casm/kinetics/DiffTransConfigurationTraits.hh\
+./include/casm/kinetics/OccupationTransformationTraits.hh\
+./include/casm/kinetics/DoFTransformation.hh\
+./include/casm/kinetics/DiffTransConfigMapping.hh\
+./include/casm/kinetics/OccPerturbation_impl.hh\
+./include/casm/kinetics/DiffusionTransformation.hh\
+./include/casm/kinetics/PrimPeriodicDiffTransOrbitIO.hh\
+./include/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh\
+./include/casm/kinetics/SubOrbitGenerators.hh\
+./include/casm/kinetics/DiffusionTransformationEnum.hh\
+./include/casm/kinetics/KineticsOrbits_impl.hh\
+./include/casm/kinetics/DiffTransEnumEquivalents.hh\
+./include/casm/kinetics/OccPerturbation.hh\
+./include/casm/kinetics/DiffTransConfiguration.hh\
+./include/casm/kinetics/DiffTransConfigurationIO.hh\
+./include/casm/kinetics/DiffusionTransformationEnum_impl.hh\
+./include/casm/kinetics/DiffusionTransformation_impl.hh\
+./include/casm/kinetics/DiffTransConfigIsEqual.hh\
+./include/casm/kinetics/DiffusionTransformationTraits.hh
+

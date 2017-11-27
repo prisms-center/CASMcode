@@ -341,6 +341,9 @@ namespace CASM {
   ///        Configuration unchanged
   std::vector<PermuteIterator> Configuration::invariant_subgroup() const {
     std::vector<PermuteIterator> fg = ConfigurationBase::invariant_subgroup();
+    if(fg.size() == 0) {
+      default_err_log() << "Something went very wrong in invariant_subgroup returning group size 0" << std::endl;
+    }
     int mult = this->prim().factor_group().size() / fg.size();
     cache_insert("multiplicity", mult);
     return fg;
@@ -601,7 +604,9 @@ namespace CASM {
   /// - equal to prim.factor_group().size() / this->factor_group().size()
   int Configuration::multiplicity() const {
     if(!cache().contains("multiplicity")) {
-      this->factor_group();
+      int result = this->prim().factor_group().size() / this->factor_group().size();
+      cache_insert("multiplicity", result);
+      return result;
     }
     return cache()["multiplicity"].get<int>();
   }
@@ -1123,7 +1128,7 @@ namespace CASM {
     if(calc_props.contains("relaxation_displacement")) {
       Eigen::MatrixXd disp;
       disp = calc_props["relaxation_displacement"].get<Eigen::MatrixXd>();
-      config.set_displacement(disp);
+      config.set_displacement(disp.transpose());
     }
     if(calc_props.contains("relaxation_deformation")) {
       Eigen::Matrix3d deform;
@@ -1518,7 +1523,19 @@ namespace CASM {
 
     return sout;
   }
-
+  Structure make_deformed_struc(const Configuration &c) {
+    Structure tmp = c.supercell().superstructure(c);
+    if(c.has_displacement()) {
+      for(int i = 0 ; i < tmp.basis.size(); i++) {
+        tmp.basis[i].cart() += c.disp(i);
+      }
+    }
+    if(c.has_deformation()) {
+      Lattice tmp_lat(c.deformation() * tmp.lattice().lat_column_mat());
+      tmp.set_lattice(tmp_lat, FRAC);
+    }
+    return tmp;
+  }
 }
 
 
