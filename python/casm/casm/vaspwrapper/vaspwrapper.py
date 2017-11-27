@@ -76,7 +76,7 @@ def read_settings(filename):
                 "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
                 "preamble", "prerun", "postrun", "prop", "prop_start", "prop_stop",
                 "prop_step", "tol", "tol_amount", "name", "fine_ngx", "CI_neb", "n_images",
-                "software","method","nodes","nodes_per_image"]
+                "software", "method", "nodes", "nodes_per_image", "endstate_calctype"]
 
     for key in required:
         if not key in settings:

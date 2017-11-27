@@ -110,7 +110,7 @@ namespace CASM {
       DB::Selection<DiffTransConfiguration> dtc_sel = make_selection<DiffTransConfiguration>(
                                                         primclex, kwargs, "names", "selection", enumerator_name, OnError::THROW);
       int n_images = kwargs["n_images"].get<int>(); // set defaults with get_else
-      std::string calctype = kwargs["calctype"].get<std::string>();
+      std::string calctype = kwargs["endstate_calctype"].get<std::string>();
       Index i;
       for(const auto &config : dtc_sel.selected()) {
         // Create a interpolation object
@@ -119,9 +119,9 @@ namespace CASM {
         for(const auto &img_config : enumerator) {
           // file_path = $project_dir/training_data/diff_trans/$diff_trans_name/$scelname/$configid/$image_number/POSCAR
           int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
-          std::string calctype = kwargs[config.name()]["calctype"].get<std::string>();
+          std::string calctype = kwargs[config.name()]["endstate_calctype"].get<std::string>();
           auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
-          file_path += "N_images_" + std::to_string(n_images) + "/0" + std::to_string(i) + "/POSCAR";
+          file_path += "N_images_" + std::to_string(n_images) + "poscars/0" + std::to_string(i) + "/POSCAR";
           fs::ofstream file(file_path);
           img_config.write_pos(file);
           i++;
