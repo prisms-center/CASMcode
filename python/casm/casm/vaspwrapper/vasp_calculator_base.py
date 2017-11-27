@@ -186,6 +186,7 @@ class VaspCalculatorBase(object):
                         if job["jobstatus"] != "C":
                             print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
                             sys.stdout.flush()
+                            raise BreakException
             except BreakException:
                 continue
             settings = self.read_settings(config_data["setfile"])

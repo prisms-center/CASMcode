@@ -82,34 +82,43 @@ class Neb(VaspCalculatorBase):
         except:
             ## Error message if "n_images" not present in settings
             raise vaspwrapper.VaspWrapperError("Could not find \"n_images\" in \"calc.json\" in an appropriate \"settings\" directory")
-            sys.stdout.flush()
         config_data["n_images"] = n_images
         config_data["calcdir"] = os.path.join(config_data["calcdir"], "N_images_{}".format(n_images))
         return config_dict
 
     def pre_setup(self):
-        """creates folder and makes POS files for each image"""
+        """Makes settings file for interpolation and POS folder/files for each image"""
         proj = self.selection.proj
+        try:
+            os.mkdir(os.path.join(proj.path, ".casm/tmp"))
+        except:
+            pass
+        sel_tmp = self.selection.saveas(os.path.join(proj.path, ".casm/tmp", "neb_interpolation_selection_tmp"), force=True)
         dict = {}
+        dict["selection"] = os.path.join(proj.path, ".casm/tmp", "neb_interpolation_selection_tmp")
         for config_data in self.selection.data:
             conf_dict = {"n_images" : config_data["n_images"],
                          "calctype" : config_data["calctype"]}
             dict[config_data["configname"]] = conf_dict
             try:
                 os.makedirs(config_data["calcdir"])
+            except:
+                pass
+            try:
                 for i in range(config_data["n_images"] + 2):
-                    os.makedirs(os.path.join(config_data["calcdir"], str(i).zfill(2)))
+                    os.makedirs(os.path.join(config_data["calcdir"], 'poscars', str(i).zfill(2)))
             except:
                 pass
 
-        filename = "_neb_tmp.json"
-        with open(filename, 'w') as file:
+        tmp_folder = os.path.join(proj, '.casm/tmp')
+        filename = "neb_interpolation_settings.json"
+        with open(os.path.join(tmp_folder, filename), 'w') as file:
             file.write(json.dumps(dict, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
 
         ## write the selection Interpolation command
-        args = "enum --method DiffTransConfigInterpolation -j {}".format(filename)
+        args = "enum --method DiffTransConfigInterpolation -j {}".format(os.path.join(tmp_folder, filename))
         output = proj.command(args)
-        os.remove(filename)
+        os.remove(os.path.join(tmp_folder, filename))
 
     def setup(self):
         """ Setup initial relaxation run for the selection"""
@@ -137,7 +146,7 @@ class Neb(VaspCalculatorBase):
         """returns filenames of a vasp neb calculation"""
         vaspfiles = super(Neb, self).get_vasp_input_files(config_data, settings)
         incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files = vaspfiles
-        super_poscarfile = os.path.join(config_data["calcdir"], "00", "POSCAR")
+        super_poscarfile = os.path.join(config_data["calcdir"], "poscars", "00", "POSCAR")
         return incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files
 
     def submit(self):
@@ -163,7 +172,7 @@ class Neb(VaspCalculatorBase):
         if super_poscarfile is None:
             super_poscarfile = os.path.join(config_data["calcdir"], "run.final/00/POSCAR")
         super(Neb, self).finalize(config_data, super_poscarfile)
-        all_image_folders = [int(i.strip().split('_')[-1]) for i in os.listdir(self.config_obj.calcdir) if "N_images" in i]
+        all_image_folders = [int(i.strip().split('_')[-1]) for i in os.listdir(config_data["calcdir"]) if "N_images" in i]
         num_images = config_data["n_images"]
         if num_images == max(all_image_folders):
             shutil.copy(os.path.join(config_data["calcdir"], "properties.calc.json"),
