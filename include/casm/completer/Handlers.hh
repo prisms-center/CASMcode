@@ -37,7 +37,10 @@ namespace CASM {
     class ArgHandler {
     public:
 
-      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR, CONFIGNAME, COORDTYPE};
+      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR, CONFIGNAME,
+                     COORDTYPE, DBTYPE, ENUMMETHOD, CONFIGTYPE, CALCTYPE, BSET,
+                     CLEX, REF, ECI, PROPERTY
+                    };
 
       ///Translate the stored boost value_name into an ARG_TYPE for the completer engine
       static ARG_TYPE determine_type(const po::option_description &boost_option);
@@ -63,6 +66,32 @@ namespace CASM {
       ///Get value_type string for coordinate mode completion
       static std::string coordtype();
 
+      ///Get value_type string for dbtype mode completion
+      static std::string dbtype();
+
+      ///Get value_type string for enummethod mode completion
+      static std::string enummethod();
+
+      ///Get value_type string for configtype mode completion
+      static std::string configtype();
+
+      ///Get value_type string for calctype mode completion
+      static std::string calctype();
+
+      ///Get value_type string for bset mode completion
+      static std::string bset();
+
+      ///Get value_type string for clex mode completion
+      static std::string clex();
+
+      ///Get value_type string for ref mode completion
+      static std::string ref();
+
+      ///Get value_type string for eci mode completion
+      static std::string eci();
+
+      ///Get value_type string for property mode completion
+      static std::string property();
 
       ///Fill the output strings with bash completion appropriate values for VOID (i.e. do nothing)
       static void void_to_bash(std::vector<std::string> &arguments);
@@ -73,8 +102,11 @@ namespace CASM {
       ///Fill the output strings with bash completion appropriate values for COMMAND
       static void command_to_bash(std::vector<std::string> &arguments);
 
-      ///Fill the output strings with bash completion appropriate values for SCELNAME   TODO: This routine is currently unimplemented
+      ///Fill the output strings with bash completion appropriate values for SCELNAME
       static void scelname_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for CONFIGNAME
+      static void configname_to_bash(std::vector<std::string> &arguments);
 
       ///Fill the output strings with bash completion appropriate values for QUERY
       static void query_to_bash(std::vector<std::string> &arguments);
@@ -82,6 +114,32 @@ namespace CASM {
       ///Fill the output strings with bash completion appropriate values for OPERATOR
       static void operator_to_bash(std::vector<std::string> &arguments);
 
+      ///Fill the output strings with bash completion appropriate values for DBTYPE
+      static void dbtype_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for ENUMMETHOD
+      static void enummethod_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for CONFIGTYPE
+      static void configtype_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for CALCTYPE
+      static void calctype_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for BSET
+      static void bset_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for CLEX
+      static void clex_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for REF
+      static void ref_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for ECI
+      static void eci_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for PROPERTY
+      static void property_to_bash(std::vector<std::string> &arguments);
 
     private:
 
@@ -658,6 +716,8 @@ namespace CASM {
       using OptionHandlerBase::coordtype_enum;
 
       SymOption();
+      double m_tol;
+      fs::path m_poscar_path;
 
     private:
 
@@ -688,6 +748,222 @@ namespace CASM {
       void initialize() override;
 
     };
+
+    /**
+     * Options set for `casm enum`. Enumerate configurations,supercells, diff_trans and diff_trans_configs here.
+     */
+
+    class EnumOption : public OptionHandlerBase {
+
+    public:
+
+      EnumOption();
+
+      using OptionHandlerBase::settings_path;
+      using OptionHandlerBase::input_str;
+      using OptionHandlerBase::supercell_strs;
+
+      const std::vector<std::string> &desc_vec() const {
+        return m_desc_vec;
+      }
+
+      std::string method() const {
+        return m_method;
+      }
+
+      int min_volume() const {
+        return m_min_volume;
+      }
+
+      int max_volume() const {
+        return m_max_volume;
+      }
+
+      bool all_existing() const {
+        return m_all_existing;
+      }
+
+      const std::vector<std::string> &filter_strs() const {
+        return m_filter_strs;
+      }
+
+    private:
+
+      void initialize() override;
+
+      std::vector<std::string> m_desc_vec;
+
+      std::string m_method;
+      int m_min_volume;
+      int m_max_volume;
+      bool m_all_existing;
+      std::vector<std::string> m_filter_strs;
+
+    };
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm query`. Get casm to query your things here.
+     */
+
+    class QueryOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::selection_path;
+      using OptionHandlerBase::output_path;
+      using OptionHandlerBase::gzip_flag;
+      using OptionHandlerBase::help_opt_vec;
+      using OptionHandlerBase::db_type;
+      using OptionHandlerBase::db_type_opts;
+
+      QueryOption();
+
+      bool verbatim_flag() const;
+
+      const std::vector<std::string> &columns_vec() const;
+
+      const std::vector<std::string> &new_alias_vec() const;
+
+    private:
+
+      void initialize() override;
+
+      std::vector<std::string> m_columns_vec;
+
+      std::vector<std::string> m_new_alias_vec;
+
+    };
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm import`. Add new structures to your project here.
+     */
+
+    class ImportOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::configtype;
+      using OptionHandlerBase::configtype_opts;
+      using OptionHandlerBase::settings_path;
+      using OptionHandlerBase::input_str;
+
+
+      ImportOption();
+
+      const std::vector<fs::path> &pos_vec() const;
+
+      const fs::path &batch_path() const;
+
+
+    private:
+
+      void initialize() override;
+
+      std::vector<fs::path> m_pos_vec;
+
+      fs::path m_batch_path;
+
+    };
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm select`. Get your organized project here.
+     */
+
+    class SelectOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::help_opt_vec;
+      using OptionHandlerBase::selection_paths;
+      using OptionHandlerBase::output_path;
+      using OptionHandlerBase::db_type;
+      using OptionHandlerBase::db_type_opts;
+
+      SelectOption();
+
+      const std::vector<std::string> &criteria_vec() const;
+
+    private:
+
+      void initialize() override;
+
+      // vector necessary to allow --set/--set-on/--set-off with or without an argument
+      std::vector<std::string> m_criteria_vec;
+
+    };
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm rm`. Get your clean project here.
+     */
+
+    class RmOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::selection_path;
+      using OptionHandlerBase::name_strs;
+      using OptionHandlerBase::db_type;
+      using OptionHandlerBase::db_type_opts;
+
+      RmOption();
+
+      bool force() const;
+
+      bool data() const;
+
+      bool dry_run() const;
+
+    private:
+
+      void initialize() override;
+
+    };
+
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm update`. Get your project up to date here.
+     */
+
+    class UpdateOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::configtype;
+      using OptionHandlerBase::configtype_opts;
+      using OptionHandlerBase::settings_path;
+      using OptionHandlerBase::input_str;
+      using OptionHandlerBase::selection_path;
+
+      UpdateOption();
+
+      double vol_tolerance() const;
+
+      double lattice_weight() const;
+
+      double min_va_frac() const;
+
+      double max_va_frac() const;
+
+    private:
+
+      void initialize() override;
+
+      double m_vol_tolerance;
+
+      double m_lattice_weight;  //TODO: Push to base? Other commands use this
+
+      double m_min_va_frac;
+
+      double m_max_va_frac;
+
+    };
+
+    //*****************************************************************************************************//
 
   }
 }

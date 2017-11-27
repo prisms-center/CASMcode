@@ -5,7 +5,7 @@
 #include "casm/app/APICommand.hh"
 
 namespace CASM {
-  namespace Completer {
+  /*namespace Completer {
 
     class ImportOption : public OptionHandlerBase {
 
@@ -33,7 +33,7 @@ namespace CASM {
       fs::path m_batch_path;
 
     };
-  }
+  }*/
 
   class ImportCommandImplBase;
   template<typename T> class ImportCommandImpl;

@@ -7,6 +7,7 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
   class Supercell;
@@ -35,7 +36,7 @@ namespace CASM {
     std::vector<BasicStructure<Site>> structures;
 
     /// The configuration the input structure was mapped onto
-    //std::unique_ptr<Kinetics::DiffTransConfiguration> config;
+    std::unique_ptr<Kinetics::DiffTransConfiguration> config;
 
     /// relaxation_properties is populated by relaxation properties:
     ///
@@ -45,12 +46,12 @@ namespace CASM {
     /// - 'relaxation_deformation': 3x3 tensor describing cell relaxation
     /// - 'relaxation_displacement': Nx3 matrix describing basis displacements
     /// - 'relaxed_energy': the energy of the relaxed configuration
-    jsonParser relaxation_properties;
+    std::vector<jsonParser> relaxation_properties;
 
     /// best_assignment is populated by the permutation of sites in the imported
     /// structure that maps them onto sites of the ideal crystal (excluding vacancies)
     std::vector<Index> best_assignment;
-
+    double kra;
     /// cart_op is populated by the cartesian isometry that rotates the imported
     /// structure onto the coordinate system of the ideal crystal
     Eigen::Matrix3d cart_op;
@@ -181,7 +182,7 @@ namespace CASM {
     ///
     DiffTransConfigMapperResult import_structure(const fs::path &pos_path) const;
 
-  private:
+    //private:
 
     std::vector<BasicStructure<Site>> _get_structures(const fs::path &pos_path) const;
 

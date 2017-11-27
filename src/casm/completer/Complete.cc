@@ -207,6 +207,7 @@ namespace CASM {
 
       case ARG_TYPE::SCELNAME:
         //Add supercell names from PrimClex pointer somehow
+        ArgHandler::scelname_to_bash(arguments);
         break;
 
       case ARG_TYPE::QUERY:
@@ -218,11 +219,47 @@ namespace CASM {
         break;
 
       case ARG_TYPE::CONFIGNAME:
-        //ArgHandler::configname_to_bash();
+        ArgHandler::configname_to_bash(arguments);
         break;
 
       case ARG_TYPE::COORDTYPE:
         //ArgHandler::coord_mode_to_bash();
+        break;
+
+      case ARG_TYPE::DBTYPE:
+        ArgHandler::dbtype_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::ENUMMETHOD:
+        ArgHandler::enummethod_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::CONFIGTYPE:
+        ArgHandler::configtype_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::CALCTYPE:
+        ArgHandler::calctype_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::BSET:
+        ArgHandler::bset_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::CLEX:
+        ArgHandler::clex_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::REF:
+        ArgHandler::ref_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::ECI:
+        ArgHandler::eci_to_bash(arguments);
+        break;
+
+      case ARG_TYPE::PROPERTY:
+        ArgHandler::property_to_bash(arguments);
         break;
 
       default:

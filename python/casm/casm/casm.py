@@ -42,17 +42,17 @@ class API(object):
       if 'LIBCASM' in os.environ:
         libname = os.environ['LIBCASM']
       elif 'CASM_PREFIX' in os.environ:
-        libname = glob.glob(join(os.environ['CASM_PREFIX'], 'lib', 'libcasm.*'))[0]
+        libname = glob.glob(join(os.environ['CASM_PREFIX'], 'lib', 'libcasm.*'))[-1]
       else:
-        libname = glob.glob(join('/usr', 'local', 'lib', 'libcasm.*'))[0]
+        libname = glob.glob(join('/usr', 'local', 'lib', 'libcasm.*'))[-1]
       self.lib_casm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
       if 'LIBCCASM' in os.environ:
         libname = os.environ['LIBCCASM']
       elif 'CASM_PREFIX' in os.environ:
-        libname = glob.glob(join(os.environ['CASM_PREFIX'], 'lib', 'libccasm.*'))[0]
+        libname = glob.glob(join(os.environ['CASM_PREFIX'], 'lib', 'libccasm.*'))[-1]
       else:
-        libname = glob.glob(join('/usr', 'local', 'lib', 'libccasm.*'))[0]
+        libname = glob.glob(join('/usr', 'local', 'lib', 'libccasm.*'))[-1]
       self.lib_ccasm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
       #### Argument types

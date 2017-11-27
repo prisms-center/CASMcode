@@ -4,6 +4,7 @@
 #include "casm/casm_io/DataFormatterTools_impl.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/database/Selected.hh"
 
 namespace CASM {
 
@@ -365,6 +366,9 @@ namespace CASM {
 
     using namespace Kinetics::DiffTransConfigIO;
     BooleanAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
+    dict.insert(
+      DB::Selected<Kinetics::DiffTransConfiguration>()
+    );
     return dict;
   }
 
