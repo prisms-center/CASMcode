@@ -106,7 +106,7 @@ namespace CASM {
       "      \"diff_trans/1\"\n"
       "    ],\n"
       "    \"orbit_selection\": \"low_barrier_diff_trans\",\n"
-      "    \"background_configs\": [\n"
+      "    \"background_confignames\": [\n"
       "      \"SCEL8_2_2_2_0_0_0/2\",\n"
       "      \"SCEL8_2_2_2_0_0_0/13\"\n"
       "     ],\n"
@@ -208,7 +208,6 @@ namespace CASM {
         const Configuration &bg_config,
         const PrimPeriodicDiffTransOrbit &dtorbit,
         const jsonParser &local_cspecs) {
-
         /// check if configuration is big enough for local cspecs here
         /// give warning if not
         std::vector<LocalOrbit<IntegralCluster>> local_orbits;
@@ -236,7 +235,6 @@ namespace CASM {
         const PrimPeriodicDiffTransOrbit &dtorbit,
         const jsonParser &local_cspecs,
         std::vector<std::string> filter_expr) {
-
         auto &db = primclex.db<DiffTransConfiguration>();
         primclex.log() << "\tUsing " << dtorbit.name() << "... " << std::flush;
         Index Ninit_spec = db.size();
@@ -277,14 +275,11 @@ namespace CASM {
       const Completer::EnumOption &enum_opt) {
 
       Log &log = primclex.log();
-
       // Validate and construct input
       DB::Selection<PrimPeriodicDiffTransOrbit> dtorbit_sel = make_selection<PrimPeriodicDiffTransOrbit>(
                                                                 primclex, kwargs, "orbit_names", "orbit_selection", enumerator_name, OnError::THROW);
-
       DB::Selection<Configuration> background_sel = make_selection<Configuration>(
                                                       primclex, kwargs, "background_confignames", "background_selection", enumerator_name, OnError::THROW);
-
       // If requested, fill all configurations into background supercell
       if(kwargs.contains("background_scel")) {
         // Get requested background scel
@@ -292,9 +287,7 @@ namespace CASM {
         const auto &background_scel = make_supercell(primclex, scelname);
         background_sel = _fill_background_scel(background_sel, background_scel);
       }
-
       jsonParser local_cspecs = _parse_local_cspecs(kwargs);
-
       std::vector<std::string> filter_expr = make_enumerator_filter_expr(kwargs, enum_opt);
       auto &db = primclex.db<DiffTransConfiguration>();
       std::string type_name = traits<DiffTransConfiguration>::name;
@@ -543,7 +536,7 @@ namespace CASM {
       PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
       Configuration greatest = perturbed_from_config;
       for(auto it = m_base_it->diff_trans_g.begin(); it != m_base_it->diff_trans_g.end(); ++it) {
-        DiffTransConfiguration tmp(copy_apply(*it, perturbed_from_config), m_base_it->diff_trans);
+        DiffTransConfiguration tmp(make_attachable(m_base_it->diff_trans, copy_apply(*it, perturbed_from_config)), m_base_it->diff_trans);
         if(copy_apply(*it, perturbed_from_config) > greatest && tmp.has_valid_from_occ()) {
           greatest = copy_apply(*it, perturbed_from_config);
           to_canonical = *it;
@@ -552,7 +545,7 @@ namespace CASM {
 
       /// construct canonical DiffTransConfiguration as m_current
       m_current = notstd::make_cloneable<DiffTransConfiguration>(
-                    copy_apply(to_canonical, perturbed_from_config),
+                    make_attachable(m_base_it->diff_trans, copy_apply(to_canonical, perturbed_from_config)),
                     m_base_it->diff_trans);
       m_current->set_orbit_name("test");
       m_current->set_orbit_name(m_diff_trans_orbit.name());

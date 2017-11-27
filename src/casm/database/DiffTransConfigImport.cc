@@ -5,7 +5,59 @@ namespace CASM {
 
     // --- DiffTransConfiguration specializations --------------------------------
 
+    /* StructureMap<DiffTransConfiguration>::StructureMap(
+    const PrimClex &primclex,
+    std::unique_ptr<DiffTransConfigMapper> mapper) :
+    ConfigData<DiffTransConfiguration>(primclex,null_log()),
+    m_difftransconfigmapper(std::move(mapper)){}
 
+     StructureMap<DiffTransConfiguration>::StructureMap(
+    const PrimClex &primclex,
+    const jsonParser &kwargs) :
+    ConfigData<DiffTransConfiguration>(primclex,null_log()) {
+
+    	// -- read settings --
+       bool rotate = true;
+       bool strict = false;
+       bool ideal;
+       kwargs.get_else(ideal, "ideal", false);
+
+       double lattice_weight;
+       kwargs.get_else(lattice_weight, "lattice_weight", 0.5);
+
+       double max_vol_change;
+       kwargs.get_else(max_vol_change, "max_vol_change", 0.3);
+
+       double min_va_frac;
+       kwargs.get_else(min_va_frac, "min_va_frac", 0.0);
+
+       double max_va_frac;
+       kwargs.get_else(max_va_frac, "max_va_frac", 0.5);
+
+       // -- collect settings used --
+       m_used.put_obj();
+       m_used["ideal"] = ideal;
+       m_used["lattice_weight"] = lattice_weight;
+       m_used["max_vol_change"] = max_vol_change;
+       m_used["min_va_frac"] = min_va_frac;
+       m_used["max_va_frac"] = max_va_frac;
+
+       // -- construct ConfigMapper --
+       int map_opt = DiffTransConfigMapper::none;
+       if(rotate) map_opt |= DiffTransConfigMapper::rotate;
+       if(strict) map_opt |= DiffTransConfigMapper::strict;
+       if(!ideal) map_opt |= DiffTransConfigMapper::robust;
+
+       m_difftransconfigmapper.reset(new DiffTransConfigMapper(
+                              primclex,
+                              lattice_weight,
+                              max_vol_change,
+                              map_opt,
+                              primclex.crystallography_tol()));
+       m_difftransconfigmapper->set_min_va_frac(min_va_frac);
+       m_difftransconfigmapper->set_max_va_frac(max_va_frac);
+
+    }*/
     /// \brief Constructor
     Import<Kinetics::DiffTransConfiguration>::Import(
       const PrimClex &primclex,
@@ -18,7 +70,37 @@ namespace CASM {
 
       ImportT(primclex, mapper, import_data, copy_additional_files, overwrite, report_dir, file_log) {}
 
-    const std::string Import<Kinetics::DiffTransConfiguration>::desc = "ToDo";
+    const std::string Import<Kinetics::DiffTransConfiguration>::desc =
+
+      "Import DiffTransConfiguration: \n\n"
+
+      "  'casm import' of DiffTransConfiguration proceeds in two steps: \n\n"
+
+      "  1) For each set of files: \n"
+      "     - Read structures from VASP POSCAR type files or CASM properties.calc.json \n"
+      "       file. \n"
+      "     - Map the structure onto a DiffTransConfiguration of the primitive crystal \n"
+      "       structure. \n"
+      "     - Record relaxation data (lattice & basis deformation cost). \n\n"
+
+      "  2) If data import is requested, iterate over each import record and do \n"
+      "     the following:\n"
+      "     - If data is imported, the corresponding properties.calc.json file is\n"
+      "       copied into the directory of the mapped configuration. Optionally, \n"
+      "       additional files in the directory of the imported structure file may\n"
+      "       also be copied. \n"
+      "     - Reports are generated detailing the results of the import: \n"
+      "       - import_map_fail: Structures that could not be mapped onto the     \n"
+      "         primitive crystal structure. \n"
+      "       - import_map_success: Configurations that were successfully mapped  \n"
+      "         and imported into the Configuration database (or already existed).\n"
+      "       - import_data_fail: Structures with data that would be imported     \n"
+      "         except preexisting data prevents it. \n"
+      "       - import_conflict: Configurations that were mapped to by multiple   \n"
+      "         structures. \n\n"
+
+
+      ;
 
     int Import<Kinetics::DiffTransConfiguration>::run(
       const PrimClex &primclex,
@@ -52,7 +134,28 @@ namespace CASM {
       fs::path report_dir) :
       UpdateT(primclex, mapper, report_dir) {}
 
-    const std::string Update<Kinetics::DiffTransConfiguration>::desc = "ToDo";
+    const std::string Update<Kinetics::DiffTransConfiguration>::desc =
+
+
+      "Update DiffTransConfiguration calculation results: \n\n"
+
+      "  'casm update' of DiffTransConfiguration calculation results proceeds as follows: \n\n"
+      "  For each DiffTransConfiguration in the input selection: \n"
+      "   - Read properties.calc.json file from training_data directory.        \n"
+      "   - Map the relaxed structure onto a DiffTransConfiguration of the primitive crystal\n"
+      "     structure. \n"
+      "   - Record relaxation data: \n"
+      "     - Lattice & basis deformation cost \n"
+      "     - Initial difftransconfiguration and relaxed difftransconfiguration \n\n"
+      "   - If multiple difftransconfigurations relax onto a difftransconfiguration for which there \n"
+      "     is no calculation data, the calculation data from the with the lowest \n"
+      "     conflict resolution score is used for the relaxed difftransconfiguration.\n"
+      "   - Both default and diiftransconfiguration-specific conflict resolution scoring\n"
+      "     method can be set via: \n"
+      "       'casm update --set-default-conflict-score -i <JSON>'\n"
+      "       'casm update --set-default-conflict-score -s <JSON filename>'\n"
+      "       'casm update --set-conflict-score configname -i <JSON>'\n"
+      "       'casm update --set-conflict-score configname -s <JSON filename>'\n\n";
 
     int Update<Kinetics::DiffTransConfiguration>::run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt) {
       return 0;

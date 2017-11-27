@@ -261,7 +261,7 @@ namespace CASM {
       "     - If data is imported, the corresponding properties.calc.json file is\n"
       "       copied into the directory of the mapped configuration. Optionally, \n"
       "       additional files in the directory of the imported structure file may\n"
-      "       also by copided. \n"
+      "       also be copied. \n"
       "     - Reports are generated detailing the results of the import: \n"
       "       - import_map_fail: Structures that could not be mapped onto the     \n"
       "         primitive crystal structure. \n"
