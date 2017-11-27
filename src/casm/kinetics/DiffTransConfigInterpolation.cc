@@ -105,6 +105,7 @@ namespace CASM {
                                           const Completer::EnumOption &enum_optconst) {
 
       // get selection filename from json/enumoption // do json for now
+      // selcection by names
       // Constrct a DB selection of DiffTransConfiguration from json and enumoption inputs
       DB::Selection<DiffTransConfiguration> dtc_sel = make_selection<DiffTransConfiguration>(
                                                         primclex, kwargs, "names", "selection", enumerator_name, OnError::THROW);
@@ -117,6 +118,8 @@ namespace CASM {
         i = 0;
         for(const auto &img_config : enumerator) {
           // file_path = $project_dir/training_data/diff_trans/$diff_trans_name/$scelname/$configid/$image_number/POSCAR
+          int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
+          std::string calctype = kwargs[config.name()]["calctype"].get<std::string>();
           auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
           file_path += "N_images_" + std::to_string(n_images) + "/0" + std::to_string(i) + "/POSCAR";
           fs::ofstream file(file_path);
