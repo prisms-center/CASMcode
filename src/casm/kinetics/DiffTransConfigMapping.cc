@@ -75,8 +75,13 @@ namespace CASM {
     Configuration from_config(scel, jsonParser(), from_dof);
     std::vector<UnitCellCoord> from_uccoords;
     std::vector<UnitCellCoord> to_uccoords;
-
-    ConfigMapperResult from_res = mapper.import_structure_occupation(result.structures[0]);
+    ConfigMapperResult from_res;
+    if(hint_ptr != nullptr) {
+      //from_res= mapper.import_structure_occupation(result.structures[0],&(hint_ptr->from_config().canonical_form()));
+    }
+    else {
+      from_res = mapper.import_structure_occupation(result.structures[0]);
+    }
     Coordinate rigid_shift = result.structures[0].basis[0] - Coordinate(from_config.uccoord(from_res.best_assignment[0]));
     Coordinate com_disp(from_config.displacement().rowwise().sum() / from_config.occupation().size(), primclex().prim().lattice(), CART);
     //Maybe check coordinate similarity after applying deformations
