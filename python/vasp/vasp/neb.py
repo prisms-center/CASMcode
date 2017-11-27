@@ -123,7 +123,7 @@ class Neb(object):
         ## copying the folders with image poscars into initdir
         for i in range(settings["n_images"]+2):
             folder_name = str(i).zfill(2) #max(2, len(str(settings["n_images"]))+1 )) ##too fancy!!!
-            shutil.move(os.path.join(self.calcdir,folder_name),initdir)
+            shutil.copytree(os.path.join(self.calcdir,"poscars",folder_name),os.path.join(initdir,folder_name))
 
         print ""
         sys.stdout.flush()
