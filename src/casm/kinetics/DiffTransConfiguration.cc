@@ -44,7 +44,7 @@ namespace CASM {
         throw std::runtime_error("Error in DiffTransConfiguration constructor diff trans not prepared");
       }
       if(!is_valid(_diff_trans, _from_config)) {
-        throw std::runtime_error("Error in DiffTransConfiguration constructor repeated linear indeces");
+        throw std::runtime_error("Error in DiffTransConfiguration constructor repeated linear indices");
       }
       if(!has_valid_from_occ(_diff_trans, _from_config)) {
         throw std::runtime_error("Error in DiffTransConfiguration constructor diff_trans and from_config inconsistent");
@@ -203,8 +203,7 @@ namespace CASM {
 
       // get diff trans
       m_sym_compare = ScelPeriodicDiffTransSymCompare(_scel);
-      m_diff_trans = m_sym_compare.prepare(
-                       jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim()));
+      m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim());
       m_diff_trans.apply_to(m_config_B);
       set_orbit_name(json["orbit_name"].get<std::string>());
       set_bg_configname(json["bg_configname"].get<std::string>());

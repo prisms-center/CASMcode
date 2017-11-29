@@ -71,16 +71,16 @@ namespace CASM {
       DatabaseIterator<Kinetics::DiffTransConfiguration> hint,
       map_result_inserter result) const {
       //todo
-      fs::path prop_path = this->calc_properties(p);
+      /*      fs::path prop_path = this->calc_properties(p);
 
-      ConfigIO::Result res;
-      res.pos = (prop_path.empty() ? p : prop_path);
+            ConfigIO::Result res;
+            res.pos = (prop_path.empty() ? p : prop_path);
 
-      std::unique_ptr<Kinetics::DiffTransConfiguration> hint_config;
-      if(hint != db_difftransconfig().end()) {
-        hint_config = notstd::make_unique<DiffTransConfiguration>(*hint);
-        res.mapped_props.from = hint_config->name();
-      }
+            std::unique_ptr<Kinetics::DiffTransConfiguration> hint_config;
+            if(hint != db_difftransconfig().end()) {
+              hint_config = notstd::make_unique<DiffTransConfiguration>(*hint);
+              res.mapped_props.from = hint_config->name();
+            }*/
       return result;
     }
 
