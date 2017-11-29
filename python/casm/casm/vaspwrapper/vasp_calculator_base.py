@@ -288,14 +288,14 @@ class VaspCalculatorBase(object):
     @staticmethod
     def _calc_submit_node_info(settings, config_data):
         """return nodes, ppn from settings of a configuration"""
-        if "nodes" in settings and "ppn" in settings:
+        if settings["nodes"] != None and settings["ppn"] != None:
             return int(settings["nodes"]), int(settings["ppn"])
-        elif "atoms_per_proc" in settings and "ppn" in settings:
+        elif settings["atoms_per_proc"] != None and settings["ppn"] != None:
             pos = vasp.io.Poscar(os.path.join(config_data["calcdir"], "POSCAR"))
             num = len(pos.basis)
             nodes = int(math.ceil(float(num)/float(settings["atom_per_proc"])/float(settings["ppn"])))
             return nodes, int(settings["ppn"])
-        elif "nodes_per_image" in settings and "ppn" in settings:
+        elif settings["nodes_per_image"] != None and settings["ppn"] != None:
             nodes = int(config_data["n_images"]) * float(settings["nodes_per_image"])
             return nodes, int(settings["ppn"])
         else:
