@@ -50,8 +50,8 @@ class VaspCalculatorBase(object):
         sel = Selection(proj, "EMPTY", "config", False)
         split_path = configuration_dir.split(os.path.sep)
         index = split_path.index("training_data")
-        configname = '/'.join(split_path[index+1:])
-        sel.data = pandas.DataFrame({"configname":configname, "selected":1}, index=range(1))
+        name = '/'.join(split_path[index+1:])
+        sel.data = pandas.DataFrame({"name":name, "selected":1}, index=range(1))
         # try:
         #     os.mkdir(os.path.join(proj.path, ".casm/tmp"))
         # except:
@@ -63,9 +63,9 @@ class VaspCalculatorBase(object):
     def config_properties(self, config_data):
         """read properties directories of a specific configuration"""
         config_dict = dict(config_data)
-        config_dict["configdir"] =  self.casm_directories.configuration_dir(config_data["configname"], self.calc_subdir)
-        config_dict["calcdir"] = self.casm_directories.calctype_dir(config_data["configname"], self.clex, self.calc_subdir)
-        config_dict["setfile"] = self.casm_directories.settings_path_crawl("calc.json", config_data["configname"], self.clex, self.calc_subdir)
+        config_dict["configdir"] =  self.casm_directories.configuration_dir(config_data["name"], self.calc_subdir)
+        config_dict["calcdir"] = self.casm_directories.calctype_dir(config_data["name"], self.clex, self.calc_subdir)
+        config_dict["setfile"] = self.casm_directories.settings_path_crawl("calc.json", config_data["name"], self.clex, self.calc_subdir)
         return config_dict
 
     def append_selection_data(self):
@@ -142,26 +142,26 @@ class VaspCalculatorBase(object):
     def get_vasp_input_files(self, config_data, settings):
         # Find required input files in CASM project directory tree
         vaspfiles = casm.vaspwrapper.vasp_input_file_names(self.casm_directories,
-                                                           config_data["configname"],
+                                                           config_data["name"],
                                                            self.clex,
                                                            self.calc_subdir)
         incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile = vaspfiles
         # Find optional input files
         extra_input_files = []
         for s in settings["extra_input_files"]:
-            extra_input_files.append(self.casm_directories.settings_path_crawl(s, config_data["configname"],
+            extra_input_files.append(self.casm_directories.settings_path_crawl(s, config_data["name"],
                                                                                self.clex, self.calc_subdir))
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Neb.setup failed. Extra input file " + s + " not found in CASM project.")
         if settings["initial"]:
             extra_input_files += [self.casm_directories.settings_path_crawl(settings["initial"],
-                                                                            config_data["configname"],
+                                                                            config_data["name"],
                                                                             self.clex, self.calc_subdir)]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Neb.setup failed. No initial INCAR file " + settings["initial"] + " found in CASM project.")
         if settings["final"]:
             extra_input_files += [self.casm_directories.settings_path_crawl(settings["final"],
-                                                                            config_data["configname"],
+                                                                            config_data["name"],
                                                                             self.clex, self.calc_subdir)]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Neb.setup failed. No final INCAR file " + settings["final"] + " found in CASM project.")
@@ -169,10 +169,11 @@ class VaspCalculatorBase(object):
 
     def submit(self):
         """ submit jobs for a selection"""
+        self.pre_setup()
         db = pbs.JobDB()
         for index,config_data in self.selection.data.iterrows():
             print "Submitting..."
-            print "Configuration:", config_data["configname"]
+            print "Configuration:", config_data["name"]
             #first, check if the job has already been submitted and is not completed
             print "Calculation directory:", config_data["calcdir"]
             id = db.select_regex_id("rundir", config_data["calcdir"])
@@ -240,7 +241,7 @@ class VaspCalculatorBase(object):
             if settings["preamble"] is not None:
                 # Append any instructions given in the 'preamble' file, if given
                 preamble = self.casm_directories.settings_path_crawl(settings["preamble"],
-                                                                     config_data["configname"],
+                                                                     config_data["name"],
                                                                      self.clex,
                                                                      self.calc_subdir)
                 with open(preamble) as my_preamble:
@@ -343,6 +344,7 @@ class VaspCalculatorBase(object):
 
     def run(self):
         """run the job of a selection"""
+        self.pre_setup()
         for index,config_data in self.selection.data.iterrows():
             settings = self.read_settings(config_data["setfile"])
             calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
@@ -406,7 +408,7 @@ class VaspCalculatorBase(object):
                 # print a local settings file, so that the run_limit can be extended if the
                 #   convergence problems are fixed
 
-                config_set_dir = self.casm_directories.configuration_calc_settings_dir(config_data["configname"],
+                config_set_dir = self.casm_directories.configuration_calc_settings_dir(config_data["name"],
                                                                                        self.clex,
                                                                                        self.calc_subdir)
 
@@ -489,7 +491,7 @@ class VaspCalculatorBase(object):
         # write properties.calc.json
         vaspdir = os.path.join(config_data["calcdir"], "run.final")
         speciesfile = self.casm_directories.settings_path_crawl("SPECIES",
-                                                                config_data["configname"],
+                                                                config_data["name"],
                                                                 self.clex,
                                                                 self.calc_subdir)
         output = self.properties(vaspdir, super_poscarfile, speciesfile)

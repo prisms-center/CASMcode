@@ -78,14 +78,14 @@ class Neb(VaspCalculatorBase):
         """return configuration properties as a dict"""
         config_dict = super(Neb, self).config_properties(config_data)
         try:
-            n_images = json.load(config_data["setfile"])["n_images"]
-            endstate_calctype = json.load(config_data["setfile"])["endstate_calctype"]
+            n_images = json.load(open(config_dict["setfile"]))["n_images"]
+            endstate_calctype = json.load(open(config_dict["setfile"]))["endstate_calctype"]
         except:
             ## Error message if "n_images" not present in settings
             raise vaspwrapper.VaspWrapperError("Could not find \"n_images\" in \"calc.json\" in an appropriate \"settings\" directory")
-        config_data["n_images"] = n_images
-        config_data["endstate_calctype"] = endstate_calctype
-        config_data["calcdir"] = os.path.join(config_data["calcdir"], "N_images_{}".format(n_images))
+        config_dict["n_images"] = n_images
+        config_dict["endstate_calctype"] = endstate_calctype
+        config_dict["calcdir"] = os.path.join(config_dict["calcdir"], "N_images_{}".format(n_images))
         return config_dict
 
     def pre_setup(self):
@@ -98,10 +98,10 @@ class Neb(VaspCalculatorBase):
         sel_tmp = self.selection.saveas(os.path.join(proj.path, ".casm/tmp", "neb_interpolation_selection_tmp"), force=True)
         dict = {}
         dict["selection"] = os.path.join(proj.path, ".casm/tmp", "neb_interpolation_selection_tmp")
-        for config_data in self.selection.data:
+        for index, config_data in self.selection.data.iterrows():
             conf_dict = {"n_images" : config_data["n_images"],
                          "endstate_calctype" : config_data["endstate_calctype"]}
-            dict[config_data["configname"]] = conf_dict
+            dict[config_data["name"]] = conf_dict
             try:
                 os.makedirs(config_data["calcdir"])
             except:
@@ -113,13 +113,13 @@ class Neb(VaspCalculatorBase):
                 pass
         dict["n_images"] = conf_dict["n_images"]
         dict["endstate_calctype"] = conf_dict["endstate_calctype"]
-        tmp_folder = os.path.join(proj, '.casm/tmp')
+        tmp_folder = os.path.join(proj.path, '.casm/tmp')
         filename = "neb_interpolation_settings.json"
         with open(os.path.join(tmp_folder, filename), 'w') as file:
             file.write(json.dumps(dict, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
 
         ## write the selection Interpolation command
-        args = "enum --method DiffTransConfigInterpolation -j {}".format(os.path.join(tmp_folder, filename))
+        args = "enum --method DiffTransConfigInterpolation -s {}".format(os.path.join(tmp_folder, filename))
         output = proj.command(args)
         os.remove(os.path.join(tmp_folder, filename))
 
@@ -175,9 +175,9 @@ class Neb(VaspCalculatorBase):
         if super_poscarfile is None:
             super_poscarfile = os.path.join(config_data["calcdir"], "run.final/00/POSCAR")
         super(Neb, self).finalize(config_data, super_poscarfile)
-        all_image_folders = [int(i.strip().split('_')[-1]) for i in os.listdir(config_data["calcdir"]) if "N_images" in i]
+        images_calculated = [int(i.strip().split('_')[-1]) for i in os.listdir(config_data["calcdir"]) if "N_images" in i]
         num_images = config_data["n_images"]
-        if num_images == max(all_image_folders):
+        if num_images == max(images_calculated):
             shutil.copy(os.path.join(config_data["calcdir"], "properties.calc.json"),
                         os.path.join(os.path.split(config_data["calcdir"])[0],
                                      "properties.calc.json"))
