@@ -1,63 +1,90 @@
 #include "casm/database/DiffTransConfigImport.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/kinetics/DiffTransConfigMapping.hh"
+#include "casm/kinetics/DiffTransConfiguration.hh"
 
 namespace CASM {
   namespace DB {
 
     // --- DiffTransConfiguration specializations --------------------------------
 
-    /* StructureMap<DiffTransConfiguration>::StructureMap(
-    const PrimClex &primclex,
-    std::unique_ptr<DiffTransConfigMapper> mapper) :
-    ConfigData<DiffTransConfiguration>(primclex,null_log()),
-    m_difftransconfigmapper(std::move(mapper)){}
+    StructureMap<Kinetics::DiffTransConfiguration>::StructureMap(
+      const PrimClex &primclex,
+      std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper) :
+      ConfigData<Kinetics::DiffTransConfiguration>(primclex, null_log()),
+      m_difftransconfigmapper(std::move(mapper)) {}
 
-     StructureMap<DiffTransConfiguration>::StructureMap(
-    const PrimClex &primclex,
-    const jsonParser &kwargs) :
-    ConfigData<DiffTransConfiguration>(primclex,null_log()) {
+    StructureMap<Kinetics::DiffTransConfiguration>::StructureMap(
+      const PrimClex &primclex,
+      const jsonParser &kwargs) :
+      ConfigData<Kinetics::DiffTransConfiguration>(primclex, null_log()) {
 
-    	// -- read settings --
-       bool rotate = true;
-       bool strict = false;
-       bool ideal;
-       kwargs.get_else(ideal, "ideal", false);
+      // -- read settings --
+      bool rotate = true;
+      bool strict = false;
+      bool ideal;
+      kwargs.get_else(ideal, "ideal", false);
 
-       double lattice_weight;
-       kwargs.get_else(lattice_weight, "lattice_weight", 0.5);
+      double lattice_weight;
+      kwargs.get_else(lattice_weight, "lattice_weight", 0.5);
 
-       double max_vol_change;
-       kwargs.get_else(max_vol_change, "max_vol_change", 0.3);
+      double max_vol_change;
+      kwargs.get_else(max_vol_change, "max_vol_change", 0.3);
 
-       double min_va_frac;
-       kwargs.get_else(min_va_frac, "min_va_frac", 0.0);
+      double min_va_frac;
+      kwargs.get_else(min_va_frac, "min_va_frac", 0.0);
 
-       double max_va_frac;
-       kwargs.get_else(max_va_frac, "max_va_frac", 0.5);
+      double max_va_frac;
+      kwargs.get_else(max_va_frac, "max_va_frac", 0.5);
 
-       // -- collect settings used --
-       m_used.put_obj();
-       m_used["ideal"] = ideal;
-       m_used["lattice_weight"] = lattice_weight;
-       m_used["max_vol_change"] = max_vol_change;
-       m_used["min_va_frac"] = min_va_frac;
-       m_used["max_va_frac"] = max_va_frac;
+      // -- collect settings used --
+      m_used.put_obj();
+      m_used["ideal"] = ideal;
+      m_used["lattice_weight"] = lattice_weight;
+      m_used["max_vol_change"] = max_vol_change;
+      m_used["min_va_frac"] = min_va_frac;
+      m_used["max_va_frac"] = max_va_frac;
 
-       // -- construct ConfigMapper --
-       int map_opt = DiffTransConfigMapper::none;
-       if(rotate) map_opt |= DiffTransConfigMapper::rotate;
-       if(strict) map_opt |= DiffTransConfigMapper::strict;
-       if(!ideal) map_opt |= DiffTransConfigMapper::robust;
+      // -- construct ConfigMapper --
+      int map_opt = Kinetics::DiffTransConfigMapper::Options::none;
+      if(rotate) map_opt |= Kinetics::DiffTransConfigMapper::Options::rotate;
+      if(strict) map_opt |= Kinetics::DiffTransConfigMapper::Options::strict;
+      if(!ideal) map_opt |= Kinetics::DiffTransConfigMapper::Options::robust;
 
-       m_difftransconfigmapper.reset(new DiffTransConfigMapper(
-                              primclex,
-                              lattice_weight,
-                              max_vol_change,
-                              map_opt,
-                              primclex.crystallography_tol()));
-       m_difftransconfigmapper->set_min_va_frac(min_va_frac);
-       m_difftransconfigmapper->set_max_va_frac(max_va_frac);
+      m_difftransconfigmapper.reset(new Kinetics::DiffTransConfigMapper(
+                                      primclex,
+                                      lattice_weight,
+                                      max_vol_change,
+                                      map_opt,
+                                      primclex.crystallography_tol()));
+      m_difftransconfigmapper->set_min_va_frac(min_va_frac);
+      m_difftransconfigmapper->set_max_va_frac(max_va_frac);
 
-    }*/
+    }
+
+    const jsonParser &StructureMap<Kinetics::DiffTransConfiguration>::used() const {
+      return m_used;
+    }
+
+    StructureMap<Kinetics::DiffTransConfiguration>::map_result_inserter StructureMap<Kinetics::DiffTransConfiguration>::map(
+      fs::path p,
+      DatabaseIterator<Kinetics::DiffTransConfiguration> hint,
+      map_result_inserter result) const {
+      //todo
+      /*      fs::path prop_path = this->calc_properties(p);
+
+            ConfigIO::Result res;
+            res.pos = (prop_path.empty() ? p : prop_path);
+
+            std::unique_ptr<Kinetics::DiffTransConfiguration> hint_config;
+            if(hint != db_difftransconfig().end()) {
+              hint_config = notstd::make_unique<DiffTransConfiguration>(*hint);
+              res.mapped_props.from = hint_config->name();
+            }*/
+      return result;
+    }
+
+
     /// \brief Constructor
     Import<Kinetics::DiffTransConfiguration>::Import(
       const PrimClex &primclex,
@@ -106,6 +133,7 @@ namespace CASM {
       const PrimClex &primclex,
       const jsonParser &kwargs,
       const Completer::ImportOption &import_opt) {
+      //todo
       return 0;
     }
 
