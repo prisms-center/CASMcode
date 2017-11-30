@@ -21,10 +21,10 @@ def read_settings(filename):
     The required keys are:
         "queue": queue to submit job in
         "ppn": processors (cores) per node to request
-        "atom_per_proc": max number of atoms per processor (core)
         "walltime": walltime to request (ex. "48:00:00")
 
     The optional keys are:
+        "atom_per_proc": max number of atoms per processor (core)
         "account": account to submit job under (default None)
         "pmem": string for requested memory (default None)
         "priority": requested job priority (default "0")
@@ -68,7 +68,7 @@ def read_settings(filename):
 
     required = ["queue", "ppn", "walltime"]
 
-    either_or = []
+    select_one = [["nodes", "atoms_per_proc", "nodes_per_image"]]
 
     optional = ["account","pmem","priority","message","email","qos","npar","ncore",
                 "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence",
@@ -82,8 +82,11 @@ def read_settings(filename):
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")
 
-    if len(either_or):
-        for key_list in either_or:
+    if len(select_one):
+        for key_list in select_one:
+            for key in key_list:
+                if not key in settings:
+                    settings[key] = None
             if not [key in settings for key in key_list].count(True) == 1:
                 raise VaspWrapperError("Declare one and only of the following options: '" + "' or '".join(key_list) + "' in file: '" + filename + "'")
 
