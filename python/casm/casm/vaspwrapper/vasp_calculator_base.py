@@ -114,9 +114,9 @@ class VaspCalculatorBase(object):
                                  super_poscarfile, speciesfile,
                                  self.sort, extra_input_files,
                                  settings["strict_kpoints"])
-        if "initial_deformation" in settings:
+        if settings["initial_deformation"] != None:
             deformation = self.get_deformation(settings)
-            self.apply_deformation(deformation, config_data)
+            self.apply_deformation(deformation, config_data["calcdir"])
 
     def get_deformation(self, settings):
         """ Either reads or queries for deformation matrix from settings dict"""
@@ -135,22 +135,21 @@ class VaspCalculatorBase(object):
             sel_config = sel_tmp.saveas(os.path.join(self.selection.proj.path, ".casm/tmp",
                                                      configname.replace('/', '.')), True)
             sel_config.query(["relaxation_strain(U,0:5,{})".format(calctype)])
-            deformation = [float(sel_config.data["relaxation_strain(U,{},{})".format(i, calctype)].loc[0]) for i in range(6)]
+            deformation = np.array([float(sel_config.data["relaxation_strain(U,{},{})".format(i, calctype)].loc[0]) for i in range(6)])
             os.remove(os.path.join(self.selection.proj.path, ".casm/tmp",
                                    configname.replace('/', '.')))
         else:
             raise vaspwrapper.VaspWrapperError("use manual or auto mode to set initial deformation. see casm format --vasp for settings")
 
         if deformation.ndim == 1:
-            deformation = np.array([[deformation[1], deformation[6], deformation[5]],
-                                    [deformation[6], deformation[2], deformation[4]],
-                                    [deformation[5], deformation[4], deformation[3]]])
+            deformation = np.array([[deformation[0], deformation[5], deformation[4]],
+                                    [deformation[5], deformation[1], deformation[3]],
+                                    [deformation[4], deformation[3], deformation[2]]])
         return deformation
 
-    def apply_deformation(self, deformation, config_data):
-        """applies the deformation and write the poscarfile"""
-        settings = self.read_settings(config_data["setfile"])
-        poscarfile = self.get_vasp_input_files(config_data, settings)[3]
+    def apply_deformation(self, deformation, calcdir):
+        """applies the deformation and write the poscar to calcdir"""
+        poscarfile = os.path.join(calcdir, "POSCAR")
         poscar_obj = vasp.io.poscar.Poscar(poscarfile)
         poscar_obj.apply_deformation(deformation)
         poscar_obj.write(poscarfile)

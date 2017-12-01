@@ -76,7 +76,7 @@ def read_settings(filename):
                 "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
                 "preamble", "prerun", "postrun", "prop", "prop_start", "prop_stop",
                 "prop_step", "tol", "tol_amount", "name", "fine_ngx", "CI_neb", "n_images",
-                "software", "method", "nodes", "nodes_per_image", "endstate_calctype","atoms_per_proc"]
+                "software", "method", "endstate_calctype", "initial_deformation"]
 
     for key in required:
         if not key in settings:
@@ -84,11 +84,11 @@ def read_settings(filename):
 
     if len(select_one):
         for key_list in select_one:
+            if not [key in settings for key in key_list].count(True) == 1:
+                raise VaspWrapperError("Declare one and only of the following options: '" + "' or '".join(key_list) + "' in file: '" + filename + "'")
             for key in key_list:
                 if not key in settings:
                     settings[key] = None
-            if not [key in settings for key in key_list].count(True) == 1:
-                raise VaspWrapperError("Declare one and only of the following options: '" + "' or '".join(key_list) + "' in file: '" + filename + "'")
 
     for key in optional:
         if not key in settings:
@@ -120,7 +120,7 @@ def read_settings(filename):
     if settings["fine_ngx"] == None:
         settings["fine_ngx"] = False
     for k in settings.keys():
-        if k not in required + optional + [key for key_list in either_or for key in key_list]:
+        if k not in required + optional + [key for key_list in select_one for key in key_list]:
             raise VaspWrapperError("unknown key '" + k + "' found in: '" + filename + "'")
 
     return settings
