@@ -737,7 +737,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
     if is_neb:
         # checkdir = os.path.join(jobdir, "01")
-        sout = open(os.path.join(jobdir, "01", stdout), 'w')
+        sout = open(os.path.join(jobdir, stdout), 'w')
     else:
         # checkdir = jobdir
         sout = open(os.path.join(jobdir, stdout), 'w')

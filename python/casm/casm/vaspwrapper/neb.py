@@ -175,7 +175,7 @@ class Neb(VaspCalculatorBase):
         if super_poscarfile is None:
             super_poscarfile = os.path.join(config_data["calcdir"], "run.final/00/POSCAR")
         super(Neb, self).finalize(config_data, super_poscarfile)
-        images_calculated = [int(i.strip().split('_')[-1]) for i in os.listdir(config_data["calcdir"]) if "N_images" in i]
+        images_calculated = [int(i.strip().split('_')[-1]) for i in os.listdir(os.path.split(config_data["calcdir"])[0]) if "N_images" in i]
         num_images = config_data["n_images"]
         if num_images == max(images_calculated):
             shutil.copy(os.path.join(config_data["calcdir"], "properties.calc.json"),
@@ -189,11 +189,10 @@ class Neb(VaspCalculatorBase):
 
     def properties(self, calcdir, super_poscarfile=None, speciesfile=None):
         """Make properties output as a list of dict of each image properties"""
-        final_output = []
+        final_output = {}
         num_images = vasp.io.get_incar_tag("IMAGES", calcdir)
-        for img in [str(j).zfill(2) for j in range(1, num_images)]:
+        for img in [str(j).zfill(2) for j in range(1, num_images+1)]:
             vaspdir = calcdir + "/{}".format(img)
             output = super(Neb, self).properties(vaspdir, super_poscarfile, speciesfile)
-            output["Image_number"] = img
-            final_output.append(output)
+            final_output[img] = output
         return final_output
