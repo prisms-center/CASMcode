@@ -4,9 +4,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/PropertiesDatabase.hh"
-#include "casm/database/DatabaseDefs.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/database/ConfigTypeTraits.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 // explicit template instantiations
 #define INST_Import(r, data, type) \
@@ -158,7 +156,7 @@ namespace CASM {
 
       GenericDatumFormatter<double, ConfigIO::Result> best_score(PropertiesDatabase &db_props) {
         return GenericDatumFormatter<double, Result>(
-                 "score", "",
+                 "best_score", "",
         [&](const Result & res) {
           return db_props.best_score(res.mapped_props.to);
         },
@@ -364,10 +362,10 @@ namespace CASM {
 
       file_log().custom(std::string("Copy calculation files: ") + configname);
       if(!copy_additional_files) {
-        file_log() << "cp " << calc_props_path << " " << p << std::endl;
+        file_log() << "cp " << calc_props_path << " " << p / "properties.calc.json" << std::endl;
         did_cp = true;
         if(!dry_run) {
-          fs::copy_file(calc_props_path, p);
+          fs::copy_file(calc_props_path, p / "properties.calc.json");
         }
       }
       else {

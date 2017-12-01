@@ -1,5 +1,7 @@
 #include "casm/app/AppIO_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/Orbit_impl.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 
@@ -8,11 +10,11 @@ namespace CASM {
 
   // --------- PrimIO Definitions --------------------------------------------------
 
-  BasicStructure<Site> read_prim(fs::path filename) {
+  BasicStructure<Site> read_prim(fs::path filename, double xtal_tol) {
 
     try {
       jsonParser json(filename);
-      return read_prim(json);
+      return read_prim(json, xtal_tol);
     }
     catch(...) {
       std::cerr << "Error reading prim from " << filename << std::endl;
@@ -22,7 +24,7 @@ namespace CASM {
   }
 
   /// \brief Read prim.json
-  BasicStructure<Site> read_prim(const jsonParser &json) {
+  BasicStructure<Site> read_prim(const jsonParser &json, double xtal_tol) {
 
     try {
 
@@ -31,7 +33,7 @@ namespace CASM {
 
       from_json(latvec_transpose, json["lattice_vectors"]);
 
-      Lattice lat(latvec_transpose.transpose());
+      Lattice lat(latvec_transpose.transpose(), xtal_tol);
 
       // create prim using lat
       BasicStructure<Site> prim(lat);
@@ -52,6 +54,7 @@ namespace CASM {
         Eigen::Vector3d coord(json["basis"][i]["coordinate"][0].get<double>(),
                               json["basis"][i]["coordinate"][1].get<double>(),
                               json["basis"][i]["coordinate"][2].get<double>());
+
         Site site(prim.lattice());
         if(mode == FRAC) {
           site.frac() = coord;
@@ -77,6 +80,7 @@ namespace CASM {
 
         // add site to prim
         prim.basis.push_back(site);
+
       }
 
       return prim;
@@ -510,6 +514,6 @@ namespace CASM {
 #define DIFFTRANS_VECTOR_INST(ORBIT) \
   PRINT_CLUST_INST(_VECTOR_IT(ORBIT), _VECTOR_INSERTER(ORBIT), PrototypePrinter<Kinetics::DiffusionTransformation>)
 
-  DIFFTRANS_VECTOR_INST(Kinetics::PrimPeriodicDiffTransOrbit)
+  DIFFTRANS_VECTOR_INST(PrimPeriodicDiffTransOrbit)
 }
 

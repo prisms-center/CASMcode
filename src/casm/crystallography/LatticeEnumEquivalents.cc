@@ -1,4 +1,5 @@
 #include "casm/crystallography/LatticeEnumEquivalents.hh"
+#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
@@ -7,7 +8,7 @@ namespace CASM {
 
     struct MakeInvariantSubgroup {
 
-      MakeInvariantSubgroup(double _tol) : tol(_tol) {}
+      MakeInvariantSubgroup() {}
 
       template<typename SymOpIterator, typename SymOpOutputIterator>
       SymOpOutputIterator operator()(
@@ -15,10 +16,9 @@ namespace CASM {
         SymOpIterator begin,
         SymOpIterator end,
         SymOpOutputIterator result) {
-        return lat.find_invariant_subgroup(begin, end, result, tol);
+        return lat.invariant_subgroup(begin, end, result);
       }
 
-      double tol;
     };
 
   }
@@ -33,9 +33,9 @@ namespace CASM {
   ///
   /// \throws std::runtime_error if super_g does not have a MasterSymGroup
   ///
-  LatticeEnumEquivalents::LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g, double tol) :
+  LatticeEnumEquivalents::LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g) :
     EnumEquivalents<Lattice, Array<SymOp>::const_iterator, SymOp, SymRepIndexCompare>(
-      lat.canonical_form(super_g, tol), super_g.begin(), super_g.end(), MakeInvariantSubgroup(tol)) {
+      lat.canonical_form(super_g), super_g.begin(), super_g.end(), MakeInvariantSubgroup()) {
 
     if(!super_g.begin()->has_valid_master()) {
       throw std::runtime_error("Error constructing LatticeEnumEquivalents: SymGroup has no MasterSymGroup");

@@ -40,6 +40,16 @@ namespace CASM {
 
   ENUM_IO_DECL(CELL_TYPE)
   ENUM_TRAITS(CELL_TYPE)
+
+  /// Standard Error handling options:
+  ///
+  /// THROW: Throw an exception
+  /// WARN: Print warning message, and continue
+  /// CONTINUE: Continue quietly
+  enum class OnError {
+    THROW, WARN, CONTINUE
+  };
+
 }
 
 #endif

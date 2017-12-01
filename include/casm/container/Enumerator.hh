@@ -211,6 +211,8 @@ namespace CASM {
 
   protected:
 
+    using EnumeratorBase::_initialize;
+
     /// Initialize
     ///
     /// - Sets current to point at _initial

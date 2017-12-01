@@ -1,88 +1,58 @@
 #ifndef CASM_DoFTransformation
 #define CASM_DoFTransformation
 
+#include <memory>
 #include "casm/CASM_global_definitions.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
 
-  class Structure;
   class Configuration;
-  class SymOp;
+
+  namespace Kinetics {
+    template<typename Base>
+    class DoFTransformation;
+  }
+
+  template<typename Base>
+  using DoFTransformation = Kinetics::DoFTransformation<Base>;
 
   namespace Kinetics {
 
-    /// \brief Abstract base class for kinetics
-    class DoFTransformation {
+    /// \brief CRTP base class for transformations
+    template<typename Base>
+    class DoFTransformation : public Base {
 
     public:
 
-      typedef Structure PrimType;
+      typedef typename Base::MostDerived MostDerived;
+      using Base::derived;
 
-      DoFTransformation(const PrimType &prim);
+      // --- required in MostDerived: ---
 
-      virtual ~DoFTransformation() {};
+      //Configuration &apply_to(Configuration &config) const;
+      //MostDerived &apply_sym(const SymOp &op);
+      //MostDerived &apply_sym(const PermuteIterator &op);
+      //void reverse();
 
-      const PrimType &prim() const {
-        return *m_prim;
+
+      // --- have optional default implementation: ---
+
+      Configuration &apply_reverse_to(Configuration &config) const {
+        return derived().apply_reverse_to_impl(config);
       }
 
-      Configuration &apply_to(Configuration &config) const;
+    protected:
 
-      Configuration &apply_reverse_to(Configuration &config) const;
-
-      DoFTransformation &apply_sym(const SymOp &op);
-
-      void reverse();
-
-      std::unique_ptr<DoFTransformation> clone() const;
-
-    private:
-
-      virtual Configuration &apply_to_impl(Configuration &config) const = 0;
-
-      virtual Configuration &apply_reverse_to_impl(Configuration &config) const = 0;
-
-      virtual void apply_sym_impl(const SymOp &op) = 0;
-
-      virtual void reverse_impl() = 0;
-
-      virtual DoFTransformation *_clone() const = 0;
-
-
-      const PrimType *m_prim;
-    };
-
-
-    class SiteDoFTransformation : public DoFTransformation {
-
-    public:
-
-      SiteDoFTransformation(const UnitCellCoord &_uccoord);
-
-      virtual ~SiteDoFTransformation();
-
-      SiteDoFTransformation &operator+=(UnitCell frac);
-
-      SiteDoFTransformation &operator-=(UnitCell frac);
-
-      SiteDoFTransformation &apply_sym(const SymOp &op);
-
-      std::unique_ptr<SiteDoFTransformation> clone() const;
-
-      UnitCellCoord uccoord;
-
-    private:
-
-      // inherited virtual functions:
-      //virtual Configuration& apply_to_impl(Configuration& config) const = 0;
-      //virtual Configuration& apply_reverse_to_impl(Configuration& config) const = 0;
-      virtual SiteDoFTransformation *_clone() const override = 0;
-      //virtual void reverse_impl() = 0;
-
-      virtual void apply_sym_impl(const SymOp &op) override;
+      // customizable functions:
+      Configuration &apply_reverse_to_impl(Configuration &config) const {
+        MostDerived tmp {derived()};
+        tmp.reverse();
+        tmp.apply_to(config);
+        return config;
+      }
 
     };
+
   }
 }
 

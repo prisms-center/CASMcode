@@ -86,10 +86,10 @@ void prim2_read_test(Structure &struc) {
       // occupants are Molecule with name "A", etc.
       // Molecule are composed of AtomPosition
       // An AtomPosition 'is' a Coordinate with a Specie
-      BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name(), check_name[i]);
-      BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-      BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).name(), check_name[i]);
-      BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).specie().name(), check_name[i]);
+      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].name(), check_name[j]);
+      BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].atom(0).name(), check_name[j]);
+      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].atom(0).specie().name(), check_name[j]);
     }
     BOOST_CHECK_EQUAL(struc.basis[i].site_occupant().value(), check_value[i]);
   }
@@ -149,10 +149,10 @@ void pos1_read_test(Structure &struc) {
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name(), check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).name(), check_name[i]);
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).specie().name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].name(), check_name[i]);
+    BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].atom(0).name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].atom(0).specie().name(), check_name[i]);
   }
 
   // FCC structure
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(PRIM1Test) {
   write_prim(struc, tmp_file, FRAC);
 
   // Read new file and run tests again
-  Structure struc2(read_prim(tmp_file));
+  Structure struc2(read_prim(tmp_file, TOL));
   prim1_read_test(struc2);
 
 }
@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(POS1jsonPrimTest) {
   sout.close();
 
   // Read new file and run tests again
-  struc = Structure(read_prim(tmp_file));
+  struc = Structure(read_prim(tmp_file, TOL));
   pos1_read_test(struc);
 
 }

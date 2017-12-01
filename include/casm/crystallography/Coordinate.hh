@@ -120,13 +120,13 @@ namespace CASM {
       return !(*this == RHS);
     }
 
-    /// Returns true if this->min_dist(RHS)<tol
-    bool compare(const Coordinate &RHS, double tol = TOL) const;
+    /// Returns true if this->min_dist(RHS)<this->lattice().tol()
+    bool compare(const Coordinate &RHS) const;
 
-    /// Returns true if this->min_dist(RHS)<tol
+    /// Returns true if this->min_dist(RHS)<this->lattice().tol()
     /// if true, calculates @param translation such that
     /// *this = (RHS+translation)
-    bool compare(const Coordinate &RHS, Coordinate &translation, double tol = TOL) const;
+    bool compare(const Coordinate &RHS, Coordinate &translation) const;
 
     /// Return true -- Exists to allow duck-typing with Site
     bool compare_type(const Coordinate &RHS)const;
@@ -192,6 +192,11 @@ namespace CASM {
     const Lattice &home() const {
       assert(m_home && "Coordinate doesn't have valid home lattice");
       return *m_home;
+    }
+
+    /// \brief Access the home lattice of the coordinate
+    const Lattice &lattice() const {
+      return home();
     }
 
     //term is terminal character, prec is precision, pad is field width - precision  (should be greater than 3)

@@ -1,11 +1,9 @@
 #include "casm/clex/RemoveSupercell.hh"
 #include "casm/app/rm.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/database/Selection.hh"
-#include "casm/database/Remove.hh"
-#include "casm/database/DatabaseDefs.hh"
-#include "casm/database/DatabaseTypes.hh"
+#include "casm/database/Selection_impl.hh"
+#include "casm/database/Remove_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
   namespace DB {
@@ -13,22 +11,25 @@ namespace CASM {
     Remove<Supercell>::Remove(const PrimClex &_primclex, fs::path report_dir, Log &_file_log) :
       m_primclex(_primclex), m_report_dir(report_dir), m_file_log(_file_log) {}
 
-    const std::string Remove<Supercell>::desc =
+    std::string Remove<Supercell>::desc() {
 
-      "Remove a supercell, including all enumerated configurations and calculation results: \n\n"
+      std::string res =
+        "Remove a supercell, including all enumerated configurations and calculation results: \n\n"
 
-      "  'casm remove --type scel' options: \n\n"
+        "  'casm remove --type scel' options: \n\n"
 
-      "  - Supercells to be erased can be specified with the --names and \n"
-      "    --selection options.\n"
-      "  - Use without additional options to remove all enumerated configurations\n"
-      "    that do not have any associated files or data for each specified suprecell.\n"
-      "    If no data or files, erase supercell.\n"
-      "  - Use --data (-d) to remove all configuration data, but not enumerated \n"
-      "    configurations, for each specified supercell. \n"
-      "  - Use --force (-f) to remove specified supercells including all data and \n"
-      "    enumerated configurations. \n"
-      "  - Use --dry-run (-n) to do a \"dry-run\". \n\n";
+        "  - Supercells to be erased can be specified with the --names and \n"
+        "    --selection options.\n"
+        "  - Use without additional options to remove all enumerated configurations\n"
+        "    that do not have any associated files or data for each specified suprecell.\n"
+        "    If no data or files, erase supercell.\n"
+        "  - Use --data (-d) to remove all configuration data, but not enumerated \n"
+        "    configurations, for each specified supercell. \n"
+        "  - Use --force (-f) to remove specified supercells including all data and \n"
+        "    enumerated configurations. \n"
+        "  - Use --dry-run (-n) to do a \"dry-run\". \n\n";
+      return res;
+    }
 
     /// Helper struct base class
     struct EraseScelConfigsBase {

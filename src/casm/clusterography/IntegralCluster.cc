@@ -4,8 +4,42 @@
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
 
 namespace CASM {
+
+  template class ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<IntegralCluster> > > >;
+  template class AperiodicSymCompare<IntegralCluster>;
+  /*
+  template bool ClusterSymCompare<AperiodicSymCompare<IntegralCluster> >::compare_impl(
+    IntegralCluster const &,
+    IntegralCluster const &) const;
+  template bool ClusterSymCompare<AperiodicSymCompare<IntegralCluster> >::invariants_compare_impl(
+    ClusterInvariants<IntegralCluster> const &,
+    ClusterInvariants<IntegralCluster> const &) const;
+  */
+
+  template class ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<IntegralCluster> > > >;
+  template class PrimPeriodicSymCompare<IntegralCluster>;
+  /*
+  template bool ClusterSymCompare<PrimPeriodicSymCompare<IntegralCluster> >::compare_impl(
+    IntegralCluster const &,
+    IntegralCluster const &) const;
+  template bool ClusterSymCompare<PrimPeriodicSymCompare<IntegralCluster> >::invariants_compare_impl(
+    ClusterInvariants<IntegralCluster> const &,
+    ClusterInvariants<IntegralCluster> const &) const;
+  */
+
+  template class ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<IntegralCluster> > > >;
+  template class ScelPeriodicSymCompare<IntegralCluster>;
+  /*
+  template bool ClusterSymCompare<ScelPeriodicSymCompare<IntegralCluster> >::compare_impl(
+    IntegralCluster const &,
+    IntegralCluster const &) const;
+  template bool ClusterSymCompare<ScelPeriodicSymCompare<IntegralCluster> >::invariants_compare_impl(
+    ClusterInvariants<IntegralCluster> const &,
+    ClusterInvariants<IntegralCluster> const &) const;
+  */
 
   /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
   std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust) {

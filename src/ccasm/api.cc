@@ -1,10 +1,8 @@
 #include "ccasm/api.hh"
 #include <wordexp.h>
-//#include "boost/iostreams/stream.hpp"
-//#include "boost/iostreams/device/null.hpp"
+#include <boost/filesystem.hpp>
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/external/boost.hh"
 #include "casm/app/casm_functions.hh"
 
 using namespace CASM;

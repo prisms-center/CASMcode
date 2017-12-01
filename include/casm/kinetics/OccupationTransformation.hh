@@ -2,33 +2,37 @@
 #define CASM_OccupationTransformation
 
 #include "casm/kinetics/DoFTransformation.hh"
+#include "casm/kinetics/OccupationTransformationTraits.hh"
+#include "casm/misc/Comparisons.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/app/AppIO.hh"
 
 namespace CASM {
 
   class Configuration;
   class SymOp;
+  class AtomSpecie;
   class Molecule;
 
   namespace Kinetics {
 
     /// \brief Describes how occupation values transform
+    ///
+    /// - Used more generally as an Element in OccPerturbation
     class OccupationTransformation :
-      public SiteDoFTransformation,
-      public Comparisons<OccupationTransformation> {
+      public Comparisons<Translatable<DoFTransformation<CRTPBase<OccupationTransformation>>>> {
 
     public:
 
-      OccupationTransformation(const UnitCellCoord &uccoord,
-                               Index from_value,
-                               Index to_value);
-
-      OccupationTransformation &apply_sym(const SymOp &op);
-
-      std::unique_ptr<OccupationTransformation> clone() const;
+      OccupationTransformation(const UnitCellCoord &_uccoord,
+                               Index _from_value,
+                               Index _to_value);
 
       Index from_value;
       Index to_value;
+      UnitCellCoord uccoord;
+
+      const Structure &prim() const;
 
       const Molecule &from_mol() const;
 
@@ -36,15 +40,19 @@ namespace CASM {
 
       bool operator<(const OccupationTransformation &B) const;
 
+      OccupationTransformation &operator+=(UnitCell Frac);
+
+      OccupationTransformation &apply_sym(const SymOp &op);
+
+      Configuration &apply_to(Configuration &config) const;
+
+      void reverse();
+
     private:
 
-      Configuration &apply_to_impl(Configuration &config) const override;
+      friend DoFTransformation<CRTPBase<OccupationTransformation>>;
 
-      Configuration &apply_reverse_to_impl(Configuration &config) const override;
-
-      void reverse_impl() override;
-
-      OccupationTransformation *_clone() const override;
+      Configuration &apply_reverse_to_impl(Configuration &config) const;
 
       std::tuple<UnitCellCoord, Index, Index> _tuple() const;
 
@@ -54,6 +62,15 @@ namespace CASM {
     std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans);
 
   }
+
+  std::map<AtomSpecie, Index> empty_specie_count(const Structure &prim);
+
+  template<typename OccTransfIt>
+  std::map<AtomSpecie, Index> from_specie_count(OccTransfIt begin, OccTransfIt end);
+
+  template<typename OccTransfIt>
+  std::map<AtomSpecie, Index> to_specie_count(OccTransfIt begin, OccTransfIt end);
+
 
   /// \brief Write OccupationTransformation to JSON object
   jsonParser &to_json(const Kinetics::OccupationTransformation &trans, jsonParser &json);

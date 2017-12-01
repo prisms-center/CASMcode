@@ -147,23 +147,7 @@ namespace CASM {
     void clear_deformation();
 
 
-    // -- Specie ID ------------------
-
-    /// Access specie id data
-    std::vector<std::vector<Index> > &specie_id() {
-      return m_specie_id;
-    }
-
-    const std::vector<std::vector<Index> > &specie_id() const {
-      return m_specie_id;
-    }
-
-    bool has_specie_id() const {
-      return size() != 0 && specie_id().size() == size();
-    }
-
-    void clear_specie_id();
-
+    ConfigDoF &apply_sym(const PermuteIterator &it);
 
     void swap(ConfigDoF &RHS);
 
@@ -204,10 +188,6 @@ namespace CASM {
 
     bool m_has_deformation;
 
-    /// Use to track specie ID during KMC, vector at each site to handle atoms
-    /// in a molecule
-    std::vector<std::vector<Index> > m_specie_id;
-
     /// Tolerance used for transformation to canonical form -- used also for comparisons, since
     /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form
     /// (This is relevant only for displacement and deformation degrees of freedom
@@ -218,10 +198,6 @@ namespace CASM {
   jsonParser &to_json(const ConfigDoF &value, jsonParser &json);
 
   void from_json(ConfigDoF &value, const jsonParser &json);
-
-  // Calculate transformed ConfigDoF from PermuteIterator via
-  //   apply(permute_iterator, dof)
-  ConfigDoF &apply(const PermuteIterator &it, ConfigDoF &dof);
 
   void swap(ConfigDoF &A, ConfigDoF &B);
 

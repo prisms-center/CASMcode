@@ -63,12 +63,12 @@ namespace CASM {
     /// return basis index of site that matches test_coord, if it is in basis
     /// otherwise, returns basis.size()
     template<typename CoordType2>
-    Index find(const CoordType2 &test_site, double tol = TOL) const;
+    Index find(const CoordType2 &test_site) const;
 
     /// return basis index of site that matches test_site+shift, if it is in basis
     /// otherwise, returns basis.size()
     template<typename CoordType2>
-    Index find(const CoordType2 &test_site, const Coordinate &shift, double tol) const;
+    Index find(const CoordType2 &test_site, const Coordinate &shift) const;
 
     const Lattice &lattice() const {
       return m_lattice;
@@ -120,8 +120,8 @@ namespace CASM {
     ///apply a symmetry operation to the current structure (may change lattice vectors and order of basis atoms)
     //BasicStructure &apply_sym(const SymOp &op);  //Anna do this
 
-    void generate_factor_group(SymGroup &factor_group, double map_tol) const;
-    void generate_factor_group_slow(SymGroup &factor_group, double map_tol) const;
+    void generate_factor_group(SymGroup &factor_group) const;
+    void generate_factor_group_slow(SymGroup &factor_group) const;
     void fg_converge(double small_tol, double large_tol, double increment);
     void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
@@ -131,17 +131,17 @@ namespace CASM {
 
     /// Returns true if the structure describes a crystal primitive cell
     /// i.e., no translation smaller than a lattice vector can map the structure onto itself
-    bool is_primitive(double prim_tol = TOL) const;          //Donghee do this
+    bool is_primitive() const;          //Donghee do this
 
     /// Returns true if the structure describes a crystal primitive cell
     /// and finds the primitive cell and stores it in 'new_prim'
-    bool is_primitive(BasicStructure &new_prim, double prim_tol = TOL) const;   //Donghee do this
+    bool is_primitive(BasicStructure &new_prim) const;   //Donghee do this
 
     /// fill an empty structure with the basis of its corresponding primitive cell
-    void fill_supercell(const BasicStructure &prim, double map_tol = TOL); //Ivy
+    void fill_supercell(const BasicStructure &prim); //Ivy
 
     ///  Shortcut routine to create a supercell structure and fill it with sites
-    BasicStructure create_superstruc(const Lattice &scel_lat, double map_tol = TOL) const;
+    BasicStructure create_superstruc(const Lattice &scel_lat) const;
 
     ///Translates all atoms in cell
     BasicStructure &operator+=(const Coordinate &shift);

@@ -3,6 +3,7 @@
 
 #include "casm/CASM_global_definitions.hh"
 #include <iostream>
+#include <stdexcept>
 
 namespace CASM {
 

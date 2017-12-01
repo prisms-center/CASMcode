@@ -5,21 +5,77 @@ namespace CASM {
 
     // --- DiffTransConfiguration specializations --------------------------------
 
-    /*
+
     /// \brief Constructor
-    Import<DiffTransConfiguration>::Import(
-      const PrimClex& primclex,
-      const DiffTransConfigMapper& configmapper,
+    Import<Kinetics::DiffTransConfiguration>::Import(
+      const PrimClex &primclex,
+      const StructureMap<Kinetics::DiffTransConfiguration> &mapper,
       bool import_data,
       bool copy_additional_files,
       bool overwrite,
+      fs::path report_dir,
+      Log &file_log) :
+
+      ImportT(primclex, mapper, import_data, copy_additional_files, overwrite, report_dir, file_log) {}
+
+    const std::string Import<Kinetics::DiffTransConfiguration>::desc = "ToDo";
+
+    int Import<Kinetics::DiffTransConfiguration>::run(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      const Completer::ImportOption &import_opt) {
+      return 0;
+    }
+
+    DataFormatter<ConfigIO::Result> Import<Kinetics::DiffTransConfiguration>::_import_formatter(
+      const std::map<std::string, ConfigIO::ImportData> &data_results) const {
+
+      // todo
+
+      DataFormatterDictionary<ConfigIO::Result> dict;
+      ConfigIO::default_import_formatters(dict, db_props(), data_results);
+
+
+
+      std::vector<std::string> col = {
+        "configname", "selected", "pos", "has_data", "has_complete_data",
+        "import_data", "import_additional_files", "score", "best_score"
+      };
+
+      return dict.parse(col);
+    }
+
+    /// \brief Constructor
+    Update<Kinetics::DiffTransConfiguration>::Update(
+      const PrimClex &primclex,
+      const StructureMap<Kinetics::DiffTransConfiguration> &mapper,
       fs::path report_dir) :
+      UpdateT(primclex, mapper, report_dir) {}
 
-      ImportT(primclex, import_data, copy_additional_files, overwrite, report_dir) :
-      m_configmapper(configmapper) {}
+    const std::string Update<Kinetics::DiffTransConfiguration>::desc = "ToDo";
 
-    const std::string Import<DiffTransConfiguration>::import_desc = "ToDo";
+    int Update<Kinetics::DiffTransConfiguration>::run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt) {
+      return 0;
+    }
 
+    DataFormatter<ConfigIO::Result> Update<Kinetics::DiffTransConfiguration>::_update_formatter() const {
+
+      // todo
+
+      DataFormatterDictionary<ConfigIO::Result> dict;
+      ConfigIO::default_update_formatters(dict, db_props());
+
+      std::vector<std::string> col = {
+        "configname", "selected", "to_configname", "has_data", "has_complete_data",
+        "score", "best_score", "is_best",
+        "lattice_deformation_cost", "basis_deformation_cost", "deformation_cost",
+        "relaxed_energy"
+      };
+
+      return dict.parse(col);
+    }
+
+    /*
     int Import<DiffTransConfiguration>::import(
       PrimClex &primclex,
       const jsonParser &kwargs,

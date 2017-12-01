@@ -94,6 +94,7 @@ namespace CASM {
     return F;
   }
 
+
   //*******************************************************************************************
   //Calculates the strain metric based on what mode is passed
   //in. Allowed modes are listed in STRAIN_METRIC
@@ -114,13 +115,17 @@ namespace CASM {
     else if(MODE == EULER_ALMANSI) {
       return euler_almansi(F);
     }
+    /// STRETCH
+    else if(MODE == STRETCH) {
+      return right_stretch_tensor(F);
+    }
     /// DISP_GRAD
     else if(MODE == DISP_GRAD) {
       return disp_grad(F);
     }
     else {
       std::cerr << "CRITICAL ERROR: In StrainConverter::strain_metric. Unrecognized strain metric" << std::endl;
-      std::cerr << "                Your only options are GREEN_LAGRANGE, BIOT, HENCKY, EULER_ALMANSI, and DISP_GRAD" << std::endl;
+      std::cerr << "                Your only options are GREEN_LAGRANGE, BIOT, HENCKY, EULER_ALMANSI,STRETCH and DISP_GRAD" << std::endl;
       std::cerr << "                Exiting..." << std::endl;
       exit(1);
     }
@@ -228,6 +233,16 @@ namespace CASM {
       curr_metric_func = &StrainConverter::euler_almansi;
       curr_inv_metric_func = &StrainConverter::euler_almansi_to_F;
     }
+    /// STRETCH = U
+    else if(mode_name == "STRAIN_U" || mode_name == "U") {
+      STRAIN_METRIC_MODE = STRETCH;
+      set_conventional_order_symmetric();
+      curr_metric_func = &StrainConverter::right_stretch_tensor;
+      curr_inv_metric_func = &StrainConverter::disp_grad_to_F;
+      m_weight_strain[3] = 1.0;
+      m_weight_strain[4] = 1.0;
+      m_weight_strain[5] = 1.0;
+    }
     /// DISP_GRAD = F
     else if(mode_name == "STRAIN_F" || mode_name == "F") {
       STRAIN_METRIC_MODE = DISP_GRAD;
@@ -237,7 +252,7 @@ namespace CASM {
     }
     else {
       std::cerr << "CRITICAL ERROR: In StrainConverter::set_mode(). Unrecognized strain metric '" << mode_name << "'" << std::endl;
-      std::cerr << "                Your only options are STRAIN_GL, STRAIN_B, STRAIN_H, STRAIN_EA, and STRAIN_F" << std::endl;
+      std::cerr << "                Your only options are STRAIN_GL, STRAIN_B, STRAIN_H, STRAIN_EA, STRAIN_U, and STRAIN_F" << std::endl;
       std::cerr << "                Exiting..." << std::endl;
       exit(1);
     }
@@ -334,6 +349,7 @@ namespace CASM {
 
     m_weight_strain.resize(3, 1.0);
     m_weight_strain.append(Array<double>(3, sqrt(2.0)));
+
 
   }
 

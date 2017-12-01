@@ -7,13 +7,16 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/casm_io/json_io/container.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
-#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/IntegralCluster_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/database/DiffTransOrbitDatabase.hh"
 
 namespace CASM {
 
@@ -101,9 +104,6 @@ namespace CASM {
     std::string bset;
     ClexDescription clex_desc;
 
-    // not sure how this will work yet...
-    std::vector<std::string> dof_keys = {"occupation"};
-
     if(!vm.count("clex")) {
       clex_desc = set.default_clex();
     }
@@ -166,26 +166,46 @@ namespace CASM {
         }
       }
 
-      jsonParser bspecs_json;
+      jsonParser bspecs_json(dir.bspecs(bset));
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+      std::vector<LocalIntegralClusterOrbit> local_orbits;
       std::unique_ptr<ClexBasis> clex_basis;
 
       try {
-        jsonParser bspecs_json(dir.bspecs(bset));
+        if(bspecs_json.contains("local_bspecs")) {
+          //this is a local basis set
+          //get hop from bspecs
+          args.log().construct("Orbitree");
+          args.log() << std::endl;
+          std::string orbitname = bspecs_json["diff_trans"].get<std::string>();
+          PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
+          make_local_orbits(
+            dtorbit.prototype(),
+            bspecs_json["local_bspecs"],
+            alloy_sites_filter,
+            primclex.crystallography_tol(),
+            std::back_inserter(local_orbits),
+            args.log());
 
-        args.log().construct("Orbitree");
-        args.log() << std::endl;
+          clex_basis.reset(new ClexBasis(prim));
+          clex_basis->generate(local_orbits.begin(), local_orbits.end(), bspecs_json["local_bspecs"]);
 
-        make_prim_periodic_orbits(
-          prim,
-          bspecs_json,
-          alloy_sites_filter,
-          set.crystallography_tol(),
-          std::back_inserter(orbits),
-          args.log());
+        }
+        else {
+          args.log().construct("Orbitree");
+          args.log() << std::endl;
 
-        clex_basis.reset(new ClexBasis(prim));
-        clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json);
+          make_prim_periodic_orbits(
+            prim,
+            bspecs_json,
+            alloy_sites_filter,
+            set.crystallography_tol(),
+            std::back_inserter(orbits),
+            args.log());
+
+          clex_basis.reset(new ClexBasis(prim));
+          clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json);
+        }
 
       }
       catch(std::exception &e) {
@@ -196,7 +216,12 @@ namespace CASM {
       // -- write clust.json ----------------
       {
         jsonParser clust_json;
-        write_clust(orbits.begin(), orbits.end(), clust_json, ProtoSitesPrinter(), bspecs_json);
+        if(bspecs_json.contains("local_bspecs")) {
+          write_clust(local_orbits.begin(), local_orbits.end(), clust_json, ProtoSitesPrinter(), bspecs_json["local_bspecs"]);
+        }
+        else {
+          write_clust(orbits.begin(), orbits.end(), clust_json, ProtoSitesPrinter(), bspecs_json);
+        }
         clust_json.write(dir.clust(bset));
 
         args.log().write(dir.clust(bset).string());
@@ -206,7 +231,12 @@ namespace CASM {
       // -- write basis.json ----------------
       {
         jsonParser basis_json;
-        write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json);
+        if(bspecs_json.contains("local_bspecs")) {
+          write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json["local_bspecs"]);
+        }
+        else {
+          write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json);
+        }
         basis_json.write(dir.basis(bset));
 
         args.log().write(dir.basis(bset).string());

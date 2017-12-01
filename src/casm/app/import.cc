@@ -1,12 +1,13 @@
 #include "casm/app/import.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseTypes.hh"
 #include "casm/database/Import.hh"
 #include "casm/app/DBInterface.hh"
 #include "casm/clex/PrimClex.hh"
 
 // need to add specializations here
 #include "casm/database/ConfigImport.hh"
+#include "casm/database/DiffTransConfigImport.hh"
 
 
 namespace CASM {

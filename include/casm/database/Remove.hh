@@ -62,12 +62,12 @@ namespace CASM {
       fs::path m_report_dir;
     };
 
-    // To be specialized for ConfigType (default implemenation exists for ConfigTypes)
+    // To be specialized for ConfigType (default implementation exists for ConfigTypes)
     template<typename ConfigType>
     class Remove : public RemoveT<ConfigType> {
     public:
       Remove(const PrimClex &primclex, fs::path report_dir, Log &_file_log);
-      static const std::string desc;
+      static std::string desc();
       static int run(const PrimClex &, const Completer::RmOption &opt);
     };
   }

@@ -27,7 +27,7 @@ namespace CASM {
 
   //Enum type that will define how the strain metrics used to
   //calculate strain order parameters are going to be calculated
-  enum STRAIN_METRIC {GREEN_LAGRANGE = 0, BIOT = 1, HENCKY = 2, EULER_ALMANSI = 3, DISP_GRAD = 4};
+  enum STRAIN_METRIC {GREEN_LAGRANGE = 0, BIOT = 1, HENCKY = 2, EULER_ALMANSI = 3, STRETCH = 4, DISP_GRAD = 5};
 
 
   class StrainConverter {
@@ -92,6 +92,8 @@ namespace CASM {
         curr_metric_func = &StrainConverter::hencky;
       else if(_MODE == EULER_ALMANSI)
         curr_metric_func = &StrainConverter::euler_almansi;
+      else if(_MODE == STRETCH)
+        curr_metric_func = &StrainConverter::right_stretch_tensor;
       else if(_MODE == DISP_GRAD)
         curr_metric_func = &StrainConverter::disp_grad;
     }

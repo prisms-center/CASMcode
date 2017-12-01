@@ -33,12 +33,16 @@ namespace CASM {
       }
 
       static const std::string enumerator_name;
+      static const std::string interface_help;
+      /// Implements run
+      static int run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
 
     private:
 
 
       /// Implements increment
       void increment() override;
+
 
 
       // -- Unique -------------------
@@ -79,7 +83,8 @@ namespace CASM {
       IntegralClusterOrbitInputIterator begin,
       IntegralClusterOrbitInputIterator end,
       double xtal_tol,
-      OrbitOutputIterator result);
+      OrbitOutputIterator result,
+      const PrimClex *primclex);
   }
 }
 

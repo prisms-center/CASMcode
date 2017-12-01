@@ -519,7 +519,7 @@ namespace CASM {
     //*****************************************************************************************************//
 
     /**
-     * Options set for `casm format`. Get your input files here.
+     * Options set for `casm init`. Set up your input here.
      */
 
     class InitOption : public OptionHandlerBase {
@@ -677,8 +677,11 @@ namespace CASM {
 
       using OptionHandlerBase::config_strs;
       using OptionHandlerBase::selection_path;
+      using OptionHandlerBase::configtype;
+      using OptionHandlerBase::configtype_opts;
 
       ViewOption();
+      int m_images;
 
     private:
 

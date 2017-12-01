@@ -1,6 +1,9 @@
-#include "casm/clex/ClexBasis.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clex/ClexBasis_impl.hh"
+#include "casm/clusterography/ClusterDecl.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/container/algorithm.hh"
+#include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/app/AppIO.hh" // necessary for write_prim() function
@@ -9,6 +12,24 @@
 
 namespace CASM {
 
+  template void ClexBasis::generate<std::vector<AperiodicIntegralClusterOrbit>::iterator>(
+    std::vector<AperiodicIntegralClusterOrbit>::iterator,
+    std::vector<AperiodicIntegralClusterOrbit>::iterator,
+    jsonParser const &,
+    Index);
+
+  template void ClexBasis::generate<std::vector<PrimPeriodicIntegralClusterOrbit>::iterator>(
+    std::vector<PrimPeriodicIntegralClusterOrbit>::iterator,
+    std::vector<PrimPeriodicIntegralClusterOrbit>::iterator,
+    jsonParser const &,
+    Index);
+
+  template
+  BasisSet ClexBasis::_construct_prototype_basis<AperiodicIntegralClusterOrbit>(
+    AperiodicIntegralClusterOrbit const &_orbit,
+    std::vector<DoFKey> const &local_keys,
+    std::vector<DoFKey> const &global_keys,
+    Index max_poly_order) const;
 
   ClexBasis::ClexBasis(Structure const &_prim) :
     m_prim_ptr(&_prim) {

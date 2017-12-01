@@ -9,6 +9,7 @@
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/clusterography/ClusterDecl.hh"
 
 namespace CASM {
 
@@ -19,11 +20,9 @@ namespace CASM {
   class jsonParser;
   class ClexBasis;
   class ChemicalReference;
-  template<typename CoordType> class CoordCluster;
   class UnitCellCoord;
-  typedef CoordCluster<UnitCellCoord> IntegralCluster;
-  template<typename Element, typename SymCompareType> class Orbit;
   class SymGroup;
+  class PrimClex;
 
   /** \defgroup ProjectIO
    *
@@ -38,9 +37,9 @@ namespace CASM {
 
   // --------- PrimIO Declarations --------------------------------------------------
 
-  BasicStructure<Site> read_prim(fs::path filename);
+  BasicStructure<Site> read_prim(fs::path filename, double xtal_tol);
 
-  BasicStructure<Site> read_prim(const jsonParser &json);
+  BasicStructure<Site> read_prim(const jsonParser &json, double xtal_tol);
 
   /// \brief Write prim.json to file
   void write_prim(const BasicStructure<Site> &prim, fs::path filename, COORD_TYPE mode);
@@ -315,6 +314,22 @@ namespace CASM {
     Printer printer,
     const jsonParser &bspecs);
 
+
+  // --- Read Selections & Object names ----------------------------------------
+
+  namespace DB {
+    template<typename T> class Selection;
+  }
+
+  /// \brief Make a DB::Selection from JSON input
+  template<typename DataObject>
+  DB::Selection<DataObject> make_selection(
+    const PrimClex &primclex,
+    const jsonParser &kwargs,
+    std::string name_key,
+    std::string sel_key,
+    std::string method_name,
+    OnError on_error);
 }
 
 #endif

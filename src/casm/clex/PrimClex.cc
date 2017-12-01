@@ -1,7 +1,7 @@
 #include "casm/clex/PrimClex_impl.hh"
 
-#include "casm/external/boost.hh"
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/CompositionConverter.hh"
@@ -10,16 +10,16 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/ECIContainer.hh"
-#include "casm/clex/Supercell.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/database/DatabaseHandler_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
+
 #include "casm/app/AppIO.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/app/EnumeratorHandler.hh"
-#include "casm/app/QueryHandler.hh"
-#include "casm/database/DatabaseHandler_impl.hh"
-#include "casm/casm_io/SafeOfstream.hh"
-#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/app/EnumeratorHandler_impl.hh"
+#include "casm/app/QueryHandler_impl.hh"
 
 namespace CASM {
 
@@ -31,7 +31,7 @@ namespace CASM {
     PrimClexData(const fs::path &_root) :
       dir(_root),
       settings(_root),
-      prim(read_prim(dir.prim())) {}
+      prim(read_prim(dir.prim(), settings.crystallography_tol())) {}
 
     ~PrimClexData() {}
 
@@ -224,7 +224,7 @@ namespace CASM {
 
   /// \brief Get the crystallography_tol
   double PrimClex::crystallography_tol() const {
-    return settings().crystallography_tol();
+    return prim().lattice().tol();
   }
 
   // ** Composition accessors **
@@ -286,6 +286,16 @@ namespace CASM {
   }
 
   template<typename T>
+  DB::ValDatabase<T> &PrimClex::generic_db() const {
+    return m_data->db_handler->template generic_db<T>();
+  }
+
+  template<typename T>
+  const DB::ValDatabase<T> &PrimClex::const_generic_db() const {
+    return m_data->db_handler->template const_generic_db<T>();
+  }
+
+  template<typename T>
   DB::Database<T> &PrimClex::db() const {
     return m_data->db_handler->template db<T>();
   }
@@ -296,13 +306,13 @@ namespace CASM {
   }
 
   template<typename T>
-  DB::PropertiesDatabase &PrimClex::db_props() const {
-    return m_data->db_handler->template db_props<T>();
+  DB::PropertiesDatabase &PrimClex::db_props(std::string calc_type) const {
+    return m_data->db_handler->template db_props<T>(calc_type);
   }
 
   template<typename T>
-  const DB::PropertiesDatabase &PrimClex::const_db_props() const {
-    return m_data->db_handler->template const_db_props<T>();
+  const DB::PropertiesDatabase &PrimClex::const_db_props(std::string calc_type) const {
+    return m_data->db_handler->template const_db_props<T>(calc_type);
   }
 
   DB::DatabaseHandler &PrimClex::db_handler() const {
@@ -340,15 +350,15 @@ namespace CASM {
 
       it = m_data->clex_basis.insert(std::make_pair(key, ClexBasis(prim()))).first;
 
-      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+      std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
 
       read_clust(
         std::back_inserter(orbits),
         jsonParser(dir().clust(key.bset)),
         prim(),
         prim().factor_group(),
-        PrimPeriodicIntegralClusterSymCompare(settings().crystallography_tol()),
-        settings().crystallography_tol()
+        PrimPeriodicSymCompare<IntegralCluster>(crystallography_tol()),
+        crystallography_tol()
       );
 
       jsonParser bspecs_json;
@@ -427,7 +437,7 @@ namespace CASM {
     const SymCompareType&) const;
 
 namespace CASM {
-  INST_PrimClex_orbits_vec(PrimPeriodicIntegralClusterOrbit, PrimPeriodicIntegralClusterSymCompare);
+  INST_PrimClex_orbits_vec(PrimPeriodicOrbit<IntegralCluster>, PrimPeriodicSymCompare<IntegralCluster>);
 }
 
 #include "casm/database/DatabaseTypes.hh"
@@ -436,11 +446,13 @@ namespace CASM {
 #define INST_PrimClex(r, data, type) \
 template DB::Database<type> &PrimClex::db<type>() const; \
 template const DB::Database<type> &PrimClex::const_db<type>() const; \
+template DB::ValDatabase<type> &PrimClex::generic_db<type>() const; \
+template const DB::ValDatabase<type> &PrimClex::const_generic_db<type>() const; \
 
 // explicit template instantiations
 #define INST_PrimClexProps(r, data, type) \
-template DB::PropertiesDatabase &PrimClex::db_props<type>() const; \
-template const DB::PropertiesDatabase &PrimClex::const_db_props<type>() const; \
+template DB::PropertiesDatabase &PrimClex::db_props<type>(std::string calc_type) const; \
+template const DB::PropertiesDatabase &PrimClex::const_db_props<type>(std::string calc_type) const; \
 
 namespace CASM {
   BOOST_PP_SEQ_FOR_EACH(INST_PrimClex, _, CASM_DB_TYPES)

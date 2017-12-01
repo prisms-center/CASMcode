@@ -515,7 +515,53 @@ class Relax(object):
 
     @staticmethod
     def properties(vaspdir, super_poscarfile = None, speciesfile = None):
-        """Report results to properties.calc.json file in configuration directory, after checking for electronic convergence."""
+        """
+        Generates the properties.calc.json file data.
+        
+        Arguments
+        ---------
+          vaspdir: str
+              VASP output directory. Requires the following files exist:
+              - os.path.join(vaspdir, "vasprun.xml")
+              - os.path.join(vaspdir, "OSZICAR")
+              - os.path.join(vaspdir, "OUTCAR")
+              - os.path.join(vaspdir, "POSCAR") (if super_poscarfile is not None)
+            
+          super_poscarfile: str, optional, default=None
+              Location of the "POS" file for this configuration. This used to be
+              required, but now the CASM ConfigMapper should be able to map the
+              relaxed structure to the ideal configuration.
+            
+          speciesfile: str, optional, default=None
+              Location of the CASM "SPECIES" file for this calctype. Required if
+              super_poscarfile is not None.
+          
+        
+        Returns
+        ---------
+          properties_calc_json: dict
+              The contents of the CASM 'properties.calc.json' file. Available
+              properties depends on calculation settings. The reference for
+              expected properties and form is found in 'casm/database/MappedProperties.hh'.
+              Here properties are listed with their Python data structures.
+              
+              - "atom_type": List[str], List of species names, as in 'prim.json',
+                as ordered in POSCAR.
+              - "atoms_per_type": List[int], List of number of atoms of each type,
+                corresponds to entries in "atom_type".
+              - "coord_mode": str, Coordinate mode for basis (always 'direct').
+              - "relaxed_forces": List[List[double]], shape=(N,3), Final forces 
+                on atoms.
+              - "relaxed_lattice": List[List[double]], shape=(3,3), Final lattice 
+                vectors, as list [ [a0, a1, a2], [b0, b1, b2], [c0, c1, c2]].
+              - "relaxed_basis": List[List[double]], shape=(N,3), Final basis
+                coordinates.
+              - "relaxed_energy": double, Final energy.
+              - "relaxed_magmom": double, Final total magnetic moment.
+              - "relaxed_mag_basis": List[double], Final magnetic moment at each
+                basis site
+            
+        """
 
         output = dict()
         vrun = vasp.io.Vasprun( os.path.join(vaspdir, "vasprun.xml") )

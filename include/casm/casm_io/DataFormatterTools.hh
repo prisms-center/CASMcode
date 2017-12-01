@@ -2,7 +2,8 @@
 #define CASM_DataFormatterTools
 #include <numeric>
 #include <iterator>
-#include "casm/external/boost.hh"
+#include <boost/regex.hpp>
+#include <boost/algorithm/string.hpp>
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/container/ContainerTraits.hh"
@@ -107,8 +108,8 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("add", "Add two or more numbers",
     [](const std::vector<double> &vec)->double {
       return std::accumulate(vec.cbegin(),
-                             vec.cend(),
-                             0.0);
+      vec.cend(),
+      0.0);
     });
 
   }
@@ -137,8 +138,8 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("mult", "Multiply two or more numbers",
     [](const std::vector<double> &vec)->double {
       return std::accumulate(vec.cbegin(),
-                             vec.cend(),
-                             1.0,
+      vec.cend(),
+      1.0,
       [](double a, double b)->double{
         return a *b;
       });
@@ -170,7 +171,7 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("max", "Max value of two or more numbers",
     [](const std::vector<double> &vec)->double {
       return (*std::max_element(vec.cbegin(),
-                                vec.cend()));
+      vec.cend()));
     });
   }
 
@@ -183,7 +184,7 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("min", "Min value of two or more numbers",
     [](const std::vector<double> &vec)->double {
       return (*std::min_element(vec.cbegin(),
-                                vec.cend()));
+      vec.cend()));
     });
   }
 
@@ -317,8 +318,8 @@ namespace CASM {
     return DataFormatterOperator<bool, bool, DataObject>("and", "Boolean AND for sequence of boolean values",
     [](const std::vector<bool> &vec)->bool {
       return std::accumulate(vec.cbegin(),
-                             vec.cend(),
-                             true,
+      vec.cend(),
+      true,
       [](bool a, bool b)->bool{
         return a && b;
       });
@@ -335,8 +336,8 @@ namespace CASM {
     return DataFormatterOperator<bool, bool, DataObject>("or", "Boolean OR for sequence of boolean values",
     [](const std::vector<bool> &vec)->bool {
       return std::accumulate(vec.cbegin(),
-                             vec.cend(),
-                             false,
+      vec.cend(),
+      false,
       [](bool a, bool b)->bool{
         return a || b;
       });
@@ -875,7 +876,7 @@ namespace CASM {
   template<typename DataObject>
   GenericDatumFormatter<std::string, DataObject> alias_or_name() {
     return GenericDatumFormatter<std::string, DataObject>(
-             "name_or_alias",
+             "alias_or_name",
              traits<DataObject>::name + " alias (if exists), else name",
     [](const DataObject & obj)->std::string {
       std::string alias = obj.alias();
@@ -1112,138 +1113,6 @@ namespace CASM {
     Evaluator m_evaluate;
     Validator m_validate;
   };
-
-  /// \brief Template alias for BaseValueFormatter returning std::string
-  ///
-  /// \ingroup DataFormatterTypes
-  ///
-  template<typename DataObject>
-  using StringAttribute = BaseValueFormatter<std::string, DataObject>;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  using StringAttributeDictionary = DataFormatterDictionary<DataObject, StringAttribute<DataObject> >;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  StringAttributeDictionary<DataObject> make_string_dictionary();
-
-
-  /// \brief Template alias for BaseValueFormatter returning bool
-  ///
-  /// \ingroup DataFormatterTypes
-  ///
-  template<typename DataObject>
-  using BooleanAttribute = BaseValueFormatter<bool, DataObject>;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  using BooleanAttributeDictionary = DataFormatterDictionary<DataObject, BooleanAttribute<DataObject> >;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  BooleanAttributeDictionary<DataObject> make_boolean_dictionary();
-
-
-  /// \brief Template alias for BaseValueFormatter returning Index
-  ///
-  /// \ingroup DataFormatterTypes
-  ///
-  template<typename DataObject>
-  using IntegerAttribute = BaseValueFormatter<Index, DataObject>;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  using IntegerAttributeDictionary = DataFormatterDictionary<DataObject, IntegerAttribute<DataObject> >;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  IntegerAttributeDictionary<DataObject> make_integer_dictionary();
-
-
-  /// \brief Template alias for BaseValueFormatter returning double
-  ///
-  /// \ingroup DataFormatterTypes
-  ///
-  template<typename DataObject>
-  using ScalarAttribute = BaseValueFormatter<double, DataObject>;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  using ScalarAttributeDictionary = DataFormatterDictionary<DataObject, ScalarAttribute<DataObject> >;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  ScalarAttributeDictionary<DataObject> make_scalar_dictionary();
-
-
-  /// \brief Template alias for BaseValueFormatter returning Eigen::VectorXi
-  ///
-  /// \ingroup DataFormatterTypes
-  ///
-  template<typename DataObject>
-  using VectorXiAttribute = Base1DDatumFormatter<Eigen::VectorXi, DataObject>;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  using VectorXiAttributeDictionary = DataFormatterDictionary<DataObject, VectorXiAttribute<DataObject> >;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  VectorXiAttributeDictionary<DataObject> make_vectorxi_dictionary();
-
-
-  /// \brief Template alias for BaseValueFormatter returning Eigen::VectorXd
-  ///
-  /// \ingroup DataFormatterTypes
-  ///
-  template<typename DataObject>
-  using VectorXdAttribute = Base1DDatumFormatter<Eigen::VectorXd, DataObject>;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  using VectorXdAttributeDictionary = DataFormatterDictionary<DataObject, VectorXdAttribute<DataObject> >;
-
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename DataObject>
-  VectorXdAttributeDictionary<DataObject> make_vectorxd_dictionary();
-
 
   /// \brief Dictionary of all Attribute
   ///

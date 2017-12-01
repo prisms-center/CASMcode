@@ -14,7 +14,7 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/Database.hh"
 #include "Common.hh"
 
 using namespace CASM;
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     BOOST_CHECK_MESSAGE(j.contains("max_vol"), "test case 'max_vol' is required");
 
     // generate prim
-    Structure prim(read_prim(j["prim"]));
+    Structure prim(read_prim(j["prim"], TOL));
 
     // clean up test proj
     if(fs::exists(test_proj_dir / ".casm")) {
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     std::map<Index, Index> total_count;
 
     Index i = 0;
-    for(const auto &scel : primclex.db<Supercell>()) {
+    for(const auto &scel : primclex.generic_db<Supercell>()) {
 
       // for each supercell, enumerate unique configurations
 
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
       // add prim configurations from smaller supercells that tile scel
       Index j = 0;
-      auto scel_j = primclex.db<Supercell>().begin();
+      auto scel_j = primclex.generic_db<Supercell>().begin();
       for(; scel_j->volume() < scel.volume(); ++scel_j) {
         jsonParser json;
         ScelEnumEquivalents e(*scel_j);

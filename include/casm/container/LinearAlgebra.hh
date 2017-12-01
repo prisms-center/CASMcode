@@ -81,6 +81,20 @@ namespace CASM {
     return M.isDiagonal(tol);
   }
 
+  /// \brief Round Eigen::MatrixXd
+  ///
+  /// \returns an Eigen:MatrixXd
+  ///
+  /// \param M Eigen::MatrixXd to be rounded
+  ///
+  /// For each coefficient, sets \code M(i,j) = boost::math::round(Mdouble(i, j)) \endcode
+  ///
+  template<typename Derived>
+  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::round<typename Derived::Scalar>)), const Derived >
+  round(const Eigen::MatrixBase<Derived> &val) {
+    return val.unaryExpr(std::ptr_fun(boost::math::round<typename Derived::Scalar>));
+  }
+
   /// \brief Round Eigen::MatrixXd to Eigen::MatrixXi
   ///
   /// \returns an Eigen:MatrixXi

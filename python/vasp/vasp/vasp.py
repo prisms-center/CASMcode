@@ -142,9 +142,11 @@ def continue_job(jobdir, contdir, settings):
     if os.path.isfile(os.path.join(jobdir, "CONTCAR")) and os.path.getsize(os.path.join(jobdir, "CONTCAR")) > 0:
         shutil.copyfile(os.path.join(jobdir, "CONTCAR"), os.path.join(contdir, "POSCAR"))
         print "  cp CONTCAR -> POSCAR"
-    else:
+    elif os.path.isfile(os.path.join(jobdir,"POSCAR")):
         shutil.copyfile(os.path.join(jobdir, "POSCAR"), os.path.join(contdir, "POSCAR"))
         print "  no CONTCAR: cp POSCAR -> POSCAR"
+    elif not "n_images" in settings: #raise error if its not an Neb run
+        print VaspError("no CONTCAR or POSCAR avaiable for continuation of the job\n")
 
     # move files
     print "  mv:",
@@ -190,6 +192,73 @@ def continue_job(jobdir, contdir, settings):
             f_in.close()
             # Remove original target file
             os.remove(os.path.join(jobdir,file))
+    print ""
+
+    # check if the run is a neb job and copy the image CONTCAR to POSCAR
+    # if "n_images" is a key available to the settings then it is assumed that its a neb run 
+    if "n_images" in settings:
+        # go through each image folder, make a new image folder in contdir and copy CONTCAR
+        i = 0
+        while os.path.isdir(os.path.join(jobdir, str(i).zfill(2))):
+            img_dir = str(i).zfill(2)
+            print "Image directory: {}".format(img_dir)
+            os.makedirs(os.path.join(contdir, img_dir))
+            if os.path.isfile(os.path.join(jobdir, img_dir, "CONTCAR")) and os.path.getsize(os.path.join(jobdir, img_dir, "CONTCAR")) > 0:
+                shutil.copyfile(os.path.join(jobdir, img_dir, "CONTCAR"), os.path.join(contdir, img_dir, "POSCAR"))
+                print "  cp {0}/CONTCAR -> {0}/POSCAR".format(img_dir)
+            else:
+                shutil.copyfile(os.path.join(jobdir, img_dir, "POSCAR"), os.path.join(contdir, img_dir, "POSCAR"))
+                print "  no {0}/CONTCAR: cp {0}/POSCAR -> {0}/POSCAR".format(img_dir)
+
+            # move files
+            print "  mv:",
+            for file in move:
+                print file,
+                # This prevents a missing file from crashing the vasprun (e.g. a missing WAVECAR)
+                if os.path.isfile(os.path.join(jobdir, img_dir, file)):
+                    os.rename(os.path.join(jobdir, img_dir, file),
+                              os.path.join(contdir, img_dir, file))
+                elif file not in ["POTCAR"]:
+                    print "Could not find file %s, skipping!" % file
+                print ""
+
+            # copy files
+            print "  cp:",
+            for file in copy:
+                print file,
+                # This prevents a missing file from crashing the vasprun (e.g. a missing WAVECAR)
+                if os.path.isfile(os.path.join(jobdir, img_dir, file)):
+                    shutil.copyfile(os.path.join(jobdir, img_dir, file),
+                                    os.path.join(contdir, img_dir, file))
+                elif file not in ["INCAR","KPOINTS"]:
+                    print "Could not find file %s, skipping!" % file
+            print ""
+
+            # remove files
+            print "  rm:",
+            for file in remove:
+                if os.path.isfile(os.path.join(jobdir, img_dir, file)):
+                    print file,
+                    os.remove(os.path.join(jobdir, img_dir, file))
+            print ""
+
+            # compress files
+            print " gzip:",
+            for file in compress:
+                if os.path.isfile(os.path.join(jobdir, img_dir, file)):
+                    print file,
+                    # Open target file, target file.gz
+                    f_in = open(os.path.join(jobdir, img_dir, file), 'rb')
+                    f_out = gzip.open(os.path.join(jobdir, img_dir, file)+'.gz', 'wb')
+                    # Compress, close files
+                    f_out.writelines(f_in)
+                    f_out.close()
+                    f_in.close()
+                    # Remove original target file
+                    os.remove(os.path.join(jobdir, img_dir, file))
+            print ""
+            i += 1
+
     print ""
     print ""
     sys.stdout.flush()
@@ -539,6 +608,49 @@ def error_check(jobdir, stdoutfile, err_types):
     else:
         return err
 
+def error_check_neb(jobdir, stdout, err_types):
+    """ Check vasp stdout for errors in a neb calculation"""
+    image_folders = [str(i).zfill(2) for i in range(1, 100) if os.path.exists(os.path.join(jobdir, str(i).zfill(2)))][:-1]
+    err = dict()
+    err_objs = {}
+    for i_err in _RunError.__subclasses__():
+        err_objs[i_err.__name__] = i_err()
+    if err_types is None:
+        possible = [SubSpaceMatrixError()]
+    else:
+        # err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError(), 'NbandsError' : NbandsError()}
+        for s in err_types:
+            if s not in err_objs.keys():
+                raise VaspError('Invalid err_type: %s'%s)
+        possible = [err_objs[s] for s in err_types]
+
+    # Error to check line by line, only look for first of each type
+    sout = open(os.path.join(jobdir, "01", stdout), 'r')
+    for line in sout:
+        for p in possible:
+            if not p.__class__.__name__ in err:
+                if p.error(line=line, jobdir=jobdir):
+                    err[p.__class__.__name__] = p
+
+    # Error to check for once
+    possible = [i_err() for i_err in _FreezeError.__subclasses__()]
+    for p in possible:
+        freeze_error = True
+        for img in image_folders:
+            if p.error(line=None, jobdir=os.path.join(jobdir, img)):
+                continue
+            else:
+                freeze_error = False
+                break
+        if freeze_error:
+            err[p.__class__.__name__] = p
+
+    sout.close()
+    if len(err) == 0:
+        return None
+    else:
+        return err
+
 def crash_check(jobdir, stdoutfile, crash_types):
     """ Check vasp stdout for evidence of a crash """
     err = None
@@ -558,7 +670,7 @@ def crash_check(jobdir, stdoutfile, crash_types):
     else:
         return {err.__class__.__name__: err}
 
-def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=None, command=None, ncpus=None, kpar=None, poll_check_time = 5.0, err_check_time = 60.0, err_types=None):
+def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=None, command=None, ncpus=None, kpar=None, poll_check_time = 5.0, err_check_time = 60.0, err_types=None, is_neb = False):
     """ Run vasp using subprocess.
 
         The 'command' is executed in the directory 'jobdir'.
@@ -623,10 +735,15 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     print "  exec:", command
     sys.stdout.flush()
 
-    sout = open(os.path.join(jobdir,stdout),'w')
-    serr = open(os.path.join(jobdir,stderr),'w')
+    if is_neb:
+        # checkdir = os.path.join(jobdir, "01")
+        sout = open(os.path.join(jobdir, "01", stdout), 'w')
+    else:
+        # checkdir = jobdir
+        sout = open(os.path.join(jobdir, stdout), 'w')
+    serr = open(os.path.join(jobdir, stderr), 'w')
     err = None
-    p = subprocess.Popen(command.split(),stdout=sout, stderr=serr)
+    p = subprocess.Popen(command.split(), stdout=sout, stderr=serr)
 
     # wait for process to end, and periodically check for errors
     poll = p.poll()
@@ -637,7 +754,10 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
         if time.time() - last_check > err_check_time:
             last_check = time.time()
-            err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
+            if is_neb:
+                err = error_check_neb(jobdir, stdout, err_types)
+            else:
+                err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
             if err != None:
                 # FreezeErrors are fatal and usually not helped with STOPCAR
                 if "FreezeError" in err.keys():
@@ -685,9 +805,16 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     # check finished job for errors
     if err is None:
         # Crash-type errors take priority over any other error that may show up
-        err = crash_check(jobdir, os.path.join(jobdir, stdout), err_types)
+        if is_neb: #if its neb it checks for crashes in the first image
+            err = crash_check(os.path.join(jobdir, "01"),
+                              os.path.join(jobdir, "01", stdout), err_types)
+        else:
+            err = crash_check(jobdir, os.path.join(jobdir, stdout), err_types)
         if err is None:
-            err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
+            if is_neb:
+                err = error_check_neb(jobdir, stdout, err_types)
+            else:
+                err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
     if err != None:
         print "  Found errors:",
         for e in err:

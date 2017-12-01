@@ -30,7 +30,7 @@ D
 
 void prim1_read_test(BasicStructure<Site> &struc) {
 
-  double tol = 1e-5;
+  double tol = struc.lattice().tol();
 
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(0.0, 2.0, 2.0), tol), true);
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(2.0, 0.0, 2.0), tol), true);
@@ -54,7 +54,7 @@ void prim1_read_test(BasicStructure<Site> &struc) {
 
   // FCC motif
   MasterSymGroup factor_grp;
-  struc.generate_factor_group(factor_grp, tol);
+  struc.generate_factor_group(factor_grp);
   BOOST_CHECK_EQUAL(48, factor_grp.size());
 }
 
@@ -74,7 +74,7 @@ D
 
 void prim2_read_test(BasicStructure<Site> &struc) {
 
-  double tol = 1e-5;
+  double tol = struc.lattice().tol();
 
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
@@ -92,17 +92,17 @@ void prim2_read_test(BasicStructure<Site> &struc) {
       // occupants are Molecule with name "A", etc.
       // Molecule are composed of AtomPosition
       // An AtomPosition 'is' a Coordinate with a Specie
-      BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name(), check_name[i]);
-      BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-      BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).name(), check_name[i]);
-      BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).specie().name(), check_name[i]);
+      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].name(), check_name[j]);
+      BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].atom(0).name(), check_name[j]);
+      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].atom(0).specie().name(), check_name[j]);
     }
     BOOST_CHECK_EQUAL(struc.basis[i].site_occupant().value(), check_value[i]);
   }
 
   // ordering on FCC motif
   MasterSymGroup factor_grp;
-  struc.generate_factor_group(factor_grp, tol);
+  struc.generate_factor_group(factor_grp);
   BOOST_CHECK_EQUAL(16, factor_grp.size());
 }
 
@@ -141,7 +141,7 @@ Direct
 
 void pos1_read_test(BasicStructure<Site> &struc) {
 
-  double tol = 1e-5;
+  double tol = struc.lattice().tol();
 
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
@@ -157,15 +157,15 @@ void pos1_read_test(BasicStructure<Site> &struc) {
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name(), check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).name(), check_name[i]);
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).specie().name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].name(), check_name[i]);
+    BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].atom(0).name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].atom(0).specie().name(), check_name[i]);
   }
 
   // FCC structure
   MasterSymGroup factor_grp;
-  struc.generate_factor_group(factor_grp, tol);
+  struc.generate_factor_group(factor_grp);
   BOOST_CHECK_EQUAL(16, factor_grp.size());
 }
 
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(PRIM1Test) {
   write_prim(struc, tmp_file, FRAC);
 
   // Read new file and run tests again
-  BasicStructure<Site> struc2(read_prim(tmp_file));
+  BasicStructure<Site> struc2(read_prim(tmp_file, TOL));
   prim1_read_test(struc2);
 
 }

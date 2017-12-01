@@ -4,6 +4,7 @@
 #include "casm/monte_carlo/MonteIO_impl.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
+#include "casm/monte_carlo/canonical/CanonicalSettings_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/misc/algorithm.hh"
 
@@ -38,16 +39,16 @@ namespace CASM {
 
       _log().construct("Canonical Monte Carlo");
       _log() << "project: " << this->primclex().dir().root_dir() << "\n";
-      _log() << "formation_energy cluster expansion: " << desc.name << "\n";
-      _log() << std::setw(16) << "property: " << desc.property << "\n";
-      _log() << std::setw(16) << "calctype: " << desc.calctype << "\n";
-      _log() << std::setw(16) << "ref: " << desc.ref << "\n";
-      _log() << std::setw(16) << "bset: " << desc.bset << "\n";
-      _log() << std::setw(16) << "eci: " << desc.eci << "\n";
-      _log() << "supercell: \n" << supercell().transf_mat() << "\n";
-      _log() << "use_deltas: " << std::boolalpha << m_use_deltas << "\n";
-      _log() << "\nSampling: \n";
-      _log() << std::setw(24) << "quantity" << std::setw(24) << "requested_precision" << "\n";
+                             _log() << "formation_energy cluster expansion: " << desc.name << "\n";
+                                                                               _log() << std::setw(16) << "property: " << desc.property << "\n";
+                                                                                   _log() << std::setw(16) << "calctype: " << desc.calctype << "\n";
+                                                                                       _log() << std::setw(16) << "ref: " << desc.ref << "\n";
+                                                                                           _log() << std::setw(16) << "bset: " << desc.bset << "\n";
+                                                                                               _log() << std::setw(16) << "eci: " << desc.eci << "\n";
+                                                                                                   _log() << "supercell: \n" << supercell().transf_mat() << "\n";
+                                                                                                       _log() << "use_deltas: " << std::boolalpha << m_use_deltas << "\n";
+                                                                                                           _log() << "\nSampling: \n";
+                                                                                                           _log() << std::setw(24) << "quantity" << std::setw(24) << "requested_precision" << "\n";
       for(auto it = samplers().begin(); it != samplers().end(); ++it) {
         _log() << std::setw(24) << it->first;
         if(it->second->must_converge()) {
@@ -57,14 +58,14 @@ namespace CASM {
           _log() << std::setw(24) << "none" << std::endl;
         }
       }
-      _log() << "\nautomatic convergence mode?: " << std::boolalpha << must_converge() << std::endl;
-      _log() << std::endl;
+              _log() << "\nautomatic convergence mode?: " << std::boolalpha << must_converge() << std::endl;
+                                                                             _log() << std::endl;
 
-      _log() << std::pair<const OccCandidateList &, const Conversions &>(m_cand, m_convert) << std::endl;
+                                                                             _log() << std::pair<const OccCandidateList &, const Conversions &>(m_cand, m_convert) << std::endl;
 
     }
 
-    /// \brief Return number of steps per pass. Equals number of sites with variable occupation.
+                                                                                   /// \brief Return number of steps per pass. Equals number of sites with variable occupation.
     Index Canonical::steps_per_pass() const {
       return m_occ_loc.size();
     }
@@ -81,41 +82,41 @@ namespace CASM {
       _log().set("Conditions");
       _log() << new_conditions << std::endl << std::endl;
 
-      m_condition = new_conditions;
+                                m_condition = new_conditions;
 
-      clear_samples();
-      _update_properties();
+                                clear_samples();
+                                _update_properties();
 
-      return;
+                                return;
     }
 
-    /// \brief Set configdof and clear previously collected data
+                              /// \brief Set configdof and clear previously collected data
     void Canonical::set_configdof(const ConfigDoF &configdof, const std::string &msg) {
       _log().set("DoF");
       if(!msg.empty()) {
         _log() << msg << "\n";
       }
-      _log() << std::endl;
+              _log() << std::endl;
 
-      reset(_enforce_conditions(configdof));
-      _update_properties();
+              reset(_enforce_conditions(configdof));
+              _update_properties();
     }
 
-    /// \brief Set configdof and conditions and clear previously collected data
-    ///
-    /// \returns Specified ConfigDoF and configname (or configdof path)
-    ///
-    std::pair<ConfigDoF, std::string> Canonical::set_state(
-      const CanonicalConditions &new_conditions,
-      const CanonicalSettings &settings) {
+            /// \brief Set configdof and conditions and clear previously collected data
+            ///
+            /// \returns Specified ConfigDoF and configname (or configdof path)
+            ///
+            std::pair<ConfigDoF, std::string> Canonical::set_state(
+              const CanonicalConditions &new_conditions,
+    const CanonicalSettings &settings) {
 
       _log().set("Conditions");
       _log() << new_conditions << std::endl;
 
-      m_condition = new_conditions;
+              m_condition = new_conditions;
 
-      ConfigDoF configdof;
-      std::string configname;
+              ConfigDoF configdof;
+              std::string configname;
 
       if(settings.is_motif_configname()) {
 
@@ -138,9 +139,9 @@ namespace CASM {
       else if(settings.is_motif_configdof()) {
         _log().set("DoF");
         _log() << "motif configdof: " << settings.motif_configdof_path() << "\n";
-        _log() << "using configdof: " << settings.motif_configdof_path() << "\n" << std::endl;
-        configdof = settings.motif_configdof();
-        configname = settings.motif_configdof_path().string();
+                                       _log() << "using configdof: " << settings.motif_configdof_path() << "\n" << std::endl;
+                                                                      configdof = settings.motif_configdof();
+                                                                      configname = settings.motif_configdof_path().string();
       }
       else {
         throw std::runtime_error("Error: Must specify motif \"configname\" or \"configdof\"");
@@ -159,26 +160,26 @@ namespace CASM {
       _log().set("Conditions");
       _log() << new_conditions << std::endl << std::endl;
 
-      m_condition = new_conditions;
+                                m_condition = new_conditions;
 
-      _log().set("DoF");
+                                _log().set("DoF");
       if(!msg.empty()) {
         _log() << msg << "\n";
       }
-      _log() << std::endl;
+              _log() << std::endl;
 
-      reset(_enforce_conditions(configdof));
-      _update_properties();
+              reset(_enforce_conditions(configdof));
+              _update_properties();
 
-      return;
+              return;
     }
 
 
-    /// \brief Propose a new event, calculate delta properties, and return reference to it
-    ///
-    /// Randomly picks a site that's allowed more than one occupant, and randomly picks what occupant it
-    /// changes to. Then calculates delta properties associated with that change.
-    ///
+            /// \brief Propose a new event, calculate delta properties, and return reference to it
+            ///
+            /// Randomly picks a site that's allowed more than one occupant, and randomly picks what occupant it
+            /// changes to. Then calculates delta properties associated with that change.
+            ///
     const Canonical::EventType &Canonical::propose() {
       m_occ_loc.propose_canonical(m_event.occ_event(), m_cand.canonical_swap(), _mtrand());
       _update_deltas(m_event);
@@ -194,7 +195,7 @@ namespace CASM {
           _log().custom("Check event");
           _log() << "Probability to accept: 1.0\n" << std::endl;
         }
-        return true;
+                return true;
       }
 
       double rand = _mtrand().rand53();
@@ -203,18 +204,18 @@ namespace CASM {
       if(debug()) {
         _log().custom("Check event");
         _log() << "Probability to accept: " << prob << "\n"
-               << "Random number: " << rand << "\n" << std::endl;
+                                                     << "Random number: " << rand << "\n" << std::endl;
       }
 
-      return rand < prob;
+                                                                                 return rand < prob;
     }
 
-    /// \brief Accept proposed event. Change configuration accordingly and update energies etc.
-    ///
-    /// Once you've found an event that passes the random number test, you want to accept it. This routine will
-    /// apply all the changes in the event to *this (change occupation of one atom) and update the formation energy,
-    /// generalized enthalpy, number of species and correlations values.
-    ///
+                                                                               /// \brief Accept proposed event. Change configuration accordingly and update energies etc.
+                                                                               ///
+                                                                               /// Once you've found an event that passes the random number test, you want to accept it. This routine will
+                                                                               /// apply all the changes in the event to *this (change occupation of one atom) and update the formation energy,
+                                                                               /// generalized enthalpy, number of species and correlations values.
+                                                                               ///
     void Canonical::accept(const EventType &event) {
 
       if(debug()) {
@@ -394,9 +395,9 @@ namespace CASM {
 
       _log().calculate(title);
       _log() << std::setw(12) << "i"
-             << std::setw(16) << "ECI"
-             << std::setw(16) << colheader
-             << std::endl;
+                               << std::setw(16) << "ECI"
+                                                 << std::setw(16) << colheader
+                                                                   << std::endl;
 
       for(int i = 0; i < corr.size(); ++i) {
 
@@ -411,20 +412,20 @@ namespace CASM {
         }
 
         _log() << std::setw(12) << i
-               << std::setw(16) << std::setprecision(8) << eci;
+                                 << std::setw(16) << std::setprecision(8) << eci;
         if(calculated) {
           _log() << std::setw(16) << std::setprecision(8) << corr[i];
         }
         else {
           _log() << std::setw(16) << "unknown";
         }
-        _log() << std::endl;
+                _log() << std::endl;
 
       }
-      _log() << std::endl;
+              _log() << std::endl;
     }
 
-    /// \brief Update delta properties in 'event'
+            /// \brief Update delta properties in 'event'
     void Canonical::_update_deltas(CanonicalEvent &event) const {
 
       // ---- set dcorr --------------
@@ -460,33 +461,33 @@ namespace CASM {
 
         _log().custom("Calculate properties");
         _log() << "Canonical ensemble: \n"
-               << "  Thermodynamic potential (per unitcell), phi = -kT*ln(Z)/N \n"
-               << "  Partition function, Z = sum_i exp(-N*potential_energy_i/kT) \n"
-               << "  composition, comp_n = origin + M * comp_x \n"
-               << "  potential_energy (per unitcell) = formation_energy \n\n"
+                << "  Thermodynamic potential (per unitcell), phi = -kT*ln(Z)/N \n"
+                 << "  Partition function, Z = sum_i exp(-N*potential_energy_i/kT) \n"
+                  << "  composition, comp_n = origin + M * comp_x \n"
+                   << "  potential_energy (per unitcell) = formation_energy \n\n"
 
-               << "components: " << jsonParser(primclex().composition_axes().components()) << "\n"
-               << "M:\n" << M << "\n"
-               << "origin: " << origin.transpose() << "\n"
-               << "comp_n: " << comp_n().transpose() << "\n"
-               << "comp_x: " << comp_x.transpose() << "\n"
-               << "formation_energy: " << formation_energy() << "\n"
-               << "potential_energy: " << potential_energy() << "\n" << std::endl;
+                    << "components: " << jsonParser(primclex().composition_axes().components()) << "\n"
+                                       << "M:\n" << M << "\n"
+                                                       << "origin: " << origin.transpose() << "\n"
+                                                                      << "comp_n: " << comp_n().transpose() << "\n"
+                                                                                     << "comp_x: " << comp_x.transpose() << "\n"
+                                                                                         << "formation_energy: " << formation_energy() << "\n"
+                                                                                             << "potential_energy: " << potential_energy() << "\n" << std::endl;
       }
 
     }
 
-    /// \brief Generate supercell filling ConfigDoF from default configuration
+                                                                                             /// \brief Generate supercell filling ConfigDoF from default configuration
     ConfigDoF Canonical::_default_motif() const {
       _log().set("DoF");
       _log() << "motif configname: default\n";
       _log() << "using configuration with default occupation...\n" << std::endl;
-      return Configuration(_supercell(), jsonParser(), std::vector<int>(_supercell().num_sites(), 0)).configdof();
+              return Configuration(_supercell(), jsonParser(), std::vector<int>(_supercell().num_sites(), 0)).configdof();
     }
 
-    /// \brief Generate minimum potential energy ConfigDoF
-    ///
-    /// Raises exception if it doesn't tile the supercell
+            /// \brief Generate minimum potential energy ConfigDoF
+            ///
+            /// Raises exception if it doesn't tile the supercell
     std::pair<ConfigDoF, std::string> Canonical::_auto_motif(const CanonicalConditions &cond) const {
       throw std::runtime_error("Canonical Monte Carlo 'auto' motif is not implemented yet");
     }
@@ -501,25 +502,25 @@ namespace CASM {
 
       _log().set("DoF");
       _log() << "motif configname: " << configname << "\n";
-      _log() << "using configation: " << configname << "\n" << std::endl;
+                                      _log() << "using configation: " << configname << "\n" << std::endl;
 
-      Configuration config = *primclex().db<Configuration>().find(configname);
-      const SymGroup &g = primclex().prim().factor_group();
-      return config.fill_supercell(_supercell(), g).configdof();
+                                                                                     Configuration config = *primclex().db<Configuration>().find(configname);
+                                                                                     const SymGroup &g = primclex().prim().factor_group();
+                                                                                     return config.fill_supercell(_supercell(), g).configdof();
     }
 
-    /// \brief Find a grand canonical OccSwap to help enforce composition
-    ///
-    /// - Find the OccSwap that by applying minimizes:
-    ///     (comp_n - conditions().mol_composition()).norm()
-    /// - If cannot be improved, return end
-    /// - If ties, randomly choose weighted by composition
-    ///
-    std::vector<OccSwap>::const_iterator
-    Canonical::_find_grand_canonical_swap(
-      const Configuration &config,
-      std::vector<OccSwap>::const_iterator begin,
-      std::vector<OccSwap>::const_iterator end) {
+                                                                                   /// \brief Find a grand canonical OccSwap to help enforce composition
+                                                                                   ///
+                                                                                   /// - Find the OccSwap that by applying minimizes:
+                                                                                   ///     (comp_n - conditions().mol_composition()).norm()
+                                                                                   /// - If cannot be improved, return end
+                                                                                   /// - If ties, randomly choose weighted by composition
+                                                                                   ///
+                                                                                   std::vector<OccSwap>::const_iterator
+                                                                                   Canonical::_find_grand_canonical_swap(
+                                                                                       const Configuration &config,
+                                                                                       std::vector<OccSwap>::const_iterator begin,
+    std::vector<OccSwap>::const_iterator end) {
 
       double dn = 1. / supercell().volume();
       Eigen::VectorXd target_comp_n = conditions().mol_composition();
@@ -584,14 +585,14 @@ namespace CASM {
       jsonParser json;
 
       _log() << "    initial comp: " << to_json_array(CASM::comp(tconfig), json) << std::endl;
-      _log() << "  initial comp_n: " << to_json_array(CASM::comp_n(tconfig), json) << std::endl;
+                                      _log() << "  initial comp_n: " << to_json_array(CASM::comp_n(tconfig), json) << std::endl;
 
-      Eigen::VectorXd target_comp_n = conditions().mol_composition();
-      _log() << "   target comp_n: " << to_json_array(target_comp_n, json) << std::endl;
+                                                                      Eigen::VectorXd target_comp_n = conditions().mol_composition();
+                                                                      _log() << "   target comp_n: " << to_json_array(target_comp_n, json) << std::endl;
 
-      int count = 0;
-      OccEvent e;
-      ConfigDoF &tconfigdof = tconfig.configdof();
+                                                                              int count = 0;
+                                                                              OccEvent e;
+                                                                              ConfigDoF &tconfigdof = tconfig.configdof();
       while(true) {
         auto begin = m_cand.grand_canonical_swap().begin();
         auto end = m_cand.grand_canonical_swap().end();
@@ -599,20 +600,20 @@ namespace CASM {
 
         if(it == end) {
           _log() << "   applied swaps: " << count << std::endl;
-          break;
+                                          break;
         }
 
-        /// apply chosen swap (*it)
-        m_occ_loc.propose_grand_canonical(e, *it, _mtrand());
-        m_occ_loc.apply(e, tconfigdof);
+                                        /// apply chosen swap (*it)
+                                        m_occ_loc.propose_grand_canonical(e, *it, _mtrand());
+                m_occ_loc.apply(e, tconfigdof);
 
-        ++count;
+                ++count;
       }
 
-      _log() << "      final comp: " << to_json_array(CASM::comp(tconfig), json) << std::endl;
-      _log() << "    final comp_n: " << to_json_array(CASM::comp_n(tconfig), json) << std::endl << std::endl;
+              _log() << "      final comp: " << to_json_array(CASM::comp(tconfig), json) << std::endl;
+                                              _log() << "    final comp_n: " << to_json_array(CASM::comp_n(tconfig), json) << std::endl << std::endl;
 
-      return tconfig.configdof();
+                                                                              return tconfig.configdof();
     }
 
   }

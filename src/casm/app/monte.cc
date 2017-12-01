@@ -3,7 +3,7 @@
 
 #include <boost/filesystem.hpp>
 #include "casm/casm_io/json_io/container.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/clex/PrimClex_impl.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"

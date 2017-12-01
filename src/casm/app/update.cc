@@ -5,10 +5,11 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/database/Import.hh"
 #include "casm/database/Selection.hh"
-#include "casm/database/ConfigTypeTraits.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 // need to add specializations here
 #include "casm/database/ConfigImport.hh"
+#include "casm/database/DiffTransConfigImport.hh"
 
 
 namespace CASM {

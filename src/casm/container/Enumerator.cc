@@ -4,6 +4,10 @@
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/clex/ScelEnum.hh"
+#include "casm/kinetics/DiffusionTransformationEnum.hh"
+#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
+#include "casm/kinetics/DiffTransConfigInterpolation.hh"
+#include "casm/kinetics/EnumDiffTransConfigEndpoints.hh"
 #include "casm/app/enum.hh"
 
 namespace CASM {
@@ -20,7 +24,11 @@ namespace CASM {
     emap->insert(
       EnumInterface<ScelEnum>(),
       EnumInterface<ConfigEnumAllOccupations>(),
-      EnumInterface<SuperConfigEnum>()
+      EnumInterface<SuperConfigEnum>(),
+      EnumInterface<Kinetics::DiffusionTransformationEnum>(),
+      EnumInterface<Kinetics::DiffTransConfigEnumOccPerturbations>(),
+      EnumInterface<Kinetics::DiffTransConfigInterpolation>(),
+      EnumInterface<Kinetics::EnumDiffTransConfigEndpoints>()
     );
 
     return emap;

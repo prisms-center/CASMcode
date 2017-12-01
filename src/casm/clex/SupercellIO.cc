@@ -3,11 +3,9 @@
 #include "casm/casm_io/DataFormatterTools_impl.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/database/Selected.hh"
-#include "casm/database/DatabaseDefs.hh"
-#include "casm/database/ConfigTypeDefs.hh"
+#include "casm/clex/Supercell_impl.hh"
+#include "casm/database/Selected_impl.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
 
@@ -376,7 +374,7 @@ namespace CASM {
       [](const Supercell & scel)->Eigen::VectorXd {
         Eigen::VectorXd res;
         res << scel.lattice().length(0), scel.lattice().length(1), scel.lattice().length(2),
-            scel.lattice().angle(0), scel.lattice().angle(1), scel.lattice().angle(2);
+        scel.lattice().angle(0), scel.lattice().angle(1), scel.lattice().angle(2);
         return res;
       });
     }

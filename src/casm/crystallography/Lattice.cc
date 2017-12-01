@@ -13,23 +13,21 @@ namespace CASM {
   namespace {
 
     typedef std::vector<Lattice>::iterator vec_lat_it;
-    typedef std::back_insert_iterator<std::vector<SymOp> > vec_symop_back_inserter;
     typedef Array<SymOp>::const_iterator array_symop_cit;
   }
 
   template Lattice superdupercell<vec_lat_it, array_symop_cit>(
     vec_lat_it, vec_lat_it, array_symop_cit, array_symop_cit);
 
-  template vec_symop_back_inserter Lattice::find_invariant_subgroup<array_symop_cit, vec_symop_back_inserter>(
-    array_symop_cit, array_symop_cit, vec_symop_back_inserter, double) const;
-
   template std::pair<array_symop_cit, Eigen::MatrixXi> is_supercell<Lattice, array_symop_cit>(
     const Lattice &, const Lattice &, array_symop_cit, array_symop_cit, double);
 
+  template class LatticeCanonicalForm<Comparisons<CRTPBase<Lattice> > >;
 
   Lattice::Lattice(const Eigen::Vector3d &vec1,
                    const Eigen::Vector3d &vec2,
-                   const Eigen::Vector3d &vec3) {
+                   const Eigen::Vector3d &vec3,
+                   double xtal_tol) : m_tol(xtal_tol) {
     m_lat_mat << vec1, vec2, vec3;
     m_inv_lat_mat = m_lat_mat.inverse();
   }
@@ -38,57 +36,58 @@ namespace CASM {
 
   ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
   ///(e.g., lat_mat is equivalent to lat_column_mat())
-  Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat) :
+  Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat, double xtal_tol) :
     m_lat_mat(lat_mat),
-    m_inv_lat_mat(lat_mat.inverse()) {
+    m_inv_lat_mat(lat_mat.inverse()),
+    m_tol(xtal_tol) {
   }
 
   //********************************************************************
 
-  Lattice Lattice::fcc() {
+  Lattice Lattice::fcc(double tol) {
     Eigen::Matrix3d latmat;
     latmat <<
            0, 1, 1,
            1, 0, 1,
            1, 1, 0;
     latmat /= pow(latmat.determinant(), 1.0 / 3.0);
-    return Lattice(latmat);
+    return Lattice(latmat, tol);
   }
 
   //********************************************************************
 
-  Lattice Lattice::bcc() {
+  Lattice Lattice::bcc(double tol) {
     Eigen::Matrix3d latmat;
     latmat <<
            -1, 1, 1,
            1, -1, 1,
            1, 1, -1;
     latmat /= pow(latmat.determinant(), 1.0 / 3.0);
-    return Lattice(latmat);
+    return Lattice(latmat, tol);
   }
 
   //********************************************************************
 
-  Lattice Lattice::cubic() {
-    return Lattice(Eigen::Matrix3d::Identity());
+  Lattice Lattice::cubic(double tol) {
+    return Lattice(Eigen::Matrix3d::Identity(), tol);
   }
 
   //********************************************************************
 
-  Lattice Lattice::hexagonal() {
+  Lattice Lattice::hexagonal(double tol) {
     Eigen::Matrix3d latmat;
     latmat <<
            1, -1.0 / sqrt(3.0), 0,
            0, 2.0 / sqrt(3.0),  0,
            0, 0, sqrt(3.0);
 
-    return Lattice(latmat.transpose());
+    return Lattice(latmat.transpose(), tol);
   }
 
   //********************************************************************
 
   Lattice Lattice::scaled_lattice(double scale) const {
-    return Lattice(scale * lat_column_mat());
+    return Lattice(scale * lat_column_mat(), tol());
   }
 
   //********************************************************************
@@ -156,7 +155,7 @@ namespace CASM {
        2 * M_PI * cross_prod(vecs[0], vecs[1]) / vol);
        return recip_lat;
     */
-    return Lattice(2 * M_PI * inv_lat_column_mat().transpose()); //equivalent expression
+    return Lattice(2 * M_PI * inv_lat_column_mat().transpose(), tol()); //equivalent expression
   }
 
   //********************************************************************
@@ -219,92 +218,8 @@ namespace CASM {
   }
 
   //********************************************************************
-  // Finds subgroup of super_group that leaves this lattice invariant.
-  // note that this routine is written so that pg_tol has exactly the same meaning
-  // as in Lattice::generate_point_group
-  void Lattice::find_invariant_subgroup(const SymGroup &super_group, SymGroup &sub_group, double pg_tol) const {
-    if(sub_group.size() != 0) {
-      std::cerr << "WARNING in Lattice::find_invariant_group" << std::endl;
-      std::cerr << "The subgroup isn't empty and it's about to be rewritten!" << std::endl;
-      sub_group.clear();
-    }
 
-    this->find_invariant_subgroup(super_group.begin(), super_group.end(), std::back_inserter(sub_group), pg_tol);
-  }
-
-  //*******************************************************************************
-
-  /// \brief Check if Lattice is in the canonical form
-  bool Lattice::is_canonical(double tol) const {
-    return almost_equal(this->lat_column_mat(), this->canonical_form(tol).lat_column_mat(), tol);
-  }
-
-  //*******************************************************************************
-
-  /// \brief Check if Lattice is in the canonical form
-  bool Lattice::is_canonical(const SymGroup &pg, double tol) const {
-    return almost_equal(this->lat_column_mat(), this->canonical_form(pg, tol).lat_column_mat(), tol);
-  }
-
-  //*******************************************************************************
-
-  /// \brief Returns the operation that applied to *this returns the canonical form
-  SymOp Lattice::to_canonical(double tol) const {
-
-    // canon = X*this
-    // canon.t = this.t * X.t
-
-    Lattice canon {this->canonical_form(tol)};
-    return SymOp {(this->lat_column_mat().transpose()).colPivHouseholderQr().solve(canon.lat_column_mat().transpose()).transpose()};
-  }
-
-  //*******************************************************************************
-
-  /// \brief Returns the operation that applied to *this returns the canonical form
-  SymOp Lattice::to_canonical(const SymGroup &pg, double tol) const {
-
-    // canon = X*this
-    // canon.t = this.t * X.t
-
-    Lattice canon {this->canonical_form(pg, tol)};
-    return SymOp {(this->lat_column_mat().transpose()).colPivHouseholderQr().solve(canon.lat_column_mat().transpose()).transpose()};
-  }
-
-  //*******************************************************************************
-
-  /// \brief Returns the operation that applied to *this returns the canonical form
-  SymOp Lattice::from_canonical(double tol) const {
-    return to_canonical(tol).inverse();
-  }
-
-  //*******************************************************************************
-
-  /// \brief Returns the operation that applied to *this returns the canonical form
-  SymOp Lattice::from_canonical(const SymGroup &pg, double tol) const {
-    return to_canonical(pg, tol).inverse();
-  }
-
-  //*******************************************************************************
-
-  /// \brief Returns the canonical equivalent Lattice, using the point group of the Lattice
-  ///
-  /// - To specify different symmetry, see canonical_equivalent_lattice
-  Lattice Lattice::canonical_form(double tol) const {
-    SymGroup pg;
-    this->generate_point_group(pg, tol);
-    return this->canonical_form(pg, tol);
-  }
-
-  //*******************************************************************************
-
-  /// \brief Returns the canonical equivalent Lattice, using the provided point group
-  Lattice Lattice::canonical_form(const SymGroup &pg, double tol) const {
-    return canonical_equivalent_lattice(*this, pg, tol);
-  }
-
-  //********************************************************************
-
-  void Lattice::generate_point_group(SymGroup &point_group, double pg_tol) const {
+  void Lattice::generate_point_group(SymGroup &point_group) const {
 
     if(point_group.size() != 0) {
       std::cerr << "WARNING in Lattice::generate_point_group" << std::endl;
@@ -324,7 +239,7 @@ namespace CASM {
 
     //For this algorithm to work, lattice needs to be in reduced form.
     Lattice tlat_reduced(reduced_cell());
-    LatticeIsEquivalent is_equiv(tlat_reduced, pg_tol);
+    IsPointGroupOp is_equiv(tlat_reduced);
     do {
       if(is_equiv(pg_count())) {
         point_group.push_back(is_equiv.sym_op());
@@ -332,15 +247,15 @@ namespace CASM {
     }
     while(++pg_count);
 
-    if(!point_group.is_group(pg_tol)) {
+    if(!point_group.is_group(tol())) {
       std::cerr << "*** WARNING *** \n"
                 << "    Lattice::generate_point_group() has been called on an ill-conditioned lattice \n"
-                << "    (i.e., a well-defined point group could not be found with the supplied tolerance of " << pg_tol << ").\n"
+                << "    (i.e., a well-defined point group could not be found with the current tolerance of " << tol() << ").\n"
                 << "    CASM will use the group closure of the symmetry operations that were found.  Please consider using the \n"
                 << "    CASM symmetrization tool on your input files.\n";
       std::cout << "Lat_column_mat:\n" << lat_column_mat() << "\n\n";
 
-      point_group.enforce_group(pg_tol);
+      point_group.enforce_group(tol());
 
     }
     //Sort point_group by trace/conjugacy class
@@ -354,7 +269,9 @@ namespace CASM {
   Array<double> Lattice::pg_converge(double large_tol) {
     Array<double> tarray;
     SymGroup point_group;
-    generate_point_group(point_group, large_tol);
+    double orig_tol = tol();
+    set_tol(large_tol);
+    generate_point_group(point_group);
     if(!point_group.is_group(large_tol)) {
       std::cout << "This is not a group. It is being enforced...\n";
       point_group.enforce_group(large_tol);
@@ -362,6 +279,7 @@ namespace CASM {
     for(Index i = 0; i < point_group.size(); i++) {
       tarray.push_back(point_group[i].map_error());
     }
+    set_tol(orig_tol);
     return tarray;
   }
 
@@ -375,11 +293,13 @@ namespace CASM {
     Array<int> num_ops, num_enforced_ops;
     Array<std::string> old_name, new_name;
 
+    double orig_tol = tol();
     for(double i = small_tol; i <= large_tol; i += increment) {
       SymGroup point_group;
 
       tols.push_back(i);
-      generate_point_group(point_group, i);
+      set_tol(i);
+      generate_point_group(point_group);
       point_group.character_table();
       old_name.push_back(point_group.get_name());
       num_ops.push_back(point_group.size());
@@ -390,6 +310,7 @@ namespace CASM {
       point_group.character_table();
       new_name.push_back(point_group.get_name());
     }
+    set_tol(orig_tol);
 
     for(Index i = 0; i < tols.size(); i++) {
       std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << old_name[i] << "\t" << num_enforced_ops[i] << "\t" << is_group_now[i] << "\t" << new_name[i] << "\n";
@@ -635,16 +556,18 @@ namespace CASM {
       recip.col(i) *= radius / recip.col(i).norm();
     }
     //recip contains three column vectors of length 'radius' pointed along plane normals
-
-    return (inv_lat_column_mat() * recip).cwiseAbs().unaryExpr(std::ptr_fun(ceil)).colwise().maxCoeff().cast<int>();
+    auto lambda = [](double val) {
+      return ceil(val);
+    };
+    return (inv_lat_column_mat() * recip).cwiseAbs().unaryExpr(lambda).colwise().maxCoeff().cast<int>();
   }
 
   //********************************************************************
   //Change bool to an array of SymOps you want to use, default point group
   //Overload to only use identity
   //Return N matrix
-  bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, Eigen::Matrix3d &multimat, double _tol) const {
-    auto result = is_supercell(*this, tile, symoplist.begin(), symoplist.end(), _tol);
+  bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, Eigen::Matrix3d &multimat) const {
+    auto result = is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol());
     multimat = result.second.cast<double>();
     return result.first != symoplist.end();
   }
@@ -653,8 +576,8 @@ namespace CASM {
   //Change bool to an array of SymOps you want to use, default point group
   //Overload to only use identity
   //Return N matrix
-  bool Lattice::is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat, double _tol) const {
-    auto result = is_supercell(*this, tile, _tol);
+  bool Lattice::is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat) const {
+    auto result = is_supercell(*this, tile, tol());
     multimat = result.second.cast<double>();
     return result.first;
   }
@@ -662,14 +585,14 @@ namespace CASM {
   //********************************************************************
   //Overload to only use identity
   //Return N matrix
-  bool Lattice::is_supercell_of(const Lattice &tile, double _tol) const {
-    return is_supercell(*this, tile, _tol).first;
+  bool Lattice::is_supercell_of(const Lattice &tile) const {
+    return is_supercell(*this, tile, tol()).first;
   }
 
   //********************************************************************
 
-  bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, double _tol) const {
-    return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), _tol).first != symoplist.end();
+  bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist) const {
+    return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol()).first != symoplist.end();
   }
 
   /**
@@ -692,11 +615,11 @@ namespace CASM {
   //\John G 121212
   //********************************************************************************************************
 
-  Eigen::Vector3i Lattice::millers(Eigen::Vector3d plane_normal, double tolerance) const {
+  Eigen::Vector3i Lattice::millers(Eigen::Vector3d plane_normal) const {
     //Get fractional coordinates of plane_normal in recip_lattice
     //These are h, k, l
     //For miller indeces h, k and l    plane_normal[CART]=h*a.recip+k*b.recip+l*c.recip
-    return scale_to_int(lat_column_mat().transpose() * plane_normal, tolerance);
+    return scale_to_int(lat_column_mat().transpose() * plane_normal, tol());
   }
 
   //John G 121015
@@ -728,7 +651,7 @@ namespace CASM {
       std::cout << "b --> c" << std::endl;
       std::cout << "a --> b" << std::endl;
       std::cout << "c --> a" << std::endl;
-      return Lattice(lat_column_mat().col(2), lat_column_mat().col(0), lat_column_mat().col(1));
+      return Lattice(lat_column_mat().col(2), lat_column_mat().col(0), lat_column_mat().col(1), tol());
     }
 
     else if(millers == Eigen::Vector3i(1, 0, 0)) {
@@ -737,7 +660,7 @@ namespace CASM {
       std::cout << "a --> c" << std::endl;
       std::cout << "b --> a" << std::endl;
       std::cout << "c --> b" << std::endl;
-      return Lattice(lat_column_mat().col(1), lat_column_mat().col(2), lat_column_mat().col(0));
+      return Lattice(lat_column_mat().col(1), lat_column_mat().col(2), lat_column_mat().col(0), tol());
     }
 
     else if(millers == Eigen::Vector3i(0, 0, 1)) { // || millers==Eigen::Vector3i(0,1,0) || millers==Eigen::Vector3i(1,0,0))
@@ -995,14 +918,6 @@ namespace CASM {
 
   //********************************************************************
 
-  ///Are lattice vectors identical for two lattices
-  bool Lattice::is_equivalent(const Lattice &RHS, double tol) const {
-    LatticeIsEquivalent f(*this, tol);
-    return f(RHS);
-  }
-
-  //********************************************************************
-
   /// \brief Compare two Lattice
   ///
   /// - First compares is_niggli(*this, TOL) with is_niggli(RHS, TOL)
@@ -1066,7 +981,7 @@ namespace CASM {
       }
     }
 
-    (*this) = Lattice(tLat2);
+    (*this) = Lattice(tLat2, tol());
 
 
 
@@ -1081,10 +996,13 @@ namespace CASM {
    */
   //***********************************************************
 
-  void Lattice::symmetrize(double tol) {
+  void Lattice::symmetrize(double sym_tol) {
     SymGroup point_group;
-    generate_point_group(point_group, tol);
+    double orig_tol = tol();
+    set_tol(sym_tol);
+    generate_point_group(point_group);
     symmetrize(point_group);
+    set_tol(orig_tol);
     return;
   }
 
@@ -1111,9 +1029,13 @@ namespace CASM {
 
   //********************************************************************
   // read Lattice from a json array of Eigen::Vector3d
-  void from_json(Lattice &lat, const jsonParser &json) {
+  void from_json(Lattice &lat, const jsonParser &json, double xtal_tol) {
     try {
-      lat = Lattice(json[0].get<Eigen::Vector3d >(), json[1].get<Eigen::Vector3d >(), json[2].get<Eigen::Vector3d >());
+      lat = Lattice(
+              json[0].get<Eigen::Vector3d >(),
+              json[1].get<Eigen::Vector3d >(),
+              json[2].get<Eigen::Vector3d >(),
+              xtal_tol);
     }
     catch(...) {
       /// re-throw exceptions
@@ -1123,12 +1045,12 @@ namespace CASM {
 
   /// \brief Apply SymOp to a Lattice
   Lattice &apply(const SymOp &op, Lattice &lat) {
-    return lat = Lattice(op.matrix() * lat.lat_column_mat());
+    return lat = Lattice(op.matrix() * lat.lat_column_mat(), lat.tol());
   }
 
   /// \brief Copy and apply SymOp to a Lattice
   Lattice copy_apply(const SymOp &op, const Lattice &lat) {
-    return Lattice(op.matrix() * lat.lat_column_mat());
+    return Lattice(op.matrix() * lat.lat_column_mat(), lat.tol());
   }
 
 

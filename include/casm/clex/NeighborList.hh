@@ -3,6 +3,7 @@
 
 #include <set>
 #include <vector>
+#include <memory>
 #include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {

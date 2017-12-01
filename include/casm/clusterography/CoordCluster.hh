@@ -3,9 +3,12 @@
 
 #include <vector>
 
+#include "casm/symmetry/PermuteIterator.hh"
 #include "casm/clusterography/GenericCluster.hh"
+#include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/clex/HasCanonicalForm.hh"
 
 namespace CASM {
 
@@ -13,9 +16,6 @@ namespace CASM {
 
   class Structure;
   class SymOp;
-
-  template<typename CoordType>
-  class CoordCluster;
 
   /** \defgroup Clusterography
 
@@ -28,68 +28,43 @@ namespace CASM {
       \ingroup Clusterography
   */
 
-  /// \brief Traits class for CoordCluster<CoordType>
-  ///
-  /// \ingroup CoordCluster
-  ///
-  template<typename CoordType>
-  struct traits<CoordCluster<CoordType> > {
-    typedef CoordCluster<CoordType> MostDerived;
-    typedef CoordType Element;
-    typedef ClusterInvariants<CoordCluster<CoordType> > InvariantsType;
-  };
-
   /// \brief A cluster of Coordinate-like elements
   ///
   /// Beyond what a GenericCluster does, a CoordCluster:
-  /// - has a ptr to a primitive Structure
-  /// - may be translated by UnitCell
-  /// - expects static_cast<Coordinate>(CoordType) to be valid
+  /// - has coordinates of elements
+  /// - may be translated by UnitCell, by translating each element
+  /// - has a list of displacements between coordinates, min_length, max_length
+  ///
+  /// Requires:
+  ///   - Structure& MostDerived::prim_impl();
+  ///   - Element& Element::operator+=(UnitCell trans);
+  ///   - Coordinate MostDerived::coordinate_impl(size_type i) const;
+  ///   - const std::vector<double>& MostDerived::InvariantsType::displacement() const;
+  ///   - _Base inherits from GenericCluster
   ///
   /// \ingroup CoordCluster
   ///
-  template<typename CoordType>
-  class CoordCluster : public ElementWiseSymCluster<CoordCluster<CoordType> > {
+  template<typename _Base>
+  class GenericCoordCluster : public Translatable<GenericCluster<_Base>> {
 
   public:
 
-    typedef unsigned int size_type;
-    typedef Structure PrimType;
+    typedef Translatable<GenericCluster<_Base>> Base;
+    typedef typename Base::MostDerived MostDerived;
+    using Base::derived;
 
-    /// \brief Construct an empty UnitCellCoordCluster
-    explicit CoordCluster(const PrimType &_prim) :
-      ElementWiseSymCluster<CoordCluster>(),
-      m_prim_ptr(&_prim) {}
+    typedef typename traits<MostDerived>::Element Element;
+    typedef typename traits<MostDerived>::InvariantsType InvariantsType;
+    typedef typename traits<MostDerived>::size_type size_type;
 
-    /// \brief Construct a CoordCluster with a range of CoordType
-    template<typename InputIterator>
-    CoordCluster(const PrimType &_prim,
-                 InputIterator _begin,
-                 InputIterator _end) :
-      ElementWiseSymCluster<CoordCluster>(_begin, _end),
-      m_prim_ptr(&_prim) {}
-
-    /// \brief Default copy constructor
-    CoordCluster(const CoordCluster &other) = default;
-
-    /// \brief Default assignment constructor
-    CoordCluster &operator=(const CoordCluster &other) = default;
-
-    /// \brief Default move constructor
-    CoordCluster(CoordCluster &&other) = default;
-
-    /// \brief Default move assignment
-    CoordCluster &operator=(CoordCluster &&other) = default;
-
-
-    /// \brief Return a reference to the primitive Structure
-    const PrimType &prim() const {
-      return *m_prim_ptr;
-    }
 
     /// \brief Return the coordinate corresponding to element(i)
     Coordinate coordinate(size_type i) const {
-      return static_cast<Coordinate>(this->element(i));
+      return derived().coordinate_impl(i);
+    }
+
+    const std::vector<double> &displacement() const {
+      return this->invariants().displacement();
     }
 
     /// \brief Return the min pair distance, or 0.0 if size() <= 1
@@ -97,7 +72,7 @@ namespace CASM {
       if(this->size() <= 1) {
         return 0.0;
       }
-      return this->invariants().displacement().front();
+      return displacement().front();
     }
 
     /// \brief Return the max pair distance, or 0.0 if size() <= 1
@@ -105,41 +80,80 @@ namespace CASM {
       if(this->size() <= 1) {
         return 0.0;
       }
-      return this->invariants().displacement().back();
+      return displacement().back();
     }
 
     /// \brief Translate the cluster by a UnitCell translation
-    CoordCluster &operator+=(UnitCell trans) {
+    MostDerived &operator+=(UnitCell trans) {
       for(auto it = this->begin(); it != this->end(); ++it) {
         *it += trans;
       }
-      return *this;
+      return this->derived();
     }
 
-    /// \brief Translate the UnitCellCoordCluster by a UnitCell translation
-    CoordCluster &operator-=(UnitCell trans) {
-      for(auto it = this->begin(); it != this->end(); ++it) {
-        *it -= trans;
-      }
-      return *this;
+  };
+
+  template<typename CoordType>
+  struct traits<CoordCluster<CoordType>> {
+    typedef CoordType Element;
+    typedef ClusterInvariants<CoordCluster<CoordType>> InvariantsType;
+    static CoordType position(const CoordCluster<CoordType> &clust);
+    typedef unsigned int size_type;
+  };
+
+  template<typename CoordType>
+  class CoordCluster : public
+    CanonicalForm<ElementWiseSymApply<GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>>> {
+
+  public:
+
+    typedef Structure PrimType;
+    typedef typename traits<CoordCluster<CoordType>>::Element Element;
+    typedef typename traits<CoordCluster<CoordType>>::InvariantsType InvariantsType;
+    typedef typename traits<CoordCluster<CoordType>>::size_type size_type;
+
+    CoordCluster(const PrimType &prim) :
+      m_prim_ptr(&prim) {}
+
+    template<typename Iterator>
+    CoordCluster(const PrimType &prim, Iterator begin, Iterator end) :
+      m_prim_ptr(&prim),
+      m_element(begin, end) {}
+
+    const PrimType &prim() const {
+      return *m_prim_ptr;
     }
 
-    CoordCluster operator+(const UnitCell &trans) const {
-      CoordCluster res(*this);
-      return res += trans;
+    /// \brief Access vector of elements
+    std::vector<Element> &elements() {
+      this->reset_invariants();
+      return m_element;
     }
 
-    CoordCluster operator-(const UnitCell &trans) const {
-      CoordCluster res(*this);
-      return res -= trans;
+    /// \brief const Access vector of elements
+    const std::vector<Element> &elements() const {
+      return m_element;
     }
 
+  protected:
+
+    friend GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>;
+
+    Coordinate coordinate_impl(size_type i) const {
+      return static_cast<Coordinate>(this->element(i));
+    }
 
   private:
 
+    std::vector<Element> m_element;
     const PrimType *m_prim_ptr;
 
   };
+
+  template<typename CoordType>
+  CoordType traits<CoordCluster<CoordType>>::position(const CoordCluster<CoordType> &clust) {
+    return clust[0];
+  }
 
 }
 

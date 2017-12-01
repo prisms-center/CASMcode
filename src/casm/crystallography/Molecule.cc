@@ -115,6 +115,10 @@ namespace CASM {
     return AtomPosition(_pos, AtomSpecie(_name), _SD_flag);
   }
 
+  bool Molecule::is_vacancy() const {
+    //return m_atoms.empty();
+    return CASM::is_vacancy(m_atoms[0].name());
+  }
 
   //****************************************************
   // Applies symmetry operation to a Molecule
@@ -230,8 +234,8 @@ namespace CASM {
   //****************************************************
 
   Molecule Molecule::make_atom(std::string const &atom_name, AtomPosition::sd_type const &_sd_flags /*=AtomPosition::sd_type{false,false,false}*/) {
-    if(CASM::is_vacancy(atom_name))
-      return make_vacancy();
+    //if(CASM::is_vacancy(atom_name))
+    //  return make_vacancy();
     return Molecule(atom_name, {AtomPosition(0., 0., 0., atom_name)});
   }
 
@@ -240,7 +244,8 @@ namespace CASM {
   //****************************************************
 
   Molecule Molecule::make_vacancy() {
-    return Molecule("Va", {});
+    //return Molecule("Va", {});
+    return make_atom("Va");
   }
 
   //****************************************************

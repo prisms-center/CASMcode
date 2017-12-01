@@ -40,7 +40,7 @@ namespace CASM {
 namespace CASM {
   namespace Monte {
 
-    struct OccCandidate : public Comparisons<OccCandidate> {
+    struct OccCandidate : public Comparisons<CRTPBase<OccCandidate>> {
 
       OccCandidate(Index _asym, Index _species_index) :
         asym(_asym),
@@ -63,7 +63,7 @@ namespace CASM {
 
 
     /// \brief Store swap type, mutating sites, and info for keeping OccLocation up-to-date
-    class OccSwap : public Comparisons<OccSwap> {
+    class OccSwap : public Comparisons<CRTPBase<OccSwap>> {
 
     public:
 

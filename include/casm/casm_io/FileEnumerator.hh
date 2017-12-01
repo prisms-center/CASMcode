@@ -8,7 +8,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
 

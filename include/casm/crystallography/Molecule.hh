@@ -26,8 +26,9 @@ namespace CASM {
   /// For now, AtomSpecie only contains the name, but in future other properties
   /// may be needed (mass, atomic number, etc).
   // Additional fields should only be added if absolutely necessary!
-  class AtomSpecie : public Comparisons<AtomSpecie> {
+  class AtomSpecie : public Comparisons<CRTPBase<AtomSpecie>> {
   public:
+
     /// \brief Constructor
     AtomSpecie(std::string const &_name) :
       m_name(_name) {}
@@ -65,18 +66,20 @@ namespace CASM {
     typedef std::array<bool, 3> sd_type;
 
     /// \brief Construct with x,y,z position coordinates and AtomSpecie
+    template<typename AtomSpecieConvertible>
     AtomPosition(double _pos1,
                  double _pos2,
                  double _pos3,
-                 AtomSpecie const &_specie,
+                 AtomSpecieConvertible _specie,
                  sd_type const &_sd_flag = sd_type{false, false, false}) :
       m_position(_pos1, _pos2, _pos3),
       m_specie(_specie),
       m_sd_flag(_sd_flag) { }
 
     /// \brief Construct with vector position and AtomSpecie
+    template<typename AtomSpecieConvertible>
     AtomPosition(Eigen::Ref<const Eigen::Vector3d> const &_pos,
-                 AtomSpecie const &_specie,
+                 AtomSpecieConvertible _specie,
                  sd_type const &_sd_flag = sd_type{false, false, false}) :
       m_position(_pos),
       m_specie(_specie),
@@ -162,16 +165,18 @@ namespace CASM {
     static Molecule make_vacancy();
 
     Molecule(std::string const &_name,
-             std::initializer_list<AtomPosition> const &_atoms) :
+             std::initializer_list<AtomPosition> const &_atoms,
+             bool _divisible = false) :
       m_name(_name),
       m_atoms(_atoms),
-      m_divisible(false) {}
+      m_divisible(_divisible) {}
 
     Molecule(std::string const &_name,
-             std::vector<AtomPosition> const &_atoms) :
+             std::vector<AtomPosition> const &_atoms,
+             bool _divisible = false) :
       m_name(_name),
       m_atoms(_atoms),
-      m_divisible(false) {}
+      m_divisible(_divisible) {}
 
     Index size() const {
       return m_atoms.size();
@@ -189,9 +194,7 @@ namespace CASM {
       return m_atoms[i];
     }
 
-    bool is_vacancy() const {
-      return m_atoms.empty();
-    }
+    bool is_vacancy() const;
 
     Molecule &apply_sym(SymOp const &op);
 

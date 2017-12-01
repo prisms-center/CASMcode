@@ -1,5 +1,6 @@
 #include "casm/clex/ClexBasisWriter.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 namespace CASM {
 

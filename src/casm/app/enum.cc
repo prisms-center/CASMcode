@@ -27,7 +27,7 @@ namespace CASM {
        "Print extended usage description. "
        "Use '--desc MethodName [MethodName2...]' for detailed option description. "
        "Partial matches of method names will be included.")
-      ("method", po::value<std::string>(&m_method), "Method to use")
+      ("method,m", po::value<std::string>(&m_method), "Method to use: Can use number shortcuts in this option.")
       ("min", po::value<int>(&m_min_volume)->default_value(1), "Min volume")
       ("max", po::value<int>(&m_max_volume), "Max volume")
       ("filter",
@@ -158,6 +158,19 @@ namespace CASM {
       return it->run(primclex(), input, opt());
     }
     else if(count < 1) {
+      // allows for number aliasing
+      try {
+        int m = stoi(opt().method());
+        if(m < std::distance(enumerators().begin(), enumerators().end()) &&
+           m >= 0) {
+          auto it = enumerators().begin();
+          for(int k = 0; k < m; ++k) {
+            ++it;
+          }
+          return it->run(primclex(), input, opt());
+        }
+      }
+      catch(...) {}
       err_log() << "No match found for --method " << opt().method() << std::endl;
       print_names(err_log(), enumerators());
       return ERR_INVALID_ARG;
@@ -167,7 +180,7 @@ namespace CASM {
       print_names(err_log(), enumerators());
       return ERR_INVALID_ARG;
     }
-    throw std::runtime_error("Unknown error in 'casm enum'");
+    throw std::runtime_error("Unknown error in EnumCommand::run");
   }
 
   const EnumeratorMap &EnumCommand::enumerators() const {
@@ -185,9 +198,10 @@ namespace CASM {
 
   void EnumCommand::print_names(std::ostream &sout, const EnumeratorMap &enumerators) const {
     sout << "The enumeration methods are:\n";
-
+    int counter = 0;
     for(const auto &e : enumerators) {
-      sout << "  " << e.name() << std::endl;
+      sout << "  " << counter << ") " << e.name() << std::endl;
+      ++counter;
     }
   }
 

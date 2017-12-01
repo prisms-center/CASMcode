@@ -1,10 +1,10 @@
 #include "casm/app/select.hh"
-#include "casm/app/DBInterface.hh"
+#include "casm/app/DBInterface_impl.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
-#include "casm/database/DatabaseDefs.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/clex/Configuration_impl.hh"
+#include "casm/database/Database.hh"
+#include "casm/database/DatabaseTypes.hh"
 #include "casm/database/Selection.hh"
 
 namespace CASM {
@@ -190,7 +190,7 @@ namespace CASM {
   SelectCommandImpl<DataObject>::SelectCommandImpl(const SelectCommand &cmd) :
     SelectCommandImplBase(cmd),
     m_data(cmd),
-    m_Ntot(m_cmd.primclex().template db<DataObject>().size()) {
+    m_Ntot(m_cmd.primclex().template generic_db<DataObject>().size()) {
   }
 
   template<typename DataObject>
@@ -274,7 +274,7 @@ namespace CASM {
                      only_selected);
     log() << "write: " << _output_path() << "\n" << std::endl;
 
-    log().custom("Output config list", _output_path().string());
+    log().custom("Output " + traits<DataObject>::short_name + " list", _output_path().string());
     _write_selection_stats(m_Ntot, _sel(0), log(), only_selected);
 
     log() << std::endl;
@@ -393,12 +393,12 @@ namespace CASM {
   void SelectCommandImpl<DataObject>::_write_input_stats() const {
 
     // ---- write starting stats ----
-    log().custom("Input config list", _selection_paths(0).string());
+    log().custom("Input " + traits<DataObject>::short_name + " list", _selection_paths(0).string());
     _write_selection_stats(m_Ntot, _sel(0), log(), false);
     log() << std::endl;
 
     for(int i = 1; i < _selection_paths().size(); ++i) {
-      log().custom("Input config list", _selection_paths(i).string());
+      log().custom("Input " + traits<DataObject>::short_name + " list", _selection_paths(i).string());
       _write_selection_stats(m_Ntot, _sel(i), log(), false);
       log() << std::endl;
     }
@@ -413,9 +413,9 @@ namespace CASM {
     auto Nselected = sel.selected_size();
     auto Ninclude = only_selected ? Nselected : sel.size();
 
-    log << "# configurations in this project: " << Ntot << "\n";
-    log << "# configurations included in this list: " << Ninclude << "\n";
-    log << "# configurations selected in this list: " << Nselected << "\n";
+    log << "# " + traits<DataObject>::short_name + "s in this project: " << Ntot << "\n";
+    log << "# " + traits<DataObject>::short_name + "s included in this list: " << Ninclude << "\n";
+    log << "# " + traits<DataObject>::short_name + "s selected in this list: " << Nselected << "\n";
   }
 
 
@@ -462,7 +462,7 @@ namespace CASM {
 
     if((cmd == "set-on" || cmd == "set-off" || cmd == "set") && vm().count("selections") && opt().selection_paths().size() != 1) {
       err_log() << "Error in 'casm select " << cmd << "'. "
-                << opt().selection_paths().size() << " config selections were specified, "
+                << opt().selection_paths().size() << " selections were specified, "
                 "but no more than one selection is allowed (MASTER list is used if no "
                 "other is specified)." << std::endl;
       return ERR_INVALID_ARG;
@@ -498,7 +498,7 @@ namespace CASM {
           throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
         }
 
-        DB::for_config_type_short(opt().db_type(), DB::ConstructImpl<SelectCommand>(m_impl, *this));
+        DB::for_type_short(opt().db_type(), DB::ConstructImpl<SelectCommand>(m_impl, *this));
       }
       else {
         m_impl = notstd::make_unique<SelectCommandImplBase>(*this);

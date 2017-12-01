@@ -1,6 +1,7 @@
 #ifndef CASM_PrimClex
 #define CASM_PrimClex
 
+#include <memory>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
 
@@ -19,6 +20,7 @@ namespace CASM {
   class ECIContainer;
 
   namespace DB {
+    template<typename T> class ValDatabase;
     template<typename T> class Database;
     class PropertiesDatabase;
     class DatabaseHandler;
@@ -118,6 +120,13 @@ namespace CASM {
     // ** Supercell, Configuration, etc. databases **
 
     template<typename T>
+    DB::ValDatabase<T> &generic_db() const;
+
+    template<typename T>
+    const DB::ValDatabase<T> &const_generic_db() const;
+
+
+    template<typename T>
     DB::Database<T> &db() const;
 
     template<typename T>
@@ -125,10 +134,10 @@ namespace CASM {
 
 
     template<typename T>
-    DB::PropertiesDatabase &db_props() const;
+    DB::PropertiesDatabase &db_props(std::string calc_type) const;
 
     template<typename T>
-    const DB::PropertiesDatabase &const_db_props() const;
+    const DB::PropertiesDatabase &const_db_props(std::string calc_type) const;
 
 
     DB::DatabaseHandler &db_handler() const;

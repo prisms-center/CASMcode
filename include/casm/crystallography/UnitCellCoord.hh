@@ -14,6 +14,7 @@ namespace CASM {
   class Site;
   class Structure;
   class SymOp;
+  class Lattice;
 
   /** \ingroup Coordinate
    *  @{
@@ -44,23 +45,31 @@ namespace CASM {
     }
   };
 
-  template<typename Derived>
-  struct Translatable {
+  /// \brief CRTP class to implement '-=', '+', and '-' in terms of '+='
+  ///
+  /// Requires:
+  /// - MostDerived& MostDerived::operator+=(UnitCell frac)
+  ///
+  template<typename Base>
+  struct Translatable : public Base {
 
-    Derived operator+(UnitCell frac) {
-      Derived tmp {derived()};
+    typedef typename Base::MostDerived MostDerived;
+    using Base::derived;
+
+    MostDerived &operator-=(UnitCell frac) {
+      return derived() += -frac;
+    }
+
+    MostDerived operator+(UnitCell frac) {
+      MostDerived tmp {derived()};
       return tmp += frac;
     }
 
-    Derived operator-(UnitCell frac) {
-      Derived tmp {derived()};
-      return tmp -= frac;
+    MostDerived operator-(UnitCell frac) {
+      MostDerived tmp {derived()};
+      return tmp += -frac;
     }
 
-  protected:
-    const Derived &derived() const {
-      return *static_cast<const Derived *>(this);
-    }
   };
 
   /* -- UnitCellCoord Declarations ------------------------------------- */
@@ -69,14 +78,14 @@ namespace CASM {
   ///
   /// - Represent a crystal site using UnitCell indices and sublattice index
   ///
-  class UnitCellCoord : public Comparisons<UnitCellCoord>, public Translatable<UnitCellCoord> {
+  class UnitCellCoord : public Comparisons<Translatable<CRTPBase<UnitCellCoord>>> {
 
   public:
 
     /// \brief SymBasisPermute rep should be obtainable from UnitType
     typedef Structure UnitType;
 
-    UnitCellCoord(const UnitType &unit);
+    explicit UnitCellCoord(const UnitType &unit);
 
     UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell);
 
@@ -99,6 +108,9 @@ namespace CASM {
 
     /// \brief Change unit structure, keeping indices constant
     void set_unit(const UnitType &_unit);
+
+    /// \brief Access the Lattice
+    const Lattice &lattice() const;
 
     /// \brief Get corresponding coordinate
     Coordinate coordinate() const;
@@ -123,8 +135,6 @@ namespace CASM {
 
     UnitCellCoord &operator+=(UnitCell frac);
 
-    UnitCellCoord &operator-=(UnitCell frac);
-
     bool operator<(const UnitCellCoord &B) const;
 
     UnitCellCoord &apply_sym(const SymOp &op);
@@ -136,9 +146,9 @@ namespace CASM {
   private:
 
     /// make _eq accessible
-    friend class Comparisons<UnitCellCoord>;
+    friend class Comparisons<Translatable<CRTPBase<UnitCellCoord>>>;
 
-    bool _eq(const UnitCellCoord &B) const;
+    bool eq_impl(const UnitCellCoord &B) const;
 
     const UnitType *m_unit;
     UnitCell m_unitcell;
@@ -233,11 +243,6 @@ namespace CASM {
     return *this;
   }
 
-  inline UnitCellCoord &UnitCellCoord::operator-=(UnitCell frac) {
-    m_unitcell -= frac;
-    return *this;
-  }
-
   /// \brief Compare UnitCellCoord
   inline bool UnitCellCoord::operator<(const UnitCellCoord &B) const {
     const auto &A = *this;
@@ -256,7 +261,7 @@ namespace CASM {
     return false;
   }
 
-  inline bool UnitCellCoord::_eq(const UnitCellCoord &B) const {
+  inline bool UnitCellCoord::eq_impl(const UnitCellCoord &B) const {
     const auto &A = *this;
     return A.unitcell()(0) == B.unitcell()(0) &&
            A.unitcell()(1) == B.unitcell()(1) &&

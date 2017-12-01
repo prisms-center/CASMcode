@@ -1,6 +1,8 @@
 #ifndef CASM_DB_ConfigData
 #define CASM_DB_ConfigData
 
+#include <boost/filesystem.hpp>
+#include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
@@ -146,7 +148,9 @@ namespace CASM {
 
       Database<Supercell> &db_supercell() const;
 
+      /// Uses primclex().settings().default_clex().calctype
       virtual PropertiesDatabase &db_props() const = 0;
+
 
       /// \brief Path to default calctype training_data directory for config
       fs::path calc_dir(const std::string configname) const;

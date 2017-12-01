@@ -159,13 +159,13 @@ namespace CASM {
     /// \brief Return SCEL path
     fs::path SCEL() const;
 
-    /// \brief Return supercell directory path (scelname has format SCELV_A_B_C_D_E_F)
+    /// \brief Return supercell directory path
     fs::path supercell_dir(std::string scelname) const;
 
-    /// \brief Return supercell LAT file path (scelname has format SCELV_A_B_C_D_E_F)
+    /// \brief Return supercell LAT file path
     fs::path LAT(std::string scelname) const;
 
-    /// \brief Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)
+    /// \brief Return configuration directory path
     fs::path configuration_dir(std::string configname) const;
 
     /// \brief Return path to POS file

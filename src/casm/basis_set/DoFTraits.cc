@@ -1,9 +1,11 @@
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/clex/ClexBasis.hh"
+#include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clex/ClexBasis.hh"
 
 namespace CASM {
   namespace DoF_impl {

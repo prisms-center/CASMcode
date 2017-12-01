@@ -3,15 +3,20 @@
 
 #include <vector>
 
-#include "casm/misc/cloneable_ptr.hh"
+#include <boost/iterator/transform_iterator.hpp>
+
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/container/multivector.hh"
-#include "casm/symmetry/SymCompare.hh"
+#include "casm/symmetry/OrbitDecl.hh"
+#include "casm/symmetry/SymOp.hh"
+#include "casm/database/Named.hh"
+#include "casm/clex/HasPrimClex.hh"
 
 namespace CASM {
+  class SymGroup;
 
-  /* -- Orbit Declarations ------------------------------------- */
+  // -- GenericOrbit -------------------------------------
 
   /// \brief An Orbit of Element
   ///
@@ -26,7 +31,7 @@ namespace CASM {
   /// \ingroup Clusterography
   ///
   template<typename _Element, typename _SymCompareType>
-  class Orbit : public Comparisons<Orbit<_Element, _SymCompareType> > {
+  class GenericOrbit : public Comparisons<CRTPBase<GenericOrbit<_Element, _SymCompareType>>> {
 
   public:
 
@@ -37,9 +42,9 @@ namespace CASM {
     typedef typename std::vector<SymOp>::const_iterator const_symop_iterator;
 
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
-    Orbit(Element generating_element,
-          const SymGroup &generating_group,
-          const SymCompareType &sym_compare);
+    GenericOrbit(Element generating_element,
+                 const SymGroup &generating_group,
+                 const SymCompareType &sym_compare);
 
 
     const_iterator begin() const {
@@ -124,10 +129,10 @@ namespace CASM {
     }
 
     /// \brief Apply symmetry to Orbit
-    Orbit &apply_sym(const SymOp &op);
+    GenericOrbit &apply_sym(const SymOp &op);
 
     /// \brief Compare orbits, using SymCompareType::inter_orbit_compare
-    bool operator<(const Orbit &B) const {
+    bool operator<(const GenericOrbit &B) const {
       return m_sym_compare.inter_orbit_compare(prototype(), B.prototype());
     }
 
@@ -152,9 +157,64 @@ namespace CASM {
   };
 
 
+  // -- DatabaseTypeOrbit -------------------------------------
+
+  /// \brief Specialize GenericOrbit for Orbit types that will be stored in a database
+  ///
+  template<typename _Element, typename _SymCompareType>
+  class DatabaseTypeOrbit :
+    public GenericOrbit<_Element, _SymCompareType>,
+    public HasPrimClex<DB::Indexed<CRTPBase<DatabaseTypeOrbit<_Element, _SymCompareType>>>> {
+  public:
+    typedef _Element Element;
+    typedef _SymCompareType SymCompareType;
+
+    /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
+    DatabaseTypeOrbit(Element generating_element,
+                      const SymGroup &generating_group,
+                      const SymCompareType &sym_compare,
+                      const PrimClex *_primclex);
+
+    void write_pos() const;
+
+    void write_pos(std::ostream &sout) const;
+
+    const PrimClex &primclex() const;
+
+  private:
+
+    friend DB::Named<CRTPBase<DatabaseTypeOrbit<_Element, _SymCompareType>>>;
+
+    std::string generate_name_impl() const;
+
+    void set_primclex(const PrimClex *_primclex);
+
+    const PrimClex *m_primclex;
+  };
+
+
+  // -- Orbit Helpers --------------------
+
   /// \brief Find orbit containing an element in a range of Orbit
   template<typename OrbitIterator, typename Element>
   OrbitIterator find_orbit(OrbitIterator begin, OrbitIterator end, Element e);
+
+  struct GetPrototype {
+
+    template<typename OrbitType>
+    typename OrbitType::Element const &operator()(const OrbitType &orbit) const {
+      return orbit.prototype();
+    }
+  };
+
+  template<typename OrbitIterator>
+  using PrototypeIterator = boost::transform_iterator<GetPrototype, OrbitIterator>;
+
+  /// Convert an Orbit iterator to a prototype iterator
+  template<typename OrbitIterator>
+  PrototypeIterator<OrbitIterator> prototype_iterator(OrbitIterator orbit_it) {
+    return boost::make_transform_iterator(orbit_it, GetPrototype());
+  }
 }
 
 #endif

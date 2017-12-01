@@ -11,6 +11,8 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
+#include "casm/casm_io/Log.hh"
+
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -18,8 +20,8 @@ namespace CASM {
 
   Structure::Structure(const fs::path &filepath) : BasicStructure<Site>() {
     if(!fs::exists(filepath)) {
-      std::cerr << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
-      std::cerr << "  File does not exist at: " << filepath << std::endl;
+      default_err_log() << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
+      default_err_log() << "  File does not exist at: " << filepath << std::endl;
       exit(1);
     }
     fs::ifstream infile(filepath);
@@ -79,19 +81,19 @@ namespace CASM {
   //***********************************************************
 
 
-  void Structure::generate_factor_group_slow(double map_tol) const {
+  void Structure::generate_factor_group_slow() const {
     m_factor_group.clear();
     m_factor_group.set_lattice(lattice());
-    BasicStructure<Site>::generate_factor_group_slow(m_factor_group, map_tol);
+    BasicStructure<Site>::generate_factor_group_slow(m_factor_group);
     return;
   }
 
   //************************************************************
-  void Structure::generate_factor_group(double map_tol) const {
+  void Structure::generate_factor_group() const {
     m_factor_group.clear();
     m_factor_group.set_lattice(lattice());
     //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &m_factor_group << "\n";
-    BasicStructure<Site>::generate_factor_group(m_factor_group, map_tol);
+    BasicStructure<Site>::generate_factor_group(m_factor_group);
     return;
   }
 
@@ -234,7 +236,7 @@ namespace CASM {
 
   //************************************************************
   void Structure::fg_converge(double large_tol) {
-    BasicStructure<Site>::fg_converge(m_factor_group, TOL, large_tol, (large_tol - TOL) / 10.0);
+    BasicStructure<Site>::fg_converge(m_factor_group, lattice().tol(), large_tol, (large_tol - lattice().tol()) / 10.0);
     return;
   }
 
@@ -265,7 +267,7 @@ namespace CASM {
    */
   //***********************************************************
 
-  void Structure::fill_supercell(const Structure &prim, double map_tol) {
+  void Structure::fill_supercell(const Structure &prim) {
     Index i, j;
 
     SymGroup latvec_pg;
@@ -292,7 +294,7 @@ namespace CASM {
 
         basis.back().within();
         for(Index k = 0; k < basis.size() - 1; k++) {
-          if(basis[k].compare(basis.back(), map_tol)) {
+          if(basis[k].compare(basis.back())) {
             basis.pop_back();
             break;
           }
@@ -316,7 +318,7 @@ namespace CASM {
     }
     if(m_factor_group.size() > 200) {// how big is too big? this is at least big enough for FCC conventional cell
 #ifndef NDEBUG
-      std::cerr << "WARNING: You have a very large factor group of a non-primitive structure. Certain symmetry features will be unavailable.\n";
+      default_err_log() << "WARNING: You have a very large factor group of a non-primitive structure. Certain symmetry features will be unavailable.\n";
 #endif
       m_factor_group.invalidate_multi_tables();
     }
@@ -337,7 +339,7 @@ namespace CASM {
    */
   //***********************************************************
 
-  Structure Structure::create_superstruc(const Lattice &scel_lat, double map_tol) const {
+  Structure Structure::create_superstruc(const Lattice &scel_lat) const {
     Structure tsuper(scel_lat);
     tsuper.fill_supercell(*this);
     return tsuper;
@@ -415,13 +417,13 @@ namespace CASM {
 
     //Check that (*this) is actually a supercell of the prim
     if(!lattice().is_supercell_of(prim.lattice(), prim.point_group())) {
-      std::cerr << "*******************************************\n"
-                << "ERROR in Structure::map_superstruc_to_prim:\n"
-                << "The structure \n";
-      std::cerr << jsonParser(*this) << std::endl;
-      std::cerr << "is not a supercell of the given prim!\n";
-      std::cerr << jsonParser(prim) << std::endl;
-      std::cerr << "*******************************************\n";
+      default_err_log() << "*******************************************\n"
+                        << "ERROR in Structure::map_superstruc_to_prim:\n"
+                        << "The structure \n";
+      default_err_log() << jsonParser(*this) << std::endl;
+      default_err_log() << "is not a supercell of the given prim!\n";
+      default_err_log() << jsonParser(prim) << std::endl;
+      default_err_log() << "*******************************************\n";
       exit(1);
     }
 
@@ -447,14 +449,14 @@ namespace CASM {
         prim_to_scel = find(shifted_site);
 
         if(prim_to_scel == basis.size()) {
-          std::cerr << "*******************************************\n"
-                    << "ERROR in Structure::map_superstruc_to_prim:\n"
-                    << "Cannot associate site \n"
-                    << shifted_site << "\n"
-                    << "with a site in the supercell basis. \n"
-                    << "*******************************************\n";
-          std::cerr << "The basis_ind is "
-                    << shifted_site.basis_ind() << "\n ";
+          default_err_log() << "*******************************************\n"
+                            << "ERROR in Structure::map_superstruc_to_prim:\n"
+                            << "Cannot associate site \n"
+                            << shifted_site << "\n"
+                            << "with a site in the supercell basis. \n"
+                            << "*******************************************\n";
+          default_err_log() << "The basis_ind is "
+                            << shifted_site.basis_ind() << "\n ";
           exit(2);
         }
 
@@ -563,8 +565,11 @@ namespace CASM {
   //***********************************************************
 
   void Structure::symmetrize(const double &tolerance) {
-    generate_factor_group(tolerance);
+    double orig_tol = lattice().tol();
+    m_lattice.set_tol(tolerance);
+    generate_factor_group();
     symmetrize(factor_group());
+    m_lattice.set_tol(orig_tol);
     return;
   }
 
@@ -626,8 +631,8 @@ namespace CASM {
   SymGroupRepID Structure::generate_basis_permutation_representation(bool verbose) const {
 
     if(factor_group().size() <= 0 || !basis.size()) {
-      std::cerr << "ERROR in BasicStructure::generate_basis_permutation_representation" << std::endl;
-      std::cerr << "You have NOT generated the factor group, or something is very wrong with your structure. I'm quitting!" << std::endl;;
+      default_err_log() << "ERROR in BasicStructure::generate_basis_permutation_representation" << std::endl;
+      default_err_log() << "You have NOT generated the factor group, or something is very wrong with your structure. I'm quitting!" << std::endl;;
       exit(1);
     }
 
@@ -641,12 +646,12 @@ namespace CASM {
           std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << ng << "/" << m_factor_group.size() << std::flush;
       }
 
-      basis_permute_group.set_rep(ng, SymBasisPermute(m_factor_group[ng], *this, TOL));
+      basis_permute_group.set_rep(ng, SymBasisPermute(m_factor_group[ng], *this, lattice().tol()));
     }
     // Adds the representation into the master sym group of this structure and returns the rep id
     basis_perm_rep_ID = m_factor_group.add_representation(basis_permute_group);
 
-    //std::cerr << "Added basis permutation rep id " << rep_id << '\n';
+    //default_err_log() << "Added basis permutation rep id " << rep_id << '\n';
 
     if(verbose) std::cout << '\r' << clr.c_str() << '\r' << std::flush;
     return basis_perm_rep_ID;
@@ -657,7 +662,7 @@ namespace CASM {
   //Sets the occupants in the basis sites to those specified by occ_index
   void Structure::set_occs(Array <int> occ_index) {
     if(occ_index.size() != basis.size()) {
-      std::cerr << "The size of the occ index and basis index do not match!\nEXITING\n";
+      default_err_log() << "The size of the occ index and basis index do not match!\nEXITING\n";
       exit(1);
     }
     for(Index i = 0; i < basis.size(); i++) {
