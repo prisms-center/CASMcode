@@ -608,7 +608,7 @@ def error_check(jobdir, stdoutfile, err_types):
     else:
         return err
 
-def error_check_neb(jobdir, stdout, err_types):
+def error_check_neb(jobdir, stdoutfile, err_types):
     """ Check vasp stdout for errors in a neb calculation"""
     image_folders = [str(i).zfill(2) for i in range(1, 100) if os.path.exists(os.path.join(jobdir, str(i).zfill(2)))][:-1]
     err = dict()
@@ -625,7 +625,7 @@ def error_check_neb(jobdir, stdout, err_types):
         possible = [err_objs[s] for s in err_types]
 
     # Error to check line by line, only look for first of each type
-    sout = open(os.path.join(jobdir, "01", stdout), 'r')
+    sout = open(stdoutfile, 'r')
     for line in sout:
         for p in possible:
             if not p.__class__.__name__ in err:
@@ -755,7 +755,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
         if time.time() - last_check > err_check_time:
             last_check = time.time()
             if is_neb:
-                err = error_check_neb(jobdir, stdout, err_types)
+                err = error_check_neb(jobdir, os.path.join(jobdir, stdout), err_types)
             else:
                 err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
             if err != None:
@@ -807,12 +807,12 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
         # Crash-type errors take priority over any other error that may show up
         if is_neb: #if its neb it checks for crashes in the first image
             err = crash_check(os.path.join(jobdir, "01"),
-                              os.path.join(jobdir, "01", stdout), err_types)
+                              os.path.join(jobdir, stdout), err_types)
         else:
             err = crash_check(jobdir, os.path.join(jobdir, stdout), err_types)
         if err is None:
             if is_neb:
-                err = error_check_neb(jobdir, stdout, err_types)
+                err = error_check_neb(jobdir, os.path.join(jobdir, stdout), err_types)
             else:
                 err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
     if err != None:
