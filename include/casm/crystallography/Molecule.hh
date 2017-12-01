@@ -21,20 +21,23 @@ namespace CASM {
   template<typename T> struct jsonConstructor;
 
   //****************************************************
-  ///\brief Lightweight container for atom properties.
+  ///\brief Lightweight container for intrinsic atom properties.
 
-  /// For now, it only contains the name, but in future other properties
+  /// For now, AtomSpecie only contains the name, but in future other properties
   /// may be needed (mass, atomic number, etc).
   // Additional fields should only be added if absolutely necessary!
   class AtomSpecie : public Comparisons<AtomSpecie> {
   public:
+    /// \brief Constructor
     AtomSpecie(std::string const &_name) :
       m_name(_name) {}
 
+    /// \brief Return name of species
     std::string const &name() const {
       return m_name;
     }
 
+    /// \brief Equality comparison for two AtomSpecies
     bool operator==(AtomSpecie const &RHS) const {
       return name() == RHS.name();
     }
@@ -50,13 +53,18 @@ namespace CASM {
   void from_json(AtomSpecie &_specie, jsonParser const &json);
 
   jsonParser &to_json(AtomSpecie const &_specie, jsonParser &json);
+
   //****************************************************
 
   /// \brief An atomic specie associated with a position in space
+  /// Also tracks selective dynamics flags for atom
   class AtomPosition {
   public:
+
+    /// Typedef for selective dynamics array
     typedef std::array<bool, 3> sd_type;
 
+    /// \brief Construct with x,y,z position coordinates and AtomSpecie
     AtomPosition(double _pos1,
                  double _pos2,
                  double _pos3,
@@ -66,6 +74,7 @@ namespace CASM {
       m_specie(_specie),
       m_sd_flag(_sd_flag) { }
 
+    /// \brief Construct with vector position and AtomSpecie
     AtomPosition(Eigen::Ref<const Eigen::Vector3d> const &_pos,
                  AtomSpecie const &_specie,
                  sd_type const &_sd_flag = sd_type{false, false, false}) :
@@ -73,34 +82,34 @@ namespace CASM {
       m_specie(_specie),
       m_sd_flag(_sd_flag) { }
 
-    /// Const access of specie name
+    /// \brief Const access of specie name
     std::string const &name() const {
       return m_specie.name();
     }
 
-    /// Const access of atomic specie
+    /// \brief Const access of atomic specie
     AtomSpecie const &specie() const {
       return m_specie;
     }
 
-    /// Const access of Cartesian position of atom
+    /// \brief Const access of Cartesian position of atom
     Eigen::Vector3d const &cart() const {
       return m_position;
     }
 
-    /// Const access of selective dynamics flags
+    /// \brief Const access of selective dynamics flags
     sd_type const &sd_flag() const {
       return m_sd_flag;
     }
 
-    bool identical(AtomPosition const &RHS, double _tol) const;
-
+    /// \brief Print AtomPosition after applying affine transformation cart2frac*cart()+trans
     void print(std::ostream &stream,
                Eigen::Ref<const Eigen::Vector3d> const &trans,
                Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
                int spaces,
                bool print_sd_flags = false) const;
 
+    /// \brief Apply symmetry (translation is ignored)
     AtomPosition &apply_sym(const SymOp &op);
 
   private:
@@ -114,9 +123,14 @@ namespace CASM {
     sd_type m_sd_flag;
   };
 
-  jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Matrix3d const &c2f_mat);
+  /// \brief Comparison with tolerance (max allowed distance between LHS and RHS, in Angstr.)
+  bool identical(AtomPosition const &LHS, AtomPosition const &RHS, double _tol);
 
-  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+  /// \brief Print AtomPosition to json after applying affine transformation cart2frac*cart()+trans
+  jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &cart2frac);
+
+  /// \brief Read AtomPosition from json and then apply affine transformation cart2frac*cart()+trans
+  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &frac2cart);
 
   template<>
   struct jsonConstructor<AtomPosition> {

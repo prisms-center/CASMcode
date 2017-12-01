@@ -1,8 +1,6 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
 
-#include "casm/basis_set/DoF.hh"
-#include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/DoF.hh"

@@ -42,6 +42,29 @@ namespace CASM {
         return std::unique_ptr<Base>(_clone());
       }
 
+      /// \brief Obtain const reference to abstract ClexParamPack object
+      ClexParamPack const &param_pack() const;
+
+      /// \brief Obtain reference to abstract ClexParamPack object
+      ClexParamPack &param_pack();
+
+      /// \brief Obtain ClexParamKey for a particular parameter
+      ClexParamKey param_key(std::string const &_param_name)const;
+
+      /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom double -> double function set
+      void set_evaluation(ClexParamKey const _param_key, std::vector<PFunction<std::vector<double>, double> > const   &_basis_set);
+
+      /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom int -> double function set
+      void set_evaluation(ClexParamKey const _param_key, std::vector<PFunction<std::vector<int>, double> > const &_basis_set);
+
+      /// \brief Alter evaluation of parameters specified by @param _param_key, using the string  @param _eval_type,
+      // which can be at least either "READ" (i.e., read from ClexParamPack) or "DEFAULT" (i.e., the Clexulator's default implementation)
+      void set_evaluation(ClexParamKey const _param_key, std::string _eval_type);
+
+      /// \brief Check evaluation mode of parameters specified by @param _param_key, which can be one of (at least)
+      /// "READ" (i.e., read from ClexParamPack), "CUSTOM", or "DEFAULT" (i.e., the Clexulator's default implementation)
+      std::string check_evaluation(ClexParamKey const _param_key) const;
+
       /// \brief The UnitCellCoord involved in calculating the basis functions,
       /// relative origin UnitCell
       const std::set<UnitCellCoord> &neighborhood() const {
