@@ -24,7 +24,7 @@ if 'BASH_COMPLETION_DIR' in env:
   # Construct 'casm-complete' executable
 
   # link flags
-  linkflags = ""
+  linkflags = env['LDFLAGS']
   if env['PLATFORM'] == 'darwin':
     linkflags = ['-rpath', '@loader_path/../lib']
   else:

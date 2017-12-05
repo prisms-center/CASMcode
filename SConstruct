@@ -64,7 +64,8 @@ Help("""
       
       Use 'cxx=X' to set the C++ compiler. Default is chosen by scons.
           'ccflags=X' to set C compiler flags. Default is '-Wno-unused-parameter'.
-          'cxxflags=X' to set compiler flags. Default is '-Wno-deprecated-register -Wno-deprecated-declarations'
+          'cxxflags=X' to set compiler flags. Default is '-Wno-deprecated-register -Wno-deprecated-declarations'.
+          'ldflags=X' to set linker flags. Default is empty.
           'opt=X' to set optimization level, '-OX'. Default is 3.
           'debug=X' with X=0 to use '-DNDEBUG', 
              or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
@@ -275,6 +276,12 @@ def compile_flags():
   
   return (ccflags, cxxflags)
 
+def ldflags():
+  if 'ldflags' in ARGUMENTS:
+    return ARGUMENTS.get('ldflags').split()
+  else:
+    return []
+
 def set_bash_completion_dir(env):
   if 'CASM_BASH_COMPLETION_DIR' in os.environ:
     result = os.environ['CASM_BASH_COMPLETION_DIR']
@@ -320,7 +327,8 @@ env.Replace(CXX=cxx())
 
 # C and C++ flags
 ccflags, cxxflags = compile_flags()
-env.Replace(CCFLAGS=ccflags, CXXFLAGS=cxxflags)
+ldflags = ldflags()
+env.Replace(CCFLAGS=ccflags, CXXFLAGS=cxxflags, LDFLAGS=ldflags())
 
 # where the shared libraries should be built
 env.Append(LIBDIR = join(os.getcwd(), 'lib'))
@@ -425,7 +433,7 @@ build_lib_paths = [env['LIBDIR'], env['BOOST_LIBDIR']]
 Export('build_lib_paths')
 
 # link flags
-linkflags = ""
+linkflags = ldflags()
 if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libcasm.dylib']
 
