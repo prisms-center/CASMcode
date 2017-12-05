@@ -4,10 +4,23 @@
 
 namespace CASM {
 
+  namespace {
+    jsonParser &_self(jsonParser &_input, fs::path _path) {
+      if(_path.empty()) {
+        return _input;
+      }
+      auto it = _input.find_at(_path);
+      if(it == _input.end()) {
+        return _input;
+      }
+      return *it;
+    }
+  }
+
   KwargsParser::KwargsParser(jsonParser &_input, fs::path _path, bool _required) :
     input(_input),
     path(_path),
-    self_it(parent().find(name())),
+    self(_self(_input, _path)),
     required(_required) {}
 
   void KwargsParser::print_warnings(Log &log, std::string header) const {
@@ -43,7 +56,7 @@ namespace CASM {
     return !error.size();
   }
 
-  void KwargsParser::report() {
+  jsonParser &KwargsParser::report() {
     if(warning.size()) {
       parent()[name() + ".WARNING"] = warning;
       parent()[name() + ".WARNING"].set_force_column();
@@ -52,6 +65,7 @@ namespace CASM {
       parent()[name() + ".ERROR"] = error;
       parent()[name() + ".ERROR"].set_force_column();
     }
+    return input;
   }
 
   jsonParser &KwargsParser::parent() {
@@ -76,9 +90,13 @@ namespace CASM {
     return path.filename().string();
   }
 
+  bool KwargsParser::exists() const {
+    return input.find_at(path) != input.end();
+  }
 
-  InputParser::InputParser(const jsonParser &_input):
-    input(_input) {}
+
+  InputParser::InputParser(jsonParser &_input, fs::path _path, bool _required):
+    KwargsParser(_input, _path, _required) {}
 
   /// \brief Return true if all parsers in kwargs are valid
   bool InputParser::valid() const {
@@ -118,5 +136,23 @@ namespace CASM {
     log.custom(header);
     std::for_each(kwargs.begin(), kwargs.end(), lambda);
     log << std::endl;
+  }
+
+  std::set<std::string> InputParser::all_warning() const {
+    std::set<std::string> res = this->warning;
+    for(const auto &val : kwargs) {
+      const auto &parser = *val.second;
+      res.insert(parser.warning.begin(), parser.warning.end());
+    }
+    return res;
+  }
+
+  std::set<std::string> InputParser::all_error() const {
+    std::set<std::string> res = this->error;
+    for(const auto &val : kwargs) {
+      const auto &parser = *val.second;
+      res.insert(parser.error.begin(), parser.error.end());
+    }
+    return res;
   }
 }

@@ -21,9 +21,9 @@ namespace CASM {
   /// require option self_it->find(option) of type RequiredType
   template<typename RequiredType, typename...Args>
   std::unique_ptr<RequiredType> KwargsParser::require_at(fs::path option, Args &&...args) {
-    auto it = self_it->find_at(option);
+    auto it = self.find_at(option);
     std::unique_ptr<RequiredType> res;
-    if(it == self_it->end()) {
+    if(it == self.end()) {
       error.insert(std::string("Error: missing required option '") + option.string() + "'.");
       return res;
     }

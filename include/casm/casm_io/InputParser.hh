@@ -17,11 +17,18 @@ namespace CASM {
   /// Base struct for creating individual input parsers
   struct KwargsParser {
 
+    // top-level
     jsonParser &input;
+
+    // path to self from input
     fs::path path;
 
-    /// result of 'parent().find(name())'; compare with parent().end()
-    jsonParser::const_iterator self_it;
+    // component to be parsed
+    // if path.empty(), or path not found in input, self = input;
+    // else: self = *input.find_at(path)
+    jsonParser &self;
+
+    // if required to exist
     bool required;
 
     std::set<std::string> warning;
@@ -29,9 +36,11 @@ namespace CASM {
 
     KwargsParser(jsonParser &_input, fs::path _path, bool _required);
 
-    void print_warnings(Log &log, std::string header = "Warnings") const;
+    virtual ~KwargsParser() {}
 
-    void print_errors(Log &log, std::string header = "Errors") const;
+    virtual void print_warnings(Log &log, std::string header = "Warnings") const;
+
+    virtual void print_errors(Log &log, std::string header = "Errors") const;
 
     /// equivalent to require_at fs::path(it.name()) / option
     template<typename RequiredType, typename...Args>
@@ -48,9 +57,9 @@ namespace CASM {
     /// add warning if setting in JSON object is unnecessary or unrecognized
     bool warn_unnecessary(const jsonParser &obj, fs::path path, const std::set<std::string> &expected);
 
-    bool valid() const;
+    virtual bool valid() const;
 
-    void report();
+    virtual jsonParser &report();
 
     jsonParser &parent();
 
@@ -60,28 +69,45 @@ namespace CASM {
 
     std::string name() const;
 
+    bool exists() const;
+
   };
 
   /// Base struct for creating input parsers that include multiple KwargsParser
-  struct InputParser {
+  struct InputParser : public KwargsParser {
 
-    jsonParser input;
-
-    typedef std::map<fs::path, std::unique_ptr<KwargsParser>> map_type;
+    typedef std::map<fs::path, std::shared_ptr<KwargsParser>> map_type;
     map_type kwargs;
     typedef map_type::value_type PairType;
 
-    InputParser(const jsonParser &_input);
+    InputParser(jsonParser &_input, fs::path _path, bool _required);
 
     /// \brief Return true if all parsers in kwargs are valid
-    bool valid() const;
+    bool valid() const override;
 
     /// \brief Modifies this->input to include error and warning messages from all parsers in kwargs
-    jsonParser &report();
+    jsonParser &report() override;
 
-    void print_warnings(Log &log, std::string header = "Warnings") const;
+    void print_warnings(Log &log, std::string header = "Warnings") const override;
 
-    void print_errors(Log &log, std::string header = "Errors") const;
+    void print_errors(Log &log, std::string header = "Errors") const override;
+
+    std::set<std::string> all_warning() const;
+
+    std::set<std::string> all_error() const;
+  };
+
+  /// \brief Return path `base / val`, ensuring result is a relative path
+  struct Relpath {
+
+    fs::path base;
+
+    Relpath(const fs::path &_base) :
+      base(_base) {}
+
+    fs::path operator()(const fs::path &val) const {
+      return base.empty() ? val : base / val;
+    };
   };
 }
 
