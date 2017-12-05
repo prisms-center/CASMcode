@@ -2,6 +2,19 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/kinetics/DiffTransConfigMapping.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/import.hh"
+#include "casm/app/update.hh"
+#include "casm/app/rm.hh"
+#include "casm/database/DiffTransConfigDatabase.hh"
+#include "casm/database/PropertiesDatabase.hh"
+#include "casm/database/Selection_impl.hh"
+#include "casm/database/Import_impl.hh"
+#include "casm/database/Update_impl.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/basis_set/DoF.hh"
+
 
 namespace CASM {
   namespace DB {
@@ -71,16 +84,55 @@ namespace CASM {
       DatabaseIterator<Kinetics::DiffTransConfiguration> hint,
       map_result_inserter result) const {
       //todo
-      /*      fs::path prop_path = this->calc_properties(p);
+      fs::path prop_path = this->calc_properties_path(p);
 
-            ConfigIO::Result res;
-            res.pos = (prop_path.empty() ? p : prop_path);
+      ConfigIO::Result res;
+      res.pos = (prop_path.empty() ? p : prop_path);
 
-            std::unique_ptr<Kinetics::DiffTransConfiguration> hint_config;
-            if(hint != db_difftransconfig().end()) {
-              hint_config = notstd::make_unique<DiffTransConfiguration>(*hint);
-              res.mapped_props.from = hint_config->name();
-            }*/
+      std::unique_ptr<Kinetics::DiffTransConfiguration> hint_config;
+      if(hint != db_config().end()) {
+        hint_config = notstd::make_unique<Kinetics::DiffTransConfiguration>(*hint);
+        res.mapped_props.from = hint_config->name();
+      }
+
+      // do mapping
+      DiffTransConfigMapperResult map_result;
+      map_result = m_difftransconfigmapper->import_structure_occupation(res.pos, hint_config.get());
+
+      if(!map_result.success) {
+        res.fail_msg = map_result.fail_msg;
+        *result++ = res;
+        return result;
+      }
+      // if the result was a success, need to populate proper fields in
+      // map_result.relaxation_properties["best_mapping"]
+      if(res.pos.extension() == ".json" || res.pos.extension() == ".JSON") {
+        jsonParser json(res.pos);
+        if(json.contains("kra")) {
+          map_result.kra = json["kra"].get<double>();
+        }
+        //Maybe move kra calculation from DiffTransConfigMapping to here
+      }
+      // insert in database (note that this also/only inserts primitive)
+      Kinetics::DiffTransConfigInsertResult insert_result = map_result.config->insert();
+
+      res.is_new_config = insert_result.insert_canonical;
+
+      res.mapped_props.to = insert_result.canonical_it.name();
+
+      // copy relaxation properties from best config mapping into 'mapped' props
+      res.mapped_props.mapped[insert_result.canonical_it.name()] = map_result.relaxation_properties;
+      //These two aren't really being used yet
+      res.mapped_props.mapped["best_assignment"] = map_result.best_assignment;
+      res.mapped_props.mapped["cart_op"] = map_result.cart_op;
+
+      res.mapped_props.mapped["kra"] = map_result.kra;
+
+
+
+
+      *result++ = res;
+
       return result;
     }
 
@@ -101,7 +153,7 @@ namespace CASM {
 
       "Import DiffTransConfiguration: \n\n"
 
-      "  'casm import' of DiffTransConfiguration proceeds in two steps: \n\n"
+      "  'casm import' of DiffTransDiffTransConfiguration proceeds in two steps: \n\n"
 
       "  1) For each set of files: \n"
       "     - Read structures from VASP POSCAR type files or CASM properties.calc.json \n"
@@ -134,6 +186,70 @@ namespace CASM {
       const jsonParser &kwargs,
       const Completer::ImportOption &import_opt) {
       //todo
+      // -- collect input settings --
+
+      const po::variables_map &vm = import_opt.vm();
+      jsonParser used;
+      jsonParser _default;
+
+
+      // get input report_dir, check if exists, and create new report_dir.i if necessary
+      fs::path report_dir = primclex.dir().root_dir() / "import_report";
+      report_dir = create_report_dir(report_dir);
+
+      // 'mapping' subsettings are used to construct ConfigMapper, and also returns
+      // the 'used' settings
+      jsonParser map_json;
+      kwargs.get_else(map_json, "mapping", jsonParser());
+      StructureMap<Kinetics::DiffTransConfiguration> mapper(primclex, map_json);
+      used["mapping"] = mapper.used();
+
+      // 'data' subsettings
+      jsonParser data;
+      kwargs.get_if(data, "data");
+
+      bool import_data;
+      if(vm.count("data")) {
+        import_data = true;
+      }
+      else {
+        data.get_else(import_data, "import", false);
+      }
+      used["data"]["import"] = import_data;
+
+      bool copy_additional_files;
+      data.get_else(copy_additional_files, "copy_additional_files", false);
+      used["data"]["copy_additional_files"] = copy_additional_files;
+
+      bool overwrite;
+      data.get_else(overwrite, "overwrite", false);
+      used["data"]["overwrite"] = overwrite;
+
+      // -- print used settings --
+      Log &log = primclex.log();
+      log.read("Settings");
+      log << used << std::endl << std::endl;
+
+      // -- construct Import --
+      Import<Kinetics::DiffTransConfiguration> f(
+        primclex,
+        mapper,
+        import_data,
+        copy_additional_files,
+        overwrite,
+        report_dir,
+        primclex.log());
+
+      // -- read structure file paths --
+      std::set<fs::path> pos;
+      auto res = construct_pos_paths(primclex, import_opt, std::inserter(pos, pos.end()));
+      if(res.second) {
+        return res.second;
+      }
+
+      // -- read structure file paths --
+      f.import(pos.begin(), pos.end());
+
       return 0;
     }
 
@@ -185,7 +301,53 @@ namespace CASM {
       "       'casm update --set-conflict-score configname -i <JSON>'\n"
       "       'casm update --set-conflict-score configname -s <JSON filename>'\n\n";
 
-    int Update<Kinetics::DiffTransConfiguration>::run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt) {
+    int Update<Kinetics::DiffTransConfiguration>::run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &update_opt) {
+      // -- collect input settings --
+
+      const po::variables_map &vm = update_opt.vm();
+      jsonParser used;
+
+      bool force;
+      if(vm.count("force")) {
+        force = true;
+      }
+      else {
+        kwargs.get_else(force, "force", false);
+      }
+      used["force"] = force;
+
+      // get input report_dir, check if exists, and create new report_dir.i if necessary
+      fs::path report_dir = primclex.dir().root_dir() / "update_report";
+      report_dir = create_report_dir(report_dir);
+
+      // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values
+      // still need to figure out how to specify this in general
+      jsonParser map_json;
+      kwargs.get_else(map_json, "mapping", jsonParser());
+      StructureMap<Kinetics::DiffTransConfiguration> mapper(primclex, map_json);
+      used["mapping"] = mapper.used();
+
+      // 'data' subsettings
+      bool import_data = true;
+      bool import_additional_files = false;
+      bool overwrite = false;
+
+      // -- print used settings --
+      Log &log = primclex.log();
+      log.read("Settings");
+      log << used << std::endl << std::endl;
+
+      // -- construct Update --
+      Update<Kinetics::DiffTransConfiguration> f(
+        primclex,
+        mapper,
+        report_dir);
+
+      // -- read selection --
+      DB::Selection<Kinetics::DiffTransConfiguration> sel(primclex, update_opt.selection_path());
+
+      // -- update --
+      f.update(sel, force);
       return 0;
     }
 
@@ -206,84 +368,6 @@ namespace CASM {
       return dict.parse(col);
     }
 
-    /*
-    int Import<DiffTransConfiguration>::import(
-      PrimClex &primclex,
-      const jsonParser &kwargs,
-      const Completer::ImportOption &import_opt) {
-
-    }
-
-    const std::string Import<DiffTransConfiguration>::update_desc = "ToDo";
-
-    int Import<DiffTransConfiguration>::update(
-      PrimClex &primclex,
-      const jsonParser &kwargs,
-      const Completer::UpdateOption &update_opt) {
-
-    }
-
-    const std::string Import<DiffTransConfiguration>::remove_desc = "ToDo";
-
-    int Import<DiffTransConfiguration>::remove(
-      PrimClex &primclex,
-      const jsonParser &kwargs,
-      const Completer::RemoveOption &remove_opt) {
-
-    }
-
-    /// \brief Specialized import method for ConfigType
-    ///
-    /// \param p Path to structure or properties.calc.json file. Not guaranteed to exist or be valid.
-    /// \param hint Iterator to 'from' config for 'casm update', or 'end' if unknown as with 'casm import'.
-    /// \param result Insert iterator of Result objects to output mapping results
-    ///
-    /// - Should output one or more mapping results from the structure located at specied path
-    /// - >1 result handles case of non-primitive configurations
-    /// - responsible for filling in Result data structure
-    /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
-    import_inserter Import<DiffTransConfiguration>::_import(
-      fs::path p,
-      DataBaseIterator<DiffTransConfiguration> hint,
-      import_inserter result) override {
-
-      // todo
-
-      return import_inserter;
-    }
-
-    /// Allow ConfigType to specialize the report formatting for 'import'
-    DataFormatter<Result> _import_formatter(
-      const std::map<std::string, ImportData>& data_results) const {
-
-      // todo
-
-      DataFormatterDictionary<Result> dict;
-      _default_formatters(dict, data_results);
-
-      std::vector<std::string> col = {
-        "configname", "selected", "pos", "has_data", "has_complete_data",
-        "import_data", "import_additional_files", "score", "best_score"};
-
-      return m_dict.parse(col);
-    }
-
-    // Allow ConfigType to specialize the report formatting for 'update'
-    DataFormatter<Result> Import<DiffTransConfiguration>::_update_formatter(
-      const std::map<std::string, ImportData>& data_results) const {
-
-      // todo
-
-      DataFormatterDictionary<Result> dict;
-      _default_formatters(dict, data_results);
-
-      std::vector<std::string> col = {
-        "configname", "selected", "to_configname", "has_data", "has_complete_data",
-        "score", "best_score"};
-
-      return m_dict.parse(col);
-    }
-    */
 
   }
 }

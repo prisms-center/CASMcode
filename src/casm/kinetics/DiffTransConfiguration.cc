@@ -309,6 +309,12 @@ namespace CASM {
       return cache()["to_config_from_canonical"].get<PermuteIterator>(supercell());
     }
 
+
+    DiffTransConfigInsertResult DiffTransConfiguration::insert() const {
+      DiffTransConfigInsertResult res;
+      std::tie(res.canonical_it, res.insert_canonical) = primclex().db<DiffTransConfiguration>().insert(canonical_form());
+    }
+
     void DiffTransConfiguration::write_pos() const {
       const auto &dir = primclex().dir();
       try {

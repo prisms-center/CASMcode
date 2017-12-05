@@ -16,6 +16,8 @@ namespace CASM {
 
   namespace Kinetics {
 
+    struct DiffTransConfigInsertResult;
+
     class DiffTransConfiguration :
       public ConfigCanonicalForm<HasSupercell<Comparisons<Calculable<CRTPBase<DiffTransConfiguration>>>>> {
 
@@ -117,6 +119,8 @@ namespace CASM {
 
       static bool has_valid_from_occ(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
 
+      DiffTransConfigInsertResult insert() const;
+
     private:
 
       friend Named<CRTPBase<DiffTransConfiguration>>;
@@ -138,6 +142,15 @@ namespace CASM {
 
       std::string m_orbit_name;
       std::string m_bg_configname;
+    };
+
+    struct DiffTransConfigInsertResult {
+
+      typedef DB::DatabaseIterator<DiffTransConfiguration> iterator;
+
+      bool insert_canonical;
+
+      iterator canonical_it;
     };
 
     /// \brief prints this DiffTransConfiguration
