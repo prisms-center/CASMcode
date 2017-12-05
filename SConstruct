@@ -387,7 +387,8 @@ for x in boost_libs:
   env[x] = lib_name(env['BOOST_LIBDIR'], x)
 
 # make compiler errors and warnings in color
-env['ENV']['TERM'] = os.environ['TERM']
+if 'TERM' in os.environ:
+  env['ENV']['TERM'] = os.environ['TERM']
 
 # set testing environment (for running tests)
 env['ENV']['PATH'] = env['BINDIR'] + ":" + env['ENV']['PATH']
