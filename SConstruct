@@ -63,6 +63,9 @@ Help("""
       Additional options that override environment variables:
       
       Use 'cxx=X' to set the C++ compiler. Default is chosen by scons.
+          'ccflags=X' to set C compiler flags. Default is '-Wno-unused-parameter'.
+          'cxxflags=X' to set compiler flags. Default is '-Wno-deprecated-register -Wno-deprecated-declarations'.
+          'ldflags=X' to set linker flags. Default is empty.
           'opt=X' to set optimization level, '-OX'. Default is 3.
           'debug=X' with X=0 to use '-DNDEBUG', 
              or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
@@ -237,11 +240,14 @@ def boost_no_cxx11_scoped_enums():
 
 def compile_flags():
   # command-line variables (C and C++)
-  ccflags = []
-  cxxflags = []
-
-  #ccflags.append('-Wall')
-  ccflags.append('-Wno-unused-parameter')
+  if 'ccflags' in ARGUMENTS:
+    ccflags = ARGUMENTS.get('ccflags').split()
+  else:
+    ccflags = ['-Wno-unused-parameter']
+  if 'cxxflags' in ARGUMENTS:
+    cxxflags = ARGUMENTS.get('cxxflags').split()
+  else:
+    cxxflags = ['-Wno-deprecated-register', '-Wno-deprecated-declarations']
 
   _debug_level = debug_level()
   
@@ -260,8 +266,6 @@ def compile_flags():
   # C++ only
   #cxxflags = []
   cxxflags.append('--std=c++11')
-  cxxflags.append('-Wno-deprecated-register')
-  cxxflags.append('-Wno-deprecated-declarations')
   cxxflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
 
   if boost_no_cxx11_scoped_enums():
@@ -271,6 +275,12 @@ def compile_flags():
   ccflags.append('-DGZSTREAM_NAMESPACE=gz')
   
   return (ccflags, cxxflags)
+
+def ldflags():
+  if 'ldflags' in ARGUMENTS:
+    return ARGUMENTS.get('ldflags').split()
+  else:
+    return []
 
 def set_bash_completion_dir(env):
   if 'CASM_BASH_COMPLETION_DIR' in os.environ:
@@ -317,7 +327,7 @@ env.Replace(CXX=cxx())
 
 # C and C++ flags
 ccflags, cxxflags = compile_flags()
-env.Replace(CCFLAGS=ccflags, CXXFLAGS=cxxflags)
+env.Replace(CCFLAGS=ccflags, CXXFLAGS=cxxflags, LDFLAGS=ldflags())
 
 # where the shared libraries should be built
 env.Append(LIBDIR = join(os.getcwd(), 'lib'))
@@ -422,9 +432,9 @@ build_lib_paths = [env['LIBDIR'], env['BOOST_LIBDIR']]
 Export('build_lib_paths')
 
 # link flags
-linkflags = ""
+linkflags = ldflags()
 if env['PLATFORM'] == 'darwin':
-  linkflags = ['-install_name', '@rpath/libcasm.dylib']
+  linkflags += ['-install_name', '@rpath/libcasm.dylib']
 
 # use boost libraries
 libs = [

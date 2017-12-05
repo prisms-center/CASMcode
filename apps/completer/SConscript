@@ -24,11 +24,11 @@ if 'BASH_COMPLETION_DIR' in env:
   # Construct 'casm-complete' executable
 
   # link flags
-  linkflags = ""
+  linkflags = env['LDFLAGS']
   if env['PLATFORM'] == 'darwin':
-    linkflags = ['-rpath', '@loader_path/../lib']
+    linkflags += ['-rpath', '@loader_path/../lib']
   else:
-    linkflags = ['-Wl,--rpath=\\$$ORIGIN/../lib', '-z', 'origin']
+    linkflags += ['-Wl,--rpath=\\$$ORIGIN/../lib', '-z', 'origin']
 
   casm_complete = env.Program(os.path.join(env['BINDIR'], 'casm-complete'),
                      [complete_obj],

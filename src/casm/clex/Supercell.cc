@@ -618,14 +618,15 @@ namespace CASM {
   std::pair<Supercell::config_const_iterator, bool>
   Supercell::insert_canon_config(const Configuration &canon_config) {
     Index index;
-    bool inserted = false;
+    std::pair<Supercell::config_const_iterator, bool> res;
+    res.second = false;
     if(!contains_config(canon_config, index)) {
       _add_canon_config(canon_config);
       index = config_list.size() - 1;
-      inserted = true;
+      res.second = true;
     }
-    config_const_iterator it(&get_primclex(), get_id(), index);
-    return std::make_pair(it, inserted);
+    res.first = config_const_iterator(&get_primclex(), get_id(), index);
+    return res;
   }
 
   //*******************************************************************************
