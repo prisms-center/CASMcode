@@ -35,9 +35,9 @@ test_obj = [lenv.Object(x) for x in test_src]
 
 linkflags = env['LDFLAGS']
 if lenv['PLATFORM'] == 'darwin':
-  linkflags = ['-rpath', '@loader_path/../../../lib']
+  linkflags += ['-rpath', '@loader_path/../../../lib']
 else:
-  linkflags = ['-Wl,--rpath=\\$$ORIGIN/../../../lib', '-z', 'origin']
+  linkflags += ['-Wl,--rpath=\\$$ORIGIN/../../../lib', '-z', 'origin']
 
 
 ### The combined unit_test that runs all individual tests

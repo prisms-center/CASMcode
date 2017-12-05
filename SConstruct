@@ -327,7 +327,6 @@ env.Replace(CXX=cxx())
 
 # C and C++ flags
 ccflags, cxxflags = compile_flags()
-ldflags = ldflags()
 env.Replace(CCFLAGS=ccflags, CXXFLAGS=cxxflags, LDFLAGS=ldflags())
 
 # where the shared libraries should be built
@@ -435,7 +434,7 @@ Export('build_lib_paths')
 # link flags
 linkflags = ldflags()
 if env['PLATFORM'] == 'darwin':
-  linkflags = ['-install_name', '@rpath/libcasm.dylib']
+  linkflags += ['-install_name', '@rpath/libcasm.dylib']
 
 # use boost libraries
 libs = [
