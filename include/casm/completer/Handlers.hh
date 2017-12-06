@@ -154,6 +154,34 @@ namespace CASM {
      * specifying a coordinate mode, or asking for an output file.
      * Derived classes will hold all the required variables for po::options_description construction
      * that get passed by referenced and parsed from command line input.
+     *
+     * Shortcuts:
+     * \code
+     * - '-a': --all, --add-canonical
+     * - '-b': --batch
+     * - '-c': --selection, --selections, --config, --configs
+     * - '-d': --display, --details, --data
+     * - '-e': --exec
+     * - '-f': --force
+     * - '-h': --help
+     * - '-i': --input, --images
+     * - '-j': --json
+     * - '-k': --columns
+     * - '-l': --list
+     * - '-m': --method
+     * - '-n': --dry-run, --next
+     * - '-o': --output
+     * - '-p': --pos
+     * - '-r': --relaxed
+     * - '-s': --settings
+     * - '-t': --type
+     * - '-u': --update
+     * - '-v': --verbatim
+     * - '-w': --warning
+     * - '-z': --gzip
+     * - '-R': --relative
+     *
+     * \endcode
      */
 
     class OptionHandlerBase {

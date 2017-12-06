@@ -14,7 +14,7 @@ namespace CASM {
       add_help_suboption();
 
       m_desc.add_options()
-      ("dir,d", "CASM project directory structure summary")
+      ("dir", "CASM project directory structure summary")
       ("project_settings", "Description and location of 'project_settings' file")
       ("prim", "Description and location of 'prim.json' and 'PRIM' files")
       ("sym", "Description and location of 'lattice_point_group.json', 'factor_group.json' and 'crystal_point_group.json' files")
