@@ -217,7 +217,19 @@ namespace CASM {
     std::vector<BasicStructure<Site>> DiffTransConfigMapper::_get_structures(const fs::path &pos_path) const {
       std::map<Index, BasicStructure<Site>> bins;
       std::vector<BasicStructure<Site>> images;
-      if(fs::exists(pos_path / "properties.calc.json")) {
+      if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
+        jsonParser all_strucs;
+        to_json(pos_path, all_strucs);
+        int count = 0;
+        for(auto &img : all_strucs) {
+          std::cout << img << std::endl;
+          BasicStructure<Site> struc;
+          from_json(simple_json(struc, "relaxed_"), img);
+          bins.insert(std::make_pair(count, struc));
+          count++;
+        }
+      }
+      else if(fs::exists(pos_path / "properties.calc.json")) {
         jsonParser all_strucs;
         to_json(pos_path / "properties.calc.json", all_strucs);
         int count = 0;
