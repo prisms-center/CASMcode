@@ -38,7 +38,6 @@ namespace {
         primclex,
         jsonFile("tests/unit/kinetics/ZrO_bspecs_0.json"),
         2, 4) { // orbit_branches [2,4)
-      std::cout << "cluster orbit specs: \n" << specs << std::endl;
       BOOST_CHECK_EQUAL(orbits.size(), 74);
       BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
     }
@@ -320,7 +319,7 @@ BOOST_AUTO_TEST_CASE(ZrOTest_Components) {
   /// Make test project
   test::ZrOProj proj;
   proj.check_init();
-  Log &log = default_log();
+  Log &log = null_log();
   PrimClex primclex(proj.dir, null_log());
   BOOST_CHECK_EQUAL(true, true);
 

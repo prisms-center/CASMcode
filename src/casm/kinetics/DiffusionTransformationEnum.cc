@@ -64,15 +64,17 @@ namespace CASM {
       "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
       "    JSON item \"cspecs\" should be a cspecs style initialization of cluster number and sizes.\n"
       "    See below.          \n\n"
-      ""
+
       "  require: JSON array of strings (optional,default=[]) \n "
       "    Indicate required species to enforce that a given species must be a part of the diffusion \n"
       "    transformation. The JSON array \"require\" should be an array of species names.\n"
       "    i.e. \"require\": [\"Va\",\"O\"] \n\n"
+
       "  exclude: JSON array of strings (optional,default=[]) \n "
       "    Indicate excluded species to enforce that a given species must not be a part of the diffusion \n"
       "    transformation. The JSON array \"exclude\" should be an array of species names.\n"
       "    i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n"
+
       "  Example:\n"
       "  {\n"
       "   \"require\":[\"Va\"],\n"
@@ -179,17 +181,9 @@ namespace CASM {
                     &primclex);
 
       for(auto &diff_trans_orbit : diff_trans_orbits) {
-        auto speciemap = diff_trans_orbit.prototype().specie_count();
-        auto it = speciemap.begin();
-        for(; it != speciemap.end(); ++it) {
-          if(std::find(require.begin(), require.end(), it->first.name()) != require.end() && it->second == 0) {
-            break;
-          }
-          if(std::find(exclude.begin(), exclude.end(), it->first.name()) != exclude.end() && it->second != 0) {
-            break;
-          }
-        }
-        if(it == speciemap.end()) {
+        auto specie_count = diff_trans_orbit.prototype().specie_count();
+        if(includes_all(specie_count, require.begin(), require.end()) &&
+           excludes_all(specie_count, exclude.begin(), exclude.end())) {
           //insert current into database
           db.insert(diff_trans_orbit);
         }

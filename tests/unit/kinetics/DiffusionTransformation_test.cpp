@@ -13,6 +13,7 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/app/enum.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/casm_io/jsonFile.hh"
 
 using namespace CASM;
 using namespace test;
@@ -344,8 +345,7 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
     //}
   }
 
-  fs::path difftrans_path = "tests/unit/kinetics/ZrO_diff_trans_0.json";
-  jsonParser diff_trans_json {difftrans_path};
+  jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
@@ -368,6 +368,23 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
   vecprinter("mult", mult);
   */
 
+}
+
+BOOST_AUTO_TEST_CASE(EnumTest1) {
+
+  test::FCCTernaryProj proj;
+  proj.check_init();
+  proj.check_composition();
+
+  Logging logging = Logging::null();
+  PrimClex primclex(proj.dir, logging);
+
+  jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
+  Completer::EnumOption enum_opt;
+  enum_opt.desc();
+  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
+  BOOST_CHECK_EQUAL(success, 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

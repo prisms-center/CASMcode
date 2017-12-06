@@ -302,6 +302,12 @@ namespace CASM {
     void print(const Element &element, std::ostream &out);
   };
 
+  template<typename NameIterator>
+  bool includes_all(const std::map<AtomSpecie, Index> specie_count, NameIterator begin, NameIterator end);
+
+  template<typename NameIterator>
+  bool excludes_all(const std::map<AtomSpecie, Index> specie_count, NameIterator begin, NameIterator end);
+
 }
 
 #endif
