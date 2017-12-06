@@ -69,10 +69,31 @@ namespace test {
     TestPrimPeriodicIntegralClusterOrbits(primclex, _specs) {
 
     try {
+
+      auto begin = orbits.begin();
+      for(auto it = begin; it != orbits.end(); ++it) {
+        if(it->prototype().size() <= branch_begin) {
+          begin = it;
+          break;
+        }
+      }
+
+      auto end = orbits.end();
+      if(begin != end) {
+        auto it = begin;
+        ++it;
+        for(; it != orbits.end(); ++it) {
+          if(it->prototype().size() >= branch_end) {
+            end = it;
+            break;
+          }
+        }
+      }
+
       // Make PrimPeriodicDiffTransOrbit
       Kinetics::make_prim_periodic_diff_trans_orbits(
-        orbits.begin() + branch_begin,
-        orbits.begin() + branch_end,
+        begin,
+        end,
         primclex.crystallography_tol(),
         std::back_inserter(diff_trans_orbits),
         &primclex);
