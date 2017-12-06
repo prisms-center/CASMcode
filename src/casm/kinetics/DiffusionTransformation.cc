@@ -208,6 +208,7 @@ namespace CASM {
     }
 
     DiffusionTransformation &DiffusionTransformation::operator+=(UnitCell frac) {
+      m_cluster.reset();
       for(auto &t : m_occ_transform) {
         t += frac;
       }
@@ -328,7 +329,7 @@ namespace CASM {
     }
 
     std::vector<OccupationTransformation> &DiffusionTransformation::occ_transform() {
-      reset_invariants();
+      _reset();
       return m_occ_transform;
     }
 
@@ -337,7 +338,7 @@ namespace CASM {
     }
 
     std::vector<SpecieTrajectory> &DiffusionTransformation::specie_traj() {
-      reset_invariants();
+      _reset();
       return m_specie_traj;
     }
 
@@ -429,6 +430,7 @@ namespace CASM {
     }
 
     DiffusionTransformation &DiffusionTransformation::apply_sym(const SymOp &op) {
+      m_cluster.reset();
       for(auto &t : m_occ_transform) {
         t.apply_sym(op);
       }
