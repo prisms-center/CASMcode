@@ -7,6 +7,7 @@
 #include "casm/clusterography/CoordCluster.hh"
 
 namespace CASM {
+  class PrimClex;
 
   /** \defgroup Clusterography
 

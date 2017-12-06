@@ -148,6 +148,43 @@ namespace CASM {
     return obj + this->m_integral_tau;
   }
 
+
+  // -- WithinScelSymCompare<IntegralCluster> -------------------------------------
+
+  /// \brief Constructor
+  ///
+  /// \param tol Tolerance for invariants_compare of site-to-site distances
+  ///
+  template<typename Element>
+  WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  WithinScelSymCompare(const PrimGrid &prim_grid, double tol):
+    ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>>(tol),
+    m_prim_grid(&prim_grid) {}
+
+  /// \brief Constructor
+  ///
+  /// \param tol Tolerance for invariants_compare of site-to-site distances
+  ///
+  template<typename Element>
+  WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  WithinScelSymCompare(const Supercell &scel):
+    WithinScelSymCompare<Element>(scel.prim_grid(), scel.crystallography_tol()) {}
+
+  /// \brief Prepare an element for comparison
+  ///
+  /// - Puts all sites within the supercell, then sorts
+  template<typename Element>
+  Element WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  prepare_impl(Element obj) const {
+    if(!obj.size()) {
+      return obj;
+    }
+    for(Index i = 0; i < obj.size(); ++i) {
+      obj[i] = m_prim_grid->within(obj[i]);
+    }
+    obj.sort();
+    return obj;
+  }
 }
 
 #endif

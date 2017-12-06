@@ -25,6 +25,11 @@ namespace CASM {
   template<typename Element, typename U = void>
   class ScelPeriodicSymCompare;
 
+  /// \brief Template class to be specialized for comparisons with periodic symmetry
+  /// of the supercell lattice, for clusters that do not extend outside the supercell
+  template<typename Element, typename U = void>
+  class WithinScelSymCompare;
+
   template<typename _Element, typename _SymCompareType>
   class GenericOrbit;
 
@@ -74,6 +79,9 @@ namespace CASM {
 
   template<typename Element>
   using PrimPeriodicOrbit = Orbit<Element, PrimPeriodicSymCompare<Element>>;
+
+  template<typename Element>
+  using WithinScelOrbit = Orbit<Element, WithinScelSymCompare<Element>>;
 
 }
 

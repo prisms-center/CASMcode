@@ -136,6 +136,7 @@ namespace CASM {
   CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, LocalSymCompare<IntegralCluster>)
   CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, PrimPeriodicSymCompare<IntegralCluster>)
   CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, ScelPeriodicSymCompare<IntegralCluster>)
+  CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, WithinScelSymCompare<IntegralCluster>)
 
 #define PRIM_PERIODIC_CLUSTER_ORBITS_VECTOR_INST(ELEMENT,SYMCOMPARE) \
   PRIM_PERIODIC_CLUSTER_ORBITS_INST( \
@@ -150,5 +151,6 @@ namespace CASM {
 
   LOCAL_CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, LocalSymCompare<IntegralCluster>)
   LOCAL_CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, ScelPeriodicSymCompare<IntegralCluster>)
+  LOCAL_CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, WithinScelSymCompare<IntegralCluster>)
 
 }

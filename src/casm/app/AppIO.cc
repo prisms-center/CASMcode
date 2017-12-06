@@ -505,10 +505,12 @@ namespace CASM {
   ORBIT_VECTOR_INST(LocalIntegralClusterOrbit)
   ORBIT_VECTOR_INST(PrimPeriodicIntegralClusterOrbit)
   ORBIT_VECTOR_INST(ScelPeriodicIntegralClusterOrbit)
+  ORBIT_VECTOR_INST(WithinScelIntegralClusterOrbit)
 
   ORBIT_SET_INST(LocalIntegralClusterOrbit)
   ORBIT_SET_INST(PrimPeriodicIntegralClusterOrbit)
   ORBIT_SET_INST(ScelPeriodicIntegralClusterOrbit)
+  ORBIT_SET_INST(WithinScelIntegralClusterOrbit)
 
 
 #define DIFFTRANS_VECTOR_INST(ORBIT) \

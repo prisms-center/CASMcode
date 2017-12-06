@@ -41,6 +41,17 @@ namespace CASM {
     ClusterInvariants<IntegralCluster> const &) const;
   */
 
+  template class ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<IntegralCluster> > > >;
+  template class WithinScelSymCompare<IntegralCluster>;
+  /*
+  template bool ClusterSymCompare<WithinScelSymCompare<IntegralCluster> >::compare_impl(
+    IntegralCluster const &,
+    IntegralCluster const &) const;
+  template bool ClusterSymCompare<WithinScelSymCompare<IntegralCluster> >::invariants_compare_impl(
+    ClusterInvariants<IntegralCluster> const &,
+    ClusterInvariants<IntegralCluster> const &) const;
+  */
+
   /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
   std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust) {
     SitesPrinter printer {6, '\n', INTEGRAL};
