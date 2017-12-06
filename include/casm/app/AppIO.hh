@@ -209,7 +209,7 @@ namespace CASM {
       for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
         out << indent() << indent() << equiv_index << " of " << orbit.size()
             << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
-        print(orbit.prototype(), out);
+        print(orbit[equiv_index], out);
       }
     }
 
