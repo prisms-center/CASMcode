@@ -1,9 +1,10 @@
 #ifndef CASM_ClusterOrbits_impl
 #define CASM_ClusterOrbits_impl
 
+#include "casm/clusterography/ClusterOrbits.hh"
+
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/lexical_cast.hpp>
-#include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/container/Counter.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/TypeInfo.hh"
@@ -11,15 +12,15 @@
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/EnumIO.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/symmetry/Orbit.hh"
-#include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/symmetry/Orbit_impl.hh"
 #include "casm/symmetry/InvariantSubgroup.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clusterography/SubClusterGenerator.hh"
 #include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
+#include "casm/symmetry/OrbitGeneration_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
 
 namespace CASM {
 
