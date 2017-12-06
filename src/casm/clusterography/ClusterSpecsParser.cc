@@ -7,11 +7,12 @@ namespace CASM {
     max_branch(max_orbit_branch()) {}
 
   jsonParser::const_iterator OrbitBranchSpecsParser::branch(int branch_i) const {
-    if(self_it == parent().end()) {
+    auto it = self.find(branch_to_string(branch_i));
+    if(it == self.end()) {
       throw std::runtime_error(std::string("Error in OrbitBranchSpecsParser: ")
                                + "Attempted to access branch '" + branch_to_string(branch_i) + "'");
     }
-    return self_it->find(branch_to_string(branch_i));
+    return it;
   }
 
   int OrbitBranchSpecsParser::branch_to_int(jsonParser::const_iterator it) const {
@@ -34,7 +35,12 @@ namespace CASM {
   }
 
   /// warn for non-integer 'branch'
-  bool OrbitBranchSpecsParser::warn_non_integer_branch(jsonParser::const_iterator it) {
+  bool OrbitBranchSpecsParser::warn_non_integer_branch(
+    jsonParser::const_iterator it,
+    const std::set<std::string> &expected) {
+    if(expected.find(it.name()) != expected.end()) {
+      return true;
+    }
     if(!is_integer(it)) {
       warning.insert(std::string("Warning: Ignoring '")
                      + it.name() + "', is not an integer.");
@@ -70,13 +76,13 @@ namespace CASM {
   jsonParser::const_iterator OrbitBranchSpecsParser::previous(jsonParser::const_iterator it) {
     int branch = branch_to_int(it);
     int previous = branch - 1;
-    return self_it->find(branch_to_string(previous));
+    return self.find(branch_to_string(previous));
   }
 
   int OrbitBranchSpecsParser::max_orbit_branch() const {
     int res = 1; // always assume branch 1
-    if(self_it != parent().end()) {
-      for(auto it = self_it->begin(); it != self_it->end(); ++it) {
+    if(exists()) {
+      for(auto it = self.begin(); it != self.end(); ++it) {
         if(is_integer(it)) {
           int curr = branch_to_int(it);
           if(curr > res) {
@@ -97,13 +103,13 @@ namespace CASM {
     bool _required) :
     OrbitBranchSpecsParser(_input, _path, _required) {
 
-    if(self_it != parent().end()) {
-      if(!self_it->is_obj()) {
+    if(exists()) {
+      if(!self.is_obj()) {
         error.insert(std::string("Error: ") + name() + " is not a JSON object");
         return;
       }
 
-      for(auto it = self_it->begin(); it != self_it->end(); ++it) {
+      for(auto it = self.begin(); it != self.end(); ++it) {
         if(!warn_non_integer_branch(it)) {
           continue;
         }
@@ -128,7 +134,11 @@ namespace CASM {
       throw std::invalid_argument(std::string("Error: ")
                                   + "Requested max_length for invalid branch: " + branch_to_string(branch_i));
     }
-    return branch(branch_i)->find("max_length")->get<double>();
+    auto it = branch(branch_i)->find("max_length");
+    if(it == branch(branch_i)->end()) {
+      throw std::runtime_error(std::string("Error: ") + "'max_length' not given for branch: " + branch_to_string(branch_i));
+    }
+    return it->get<double>();
   }
 
 
@@ -145,16 +155,16 @@ namespace CASM {
     primclex(_primclex),
     custom_generators(_generating_grp, _sym_compare) {
 
-    if(self_it != parent().end()) {
+    if(exists()) {
 
-      if(!self_it->is_array()) {
+      if(!self.is_array()) {
         error.insert(std::string("Error: ") + name() + " is not a JSON array");
         return;
       }
 
       // for each custom orbit
-      for(Index i = 0; i < self_it->size(); ++i) {
-        const jsonParser &val = (*self_it)[i];
+      for(Index i = 0; i < self.size(); ++i) {
+        const jsonParser &val = self[i];
         warn_unnecessary(
           val,
           path / boost::lexical_cast<std::string>(i),
@@ -203,21 +213,18 @@ namespace CASM {
     const PrimClex &_primclex,
     const SymGroup &_generating_grp,
     const PrimPeriodicSymCompare<IntegralCluster> &_sym_compare,
-    const jsonParser &_input,
+    jsonParser &_input,
     fs::path _path,
     bool _required) :
-    InputParser(_input),
-    path(_path) {
+    InputParser(_input, _path, _required) {
 
-    auto _relpath = [&](const fs::path & val) {
-      return _path.empty() ? val : _path / val;
-    };
+    auto _relpath = Relpath(_path);
 
     this->kwargs["orbit_branch_specs"] =
-      notstd::make_unique<PrimPeriodicOrbitBranchSpecsParser>(
+      std::make_shared<PrimPeriodicOrbitBranchSpecsParser>(
         input, _relpath("orbit_branch_specs"), false);
     this->kwargs["orbit_specs"] =
-      notstd::make_unique<PrimPeriodicOrbitSpecsParser>(
+      std::make_shared<PrimPeriodicOrbitSpecsParser>(
         _primclex, _generating_grp, _sym_compare, input, _relpath("orbit_specs"), false);
   }
 
@@ -245,13 +252,64 @@ namespace CASM {
   // --- LocalOrbitBranchSpecsParser ---
 
   LocalOrbitBranchSpecsParser::LocalOrbitBranchSpecsParser(
-    jsonParser &_input, fs::path _path, bool _required) {
-    // ... todo ...
+    jsonParser &_input, fs::path _path, bool _required):
+    OrbitBranchSpecsParser(_input, _path, _required) {
+
+    if(exists()) {
+      if(!self.is_obj()) {
+        error.insert(std::string("Error: ") + name() + " is not a JSON object");
+        return;
+      }
+
+      for(auto it = self.begin(); it != self.end(); ++it) {
+        warn_non_integer_branch(it, {"max_length_including_phenomenal"});
+        if(!is_integer(it)) {
+          continue;
+        }
+        int branch = branch_to_int(it);
+        if(branch < 1) {
+          warn_unnecessary_branch(it);
+          continue;
+        }
+        if(max_length_including_phenomenal()) {
+          // branch 1+ requires cutoff_radius & max_length
+          if(branch > 0) {
+            require<double>(it, "max_length");
+            require<double>(it, "cutoff_radius");
+            warn_unnecessary(it, {"max_length", "cutoff_radius"});
+          }
+          if(branch > 1) {
+            require_nonincreasing<double>(it, "max_length");
+            require_nonincreasing<double>(it, "cutoff_radius");
+          }
+        }
+        else {
+          // branch 1+ requires cutoff_radius, 2+ requires max_length
+          if(branch == 1) {
+            require<double>(it, "cutoff_radius");
+            warn_unnecessary(it, {"cutoff_radius"});
+          }
+          else if(branch == 2) {
+            require<double>(it, "max_length");
+            require<double>(it, "cutoff_radius");
+            require_nonincreasing<double>(it, "cutoff_radius");
+            warn_unnecessary(it, {"max_length", "cutoff_radius"});
+          }
+          else if(branch > 2) {
+            require<double>(it, "max_length");
+            require<double>(it, "cutoff_radius");
+            require_nonincreasing<double>(it, "max_length");
+            require_nonincreasing<double>(it, "cutoff_radius");
+            warn_unnecessary(it, {"max_length", "cutoff_radius"});
+          }
+        }
+      }
+    }
   }
 
   bool LocalOrbitBranchSpecsParser::max_length_including_phenomenal() const {
     bool result;
-    self_it->get_else<bool>(result, "max_length_including_phenomenal", false);
+    self.get_else<bool>(result, "max_length_including_phenomenal", false);
     return result;
   }
 
@@ -260,7 +318,11 @@ namespace CASM {
       throw std::invalid_argument(std::string("Error: ")
                                   + "Requested max_length for invalid branch: " + branch_to_string(branch_i));
     }
-    return branch(branch_i)->find("max_length")->get<double>();
+    auto it = branch(branch_i)->find("max_length");
+    if(it == branch(branch_i)->end()) {
+      throw std::runtime_error(std::string("Error: ") + "'max_length' not given for branch: " + branch_to_string(branch_i));
+    }
+    return it->get<double>();
   }
 
   double LocalOrbitBranchSpecsParser::cutoff_radius(int branch_i) const {
@@ -268,7 +330,11 @@ namespace CASM {
       throw std::invalid_argument(std::string("Error: ")
                                   + "Requested cutoff_radius for invalid branch: " + branch_to_string(branch_i));
     }
-    return branch(branch_i)->find("cutoff_radius")->get<double>();
+    auto it = branch(branch_i)->find("cutoff_radius");
+    if(it == branch(branch_i)->end()) {
+      throw std::runtime_error(std::string("Error: ") + "'cutoff_radius' not given for branch: " + branch_to_string(branch_i));
+    }
+    return it->get<double>();
   }
 }
 

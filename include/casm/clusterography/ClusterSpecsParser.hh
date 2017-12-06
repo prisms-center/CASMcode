@@ -25,8 +25,8 @@ namespace CASM {
 
     bool is_integer(jsonParser::const_iterator it) const;
 
-    /// warn for non-integer 'branch'
-    bool warn_non_integer_branch(jsonParser::const_iterator it);
+    /// warn for unexpected non-integer 'branch'
+    bool warn_non_integer_branch(jsonParser::const_iterator it, const std::set<std::string> &expected = {});
 
     /// add warning if option is unnecessary
     bool warn_unnecessary(jsonParser::const_iterator it, const std::set<std::string> &expected);
@@ -54,6 +54,31 @@ namespace CASM {
   };
 
   /// Component used by ClusterSpecs parsers
+  ///
+  /// Notes:
+  /// - "coordinate_mode" (COORD_TYPE): (optional, default="Integral")
+  ///     Specifies how the cluster sites are represented. May be
+  ///     "Integral" (default), "Direct" or "Fractional", or "Cartesian"
+  /// - "prototype" or "sites" (2d array):
+  ///     Array of sites in the prototype cluster.
+  /// - "include_subclusters": (optional, default=true)
+  ///     Also include orbits of subclusters of the specified prototype cluster
+  /// Example:
+  /// \code
+  /// "orbit_specs": [
+  ///   {
+  ///     "coordinate_mode" : "Direct",
+  ///     "prototype" : [
+  ///       [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+  ///       [ 1.000000000000, 0.000000000000, 0.000000000000 ],
+  ///       [ 2.000000000000, 0.000000000000, 0.000000000000 ],
+  ///       [ 3.000000000000, 0.000000000000, 0.000000000000 ]],
+  ///     "include_subclusters" : true
+  ///   },
+  ///   ...
+  /// ]
+  /// \endcode
+  ///
   struct PrimPeriodicOrbitSpecsParser : KwargsParser {
 
     const PrimClex &primclex;
@@ -116,13 +141,12 @@ namespace CASM {
   struct PrimPeriodicClustersByMaxLength : InputParser {
 
     typedef PrimPeriodicOrbit<IntegralCluster> OrbitType;
-    fs::path path;
 
     PrimPeriodicClustersByMaxLength(
       const PrimClex &_primclex,
       const SymGroup &_generating_grp,
       const PrimPeriodicSymCompare<IntegralCluster> &_sym_compare,
-      const jsonParser &_input,
+      jsonParser &_input,
       fs::path _path,
       bool _required);
 
@@ -149,25 +173,27 @@ namespace CASM {
     double cutoff_radius(int branch_i) const;
   };
 
-  template<typename PhenomenalType>
-  struct LocalOrbitSpecsParser : OrbitBranchSpecsParser {
+  struct LocalOrbitSpecsParser : KwargsParser {
+
+    struct Data {
+      IntegralCluster cluster;
+      bool include_subclusters;
+    };
 
     const PrimClex &primclex;
-    typedef ScelPeriodicOrbit<IntegralCluster> OrbitType;
-    std::unique_ptr<OrbitGenerators<OrbitType>> custom_generators;
+    std::vector<Data> prototypes;
 
-    LocalOrbitSpecsParser(jsonParser &_input, fs::path _path, bool _required);
+    LocalOrbitSpecsParser(const PrimClex &_primclex, jsonParser &_input, fs::path _path, bool _required);
 
     /// For all custom clusters, insert 'op*prototype' into custom_generators
     ///
     /// \note Use ClusterEquivalenceParser to determine if custom clusters apply
     /// to a given cluster, and determine 'op'.
     ///
-    const OrbitGenerators<OrbitType> &
-    custom_generators(
+    template<typename OrbitType>
+    OrbitGenerators<OrbitType> &insert_custom_generators(
       const SymOp &op,
-      const SymGroup &generating_grp,
-      const OrbitType::SymCompareType &sym_compare) const;
+      OrbitGenerators<OrbitType> &custom_generators) const;
   };
 
   /// \brief Specify equivalence type for customizing input based on a particular phenomenal cluster
@@ -178,18 +204,19 @@ namespace CASM {
   ///   "coordinate_mode": "<>", // coordinate mode for 'sites'
   ///   "sites": [...], // phenomenal cluster (or whatever is expected for PhenomenalType)
   ///   "equivalence_type": "prim", // one of "prim" (default), "scel", "config"
-  ///   "scelname": "<scelname>", // required if equivalence_type is "scel"
-  ///   "configname": "<configname>" // required if equivalence_type is "config"
+  ///   "configname": "<configname>" // required if equivalence_type is "config" (must have appropriate Supercell for context)
   /// }
   ///
   /// - For equiv_type == EQUIVALENCE_TYPE::PRIM, use prim factor group
-  /// - For equiv_type == EQUIVALENCE_TYPE::SCEL, use factor group of Supercell named by 'scelname'
-  /// - For equiv_type == EQUIVALENCE_TYPE::CONFIG, use factor group of Configuration named by 'configname'
+  /// - For equiv_type == EQUIVALENCE_TYPE::SCEL, use factor group of relevant Supercell
+  /// - For equiv_type == EQUIVALENCE_TYPE::CONFIG, use factor group of Configuration named
+  ///   by 'configname' (must have same Supercell as given to constructor)
   ///
   template<typename PhenomenalType>
   struct ClusterEquivalenceParser : KwargsParser {
 
     const PrimClex &primclex;
+    const Supercell &scel;
     std::unique_ptr<PhenomenalType> phenom;
     EQUIVALENCE_TYPE equiv_type;
 
@@ -197,23 +224,24 @@ namespace CASM {
     std::unique_ptr<PrimPeriodicSymCompare<PhenomenalType>> prim_sym_compare;
 
     // for EQUIVALENCE_TYPE::SCEL
-    const Supercell *scel;
     std::unique_ptr<ScelPeriodicSymCompare<PhenomenalType>> scel_sym_compare;
 
     // for EQUIVALENCE_TYPE::CONFIG
+    std::string configname;
     std::unique_ptr<ScelPeriodicSymCompare<PhenomenalType>> config_sym_compare;
     std::vector<PermuteIterator> config_fg;
 
 
-    ClusterEquivalenceParser(const PrimClex &_primclex, jsonParser &_input, fs::path _path, bool _required);
+    ClusterEquivalenceParser(const Supercell &_scel, jsonParser &_input, fs::path _path, bool _required);
 
     /// \brief Check if test is equivalent to phenom
     ///
     /// \returns (phenom.apply_sym(op) is_equivalent to test, op)
     ///
     /// For equiv_type == EQUIVALENCE_TYPE::PRIM, use prim factor group
-    /// For equiv_type == EQUIVALENCE_TYPE::SCEL, use factor group of Supercell named by 'scelname'
-    /// For equiv_type == EQUIVALENCE_TYPE::CONFIG, use factor group of Configuration named by 'configname'
+    /// For equiv_type == EQUIVALENCE_TYPE::SCEL, use factor group of Supercell
+    /// For equiv_type == EQUIVALENCE_TYPE::CONFIG, use factor group of Configuration named
+    ///   by 'configname' (must have same Supercell as given to constructor)
     ///
     std::pair<bool, SymOp> is_equivalent(const PhenomenalType &test) const;
 
@@ -246,8 +274,28 @@ namespace CASM {
       PermuteIteratorIt end) const;
   };
 
+  template<typename PhenomenalType>
+  struct CustomLocalClustersByMaxLength : InputParser {
+
+    struct CustomSpecs {
+      std::shared_ptr<ClusterEquivalenceParser<PhenomenalType>> phenom;
+      std::shared_ptr<LocalOrbitBranchSpecsParser> orbit_branch_specs;
+      std::shared_ptr<LocalOrbitSpecsParser> orbit_specs;
+    };
+    std::vector<CustomSpecs> data;
+    typedef typename std::vector<CustomSpecs>::const_iterator custom_specs_iterator;
+
+    CustomLocalClustersByMaxLength(const Supercell &_scel, jsonParser &_input, fs::path _path, bool _required);
+
+    /// Find if phenom is equivalent to one of the custom phenomenal clusters
+    std::pair<custom_specs_iterator, SymOp> find(const PhenomenalType &phenom) const;
+
+  };
+
   /// Specs for generating local clusters
   ///
+  /// - Is supercell specific, all local orbits are generated with a subgroup
+  ///   of the supercell factor group
   /// - "standard" orbit_branch_specs give the default generating specs
   /// - "custom" specs provide a way to specify orbit branch and orbit specs
   ///   for particular phenomenal clusters
@@ -263,9 +311,13 @@ namespace CASM {
   /// - no minimum orbit_branch_specs
   /// - warn for non-integer orbit_branch_specs
   /// - error if missing any in range [2, max(branch)]
-  /// - for branch=1: ignore with warning
-  /// - for branch 2+: max_length required,
-  ///      max_length must be <= max_length for branch-1
+  /// - for branch 1:
+  ///   - max_length required if "max_length_including_phenomenal", else ignore w/ warning
+  ///     and throw if not given and requested
+  ///   - cutoff_radius required
+  /// - for branch 2+: max_length & cutoff_radius required,
+  ///   - max_length must be <= max_length for branch-1
+  ///   - cutoff_radious must be <= cutoff_radius for branch-1
   ///
   /// - ClusterFilter: max_length, include_phenomenal
   ///
@@ -296,8 +348,7 @@ namespace CASM {
   ///           "phenomenal": {
   ///             "coordinate_mode": "<>",
   ///             "sites": [...],
-  ///             "equivalence": "prim", // "scel", "config"
-  ///             "scelname": "<scelname>",
+  ///             "equivalence_type": "prim", // "scel", "config"
   ///             "configname": "<configname>"
   ///           },
   ///           "orbit_branch_specs": {}
@@ -313,18 +364,13 @@ namespace CASM {
   template<typename PhenomenalType>
   struct LocalClustersByMaxLength : InputParser {
 
-    struct CustomSpecs {
-      ClusterEquivalenceParser<PhenomenalType> phenom;
-      LocalOrbitBranchSpecsParser orbit_branch_specs;
-      LocalOrbitSpecsParser<PhenomenalType> orbit_specs;
-    };
-
-    LocalOrbitBranchSpecsParser standard;
-    std::vector<CustomSpecs> custom;
-    typedef std::vector<CustomSpecs>::const_iterator custom_specs_iterator;
+    std::shared_ptr<LocalOrbitBranchSpecsParser> standard;
+    typedef CustomLocalClustersByMaxLength<PhenomenalType> CustomParserType;
+    std::shared_ptr<CustomParserType> custom;
+    typedef typename CustomParserType::custom_specs_iterator custom_specs_iterator;
 
 
-    LocalClustersByMaxLength(const PrimClex &_primclex, jsonParser &_input, fs::path _path, bool _required);
+    LocalClustersByMaxLength(const Supercell &_scel, jsonParser &_input, fs::path _path, bool _required);
 
     /// Find if phenom is equivalent to one of the custom phenomenal clusters
     std::pair<custom_specs_iterator, SymOp> find(const PhenomenalType &phenom) const;
@@ -342,12 +388,11 @@ namespace CASM {
     /// Get custom local cluster generators
     ///
     /// \throws std::invalid_argument if find_res.first == custom.end()
-    template<typename SymCompareType>
-    const OrbitGenerators<Orbit<IntegralCluster, SymCompareType>> &
-    custom_generators(
+    template<typename OrbitType>
+    OrbitGenerators<OrbitType> &
+    insert_custom_generators(
       std::pair<custom_specs_iterator, SymOp> find_res,
-      const SymGroup &generating_grp,
-      const SymCompareType &sym_compare) const;
+      OrbitGenerators<OrbitType> &custom_generators) const;
 
     // *INDENT-ON*
   };
