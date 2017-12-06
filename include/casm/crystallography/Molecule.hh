@@ -64,8 +64,8 @@ namespace CASM {
                  double _pos3,
                  AtomSpecieConvertible _specie,
                  sd_type const &_sd_flag = sd_type{false, false, false}) :
-      m_position(_pos1, _pos2, _pos3),
       m_specie(_specie),
+      m_position(_pos1, _pos2, _pos3),
       m_sd_flag(_sd_flag) { }
 
     template<typename AtomSpecieConvertible>

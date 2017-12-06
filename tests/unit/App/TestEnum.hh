@@ -44,7 +44,8 @@ namespace CASM {
       const PrimClex &primclex,
       ScelIterator begin,
       ScelIterator end,
-      const std::vector<std::string> &filter_expr = {});
+      const std::vector<std::string> &filter_expr = {},
+      bool dry_run = false);
 
   private:
 
