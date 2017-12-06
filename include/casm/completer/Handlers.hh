@@ -172,7 +172,7 @@ namespace CASM {
      * - '-n': --dry-run, --next
      * - '-o': --output
      * - '-p': --pos
-     * - '-r': --relaxed
+     * - '-r': --recursive
      * - '-s': --settings
      * - '-t': --type
      * - '-u': --update
