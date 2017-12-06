@@ -15,14 +15,13 @@ namespace CASM {
         using OptionHandlerBase::name_strs;
         using OptionHandlerBase::db_type;
         using OptionHandlerBase::db_type_opts;
+        using OptionHandlerBase::dry_run;
 
         RmOption();
 
         bool force() const;
 
         bool data() const;
-
-        bool dry_run() const;
 
       private:
 

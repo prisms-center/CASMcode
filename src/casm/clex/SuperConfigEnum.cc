@@ -41,8 +41,11 @@ namespace CASM {
     "    configurations are saved.    \n\n"
 
     "  filter: string (optional, default=None)\n"
-    "    A query command to use to filter which configurations are kept.          \n"
-    "\n"
+    "    A query command to use to filter which configurations are kept.          \n\n"
+
+    "  dry_run: bool (optional, default=false)\n"
+    "    Perform dry run.\n\n"
+
     "  Examples:\n"
     "    To enumerate super-configurations of listed sub-configurations:\n"
     "     casm enum --method SuperConfigEnum -i \n"
@@ -205,7 +208,8 @@ namespace CASM {
                        superlat_enum->end(),
                        lambda,
                        filter_expr,
-                       primitive_only);
+                       primitive_only,
+                       CASM::dry_run(_kwargs, enum_opt));
 
     return returncode;
   }

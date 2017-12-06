@@ -443,6 +443,15 @@ namespace CASM {
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt);
 
+  /// \brief Get dry-run value (default=false)
+  bool dry_run(
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt);
+
+  inline std::string dry_run_msg(bool dry_run) {
+    return dry_run ? "(dry run) " : "";
+  }
+
   /// \brief Standardizes insertion from enumerators that construct unique
   /// primitive canonical configurations
   template<typename ScelIterator, typename ConfigEnumConstructor>
@@ -452,7 +461,8 @@ namespace CASM {
     ScelIterator begin,
     ScelIterator end,
     ConfigEnumConstructor f,
-    std::vector<std::string> filter_expr);
+    std::vector<std::string> filter_expr,
+    bool dry_run);
 
   /// \brief Standardizes insertion from enumerators that construct configurations
   template<typename ScelIterator, typename ConfigEnumConstructor>
@@ -463,7 +473,8 @@ namespace CASM {
     ScelIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
-    bool primitive_only);
+    bool primitive_only,
+    bool dry_run);
 
   /// \brief Standardizes insertion from enumerators that construct configurations
   template<typename LatticeIterator, typename ConfigEnumConstructor>
@@ -474,7 +485,8 @@ namespace CASM {
     LatticeIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
-    bool primitive_only);
+    bool primitive_only,
+    bool dry_run);
 
   /// \brief Template class to be specialized for each enumerator that may be accessed via the API
   template<typename Derived>

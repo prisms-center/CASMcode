@@ -689,6 +689,20 @@ namespace CASM {
       return;
     }
 
+    void OptionHandlerBase::add_dry_run_suboption(std::string msg) {
+      m_desc.add_options()
+      ("dry-run,n", msg.c_str());
+    }
+
+    std::string OptionHandlerBase::default_dry_run_msg() {
+      return std::string("Dry run (if supported by method)");
+    }
+
+    bool OptionHandlerBase::dry_run() const {
+      return vm().count("dry-run");
+    }
+
+
     //*****************************************************************************************************//
 
   }

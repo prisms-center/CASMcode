@@ -37,6 +37,9 @@ namespace CASM {
     "    be perturbed. The string \"local_cspecs_filepath\" should be the file "
     "    path to a JSON file containing the local cspecs.\n\n"
 
+    "  dry_run: bool (optional, default=false)\n"
+    "    Perform dry run.\n\n"
+
     "  Example:\n"
     "  {\n"
     "   \"background_configs\":[\"SCEL8_2_2_2_0_0_0/2\"],\n"

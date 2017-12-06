@@ -35,6 +35,9 @@ namespace CASM {
     "  filter: string (optional, default=None)\n"
     "    A query command to use to filter which Configurations are kept.          \n\n"
 
+    "  dry_run: bool (optional, default=false)\n"
+    "    Perform dry run.\n\n"
+
     "  Examples:\n"
     "    To enumerate 200 random occupations in supercells up to and including size 4:\n"
     "      casm enum --method ConfigEnumRandomOccupations -i \n"
@@ -86,7 +89,8 @@ namespace CASM {
                        scel_enum->end(),
                        lambda,
                        filter_expr,
-                       primitive_only);
+                       primitive_only,
+                       CASM::dry_run(_kwargs, enum_opt));
 
     return returncode;
   }

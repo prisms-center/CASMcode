@@ -43,6 +43,7 @@ namespace CASM {
       add_input_suboption(required);
       add_scelnames_suboption();
       add_confignames_suboption();
+      add_dry_run_suboption();
 
       return;
     }

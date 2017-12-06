@@ -133,4 +133,18 @@ namespace CASM {
 
     return filter_expr;
   }
+
+  /// \brief Get dry-run value (default=false)
+  bool dry_run(
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) {
+    if(enum_opt.vm().count("dry-run")) {
+      return true;
+    }
+    else {
+      bool res;
+      _kwargs.get_else(res, "dry_run", false);
+      return res;
+    }
+  }
 }

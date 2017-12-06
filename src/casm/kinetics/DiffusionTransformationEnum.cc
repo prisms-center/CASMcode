@@ -75,6 +75,9 @@ namespace CASM {
       "    transformation. The JSON array \"exclude\" should be an array of species names.\n"
       "    i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n"
 
+      "  dry_run: bool (optional, default=false)\n"
+      "    Perform dry run.\n\n"
+
       "  Example:\n"
       "  {\n"
       "   \"require\":[\"Va\"],\n"
@@ -135,6 +138,9 @@ namespace CASM {
       const Completer::EnumOption &enum_opt,
       DatabaseType &db) {
 
+      bool dry_run = CASM::dry_run(_kwargs, enum_opt);
+      std::string dry_run_msg = CASM::dry_run_msg(dry_run);
+
       jsonParser kwargs;
       if(!_kwargs.contains("cspecs")) {
         primclex.err_log() << "DiffusionTransformationEnum currently has no default and requires a correct JSON with a bspecs tag within it" << std::endl;
@@ -167,7 +173,7 @@ namespace CASM {
       Log &log = primclex.log();
 
       Index Ninit = db.size();
-      log << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
+      log << dry_run_msg << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
 
       log.begin(enumerator_name);
 
@@ -189,12 +195,12 @@ namespace CASM {
         }
       }
 
-      log << "  DONE." << std::endl << std::endl;
+      log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
       Index Nfinal = db.size();
 
-      log << "# new diffusion transformations: " << Nfinal - Ninit << "\n";
-      log << "# diffusion transformations in this project: " << Nfinal << "\n" << std::endl;
+      log << dry_run_msg << "# new diffusion transformations: " << Nfinal - Ninit << "\n";
+      log << dry_run_msg << "# diffusion transformations in this project: " << Nfinal << "\n" << std::endl;
 
       return 0;
     }
@@ -206,12 +212,15 @@ namespace CASM {
       const Completer::EnumOption &enum_opt) {
 
       auto &db = primclex.db<PrimPeriodicDiffTransOrbit>();
+      bool dry_run = CASM::dry_run(_kwargs, enum_opt);
 
       DiffusionTransformationEnum::run(primclex, _kwargs, enum_opt, db);
 
-      primclex.log() << "Writing diffusion transformation database..." << std::endl;
-      db.commit();
-      primclex.log() << "  DONE" << std::endl;
+      if(!dry_run) {
+        primclex.log() << "Writing diffusion transformation database..." << std::endl;
+        db.commit();
+        primclex.log() << "  DONE" << std::endl;
+      }
 
       return 0;
     }

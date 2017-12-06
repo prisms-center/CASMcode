@@ -28,8 +28,11 @@ namespace CASM {
     "    supercells are used. See 'ScelEnum' description for details.         \n\n"
 
     "  filter: string (optional, default=None)\n"
-    "    A query command to use to filter which Configurations are kept.          \n"
-    "\n"
+    "    A query command to use to filter which Configurations are kept.          \n\n"
+
+    "  dry_run: bool (optional, default=false)\n"
+    "    Perform dry run.\n\n"
+
     "  Examples:\n"
     "    To enumerate all occupations in supercells up to and including size 4:\n"
     "      casm enum --method ConfigEnumAllOccupations -i '{\"supercells\": {\"max\": 4}}' \n"
@@ -57,7 +60,7 @@ namespace CASM {
     std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
-    return run(primclex, scel_enum->begin(), scel_enum->end(), filter_expr);
+    return run(primclex, scel_enum->begin(), scel_enum->end(), filter_expr, CASM::dry_run(_kwargs, enum_opt));
   }
 
   /// \brief Construct with a Supercell, using all permutations

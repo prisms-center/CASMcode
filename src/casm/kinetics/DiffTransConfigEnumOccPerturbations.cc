@@ -252,9 +252,11 @@ namespace CASM {
         const PrimPeriodicDiffTransOrbit &dtorbit,
         const jsonParser &local_cspecs,
         std::vector<std::string> filter_expr,
-        DatabaseType &db) {
+        DatabaseType &db,
+        bool dry_run) {
 
-        primclex.log() << "\tUsing " << dtorbit.name() << "... " << std::flush;
+        std::string dry_run_msg = CASM::dry_run_msg(dry_run);
+        primclex.log() << dry_run_msg << "\tUsing " << dtorbit.name() << "... " << std::flush;
         Index Ninit_spec = db.size();
 
         DiffTransConfigEnumOccPerturbations enumerator(bg_config, dtorbit, local_cspecs);
@@ -281,7 +283,7 @@ namespace CASM {
         }
 
         Index Nfinal_spec = db.size();
-        primclex.log() << "Found " << Nfinal_spec - Ninit_spec
+        primclex.log() << dry_run_msg << "Found " << Nfinal_spec - Ninit_spec
                        << " new " << traits<DiffTransConfiguration>::short_name << std::endl;
       }
 
@@ -296,6 +298,9 @@ namespace CASM {
       DatabaseType &db) {
 
       Log &log = primclex.log();
+
+      bool dry_run = CASM::dry_run(kwargs, enum_opt);
+      std::string dry_run_msg = CASM::dry_run_msg(dry_run);
 
       // Validate and construct input
       DB::Selection<PrimPeriodicDiffTransOrbit> dtorbit_sel = make_selection<PrimPeriodicDiffTransOrbit>(
@@ -318,26 +323,26 @@ namespace CASM {
       std::string type_name = traits<DiffTransConfiguration>::name;
 
       Index Ninit = db.size();
-      log << "# " << type_name << " in this project: " << Ninit << "\n" << std::endl;
+      log << dry_run_msg << "# " << type_name << " in this project: " << Ninit << "\n" << std::endl;
 
       log.begin(enumerator_name);
       for(auto bg_config : background_sel.selected()) {
         auto prim_config = bg_config.primitive().in_canonical_supercell();
-        log << "Searching in " << bg_config.name()
+        log << dry_run_msg << "Searching in " << bg_config.name()
             << " (primitive = " << prim_config.name() << ") ..." << std::endl;
 
         for(const auto &dtorbit : dtorbit_sel.selected()) {
           _check_overlap(primclex, bg_config, dtorbit, local_cspecs);
-          _enumerate(primclex, bg_config, dtorbit, local_cspecs, filter_expr, db);
+          _enumerate(primclex, bg_config, dtorbit, local_cspecs, filter_expr, db, dry_run);
         }
       }
 
-      log << "  DONE." << std::endl << std::endl;
+      log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
       Index Nfinal = db.size();
 
-      log << "# new " << type_name << ": " << Nfinal - Ninit << "\n";
-      log << "# " << type_name << " in this project: " << Nfinal << "\n" << std::endl;
+      log << dry_run_msg << "# new " << type_name << ": " << Nfinal - Ninit << "\n";
+      log << dry_run_msg << "# " << type_name << " in this project: " << Nfinal << "\n" << std::endl;
 
       return 0;
     }
@@ -357,10 +362,11 @@ namespace CASM {
                enum_opt,
                primclex.db<DiffTransConfiguration>());
 
-      primclex.log() << "Writing " << type_name << " database..." << std::endl;
-      db.commit();
-      primclex.log() << "  DONE" << std::endl;
-
+      if(!CASM::dry_run(kwargs, enum_opt)) {
+        primclex.log() << "Writing " << type_name << " database..." << std::endl;
+        db.commit();
+        primclex.log() << "  DONE" << std::endl;
+      }
       return 0;
     }
 

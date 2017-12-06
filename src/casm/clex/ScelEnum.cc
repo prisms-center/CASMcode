@@ -207,6 +207,9 @@ namespace CASM {
     "    to other enumeration methods, such as ConfigEnumAllOccupations when \n"
     "    supercells have already been enumerated. \n"
     "\n"
+    "  dry_run: bool (optional, default=false)\n"
+    "    Perform dry run.\n"
+    "\n"
     "Examples:\n"
     "\n"
     "    To enumerate supercells up to and including size 4:\n"
@@ -255,23 +258,27 @@ namespace CASM {
     }
 
     ScelEnum scel_enum(primclex, input);
+
+    bool dry_run = CASM::dry_run(kwargs, enum_opt);
+    std::string dry_run_msg = CASM::dry_run_msg(dry_run);
     for(auto &scel : scel_enum) {
       if(verbose) {
         if(primclex.db<Supercell>().size() != list_size) {
-          log << "  Generated: " << scel.name() << "\n";
+          log << dry_run_msg << "  Generated: " << scel.name() << "\n";
         }
         else {
-          log << "  Generated: " << scel.name() << " (already existed)\n";
+          log << dry_run_msg << "  Generated: " << scel.name() << " (already existed)\n";
         }
       }
       list_size = primclex.db<Supercell>().size();
     }
-    log << "  DONE." << std::endl << std::endl;
+    log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
-    log << "Write supercells..." << std::endl;
-    primclex.db<Supercell>().commit();
-    log << "  DONE" << std::endl << std::endl;
-
+    if(!dry_run) {
+      log << "Write supercells..." << std::endl;
+      primclex.db<Supercell>().commit();
+      log << "  DONE" << std::endl << std::endl;
+    }
     return 0;
   }
 

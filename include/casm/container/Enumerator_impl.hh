@@ -32,7 +32,8 @@ namespace CASM {
     ScelIterator begin,
     ScelIterator end,
     ConfigEnumConstructor f,
-    std::vector<std::string> filter_expr) {
+    std::vector<std::string> filter_expr,
+    bool dry_run) {
 
     Log &log = primclex.log();
     auto &db_config = primclex.db<Configuration>();
@@ -40,17 +41,19 @@ namespace CASM {
       return db_config.scel_range_size(scelname);
     };
 
+    std::string dry_run_msg = CASM::dry_run_msg(dry_run);
+
     Index Ninit = db_config.size();
-    log << "# configurations in this project: " << Ninit << "\n" << std::endl;
+    log << dry_run_msg << "# configurations in this project: " << Ninit << "\n" << std::endl;
 
     log.begin(method);
 
     for(auto scel_it = begin; scel_it != end; ++scel_it) {
       const Supercell &scel = *scel_it;
-      log << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
-
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
+      log << dry_run_msg << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
+
       Index num_before = distance(scel.name());
       if(!filter_expr.empty()) {
         try {
@@ -73,20 +76,22 @@ namespace CASM {
 
       log << (distance(scel.name()) - num_before) << " configs." << std::endl;
     }
-    log << "  DONE." << std::endl << std::endl;
+    log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
     Index Nfinal = db_config.size();
 
-    log << "# new configurations: " << Nfinal - Ninit << "\n";
-    log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
+    log << dry_run_msg << "# new configurations: " << Nfinal - Ninit << "\n";
+    log << dry_run_msg << "# configurations in this project: " << Nfinal << "\n" << std::endl;
 
-    log << "Write supercell database..." << std::endl;
-    primclex.db<Supercell>().commit();
-    log << "  DONE" << std::endl << std::endl;
+    if(!dry_run) {
+      log << "Write supercell database..." << std::endl;
+      primclex.db<Supercell>().commit();
+      log << "  DONE" << std::endl << std::endl;
 
-    log << "Writing configuration database..." << std::endl;
-    db_config.commit();
-    log << "  DONE" << std::endl;
+      log << "Writing configuration database..." << std::endl;
+      db_config.commit();
+      log << "  DONE" << std::endl;
+    }
 
     return 0;
   }
@@ -112,7 +117,8 @@ namespace CASM {
     ScelIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
-    bool primitive_only) {
+    bool primitive_only,
+    bool dry_run) {
 
     Log &log = primclex.log();
     auto &db_config = primclex.db<Configuration>();
@@ -120,14 +126,16 @@ namespace CASM {
       return db_config.scel_range_size(scelname);
     };
 
+    std::string dry_run_msg = CASM::dry_run_msg(dry_run);
+
     Index Ninit = db_config.size();
-    log << "# configurations in this project: " << Ninit << "\n" << std::endl;
+    log << dry_run_msg << "# configurations in this project: " << Ninit << "\n" << std::endl;
 
     log.begin(method);
 
     for(auto scel_it = begin; scel_it != end; ++scel_it) {
       const Supercell &scel = *scel_it;
-      log << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
+      log << dry_run_msg << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
 
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
@@ -159,20 +167,22 @@ namespace CASM {
 
       log << (distance(scel.name()) - num_before) << " configs." << std::endl;
     }
-    log << "  DONE." << std::endl << std::endl;
+    log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
     Index Nfinal = db_config.size();
 
-    log << "# new configurations: " << Nfinal - Ninit << "\n";
-    log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
+    log << dry_run_msg << "# new configurations: " << Nfinal - Ninit << "\n";
+    log << dry_run_msg << "# configurations in this project: " << Nfinal << "\n" << std::endl;
 
-    log << "Write supercell database..." << std::endl;
-    primclex.db<Supercell>().commit();
-    log << "  DONE" << std::endl << std::endl;
+    if(!dry_run) {
+      log << "Write supercell database..." << std::endl;
+      primclex.db<Supercell>().commit();
+      log << "  DONE" << std::endl << std::endl;
 
-    log << "Writing configuration database..." << std::endl;
-    db_config.commit();
-    log << "  DONE" << std::endl;
+      log << "Writing configuration database..." << std::endl;
+      db_config.commit();
+      log << "  DONE" << std::endl;
+    }
 
     return 0;
   }
@@ -198,7 +208,8 @@ namespace CASM {
     LatticeIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
-    bool primitive_only) {
+    bool primitive_only,
+    bool dry_run) {
 
     Log &log = primclex.log();
     auto &db_config = primclex.db<Configuration>();
@@ -206,15 +217,17 @@ namespace CASM {
       return db_config.scel_range_size(scelname);
     };
 
+    std::string dry_run_msg = CASM::dry_run_msg(dry_run);
+
     Index Ninit = db_config.size();
-    log << "# configurations in this project: " << Ninit << "\n" << std::endl;
+    log << dry_run_msg << "# configurations in this project: " << Ninit << "\n" << std::endl;
 
     log.begin(method);
 
     for(auto scel_lat_it = begin; scel_lat_it != end; ++scel_lat_it) {
       Supercell scel(&primclex, *scel_lat_it);
       const Supercell &canon_scel = scel.canonical_form();
-      log << "Enumerate configurations for " << canon_scel.name() << " ...  " << std::flush;
+      log << dry_run_msg << "Enumerate configurations for " << canon_scel.name() << " ...  " << std::flush;
 
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
@@ -246,20 +259,22 @@ namespace CASM {
 
       log << (distance(canon_scel.name()) - num_before) << " configs." << std::endl;
     }
-    log << "  DONE." << std::endl << std::endl;
+    log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
     Index Nfinal = primclex.db<Configuration>().size();
 
-    log << "# new configurations: " << Nfinal - Ninit << "\n";
-    log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
+    log << dry_run_msg << "# new configurations: " << Nfinal - Ninit << "\n";
+    log << dry_run_msg << "# configurations in this project: " << Nfinal << "\n" << std::endl;
 
-    log << "Write supercell database..." << std::endl;
-    primclex.db<Supercell>().commit();
-    log << "  DONE" << std::endl << std::endl;
+    if(!dry_run) {
+      log << "Write supercell database..." << std::endl;
+      primclex.db<Supercell>().commit();
+      log << "  DONE" << std::endl << std::endl;
 
-    log << "Writing configuration database..." << std::endl;
-    db_config.commit();
-    log << "  DONE" << std::endl;
+      log << "Writing configuration database..." << std::endl;
+      db_config.commit();
+      log << "  DONE" << std::endl;
+    }
 
     return 0;
   }

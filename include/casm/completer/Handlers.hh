@@ -441,6 +441,14 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
+      void add_dry_run_suboption(std::string msg = default_dry_run_msg());
+
+      static std::string default_dry_run_msg();
+
+      bool dry_run() const;
+
+      //-------------------------------------------------------------------------------------//
+
       //Add more general suboption adding routines here//
     };
 
@@ -790,6 +798,7 @@ namespace CASM {
       using OptionHandlerBase::settings_path;
       using OptionHandlerBase::input_str;
       using OptionHandlerBase::supercell_strs;
+      using OptionHandlerBase::dry_run;
 
       const std::vector<std::string> &desc_vec() const {
         return m_desc_vec;
@@ -936,14 +945,13 @@ namespace CASM {
       using OptionHandlerBase::name_strs;
       using OptionHandlerBase::db_type;
       using OptionHandlerBase::db_type_opts;
+      using OptionHandlerBase::dry_run;
 
       RmOption();
 
       bool force() const;
 
       bool data() const;
-
-      bool dry_run() const;
 
     private:
 
