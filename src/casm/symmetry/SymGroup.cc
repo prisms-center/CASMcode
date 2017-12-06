@@ -3779,7 +3779,8 @@ namespace CASM {
     // mutable Array<std::string> irrep_names;
     json["irrep_names"] = irrep_names;
 
-    json["unique_subgroups"] = unique_subgroups();
+    //json["unique_subgroups"] = unique_subgroups();
+    json["unique_subgroups"] = std::string("TODO: fix SymGroup::unique_subgroups()");
 
     // mutable Array<Array<Array<int> > > m_subgroups;
     json["m_subgroups"] = m_subgroups;
