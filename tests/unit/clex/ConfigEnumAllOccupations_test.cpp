@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsRunTest) {
   proj.check_init();
 
   // construct PrimClex
-  PrimClex primclex(proj.dir, default_log());
+  PrimClex primclex(proj.dir, null_log());
 
   // --dry-run test
   {
