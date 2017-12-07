@@ -17,7 +17,6 @@ libcasmtesting_a_SOURCES = \
   tests/unit/TestConfiguration.hh\
   tests/unit/TestDiffTransConfigOccPerturbations.hh\
   tests/unit/FCCTernaryProj.hh\
-  tests/unit/TestDiffusionTransformationOrbits.hh\
   tests/unit/ZrOProj.hh
 
 check_PROGRAMS += \
@@ -142,6 +141,7 @@ EXTRA_DIST += \
   tests/unit/kinetics/FCCTernary_diff_trans_0.json\
   tests/unit/kinetics/FCCTernary_diff_perturb_0.json\
   tests/unit/kinetics/FCCTernary_bspecs_0.json\
+  tests/unit/kinetics/FCCTernary_diff_trans_err_0.json\
   tests/unit/kinetics/ZrO_diff_trans_0.json\
   tests/unit/kinetics/ZrO_local_bspecs_1.json\
   tests/unit/kinetics/ZrO_local_bspecs_0.json\

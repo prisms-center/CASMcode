@@ -233,7 +233,13 @@ namespace CASM {
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel);
 
+  Eigen::Matrix3i transf_mat(const PrimClex &primclex, const Lattice &super_lat);
+
   std::string generate_name(const Eigen::Matrix3i &transf_mat);
+
+  std::string scelname(const PrimClex &primclex, const Lattice &lat);
+
+  std::string canonical_scelname(const PrimClex &primclex, const Lattice &lat);
 
   /// \brief Construct the subgroup of permutations that leaves an element unchanged
   template<typename Element>

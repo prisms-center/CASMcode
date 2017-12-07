@@ -129,6 +129,13 @@ namespace CASM {
   /// \brief Make a ScelEnumProps object from JSON input
   ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
 
+  jsonParser &to_json(const ScelEnumProps &props, jsonParser &json);
+
+  template<>
+  struct jsonConstructor<ScelEnumProps> {
+    static ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
+  };
+
   /**
    * Given the dimensions of a square matrix and its determinant,
    * HermiteCounter will cycle through every possible matrix that
