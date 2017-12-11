@@ -132,13 +132,11 @@ namespace CASM {
     int tprec = stream.precision();
     std::ios::fmtflags tflags = stream.flags();
     stream.precision(_prec);
-    stream.width(_prec + 3);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-    stream  << 1.0 << '\n';
+    Eigen::IOFormat format(_prec);
 
-    stream << ' ' << std::setw(_prec + 8) << m_lat_mat.col(0).transpose() << '\n';
-    stream << ' ' << std::setw(_prec + 8) << m_lat_mat.col(1).transpose() << '\n';
-    stream << ' ' << std::setw(_prec + 8) << m_lat_mat.col(2).transpose() << '\n';
+    stream  << 1.0 << '\n';
+    stream << m_lat_mat.transpose().format(format);
 
     stream.precision(tprec);
     stream.flags(tflags);

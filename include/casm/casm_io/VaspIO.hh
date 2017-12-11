@@ -205,6 +205,10 @@ namespace CASM {
         template<typename TupleIterator>
         void _print(std::ostream &sout, TupleIterator begin, TupleIterator end) const;
 
+        /// \brief Print POSCAR, provide a range of std::tuple<Atom name, Coordinate, SelectiveDynamics>
+        template<typename TupleIterator>
+        void _print(Log &sout, TupleIterator begin, TupleIterator end) const;
+
       private:
 
         std::string m_title;
@@ -286,6 +290,9 @@ namespace CASM {
 
       /// \brief Print POSCAR to stream
       void print(std::ostream &sout) const;
+
+      /// \brief Print POSCAR to log (enables indentation)
+      void print(Log &sout) const;
 
 
     private:
