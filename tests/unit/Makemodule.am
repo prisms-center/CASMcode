@@ -167,7 +167,8 @@ casm_unit_crystallography_SOURCES = \
   tests/unit/crystallography/Structure_test.cpp\
   tests/unit/crystallography/BasicStructure_test.cpp\
   tests/unit/crystallography/Niggli_test.cpp\
-  tests/unit/crystallography/Molecule_test.cpp
+  tests/unit/crystallography/Molecule_test.cpp\
+  tests/unit/crystallography/UnitCellCoord_test.cpp
 
 casm_unit_crystallography_LDADD = \
   libcasm.la\

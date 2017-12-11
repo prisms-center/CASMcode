@@ -20,11 +20,11 @@ namespace CASM {
 
     namespace {
 
-      std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust) {
+      Log &operator<<(Log &out, const IntegralCluster &clust) {
         SitesPrinter printer;
-        printer.print(clust, std::cout);
-        sout << std::endl;
-        return sout;
+        printer.print(clust, out);
+        out << std::endl;
+        return out;
       }
     }
 
@@ -77,6 +77,12 @@ namespace CASM {
 
       "  dry_run: bool (optional, default=false)\n"
       "    Perform dry run.\n\n"
+
+      "  coordinate_mode: string (optional, default=FRAC)\n"
+      "    Coordinate mode (FRAC, CART, INTEGRAL) for printing orbits.\n\n"
+
+      "  orbit_print_mode: string (optional, default=\"PROTO\")\n"
+      "    Mode (FULL, PROTO) to select printing full orbits or just orbit prototypes.\n\n"
 
       "  Example:\n"
       "  {\n"
@@ -140,6 +146,7 @@ namespace CASM {
 
       bool dry_run = CASM::dry_run(_kwargs, enum_opt);
       std::string dry_run_msg = CASM::dry_run_msg(dry_run);
+      std::string lead;
 
       jsonParser kwargs;
       if(!_kwargs.contains("cspecs")) {
@@ -159,9 +166,25 @@ namespace CASM {
           exclude.push_back(from_json<std::string>(*it));
         }
       }
-      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
+      COORD_TYPE coord_mode;
+      _kwargs.get_else(coord_mode, traits<COORD_TYPE>::name, COORD_TYPE::FRAC);
+      ORBIT_PRINT_MODE orbit_print_mode;
+      _kwargs.get_else(orbit_print_mode, traits<ORBIT_PRINT_MODE>::name, ORBIT_PRINT_MODE::PROTO);
+      Printer<Kinetics::DiffusionTransformation> dt_printer(6, '\n', coord_mode);
+
+      Index Ninit = db.size();
+      Log &log = primclex.log();
+      lead = dry_run_msg;
+      log << lead << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
+
+      log.begin(enumerator_name);
+      log.increase_indent();
+      log << std::endl;
+
+      log.begin<Log::verbose>("Calculate cluster orbits");
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       auto end = make_prim_periodic_orbits(
                    primclex.prim(),
                    _kwargs["cspecs"],
@@ -169,15 +192,10 @@ namespace CASM {
                    primclex.crystallography_tol(),
                    std::back_inserter(orbits),
                    primclex.log());
+      print_clust(orbits.begin(), orbits.end(), log, orbit_print_mode, coord_mode);
+      log << std::endl;
 
-      Log &log = primclex.log();
-
-      Index Ninit = db.size();
-      log << dry_run_msg << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
-
-      log.begin(enumerator_name);
-
-
+      log.begin<Log::verbose>("Calculate diff_trans orbits");
       std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
       auto end2 = make_prim_periodic_diff_trans_orbits(
                     orbits.begin(),
@@ -185,22 +203,51 @@ namespace CASM {
                     primclex.crystallography_tol(),
                     std::back_inserter(diff_trans_orbits),
                     &primclex);
+      print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), log, orbit_print_mode, coord_mode);
+      log << std::endl;
 
+      log.begin<Log::verbose>("Check diff_trans orbits");
+      lead = log.indent_str() + dry_run_msg;
       for(auto &diff_trans_orbit : diff_trans_orbits) {
+        log << lead << "Checking: \n";
+        log.increase_indent();
+        dt_printer.print(diff_trans_orbit.prototype(), log);
         auto specie_count = diff_trans_orbit.prototype().specie_count();
-        if(includes_all(specie_count, require.begin(), require.end()) &&
-           excludes_all(specie_count, exclude.begin(), exclude.end())) {
-          //insert current into database
-          db.insert(diff_trans_orbit);
+
+        if(!includes_all(specie_count, require.begin(), require.end())) {
+          log << lead << "- Missing required species, do not insert" << std::endl;
+          log.decrease_indent();
+          log << std::endl;
+          continue;
         }
+        if(!excludes_all(specie_count, exclude.begin(), exclude.end())) {
+          log << lead << "- Includes excluded species, do not insert" << std::endl;
+          log.decrease_indent();
+          log << std::endl;
+          continue;
+        }
+
+        //insert current into database
+        auto res = db.insert(diff_trans_orbit);
+        if(res.second) {
+          log << lead << "- Inserted as: " << res.first->name() << std::endl;
+        }
+        else {
+          log << lead << "- Already exists: " << res.first->name() << std::endl;
+        }
+        log << std::endl;
+        log.decrease_indent();
+
       }
 
-      log << dry_run_msg << "  DONE." << std::endl << std::endl;
+      log << lead << "  DONE." << std::endl << std::endl;
+      log.decrease_indent();
+      lead = log.indent_str() + dry_run_msg;
 
       Index Nfinal = db.size();
 
-      log << dry_run_msg << "# new diffusion transformations: " << Nfinal - Ninit << "\n";
-      log << dry_run_msg << "# diffusion transformations in this project: " << Nfinal << "\n" << std::endl;
+      log << lead << "# new diffusion transformations: " << Nfinal - Ninit << "\n";
+      log << lead << "# diffusion transformations in this project: " << Nfinal << "\n" << std::endl;
 
       return 0;
     }

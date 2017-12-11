@@ -56,20 +56,20 @@ namespace CASM {
   ///
   /// Printer is expected to have:
   /// - \code std::string Printer::indent(); \endcode
-  /// - \code void Printer::coord_mode(std::ostream& out); \endcode
-  /// - \code void Printer::operator()(const Orbit<IntegralCluster, SymCompareType>& orbit, std::ostream& out, Index orbit_index, Index Norbits); \endcode
+  /// - \code void Printer::coord_mode(Log& out); \endcode
+  /// - \code void Printer::operator()(const Orbit<IntegralCluster, SymCompareType>& orbit, Log& out, Index orbit_index, Index Norbits); \endcode
   ///
   template<typename ClusterOrbitIterator, typename OrbitPrinter>
   void print_clust(
     ClusterOrbitIterator begin,
     ClusterOrbitIterator end,
-    std::ostream &out,
+    Log &out,
     OrbitPrinter printer) {
 
     printer.coord_mode(out);
 
-    out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
-    out.precision(5);
+    out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+    out.ostream().precision(5);
 
     Index branch = -1;
     Index orbit_index = 0;
@@ -79,18 +79,48 @@ namespace CASM {
     for(auto it = begin; it != end; ++it) {
       if(it->prototype().size() != branch) {
         branch = it->prototype().size();
-        out << "** Branch " << branch << " ** " << std::endl;
+        out << out.indent_str() << "** Branch " << branch << " ** " << std::endl;
       }
-      out << printer.indent() << "** " << orbit_index << " of " << Norbits << " Orbits **"
+      printer.indent_level++;
+      out << out.indent_str() << printer.indent() << "** " << orbit_index << " of " << Norbits << " Orbits **"
           << "  Points: " << it->prototype().size()
           << "  Mult: " << it->size()
           << "  MinLength: " << it->prototype().min_length()
           << "  MaxLength: " << it->prototype().max_length() << std::endl;
+      printer.indent_level++;
       printer(*it, out, orbit_index, Norbits);
       out << std::endl;
+      printer.indent_level--;
+      printer.indent_level--;
       ++orbit_index;
     }
 
+  }
+
+  /// \brief Print IntegralCluster orbits
+  template<typename ClusterOrbitIterator>
+  void print_clust(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    Log &out,
+    ORBIT_PRINT_MODE _orbit_print_mode,
+    COORD_TYPE _coord_mode,
+    int _indent_space,
+    char _delim) {
+
+    //typedef typename ClusterOrbitIterator::container_type container_type;
+    //typedef typename container_type::value_type orbit_type;
+    typedef typename std::iterator_traits<ClusterOrbitIterator>::value_type orbit_type;
+    typedef typename orbit_type::Element Element;
+
+    if(_orbit_print_mode == ORBIT_PRINT_MODE::PROTO) {
+      OrbitPrinter<Element, ORBIT_PRINT_MODE::PROTO> orbit_printer(_indent_space, _delim, _coord_mode);
+      print_clust(begin, end, out, orbit_printer);
+    }
+    else if(_orbit_print_mode == ORBIT_PRINT_MODE::FULL) {
+      OrbitPrinter<Element, ORBIT_PRINT_MODE::FULL> orbit_printer(_indent_space, _delim, _coord_mode);
+      print_clust(begin, end, out, orbit_printer);
+    }
   }
 
   // ---------- clust.json IO ------------------------------------------------------------------

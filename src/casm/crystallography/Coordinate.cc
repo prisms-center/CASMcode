@@ -105,39 +105,45 @@ namespace CASM {
 
   //********************************************************************
 
-  void Coordinate::print(std::ostream &stream, char term, int prec, int pad) const {
-    print(stream, COORD_MODE::CHECK(), term, prec, pad);
+  void Coordinate::print(std::ostream &stream, char term, Eigen::IOFormat format) const {
+    print(stream, COORD_MODE::CHECK(), term, format);
   }
 
   //********************************************************************
-  void Coordinate::print(std::ostream &stream, COORD_TYPE mode, char term, int prec, int pad) const {
 
-    stream.precision(prec);
-    stream.width(prec + pad);
-    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+  void _formatted_print(std::ostream &stream, Eigen::Vector3d vec, COORD_TYPE mode, char term, Eigen::IOFormat format) {
+    //    stream.precision(prec);
+    //    stream.width(prec + pad);
+    //    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+
+    stream << vec.transpose().format(format);
+    if(term) stream << term;
+    return;
+  }
+
+  //********************************************************************
+  void Coordinate::print(std::ostream &stream, COORD_TYPE mode, char term, Eigen::IOFormat format) const {
+    Eigen::Vector3d vec;
 
     if(mode == CART)
-      stream << const_cart().transpose();
+      vec = const_cart();
     else if(mode == FRAC)
-      stream << const_frac().transpose();
-    if(term) stream << term;
+      vec = const_frac();
+    _formatted_print(stream, vec, mode, term, format);
     return;
   }
 
   //********************************************************************
 
   /// \brief Print normalized vector
-  void Coordinate::print_axis(std::ostream &stream, COORD_TYPE mode, char term, int prec, int pad) const {
+  void Coordinate::print_axis(std::ostream &stream, COORD_TYPE mode, char term, Eigen::IOFormat format) const {
 
-    stream.precision(prec);
-    stream.width(prec + pad);
-    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-
+    Eigen::Vector3d vec;
     if(mode == CART)
-      stream << const_cart().normalized().transpose();
+      vec = const_cart().normalized();
     else if(mode == FRAC)
-      stream << const_frac().normalized().transpose();
-    if(term) stream << term;
+      vec = const_frac().normalized();
+    _formatted_print(stream, vec, mode, term, format);
     return;
   }
 

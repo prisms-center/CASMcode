@@ -525,7 +525,8 @@ namespace CASM {
     /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
     std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans) {
       Printer<Kinetics::DiffusionTransformation> printer;
-      printer.print(trans, sout);
+      Log out(sout);
+      printer.print(trans, out);
       return sout;
     }
 
@@ -757,27 +758,98 @@ namespace CASM {
 
   const std::string Printer<Kinetics::DiffusionTransformation>::element_name = "DiffusionTransformation";
 
-  void Printer<Kinetics::DiffusionTransformation>::print(const Kinetics::DiffusionTransformation &trans, std::ostream &out) {
+  void Printer<Kinetics::DiffusionTransformation>::print(const Kinetics::DiffusionTransformation &trans, Log &out) {
+    if(!out.print()) {
+      return;
+    }
+
     COORD_MODE printer_mode(mode);
 
     if(trans.is_valid()) {
-      for(const auto &traj : trans.specie_traj()) {
-        out << indent() << indent() << indent();
-        out << traj.from.specie().name() + ": " << traj.from << "  ->  " << traj.to;
+      if(mode != INTEGRAL) {
+        // calculate nice widths
+        int name_width = 0;
+        int prec = 7;
+        int width = prec;
+        out.ostream().precision(prec);
+        out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+        for(const auto &traj : trans.specie_traj()) {
+          if(traj.from.specie().name().length() > name_width) name_width = traj.from.specie().name().length();
+          Eigen::Vector3d vec_from, vec_to;
+          if (mode == CART) {
+            vec_from = traj.from.uccoord.coordinate().cart();
+            vec_to = traj.to.uccoord.coordinate().cart();
+          }
+          else {
+            vec_from = traj.from.uccoord.coordinate().frac();
+            vec_to = traj.to.uccoord.coordinate().frac();
+          }
+          width = print_matrix_width(out, vec_from, width);
+          width = print_matrix_width(out, vec_to, width);
+        }
 
-        if(delim)
-          out << delim;
-        out << std::flush;
+        // print
+        Eigen::IOFormat format(prec, width + 1);
+        for(const auto &traj : trans.specie_traj()) {
+          out << out.indent_str() << indent();
+          out << std::setw(name_width) << traj.from.specie().name() << ": ";
+          {
+            const auto &obj = traj.from;
+            obj.uccoord.coordinate().print(out, 0, format);
+            out << " : " << obj.occ << " " << obj.pos;
+          }
+          out << "  ->  ";
+          {
+            const auto &obj = traj.to;
+            obj.uccoord.coordinate().print(out, 0, format);
+            out << " : " << obj.occ << " " << obj.pos;
+          }
+          if(delim)
+            out << delim;
+          out << std::flush;
+        }
+      }
+      else {
+        // calculate nice widths
+        int name_width = 0;
+        int prec = 1;
+        int width = prec;
+        out.ostream().precision(prec);
+        out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+        for(const auto &traj : trans.specie_traj()) {
+          if(traj.from.specie().name().length() > name_width) name_width = traj.from.specie().name().length();
+          width = print_matrix_width(out, traj.from.uccoord.unitcell(), width);
+          width = print_matrix_width(out, traj.to.uccoord.unitcell(), width);
+        }
+
+        // print
+        Eigen::IOFormat format(prec, width);
+        for(const auto &traj : trans.specie_traj()) {
+          out << out.indent_str() << indent();
+          out << std::setw(name_width) << traj.from.specie().name() << ": ";
+          {
+            const auto &obj = traj.from;
+            out << obj.uccoord.sublat() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
+          }
+          out << "  ->  ";
+          {
+            const auto &obj = traj.to;
+            out << obj.uccoord.sublat() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
+          }
+          if(delim)
+            out << delim;
+          out << std::flush;
+        }
       }
     }
     else {
-      out << indent() << indent() << indent() << "occupation transformation:" << delim;
+      out << out.indent_str() << indent() << "occupation transformation:" << delim;
       for(const auto &t : trans.occ_transform()) {
         out << t;
       }
-      out << indent() << indent() << indent() << "specie trajectory:" << delim;
+      out << out.indent_str() << indent() << "specie trajectory:" << delim;
       for(const auto &traj : trans.specie_traj()) {
-        out << indent() << indent() << indent();
+        out << out.indent_str() << indent();
         out << traj.from << " (" << traj.from.specie().name() << ")";
         out << "  ->  ";
         out << traj.to << " (" << traj.to.specie().name() << ")";

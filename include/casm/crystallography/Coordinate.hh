@@ -203,11 +203,11 @@ namespace CASM {
 
     //term is terminal character, prec is precision, pad is field width - precision  (should be greater than 3)
     void read(std::istream &stream, COORD_TYPE mode);
-    void print(std::ostream &stream, COORD_TYPE mode, char term = 0, int prec = 7, int pad = 5) const;
-    void print(std::ostream &stream, char term = 0, int prec = 7, int pad = 5) const;
+    void print(std::ostream &stream, COORD_TYPE mode, char term = 0, Eigen::IOFormat format = Eigen::IOFormat(7, 12)) const;
+    void print(std::ostream &stream, char term = 0, Eigen::IOFormat format = Eigen::IOFormat(7, 12)) const;
 
     /// \brief Print normalized vector
-    void print_axis(std::ostream &stream, COORD_TYPE mode, char term = 0, int prec = 7, int pad = 5) const;
+    void print_axis(std::ostream &stream, COORD_TYPE mode, char term = 0, Eigen::IOFormat format  = Eigen::IOFormat(7, 12)) const;
 
     /// \brief distance (in Angstr) of neighbor from *this
     double dist(const Coordinate &neighbor) const;

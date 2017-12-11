@@ -143,14 +143,14 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
     //std::cout << "prim_config: \n" << prim_config << std::endl;
 
     auto print_res = [&](std::string name, const DiffTransVec & diff_trans_vec, ScelDiffTransSymCompare sym_compare) {
-      std::cout << name << ":" << std::endl;
+      primclex.log() << name << ":" << std::endl;
       Index index = 0;
       for(const auto &el : diff_trans_vec) {
-        std::cout << "index: " << index << std::endl;
-        diff_trans_printer.print(sym_compare.prepare(el), std::cout);
+        primclex.log() << "index: " << index << std::endl;
+        diff_trans_printer.print(sym_compare.prepare(el), primclex.log());
         ++index;
       }
-      std::cout << std::endl;
+      primclex.log() << std::endl;
     };
 
     /// prim -> prim_config.supercell() symmetry breaking
@@ -357,14 +357,14 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
     //std::cout << "prim_config: \n" << prim_config << std::endl;
 
     auto print_res = [&](std::string name, const DiffTransVec & diff_trans_vec, ScelDiffTransSymCompare sym_compare) {
-      std::cout << name << ":" << std::endl;
+      primclex.log() << name << ":" << std::endl;
       Index index = 0;
       for(const auto &el : diff_trans_vec) {
-        std::cout << "index: " << index << std::endl;
-        diff_trans_printer.print(sym_compare.prepare(el), std::cout);
+        primclex.log() << "index: " << index << std::endl;
+        diff_trans_printer.print(sym_compare.prepare(el), primclex.log());
         ++index;
       }
-      std::cout << std::endl;
+      primclex.log() << std::endl;
     };
 
     /// prim -> prim_config.supercell() symmetry breaking
@@ -580,14 +580,14 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
     // std::cout << "prim_config: \n" << prim_config << std::endl;
 
     auto print_res = [&](std::string name, const DiffTransVec & diff_trans_vec, ScelDiffTransSymCompare sym_compare) {
-      std::cout << name << ":" << std::endl;
+      primclex.log() << name << ":" << std::endl;
       Index index = 0;
       for(const auto &el : diff_trans_vec) {
-        std::cout << "index: " << index << std::endl;
-        diff_trans_printer.print(sym_compare.prepare(el), std::cout);
+        primclex.log() << "index: " << index << std::endl;
+        diff_trans_printer.print(sym_compare.prepare(el), primclex.log());
         ++index;
       }
-      std::cout << std::endl;
+      primclex.log() << std::endl;
     };
 
     /// prim -> prim_config.supercell() symmetry breaking

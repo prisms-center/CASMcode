@@ -154,15 +154,14 @@ namespace CASM {
 
     std::stringstream stream;
     char term(0);
-    int prec(3);
-    int pad(0);
+    Eigen::IOFormat format(3, 4);
 
     auto print_coord = [&](const Coordinate & coord) {
-      coord.print(stream, mode, term, prec, pad);
+      coord.print(stream, mode, term, format);
     };
 
     auto print_axis = [&](const Coordinate & coord) {
-      coord.print_axis(stream, mode, term, prec, pad);
+      coord.print_axis(stream, mode, term, format);
     };
 
     switch(info.op_type) {

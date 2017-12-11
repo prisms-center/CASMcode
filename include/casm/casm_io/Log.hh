@@ -2,6 +2,7 @@
 #define CASM_Log
 
 #include <iostream>
+#include <vector>
 #include <boost/chrono.hpp>
 
 namespace CASM {
@@ -25,7 +26,7 @@ namespace CASM {
     /// - 0: print nothing
     /// - 10: print all standard output
     /// - 100: print all possible output
-    Log(std::ostream &_ostream = std::cout, int _verbosity = standard, bool _show_clock = false);
+    Log(std::ostream &_ostream = std::cout, int _verbosity = standard, bool _show_clock = false, int _indent_space = 2);
 
     template<int _required_verbosity = standard>
     void calculate(const std::string &what) {
@@ -145,6 +146,10 @@ namespace CASM {
 
     operator std::ostream &();
 
+    std::ostream &ostream() {
+      return *m_stream;
+    }
+
     explicit operator bool () {
       return m_print;
     }
@@ -152,15 +157,42 @@ namespace CASM {
     /// \brief Read verbosity level from a string
     static std::pair<bool, int> verbosity_level(std::string s);
 
+    int indent_space() const {
+      return m_indent_space;
+    }
+
+    std::string indent_str() const {
+      return std::string(m_indent_space * m_indent_level, ' ');
+    }
+
+    void increase_indent() {
+      m_indent_level++;
+    }
+
+    void decrease_indent() {
+      if(m_indent_level > 0) {
+        m_indent_level--;
+      }
+      if(m_required_verbosity.size()) {
+        m_required_verbosity.pop_back();
+      }
+    }
+
+    bool print() const;
+
 
   private:
 
     template<int _required_verbosity = standard>
     void _add(const std::string &type, const std::string &what) {
       static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
-      m_print = (m_verbosity >= _required_verbosity);
+      if(m_required_verbosity.size()) {
+        m_required_verbosity.pop_back();
+      }
+      m_required_verbosity.push_back(_required_verbosity);
+      m_print = (m_verbosity >= m_required_verbosity.back());
       if(_print()) {
-        *m_stream << "-- " << type << ": " << what << " -- ";
+        *m_stream << indent_str() << "-- " << type << ": " << what << " -- ";
         _add_time();
         *m_stream << std::endl;
       }
@@ -170,6 +202,7 @@ namespace CASM {
 
     bool _print() const;
 
+    std::vector<int> m_required_verbosity;
 
     /// If m_verbosity >= required verbosity, then print
     int m_verbosity;
@@ -178,6 +211,9 @@ namespace CASM {
     bool m_print;
 
     bool m_show_clock;
+
+    int m_indent_space;
+    int m_indent_level;
 
     boost::chrono::steady_clock::time_point m_start_time;
 

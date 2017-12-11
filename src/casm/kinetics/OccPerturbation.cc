@@ -153,11 +153,15 @@ namespace CASM {
   /// \brief Print OccupationTransformation to stream, using default Printer<Kinetics::OccupationTransformation>
   std::ostream &operator<<(std::ostream &sout, const OccPerturbation &perturb) {
     Printer<OccPerturbation> printer;
-    printer.print(perturb, sout);
+    Log out(sout);
+    printer.print(perturb, out);
     return sout;
   }
 
-  void Printer<OccPerturbation>::print(const OccPerturbation &perturb, std::ostream &out) {
+  void Printer<OccPerturbation>::print(const OccPerturbation &perturb, Log &out) {
+    if(!out.print()) {
+      return;
+    }
     COORD_MODE printer_mode(mode);
 
     Printer<Kinetics::OccupationTransformation> printer;

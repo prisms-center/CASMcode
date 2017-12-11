@@ -345,13 +345,6 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
     //}
   }
 
-  jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
-  Completer::EnumOption enum_opt;
-  enum_opt.desc();
-  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
-  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
-  BOOST_CHECK_EQUAL(success, 0);
-
   /*
   auto vecprinter = [=](const std::string name, const std::vector<int>& v) {
     std::cout << name << " = {";
@@ -372,12 +365,30 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
 
 BOOST_AUTO_TEST_CASE(EnumTest1) {
 
+  test::ZrOProj proj;
+  proj.check_init();
+  proj.check_composition();
+
+  default_log().set_verbosity(Log::verbose);
+  PrimClex primclex(proj.dir, default_log());
+
+  jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
+  diff_trans_json["coordinate_mode"] = std::string("FRAC");
+  Completer::EnumOption enum_opt;
+  enum_opt.desc();
+  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
+  BOOST_CHECK_EQUAL(success, 1);
+}
+
+BOOST_AUTO_TEST_CASE(EnumTest2) {
+
   test::FCCTernaryProj proj;
   proj.check_init();
   proj.check_composition();
 
-  Logging logging = Logging::null();
-  PrimClex primclex(proj.dir, logging);
+  default_log().set_verbosity(Log::verbose);
+  PrimClex primclex(proj.dir, default_log());
 
   jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
   Completer::EnumOption enum_opt;

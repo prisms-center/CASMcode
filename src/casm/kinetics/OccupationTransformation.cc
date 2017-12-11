@@ -70,7 +70,8 @@ namespace CASM {
     /// \brief Print OccupationTransformation to stream, using default Printer<Kinetics::OccupationTransformation>
     std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans) {
       Printer<Kinetics::OccupationTransformation> printer;
-      printer.print(trans, sout);
+      Log out(sout);
+      printer.print(trans, out);
       return sout;
     }
   }
@@ -153,10 +154,13 @@ namespace CASM {
 
   const std::string Printer<Kinetics::OccupationTransformation>::element_name = "OccupationTransformation";
 
-  void Printer<Kinetics::OccupationTransformation>::print(const Kinetics::OccupationTransformation &trans, std::ostream &out) {
+  void Printer<Kinetics::OccupationTransformation>::print(const Kinetics::OccupationTransformation &trans, Log &out) {
+    if(!out.print()) {
+      return;
+    }
     COORD_MODE printer_mode(mode);
 
-    out << indent() << indent() << indent();
+    out << out.indent_str() << indent() << indent() << indent();
     out << trans.uccoord << " : ";
     out << trans.from_value << " (" << trans.from_mol().name() << ")";
     out << "  ->  ";

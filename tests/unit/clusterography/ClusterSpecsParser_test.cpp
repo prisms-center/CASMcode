@@ -85,7 +85,7 @@ namespace {
 
   void local_point_clusters_test(
     const test::TestSupercell &ts,
-    const Kinetics::DiffusionTransformation& phenom) {
+    const Kinetics::DiffusionTransformation &phenom) {
 
     IntegralCluster phenom_sites = phenom.cluster();
 
@@ -95,7 +95,7 @@ namespace {
     OrbitGenerators<WithinScelIntegralClusterOrbit> generators(
       dt_group, ts.within_scel_sym_compare);
 
-    for(Index l=0; l<ts.scel.num_sites(); ++l) {
+    for(Index l = 0; l < ts.scel.num_sites(); ++l) {
       IntegralCluster el(ts.scel.primclex().prim());
       el.elements().push_back(ts.scel.uccoord(l));
       generators.insert(el);
@@ -105,20 +105,20 @@ namespace {
     generators.make_orbits(std::back_inserter(local_point_orbits));
 
     Index count = 0;
-    for(const auto& orbit : local_point_orbits) {
+    for(const auto &orbit : local_point_orbits) {
       count += orbit.size();
     }
 
     BOOST_CHECK_EQUAL(count, ts.scel.num_sites());
 
     FullOrbitPrinter<IntegralCluster> orbit_printer(6, '\n', CART);
-    print_clust(local_point_orbits.begin(), local_point_orbits.end(), std::cout, orbit_printer);
+    print_clust(local_point_orbits.begin(), local_point_orbits.end(), ts.scel.primclex().log(), orbit_printer);
 
   }
 
   void local_pair_clusters_test(
     const test::TestSupercell &ts,
-    const Kinetics::DiffusionTransformation& phenom) {
+    const Kinetics::DiffusionTransformation &phenom) {
 
     IntegralCluster phenom_sites = phenom.cluster();
 
@@ -128,8 +128,8 @@ namespace {
     OrbitGenerators<WithinScelIntegralClusterOrbit> generators(
       dt_group, ts.within_scel_sym_compare);
 
-    for(Index l=0; l<ts.scel.num_sites(); ++l) {
-      for(Index m=0; m<ts.scel.num_sites(); ++m) {
+    for(Index l = 0; l < ts.scel.num_sites(); ++l) {
+      for(Index m = 0; m < ts.scel.num_sites(); ++m) {
         if(l < m) {
           IntegralCluster el(ts.scel.primclex().prim());
           el.elements().push_back(ts.scel.uccoord(l));
@@ -143,14 +143,14 @@ namespace {
     generators.make_orbits(std::back_inserter(local_pair_orbits));
 
     Index count = 0;
-    for(const auto& orbit : local_pair_orbits) {
+    for(const auto &orbit : local_pair_orbits) {
       count += orbit.size();
     }
 
-    BOOST_CHECK_EQUAL(count, ts.scel.num_sites()*(ts.scel.num_sites() - 1)/2);
+    BOOST_CHECK_EQUAL(count, ts.scel.num_sites() * (ts.scel.num_sites() - 1) / 2);
 
     FullOrbitPrinter<IntegralCluster> orbit_printer(6, '\n', CART);
-    print_clust(local_pair_orbits.begin(), local_pair_orbits.end(), std::cout, orbit_printer);
+    print_clust(local_pair_orbits.begin(), local_pair_orbits.end(), ts.scel.primclex().log(), orbit_printer);
 
   }
 
@@ -411,17 +411,17 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
-  const auto& diff_trans_db = primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>();
+  const auto &diff_trans_db = primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>();
   BOOST_CHECK_EQUAL(diff_trans_db.size(), 28);
   BOOST_CHECK_EQUAL(success, 0);
 
   PrototypePrinter<Kinetics::DiffusionTransformation> dt_orbit_printer(6, '\n', CART);
 
   {
-    Index i=0;
-    for(const auto& orbit : diff_trans_db) {
-      std::cout << "\n --- " << orbit.name() << " ---" << std::endl;
-      dt_orbit_printer(orbit, std::cout, i++, diff_trans_db.size());
+    Index i = 0;
+    for(const auto &orbit : diff_trans_db) {
+      log << "\n --- " << orbit.name() << " ---" << std::endl;
+      dt_orbit_printer(orbit, log, i++, diff_trans_db.size());
     }
   }
 
@@ -433,16 +433,16 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
   //print prototypes
   //  {
   //    PrototypePrinter<IntegralCluster> printer;
-  //    print_clust(to.orbits.begin(), to.orbits.end(), std::cout, printer);
+  //    print_clust(to.orbits.begin(), to.orbits.end(), log, printer);
   //  }
 
   //print DiffTrans prototypes
   //  {
   //    PrototypePrinter<Kinetics::DiffusionTransformation> printer;
-  //    print_clust(to.diff_trans_orbits.begin(), to.diff_trans_orbits.end(), std::cout, printer);
+  //    print_clust(to.diff_trans_orbits.begin(), to.diff_trans_orbits.end(), log, printer);
   //    jsonParser json;
   //    write_clust(to.diff_trans_orbits.begin(), to.diff_trans_orbits.end(), json, printer);
-  //    std::cout << json << std::endl;
+  //    log << json << std::endl;
   //  }
 
   // --- minimal ---
@@ -716,83 +716,83 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
 
   // --- custom orbit_branch_specs, equivalence_type=prim (default), specified by name  ---
   {
-//    auto parser = LocalParser(ts.scel, R"({
-//      "standard": {
-//        "orbit_branch_specs": {
-//          "max_length_including_phenomenal": true,
-//          "1": {"max_length": 4., "cutoff_radius": 3.},
-//          "2": {"max_length": 4., "cutoff_radius": 3.}
-//        }
-//      },
-//      "custom": [
-//        {
-//          "phenomenal": "<name>",
-//          "orbit_branch_specs": {
-//            "max_length_including_phenomenal": true,
-//            "1": {"max_length": "inf", "cutoff_radius": 6.},
-//            "2": {"max_length": "inf", "cutoff_radius": 6.},
-//            "3": {"max_length": "inf", "cutoff_radius": 6.}
-//          }
-//        }
-//      ]
-//    })");
-//
-//    BOOST_CHECK_EQUAL(parser->valid(), true);
-//    BOOST_CHECK_EQUAL(parser->standard->max_branch, 2);
-//    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), true);
-//    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
-//    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
-//    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(1), 4.), true);
-//    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 4.), true);
-//
-//    BOOST_CHECK_EQUAL(parser->custom->data.size(), 1);
-//    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_branch, 3);
-//    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length_including_phenomenal(), true);
-//    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(1), 6.), true);
-//    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(2), 6.), true);
-//    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(3), 6.), true);
-//    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(1), std::numeric_limits<double>::infinity());
-//    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(2), std::numeric_limits<double>::infinity());
-//    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(3), std::numeric_limits<double>::infinity());
-//
-//    // checks comparing input phenomenal cluster to test cluster
-//    // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
-//    // only clusters in orbit to.diff_trans_orbits[0] should be found
-//    {
-//      Index linear_orbit_index = 0;
-//      for(const auto &orbit : to.diff_trans_orbits) {
-//        for(const auto &equiv : orbit) {
-//          auto find_res = parser->find(equiv);
-//          auto it = find_res.first;
-//          auto op = find_res.second;
-//          BOOST_CHECK_EQUAL((it != parser->custom->data.end()), (linear_orbit_index == 0));
-//
-//          // check op*phenom == equiv
-//          if(it != parser->custom->data.end()) {
-//            auto &f = *it->phenom->prim_sym_compare;
-//            BOOST_CHECK_EQUAL(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
-//          }
-//
-//          int expected_max_branch = (linear_orbit_index == 0 ? 3 : 2);
-//          BOOST_CHECK_EQUAL(parser->max_branch(it), expected_max_branch);
-//          BOOST_CHECK_EQUAL(parser->max_length_including_phenomenal(it), true);
-//
-//          for(int branch = 1; branch <= parser->max_branch(it); ++branch) {
-//            double expected_cutoff_radius = (linear_orbit_index == 0 ? 6. : 3.);
-//            BOOST_CHECK_EQUAL(parser->cutoff_radius(it, branch), expected_cutoff_radius);
-//
-//            double expected_max_length = (linear_orbit_index == 0 ? std::numeric_limits<double>::infinity() : 4.);
-//            BOOST_CHECK_EQUAL(parser->max_length(it, branch), expected_max_length);
-//          }
-//        }
-//        linear_orbit_index++;
-//      }
-//    }
-//
-//    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-//    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
-//
-//    log << parser->report() << std::endl;
+    //    auto parser = LocalParser(ts.scel, R"({
+    //      "standard": {
+    //        "orbit_branch_specs": {
+    //          "max_length_including_phenomenal": true,
+    //          "1": {"max_length": 4., "cutoff_radius": 3.},
+    //          "2": {"max_length": 4., "cutoff_radius": 3.}
+    //        }
+    //      },
+    //      "custom": [
+    //        {
+    //          "phenomenal": "<name>",
+    //          "orbit_branch_specs": {
+    //            "max_length_including_phenomenal": true,
+    //            "1": {"max_length": "inf", "cutoff_radius": 6.},
+    //            "2": {"max_length": "inf", "cutoff_radius": 6.},
+    //            "3": {"max_length": "inf", "cutoff_radius": 6.}
+    //          }
+    //        }
+    //      ]
+    //    })");
+    //
+    //    BOOST_CHECK_EQUAL(parser->valid(), true);
+    //    BOOST_CHECK_EQUAL(parser->standard->max_branch, 2);
+    //    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), true);
+    //    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
+    //    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
+    //    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(1), 4.), true);
+    //    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 4.), true);
+    //
+    //    BOOST_CHECK_EQUAL(parser->custom->data.size(), 1);
+    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_branch, 3);
+    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length_including_phenomenal(), true);
+    //    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(1), 6.), true);
+    //    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(2), 6.), true);
+    //    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(3), 6.), true);
+    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(1), std::numeric_limits<double>::infinity());
+    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(2), std::numeric_limits<double>::infinity());
+    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(3), std::numeric_limits<double>::infinity());
+    //
+    //    // checks comparing input phenomenal cluster to test cluster
+    //    // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
+    //    // only clusters in orbit to.diff_trans_orbits[0] should be found
+    //    {
+    //      Index linear_orbit_index = 0;
+    //      for(const auto &orbit : to.diff_trans_orbits) {
+    //        for(const auto &equiv : orbit) {
+    //          auto find_res = parser->find(equiv);
+    //          auto it = find_res.first;
+    //          auto op = find_res.second;
+    //          BOOST_CHECK_EQUAL((it != parser->custom->data.end()), (linear_orbit_index == 0));
+    //
+    //          // check op*phenom == equiv
+    //          if(it != parser->custom->data.end()) {
+    //            auto &f = *it->phenom->prim_sym_compare;
+    //            BOOST_CHECK_EQUAL(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
+    //          }
+    //
+    //          int expected_max_branch = (linear_orbit_index == 0 ? 3 : 2);
+    //          BOOST_CHECK_EQUAL(parser->max_branch(it), expected_max_branch);
+    //          BOOST_CHECK_EQUAL(parser->max_length_including_phenomenal(it), true);
+    //
+    //          for(int branch = 1; branch <= parser->max_branch(it); ++branch) {
+    //            double expected_cutoff_radius = (linear_orbit_index == 0 ? 6. : 3.);
+    //            BOOST_CHECK_EQUAL(parser->cutoff_radius(it, branch), expected_cutoff_radius);
+    //
+    //            double expected_max_length = (linear_orbit_index == 0 ? std::numeric_limits<double>::infinity() : 4.);
+    //            BOOST_CHECK_EQUAL(parser->max_length(it, branch), expected_max_length);
+    //          }
+    //        }
+    //        linear_orbit_index++;
+    //      }
+    //    }
+    //
+    //    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
+    //    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    //
+    //    log << parser->report() << std::endl;
   }
 
   // --- custom orbit_specs, equivalence_type=prim (default)  ---
@@ -1022,17 +1022,17 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
 
     Printer<IntegralCluster> cluster_printer(6, '\n', CART);
 
-//    std::cout << "check # matches" << std::endl;
+    //    log << "check # matches" << std::endl;
     {
       std::vector<Index> count = {0, 0};
       BOOST_CHECK_EQUAL(to.diff_trans_orbits[0].size(), 6);
       for(const auto &equiv : to.diff_trans_orbits[0]) {
 
-//        std::cout << "\n##################" << std::endl;
-//        std::cout << "equiv: \n" << equiv << std::endl;
-//        std::cout << "equiv.cluster(): \n";
-        cluster_printer.print(equiv.cluster(), std::cout);
-        std::cout << std::endl;
+        //        log << "\n##################" << std::endl;
+        //        log << "equiv: \n" << equiv << std::endl;
+        //        log << "equiv.cluster(): \n";
+        cluster_printer.print(equiv.cluster(), log);
+        log << std::endl;
 
         auto find_res = parser->find(equiv);
         auto it = find_res.first;
@@ -1053,13 +1053,13 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
             BOOST_CHECK_EQUAL(dt_group.size(), 8);
           }
 
-//          std::cout << "--- dt_group ---" << std::endl;
-//          Index op_index = 0;
-//          for(const auto& op: dt_group) {
-//            std::cout << op_index++ << ":\n" << std::endl;
-//            std::cout << "op.matrix(): \n" << op.matrix() << std::endl;
-//            std::cout << "op.tau(): " << op.tau().transpose() << std::endl << std::endl;
-//          }
+          //          log << "--- dt_group ---" << std::endl;
+          //          Index op_index = 0;
+          //          for(const auto& op: dt_group) {
+          //            log << op_index++ << ":\n" << std::endl;
+          //            log << "op.matrix(): \n" << op.matrix() << std::endl;
+          //            log << "op.tau(): " << op.tau().transpose() << std::endl << std::endl;
+          //          }
 
           OrbitGenerators<ScelPeriodicIntegralClusterOrbit> test_gen(dt_group, ts.scel_sym_compare);
           parser->insert_custom_generators(find_res, test_gen);
@@ -1086,9 +1086,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
     }
 
     // other orbits should not match (this is slow)
-    std::cout << "check # not matches" << std::endl;
+    log << "check # not matches" << std::endl;
     {
-      for(Index i=1; i<to.diff_trans_orbits.size(); ++i) {
+      for(Index i = 1; i < to.diff_trans_orbits.size(); ++i) {
         for(const auto &equiv : to.diff_trans_orbits[i]) {
           auto find_res = parser->find(equiv);
           auto it = find_res.first;
@@ -1115,7 +1115,7 @@ BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_FCCTernary) {
   BOOST_CHECK_EQUAL(true, true);
 
   TestOrbits0 to(primclex);
-  const auto& phenom = to.diff_trans_orbits[0].prototype();
+  const auto &phenom = to.diff_trans_orbits[0].prototype();
 
   {
     test::TestStandardFCCSupercell ts(primclex, 3, 3, 3);
@@ -1163,7 +1163,7 @@ BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_ZrO) {
   BOOST_CHECK_EQUAL(true, true);
 
   TestOrbits1 to(primclex);
-  const auto& phenom = to.diff_trans_orbits[0].prototype();
+  const auto &phenom = to.diff_trans_orbits[0].prototype();
 
   {
     test::TestSupercell ts(primclex, Eigen::Vector3i(3, 3, 3).asDiagonal());

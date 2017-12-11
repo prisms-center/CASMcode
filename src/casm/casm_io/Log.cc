@@ -2,7 +2,9 @@
 
 namespace CASM {
 
-  Log::Log(std::ostream &_ostream, int _verbosity, bool _show_clock) {
+  Log::Log(std::ostream &_ostream, int _verbosity, bool _show_clock, int _indent_space) :
+    m_indent_space(_indent_space),
+    m_indent_level(0) {
     reset(_ostream, _verbosity, _show_clock);
   }
 
@@ -99,6 +101,10 @@ namespace CASM {
     }
 
   };
+
+  bool Log::print() const {
+    return _print();
+  }
 
 
   void Log::_add_time() {
