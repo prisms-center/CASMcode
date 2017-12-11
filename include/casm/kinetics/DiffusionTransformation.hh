@@ -14,7 +14,7 @@
 
 namespace CASM {
 
-  class AtomSpecie;
+  class AtomSpecies;
   class Structure;
   class Configuration;
   class SymOp;
@@ -24,24 +24,24 @@ namespace CASM {
 
   namespace Kinetics {
 
-    /// \brief Specifies a particular specie
-    struct SpecieLocation : public Comparisons<CRTPBase<SpecieLocation>> {
+    /// \brief Specifies a particular species
+    struct SpeciesLocation : public Comparisons<CRTPBase<SpeciesLocation>> {
 
-      SpecieLocation(const UnitCellCoord &_uccoord, Index _occ, Index _pos);
+      SpeciesLocation(const UnitCellCoord &_uccoord, Index _occ, Index _pos);
 
       UnitCellCoord uccoord;
 
       /// Occupant index
       Index occ;
 
-      /// Position of specie in Molecule
+      /// Position of species in Molecule
       Index pos;
 
-      bool operator<(const SpecieLocation &B) const;
+      bool operator<(const SpeciesLocation &B) const;
 
       const Molecule &mol() const;
 
-      const AtomSpecie &specie() const;
+      const AtomSpecies &species() const;
 
     private:
 
@@ -49,40 +49,40 @@ namespace CASM {
     };
 
     /// \brief Print DiffTransInvariants
-    std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj);
+    std::ostream &operator<<(std::ostream &sout, const SpeciesLocation &obj);
 
   }
 
-  jsonParser &to_json(const Kinetics::SpecieLocation &obj, jsonParser &json);
+  jsonParser &to_json(const Kinetics::SpeciesLocation &obj, jsonParser &json);
 
   template<>
-  struct jsonConstructor<Kinetics::SpecieLocation> {
+  struct jsonConstructor<Kinetics::SpeciesLocation> {
 
-    static Kinetics::SpecieLocation from_json(const jsonParser &json, const Structure &prim);
+    static Kinetics::SpeciesLocation from_json(const jsonParser &json, const Structure &prim);
   };
 
-  void from_json(Kinetics::SpecieLocation &obj, const jsonParser &json);
+  void from_json(Kinetics::SpeciesLocation &obj, const jsonParser &json);
 
 
   namespace Kinetics {
 
-    /// \brief Describes how one specie moves
+    /// \brief Describes how one species moves
     class SpecieTrajectory : public Comparisons<CRTPBase<SpecieTrajectory>> {
 
     public:
 
-      SpecieTrajectory(const SpecieLocation &_from, const SpecieLocation &_to);
+      SpecieTrajectory(const SpeciesLocation &_from, const SpeciesLocation &_to);
 
       SpecieTrajectory &operator+=(UnitCell frac);
 
       SpecieTrajectory &operator-=(UnitCell frac);
 
-      bool specie_types_map() const;
+      bool species_types_map() const;
 
       bool is_no_change() const;
 
-      SpecieLocation from;
-      SpecieLocation to;
+      SpeciesLocation from;
+      SpeciesLocation to;
 
       bool operator<(const SpecieTrajectory &B) const;
 
@@ -92,7 +92,7 @@ namespace CASM {
 
     private:
 
-      std::tuple<SpecieLocation, SpecieLocation> _tuple() const;
+      std::tuple<SpeciesLocation, SpeciesLocation> _tuple() const;
 
     };
   }
@@ -120,7 +120,7 @@ namespace CASM {
       DiffTransInvariants(const DiffusionTransformation &trans);
 
       ClusterInvariants<IntegralCluster> cluster_invariants;
-      std::map<AtomSpecie, Index> specie_count;
+      std::map<AtomSpecies, Index> species_count;
 
     };
   }
@@ -164,16 +164,16 @@ namespace CASM {
 
       bool is_valid_occ_transform() const;
 
-      /// \brief Check specie_types_map() && !breaks_indivisible_mol() && !is_subcluster_transformation()
-      bool is_valid_specie_traj() const;
+      /// \brief Check species_types_map() && !breaks_indivisible_mol() && !is_subcluster_transformation()
+      bool is_valid_species_traj() const;
 
-      bool specie_types_map() const;
+      bool species_types_map() const;
 
       bool breaks_indivisible_mol() const;
 
       bool is_subcluster_transformation() const;
 
-      /// \brief Check if specie_traj() and occ_transform() are consistent
+      /// \brief Check if species_traj() and occ_transform() are consistent
       bool is_self_consistent() const;
 
       bool is_valid() const;
@@ -181,11 +181,11 @@ namespace CASM {
       std::vector<OccupationTransformation> &occ_transform();
       const std::vector<OccupationTransformation> &occ_transform() const;
 
-      std::vector<SpecieTrajectory> &specie_traj();
-      const std::vector<SpecieTrajectory> &specie_traj() const;
+      std::vector<SpecieTrajectory> &species_traj();
+      const std::vector<SpecieTrajectory> &species_traj() const;
 
       const IntegralCluster &cluster() const;
-      const std::map<AtomSpecie, Index> &specie_count() const;
+      const std::map<AtomSpecies, Index> &species_count() const;
 
       /// \brief Compare DiffusionTransformation
       ///
@@ -229,20 +229,20 @@ namespace CASM {
       /// \brief Reset mutable members, cluster and invariants, when necessary
       void _reset();
 
-      std::map<AtomSpecie, Index> _from_specie_count() const;
-      std::map<AtomSpecie, Index> _to_specie_count() const;
+      std::map<AtomSpecies, Index> _from_species_count() const;
+      std::map<AtomSpecies, Index> _to_species_count() const;
 
       const Structure *m_prim_ptr;
 
       std::vector<OccupationTransformation> m_occ_transform;
-      std::vector<SpecieTrajectory> m_specie_traj;
+      std::vector<SpecieTrajectory> m_species_traj;
 
       // stores IntegralCluster, based on occ_transform uccoord
       mutable notstd::cloneable_ptr<IntegralCluster> m_cluster;
 
-      // stores Specie -> count, using 'from' specie
-      // - is equal to 'to' specie count if is_valid_occ_transform() == true
-      mutable notstd::cloneable_ptr<std::map<AtomSpecie, Index> > m_specie_count;
+      // stores Specie -> count, using 'from' species
+      // - is equal to 'to' species count if is_valid_occ_transform() == true
+      mutable notstd::cloneable_ptr<std::map<AtomSpecies, Index> > m_species_count;
 
     };
 
@@ -303,10 +303,10 @@ namespace CASM {
   };
 
   template<typename NameIterator>
-  bool includes_all(const std::map<AtomSpecie, Index> specie_count, NameIterator begin, NameIterator end);
+  bool includes_all(const std::map<AtomSpecies, Index> species_count, NameIterator begin, NameIterator end);
 
   template<typename NameIterator>
-  bool excludes_all(const std::map<AtomSpecie, Index> specie_count, NameIterator begin, NameIterator end);
+  bool excludes_all(const std::map<AtomSpecies, Index> species_count, NameIterator begin, NameIterator end);
 
 }
 

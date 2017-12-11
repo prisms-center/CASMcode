@@ -39,13 +39,19 @@ namespace CASM {
     log << std::endl;
   }
 
-  /// add warning if setting in JSON object is unnecessary or unrecognized
+  /// add warning if unrecognized settings are found in self
+  bool KwargsParser::warn_unnecessary(const std::set<std::string> &expected) {
+    return warn_unnecessary(self, fs::path(), expected);
+  }
+
+  /// add warning if unrecognized settings are found in obj located at path
   bool KwargsParser::warn_unnecessary(const jsonParser &obj, fs::path path, const std::set<std::string> &expected) {
     bool all_necessary = true;
     for(auto opt_it = obj.begin(); opt_it != obj.end(); ++opt_it) {
       if(expected.find(opt_it.name()) == expected.end()) {
+        std::string _path = path.empty() ? opt_it.name() : (path / opt_it.name()).string();
         warning.insert(
-          std::string("Warning: ") + "Ignoring setting '" + (path / opt_it.name()).string() + "' (it is unrecognized or unncessary).");
+          std::string("Warning: ") + "Ignoring setting '" + _path + "' (it is unrecognized or unncessary).");
         all_necessary = false;
       }
     }

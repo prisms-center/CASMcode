@@ -336,5 +336,59 @@ namespace CASM {
     }
     return it->get<double>();
   }
+
+
+  // --- LocalOrbitSpecsParser ---
+
+  LocalOrbitSpecsParser::LocalOrbitSpecsParser(
+    const PrimClex &_primclex,
+    jsonParser &_input,
+    fs::path _path,
+    bool _required):
+    KwargsParser(_input, _path, _required),
+    primclex(_primclex) {
+
+    if(exists()) {
+      if(!self.is_array()) {
+        error.insert(std::string("Error: ") + name() + " is not a JSON array");
+        return;
+      }
+
+      // for each custom orbit
+      std::set<std::string> opt {"coordinate_mode", "prototype", "sites", "include_subclusters"};
+      for(Index i = 0; i < self.size(); ++i) {
+        const jsonParser &val = self[i];
+        warn_unnecessary(val, path / boost::lexical_cast<std::string>(i), opt);
+
+        // read orbit generating cluster from specs
+        IntegralCluster input_cluster(primclex.prim());
+        try {
+          from_json(input_cluster, val, primclex.crystallography_tol());
+        }
+        catch(std::exception &e) {
+          std::stringstream msg;
+          msg << "Error in '" << name() << "'[" << i << "] reading cluster: "
+              << e.what() << std::endl << val << std::endl;
+          error.insert(msg.str());
+          continue;
+        }
+
+        bool include_subclusters;
+        try {
+          // check if subclusters should be included (yes by default)
+          val.get_else(include_subclusters, "include_subclusters", true);
+        }
+        catch(std::exception &e) {
+          std::stringstream msg;
+          msg << "Error: in '" << name() << "'[" << i << "] constructing generators: "
+              << e.what() << std::endl << val << std::endl;
+          error.insert(msg.str());
+          continue;
+        }
+
+        prototypes.emplace_back(Data{input_cluster, include_subclusters});
+      }
+    }
+  }
 }
 

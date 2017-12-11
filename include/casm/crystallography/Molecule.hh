@@ -27,21 +27,21 @@ namespace CASM {
   /// may be needed (mass, atomic number, etc).
   /// - Additional fields should only be added if absolutely necessary!
   /// - Vacancies are AtomSpecie with name == "Va"
-  class AtomSpecie : public Comparisons<CRTPBase<AtomSpecie>> {
+  class AtomSpecies : public Comparisons<CRTPBase<AtomSpecies>> {
   public:
 
-    AtomSpecie(std::string const &_name) :
+    AtomSpecies(std::string const &_name) :
       m_name(_name) {}
 
     std::string const &name() const {
       return m_name;
     }
 
-    bool operator==(AtomSpecie const &RHS) const {
+    bool operator==(AtomSpecies const &RHS) const {
       return name() == RHS.name();
     }
 
-    bool operator<(AtomSpecie const &RHS) const {
+    bool operator<(AtomSpecies const &RHS) const {
       return name() < RHS.name();
     }
 
@@ -49,42 +49,42 @@ namespace CASM {
     std::string m_name;
   };
 
-  void from_json(AtomSpecie &_specie, jsonParser const &json);
+  void from_json(AtomSpecies &_species, jsonParser const &json);
 
-  jsonParser &to_json(AtomSpecie const &_specie, jsonParser &json);
+  jsonParser &to_json(AtomSpecies const &_species, jsonParser &json);
   //****************************************************
 
-  /// \brief An atomic specie associated with a position in space
+  /// \brief An atomic species associated with a position in space
   class AtomPosition {
   public:
     typedef std::array<bool, 3> sd_type;
 
-    template<typename AtomSpecieConvertible>
+    template<typename AtomSpeciesConvertible>
     AtomPosition(double _pos1,
                  double _pos2,
                  double _pos3,
-                 AtomSpecieConvertible _specie,
+                 AtomSpeciesConvertible _species,
                  sd_type const &_sd_flag = sd_type{false, false, false}) :
-      m_specie(_specie),
+      m_species(_species),
       m_position(_pos1, _pos2, _pos3),
       m_sd_flag(_sd_flag) { }
 
-    template<typename AtomSpecieConvertible>
+    template<typename AtomSpeciesConvertible>
     AtomPosition(Eigen::Ref<const Eigen::Vector3d> const &_pos,
-                 AtomSpecieConvertible _specie,
+                 AtomSpeciesConvertible _species,
                  sd_type const &_sd_flag = sd_type{false, false, false}) :
       m_position(_pos),
-      m_specie(_specie),
+      m_species(_species),
       m_sd_flag(_sd_flag) { }
 
-    /// Const access of specie name
+    /// Const access of species name
     std::string const &name() const {
-      return m_specie.name();
+      return m_species.name();
     }
 
-    /// Const access of atomic specie
-    AtomSpecie const &specie() const {
-      return m_specie;
+    /// Const access of atomic species
+    AtomSpecies const &species() const {
+      return m_species;
     }
 
     /// Const access of Cartesian position of atom
@@ -108,8 +108,8 @@ namespace CASM {
     AtomPosition &apply_sym(const SymOp &op);
 
   private:
-    /// Atomic specie
-    AtomSpecie m_specie;
+    /// Atomic species
+    AtomSpecies m_species;
 
     /// Cartesian position; origin is centered at site
     Eigen::Vector3d m_position;

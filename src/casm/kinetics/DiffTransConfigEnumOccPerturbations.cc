@@ -544,7 +544,7 @@ namespace CASM {
 
       // get list of linear indices of hopping sites
       std::set<Index> hop_cluster_indices;
-      for(auto &traj : m_base_it->diff_trans.specie_traj()) {
+      for(auto &traj : m_base_it->diff_trans.species_traj()) {
         auto res = hop_cluster_indices.insert(_supercell().linear_index(traj.from.uccoord));
         if(!res.second) {
           std::string msg = "Error in " + enumerator_name + ": Background "

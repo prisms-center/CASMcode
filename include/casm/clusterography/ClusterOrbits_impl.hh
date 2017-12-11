@@ -465,7 +465,7 @@ namespace CASM {
 
     int max_low_shift = 0;
     int max_high_shift = 0;
-    for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
+    for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); it++) {
       Eigen::Vector3l vec = it->from.uccoord.unitcell();
       if(vec.maxCoeff() > max_high_shift) {
         max_high_shift = vec.maxCoeff();
@@ -502,13 +502,13 @@ namespace CASM {
           *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
         }
         if(dist_to_path(diff_trans, tmp) <= xtal_tol) {
-          auto spec_it = diff_trans.specie_traj().begin();
-          for(; spec_it != diff_trans.specie_traj().end(); ++spec_it) {
+          auto spec_it = diff_trans.species_traj().begin();
+          for(; spec_it != diff_trans.species_traj().end(); ++spec_it) {
             if(spec_it->to.uccoord == tmp || spec_it->from.uccoord == tmp) {
               break;
             }
           }
-          if(spec_it == diff_trans.specie_traj().end()) {
+          if(spec_it == diff_trans.species_traj().end()) {
             *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
           }
         }

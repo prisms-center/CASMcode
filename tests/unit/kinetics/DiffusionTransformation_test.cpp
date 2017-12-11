@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_SUITE(DiffusionTransformationTest)
 
 BOOST_AUTO_TEST_CASE(BasicsTest0) {
 
-  typedef Kinetics::SpecieLocation SpecieLocation;
+  typedef Kinetics::SpeciesLocation SpecieLocation;
 
   /// Make test project
   BOOST_CHECK_EQUAL(true, true);
@@ -67,23 +67,23 @@ BOOST_AUTO_TEST_CASE(BasicsTest0) {
     BOOST_CHECK_EQUAL(diff_trans.is_valid_occ_transform(), true);
 
     // Add non-self consistent trajectory
-    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
-    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordB, iVa, 0), SpecieLocation(uccoordA, iVa, 0));
+    diff_trans.species_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
+    diff_trans.species_traj().emplace_back(SpecieLocation(uccoordB, iVa, 0), SpecieLocation(uccoordA, iVa, 0));
     BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(diff_trans.is_valid_specie_traj(), true);
-    BOOST_CHECK_EQUAL(diff_trans.specie_types_map(), true);
+    BOOST_CHECK_EQUAL(diff_trans.is_valid_species_traj(), true);
+    BOOST_CHECK_EQUAL(diff_trans.species_types_map(), true);
     BOOST_CHECK_EQUAL(diff_trans.breaks_indivisible_mol(), false);
     BOOST_CHECK_EQUAL(diff_trans.is_subcluster_transformation(), false);
     BOOST_CHECK_EQUAL(diff_trans.is_self_consistent(), false);
     BOOST_CHECK_EQUAL(diff_trans.is_valid(), false);
-    diff_trans.specie_traj().clear();
+    diff_trans.species_traj().clear();
 
     // Add valid trajectory
-    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
-    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordB, iO, 0), SpecieLocation(uccoordA, iO, 0));
+    diff_trans.species_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
+    diff_trans.species_traj().emplace_back(SpecieLocation(uccoordB, iO, 0), SpecieLocation(uccoordA, iO, 0));
     BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(diff_trans.is_valid_specie_traj(), true);
-    BOOST_CHECK_EQUAL(diff_trans.specie_types_map(), true);
+    BOOST_CHECK_EQUAL(diff_trans.is_valid_species_traj(), true);
+    BOOST_CHECK_EQUAL(diff_trans.species_types_map(), true);
     BOOST_CHECK_EQUAL(diff_trans.breaks_indivisible_mol(), false);
     BOOST_CHECK_EQUAL(diff_trans.is_subcluster_transformation(), false);
     BOOST_CHECK_EQUAL(diff_trans.is_self_consistent(), true);

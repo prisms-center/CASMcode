@@ -7,9 +7,43 @@
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
+#include "casm/casm_io/InputParser_impl.hh"
+#include "casm/clusterography/ClusterSpecsParser_impl.hh"
+#include "casm/casm_io/json_io/SpeciesSetParser_impl.hh"
+
 namespace CASM {
 
   namespace Kinetics {
+
+    class DiffTransEnumParser : InputParser {
+
+    public:
+
+      DiffTransEnumParser(
+        const PrimClex &_primclex,
+        jsonParser &_input,
+        fs::path _path,
+        bool _required);
+
+      std::set<std::string> required_species() const;
+
+      std::set<std::string> excluded_species() const;
+
+      bool dry_run() const;
+
+      COORD_TYPE coordinate_mode() const;
+
+      ORBIT_PRINT_MODE orbit_print_mode() const;
+
+      const PrimPeriodicClustersByMaxLength &cspecs() const;
+
+    private:
+      const PrimClex &m_primclex;
+      std::shared_ptr<PrimPeriodicClustersByMaxLength> m_cspecs_parser;
+      std::shared_ptr<SpeciesSetParser> m_require;
+      std::shared_ptr<SpeciesSetParser> m_exclude;
+    };
+
 
     /// \brief Enumerate DiffusionTransformation for a particular IntegralCluster
     ///
@@ -63,14 +97,14 @@ namespace CASM {
       /// \brief The occ_counter contains the from/to occupation values for each site
       void _init_occ_counter();
 
-      /// \brief Returns container of 'from' specie locations
-      std::vector<SpecieLocation> _init_from_loc(const std::vector<Index> &occ_values);
+      /// \brief Returns container of 'from' species locations
+      std::vector<SpeciesLocation> _init_from_loc(const std::vector<Index> &occ_values);
 
-      /// \brief Returns container of 'to' specie locations
-      std::vector<SpecieLocation> _init_to_loc(const std::vector<Index> &occ_values);
+      /// \brief Returns container of 'to' species locations
+      std::vector<SpeciesLocation> _init_to_loc(const std::vector<Index> &occ_values);
 
-      /// \brief Returns container of 'from' or 'to' specie locations
-      std::vector<SpecieLocation> _init_loc(const std::vector<Index> &occ_values, Index offset);
+      /// \brief Returns container of 'from' or 'to' species locations
+      std::vector<SpeciesLocation> _init_loc(const std::vector<Index> &occ_values, Index offset);
 
       /// \brief Uses m_cluster, m_occ_counter, m_from_loc, and m_to_loc to set m_current
       void _set_current();
@@ -80,8 +114,8 @@ namespace CASM {
 
 
       Counter<std::vector<Index> > m_occ_counter;
-      std::vector<SpecieLocation> m_from_loc;
-      std::vector<SpecieLocation> m_to_loc;
+      std::vector<SpeciesLocation> m_from_loc;
+      std::vector<SpeciesLocation> m_to_loc;
 
       IntegralCluster m_cluster;
       notstd::cloneable_ptr<DiffusionTransformation> m_current;

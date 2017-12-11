@@ -1,15 +1,12 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/HasPrimClex_impl.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
 
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/app/AppIO_impl.hh"
-#include "casm/casm_io/InputParser_impl.hh"
-#include "casm/clusterography/ClusterSpecsParser_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_DiffusionTransformationEnum_interface() {
@@ -30,6 +27,62 @@ namespace CASM {
         return out;
       }
     }
+
+
+    DiffTransEnumParser::DiffTransEnumParser(
+      const PrimClex &_primclex,
+      jsonParser &_input,
+      fs::path _path,
+      bool _required) :
+      InputParser(_input, _path, _required),
+      m_primclex(_primclex) {
+
+      auto _relpath = Relpath(_path);
+
+      // check "cspecs"
+      PrimPeriodicSymCompare<IntegralCluster> sym_compare(_primclex);
+      this->kwargs["cspecs"] = m_cspecs_parser = std::make_shared<PrimPeriodicClustersByMaxLength>(
+                                                   _primclex, _primclex.prim().factor_group(), sym_compare, input, _relpath("cspecs"), true);
+
+      // check "require" and "exclude"
+      this->kwargs["require"] = m_require = std::make_shared<SpeciesSetParser>(
+                                              _primclex, ALLOWED_SPECIES_TYPES::ALL, "require", input, _relpath("require"), true);
+
+      this->kwargs["exclude"] = m_exclude = std::make_shared<SpeciesSetParser>(
+                                              _primclex, ALLOWED_SPECIES_TYPES::ALL, "exclude", input, _relpath("exclude"), true);
+
+      // check values for optional dry_run, coordinate_mode, orbit_print_mode
+      optional<bool>("dry_run");
+      optional<COORD_TYPE>(traits<COORD_TYPE>::name);
+      optional<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name);
+
+      warn_unnecessary({"cspecs", "require", "exclude", "dry_run", traits<COORD_TYPE>::name, traits<ORBIT_PRINT_MODE>::name});
+    }
+
+    std::set<std::string> DiffTransEnumParser::required_species() const {
+      return m_require->values();
+    }
+
+    std::set<std::string> DiffTransEnumParser::excluded_species() const {
+      return m_exclude->values();
+    }
+
+    bool DiffTransEnumParser::dry_run() const {
+      return self.get_if_else<bool>("dry_run", false);
+    }
+
+    COORD_TYPE DiffTransEnumParser::coordinate_mode() const {
+      return self.get_if_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC);
+    }
+
+    ORBIT_PRINT_MODE DiffTransEnumParser::orbit_print_mode() const {
+      return self.get_if_else<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name, ORBIT_PRINT_MODE::PROTO);
+    }
+
+    const PrimPeriodicClustersByMaxLength &DiffTransEnumParser::cspecs() const {
+      return *m_cspecs_parser;
+    }
+
 
     /// \brief Construct with an IntegralCluster
     DiffusionTransformationEnum::DiffusionTransformationEnum(const IntegralCluster &clust) :
@@ -69,12 +122,12 @@ namespace CASM {
       "    See below.          \n\n"
 
       "  require: JSON array of strings (optional,default=[]) \n "
-      "    Indicate required species (atom or molecules names) to enforce that a given species \n"
+      "    Indicate required species (atom or molecule names) to enforce that a given species \n"
       "    must be a part of the diffusion transformation. The JSON array \"require\" should be \n"
       "    an array of species names. i.e. \"require\": [\"Va\",\"O\"] \n\n"
 
       "  exclude: JSON array of strings (optional,default=[]) \n "
-      "    Indicate excluded species (atom or molecules names) to enforce that a given species \n"
+      "    Indicate excluded species (atom or molecule names) to enforce that a given species \n"
       "    must not be a part of the diffusion transformation. The JSON array \"exclude\" should \n"
       "    be an array of species names. i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n"
 
@@ -100,98 +153,28 @@ namespace CASM {
       "  }\n\n"
       ;
 
-    template<typename T, typename...Args>
-    T get_else(const jsonParser &json, const std::string &key, const T &default_value, Args &&... args) {
-      auto it = json.find(key);
-      if(it != json.end()) {
-        return it->get<T>(std::forward<Args>(args)...);
-      }
-      else {
-        return default_value;
-      }
-    }
-
-
-    class DiffTransEnumParser : InputParser, HasPrimClex<CRTPBase<DiffTransEnumParser>> {
-
-    public:
-
-      DiffTransEnumParser(
-        const PrimClex &_primclex,
-        jsonParser &_input,
-        fs::path _path,
-        bool _required) :
-        InputParser(_input, _path, _required),
-        m_primclex(_primclex) {
-
-        auto _relpath = Relpath(_path);
-
-        this->kwargs["cspecs"] =
-          std::make_shared<PrimPeriodicClustersByMaxLength>(
-            input, _relpath("cspecs"), true);
-
-        // check that "require" and "exclude" species names are valid
-        {
-
-        }
-      }
-
-      //      void require_valid_species(std::string option) {
-      //        auto ptr = this->optional<std::set<std::string>>("require");
-      //        if(ptr) {
-      //          auto struc_specie = prim().struc_specie();
-      //          auto struc_mol = prim().struc_molecule();
-      //
-      //          auto res = std::all_of(ptr->begin(), ptr->end(), [&](std::string val) {});
-      //          require_valid_species("require");
-      //        }
-      //      }
-
-      std::set<std::string> required_species() const {
-        return self.get_else<std::set<std::string>>("require", std::set<std::string>());
-      }
-
-      std::set<std::string> excluded_species() const {
-        return self.get_else<std::set<std::string>>("exclude", std::set<std::string>());
-      }
-
-      bool dry_run() const {
-        return self.get_else<bool>("dry_run", false);
-      }
-
-      COORD_TYPE coordinate_mode() const {
-        return self.get_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC);
-      }
-
-      ORBIT_PRINT_MODE orbit_print_mode() const {
-        return self.get_else<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name, ORBIT_PRINT_MODE::PROTO);
-      }
-
-      const PrimPeriodicClustersByMaxLength &cspecs() const {
-        return *m_cspecs_parser;
-      }
-
-      const PrimClex &primclex() const {
-        return m_primclex;
-      }
-
-    private:
-      const PrimClex &m_primclex;
-      std::shared_ptr<PrimPeriodicClustersByMaxLength> m_cspecs_parser;
-
-    };
+    //    template<typename T, typename...Args>
+    //    T get_else(const jsonParser &json, const std::string &key, const T &default_value, Args &&... args) {
+    //      auto it = json.find(key);
+    //      if(it != json.end()) {
+    //        return it->get<T>(std::forward<Args>(args)...);
+    //      }
+    //      else {
+    //        return default_value;
+    //      }
+    //    }
 
     /// Implements increment
     void DiffusionTransformationEnum::increment() {
 
       // get the next valid DiffTrans
-      // to do so, get the next valid specie trajectory
+      // to do so, get the next valid species trajectory
       do {
 
-        // by taking a permutation of possible 'to' specie position
+        // by taking a permutation of possible 'to' species position
         bool valid_perm = std::next_permutation(m_to_loc.begin(), m_to_loc.end());
 
-        // if no more possible specie trajectory,
+        // if no more possible species trajectory,
         if(!valid_perm) {
 
           // get next valid from/to occupation values
@@ -215,7 +198,7 @@ namespace CASM {
         }
         _update_current_to_loc();
       }
-      while(!m_current->is_valid_specie_traj());
+      while(!m_current->is_valid_species_traj());
 
       _increment_step();
     }
@@ -297,15 +280,15 @@ namespace CASM {
         log << lead << "Checking: \n";
         log.increase_indent();
         dt_printer.print(diff_trans_orbit.prototype(), log);
-        auto specie_count = diff_trans_orbit.prototype().specie_count();
+        auto species_count = diff_trans_orbit.prototype().species_count();
 
-        if(!includes_all(specie_count, require.begin(), require.end())) {
+        if(!includes_all(species_count, require.begin(), require.end())) {
           log << lead << "- Missing required species, do not insert" << std::endl;
           log.decrease_indent();
           log << std::endl;
           continue;
         }
-        if(!excludes_all(specie_count, exclude.begin(), exclude.end())) {
+        if(!excludes_all(species_count, exclude.begin(), exclude.end())) {
           log << lead << "- Includes excluded species, do not insert" << std::endl;
           log.decrease_indent();
           log << std::endl;
@@ -390,30 +373,30 @@ namespace CASM {
       m_occ_counter = Counter<std::vector<Index> >(init_occ, final_occ, incr);
     }
 
-    /// \brief Returns container of 'from' specie locations
-    std::vector<SpecieLocation> DiffusionTransformationEnum::_init_from_loc(const std::vector<Index> &occ_values) {
+    /// \brief Returns container of 'from' species locations
+    std::vector<SpeciesLocation> DiffusionTransformationEnum::_init_from_loc(const std::vector<Index> &occ_values) {
       return _init_loc(occ_values, 0);
     }
 
-    /// \brief Returns container of 'to' specie locations
-    std::vector<SpecieLocation> DiffusionTransformationEnum::_init_to_loc(const std::vector<Index> &occ_values) {
+    /// \brief Returns container of 'to' species locations
+    std::vector<SpeciesLocation> DiffusionTransformationEnum::_init_to_loc(const std::vector<Index> &occ_values) {
       return _init_loc(occ_values, cluster().size());
     }
 
-    /// \brief Returns container of 'from' or 'to' specie locations
+    /// \brief Returns container of 'from' or 'to' species locations
     ///
-    /// - offset == 0 for 'from', N for 'to' specie locations
+    /// - offset == 0 for 'from', N for 'to' species locations
     ///
-    std::vector<SpecieLocation> DiffusionTransformationEnum::_init_loc(const std::vector<Index> &occ_values, Index offset) {
+    std::vector<SpeciesLocation> DiffusionTransformationEnum::_init_loc(const std::vector<Index> &occ_values, Index offset) {
 
       Index N = cluster().size();
-      std::vector<SpecieLocation> loc;
+      std::vector<SpeciesLocation> loc;
       // for each 'from' occupant
       for(Index i = 0; i < N; ++i) {
         Index occ = occ_values[i + offset];
         UnitCellCoord uccoord = cluster()[i];
         Index mol_size = uccoord.site().site_occupant()[occ].size();
-        // for each specie
+        // for each species
         for(Index j = 0; j < mol_size; ++j) {
           loc.emplace_back(uccoord, occ, j);
         }
@@ -444,16 +427,16 @@ namespace CASM {
     }
 
     void DiffusionTransformationEnum::_set_current_loc() {
-      m_current->specie_traj().clear();
-      m_current->specie_traj().reserve(m_from_loc.size());
+      m_current->species_traj().clear();
+      m_current->species_traj().reserve(m_from_loc.size());
       for(const auto &t : m_from_loc) {
-        m_current->specie_traj().emplace_back(t, t);
+        m_current->species_traj().emplace_back(t, t);
       }
     }
 
     void DiffusionTransformationEnum::_update_current_to_loc() {
       auto it = m_to_loc.begin();
-      for(auto &t : m_current->specie_traj()) {
+      for(auto &t : m_current->species_traj()) {
         t.to = *it++;
       }
     }

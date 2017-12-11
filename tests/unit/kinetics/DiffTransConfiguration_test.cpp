@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   //test make attachable
   Configuration result = make_attachable(trans, config3);
   BOOST_CHECK_EQUAL(config3 == result, 0);
-  for(auto traj : trans.specie_traj()) {
+  for(auto traj : trans.species_traj()) {
     Index l = result.supercell().linear_index(traj.from.uccoord);
     BOOST_CHECK_EQUAL(result.occ(l), traj.from.occ);
   }

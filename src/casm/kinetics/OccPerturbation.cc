@@ -22,14 +22,14 @@ namespace CASM {
   OccPerturbationInvariants::OccPerturbationInvariants(
     const OccPerturbation &perturb) :
     cluster_invariants(perturb.cluster().invariants()),
-    from_specie_count(CASM::from_specie_count(perturb.begin(), perturb.end())),
-    to_specie_count(CASM::to_specie_count(perturb.begin(), perturb.end())) {}
+    from_species_count(CASM::from_species_count(perturb.begin(), perturb.end())),
+    to_species_count(CASM::to_species_count(perturb.begin(), perturb.end())) {}
 
   /// \brief Check if DiffTransInvariants are equal
   bool almost_equal(const OccPerturbationInvariants &A, const OccPerturbationInvariants &B, double tol) {
     return almost_equal(A.cluster_invariants, B.cluster_invariants, tol)
-           && A.from_specie_count == B.from_specie_count
-           && A.to_specie_count == B.to_specie_count;
+           && A.from_species_count == B.from_species_count
+           && A.to_species_count == B.to_species_count;
   }
 
   /// \brief Compare DiffTransInvariants
@@ -40,27 +40,27 @@ namespace CASM {
     if(compare(B.cluster_invariants, A.cluster_invariants, tol)) {
       return false;
     }
-    if(A.from_specie_count < B.from_specie_count) {
+    if(A.from_species_count < B.from_species_count) {
       return true;
     }
-    if(B.from_specie_count < A.from_specie_count) {
+    if(B.from_species_count < A.from_species_count) {
       return false;
     }
-    return A.to_specie_count < B.to_specie_count;
+    return A.to_species_count < B.to_species_count;
   }
 
   /// \brief Print DiffTransInvariants
   std::ostream &operator<<(std::ostream &sout, const OccPerturbationInvariants &obj) {
     sout << obj.cluster_invariants;
     sout << " from(";
-    if(obj.from_specie_count.size() > 0) {
-      for(const auto &t : obj.from_specie_count) {
+    if(obj.from_species_count.size() > 0) {
+      for(const auto &t : obj.from_species_count) {
         sout << " " << t.first.name() << ":" << t.second;
       }
     }
     sout << ") to(";
-    if(obj.to_specie_count.size() > 0) {
-      for(const auto &t : obj.to_specie_count) {
+    if(obj.to_species_count.size() > 0) {
+      for(const auto &t : obj.to_species_count) {
         sout << " " << t.first.name() << ":" << t.second;
       }
     }

@@ -69,8 +69,12 @@ namespace CASM {
     std::unique_ptr<RequiredType> optional_at(fs::path option, Args &&...args);
 
 
-    /// add warning if setting in JSON object is unnecessary or unrecognized
+    /// add warning if unrecognized settings are found in self
+    bool warn_unnecessary(const std::set<std::string> &expected);
+
+    /// add warning if unrecognized settings are found in obj located at path
     bool warn_unnecessary(const jsonParser &obj, fs::path path, const std::set<std::string> &expected);
+
 
     virtual bool valid() const;
 

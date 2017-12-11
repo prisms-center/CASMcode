@@ -126,10 +126,10 @@ namespace CASM {
   //************************************************************
 
   /// Returns an Array of each *possible* Specie in this Structure
-  std::vector<AtomSpecie> Structure::struc_specie() const {
+  std::vector<AtomSpecies> Structure::struc_species() const {
 
     std::vector<Molecule> tstruc_molecule = struc_molecule();
-    std::vector<AtomSpecie> tstruc_specie;
+    std::vector<AtomSpecies> tstruc_species;
 
     Index i, j;
 
@@ -137,13 +137,13 @@ namespace CASM {
     for(i = 0; i < tstruc_molecule.size(); i++) {
       // For each atomposition in the molecule
       for(j = 0; j < tstruc_molecule[i].size(); j++) {
-        if(!contains(tstruc_specie, tstruc_molecule[i].atom(j).specie())) {
-          tstruc_specie.push_back(tstruc_molecule[i].atom(j).specie());
+        if(!contains(tstruc_species, tstruc_molecule[i].atom(j).species())) {
+          tstruc_species.push_back(tstruc_molecule[i].atom(j).species());
         }
       }
     }
 
-    return tstruc_specie;
+    return tstruc_species;
   }
 
   //************************************************************
@@ -169,18 +169,18 @@ namespace CASM {
   }
 
   /// Returns an Array of each *possible* AtomSpecie in this Structure
-  std::vector<std::string> Structure::struc_specie_name() const {
+  std::vector<std::string> Structure::struc_species_name() const {
 
     // get AtomSpecie allowed in struc
-    std::vector<AtomSpecie> struc_specie = struc_specie();
+    std::vector<AtomSpecies> struc_spec = struc_species();
 
     // store AtomSpecie names in vector
-    std::vector<std::string> struc_specie_name;
-    for(int i = 0; i < struc_specie.size(); i++) {
-      struc_specie_name.push_back(struc_specie[i].name());
+    std::vector<std::string> struc_spec_name;
+    for(int i = 0; i < struc_spec.size(); i++) {
+      struc_spec_name.push_back(struc_spec[i].name());
     }
 
-    return struc_specie_name;
+    return struc_spec_name;
   }
 
   /// Returns an Array of each *possible* Molecule in this Structure
@@ -200,24 +200,24 @@ namespace CASM {
 
   //************************************************************
 
-  /// Returns a list of how many of each specie exist in this Structure
-  ///   The Specie types are ordered according to struc_specie()
-  Eigen::VectorXi Structure::num_each_specie() const {
+  /// Returns a list of how many of each species exist in this Structure
+  ///   The Specie types are ordered according to struc_species()
+  Eigen::VectorXi Structure::num_each_species() const {
 
-    std::vector<AtomSpecie> tstruc_specie = struc_specie();
-    Eigen::VectorXi tnum_each_specie = Eigen::VectorXi::Zero(tstruc_specie.size());
+    std::vector<AtomSpecies> tstruc_species = struc_species();
+    Eigen::VectorXi tnum_each_species = Eigen::VectorXi::Zero(tstruc_species.size());
 
     Index i, j;
     // For each site
     for(i = 0; i < basis.size(); i++) {
       // For each atomposition in the molecule on the site
       for(j = 0; j < basis[i].occ().size(); j++) {
-        // Count the present specie
-        tnum_each_specie(find_index(tstruc_specie, basis[i].occ().atom(j).specie()))++;
+        // Count the present species
+        tnum_each_species(find_index(tstruc_species, basis[i].occ().atom(j).species()))++;
       }
     }
 
-    return tnum_each_specie;
+    return tnum_each_species;
   }
 
   //************************************************************

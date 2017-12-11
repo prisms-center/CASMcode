@@ -114,10 +114,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
     BOOST_CHECK_EQUAL(diff_trans.is_valid_occ_transform(), true);
 
     // Add trajectory
-    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
-    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordB, iO, 0), SpecieLocation(uccoordA, iO, 0));
+    diff_trans.species_traj().emplace_back(SpeciesLocation(uccoordA, iVa, 0), SpeciesLocation(uccoordB, iVa, 0));
+    diff_trans.species_traj().emplace_back(SpeciesLocation(uccoordB, iO, 0), SpeciesLocation(uccoordA, iO, 0));
     BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(diff_trans.is_valid_specie_traj(), true);
+    BOOST_CHECK_EQUAL(diff_trans.is_valid_species_traj(), true);
     BOOST_CHECK_EQUAL(diff_trans.is_valid(), true);
 
     PrimPeriodicDiffTransSymCompare sym_compare(primclex);

@@ -134,7 +134,7 @@ namespace CASM {
     Configuration DiffTransConfigInterpolation::prepare_to_config(const Configuration &config,
                                                                   const DiffusionTransformation &diff_trans) {
       Configuration result = config;
-      for(auto traj : diff_trans.specie_traj()) {
+      for(auto traj : diff_trans.species_traj()) {
         Index k = config.supercell().linear_index(traj.from.uccoord);
         Index l = config.supercell().linear_index(traj.to.uccoord);
 

@@ -272,7 +272,7 @@ namespace CASM {
 
     /// Get data from json, if 'this' contains 'key', else return to 'default_value'
     template<typename T, typename...Args>
-    T get_else(const std::string &key, const T &default_value, Args &&... args) const;
+    T get_if_else(const std::string &key, const T &default_value, Args &&... args) const;
 
     /// Get data from json, if 'this' contains 'key', else set to 'default_value'
     ///   Returns true if 'key' found, else false
@@ -756,7 +756,7 @@ namespace CASM {
   }
 
   template<typename T, typename...Args>
-  T jsonParser::get_else(const std::string &key, const T &default_value, Args &&... args) const {
+  T jsonParser::get_if_else(const std::string &key, const T &default_value, Args &&... args) const {
     auto it = find(key);
     if(it != end()) {
       return it->get<T>(std::forward<Args>(args)...);

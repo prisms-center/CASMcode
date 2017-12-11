@@ -5,6 +5,7 @@
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clex/HasPrimClex_impl.hh"
 
 namespace CASM {
 
