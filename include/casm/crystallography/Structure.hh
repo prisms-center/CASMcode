@@ -76,6 +76,7 @@ namespace CASM {
 
     std::vector<AtomSpecie> struc_specie() const;
     std::vector<Molecule> struc_molecule() const;
+    std::vector<std::string> struc_specie_name() const;
     std::vector<std::string> struc_molecule_name() const;
     Eigen::VectorXi num_each_specie() const;
     Eigen::VectorXi num_each_molecule() const;

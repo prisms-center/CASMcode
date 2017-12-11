@@ -168,10 +168,25 @@ namespace CASM {
     return tstruc_molecule;
   }
 
+  /// Returns an Array of each *possible* AtomSpecie in this Structure
+  std::vector<std::string> Structure::struc_specie_name() const {
+
+    // get AtomSpecie allowed in struc
+    std::vector<AtomSpecie> struc_specie = struc_specie();
+
+    // store AtomSpecie names in vector
+    std::vector<std::string> struc_specie_name;
+    for(int i = 0; i < struc_specie.size(); i++) {
+      struc_specie_name.push_back(struc_specie[i].name());
+    }
+
+    return struc_specie_name;
+  }
+
   /// Returns an Array of each *possible* Molecule in this Structure
   std::vector<std::string> Structure::struc_molecule_name() const {
 
-    // get Molecule allowed in prim, and how many there are
+    // get Molecule allowed in struc
     std::vector<Molecule> struc_mol = struc_molecule();
 
     // store Molecule names in vector

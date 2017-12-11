@@ -1,12 +1,15 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/HasPrimClex_impl.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
 
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/app/AppIO_impl.hh"
+#include "casm/casm_io/InputParser_impl.hh"
+#include "casm/clusterography/ClusterSpecsParser_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_DiffusionTransformationEnum_interface() {
@@ -66,14 +69,14 @@ namespace CASM {
       "    See below.          \n\n"
 
       "  require: JSON array of strings (optional,default=[]) \n "
-      "    Indicate required species to enforce that a given species must be a part of the diffusion \n"
-      "    transformation. The JSON array \"require\" should be an array of species names.\n"
-      "    i.e. \"require\": [\"Va\",\"O\"] \n\n"
+      "    Indicate required species (atom or molecules names) to enforce that a given species \n"
+      "    must be a part of the diffusion transformation. The JSON array \"require\" should be \n"
+      "    an array of species names. i.e. \"require\": [\"Va\",\"O\"] \n\n"
 
       "  exclude: JSON array of strings (optional,default=[]) \n "
-      "    Indicate excluded species to enforce that a given species must not be a part of the diffusion \n"
-      "    transformation. The JSON array \"exclude\" should be an array of species names.\n"
-      "    i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n"
+      "    Indicate excluded species (atom or molecules names) to enforce that a given species \n"
+      "    must not be a part of the diffusion transformation. The JSON array \"exclude\" should \n"
+      "    be an array of species names. i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n"
 
       "  dry_run: bool (optional, default=false)\n"
       "    Perform dry run.\n\n"
@@ -88,7 +91,7 @@ namespace CASM {
       "  {\n"
       "   \"require\":[\"Va\"],\n"
       "   \"exclude\":[],\n"
-      "    \"cspecs\":{\n"
+      "   \"cspecs\":{\n"
       "      \"orbit_branch_specs\" : { \n"
       "       \"2\" : {\"max_length\" : 5.01},\n"
       "       \"3\" : {\"max_length\" : 5.01}\n"
@@ -96,6 +99,87 @@ namespace CASM {
       "    }\n"
       "  }\n\n"
       ;
+
+    template<typename T, typename...Args>
+    T get_else(const jsonParser &json, const std::string &key, const T &default_value, Args &&... args) {
+      auto it = json.find(key);
+      if(it != json.end()) {
+        return it->get<T>(std::forward<Args>(args)...);
+      }
+      else {
+        return default_value;
+      }
+    }
+
+
+    class DiffTransEnumParser : InputParser, HasPrimClex<CRTPBase<DiffTransEnumParser>> {
+
+    public:
+
+      DiffTransEnumParser(
+        const PrimClex &_primclex,
+        jsonParser &_input,
+        fs::path _path,
+        bool _required) :
+        InputParser(_input, _path, _required),
+        m_primclex(_primclex) {
+
+        auto _relpath = Relpath(_path);
+
+        this->kwargs["cspecs"] =
+          std::make_shared<PrimPeriodicClustersByMaxLength>(
+            input, _relpath("cspecs"), true);
+
+        // check that "require" and "exclude" species names are valid
+        {
+
+        }
+      }
+
+      //      void require_valid_species(std::string option) {
+      //        auto ptr = this->optional<std::set<std::string>>("require");
+      //        if(ptr) {
+      //          auto struc_specie = prim().struc_specie();
+      //          auto struc_mol = prim().struc_molecule();
+      //
+      //          auto res = std::all_of(ptr->begin(), ptr->end(), [&](std::string val) {});
+      //          require_valid_species("require");
+      //        }
+      //      }
+
+      std::set<std::string> required_species() const {
+        return self.get_else<std::set<std::string>>("require", std::set<std::string>());
+      }
+
+      std::set<std::string> excluded_species() const {
+        return self.get_else<std::set<std::string>>("exclude", std::set<std::string>());
+      }
+
+      bool dry_run() const {
+        return self.get_else<bool>("dry_run", false);
+      }
+
+      COORD_TYPE coordinate_mode() const {
+        return self.get_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC);
+      }
+
+      ORBIT_PRINT_MODE orbit_print_mode() const {
+        return self.get_else<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name, ORBIT_PRINT_MODE::PROTO);
+      }
+
+      const PrimPeriodicClustersByMaxLength &cspecs() const {
+        return *m_cspecs_parser;
+      }
+
+      const PrimClex &primclex() const {
+        return m_primclex;
+      }
+
+    private:
+      const PrimClex &m_primclex;
+      std::shared_ptr<PrimPeriodicClustersByMaxLength> m_cspecs_parser;
+
+    };
 
     /// Implements increment
     void DiffusionTransformationEnum::increment() {
@@ -207,6 +291,7 @@ namespace CASM {
       log << std::endl;
 
       log.begin<Log::verbose>("Check diff_trans orbits");
+      log << lead << "COORD_MODE = " << coord_mode << std::endl << std::endl;
       lead = log.indent_str() + dry_run_msg;
       for(auto &diff_trans_orbit : diff_trans_orbits) {
         log << lead << "Checking: \n";

@@ -23,9 +23,10 @@ namespace CASM {
   //****************************************************
   ///\brief Lightweight container for atom properties.
 
-  /// For now, it only contains the name, but in future other properties
+  /// - For now, it only contains the name, but in future other properties
   /// may be needed (mass, atomic number, etc).
-  // Additional fields should only be added if absolutely necessary!
+  /// - Additional fields should only be added if absolutely necessary!
+  /// - Vacancies are AtomSpecie with name == "Va"
   class AtomSpecie : public Comparisons<CRTPBase<AtomSpecie>> {
   public:
 
@@ -136,6 +137,13 @@ namespace CASM {
    *  @{
    */
 
+  /// \brief Class representing a Molecule
+  ///
+  /// - A Molecule is a vector of AtomPosition, with a name
+  /// - Vacancies are represented as a single atom Molecule, with molecule name == atom name == "Va"
+  /// - "make_atom" makes a Molecule with a single atom, with molecule name same as atom name
+  /// - "make_vacancy" makes a Molecule with a single atom, with molecule name == atom name == "Va"
+  ///
   class Molecule {
   public:
     /// \brief Return an atomic Molecule with specified name

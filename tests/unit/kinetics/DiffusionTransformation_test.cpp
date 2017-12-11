@@ -390,7 +390,8 @@ BOOST_AUTO_TEST_CASE(EnumTest2) {
   default_log().set_verbosity(Log::verbose);
   PrimClex primclex(proj.dir, default_log());
 
-  jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
+  jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_err_0.json"};
+  diff_trans_json["coordinate_mode"] = std::string("CART");
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);

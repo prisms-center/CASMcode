@@ -42,17 +42,32 @@ namespace CASM {
 
     virtual void print_errors(Log &log, std::string header = "Errors") const;
 
+
     /// equivalent to require_at fs::path(it.name()) / option
     template<typename RequiredType, typename...Args>
     std::unique_ptr<RequiredType> require(jsonParser::const_iterator it, std::string option, Args &&...args);
 
-    /// require option self_it->find(option) of type RequiredType
+    /// require option self.find(option) of type RequiredType
     template<typename RequiredType, typename...Args>
     std::unique_ptr<RequiredType> require(std::string option, Args &&...args);
 
-    /// require option self_it->find(option) of type RequiredType
+    /// require option self.find_at(option) of type RequiredType
     template<typename RequiredType, typename...Args>
     std::unique_ptr<RequiredType> require_at(fs::path option, Args &&...args);
+
+
+    /// equivalent to optional_at fs::path(it.name()) / option
+    template<typename RequiredType, typename...Args>
+    std::unique_ptr<RequiredType> optional(jsonParser::const_iterator it, std::string option, Args &&...args);
+
+    /// check that if option self.find(option) exists it can constructed as type RequiredType
+    template<typename RequiredType, typename...Args>
+    std::unique_ptr<RequiredType> optional(std::string option, Args &&...args);
+
+    /// check that if option self.find_at(option) exists it can constructed as type RequiredType
+    template<typename RequiredType, typename...Args>
+    std::unique_ptr<RequiredType> optional_at(fs::path option, Args &&...args);
+
 
     /// add warning if setting in JSON object is unnecessary or unrecognized
     bool warn_unnecessary(const jsonParser &obj, fs::path path, const std::set<std::string> &expected);
