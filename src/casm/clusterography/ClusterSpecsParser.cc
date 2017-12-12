@@ -226,6 +226,7 @@ namespace CASM {
     this->kwargs["orbit_specs"] =
       std::make_shared<PrimPeriodicOrbitSpecsParser>(
         _primclex, _generating_grp, _sym_compare, input, _relpath("orbit_specs"), false);
+    warn_unnecessary({"orbit_branch_specs", "orbit_specs"});
   }
 
   int PrimPeriodicClustersByMaxLength::max_branch() const {

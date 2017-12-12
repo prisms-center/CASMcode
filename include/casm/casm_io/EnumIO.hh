@@ -7,9 +7,11 @@
 #include <stdexcept>
 #include <map>
 #include <vector>
+#include <set>
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/Help.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 
@@ -56,11 +58,11 @@ namespace CASM {
     return ss.str();
   }
 
-  /// \brief Print help message describing recognized strings for allowed enum values
+  /// \brief Print short help message describing recognized strings for allowed enum values
   ///
   /// Of form:
   /// \code
-  /// Options are: {'CART', 'cart'}, {'FRAC', 'frac', 'DIRECT', 'direct'}, {'INTEGRAL', 'integral'}
+  /// Options are: {'CART', 'FRAC', 'INTEGRAL'}
   /// \endcode
   ///
   /// \ingroup EnumIO
@@ -68,19 +70,14 @@ namespace CASM {
   template<typename ENUM>
   std::string singleline_enum_help() {
     std::stringstream ss;
-    ss << "Options are:";
+    ss << "Options are: {";
     for(auto it = traits<ENUM>::strval.begin(); it != traits<ENUM>::strval.end(); ++it) {
-      ss << "  ";
-      for(auto sit = it->second.begin(); sit != it->second.end(); sit++) {
-        if(sit != it->second.begin()) {
-          ss << " or " << *sit;
-        }
-        else {
-          ss << *sit;
-        }
+      if(it != traits<ENUM>::strval.begin()) {
+        ss << ", ";
       }
-      ss << "\n";
+      ss << "'" << *it->second.begin() << "'";
     }
+    ss << "}";
     return ss.str();
   }
 

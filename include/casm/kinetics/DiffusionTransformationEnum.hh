@@ -15,7 +15,7 @@ namespace CASM {
 
   namespace Kinetics {
 
-    class DiffTransEnumParser : InputParser {
+    class DiffTransEnumParser : public InputParser {
 
     public:
 

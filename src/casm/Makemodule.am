@@ -227,6 +227,7 @@ libcasm_la_SOURCES = \
   src/casm/casm_io/VaspIO.cc\
   src/casm/casm_io/DataStream.cc\
   src/casm/casm_io/Log.cc\
+  src/casm/casm_io/json_io/SpeciesSetParser.cc\
   src/casm/casm_io/json_io/clex.cc
 
 libcasm_la_LIBADD = \

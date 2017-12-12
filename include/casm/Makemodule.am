@@ -693,5 +693,7 @@ casminclude_HEADERS = \
   include/casm/casm_io/SafeOfstream.hh\
   include/casm/casm_io/json_io/clex.hh\
   include/casm/casm_io/json_io/container.hh\
+  include/casm/casm_io/json_io/SpeciesSetParser.hh\
+  include/casm/casm_io/json_io/SpeciesSetParser_impl.hh\
   include/casm/casm_io/stream_io/container.hh
 

@@ -461,8 +461,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 10.), true);
     BOOST_CHECK_THROW(parser->standard->max_length(1), std::runtime_error);
 
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
     log << parser->report() << std::endl;
   }
@@ -489,8 +489,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 12.), true);
     BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(3), 10.), true);
 
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
     log << parser->report() << std::endl;
   }
@@ -510,8 +510,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->valid(), true);
     BOOST_CHECK_EQUAL(parser->standard->warning.size(), 1);
     BOOST_CHECK_EQUAL(parser->standard->error.size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 1);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 1);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
     log << parser->report() << std::endl;
   }
@@ -531,8 +531,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->valid(), false);
     BOOST_CHECK_EQUAL(parser->standard->warning.size(), 0);
     BOOST_CHECK_EQUAL(parser->standard->error.size(), 2);
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 2);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 2);
 
     log << parser->report() << std::endl;
   }
@@ -560,8 +560,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 12.), true);
     BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(3), 10.), true);
 
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
     log << parser->report() << std::endl;
   }
@@ -590,8 +590,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->standard->max_length(2), std::numeric_limits<double>::infinity());
     BOOST_CHECK_EQUAL(parser->standard->max_length(3), std::numeric_limits<double>::infinity());
 
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
     log << parser->report() << std::endl;
   }
@@ -612,8 +612,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->valid(), false);
     BOOST_CHECK_EQUAL(parser->standard->warning.size(), 0);
     BOOST_CHECK_EQUAL(parser->standard->error.size(), 2);
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 2);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 2);
 
     log << parser->report() << std::endl;
   }
@@ -708,8 +708,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     }
 
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
     log << parser->report() << std::endl;
   }
@@ -907,8 +907,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     }
 
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
     log << parser->report() << std::endl;
   }
@@ -1098,8 +1098,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
       }
     }
 
-    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
     log << parser->report() << std::endl;
   }

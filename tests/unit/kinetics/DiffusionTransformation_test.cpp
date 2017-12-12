@@ -18,6 +18,22 @@
 using namespace CASM;
 using namespace test;
 
+namespace {
+
+  struct DiffTransEnumParserPtr {
+    jsonParser input;
+    std::unique_ptr<Kinetics::DiffTransEnumParser> parser;
+
+    DiffTransEnumParserPtr(const PrimClex &primclex, const std::string &specs):
+      input(jsonParser::parse(specs)),
+      parser(notstd::make_unique<Kinetics::DiffTransEnumParser>(primclex, input, fs::path(), true)) {}
+
+    Kinetics::DiffTransEnumParser *operator->() {
+      return parser.get();
+    }
+  };
+}
+
 BOOST_AUTO_TEST_SUITE(DiffusionTransformationTest)
 
 BOOST_AUTO_TEST_CASE(BasicsTest0) {
@@ -361,6 +377,142 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
   vecprinter("mult", mult);
   */
 
+}
+
+BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
+  test::FCCTernaryProj proj;
+  proj.check_init();
+
+  PrimClex primclex(proj.dir, default_log());
+
+  {
+    DiffTransEnumParserPtr parser(primclex, std::string(R"({
+        "cspecs": {
+          "orbit_branch_specs" : {
+            "2" : {"max_length" : 5.0},
+            "3" : {"max_length" : 3.0}
+          }
+        }
+      })"));
+    BOOST_CHECK_EQUAL(parser->valid(), true);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->cspecs().orbit_branch_specs().max_branch, 3);
+    BOOST_CHECK_EQUAL(almost_equal(parser->cspecs().orbit_branch_specs().max_length(2), 5.), true);
+    BOOST_CHECK_EQUAL(almost_equal(parser->cspecs().orbit_branch_specs().max_length(3), 3.), true);
+    BOOST_CHECK_EQUAL(parser->cspecs().orbit_specs().custom_generators.elements.size(), 0);
+    BOOST_CHECK_EQUAL(parser->dry_run(), false);
+    BOOST_CHECK_EQUAL(parser->coordinate_mode(), FRAC);
+    BOOST_CHECK_EQUAL(parser->orbit_print_mode(), ORBIT_PRINT_MODE::PROTO);
+    BOOST_CHECK_EQUAL(parser->required_species().size(), 0);
+    BOOST_CHECK_EQUAL(parser->excluded_species().size(), 0);
+
+    primclex.log() << parser->report() << std::endl;
+  }
+
+  // require and exclude
+  {
+    DiffTransEnumParserPtr parser(primclex, std::string(R"({
+        "require": ["C"],
+        "exclude": ["A", "B"],
+        "cspecs": {
+          "orbit_branch_specs" : {
+            "2" : {"max_length" : 5.0},
+            "3" : {"max_length" : 3.0}
+          }
+        },
+        "dry_run": true
+      })"));
+    BOOST_CHECK_EQUAL(parser->valid(), true);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->required_species().size(), 1);
+    BOOST_CHECK_EQUAL(parser->excluded_species().size(), 2);
+    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+
+    primclex.log() << parser->report() << std::endl;
+  }
+
+  // "require" in wrong place
+  {
+    DiffTransEnumParserPtr parser(primclex, std::string(R"({
+        "cspecs": {
+          "require": ["Va"],
+          "orbit_branch_specs" : {
+            "2" : {"max_length" : 5.0},
+            "3" : {"max_length" : 3.0}
+          }
+        },
+        "dry_run": true
+      })"));
+    BOOST_CHECK_EQUAL(parser->valid(), true);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 1);
+    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+
+    primclex.log() << parser->report() << std::endl;
+  }
+
+  // "Va" not in prim
+  {
+    DiffTransEnumParserPtr parser(primclex, std::string(R"({
+        "require": ["Va"],
+        "cspecs": {
+          "orbit_branch_specs" : {
+            "2" : {"max_length" : 5.0},
+            "3" : {"max_length" : 3.0}
+          }
+        },
+        "dry_run": true
+      })"));
+    BOOST_CHECK_EQUAL(parser->valid(), false);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 1);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->required_species().size(), 1);
+    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+
+    primclex.log() << parser->report() << std::endl;
+  }
+
+  // "unrecognized" option
+  {
+    DiffTransEnumParserPtr parser(primclex, std::string(R"({
+        "cspecs": {
+          "orbit_branch_specs" : {
+            "2" : {"max_length" : 5.0},
+            "3" : {"max_length" : 3.0}
+          }
+        },
+        "dry_run": true,
+        "unrecognized": true
+      })"));
+    BOOST_CHECK_EQUAL(parser->valid(), true);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 1);
+    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+
+    primclex.log() << parser->report() << std::endl;
+  }
+
+  // bad "coordinate_mode" value
+  {
+    DiffTransEnumParserPtr parser(primclex, std::string(R"({
+        "cspecs": {
+          "orbit_branch_specs" : {
+            "2" : {"max_length" : 5.0},
+            "3" : {"max_length" : 3.0}
+          }
+        },
+        "dry_run": true,
+        "coordinate_mode": true
+      })"));
+    BOOST_CHECK_EQUAL(parser->valid(), false);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 1);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+
+    primclex.log() << parser->report() << std::endl;
+  }
 }
 
 BOOST_AUTO_TEST_CASE(EnumTest1) {

@@ -24,19 +24,29 @@ namespace CASM {
     required(_required) {}
 
   void KwargsParser::print_warnings(Log &log, std::string header) const {
-    log.custom(header);
+    bool top = false;
+    if(!header.empty()) {
+      log.custom(header);
+      header = "";
+      top = true;
+    }
     for(const auto &msg : warning) {
       log << msg << std::endl;
     }
-    log << std::endl;
+    if(top) log << std::endl;
   }
 
   void KwargsParser::print_errors(Log &log, std::string header) const {
-    log.custom(header);
+    bool top = false;
+    if(!header.empty()) {
+      log.custom(header);
+      header = "";
+      top = true;
+    }
     for(const auto &msg : error) {
       log << msg << std::endl;
     }
-    log << std::endl;
+    if(top) log << std::endl;
   }
 
   /// add warning if unrecognized settings are found in self
@@ -46,6 +56,7 @@ namespace CASM {
 
   /// add warning if unrecognized settings are found in obj located at path
   bool KwargsParser::warn_unnecessary(const jsonParser &obj, fs::path path, const std::set<std::string> &expected) {
+    jsonParser json;
     bool all_necessary = true;
     for(auto opt_it = obj.begin(); opt_it != obj.end(); ++opt_it) {
       if(expected.find(opt_it.name()) == expected.end()) {
@@ -109,11 +120,12 @@ namespace CASM {
     auto lambda = [](const PairType & pair) {
       return pair.second->valid();
     };
-    return std::all_of(kwargs.begin(), kwargs.end(), lambda);
+    return KwargsParser::valid() && std::all_of(kwargs.begin(), kwargs.end(), lambda);
   }
 
   /// \brief Modifies this->input to include error and warning messages from all parsers in kwargs
   jsonParser &InputParser::report() {
+    KwargsParser::report();
     std::for_each(kwargs.begin(), kwargs.end(), [](const PairType & pair) {
       pair.second->report();
     });
@@ -127,9 +139,15 @@ namespace CASM {
       }
     };
 
-    log.custom(header);
+    bool top = false;
+    if(!header.empty()) {
+      log.custom(header);
+      header = "";
+      top = true;
+    }
+    KwargsParser::print_warnings(log, header);
     std::for_each(kwargs.begin(), kwargs.end(), lambda);
-    log << std::endl;
+    if(top) log << std::endl;
   }
 
   void InputParser::print_errors(Log &log, std::string header) const {
@@ -139,12 +157,18 @@ namespace CASM {
       }
     };
 
-    log.custom(header);
+    bool top = false;
+    if(!header.empty()) {
+      log.custom(header);
+      header = "";
+      top = true;
+    }
+    KwargsParser::print_errors(log, header);
     std::for_each(kwargs.begin(), kwargs.end(), lambda);
-    log << std::endl;
+    if(top) log << std::endl;
   }
 
-  std::set<std::string> InputParser::all_warning() const {
+  std::set<std::string> InputParser::all_warnings() const {
     std::set<std::string> res = this->warning;
     for(const auto &val : kwargs) {
       const auto &parser = *val.second;
@@ -153,7 +177,7 @@ namespace CASM {
     return res;
   }
 
-  std::set<std::string> InputParser::all_error() const {
+  std::set<std::string> InputParser::all_errors() const {
     std::set<std::string> res = this->error;
     for(const auto &val : kwargs) {
       const auto &parser = *val.second;

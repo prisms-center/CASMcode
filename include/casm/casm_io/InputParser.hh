@@ -111,9 +111,9 @@ namespace CASM {
 
     void print_errors(Log &log, std::string header = "Errors") const override;
 
-    std::set<std::string> all_warning() const;
+    std::set<std::string> all_warnings() const;
 
-    std::set<std::string> all_error() const;
+    std::set<std::string> all_errors() const;
   };
 
   /// \brief Return path `base / val`, ensuring result is a relative path
