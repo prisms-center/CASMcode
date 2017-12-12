@@ -3,8 +3,8 @@
 
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
-#include "casm/container/InputEnumerator.hh"
-#include "casm/container/RandomAccessEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
+#include "casm/enumerator/RandomAccessEnumerator.hh"
 #include "casm/clex/Supercell.hh"
 
 /** \defgroup ScelEnumGroup Supercell Enumerators

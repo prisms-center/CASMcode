@@ -18,7 +18,7 @@
 #include "casm/database/Selection.hh"
 #include "casm/database/Selected.hh"
 #include "casm/database/Database.hh"
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/app/enum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"

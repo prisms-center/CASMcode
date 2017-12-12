@@ -2,7 +2,7 @@
 #define CASM_TestEnum
 
 #include "casm/container/Counter.hh"
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 

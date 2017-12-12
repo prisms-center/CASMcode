@@ -2,7 +2,7 @@
 #define CASM_TestEnum_impl
 
 #include "TestEnum.hh"
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 
 namespace CASM {
 

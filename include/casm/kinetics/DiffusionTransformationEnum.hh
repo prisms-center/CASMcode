@@ -2,7 +2,7 @@
 #define CASM_DiffusionTransformationEnum
 
 #include "casm/container/Counter.hh"
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/misc/cloneable_ptr.hh"

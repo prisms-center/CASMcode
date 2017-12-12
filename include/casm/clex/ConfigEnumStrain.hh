@@ -3,7 +3,7 @@
 
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/strain/StrainConverter.hh"
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/container/Counter.hh"
 #include "casm/clex/Configuration.hh"
 

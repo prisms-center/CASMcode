@@ -1,7 +1,7 @@
 #ifndef CASM_EnumEquivalents
 #define CASM_EnumEquivalents
 
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {

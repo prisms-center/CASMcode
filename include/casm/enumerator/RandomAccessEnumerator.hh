@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "casm/container/Enumerator.hh"
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/Enumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 
 namespace CASM {
 

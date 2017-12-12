@@ -6,7 +6,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/enum.hh"
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/database/Selection.hh"
 #include "casm/database/ConfigDatabase.hh"
 

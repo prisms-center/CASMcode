@@ -3,7 +3,7 @@
 
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/container/Counter.hh"
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 

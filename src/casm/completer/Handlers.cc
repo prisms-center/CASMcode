@@ -9,7 +9,7 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/database/DatabaseTypes.hh"
-#include "casm/container/Enumerator.hh"
+#include "casm/enumerator/Enumerator.hh"
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/APICommand.hh"

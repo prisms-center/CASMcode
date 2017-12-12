@@ -1,6 +1,6 @@
 #include "casm/kinetics/EnumDiffTransConfigEndpoints.hh"
 
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"

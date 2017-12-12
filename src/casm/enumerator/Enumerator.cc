@@ -1,4 +1,4 @@
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"

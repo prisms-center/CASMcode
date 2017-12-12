@@ -2,7 +2,7 @@
 #define CASM_DiffTransConfigInterpolation
 
 #include "casm/container/Counter.hh"
-#include "casm/container/RandomAccessEnumerator.hh"
+#include "casm/enumerator/RandomAccessEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/clex/ConfigEnumInterpolation.hh"

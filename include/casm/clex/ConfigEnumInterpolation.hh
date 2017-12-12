@@ -1,7 +1,7 @@
 #ifndef CASM_ConfigEnumInterpolation
 #define CASM_ConfigEnumInterpolation
 
-#include "casm/container/RandomAccessEnumerator.hh"
+#include "casm/enumerator/RandomAccessEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 
 extern "C" {

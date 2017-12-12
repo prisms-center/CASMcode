@@ -2,7 +2,7 @@
 #define CASM_DiffTransConfigEnumOccPerturbations
 
 #include <iterator>
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/container/Counter.hh"
 #include "casm/symmetry/Orbit.hh"
 #include "casm/symmetry/ScelOrbitGeneration.hh"

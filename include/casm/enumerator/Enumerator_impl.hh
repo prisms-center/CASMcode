@@ -2,7 +2,7 @@
 #define CASM_Enumerator_impl
 
 #include "casm/system/RuntimeLibrary.hh"
-#include "casm/container/Enumerator.hh"
+#include "casm/enumerator/Enumerator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/ProjectSettings.hh"
