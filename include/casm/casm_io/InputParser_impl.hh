@@ -80,6 +80,54 @@ namespace CASM {
     }
   }
 
+  /// check that if option self.find(option) exists it can constructed as type RequiredType
+  template<typename RequiredType, typename...Args>
+  RequiredType KwargsParser::optional_else(std::string option, const RequiredType &_default, Args &&...args) {
+    return optional_at_else<RequiredType>(fs::path(option), _default, std::forward<Args>(args)...);
+  }
+
+  /// check that if self.find_at(option) exists, it can constructed as type RequiredType
+  template<typename RequiredType, typename...Args>
+  RequiredType KwargsParser::optional_at_else(fs::path option, const RequiredType &_default, Args &&...args) {
+    auto res = optional_at(option, std::forward<Args>(args)...);
+    return res ? *res : _default;
+  }
+
+  template<typename OptHandlerType>
+  int KwargsParser::parse_verbosity(const OptHandlerType &opt) {
+    std::string verbosity_str = opt.vm().count("verbosity") ?
+                                opt.verbosity_str() :
+                                optional_else<std::string>("verbosity", "standard");
+    auto val = Log::verbosity_level(verbosity_str);
+    if(val.first) {
+      return val.second;
+    }
+    else {
+      error.insert(Log::invalid_verbosity_msg(verbosity_str));
+      return Log::standard;
+    }
+    return 0;
+  }
+
+  template<typename OptHandlerType>
+  bool KwargsParser::parse_dry_run(const OptHandlerType &opt) {
+    return opt.vm().count("dry-run") ?
+           true :
+           optional_else<bool>("dry_run", false);
+  }
+
+  template<typename OptHandlerType>
+  COORD_TYPE KwargsParser::parse_coord_type(const OptHandlerType &opt) {
+    return opt.vm().count("coord") ?
+           opt.coordtype_enum() :
+           optional_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC);
+  }
+
+  template<typename OptHandlerType>
+  ORBIT_PRINT_MODE KwargsParser::parse_orbit_print_mode(const OptHandlerType &opt) {
+    return optional_else<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name, ORBIT_PRINT_MODE::PROTO);
+  }
+
 }
 
 #endif

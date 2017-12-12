@@ -24,6 +24,10 @@ namespace CASM {
   class SpeciesSetParser : public KwargsParser, public HasPrimClex<CRTPBase<SpeciesSetParser>> {
 
   public:
+
+    const std::string require_all_help;
+    const std::string exclude_all_help;
+
     SpeciesSetParser(
       const PrimClex &_primclex,
       ALLOWED_SPECIES_TYPES _allowed_species_types,

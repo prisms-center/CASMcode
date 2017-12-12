@@ -7,6 +7,7 @@
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
+#include "casm/enumerator/EnumInputParser.hh"
 #include "casm/casm_io/InputParser_impl.hh"
 #include "casm/clusterography/ClusterSpecsParser_impl.hh"
 #include "casm/casm_io/json_io/SpeciesSetParser_impl.hh"
@@ -15,7 +16,7 @@ namespace CASM {
 
   namespace Kinetics {
 
-    class DiffTransEnumParser : public InputParser {
+    class DiffTransEnumParser : public EnumInputParser {
 
     public:
 
@@ -25,23 +26,24 @@ namespace CASM {
         fs::path _path,
         bool _required);
 
+      DiffTransEnumParser(
+        const PrimClex &_primclex,
+        jsonParser &_input,
+        const Completer::EnumOption &_enum_opt,
+        fs::path _path,
+        bool _required);
+
       std::set<std::string> required_species() const;
 
       std::set<std::string> excluded_species() const;
 
-      bool dry_run() const;
-
-      COORD_TYPE coordinate_mode() const;
-
-      ORBIT_PRINT_MODE orbit_print_mode() const;
-
       const PrimPeriodicClustersByMaxLength &cspecs() const;
 
     private:
-      const PrimClex &m_primclex;
-      std::shared_ptr<PrimPeriodicClustersByMaxLength> m_cspecs_parser;
       std::shared_ptr<SpeciesSetParser> m_require;
       std::shared_ptr<SpeciesSetParser> m_exclude;
+      std::shared_ptr<PrimPeriodicClustersByMaxLength> m_cspecs_parser;
+
     };
 
 

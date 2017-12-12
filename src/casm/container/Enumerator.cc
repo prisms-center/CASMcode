@@ -142,9 +142,7 @@ namespace CASM {
       return true;
     }
     else {
-      bool res;
-      _kwargs.get_else(res, "dry_run", false);
-      return res;
+      return _kwargs.get_if_else<bool>("dry_run", false);
     }
   }
 }

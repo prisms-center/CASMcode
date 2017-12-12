@@ -28,16 +28,25 @@ namespace CASM {
       }
     }
 
-
     DiffTransEnumParser::DiffTransEnumParser(
       const PrimClex &_primclex,
       jsonParser &_input,
       fs::path _path,
       bool _required) :
-      InputParser(_input, _path, _required),
-      m_primclex(_primclex) {
+      DiffTransEnumParser(_primclex, _input, Completer::EnumOption(), _path, _required) {}
+
+    DiffTransEnumParser::DiffTransEnumParser(
+      const PrimClex &_primclex,
+      jsonParser &_input,
+      const Completer::EnumOption &_enum_opt,
+      fs::path _path,
+      bool _required) :
+      EnumInputParser(_input, _path, _required),
+      m_primclex(_primclex),
+      m_enum_opt(_enum_opt) {
 
       auto _relpath = Relpath(_path);
+      m_enum_opt.desc();
 
       // check "cspecs"
       PrimPeriodicSymCompare<IntegralCluster> sym_compare(_primclex);
@@ -65,18 +74,6 @@ namespace CASM {
 
     std::set<std::string> DiffTransEnumParser::excluded_species() const {
       return m_exclude->values();
-    }
-
-    bool DiffTransEnumParser::dry_run() const {
-      return self.get_if_else<bool>("dry_run", false);
-    }
-
-    COORD_TYPE DiffTransEnumParser::coordinate_mode() const {
-      return self.get_if_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC);
-    }
-
-    ORBIT_PRINT_MODE DiffTransEnumParser::orbit_print_mode() const {
-      return self.get_if_else<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name, ORBIT_PRINT_MODE::PROTO);
     }
 
     const PrimPeriodicClustersByMaxLength &DiffTransEnumParser::cspecs() const {
@@ -114,31 +111,11 @@ namespace CASM {
 
     const std::string DiffusionTransformationEnum::enumerator_name = "DiffusionTransformationEnum";
     const std::string DiffusionTransformationEnum::interface_help =
-      "DiffusionTransformationEnum: \n\n"
-
-      "  cspecs: JSON object \n"
-      "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
-      "    JSON item \"cspecs\" should be a cspecs style initialization of cluster number and sizes.\n"
-      "    See below.          \n\n"
-
-      "  require: JSON array of strings (optional,default=[]) \n "
-      "    Indicate required species (atom or molecule names) to enforce that a given species \n"
-      "    must be a part of the diffusion transformation. The JSON array \"require\" should be \n"
-      "    an array of species names. i.e. \"require\": [\"Va\",\"O\"] \n\n"
-
-      "  exclude: JSON array of strings (optional,default=[]) \n "
-      "    Indicate excluded species (atom or molecule names) to enforce that a given species \n"
-      "    must not be a part of the diffusion transformation. The JSON array \"exclude\" should \n"
-      "    be an array of species names. i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n"
-
-      "  dry_run: bool (optional, default=false)\n"
-      "    Perform dry run.\n\n"
-
-      "  coordinate_mode: string (optional, default=FRAC)\n"
-      "    Coordinate mode (FRAC, CART, INTEGRAL) for printing orbits.\n\n"
-
-      "  orbit_print_mode: string (optional, default=\"PROTO\")\n"
-      "    Mode (FULL, PROTO) to select printing full orbits or just orbit prototypes.\n\n"
+      std::string("DiffusionTransformationEnum: \n\n") +
+      + PrimPeriodicClustersByMaxLength::cspecs_help
+      + SpeciesSetParser::require_all_help
+      + SpeciesSetParser::exclude_all_help
+      + EnumInputParser::standard_help +
 
       "  Example:\n"
       "  {\n"
@@ -210,6 +187,8 @@ namespace CASM {
       const jsonParser &_kwargs,
       const Completer::EnumOption &enum_opt,
       DatabaseType &db) {
+
+      DiffTransEnumParser(primclex, _kwargs, fs::path(), true);
 
       bool dry_run = CASM::dry_run(_kwargs, enum_opt);
       std::string dry_run_msg = CASM::dry_run_msg(dry_run);

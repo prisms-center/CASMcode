@@ -154,6 +154,8 @@ namespace CASM {
       return m_print;
     }
 
+    static std::string invalid_verbosity_msg(std::string s);
+
     /// \brief Read verbosity level from a string
     static std::pair<bool, int> verbosity_level(std::string s);
 

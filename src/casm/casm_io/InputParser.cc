@@ -112,6 +112,24 @@ namespace CASM {
   }
 
 
+  const std::string InputParser::dry_run_help =
+    "  dry_run: bool (optional, default=false)\n"
+    "    Perform dry run.\n\n";
+
+  const std::string InputParser::coordinate_mode_help =
+    "  coordinate_mode: string (optional, default=FRAC)\n"
+    "    Coordinate mode (FRAC, CART, INTEGRAL) for printing orbits.\n\n";
+
+  const std::string InputParser::orbit_print_mode_help =
+    "  orbit_print_mode: string (optional, default=\"PROTO\")\n"
+    "    Mode (FULL, PROTO) to select printing full orbits or just orbit prototypes.\n\n";
+
+  const std::string InputParser::verbosity_help =
+    "  verbosity: string or int (optional, default=\"standard\")\n"
+    "    Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug',\n"
+    "    or an integer 0-100 (0: 'none', 100: 'debug').\n\n";
+
+
   InputParser::InputParser(jsonParser &_input, fs::path _path, bool _required):
     KwargsParser(_input, _path, _required) {}
 

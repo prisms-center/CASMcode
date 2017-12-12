@@ -11,6 +11,7 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/misc/TypeInfo.hh"
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/app/AppIO_impl.hh"
 
 namespace CASM {
 
@@ -69,6 +70,15 @@ namespace CASM {
     std::unique_ptr<RequiredType> optional_at(fs::path option, Args &&...args);
 
 
+    /// check for option, return value or default, error if cannot be constructed
+    template<typename RequiredType, typename...Args>
+    RequiredType optional_else(std::string option, const RequiredType &_default, Args &&...args);
+
+    /// check for option, return value or default, error if cannot be constructed
+    template<typename RequiredType, typename...Args>
+    RequiredType optional_at_else(fs::path option, const RequiredType &_default, Args &&...args);
+
+
     /// add warning if unrecognized settings are found in self
     bool warn_unnecessary(const std::set<std::string> &expected);
 
@@ -90,10 +100,31 @@ namespace CASM {
 
     bool exists() const;
 
+
+    // --- Optional, check CLI and JSON options ---
+
+    template<typename OptHandlerType>
+    int parse_verbosity(const OptHandlerType &opt);
+
+    template<typename OptHandlerType>
+    bool parse_dry_run(const OptHandlerType &opt);
+
+    template<typename OptHandlerType>
+    COORD_TYPE parse_coord_type(const OptHandlerType &opt);
+
+    template<typename OptHandlerType>
+    ORBIT_PRINT_MODE parse_orbit_print_mode(const OptHandlerType &opt);
+
   };
 
   /// Base struct for creating input parsers that include multiple KwargsParser
   struct InputParser : public KwargsParser {
+
+    const std::string dry_run_help;
+    const std::string coordinate_mode_help;
+    const std::string orbit_print_mode_help;
+    const std::string verbosity_help;
+
 
     typedef std::map<fs::path, std::shared_ptr<KwargsParser>> map_type;
     map_type kwargs;

@@ -59,6 +59,12 @@ namespace CASM {
     return *m_stream;
   }
 
+  std::string Log::invalid_verbosity_msg(std::string s) {
+    return std::string("Error: Received '") + s +
+           "', expected one of 'none', 'quiet', 'standard', 'verbose', 'debug', "
+           "or an int in range [0, 100]";
+  }
+
   /// \brief Read verbosity level from a string
   ///
   /// \returns result, a pair of bool,int

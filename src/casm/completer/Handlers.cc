@@ -360,6 +360,16 @@ namespace CASM {
       return m_verbosity_str;
     }
 
+    /// Will throw if not expected string or int in range [0, 100]
+    int OptionHandlerBase::verbosity() const {
+      auto val = Log::verbosity_level(verbosity_str());
+      if(val.first) {
+        return val.second;
+      }
+
+      throw std::invalid_argument(Log::invalid_verbosity_msg(verbosity_str()));
+    }
+
     const fs::path OptionHandlerBase::settings_path() const {
       return m_settings_path;
     }
@@ -571,7 +581,7 @@ namespace CASM {
     void OptionHandlerBase::add_verbosity_suboption() {
       //TODO: add ArgHandler for this
       m_desc.add_options()
-      ("verbosity", po::value<std::string>(&m_verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: all).");
+      ("verbosity", po::value<std::string>(&m_verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: debug).");
       return;
     }
 

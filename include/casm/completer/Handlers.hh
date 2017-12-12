@@ -322,6 +322,9 @@ namespace CASM {
       ///Returns the string corresponding to add_verbosity_suboption()
       const std::string &verbosity_str() const;
 
+      /// Will throw if not expected string or int in range [0, 100]
+      int verbosity() const;
+
       //-------------------------------------------------------------------------------------//
 
       ///Add a --input suboption. Expects a corresponding `casm format` to go with it.
@@ -799,6 +802,7 @@ namespace CASM {
       using OptionHandlerBase::input_str;
       using OptionHandlerBase::supercell_strs;
       using OptionHandlerBase::dry_run;
+      using OptionHandlerBase::verbosity_str;
 
       const std::vector<std::string> &desc_vec() const {
         return m_desc_vec;
