@@ -20,7 +20,7 @@ namespace CASM {
 
   const std::string SuperConfigEnum::enumerator_name = "SuperConfigEnum";
 
-  const std::string SuperConfigEnum::interface_help =
+  std::string SuperConfigEnum::interface_help() {
 
     "SuperConfigEnum: \n\n"
 
@@ -72,6 +72,7 @@ namespace CASM {
     "        \"subconfigs\": \"selection_filename\"\n"
     "      }' \n"
     "\n";
+  }
 
   /// sub-routine for EnumInterface<SuperConfigEnum>::run,
   ///   generates primitive configurations from input

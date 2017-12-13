@@ -63,7 +63,7 @@ namespace CASM {
 
     const std::string DiffTransConfigEnumOccPerturbations::enumerator_name = "DiffTransConfigEnumOccPerturbations";
 
-    std::string _interface_help() {
+    std::string DiffTransConfigEnumOccPerturbations::interface_help() {
       return "DiffTransConfigEnumOccPerturbations: \n\n"
 
              "  orbit_names: JSON array of strings \n"
@@ -123,8 +123,6 @@ namespace CASM {
              "    }\n"
              "  }\n\n";
     }
-
-    const std::string DiffTransConfigEnumOccPerturbations::interface_help = _interface_help();
 
 
     namespace {

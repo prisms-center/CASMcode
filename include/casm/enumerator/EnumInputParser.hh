@@ -13,7 +13,7 @@ namespace CASM {
 
   public:
 
-    static const std::string standard_help;
+    static std::string standard_help();
 
     EnumInputParser(
       const PrimClex &_primclex,
@@ -50,5 +50,7 @@ namespace CASM {
 
   };
 }
+
+#include "casm/clex/HasPrimClex_impl.hh"
 
 #endif

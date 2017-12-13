@@ -209,11 +209,13 @@ namespace CASM {
 
   // --- PrimPeriodicClustersByMaxLength ---
 
-  const std::string PrimPeriodicClustersByMaxLength::cspecs_help =
-    "  cspecs: JSON object \n"
-    "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
-    "    JSON item \"cspecs\" should be a cspecs style initialization of cluster number and sizes.\n"
-    "    See below.          \n\n";
+  std::string PrimPeriodicClustersByMaxLength::cspecs_help() {
+    return
+      "  cspecs: JSON object \n"
+      "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
+      "    JSON item \"cspecs\" should be a cspecs style initialization of cluster number and sizes.\n"
+      "    See below.          \n\n";
+  }
 
   PrimPeriodicClustersByMaxLength::PrimPeriodicClustersByMaxLength(
     const PrimClex &_primclex,

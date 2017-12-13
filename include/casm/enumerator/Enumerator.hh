@@ -63,7 +63,7 @@ namespace CASM {
    *
    *  Variables:
    *  - \code public: static const std::string enumerator_name; \endcode
-   *  - \code public: static const std::string interface_help; \endcode
+   *  - \code public: static std::string interface_help(); \endcode
    *
    *  Functions:
    *  - public: std::string name() const override { return enumerator_name; } \endcode
@@ -495,7 +495,7 @@ namespace CASM {
   public:
 
     std::string help() const override {
-      return Derived::interface_help;
+      return Derived::interface_help();
     }
 
     std::string name() const override {

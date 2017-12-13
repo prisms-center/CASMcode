@@ -2,11 +2,12 @@
 
 namespace CASM {
 
-  const std::string EnumInputParser::standard_help =
-    InputParser::dry_run_help
-    + InputParser::coordinate_mode_help
-    + InputParser::orbit_print_mode_help
-    + InputParser::verbosity_help;
+  std::string EnumInputParser::standard_help() {
+    return InputParser::dry_run_help()
+           + InputParser::coordinate_mode_help()
+           + InputParser::orbit_print_mode_help()
+           + InputParser::verbosity_help();
+  }
 
 
   EnumInputParser::EnumInputParser(
@@ -59,8 +60,12 @@ namespace CASM {
     return m_filter_expr;
   }
 
-  std::set<std::string> expected() {
+  std::set<std::string> EnumInputParser::expected() {
     return std::set<std::string>({"dry_run", "coordinate_mode", "verbosity", "orbit_print_mode", "filter"});
+  }
+
+  const PrimClex &EnumInputParser::primclex() const {
+    return m_primclex;
   }
 
 }

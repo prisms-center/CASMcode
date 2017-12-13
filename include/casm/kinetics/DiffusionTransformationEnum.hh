@@ -71,7 +71,7 @@ namespace CASM {
       }
 
       static const std::string enumerator_name;
-      static const std::string interface_help;
+      static std::string interface_help();
 
       /// Implements run using any set-like container
       template<typename DatabaseType>

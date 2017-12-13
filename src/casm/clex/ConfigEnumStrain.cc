@@ -19,10 +19,12 @@ namespace CASM {
 
   const std::string ConfigEnumStrain::enumerator_name = "ConfigEnumStrain";
 
-  const std::string ConfigEnumStrain::interface_help =
-    "ConfigEnumStrain: \n\n"
+  std::string ConfigEnumStrain::interface_help() {
+    return
+      "ConfigEnumStrain: \n\n"
 
-    "  ... include help documentation here ... \n\n";
+      "  ... include help documentation here ... \n\n";
+  }
 
   int ConfigEnumStrain::run(
     const PrimClex &primclex,

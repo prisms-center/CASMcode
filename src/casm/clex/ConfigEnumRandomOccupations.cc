@@ -14,53 +14,55 @@ namespace CASM {
 
   const std::string ConfigEnumRandomOccupations::enumerator_name = "ConfigEnumRandomOccupations";
 
-  const std::string ConfigEnumRandomOccupations::interface_help =
-    "ConfigEnumRandomOccupations: \n\n"
+  std::string ConfigEnumRandomOccupations::interface_help() {
+    return
+      "ConfigEnumRandomOccupations: \n\n"
 
-    "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
-    "    Indicate supercells to enumerate all occupational configurations in. May \n"
-    "    be a JSON array of supercell names, or a JSON object specifying          \n"
-    "    supercells in terms of size and unit cell. By default, all existing      \n"
-    "    supercells are used. See 'ScelEnum' description for details.         \n\n"
+      "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
+      "    Indicate supercells to enumerate all occupational configurations in. May \n"
+      "    be a JSON array of supercell names, or a JSON object specifying          \n"
+      "    supercells in terms of size and unit cell. By default, all existing      \n"
+      "    supercells are used. See 'ScelEnum' description for details.         \n\n"
 
-    "  n_config: integer (optional, default=100) \n"
-    "    How many random configurations to generate. Includes duplicate and pre-\n"
-    "    existing configurations.                                                 \n\n"
+      "  n_config: integer (optional, default=100) \n"
+      "    How many random configurations to generate. Includes duplicate and pre-\n"
+      "    existing configurations.                                                 \n\n"
 
-    "  primitive_only: bool (default=true)\n"
-    "    If true, only the primitive form of a configuration is saved in the      \n"
-    "    configuration list. Otherwise, both primitive and non-primitive          \n"
-    "    configurations are saved. \n\n"
+      "  primitive_only: bool (default=true)\n"
+      "    If true, only the primitive form of a configuration is saved in the      \n"
+      "    configuration list. Otherwise, both primitive and non-primitive          \n"
+      "    configurations are saved. \n\n"
 
-    "  filter: string (optional, default=None)\n"
-    "    A query command to use to filter which Configurations are kept.          \n\n"
+      "  filter: string (optional, default=None)\n"
+      "    A query command to use to filter which Configurations are kept.          \n\n"
 
-    "  dry_run: bool (optional, default=false)\n"
-    "    Perform dry run.\n\n"
+      "  dry_run: bool (optional, default=false)\n"
+      "    Perform dry run.\n\n"
 
-    "  Examples:\n"
-    "    To enumerate 200 random occupations in supercells up to and including size 4:\n"
-    "      casm enum --method ConfigEnumRandomOccupations -i \n"
-    "        '{\"supercell\":{\"max\":4}, \"n_config\": 200}' \n"
-    "\n"
-    "    To enumerate 200 random occupations in all existing supercells:\n"
-    "      casm enum --method ConfigEnumRandomOccupations -i '{\"n_config\": 200}' \n"
-    "\n"
-    "    To enumerate 100 random occupations in all existing supercells:\n"
-    "      casm enum --method ConfigEnumRandomOccupations' \n"
-    "\n"
-    "    To enumerate 200 random occupations in particular supercells:\n"
-    "      casm enum --method ConfigEnumRandomOccupations -i \n"
-    "      '{ \n"
-    "        \"supercells\": { \n"
-    "          \"name\": [\n"
-    "            \"SCEL1_1_1_1_0_0_0\",\n"
-    "            \"SCEL2_1_2_1_0_0_0\",\n"
-    "            \"SCEL4_1_4_1_0_0_0\"\n"
-    "          ]\n"
-    "        }, \n"
-    "        \"n_config\": 200\n"
-    "      }' \n\n";
+      "  Examples:\n"
+      "    To enumerate 200 random occupations in supercells up to and including size 4:\n"
+      "      casm enum --method ConfigEnumRandomOccupations -i \n"
+      "        '{\"supercell\":{\"max\":4}, \"n_config\": 200}' \n"
+      "\n"
+      "    To enumerate 200 random occupations in all existing supercells:\n"
+      "      casm enum --method ConfigEnumRandomOccupations -i '{\"n_config\": 200}' \n"
+      "\n"
+      "    To enumerate 100 random occupations in all existing supercells:\n"
+      "      casm enum --method ConfigEnumRandomOccupations' \n"
+      "\n"
+      "    To enumerate 200 random occupations in particular supercells:\n"
+      "      casm enum --method ConfigEnumRandomOccupations -i \n"
+      "      '{ \n"
+      "        \"supercells\": { \n"
+      "          \"name\": [\n"
+      "            \"SCEL1_1_1_1_0_0_0\",\n"
+      "            \"SCEL2_1_2_1_0_0_0\",\n"
+      "            \"SCEL4_1_4_1_0_0_0\"\n"
+      "          ]\n"
+      "        }, \n"
+      "        \"n_config\": 200\n"
+      "      }' \n\n";
+  }
 
   int ConfigEnumRandomOccupations::run(
     const PrimClex &primclex,

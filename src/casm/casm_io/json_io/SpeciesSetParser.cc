@@ -26,17 +26,21 @@ namespace CASM {
     throw std::invalid_argument("Error: Unknown ALLOWED_SPECIES_TYPES value");
   }
 
-  const std::string SpeciesSetParser::require_all_help =
-    "  require: JSON array of strings (optional,default=[]) \n "
-    "    Indicate required species (atom or molecule names) to enforce that a given species \n"
-    "    must be a part of the diffusion transformation. The JSON array \"require\" should be \n"
-    "    an array of species names. i.e. \"require\": [\"Va\",\"O\"] \n\n";
+  std::string SpeciesSetParser::require_all_help() {
+    return
+      "  require: JSON array of strings (optional,default=[]) \n "
+      "    Indicate required species (atom or molecule names) to enforce that a given species \n"
+      "    must be a part of the diffusion transformation. The JSON array \"require\" should be \n"
+      "    an array of species names. i.e. \"require\": [\"Va\",\"O\"] \n\n";
+  }
 
-  const std::string SpeciesSetParser::exclude_all_help =
-    "  exclude: JSON array of strings (optional,default=[]) \n "
-    "    Indicate excluded species (atom or molecule names) to enforce that a given species \n"
-    "    must not be a part of the diffusion transformation. The JSON array \"exclude\" should \n"
-    "    be an array of species names. i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n";
+  std::string SpeciesSetParser::exclude_all_help() {
+    return
+      "  exclude: JSON array of strings (optional,default=[]) \n "
+      "    Indicate excluded species (atom or molecule names) to enforce that a given species \n"
+      "    must not be a part of the diffusion transformation. The JSON array \"exclude\" should \n"
+      "    be an array of species names. i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n";
+  }
 
   SpeciesSetParser::SpeciesSetParser(
     const PrimClex &_primclex,

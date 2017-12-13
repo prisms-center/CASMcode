@@ -19,7 +19,8 @@ namespace CASM {
 
   const std::string ConfigEnumOccPerturbations::enumerator_name = "ConfigEnumOccPerturbations";
 
-  const std::string ConfigEnumOccPerturbations::interface_help =
+  std::string ConfigEnumOccPerturbations::interface_help() {
+    return
     "ConfigEnumOccPerturbations: \n\n"
 
     "  background_configs: JSON array of strings \n "
@@ -54,6 +55,7 @@ namespace CASM {
     "      }\n"
     "    }\n"
     "  }\n\n";
+  }
 
   int ConfigEnumOccPerturbations::run(
     const PrimClex &primclex,

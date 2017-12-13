@@ -118,25 +118,25 @@ namespace CASM {
     }
 
     const std::string DiffusionTransformationEnum::enumerator_name = "DiffusionTransformationEnum";
-    const std::string DiffusionTransformationEnum::interface_help =
-      std::string("DiffusionTransformationEnum: \n\n")
-      + PrimPeriodicClustersByMaxLength::cspecs_help
-      + SpeciesSetParser::require_all_help
-      + SpeciesSetParser::exclude_all_help
-      + EnumInputParser::standard_help +
+    std::string DiffusionTransformationEnum::interface_help() {
+      return std::string("DiffusionTransformationEnum: \n\n")
+             + PrimPeriodicClustersByMaxLength::cspecs_help()
+             + SpeciesSetParser::require_all_help()
+             + SpeciesSetParser::exclude_all_help()
+             + EnumInputParser::standard_help() +
 
-      "  Example:\n"
-      "  {\n"
-      "   \"require\":[\"Va\"],\n"
-      "   \"exclude\":[],\n"
-      "   \"cspecs\":{\n"
-      "      \"orbit_branch_specs\" : { \n"
-      "       \"2\" : {\"max_length\" : 5.01},\n"
-      "       \"3\" : {\"max_length\" : 5.01}\n"
-      "      }\n"
-      "    }\n"
-      "  }\n\n"
-      ;
+             "  Example:\n"
+             "  {\n"
+             "   \"require\":[\"Va\"],\n"
+             "   \"exclude\":[],\n"
+             "   \"cspecs\":{\n"
+             "      \"orbit_branch_specs\" : { \n"
+             "       \"2\" : {\"max_length\" : 5.01},\n"
+             "       \"3\" : {\"max_length\" : 5.01}\n"
+             "      }\n"
+             "    }\n"
+             "  }\n\n";
+    }
 
     //    template<typename T, typename...Args>
     //    T get_else(const jsonParser &json, const std::string &key, const T &default_value, Args &&... args) {

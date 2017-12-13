@@ -142,7 +142,7 @@ namespace CASM {
 
     typedef PrimPeriodicOrbit<IntegralCluster> OrbitType;
 
-    static const std::string cspecs_help;
+    static std::string cspecs_help();
 
     PrimPeriodicClustersByMaxLength(
       const PrimClex &_primclex,

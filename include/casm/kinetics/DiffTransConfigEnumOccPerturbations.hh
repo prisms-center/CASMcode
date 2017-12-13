@@ -62,7 +62,7 @@ namespace CASM {
       }
 
       static const std::string enumerator_name;
-      static const std::string interface_help;
+      static std::string interface_help();
 
       /// Enumerate DiffTransConfigEnumOccPerturbations into the project database
       static int run(

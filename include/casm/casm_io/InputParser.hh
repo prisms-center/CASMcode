@@ -123,10 +123,10 @@ namespace CASM {
   /// Base struct for creating input parsers that include multiple KwargsParser
   struct InputParser : public KwargsParser {
 
-    static const std::string dry_run_help;
-    static const std::string coordinate_mode_help;
-    static const std::string orbit_print_mode_help;
-    static const std::string verbosity_help;
+    static std::string dry_run_help();
+    static std::string coordinate_mode_help();
+    static std::string orbit_print_mode_help();
+    static std::string verbosity_help();
 
 
     typedef std::map<fs::path, std::shared_ptr<KwargsParser>> map_type;
