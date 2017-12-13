@@ -41,31 +41,33 @@ namespace CASM {
       const Completer::EnumOption &_enum_opt,
       fs::path _path,
       bool _required) :
-      EnumInputParser(_input, _path, _required),
-      m_primclex(_primclex),
-      m_enum_opt(_enum_opt) {
+      EnumInputParser(_primclex, _input, _enum_opt, _path, _required) {
 
-      auto _relpath = Relpath(_path);
-      m_enum_opt.desc();
+      if(exists()) {
+        auto _relpath = Relpath(_path);
 
-      // check "cspecs"
-      PrimPeriodicSymCompare<IntegralCluster> sym_compare(_primclex);
-      this->kwargs["cspecs"] = m_cspecs_parser = std::make_shared<PrimPeriodicClustersByMaxLength>(
-                                                   _primclex, _primclex.prim().factor_group(), sym_compare, input, _relpath("cspecs"), true);
+        // check "cspecs"
+        PrimPeriodicSymCompare<IntegralCluster> sym_compare(_primclex);
+        this->kwargs["cspecs"] = m_cspecs_parser =
+                                   std::make_shared<PrimPeriodicClustersByMaxLength>(
+                                     _primclex, _primclex.prim().factor_group(), sym_compare, input, _relpath("cspecs"), true);
 
-      // check "require" and "exclude"
-      this->kwargs["require"] = m_require = std::make_shared<SpeciesSetParser>(
-                                              _primclex, ALLOWED_SPECIES_TYPES::ALL, "require", input, _relpath("require"), true);
+        // check "require" and "exclude"
+        this->kwargs["require"] = m_require =
+                                    std::make_shared<SpeciesSetParser>(
+                                      _primclex, ALLOWED_SPECIES_TYPES::ALL, "require", input, _relpath("require"), true);
 
-      this->kwargs["exclude"] = m_exclude = std::make_shared<SpeciesSetParser>(
-                                              _primclex, ALLOWED_SPECIES_TYPES::ALL, "exclude", input, _relpath("exclude"), true);
+        this->kwargs["exclude"] = m_exclude =
+                                    std::make_shared<SpeciesSetParser>(
+                                      _primclex, ALLOWED_SPECIES_TYPES::ALL, "exclude", input, _relpath("exclude"), true);
 
-      // check values for optional dry_run, coordinate_mode, orbit_print_mode
-      optional<bool>("dry_run");
-      optional<COORD_TYPE>(traits<COORD_TYPE>::name);
-      optional<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name);
+        // check values for optional dry_run, coordinate_mode, orbit_print_mode
+        optional<bool>("dry_run");
+        optional<COORD_TYPE>(traits<COORD_TYPE>::name);
+        optional<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name);
 
-      warn_unnecessary({"cspecs", "require", "exclude", "dry_run", traits<COORD_TYPE>::name, traits<ORBIT_PRINT_MODE>::name});
+        warn_unnecessary(expected());
+      }
     }
 
     std::set<std::string> DiffTransEnumParser::required_species() const {
@@ -78,6 +80,12 @@ namespace CASM {
 
     const PrimPeriodicClustersByMaxLength &DiffTransEnumParser::cspecs() const {
       return *m_cspecs_parser;
+    }
+
+    std::set<std::string> DiffTransEnumParser::expected() {
+      std::set<std::string> res = EnumInputParser::expected();
+      res.insert({"cspecs", "require", "exclude"});
+      return res;
     }
 
 
@@ -111,7 +119,7 @@ namespace CASM {
 
     const std::string DiffusionTransformationEnum::enumerator_name = "DiffusionTransformationEnum";
     const std::string DiffusionTransformationEnum::interface_help =
-      std::string("DiffusionTransformationEnum: \n\n") +
+      std::string("DiffusionTransformationEnum: \n\n")
       + PrimPeriodicClustersByMaxLength::cspecs_help
       + SpeciesSetParser::require_all_help
       + SpeciesSetParser::exclude_all_help
@@ -183,57 +191,43 @@ namespace CASM {
     /// Implements run
     template<typename DatabaseType>
     int DiffusionTransformationEnum::run(
-      const PrimClex &primclex,
-      const jsonParser &_kwargs,
-      const Completer::EnumOption &enum_opt,
+      DiffTransEnumParser &parser,
       DatabaseType &db) {
 
-      DiffTransEnumParser(primclex, _kwargs, fs::path(), true);
-
-      bool dry_run = CASM::dry_run(_kwargs, enum_opt);
-      std::string dry_run_msg = CASM::dry_run_msg(dry_run);
-      std::string lead;
-
-      jsonParser kwargs;
-      if(!_kwargs.contains("cspecs")) {
-        primclex.err_log() << "DiffusionTransformationEnum currently has no default and requires a correct JSON with a bspecs tag within it" << std::endl;
-        throw std::runtime_error("Error in DiffusionTransformationEnum: cspecs not found");
-      }
-
-      std::vector<std::string> require;
-      std::vector<std::string> exclude;
-      if(_kwargs.contains("require")) {
-        for(auto it = _kwargs["require"].begin(); it != _kwargs["require"].end(); ++it) {
-          require.push_back(from_json<std::string>(*it));
-        }
-      }
-      if(_kwargs.contains("exclude")) {
-        for(auto it = _kwargs["exclude"].begin(); it != _kwargs["exclude"].end(); ++it) {
-          exclude.push_back(from_json<std::string>(*it));
-        }
-      }
-      std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
-
-      COORD_TYPE coord_mode;
-      _kwargs.get_else(coord_mode, traits<COORD_TYPE>::name, COORD_TYPE::FRAC);
-      ORBIT_PRINT_MODE orbit_print_mode;
-      _kwargs.get_else(orbit_print_mode, traits<ORBIT_PRINT_MODE>::name, ORBIT_PRINT_MODE::PROTO);
-      Printer<Kinetics::DiffusionTransformation> dt_printer(6, '\n', coord_mode);
-
-      Index Ninit = db.size();
+      const PrimClex &primclex = parser.primclex();
       Log &log = primclex.log();
-      lead = dry_run_msg;
-      log << lead << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
+      COORD_TYPE coord_mode = parser.coord_mode();
+      ORBIT_PRINT_MODE orbit_print_mode = parser.orbit_print_mode();
+      std::string dry_run_msg = parser.dry_run_msg();
+      std::set<std::string> require = parser.required_species();
+      std::set<std::string> exclude = parser.excluded_species();
+      std::string lead = dry_run_msg;
 
       log.begin(enumerator_name);
+      Index Ninit = db.size();
+      log << lead << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
+
       log.increase_indent();
       log << std::endl;
+
+      if(!parser.valid()) {
+        parser.print_errors(log);
+        log << std::endl << parser.report() << std::endl;
+        log.decrease_indent();
+        return 1;
+      }
+      if(parser.all_warnings().size()) {
+        parser.print_warnings(log);
+        log << std::endl << parser.report() << std::endl;
+      }
+
+      Printer<Kinetics::DiffusionTransformation> dt_printer(6, '\n', coord_mode);
 
       log.begin<Log::verbose>("Calculate cluster orbits");
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       auto end = make_prim_periodic_orbits(
                    primclex.prim(),
-                   _kwargs["cspecs"],
+                   parser.cspecs().self, // TODO
                    alloy_sites_filter,
                    primclex.crystallography_tol(),
                    std::back_inserter(orbits),
@@ -299,18 +293,34 @@ namespace CASM {
       return 0;
     }
 
-    /// Implements run
+    /// Implements run using any set-like container
+    template<typename DatabaseType>
+    int DiffusionTransformationEnum::run(
+      const PrimClex &primclex,
+      const jsonParser &_kwargs,
+      const Completer::EnumOption &enum_opt,
+      DatabaseType &db) {
+
+      jsonParser input {_kwargs};
+      DiffTransEnumParser parser(primclex, input, enum_opt, fs::path(), true);
+      return DiffusionTransformationEnum::run(parser, db);
+    }
+
+    /// Implements run using default database  (and commits)
     int DiffusionTransformationEnum::run(
       const PrimClex &primclex,
       const jsonParser &_kwargs,
       const Completer::EnumOption &enum_opt) {
 
+      jsonParser input {_kwargs};
+      DiffTransEnumParser parser(primclex, input, enum_opt, fs::path(), true);
       auto &db = primclex.db<PrimPeriodicDiffTransOrbit>();
-      bool dry_run = CASM::dry_run(_kwargs, enum_opt);
+      int res = DiffusionTransformationEnum::run(parser, db);
+      if(res) {
+        return res;
+      }
 
-      DiffusionTransformationEnum::run(primclex, _kwargs, enum_opt, db);
-
-      if(!dry_run) {
+      if(!parser.dry_run()) {
         primclex.log() << "Writing diffusion transformation database..." << std::endl;
         db.commit();
         primclex.log() << "  DONE" << std::endl;

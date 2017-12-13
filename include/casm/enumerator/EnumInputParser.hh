@@ -13,7 +13,7 @@ namespace CASM {
 
   public:
 
-    const std::string standard_help;
+    static const std::string standard_help;
 
     EnumInputParser(
       const PrimClex &_primclex,
@@ -26,16 +26,18 @@ namespace CASM {
 
     std::string dry_run_msg() const;
 
-    COORD_TYPE coordinate_mode() const;
+    COORD_TYPE coord_mode() const;
 
     ORBIT_PRINT_MODE orbit_print_mode() const;
 
     int verbosity() const;
 
+    std::vector<std::string> filter_expr() const;
+
     const PrimClex &primclex() const;
 
   protected:
-    std::set<std::string> expected();
+    static std::set<std::string> expected();
 
   private:
     const PrimClex &m_primclex;
@@ -44,6 +46,7 @@ namespace CASM {
     COORD_TYPE m_coord_mode;
     ORBIT_PRINT_MODE m_orbit_print_mode;
     int m_verbosity;
+    std::vector<std::string> m_filter_expr;
 
   };
 }

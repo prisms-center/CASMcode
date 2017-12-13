@@ -115,15 +115,18 @@ namespace CASM {
     template<typename OptHandlerType>
     ORBIT_PRINT_MODE parse_orbit_print_mode(const OptHandlerType &opt);
 
+    template<typename OptHandlerType>
+    std::vector<std::string> parse_filter_expr(const OptHandlerType &opt);
+
   };
 
   /// Base struct for creating input parsers that include multiple KwargsParser
   struct InputParser : public KwargsParser {
 
-    const std::string dry_run_help;
-    const std::string coordinate_mode_help;
-    const std::string orbit_print_mode_help;
-    const std::string verbosity_help;
+    static const std::string dry_run_help;
+    static const std::string coordinate_mode_help;
+    static const std::string orbit_print_mode_help;
+    static const std::string verbosity_help;
 
 
     typedef std::map<fs::path, std::shared_ptr<KwargsParser>> map_type;

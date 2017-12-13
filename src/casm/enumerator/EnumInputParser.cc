@@ -23,11 +23,14 @@ namespace CASM {
     m_orbit_print_mode(ORBIT_PRINT_MODE::PROTO),
     m_verbosity(Log::standard) {
 
+    m_enum_opt.desc();
+
     if(exists()) {
       m_dry_run = parse_dry_run(m_enum_opt);
       m_coord_mode = parse_coord_type(m_enum_opt);
       m_orbit_print_mode = parse_orbit_print_mode(m_enum_opt);
       m_verbosity = parse_verbosity(m_enum_opt);
+      m_filter_expr = parse_filter_expr(m_enum_opt);
       // warn_unnecessary should be done in derived
     }
   }
@@ -40,7 +43,7 @@ namespace CASM {
     return CASM::dry_run_msg(dry_run());
   }
 
-  COORD_TYPE EnumInputParser::coordinate_mode() const {
+  COORD_TYPE EnumInputParser::coord_mode() const {
     return m_coord_mode;
   }
 
@@ -52,8 +55,12 @@ namespace CASM {
     return m_verbosity;
   }
 
-  std::set<std::string> expected() const {
-    return std::set<std::string>({"dry_run", "coordinate_mode", "verbosity", "orbit_print_mode"});
+  std::vector<std::string> EnumInputParser::filter_expr() const {
+    return m_filter_expr;
+  }
+
+  std::set<std::string> expected() {
+    return std::set<std::string>({"dry_run", "coordinate_mode", "verbosity", "orbit_print_mode", "filter"});
   }
 
 }

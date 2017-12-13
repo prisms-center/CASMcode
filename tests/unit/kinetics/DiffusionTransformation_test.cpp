@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
     BOOST_CHECK_EQUAL(almost_equal(parser->cspecs().orbit_branch_specs().max_length(3), 3.), true);
     BOOST_CHECK_EQUAL(parser->cspecs().orbit_specs().custom_generators.elements.size(), 0);
     BOOST_CHECK_EQUAL(parser->dry_run(), false);
-    BOOST_CHECK_EQUAL(parser->coordinate_mode(), FRAC);
+    BOOST_CHECK_EQUAL(parser->coord_mode(), FRAC);
     BOOST_CHECK_EQUAL(parser->orbit_print_mode(), ORBIT_PRINT_MODE::PROTO);
     BOOST_CHECK_EQUAL(parser->required_species().size(), 0);
     BOOST_CHECK_EQUAL(parser->excluded_species().size(), 0);

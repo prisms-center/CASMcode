@@ -110,7 +110,6 @@ libcasm_la_SOURCES = \
   src/casm/symmetry/ConfigSubOrbits.cc\
   src/casm/completer/Complete.cc\
   src/casm/completer/Handlers.cc\
-  src/casm/container/Enumerator.cc\
   src/casm/container/LinearAlgebra.cc\
   src/casm/container/Permutation.cc\
   src/casm/system/RuntimeLibrary.cc\
@@ -228,7 +227,9 @@ libcasm_la_SOURCES = \
   src/casm/casm_io/DataStream.cc\
   src/casm/casm_io/Log.cc\
   src/casm/casm_io/json_io/SpeciesSetParser.cc\
-  src/casm/casm_io/json_io/clex.cc
+  src/casm/casm_io/json_io/clex.cc\
+  src/casm/enumerator/Enumerator.cc\
+  src/casm/enumerator/EnumInputParser.cc
 
 libcasm_la_LIBADD = \
   $(BOOST_SYSTEM_LIB)\

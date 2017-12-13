@@ -803,6 +803,7 @@ namespace CASM {
       using OptionHandlerBase::supercell_strs;
       using OptionHandlerBase::dry_run;
       using OptionHandlerBase::verbosity_str;
+      using OptionHandlerBase::coordtype_enum;
 
       const std::vector<std::string> &desc_vec() const {
         return m_desc_vec;

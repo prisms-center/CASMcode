@@ -39,6 +39,8 @@ namespace CASM {
 
       const PrimPeriodicClustersByMaxLength &cspecs() const;
 
+      static std::set<std::string> expected();
+
     private:
       std::shared_ptr<SpeciesSetParser> m_require;
       std::shared_ptr<SpeciesSetParser> m_exclude;
@@ -71,7 +73,7 @@ namespace CASM {
       static const std::string enumerator_name;
       static const std::string interface_help;
 
-      /// Implements run
+      /// Implements run using any set-like container
       template<typename DatabaseType>
       static int run(
         const PrimClex &primclex,
@@ -79,11 +81,19 @@ namespace CASM {
         const Completer::EnumOption &enum_opt,
         DatabaseType &db);
 
+      /// Implements run using default database (and commits)
+      static int run(
+        const PrimClex &primclex,
+        const jsonParser &_kwargs,
+        const Completer::EnumOption &enum_opt);
+
       /// Implements run
-      static int run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
+      template<typename DatabaseType>
+      static int run(
+        DiffTransEnumParser &parser,
+        DatabaseType &db);
 
     private:
-
 
       /// Implements increment
       void increment() override;

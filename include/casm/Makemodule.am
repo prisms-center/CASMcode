@@ -174,18 +174,14 @@ casminclude_HEADERS = \
   include/casm/container/Permutation.hh\
   include/casm/container/LinearAlgebra.hh\
   include/casm/container/Tensor.hh\
-  include/casm/container/Enumerator.hh\
   include/casm/container/IsoCounter.hh\
   include/casm/container/Template_Algorithms.hh\
   include/casm/container/MultiCounter.hh\
   include/casm/container/Counter.hh\
   include/casm/container/Array.hh\
-  include/casm/container/Enumerator_impl.hh\
-  include/casm/container/RandomAccessEnumerator.hh\
   include/casm/container/BaseCounter.hh\
   include/casm/container/PolyTrie.hh\
   include/casm/container/algorithm.hh\
-  include/casm/container/InputEnumerator.hh\
   include/casm/container/ContainerTraits.hh\
   include/casm/system/Popen.hh\
   include/casm/system/RuntimeLibrary.hh\
@@ -695,5 +691,10 @@ casminclude_HEADERS = \
   include/casm/casm_io/json_io/container.hh\
   include/casm/casm_io/json_io/SpeciesSetParser.hh\
   include/casm/casm_io/json_io/SpeciesSetParser_impl.hh\
-  include/casm/casm_io/stream_io/container.hh
+  include/casm/casm_io/stream_io/container.hh\
+  include/casm/enumerator/Enumerator.hh\
+  include/casm/enumerator/Enumerator_impl.hh\
+  include/casm/enumerator/RandomAccessEnumerator.hh\
+  include/casm/enumerator/InputEnumerator.hh\
+  include/casm/enumerator/EnumInputParser.hh
 

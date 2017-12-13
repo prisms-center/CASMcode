@@ -89,7 +89,7 @@ namespace CASM {
   /// check that if self.find_at(option) exists, it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   RequiredType KwargsParser::optional_at_else(fs::path option, const RequiredType &_default, Args &&...args) {
-    auto res = optional_at(option, std::forward<Args>(args)...);
+    auto res = optional_at<RequiredType>(option, std::forward<Args>(args)...);
     return res ? *res : _default;
   }
 
@@ -126,6 +126,22 @@ namespace CASM {
   template<typename OptHandlerType>
   ORBIT_PRINT_MODE KwargsParser::parse_orbit_print_mode(const OptHandlerType &opt) {
     return optional_else<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name, ORBIT_PRINT_MODE::PROTO);
+  }
+
+  template<typename OptHandlerType>
+  std::vector<std::string> KwargsParser::parse_filter_expr(const OptHandlerType &opt) {
+    if(opt.vm().count("filter")) {
+      return opt.filter_strs();
+    }
+    else {
+      auto ptr = optional<std::string>("filter");
+      if(ptr) {
+        return std::vector<std::string>({*ptr});
+      }
+      else {
+        return std::vector<std::string>();
+      }
+    }
   }
 
 }

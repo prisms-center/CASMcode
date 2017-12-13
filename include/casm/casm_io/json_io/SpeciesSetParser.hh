@@ -25,8 +25,8 @@ namespace CASM {
 
   public:
 
-    const std::string require_all_help;
-    const std::string exclude_all_help;
+    static const std::string require_all_help;
+    static const std::string exclude_all_help;
 
     SpeciesSetParser(
       const PrimClex &_primclex,

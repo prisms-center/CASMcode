@@ -3,6 +3,7 @@
 
 #include "casm/completer/Handlers.hh"
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/EnumIO.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
@@ -411,30 +412,15 @@ namespace CASM {
     }
 
     COORD_TYPE OptionHandlerBase::coordtype_enum() const {
-      COORD_TYPE selected_mode;
-
-      if(m_coordtype_str[0] == 'F' || m_coordtype_str[0] == 'f') {
-        selected_mode = COORD_TYPE::FRAC;
-      }
-
-      else if(m_coordtype_str[0] == 'C' || m_coordtype_str[0] == 'c') {
-        selected_mode = COORD_TYPE::CART;
-      }
-
-      else {
-        selected_mode = COORD_TYPE::COORD_DEFAULT;
-      }
-
-      return selected_mode;
+      return from_string<COORD_TYPE>(coordtype_str());
     }
 
     void OptionHandlerBase::add_selection_suboption(const fs::path &_default) {
       m_desc.add_options()
       ("selection,c",
        po::value<fs::path>(&m_selection_path)->default_value(_default)->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected objects from the given selection file. "
-                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+       (std::string("Only consider the selected objects from the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
       return;
     }
 
@@ -442,9 +428,8 @@ namespace CASM {
       m_desc.add_options()
       ("config,c",
        po::value<fs::path>(&m_selection_path)->default_value(_default)->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected configurations of the given selection file. "
-                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+       (std::string("Only consider the selected configurations of the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
       return;
     }
 
@@ -452,9 +437,8 @@ namespace CASM {
       m_desc.add_options()
       ("selections,c",
        po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {_default})->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected objects from the given selection file. "
-                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+       (std::string("Only consider the selected objects from the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
       return;
     }
 
@@ -462,9 +446,8 @@ namespace CASM {
       m_desc.add_options()
       ("configs,c",
        po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {_default})->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected configurations of the given selection file. "
-                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+       (std::string("Only consider the selected configurations of the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
       return;
     }
 
@@ -472,8 +455,8 @@ namespace CASM {
       m_desc.add_options()
       ("config,c",
        po::value<fs::path>(&m_selection_path)->value_name(ArgHandler::path()),
-       "Only consider the selected configurations of the given selection file. "
-       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. ");
+       (std::string("Only consider the selected configurations of the given selection file. ") +
+        standard_singleline_enum_help<DB::SELECTION_TYPE>("", "filename")).c_str());
       return;
     }
 
@@ -481,8 +464,8 @@ namespace CASM {
       m_desc.add_options()
       ("configs,c",
        po::value<std::vector<fs::path> >(&m_selection_paths)->value_name(ArgHandler::path()),
-       "Only consider the selected configurations of the given selection files. "
-       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. ");
+       (std::string("Only consider the selected configurations of the given selection files. ") +
+        standard_singleline_enum_help<DB::SELECTION_TYPE>("", "filename")).c_str());
       return;
     }
 
@@ -496,19 +479,7 @@ namespace CASM {
       }
 
       std::stringstream help;
-      help << "Type of configurations. Options are: ";
-      int i = 0;
-      for(std::string s : m_configtype_opts) {
-        help << "\"" << s << "\"";
-        if(s == _default) {
-          help << " (default)";
-        }
-        if(i != m_configtype_opts.size() - 1) {
-          help << ", ";
-        }
-        ++i;
-      }
-      help << ".";
+      help << "Type of configurations. " << standard_singleline_help(m_configtype_opts, _default) << ".";
 
       m_desc.add_options()
       ("type,t",
@@ -534,19 +505,7 @@ namespace CASM {
       }
 
       std::stringstream help;
-      help << "Type of database objects. Options are: ";
-      int i = 0;
-      for(std::string s : m_db_type_opts) {
-        help << "\"" << s << "\"";
-        if(s == _default) {
-          help << " (default)";
-        }
-        if(i != m_db_type_opts.size() - 1) {
-          help << ", ";
-        }
-        ++i;
-      }
-      help << ".";
+      help << "Type of database objects. " << standard_singleline_help(m_db_type_opts, _default) << ".";
 
       m_desc.add_options()
       ("type,t",
@@ -695,7 +654,9 @@ namespace CASM {
 
     void OptionHandlerBase::add_coordtype_suboption() {
       m_desc.add_options()
-      ("coord", po::value<std::string>(&m_coordtype_str)->default_value("frac")->value_name(ArgHandler::coordtype()), "Type of coordinate system to use. Use 'frac' for fractional (default) or 'cart' for Cartesian.");
+      ("coord", po::value<std::string>(&m_coordtype_str)->default_value("frac")
+       ->value_name(ArgHandler::coordtype()), (std::string("Type of coordinate system to use. ") +
+                                               singleline_help<COORD_TYPE>()).c_str());
       return;
     }
 
