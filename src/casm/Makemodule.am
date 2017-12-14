@@ -68,7 +68,6 @@ libcasm_la_SOURCES = \
   src/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.cc\
   src/casm/kinetics/DiffTransConfiguration.cc\
   src/casm/kinetics/DiffusionTransformationTraits.cc\
-  src/casm/kinetics/OccPerturbationEnum.cc\
   src/casm/kinetics/DiffTransConfigEnumOccPerturbations.cc\
   src/casm/kinetics/DiffTransConfigInterpolation.cc\
   src/casm/kinetics/DiffTransConfigurationIO.cc\
