@@ -668,7 +668,6 @@ namespace CASM {
       if(m_is_open) {
         return *this;
       }
-
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
       fs::path diff_trans_config_list_path = dir.obj_list<Kinetics::DiffTransConfiguration>();
 
@@ -677,14 +676,13 @@ namespace CASM {
         master_selection() = Selection<Kinetics::DiffTransConfiguration>(*this);
         return *this;
       }
-
       jsonParser json(diff_trans_config_list_path);
 
       if(!json.is_obj() || !json.contains("prototypes")) {
         throw std::runtime_error(
           std::string("Error invalid format: ") + diff_trans_config_list_path.string());
       }
-
+      
       // check json version
       if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
         throw std::runtime_error(
@@ -697,7 +695,7 @@ namespace CASM {
       // read diff_trans_config list contents
       auto orbit_it = json["prototypes"].begin();
       auto orbit_end = json["prototypes"].end();
-
+      
       for(; orbit_it != orbit_end; ++orbit_it) {
 
         auto scel_it = orbit_it->begin();
@@ -719,7 +717,7 @@ namespace CASM {
           }
         }
       }
-
+      
       // read next config id for each supercell
       from_json(m_config_id, json["config_id"]);
       master_selection() = Selection<Kinetics::DiffTransConfiguration>(*this);
@@ -738,7 +736,7 @@ namespace CASM {
         fs::remove(diff_trans_config_list_path);
         return;
       }
-
+      
       jsonParser json;
 
       if(fs::exists(diff_trans_config_list_path)) {
@@ -758,7 +756,7 @@ namespace CASM {
       }
 
       json["config_id"] = m_config_id;
-
+      
       SafeOfstream file;
       fs::create_directories(diff_trans_config_list_path.parent_path());
       file.open(diff_trans_config_list_path);
@@ -802,14 +800,12 @@ namespace CASM {
     }
 
     std::pair<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator, bool> jsonDatabase<Kinetics::DiffTransConfiguration>::insert(const Kinetics::DiffTransConfiguration &diff_trans_config) {
-
       auto result = m_diff_trans_config_list.insert(diff_trans_config);
 
       return _on_insert_or_emplace(result, true);
     }
 
     std::pair<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator, bool> jsonDatabase<Kinetics::DiffTransConfiguration>::insert(const Kinetics::DiffTransConfiguration &&diff_trans_config) {
-
       auto result = m_diff_trans_config_list.insert(std::move(diff_trans_config));
 
       return _on_insert_or_emplace(result, true);
@@ -932,13 +928,11 @@ namespace CASM {
     /// Update m_name_to_diff_trans_config, m_orbit_scel_range, m_orbit_range, m_scel_range after performing an insert or emplace
     std::pair<jsonDatabase<Kinetics::DiffTransConfiguration>::iterator, bool>
     jsonDatabase<Kinetics::DiffTransConfiguration>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
-
       if(result.second) {
-
         const Kinetics::DiffTransConfiguration &diff_trans_config = *result.first;
         std::string dt_name;
         if(is_new) {
-          // set the diff trans config id, and increment
+      	  // set the diff trans config id, and increment
           //Again need to determine orbit name from diff_trans_config object somehow
           dt_name = diff_trans_config.orbit_name();
           std::string scelname = diff_trans_config.from_config().supercell().name();
@@ -958,13 +952,12 @@ namespace CASM {
           this->set_id(diff_trans_config, ((_config_id_it->second).find(scelname))->second++);
 
         }
-
         // update name -> config
         m_name_to_diff_trans_config.insert(std::make_pair(diff_trans_config.name(), result.first));
-        master_selection().data().emplace(diff_trans_config.name(), 0);
+	master_selection().data().emplace(diff_trans_config.name(), 0);
+
         // check if scel_range needs updating
         auto _scel_range_it = m_scel_range.find(diff_trans_config.from_config().supercell().name());
-
         // new supercell
         if(_scel_range_it == m_scel_range.end()) {
           m_scel_range.emplace(
@@ -983,7 +976,6 @@ namespace CASM {
         // check if orbit_range needs updating
         dt_name = diff_trans_config.orbit_name();
         auto _orbit_range_it = m_orbit_range.find(dt_name);
-
         // new orbit
         if(_orbit_range_it == m_orbit_range.end()) {
           m_orbit_range.emplace(
@@ -992,13 +984,12 @@ namespace CASM {
         }
         // if new 'begin' of orbit range
         else if(_orbit_range_it->second.first == std::next(result.first)) {
-          _orbit_range_it->second.first = result.first;
+	  _orbit_range_it->second.first = result.first;
         }
         // if new 'end' of orbit range (!= past-the-last config in scel)
         else if(_orbit_range_it->second.second == std::prev(result.first)) {
-          _orbit_range_it->second.second = result.first;
+	  _orbit_range_it->second.second = result.first;
         }
-
         // check if orbit_scel_range needs updating
         auto _orbit_scel_range_it = m_orbit_scel_range.find(dt_name);
 
@@ -1024,7 +1015,6 @@ namespace CASM {
         }
 
       }
-
       return std::make_pair(_iterator(result.first), result.second);
     }
 

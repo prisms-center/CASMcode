@@ -311,8 +311,9 @@ namespace CASM {
 
 
     DiffTransConfigInsertResult DiffTransConfiguration::insert() const {
-      DiffTransConfigInsertResult res;
-      std::tie(res.canonical_it, res.insert_canonical) = primclex().db<DiffTransConfiguration>().insert(canonical_form());
+	    DiffTransConfigInsertResult res;
+      std::tie(res.canonical_it, res.insert_canonical) = primclex().db<DiffTransConfiguration>().insert(this->canonical_form());
+           return res;
     }
 
     void DiffTransConfiguration::write_pos() const {

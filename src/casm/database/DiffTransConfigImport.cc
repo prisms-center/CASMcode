@@ -98,7 +98,6 @@ namespace CASM {
       // do mapping
       DiffTransConfigMapperResult map_result;
       map_result = m_difftransconfigmapper->import_structure_occupation(res.pos, hint_config.get());
-
       if(!map_result.success) {
         res.fail_msg = map_result.fail_msg;
         *result++ = res;
@@ -115,11 +114,8 @@ namespace CASM {
       }
       // insert in database (note that this also/only inserts primitive)
       Kinetics::DiffTransConfigInsertResult insert_result = map_result.config->insert();
-
       res.is_new_config = insert_result.insert_canonical;
-
-      res.mapped_props.to = insert_result.canonical_it.name();
-
+      res.mapped_props.to = insert_result.canonical_it->name();
       // copy relaxation properties from best config mapping into 'mapped' props
       res.mapped_props.mapped[insert_result.canonical_it.name()] = map_result.relaxation_properties;
       //These two aren't really being used yet
@@ -127,7 +123,6 @@ namespace CASM {
       res.mapped_props.mapped["cart_op"] = map_result.cart_op;
 
       res.mapped_props.mapped["kra"] = map_result.kra;
-
 
 
 
@@ -156,8 +151,17 @@ namespace CASM {
       "  'casm import' of DiffTransDiffTransConfiguration proceeds in two steps: \n\n"
 
       "  1) For each set of files: \n"
-      "     - Read structures from VASP POSCAR type files or CASM properties.calc.json \n"
+      "     - Read structures from folders VASP POSCAR type files or CASM properties.calc.json \n"
       "       file. \n"
+      "	    - Note: for the paths for the --pos or --batch options please give the path to the\n"
+      "	      parent folder containing image numbers. i.e. POSCARS for each endpoint are stored\n"
+      "	      poscars/ <--give path to here"
+      "		00/"
+      " 	  POSCAR"		
+      "		01/"
+      " 	  POSCAR"
+      "		02/"
+      " 	  POSCAR"
       "     - Map the structure onto a DiffTransConfiguration of the primitive crystal \n"
       "       structure. \n"
       "     - Record relaxation data (lattice & basis deformation cost). \n\n"

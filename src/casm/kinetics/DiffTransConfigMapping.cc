@@ -71,19 +71,20 @@ namespace CASM {
       ConfigDoF from_dof;
       Lattice from_lat;
       mapper.struc_to_configdof(result.structures[0], from_dof, from_lat);
-      Supercell scel(&(mapper.primclex()), from_lat);
-      Configuration from_config(scel, jsonParser(), from_dof);
+      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_lat);
+      Configuration from_config(scel_ptr, jsonParser(), from_dof);
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
       ConfigMapperResult from_res;
       if(hint_ptr != nullptr) {
-        //from_res= mapper.import_structure_occupation(result.structures[0],&(hint_ptr->from_config().canonical_form()));
+	Configuration tmp = hint_ptr->from_config().canonical_form();
+        from_res= mapper.import_structure_occupation(result.structures[0],&(tmp));
       }
       else {
         from_res = mapper.import_structure_occupation(result.structures[0]);
       }
+
       Coordinate rigid_shift = result.structures[0].basis[0] - Coordinate(from_config.uccoord(from_res.best_assignment[0]));
-      Coordinate com_disp(from_config.displacement().rowwise().sum() / from_config.occupation().size(), primclex().prim().lattice(), CART);
       //Maybe check coordinate similarity after applying deformations
       //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config
       //This max_displacement is not considering rigid translational shifts of the structures's basis to the primclex's basis
@@ -91,12 +92,12 @@ namespace CASM {
       // For image 00 set reference of POSCAR index to  basis site linear index
       for(auto &site : result.structures[0].basis) {
         //should apply cartop here too
-        from_uccoords.emplace_back(primclex().prim(), site - rigid_shift, max_displacement);
+        from_uccoords.emplace_back(primclex().prim(), (site - rigid_shift), max_displacement);
       }
 
       // For last image  find POSCAR index to basis site linear index
       for(auto &site : result.structures[result.structures.size() - 1].basis) {
-        to_uccoords.emplace_back(primclex().prim(), site - rigid_shift, max_displacement);
+      	to_uccoords.emplace_back(primclex().prim(), site - rigid_shift, max_displacement);
       }
       //ConfigMapperResult to_config_result = mapper.import_structure_occupation(result.structures[result.structures.size()-1]);
       std::vector<Index> moving_atoms;
@@ -177,6 +178,8 @@ namespace CASM {
       from_config.clear_displacement();
       from_config.init_displacement();
       result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
+      //NEED TO SET ORBIT NAME OF DTC SOMEHOW FOR NEW DIFF TRANS
+      //result.config->set_orbit_name("diff_trans/0");
       //use this to interpolate same amount of images
       Kinetics::DiffTransConfigInterpolation interpolater(result.config->diff_trans(), result.config->from_config(), result.config->to_config(), result.structures.size() - 2); //<- using current calctype here
       int image_no = 0;
@@ -190,13 +193,13 @@ namespace CASM {
         result.relaxation_properties[image_no]["basis_deformation"] = tmp_result.relaxation_properties["best_mapping"]["basis_deformation"];
         image_no++;
       }
-
+      
       //Structure config.supercell().superstructure(config) //<---how to get structure from ideal config
       //calculate strain scores and basis scores for every image and sum/average/sumsq
       // set relaxation properties and indicate successful mapping or not
-      if(fs::exists(pos_path / "properties.calc.json")) {
+      if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
         jsonParser all_strucs;
-        to_json(pos_path / "properties.calc.json", all_strucs);
+        to_json(pos_path, all_strucs);
         int count = 0;
         std::vector<double> energies;
         for(auto &img : all_strucs) {
@@ -210,7 +213,6 @@ namespace CASM {
         result.kra = all_strucs["kra"].get<double>();
       }
       result.success = true;
-
       return result;
     }
 
@@ -218,29 +220,27 @@ namespace CASM {
       std::map<Index, BasicStructure<Site>> bins;
       std::vector<BasicStructure<Site>> images;
       if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
-        jsonParser all_strucs;
+	jsonParser all_strucs;
         to_json(pos_path, all_strucs);
         int count = 0;
         for(auto &img : all_strucs) {
-          std::cout << img << std::endl;
           BasicStructure<Site> struc;
           from_json(simple_json(struc, "relaxed_"), img);
           bins.insert(std::make_pair(count, struc));
           count++;
         }
       }
-      else if(fs::exists(pos_path / "properties.calc.json")) {
+     /* else if(fs::exists(pos_path / "properties.calc.json")) {
         jsonParser all_strucs;
         to_json(pos_path / "properties.calc.json", all_strucs);
         int count = 0;
         for(auto &img : all_strucs) {
-          std::cout << img << std::endl;
           BasicStructure<Site> struc;
           from_json(simple_json(struc, "relaxed_"), img);
           bins.insert(std::make_pair(count, struc));
           count++;
         }
-      }
+      }*/
       else {
         for(auto &dir_path : fs::directory_iterator(pos_path)) {
           try {
