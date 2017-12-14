@@ -85,8 +85,7 @@ casm_unit_App_SOURCES = \
   tests/unit/App/settings_test.cpp\
   tests/unit/App/QueryPlugin_test.cpp\
   tests/unit/App/EnumeratorPlugin_test.cpp\
-  tests/unit/App/App_test.cpp\
-  tests/unit/App/ConfigUpdate_test.cpp
+  tests/unit/App/App_test.cpp
 
 casm_unit_App_LDADD = \
   libcasm.la\
