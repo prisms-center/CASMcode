@@ -77,27 +77,31 @@ namespace CASM {
       std::vector<UnitCellCoord> to_uccoords;
       ConfigMapperResult from_res;
       if(hint_ptr != nullptr) {
-	Configuration tmp = hint_ptr->from_config().canonical_form();
-        from_res= mapper.import_structure_occupation(result.structures[0],&(tmp));
+        Configuration tmp = hint_ptr->from_config().canonical_form();
+        from_res = mapper.import_structure_occupation(result.structures[0], &(tmp));
       }
       else {
         from_res = mapper.import_structure_occupation(result.structures[0]);
       }
-
-      Coordinate rigid_shift = result.structures[0].basis[0] - Coordinate(from_config.uccoord(from_res.best_assignment[0]));
+      //This rigid rotation and rigid shift seems unnecessary surprisingly
+      /*
+         SymOp op(from_res.cart_op);
+          Coordinate rigid_shift = copy_apply(op,result.structures[0].basis[0]) - Coordinate(from_config.uccoord(from_res.best_assignment[0]));
+      Coordinate t_shift(primclex().prim().lattice());
+      t_shift.cart() = rigid_shift.cart();
+      */
       //Maybe check coordinate similarity after applying deformations
       //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config
       //This max_displacement is not considering rigid translational shifts of the structures's basis to the primclex's basis
       double max_displacement = from_config.displacement().colwise().norm().maxCoeff() * 2 + primclex().crystallography_tol();
       // For image 00 set reference of POSCAR index to  basis site linear index
       for(auto &site : result.structures[0].basis) {
-        //should apply cartop here too
-        from_uccoords.emplace_back(primclex().prim(), (site - rigid_shift), max_displacement);
+        from_uccoords.emplace_back(primclex().prim(), site, max_displacement);
       }
 
       // For last image  find POSCAR index to basis site linear index
       for(auto &site : result.structures[result.structures.size() - 1].basis) {
-      	to_uccoords.emplace_back(primclex().prim(), site - rigid_shift, max_displacement);
+        to_uccoords.emplace_back(primclex().prim(), site, max_displacement);
       }
       //ConfigMapperResult to_config_result = mapper.import_structure_occupation(result.structures[result.structures.size()-1]);
       std::vector<Index> moving_atoms;
@@ -174,8 +178,8 @@ namespace CASM {
 
       //Attach hop to ideal from config in same orientation
       from_config.clear_deformation();
-      from_config.init_deformation();
       from_config.clear_displacement();
+      from_config.init_deformation();
       from_config.init_displacement();
       result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
       //NEED TO SET ORBIT NAME OF DTC SOMEHOW FOR NEW DIFF TRANS
@@ -193,7 +197,7 @@ namespace CASM {
         result.relaxation_properties[image_no]["basis_deformation"] = tmp_result.relaxation_properties["best_mapping"]["basis_deformation"];
         image_no++;
       }
-      
+
       //Structure config.supercell().superstructure(config) //<---how to get structure from ideal config
       //calculate strain scores and basis scores for every image and sum/average/sumsq
       // set relaxation properties and indicate successful mapping or not
@@ -220,7 +224,7 @@ namespace CASM {
       std::map<Index, BasicStructure<Site>> bins;
       std::vector<BasicStructure<Site>> images;
       if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
-	jsonParser all_strucs;
+        jsonParser all_strucs;
         to_json(pos_path, all_strucs);
         int count = 0;
         for(auto &img : all_strucs) {
@@ -230,17 +234,17 @@ namespace CASM {
           count++;
         }
       }
-     /* else if(fs::exists(pos_path / "properties.calc.json")) {
-        jsonParser all_strucs;
-        to_json(pos_path / "properties.calc.json", all_strucs);
-        int count = 0;
-        for(auto &img : all_strucs) {
-          BasicStructure<Site> struc;
-          from_json(simple_json(struc, "relaxed_"), img);
-          bins.insert(std::make_pair(count, struc));
-          count++;
-        }
-      }*/
+      /* else if(fs::exists(pos_path / "properties.calc.json")) {
+         jsonParser all_strucs;
+         to_json(pos_path / "properties.calc.json", all_strucs);
+         int count = 0;
+         for(auto &img : all_strucs) {
+           BasicStructure<Site> struc;
+           from_json(simple_json(struc, "relaxed_"), img);
+           bins.insert(std::make_pair(count, struc));
+           count++;
+         }
+       }*/
       else {
         for(auto &dir_path : fs::directory_iterator(pos_path)) {
           try {
