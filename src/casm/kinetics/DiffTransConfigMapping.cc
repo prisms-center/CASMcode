@@ -21,7 +21,11 @@
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/kinetics/DiffTransConfigInterpolation.hh"
 #include "casm/crystallography/jsonStruc.hh"
-
+#include "casm/symmetry/Orbit.hh"
+#include "casm/symmetry/OrbitDecl.hh"
+#include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/kinetics/DiffusionTransformationTraits.hh"
+#include "casm/database/DiffTransOrbitDatabase.hh"
 namespace CASM {
   namespace Kinetics {
     //*******************************************************************************************
@@ -183,7 +187,17 @@ namespace CASM {
       from_config.init_displacement();
       result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
       //NEED TO SET ORBIT NAME OF DTC SOMEHOW FOR NEW DIFF TRANS
-      //result.config->set_orbit_name("diff_trans/0");
+      PrimPeriodicDiffTransSymCompare sym_c {primclex().crystallography_tol()};
+      OrbitGenerators<PrimPeriodicDiffTransOrbit> generators(primclex().prim().factor_group(), sym_c);
+      generators.insert(sym_c.prepare(diff_trans));
+      std::vector<PrimPeriodicDiffTransOrbit> dt_orbits;
+      generators.make_orbits(std::back_inserter(dt_orbits), primclex());
+      auto insert_res = primclex().db<PrimPeriodicDiffTransOrbit>().insert(dt_orbits.front());
+      primclex().db<PrimPeriodicDiffTransOrbit>().commit();
+      std::string orbit_name;
+      orbit_name = insert_res.first.name();
+      std::cout << "orbit name is " << orbit_name << std::endl;
+      result.config->set_orbit_name(orbit_name);
       //use this to interpolate same amount of images
       Kinetics::DiffTransConfigInterpolation interpolater(result.config->diff_trans(), result.config->from_config(), result.config->to_config(), result.structures.size() - 2); //<- using current calctype here
       int image_no = 0;
