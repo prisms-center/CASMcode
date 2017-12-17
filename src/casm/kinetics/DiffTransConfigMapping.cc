@@ -175,11 +175,40 @@ namespace CASM {
           }
         }
       }
-
+      //diff_trans constructed from end points might not be shortest path
+      //in order to set up shortest path create eigen counter that represents all adjacent supercells
+      //to which the unitcell coords will be reachable from the from uccoords
+      // for each item in counter take item wise product with maximum uccoord in from configs scel
+      // + 1 to account for starting at 0
+      // make temp storage "final_diff_trans" replace if max length is smaller for current diff_trans
+      //
+      Kinetics::DiffusionTransformation final_diff_trans = diff_trans;
+      EigenCounter<Eigen::Vector3l> counter(Eigen::Vector3l::Constant(-1), Eigen::Vector3l::Constant(1), Eigen::Vector3l::Ones());
+      for(int i = 0 ; i < diff_trans.occ_transform().size(); i++) {
+        while(counter.valid()) {
+          Eigen::Vector3l scelvec = (from_config.supercell().uccoord(from_config.supercell().num_sites() - 1).unitcell() + Eigen::Vector3l::Constant(1));
+          UnitCell shift = counter().cwiseProduct(scelvec);
+          Kinetics::DiffusionTransformation tmp = diff_trans;
+          UnitCellCoord replace_this = tmp.occ_transform()[i].uccoord;
+          tmp.occ_transform()[i].uccoord = replace_this + shift;
+          for(auto &traj : tmp.specie_traj()) {
+            if(traj.from.uccoord == replace_this) {
+              traj.from.uccoord = replace_this + shift;
+            }
+            if(traj.to.uccoord == replace_this) {
+              traj.to.uccoord = replace_this + shift;
+            }
+          }
+          if(tmp.max_length() <= final_diff_trans.max_length()) {
+            final_diff_trans = tmp;
+          }
+          counter++;
+        }
+      }
       //THIS IS THE FIRST CASE IN WHICH WE DON'T WANT TO SORT DIFFTRANS ON CONSTRUCTION -speak with brian about removing sorting from prepare
       //or stick with prepareless workaround. Alternatively check if sorted, if not then sort diff trans and flip from/to then create.
       //Need to somehow only use occupation from the config to construct diff_trans_config
-
+      diff_trans = final_diff_trans;
       //Attach hop to ideal from config in same orientation
       from_config.clear_deformation();
       from_config.clear_displacement();
@@ -196,7 +225,6 @@ namespace CASM {
       primclex().db<PrimPeriodicDiffTransOrbit>().commit();
       std::string orbit_name;
       orbit_name = insert_res.first.name();
-      std::cout << "orbit name is " << orbit_name << std::endl;
       result.config->set_orbit_name(orbit_name);
       //use this to interpolate same amount of images
       Kinetics::DiffTransConfigInterpolation interpolater(result.config->diff_trans(), result.config->from_config(), result.config->to_config(), result.structures.size() - 2); //<- using current calctype here
