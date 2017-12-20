@@ -42,21 +42,17 @@ namespace CASM {
         //
 
         if(!has_existing_files(name) || !fs::exists(pos) || (!force && no_change(name))) {
-	  continue;
+          continue;
         }
         // erase existing data (not files), unlinking relaxation mappings && resetting 'best' data
         db_props().erase_via_from(name);
 
-
         std::vector<ConfigIO::Result> tvec;
         auto config_it = db_config().find(name);
-	std::cout << "premap" << std::endl;
         m_structure_mapper.map(pos, config_it, std::back_inserter(tvec));
-	std::cout << "postmap" << std::endl;
         for(auto &res : tvec) {
 
           results.push_back(res);
-
           // if mapped && has data, insert
           if(!res.mapped_props.to.empty() && res.has_data) {
             // insert data:

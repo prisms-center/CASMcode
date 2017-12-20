@@ -116,12 +116,21 @@ namespace CASM {
       Kinetics::DiffTransConfigInsertResult insert_result = map_result.config->insert();
       res.is_new_config = insert_result.insert_canonical;
       res.mapped_props.to = insert_result.canonical_it->name();
+      // read in raw unmapped data and put into res
+      if(!prop_path.empty()) {
+        std::tie(res.mapped_props.unmapped, res.has_data, res.has_complete_data) = read_calc_properties<Kinetics::DiffTransConfiguration>(primclex(), prop_path);
+      }
+
+
+
       // copy relaxation properties from best config mapping into 'mapped' props
       res.mapped_props.mapped[insert_result.canonical_it.name()] = map_result.relaxation_properties;
       //These two aren't really being used yet
       res.mapped_props.mapped["best_assignment"] = map_result.best_assignment;
       res.mapped_props.mapped["cart_op"] = map_result.cart_op;
-
+      //This is a hack right now because default conflict score looks for minimum
+      // relaxed_energy which doesn't make sense for diff_trans_config
+      res.mapped_props.mapped["relaxed_energy"] = map_result.kra;
       res.mapped_props.mapped["kra"] = map_result.kra;
 
 
@@ -157,7 +166,7 @@ namespace CASM {
       "	      parent folder containing image numbers. i.e. POSCARS for each endpoint are stored\n"
       "	      poscars/ <--give path to here"
       "		00/"
-      " 	  POSCAR"		
+      " 	  POSCAR"
       "		01/"
       " 	  POSCAR"
       "		02/"

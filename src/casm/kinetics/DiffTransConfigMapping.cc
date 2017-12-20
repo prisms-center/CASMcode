@@ -268,12 +268,15 @@ namespace CASM {
       if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
         jsonParser all_strucs;
         to_json(pos_path, all_strucs);
-        int count = 0;
-        for(auto &img : all_strucs) {
+        for(auto it =  all_strucs.begin(); it != all_strucs.end(); ++it) {
           BasicStructure<Site> struc;
-          from_json(simple_json(struc, "relaxed_"), img);
-          bins.insert(std::make_pair(count, struc));
-          count++;
+          try {
+            int img_no = std::stoi(it.name());
+            from_json(simple_json(struc, "relaxed_"), *it);
+            bins.insert(std::make_pair(img_no, struc));
+          }
+          catch(std::invalid_argument) {
+          }
         }
       }
       /* else if(fs::exists(pos_path / "properties.calc.json")) {
