@@ -311,9 +311,9 @@ namespace CASM {
 
 
     DiffTransConfigInsertResult DiffTransConfiguration::insert() const {
-	    DiffTransConfigInsertResult res;
+      DiffTransConfigInsertResult res;
       std::tie(res.canonical_it, res.insert_canonical) = primclex().db<DiffTransConfiguration>().insert(this->canonical_form());
-           return res;
+      return res;
     }
 
     void DiffTransConfiguration::write_pos() const {
@@ -415,6 +415,16 @@ namespace CASM {
       //do work here
 
       return correlations;
+    }
+
+    /// \brief Indicates whether there is a valid kra for DiffTransConfiguration
+    bool has_kra(const DiffTransConfiguration &dtc) {
+      return dtc.calc_properties().contains("kra");
+    }
+
+    /// \brief Returns kra for DiffTransConfiguration
+    double kra(const DiffTransConfiguration &dtc) {
+      return dtc.calc_properties()["kra"].get<double>();
     }
 
   }

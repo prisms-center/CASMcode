@@ -162,6 +162,12 @@ namespace CASM {
     /// \brief Returns correlations using 'clexulator'.
     Eigen::VectorXd correlations(const DiffTransConfiguration &dtc, Clexulator &clexulator);
 
+    /// \brief Indicates whether there is a valid kra for DiffTransConfiguration
+    bool has_kra(const DiffTransConfiguration &dtc);
+
+    /// \brief Returns kra for DiffTransConfiguration
+    double kra(const DiffTransConfiguration &dtc);
+
 
   }
 

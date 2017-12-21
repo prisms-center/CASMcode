@@ -341,6 +341,13 @@ namespace CASM {
           return dtconfig.bg_configname();
         });
       }
+
+      GenericDiffTransConfigFormatter<double> kra_barrier() {
+        return GenericDiffTransConfigFormatter<double>("kra",
+                                                       "kinetically resolved activation barrier, this is the distance from the average energy of the two endpoints to the highest point on the diffusion energy landscape",
+                                                       CASM::Kinetics::kra,
+                                                       CASM::Kinetics::has_kra);
+      }
     }
   }
 
@@ -386,7 +393,8 @@ namespace CASM {
     using namespace Kinetics::DiffTransConfigIO;
     ScalarAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
     dict.insert(
-      LocalClex()
+      LocalClex(),
+      kra_barrier()
     );
     return dict;
   }
