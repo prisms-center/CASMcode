@@ -19,6 +19,7 @@ namespace CASM {
 
   namespace Kinetics {
     class DiffTransConfiguration;
+    class DiffusionTransformation;
   }
 
   namespace Completer {
@@ -187,6 +188,14 @@ namespace CASM {
 
       std::vector<BasicStructure<Site>> _get_structures(const fs::path &pos_path) const;
 
+      Kinetics::DiffusionTransformation _make_hop(BasicStructure<Site> &from_struc,
+                                                  std::vector<UnitCellCoord> &from_coords,
+                                                  std::vector<UnitCellCoord> &to_coords,
+                                                  std::set<UnitCellCoord> &vacancy_from,
+                                                  std::set<UnitCellCoord> &vacancy_to,
+                                                  std::vector<Index> &moving_atoms) const;
+
+      Kinetics::DiffusionTransformation _shortest_hop(Kinetics::DiffusionTransformation &diff_trans, const Supercell &scel) const;
     private:
 
       const PrimClex *m_pclex;
