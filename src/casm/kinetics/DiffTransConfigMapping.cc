@@ -87,6 +87,8 @@ namespace CASM {
       else {
         from_res = mapper.import_structure_occupation(result.structures[0]);
       }
+      std::set<UnitCellCoord> vacancy_from;
+      std::set<UnitCellCoord> vacancy_to;
       //This rigid rotation and rigid shift seems unnecessary surprisingly
       /*
          SymOp op(from_res.cart_op);
@@ -97,40 +99,14 @@ namespace CASM {
       //Maybe check coordinate similarity after applying deformations
       //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config
       //This max_displacement is not considering rigid translational shifts of the structures's basis to the primclex's basis
-      double max_displacement = from_config.displacement().colwise().norm().maxCoeff() * 2 + primclex().crystallography_tol();
-      // For image 00 set reference of POSCAR index to  basis site linear index
-      for(auto &site : result.structures[0].basis) {
-        from_uccoords.emplace_back(primclex().prim(), site, max_displacement);
-      }
+      std::vector<Index> moving_atoms = _analyze_atoms(result.structures[0],
+                                                       result.structures[result.structures.size() - 1],
+                                                       from_config.displacement().colwise().norm().maxCoeff() * 2 + primclex().crystallography_tol(),
+                                                       from_uccoords,
+                                                       to_uccoords,
+                                                       vacancy_from,
+                                                       vacancy_to);
 
-      // For last image  find POSCAR index to basis site linear index
-      for(auto &site : result.structures[result.structures.size() - 1].basis) {
-        to_uccoords.emplace_back(primclex().prim(), site, max_displacement);
-      }
-      //ConfigMapperResult to_config_result = mapper.import_structure_occupation(result.structures[result.structures.size()-1]);
-      std::vector<Index> moving_atoms;
-      for(int i = 0 ; i < from_uccoords.size(); i++) {
-        if(from_uccoords[i] != to_uccoords[i]) {
-          moving_atoms.push_back(i);
-        }
-      }
-      ////if this isn't a closed loop one of the species is a vacancy
-      std::set<UnitCellCoord> vacancy_from;
-      std::set<UnitCellCoord> vacancy_to;
-      for(int i = 0 ; i < moving_atoms.size() ; i++) {
-        if(vacancy_from.find(to_uccoords[moving_atoms[i]]) == vacancy_from.end()) {
-          vacancy_from.insert(to_uccoords[moving_atoms[i]]);
-        }
-        else {
-          vacancy_from.erase(vacancy_from.find(to_uccoords[moving_atoms[i]]));
-        }
-        if(vacancy_to.find(from_uccoords[moving_atoms[i]]) == vacancy_to.end()) {
-          vacancy_to.insert(from_uccoords[moving_atoms[i]]);
-        }
-        else {
-          vacancy_to.erase(vacancy_to.find(from_uccoords[moving_atoms[i]]));
-        }
-      }
       Kinetics::DiffusionTransformation diff_trans = _make_hop(result.structures[0],
                                                                from_uccoords,
                                                                to_uccoords,
@@ -200,6 +176,46 @@ namespace CASM {
       return result;
     }
 
+    std::vector<Index> DiffTransConfigMapper::_analyze_atoms(BasicStructure<Site> &from,
+                                                             BasicStructure<Site> &to,
+                                                             double max_disp,
+                                                             std::vector<UnitCellCoord> &from_uccoords,
+                                                             std::vector<UnitCellCoord> &to_uccoords,
+                                                             std::set<UnitCellCoord> &vacancy_from,
+                                                             std::set<UnitCellCoord> &vacancy_to) const {
+      // For image 00 set reference of POSCAR index to  basis site linear index
+      for(auto &site : from.basis) {
+        from_uccoords.emplace_back(primclex().prim(), site, max_disp);
+      }
+
+      // For last image  find POSCAR index to basis site linear index
+      for(auto &site : to.basis) {
+        to_uccoords.emplace_back(primclex().prim(), site, max_disp);
+      }
+      std::vector<Index> moving_atoms;
+      for(int i = 0 ; i < from_uccoords.size(); i++) {
+        if(from_uccoords[i] != to_uccoords[i]) {
+          moving_atoms.push_back(i);
+        }
+      }
+
+      ////if this isn't a closed loop one of the species is a vacancy
+      for(int i = 0 ; i < moving_atoms.size() ; i++) {
+        if(vacancy_from.find(to_uccoords[moving_atoms[i]]) == vacancy_from.end()) {
+          vacancy_from.insert(to_uccoords[moving_atoms[i]]);
+        }
+        else {
+          vacancy_from.erase(vacancy_from.find(to_uccoords[moving_atoms[i]]));
+        }
+        if(vacancy_to.find(from_uccoords[moving_atoms[i]]) == vacancy_to.end()) {
+          vacancy_to.insert(from_uccoords[moving_atoms[i]]);
+        }
+        else {
+          vacancy_to.erase(vacancy_to.find(from_uccoords[moving_atoms[i]]));
+        }
+      }
+      return moving_atoms;
+    }
 
     Kinetics::DiffusionTransformation DiffTransConfigMapper::_shortest_hop(Kinetics::DiffusionTransformation &diff_trans, const Supercell &scel) const {
       Kinetics::DiffusionTransformation final_diff_trans = diff_trans;

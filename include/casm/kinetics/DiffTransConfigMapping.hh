@@ -196,6 +196,14 @@ namespace CASM {
                                                   std::vector<Index> &moving_atoms) const;
 
       Kinetics::DiffusionTransformation _shortest_hop(Kinetics::DiffusionTransformation &diff_trans, const Supercell &scel) const;
+
+      std::vector<Index> _analyze_atoms(BasicStructure<Site> &from,
+                                        BasicStructure<Site> &to,
+                                        double max_disp,
+                                        std::vector<UnitCellCoord> &from_uccoords,
+                                        std::vector<UnitCellCoord> &to_uccoords,
+                                        std::set<UnitCellCoord> &vacancy_from,
+                                        std::set<UnitCellCoord> &vacancy_to) const;
     private:
 
       const PrimClex *m_pclex;
