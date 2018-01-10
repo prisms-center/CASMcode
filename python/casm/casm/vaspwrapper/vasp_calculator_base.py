@@ -221,9 +221,9 @@ class VaspCalculatorBase(object):
             sys.stdout.flush()
             try:
                 if id != []:
+                    db.update()
                     for j in id:
                         job = db.select_job(j)
-                        #db.update()
                         if job["jobstatus"] != "C":
                             print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
                             sys.stdout.flush()
