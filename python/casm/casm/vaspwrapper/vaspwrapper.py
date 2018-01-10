@@ -68,7 +68,7 @@ def read_settings(filename):
 
     required = ["queue", "ppn", "walltime"]
 
-    select_one = [["nodes", "atoms_per_proc", "nodes_per_image"]]
+    select_one = [["nodes", "atom_per_proc", "nodes_per_image"]]
 
     optional = ["account","pmem","priority","message","email","qos","npar","ncore",
                 "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence",

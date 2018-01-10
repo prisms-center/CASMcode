@@ -330,7 +330,7 @@ class VaspCalculatorBase(object):
         """return nodes, ppn from settings of a configuration"""
         if settings["nodes"] != None and settings["ppn"] != None:
             return int(settings["nodes"]), int(settings["ppn"])
-        elif settings["atoms_per_proc"] != None and settings["ppn"] != None:
+        elif settings["atom_per_proc"] != None and settings["ppn"] != None:
             pos = vasp.io.Poscar(os.path.join(config_data["calcdir"], "POSCAR"))
             num = len(pos.basis)
             nodes = int(math.ceil(float(num)/float(settings["atom_per_proc"])/float(settings["ppn"])))
