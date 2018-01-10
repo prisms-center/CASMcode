@@ -146,7 +146,6 @@ namespace CASM {
             data_res_it->second.preexisting = has_existing_data_or_files(from);
           }
           ConfigIO::ImportData &data_res = data_res_it->second;
-
           // if preexisting data, do not import new data unless overwrite option set
           if(data_res.preexisting && !m_overwrite) {
             continue;
