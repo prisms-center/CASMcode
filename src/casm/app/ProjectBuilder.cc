@@ -86,6 +86,7 @@ namespace CASM {
       // create basic directories
       set.new_casm_dir();
       set.new_symmetry_dir();
+      set.new_reports_dir();
       set.new_bset_dir("default");
       set.new_calc_settings_dir("default");
       set.new_ref_dir("default", "default");

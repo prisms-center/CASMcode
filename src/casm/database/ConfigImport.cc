@@ -368,7 +368,7 @@ namespace CASM {
       used["primitive_only"] = primitive_only;
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().root_dir() / "import_report";
+      fs::path report_dir = primclex.dir().reports_dir() / "import_report";
       report_dir = create_report_dir(report_dir);
 
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
@@ -622,7 +622,7 @@ namespace CASM {
       used["force"] = force;
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().root_dir() / "update_report";
+      fs::path report_dir = primclex.dir().reports_dir() / "update_report";
       report_dir = create_report_dir(report_dir);
 
       // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values
