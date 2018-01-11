@@ -127,6 +127,13 @@ namespace CASM {
           img_config.write_pos(file);
           i++;
         }
+        jsonParser endpt_info;
+        endpt_info["from_configname"] = config.from_config().name();
+        endpt_info["to_configname"] = config.to_config().name();
+        endpt_info["calctype"] = calctype;
+        fs::ofstream outfile(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(n_images)) / "endpoint_specs.json");
+        endpt_info.print(outfile);
+        outfile.close();
       }
       // setup error methods
       return 0;
