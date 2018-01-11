@@ -134,6 +134,7 @@ namespace CASM {
         fs::ofstream outfile(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(n_images)) / "endpoint_specs.json");
         endpt_info.print(outfile);
         outfile.close();
+        make_configuration(primclex, endpt_info["from_configname"].get<std::string>()).print_properties(calctype, std::cout);
       }
       // setup error methods
       return 0;

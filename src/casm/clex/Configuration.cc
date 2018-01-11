@@ -800,6 +800,62 @@ namespace CASM {
 
   //*********************************************************************************
 
+  std::ostream &Configuration::print_properties(std::string calctype, std::ostream &sout) const {
+    jsonParser prop_calc_json;
+    Lattice ref_lat = supercell().lattice();
+    if(has_deformation()) {
+      ref_lat = Lattice(deformation() * supercell().lattice().lat_column_mat());
+    }
+    prop_calc_json["relaxed_lattice"] = ref_lat.lat_column_mat();
+    std::vector<std::pair<std::string, Coordinate>> basis;
+    for(int i = 0 ; i < supercell().num_sites(); i++) {
+      Coordinate ref_coord = supercell().coord(i);
+      if(has_displacement()) {
+        ref_coord.cart() += disp(i);
+      }
+      if(has_deformation()) {
+        ref_coord.cart() = deformation() * ref_coord.const_cart();
+      }
+      Coordinate deformed_coord(ref_coord.const_cart(), ref_lat, CART);
+      deformed_coord.within();
+      std::pair<std::string, Coordinate> site(mol(i).name(), deformed_coord);
+    }
+    std::sort(basis.begin(), basis.end(), [ = ](const std::pair<std::string, Coordinate> &A, const std::pair<std::string, Coordinate> &B) {
+      return A.first < B.first;
+    });
+    std::map<std::string, int> atom_type_count;
+    std::vector<Eigen::Vector3d> relaxed_basis;
+    for(auto it = basis.begin(); it != basis.end(); ++it) {
+      if(it->first != "Va" || it->first != "va" || it->first != "VA") {
+        auto search = atom_type_count.find(it->first);
+        if(search == atom_type_count.end()) {
+          atom_type_count.emplace(it->first, 1);
+        }
+        else {
+          search->second++;
+        }
+        relaxed_basis.push_back(it->second.const_frac());
+      }
+    }
+    prop_calc_json["coord_mode"] = "direct";
+    std::vector<std::string> atom_type;
+    std::vector<int> atoms_per_type;
+    for(auto it = atom_type_count.begin(); it != atom_type_count.end(); ++it) {
+      atom_type.push_back(it->first);
+      atoms_per_type.push_back(it->second);
+    }
+    prop_calc_json["atom_type"] = atom_type;
+    prop_calc_json["atoms_per_type"] = atoms_per_type;
+    prop_calc_json["relaxed_basis"] = relaxed_basis;
+    if(calc_properties(calctype).contains("relaxed_energy")) {
+      prop_calc_json["relaxed_energy"] = calc_properties(calctype)["relaxed_energy"];
+    }
+    sout << prop_calc_json;
+    return sout;
+  }
+
+  //*********************************************************************************
+
   /// Private members:
 
   /// Reads the Configuration from JSON
