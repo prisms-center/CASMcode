@@ -327,18 +327,19 @@ namespace CASM {
          }
        }*/
       else {
-        for(auto &dir_path : fs::directory_iterator(pos_path)) {
+        fs::directory_iterator end;
+        for(fs::directory_iterator begin(pos_path); begin != end; ++begin) {
           try {
-            int img_no = std::stoi(dir_path.path().filename().string());
-            if(fs::is_directory(dir_path)) {
-              if(fs::is_regular(dir_path / "CONTCAR")) {
-                bins.insert(std::make_pair(img_no, BasicStructure<Site>(dir_path / "CONTCAR")));
+            int img_no = std::stoi(begin->path().filename().string());
+            if(fs::is_directory(*begin)) {
+              if(fs::is_regular(*begin / "CONTCAR")) {
+                bins.insert(std::make_pair(img_no, BasicStructure<Site>(*begin / "CONTCAR")));
               }
-              else if(fs::is_regular(dir_path / "POSCAR")) {
-                bins.insert(std::make_pair(img_no, BasicStructure<Site>(dir_path / "POSCAR")));
+              else if(fs::is_regular(*begin / "POSCAR")) {
+                bins.insert(std::make_pair(img_no, BasicStructure<Site>(*begin / "POSCAR")));
               }
               else {
-                std::cerr << "NO POSCAR OR CONTCAR FOUND IN " << dir_path << std::endl;
+                std::cerr << "NO POSCAR OR CONTCAR FOUND IN " << *begin << std::endl;
               }
             }
           }
