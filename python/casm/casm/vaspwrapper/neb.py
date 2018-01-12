@@ -190,9 +190,12 @@ class Neb(VaspCalculatorBase):
     def properties(self, calcdir, super_poscarfile=None, speciesfile=None):
         """Make properties output as a list of dict of each image properties"""
         final_output = {}
+        endpts = json.load(open(os.path.join(calcdir,"endpoint_props.json")))
+        final_output["00"]=endpts["0"]
         num_images = vasp.io.get_incar_tag("IMAGES", calcdir)
         for img in [str(j).zfill(2) for j in range(1, num_images+1)]:
             vaspdir = calcdir + "/{}".format(img)
             output = super(Neb, self).properties(vaspdir, super_poscarfile, speciesfile)
             final_output[img] = output
+        final_output[str(num_images+1).zfill(2)]=endpts[str(num_images+1)]
         return final_output
