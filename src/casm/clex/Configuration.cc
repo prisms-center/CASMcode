@@ -614,7 +614,31 @@ namespace CASM {
   //*********************************************************************************
 
   Configuration &Configuration::apply_sym(const PermuteIterator &it) {
+    auto all_props = calc_properties_map();
     configdof().apply_sym(it);
+    for(auto ii = all_props.begin(); ii != all_props.end(); ++ii) {
+      std::string calctype = ii->first;
+      jsonParser transformed_props;
+      for(auto json_it = all_props[calctype]["mapped"].begin(); json_it != all_props[calctype]["mapped"].end(); ++json_it) {
+        if(json_it.name() == "relaxed_energy") {
+          transformed_props["relaxed_energy"] = *json_it;
+        }
+        Eigen::Matrix3d fg_cart_op = it.sym_op().matrix();
+        if(json_it.name() == "relaxation_deformation") {
+          transformed_props["relaxation_deformation"] = fg_cart_op * json_it->get<Eigen::Matrix3d>() * fg_cart_op.transpose();
+        }
+        Permutation tperm(it.combined_permute());
+        if(json_it.name() == "relaxation_displacement" || json_it.name() == "relaxed_forces") {
+          Eigen::MatrixXd new_matrix = fg_cart_op * json_it->get<Eigen::MatrixXd>().transpose();
+          Eigen::MatrixXd permuted_matrix(3, size());
+          for(Index i = 0; i < size(); i++) {
+            permuted_matrix.col(i) = new_matrix.col(tperm[i]);
+          }
+          transformed_props[json_it.name()] = permuted_matrix.transpose();
+        }
+      }
+      set_calc_properties(transformed_props, calctype);
+    }
     return *this;
   }
 
@@ -803,30 +827,32 @@ namespace CASM {
   std::ostream &Configuration::print_properties(std::string calctype, std::ostream &sout) const {
     jsonParser prop_calc_json;
     Lattice ref_lat = supercell().lattice();
-    if(has_deformation()) {
-      ref_lat = Lattice(deformation() * supercell().lattice().lat_column_mat());
+    if(calc_properties(calctype).contains("relaxation_deformation")) {
+      ref_lat = Lattice(calc_properties(calctype)["relaxation_deformation"].get<Eigen::Matrix3d>() * supercell().lattice().lat_column_mat());
     }
-    prop_calc_json["relaxed_lattice"] = ref_lat.lat_column_mat();
+    prop_calc_json["relaxed_lattice"] = ref_lat.lat_column_mat().transpose();
     std::vector<std::pair<std::string, Coordinate>> basis;
     for(int i = 0 ; i < supercell().num_sites(); i++) {
       Coordinate ref_coord = supercell().coord(i);
-      if(has_displacement()) {
-        ref_coord.cart() += disp(i);
+      if(calc_properties(calctype).contains("relaxation_displacement")) {
+        ref_coord.cart() += calc_properties(calctype)["relaxation_displacement"].get<Eigen::MatrixXd>().row(i).transpose();
       }
-      if(has_deformation()) {
-        ref_coord.cart() = deformation() * ref_coord.const_cart();
+      if(calc_properties(calctype).contains("relaxation_deformation")) {
+        ref_coord.cart() = calc_properties(calctype)["relaxation_deformation"].get<Eigen::Matrix3d>() * ref_coord.const_cart();
       }
       Coordinate deformed_coord(ref_coord.const_cart(), ref_lat, CART);
       deformed_coord.within();
       std::pair<std::string, Coordinate> site(mol(i).name(), deformed_coord);
+      basis.push_back(site);
     }
     std::sort(basis.begin(), basis.end(), [ = ](const std::pair<std::string, Coordinate> &A, const std::pair<std::string, Coordinate> &B) {
       return A.first < B.first;
     });
     std::map<std::string, int> atom_type_count;
-    std::vector<Eigen::Vector3d> relaxed_basis;
+    Eigen::MatrixXd relaxed_basis(supercell().num_sites(), 3);
+    int i = 0;
     for(auto it = basis.begin(); it != basis.end(); ++it) {
-      if(it->first != "Va" || it->first != "va" || it->first != "VA") {
+      if(it->first != "Va" && it->first != "va" && it->first != "VA") {
         auto search = atom_type_count.find(it->first);
         if(search == atom_type_count.end()) {
           atom_type_count.emplace(it->first, 1);
@@ -834,10 +860,12 @@ namespace CASM {
         else {
           search->second++;
         }
-        relaxed_basis.push_back(it->second.const_frac());
+        relaxed_basis.row(i) = it->second.const_frac().transpose();
+        ++i;
       }
     }
-    prop_calc_json["coord_mode"] = "direct";
+    relaxed_basis = relaxed_basis.topLeftCorner(i, 3);
+    prop_calc_json["coord_mode"] = "Direct";
     std::vector<std::string> atom_type;
     std::vector<int> atoms_per_type;
     for(auto it = atom_type_count.begin(); it != atom_type_count.end(); ++it) {
@@ -849,6 +877,9 @@ namespace CASM {
     prop_calc_json["relaxed_basis"] = relaxed_basis;
     if(calc_properties(calctype).contains("relaxed_energy")) {
       prop_calc_json["relaxed_energy"] = calc_properties(calctype)["relaxed_energy"];
+    }
+    if(calc_properties(calctype).contains("relaxed_forces")) {
+      prop_calc_json["relaxed_forces"] = calc_properties(calctype)["relaxed_forces"];
     }
     sout << prop_calc_json;
     return sout;
@@ -1057,7 +1088,6 @@ namespace CASM {
       Configuration canon_config = *primclex.db<Configuration>().find(canon_config_name);
       Index fg_index = boost::lexical_cast<Index>(tokens[2]);
       Index trans_index = boost::lexical_cast<Index>(tokens[3]);
-
       return apply(canon_config.supercell().permute_it(fg_index, trans_index), canon_config);
     }
 
