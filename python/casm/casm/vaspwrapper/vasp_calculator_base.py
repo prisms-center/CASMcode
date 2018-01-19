@@ -307,7 +307,8 @@ class VaspCalculatorBase(object):
                           email=settings["email"],\
                           priority=settings["priority"],\
                           command=cmd,\
-                          auto=self.auto)
+                          auto=self.auto,
+			  software=db.config["software"])
 
             print "Submitting"
             sys.stdout.flush()
