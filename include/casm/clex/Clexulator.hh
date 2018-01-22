@@ -5,6 +5,7 @@
 #include <boost/filesystem/path.hpp>
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/clex/ClexParamPack.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/casm_io/Log.hh"
