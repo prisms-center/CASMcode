@@ -10,6 +10,11 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/casm_io/Log.hh"
 
+namespace PRISMS {
+  template< class VarContainer, class OutType>
+  class PFunction;
+}
+
 namespace CASM {
 
   namespace Clexulator_impl {
@@ -53,10 +58,10 @@ namespace CASM {
       ClexParamKey param_key(std::string const &_param_name)const;
 
       /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom double -> double function set
-      void set_evaluation(ClexParamKey const _param_key, std::vector<PFunction<std::vector<double>, double> > const   &_basis_set);
+      void set_evaluation(ClexParamKey const _param_key, std::vector<PRISMS::PFunction<std::vector<double>, double> > const   &_basis_set);
 
       /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom int -> double function set
-      void set_evaluation(ClexParamKey const _param_key, std::vector<PFunction<std::vector<int>, double> > const &_basis_set);
+      void set_evaluation(ClexParamKey const _param_key, std::vector<PRISMS::PFunction<std::vector<int>, double> > const &_basis_set);
 
       /// \brief Alter evaluation of parameters specified by @param _param_key, using the string  @param _eval_type,
       // which can be at least either "READ" (i.e., read from ClexParamPack) or "DEFAULT" (i.e., the Clexulator's default implementation)

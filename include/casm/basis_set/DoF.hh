@@ -806,6 +806,7 @@ namespace CASM {
   };
 
   //********************************************************************
+
   template<typename OccType> template<typename...Args>
   void OccupantDoF<OccType>::from_json(const jsonParser &json, Args &&... args) {
     _set_type_name(json["type_name"].get<std::string>());

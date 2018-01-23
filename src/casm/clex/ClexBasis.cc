@@ -77,12 +77,21 @@ namespace CASM {
 
   /// \brief Total number of basis sites in primitive cell
   Index ClexBasis::n_sublat() const {
-    throw std::runtime_error("ClexBasis::n_sublat is not implemented");
+    return prim().basis.size();
+  }
+
+  /// \brief Total number of cluster orbits
+  Index ClexBasis::n_orbits() const {
+    return m_bset_tree.size();
   }
 
   /// \brief Total number of basis functions
   Index ClexBasis::n_functions() const {
-    throw std::runtime_error("ClexBasis::n_functions is not implemented");
+    Index nf = 0;
+    for(auto const &bo : m_bset_tree) {
+      nf += bo.size();
+    }
+    return nf;
   }
 
 

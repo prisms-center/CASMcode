@@ -1,6 +1,7 @@
 #ifndef CLEXPARAMPACK_HH
 #define CLEXPARAMPACK_HH
 #include <cstddef>
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
 
@@ -18,17 +19,21 @@ namespace CASM {
       /// \brief Clone the ClexParamKey
       virtual BaseKey *_clone() const = 0;
 
-    }
+    };
   }
 
   class ClexParamPack;
+
+  namespace Clexulator_impl {
+    class Base;
+  }
 
   /// \brief Key for indexing clexulator parameters
   class ClexParamKey {
     friend class Clexulator_impl::Base;
   private:
     /// \brief  ptr to BaseKey class that hides implementation-specific access attributes
-    std::cloneable_ptr<ClexParamPack_impl::BaseKey> m_key_ptr;
+    notstd::cloneable_ptr<ClexParamPack_impl::BaseKey> m_key_ptr;
   };
 
 
@@ -41,12 +46,12 @@ namespace CASM {
 
     size_type size(ClexParamKey  const &_key, size_type _ind) const;
 
-    double read(ClexParamKey  const &_key, size_type _ind) const;
+    std::vector<double> const &read(ClexParamKey  const &_key) const;
     double read(ClexParamKey  const &_key, size_type _ind) const;
 
 
     void write(ClexParamKey const &_key, std::vector<double> const &_val);
-    void write(ClexParamKey const &_key, _ind, double val);
+    void write(ClexParamKey const &_key, size_type _ind, double val);
   };
 
 
