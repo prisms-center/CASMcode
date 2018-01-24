@@ -294,7 +294,6 @@ namespace CASM {
     //Ensure you at least get *something* back that's niggli AND right handed
     Lattice most_canonical = niggli(in_lat, compare_tol, false);
     Eigen::Matrix3d most_canonical_lat_mat = most_canonical.lat_column_mat();
-
     Eigen::Matrix3d ref_lat_mat = most_canonical.lat_column_mat();
     auto to_canonical = point_grp.begin();
 
@@ -311,7 +310,7 @@ namespace CASM {
       }
 
       //Skip operations that change the handedness of the lattice
-      if(candidate_lat_mat.determinant() < 0.0) {
+      if(candidate_lat_mat.determinant() <= 0.0) {
         continue;
       }
 

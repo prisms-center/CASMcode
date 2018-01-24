@@ -51,7 +51,6 @@ namespace CASM {
           best_lat = *it;
         }
       }
-
       return best_lat;
     }
 
@@ -560,7 +559,6 @@ namespace CASM {
     ConfigDoF tdof;
     BasicStructure<Site> tstruc(struc);
     Lattice tlat;
-
     // First pass:  Find a reasonable upper bound
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
       tlat = ConfigMapping::find_nearest_super_lattice(primclex().prim().lattice(),
@@ -585,7 +583,6 @@ namespace CASM {
       if(m_rotate_flag) {
         rotF = StrainConverter::right_stretch_tensor(tF);
       }
-
       Supercell scel(&primclex(), tlat);
       if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
                                                             tstruc,
@@ -597,7 +594,6 @@ namespace CASM {
         continue;
       basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
       tot_cost = strain_cost + basis_cost;
-
       if(tot_cost < best_cost) {
         best_cost = tot_cost - m_tol;
         swap(best_assignment, assignment);
@@ -610,11 +606,9 @@ namespace CASM {
       }
     }
 
-
     //Second pass: Find the absolute best mapping
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
       const std::vector<Lattice> &lat_vec = _lattices_of_vol(i_vol);
-
       for(auto it = lat_vec.cbegin(); it != lat_vec.cend(); ++it) {
         if(!deformed_struc_to_configdof_of_lattice(struc,
                                                    *it,
@@ -649,7 +643,6 @@ namespace CASM {
     Eigen::Matrix3d tF, rotF;
     std::vector<Index> assignment;
     Supercell scel(&primclex(), imposed_lat);
-
     double lw = m_lattice_weight;
     double bw = 1.0 - lw;
     double num_atoms = double(struc.basis.size());
