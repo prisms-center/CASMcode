@@ -112,6 +112,8 @@ namespace CASM {
     ///Transpose of initialization lattice dotted with itself
     const Eigen::Matrix3d m_metrical_matrix;
 
+    ///Scaling factor for niggli comparisons
+    const double m_scale_factor;
   };
 
 

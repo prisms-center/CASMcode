@@ -3,10 +3,11 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/container/LinearAlgebra.hh"
-
+#include "casm/misc/CASM_math.hh"
 namespace CASM {
   NiggliRep::NiggliRep(const Eigen::Matrix3d &init_lat_col_mat):
-    m_metrical_matrix(init_lat_col_mat.transpose() * init_lat_col_mat) {
+    m_metrical_matrix(init_lat_col_mat.transpose() * init_lat_col_mat),
+    m_scale_factor(cuberoot(init_lat_col_mat.determinant()))	{
   }
 
   NiggliRep::NiggliRep(const Lattice &init_lat):
@@ -43,7 +44,7 @@ namespace CASM {
 
   bool NiggliRep::meets_criteria_1(double compare_tol) const {
     bool does_meet = true;
-
+    compare_tol = m_scale_factor * compare_tol;
     //For niggli you need A<=B
     if(CASM::compare(B(), A(), compare_tol)) {
       does_meet = false;
@@ -60,6 +61,7 @@ namespace CASM {
   bool NiggliRep::meets_criteria_2(double compare_tol) const {
     bool does_meet = true;
 
+    compare_tol = m_scale_factor * compare_tol;
     //For niggli you need B<=C
     if(compare(C(), B(), compare_tol)) {
       does_meet = false;
@@ -74,8 +76,8 @@ namespace CASM {
   }
 
   bool NiggliRep::meets_criteria_3(double compare_tol) const {
+    compare_tol = m_scale_factor * compare_tol;
     bool does_meet = false;
-
     //For type one niggli cells, the angles are all less than 90 degrees
     if(compare(0.0, ksi(), compare_tol) && compare(0.0, eta(), compare_tol) && compare(0.0, zeta(), compare_tol)) {
       does_meet = true;
@@ -85,8 +87,8 @@ namespace CASM {
   }
 
   bool NiggliRep::meets_criteria_4(double compare_tol) const {
+    compare_tol = m_scale_factor * compare_tol;
     bool does_meet = false;
-
     //For type two niggli cells, the angles are all more than or equal to 90 degrees
     if(!compare(0.0, ksi(), compare_tol) && !compare(0.0, eta(), compare_tol) && !compare(0.0, zeta(), compare_tol)) {
       does_meet = true;
@@ -96,6 +98,7 @@ namespace CASM {
   }
 
   bool NiggliRep::meets_criteria_5(double compare_tol) const {
+    compare_tol = m_scale_factor * compare_tol;
     bool does_meet = true;
 
     //For niggli you need |ksi|<=B
@@ -105,7 +108,6 @@ namespace CASM {
 
     //If ksi==B, then niggli requires zeta<=2*eta
     else if(almost_equal(ksi(), B(), compare_tol) && compare(2 * eta(), zeta(), compare_tol)) {
-      does_meet = false;
     }
 
     //If ksi==-B, then niggli requires zeta==0
@@ -117,6 +119,7 @@ namespace CASM {
   }
 
   bool NiggliRep::meets_criteria_6(double compare_tol) const {
+    compare_tol = m_scale_factor * compare_tol;
     bool does_meet = true;
 
     //For niggli you need |eta|<=A
@@ -138,6 +141,7 @@ namespace CASM {
   }
 
   bool NiggliRep::meets_criteria_7(double compare_tol) const {
+    compare_tol = m_scale_factor * compare_tol;
     bool does_meet = true;
 
     //For niggli you need |zeta|<=A
@@ -159,6 +163,7 @@ namespace CASM {
   }
 
   bool NiggliRep::meets_criteria_8(double compare_tol) const {
+    compare_tol = m_scale_factor * compare_tol;
     bool does_meet = true;
 
     double clobber = A() + B() + C() + ksi() + eta() + zeta();
@@ -186,7 +191,6 @@ namespace CASM {
 
   bool NiggliRep::is_niggli(double compare_tol) const {
     bool totally_niggli = false;
-
     if(meets_criteria_1(compare_tol) &&
        meets_criteria_2(compare_tol) &&
        (meets_criteria_3(compare_tol) != meets_criteria_4(compare_tol)) &&
@@ -242,12 +246,12 @@ namespace CASM {
 
     Lattice target_lat(in_lat);
 
+
     if(!keep_handedness) {
       target_lat.make_right_handed();
     }
 
     const Lattice reduced_in = target_lat.reduced_cell();
-
     bool first_niggli = true;
     Eigen::Matrix3d best_lat_mat = Eigen::Matrix3d::Zero();
 
@@ -256,13 +260,15 @@ namespace CASM {
 
     for(auto it = candidate_trans_mats.begin(); it != candidate_trans_mats.end(); ++it) {
       Eigen::Matrix3d candidate_lat_mat = reduced_in.lat_column_mat() * it->cast<double>();
-
       if(is_niggli(candidate_lat_mat, compare_tol)) {
         if(first_niggli || standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
           best_lat_mat = candidate_lat_mat;
           first_niggli = false;
         }
       }
+    }
+    if(first_niggli) {
+      throw std::runtime_error("First niggli guess was excepted, this shouldn't happen");
     }
     return Lattice(best_lat_mat);
   }
