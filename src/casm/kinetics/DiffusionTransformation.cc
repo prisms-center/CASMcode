@@ -208,6 +208,9 @@ namespace CASM {
     }
 
     DiffusionTransformation &DiffusionTransformation::operator+=(UnitCell frac) {
+      if(!m_cluster) {
+        cluster();
+      }
       for(auto &t : m_occ_transform) {
         t += frac;
       }
@@ -215,6 +218,7 @@ namespace CASM {
       for(auto &t : m_specie_traj) {
         t += frac;
       }
+      *m_cluster += frac;
       return *this;
     }
 
@@ -429,6 +433,9 @@ namespace CASM {
     }
 
     DiffusionTransformation &DiffusionTransformation::apply_sym(const SymOp &op) {
+      if(!m_cluster) {
+        cluster();
+      }
       for(auto &t : m_occ_transform) {
         t.apply_sym(op);
       }
@@ -436,6 +443,7 @@ namespace CASM {
       for(auto &t : m_specie_traj) {
         t.apply_sym(op);
       }
+      m_cluster->apply_sym(op);
       return *this;
     }
 
