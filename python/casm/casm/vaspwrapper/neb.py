@@ -72,7 +72,7 @@ class Neb(VaspCalculatorBase):
         print "Construct a casm.vaspwrapper.Neb instance:"
         VaspCalculatorBase.__init__(self, selection, calctype, auto, sort)
         self.results_subdir = '01'
-        self.calculator = calculator
+        #self.calculator = calculator
 
     def config_properties(self, config_data):
         """return configuration properties as a dict"""
@@ -113,6 +113,7 @@ class Neb(VaspCalculatorBase):
                 pass
         dict["n_images"] = conf_dict["n_images"]
         dict["endstate_calctype"] = conf_dict["endstate_calctype"]
+        dict["calctype"]=self.calctype
         tmp_folder = os.path.join(proj.path, '.casm/tmp')
         filename = "neb_interpolation_settings.json"
         with open(os.path.join(tmp_folder, filename), 'w') as file:
@@ -121,7 +122,8 @@ class Neb(VaspCalculatorBase):
         ## write the selection Interpolation command
         args = "enum --method DiffTransConfigInterpolation -s {}".format(os.path.join(tmp_folder, filename))
         output = proj.command(args)
-        os.remove(os.path.join(tmp_folder, filename))
+        print "Interpolation complete"
+        #os.remove(os.path.join(tmp_folder, filename))
 
     def setup(self):
         """ Setup initial relaxation run for the selection"""

@@ -110,16 +110,16 @@ namespace CASM {
       DB::Selection<DiffTransConfiguration> dtc_sel = make_selection<DiffTransConfiguration>(
                                                         primclex, kwargs, "names", "selection", enumerator_name, OnError::THROW);
       int n_images = kwargs["n_images"].get<int>(); // set defaults with get_else
-      std::string calctype = kwargs["endstate_calctype"].get<std::string>();
+      std::string endpt_calctype = kwargs["endstate_calctype"].get<std::string>();
+      std::string calctype = kwargs["calctype"].get<std::string>();
       Index i;
       for(const auto &config : dtc_sel.selected()) {
         // Create a interpolation object
-        DiffTransConfigInterpolation enumerator(config, n_images, calctype);
+        DiffTransConfigInterpolation enumerator(config, n_images, endpt_calctype);
         i = 0;
         for(const auto &img_config : enumerator) {
           // file_path = $project_dir/training_data/diff_trans/$diff_trans_name/$scelname/$configid/$image_number/POSCAR
           int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
-          std::string calctype = kwargs[config.name()]["endstate_calctype"].get<std::string>();
           auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
           file_path += "/N_images_" + std::to_string(n_images) + "/poscars/0" + std::to_string(i) + "/POSCAR";
           std::cout << file_path << "\n";
@@ -130,7 +130,7 @@ namespace CASM {
         jsonParser endpt_info;
         endpt_info["from_configname"] = config.from_config().name();
         endpt_info["to_configname"] = config.to_config().name();
-        endpt_info["calctype"] = calctype;
+        endpt_info["calctype"] = endpt_calctype;
         fs::ofstream outfile(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(n_images)) / "endpoint_specs.json");
         endpt_info.print(outfile);
         outfile.close();
@@ -145,26 +145,34 @@ namespace CASM {
           Configuration canon_config = *primclex.db<Configuration>().find(canon_config_name);
           Index fg_index = boost::lexical_cast<Index>(tokens[2]);
           Index trans_index = boost::lexical_cast<Index>(tokens[3]);
-          canon_config.calc_properties(calctype);
-          apply(canon_config.supercell().permute_it(fg_index, trans_index), canon_config).print_properties(calctype, endpts);
+          canon_config.calc_properties(endpt_calctype);
+          apply(canon_config.supercell().permute_it(fg_index, trans_index), canon_config).print_properties(endpt_calctype, endpts);
         }
         else {
-          make_configuration(primclex, endpt_info["from_configname"].get<std::string>()).print_properties(calctype, endpts);
+          make_configuration(primclex, endpt_info["from_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
         }
         endpts << "," << std::endl << '"' << std::to_string(n_images + 1) << '"' << ":";
         std::vector<std::string> tokens2;
         std::string name2 = endpt_info["to_configname"].get<std::string>();
+        std::cout << name2 << std::endl;
         boost::split(tokens2, name2, boost::is_any_of("."), boost::token_compress_on);
         std::string canon_config_name2 = tokens2[0];
         if(tokens2.size() == 4) {
+          std::cout << tokens2[0] << std::endl;
+          std::cout << tokens2[1] << std::endl;
+          std::cout << tokens2[2] << std::endl;
+          std::cout << tokens2[3] << std::endl;
           Configuration canon_config = *primclex.db<Configuration>().find(canon_config_name2);
-          Index fg_index = boost::lexical_cast<Index>(tokens[2]);
-          Index trans_index = boost::lexical_cast<Index>(tokens[3]);
-          canon_config.calc_properties(calctype);
-          apply(canon_config.supercell().permute_it(fg_index, trans_index), canon_config).print_properties(calctype, endpts);
+          std::cout << "HeRe" << std::endl;
+          Index fg_index = boost::lexical_cast<Index>(tokens2[2]);
+          Index trans_index = boost::lexical_cast<Index>(tokens2[3]);
+          std::cout << "here" << std::endl;
+          canon_config.calc_properties(endpt_calctype);
+          std::cout << "Here?" << std::endl;
+          apply(canon_config.supercell().permute_it(fg_index, trans_index), canon_config).print_properties(endpt_calctype, endpts);
         }
         else {
-          make_configuration(primclex, endpt_info["to_configname"].get<std::string>()).print_properties(calctype, endpts);
+          make_configuration(primclex, endpt_info["to_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
         }
         endpts << std::endl << "}" << std::endl;
         endpts.close();
