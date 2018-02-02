@@ -5,31 +5,47 @@
 #include "casm/clex/ClexBasis.hh"
 namespace CASM {
   class ClexBasis;
+  class Structure;
   class PrimNeighborList;
+  class ParamPackMixIn
+
+  /// \brief virtual base class for printing orbit functions of type specified by implementation.
+    class OrbitFunctionWriter {
+    public:
+
+      // Constructor? OrbitFunctionWriter()
+      //
+      virtual void print_param_pack_initilialization() const {}
+
+      virtual void print_to_point_prepare() const {}
+
+      virtual void print_to_global_prepare() const {}
+
+      virtual void print_typedefs(std::ostream &out,
+                                  std::string const &class_name,
+                                  std::string const &indent)const {}
 
 
-  class OrbitFunctionWriter {
-  public:
-    virtual void print_typedefs(std::ostream &out,
-                                std::string const &class_name,
-                                std::string const &indent)const {}
+      virtual void print_eval_table_definitions(std::ostream &out,
+                                                std::string const &class_name,
+                                                ClexBasis const &clex,
+                                                std::string const &indent)const {}
 
-    virtual void print_eval_table_definitions(std::ostream &out,
-                                              std::string const &class_name,
-                                              ClexBasis const &clex,
-                                              std::string const &indent)const {}
+    private:
+      std::string m_name;
+      std::vector<std::string> m_signature;
+      std::vector<std::string> m_arg_names;
+      std::string m_short_desc;
+      std::string m_long_desc;
 
-  private:
-    std::string m_name;
-    std::vector<std::string> m_signature;
-    std::vector<std::string> arg_names;
-    std::string m_short_desc;
-    std::string m_long_desc;
-
-  };
+    };
 
   class ClexBasisWriter {
   public:
+
+    /// \brief Construct ClexBasisWriter, collecting requisite DoF info from '_prim'
+    ClexBasisWriter(Structure const &_prim, ParamPackMixIn const *parampack_mix_in = null_ptr);
+
     /// \brief Print clexulator
     template <typename OrbitType>
     void print_clexulator(std::string class_name,
@@ -42,6 +58,16 @@ namespace CASM {
   private:
     std::vector<std::unique_ptr<FunctionVisitor> > const &_function_label_visitors() const;
     std::vector<std::unique_ptr<OrbitFunctionWriter> > const &_orbit_func_writers() const;
+
+    /// \brief Print ClexParamPack specialization
+    template <typename OrbitType>
+    void print_param_pack(std::string class_name,
+                          ClexBasis const &clex,
+                          std::vector<OrbitType > const &_tree,
+                          PrimNeighborList &_nlist,
+                          std::ostream &stream,
+                          double xtal_tol);
+
   };
 
 
@@ -128,6 +154,27 @@ namespace CASM {
                                                       std::vector< std::vector<std::string> > const &flower_method_names,
                                                       std::vector< std::vector<std::string> > const &dflower_method_names,
                                                       std::string const &indent);
+
+    //*******************************************************************************************
+
+    template <typename OrbitType>
+    std::string clexulator_point_prepare_implementation(std::string const &class_name,
+                                                        ClexBasis const &clex,
+                                                        std::vector<OrbitType> const &_tree,
+                                                        PrimNeighborList &_nlist,
+                                                        std::vector<std::unique_ptr<OrbitFunctionWriter> > const &orbit_func_writers,
+                                                        //Something that contains info about DoF requirements
+                                                        std::string const &indent);
+    //*******************************************************************************************
+
+    template <typename OrbitType>
+    std::string clexulator_global_prepare_implementation(std::string const &class_name,
+                                                         ClexBasis const &clex,
+                                                         std::vector<OrbitType> const &_tree,
+                                                         PrimNeighborList &_nlist,
+                                                         std::vector<std::unique_ptr<OrbitFunctionWriter> > const &orbit_func_writers,
+                                                         //Something that contains info about DoF requirements
+                                                         std::string const &indent);
 
     //*******************************************************************************************
 

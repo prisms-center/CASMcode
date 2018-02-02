@@ -4,6 +4,11 @@
 #include "casm/basis_set/FunctionVisitor.hh"
 namespace CASM {
 
+  ClexBasisWriter::ClexBasisWriter(Structure const &_prim) {
+    throw std::runtime_error("Error: print_clexulator is being re-implemented");
+
+  }
+
   namespace ClexBasisWriter_impl {
 
     std::string clexulator_member_definitions(std::string const &class_name,
@@ -70,17 +75,30 @@ namespace CASM {
          indent << "  /// \\brief Calculate contribution to select global correlations from one unit cell\n" <<
          indent << "  void _calc_restricted_global_corr_contribution(double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n" <<
 
-         indent << "  /// \\brief Calculate point correlations about basis site 'b_index'\n" <<
-         indent << "  void _calc_point_corr(int b_index, double *corr_begin) const override;\n\n" <<
+         indent << "  /// \\brief Calculate point correlations about neighbor site 'n_index'\n" <<
+         indent << "  /// For global clexulators, 'n_index' only ranges over sites in the cell\n" <<
+         indent << "  /// For local clexulators, 'n_index' ranges over all sites in the neighborhood\n" <<
+         indent << "  void _calc_point_corr(int n_index, double *corr_begin) const override;\n\n" <<
 
-         indent << "  /// \\brief Calculate select point correlations about basis site 'b_index'\n" <<
-         indent << "  void _calc_restricted_point_corr(int b_index, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n" <<
+         indent << "  /// \\brief Calculate select point correlations about neighbor site 'n_index'\n" <<
+         indent << "  /// For global clexulators, 'n_index' only ranges over sites in the cell\n" <<
+         indent << "  /// For local clexulators, 'n_index' ranges over all sites in the neighborhood\n" <<
+         indent << "  void _calc_restricted_point_corr(int n_index, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n" <<
 
-         indent << "  /// \\brief Calculate the change in point correlations due to changing an occupant\n" <<
-         indent << "  void _calc_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin) const override;\n\n" <<
+         indent << "  /// \\brief Calculate the change in point correlations due to changing an occupant at neighbor site 'n_index'\n" <<
+         indent << "  /// For global clexulators, 'n_index' only ranges over sites in the cell\n" <<
+         indent << "  /// For local clexulators, 'n_index' ranges over all sites in the neighborhood\n" <<
+         indent << "  void _calc_delta_point_corr(int n_index, int occ_i, int occ_f, double *corr_begin) const override;\n\n" <<
 
-         indent << "  /// \\brief Calculate the change in select point correlations due to changing an occupant\n" <<
-         indent << "  void _calc_restricted_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n";
+         indent << "  /// \\brief Calculate the change in select point correlations due to changing an occupant at neighbor site 'n_index'\n" <<
+         indent << "  /// For global clexulators, 'n_index' only ranges over sites in the cell\n" <<
+         indent << "  /// For local clexulators, 'n_index' ranges over all sites in the neighborhood\n" <<
+         indent << "  void _calc_restricted_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n"
+
+         indent << "  void _global_prepare() const override;\n\n" <<
+
+         indent << "  void _point_prepare(int neighbor_ind) const override;\n";
+
 
 
       auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());

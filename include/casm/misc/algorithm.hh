@@ -2,6 +2,7 @@
 #define CASM_algorithm
 
 #include <algorithm>
+#include <vector>
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
@@ -95,6 +96,19 @@ namespace CASM {
     }
     return init_val;
   }
+
+  ///\brief Return pointer one past end of vector. Equivalent to convainer.data()+container.size()
+  template<typename T>
+  T *end_ptr(std::vector<T> &container) {
+    return container.data() + container.size();
+  }
+
+  ///\brief Return const pointer one past end of vector. Equivalent to convainer.data()+container.size()
+  template<typename T>
+  T const *end_ptr(std::vector<T> const &container) {
+    return container.data() + container.size();
+  }
+
 }
 
 #endif

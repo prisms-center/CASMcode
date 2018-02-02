@@ -90,7 +90,7 @@ namespace CASM {
 
       /// \brief Calculate contribution to global correlations from one unit cell
       ///
-      /// \param corr_begin Pointer to beginning of data structure where correlations are written
+      /// \param _corr_begin Pointer to beginning of data structure where correlations are written
       ///
       /// Call using:
       /// \code
@@ -103,45 +103,49 @@ namespace CASM {
       ///
       void calc_global_corr_contribution(ConfigDoF const &_config_dof,
                                          long int const *_n_list_begin,
-                                         double *corr_begin) const {
+                                         long int const *_n_list_end,
+                                         double *_corr_begin,
+                                         double *_corr_end) const {
         m_config_ptr = &_config_dof;
         _set_nlist(_n_list_begin);
         _global_prepare();
-        _calc_global_corr_contribution(corr_begin);
+        _calc_global_corr_contribution(_corr_begin);
       }
 
       /// \brief Calculate contribution to select global correlations from one unit cell
       ///
-      /// \param corr_begin Pointer to beginning of data structure where correlations are written
-      /// \param ind_list_begin,ind_list_end Pointers to range indicating which correlations should be calculated
+      /// \param _corr_begin Pointer to beginning of data structure where correlations are written
+      /// \param _corr_ind_begin,_corr_ind_end Pointers to range indicating which correlations should be calculated
       ///
       /// Call using:
       /// \code
       /// UnitCellCoord bijk(0,i,j,k);           // i,j,k of unit cell to get contribution from
       /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
-      /// std::vector<int> ind_list = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
+      /// std::vector<int> _corr_ind = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
       /// myclexulator.calc_restricted_global_corr_contribution(my_configdof,
       ///                                                       my_supercell.get_nlist(l_index).begin(),
       ///                                                       correlation_array.begin(),
-      ///                                                       ind_list.begin(),
-      ///                                                       ind_list.end());
+      ///                                                       _corr_ind.begin(),
+      ///                                                       _corr_ind.end());
       /// \endcode
       ///
       void calc_restricted_global_corr_contribution(ConfigDoF const &_config_dof,
                                                     long int const *_n_list_begin,
-                                                    double *corr_begin,
-                                                    size_type const *ind_list_begin,
-                                                    size_type const *ind_list_end) const {
+                                                    long int const *_n_list_end,
+                                                    double *_corr_begin,
+                                                    double *_corr_end,
+                                                    size_type const *_corr_ind_begin,
+                                                    size_type const *_corr_ind_end) const {
         m_config_ptr = &_config_dof;
         _set_nlist(_n_list_begin);
         _global_prepare();
-        _calc_restricted_global_corr_contribution(corr_begin, ind_list_begin, ind_list_end);
+        _calc_restricted_global_corr_contribution(_corr_begin, _corr_ind_begin, _corr_ind_end);
       }
 
-      /// \brief Calculate point correlations about basis site 'sublat_ind'
+      /// \brief Calculate point correlations about basis site 'neighbor_ind'
       ///
-      /// \brief sublat_ind Basis site index about which to calculate correlations
-      /// \brief corr_begin Pointer to beginning of data structure where correlations are written
+      /// \brief neighbor_ind Basis site index about which to calculate correlations
+      /// \brief _corr_begin Pointer to beginning of data structure where correlations are written
       ///
       /// Call using:
       /// \code
@@ -152,51 +156,55 @@ namespace CASM {
       ///
       void calc_point_corr(ConfigDoF const &_config_dof,
                            long int const *_n_list_begin,
-                           int sublat_ind,
-                           double *corr_begin) const {
+                           long int const *_n_list_end,
+                           int neighbor_ind,
+                           double *_corr_begin,
+                           double *_corr_end) const {
         m_config_ptr = &_config_dof;
         _set_nlist(_n_list_begin);
-        _point_prepare(sublat_ind);
-        _calc_point_corr(sublat_ind, corr_begin);
+        _point_prepare(neighbor_ind);
+        _calc_point_corr(neighbor_ind, _corr_begin);
       }
 
-      /// \brief Calculate select point correlations about basis site 'sublat_ind'
+      /// \brief Calculate select point correlations about basis site 'neighbor_ind'
       ///
-      /// \brief sublat_ind Basis site index about which to calculate correlations
-      /// \brief corr_begin Pointer to beginning of data structure where correlations are written
-      /// \param ind_list_begin,ind_list_end Pointers to range indicating which correlations should be calculated
+      /// \brief neighbor_ind Neighbor within specified neighborhood about which to calculate correlations
+      /// \brief _corr_begin Pointer to beginning of data structure where correlations are written
+      /// \param _corr_ind_begin,_corr_ind_end Pointers to range indicating which correlations should be calculated
       ///
       /// Call using:
       /// \code
       /// UnitCellCoord bijk(b,i,j,k);           // b,i,j,k of site to get point correlations
       /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
-      /// std::vector<int> ind_list = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
+      /// std::vector<int> _corr_ind = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
       /// myclexulator.calc_restricted_point_corr(my_configdof,
       ///                                         my_supercell.get_nlist(l_index).begin(),
       ///                                         b,
       ///                                         correlation_array.begin(),
-      ///                                         ind_list.begin(),
-      ///                                         ind_list.end());
+      ///                                         _corr_ind.begin(),
+      ///                                         _corr_ind.end());
       /// \endcode
       ///
       void calc_restricted_point_corr(ConfigDoF const &_config_dof,
                                       long int const *_n_list_begin,
-                                      int sublat_ind,
-                                      double *corr_begin,
-                                      size_type const *ind_list_begin,
-                                      size_type const *ind_list_end) const {
+                                      long int const *_n_list_end,
+                                      int neighbor_ind,
+                                      double *_corr_begin,
+                                      double *_corr_end,
+                                      size_type const *_corr_ind_begin,
+                                      size_type const *_corr_ind_end) const {
 
         m_config_ptr = &_config_dof;
         _set_nlist(_n_list_begin);
-        _point_prepare(sublat_ind);
-        _calc_restricted_point_corr(sublat_ind, corr_begin, ind_list_begin, ind_list_end);
+        _point_prepare(neighbor_ind);
+        _calc_restricted_point_corr(neighbor_ind, _corr_begin, _corr_ind_begin, _corr_ind_end);
       }
 
       /// \brief Calculate the change in point correlations due to changing an occupant
       ///
-      /// \brief sublat_ind Basis site index about which to calculate correlations
+      /// \brief neighbor_ind Basis site index about which to calculate correlations
       /// \brief occ_i,occ_f Initial and final occupant variable
-      /// \brief corr_begin Pointer to beginning of data structure where difference in correlations are written
+      /// \brief _corr_begin Pointer to beginning of data structure where difference in correlations are written
       ///
       /// Call using:
       /// \code
@@ -208,50 +216,54 @@ namespace CASM {
       ///
       void calc_delta_point_corr(ConfigDoF const &_config_dof,
                                  long int const *_n_list_begin,
-                                 int sublat_ind,
+                                 long int const *_n_list_end,
+                                 int neighbor_ind,
                                  int occ_i,
                                  int occ_f,
-                                 double *corr_begin) const {
+                                 double *_corr_begin,
+                                 double *_corr_end) const {
         m_config_ptr = &_config_dof;
         _set_nlist(_n_list_begin);
-        _point_prepare(sublat_ind);
-        _calc_delta_point_corr(sublat_ind, occ_i, occ_f, corr_begin);
+        _point_prepare(neighbor_ind);
+        _calc_delta_point_corr(neighbor_ind, occ_i, occ_f, _corr_begin);
       }
       /// \brief Calculate the change in select point correlations due to changing an occupant
       ///
-      /// \brief sublat_ind Basis site index about which to calculate correlations
+      /// \brief neighbor_ind Basis site index about which to calculate correlations
       /// \brief occ_i,occ_f Initial and final occupant variable
-      /// \brief corr_begin Pointer to beginning of data structure where difference in correlations are written
-      /// \param ind_list_begin,ind_list_end Pointers to range indicating which correlations should be calculated
+      /// \brief _corr_begin Pointer to beginning of data structure where difference in correlations are written
+      /// \param _corr_ind_begin,_corr_ind_end Pointers to range indicating which correlations should be calculated
       ///
       /// Call using:
       /// \code
       /// UnitCellCoord bijk(b,i,j,k);           // b,i,j,k of site to get delta point correlations
       /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
       /// int occ_i=0, occ_f=1;  // Swap from occupant 0 to occupant 1
-      /// std::vector<int> ind_list = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
+      /// std::vector<int> _corr_ind = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
       /// myclexulator.calc_restricted_delta_point_corr(my_configdof,
       ///                                               my_supercell.get_nlist(l_index).begin(),
       ///                                               b,
       ///                                               occ_i,
       ///                                               occ_f,
       ///                                               correlation_array.begin(),
-      ///                                               ind_list.begin(),
-      ///                                               ind_list.end());
+      ///                                               _corr_ind.begin(),
+      ///                                               _corr_ind.end());
       /// \endcode
       ///
       void calc_restricted_delta_point_corr(ConfigDoF const &_config_dof,
                                             long int const *_n_list_begin,
-                                            int sublat_ind,
+                                            long int const *_n_list_end,
+                                            int neighbor_ind,
                                             int occ_i,
                                             int occ_f,
-                                            double *corr_begin,
-                                            size_type const *ind_list_begin,
-                                            size_type const *ind_list_end) const {
+                                            double *_corr_begin,
+                                            double *_corr_end,
+                                            size_type const *_corr_ind_begin,
+                                            size_type const *_corr_ind_end) const {
         m_config_ptr = &_config_dof;
         _set_nlist(_n_list_begin);
-        _point_prepare(sublat_ind);
-        _calc_delta_point_corr(sublat_ind, occ_i, occ_f, corr_begin, ind_list_begin, ind_list_end);
+        _point_prepare(neighbor_ind);
+        _calc_restricted_delta_point_corr(neighbor_ind, occ_i, occ_f, _corr_begin, _corr_ind_begin, _corr_ind_end);
       }
 
 
@@ -269,34 +281,34 @@ namespace CASM {
 
     protected:
 
-      virtual void _calc_global_corr_contribution(double *corr_begin) const = 0;
-      virtual void _calc_restricted_global_corr_contribution(double *corr_begin,
-                                                             size_type const *ind_list_begin,
-                                                             size_type const *ind_list_end) const = 0;
+      virtual void _calc_global_corr_contribution(double *_corr_begin) const = 0;
+      virtual void _calc_restricted_global_corr_contribution(double *_corr_begin,
+                                                             size_type const *_corr_ind_begin,
+                                                             size_type const *_corr_ind_end) const = 0;
 
-      virtual void _calc_point_corr(int sublat_ind,
-                                    double *corr_begin) const = 0;
+      virtual void _calc_point_corr(int neighbor_ind,
+                                    double *_corr_begin) const = 0;
 
-      virtual void _calc_restricted_point_corr(int sublat_ind,
-                                               double *corr_begin,
-                                               size_type const *ind_list_begin,
-                                               size_type const *ind_list_end) const = 0;
+      virtual void _calc_restricted_point_corr(int neighbor_ind,
+                                               double *_corr_begin,
+                                               size_type const *_corr_ind_begin,
+                                               size_type const *_corr_ind_end) const = 0;
 
-      virtual void _calc_delta_point_corr(int sublat_ind,
+      virtual void _calc_delta_point_corr(int neighbor_ind,
                                           int occ_i,
                                           int occ_f,
-                                          double *corr_begin) const = 0;
+                                          double *_corr_begin) const = 0;
 
-      virtual void _calc_delta_point_corr(int sublat_ind,
-                                          int occ_i,
-                                          int occ_f,
-                                          double *corr_begin,
-                                          size_type const *ind_list_begin,
-                                          size_type const *ind_list_end) const = 0;
+      virtual void _calc_restricted_delta_point_corr(int neighbor_ind,
+                                                     int occ_i,
+                                                     int occ_f,
+                                                     double *_corr_begin,
+                                                     size_type const *_corr_ind_begin,
+                                                     size_type const *_corr_ind_end) const = 0;
 
       virtual void _global_prepare() const = 0;
 
-      virtual void _point_prepare(int sublat_ind) const = 0;
+      virtual void _point_prepare(int neighbor_ind) const = 0;
 
 
       /// \brief Set pointer to neighbor list
@@ -466,6 +478,43 @@ namespace CASM {
       return m_clex->corr_size();
     }
 
+    /// \brief Obtain const reference to abstract ClexParamPack object
+    ClexParamPack const &param_pack() const {
+      return m_clex->param_pack();
+    }
+
+    /// \brief Obtain reference to abstract ClexParamPack object
+    ClexParamPack &param_pack() {
+      return m_clex->param_pack();
+    }
+
+    /// \brief Obtain ClexParamKey for a particular parameter
+    ClexParamKey param_key(std::string const &_param_name)const {
+      return m_clex->param_key(_param_name);
+    }
+
+    /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom double -> double function set
+    void set_evaluation(ClexParamKey const _param_key, std::vector<PRISMS::PFunction<std::vector<double>, double> > const   &_basis_set) {
+      m_clex->set_evaluation(_param_key, _basis_set);
+    }
+
+    /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom int -> double function set
+    void set_evaluation(ClexParamKey const _param_key, std::vector<PRISMS::PFunction<std::vector<int>, double> > const &_basis_set) {
+      m_clex->set_evaluation(_param_key, _basis_set);
+    }
+
+    /// \brief Alter evaluation of parameters specified by @param _param_key, using the string  @param _eval_type,
+    /// which can be at least either "READ" (i.e., read from ClexParamPack) or "DEFAULT" (i.e., the Clexulator's default implementation)
+    void set_evaluation(ClexParamKey const _param_key, std::string _eval_type) {
+      m_clex->set_evaluation(_param_key, _eval_type);
+    }
+
+    /// \brief Check evaluation mode of parameters specified by @param _param_key, which can be one of (at least)
+    /// "READ" (i.e., read from ClexParamPack), "CUSTOM", or "DEFAULT" (i.e., the Clexulator's default implementation)
+    std::string check_evaluation(ClexParamKey const _param_key) const {
+      return m_clex->check_evaluation(_param_key);
+    }
+
     /// \brief The UnitCellCoord involved in calculating the basis functions,
     /// relative origin UnitCell
     const std::set<UnitCellCoord> &neighborhood() const {
@@ -485,7 +534,7 @@ namespace CASM {
 
     /// \brief Calculate contribution to global correlations from one unit cell
     ///
-    /// \param corr_begin Pointer to beginning of data structure where correlations are written
+    /// \param _corr_begin Pointer to beginning of data structure where correlations are written
     ///
     /// Call using:
     /// \code
@@ -496,45 +545,53 @@ namespace CASM {
     ///
     void calc_global_corr_contribution(ConfigDoF const &_config_dof,
                                        long int const *_n_list_begin,
-                                       double *corr_begin) const {
+                                       long int const *_n_list_end,
+                                       double *_corr_begin,
+                                       double *_corr_end) const {
       m_clex->calc_global_corr_contribution(_config_dof,
                                             _n_list_begin,
-                                            corr_begin);
+                                            _n_list_end,
+                                            _corr_begin,
+                                            _corr_end);
     }
 
     /// \brief Calculate contribution to select global correlations from one unit cell
     ///
-    /// \param corr_begin Pointer to beginning of data structure where correlations are written
-    /// \param ind_list_begin,ind_list_end Pointers to range indicating which correlations should be calculated
+    /// \param _corr_begin Pointer to beginning of data structure where correlations are written
+    /// \param _corr_ind_begin,_corr_ind_end Pointers to range indicating which correlations should be calculated
     ///
     /// Call using:
     /// \code
     /// UnitCellCoord bijk(0,i,j,k);           // i,j,k of unit cell to get contribution from
     /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
-    /// std::vector<int> ind_list = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
+    /// std::vector<int> _corr_ind = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
     /// myclexulator.calc_restricted_global_corr_contribution(my_configdof,
     ///                                                       my_supercell.get_nlist(l_index).begin(),
     ///                                                       correlation_array.begin(),
-    ///                                                       ind_list.begin(),
-    ///                                                       ind_list.end());
+    ///                                                       _corr_ind.begin(),
+    ///                                                       _corr_ind.end());
     /// \endcode
     ///
     void calc_restricted_global_corr_contribution(ConfigDoF const &_config_dof,
                                                   long int const *_n_list_begin,
-                                                  double *corr_begin,
-                                                  size_type const *ind_list_begin,
-                                                  size_type const *ind_list_end) const {
+                                                  long int const *_n_list_end,
+                                                  double *_corr_begin,
+                                                  double *_corr_end,
+                                                  size_type const *_corr_ind_begin,
+                                                  size_type const *_corr_ind_end) const {
       m_clex->calc_restricted_global_corr_contribution(_config_dof,
                                                        _n_list_begin,
-                                                       corr_begin,
-                                                       ind_list_begin,
-                                                       ind_list_end);
+                                                       _n_list_end,
+                                                       _corr_begin,
+                                                       _corr_end,
+                                                       _corr_ind_begin,
+                                                       _corr_ind_end);
     }
 
-    /// \brief Calculate point correlations about basis site 'sublat_ind'
+    /// \brief Calculate point correlations about basis site 'neighbor_ind'
     ///
-    /// \brief sublat_ind Basis site index about which to calculate correlations
-    /// \brief corr_begin Pointer to beginning of data structure where correlations are written
+    /// \brief neighbor_ind Basis site index about which to calculate correlations
+    /// \brief _corr_begin Pointer to beginning of data structure where correlations are written
     ///
     /// Call using:
     /// \code
@@ -545,47 +602,55 @@ namespace CASM {
     ///
     void calc_point_corr(ConfigDoF const &_config_dof,
                          long int const *_n_list_begin,
-                         int sublat_ind,
-                         double *corr_begin) const {
+                         long int const *_n_list_end,
+                         int neighbor_ind,
+                         double *_corr_begin,
+                         double *_corr_end) const {
       m_clex->calc_point_corr(_config_dof,
                               _n_list_begin,
-                              sublat_ind,
-                              corr_begin);
+                              _n_list_end,
+                              neighbor_ind,
+                              _corr_begin,
+                              _corr_end);
     }
 
-    /// \brief Calculate select point correlations about basis site 'sublat_ind'
+    /// \brief Calculate select point correlations about basis site 'neighbor_ind'
     ///
-    /// \brief sublat_ind Basis site index about which to calculate correlations
-    /// \brief corr_begin Pointer to beginning of data structure where correlations are written
-    /// \param ind_list_begin,ind_list_end Pointers to range indicating which correlations should be calculated
+    /// \brief neighbor_ind Basis site index about which to calculate correlations
+    /// \brief _corr_begin Pointer to beginning of data structure where correlations are written
+    /// \param _corr_ind_begin,_corr_ind_end Pointers to range indicating which correlations should be calculated
     ///
     /// Call using:
     /// \code
     /// UnitCellCoord bijk(b,i,j,k);           // b,i,j,k of site to get point correlations
     /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
-    /// std::vector<int> ind_list = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
-    /// myclexulator.calc_restricted_point_corr(my_configdof, my_supercell.get_nlist(l_index).begin(), b, correlation_array.begin(), ind_list.begin(), ind_list.end());
+    /// std::vector<int> _corr_ind = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
+    /// myclexulator.calc_restricted_point_corr(my_configdof, my_supercell.get_nlist(l_index).begin(), b, correlation_array.begin(), _corr_ind.begin(), _corr_ind.end());
     /// \endcode
     ///
     void calc_restricted_point_corr(ConfigDoF const &_config_dof,
                                     long int const *_n_list_begin,
-                                    int sublat_ind,
-                                    double *corr_begin,
-                                    size_type const *ind_list_begin,
-                                    size_type const *ind_list_end) const {
+                                    long int const *_n_list_end,
+                                    int neighbor_ind,
+                                    double *_corr_begin,
+                                    double *_corr_end,
+                                    size_type const *_corr_ind_begin,
+                                    size_type const *_corr_ind_end) const {
       m_clex->calc_restricted_point_corr(_config_dof,
                                          _n_list_begin,
-                                         sublat_ind,
-                                         corr_begin,
-                                         ind_list_begin,
-                                         ind_list_end);
+                                         _n_list_end,
+                                         neighbor_ind,
+                                         _corr_begin,
+                                         _corr_end,
+                                         _corr_ind_begin,
+                                         _corr_ind_end);
     }
 
     /// \brief Calculate the change in point correlations due to changing an occupant
     ///
-    /// \brief sublat_ind Basis site index about which to calculate correlations
+    /// \brief neighbor_ind Basis site index about which to calculate correlations
     /// \brief occ_i,occ_f Initial and final occupant variable
-    /// \brief corr_begin Pointer to beginning of data structure where difference in correlations are written
+    /// \brief _corr_begin Pointer to beginning of data structure where difference in correlations are written
     ///
     /// Call using:
     /// \code
@@ -597,57 +662,66 @@ namespace CASM {
     ///
     void calc_delta_point_corr(ConfigDoF const &_config_dof,
                                long int const *_n_list_begin,
-                               int sublat_ind,
+                               long int const *_n_list_end,
+                               int neighbor_ind,
                                int occ_i,
                                int occ_f,
-                               double *corr_begin) const {
+                               double *_corr_begin,
+                               double *_corr_end) const {
       m_clex->calc_delta_point_corr(_config_dof,
                                     _n_list_begin,
-                                    sublat_ind,
+                                    _n_list_end,
+                                    neighbor_ind,
                                     occ_i,
                                     occ_f,
-                                    corr_begin);
+                                    _corr_begin,
+                                    _corr_end);
     }
 
     /// \brief Calculate the change in select point correlations due to changing an occupant
     ///
-    /// \brief sublat_ind Basis site index about which to calculate correlations
+    /// \brief neighbor_ind Basis site index about which to calculate correlations
     /// \brief occ_i,occ_f Initial and final occupant variable
-    /// \brief corr_begin Pointer to beginning of data structure where difference in correlations are written
-    /// \param ind_list_begin,ind_list_end Pointers to range indicating which correlations should be calculated
+    /// \brief _corr_begin Pointer to beginning of data structure where difference in correlations are written
+    /// \param _corr_ind_begin,_corr_ind_end Pointers to range indicating which correlations should be calculated
     ///
     /// Call using:
     /// \code
     /// UnitCellCoord bijk(b,i,j,k);           // b,i,j,k of site to get delta point correlations
     /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
     /// int occ_i=0, occ_f=1;  // Swap from occupant 0 to occupant 1
-    /// std::vector<int> ind_list = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
+    /// std::vector<int> _corr_ind = {0, 2, 4, 6}; // Get contribution to correlations 0, 2, 4, and 6
     /// myclexulator.calc_restricted_delta_point_corr(my_configdof,
     ///                                               my_supercell.get_nlist(l_index).begin(),
     ///                                               b,
     ///                                               occ_i,
     ///                                               occ_f,
     ///                                               correlation_array.begin(),
-    ///                                               ind_list.begin(),
-    ///                                               ind_list.end());
+    ///                                               correlation_array.end(),
+    ///                                               _corr_ind.begin(),
+    ///                                               _corr_ind.end());
     /// \endcode
     ///
     void calc_restricted_delta_point_corr(ConfigDoF const &_config_dof,
                                           long int const *_n_list_begin,
-                                          int sublat_ind,
+                                          long int const *_n_list_end,
+                                          int neighbor_ind,
                                           int occ_i,
                                           int occ_f,
-                                          double *corr_begin,
-                                          size_type const *ind_list_begin,
-                                          size_type const *ind_list_end) const {
+                                          double *_corr_begin,
+                                          double *_corr_end,
+                                          size_type const *_corr_ind_begin,
+                                          size_type const *_corr_ind_end) const {
       m_clex->calc_restricted_delta_point_corr(_config_dof,
                                                _n_list_begin,
-                                               sublat_ind,
+                                               _n_list_end,
+                                               neighbor_ind,
                                                occ_i,
                                                occ_f,
-                                               corr_begin,
-                                               ind_list_begin,
-                                               ind_list_end);
+                                               _corr_begin,
+                                               _corr_end,
+                                               _corr_ind_begin,
+                                               _corr_ind_end);
     }
 
 

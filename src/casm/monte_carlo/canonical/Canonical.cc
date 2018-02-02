@@ -275,10 +275,12 @@ namespace CASM {
           _clexulator().calc_delta_point_corr(
             _configdof(),
             nlist().sites(nlist().unitcell_index(l)).data(),
+            end_ptr(nlist().sites(nlist().unitcell_index(l))),
             sublat,
             curr_occ,
             new_occ,
-            dCorr_comp.data());
+            dCorr_comp.data(),
+            end_ptr(dCorr_comp));
         }
         else {
           auto begin = _eci().index().data();
@@ -286,10 +288,12 @@ namespace CASM {
           _clexulator().calc_restricted_delta_point_corr(
             _configdof(),
             nlist().sites(nlist().unitcell_index(l)).data(),
+            end_ptr(nlist().sites(nlist().unitcell_index(l))),
             sublat,
             curr_occ,
             new_occ,
             dCorr_comp.data(),
+            end_ptr(dCorr_comp),
             begin,
             end);
         }
@@ -305,7 +309,9 @@ namespace CASM {
           _clexulator().calc_point_corr(
             _configdof(),
             nlist().sites(nlist().unitcell_index(l)).data(),
+            end_ptr(nlist().sites(nlist().unitcell_index(l))),
             sublat,
+            end_ptr(before),
             before.data());
 
           // Apply change
@@ -315,8 +321,10 @@ namespace CASM {
           _clexulator().calc_point_corr(
             _configdof(),
             nlist().sites(nlist().unitcell_index(l)).data(),
+            end_ptr(nlist().sites(nlist().unitcell_index(l))),
             sublat,
-            after.data());
+            after.data(),
+            end_ptr(after));
         }
         else {
           auto begin = _eci().index().data();
@@ -326,8 +334,10 @@ namespace CASM {
           _clexulator().calc_restricted_point_corr(
             _configdof(),
             nlist().sites(nlist().unitcell_index(l)).data(),
+            end_ptr(nlist().sites(nlist().unitcell_index(l))),
             sublat,
             before.data(),
+            end_ptr(before),
             begin,
             end);
 
@@ -338,8 +348,10 @@ namespace CASM {
           _clexulator().calc_restricted_point_corr(
             _configdof(),
             nlist().sites(nlist().unitcell_index(l)).data(),
+            end_ptr(nlist().sites(nlist().unitcell_index(l))),
             sublat,
             after.data(),
+            end_ptr(after),
             begin,
             end);
 

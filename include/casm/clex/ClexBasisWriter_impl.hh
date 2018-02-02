@@ -22,7 +22,7 @@ namespace CASM {
     Index N_sublat = clex.n_sublat();
 
     Index N_corr = clex.n_functions();
-    std::stringstream private_def_stream, public_def_stream, interface_imp_stream, bfunc_imp_stream, bfunc_def_stream;
+    std::stringstream bfunc_imp_stream, bfunc_def_stream;
 
     std::string uclass_name;
     for(Index i = 0; i < class_name.size(); i++)
@@ -166,10 +166,11 @@ namespace CASM {
         << indent << "class " << class_name << " : public Clexulator_impl::Base {\n\n"
 
         << indent << "public:\n\n"
-        << public_def_stream.str() << "\n"
+        << public_definitions << "\n"
+        << bfunc_def_stream.str() << "\n"
 
         << indent << "private:\n\n"
-        << private_def_stream.str() << "\n"
+        << private_definitions << "\n"
 
         << indent << "};\n\n" // close class definition
 
@@ -177,7 +178,8 @@ namespace CASM {
 
         << "//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n"
 
-        << interface_imp_stream.str()
+        << constructor_implementation << "\n"
+        << interface_implementation << "\n"
         << bfunc_imp_stream.str()
         << "}\n\n\n"      // close namespace
 

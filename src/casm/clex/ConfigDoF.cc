@@ -218,7 +218,9 @@ namespace CASM {
       //Fill up contributions
       clexulator.calc_global_corr_contribution(configdof,
                                                scel.nlist().sites(v).data(),
-                                               tcorr.data());
+                                               end_ptr(scel.nlist().sites(v)),
+                                               tcorr.data(),
+                                               end_ptr(tcorr));
 
       correlations += tcorr;
     }

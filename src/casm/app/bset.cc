@@ -13,6 +13,7 @@
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/clex/ClexBasisWriter.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/completer/Handlers.hh"
@@ -261,6 +262,7 @@ namespace CASM {
         // write source code
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), bset));
+
         throw std::runtime_error("Error: print_clexulator is being re-implemented");
         //print_clexulator(...);
         outfile.close();

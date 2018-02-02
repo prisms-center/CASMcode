@@ -22,6 +22,19 @@ namespace CASM {
   // Finds optimal assignments, based on cost_matrix, and returns total optimal cost
   double hungarian_method(const Eigen::MatrixXd &cost_matrix, std::vector<Index> &optimal_assignments, const double _tol);
 
+
+  ///\brief Return pointer one past end of vector. Equivalent to convainer.data()+container.size()
+  template<typename Derived>
+  typename Derived::Scalar *end_ptr(Eigen::PlainObjectBase<Derived> &container) {
+    return container.data() + container.size();
+  }
+
+  ///\brief Return const pointer one past end of vector. Equivalent to convainer.data()+container.size()
+  template<typename Derived>
+  typename Derived::Scalar const *end_ptr(Eigen::PlainObjectBase<Derived> const &container) {
+    return container.data() + container.size();
+  }
+
 }
 
 namespace Eigen {
