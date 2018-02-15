@@ -112,11 +112,34 @@ namespace CASM {
     m_strict_flag(options & strict),
     m_rotate_flag(options & rotate),
     m_tol(max(1e-9, _tol)) {
+
     //squeeze lattice_weight into (0,1] if necessary
     m_lattice_weight = max(min(_lattice_weight, 1.0), 1e-9);
     ParamComposition param_comp(_pclex.prim());
     m_fixed_components = param_comp.fixed_components();
     m_max_volume_change = max(m_tol, _max_volume_change);
+  }
+
+  //*******************************************************************************************
+
+  void ConfigMapper::force_lattices(const std::vector<std::string> &lattice_names) const {
+    //Turn the lattice names into actual lattices
+    for(auto &name : lattice_names) {
+      //Somehow adding new supercells to the database is considered const (?)
+      const Supercell &force_scel = CASM::make_supercell(*m_pclex, name);
+      const Lattice &force_lat = force_scel.lattice();
+      Index force_vol = force_scel.volume();
+
+      m_forced_superlat_map[force_vol].push_back(force_lat);
+    }
+    return;
+  }
+
+  //*******************************************************************************************
+
+  void ConfigMapper::unforce_lattices() const {
+    m_forced_superlat_map.clear();
+    return;
   }
 
   //*******************************************************************************************
@@ -559,14 +582,22 @@ namespace CASM {
     ConfigDoF tdof;
     BasicStructure<Site> tstruc(struc);
     Lattice tlat;
+    //
     // First pass:  Find a reasonable upper bound
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
+
+      const auto &lattice_candidates = _lattices_of_vol(i_vol);
+      if(lattice_candidates.size() == 0) {
+        //This means you forced lattices on
+        continue;
+      }
+
       tlat = ConfigMapping::find_nearest_super_lattice(primclex().prim().lattice(),
                                                        struc.lattice(),
                                                        primclex().prim().point_group(),
                                                        tF,
                                                        ttrans_mat,
-                                                       _lattices_of_vol(i_vol),
+                                                       lattice_candidates,
                                                        m_tol);
       strain_cost = lw * LatticeMap::calc_strain_cost(tF, struc.lattice().vol() / max(num_atoms, 1.));
 
@@ -583,6 +614,7 @@ namespace CASM {
       if(m_rotate_flag) {
         rotF = StrainConverter::right_stretch_tensor(tF);
       }
+
       Supercell scel(&primclex(), tlat);
       if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
                                                             tstruc,
@@ -741,24 +773,38 @@ namespace CASM {
 
   //*******************************************************************************************
   const std::vector<Lattice> &ConfigMapper::_lattices_of_vol(Index prim_vol) const {
+
+    //If you specified that you wanted certain lattices, return those, otherwise do the
+    //usual enumeration
+    if(this->lattices_are_forced()) {
+      //This may very well return an empty vector, saving painful time enumerating things
+      return m_forced_superlat_map[prim_vol];
+
+    }
+
     if(!valid_index(prim_vol)) {
       throw std::runtime_error("Cannot enumerate lattice of volume " + std::to_string(prim_vol) + ", which is out of bounds.\n");
     }
+
+    //If we already have candidate lattices for the given volume, return those
     auto it = m_superlat_map.find(prim_vol);
     if(it != m_superlat_map.end())
       return it->second;
 
+    //We don't have any lattices for the provided volume, enumerate them all!!!
     std::vector<Lattice> lat_vec;
     SupercellEnumerator<Lattice> enumerator(
       primclex().prim().lattice(),
       primclex().prim().point_group(),
       ScelEnumProps(prim_vol, prim_vol + 1));
 
+    //Save all the lattices we enumerate in their canonical form
     Index l = 0;
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       lat_vec.push_back(canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol));
     }
 
+    //Save the lattices we enumerated to the map, and return their value
     return m_superlat_map[prim_vol] = std::move(lat_vec);
 
   }

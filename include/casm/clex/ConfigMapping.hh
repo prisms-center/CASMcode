@@ -68,6 +68,7 @@ namespace CASM {
   /// \ingroup Configuration
   class ConfigMapper {
   public:
+    typedef std::map<Index, std::vector<Lattice> > LatMapType;
     enum NullInitializer {null_initializer};
     enum Options {none = 0,
                   rotate = (1u << 0),
@@ -122,7 +123,7 @@ namespace CASM {
       return *m_pclex;
     }
 
-    void set_primclex(PrimClex &_pclex) {
+    void set_primclex(const PrimClex &_pclex) {
       m_pclex = &_pclex;
     }
 
@@ -190,6 +191,17 @@ namespace CASM {
     bool struc_to_configdof(const BasicStructure<Site> &_struc,
                             ConfigDoF &mapped_configdof,
                             Lattice &mapped_lat) const;
+
+    ///\brief specify which lattices should be searched when mapping configurations
+    void force_lattices(const std::vector<std::string> &lattice_names) const;
+
+    ///\brief unset the enforcement of particular lattices (default behavior)
+    void unforce_lattices() const;
+
+    ///\brief returns true if lattices were set to be forced as candidates
+    bool lattices_are_forced() const {
+      return m_forced_superlat_map.size();
+    }
 
   private:
 
@@ -262,7 +274,9 @@ namespace CASM {
   private:
 
     const PrimClex *m_pclex;
-    mutable std::map<Index, std::vector<Lattice> > m_superlat_map;
+    ///Maps the supercell volume to a vector of Lattices with that volume
+    mutable LatMapType m_superlat_map;
+    mutable LatMapType m_forced_superlat_map;
     double m_lattice_weight;
     double m_max_volume_change;
     double m_min_va_frac;
