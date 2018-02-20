@@ -1,6 +1,7 @@
 include python/casm/Makemodule.am
+include python/quantumespresso/Makemodule.am
+include python/seqquest/Makemodule.am
 include python/vasp/Makemodule.am
-
 #install:
 #	cd $(top_srcdir)/python/casm && $(PYTHON) $(abs_builddir)/casm/setup.py install --prefix=$(PYTHON_PREFIX)
 #	cd $(top_srcdir)/python/vasp && $(PYTHON) $(abs_builddir)/vasp/setup.py install --prefix=$(PYTHON_PREFIX)
