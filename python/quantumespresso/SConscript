@@ -10,7 +10,7 @@ pyquantumespresso_setup = env.Command('setup.py', ['make_setup.py'], 'cd python/
 env.NoClean(pyquantumespresso_setup)
 
 cmd = 'cd python/quantumespresso && ' + find_executable('python') + ' setup.py install'
-cmd += ' --prefix=' + env['PREFIX']
+cmd += ' --prefix=' + env['CASM_PYTHON_PREFIX']
 cmd += ' --record installed.txt'
 
 pyquantumespresso_install = env.Command('installed.txt', [pyquantumespresso_setup], cmd)

@@ -68,6 +68,11 @@ namespace CASM {
     _init();
   }
 
+  template<bool IsConst>
+  std::string ScelEnumByNameT<IsConst>::name() const {
+    return enumerator_name;
+  }
+
   /// Random access implementation
   template<bool IsConst>
   Supercell *ScelEnumByNameT<IsConst>::at_step(step_type n) {
@@ -146,6 +151,11 @@ namespace CASM {
   ScelEnumByPropsT<IsConst>::ScelEnumByPropsT(PrimClex &primclex, const jsonParser &input) :
     ScelEnumByPropsT(primclex, make_scel_enum_props(primclex, input), _get_else(input, "existing_only", false)) {}
 
+  template<bool IsConst>
+  std::string ScelEnumByPropsT<IsConst>::name() const {
+    return enumerator_name;
+  }
+
   /// Implements increment over supercells
   template<bool IsConst>
   void ScelEnumByPropsT<IsConst>::increment() {
@@ -176,6 +186,11 @@ namespace CASM {
       return m_primclex->contains_supercell(tmp);
     }
     return true;
+  }
+
+  template<bool IsConst>
+  std::string ScelEnumT<IsConst>::name() const {
+    return enumerator_name;
   }
 
   /// \relates ::ScelEnumT
