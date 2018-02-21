@@ -77,7 +77,9 @@ namespace CASM {
       m_used["max_vol_change"] = max_vol_change;
       m_used["min_va_frac"] = min_va_frac;
       m_used["max_va_frac"] = max_va_frac;
-      if(forced_lattice_names.size() > 0) {
+
+      bool lattices_forced_in_settings = (forced_lattice_names.size() > 0);
+      if(lattices_forced_in_settings) {
         m_used["forced_lattices"] = forced_lattice_names;
       }
 
@@ -97,7 +99,7 @@ namespace CASM {
       m_configmapper->set_max_va_frac(max_va_frac);
 
       //If the settings specified at least one lattice, then force that on the configmapper
-      if(forced_lattice_names.size() > 0) {
+      if(lattices_forced_in_settings) {
         m_configmapper->force_lattices(forced_lattice_names);
       }
 
