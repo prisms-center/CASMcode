@@ -1,6 +1,7 @@
 vasppy_PYTHON=python/vasp/vasp/relax.py\
 			  python/vasp/vasp/__init__.py\
-			  python/vasp/vasp/vasp.py
+			  python/vasp/vasp/vasp.py\
+			  python/vasp/vasp/neb.py
 vasppydir=$(pythondir)/vasp
 
 vaspio_PYTHON=python/vasp/vasp/io/oszicar.py\
