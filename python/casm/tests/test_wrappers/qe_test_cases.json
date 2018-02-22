@@ -1,0 +1,33 @@
+{
+  "comment": [
+    "Test projects are expected to have required directory structure",
+    "for calculation."
+  ],  
+  
+  "run" : {
+    "setup_many" : [
+      {
+        "comment" : "test case 1",
+        "proj" : "ZrO_HCP_test",
+        "infilename":"ZrO.in",
+        "max_vol":2
+      }
+    ],
+    "run_many" : [
+      {
+        "comment" : "test case 1",
+        "proj" : "ZrO_HCP_test",
+        "infilename":"ZrO.in",
+        "max_vol":2
+      }
+    ],
+    "run_single" : [
+       {
+        "comment" : "test case 1",
+        "proj" : "ZrO_HCP_test_relax/quantumespresso",
+        "infilename":"ZrO.in",
+        "outfilename":"ZrO.out"
+      }
+    ]
+  }
+}

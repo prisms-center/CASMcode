@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse, json, sys
+import casm.qewrapper
 from os import getcwd
 from os.path import join, abspath
 from casm import NoIndentEncoder
@@ -8,7 +9,7 @@ from casm.project import Project, Selection
 from casm.vaspwrapper import Relax
 
 # casm-calc --configs selection
-#           --calculator "vasp"
+#           --calculator "quantumespresso" "vasp"
 #           --scheduler "pbs"
 #           --run / --submit / --setup / --report
 
@@ -23,6 +24,10 @@ Path to CASM project. Default=current working directory.
 run_help = """
 Run calculation for all selected configurations.
 """
+method_help = """
+Choose what method to use to calculate training data options are vasp or quantumespresso (default="").
+Overrides the calculator tag in relax.json. If calculator tag in relax.json is empty then VASP will be used.
+"""
 
 submit_help = """
 Submit calculation for all selected configurations.
@@ -36,10 +41,12 @@ report_help = """
 Report calculation results (print calc.properties.json file) for all selected configurations.
 """
 
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
   parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
   parser.add_argument('--path', help=path_help, type=str, default=None)
+  parser.add_argument('-m','--method', help=method_help, type=str, default=None)
   parser.add_argument('--run', help=run_help, action="store_true", default=False)
   parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
   parser.add_argument('--setup', help=setup_help, action="store_true", default=False)
@@ -52,23 +59,52 @@ if __name__ == "__main__":
   try:
     proj = Project(abspath(args.path))
     sel = Selection(proj, args.configs, all=False)
-  
+    if sel.data["configname"] is not None:
+      configname=sel.data["configname"][0]
+      casm_settings=proj.settings
+      if casm_settings == None:
+        raise casm.qewrapper.QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+      casm_directories=proj.dir
+      print "  Reading relax.json settings file"
+      sys.stdout.flush()
+      setfile = casm_directories.settings_path_crawl("relax.json",configname,casm_settings.default_clex)
+      if setfile == None:
+          raise casm.qewrapper.QEWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
+          sys.stdout.flush()
+      else:
+          print "Using "+str(setfile)+" as settings..."
+      settings = casm.qewrapper.read_settings(setfile)
+      if settings["calculator"] is None:
+        settings["calculator"]="vasp"
+      calculator=settings["calculator"]
+      if args.method is not None:
+        calculator=args.method
+      print "Relevant calculator is:", calculator
     if args.setup:
       sel.write_pos()
       for configname in sel.data["configname"]:
-        relaxation = Relax(proj.dir.configuration_dir(configname))
+        if calculator == "quantumespresso":
+          relaxation = casm.qewrapper.Relax(proj.dir.configuration_dir(configname))
+        else:
+          relaxation = Relax(proj.dir.configuration_dir(configname))
         relaxation.setup()
     
     elif args.submit:
       sel.write_pos()
       for configname in sel.data["configname"]:
-        relaxation = Relax(proj.dir.configuration_dir(configname))
+        if calculator == "quantumespresso":
+          relaxation = casm.qewrapper.Relax(proj.dir.configuration_dir(configname))
+        else:
+          relaxation = Relax(proj.dir.configuration_dir(configname))
         relaxation.submit()
     
     elif args.run:
       sel.write_pos()
       for configname in sel.data["configname"]:
-        relaxation = Relax(proj.dir.configuration_dir(configname))
+        if calculator == "quantumespresso":
+          relaxation = casm.qewrapper.Relax(proj.dir.configuration_dir(configname))
+        else:
+          relaxation = Relax(proj.dir.configuration_dir(configname))
         relaxation.run()
     
     elif args.report:
@@ -78,15 +114,21 @@ if __name__ == "__main__":
         calcdir = proj.dir.calctype_dir(configname, clex)
         finaldir = join(calcdir, "run.final")
         try:
-          output = Relax.properties(finaldir)
+          if calculator == "quantumespresso":
+            if settings["outfilename"] is None:
+                print "WARNING: No output file specified in relax.json using default outfilename of std.out"
+                settings["outfilename"]="std.out"
+            outfilename = settings["outfilename"]
+            output = casm.qewrapper.Relax.properties(finaldir,outfilename)
+          else:
+            output = Relax.properties(finaldir)
           calc_props = proj.dir.calculated_properties(configname, clex)
           with open(calc_props, 'w') as file:
             print "writing:", calc_props
             file.write(json.dumps(output, file, cls=NoIndentEncoder, indent=4, sort_keys=True))
         except:
           print("Unable to report properties for directory {}.\n" 
-                "Please verify that it contains a completed VASP calculation.".format(configdir))
-          raise
+                "Please verify that it contains a completed calculation.".format(configdir))
   except Exception as e:
     print e
     sys.exit(1)

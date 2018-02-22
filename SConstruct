@@ -535,6 +535,11 @@ SConscript(['tests/unit/SConscript'], {'env': env})
 SConscript(['python/casm/SConscript'], {'env':env})
 SConscript(['python/vasp/SConscript'], {'env':env})
 SConscript(['python/seqquest/SConscript'], {'env':env})
+SConscript(['python/quantumespresso/SConscript'], {'env':env})
+
+# python/casm/tests
+SConscript(['python/casm/tests/SConscript'], {'env':env})
+
 
 
 ##### Make combined alias 'test'

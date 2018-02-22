@@ -1,10 +1,10 @@
 import os, math, sys, shutil, gzip
-import vasp, io
+import quantumespresso, qeio
 
 class Relax(object):
-    """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
+    """The Relax class contains functions for setting up, executing, and parsing a Quantum Espresso relaxation.
 
-        The relaxation is initialized in a directory containing VASP input files, called 'relaxdir'.
+        The relaxation is initialized in a directory containing Quantum Espresso input files, called 'relaxdir'.
         It then creates the following directory structure:
         .../relaxdir/
             run.0/
@@ -15,7 +15,7 @@ class Relax(object):
 
 
         'run.i' directories are only created when ready.
-        'run.final' is a final constant volume run {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}.
+        'run.final' is a final constant volume run 
 
         Contains:
             self.relaxdir  (.../relax)
@@ -24,30 +24,30 @@ class Relax(object):
     """
     def __init__(self, relaxdir=None, settings=None):
         """
-        Construct a VASP relaxation job object.
+        Construct a Quantum Espresso relaxation job object.
 
         Args:
-            configdir:  path to vasp relaxation directory
+            relaxdir:  path to quantum espresso relaxation directory
             settings:   dictionary-like object containing settings, or if None, it reads
                         the json file: .../relaxdir/relax.json
 
                 possible settings keys are:
-                    used by vasp.run() function:
+                    used by quantumespresso.run() function:
                         "ncpus": number of ncpus to run mpi on
 			"npar" or "ncore": number of ways to parallelize
                         "kpar": number of ways to parallelize k-points
-                        "vasp_cmd": (default, see vasp.run) shell command to execute vasp, or None to use default mpirun
+                        "quantumespresso_cmd": (default, see quantumespresso.run) shell command to execute quantumespresso, or None to use default mpirun
                         "strict_kpoint": force strict copying of KPOINTS file, otherwise kpoints are scaled based on supercell size
                     used by not_converging():
                         "run_limit": (default 10) maximum number of runs to allow before setting status to "not_converging"
 
         """
 
-        print "Constructing a VASP Relax object"
+        print "Constructing a Quantum Espresso Relax object"
         sys.stdout.flush()
 
         # store path to .../relaxdir, and create if not existing
-        if relaxdir is None:
+        if relaxdir == None:
             relaxdir = os.getcwd()
         self.relaxdir = os.path.abspath(relaxdir)
 
@@ -62,7 +62,7 @@ class Relax(object):
 
         self.finaldir = os.path.join(self.relaxdir, "run.final")
 
-        if settings is None:
+        if settings == None:
             self.settings = dict()
         else:
             self.settings = settings
@@ -74,8 +74,8 @@ class Relax(object):
             self.settings["kpar"] = None
         if not "ncore" in self.settings:
             self.settings["ncore"] = None
-        if not "vasp_cmd" in self.settings:
-            self.settings["vasp_cmd"] = None
+        if not "qe_cmd" in self.settings:
+            self.settings["qe_cmd"] = None
         if not "ncpus" in self.settings:
             self.settings["ncpus"] = None
         if not "run_limit" in self.settings:
@@ -84,24 +84,27 @@ class Relax(object):
             self.settings["nrg_convergence"] = None
         if not "compress" in self.settings:
             self.settings["compress"] = []
+        if not "err_types" in self.settings:
+            self.settings["err_types"] = ['SubSpaceMatrixError']
+        ## added these because of key errors
+        if not "extra_input_files" in self.settings:
+            self.settings["extra_input_files"] = []
         if not "move" in self.settings:
             self.settings["move"] = []
         if not "copy" in self.settings:
             self.settings["copy"] = []
-        if not "backup" in self.settings:
-            self.settings["backup"] = []
         if not "remove" in self.settings:
             self.settings["remove"] = []
-        if not "extra_input_files" in self.settings:
-            self.settings["extra_input_files"] = []
+        if not "compress" in self.settings:
+            self.settings["compress"] = []
+        if not "backup" in self.settings:
+            self.settings["backup"] = []
         if not "initial" in self.settings:
             self.settings["initial"] = None
         if not "final" in self.settings:
             self.settings["final"] = None
-        if not "err_types" in self.settings:
-            self.settings["err_types"] = ['SubSpaceMatrixError']
 
-        print "VASP Relax object constructed\n"
+        print "Quantum Espresso Relax object constructed\n"
         sys.stdout.flush()
 
 
@@ -113,7 +116,7 @@ class Relax(object):
 
 
     def update_rundir(self):
-        """Find all .../config/vasp/relax/run.i directories, store paths in self.rundir list"""
+        """Find all .../config/qe/relax/run.i directories, store paths in self.rundir list"""
         self.rundir = []
         run_index = len(self.rundir)
         while os.path.isdir( os.path.join(self.relaxdir, "run." + str(run_index))):
@@ -128,7 +131,7 @@ class Relax(object):
 
 
     def update_errdir(self):
-        """Find all .../config/vasp/relax/run.i_err.j directories, store paths in self.errdir list"""
+        """Find all .../config/qe/relax/run.i_err.j directories, store paths in self.errdir list"""
         self.errdir = []
         if len(self.rundir) == 0:
             pass
@@ -142,33 +145,36 @@ class Relax(object):
     def setup(self, initdir, settings):
         """ mv all files and directories (besides initdir) into initdir """
 
+        infilename=settings["infilename"]
+
         print "Moving files into initial run directory:", initdir
         initdir = os.path.abspath(initdir)
         for p in os.listdir(self.relaxdir):
-            if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.relaxdir, p) != initdir):
+            if (p in ([infilename] + self.settings["extra_input_files"])) and (os.path.join(self.relaxdir, p) != initdir):
                 os.rename(os.path.join(self.relaxdir,p), os.path.join(initdir,p))
         print ""
         sys.stdout.flush()
 
-        # Keep a backup copy of the base INCAR
-        shutil.copyfile(os.path.join(initdir,"INCAR"),os.path.join(self.relaxdir,"INCAR.base"))
+        # Keep a backup copy of the base Infile
+        shutil.copyfile(os.path.join(initdir,infilename),os.path.join(self.relaxdir,infilename + ".base"))
 
-        # If an initial incar is called for, copy it in and set the appropriate flag
+        # If an initial infile is called for, copy it in and set the appropriate flag
         if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["initial"]))):
-            new_values = io.Incar(os.path.join(self.relaxdir,self.settings["initial"])).tags
-            io.set_incar_tag(new_values, initdir)
-            print "  Set INCAR tags:", new_values, "\n"
+            new_values = qeio.Infile(os.path.join(self.relaxdir,self.settings["initial"])).tags
+            qeio.set_infile_tag(new_values,infilename,initdir)
+            print "  Set Infile tags:", new_values, "\n"
             sys.stdout.flush()
 
     def complete(self):
-        """Check if the VASP relaxation is complete.
+        """Check if the Quantum Espresso relaxation is complete.
 
-           Completion criteria: .../config/vasp/relax/run.final/OUTCAR exists and is complete
+           Completion criteria: .../config/qe/relax/run.final/outfilename exists and is complete
         """
-        outcarfile = os.path.join(self.finaldir,"OUTCAR")
-        if not os.path.isfile(outcarfile):
+        outfilename= self.settings["outfilename"]
+        myoutfile = os.path.join(self.finaldir,outfilename)
+        if not os.path.isfile(myoutfile):
             return False
-        if not io.Outcar(outcarfile).complete():
+        if not qeio.Outfile(myoutfile).complete():
             return False
         return True
 
@@ -183,13 +189,14 @@ class Relax(object):
                                     or 2) the last two jobs had final E0 differ by less than
                                           self.settings["nrg_convergence"]
         """
+        outfilename=self.settings["outfilename"]
         if len(self.rundir) >= 2:
-            if io.ionic_steps(self.rundir[-1]) <= 3:
+            if qeio.ionic_steps(outfilename,self.rundir[-1]) <= 3:
                 return True
             if self.settings["nrg_convergence"] != None:
-                if io.job_complete(self.rundir[-1]) and io.job_complete(self.rundir[-2]):
-                    o1 = io.Oszicar(os.path.join(self.rundir[-1],"OSZICAR"))
-                    o2 = io.Oszicar(os.path.join(self.rundir[-2],"OSZICAR"))
+                if qeio.job_complete(outfilename,self.rundir[-1]) and qeio.job_complete(outfilename,self.rundir[-2]):
+                    o1 = qeio.Outfile(os.path.join(self.rundir[-1],outfilename))
+                    o2 = qeio.Outfile(os.path.join(self.rundir[-2],outfilename))
                     if abs( o1.E[-1] - o2.E[-1]) < self.settings["nrg_convergence"]:
                         return True
 
@@ -209,18 +216,20 @@ class Relax(object):
 
 
     def run(self):
-        """ Perform a series of vasp jobs to relax a structure. Performs a series of vasp calculations until
+        """ Perform a series of quantum espresso jobs to relax a structure. Performs a series of quantum espresso calculations until
             convergence is reached according to the criteria in 'status()'. Then performs a final constant volume run
-            {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}.
         """
 
-        print "Begin VASP relaxation run"
+        print "Begin Quantum Espresso relaxation run"
         sys.stdout.flush()
 
         # get current status of the relaxation:
         (status, task) = self.status()
         print "\n++  status:", status, "  next task:", task
         sys.stdout.flush()
+
+        infilename=self.settings["infilename"]
+        outfilename=self.settings["outfilename"]
 
         while status == "incomplete":
             if task == "setup":
@@ -229,64 +238,39 @@ class Relax(object):
 
             elif task == "relax":
                 self.add_rundir()
-                vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
-                shutil.copyfile(os.path.join(self.relaxdir,"INCAR.base"),os.path.join(self.rundir[-1],"INCAR"))
+                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
             elif task == "constant":
                 self.add_rundir()
-                vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
+                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1],self.settings)
 
-                # set INCAR to ISIF = 2, ISMEAR = -5, NSW = 0, IBRION = -1
+                # set Infile to calculation = relax
                 if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["final"]))):
-                    new_values = io.Incar(os.path.join(self.relaxdir, self.settings["final"])).tags
+                    new_values = qeio.Infile(os.path.join(self.relaxdir, self.settings["final"])).tags
                 else:
-                    new_values = {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}
+                    new_values = {"calculation":"'relax'"}
 
-                # set INCAR system tag to denote 'final'
-                if io.get_incar_tag("SYSTEM", self.rundir[-1]) is None:
-                    new_values["SYSTEM"] = "final"
+                # set Infile title tag to denote 'final'
+                if qeio.get_infile_tag("title",infilename, self.rundir[-1]) is None:
+                    new_values["title"] = "'final'"
                 else:
-                    new_values["SYSTEM"] = io.get_incar_tag("SYSTEM", self.rundir[-1]) + " final"
+                    new_values["title"] = "'{}'".format(qeio.get_infile_tag("title", self.rundir[-1]) + " final")
 
-                io.set_incar_tag( new_values, self.rundir[-1])
-                print "  Set INCAR tags:", new_values, "\n"
+                qeio.set_infile_tag(new_values,infilename,self.rundir[-1])
+                print "  Set Infile tags:", new_values, "\n"
                 sys.stdout.flush()
 
             else:
                 # probably hit walltime
                 self.add_rundir()
-                vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
+                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
             while True:
-                # run vasp
-                result = vasp.run(self.rundir[-1], npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],ncpus=self.settings["ncpus"],kpar=self.settings["kpar"],err_types=self.settings["err_types"])
+                # run quantum espresso
+                result = quantumespresso.run(infilename,outfilename,self.rundir[-1],command=self.settings["qe_cmd"],ncpus=self.settings["ncpus"],err_types=self.settings["err_types"])
 
                 # if no errors, continue
-                if result is None or self.not_converging():
-                    # Check for actions that should be taken after the initial run
-                    if len(self.rundir) == 1:
-                        if self.settings["fine_ngx"]:
-                            outcarfile = os.path.join(self.rundir[-1], "OUTCAR")
-                            if not os.path.isfile(outcarfile):
-                                # This is an error but I'm not sure what to do about it
-                                pass
-                            else:
-                                init_outcar = io.Outcar(outcarfile)
-                                if not init_outcar.complete:
-                                    # This is an error but I'm not sure what to do about it
-                                    pass
-                                elif (init_outcar.ngx is None or
-                                      init_outcar.ngy is None or
-                                      init_outcar.ngz is None):
-                                    # This is an error but I'm not sure what to do about it
-                                    pass
-                                else:
-                                    ng_tags = {
-                                        "ngx" : init_outcar.ngx*2,
-                                        "ngy" : init_outcar.ngy*2,
-                                        "ngz" : init_outcar.ngz*2}
-                                    print ng_tags
-                                    io.set_incar_tag(ng_tags, self.relaxdir, "INCAR.base")
+                if result == None or self.not_converging():
                     break
 
                 # else, attempt to fix first error
@@ -326,13 +310,13 @@ class Relax(object):
                 sys.stdout.flush()
                 os.rename(self.rundir[-1], self.finaldir)
                 self.rundir.pop()
-                vasp.complete_job(self.finaldir, self.settings)
+                quantumespresso.complete_job(self.finaldir, self.settings)
 
         return (status, task)
 
 
     def status(self):
-        """ Determine the status of a vasp relaxation series of runs. Individual runs in the series
+        """ Determine the status of a quantum espresso relaxation series of runs. Individual runs in the series
             are in directories labeled "run.0", "run.1", etc.
 
             Returns a tuple: (status = "incomplete" or "complete" or "not_converging",
@@ -341,35 +325,32 @@ class Relax(object):
             The first value is the status of the entire relaxation.
 
             The second value is the current task, where 'continuedir' is the path to a
-            vasp job directory that is not yet completed, "relax" indicates another
+            quantum espresso job directory that is not yet completed, "relax" indicates another
             volume relaxation job is required, and "constant" that a constant volume run is required.
         """
-
+        infilename=self.settings["infilename"]
+        outfilename=self.settings["outfilename"]
         # check if all complete
-        if io.job_complete(self.finaldir):
+        if qeio.job_complete(outfilename,self.finaldir):
             return ("complete",None)
 
         # check status of relaxation runs
         self.update_rundir()
-
         # if not yet started
         if len(self.rundir) == 0:
             return ("incomplete", "setup")
 
         # if the latest run is complete:
-        if io.job_complete(self.rundir[-1]):
-
+        if qeio.job_complete(outfilename,self.rundir[-1]):
             # if it is a final constant volume run
-            if io.get_incar_tag("SYSTEM", self.rundir[-1]) != None:
-                if io.get_incar_tag("SYSTEM", self.rundir[-1]).split()[-1].strip().lower() == "final":
-                # if io.get_incar_tag("ISIF", self.rundir[-1]) == 2 and \
-                #    io.get_incar_tag("NSW", self.rundir[-1]) == 0 and \
-                #    io.get_incar_tag("ISMEAR", self.rundir[-1]) == -5:
+            if qeio.get_infile_tag("title", infilename, self.rundir[-1]) != None:
+                print qeio.get_infile_tag("title", infilename, self.rundir[-1])[1:-1].split()[-1].strip().lower()
+                if qeio.get_infile_tag("title", infilename, self.rundir[-1])[1:-1].split()[-1].strip().lower() == "final":
                     return ("complete", None)
 
             # elif constant volume run (but not the final one)
-            if io.get_incar_tag("ISIF", self.rundir[-1]) in [0,1,2]:
-                if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1],"OSZICAR")).E):
+            if qeio.get_infile_tag("calculation", infilename, self.rundir[-1]) in ['relax','scf','nscf']:
+                if qeio.get_infile_tag("nsteps", infilename, self.rundir[-1]) == len(qeio.Outfile(os.path.join(self.rundir[-1],outfilename)).E):
                     return ("incomplete", "relax")      # static run hit NSW limit and so isn't "done"
                 else:
                     return ("incomplete", "constant")

@@ -1,0 +1,7 @@
+{
+  "queue":"batch",
+  "walltime":"2:00:00",
+  "ppn":"2",
+  "atom_per_proc":"2",
+  "run_limit":20
+}
