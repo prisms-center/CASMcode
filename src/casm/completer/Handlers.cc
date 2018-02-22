@@ -248,8 +248,8 @@ namespace CASM {
     void OptionHandlerBase::add_configlists_suboption(const fs::path &_default) {
       m_desc.add_options()
       ("configs,c",
-       po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {_default})->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected configurations of the given selection file2. "
+       po::value<std::vector<fs::path> >(&m_selection_paths)->multitoken()->default_value(std::vector<fs::path> {_default})->value_name(ArgHandler::path()),
+       (std::string("Only consider the selected configurations of the given selection file. "
                     "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
                     "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
       return;
@@ -267,7 +267,7 @@ namespace CASM {
     void OptionHandlerBase::add_configlists_nodefault_suboption() {
       m_desc.add_options()
       ("configs,c",
-       po::value<std::vector<fs::path> >(&m_selection_paths)->value_name(ArgHandler::path()),
+       po::value<std::vector<fs::path> >(&m_selection_paths)->multitoken()->value_name(ArgHandler::path()),
        "Only consider the selected configurations of the given selection files. "
        "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. ");
       return;
