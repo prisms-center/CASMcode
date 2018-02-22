@@ -82,4 +82,8 @@ config.*
 libtool
 stamp-h1
 
+#Eclipse IDE
+.project
+.pydevproject
+
 #Other stuff
