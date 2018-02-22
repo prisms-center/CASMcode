@@ -1,7 +1,7 @@
 seqquest_PYTHON=python/seqquest/seqquest/__init__.py\
 			  python/seqquest/seqquest/relax.py\
 			  python/seqquest/seqquest/seqquest.py
-seqquest_dir=$(pythondir)/seqquest
+seqquestdir=$(pythondir)/seqquest
 
 seqquest_io_PYTHON=python/seqquest/seqquest/seqquest_io/__init__.py\
         python/seqquest/seqquest/seqquest_io/lcao_mod.py\
@@ -9,11 +9,11 @@ seqquest_io_PYTHON=python/seqquest/seqquest/seqquest_io/__init__.py\
         python/seqquest/seqquest/seqquest_io/seq_exceptions.py\
         python/seqquest/seqquest/seqquest_io/seqquestio.py\
         python/seqquest/seqquest/seqquest_io/species.py
-seqquest_io_dir=$(seqquest_dir)/seqquest_io
+seqquest_iodir=$(seqquestdir)/seqquest_io
 
 seqquest_io_geom_PYTHON=python/seqquest/seqquest/seqquest_io/geom/__init__.py\
         python/seqquest/seqquest/seqquest_io/geom/geom.py
-seqquest_io_geom_dir=$(seqquest_io_dir)/geom
+seqquest_io_geomdir=$(seqquest_iodir)/geom
 
 seqquest_io_lcao_in_PYTHON=python/seqquest/seqquest/seqquest_io/lcao_in/__init__.py\
         python/seqquest/seqquest/seqquest_io/lcao_in/bandstructure.py\
@@ -24,4 +24,4 @@ seqquest_io_lcao_in_PYTHON=python/seqquest/seqquest/seqquest_io/lcao_in/__init__
         python/seqquest/seqquest/seqquest_io/lcao_in/run.py\
         python/seqquest/seqquest/seqquest_io/lcao_in/runcell.py\
         python/seqquest/seqquest/seqquest_io/lcao_in/setup.py
-seqquest_io_lcao_in_dir=$(seqquest_io_dir)/lcao_in
+seqquest_io_lcao_indir=$(seqquest_iodir)/lcao_in

@@ -4,7 +4,6 @@
 import os
 # import math
 import sys
-# sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 import shutil
 import gzip
 
