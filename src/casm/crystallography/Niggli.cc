@@ -268,7 +268,7 @@ namespace CASM {
       }
     }
     if(first_niggli) {
-      throw std::runtime_error("First niggli guess was accepted, this shouldn't happen");
+      //throw std::runtime_error("First niggli guess was accepted, this shouldn't happen");
     }
     return Lattice(best_lat_mat);
   }

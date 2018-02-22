@@ -68,7 +68,7 @@ namespace CASM {
         ConfigDoF dof;
         CASM::from_json(dof, _data["dof"]);
         *this = Configuration(_supercell, _data, dof);
-        return;
+	return;
       }
       *this = Configuration(_supercell, _data);
       return;

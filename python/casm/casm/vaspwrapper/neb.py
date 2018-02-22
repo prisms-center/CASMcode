@@ -72,7 +72,7 @@ class Neb(VaspCalculatorBase):
         print "Construct a casm.vaspwrapper.Neb instance:"
         VaspCalculatorBase.__init__(self, selection, calctype, auto, sort)
         self.results_subdir = '01'
-        #self.calculator = calculator
+        self.calculator = calculator
 
     def config_properties(self, config_data):
         """return configuration properties as a dict"""
