@@ -1,5 +1,5 @@
 """Plotting tools"""
-from plotting import ConvexHullPlot, \
+from casm.plotting.plotting import ConvexHullPlot, \
     GridPlot,\
     Histogram,\
     PlottingData,\

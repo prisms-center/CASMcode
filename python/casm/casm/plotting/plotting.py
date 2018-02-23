@@ -160,7 +160,7 @@ class PlottingData(object):
         
     def project(self, proj_path=None, kwargs=dict()):
         if proj_path is None:
-            proj_path = casm.project_path()
+            proj_path = casm.project.project_path()
         else:
             proj_path = os.path.abspath(proj_path)
         if proj_path not in self.data_:
@@ -438,7 +438,7 @@ def update_dft_hull_glyphs(sel, style, selected=None):
   
   for value in ['color', 'radii']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data[value] = map(lambda x: cmap[x], selected)
+    sel.src.data[value] = list(map(lambda x: cmap[x], selected))
 
   on_dft_hull = None
   if 'on_dft_hull' in sel.data.columns:
@@ -447,7 +447,7 @@ def update_dft_hull_glyphs(sel, style, selected=None):
   if on_dft_hull is not None:
     for value in ['line_color', 'line_width', 'line_alpha']:
       cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
-      sel.src.data[value] = map(lambda x: cmap[x], on_dft_hull)
+      sel.src.data[value] = list(map(lambda x: cmap[x], on_dft_hull))
 
   
 def update_clex_hull_glyphs(sel, style, selected=None):
@@ -462,7 +462,7 @@ def update_clex_hull_glyphs(sel, style, selected=None):
   
   for value in ['color', 'radii']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data['clex_' + value] = map(lambda x: cmap[x], selected)
+    sel.src.data['clex_' + value] = list(map(lambda x: cmap[x], selected))
 
   on_clex_hull = None
   if 'on_clex_hull' in sel.data.columns:
@@ -471,7 +471,7 @@ def update_clex_hull_glyphs(sel, style, selected=None):
   if on_clex_hull is not None:
     for value in ['line_color', 'line_width', 'line_alpha']:
       cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
-      sel.src.data['clex_' + value] = map(lambda x: cmap[x], on_clex_hull)
+      sel.src.data['clex_' + value] = list(map(lambda x: cmap[x], on_clex_hull))
 
 
 def update_scatter_glyphs(sel, style, id, selected=None):
@@ -483,7 +483,7 @@ def update_scatter_glyphs(sel, style, id, selected=None):
   
   for value in ['color', 'radii', 'line_color', 'line_width', 'line_alpha', 'fill_alpha']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data[value + '.' + id] = map(lambda x: cmap[x], selected)
+    sel.src.data[value + '.' + id] = list(map(lambda x: cmap[x], selected))
 
 
 class ConvexHullPlot(object):
@@ -513,7 +513,7 @@ class ConvexHullPlot(object):
     """
     Arguments:
       data: PlottingData object
-      project: path to CASM project (optional, default=casm.project_path())
+      project: path to CASM project (optional, default=casm.project.project_path())
       selection: path for CASM Selection
       hull_selection: path for CASM Selection to use for the hull. Default uses selection.
       x: (str) column name to use as x axis. Default='comp(a)'. Must be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'.
@@ -528,7 +528,7 @@ class ConvexHullPlot(object):
     self.data = data
     
     if project is None:
-        project = casm.project_path()
+        project = casm.project.project_path()
     proj = self.data.project(project)
     
     prim = proj.prim
@@ -689,7 +689,7 @@ class ConvexHullPlot(object):
     column 'on_hull_label' indicating which configurations are on the hull.
     """
     sel.data.loc[_unselected(sel), on_hull_label] = False
-    on_hull = map(lambda x: abs(x) < self.hull_tol, sel.data.loc[_selected(sel), hull_dist_label])
+    on_hull = list(map(lambda x: abs(x) < self.hull_tol, sel.data.loc[_selected(sel), hull_dist_label]))
     sel.data.loc[_selected(sel), on_hull_label] = on_hull
 
   
@@ -840,7 +840,7 @@ class Scatter(object):
     """
     Arguments:
         data: PlottingData object
-        project: path to CASM project (optional, default=casm.project_path())
+        project: path to CASM project (optional, default=casm.project.project_path())
         selection: path for CASM Selection
         x: (str) column name to use as x axis. Default='comp(a)'
         y: (str) column name to use as y axis. Default='formation_energy'
@@ -856,7 +856,7 @@ class Scatter(object):
     self.data = data
     
     if project is None:
-        project = casm.project_path()
+        project = casm.project.project_path()
     
     if selection is None:
       selection = "MASTER"
@@ -956,7 +956,7 @@ class Histogram(object):
     """
     Arguments:
         data: PlottingData object
-        project: path to CASM project (optional, default=casm.project_path())
+        project: path to CASM project (optional, default=casm.project.project_path())
         selection: path for CASM Selection
         x: (str) column name to use as x axis. Default='comp(a)'
         hist_kwargs:
@@ -972,7 +972,7 @@ class Histogram(object):
     self.data = data
     
     if project is None:
-        project = casm.project_path()
+        project = casm.project.project_path()
     
     if selection is None:
       selection = "MASTER"
@@ -1209,7 +1209,7 @@ class RankPlot(object):
     """
     Arguments:
       data: PlottingData instance
-      project: str (optional, default=casm.project_path())
+      project: str (optional, default=casm.project.project_path())
       selection: str (optional, default="MASTER")
       query: List[str]
       scoring_query: str
@@ -1225,7 +1225,7 @@ class RankPlot(object):
     self.data = data
     
     if project is None:
-        project = casm.project_path()
+        project = casm.project.project_path()
     
     if selection is None:
       selection = "MASTER"
@@ -1581,7 +1581,7 @@ class RankSelect(object):
           self.sel.update_selection()
           update_glyphs(self.sel, selected=self.sel.data['to_be_selected'])
           self.msg.value = "Applied selection and saved: " + self.sel.path
-        except Exception, e:
+        except Exception as e:
           self.msg.value = str(e)
       self.select_action.value = "Select action"
     self.select_action.on_change('value', select_action_f)
@@ -1769,7 +1769,7 @@ class WeightSelect(object):
         self.fit_input["weight"]["kwargs"]["Eref"] = self.input['Eref'].value
       compat.dump(json, self.fit_input, self.input_filename, 'w', indent=2)
       self.msg.value = "Saved input file: " + self.input_filename
-    except Exception, e:
+    except Exception as e:
       self.msg.value = str(e)
   
   def _apply_and_save(self):
@@ -1777,7 +1777,7 @@ class WeightSelect(object):
       self._apply()
       self._save()
       self.msg.value = "Applied sample weights and saved input file: " + self.input_filename
-    except Exception, e:
+    except Exception as e:
       self.msg.value = str(e)
   
   def _set_value(self):
@@ -2042,7 +2042,7 @@ class ECISelect(object):
     self.sel.eci_src.data["max_length"] = [j["prototype"]["max_length"] for j in self.basis["cluster_functions"] ]
     self.sel.eci_src.data["min_length"] = [j["prototype"]["min_length"] for j in self.basis["cluster_functions"] ]
     colormap = ["black", "blue", "red", "green", "cyan", "magenta", "yellow", "orange"]
-    self.sel.eci_src.data["color"] = map(lambda x: colormap[x % len(colormap)], self.sel.eci_src.data["branch"])
+    self.sel.eci_src.data["color"] = list(map(lambda x: colormap[x % len(colormap)], self.sel.eci_src.data["branch"]))
     self.sel.eci_src.data["current"] = self.sel.eci_src.data[str(index)]
     
     # TOOLS in bokeh plot

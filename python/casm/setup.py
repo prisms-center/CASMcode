@@ -10,8 +10,8 @@ def script_str(file):
         return name.replace('_','-') + '=casm.scripts.' + name + ':main'
     else:
         return name.replace('_','.') + '=casm.scripts.' + name + ':main'
-console_scripts = [script_str(x) for x in glob.glob('casm/scripts/*') if x != 'casm/scripts/__init__.py']
-print console_scripts
+console_scripts = [script_str(x) for x in glob.glob('casm/scripts/*.py') if x != 'casm/scripts/__init__.py']
+print(console_scripts)
 
 setup(name='casm-python',
       version=__version__,
