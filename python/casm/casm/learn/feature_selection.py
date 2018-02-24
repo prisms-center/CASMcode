@@ -5,6 +5,7 @@ import time
 from casm.learn.fit import make_fitting_data, make_estimator, make_selector, \
   add_individual_detail, print_halloffame
 import casm.learn.cross_validation
+from casm.learn.evolve import GeneticAlgorithm, IndividualBestFirst, PopulationBestFirst
 
 def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None):
   """
