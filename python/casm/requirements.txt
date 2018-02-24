@@ -6,4 +6,5 @@ prisms-jobs
 scikit-learn ==0.19
 scipy
 sh
+six
 tornado ==4.3
