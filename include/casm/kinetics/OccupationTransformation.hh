@@ -17,13 +17,15 @@ namespace CASM {
   namespace Kinetics {
 
     /// \brief Describes how occupation values transform
-    ///
-    /// - Used more generally as an Element in OccPerturbation
+    /// An OccupationTransformation object is a representation of a occupant on a given
+    /// site. This is both a sub component of DiffusionTransformations (shuffling occupants)
+    /// and a sub component of a perturbation (changing one configuration to another)
     class OccupationTransformation :
       public Comparisons<Translatable<DoFTransformation<CRTPBase<OccupationTransformation>>>> {
 
     public:
-
+      /// Constructor Create an OccupationTransformation on a site indicating what the current
+      /// occupant is on that site and the one it will change to
       OccupationTransformation(const UnitCellCoord &_uccoord,
                                Index _from_value,
                                Index _to_value);
@@ -32,20 +34,30 @@ namespace CASM {
       Index to_value;
       UnitCellCoord uccoord;
 
+      /// The tiling unit of the infinite crystal that the site of this
+      /// OccupationTransformation lives in
       const Structure &prim() const;
 
+      /// The current occupant of the site
       const Molecule &from_mol() const;
 
+      /// The future occupant of the site
       const Molecule &to_mol() const;
 
+      /// Lexicographical comparison of OccupationTransformation for sorting purposes
       bool operator<(const OccupationTransformation &B) const;
 
+      /// Rigidly shifts the coordinate of this transformation by a lattice shift
       OccupationTransformation &operator+=(UnitCell Frac);
 
+      /// Applies symmetry to the coordinate of this transformation
       OccupationTransformation &apply_sym(const SymOp &op);
 
+      /// Transform the occupation of config and return a configuration
+      /// that is perturbed according to this transformation
       Configuration &apply_to(Configuration &config) const;
 
+      /// Flip the initial and final state of this transformation
       void reverse();
 
     private:
@@ -62,12 +74,14 @@ namespace CASM {
     std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans);
 
   }
-
+  /// Returns an empty map for a given infinite crystal
   std::map<AtomSpecie, Index> empty_specie_count(const Structure &prim);
 
+  /// Iterates over a vector of Occupation Transformation to give the count map of initial species
   template<typename OccTransfIt>
   std::map<AtomSpecie, Index> from_specie_count(OccTransfIt begin, OccTransfIt end);
 
+  /// Iterates over a vector of OccupationTransformation to give the count map of final species
   template<typename OccTransfIt>
   std::map<AtomSpecie, Index> to_specie_count(OccTransfIt begin, OccTransfIt end);
 
