@@ -2,10 +2,11 @@ from __future__ import (absolute_import, division, print_function, unicode_liter
 from builtins import *
 
 import os
+import re
 import shutil
 import six
 import sys
-from casm.quantumespresso.qeio import infile, outfile, species, poscar, re
+from casm.quantumespresso.qeio import infile, outfile, species, poscar
 
 #VASP_INPUT_FILE_LIST = ["INCAR", "STOPCAR", "POTCAR", "KPOINTS", "POSCAR",\
 #                        "EXHCAR", "CHGCAR", "WAVECAR", "TMPCAR"]

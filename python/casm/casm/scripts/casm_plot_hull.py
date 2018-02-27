@@ -148,8 +148,10 @@ def main():
     
     # set up session
     session = push_session(curdoc())
+    print('To view the plot navigate to:')
+    print('http://localhost:5006/?bokeh-session-id=' + session.id)
     curdoc().add_root(fig)
-    session.show() # open the document in a browser
+    #session.show() # open the document in a browser
     session.loop_until_closed() # run forever
 
 if __name__ == "__main__":

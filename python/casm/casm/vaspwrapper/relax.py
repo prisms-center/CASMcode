@@ -588,6 +588,6 @@ class Relax(object):
         # if output["relaxed_mag_basis"][0] is None:
         #     output.pop("relaxed_mag_basis", None)
 
-	return output
+        return output
 
 
