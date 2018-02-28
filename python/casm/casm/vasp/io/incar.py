@@ -2,6 +2,7 @@ from __future__ import (absolute_import, division, print_function, unicode_liter
 from builtins import *
 
 import re
+from casm.wrapper.misc import remove_chars
 
 # List of tags in VASP sorted by the data type associated with it
 VASP_TAG_INT_LIST = ['ialgo','ibrion','icharg','images','ismear','ispin',\
@@ -137,7 +138,7 @@ class Incar(object):
 
         if sort == False:
             # for each 'tag' in the IndividualSpecies, create a list in self.tags
-            for key in species.values()[0].tags.keys():
+            for key in list(species.values())[0].tags.keys():
                 if key.lower() in (VASP_TAG_INT_LIST + VASP_TAG_FLOAT_LIST):
                     self.tags[key] = 0.
                     for site in poscar.basis:
@@ -157,7 +158,7 @@ class Incar(object):
         else:
             pos = poscar.basis_dict()
             # for each 'tag' in the IndividualSpecies, create a list in self.tags
-            for key in species.values()[0].tags.keys():
+            for key in list(species.values())[0].tags.keys():
             # for key in species[species.keys()[0]].tags.keys():
                 if key.lower() in (VASP_TAG_INT_LIST + VASP_TAG_FLOAT_LIST):
                     self.tags[key] = 0.
@@ -196,9 +197,9 @@ class Incar(object):
                 pass
             else:
                 if tag.lower() in VASP_TAG_SITEF_LIST + VASP_TAG_SPECF_LIST:
-                    incar_write.write('{} = {}\n'.format(tag.upper(),str(self.tags[tag]).translate(None,"[],'")))
+                    incar_write.write('{} = {}\n'.format(tag.upper(),remove_chars(self.tags[tag], "[\[\],]'")))
                 elif tag.lower() in VASP_TAG_SPECI_LIST:
-                    incar_write.write('{} = {}\n'.format(tag.upper(),str(self.tags[tag]).translate(None,"[],'")))
+                    incar_write.write('{} = {}\n'.format(tag.upper(),remove_chars(self.tags[tag], "[\[\],]'")))
                 elif tag.lower() in VASP_TAG_BOOL_LIST:
                     if self.tags[tag] == True:
                         incar_write.write('{} = .TRUE.\n'.format(tag.upper()))

@@ -2,6 +2,7 @@ from __future__ import (absolute_import, division, print_function, unicode_liter
 from builtins import *
 
 import os
+import re
 import shutil
 import six
 import sys
@@ -24,7 +25,6 @@ class VaspIOError(Exception):
 
     def __str__(self):
         return self.msg
-
 
 def job_complete(jobdir=None):
     """Return True if vasp job at path 'jobdir' is complete"""

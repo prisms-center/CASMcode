@@ -5,6 +5,8 @@ import numpy as np
 import math
 import copy
 
+from casm.wrapper.misc import remove_chars
+
 class KpointsError(Exception):
     def __init__(self,msg):
         self.msg = msg
@@ -178,11 +180,11 @@ class Kpoints:
         except IOError:
             raise KpointsError("Write failed")
         file.write(self.header+'\n')
-        file.write(str(self.num_points).translate(None,'[],')+'\n')
+        file.write(remove_chars(self.num_points, '[\[\],]')+'\n')
         file.write(self.automode+'\n')
-        file.write(str(self.subdivisions).translate(None,'[],')+'\n')
+        file.write(remove_chars(self.subdivisions, '[\[\],]')+'\n')
         if self.automode[0].lower() != 'a':
-            file.write(str(self.shift).translate(None,'[],')+'\n')
+            file.write(remove_chars(self.shift, '[\[\],]')+'\n')
         file.close()
         return
 
