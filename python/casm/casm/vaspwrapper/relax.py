@@ -1,11 +1,12 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
-import os
-import math
-import sys
 import json
+import math
+import os
 import re
+import six
+import sys
 import warnings
 
 try:
@@ -484,7 +485,7 @@ class Relax(object):
 
         outputfile = os.path.join(self.calcdir, "status.json")
         with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
+            file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
         print("Wrote " + outputfile)
         sys.stdout.flush()
 
@@ -497,7 +498,7 @@ class Relax(object):
         output = self.properties(vaspdir, super_poscarfile, speciesfile)
         outputfile = os.path.join(self.calcdir, "properties.calc.json")
         with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
+            file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
         print("Wrote " + outputfile)
         sys.stdout.flush()
         self.report_status('complete')

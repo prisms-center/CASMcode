@@ -5,6 +5,7 @@ from builtins import *
 ### External ###
 import os
 import shutil
+import six
 from math import ceil, sqrt
 import sys
 import json
@@ -439,7 +440,7 @@ class Converge(object):
         conv_file_name = "convergence.calc.json"
         outputfile = os.path.join(self.calcdir, conv_file_name)
         with open(outputfile, 'w') as my_file:
-            my_file.write(json.dumps(conv_dict, my_file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
+            my_file.write(six.u(json.dumps(conv_dict, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
         print("Wrote " + outputfile)
         sys.stdout.flush()
 
@@ -856,7 +857,7 @@ class Converge(object):
 
         outputfile = os.path.join(self.propdir, "status.json")
         with open(outputfile, 'w') as my_file:
-            my_file.write(json.dumps(output, my_file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
+            my_file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
         print("Wrote " + outputfile)
         sys.stdout.flush()
 
@@ -871,7 +872,7 @@ class Converge(object):
             prop_file_name = "properties.calc.json"
             outputfile = os.path.join(self.propdir, prop_file_name)
             with open(outputfile, 'w') as my_file:
-                my_file.write(json.dumps(output, my_file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
+                my_file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
             print("Wrote " + outputfile)
             sys.stdout.flush()
             self.report_status('complete')
