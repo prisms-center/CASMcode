@@ -1,5 +1,5 @@
 check_PROGRAMS += \
-  casm
+  ccasm
 
 noinst_LIBRARIES += \
   libcasmtesting.a

@@ -49,3 +49,4 @@ _casm()
 
 }
 complete -F _casm casm
+complete -F _casm ccasm

@@ -51,8 +51,8 @@ class API(object):
           self.lib_ccasm = ctypes.CDLL(libccasm_path, mode=ctypes.RTLD_GLOBAL)
       except Exception as e:
           print("Error loading casm libraries")
-          casm_path = find_executable('casm')
-          print("Find 'casm':", casm_path)
+          casm_path = find_executable('ccasm')
+          print("Find 'ccasm':", casm_path)
           if platform == 'darwin':
               print("Find 'libcasm':")
               print(sh.otool('-L', casm_path))
@@ -81,6 +81,9 @@ class API(object):
       self.lib_ccasm.casm_ostringstream_strcpy.restype = ctypes.POINTER(ctypes.c_char)
 
 
+      self.lib_ccasm.casm_primclex_null.argtypes = None
+      self.lib_ccasm.casm_primclex_null.restype = ctypes.c_void_p
+
       self.lib_ccasm.casm_primclex_new.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
       self.lib_ccasm.casm_primclex_new.restype = ctypes.c_void_p
 
@@ -90,6 +93,9 @@ class API(object):
       self.lib_ccasm.casm_primclex_refresh.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool]
       self.lib_ccasm.casm_primclex_refresh.restype = None
 
+      self.lib_ccasm.casm_command_list.argtypes = [ctypes.c_void_p]
+      self.lib_ccasm.casm_command_list.restype = None
+      
       self.lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
       self.lib_ccasm.casm_capi.restype = ctypes.c_int
 
@@ -175,6 +181,17 @@ class API(object):
     API.__api.lib_ccasm.casm_ostringstream_delete(ptr)
     return
 
+  def primclex_null(self):
+    """
+    Construct a CASM::PrimClex nullptr
+
+    Returns
+    -------
+      ptr: CASM::PrimClex nullptr
+
+    """
+    return API.__api.lib_ccasm.casm_primclex_null()
+
   def primclex_new(self, path, log, debug_log, err_log):
     """
     Construct a new CASM::PrimClex
@@ -259,6 +276,21 @@ class API(object):
     API.__api.lib_ccasm.casm_primclex_delete(ptr)
     return
 
+  def command_list(self):
+    """
+    Get list of recognized casm commands implemented at the libcasm level
+    
+    Returns
+    -------
+      s: str
+        JSON array containing the list of recognized casm commands
+
+    """
+    ptr = self.ostringstream_new()
+    API.__api.lib_ccasm.casm_command_list(ptr)
+    s = self.ostringstream_to_str(ptr)
+    self.ostringstream_delete(ptr)
+    return s
 
   def __call__(self, args, primclex, root, log, debug_log, err_log):
     """
@@ -336,3 +368,48 @@ class API(object):
     """
     return API.__api.lib_ccasm.casm_capi(six.b(args), primclex, six.b(root), log, debug_log, err_log)
 
+def casm_capi(args, primclex=None, root=None):
+    """
+    Execute a command via the c api, printing to stdout, stderr. 
+    
+    Arguments
+    ---------
+
+      args: str
+        A string containing the arguments for the casm command to be executed.
+
+          Ex: "select --set-on -o /abspath/to/my_selection"
+          Ex: "query -k 'configname selected' -v -o STDOUT"
+
+      primclex: CASM::PrimClex pointer (optional, default=API.primclex_null())
+        A pointer to a CASM::PrimClex, as obtained from API.primclex_new()
+
+      root: str (optional, default=os.getcwd())
+        A string giving the path to a root directory of a CASM project, typically
+        casm.project.Project.path
+
+    Returns:
+      returncode: The result of running the command via the command line iterface.
+          
+    """
+    _api = API()
+    
+    # this also ensures self._api is not None
+    if primclex is None:
+        _primclex = _api.primclex_null()
+    else:
+        _primclex = primclex
+    
+    if root is None:
+        root = os.getcwd()
+    
+    # construct stringstream objects to capture stdout, debug, stderr
+    ss = _api.stdout()
+    ss_debug = _api.stdout()
+    ss_err = _api.stderr()
+    
+    res = self._api(args, _primclex, root, ss, ss_debug, ss_err)
+    
+    return res
+    
+    

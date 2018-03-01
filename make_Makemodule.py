@@ -276,15 +276,15 @@ def main():
         write_option(f, name, 'SOURCES', find_files(dir, include='.*\.(c|cc|cpp|C)'))
         write_option(f, name, 'LDFLAGS', ['-avoid-version'])
     
-    # apps/casm/Makemodule.am
-    dir = join('apps', 'casm')
+    # apps/ccasm/Makemodule.am
+    dir = join('apps', 'ccasm')
     print('Working on', dir)
-    makemodules.append(join('apps', 'casm', 'Makemodule.am'))
+    makemodules.append(join('apps', 'ccasm', 'Makemodule.am'))
     with open(makemodules[-1], 'w') as f:
-        append(f, 'bin_PROGRAMS', ['casm'])
-        append(f, 'man1_MANS', ['man/casm.1'])
-        write_option(f, 'casm', 'SOURCES', ['apps/casm/casm.cpp'])
-        write_option(f, 'casm', 'LDADD', lib_casm + boost_libs)
+        append(f, 'bin_PROGRAMS', ['ccasm'])
+        append(f, 'man1_MANS', ['man/ccasm.1'])
+        write_option(f, 'ccasm', 'SOURCES', ['apps/ccasm/ccasm.cpp'])
+        write_option(f, 'ccasm', 'LDADD', lib_casm + boost_libs)
         
     
     # apps/completer/Makemodule.am
@@ -308,7 +308,7 @@ def main():
     with open(makemodules[-1], 'w') as f:
         
         # PROGRAMS (complete tests)
-        append_option(f, 'check', 'PROGRAMS', ['casm'])
+        append_option(f, 'check', 'PROGRAMS', ['ccasm'])
         
         # LIBRARIES
         append(f, 'noinst_LIBRARIES', ['libcasmtesting.a'])

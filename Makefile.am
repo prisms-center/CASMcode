@@ -58,7 +58,7 @@ include $(srcdir)/include/casm/Makemodule.am
 include $(srcdir)/include/ccasm/Makemodule.am
 include $(srcdir)/src/casm/Makemodule.am
 include $(srcdir)/src/ccasm/Makemodule.am
-include $(srcdir)/apps/casm/Makemodule.am
+include $(srcdir)/apps/ccasm/Makemodule.am
 include $(srcdir)/apps/completer/Makemodule.am
 include $(srcdir)/tests/unit/Makemodule.am
 # END MAKEMODULE

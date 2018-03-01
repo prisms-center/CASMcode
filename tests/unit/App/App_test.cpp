@@ -43,14 +43,14 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
   };
 
   // check help doesn't need to be in a project
-  p.popen("casm init -h");
+  p.popen("ccasm init -h");
   BOOST_CHECK_MESSAGE(p.exit_code() == 0, p.gets());
 
   for(auto it = command.begin(); it != command.end(); ++it) {
-    p.popen("casm " + it->type + " " + it->no_proj_command);
+    p.popen("ccasm " + it->type + " " + it->no_proj_command);
     BOOST_CHECK_MESSAGE(p.exit_code() == 3, p.gets());
 
-    p.popen("casm " + it->type + " " + it->help_command);
+    p.popen("ccasm " + it->type + " " + it->help_command);
     BOOST_CHECK_MESSAGE(p.exit_code() == 0, p.gets());
   }
 
