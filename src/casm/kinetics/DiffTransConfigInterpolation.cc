@@ -122,6 +122,7 @@ namespace CASM {
           int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
           auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
           file_path += "/N_images_" + std::to_string(n_images) + "/poscars/0" + std::to_string(i) + "/POSCAR";
+          /* file_path = file_path /"N_images_" + std::to_string(n_images)  /"poscars" /"0" + std::to_string(i)  /"POSCAR"; */
           std::cout << file_path << "\n";
           fs::ofstream file(file_path);
           img_config.write_pos(file);
