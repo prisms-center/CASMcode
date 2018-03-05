@@ -41,7 +41,10 @@ report_help = """
 Report calculation results (print calc.properties.json file) for all selected configurations.
 """
 
-def main():
+def main(argv = None):
+  if argv is None:
+    argv = sys.argv[1:]
+    
   parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
   parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
   parser.add_argument('--path', help=path_help, type=str, default=None)
@@ -49,7 +52,7 @@ def main():
   parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
   parser.add_argument('--setup', help=setup_help, action="store_true", default=False)
   parser.add_argument('--report', help=report_help, action="store_true", default=False)
-  args = parser.parse_args()
+  args = parser.parse_args(argv)
   
   if args.path is None:
     args.path = getcwd()

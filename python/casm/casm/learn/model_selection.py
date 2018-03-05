@@ -1,16 +1,16 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
-import sklearn.cross_validation
+import sklearn.model_selection
 import numpy as np
 import pickle
 from math import sqrt
 from casm.learn.linear_model import LinearRegressionForLOOCV
 from casm.learn.tools import indices
 
-def LeaveOneOutForLLS(n_samples, **kwargs):
+def LeaveOneOutForLLS(n_samples):
   """ 
-  Fake cv generator yields train and test sets including all n_samples.
+  Returns train and test sets each including all n_samples.
   
   Arguments
   ---------
@@ -28,7 +28,7 @@ def LeaveOneOutForLLS(n_samples, **kwargs):
   return [(range(n_samples), range(n_samples))] 
 
 
-def cvCustom(n_samples, filename=None):
+def cvCustom(filename=None):
   """
   Read CV generator or train / test sets from a pickle file.
   """
@@ -62,7 +62,7 @@ def cross_val_score(estimator, X, individual, y=None, scoring=None, cv=None, pen
     
     scoring: string, callable or None, optional, default=None
       A string or a scorer callable object / function with signature 
-      scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+      scorer(estimator, X, y). The parameter for sklearn.model_valdiation.cross_val_score,
       default = None, uses estimator.score().
     
     cv: cross-validation generator or an iterable
@@ -96,7 +96,7 @@ def cross_val_score(estimator, X, individual, y=None, scoring=None, cv=None, pen
       fit_params=fit_params)
     return sqrt(np.mean(scores)) + penalty*sum(individual),
   """
-  scores = sklearn.cross_validation.cross_val_score(
+  scores = sklearn.model_selection.cross_val_score(
     estimator,
     X[:,indices(individual)],
     y=y,

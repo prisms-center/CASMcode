@@ -39,7 +39,7 @@ class API(object):
       """Loads dynamic libraries"""
       
       try:
-          casm_path = find_executable('casm')
+          casm_path = find_executable('ccasm')
           if platform == 'darwin':
               libcasm_path = sh.grep(sh.otool('-L', casm_path), 'libcasm').split()[0]
               libcasm_path = libcasm_path.replace('@loader_path', dirname(casm_path))

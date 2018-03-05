@@ -108,18 +108,20 @@ def make_layout(val, n_plots_each_row):
         layout.append([copy.deepcopy(val) for i in range(n)])
     return layout
 
-def main():
+def main(argv = None):
+    if argv is None:
+        argv = sys.argv[1:]
     parser = argparse.ArgumentParser(description = 'Layout plot')
     parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
     parser.add_argument('input', nargs='?', help=input_help, type=str)
-    
-    
-    # ignore 'mc casm'
-    args = parser.parse_args(sys.argv[1:])
+    args = parser.parse_args(argv)
     
     if args.desc:
         print(usage_desc)
-        sys.exit(1)
+        return
+    elif args.input is None:
+        parser.print_help()
+        return
     
     with open(args.input, 'r') as f:
         layout_input = json.load(f)

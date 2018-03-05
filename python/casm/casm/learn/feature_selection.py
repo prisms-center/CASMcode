@@ -4,7 +4,7 @@ from builtins import *
 import time
 from casm.learn.fit import make_fitting_data, make_estimator, make_selector, \
   add_individual_detail, print_halloffame
-import casm.learn.cross_validation
+import casm.learn.model_selection
 from casm.learn.evolve import GeneticAlgorithm, IndividualBestFirst, PopulationBestFirst
 
 def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None):
@@ -99,7 +99,7 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
       indiv = casm.learn.creator.Individual(selector.get_support())
       if verbose:
         print("Adding statistics...")
-      indiv.fitness.values = casm.learn.cross_validation.cross_val_score(
+      indiv.fitness.values = casm.learn.model_selection.cross_val_score(
         estimator, fdata.weighted_X, indiv, 
         y=fdata.weighted_y, scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty)
       add_individual_detail(indiv, estimator, fdata, input, selector=selector)

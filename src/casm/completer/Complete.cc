@@ -178,7 +178,8 @@ namespace CASM {
         }
       }
 
-      return std::vector<std::string>();
+      // as fallback, show files/dirs
+      return std::vector<std::string>({"BASH_COMP_PATH"});
     }
 
     /**
@@ -227,6 +228,11 @@ namespace CASM {
 
       default:
         break;
+      }
+
+      // as fallback, show files/dirs
+      if(!arguments.size()) {
+        arguments.push_back("BASH_COMP_PATH");
       }
 
       return arguments;

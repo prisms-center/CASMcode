@@ -6,7 +6,7 @@ from casm import __version__
 # get console_scripts
 def script_str(file):
     name = os.path.splitext(os.path.split(file)[1])[0]
-    if name in ['casm_calc', 'casm_learn']:
+    if name in ['casm_calc', 'casm_learn', 'casm_plot']:
         return name.replace('_','-') + '=casm.scripts.' + name + ':main'
     else:
         return name.replace('_','.') + '=casm.scripts.' + name + ':main'
@@ -30,7 +30,7 @@ setup(name='casm-python',
           'mock', 
           'pandas',
           'prisms-jobs',
-          'scikit-learn==0.19',
+          'scikit-learn',
           'scipy',
           'sh',
           'tornado==4.3'

@@ -915,7 +915,7 @@ class GeneticAlgorithm(EvolutionaryFeatureSelection):
     
     scoring: string
       A string or a scorer callable object / function with signature 
-      scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+      scorer(estimator, X, y). The parameter for sklearn.model_selection.cross_val_score,
       default = None, uses estimator.score().
     
     cv: cross-validation generator or an iterable
@@ -979,11 +979,11 @@ class GeneticAlgorithm(EvolutionaryFeatureSelection):
       
       scoring: string, callable or None, optional, default=None
         A string or a scorer callable object / function with signature 
-        scorer(estimator, X, y). The parameter is passed to sklearn.cross_validation.cross_val_score,
+        scorer(estimator, X, y). The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses estimator.score().
       
       cv: cross-validation generator or an iterable, optional, default=None
-        Provides train/test splits. The parameter is passed to sklearn.cross_validation.cross_val_score,
+        Provides train/test splits. The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses KFold cross-validation with k=3.
       
       penalty: float, optional, default=0.0
@@ -1081,7 +1081,7 @@ class GeneticAlgorithm(EvolutionaryFeatureSelection):
     self.toolbox.register("individual", initNRandomOn, 
       casm.learn.creator.Individual, X.shape[1], self.evolve_params.n_features_init)
     self.toolbox.register("population", deap.tools.initRepeat, list, self.toolbox.individual)
-    self.toolbox.register("evaluate", casm.learn.cross_validation.cross_val_score, 
+    self.toolbox.register("evaluate", casm.learn.model_selection.cross_val_score, 
       self.estimator, X, y=y, scoring=self.scoring, cv=self.cv, penalty=self.penalty)
     
     return self._run() 
@@ -1109,7 +1109,7 @@ class IndividualBestFirst(EvolutionaryFeatureSelection):
     
     scoring: string
       A string or a scorer callable object / function with signature 
-      scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+      scorer(estimator, X, y). The parameter for sklearn.model_selection.cross_val_score,
       default = None, uses estimator.score().
     
     cv: cross-validation generator or an iterable
@@ -1156,11 +1156,11 @@ class IndividualBestFirst(EvolutionaryFeatureSelection):
       
       scoring: string, callable or None, optional, default=None
         A string or a scorer callable object / function with signature 
-        scorer(estimator, X, y). The parameter is passed to sklearn.cross_validation.cross_val_score,
+        scorer(estimator, X, y). The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses estimator.score().
       
       cv: cross-validation generator or an iterable, optional, default=None
-        Provides train/test splits. The parameter is passed to sklearn.cross_validation.cross_val_score,
+        Provides train/test splits. The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses KFold cross-validation with k=3.
       
       penalty: float, optional, default=0.0
@@ -1240,7 +1240,7 @@ class IndividualBestFirst(EvolutionaryFeatureSelection):
     self.toolbox.register("individual", initNRandomOn, 
       casm.learn.creator.Individual, X.shape[1], self.evolve_params.n_features_init)
     self.toolbox.register("population", deap.tools.initRepeat, list, self.toolbox.individual)
-    self.toolbox.register("evaluate", casm.learn.cross_validation.cross_val_score, 
+    self.toolbox.register("evaluate", casm.learn.model_selection.cross_val_score, 
       self.estimator, X, y=y, scoring=self.scoring, cv=self.cv, penalty=self.penalty)
     
     return self._run()
@@ -1271,7 +1271,7 @@ class PopulationBestFirst(EvolutionaryFeatureSelection):
     
     scoring: string
       A string or a scorer callable object / function with signature 
-      scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+      scorer(estimator, X, y). The parameter for sklearn.model_selection.cross_val_score,
       default = None, uses estimator.score().
     
     cv: cross-validation generator or an iterable
@@ -1318,11 +1318,11 @@ class PopulationBestFirst(EvolutionaryFeatureSelection):
       
       scoring: string, callable or None, optional, default=None
         A string or a scorer callable object / function with signature 
-        scorer(estimator, X, y). The parameter is passed to sklearn.cross_validation.cross_val_score,
+        scorer(estimator, X, y). The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses estimator.score().
       
       cv: cross-validation generator or an iterable, optional, default=None
-        Provides train/test splits. The parameter is passed to sklearn.cross_validation.cross_val_score,
+        Provides train/test splits. The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses KFold cross-validation with k=3.
       
       penalty: float, optional, default=0.0
@@ -1401,7 +1401,7 @@ class PopulationBestFirst(EvolutionaryFeatureSelection):
     self.toolbox.register("individual", initNRandomOn, 
       casm.learn.creator.Individual, X.shape[1], self.evolve_params.n_features_init)
     self.toolbox.register("population", deap.tools.initRepeat, list, self.toolbox.individual)
-    self.toolbox.register("evaluate", casm.learn.cross_validation.cross_val_score, 
+    self.toolbox.register("evaluate", casm.learn.model_selection.cross_val_score, 
       self.estimator, X, y=y, scoring=self.scoring, cv=self.cv, penalty=self.penalty)
     
     return self._run()
