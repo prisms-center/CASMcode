@@ -18,6 +18,7 @@ casmvaspwrapper_PYTHON=python/casm/casm/vaspwrapper/vaspwrapper.py\
 					   python/casm/casm/vaspwrapper/relax.py\
 					   python/casm/casm/vaspwrapper/__init__.py\
 					   python/casm/casm/vaspwrapper/neb.py\
+					   python/casm/casm/vaspwrapper/converge.py\
 					   python/casm/casm/vaspwrapper/vasp_calculator_base.py
 casmvaspwrapperdir=$(casmpydir)/vaspwrapper
 
@@ -25,6 +26,7 @@ casmproject_PYTHON=python/casm/casm/project/project.py\
 				   python/casm/casm/project/query.py\
 				   python/casm/casm/project/selection.py\
 				   python/casm/casm/project/__init__.py\
+				   python/casm/casm/project/syminfo.py
 				   python/casm/casm/project/io.py
 casmprojectdir=$(casmpydir)/project
 
