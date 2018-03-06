@@ -27,8 +27,13 @@ namespace CASM {
   Lattice::Lattice(const Eigen::Vector3d &vec1,
                    const Eigen::Vector3d &vec2,
                    const Eigen::Vector3d &vec3,
-                   double xtal_tol) : m_tol(xtal_tol) {
+                   double xtal_tol,
+                   bool force) : m_tol(xtal_tol) {
     m_lat_mat << vec1, vec2, vec3;
+    if(!force && m_lat_mat.determinant() < 0) {
+      this->make_right_handed();
+      //throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
+    }
     m_inv_lat_mat = m_lat_mat.inverse();
   }
 
@@ -36,10 +41,14 @@ namespace CASM {
 
   ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
   ///(e.g., lat_mat is equivalent to lat_column_mat())
-  Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat, double xtal_tol) :
+  Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat, double xtal_tol, bool force) :
     m_lat_mat(lat_mat),
     m_inv_lat_mat(lat_mat.inverse()),
     m_tol(xtal_tol) {
+    if(!force && m_lat_mat.determinant() < 0) {
+      this->make_right_handed();
+      //throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
+    }
   }
 
   //********************************************************************

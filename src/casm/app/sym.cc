@@ -22,7 +22,7 @@ namespace CASM {
       ("factor-group", "Pretty print factor group")
       ("crystal-point-group", "Pretty print crystal point group")
       ("tol", po::value<double>(&m_tol)->default_value(1.0e-5), "tolerance to use with symmetrize in Angstroms default (1e-5)")
-      ("symmetrize", po::value<fs::path>(&m_poscar_path)->required()->value_name(ArgHandler::path()), "symmetrize a POSCAR specified by path to a given tolerance");
+      ("symmetrize", po::value<fs::path>(&m_poscar_path)->value_name(ArgHandler::path()), "symmetrize a POSCAR specified by path to a given tolerance");
 
       return;
     }
@@ -65,53 +65,6 @@ namespace CASM {
 
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
-      if(vm.count("symmetrize")) {
-        fs::path poscar_path = sym_opt.m_poscar_path;
-        double tol = sym_opt.m_tol;
-        args.log() << "\n***************************\n" << std::endl;
-        args.log() << "Symmetrizing: " << poscar_path << std::endl;
-        args.log() << "with tolerance: " << tol << std::endl;
-        Structure struc(poscar_path);
-        Structure tprim;
-        if(!struc.is_primitive(tprim)) {
-          struc = tprim;
-        }
-        int biggest = struc.factor_group().size();
-        Structure tmp = struc;
-        // a) symmetrize the lattice vectors
-        Lattice lat = tmp.lattice();
-        lat.symmetrize(tol);
-        lat.set_tol(tol);
-        SymGroup pg;
-        lat.generate_point_group(pg);
-
-        tmp.set_lattice(lat, FRAC);
-
-        tmp.factor_group();
-        // b) find factor group with same tolerance
-        tmp.fg_converge(tol);
-        // c) symmetrize the basis sites
-        SymGroup g = tmp.factor_group();
-        tmp.symmetrize(g);
-
-        g = tmp.factor_group();
-        tmp.symmetrize(g);
-        if(tmp.factor_group().is_group(tol) && (tmp.factor_group().size() > biggest)) {
-          struc = tmp;
-        }
-        if(!struc.is_primitive(tprim)) {
-          struc = tprim;
-        }
-        fs::ofstream file_i;
-        fs::path POSCARpath_i = "POSCAR_sym";
-        file_i.open(POSCARpath_i);
-        VaspIO::PrintPOSCAR p_i(struc);
-        p_i.print(file_i);
-        file_i.close();
-        return 0;
-
-      }
-      coordtype = sym_opt.coordtype_enum();
     }
     catch(po::error &e) {
       args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
@@ -175,6 +128,53 @@ namespace CASM {
       prim.point_group().print(args.log(), coordtype);
     }
 
+    if(vm.count("symmetrize")) {
+      fs::path poscar_path = sym_opt.m_poscar_path;
+      double tol = sym_opt.m_tol;
+      args.log() << "\n***************************\n" << std::endl;
+      args.log() << "Symmetrizing: " << poscar_path << std::endl;
+      args.log() << "with tolerance: " << tol << std::endl;
+      Structure struc(poscar_path);
+      Structure tprim;
+      if(!struc.is_primitive(tprim)) {
+        struc = tprim;
+      }
+      int biggest = struc.factor_group().size();
+      Structure tmp = struc;
+      // a) symmetrize the lattice vectors
+      Lattice lat = tmp.lattice();
+      lat.symmetrize(tol);
+      lat.set_tol(tol);
+      SymGroup pg;
+      lat.generate_point_group(pg);
+
+      tmp.set_lattice(lat, FRAC);
+
+      tmp.factor_group();
+      // b) find factor group with same tolerance
+      tmp.fg_converge(tol);
+      // c) symmetrize the basis sites
+      SymGroup g = tmp.factor_group();
+      tmp.symmetrize(g);
+
+      g = tmp.factor_group();
+      tmp.symmetrize(g);
+      if(tmp.factor_group().is_group(tol) && (tmp.factor_group().size() > biggest)) {
+        struc = tmp;
+      }
+      if(!struc.is_primitive(tprim)) {
+        struc = tprim;
+      }
+      fs::ofstream file_i;
+      fs::path POSCARpath_i = "POSCAR_sym";
+      file_i.open(POSCARpath_i);
+      VaspIO::PrintPOSCAR p_i(struc);
+      p_i.print(file_i);
+      file_i.close();
+      return 0;
+
+    }
+    coordtype = sym_opt.coordtype_enum();
 
 
     // Write symmetry info files

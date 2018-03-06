@@ -12,6 +12,7 @@
 #include "FCCTernaryProj.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
 
@@ -79,7 +80,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(std::distance(lat_enum.begin(), lat_enum.end()), 87);
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
-    db_scel.emplace(&primclex, it.matrix());
+    Supercell scel(&primclex, it.matrix());
+    db_scel.insert(scel.canonical_form());
   }
   BOOST_CHECK_EQUAL(db_scel.size(), 87);
 
