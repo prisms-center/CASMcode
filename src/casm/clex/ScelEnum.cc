@@ -77,7 +77,7 @@ namespace CASM {
   ScelEnumByProps::ScelEnumByProps(const PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only) :
     m_primclex(&primclex),
     m_existing_only(existing_only) {
-
+    // std::cout << "Constructing ScelEnumByProps" << std::endl;
     m_lattice_enum.reset(new SupercellEnumerator<Lattice>(
                            m_primclex->prim().lattice(),
                            m_primclex->prim().factor_group(),
@@ -126,13 +126,19 @@ namespace CASM {
   void ScelEnumByProps::increment() {
     ++m_lat_it;
 
+    std::cout << "incrementing in ScelEnumByProps" << std::endl;
     while(!_include(*m_lat_it) && m_lat_it != m_lat_end) {
       ++m_lat_it;
+      std::cout << "incrementing ScelEnumByProps" << std::endl;
     }
 
     if(m_lat_it != m_lat_end) {
+      std::cout << "making supercell from lat" << std::endl << m_lat_it->lat_column_mat() << std::endl;
       Supercell scel(m_primclex, *m_lat_it);
+      std::cout << "scel made" << std::endl;
+      assert(scel.is_canonical());
       this->_set_current_ptr(&*scel.insert().first);
+      std::cout << "scel inserted" << std::endl;
       this->_increment_step();
     }
     else {
@@ -282,9 +288,11 @@ namespace CASM {
 
     if(input.contains("name")) {
       m_enum.ptr.reset(new ScelEnumByName(primclex, input["name"]));
+      std::cout << "name enum" << std::endl;
     }
     else {
       m_enum.ptr.reset(new ScelEnumByProps(primclex, input));
+      std::cout << "props enum" << std::endl;
     }
 
     m_it = m_enum.begin();
@@ -303,6 +311,7 @@ namespace CASM {
   /// Implements increment over all occupations
   void ScelEnum::increment() {
     ++m_it;
+    std::cout << "incrementing in ScelEnum" << std::endl;
     if(m_it != m_end) {
       this->_set_current_ptr(&(*m_it));
       this->_increment_step();

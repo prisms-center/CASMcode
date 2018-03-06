@@ -12,7 +12,11 @@ namespace CASM {
   const std::string traits<Supercell>::name = "Supercell";
 
   const std::string traits<Supercell>::short_name = "scel";
-
+  namespace {
+    bool _check_int_only(std::string &str) {
+      return str.find_first_not_of("0123456789") == std::string::npos;
+    }
+  }
   /// Tokenizes 'SCELV_A_B_C_D_E_F' to integral values {V, A, B, C, D, E, F} and
   /// does lexicographical comparison
   bool traits<Supercell>::name_compare(std::string A, std::string B) {
@@ -21,6 +25,8 @@ namespace CASM {
     std::vector<std::string> splt_vec_B;
     boost::split(splt_vec_B, B, boost::is_any_of("L_"), boost::token_compress_on);
     for(int i = 1; i < splt_vec_A.size(); ++i) {
+      assert(_check_int_only(splt_vec_A[i]));
+      assert(_check_int_only(splt_vec_B[i]));
       Index i_A = boost::lexical_cast<Index>(splt_vec_A[i]);
       Index i_B = boost::lexical_cast<Index>(splt_vec_B[i]);
       if(i_A != i_B) {
@@ -29,4 +35,5 @@ namespace CASM {
     }
     return false;
   };
+
 }

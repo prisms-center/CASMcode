@@ -68,7 +68,7 @@ namespace CASM {
         ConfigDoF dof;
         CASM::from_json(dof, _data["dof"]);
         *this = Configuration(_supercell, _data, dof);
-	return;
+        return;
       }
       *this = Configuration(_supercell, _data);
       return;
@@ -864,7 +864,8 @@ namespace CASM {
         ++i;
       }
     }
-    relaxed_basis = relaxed_basis.topLeftCorner(i, 3);
+    Eigen::MatrixXd tmp = relaxed_basis.topLeftCorner(i, 3);
+    relaxed_basis = tmp;
     prop_calc_json["coord_mode"] = "Direct";
     std::vector<std::string> atom_type;
     std::vector<int> atoms_per_type;

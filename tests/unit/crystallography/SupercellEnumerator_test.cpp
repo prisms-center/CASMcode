@@ -466,7 +466,7 @@ jsonParser generate_all_test_cases() {
   all_mat_tests.push_back(mat_test_case("PRIM1", 2, 9));
   all_mat_tests.push_back(mat_test_case("PRIM2", 4, 7));
   all_mat_tests.push_back(mat_test_case("PRIM4", 1, 8));
-
+  // all_mat_tests.push_back(mat_test_case("PRIM6",1,8));
   all_test_cases["mat_test_cases"] = all_mat_tests;
 
   //********************************************************************//
@@ -477,6 +477,7 @@ jsonParser generate_all_test_cases() {
   all_lat_tests.push_back(lat_test_case("PRIM2", 3, 7));
   all_lat_tests.push_back(lat_test_case("PRIM4", 1, 8));
   all_lat_tests.push_back(lat_test_case("PRIM5", 1, 8));
+  //all_lat_tests.push_back(lat_test_case("PRIM6",1,8));
 
   all_test_cases["lat_test_cases"] = all_lat_tests;
 
@@ -566,6 +567,17 @@ void trans_enum_test() {
 
   return;
 }
+
+void only_canonical_test() {
+  Eigen::Matrix3d spinel_lat;
+  spinel_lat <<      0.000000000000, 4.171289279830, 4.171289279830,
+             4.171289279830, 0.000000000000, 4.171289279830,
+             4.171289279830, 4.171289279830, 0.000000000000;
+
+  Lattice testlat(spinel_lat, 1e-5);
+  ScelEnumProps enum_props(1, 7, "abc");
+}
+
 
 void restricted_test() {
   std::vector<Lattice> all_test_lats;

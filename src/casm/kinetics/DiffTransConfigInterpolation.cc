@@ -36,8 +36,8 @@ namespace CASM {
       Configuration from_config = configs.first;
       m_current = from_config;
       Configuration to_config = configs.second;
-      if (from_config.supercell().lattice().lat_column_mat()!=to_config.supercell().lattice().lat_column_mat()){
-	throw std::runtime_error("Attempting to interpolate between configs with different lattices.\n You will have a bad time.");
+      if(from_config.supercell().lattice().lat_column_mat() != to_config.supercell().lattice().lat_column_mat()) {
+        throw std::runtime_error("Attempting to interpolate between configs with different lattices.\n You will have a bad time.");
       }
       DiffusionTransformation diff_trans  = diff_trans_config.diff_trans();
       if(!from_config.has_displacement()) {
@@ -135,10 +135,10 @@ namespace CASM {
         jsonParser endpt_info;
         endpt_info["from_configname"] = config.from_config().name();
         endpt_info["to_configname"] = config.to_config().name();
-        //std::cout << "DTC::config.from_configname" << config.from_configname() << std::endl;
-        //std::cout << "config.from_config().canonical_form().name()" << config.from_config().canonical_form().name() << std::endl;
-	//std::cout << "config.from_config().name()" << config.from_config().name() << std::endl;
-	endpt_info["calctype"] = endpt_calctype;
+        std::cout << "DTC::config.from_configname" << config.from_configname() << std::endl;
+        std::cout << "config.from_config().canonical_form().name()" << config.from_config().canonical_form().name() << std::endl;
+        std::cout << "config.from_config().name()" << config.from_config().name() << std::endl;
+        endpt_info["calctype"] = endpt_calctype;
         fs::ofstream outfile(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(n_images)) / "endpoint_specs.json");
         endpt_info.print(outfile);
         outfile.close();
@@ -150,11 +150,11 @@ namespace CASM {
         boost::split(tokens, name, boost::is_any_of("."), boost::token_compress_on);
         std::string canon_config_name = tokens[0];
         if(tokens.size() == 4) {
-          Configuration canon_config = *primclex.db<Configuration>().find(canon_config_name);
+          Configuration canon_config = *primclex.db<Configuration>().find(config.from_config().canonical_form().name());
           Index fg_index = boost::lexical_cast<Index>(tokens[2]);
           Index trans_index = boost::lexical_cast<Index>(tokens[3]);
           canon_config.calc_properties(endpt_calctype);
-          apply(canon_config.supercell().permute_it(fg_index, trans_index), canon_config).print_properties(endpt_calctype, endpts);
+          apply(config.from_config_from_canonical(), canon_config).print_properties(endpt_calctype, endpts);
         }
         else {
           make_configuration(primclex, endpt_info["from_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
@@ -166,11 +166,18 @@ namespace CASM {
         boost::split(tokens2, name2, boost::is_any_of("."), boost::token_compress_on);
         std::string canon_config_name2 = tokens2[0];
         if(tokens2.size() == 4) {
-          Configuration canon_config = *primclex.db<Configuration>().find(canon_config_name2);
+          Configuration canon_config = *primclex.db<Configuration>().find(config.to_config().canonical_form().name());
           Index fg_index = boost::lexical_cast<Index>(tokens2[2]);
           Index trans_index = boost::lexical_cast<Index>(tokens2[3]);
-          canon_config.calc_properties(endpt_calctype);
-          apply(canon_config.supercell().permute_it(fg_index, trans_index), canon_config).print_properties(endpt_calctype, endpts);
+          //	  std::cout << "canon json" << std::endl;
+          //	  std::cout << canon_config.calc_properties(endpt_calctype)<<std::endl;
+          //	  std::cout << "canon props" << std::endl;
+          //	  canon_config.print_properties(endpt_calctype,std::cout);
+          //	  std::cout << "rotated props" << std::endl;
+          //	  copy_apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype, std::cout);
+          apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype, endpts);
+          //	  std::cout << "rotated json" << std::endl;
+          //	  std::cout << canon_config.calc_properties(endpt_calctype) <<std::endl;
         }
         else {
           make_configuration(primclex, endpt_info["to_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
@@ -216,7 +223,7 @@ namespace CASM {
       Configuration ret_frm = dfc.from_config();
       Configuration ret_to = dfc.to_config();
       if(dfc.from_configname().find("none") == std::string::npos) {
-	Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
+        Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
         ret_frm = copy_apply(dfc.from_config_from_canonical(), rlx_frm);
       }
       if(dfc.to_configname().find("none") == std::string::npos) {
