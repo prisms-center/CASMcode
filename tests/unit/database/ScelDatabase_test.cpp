@@ -79,8 +79,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(std::distance(lat_enum.begin(), lat_enum.end()), 87);
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
-    std::cout << "LOOP" << std::endl;
-    std::cout << it.matrix().cast<double>() << std::endl;
     db_scel.emplace(&primclex, it.matrix());
   }
   BOOST_CHECK_EQUAL(db_scel.size(), 87);

@@ -342,6 +342,7 @@ namespace CASM {
    */
   Lattice Lattice::reduced_cell() const {
     Eigen::Matrix3d reduced_lat = lat_column_mat();
+    bool right_handed = (reduced_lat.determinant() > 0);
     Eigen::HouseholderQR<Eigen::Matrix3d> qr(reduced_lat);
     Eigen::Matrix3d Q = qr.householderQ();
     Eigen::Matrix3d R = Q.inverse() * reduced_lat;
@@ -383,6 +384,9 @@ namespace CASM {
           k = k - 1;
         }
       }
+    }
+    if(right_handed) {
+      return Lattice(reduced_lat).make_right_handed();
     }
     return Lattice(reduced_lat);
   }
