@@ -115,7 +115,15 @@ def clex_hull_dist_per_atom(path="CALCULATED"):
   """
   return 'clex_' + hull_dist_per_atom(path)
 
+def set_src_data(src, name, data, force=False):
+  """Add/modify data column in a ColumnDataSource, creating the column if necessary"""
+  if name not in src.column_names:
+    src.add(data, name)
+  elif force == True:
+    src.patch({name:(slice(len(data)),data)})
+
 def add_src_data(sel, name, data, force=False):
+  """Add data to Selection's ColumnDataSource, creating if necessary"""
   if sel.src is None:
     sel.src = bokeh.models.ColumnDataSource(data={name:data})
     sel.selection_callbacks = []
@@ -124,9 +132,7 @@ def add_src_data(sel, name, data, force=False):
         f()
     sel.update_selection = callbacks
   else:
-    if name not in sel.src.data.keys() or force == True:
-      sel.src.data[name] = data
-
+    set_src_data(sel.src, name, data, force=force)
 
 def view_on_tap(sel, attrname, old, new):
   """
@@ -168,8 +174,8 @@ class PlottingData(object):
             self.add_project([proj])
         return self.data_[proj_path]['project']
     
-    def selection(self, proj_path=None, sel_path="MASTER", kwargs=dict()):
-        proj = self.project(proj_path)
+    def selection(self, proj_path=None, sel_path="MASTER", kwargs=dict(), proj_kwargs=dict()):
+        proj = self.project(proj_path, kwargs=proj_kwargs)
         if sel_path is None:
             sel_path = "MASTER"
         if sel_path not in ["MASTER", "ALL", "CALCULATED"]:
@@ -235,7 +241,7 @@ class TapAction(object):
   def __call__(self, attrname, old, new):
     proj_path = new['project'][0]
     sel_path = new['selection'][0]
-    sel = self.data.selection(proj_path, sel_path)
+    sel = self.data.selection(proj_path, sel_path, proj_kwargs={"verbose":False})
     self.py_callback[sel_path](sel, attrname, old, new)
   
   def add_callback(self, sel, callback=None, renderers=None):
@@ -437,7 +443,7 @@ def update_dft_hull_glyphs(sel, style, selected=None):
   
   for value in ['color', 'radii']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data[value] = list(map(lambda x: cmap[x], selected))
+    set_src_data(sel.src, value, list(map(lambda x: cmap[x], selected)), force=True)
 
   on_dft_hull = None
   if 'on_dft_hull' in sel.data.columns:
@@ -446,7 +452,7 @@ def update_dft_hull_glyphs(sel, style, selected=None):
   if on_dft_hull is not None:
     for value in ['line_color', 'line_width', 'line_alpha']:
       cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
-      sel.src.data[value] = list(map(lambda x: cmap[x], on_dft_hull))
+      set_src_data(sel.src, value, list(map(lambda x: cmap[x], on_dft_hull)), force=True)
 
   
 def update_clex_hull_glyphs(sel, style, selected=None):
@@ -461,7 +467,7 @@ def update_clex_hull_glyphs(sel, style, selected=None):
   
   for value in ['color', 'radii']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data['clex_' + value] = list(map(lambda x: cmap[x], selected))
+    set_src_data(sel.src, 'clex_' + value, list(map(lambda x: cmap[x], selected)), force=True)
 
   on_clex_hull = None
   if 'on_clex_hull' in sel.data.columns:
@@ -470,7 +476,7 @@ def update_clex_hull_glyphs(sel, style, selected=None):
   if on_clex_hull is not None:
     for value in ['line_color', 'line_width', 'line_alpha']:
       cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
-      sel.src.data['clex_' + value] = list(map(lambda x: cmap[x], on_clex_hull))
+      set_src_data(sel.src, 'clex_' + value, list(map(lambda x: cmap[x], on_clex_hull)), force=True)
 
 
 def update_scatter_glyphs(sel, style, id, selected=None):
@@ -482,7 +488,7 @@ def update_scatter_glyphs(sel, style, id, selected=None):
   
   for value in ['color', 'radii', 'line_color', 'line_width', 'line_alpha', 'fill_alpha']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data[value + '.' + id] = list(map(lambda x: cmap[x], selected))
+    set_src_data(sel.src, value + '.' + id, list(map(lambda x: cmap[x], selected)), force=True)
 
 
 class ConvexHullPlot(object):
@@ -528,7 +534,7 @@ class ConvexHullPlot(object):
     
     if project is None:
         project = casm.project.project_path()
-    proj = self.data.project(project)
+    proj = self.data.project(project, kwargs={"verbose":False})
     
     prim = proj.prim
     if prim.n_independent_compositions != 1:
@@ -538,11 +544,11 @@ class ConvexHullPlot(object):
     
     if selection is None:
       selection = "MASTER"
-    self.sel = self.data.selection(project, selection)
+    self.sel = self.data.selection(project, selection, proj_kwargs={"verbose":False})
     
     if hull_selection is None:
       hull_selection = selection
-    self.hull_sel = self.data.selection(project, hull_selection)
+    self.hull_sel = self.data.selection(project, hull_selection, proj_kwargs={"verbose":False})
     
     self.hull_sel_calculated = casm.project.Selection(self.sel.proj, self.hull_sel.path + ".calculated")
     self.dft_hull_sel = casm.project.Selection(self.sel.proj, self.hull_sel.path + ".dft_hull")
@@ -588,9 +594,7 @@ class ConvexHullPlot(object):
     if fig is None:
         fig = bokeh.models.Figure(**default_figure_kwargs)
     
-    print("here -2")
     update_dft_hull_glyphs(self.sel, self.dft_style)
-    print("here -1")
     update_clex_hull_glyphs(self.sel, self.clex_style)
     
     # plot formation energy vs comp, with convex hull states
@@ -798,27 +802,6 @@ class ConvexHullPlot(object):
     # set clex of dft hull line data
     self.sorted_clex_of_dft_hull = self._sort_hull_line(self.sel, 'on_clex_of_dft_hull')
     return self.sorted_clex_of_dft_hull
-  
-#  def update_hull_line(self):
-#    self.sort_hull_line()
-#    
-#    # source for hull data
-#    self.calc_hull_src.data[self.x] = self.sel.data.loc[self.sorted_dft_hull.index, self.x]
-#    self.calc_hull_src.data[self.y] = self.sel.data.loc[self.sorted_dft_hull.index, self.y]
-#
-#  def update_clex_hull_line(self):
-#    self.sort_clex_hull_line()
-#    
-#    # source for clex hull data
-#    self.clex_hull_src.data[self.x] = self.sel.data.loc[self.sorted_clex_hull.index, self.x]
-#    self.clex_hull_src.data[self.y] = self.sel.data.loc[self.sorted_clex_hull.index, self.y]
-#
-#  def update_hull_line(self):
-#    self.sort_clex_of_dft_hull_line()
-#    
-#    # source for clex of dft hull data
-#    self.clex_of_dft_hull_src.data[self.x] = self.sel.data.loc[self.sorted_clex_of_dft_hull.index, self.x]
-#    self.clex_of_dft_hull_src.data[self.y] = self.sel.data.loc[self.sorted_clex_of_dft_hull.index, self.y]
 
 
 class Scatter(object):
@@ -861,13 +844,15 @@ class Scatter(object):
     
     if selection is None:
       selection = "MASTER"
-    self.sel = self.data.selection(project, selection)
+    self.sel = self.data.selection(project, selection, proj_kwargs={"verbose":False})
     
     self.x = x
     self.y = y
     
     if legend is None:
         legend = y
+    elif legend == "off" or legend == "none":
+        legend = None
     self.legend = legend
     self.index = index
     if series_name is None:
@@ -895,6 +880,10 @@ class Scatter(object):
   def plot(self, fig=None, tap_action=None):
           
       update_scatter_glyphs(self.sel, self.style, self.series_name)
+      
+      # avoid having a legend name same as a column name
+      while self.legend in self.sel.src.column_names:
+          self.legend += ' '
       
       self.r = getattr(fig, self.style['marker'])(
           self.x,
@@ -977,7 +966,7 @@ class Histogram(object):
     
     if selection is None:
       selection = "MASTER"
-    self.sel = self.data.selection(project, selection)
+    self.sel = self.data.selection(project, selection, proj_kwargs={"verbose":False})
     
     self.x = x
     self.hist_kwargs = hist_kwargs
@@ -1029,15 +1018,15 @@ class Histogram(object):
       
       if self.src is None:
           self.src = bokeh.models.ColumnDataSource()
-          self.src.data["left"] = edges[:-1]
-          self.src.data["right"] = edges[1:]
+          set_src_data(self.src, "left", edges[:-1], force=True)
+          set_src_data(self.src, "right", edges[1:], force=True)
       
-      self.src.data["top"] = hist
-      self.src.data["bottom"] = [0]*len(hist)
-        
-      self.src.data["top_sel"] = hist_sel
-      self.src.data["top_unsel"] = hist - hist_sel
-      self.src.data["bottom_sel"] = [0]*len(hist_sel)
+      set_src_data(self.src, "top", hist, force=True)
+      set_src_data(self.src, "bottom", [0]*len(hist), force=True)
+       
+      set_src_data(self.src, "top_sel", hist_sel, force=True)
+      set_src_data(self.src, "top_unsel", hist - hist_sel, force=True)
+      set_src_data(self.src, "bottom_sel", [0]*len(hist_sel), force=True)
             
       if 'density' not in self.hist_kwargs.keys() or self.hist_kwargs['density'] == False:
           self.y_label = "Frequency"
@@ -1230,7 +1219,7 @@ class RankPlot(object):
     
     if selection is None:
       selection = "MASTER"
-    self.sel = self.data.selection(project, selection)
+    self.sel = self.data.selection(project, selection, proj_kwargs={"verbose":False})
     
     self.scoring_query = scoring_query
     
@@ -1616,7 +1605,7 @@ class RankSelect(object):
       f = self._set_off_f
     
     self.sel.data.loc[:,'to_be_selected'] = self.df.apply(f, axis='columns')
-    self.cutoff_line_src.data['y'] = [self.input['cutoff'].value, self.input['cutoff'].value]
+    set_src_data(self.cutoff_line_src, 'y', [self.input['cutoff'].value, self.input['cutoff'].value], force=True)
     self.sel.update_selection()
     update_glyphs(self.sel, selected=self.sel.data['to_be_selected'])
   
@@ -1837,16 +1826,16 @@ class WeightSelect(object):
         self.ref_line = self.hullplot.p.line('x', 'y', source=self.ref_line_src, line_color='red', line_width=1.0)
     if self.ref_line is not None:
       if self.select_method.value == "wEref":
-        self.ref_line_src.data['x'] = [self.x_min, self.x_max]
-        self.ref_line_src.data['y'] = [self.input['Eref'].value, self.input['Eref'].value]
+        set_src_data(self.ref_line_src, 'x', [self.x_min, self.x_max], force=True)
+        set_src_data(self.ref_line_src, 'y', [self.input['Eref'].value, self.input['Eref'].value], force=True)
       elif self.select_method.value == "wEmin":
-        self.ref_line_src.data['x'] = [self.x_min, self.x_max]
-        self.ref_line_src.data['y'] = [self.Ef_min, self.Ef_min]
+        set_src_data(self.ref_line_src, 'x', [self.x_min, self.x_max], force=True)
+        set_src_data(self.ref_line_src, 'y', [self.Ef_min, self.Ef_min], force=True)
       elif self.select_method.value == "wHullDist":
-        self.ref_line_src.data['x'] = []
-        self.ref_line_src.data['y'] = []
+        set_src_data(self.ref_line_src, 'x', [], force=True)
+        set_src_data(self.ref_line_src, 'y', [], force=True)
     if self.select_method.value == "wEref":
-      self.ref_line_src.data['y'] = [self.input['Eref'].value, self.input['Eref'].value]
+      set_src_data(self.ref_line_src, 'y', [self.input['Eref'].value, self.input['Eref'].value], force=True) 
     
     self.whullplot.update_hull_line()
   
@@ -2028,7 +2017,7 @@ class ECISelect(object):
       if len(sel.src.selected['1d']['indices']) == 1:
         print("update!")
         index = sel.src.selected['1d']['indices'][0]
-        sel.eci_src.data["current"] = sel.eci_src.data[str(index)]
+        set_src_data(sel.eci_src, 'current', sel.eci_src.data[str(index)], force=True)
     
     # self, sel, scoring, name="Score", mode='set', tooltips=None, on_tap=view_on_tap)
     self.cv_rankplot = RankPlot( self.sel, score, name="CV Score", 
@@ -2044,14 +2033,14 @@ class ECISelect(object):
     with open(self.proj.dir.basis(self.proj.settings.default_clex), 'r') as f:
       self.basis = json.load(f)
     
-    self.sel.eci_src.data["index"] = range(self.sel.eci.shape[0])
-    self.sel.eci_src.data["branch"] = [j["orbit"][0] for j in self.basis["cluster_functions"] ]
-    self.sel.eci_src.data["mult"] = [j["mult"] for j in self.basis["cluster_functions"] ]
-    self.sel.eci_src.data["max_length"] = [j["prototype"]["max_length"] for j in self.basis["cluster_functions"] ]
-    self.sel.eci_src.data["min_length"] = [j["prototype"]["min_length"] for j in self.basis["cluster_functions"] ]
+    set_src_data(sel.eci_src, 'index', range(self.sel.eci.shape[0]), force=True)
+    set_src_data(sel.eci_src, 'branch', [j["orbit"][0] for j in self.basis["cluster_functions"] ], force=True)
+    set_src_data(sel.eci_src, 'mult', [j["mult"] for j in self.basis["cluster_functions"] ], force=True)
+    set_src_data(sel.eci_src, 'max_length', [j["prototype"]["max_length"] for j in self.basis["cluster_functions"] ], force=True)
+    set_src_data(sel.eci_src, 'min_length', [j["prototype"]["min_length"] for j in self.basis["cluster_functions"] ], force=True)
     colormap = ["black", "blue", "red", "green", "cyan", "magenta", "yellow", "orange"]
-    self.sel.eci_src.data["color"] = list(map(lambda x: colormap[x % len(colormap)], self.sel.eci_src.data["branch"]))
-    self.sel.eci_src.data["current"] = self.sel.eci_src.data[str(index)]
+    set_src_data(sel.eci_src, 'color', list(map(lambda x: colormap[x % len(colormap)], self.sel.eci_src.data["branch"])), force=True)
+    set_src_data(sel.eci_src, 'current', self.sel.eci_src.data[str(index)], force=True)
     
     # TOOLS in bokeh plot
     _tools = ["crosshair,pan,reset,box_zoom,wheel_zoom,save"]

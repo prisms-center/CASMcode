@@ -67,6 +67,11 @@ input_example = {
         "configname",
         "basis_deformation",
         "lattice_deformation"
+      ],
+      "tooltips": [
+        "configname",
+        "basis_deformation",
+        "lattice_deformation"
       ]
     }
   ]

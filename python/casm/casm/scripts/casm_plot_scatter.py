@@ -35,7 +35,7 @@ Input file attributes:
       Query to use for y-values
     
     legend: str (optional, default=<y>)
-      String to use for legend, default uses 'y' value
+      String to use for legend, default uses 'y' value. Use "off" or "none" to exclude.
     
     tooltips: JSON array of str (optional, default=[])
       Additional properties to query and include in 'tooltips' info that appears

@@ -114,7 +114,7 @@ class Selection(object):
         if self.path == "MASTER":
           
           if data is not None:
-            self._data = data
+            self._data = data.copy()
             self._clean_data()
         
           if self._data is None:
@@ -152,7 +152,7 @@ class Selection(object):
         else:
           
           if data is not None:
-            self._data = data
+            self._data = data.copy()
             self._clean_data()
           
           if os.path.exists(self.path) and not force:
