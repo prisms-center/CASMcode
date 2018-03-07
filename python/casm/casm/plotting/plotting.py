@@ -588,7 +588,9 @@ class ConvexHullPlot(object):
     if fig is None:
         fig = bokeh.models.Figure(**default_figure_kwargs)
     
+    print("here -2")
     update_dft_hull_glyphs(self.sel, self.dft_style)
+    print("here -1")
     update_clex_hull_glyphs(self.sel, self.clex_style)
     
     # plot formation energy vs comp, with convex hull states

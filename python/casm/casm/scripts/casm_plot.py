@@ -4,21 +4,21 @@ from builtins import *
 import argparse
 import subprocess
 import sys
-from bokeh.server.server import Server
 
-import casm.scripts.casm_plot_hist
-import casm.scripts.casm_plot_hull
-import casm.scripts.casm_plot_layout
-import casm.scripts.casm_plot_rankplot
-import casm.scripts.casm_plot_scatter
+import casm.scripts.casm_plot_hist as cp_hist
+import casm.scripts.casm_plot_hull as cp_hull
+import casm.scripts.casm_plot_layout as cp_layout
+import casm.scripts.casm_plot_rankplot as cp_rankplot
+import casm.scripts.casm_plot_scatter as cp_scatter
 
-plot_types = {
-    "hist": casm.scripts.casm_plot_hist.main,
-    "hull": casm.scripts.casm_plot_hull.main,
-    "layout": casm.scripts.casm_plot_layout.main,
-    "rankplot": casm.scripts.casm_plot_rankplot.main,
-    "scatter": casm.scripts.casm_plot_scatter.main,
-    }
+plot_type_cls = [
+    cp_hist.PlotHistCommand,
+    cp_hull.PlotHullCommand,
+    cp_layout.PlotLayoutCommand,
+    cp_rankplot.PlotRankplotCommand,
+    cp_scatter.PlotScatterCommand]
+
+plot_types = {cls.name():cls.run for cls in plot_type_cls}
 
 def main(argv=None):
     if argv is None:
@@ -27,12 +27,7 @@ def main(argv=None):
     parser.add_argument('type', help="Plot type", type=str, default="", nargs="?", metavar="<type>")
     parser.add_argument('args', help="Plotting arguments", nargs=argparse.REMAINDER, metavar="...")
     parser.add_argument('--desc', help="Print plot type list", action="store_true", default=False)
-    #parser.add_argument('--serve', help="Start bokeh server for plots", action="store_true", default=False)
     args = parser.parse_args(argv)
-
-#     if args.serve:
-#         subprocess.Popen(['bokeh', 'serve'])
-#         return
     
     if args.type in plot_types:
         plot_types[args.type](argv[1:])
@@ -46,6 +41,3 @@ def main(argv=None):
         print("For help using a plot type: 'casm plot <type> --help'\n")
     else:
         parser.print_help()
-
-if __name__ == "__main__":
-    main()

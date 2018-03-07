@@ -1,28 +1,15 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
-from casm.project import Project, Selection
-import casm.plotting
-import argparse
-import os
-import sys
 import json
-import copy
-from bokeh.io import curdoc
-from bokeh.client import push_session
-from bokeh.server.server import Server
+import bokeh.layouts
 import bokeh.plotting
 import bokeh.models
-import bokeh.layouts
 
-input_help = "Input file"
-desc_help = "Print extended usage description"
+import casm.plotting
+
 usage_desc = """
-Layout plots of CASM query output
-
-Before running you must start the bokeh server:
-- install bokeh with: 'pip install bokeh'
-- start server: 'bokeh serve'
+Layout several plots of CASM query output
 
 If you have 'casm view' setup, then clicking on a configuration in the plot
 will attempt to use 'casm view' to view that configuration.
@@ -49,11 +36,10 @@ Input file attributes:
       the 'type' is required:
 
       type: str
-        One of 'hull', 'scatter'.
+        One of 'histogram', 'hull', 'rankplot', 'scatter'
+"""
 
-Example input file:
-
-{
+input_example = {
   "n_plots_each_row": [1, 2],
   "subplots": [
     {
@@ -66,7 +52,14 @@ Example input file:
       "series": [
         {
           "type": "hull",
-          ... hull plot input ...
+          "project": None,
+          "selection": "MASTER",
+          "hull_selection":"MASTER",
+          "x": "comp(a)",
+          "y": "formation_energy",
+          "tooltips": [
+            "scel_size"
+          ]
         }
       ]
     },
@@ -80,7 +73,15 @@ Example input file:
       "series": [
         {
           "type": "scatter",
-          ... scatter plot input ...
+          "project": None,
+          "selection": "MASTER",
+          "x": "basis_deformation",
+          "y": "formation_energy",
+          "tooltips": [
+            "scel_size",
+            "volume_relaxation"
+          ],
+          "legend":"formation_energy"
         }
       ]
     },
@@ -94,14 +95,20 @@ Example input file:
       "series": [
         {
           "type": "scatter",
-          ... scatter plot input ...
+          "project": None,
+          "selection": "MASTER",
+          "x": "lattice_deformation",
+          "y": "formation_energy",
+          "tooltips": [
+            "scel_size",
+            "volume_relaxation"
+          ],
+          "legend":"formation_energy"
         }
       ]
     }
   ]
 }
-
-"""
 
 def make_layout(val, n_plots_each_row):
     layout = []
@@ -109,80 +116,74 @@ def make_layout(val, n_plots_each_row):
         layout.append([copy.deepcopy(val) for i in range(n)])
     return layout
 
-def plot(doc, args):
-    with open(args.input, 'r') as f:
-        layout_input = json.load(f)
+class PlotLayoutCommand(casm.plotting.PlotTypeCommand):
     
-    data = casm.plotting.PlottingData()
-    layout = make_layout(None, layout_input['n_plots_each_row'])
+    @classmethod
+    def name(cls):
+        return "layout"
     
-    options = {
-      'hull':casm.plotting.ConvexHullPlot,
-      'scatter':casm.plotting.Scatter,
-      'rankplot':casm.plotting.RankPlot,
-      'histogram':casm.plotting.Histogram
-    }
-    for subplot in layout_input['subplots']:
-        for index, series in enumerate(subplot['series']):
-            series_name = str(subplot['pos'][0]) + "." + str(subplot['pos'][1]) + "." + str(index)
-            series['self'] = options[series['type']](data=data, index=index, series_name=series_name, **series)
+    @classmethod
+    def short_desc(cls):
+        return "Layout several plots"
     
-    # first query data necessary for all series in every figure
-    for subplot in layout_input['subplots']:
-        for series in subplot['series']:
-            series['self'].query()
+    @classmethod
+    def long_desc(cls):
+        return usage_desc
+    
+    @classmethod
+    def style_example(cls):
+        return style_example
+    
+    @classmethod
+    def input_example(cls):
+        return input_example
+    
+    @classmethod
+    def plot(cls, doc, args):
+        with open(args.input, 'r') as f:
+            layout_input = json.load(f)
         
-    # next create plots
-    for subplot in layout_input['subplots']:
-    
-        figure_kwargs = subplot.get('figure_kwargs', casm.plotting.default_figure_kwargs)
-    
-        r = subplot['pos'][0]
-        c = subplot['pos'][1]
+        data = casm.plotting.PlottingData()
+        layout = make_layout(None, layout_input['n_plots_each_row'])
         
-        ## Construct a figure
-        fig = bokeh.plotting.Figure(**figure_kwargs)
-        tap_action = casm.plotting.TapAction(data)
-        renderers = []
-        for series in subplot['series']:
-            series['self'].plot(fig, tap_action=tap_action)
-            renderers += series['self'].renderers
+        options = {
+          'hull':casm.plotting.ConvexHullPlot,
+          'scatter':casm.plotting.Scatter,
+          'rankplot':casm.plotting.RankPlot,
+          'histogram':casm.plotting.Histogram
+        }
+        for subplot in layout_input['subplots']:
+            for index, series in enumerate(subplot['series']):
+                series_name = str(subplot['pos'][0]) + "." + str(subplot['pos'][1]) + "." + str(index)
+                series['self'] = options[series['type']](data=data, index=index, series_name=series_name, **series)
         
-        # add tools
-        fig.add_tools(tap_action.tool())
-        fig.add_tools(bokeh.models.BoxSelectTool(renderers=renderers))
-        fig.add_tools(bokeh.models.LassoSelectTool(renderers=renderers))
-        layout[r][c] = fig
-    
-    gplot = bokeh.layouts.layout(layout, plot_width=400, plot_height=400)
-    
-    doc.add_root(gplot)
-
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv[1:]
-    parser = argparse.ArgumentParser(description = 'Layout plot')
-    parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
-    parser.add_argument('input', nargs='?', help=input_help, type=str)
-    args = parser.parse_args(argv)
-    
-    if args.desc:
-        print(usage_desc)
-        return
-    elif args.input is not None:
-        def f(doc):
-            plot(doc, args)
-        server = Server({'/': f}, num_procs=1)
-        server.start()
+        # first query data necessary for all series in every figure
+        for subplot in layout_input['subplots']:
+            for series in subplot['series']:
+                series['self'].query()
+            
+        # next create plots
+        for subplot in layout_input['subplots']:
         
-        print('Opening on http://localhost:5006/')
-        print('Enter Ctrl+C to stop')
-        try:
-            server.io_loop.add_callback(server.show, "/")
-            server.io_loop.start()
-        except KeyboardInterrupt as e:
-            print('\nStopping...')
-            pass
-    else:
-        parser.print_help()
-        return
+            figure_kwargs = subplot.get('figure_kwargs', casm.plotting.default_figure_kwargs)
+        
+            r = subplot['pos'][0]
+            c = subplot['pos'][1]
+            
+            ## Construct a figure
+            fig = bokeh.plotting.Figure(**figure_kwargs)
+            tap_action = casm.plotting.TapAction(data)
+            renderers = []
+            for series in subplot['series']:
+                series['self'].plot(fig, tap_action=tap_action)
+                renderers += series['self'].renderers
+            
+            # add tools
+            fig.add_tools(tap_action.tool())
+            fig.add_tools(bokeh.models.BoxSelectTool(renderers=renderers))
+            fig.add_tools(bokeh.models.LassoSelectTool(renderers=renderers))
+            layout[r][c] = fig
+        
+        gplot = bokeh.layouts.layout(layout, plot_width=400, plot_height=400)
+        
+        doc.add_root(gplot)

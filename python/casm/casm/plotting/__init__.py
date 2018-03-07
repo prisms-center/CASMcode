@@ -20,6 +20,7 @@ from casm.plotting.plotting import ConvexHullPlot, \
     update_dft_hull_glyphs,\
     update_scatter_glyphs,\
     view_on_tap
+from casm.plotting.command import PlotTypeCommand
 
 __all__ = ['ConvexHullPlot',
     'GridPlot',
@@ -41,4 +42,5 @@ __all__ = ['ConvexHullPlot',
     'update_clex_hull_glyphs',
     'update_dft_hull_glyphs',
     'update_scatter_glyphs',
-    'view_on_tap']
+    'view_on_tap',
+    'PlotTypeCommand']
