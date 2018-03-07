@@ -13,7 +13,7 @@ import bokeh.client
 import bokeh.io
 import bokeh.models
 import bokeh.plotting
-from bokeh.plotting import hplot, vplot
+import bokeh.layouts as bk_layouts
 import numpy as np
 import pandas
 import six
@@ -38,10 +38,10 @@ class Session(object):
     self.doc.add_root(layout)
   
   def begin(self):
-    self.session.show()
+    self.session.show(self.doc)
   
   def begin_interactive(self):
-    self.session.show()
+    self.session.show(self.doc)
     self.session.loop_until_closed()
   
   def close(self):
@@ -221,13 +221,12 @@ class TapAction(object):
     """
     self.tap_indicator_src = bokeh.models.ColumnDataSource(data={"x":[0], "project":['None'], "selection":['None']})
     self.js_callback = bokeh.models.CustomJS(args={'src':self.tap_indicator_src}, code="""
-      var data = src.get('data');
+      var data = src.data;
       data['x'][0] = data['x'][0] + 1;
-      data['project'][0] = cb_obj.data['project'][0];
-      data['selection'][0] = cb_obj.data['selection'][0];
-      console.log(cb_obj); // Logs output to dev tools console.
-      // alert(str); // Displays output using window.alert()
-      src.set('data', data);
+      hovered_data = cb_data.source.data;
+      data['project'][0] = hovered_data['project'][0];
+      data['selection'][0] = hovered_data['selection'][0];
+      src.data = data;
       """)
     self.data = data
     self.py_callback = dict()
@@ -363,7 +362,7 @@ default_scatter_style = {
 default_figure_kwargs = {
     "plot_height": 400,
     "plot_width": 800,
-    "tools": "crosshair,pan,reset,resize,box_zoom"
+    "tools": "crosshair,pan,reset,box_zoom,wheel_zoom,save"
 }
 
 
@@ -923,7 +922,7 @@ class Scatter(object):
           tooltips = []
             
           for col in self.tooltips + [self.x, self.y]:
-              if col in casm.plotting.float_dtypes:
+              if col in float_dtypes:
                   tooltips.append((col,"@{" + col + "}{1.1111}"))
               else:
                   tooltips.append((col,"@{" + col + "}"))
@@ -1305,7 +1304,7 @@ class RankPlot(object):
                 tooltips.append(("score","@{" + self.score_id + "}{1.1111}"))
             elif col == self.rank_id:
                 tooltips.append(("rank","@{" + self.rank_id + "}{1.1111}"))
-            elif col in casm.plotting.float_dtypes:
+            elif col in float_dtypes:
                 tooltips.append((col,"@{" + col + "}{1.1111}"))
             else:
                 tooltips.append((col,"@{" + col + "}"))
@@ -1332,7 +1331,12 @@ class RankPlot(object):
     'scoring' function.
     """
     if self.scoring_query is not None:
-        self.sel.data.loc[:,self.score_id] = self.sel.data.loc[:,self.scoring_query]
+        try:
+            self.sel.data.loc[:,self.score_id] = self.sel.data.loc[:,self.scoring_query]
+        except Exception as e:
+            print("scoring_query:", self.scoring_query)
+            print("columns:", self.sel.data.columns)
+            raise e
     else:
         f, filename, description = imp.find_module(self.scoring_module)
         try:
@@ -1412,7 +1416,7 @@ class RankSelect(object):
     self._min_score = None
     
     # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
+    self.tools = "crosshair,pan,reset,box_zoom,wheel_zoom,save"
     self.tooltips = None
     
     # bokeh DataSource for cutoff line
@@ -1430,8 +1434,8 @@ class RankSelect(object):
     self._plot()
     
     # store plot in layout with widgets
-    _hplot = hplot(self.input['cutoff'].widget, self.select_mode, self.select_action)
-    self.layout = vplot(self.p, _hplot, self.msg.widget, width=self.p.plot_width)
+    _hplot = bk_layouts.row(self.input['cutoff'].widget, self.select_mode, self.select_action)
+    self.layout = bk_layouts.column(self.p, _hplot, self.msg.widget, width=self.p.plot_width)
     
   
   @property
@@ -1488,10 +1492,11 @@ class RankSelect(object):
     self.p_.select(type=bokeh.models.CrosshairTool).dimensions = ['width']
     
     p_click=bokeh.models.CustomJS(args={'src':self.cutoff_line_src, 'loc': self.mouse_location_src}, code="""
-      var data = src.get('data');
-      data['y'][0] = loc.get('data')['y'][0];
-      data['y'][1] = loc.get('data')['y'][0];
-      src.set('data', data);
+      var data = src.data;
+      var loc_data = loc.data;
+      data['y'][0] = loc_data['y'][0];
+      data['y'][1] = loc_data['y'][0];
+      src.data = data;
       """)
     self.p_.select(type=bokeh.models.CrosshairTool).dimensions = ['width']
     self.p_.add_tools(bokeh.models.TapTool(callback=p_click))
@@ -1548,8 +1553,9 @@ class RankSelect(object):
     self.mouse = bokeh.models.HoverTool(
       tooltips=None,
       callback=bokeh.models.CustomJS(args={'src': self.mouse_location_src}, code="""
-        src.get('data')['y'][0] = cb_data.geometry.y;
-        src.get('data')['y'][1] = cb_data.geometry.y;
+        var data = src.data;
+        data['y'][0] = cb_data.geometry.y;
+        data['y'][1] = cb_data.geometry.y;
         """))
     
     self.msg = Messages()
@@ -1898,8 +1904,8 @@ class WeightSelect(object):
     else:
       children = [self.hullplot.layout, self.whullplot.layout]
     grid = bokeh.models.GridPlot(children=[children])
-    row = hplot(vplot(*self._widget_layout()), grid)
-    return vplot(row, self.msg.widget, width=self.whullplot.p.plot_width*3 + 300)
+    row = bk_layouts.row(bk_layouts.column(*self._widget_layout()), grid)
+    return bk_layouts.column(row, self.msg.widget, width=self.whullplot.p.plot_width*3 + 300)
   
   def _widget_layout(self):
     if self.select_method.value in ["wHullDist", "wEmin"]:
@@ -1990,7 +1996,7 @@ class ECISelect(object):
     self._cv_rankplot()
     self._eci_stemplot(0)
     
-    self.layout = hplot(self.cv_rankplot.layout, self.eci_stemplot)
+    self.layout = bk_layouts.row(self.cv_rankplot.layout, self.eci_stemplot)
     
   
   def _cv_rankplot(self):
@@ -2046,7 +2052,7 @@ class ECISelect(object):
     self.sel.eci_src.data["current"] = self.sel.eci_src.data[str(index)]
     
     # TOOLS in bokeh plot
-    _tools = ["crosshair,pan,reset,resize,box_zoom"]
+    _tools = ["crosshair,pan,reset,box_zoom,wheel_zoom,save"]
     
     self.eci_stemplot = bokeh.plotting.Figure(plot_width=800, plot_height=400, 
       tools=_tools, y_range=(self.sel.eci.min().min()*1.1, self.sel.eci.max().max()*1.1))
@@ -2213,7 +2219,7 @@ class GUIOptions(object):
     self.update.append(select_action_f)
     
     self.widget.on_change('value', self.on_change)
-    self.layout = hplot(self.widget, width=200)
+    self.layout = bk_layouts.row(self.widget, width=200)
   
   def on_change(self, attrname, old, new):
     for f in self.update:

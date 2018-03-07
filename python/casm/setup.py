@@ -25,7 +25,7 @@ setup(name='casm-python',
           'console_scripts': console_scripts
       },
       install_requires=[
-          'bokeh==0.12.3',
+          'bokeh',
           'deap',
           'mock', 
           'pandas',
@@ -33,7 +33,7 @@ setup(name='casm-python',
           'scikit-learn',
           'scipy',
           'sh',
-          'tornado==4.3'
+          'tornado'
       ],
       classifiers=[
         'Development Status :: 4 - Beta',

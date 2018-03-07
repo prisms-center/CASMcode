@@ -1,4 +1,4 @@
-bokeh ==0.12.3
+bokeh
 deap
 mock
 pandas
@@ -7,4 +7,4 @@ scikit-learn
 scipy
 sh
 six
-tornado ==4.3
+tornado

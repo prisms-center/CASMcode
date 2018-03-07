@@ -10,6 +10,7 @@ import json
 import copy
 from bokeh.io import curdoc
 from bokeh.client import push_session
+from bokeh.server.server import Server
 import bokeh.plotting
 import bokeh.models
 import bokeh.layouts
@@ -60,7 +61,7 @@ Example input file:
       "figure_kwargs": {
         "plot_height": 400,
         "plot_width": 800,
-        "tools": "crosshair,pan,reset,resize,box_zoom"
+        "tools": "crosshair,pan,reset,box_zoom,wheel_zoom,save"
       },
       "series": [
         {
@@ -74,7 +75,7 @@ Example input file:
       "figure_kwargs": {
         "plot_height": 400,
         "plot_width": 400,
-        "tools": "crosshair,pan,reset,resize,box_zoom"
+        "tools": "crosshair,pan,reset,box_zoom,wheel_zoom,save"
       },
       "series": [
         {
@@ -88,7 +89,7 @@ Example input file:
       "figure_kwargs": {
         "plot_height": 400,
         "plot_width": 400,
-        "tools": "crosshair,pan,reset,resize,box_zoom"
+        "tools": "crosshair,pan,reset,box_zoom,wheel_zoom,save"
       },
       "series": [
         {
@@ -108,21 +109,7 @@ def make_layout(val, n_plots_each_row):
         layout.append([copy.deepcopy(val) for i in range(n)])
     return layout
 
-def main(argv = None):
-    if argv is None:
-        argv = sys.argv[1:]
-    parser = argparse.ArgumentParser(description = 'Layout plot')
-    parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
-    parser.add_argument('input', nargs='?', help=input_help, type=str)
-    args = parser.parse_args(argv)
-    
-    if args.desc:
-        print(usage_desc)
-        return
-    elif args.input is None:
-        parser.print_help()
-        return
-    
+def plot(doc, args):
     with open(args.input, 'r') as f:
         layout_input = json.load(f)
     
@@ -169,13 +156,33 @@ def main(argv = None):
     
     gplot = bokeh.layouts.layout(layout, plot_width=400, plot_height=400)
     
-    # set up session
-    session = push_session(curdoc())
-    print('To view the plot navigate to:')
-    print('http://localhost:5006/?bokeh-session-id=' + session.id)
-    curdoc().add_root(gplot)
-    session.show() # open the document in a browser
-    session.loop_until_closed() # run forever
+    doc.add_root(gplot)
 
-if __name__ == "__main__":
-    main()
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    parser = argparse.ArgumentParser(description = 'Layout plot')
+    parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
+    parser.add_argument('input', nargs='?', help=input_help, type=str)
+    args = parser.parse_args(argv)
+    
+    if args.desc:
+        print(usage_desc)
+        return
+    elif args.input is not None:
+        def f(doc):
+            plot(doc, args)
+        server = Server({'/': f}, num_procs=1)
+        server.start()
+        
+        print('Opening on http://localhost:5006/')
+        print('Enter Ctrl+C to stop')
+        try:
+            server.io_loop.add_callback(server.show, "/")
+            server.io_loop.start()
+        except KeyboardInterrupt as e:
+            print('\nStopping...')
+            pass
+    else:
+        parser.print_help()
+        return
