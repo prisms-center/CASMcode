@@ -1166,9 +1166,9 @@ def open_input(input_filename):
       casm.learn.set_input_defaults
   """
   # open input and always set input defaults before doing anything else
-  with open(input_filename, 'r') as f:
+  with open(input_filename, 'rb') as f:
     try:
-      input = set_input_defaults(json.load(f), input_filename)
+      input = set_input_defaults(json.loads(f.read().decode('utf-8')), input_filename)
     except Exception as e:
       print("Error parsing JSON in", args.settings[0])
       raise e

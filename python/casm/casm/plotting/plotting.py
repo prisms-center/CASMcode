@@ -1652,9 +1652,10 @@ class WeightSelect(object):
     self.hullplot_kwargs = hullplot_kwargs
     if not os.path.exists(input_filename):
       self.fit_input = casm.learn.example_input()
-      compat.dump(json, self.fit_input, self.input_filename, 'w' , indent=2)
+      with open(self.input_filename, 'wb') as file:
+        file.write(six.u(json.dumps(self.fit_input, indent=2)).encode('utf-8'))
     else:
-      self.fit_input = json.load(open(self.input_filename, 'r'))
+      self.fit_input = json.loads(open(self.input_filename, 'rb').read().decode('utf-8'))
     
     # create select box with weighting method options
     self.select_method = SelectInput(
@@ -1764,7 +1765,8 @@ class WeightSelect(object):
       self.fit_input["weight"]["kwargs"]["kT"] = self.input['kT'].value
       if self.select_method.value == ["wEref"]:
         self.fit_input["weight"]["kwargs"]["Eref"] = self.input['Eref'].value
-      compat.dump(json, self.fit_input, self.input_filename, 'w', indent=2)
+      with open(self.input_filename, 'wb') as file:
+        file.write(six.u(json.dumps(self.fit_input, indent=2)).encode('utf-8'))
       self.msg.value = "Saved input file: " + self.input_filename
     except Exception as e:
       self.msg.value = str(e)
@@ -1930,7 +1932,7 @@ class ECISelection(object):
     if cwd is None:
       cwd = os.getcwd()
     self.input_filename = os.path.join(cwd, input_filename,)
-    self.fit_input = json.load(open(self.input_filename, 'r'))
+    self.fit_input = json.loads(open(self.input_filename, 'rb').read().decode('utf-8'))
     halloffame_filename = os.path.join(cwd, self.fit_input.get("halloffame_filename", "halloffame.pkl"))
     self.hall = pickle.load(open(halloffame_filename, 'rb'))
     
@@ -2030,8 +2032,8 @@ class ECISelect(object):
     
     self.sel.eci_src = bokeh.models.ColumnDataSource(data=self.sel.eci)
     
-    with open(self.proj.dir.basis(self.proj.settings.default_clex), 'r') as f:
-      self.basis = json.load(f)
+    with open(self.proj.dir.basis(self.proj.settings.default_clex), 'rb') as f:
+      self.basis = json.loads(f.read().decode('utf-8'))
     
     set_src_data(sel.eci_src, 'index', range(self.sel.eci.shape[0]), force=True)
     set_src_data(sel.eci_src, 'branch', [j["orbit"][0] for j in self.basis["cluster_functions"] ], force=True)

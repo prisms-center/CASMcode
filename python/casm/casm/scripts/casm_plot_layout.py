@@ -141,8 +141,8 @@ class PlotLayoutCommand(casm.plotting.PlotTypeCommand):
     
     @classmethod
     def plot(cls, doc, args):
-        with open(args.input, 'r') as f:
-            layout_input = json.load(f)
+        with open(args.input, 'rb') as f:
+            layout_input = json.loads(f.read().decode('utf-8'))
         
         data = casm.plotting.PlottingData()
         layout = make_layout(None, layout_input['n_plots_each_row'])

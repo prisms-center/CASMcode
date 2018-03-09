@@ -123,8 +123,8 @@ class PlotScatterCommand(casm.plotting.PlotTypeCommand):
     
     @classmethod
     def plot(cls, doc, args):
-        with open(args.input, 'r') as f:
-            input = json.load(f)
+        with open(args.input, 'rb') as f:
+            input = json.loads(f.read().decode('utf-8'))
         
         data = casm.plotting.PlottingData()
         figure_kwargs = input.get('figure_kwargs', casm.plotting.default_figure_kwargs)

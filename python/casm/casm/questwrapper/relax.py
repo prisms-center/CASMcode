@@ -297,8 +297,8 @@ class Relax(object):
         if self.settings["preamble"] is not None:
         # Append any instructions given in the 'preamble' file, if given
             preamble = self.casm_directories.settings_path_crawl(self.settings["preamble"], self.configname, self.clex)
-            with open(preamble) as my_preamble:
-                cmd += "".join(my_preamble) + "\n"
+            with open(preamble, 'rb') as my_preamble:
+                cmd += "".join(my_preamble.read().decode('utf-8')) + "\n"
         if self.settings["prerun"] is not None:
             cmd += self.settings["prerun"] + "\n"
         cmd += "python -c \"import casm.questwrapper; casm.questwrapper.Relax('" + self.configdir + "').run()\"\n"
@@ -474,7 +474,7 @@ class Relax(object):
             output["failure_type"] = failure_type
 
         outputfile = os.path.join(self.calcdir, "status.json")
-        with open(outputfile, 'w') as stream:
+        with open(outputfile, 'wb') as stream:
             stream.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4,
                                     sort_keys=True)).encode('utf-8'))
         print("Wrote " + outputfile)
@@ -487,7 +487,7 @@ class Relax(object):
             rundir = os.path.join(self.calcdir, "run.final")
             output = self.properties(rundir)
             outputfile = os.path.join(self.calcdir, "properties.calc.json")
-            with open(outputfile, 'w') as stream:
+            with open(outputfile, 'wb') as stream:
                 stream.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4,
                                         sort_keys=True)).encode('utf-8'))
             print("Wrote " + outputfile)

@@ -438,7 +438,7 @@ class Relax(object):
             output["failure_type"] = failure_type
 
         outputfile = os.path.join(self.calcdir, "status.json")
-        with open(outputfile, 'w') as file:
+        with open(outputfile, 'wb') as file:
             file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
         print("Wrote " + outputfile)
         sys.stdout.flush()
@@ -452,7 +452,7 @@ class Relax(object):
             speciesfile = self.casm_directories.settings_path_crawl("SPECIES",self.configname,self.casm_settings.default_clex)
             output = self.properties(qedir, outfilename)
             outputfile = os.path.join(self.calcdir, "properties.calc.json")
-            with open(outputfile, 'w') as file:
+            with open(outputfile, 'wb') as file:
                 file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
             print("Wrote " + outputfile)
             sys.stdout.flush()

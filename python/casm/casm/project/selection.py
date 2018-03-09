@@ -126,8 +126,8 @@ class Selection(object):
             raise Exception("File: " + backup + " already exists")
           
           # read
-          with open(clist, 'r') as f:
-              j = json.load(f)
+          with open(clist, 'rb') as f:
+              j = json.loads(f.read().decode('utf-8'))
           
           for sk, sv in six.iteritems(j["supercells"]):
             for ck, cv in six.iteritems(sv):
