@@ -1,0 +1,15 @@
+echo "printenv: "
+printenv
+
+echo "g++ --version: "
+g++ --version
+
+WD=`pwd`
+echo "wd: "$WD
+
+./bootstrap.sh \
+    --prefix=$PREFIX \
+    --with-libraries=system,filesystem,program_options,regex,chrono,timer,test \
+  && ./b2 cxxflags="-std=c++11 -O3" -j $NCPUS \
+  && ./b2 install -j $NCPUS 
+
