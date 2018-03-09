@@ -101,7 +101,7 @@ namespace CASM {
       //This max_displacement is not considering rigid translational shifts of the structures's basis to the primclex's basis
       std::vector<Index> moving_atoms = _analyze_atoms(result.structures[0],
                                                        result.structures[result.structures.size() - 1],
-                                                       from_config.displacement().colwise().norm().maxCoeff() * 2 + primclex().crystallography_tol(),
+                                                       from_config,
                                                        from_uccoords,
                                                        to_uccoords,
                                                        vacancy_from,
@@ -178,19 +178,36 @@ namespace CASM {
 
     std::vector<Index> DiffTransConfigMapper::_analyze_atoms(BasicStructure<Site> &from,
                                                              BasicStructure<Site> &to,
-                                                             double max_disp,
+                                                             Configuration &config,
                                                              std::vector<UnitCellCoord> &from_uccoords,
                                                              std::vector<UnitCellCoord> &to_uccoords,
                                                              std::set<UnitCellCoord> &vacancy_from,
                                                              std::set<UnitCellCoord> &vacancy_to) const {
       // For image 00 set reference of POSCAR index to  basis site linear index
+      double max_disp = config.displacement().colwise().norm().maxCoeff() + primclex().crystallography_tol();
+      Eigen::MatrixXd strain = config.deformation();
+      Lattice mapped_lat = config.supercell().lattice();
+      Structure strained_prim = primclex().prim();
+      strained_prim.set_lattice(Lattice(strain * primclex().prim().lattice().lat_column_mat()), FRAC);
       for(auto &site : from.basis) {
-        from_uccoords.emplace_back(primclex().prim(), site, max_disp);
+        UnitCellCoord ucc(strained_prim, site, max_disp);
+        ucc.set_unit(primclex().prim());
+        Coordinate tmp = ucc.coordinate();
+        tmp.set_lattice(mapped_lat, CART);
+        tmp.within();
+        UnitCellCoord wucc(primclex().prim(), tmp, primclex().crystallography_tol());
+        from_uccoords.push_back(wucc);
       }
 
       // For last image  find POSCAR index to basis site linear index
       for(auto &site : to.basis) {
-        to_uccoords.emplace_back(primclex().prim(), site, max_disp);
+        UnitCellCoord ucc(strained_prim, site, max_disp);
+        ucc.set_unit(primclex().prim());
+        Coordinate tmp = ucc.coordinate();
+        tmp.set_lattice(mapped_lat, CART);
+        tmp.within();
+        UnitCellCoord wucc(primclex().prim(), tmp, primclex().crystallography_tol());
+        to_uccoords.push_back(wucc);
       }
       std::vector<Index> moving_atoms;
       for(int i = 0 ; i < from_uccoords.size(); i++) {
@@ -198,19 +215,20 @@ namespace CASM {
           moving_atoms.push_back(i);
         }
       }
-
       ////if this isn't a closed loop one of the species is a vacancy
       for(int i = 0 ; i < moving_atoms.size() ; i++) {
         if(vacancy_from.find(to_uccoords[moving_atoms[i]]) == vacancy_from.end()) {
           vacancy_from.insert(to_uccoords[moving_atoms[i]]);
         }
         else {
+          std::cout << "There should be only 1 vacancy in hop!" << std::endl;
           vacancy_from.erase(vacancy_from.find(to_uccoords[moving_atoms[i]]));
         }
         if(vacancy_to.find(from_uccoords[moving_atoms[i]]) == vacancy_to.end()) {
           vacancy_to.insert(from_uccoords[moving_atoms[i]]);
         }
         else {
+          std::cout << "There should be only 1 vacancy in hop!" << std::endl;
           vacancy_to.erase(vacancy_to.find(from_uccoords[moving_atoms[i]]));
         }
       }

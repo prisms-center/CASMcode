@@ -199,7 +199,7 @@ namespace CASM {
 
       std::vector<Index> _analyze_atoms(BasicStructure<Site> &from,
                                         BasicStructure<Site> &to,
-                                        double max_disp,
+                                        Configuration &config,
                                         std::vector<UnitCellCoord> &from_uccoords,
                                         std::vector<UnitCellCoord> &to_uccoords,
                                         std::set<UnitCellCoord> &vacancy_from,
