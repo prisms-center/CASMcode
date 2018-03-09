@@ -1,5 +1,5 @@
 """Defines the neb module methods"""
-
+import numpy as np
 import os
 import sys
 import json
@@ -9,6 +9,20 @@ import casm
 import vaspwrapper
 from casm.vaspwrapper.vasp_calculator_base import VaspCalculatorBase
 from vasp import Neb as calculator
+    
+def shuffle_endpoint_props(myjson,pos):
+    positions=map(lambda site: site.position.tolist(),pos.basis)
+    sort_inds=[ p[1] for p in sorted(zip(positions,range(len(positions))),key=lambda pair: pair[0])]
+    unsort_inds=np.argsort(sort_inds)
+    prev_basis=myjson["relaxed_basis"]
+    prev_basis_sorted=sorted(prev_basis)
+    myjson["relaxed_basis"]=[prev_basis_sorted[i] for i in unsort_inds]
+    if "relaxed_forces" in myjson.keys():
+        prev_forces=myjson["relaxed_forces"]
+        prev_forces_sorted=sorted(prev_forces)
+        myjson["relaxed_forces"]=[prev_forces_sorted[i] for i in unsort_inds]
+    return myjson
+
 
 class Neb(VaspCalculatorBase):
     """
@@ -193,11 +207,13 @@ class Neb(VaspCalculatorBase):
         """Make properties output as a list of dict of each image properties"""
         final_output = {}
         endpts = json.load(open(os.path.join(calcdir,"../endpoint_props.json")))
-        final_output["00"]=endpts["0"]
+        from_pos=os.path.join(calcdir,"00/POSCAR")
+        final_output["00"]=shuffle_endpoint_props(endpts["0"],vasp.io.poscar.Poscar(from_pos))
         num_images = vasp.io.get_incar_tag("IMAGES", calcdir)
+        to_pos=os.path.join(calcdir,str(num_images+1).zfill(2)+"/POSCAR")
         for img in [str(j).zfill(2) for j in range(1, num_images+1)]:
             vaspdir = calcdir + "/{}".format(img)
             output = super(Neb, self).properties(vaspdir, super_poscarfile, speciesfile)
             final_output[img] = output
-        final_output[str(num_images+1).zfill(2)]=endpts[str(num_images+1)]
+        final_output[str(num_images+1).zfill(2)]=shuffle_endpoint_props(endpts[str(num_images+1)],vasp.io.poscar.Poscar(to_pos))
         return final_output
