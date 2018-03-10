@@ -28,7 +28,7 @@ if [[ -z "$CASM_CONDA_TOKEN_DIR" ]]; then
     echo "at a directory (that is not in the git repository) and do:"
     echo "  anaconda auth --create --name "$CASM_CONDA_ID_USER"_api_token --scopes 'api' > \$CASM_CONDA_TOKEN_DIR/conda_api_token"
     echo "Configure the token for the appropriate channel with"
-    echo "  condaconfig --add channels https://conda.anaconda.org/t/<token>/$CASM_CONDA_ID_USER/label/$CASM_CONDA_ID_USER"
+    echo "  conda config --add channels https://conda.anaconda.org/t/<token>/$CASM_CONDA_ID_USER/label/$CASM_CONDA_LABEL"
     echo "For help, see: https://docs.anaconda.com/anaconda-cloud/user-guide/tasks/work-with-accounts"
     exit 1
 fi
