@@ -33,7 +33,7 @@ requirements:
     - gfortran_linux-64 {{ CASM_CONDAGCC_VERSION }}*
 
   run:
-    - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_BUILD_NUMBER }}
+    - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_CONDAGCC_BUILD_STR }}
     - gcc_linux-64 {{ CASM_CONDAGCC_VERSION }}*
     - gxx_linux-64 {{ CASM_CONDAGCC_VERSION }}*
     - gfortran_linux-64 {{ CASM_CONDAGCC_VERSION }}*

@@ -30,7 +30,7 @@ requirements:
     - six
   
   run:
-    - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_DEVTOOLSET_BUILD_STR }}
+    - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_DEVTOOLSET_BUILD_STR }}
   
 about:
   home: {{ CASM_URL }}
