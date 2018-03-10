@@ -20,15 +20,19 @@ export CASM_CONDA_ID_USER=$3
 # the repo top level directory
 export CASM_GIT_DIR=$(git rev-parse --show-toplevel)
 
+. $CASM_GIT_DIR/build_scripts/build_functions.sh
+
 if [[ -z "$CASM_CONDA_TOKEN_DIR" ]]; then
     echo "No CASM_CONDA_TOKEN_DIR variable set"
     echo "For passwordless upload, you should set the variable to point"
     echo "at a directory (that is not in the git repository) and do:"
-    echo "  anaconda auth --create --name "$CASM_CONDA_ID_USER"_upload_token --scopes 'conda' > \$CASM_CONDA_TOKEN_DIR/conda_upload_token"
+    echo "  anaconda auth --create --name "$CASM_CONDA_ID_USER"_api_token --scopes 'api' > \$CASM_CONDA_TOKEN_DIR/conda_api_token"
+    echo "Configure the token for the appropriate channel with"
+    echo "  condaconfig --add channels https://conda.anaconda.org/t/<token>/$CASM_CONDA_ID_USER/label/$CASM_CONDA_ID_USER"
+    echo "For help, see: https://docs.anaconda.com/anaconda-cloud/user-guide/tasks/work-with-accounts"
     exit 1
 fi
 
-. $CASM_GIT_DIR/build_scripts/build_functions.sh
 
 
 ### Check and confirm

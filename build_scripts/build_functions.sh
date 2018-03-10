@@ -21,8 +21,7 @@ build_conda_package () {
     BUILD_FLAGS+="-c defaults -c conda-forge -c prisms-center "
     BUILD_FLAGS+="--python $CASM_PYTHON_VERSION "
     
-    UPLOAD_FLAGS="-t $CASM_CONDA_TOKEN_DIR/conda_upload_token "
-    UPLOAD_FLAGS+="--user $CASM_CONDA_ID_USER "
+    UPLOAD_FLAGS="--user $CASM_CONDA_ID_USER "
     UPLOAD_FLAGS+="--label $CASM_CONDA_LABEL "
     
     mkdir -p $RESULT_DIR \
@@ -32,7 +31,7 @@ build_conda_package () {
            LOCATION=$(grep 'Nothing to test for' $RESULT_DIR/tmp.out | cut -f5 -d ' '); \
          fi \
       && cp $LOCATION $RESULT_DIR \
-      && anaconda upload $UPLOAD_FLAGS $LOCATION  \
+      && anaconda -t $CASM_CONDA_TOKEN_DIR/conda_api_token upload $UPLOAD_FLAGS $LOCATION \
       && echo "true" > $RESULT_DIR/DONE
   else
     echo "$RESULT_DIR/DONE already exists. skipping..."
