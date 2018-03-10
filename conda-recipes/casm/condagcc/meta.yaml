@@ -16,7 +16,7 @@ requirements:
   
   run:
     - python {{ CASM_PYTHON_VERSION }}*
-    - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_BUILD_NUMBER }}
+    - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_CONDAGCC_BUILD_STR }}
     - casm-cpp {{ CASM_CONDA_VERSION }} {{ CASM_CONDAGCC_BUILD_STR }}
     - casm-python {{ CASM_CONDA_VERSION }} {{ CASM_BUILD_NUMBER }}
   

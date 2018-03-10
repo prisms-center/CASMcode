@@ -7,7 +7,7 @@
 # Get variables
 . $CASM_GIT_DIR/build_scripts/build_variables.sh
 
-# function to build and upload package with recipe at conda-recipes/$1/$2 $3=version $4=build number
+# function to build and upload package with recipe at conda-recipes/$1/$2 $3=version $4=buildnumber
 build_conda_package () {
   RECIPE_DIR=$CASM_GIT_DIR/conda-recipes/$1/$2
   RESULT_DIR=$RECIPE_DIR/result_py$CASM_PYTHON_VERSION"_"$3"."$4
@@ -21,6 +21,10 @@ build_conda_package () {
     BUILD_FLAGS+="-c defaults -c conda-forge -c prisms-center "
     BUILD_FLAGS+="--python $CASM_PYTHON_VERSION "
     
+    UPLOAD_FLAGS="-t $CASM_CONDA_TOKEN_DIR/conda_upload_token "
+    UPLOAD_FLAGS+="--user $CASM_CONDA_ID_USER "
+    UPLOAD_FLAGS+="--label $CASM_CONDA_LABEL "
+    
     mkdir -p $RESULT_DIR \
       && conda build $BUILD_FLAGS $RECIPE_DIR > $RESULT_DIR/tmp.out \
       && LOCATION=$(grep 'conda upload' $RESULT_DIR/tmp.out | cut -f3 -d ' ') \
@@ -28,7 +32,7 @@ build_conda_package () {
            LOCATION=$(grep 'Nothing to test for' $RESULT_DIR/tmp.out | cut -f5 -d ' '); \
          fi \
       && cp $LOCATION $RESULT_DIR \
-      && anaconda upload --user $CASM_CONDA_ID_USER $LOCATION --label $CASM_CONDA_LABEL \
+      && anaconda upload $UPLOAD_FLAGS $LOCATION  \
       && echo "true" > $RESULT_DIR/DONE
   else
     echo "$RESULT_DIR/DONE already exists. skipping..."
@@ -45,25 +49,35 @@ build_conda_all () {
 
 # build conda-recipes/casm-python/linux using Docker container $DOCKER_ID_USER/casm-build-condagcc:$CASM_CONDA_VERSION
 linux_build_casm_python () {
+  echo "anaconda login"
+  anaconda login --username $CASM_CONDA_ID_USER
   CASM_GIT_DIR_INSIDE="/home/casmuser/CASMcode"
+  CASM_CONDA_TOKEN_DIR_INSIDE="/home/casmuser/tokens/anaconda"
   docker run --rm -it \
     -e CASM_GIT_ID_USER \
     -e CASM_CONDA_ID_USER \
     -e CASM_GIT_DIR=$CASM_GIT_DIR_INSIDE \
     -e CASM_BUILD_NUMBER=$CASM_BUILD_NUMBER \
     -v $CASM_GIT_DIR:$CASM_GIT_DIR_INSIDE \
+    -e CASM_CONDA_TOKEN_DIR=$CASM_CONDA_TOKEN_DIR_INSIDE \
+    -v $CASM_CONDA_TOKEN_DIR:$CASM_CONDA_TOKEN_DIR_INSIDE \
     $CASM_DOCKER_ID_USER/casm-build-condagcc:$CASM_BRANCH \
     bash -c "cd $CASM_GIT_DIR_INSIDE && . build_scripts/build_functions.sh && build_conda_package \"casm-python\" \"linux\" $CASM_CONDA_VERSION $CASM_BUILD_NUMBER"
 }
 
 # build conda-recipes/*/$1 using Docker container $DOCKER_ID_USER/casm-build-$1:$CASM_CONDA_VERSION
 linux_build_conda () {
+  echo "anaconda login"
+  anaconda login --username $CASM_CONDA_ID_USER
   CASM_GIT_DIR_INSIDE="/home/casmuser/CASMcode"
+  CASM_CONDA_TOKEN_DIR_INSIDE="/home/casmuser/tokens/anaconda"
   docker run --rm -it \
     -e CASM_GIT_ID_USER \
     -e CASM_CONDA_ID_USER \
     -e CASM_GIT_DIR=$CASM_GIT_DIR_INSIDE \
     -v $CASM_GIT_DIR:$CASM_GIT_DIR_INSIDE \
+    -e CASM_CONDA_TOKEN_DIR=$CASM_CONDA_TOKEN_DIR_INSIDE \
+    -v $CASM_CONDA_TOKEN_DIR:$CASM_CONDA_TOKEN_DIR_INSIDE \
     $CASM_DOCKER_ID_USER/casm-build-$1:$CASM_BRANCH \
     bash -c "cd $CASM_GIT_DIR_INSIDE && . build_scripts/build_functions.sh && build_conda_all \"$1\""
 }

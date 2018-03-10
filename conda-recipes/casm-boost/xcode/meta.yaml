@@ -10,7 +10,7 @@ source:
 
 build:
   number: {{ CASM_BOOST_BUILD_NUMBER }}
-  string: {{ CASM_BOOST_BUILD_STR }}
+  string: {{ CASM_BOOST_XCODE_BUILD_STR }}
   script_env:
     - NCPUS
   track_features:

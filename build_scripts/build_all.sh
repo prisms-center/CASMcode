@@ -1,9 +1,9 @@
 ## Build and push docker images and conda packages ##
 
-if [ "$#" -ne 3 ]; then
+if [[ "$#" -ne 3 ]]; then
     echo "Wrong number of arguments. Expected: "
     echo "  build_conda.sh <github-id> <docker-id> <conda-id>"
-    exit
+    exit 1
 fi
 
 set -e
@@ -19,6 +19,14 @@ export CASM_CONDA_ID_USER=$3
 
 # the repo top level directory
 export CASM_GIT_DIR=$(git rev-parse --show-toplevel)
+
+if [[ -z "$CASM_CONDA_TOKEN_DIR" ]]; then
+    echo "No CASM_CONDA_TOKEN_DIR variable set"
+    echo "For passwordless upload, you should set the variable to point"
+    echo "at a directory (that is not in the git repository) and do:"
+    echo "  anaconda auth --create --name "$CASM_CONDA_ID_USER"_upload_token --scopes 'conda' > \$CASM_CONDA_TOKEN_DIR/conda_upload_token"
+    exit 1
+fi
 
 . $CASM_GIT_DIR/build_scripts/build_functions.sh
 
@@ -55,13 +63,6 @@ then
   [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 
 fi
 
-### logins
-#echo "docker login"
-#docker login -u $CASM_DOCKER_ID_USER
-
-echo "anaconda login"
-anaconda login --username $CASM_CONDA_ID_USER
-
 ### Build base docker images for building linux conda packages
 build_docker "casm-build" "condagcc" \
 "--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
@@ -91,5 +92,3 @@ build_docker "casm" "devtoolset" \
 "--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
 "--build-arg DEVTOOLSET_VERSION=$CASM_DEVTOOLSET_VERSION" 
 
-### logouts
-anaconda logout

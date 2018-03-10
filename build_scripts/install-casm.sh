@@ -4,7 +4,7 @@
 if [ "$#" -ne 1 ]; then
     echo "Wrong number of arguments. Expected: "
     echo "  install-casm.sh <prefix>"
-    return
+    exit 1
 fi
 
 set -e  # exit if error
