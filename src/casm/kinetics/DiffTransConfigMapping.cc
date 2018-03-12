@@ -245,7 +245,7 @@ namespace CASM {
           Kinetics::DiffusionTransformation tmp = diff_trans;
           UnitCellCoord replace_this = tmp.occ_transform()[i].uccoord;
           tmp.occ_transform()[i].uccoord = replace_this + shift;
-          for(auto &traj : tmp.specie_traj()) {
+          for(auto &traj : tmp.species_traj()) {
             if(traj.from.uccoord == replace_this) {
               traj.from.uccoord = replace_this + shift;
             }
@@ -280,12 +280,12 @@ namespace CASM {
         std::vector<std::string> allowed_from_occs = primclex().prim().basis[from_coords[moving_atoms[i]].sublat()].allowed_occupants();
         Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), from_struc.basis[moving_atoms[i]].occ_name()));
         //for now pos is 0 because Molecules are hard
-        Kinetics::SpecieLocation from_loc(from_coords[moving_atoms[i]], from_occ_index, 0);
+        Kinetics::SpeciesLocation from_loc(from_coords[moving_atoms[i]], from_occ_index, 0);
         std::vector<std::string> allowed_to_occs = primclex().prim().basis[to_coords[moving_atoms[i]].sublat()].allowed_occupants();
         Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), from_struc.basis[moving_atoms[i]].occ_name()));
         //for now pos is 0 because Molecules are hard
-        Kinetics::SpecieLocation to_loc(to_coords[moving_atoms[i]], to_occ_index, 0);
-        diff_trans.specie_traj().emplace_back(from_loc, to_loc);
+        Kinetics::SpeciesLocation to_loc(to_coords[moving_atoms[i]], to_occ_index, 0);
+        diff_trans.species_traj().emplace_back(from_loc, to_loc);
         for(auto &occ_trans : diff_trans.occ_transform()) {
           if(occ_trans.uccoord == from_coords[moving_atoms[i]]) {
             occ_trans.from_value = from_occ_index;
@@ -298,11 +298,11 @@ namespace CASM {
       if(vacancy_from.size() && vacancy_to.size()) {
         std::vector<std::string> allowed_from_occs = primclex().prim().basis[vacancy_from.begin()->sublat()].allowed_occupants();
         Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), "Va"));
-        Kinetics::SpecieLocation from_loc(*vacancy_from.begin(), from_occ_index, 0);
+        Kinetics::SpeciesLocation from_loc(*vacancy_from.begin(), from_occ_index, 0);
         std::vector<std::string> allowed_to_occs = primclex().prim().basis[vacancy_to.begin()->sublat()].allowed_occupants();
         Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), "Va"));
-        Kinetics::SpecieLocation to_loc(*vacancy_to.begin(), to_occ_index, 0);
-        diff_trans.specie_traj().emplace_back(from_loc, to_loc);
+        Kinetics::SpeciesLocation to_loc(*vacancy_to.begin(), to_occ_index, 0);
+        diff_trans.species_traj().emplace_back(from_loc, to_loc);
         for(auto &occ_trans : diff_trans.occ_transform()) {
           if(occ_trans.uccoord == *vacancy_from.begin()) {
             occ_trans.from_value = from_occ_index;

@@ -362,15 +362,15 @@ namespace CASM {
     /// to small supercell size
     bool DiffTransConfiguration::is_valid(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
       std::set<Index> unique_indices;
-      for(auto &traj : diff_trans.specie_traj()) {
+      for(auto &traj : diff_trans.species_traj()) {
         Index l = bg_config.supercell().linear_index(traj.from.uccoord);
         unique_indices.insert(l);
       }
-      return (diff_trans.specie_traj().size() == unique_indices.size());
+      return (diff_trans.species_traj().size() == unique_indices.size());
     }
 
     bool DiffTransConfiguration::has_valid_from_occ(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
-      for(auto traj : diff_trans.specie_traj()) {
+      for(auto traj : diff_trans.species_traj()) {
         Index l = bg_config.supercell().linear_index(traj.from.uccoord);
         //std::cout << "comparing " << from_config().occ(l) << " to " << traj.from.occ << " on site " << l << std::endl;
         if(bg_config.occ(l) != traj.from.occ) {
