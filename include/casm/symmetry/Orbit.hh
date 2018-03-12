@@ -10,6 +10,7 @@
 #include "casm/container/multivector.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include "casm/symmetry/SymOp.hh"
+#include "casm/symmetry/SymGroup.hh"
 #include "casm/database/Named.hh"
 #include "casm/clex/HasPrimClex.hh"
 
@@ -121,6 +122,11 @@ namespace CASM {
       return this->find(e) != end();
     }
 
+    /// \brief Return the generating SymGroup
+    const SymGroup &generating_group() const {
+      return m_generating_group;
+    }
+
     /// \brief Return the SymCompare functor reference
     ///
     /// - implements symmetry properties of this orbit
@@ -149,6 +155,9 @@ namespace CASM {
 
     /// \brief element(i) compares equivalent to prototype().copy_apply(m_equivalence_map[i][j]) for all j
     multivector<SymOp>::X<2> m_equivalence_map;
+
+    /// \brief Group used to generate the orbit
+    SymGroup m_generating_group;
 
     /// \brief Functor used to check compare Element, including symmetry rules,
     /// and make canonical forms

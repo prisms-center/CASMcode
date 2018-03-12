@@ -31,10 +31,29 @@ namespace CASM {
 
   ENUM_IO_DECL(symmetry_type)
 
+  struct SymInfoOptions {
+    SymInfoOptions(COORD_TYPE _coord_type = FRAC, double _tol = TOL, Index _prec = 7, bool _print_matrix_tau = false) :
+      coord_type(_coord_type), tol(_tol), prec(_prec), print_matrix_tau(_print_matrix_tau) {}
+    COORD_TYPE coord_type;
+    double tol;
+    Index prec;
+    bool print_matrix_tau;
+  };
+
+  jsonParser &to_json(const SymInfoOptions &opt, jsonParser &json);
+
+  /// \brief Read from JSON
+  void from_json(SymInfoOptions &opt, const jsonParser &json);
+
+  template<>
+  struct jsonConstructor<SymInfoOptions> {
+    static SymInfoOptions from_json(const jsonParser &json);
+  };
+
   /// \brief Simple struct to be used as return type for SymOp::info().
   struct SymInfo {
 
-    SymInfo(const SymOp &op, const Lattice &lat);
+    SymInfo(const SymOp &op, const Lattice &lat, SymInfoOptions opt = SymInfoOptions());
 
     /// One of: identity_op, mirror_op, glide_op, rotation_op, screw_op,
     ///         inversion_op, rotoinversion_op, or invalid_op
@@ -70,12 +89,26 @@ namespace CASM {
               const Lattice &lat);
   };
 
+  /// \brief Print SymInfo
+  void print_sym_info(Log &log, const SymInfo &info, SymInfoOptions opt = SymInfoOptions());
 
   /// \brief Print SymInfo to string
-  std::string to_string(const SymInfo &info, COORD_TYPE mode);
+  std::string to_string(const SymInfo &info, SymInfoOptions opt = SymInfoOptions());
+
+  /// \brief Print symmetry symbol to string
+  std::string to_brief_unicode(const SymInfo &info, SymInfoOptions opt = SymInfoOptions());
 
   /// \brief Print SymInfo to string
-  std::string description(const SymOp &op, const Lattice &lat, COORD_TYPE mode);
+  std::string description(const SymOp &op, const Lattice &lat, SymInfoOptions opt = SymInfoOptions());
+
+  /// \brief Print SymGroup with matrix / tau
+  void description(Log &log, const SymGroup &g, const Lattice &lat, SymInfoOptions opt = SymInfoOptions());
+
+  /// \brief Print SymInfo to brief string
+  std::string brief_description(const SymOp &op, const Lattice &lat, SymInfoOptions opt = SymInfoOptions());
+
+  /// \brief Print SymGroup with brief string
+  void brief_description(Log &log, const SymGroup &g, const Lattice &lat, SymInfoOptions opt = SymInfoOptions());
 
   /// \brief Add to existing JSON object
   void add_sym_info(const SymInfo &info, jsonParser &j);

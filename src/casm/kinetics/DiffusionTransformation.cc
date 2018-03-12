@@ -216,7 +216,6 @@ namespace CASM {
       for(auto &t : m_species_traj) {
         t += frac;
       }
-      *m_cluster += frac;
       return *this;
     }
 
@@ -431,6 +430,7 @@ namespace CASM {
     }
 
     DiffusionTransformation &DiffusionTransformation::apply_sym(const SymOp &op) {
+      m_cluster.reset();
       for(auto &t : m_occ_transform) {
         t.apply_sym(op);
       }
@@ -438,7 +438,6 @@ namespace CASM {
       for(auto &t : m_species_traj) {
         t.apply_sym(op);
       }
-      m_cluster.reset();
       return *this;
     }
 

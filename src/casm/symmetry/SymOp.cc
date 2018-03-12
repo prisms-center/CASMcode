@@ -241,5 +241,31 @@ namespace CASM {
     }
   }
 
+  /// \brief Print formatted SymOp matrix and tau
+  ///
+  /// \code
+  ///                       Matrix |       Tau
+  ///      0.5  -0.86603         0 |     1.617
+  ///  0.86603       0.5         0 |   0.93357
+  ///        0         0         1 |    2.5843
+  /// \endcode
+  ///
+  /// - Includes Log indentation level
+  ///
+  void print_matrix_tau_col(Log &log, const SymOp &op, Index prec) {
+    Index w1 = 3;
+    w1 = print_matrix_width(log, op.matrix(), w1);
+    Eigen::IOFormat fmt1(prec, w1);
+
+    Index w2 = 3;
+    w2 = print_matrix_width(log, op.tau(), w2);
+    Eigen::IOFormat fmt2(prec, w2);
+
+    std::string header = std::string(2 + w1 * 3 - 6, ' ') + "Matrix | " + std::string(w2 - 3, ' ') + "Tau";
+    log << log.indent_str() << header << std::endl;
+    log << log.indent_str() << op.matrix().row(0).format(fmt1) << " | " << op.tau().row(0).format(fmt2) << std::endl;
+    log << log.indent_str() << op.matrix().row(1).format(fmt1) << " | " << op.tau().row(1).format(fmt2) << std::endl;
+    log << log.indent_str() << op.matrix().row(2).format(fmt1) << " | " << op.tau().row(2).format(fmt2) << std::endl;
+  }
 
 }

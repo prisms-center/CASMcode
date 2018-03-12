@@ -105,6 +105,18 @@ namespace CASM {
       return m_cart_coord(index);
     }
 
+    vector_type as_vec(COORD_TYPE _mode) const {
+      if(_mode == FRAC) {
+        return const_frac();
+      }
+      else if(_mode == CART) {
+        return const_cart();
+      }
+      else {
+        throw std::runtime_error("Error: In Coordinate::as_vec, mode must be FRAC or CART");
+      }
+    }
+
     /// \brief Positive translation of this coordinate by RHS.cart()
     Coordinate &operator+=(const Coordinate &RHS);
 

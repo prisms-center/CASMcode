@@ -40,7 +40,7 @@ namespace CASM {
     typedef ScelPeriodicSymCompare<Element> MostDerived;
   };
 
-  /// \brief Traits class for ScelPeriodicSymCompare
+  /// \brief Traits class for WithinScelPeriodicSymCompare
   template<typename _Element>
   struct traits<WithinScelSymCompare<_Element>> {
     typedef _Element Element;

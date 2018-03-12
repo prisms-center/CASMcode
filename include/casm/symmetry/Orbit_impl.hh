@@ -106,6 +106,7 @@ namespace CASM {
   GenericOrbit<_Element, _SymCompareType>::GenericOrbit(Element generating_element,
                                                         const SymGroup &generating_group,
                                                         const _SymCompareType &sym_compare) :
+    m_generating_group(generating_group),
     m_sym_compare(sym_compare) {
 
     // element(i) compares equivalent to prototype().copy_apply(equivalence_map[i][j]) for all j
@@ -204,17 +205,23 @@ namespace CASM {
     /// copy results
     try {
       m_equivalence_map.resize(tmp_element.size());
+      int row_i = 0;
       for(const auto &row : best.map) {
         m_element.push_back(tmp_element[row.b]);
         for(const auto &value : row.values) {
-          m_equivalence_map[row.b].push_back(g[value]);
+          m_equivalence_map[row_i].push_back(g[value]);
         }
+        ++row_i;
       }
     }
     catch(const std::exception &e) {
       default_err_log() << "Error in GenericOrbit constructor: \n"
                         << "  Failed copying sorted elements and equivalence map." << std::endl;
       throw e;
+    }
+
+    if(m_equivalence_map[0][0].index() != 0) {
+      throw std::runtime_error("Error in GenericOrbit constructor: First equivalence map element is not identity.");
     }
   }
 
