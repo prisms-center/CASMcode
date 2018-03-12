@@ -1,11 +1,12 @@
 """implements the parent class for vasp calculations"""
-
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
 import json
 import math
+import numpy as np
 import os
+import pandas
 import sys
 
 try:
@@ -15,7 +16,8 @@ except ImportError:
   from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
   from pbs import PBSError as JobsError
 
-from casm import project, wrapper, vasp
+from casm.project import Project, Selection
+from casm import vasp
 from casm.misc import noindent
 from casm.vaspwrapper import VaspWrapperError, read_settings, write_settings, \
   vasp_input_file_names
@@ -44,7 +46,7 @@ class VaspCalculatorBase(object):
         self.casm_directories = self.selection.proj.dir
         self.casm_settings = self.selection.proj.settings
         if self.casm_settings is None:
-            raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+            raise VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
         self.clex = self.casm_settings.default_clex
         if calctype:
@@ -54,18 +56,36 @@ class VaspCalculatorBase(object):
         self.calculator = None
         self.append_selection_data()
 
+    @classmethod
+    def from_configuration_dir(cls, configuration_dir, calctype, auto=True, sort=True):
+        """returns a instance of the Neb class instantited with a single configuration"""
+        # change config_dir to configuration_dir all over
+        proj = Project(configuration_dir)
+        sel = Selection(proj, "EMPTY", "config", False)
+        split_path = configuration_dir.split(os.path.sep)
+        index = split_path.index("training_data")
+        name = '/'.join(split_path[index+1:])
+        sel.data = pandas.DataFrame({"name":name, "selected":1}, index=range(1))
+        # try:
+        #     os.mkdir(os.path.join(proj.path, ".casm/tmp"))
+        # except:
+        #     pass
+        # sel_config = sel.saveas(os.path.join(proj.path, ".casm/tmp", configname.replace('/', '.')), True)
+        obj = cls(sel, calctype, auto, sort)
+        return obj
+
     def config_properties(self, config_data):
         """read properties directories of a specific configuration"""
         config_dict = dict(config_data)
-        config_dict["configdir"] =  self.casm_directories.configuration_dir(config_data["configname"], self.calc_subdir)
-        config_dict["calcdir"] = self.casm_directories.calctype_dir(config_data["configname"], self.clex, self.calc_subdir)
-        config_dict["setfile"] = self.casm_directories.settings_path_crawl("calc.json", config_data["configname"], self.clex, self.calc_subdir)
+        config_dict["configdir"] =  self.casm_directories.configuration_dir(config_data["name"], self.calc_subdir)
+        config_dict["calcdir"] = self.casm_directories.calctype_dir(config_data["name"], self.clex, self.calc_subdir)
+        config_dict["setfile"] = self.casm_directories.settings_path_crawl("calc.json", config_data["name"], self.clex, self.calc_subdir)
         return config_dict
 
     def append_selection_data(self):
         """append configproperties to selection.data"""
         config_dicts = []
-        for config_data in self.selection.data:
+        for index,config_data in self.selection.data.iterrows():
             config_dicts.append(self.config_properties(config_data))
         properites_dict = {}
         for key in config_dicts[0].keys():
@@ -83,7 +103,7 @@ class VaspCalculatorBase(object):
     def setup(self):
         """Setup initial relaxation run for the selection"""
         self.pre_setup()
-        for config_data in self.selection.data:
+        for index, config_data in self.selection.data.iterrows():
             self.config_setup(config_data)
 
     def config_setup(self, config_data):
@@ -107,12 +127,51 @@ class VaspCalculatorBase(object):
                                  super_poscarfile, speciesfile,
                                  self.sort, extra_input_files,
                                  settings["strict_kpoints"])
+        if settings["initial_deformation"] != None:
+            deformation = self.get_deformation(settings)
+            self.apply_deformation(deformation, config_data["calcdir"])
+
+    def get_deformation(self, settings):
+        """ Either reads or queries for deformation matrix from settings dict"""
+        if settings["initial_deformation"]["method"] == 'manual':
+            deformation = np.array(settings["initial_deformation"]["deformation"])
+        elif settings["initial_deformation"]["method"] == 'auto':
+            configname = settings["initial_deformation"]["configname"]
+            calctype = settings["initial_deformation"]["calctype"]
+            sel_tmp = Selection(self.selection.proj, "EMPTY", "config", False)
+            sel_tmp.data = pandas.DataFrame({"configname":configname, "selected":1},
+                                            index=range(1))
+            try:
+                os.mkdir(os.path.join(proj.path, ".casm/tmp"))
+            except:
+                pass
+            sel_config = sel_tmp.saveas(os.path.join(self.selection.proj.path, ".casm/tmp",
+                                                     configname.replace('/', '.')), True)
+            sel_config.query(["relaxation_strain(U,0:5,{})".format(calctype)])
+            deformation = np.array([float(sel_config.data["relaxation_strain(U,{},{})".format(i, calctype)].loc[0]) for i in range(6)])
+            os.remove(os.path.join(self.selection.proj.path, ".casm/tmp",
+                                   configname.replace('/', '.')))
+        else:
+            raise VaspWrapperError("use manual or auto mode to set initial deformation. see casm format --vasp for settings")
+
+        if deformation.ndim == 1:
+            deformation = np.array([[deformation[0], deformation[5], deformation[4]],
+                                    [deformation[5], deformation[1], deformation[3]],
+                                    [deformation[4], deformation[3], deformation[2]]])
+        return deformation
+
+    def apply_deformation(self, deformation, calcdir):
+        """applies the deformation and write the poscar to calcdir"""
+        poscarfile = os.path.join(calcdir, "POSCAR")
+        poscar_obj = vasp.io.poscar.Poscar(poscarfile)
+        poscar_obj.apply_deformation(deformation)
+        poscar_obj.write(poscarfile)
 
     @staticmethod
     def read_settings(setfile):
         """ Read settings from a settings calc.json file"""
 
-        settings = vaspwrapper.read_settings(setfile)
+        settings = read_settings(setfile)
         # set default settings if not present
         if not "ncore" in settings:
             settings["ncore"] = None
@@ -135,27 +194,27 @@ class VaspCalculatorBase(object):
 
     def get_vasp_input_files(self, config_data, settings):
         # Find required input files in CASM project directory tree
-        vaspfiles = vaspwrapper.vasp_input_file_names(self.casm_directories,
-                                                      config_data["configname"],
-                                                      self.clex,
-                                                      self.calc_subdir)
+        vaspfiles = vasp_input_file_names(self.casm_directories,
+                                          config_data["name"],
+                                          self.clex,
+                                          self.calc_subdir)
         incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile = vaspfiles
         # Find optional input files
         extra_input_files = []
         for s in settings["extra_input_files"]:
-            extra_input_files.append(self.casm_directories.settings_path_crawl(s, config_data["configname"],
+            extra_input_files.append(self.casm_directories.settings_path_crawl(s, config_data["name"],
                                                                                self.clex, self.calc_subdir))
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Neb.setup failed. Extra input file " + s + " not found in CASM project.")
         if settings["initial"]:
             extra_input_files += [self.casm_directories.settings_path_crawl(settings["initial"],
-                                                                            config_data["configname"],
+                                                                            config_data["name"],
                                                                             self.clex, self.calc_subdir)]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Neb.setup failed. No initial INCAR file " + settings["initial"] + " found in CASM project.")
         if settings["final"]:
             extra_input_files += [self.casm_directories.settings_path_crawl(settings["final"],
-                                                                            config_data["configname"],
+                                                                            config_data["name"],
                                                                             self.clex, self.calc_subdir)]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Neb.setup failed. No final INCAR file " + settings["final"] + " found in CASM project.")
@@ -163,23 +222,27 @@ class VaspCalculatorBase(object):
 
     def submit(self):
         """ submit jobs for a selection"""
-        db = JobDB()
-        db.update()
-        for config_data in self.selection.data:
+        self.pre_setup()
+        db = pbs.JobDB()
+        for index,config_data in self.selection.data.iterrows():
             print("Submitting...")
-            print("Configuration:", config_data["configname"])
+            print("Configuration:", config_data["name"])
             #first, check if the job has already been submitted and is not completed
             print("Calculation directory:", config_data["calcdir"])
             id = db.select_regex_id("rundir", config_data["calcdir"])
             print("JobID:", id)
             sys.stdout.flush()
-            if id != []:
-                for j in id:
-                    job = db.select_job(j)
-                    if job["jobstatus"] != "C":
-                        print("JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting.")
-                        sys.stdout.flush()
-                        continue
+            try:
+                if id != []:
+                    db.update()
+                    for j in id:
+                        job = db.select_job(j)
+                        if job["jobstatus"] != "C":
+                            print("JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting.")
+                            sys.stdout.flush()
+                            raise BreakException
+            except BreakException:
+                continue
             settings = self.read_settings(config_data["setfile"])
             # construct the Relax object
             calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
@@ -213,7 +276,7 @@ class VaspCalculatorBase(object):
                 continue
 
             elif status != "incomplete":
-                raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+                raise VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
                 sys.stdout.flush()
                 continue
 
@@ -231,7 +294,7 @@ class VaspCalculatorBase(object):
             if settings["preamble"] is not None:
                 # Append any instructions given in the 'preamble' file, if given
                 preamble = self.casm_directories.settings_path_crawl(settings["preamble"],
-                                                                     config_data["configname"],
+                                                                     config_data["name"],
                                                                      self.clex,
                                                                      self.calc_subdir)
                 with open(preamble) as my_preamble:
@@ -239,32 +302,32 @@ class VaspCalculatorBase(object):
             # Or just execute a single prerun line, if given
             if settings["prerun"] is not None:
                 cmd += settings["prerun"] + "\n"
-            #cmd += "python -c \"import pvaspwrapper; casm.vaspwrapper.Relax('" + config_obj.configdir + "').run()\"\n" #TODO
             cmd += self.run_cmd(config_data["configdir"], self.calctype)
             if settings["postrun"] is not None:
                 cmd += settings["postrun"] + "\n"
 
             print("Constructing a PBS job")
             sys.stdout.flush()
-            # construct a Job
-            job = Job(name=wrapper.jobname(config_data["configdir"]),\
-                      account=settings["account"],\
-                      nodes=nodes, ppn=ppn,\
-                      walltime=settings["walltime"],\
-                      pmem=settings["pmem"],\
-                      qos=settings["qos"],\
-                      queue=settings["queue"],\
-                      message=settings["message"],\
-                      email=settings["email"],\
-                      priority=settings["priority"],\
-                      command=cmd,\
-                      auto=self.auto)
+            # construct a pbs.Job
+            job = pbs.Job(name=casm.jobname(config_data["configdir"]),\
+                          account=settings["account"],\
+                          nodes=nodes, ppn=ppn,\
+                          walltime=settings["walltime"],\
+                          pmem=settings["pmem"],\
+                          qos=settings["qos"],\
+                          queue=settings["queue"],\
+                          message=settings["message"],\
+                          email=settings["email"],\
+                          priority=settings["priority"],\
+                          command=cmd,\
+                          auto=self.auto,
+			  software=db.config["software"])
 
             print("Submitting")
             sys.stdout.flush()
             # submit the job
             job.submit()
-            self.report_status(calculation.calcdir, "submitted")
+            self.report_status(config_data["calcdir"], "submitted")
 
             # return to current directory
             os.chdir(currdir)
@@ -277,20 +340,20 @@ class VaspCalculatorBase(object):
         return None
 
     @staticmethod
-    def _calc_submit_node_info(config_data, settings):
+    def _calc_submit_node_info(settings, config_data):
         """return nodes, ppn from settings of a configuration"""
-        if "nodes" in settings and "ppn" in settings:
+        if settings["nodes"] != None and settings["ppn"] != None:
             return int(settings["nodes"]), int(settings["ppn"])
-        elif "atoms_per_proc" in settings and "ppn" in settings:
+        elif settings["atom_per_proc"] != None and settings["ppn"] != None:
             pos = vasp.io.Poscar(os.path.join(config_data["calcdir"], "POSCAR"))
             num = len(pos.basis)
             nodes = int(math.ceil(float(num)/float(settings["atom_per_proc"])/float(settings["ppn"])))
             return nodes, int(settings["ppn"])
-        elif "nodes_per_image" in settings and "ppn" in settings:
+        elif settings["nodes_per_image"] != None and settings["ppn"] != None:
             nodes = int(config_data["n_images"]) * float(settings["nodes_per_image"])
             return nodes, int(settings["ppn"])
         else:
-            raise vaspwrapper.VaspWrapperError("Not enough information to determine nodes and ppn information")
+            raise VaspWrapperError("Not enough information to determine nodes and ppn information")
 
     @staticmethod
     def run_settings(settings):
@@ -335,7 +398,8 @@ class VaspCalculatorBase(object):
 
     def run(self):
         """run the job of a selection"""
-        for config_data in self.selection.data:
+        self.pre_setup()
+        for index,config_data in self.selection.data.iterrows():
             settings = self.read_settings(config_data["setfile"])
             calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
 
@@ -356,14 +420,14 @@ class VaspCalculatorBase(object):
 
                 # write results to properties.calc.json
                 self.finalize(config_data)
-                return
+                continue
 
             elif status == "not_converging":
                 print("Status:", status)
                 self.report_status(config_data["calcdir"], "failed", "run_limit")
                 print("Returning")
                 sys.stdout.flush()
-                return
+                continue
 
             elif status == "incomplete":
 
@@ -375,7 +439,7 @@ class VaspCalculatorBase(object):
 
             else:
                 self.report_status(config_data["calcdir"], "failed", "unknown")
-                raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+                raise VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
 
@@ -398,7 +462,7 @@ class VaspCalculatorBase(object):
                 # print a local settings file, so that the run_limit can be extended if the
                 #   convergence problems are fixed
 
-                config_set_dir = self.casm_directories.configuration_calc_settings_dir(config_data["configname"],
+                config_set_dir = self.casm_directories.configuration_calc_settings_dir(config_data["name"],
                                                                                        self.clex,
                                                                                        self.calc_subdir)
 
@@ -407,12 +471,12 @@ class VaspCalculatorBase(object):
                 except:
                     pass
                 settingsfile = os.path.join(config_set_dir, "calc.json")
-                vaspwrapper.write_settings(settings, settingsfile)
+                write_settings(settings, settingsfile)
 
                 print("Writing:", settingsfile)
                 print("Edit the 'run_limit' property if you wish to continue.")
                 sys.stdout.flush()
-                return
+                continue
 
             elif status == "complete":
 
@@ -429,7 +493,7 @@ class VaspCalculatorBase(object):
 
             else:
                 self.report_status(config_data["calcdir"], "failed", "unknown")
-                raise vaspwrapper.VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
+                raise VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
 
@@ -466,7 +530,7 @@ class VaspCalculatorBase(object):
         checks for convergence
         calls the finalize function to write the approprite properties files.
         """
-        for config_data in self.selection.data:
+        for index,config_data in self.selection.data.iterrows():
             try:
                 settings = self.read_settings(config_data["setfile"])
                 calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
@@ -481,7 +545,7 @@ class VaspCalculatorBase(object):
         # write properties.calc.json
         vaspdir = os.path.join(config_data["calcdir"], "run.final")
         speciesfile = self.casm_directories.settings_path_crawl("SPECIES",
-                                                                config_data["configname"],
+                                                                config_data["name"],
                                                                 self.clex,
                                                                 self.calc_subdir)
         output = self.properties(vaspdir, super_poscarfile, speciesfile)
@@ -577,3 +641,7 @@ class VaspCalculatorBase(object):
                     output["relaxed_mag_basis"][unsort_dict[i]] = noindent.NoIndent(ocar.mag[i])
 
         return output
+
+class BreakException(Exception):
+    """use this exception to break an outer loop"""
+    pass

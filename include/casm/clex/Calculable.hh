@@ -41,6 +41,9 @@ namespace CASM {
 
     void push_back_source(const jsonParser &source);
 
+    std::map<std::string, jsonParser> calc_properties_map() const {
+      return m_calc_properties_map;
+    }
   protected:
 
     /// Call in MostDerived any time DoF may be modified

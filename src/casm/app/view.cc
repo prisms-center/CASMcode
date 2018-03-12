@@ -166,6 +166,7 @@ namespace CASM {
             fs::path POSCARpath = tmp_dir / ("POSCAR" + ostr.str());
             file.open(POSCARpath);
             VaspIO::PrintPOSCAR p(interpol.config_enum_interpol()[count]);
+            p.sort();
             p.print(file);
             file.close();
           }

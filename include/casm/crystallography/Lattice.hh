@@ -37,12 +37,13 @@ namespace CASM {
     Lattice(const Eigen::Vector3d &vec1,
             const Eigen::Vector3d &vec2,
             const Eigen::Vector3d &vec3,
-            double xtal_tol = TOL);
+            double xtal_tol = TOL,
+            bool force = false);
 
     ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
     ///(e.g., lat_mat is equivalent to coord_trans[FRAC])
     Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat = Eigen::Matrix3d::Identity(),
-            double xtal_tol = TOL);
+            double xtal_tol = TOL, bool force = false);
 
     /// \brief Construct FCC primitive cell of unit volume
     static Lattice fcc(double tol = TOL);

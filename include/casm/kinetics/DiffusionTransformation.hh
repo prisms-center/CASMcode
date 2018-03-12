@@ -24,9 +24,15 @@ namespace CASM {
 
   namespace Kinetics {
 
-    /// \brief Specifies a particular species
+    /// \brief Specifies a particular specie
+    /// A SpeciesLocation object describes a particular specie at a specific
+    /// lattice + basis site within the infinite crystal
+    /// contains the UnitCellCoord (b, i, j, k) and occupant index (integer describing
+    /// configurational degrees of freedom)
     struct SpeciesLocation : public Comparisons<CRTPBase<SpeciesLocation>> {
 
+      /// Constructor Create SpeciesLocation using a bijk and
+      /// an occ index into that basis site's occupant array
       SpeciesLocation(const UnitCellCoord &_uccoord, Index _occ, Index _pos);
 
       UnitCellCoord uccoord;
@@ -37,6 +43,7 @@ namespace CASM {
       /// Position of species in Molecule
       Index pos;
 
+      /// Lexicographical comparison of SpeciesLocation for sorting purposes
       bool operator<(const SpeciesLocation &B) const;
 
       const Molecule &mol() const;
@@ -48,7 +55,8 @@ namespace CASM {
       std::tuple<UnitCellCoord, Index, Index> _tuple() const;
     };
 
-    /// \brief Print DiffTransInvariants
+    /// \brief Prints the information contained within this SpeciesLocation
+    /// b, i j k : occ pos
     std::ostream &operator<<(std::ostream &sout, const SpeciesLocation &obj);
 
   }
@@ -67,27 +75,45 @@ namespace CASM {
   namespace Kinetics {
 
     /// \brief Describes how one species moves
+    /// A SpeciesTrajectory object tracks a singular species on its path from
+    /// one site to another within the infinite crystal
+    /// it contains two SpeciesLocations from and to representing the initial and
+    /// final site the species is found on. Both SpecieLocation objects should
+    /// have the same Specie Information (a single atom is moving)
     class SpecieTrajectory : public Comparisons<CRTPBase<SpecieTrajectory>> {
 
     public:
-
+      /// Constructor Creates SpecieTrajectory from two SpecieLocation objects
+      /// SpecieLocation objects should have the same Specie information
+      /// transforming a Ni into an Al does not make sense
       SpecieTrajectory(const SpeciesLocation &_from, const SpeciesLocation &_to);
 
+      /// Rigidly shifts all sites within a SpecieTrajectory
+      /// by a lattice translation
       SpecieTrajectory &operator+=(UnitCell frac);
 
+      /// Rigidly shifts (negatively) all sites within a
+      /// SpecieTrajectory by a lattice translation
       SpecieTrajectory &operator-=(UnitCell frac);
 
+      /// Tells whether or not the SpeciesTrajectory is valid due to
+      /// having the same Species moving
       bool species_types_map() const;
 
+      /// Tells whether or not the SpecieTrajectory is moving a species or not
+      /// true indicates the trajectory is useless
       bool is_no_change() const;
 
       SpeciesLocation from;
       SpeciesLocation to;
 
+      /// Lexicographical comparison of SpecieTrajectories for sorting purposes
       bool operator<(const SpecieTrajectory &B) const;
 
+      /// Apply symmetry to locations within the trajectory
       SpecieTrajectory &apply_sym(const SymOp &op);
 
+      /// Swaps the direction of the trajectory
       void reverse();
 
     private:
@@ -118,7 +144,8 @@ namespace CASM {
     public:
 
       DiffTransInvariants(const DiffusionTransformation &trans);
-
+      /// Upon application of symmetry the cluster size&shape does not change
+      /// as well as the species that are present
       ClusterInvariants<IntegralCluster> cluster_invariants;
       std::map<AtomSpecies, Index> species_count;
 
@@ -151,51 +178,78 @@ namespace CASM {
     CRTPBase<DiffusionTransformation >>> >>> DiffTransBase;
 
     /// \brief Describes how species move
+    /// A DiffusionTransformation object is an object that represents
+    /// a series of atoms(or vacancies) moving from sites on an infinite crystal
+    /// to other sites on the crystal. There can be multiple ways of examining a
+    /// DiffusionTransformation viewing a single site and watching the species that
+    /// move through, or tracking a single species on the sites that it moves through.
     class DiffusionTransformation : public DiffTransBase {
 
     public:
-
+      /// Constructor Create a null DiffusionTransformation on an infinite
+      /// crystal represented by a structure
       DiffusionTransformation(const Structure &_prim);
 
-
+      /// Return the tiling unit of the infinite crystal
       const Structure &prim() const;
-
+      /// Rigid Shift all the coordinates in the DiffusionTransformation by
+      /// a lattice translation
       DiffusionTransformation &operator+=(UnitCell frac);
 
+      /// Checks to see if the species are compatible with a given site
+      /// according to the prim degrees of freedom
       bool is_valid_occ_transform() const;
 
       /// \brief Check species_types_map() && !breaks_indivisible_mol() && !is_subcluster_transformation()
+      /// Ensures that the DiffusionTransformation is compatible with itself
       bool is_valid_species_traj() const;
 
+      /// Checks to see if the sub objects contain the species required
       bool species_types_map() const;
 
+      /// Checks to see if the transformation treats molecules illegally
       bool breaks_indivisible_mol() const;
 
+      /// Checks to see if the transformation can be represented by
+      /// one or more smaller transformations
       bool is_subcluster_transformation() const;
 
       /// \brief Check if species_traj() and occ_transform() are consistent
       bool is_self_consistent() const;
 
+      /// Performs all validity checks to see if DiffusionTransformation makes sense physically
       bool is_valid() const;
 
+      /// Non-const access to OccupationTransformation vector
+      /// (view point of sites and species moving through them)
       std::vector<OccupationTransformation> &occ_transform();
+      /// Const access to OccupationTransformation vector
+      /// (view point of sites and species moving through them)
       const std::vector<OccupationTransformation> &occ_transform() const;
-
+      /// Non-const access to SpecieTrajectory vector
+      /// (view point of tracking a single species and locations it moves through)
       std::vector<SpecieTrajectory> &species_traj();
+      /// Const access to SpecieTrajectory vector
+      /// (view point of tracking a single species and locations it moves through)
       const std::vector<SpecieTrajectory> &species_traj() const;
-
+      /// Gives the cluster (sites only) that this Diffusion Transformation
+      /// lives on
       const IntegralCluster &cluster() const;
+      /// Gives a map from type of atom to amount in this DiffusionTransformation
       const std::map<AtomSpecies, Index> &species_count() const;
 
       /// \brief Compare DiffusionTransformation
-      ///
+      /// Lexicographical Comparison for sorting purposes
       /// - Comparison is made using the sorted forms
       bool operator<(const DiffusionTransformation &B) const;
 
+      /// Puts Transformation in sorted form
       DiffusionTransformation &sort();
 
+      /// Gives a sorted version of this
       DiffusionTransformation sorted() const;
 
+      /// Tells whether this is sorted or not
       bool is_sorted() const;
 
       /// \brief Return the cluster size
@@ -207,12 +261,19 @@ namespace CASM {
       /// \brief Return the max pair distance, or 0.0 if size() <= 1
       double max_length() const;
 
+      ///Applies symmetry to the coordinates of this Transformation
+      /// updates occ_transform and specie_trajectory accordingly
       DiffusionTransformation &apply_sym(const SymOp &op);
 
+      ///Applies symmetry using permute_iterator
       DiffusionTransformation &apply_sym(const PermuteIterator &it);
 
+      /// Apply this transformation to a Configuration to
+      /// Return a configuration with altered occupation
       Configuration &apply_to(Configuration &config) const;
 
+      /// swaps the direction of the movement of species
+      /// makes the final state the initial state
       void reverse();
 
 

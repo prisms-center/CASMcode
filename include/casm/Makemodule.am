@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 casm_includedir=$(includedir)/casm
 
 casm_include_HEADERS = \
@@ -969,3 +970,31 @@ casm_enumerator_include_HEADERS = \
   include/casm/enumerator/InputEnumerator.hh\
   include/casm/enumerator/EnumInputParser.hh
 
+=======
+#include include/casm/experimental.am
+
+casmincludedir=$(includedir)/casm
+casminclude_HEADERS=\
+include/casm/CASM_global_definitions.hh\
+include/casm/CASM_global_Eigen.hh\
+include/casm/CASM_global_enum.hh
+
+include include/casm/strain/Makemodule.am
+include include/casm/basis_set/Makemodule.am
+include include/casm/app/Makemodule.am
+include include/casm/external/Makemodule.am
+include include/casm/misc/Makemodule.am
+include include/casm/symmetry/Makemodule.am
+include include/casm/clusterography/Makemodule.am
+include include/casm/system/Makemodule.am
+include include/casm/casm_io/Makemodule.am
+include include/casm/container/Makemodule.am
+include include/casm/clex/Makemodule.am
+include include/casm/version/Makemodule.am
+include include/casm/hull/Makemodule.am
+include include/casm/crystallography/Makemodule.am
+include include/casm/monte_carlo/Makemodule.am
+include include/casm/completer/Makemodule.am
+include include/casm/kinetics/Makemodule.am
+include include/casm/database/Makemodule.am
+>>>>>>> skk74/0.3a1_database_sk

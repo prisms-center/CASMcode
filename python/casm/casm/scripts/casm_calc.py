@@ -62,55 +62,50 @@ available_calculators = {
 }
 
 def main(argv = None):
-  if argv is None:
-    argv = sys.argv[1:]
+    if argv is None:
+        argv = sys.argv[1:]
+      
+    parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
+    parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
+    parser.add_argument('-t', '--type', help=configtype_help, type=str, default="config")
+    parser.add_argument('--calctype', help=calctype_help, type=str, default="")
+    parser.add_argument('--path', help=path_help, type=str, default=None)
+    parser.add_argument('--run', help=run_help, action="store_true", default=False)
+    parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
+    parser.add_argument('--setup', help=setup_help, action="store_true", default=False)
+    parser.add_argument('--report', help=report_help, action="store_true", default=False)
+    args = parser.parse_args(argv)
     
-  parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
-  parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
-  parser.add_argument('-t', '--type', help=configtype_help, type=str, default="config")
-  parser.add_argument('--calctype', help=calctype_help, type=str, default="")
-  parser.add_argument('--path', help=path_help, type=str, default=None)
-  parser.add_argument('--run', help=run_help, action="store_true", default=False)
-  parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
-  parser.add_argument('--setup', help=setup_help, action="store_true", default=False)
-  parser.add_argument('--report', help=report_help, action="store_true", default=False)
-  args = parser.parse_args(argv)
-  
-  if args.path is None:
-    args.path = getcwd()
-
-  try:
-    proj = Project(abspath(args.path))
-    sel = Selection(proj, args.configs, args.type, all=False) 
-    if args.calctype == "":
-      #get default calctype
-      args.calctype = proj.settings.default_clex.calctype 
-
-    global_settings = json.loads(os.path.join(proj.dir.settings.calctype_settings_dir(args.calctype), "calc.json"))
-    software = global_settings["software"]
-    method = global_settings["method"]
-    # Construct with Selection:
-    # - This provides access to the Project, via sel.proj
-    # - From the project you can make calls to run interpolation and query lattice relaxations
-    calculator = available_calculators[software][method](sel, args.calctype)
-
-    if args.setup:
-      calculator.setup()
-
-    elif args.submit:
-      calculator.setup()
-      calculator.submit()
-
-    elif args.run:
-      calculator.setup()
-      calculator.run()
-
-    elif args.report:
-      calculator.report()
-
-  except Exception as e:
-    print(e)
-    sys.exit(1)
+    if args.path is None:
+        args.path = getcwd()
+    
+    try:
+        proj = Project(abspath(args.path))
+        sel = Selection(proj, args.configs, args.type, all=False)
+        if args.calctype == "":
+            #get default calctype
+            args.calctype = proj.settings.default_clex.calctype
+    
+        global_settings = json.load(open(join(proj.dir.calctype_settings_dir(args.calctype), "calc.json")))
+        software = global_settings["software"]
+        method = global_settings["method"]
+        # Construct with Selection:
+        # - This provides access to the Project, via sel.proj
+        # - From the project you can make calls to run interpolation and query lattice relaxations
+        calculator = available_calculators[software][method](sel, args.calctype)
+    
+        if args.setup:
+            calculator.setup()
+    
+        elif args.submit:
+            calculator.submit()
+    
+        elif args.run:
+            calculator.run()
+    
+    except Exception as e:
+      print(e)
+      sys.exit(1)
 
 if __name__ == "__main__":
   main()

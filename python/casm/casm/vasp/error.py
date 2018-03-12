@@ -664,7 +664,7 @@ def error_check(jobdir, stdoutfile, err_types):
     else:
         return err
 
-def error_check_neb(jobdir, stdout, err_types):
+def error_check_neb(jobdir, stdoutfile, err_types):
     """ Check vasp stdout for errors in a neb calculation"""
     image_folders = [str(i).zfill(2) for i in range(1, 100) if os.path.exists(os.path.join(jobdir, str(i).zfill(2)))][:-1]
     err = dict()
@@ -681,7 +681,7 @@ def error_check_neb(jobdir, stdout, err_types):
         possible = [err_objs[s] for s in err_types]
 
     # Error to check line by line, only look for first of each type
-    sout = open(os.path.join(jobdir, "01", stdout), 'r')
+    sout = open(stdoutfile, 'r')
     for line in sout:
         for p in possible:
             if not p.__class__.__name__ in err:
@@ -726,3 +726,155 @@ def crash_check(jobdir, stdoutfile, crash_types):
     else:
         return {err.__class__.__name__: err}
 
+def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=None, command=None, ncpus=None, kpar=None, poll_check_time = 5.0, err_check_time = 60.0, err_types=None, is_neb = False):
+    """ Run vasp using subprocess.
+
+        The 'command' is executed in the directory 'jobdir'.
+
+        Args:
+            jobdir:     directory to run vasp.  If jobdir is None, the current directory is used.
+            stdout:     filename to write to.  If stdout is None, "std.out" is used.
+            stderr:     filename to write to.  If stderr is None, "std.err" is used.
+            npar:       (int or None) VASP INCAR NPAR setting. If npar is None, then NPAR is removed from INCAR
+            kpar:       (int or None) VASP INCAR KPAR setting. If kpar is None, then KPAR is removed from INCAR
+            ncore:      (int or None) VASP INCAR NCORE setting. If not npar is None or ncore is None, then NCORE is removed from INCAR
+            command:    (str or None) vasp execution command
+                        If command != None: then 'command' is run in a subprocess
+                        Else, if ncpus == 1, then command = "vasp"
+                        Else, command = "mpirun -np {NCPUS} vasp"
+            ncpus:      (int) if '{NCPUS}' is in 'command' string, then 'ncpus' is substituted in the command.
+                        if ncpus==None, $PBS_NP is used if it exists, else 1
+            poll_check_time: how frequently to check if the vasp job is completed
+            err_check_time: how frequently to parse vasp output to check for errors
+            err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError', 'NbandsError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
+
+    """
+    print "Begin vasp run:"
+    sys.stdout.flush()
+
+    if jobdir is None:
+        jobdir = os.getcwd()
+
+    currdir = os.getcwd()
+    os.chdir(jobdir)
+
+    if ncpus is None:
+        if "PBS_NP" in os.environ:
+            ncpus = os.environ["PBS_NP"]
+        elif "SLURM_NTASKS" in os.environ:
+            ncpus = os.environ["SLURM_NTASKS"]
+        else:
+            ncpus = 1
+
+    if command is None:
+        if ncpus == 1:
+            command = "vasp"
+        else:
+            command = "mpirun -np {NCPUS} vasp"
+
+    if re.search("\{NCPUS\}",command):
+        command = command.format(NCPUS=str(ncpus))
+
+    ### Expand remaining environment variables
+    command = os.path.expandvars(command)
+
+    if npar is not None:
+        ncore = None
+
+    if npar is not None or ncore is not None:
+        io.set_incar_tag({"NPAR":npar, "NCORE":ncore}, jobdir)
+
+    if kpar is not None:
+        io.set_incar_tag({"KPAR":kpar}, jobdir)
+
+    print "  jobdir:", jobdir
+    print "  exec:", command
+    sys.stdout.flush()
+
+    if is_neb:
+        # checkdir = os.path.join(jobdir, "01")
+        sout = open(os.path.join(jobdir, stdout), 'w')
+    else:
+        # checkdir = jobdir
+        sout = open(os.path.join(jobdir, stdout), 'w')
+    serr = open(os.path.join(jobdir, stderr), 'w')
+    err = None
+    p = subprocess.Popen(command.split(), stdout=sout, stderr=serr)
+
+    # wait for process to end, and periodically check for errors
+    poll = p.poll()
+    last_check = time.time()
+    stopcar_time = None
+    while poll  is None:
+        time.sleep(poll_check_time)
+
+        if time.time() - last_check > err_check_time:
+            last_check = time.time()
+            if is_neb:
+                err = error_check_neb(jobdir, os.path.join(jobdir, stdout), err_types)
+            else:
+                err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
+            if err != None:
+                # FreezeErrors are fatal and usually not helped with STOPCAR
+                if "FreezeError" in err.keys():
+                    print "  VASP is frozen, killing job"
+                    sys.stdout.flush()
+                    # Sometimes p.kill doesn't work if the process is on multiple nodes
+                    os.kill(p.pid, signal.SIGKILL)
+                    p.kill()
+                    # If the job is re-invoked (e.g. via mpirun or srun) too quickly
+                    #   after the previous job ended, infinitiband clusters can have
+                    #   some issues with resource allocation. A 30s sleep solves this.
+                    time.sleep(30)
+                # Other errors can be killed with STOPCAR, which is safer
+                elif stopcar_time is None:
+                    print "  Found errors:",
+                    for e in err:
+                        print e,
+                    print "\n  Killing job with STOPCAR"
+                    sys.stdout.flush()
+                    io.write_stopcar('e', jobdir)
+                    stopcar_time = time.time()
+                    time.sleep(30)
+                # If the STOPCAR exists, wait 5 min before manually killing the job
+                elif time.time() - stopcar_time > 300:
+                    print "  VASP is non-responsive, killing job"
+                    sys.stdout.flush()
+                    os.kill(p.pid, signal.SIGKILL)
+                    p.kill()
+                    # If the job is re-invoked (e.g. via mpirun or srun) too quickly
+                    #   after the previous job ended, infinitiband clusters can have
+                    #   some issues with resource allocation. A 30s sleep solves this.
+                    time.sleep(30)
+
+        poll = p.poll()
+
+    # close output files
+    sout.close()
+    serr.close()
+
+    os.chdir(currdir)
+
+    print "Run complete"
+    sys.stdout.flush()
+
+    # check finished job for errors
+    if err is None:
+        # Crash-type errors take priority over any other error that may show up
+        if is_neb: #if its neb it checks for crashes in the first image
+            err = crash_check(os.path.join(jobdir, "01"),
+                              os.path.join(jobdir, stdout), err_types)
+        else:
+            err = crash_check(jobdir, os.path.join(jobdir, stdout), err_types)
+        if err is None:
+            if is_neb:
+                err = error_check_neb(jobdir, os.path.join(jobdir, stdout), err_types)
+            else:
+                err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
+    if err != None:
+        print "  Found errors:",
+        for e in err:
+            print e,
+    print "\n"
+
+    return err

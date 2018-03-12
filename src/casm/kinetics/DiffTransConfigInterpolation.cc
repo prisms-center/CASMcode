@@ -34,7 +34,11 @@ namespace CASM {
       auto diff_trans_config = _diff_trans_config.sorted();
       auto configs = get_relaxed_endpoints(diff_trans_config, calctype);
       Configuration from_config = configs.first;
+      m_current = from_config;
       Configuration to_config = configs.second;
+      if(from_config.supercell().lattice().lat_column_mat() != to_config.supercell().lattice().lat_column_mat()) {
+        throw std::runtime_error("Attempting to interpolate between configs with different lattices.\n You will have a bad time.");
+      }
       DiffusionTransformation diff_trans  = diff_trans_config.diff_trans();
       if(!from_config.has_displacement()) {
         from_config.init_displacement();
@@ -112,22 +116,76 @@ namespace CASM {
       DB::Selection<DiffTransConfiguration> dtc_sel = make_selection<DiffTransConfiguration>(
                                                         primclex, kwargs, "names", "selection", enumerator_name, OnError::THROW);
       int n_images = kwargs["n_images"].get<int>(); // set defaults with get_else
+      std::string endpt_calctype = kwargs["endstate_calctype"].get<std::string>();
       std::string calctype = kwargs["calctype"].get<std::string>();
       Index i;
       for(const auto &config : dtc_sel.selected()) {
         // Create a interpolation object
-        DiffTransConfigInterpolation enumerator(config, n_images, calctype);
+        DiffTransConfigInterpolation enumerator(config, n_images, endpt_calctype);
         i = 0;
         for(const auto &img_config : enumerator) {
           // file_path = $project_dir/training_data/diff_trans/$diff_trans_name/$scelname/$configid/$image_number/POSCAR
           int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
-          std::string calctype = kwargs[config.name()]["calctype"].get<std::string>();
           auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
-          file_path += "N_images_" + std::to_string(n_images) + "/0" + std::to_string(i) + "/POSCAR";
+          file_path += "/N_images_" + std::to_string(n_images) + "/poscars/0" + std::to_string(i) + "/POSCAR";
+          /* file_path = file_path /"N_images_" + std::to_string(n_images)  /"poscars" /"0" + std::to_string(i)  /"POSCAR"; */
+          std::cout << file_path << "\n";
           fs::ofstream file(file_path);
           img_config.write_pos(file);
           i++;
         }
+        jsonParser endpt_info;
+        endpt_info["from_configname"] = config.from_config().name();
+        endpt_info["to_configname"] = config.to_config().name();
+        std::cout << "DTC::config.from_configname" << config.from_configname() << std::endl;
+        std::cout << "config.from_config().canonical_form().name()" << config.from_config().canonical_form().name() << std::endl;
+        std::cout << "config.from_config().name()" << config.from_config().name() << std::endl;
+        endpt_info["calctype"] = endpt_calctype;
+        fs::ofstream outfile(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(n_images)) / "endpoint_specs.json");
+        endpt_info.print(outfile);
+        outfile.close();
+        fs::ofstream endpts(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(n_images)) / "endpoint_props.json");
+        endpts << "{" << std::endl << '"' << 0 << '"' << ":";
+        //std::cout << endpt_info["from_configname"].get<std::string>() << std::endl;
+        std::vector<std::string> tokens;
+        std::string name = endpt_info["from_configname"].get<std::string>();
+        boost::split(tokens, name, boost::is_any_of("."), boost::token_compress_on);
+        std::string canon_config_name = tokens[0];
+        if(tokens.size() == 4) {
+          Configuration canon_config = *primclex.db<Configuration>().find(config.from_config().canonical_form().name());
+          Index fg_index = boost::lexical_cast<Index>(tokens[2]);
+          Index trans_index = boost::lexical_cast<Index>(tokens[3]);
+          canon_config.calc_properties(endpt_calctype);
+          apply(config.from_config_from_canonical(), canon_config).print_properties(endpt_calctype, endpts);
+        }
+        else {
+          make_configuration(primclex, endpt_info["from_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
+        }
+        endpts << "," << std::endl << '"' << std::to_string(n_images + 1) << '"' << ":";
+        std::vector<std::string> tokens2;
+        std::string name2 = endpt_info["to_configname"].get<std::string>();
+        //std::cout << name2 << std::endl;
+        boost::split(tokens2, name2, boost::is_any_of("."), boost::token_compress_on);
+        std::string canon_config_name2 = tokens2[0];
+        if(tokens2.size() == 4) {
+          Configuration canon_config = *primclex.db<Configuration>().find(config.to_config().canonical_form().name());
+          Index fg_index = boost::lexical_cast<Index>(tokens2[2]);
+          Index trans_index = boost::lexical_cast<Index>(tokens2[3]);
+          //	  std::cout << "canon json" << std::endl;
+          //	  std::cout << canon_config.calc_properties(endpt_calctype)<<std::endl;
+          //	  std::cout << "canon props" << std::endl;
+          //	  canon_config.print_properties(endpt_calctype,std::cout);
+          //	  std::cout << "rotated props" << std::endl;
+          //	  copy_apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype, std::cout);
+          apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype, endpts);
+          //	  std::cout << "rotated json" << std::endl;
+          //	  std::cout << canon_config.calc_properties(endpt_calctype) <<std::endl;
+        }
+        else {
+          make_configuration(primclex, endpt_info["to_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
+        }
+        endpts << std::endl << "}" << std::endl;
+        endpts.close();
       }
       // setup error methods
       return 0;

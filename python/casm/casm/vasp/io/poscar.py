@@ -22,7 +22,7 @@ class Site:
             self.occ_alias = alias (POTCAR) name, empty string by default
             self.position = np.array coordinate
     """
-    def __init__(self, cart, position, SD_FLAG = "", occupant = "", occ_alias = ""):
+    def __init__(self, cart, position,  SD_FLAG = "", occupant = "", occ_alias = ""):
         """ Site constructor """
         self.cart = cart
         self.SD_FLAG = SD_FLAG
@@ -413,5 +413,9 @@ class Poscar:
 
         return
 
+    def apply_deformation(self, deformation = np.ones((3,3))):
+        """ applies a deformation which is array of size 3 X 3
+        """
+        self._lattice = np.dot(self._lattice, np.array(deformation).T)
 
 

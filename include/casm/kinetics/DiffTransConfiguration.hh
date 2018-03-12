@@ -16,6 +16,8 @@ namespace CASM {
 
   namespace Kinetics {
 
+    struct DiffTransConfigInsertResult;
+
     class DiffTransConfiguration :
       public ConfigCanonicalForm<HasSupercell<Comparisons<Calculable<CRTPBase<DiffTransConfiguration>>>>> {
 
@@ -113,6 +115,12 @@ namespace CASM {
       void write_pos() const;
       std::ostream &write_pos(std::ostream &sout) const;
 
+      static bool is_valid(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
+
+      static bool has_valid_from_occ(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
+
+      DiffTransConfigInsertResult insert() const;
+
     private:
 
       friend Named<CRTPBase<DiffTransConfiguration>>;
@@ -136,6 +144,15 @@ namespace CASM {
       std::string m_bg_configname;
     };
 
+    struct DiffTransConfigInsertResult {
+
+      typedef DB::DatabaseIterator<DiffTransConfiguration> iterator;
+
+      bool insert_canonical;
+
+      iterator canonical_it;
+    };
+
     /// \brief prints this DiffTransConfiguration
     std::ostream &operator<<(std::ostream &sout, const DiffTransConfiguration &dtc) ;
 
@@ -144,6 +161,12 @@ namespace CASM {
 
     /// \brief Returns correlations using 'clexulator'.
     Eigen::VectorXd correlations(const DiffTransConfiguration &dtc, Clexulator &clexulator);
+
+    /// \brief Indicates whether there is a valid kra for DiffTransConfiguration
+    bool has_kra(const DiffTransConfiguration &dtc);
+
+    /// \brief Returns kra for DiffTransConfiguration
+    double kra(const DiffTransConfiguration &dtc);
 
 
   }

@@ -32,7 +32,7 @@ namespace CASM {
     if(m_trans_mat.determinant() == 0) {
       default_err_log() << "CRITICAL ERROR:  Attempting to construct a PrimGrid for a superlattice that is smaller than lattice passed as its prim.\n"
                         << "floating-point transformation matrix:\n" << dtrans_mat << "\n was rounded to integer matrix:\n" << m_trans_mat << "\n\n"
-                        << "This usage of PrimGrid is not supported. Exiting...\n";
+                        << "This usage of PrimGrid is not supported. Exiting...\n" << "Prim Lat\n" << p_lat.lat_column_mat() << "Scel Lat\n" << s_lat.lat_column_mat();
       assert(0);
       exit(1);
     }

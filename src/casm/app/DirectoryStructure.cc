@@ -375,7 +375,10 @@ namespace CASM {
   fs::path DirectoryStructure::eci(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const {
     return eci_dir(property, calctype, ref, bset, eci) / "eci.json";
   }
-
+  // -- Reports ---------------------------------------
+  fs::path DirectoryStructure::reports_dir() const {
+    return m_root / m_reports_dir;
+  }
 
   // -- other maybe temporary --------------------------
 
@@ -434,6 +437,7 @@ namespace CASM {
     m_set_dir = "settings";
     m_sym_dir = "symmetry";
     m_clex_dir = "cluster_expansions";
+    m_reports_dir = "reports";
   }
 
   /// \brief Find all directories at 'location' that match 'pattern.something'

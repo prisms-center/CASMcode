@@ -35,7 +35,8 @@ namespace CASM {
       ConfigData<Configuration>(primclex, null_log()),
       m_configmapper(std::move(mapper)),
       m_primitive_only(primitive_only),
-      m_dof(dof) {}
+      m_dof(dof) {
+    }
 
     /// Construct with PrimClex and JSON settings (see Import / Update desc)
     StructureMap<Configuration>::StructureMap(
@@ -65,6 +66,10 @@ namespace CASM {
       double max_va_frac;
       kwargs.get_else(max_va_frac, "max_va_frac", 0.5);
 
+      //These are names of the lattices you want to restrict searches to
+      std::vector<std::string> forced_lattice_names;
+      kwargs.get_else(forced_lattice_names, "forced_lattices", std::vector<std::string>());
+
       // -- collect settings used --
       m_used.put_obj();
       m_used["ideal"] = ideal;
@@ -72,6 +77,11 @@ namespace CASM {
       m_used["max_vol_change"] = max_vol_change;
       m_used["min_va_frac"] = min_va_frac;
       m_used["max_va_frac"] = max_va_frac;
+
+      bool lattices_forced_in_settings = (forced_lattice_names.size() > 0);
+      if(lattices_forced_in_settings) {
+        m_used["forced_lattices"] = forced_lattice_names;
+      }
 
       // -- construct ConfigMapper --
       int map_opt = ConfigMapper::none;
@@ -87,6 +97,11 @@ namespace CASM {
                              primclex.crystallography_tol()));
       m_configmapper->set_min_va_frac(min_va_frac);
       m_configmapper->set_max_va_frac(max_va_frac);
+
+      //If the settings specified at least one lattice, then force that on the configmapper
+      if(lattices_forced_in_settings) {
+        m_configmapper->force_lattices(forced_lattice_names);
+      }
 
     }
 
@@ -261,7 +276,7 @@ namespace CASM {
       "     - If data is imported, the corresponding properties.calc.json file is\n"
       "       copied into the directory of the mapped configuration. Optionally, \n"
       "       additional files in the directory of the imported structure file may\n"
-      "       also by copided. \n"
+      "       also be copied. \n"
       "     - Reports are generated detailing the results of the import: \n"
       "       - import_map_fail: Structures that could not be mapped onto the     \n"
       "         primitive crystal structure. \n"
@@ -368,12 +383,12 @@ namespace CASM {
       used["primitive_only"] = primitive_only;
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().root_dir() / "import_report";
+      fs::path report_dir = primclex.dir().reports_dir() / "import_report";
       report_dir = create_report_dir(report_dir);
 
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
       // the 'used' settings
-      std::vector<std::string> dof {"occupation"};
+      std::vector<std::string> dof {"occupation", "deformation", "displacement"};
       jsonParser map_json;
       kwargs.get_else(map_json, "mapping", jsonParser());
       StructureMap<Configuration> mapper(primclex, map_json, primitive_only, dof);
@@ -622,7 +637,7 @@ namespace CASM {
       used["force"] = force;
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().root_dir() / "update_report";
+      fs::path report_dir = primclex.dir().reports_dir() / "update_report";
       report_dir = create_report_dir(report_dir);
 
       // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values

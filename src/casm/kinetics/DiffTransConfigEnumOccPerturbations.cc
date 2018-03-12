@@ -656,7 +656,7 @@ namespace CASM {
       PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
       Configuration greatest = perturbed_from_config;
       for(auto it = m_base_it->diff_trans_g.begin(); it != m_base_it->diff_trans_g.end(); ++it) {
-        DiffTransConfiguration tmp(copy_apply(*it, perturbed_from_config), m_base_it->diff_trans);
+        DiffTransConfiguration tmp(make_attachable(m_base_it->diff_trans, copy_apply(*it, perturbed_from_config)), m_base_it->diff_trans);
         if(copy_apply(*it, perturbed_from_config) > greatest && tmp.has_valid_from_occ()) {
           greatest = copy_apply(*it, perturbed_from_config);
           to_canonical = *it;
@@ -665,7 +665,7 @@ namespace CASM {
 
       /// construct canonical DiffTransConfiguration as m_current
       m_current = notstd::make_cloneable<DiffTransConfiguration>(
-                    copy_apply(to_canonical, perturbed_from_config),
+                    make_attachable(m_base_it->diff_trans, copy_apply(to_canonical, perturbed_from_config)),
                     m_base_it->diff_trans);
       m_current->set_orbit_name("test");
       m_current->set_orbit_name(m_diff_trans_orbit.name());

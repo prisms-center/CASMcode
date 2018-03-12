@@ -433,6 +433,9 @@ namespace CASM {
     /// Write the POS file to pos_path
     void write_pos() const;
 
+    /// Writes incomplete properties.calc.json of config for kra purposes
+    std::ostream &print_properties(std::string calctype, std::ostream &sout) const;
+
     /// \brief Split configuration name string into scelname and config id
     static std::pair<std::string, std::string> split_name(std::string configname);
 
@@ -678,7 +681,7 @@ namespace CASM {
   };
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c);
-
+  Structure make_deformed_struc(const Configuration &c);
   /** @} */
 
 }
