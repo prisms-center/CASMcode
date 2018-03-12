@@ -1,0 +1,47 @@
+# set variables in build_scripts/build_variables.sh
+
+package:
+  name: casm-python
+  version: {{ CASM_CONDA_VERSION }}
+
+build:
+  number: {{ CASM_BUILD_NUMBER }}
+  string: {{ CASM_BUILD_NUMBER }}
+
+source:
+  git_url: {{ CASM_REPO }}
+  git_rev: {{ CASM_BRANCH }}
+  
+requirements:
+  build:
+    - python {{ CASM_PYTHON_VERSION }}*
+    - bokeh
+    - deap
+    - future
+    - mock
+    - pandas
+    - prisms-jobs
+    - scikit-learn
+    - scipy
+    - sh
+    - six
+    - tornado
+  run:
+    - python {{ CASM_PYTHON_VERSION }}*
+    - bokeh
+    - deap
+    - future
+    - mock
+    - pandas
+    - prisms-jobs
+    - scikit-learn
+    - scipy
+    - sh
+    - six
+    - tornado
+
+about:
+  home: {{ CASM_URL }}
+  license: LGPLv2
+  license_file: LICENSE
+  summary: CASM Python packages and command line tools

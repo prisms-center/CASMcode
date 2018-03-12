@@ -2,7 +2,7 @@ from __future__ import (absolute_import, division, print_function, unicode_liter
 from builtins import *
 
 import sklearn.linear_model
-import sklearn.cross_validation
+import sklearn.model_selection
 import sklearn.metrics
 import random, re, time, os, types, json, pickle, copy, uuid, shutil, tempfile
 import numpy as np
@@ -57,7 +57,7 @@ def example_input_Lasso():
   specs["cv"] = dict()
   specs["cv"]["method"] = "KFold"
   specs["cv"]["kwargs"] = dict()
-  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["n_splits"] = 10
   specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
@@ -106,7 +106,7 @@ def example_input_LassoCV():
   specs["cv"] = dict()
   specs["cv"]["method"] = "KFold"
   specs["cv"]["kwargs"] = dict()
-  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["n_splits"] = 10
   specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
@@ -156,7 +156,7 @@ def example_input_RFE():
   specs["cv"] = dict()
   specs["cv"]["method"] = "KFold"
   specs["cv"]["kwargs"] = dict()
-  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["n_splits"] = 10
   specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
@@ -203,7 +203,7 @@ def example_input_GeneticAlgorithm():
   specs["cv"] = dict()
   specs["cv"]["method"] = "KFold"
   specs["cv"]["kwargs"] = dict()
-  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["n_splits"] = 10
   specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
@@ -267,7 +267,7 @@ def example_input_IndividualBestFirst():
   specs["cv"] = dict()
   specs["cv"]["method"] = "KFold"
   specs["cv"]["kwargs"] = dict()
-  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["n_splits"] = 10
   specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
@@ -328,7 +328,7 @@ def example_input_PopulationBestFirst():
   specs["cv"] = dict()
   specs["cv"]["method"] = "KFold"
   specs["cv"]["kwargs"] = dict()
-  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["n_splits"] = 10
   specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
@@ -389,7 +389,7 @@ def example_input_DirectSelection():
   specs["cv"] = dict()
   specs["cv"]["method"] = "KFold"
   specs["cv"]["kwargs"] = dict()
-  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["n_splits"] = 10
   specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
@@ -580,7 +580,7 @@ def print_input_help():
   #   A scikit-learn or casm cross validation method. 
   #  
   #   Options include 'KFold', 'ShuffleSplit', 'LeaveOneOut', etc.
-  #     See: http://scikit-learn.org/stable/modules/cross_validation.html
+  #     See: http://scikit-learn.org/stable/modules/model_selection.html
   #
   #   CASM also provides the following method:
   #    'cvCustom': Read a scikit-learn type 'cv' generator or training/test sets
@@ -609,7 +609,7 @@ def print_input_help():
       "cv": {
         "method": "KFold", 
         "kwargs": {
-          "n_folds": 10,
+          "n_splits": 10,
           "shuffle": true
         },
         "penalty": 0.0
@@ -1166,9 +1166,9 @@ def open_input(input_filename):
       casm.learn.set_input_defaults
   """
   # open input and always set input defaults before doing anything else
-  with open(input_filename, 'r') as f:
+  with open(input_filename, 'rb') as f:
     try:
-      input = set_input_defaults(json.load(f), input_filename)
+      input = set_input_defaults(json.loads(f.read().decode('utf-8')), input_filename)
     except Exception as e:
       print("Error parsing JSON in", args.settings[0])
       raise e
@@ -1215,7 +1215,7 @@ class FittingData(object):
       
     scoring: string, callable or None, optional, default: None
       A string or a scorer callable object / function with signature 
-      scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+      scorer(estimator, X, y). The parameter for sklearn.model_selection.cross_val_score,
       default = None, uses estimator.score().
     
     penalty: float, optional, default=0.0
@@ -1254,7 +1254,7 @@ class FittingData(object):
       
       scoring: string, callable or None, optional, default=None
         A string or a scorer callable object / function with signature 
-        scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+        scorer(estimator, X, y). The parameter for sklearn.model_selection.cross_val_score,
         default = None, uses estimator.score().
         
       penalty: float, optional, default=0.0
@@ -1563,8 +1563,8 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     cv_kwargs = copy.deepcopy(specs["cv"]["kwargs"])
     
     # get cv method (required user input) 
-    cv_method = _find_method([sklearn.cross_validation, casm.learn.cross_validation], specs["cv"]["method"])
-    cv = cv_method(tdata.n_samples, **cv_kwargs)
+    cv_method = _find_method([sklearn.model_selection, casm.learn.model_selection], specs["cv"]["method"])
+    cv = cv_method(**cv_kwargs)
     
     if verbose:
       print("# CV:")
@@ -1595,7 +1595,7 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
   # to use optimized LOOCV score method
   if input["estimator"]["method"] == "LinearRegression" and specs["cv"]["method"] == "LeaveOneOut":
     fdata.scoring = None
-    fdata.cv = casm.learn.cross_validation.LeaveOneOutForLLS(fdata.weighted_y.shape[0])
+    fdata.cv = casm.learn.model_selection.LeaveOneOutForLLS(fdata.weighted_y.shape[0])
   
   return fdata 
   
@@ -1655,7 +1655,7 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
   
     scoring: string, callable or None, optional, default: None
       A string or a scorer callable object / function with signature 
-      scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+      scorer(estimator, X, y). The parameter for sklearn.model_selection.cross_val_score,
       default = None, uses estimator.score().
     
     cv: cross-validation generator or an iterable

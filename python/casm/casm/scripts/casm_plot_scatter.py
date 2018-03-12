@@ -1,25 +1,14 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
-from casm.project import Project, Selection
-import casm.plotting
-import argparse
-import os
-import sys
 import json
-from bokeh.io import curdoc
-from bokeh.client import push_session
 import bokeh.plotting
 import bokeh.models
 
-input_help = "Input file"
-desc_help = "Print extended usage description"
+import casm.plotting
+
 usage_desc = """
 Scatter plot of CASM query output
-
-Before running you must start the bokeh server:
-- install bokeh with: 'pip install bokeh'
-- start server: 'bokeh serve'
 
 If you have 'casm view' setup, then clicking on a configuration in the plot
 will attempt to use 'casm view' to view that configuration.
@@ -46,7 +35,7 @@ Input file attributes:
       Query to use for y-values
     
     legend: str (optional, default=<y>)
-      String to use for legend, default uses 'y' value
+      String to use for legend, default uses 'y' value. Use "off" or "none" to exclude.
     
     tooltips: JSON array of str (optional, default=[])
       Additional properties to query and include in 'tooltips' info that appears
@@ -55,19 +44,17 @@ Input file attributes:
     style: JSON object (optional, default=casm.plotting.scatter_series_style(<series index>, {})
       Visual styling attribute values. Defaults are determined casm.plotting.scatter_series_style.
       The 'marker' value should be one of the methods of bokeh.models.Figure
-    
+"""
 
-Example input file:
-
-{
+input_example = {
   "figure_kwargs": {
     "plot_height": 400,
     "plot_width": 800,
-    "tools": "crosshair,pan,reset,resize,box_zoom"
+    "tools": "crosshair,pan,reset,box_zoom,wheel_zoom,save"
   },
   "series": [
     {
-      "project": null,
+      "project": None,
       "selection": "MASTER",
       "x": "comp(a)",
       "y": "formation_energy",
@@ -78,7 +65,7 @@ Example input file:
       "legend":"formation_energy"
     },
     {
-      "project": null,
+      "project": None,
       "selection": "MASTER",
       "x": "comp(a)",
       "y": "clex(formation_energy)",
@@ -90,9 +77,7 @@ Example input file:
   ]
 }
 
-'style' example:
-
-{
+style_example = {
   "hover_alpha": 0.7, 
   "hover_color": "orange", 
   "selected": {
@@ -114,51 +99,53 @@ Example input file:
   "marker": "circle"
 }
 
-"""
-
-def main():
-    parser = argparse.ArgumentParser(description = 'Scatter plot')
-    parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
-    parser.add_argument('input', nargs='?', help=input_help, type=str)
+class PlotScatterCommand(casm.plotting.PlotTypeCommand):
     
+    @classmethod
+    def name(cls):
+        return "scatter"
     
-    # ignore 'mc casm'
-    args = parser.parse_args(sys.argv[1:])
+    @classmethod
+    def short_desc(cls):
+        return "Scatter plot"
     
-    if args.desc:
-        print(usage_desc)
-        sys.exit(1)
+    @classmethod
+    def long_desc(cls):
+        return usage_desc
     
-    with open(args.input, 'r') as f:
-        input = json.load(f)
+    @classmethod
+    def style_example(cls):
+        return style_example
     
-    data = casm.plotting.PlottingData()
-    figure_kwargs = input.get('figure_kwargs', casm.plotting.default_figure_kwargs)
-    fig = bokeh.plotting.Figure(**figure_kwargs)
-    tap_action = casm.plotting.TapAction(data)
-    renderers = []
+    @classmethod
+    def input_example(cls):
+        return input_example
     
-    for index, series in enumerate(input['series']):
-        series['self'] = casm.plotting.Scatter(data=data, index=index, **series)
-    
-    # first query data necessary for all series
-    for series in input['series']:
-        series['self'].query()
-    
-    for series in input['series']:
-        series['self'].plot(fig, tap_action)
-        renderers += series['self'].renderers
-    
-    # add tools
-    fig.add_tools(tap_action.tool())
-    fig.add_tools(bokeh.models.BoxSelectTool(renderers=renderers))
-    fig.add_tools(bokeh.models.LassoSelectTool(renderers=renderers))
-    
-    # set up session
-    session = push_session(curdoc())
-    curdoc().add_root(fig)
-    session.show() # open the document in a browser
-    session.loop_until_closed() # run forever
-
-if __name__ == "__main__":
-    main()
+    @classmethod
+    def plot(cls, doc, args):
+        with open(args.input, 'rb') as f:
+            input = json.loads(f.read().decode('utf-8'))
+        
+        data = casm.plotting.PlottingData()
+        figure_kwargs = input.get('figure_kwargs', casm.plotting.default_figure_kwargs)
+        fig = bokeh.plotting.Figure(**figure_kwargs)
+        tap_action = casm.plotting.TapAction(data)
+        renderers = []
+        
+        for index, series in enumerate(input['series']):
+            series['self'] = casm.plotting.Scatter(data=data, index=index, **series)
+        
+        # first query data necessary for all series
+        for series in input['series']:
+            series['self'].query()
+        
+        for series in input['series']:
+            series['self'].plot(fig, tap_action)
+            renderers += series['self'].renderers
+        
+        # add tools
+        fig.add_tools(tap_action.tool())
+        fig.add_tools(bokeh.models.BoxSelectTool(renderers=renderers))
+        fig.add_tools(bokeh.models.LassoSelectTool(renderers=renderers))
+        
+        doc.add_root(fig)

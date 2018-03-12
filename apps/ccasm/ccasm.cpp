@@ -1,10 +1,9 @@
-// include new casm tool header files here:
 #include "casm/app/casm_functions.hh"
 
 using namespace CASM;
 
 // ///////////////////////////////////////
-// casm main:
+// ccasm main:
 
 int main(int argc, char *argv[]) {
 

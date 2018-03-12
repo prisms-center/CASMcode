@@ -3,7 +3,7 @@ from builtins import *
 
 import copy
 from casm.learn import empty_individual
-from casm.learn.cross_validation import cross_val_score
+from casm.learn.model_selection import cross_val_score
 from casm.learn.fit import open_halloffame, make_fitting_data, make_estimator, \
   add_individual_detail, print_halloffame
 

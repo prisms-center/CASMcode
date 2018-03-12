@@ -45,9 +45,7 @@ namespace CASM {
     /// \brief Construct with PrimClex and array of supercell names
     ScelEnumByName(const PrimClex &primclex, const jsonParser &input);
 
-    std::string name() const override {
-      return enumerator_name;
-    }
+    std::string name() const override;
 
     static const std::string enumerator_name;
 
@@ -87,9 +85,7 @@ namespace CASM {
     ScelEnumByProps &operator=(const ScelEnumByProps &) = delete;
 
 
-    std::string name() const override {
-      return enumerator_name;
-    }
+    std::string name() const override;
 
     static const std::string enumerator_name;
 
@@ -130,9 +126,7 @@ namespace CASM {
     ScelEnum &operator=(const ScelEnum &) = delete;
 
 
-    std::string name() const override {
-      return enumerator_name;
-    }
+    std::string name() const override;
 
     static const std::string enumerator_name;
     static std::string interface_help();

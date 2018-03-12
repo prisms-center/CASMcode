@@ -120,7 +120,7 @@ class Selection(object):
           raise Exception("Saving the MASTER selection is under construction!")
           
           if data is not None:
-            self._data = data
+            self._data = data.copy()
             self._clean_data()
         
           if self._data is None:
@@ -132,8 +132,8 @@ class Selection(object):
             raise Exception("File: " + backup + " already exists")
           
           # read
-          with open(clist, 'r') as f:
-              j = json.load(f)
+          with open(clist, 'rb') as f:
+              j = json.loads(f.read().decode('utf-8'))
           
           for sk, sv in six.iteritems(j["supercells"]):
             for ck, cv in six.iteritems(sv):
@@ -158,7 +158,7 @@ class Selection(object):
         else:
           
           if data is not None:
-            self._data = data
+            self._data = data.copy()
             self._clean_data()
           
           if os.path.exists(self.path) and not force:

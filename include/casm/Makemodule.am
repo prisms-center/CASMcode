@@ -1,9 +1,13 @@
-casmincludedir=$(includedir)/casm
+casm_includedir=$(includedir)/casm
 
-casminclude_HEADERS = \
+casm_include_HEADERS = \
   include/casm/CASM_global_definitions.hh\
   include/casm/CASM_global_Eigen.hh\
-  include/casm/CASM_global_enum.hh\
+  include/casm/CASM_global_enum.hh
+
+casm_misc_includedir=$(includedir)/casm/misc
+
+casm_misc_include_HEADERS = \
   include/casm/misc/PCA.hh\
   include/casm/misc/CRTPBase.hh\
   include/casm/misc/CASM_TMP.hh\
@@ -18,7 +22,11 @@ casminclude_HEADERS = \
   include/casm/misc/HierarchyID.hh\
   include/casm/misc/CASM_Array_math.hh\
   include/casm/misc/HallOfFame.hh\
-  include/casm/misc/CASM_Eigen_math.hh\
+  include/casm/misc/CASM_Eigen_math.hh
+
+casm_database_includedir=$(includedir)/casm/database
+
+casm_database_include_HEADERS = \
   include/casm/database/Named_impl.hh\
   include/casm/database/ScelDatabase.hh\
   include/casm/database/DiffTransConfigImport.hh\
@@ -52,9 +60,17 @@ casminclude_HEADERS = \
   include/casm/database/DatabaseTypes.hh\
   include/casm/database/Database.hh\
   include/casm/database/DatabaseSetIterator.hh\
-  include/casm/database/Remove.hh\
+  include/casm/database/Remove.hh
+
+casm_database_json_includedir=$(includedir)/casm/database/json
+
+casm_database_json_include_HEADERS = \
   include/casm/database/json/jsonDatabase.hh\
-  include/casm/database/json/jsonPropertiesDatabase.hh\
+  include/casm/database/json/jsonPropertiesDatabase.hh
+
+casm_app_includedir=$(includedir)/casm/app
+
+casm_app_include_HEADERS = \
   include/casm/app/settings.hh\
   include/casm/app/ref.hh\
   include/casm/app/APICommand_impl.hh\
@@ -89,8 +105,16 @@ casminclude_HEADERS = \
   include/casm/app/APICommand.hh\
   include/casm/app/QueryHandler.hh\
   include/casm/app/monte.hh\
-  include/casm/app/AppIO_impl.hh\
-  include/casm/strain/StrainConverter.hh\
+  include/casm/app/AppIO_impl.hh
+
+casm_strain_includedir=$(includedir)/casm/strain
+
+casm_strain_include_HEADERS = \
+  include/casm/strain/StrainConverter.hh
+
+casm_kinetics_includedir=$(includedir)/casm/kinetics
+
+casm_kinetics_include_HEADERS = \
   include/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh\
   include/casm/kinetics/DiffusionTransformationEnum.hh\
   include/casm/kinetics/DiffTransConfiguration.hh\
@@ -118,8 +142,16 @@ casminclude_HEADERS = \
   include/casm/kinetics/DiffTransConfigInterpolation.hh\
   include/casm/kinetics/DiffTransConfigurationIO.hh\
   include/casm/kinetics/SubOrbitGenerators.hh\
-  include/casm/kinetics/DiffusionTransformationTraits.hh\
-  include/casm/hull/Hull.hh\
+  include/casm/kinetics/DiffusionTransformationTraits.hh
+
+casm_hull_includedir=$(includedir)/casm/hull
+
+casm_hull_include_HEADERS = \
+  include/casm/hull/Hull.hh
+
+casm_crystallography_includedir=$(includedir)/casm/crystallography
+
+casm_crystallography_include_HEADERS = \
   include/casm/crystallography/Structure.hh\
   include/casm/crystallography/MoleculeAttribute.hh\
   include/casm/crystallography/Lattice.hh\
@@ -139,7 +171,11 @@ casminclude_HEADERS = \
   include/casm/crystallography/Lattice_impl.hh\
   include/casm/crystallography/CoordinateSystems.hh\
   include/casm/crystallography/LatticeCanonicalForm.hh\
-  include/casm/crystallography/jsonStruc.hh\
+  include/casm/crystallography/jsonStruc.hh
+
+casm_symmetry_includedir=$(includedir)/casm/symmetry
+
+casm_symmetry_include_HEADERS = \
   include/casm/symmetry/SymOpRepresentation.hh\
   include/casm/symmetry/SymMatrixXd.hh\
   include/casm/symmetry/SubOrbits_impl.hh\
@@ -166,9 +202,17 @@ casminclude_HEADERS = \
   include/casm/symmetry/EnumEquivalents.hh\
   include/casm/symmetry/SymBasisPermute.hh\
   include/casm/symmetry/InvariantSubgroup_impl.hh\
-  include/casm/symmetry/ScelOrbitGeneration_impl.hh\
+  include/casm/symmetry/ScelOrbitGeneration_impl.hh
+
+casm_completer_includedir=$(includedir)/casm/completer
+
+casm_completer_include_HEADERS = \
   include/casm/completer/Complete.hh\
-  include/casm/completer/Handlers.hh\
+  include/casm/completer/Handlers.hh
+
+casm_container_includedir=$(includedir)/casm/container
+
+casm_container_include_HEADERS = \
   include/casm/container/multivector.hh\
   include/casm/container/Permutation.hh\
   include/casm/container/LinearAlgebra.hh\
@@ -181,9 +225,17 @@ casminclude_HEADERS = \
   include/casm/container/BaseCounter.hh\
   include/casm/container/PolyTrie.hh\
   include/casm/container/algorithm.hh\
-  include/casm/container/ContainerTraits.hh\
+  include/casm/container/ContainerTraits.hh
+
+casm_system_includedir=$(includedir)/casm/system
+
+casm_system_include_HEADERS = \
   include/casm/system/Popen.hh\
-  include/casm/system/RuntimeLibrary.hh\
+  include/casm/system/RuntimeLibrary.hh
+
+casm_basis_set_includedir=$(includedir)/casm/basis_set
+
+casm_basis_set_include_HEADERS = \
   include/casm/basis_set/BasisSet.hh\
   include/casm/basis_set/DoF.hh\
   include/casm/basis_set/Variable.hh\
@@ -192,8 +244,16 @@ casminclude_HEADERS = \
   include/casm/basis_set/PolynomialFunction.hh\
   include/casm/basis_set/DoFTraits.hh\
   include/casm/basis_set/BasisFunction.hh\
-  include/casm/basis_set/chebychev.m\
-  include/casm/version/version.hh\
+  include/casm/basis_set/chebychev.m
+
+casm_version_includedir=$(includedir)/casm/version
+
+casm_version_include_HEADERS = \
+  include/casm/version/version.hh
+
+casm_monte_carlo_includedir=$(includedir)/casm/monte_carlo
+
+casm_monte_carlo_include_HEADERS = \
   include/casm/monte_carlo/MonteSampler.hh\
   include/casm/monte_carlo/MonteIO.hh\
   include/casm/monte_carlo/MonteCarlo_impl.hh\
@@ -211,19 +271,31 @@ casminclude_HEADERS = \
   include/casm/monte_carlo/OccCandidate.hh\
   include/casm/monte_carlo/MonteCarloEnum.hh\
   include/casm/monte_carlo/Conversions.hh\
-  include/casm/monte_carlo/MonteDriver.hh\
+  include/casm/monte_carlo/MonteDriver.hh
+
+casm_monte_carlo_canonical_includedir=$(includedir)/casm/monte_carlo/canonical
+
+casm_monte_carlo_canonical_include_HEADERS = \
   include/casm/monte_carlo/canonical/Canonical.hh\
   include/casm/monte_carlo/canonical/CanonicalSettings_impl.hh\
   include/casm/monte_carlo/canonical/CanonicalEvent.hh\
   include/casm/monte_carlo/canonical/CanonicalSettings.hh\
   include/casm/monte_carlo/canonical/CanonicalIO.hh\
-  include/casm/monte_carlo/canonical/CanonicalConditions.hh\
+  include/casm/monte_carlo/canonical/CanonicalConditions.hh
+
+casm_monte_carlo_grand_canonical_includedir=$(includedir)/casm/monte_carlo/grand_canonical
+
+casm_monte_carlo_grand_canonical_include_HEADERS = \
   include/casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh\
   include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings_impl.hh\
   include/casm/monte_carlo/grand_canonical/GrandCanonical.hh\
   include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh\
   include/casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh\
-  include/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh\
+  include/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh
+
+casm_clex_includedir=$(includedir)/casm/clex
+
+casm_clex_include_HEADERS = \
   include/casm/clex/Clex.hh\
   include/casm/clex/ConfigEnumAllOccupations_impl.hh\
   include/casm/clex/Reference.hh\
@@ -280,7 +352,11 @@ casminclude_HEADERS = \
   include/casm/clex/ConfigurationTraits.hh\
   include/casm/clex/Clexulator_Draft.hh\
   include/casm/clex/ConfigEnumRandomOccupations.hh\
-  include/casm/clex/SuperConfigEnum.hh\
+  include/casm/clex/SuperConfigEnum.hh
+
+casm_clusterography_includedir=$(includedir)/casm/clusterography
+
+casm_clusterography_include_HEADERS = \
   include/casm/clusterography/SubClusterGenerator.hh\
   include/casm/clusterography/CoordCluster.hh\
   include/casm/clusterography/ClusterSpecsParser.hh\
@@ -294,8 +370,16 @@ casminclude_HEADERS = \
   include/casm/clusterography/ClusterDecl.hh\
   include/casm/clusterography/GenericCluster.hh\
   include/casm/clusterography/ClusterSymCompare.hh\
-  include/casm/clusterography/ClusterSpecsParser_impl.hh\
-  include/casm/external/MersenneTwister/MersenneTwister.h\
+  include/casm/clusterography/ClusterSpecsParser_impl.hh
+
+casm_external_MersenneTwister_includedir=$(includedir)/casm/external/MersenneTwister
+
+casm_external_MersenneTwister_include_HEADERS = \
+  include/casm/external/MersenneTwister/MersenneTwister.h
+
+casm_external_Eigen_includedir=$(includedir)/casm/external/Eigen
+
+casm_external_Eigen_include_HEADERS = \
   include/casm/external/Eigen/CholmodSupport\
   include/casm/external/Eigen/StdVector\
   include/casm/external/Eigen/StdDeque\
@@ -329,16 +413,32 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/MetisSupport\
   include/casm/external/Eigen/SparseCholesky\
   include/casm/external/Eigen/Eigenvalues\
-  include/casm/external/Eigen/PaStiXSupport\
-  include/casm/external/Eigen/src/CMakeLists.txt\
+  include/casm/external/Eigen/PaStiXSupport
+
+casm_external_Eigen_src_includedir=$(includedir)/casm/external/Eigen/src
+
+casm_external_Eigen_src_include_HEADERS = \
+  include/casm/external/Eigen/src/CMakeLists.txt
+
+casm_external_Eigen_src_CholmodSupport_includedir=$(includedir)/casm/external/Eigen/src/CholmodSupport
+
+casm_external_Eigen_src_CholmodSupport_include_HEADERS = \
   include/casm/external/Eigen/src/CholmodSupport/CMakeLists.txt\
-  include/casm/external/Eigen/src/CholmodSupport/CholmodSupport.h\
+  include/casm/external/Eigen/src/CholmodSupport/CholmodSupport.h
+
+casm_external_Eigen_src_misc_includedir=$(includedir)/casm/external/Eigen/src/misc
+
+casm_external_Eigen_src_misc_include_HEADERS = \
   include/casm/external/Eigen/src/misc/Solve.h\
   include/casm/external/Eigen/src/misc/CMakeLists.txt\
   include/casm/external/Eigen/src/misc/SparseSolve.h\
   include/casm/external/Eigen/src/misc/blas.h\
   include/casm/external/Eigen/src/misc/Kernel.h\
-  include/casm/external/Eigen/src/misc/Image.h\
+  include/casm/external/Eigen/src/misc/Image.h
+
+casm_external_Eigen_src_Core_includedir=$(includedir)/casm/external/Eigen/src/Core
+
+casm_external_Eigen_src_Core_include_HEADERS = \
   include/casm/external/Eigen/src/Core/Reverse.h\
   include/casm/external/Eigen/src/Core/PermutationMatrix.h\
   include/casm/external/Eigen/src/Core/Assign.h\
@@ -399,7 +499,11 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/Core/Random.h\
   include/casm/external/Eigen/src/Core/Diagonal.h\
   include/casm/external/Eigen/src/Core/DenseBase.h\
-  include/casm/external/Eigen/src/Core/Select.h\
+  include/casm/external/Eigen/src/Core/Select.h
+
+casm_external_Eigen_src_Core_products_includedir=$(includedir)/casm/external/Eigen/src/Core/products
+
+casm_external_Eigen_src_Core_products_include_HEADERS = \
   include/casm/external/Eigen/src/Core/products/SelfadjointRank2Update.h\
   include/casm/external/Eigen/src/Core/products/GeneralBlockPanelKernel.h\
   include/casm/external/Eigen/src/Core/products/CMakeLists.txt\
@@ -422,7 +526,11 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/Core/products/TriangularSolverVector.h\
   include/casm/external/Eigen/src/Core/products/SelfadjointMatrixVector_MKL.h\
   include/casm/external/Eigen/src/Core/products/TriangularMatrixMatrix.h\
-  include/casm/external/Eigen/src/Core/products/SelfadjointMatrixMatrix.h\
+  include/casm/external/Eigen/src/Core/products/SelfadjointMatrixMatrix.h
+
+casm_external_Eigen_src_Core_util_includedir=$(includedir)/casm/external/Eigen/src/Core/util
+
+casm_external_Eigen_src_Core_util_include_HEADERS = \
   include/casm/external/Eigen/src/Core/util/NonMPL2.h\
   include/casm/external/Eigen/src/Core/util/CMakeLists.txt\
   include/casm/external/Eigen/src/Core/util/BlasUtil.h\
@@ -435,20 +543,44 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/Core/util/ForwardDeclarations.h\
   include/casm/external/Eigen/src/Core/util/Memory.h\
   include/casm/external/Eigen/src/Core/util/Meta.h\
-  include/casm/external/Eigen/src/Core/util/ReenableStupidWarnings.h\
-  include/casm/external/Eigen/src/Core/arch/CMakeLists.txt\
+  include/casm/external/Eigen/src/Core/util/ReenableStupidWarnings.h
+
+casm_external_Eigen_src_Core_arch_includedir=$(includedir)/casm/external/Eigen/src/Core/arch
+
+casm_external_Eigen_src_Core_arch_include_HEADERS = \
+  include/casm/external/Eigen/src/Core/arch/CMakeLists.txt
+
+casm_external_Eigen_src_Core_arch_SSE_includedir=$(includedir)/casm/external/Eigen/src/Core/arch/SSE
+
+casm_external_Eigen_src_Core_arch_SSE_include_HEADERS = \
   include/casm/external/Eigen/src/Core/arch/SSE/PacketMath.h\
   include/casm/external/Eigen/src/Core/arch/SSE/CMakeLists.txt\
   include/casm/external/Eigen/src/Core/arch/SSE/MathFunctions.h\
-  include/casm/external/Eigen/src/Core/arch/SSE/Complex.h\
+  include/casm/external/Eigen/src/Core/arch/SSE/Complex.h
+
+casm_external_Eigen_src_Core_arch_Default_includedir=$(includedir)/casm/external/Eigen/src/Core/arch/Default
+
+casm_external_Eigen_src_Core_arch_Default_include_HEADERS = \
   include/casm/external/Eigen/src/Core/arch/Default/CMakeLists.txt\
-  include/casm/external/Eigen/src/Core/arch/Default/Settings.h\
+  include/casm/external/Eigen/src/Core/arch/Default/Settings.h
+
+casm_external_Eigen_src_Core_arch_NEON_includedir=$(includedir)/casm/external/Eigen/src/Core/arch/NEON
+
+casm_external_Eigen_src_Core_arch_NEON_include_HEADERS = \
   include/casm/external/Eigen/src/Core/arch/NEON/PacketMath.h\
   include/casm/external/Eigen/src/Core/arch/NEON/CMakeLists.txt\
-  include/casm/external/Eigen/src/Core/arch/NEON/Complex.h\
+  include/casm/external/Eigen/src/Core/arch/NEON/Complex.h
+
+casm_external_Eigen_src_Core_arch_AltiVec_includedir=$(includedir)/casm/external/Eigen/src/Core/arch/AltiVec
+
+casm_external_Eigen_src_Core_arch_AltiVec_include_HEADERS = \
   include/casm/external/Eigen/src/Core/arch/AltiVec/PacketMath.h\
   include/casm/external/Eigen/src/Core/arch/AltiVec/CMakeLists.txt\
-  include/casm/external/Eigen/src/Core/arch/AltiVec/Complex.h\
+  include/casm/external/Eigen/src/Core/arch/AltiVec/Complex.h
+
+casm_external_Eigen_src_SparseLU_includedir=$(includedir)/casm/external/Eigen/src/SparseLU
+
+casm_external_Eigen_src_SparseLU_include_HEADERS = \
   include/casm/external/Eigen/src/SparseLU/SparseLU_Utils.h\
   include/casm/external/Eigen/src/SparseLU/SparseLU_kernel_bmod.h\
   include/casm/external/Eigen/src/SparseLU/SparseLU_column_bmod.h\
@@ -466,11 +598,19 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/SparseLU/SparseLU_Memory.h\
   include/casm/external/Eigen/src/SparseLU/SparseLU_pivotL.h\
   include/casm/external/Eigen/src/SparseLU/SparseLUImpl.h\
-  include/casm/external/Eigen/src/SparseLU/SparseLU_SupernodalMatrix.h\
+  include/casm/external/Eigen/src/SparseLU/SparseLU_SupernodalMatrix.h
+
+casm_external_Eigen_src_OrderingMethods_includedir=$(includedir)/casm/external/Eigen/src/OrderingMethods
+
+casm_external_Eigen_src_OrderingMethods_include_HEADERS = \
   include/casm/external/Eigen/src/OrderingMethods/CMakeLists.txt\
   include/casm/external/Eigen/src/OrderingMethods/Ordering.h\
   include/casm/external/Eigen/src/OrderingMethods/Eigen_Colamd.h\
-  include/casm/external/Eigen/src/OrderingMethods/Amd.h\
+  include/casm/external/Eigen/src/OrderingMethods/Amd.h
+
+casm_external_Eigen_src_plugins_includedir=$(includedir)/casm/external/Eigen/src/plugins
+
+casm_external_Eigen_src_plugins_include_HEADERS = \
   include/casm/external/Eigen/src/plugins/ArrayCwiseUnaryOps.h\
   include/casm/external/Eigen/src/plugins/CMakeLists.txt\
   include/casm/external/Eigen/src/plugins/CommonCwiseUnaryOps.h\
@@ -478,13 +618,25 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/plugins/ArrayCwiseBinaryOps.h\
   include/casm/external/Eigen/src/plugins/MatrixCwiseBinaryOps.h\
   include/casm/external/Eigen/src/plugins/CommonCwiseBinaryOps.h\
-  include/casm/external/Eigen/src/plugins/MatrixCwiseUnaryOps.h\
+  include/casm/external/Eigen/src/plugins/MatrixCwiseUnaryOps.h
+
+casm_external_Eigen_src_Householder_includedir=$(includedir)/casm/external/Eigen/src/Householder
+
+casm_external_Eigen_src_Householder_include_HEADERS = \
   include/casm/external/Eigen/src/Householder/HouseholderSequence.h\
   include/casm/external/Eigen/src/Householder/CMakeLists.txt\
   include/casm/external/Eigen/src/Householder/Householder.h\
-  include/casm/external/Eigen/src/Householder/BlockHouseholder.h\
+  include/casm/external/Eigen/src/Householder/BlockHouseholder.h
+
+casm_external_Eigen_src_PardisoSupport_includedir=$(includedir)/casm/external/Eigen/src/PardisoSupport
+
+casm_external_Eigen_src_PardisoSupport_include_HEADERS = \
   include/casm/external/Eigen/src/PardisoSupport/CMakeLists.txt\
-  include/casm/external/Eigen/src/PardisoSupport/PardisoSupport.h\
+  include/casm/external/Eigen/src/PardisoSupport/PardisoSupport.h
+
+casm_external_Eigen_src_SparseCore_includedir=$(includedir)/casm/external/Eigen/src/SparseCore
+
+casm_external_Eigen_src_SparseCore_include_HEADERS = \
   include/casm/external/Eigen/src/SparseCore/SparseSelfAdjointView.h\
   include/casm/external/Eigen/src/SparseCore/SparseMatrix.h\
   include/casm/external/Eigen/src/SparseCore/CompressedStorage.h\
@@ -510,18 +662,38 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/SparseCore/SparseRedux.h\
   include/casm/external/Eigen/src/SparseCore/ConservativeSparseSparseProduct.h\
   include/casm/external/Eigen/src/SparseCore/SparseUtil.h\
-  include/casm/external/Eigen/src/SparseCore/SparseDot.h\
-  include/casm/external/Eigen/src/unsupported/KroneckerTensorProduct.h\
+  include/casm/external/Eigen/src/SparseCore/SparseDot.h
+
+casm_external_Eigen_src_unsupported_includedir=$(includedir)/casm/external/Eigen/src/unsupported
+
+casm_external_Eigen_src_unsupported_include_HEADERS = \
+  include/casm/external/Eigen/src/unsupported/KroneckerTensorProduct.h
+
+casm_external_Eigen_src_Jacobi_includedir=$(includedir)/casm/external/Eigen/src/Jacobi
+
+casm_external_Eigen_src_Jacobi_include_HEADERS = \
   include/casm/external/Eigen/src/Jacobi/CMakeLists.txt\
-  include/casm/external/Eigen/src/Jacobi/Jacobi.h\
+  include/casm/external/Eigen/src/Jacobi/Jacobi.h
+
+casm_external_Eigen_src_SPQRSupport_includedir=$(includedir)/casm/external/Eigen/src/SPQRSupport
+
+casm_external_Eigen_src_SPQRSupport_include_HEADERS = \
   include/casm/external/Eigen/src/SPQRSupport/CMakeLists.txt\
-  include/casm/external/Eigen/src/SPQRSupport/SuiteSparseQRSupport.h\
+  include/casm/external/Eigen/src/SPQRSupport/SuiteSparseQRSupport.h
+
+casm_external_Eigen_src_QR_includedir=$(includedir)/casm/external/Eigen/src/QR
+
+casm_external_Eigen_src_QR_include_HEADERS = \
   include/casm/external/Eigen/src/QR/HouseholderQR_MKL.h\
   include/casm/external/Eigen/src/QR/FullPivHouseholderQR.h\
   include/casm/external/Eigen/src/QR/CMakeLists.txt\
   include/casm/external/Eigen/src/QR/HouseholderQR.h\
   include/casm/external/Eigen/src/QR/ColPivHouseholderQR.h\
-  include/casm/external/Eigen/src/QR/ColPivHouseholderQR_MKL.h\
+  include/casm/external/Eigen/src/QR/ColPivHouseholderQR_MKL.h
+
+casm_external_Eigen_src_Eigen2Support_includedir=$(includedir)/casm/external/Eigen/src/Eigen2Support
+
+casm_external_Eigen_src_Eigen2Support_include_HEADERS = \
   include/casm/external/Eigen/src/Eigen2Support/VectorBlock.h\
   include/casm/external/Eigen/src/Eigen2Support/LU.h\
   include/casm/external/Eigen/src/Eigen2Support/CMakeLists.txt\
@@ -537,7 +709,11 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/Eigen2Support/Block.h\
   include/casm/external/Eigen/src/Eigen2Support/Memory.h\
   include/casm/external/Eigen/src/Eigen2Support/Minor.h\
-  include/casm/external/Eigen/src/Eigen2Support/Meta.h\
+  include/casm/external/Eigen/src/Eigen2Support/Meta.h
+
+casm_external_Eigen_src_Eigen2Support_Geometry_includedir=$(includedir)/casm/external/Eigen/src/Eigen2Support/Geometry
+
+casm_external_Eigen_src_Eigen2Support_Geometry_include_HEADERS = \
   include/casm/external/Eigen/src/Eigen2Support/Geometry/AngleAxis.h\
   include/casm/external/Eigen/src/Eigen2Support/Geometry/RotationBase.h\
   include/casm/external/Eigen/src/Eigen2Support/Geometry/CMakeLists.txt\
@@ -549,33 +725,65 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/Eigen2Support/Geometry/Scaling.h\
   include/casm/external/Eigen/src/Eigen2Support/Geometry/Rotation2D.h\
   include/casm/external/Eigen/src/Eigen2Support/Geometry/Transform.h\
-  include/casm/external/Eigen/src/Eigen2Support/Geometry/ParametrizedLine.h\
+  include/casm/external/Eigen/src/Eigen2Support/Geometry/ParametrizedLine.h
+
+casm_external_Eigen_src_SparseQR_includedir=$(includedir)/casm/external/Eigen/src/SparseQR
+
+casm_external_Eigen_src_SparseQR_include_HEADERS = \
   include/casm/external/Eigen/src/SparseQR/CMakeLists.txt\
-  include/casm/external/Eigen/src/SparseQR/SparseQR.h\
+  include/casm/external/Eigen/src/SparseQR/SparseQR.h
+
+casm_external_Eigen_src_SVD_includedir=$(includedir)/casm/external/Eigen/src/SVD
+
+casm_external_Eigen_src_SVD_include_HEADERS = \
   include/casm/external/Eigen/src/SVD/CMakeLists.txt\
   include/casm/external/Eigen/src/SVD/JacobiSVD.h\
   include/casm/external/Eigen/src/SVD/UpperBidiagonalization.h\
-  include/casm/external/Eigen/src/SVD/JacobiSVD_MKL.h\
+  include/casm/external/Eigen/src/SVD/JacobiSVD_MKL.h
+
+casm_external_Eigen_src_Cholesky_includedir=$(includedir)/casm/external/Eigen/src/Cholesky
+
+casm_external_Eigen_src_Cholesky_include_HEADERS = \
   include/casm/external/Eigen/src/Cholesky/LLT_MKL.h\
   include/casm/external/Eigen/src/Cholesky/CMakeLists.txt\
   include/casm/external/Eigen/src/Cholesky/LDLT.h\
-  include/casm/external/Eigen/src/Cholesky/LLT.h\
+  include/casm/external/Eigen/src/Cholesky/LLT.h
+
+casm_external_Eigen_src_UmfPackSupport_includedir=$(includedir)/casm/external/Eigen/src/UmfPackSupport
+
+casm_external_Eigen_src_UmfPackSupport_include_HEADERS = \
   include/casm/external/Eigen/src/UmfPackSupport/CMakeLists.txt\
-  include/casm/external/Eigen/src/UmfPackSupport/UmfPackSupport.h\
+  include/casm/external/Eigen/src/UmfPackSupport/UmfPackSupport.h
+
+casm_external_Eigen_src_IterativeLinearSolvers_includedir=$(includedir)/casm/external/Eigen/src/IterativeLinearSolvers
+
+casm_external_Eigen_src_IterativeLinearSolvers_include_HEADERS = \
   include/casm/external/Eigen/src/IterativeLinearSolvers/BasicPreconditioners.h\
   include/casm/external/Eigen/src/IterativeLinearSolvers/CMakeLists.txt\
   include/casm/external/Eigen/src/IterativeLinearSolvers/IncompleteLUT.h\
   include/casm/external/Eigen/src/IterativeLinearSolvers/ConjugateGradient.h\
   include/casm/external/Eigen/src/IterativeLinearSolvers/BiCGSTAB.h\
-  include/casm/external/Eigen/src/IterativeLinearSolvers/IterativeSolverBase.h\
+  include/casm/external/Eigen/src/IterativeLinearSolvers/IterativeSolverBase.h
+
+casm_external_Eigen_src_LU_includedir=$(includedir)/casm/external/Eigen/src/LU
+
+casm_external_Eigen_src_LU_include_HEADERS = \
   include/casm/external/Eigen/src/LU/CMakeLists.txt\
   include/casm/external/Eigen/src/LU/Inverse.h\
   include/casm/external/Eigen/src/LU/Determinant.h\
   include/casm/external/Eigen/src/LU/PartialPivLU.h\
   include/casm/external/Eigen/src/LU/FullPivLU.h\
-  include/casm/external/Eigen/src/LU/PartialPivLU_MKL.h\
+  include/casm/external/Eigen/src/LU/PartialPivLU_MKL.h
+
+casm_external_Eigen_src_LU_arch_includedir=$(includedir)/casm/external/Eigen/src/LU/arch
+
+casm_external_Eigen_src_LU_arch_include_HEADERS = \
   include/casm/external/Eigen/src/LU/arch/Inverse_SSE.h\
-  include/casm/external/Eigen/src/LU/arch/CMakeLists.txt\
+  include/casm/external/Eigen/src/LU/arch/CMakeLists.txt
+
+casm_external_Eigen_src_Geometry_includedir=$(includedir)/casm/external/Eigen/src/Geometry
+
+casm_external_Eigen_src_Geometry_include_HEADERS = \
   include/casm/external/Eigen/src/Geometry/AngleAxis.h\
   include/casm/external/Eigen/src/Geometry/RotationBase.h\
   include/casm/external/Eigen/src/Geometry/CMakeLists.txt\
@@ -590,21 +798,45 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/Geometry/OrthoMethods.h\
   include/casm/external/Eigen/src/Geometry/Rotation2D.h\
   include/casm/external/Eigen/src/Geometry/Transform.h\
-  include/casm/external/Eigen/src/Geometry/ParametrizedLine.h\
+  include/casm/external/Eigen/src/Geometry/ParametrizedLine.h
+
+casm_external_Eigen_src_Geometry_arch_includedir=$(includedir)/casm/external/Eigen/src/Geometry/arch
+
+casm_external_Eigen_src_Geometry_arch_include_HEADERS = \
   include/casm/external/Eigen/src/Geometry/arch/CMakeLists.txt\
-  include/casm/external/Eigen/src/Geometry/arch/Geometry_SSE.h\
+  include/casm/external/Eigen/src/Geometry/arch/Geometry_SSE.h
+
+casm_external_Eigen_src_SuperLUSupport_includedir=$(includedir)/casm/external/Eigen/src/SuperLUSupport
+
+casm_external_Eigen_src_SuperLUSupport_include_HEADERS = \
   include/casm/external/Eigen/src/SuperLUSupport/CMakeLists.txt\
-  include/casm/external/Eigen/src/SuperLUSupport/SuperLUSupport.h\
+  include/casm/external/Eigen/src/SuperLUSupport/SuperLUSupport.h
+
+casm_external_Eigen_src_MetisSupport_includedir=$(includedir)/casm/external/Eigen/src/MetisSupport
+
+casm_external_Eigen_src_MetisSupport_include_HEADERS = \
   include/casm/external/Eigen/src/MetisSupport/CMakeLists.txt\
-  include/casm/external/Eigen/src/MetisSupport/MetisSupport.h\
+  include/casm/external/Eigen/src/MetisSupport/MetisSupport.h
+
+casm_external_Eigen_src_StlSupport_includedir=$(includedir)/casm/external/Eigen/src/StlSupport
+
+casm_external_Eigen_src_StlSupport_include_HEADERS = \
   include/casm/external/Eigen/src/StlSupport/CMakeLists.txt\
   include/casm/external/Eigen/src/StlSupport/StdList.h\
   include/casm/external/Eigen/src/StlSupport/StdDeque.h\
   include/casm/external/Eigen/src/StlSupport/details.h\
-  include/casm/external/Eigen/src/StlSupport/StdVector.h\
+  include/casm/external/Eigen/src/StlSupport/StdVector.h
+
+casm_external_Eigen_src_SparseCholesky_includedir=$(includedir)/casm/external/Eigen/src/SparseCholesky
+
+casm_external_Eigen_src_SparseCholesky_include_HEADERS = \
   include/casm/external/Eigen/src/SparseCholesky/CMakeLists.txt\
   include/casm/external/Eigen/src/SparseCholesky/SimplicialCholesky_impl.h\
-  include/casm/external/Eigen/src/SparseCholesky/SimplicialCholesky.h\
+  include/casm/external/Eigen/src/SparseCholesky/SimplicialCholesky.h
+
+casm_external_Eigen_src_Eigenvalues_includedir=$(includedir)/casm/external/Eigen/src/Eigenvalues
+
+casm_external_Eigen_src_Eigenvalues_include_HEADERS = \
   include/casm/external/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h\
   include/casm/external/Eigen/src/Eigenvalues/EigenSolver.h\
   include/casm/external/Eigen/src/Eigenvalues/CMakeLists.txt\
@@ -619,20 +851,40 @@ casminclude_HEADERS = \
   include/casm/external/Eigen/src/Eigenvalues/ComplexSchur.h\
   include/casm/external/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h\
   include/casm/external/Eigen/src/Eigenvalues/RealQZ.h\
-  include/casm/external/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h\
+  include/casm/external/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h
+
+casm_external_Eigen_src_PaStiXSupport_includedir=$(includedir)/casm/external/Eigen/src/PaStiXSupport
+
+casm_external_Eigen_src_PaStiXSupport_include_HEADERS = \
   include/casm/external/Eigen/src/PaStiXSupport/CMakeLists.txt\
-  include/casm/external/Eigen/src/PaStiXSupport/PaStiXSupport.h\
+  include/casm/external/Eigen/src/PaStiXSupport/PaStiXSupport.h
+
+casm_external_gzstream_includedir=$(includedir)/casm/external/gzstream
+
+casm_external_gzstream_include_HEADERS = \
   include/casm/external/gzstream/COPYING.LIB\
   include/casm/external/gzstream/version\
-  include/casm/external/gzstream/gzstream.h\
+  include/casm/external/gzstream/gzstream.h
+
+casm_external_json_spirit_includedir=$(includedir)/casm/external/json_spirit
+
+casm_external_json_spirit_include_HEADERS = \
   include/casm/external/json_spirit/json_spirit_reader_template.h\
   include/casm/external/json_spirit/json_spirit_error_position.h\
   include/casm/external/json_spirit/json_spirit_writer_template.h\
   include/casm/external/json_spirit/json_spirit_writer_options.h\
   include/casm/external/json_spirit/json_spirit_value.h\
   include/casm/external/json_spirit/json_spirit.h\
-  include/casm/external/json_spirit/LICENSE.txt\
-  include/casm/external/qhull/COPYING.txt\
+  include/casm/external/json_spirit/LICENSE.txt
+
+casm_external_qhull_includedir=$(includedir)/casm/external/qhull
+
+casm_external_qhull_include_HEADERS = \
+  include/casm/external/qhull/COPYING.txt
+
+casm_external_qhull_libqhull_r_includedir=$(includedir)/casm/external/qhull/libqhull_r
+
+casm_external_qhull_libqhull_r_include_HEADERS = \
   include/casm/external/qhull/libqhull_r/user_r.h\
   include/casm/external/qhull/libqhull_r/io_r.h\
   include/casm/external/qhull/libqhull_r/qset_r.h\
@@ -643,7 +895,11 @@ casminclude_HEADERS = \
   include/casm/external/qhull/libqhull_r/poly_r.h\
   include/casm/external/qhull/libqhull_r/random_r.h\
   include/casm/external/qhull/libqhull_r/merge_r.h\
-  include/casm/external/qhull/libqhull_r/libqhull_r.h\
+  include/casm/external/qhull/libqhull_r/libqhull_r.h
+
+casm_external_qhull_libqhullcpp_includedir=$(includedir)/casm/external/qhull/libqhullcpp
+
+casm_external_qhull_libqhullcpp_include_HEADERS = \
   include/casm/external/qhull/libqhullcpp/QhullLinkedList.h\
   include/casm/external/qhull/libqhullcpp/QhullFacetList.h\
   include/casm/external/qhull/libqhullcpp/QhullError.h\
@@ -667,7 +923,11 @@ casminclude_HEADERS = \
   include/casm/external/qhull/libqhullcpp/QhullFacetSet.h\
   include/casm/external/qhull/libqhullcpp/RboxPoints.h\
   include/casm/external/qhull/libqhullcpp/QhullStat.h\
-  include/casm/external/qhull/libqhullcpp/QhullFacet.h\
+  include/casm/external/qhull/libqhullcpp/QhullFacet.h
+
+casm_casm_io_includedir=$(includedir)/casm/casm_io
+
+casm_casm_io_include_HEADERS = \
   include/casm/casm_io/FormatFlag.hh\
   include/casm/casm_io/jsonParser.hh\
   include/casm/casm_io/DataFormatter.hh\
@@ -685,12 +945,24 @@ casminclude_HEADERS = \
   include/casm/casm_io/VaspIO.hh\
   include/casm/casm_io/DataFormatterTools_impl.hh\
   include/casm/casm_io/DataFormatterDecl.hh\
-  include/casm/casm_io/SafeOfstream.hh\
+  include/casm/casm_io/SafeOfstream.hh
+
+casm_casm_io_json_io_includedir=$(includedir)/casm/casm_io/json_io
+
+casm_casm_io_json_io_include_HEADERS = \
   include/casm/casm_io/json_io/clex.hh\
   include/casm/casm_io/json_io/container.hh\
   include/casm/casm_io/json_io/SpeciesSetParser.hh\
-  include/casm/casm_io/json_io/SpeciesSetParser_impl.hh\
-  include/casm/casm_io/stream_io/container.hh\
+  include/casm/casm_io/json_io/SpeciesSetParser_impl.hh
+
+casm_casm_io_stream_io_includedir=$(includedir)/casm/casm_io/stream_io
+
+casm_casm_io_stream_io_include_HEADERS = \
+  include/casm/casm_io/stream_io/container.hh
+
+casm_enumerator_includedir=$(includedir)/casm/enumerator
+
+casm_enumerator_include_HEADERS = \
   include/casm/enumerator/Enumerator.hh\
   include/casm/enumerator/Enumerator_impl.hh\
   include/casm/enumerator/RandomAccessEnumerator.hh\

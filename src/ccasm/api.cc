@@ -42,6 +42,9 @@ extern "C" {
     return c_str;
   }
 
+  cPrimClex *casm_primclex_null() {
+    return nullptr;
+  }
 
   cPrimClex *casm_primclex_new(char *path, costream *log, costream *debug_log, costream *err_log) {
     Log &_log(*reinterpret_cast<Log *>(log));
@@ -63,6 +66,18 @@ extern "C" {
                              bool clear_clex) {
     PrimClex *_primclex = reinterpret_cast<PrimClex *>(ptr);
     _primclex->refresh(read_settings, read_composition, read_chem_ref, read_configs, clear_clex);
+  }
+
+  void casm_command_list(costream *ostringstream_log) {
+    // print to log the recognized casm commands as a JSON array
+    Log &_log(*reinterpret_cast<OStringStreamLog *>(ostringstream_log));
+    std::vector<std::string> command_list;
+    for(const auto &val : command_map()) {
+      command_list.push_back(val.first);
+    }
+    jsonParser json;
+    json = command_list;
+    _log << json;
   }
 
   int casm_capi(char *args, cPrimClex *primclex, char *root, costream *log, costream *debug_log, costream *err_log) {

@@ -1,5 +1,5 @@
 #include "casm/app/EnumeratorHandler_impl.hh"
-#include "casm/clex/ScelEnum.hh"
+#include "casm/clex/ScelEnum_impl.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
 #include "casm/clex/SuperConfigEnum.hh"

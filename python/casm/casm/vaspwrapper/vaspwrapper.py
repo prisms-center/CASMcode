@@ -1,7 +1,7 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
-import os, shutil, re, subprocess, json
+import os, shutil, six, re, subprocess, json
 import warnings
 import casm.vasp.io
 
@@ -62,9 +62,8 @@ def read_settings(filename):
         "name" : USED IN vasp.converge ONLY. Name used in the .../config/calctype.calc/NAME/property_i directory scheme, where, if not specified, "prop"_converge is used as NAME
     """
     try:
-        file = open(filename)
-        settings = json.load(file)
-        file.close()
+        with open(filename, 'rb') as file:
+            settings = json.loads(file.read().decode('utf-8'))
     except (IOError, ValueError) as e:
         print("Error reading settings file:", filename)
         raise e
@@ -126,9 +125,8 @@ def read_settings(filename):
 
 def write_settings(settings, filename):
     """ Write 'settings' as json file, 'filename' """
-    file = open(filename,'w')
-    json.dump( settings, file, indent=4)
-    file.close()
+    with open(filename,'wb') as file:
+        file.write(six.u(json.dump( settings, file, indent=4)).encode('utf-8'))
 
 
 def vasp_input_file_names(dir, configname, clex, calc_subdir="", is_neb=False):
@@ -211,8 +209,8 @@ def read_properties(filename):
     required = ["atom_type", "atoms_per_type", "coord_mode", "relaxed_basis", "relaxed_energy", "relaxed_forces", "relaxed_lattice"]
     optional = ["relaxed_magmom", "relaxed_mag_basis"]
 
-    with open(filename, 'r') as myfile:
-        properties = json.load(myfile)
+    with open(filename, 'rb') as myfile:
+        properties = json.loads(myfile.read().decode('utf-8'))
 
     for key in required:
         if not key in properties:

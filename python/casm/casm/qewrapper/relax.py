@@ -1,7 +1,14 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
-import os, math, sys, json, re, warnings
+import json
+import math
+import os
+import re
+import six
+import sys
+import warnings
+
 try:
   from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
 except ImportError:
@@ -431,8 +438,8 @@ class Relax(object):
             output["failure_type"] = failure_type
 
         outputfile = os.path.join(self.calcdir, "status.json")
-        with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
+        with open(outputfile, 'wb') as file:
+            file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
         print("Wrote " + outputfile)
         sys.stdout.flush()
 
@@ -445,8 +452,8 @@ class Relax(object):
             speciesfile = self.casm_directories.settings_path_crawl("SPECIES",self.configname,self.casm_settings.default_clex)
             output = self.properties(qedir, outfilename)
             outputfile = os.path.join(self.calcdir, "properties.calc.json")
-            with open(outputfile, 'w') as file:
-                file.write(json.dumps(output, file, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True))
+            with open(outputfile, 'wb') as file:
+                file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
             print("Wrote " + outputfile)
             sys.stdout.flush()
             self.report_status('complete')
@@ -501,5 +508,5 @@ class Relax(object):
 
         output["relaxed_energy"] = qrun.total_energy * 13.605698066 #convert Ry to eV
 
-	return output
+        return output
 

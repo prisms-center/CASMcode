@@ -13,7 +13,7 @@ import bokeh.client
 import bokeh.io
 import bokeh.models
 import bokeh.plotting
-from bokeh.plotting import hplot, vplot
+import bokeh.layouts as bk_layouts
 import numpy as np
 import pandas
 import six
@@ -38,10 +38,10 @@ class Session(object):
     self.doc.add_root(layout)
   
   def begin(self):
-    self.session.show()
+    self.session.show(self.doc)
   
   def begin_interactive(self):
-    self.session.show()
+    self.session.show(self.doc)
     self.session.loop_until_closed()
   
   def close(self):
@@ -115,7 +115,15 @@ def clex_hull_dist_per_atom(path="CALCULATED"):
   """
   return 'clex_' + hull_dist_per_atom(path)
 
+def set_src_data(src, name, data, force=False):
+  """Add/modify data column in a ColumnDataSource, creating the column if necessary"""
+  if name not in src.column_names:
+    src.add(data, name)
+  elif force == True:
+    src.patch({name:(slice(len(data)),data)})
+
 def add_src_data(sel, name, data, force=False):
+  """Add data to Selection's ColumnDataSource, creating if necessary"""
   if sel.src is None:
     sel.src = bokeh.models.ColumnDataSource(data={name:data})
     sel.selection_callbacks = []
@@ -124,9 +132,7 @@ def add_src_data(sel, name, data, force=False):
         f()
     sel.update_selection = callbacks
   else:
-    if name not in sel.src.data.keys() or force == True:
-      sel.src.data[name] = data
-
+    set_src_data(sel.src, name, data, force=force)
 
 def view_on_tap(sel, attrname, old, new):
   """
@@ -160,7 +166,7 @@ class PlottingData(object):
         
     def project(self, proj_path=None, kwargs=dict()):
         if proj_path is None:
-            proj_path = casm.project_path()
+            proj_path = casm.project.project_path()
         else:
             proj_path = os.path.abspath(proj_path)
         if proj_path not in self.data_:
@@ -168,8 +174,8 @@ class PlottingData(object):
             self.add_project([proj])
         return self.data_[proj_path]['project']
     
-    def selection(self, proj_path=None, sel_path="MASTER", kwargs=dict()):
-        proj = self.project(proj_path)
+    def selection(self, proj_path=None, sel_path="MASTER", kwargs=dict(), proj_kwargs=dict()):
+        proj = self.project(proj_path, kwargs=proj_kwargs)
         if sel_path is None:
             sel_path = "MASTER"
         if sel_path not in ["MASTER", "ALL", "CALCULATED"]:
@@ -221,13 +227,12 @@ class TapAction(object):
     """
     self.tap_indicator_src = bokeh.models.ColumnDataSource(data={"x":[0], "project":['None'], "selection":['None']})
     self.js_callback = bokeh.models.CustomJS(args={'src':self.tap_indicator_src}, code="""
-      var data = src.get('data');
+      var data = src.data;
       data['x'][0] = data['x'][0] + 1;
-      data['project'][0] = cb_obj.data['project'][0];
-      data['selection'][0] = cb_obj.data['selection'][0];
-      console.log(cb_obj); // Logs output to dev tools console.
-      // alert(str); // Displays output using window.alert()
-      src.set('data', data);
+      hovered_data = cb_data.source.data;
+      data['project'][0] = hovered_data['project'][0];
+      data['selection'][0] = hovered_data['selection'][0];
+      src.data = data;
       """)
     self.data = data
     self.py_callback = dict()
@@ -236,7 +241,7 @@ class TapAction(object):
   def __call__(self, attrname, old, new):
     proj_path = new['project'][0]
     sel_path = new['selection'][0]
-    sel = self.data.selection(proj_path, sel_path)
+    sel = self.data.selection(proj_path, sel_path, proj_kwargs={"verbose":False})
     self.py_callback[sel_path](sel, attrname, old, new)
   
   def add_callback(self, sel, callback=None, renderers=None):
@@ -363,7 +368,7 @@ default_scatter_style = {
 default_figure_kwargs = {
     "plot_height": 400,
     "plot_width": 800,
-    "tools": "crosshair,pan,reset,resize,box_zoom"
+    "tools": "crosshair,pan,reset,box_zoom,wheel_zoom,save"
 }
 
 
@@ -438,7 +443,7 @@ def update_dft_hull_glyphs(sel, style, selected=None):
   
   for value in ['color', 'radii']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data[value] = map(lambda x: cmap[x], selected)
+    set_src_data(sel.src, value, list(map(lambda x: cmap[x], selected)), force=True)
 
   on_dft_hull = None
   if 'on_dft_hull' in sel.data.columns:
@@ -447,7 +452,7 @@ def update_dft_hull_glyphs(sel, style, selected=None):
   if on_dft_hull is not None:
     for value in ['line_color', 'line_width', 'line_alpha']:
       cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
-      sel.src.data[value] = map(lambda x: cmap[x], on_dft_hull)
+      set_src_data(sel.src, value, list(map(lambda x: cmap[x], on_dft_hull)), force=True)
 
   
 def update_clex_hull_glyphs(sel, style, selected=None):
@@ -462,7 +467,7 @@ def update_clex_hull_glyphs(sel, style, selected=None):
   
   for value in ['color', 'radii']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data['clex_' + value] = map(lambda x: cmap[x], selected)
+    set_src_data(sel.src, 'clex_' + value, list(map(lambda x: cmap[x], selected)), force=True)
 
   on_clex_hull = None
   if 'on_clex_hull' in sel.data.columns:
@@ -471,7 +476,7 @@ def update_clex_hull_glyphs(sel, style, selected=None):
   if on_clex_hull is not None:
     for value in ['line_color', 'line_width', 'line_alpha']:
       cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
-      sel.src.data['clex_' + value] = map(lambda x: cmap[x], on_clex_hull)
+      set_src_data(sel.src, 'clex_' + value, list(map(lambda x: cmap[x], on_clex_hull)), force=True)
 
 
 def update_scatter_glyphs(sel, style, id, selected=None):
@@ -483,7 +488,7 @@ def update_scatter_glyphs(sel, style, id, selected=None):
   
   for value in ['color', 'radii', 'line_color', 'line_width', 'line_alpha', 'fill_alpha']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data[value + '.' + id] = map(lambda x: cmap[x], selected)
+    set_src_data(sel.src, value + '.' + id, list(map(lambda x: cmap[x], selected)), force=True)
 
 
 class ConvexHullPlot(object):
@@ -513,7 +518,7 @@ class ConvexHullPlot(object):
     """
     Arguments:
       data: PlottingData object
-      project: path to CASM project (optional, default=casm.project_path())
+      project: path to CASM project (optional, default=casm.project.project_path())
       selection: path for CASM Selection
       hull_selection: path for CASM Selection to use for the hull. Default uses selection.
       x: (str) column name to use as x axis. Default='comp(a)'. Must be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'.
@@ -528,8 +533,8 @@ class ConvexHullPlot(object):
     self.data = data
     
     if project is None:
-        project = casm.project_path()
-    proj = self.data.project(project)
+        project = casm.project.project_path()
+    proj = self.data.project(project, kwargs={"verbose":False})
     
     prim = proj.prim
     if prim.n_independent_compositions != 1:
@@ -539,11 +544,11 @@ class ConvexHullPlot(object):
     
     if selection is None:
       selection = "MASTER"
-    self.sel = self.data.selection(project, selection)
+    self.sel = self.data.selection(project, selection, proj_kwargs={"verbose":False})
     
     if hull_selection is None:
       hull_selection = selection
-    self.hull_sel = self.data.selection(project, hull_selection)
+    self.hull_sel = self.data.selection(project, hull_selection, proj_kwargs={"verbose":False})
     
     self.hull_sel_calculated = casm.project.Selection(self.sel.proj, self.hull_sel.path + ".calculated")
     self.dft_hull_sel = casm.project.Selection(self.sel.proj, self.hull_sel.path + ".dft_hull")
@@ -689,7 +694,7 @@ class ConvexHullPlot(object):
     column 'on_hull_label' indicating which configurations are on the hull.
     """
     sel.data.loc[_unselected(sel), on_hull_label] = False
-    on_hull = map(lambda x: abs(x) < self.hull_tol, sel.data.loc[_selected(sel), hull_dist_label])
+    on_hull = list(map(lambda x: abs(x) < self.hull_tol, sel.data.loc[_selected(sel), hull_dist_label]))
     sel.data.loc[_selected(sel), on_hull_label] = on_hull
 
   
@@ -797,27 +802,6 @@ class ConvexHullPlot(object):
     # set clex of dft hull line data
     self.sorted_clex_of_dft_hull = self._sort_hull_line(self.sel, 'on_clex_of_dft_hull')
     return self.sorted_clex_of_dft_hull
-  
-#  def update_hull_line(self):
-#    self.sort_hull_line()
-#    
-#    # source for hull data
-#    self.calc_hull_src.data[self.x] = self.sel.data.loc[self.sorted_dft_hull.index, self.x]
-#    self.calc_hull_src.data[self.y] = self.sel.data.loc[self.sorted_dft_hull.index, self.y]
-#
-#  def update_clex_hull_line(self):
-#    self.sort_clex_hull_line()
-#    
-#    # source for clex hull data
-#    self.clex_hull_src.data[self.x] = self.sel.data.loc[self.sorted_clex_hull.index, self.x]
-#    self.clex_hull_src.data[self.y] = self.sel.data.loc[self.sorted_clex_hull.index, self.y]
-#
-#  def update_hull_line(self):
-#    self.sort_clex_of_dft_hull_line()
-#    
-#    # source for clex of dft hull data
-#    self.clex_of_dft_hull_src.data[self.x] = self.sel.data.loc[self.sorted_clex_of_dft_hull.index, self.x]
-#    self.clex_of_dft_hull_src.data[self.y] = self.sel.data.loc[self.sorted_clex_of_dft_hull.index, self.y]
 
 
 class Scatter(object):
@@ -840,7 +824,7 @@ class Scatter(object):
     """
     Arguments:
         data: PlottingData object
-        project: path to CASM project (optional, default=casm.project_path())
+        project: path to CASM project (optional, default=casm.project.project_path())
         selection: path for CASM Selection
         x: (str) column name to use as x axis. Default='comp(a)'
         y: (str) column name to use as y axis. Default='formation_energy'
@@ -856,17 +840,19 @@ class Scatter(object):
     self.data = data
     
     if project is None:
-        project = casm.project_path()
+        project = casm.project.project_path()
     
     if selection is None:
       selection = "MASTER"
-    self.sel = self.data.selection(project, selection)
+    self.sel = self.data.selection(project, selection, proj_kwargs={"verbose":False})
     
     self.x = x
     self.y = y
     
     if legend is None:
         legend = y
+    elif legend == "off" or legend == "none":
+        legend = None
     self.legend = legend
     self.index = index
     if series_name is None:
@@ -894,6 +880,10 @@ class Scatter(object):
   def plot(self, fig=None, tap_action=None):
           
       update_scatter_glyphs(self.sel, self.style, self.series_name)
+      
+      # avoid having a legend name same as a column name
+      while self.legend in self.sel.src.column_names:
+          self.legend += ' '
       
       self.r = getattr(fig, self.style['marker'])(
           self.x,
@@ -923,7 +913,7 @@ class Scatter(object):
           tooltips = []
             
           for col in self.tooltips + [self.x, self.y]:
-              if col in casm.plotting.float_dtypes:
+              if col in float_dtypes:
                   tooltips.append((col,"@{" + col + "}{1.1111}"))
               else:
                   tooltips.append((col,"@{" + col + "}"))
@@ -956,7 +946,7 @@ class Histogram(object):
     """
     Arguments:
         data: PlottingData object
-        project: path to CASM project (optional, default=casm.project_path())
+        project: path to CASM project (optional, default=casm.project.project_path())
         selection: path for CASM Selection
         x: (str) column name to use as x axis. Default='comp(a)'
         hist_kwargs:
@@ -972,11 +962,11 @@ class Histogram(object):
     self.data = data
     
     if project is None:
-        project = casm.project_path()
+        project = casm.project.project_path()
     
     if selection is None:
       selection = "MASTER"
-    self.sel = self.data.selection(project, selection)
+    self.sel = self.data.selection(project, selection, proj_kwargs={"verbose":False})
     
     self.x = x
     self.hist_kwargs = hist_kwargs
@@ -1028,15 +1018,15 @@ class Histogram(object):
       
       if self.src is None:
           self.src = bokeh.models.ColumnDataSource()
-          self.src.data["left"] = edges[:-1]
-          self.src.data["right"] = edges[1:]
+          set_src_data(self.src, "left", edges[:-1], force=True)
+          set_src_data(self.src, "right", edges[1:], force=True)
       
-      self.src.data["top"] = hist
-      self.src.data["bottom"] = [0]*len(hist)
-        
-      self.src.data["top_sel"] = hist_sel
-      self.src.data["top_unsel"] = hist - hist_sel
-      self.src.data["bottom_sel"] = [0]*len(hist_sel)
+      set_src_data(self.src, "top", hist, force=True)
+      set_src_data(self.src, "bottom", [0]*len(hist), force=True)
+       
+      set_src_data(self.src, "top_sel", hist_sel, force=True)
+      set_src_data(self.src, "top_unsel", hist - hist_sel, force=True)
+      set_src_data(self.src, "bottom_sel", [0]*len(hist_sel), force=True)
             
       if 'density' not in self.hist_kwargs.keys() or self.hist_kwargs['density'] == False:
           self.y_label = "Frequency"
@@ -1209,7 +1199,7 @@ class RankPlot(object):
     """
     Arguments:
       data: PlottingData instance
-      project: str (optional, default=casm.project_path())
+      project: str (optional, default=casm.project.project_path())
       selection: str (optional, default="MASTER")
       query: List[str]
       scoring_query: str
@@ -1225,11 +1215,11 @@ class RankPlot(object):
     self.data = data
     
     if project is None:
-        project = casm.project_path()
+        project = casm.project.project_path()
     
     if selection is None:
       selection = "MASTER"
-    self.sel = self.data.selection(project, selection)
+    self.sel = self.data.selection(project, selection, proj_kwargs={"verbose":False})
     
     self.scoring_query = scoring_query
     
@@ -1305,7 +1295,7 @@ class RankPlot(object):
                 tooltips.append(("score","@{" + self.score_id + "}{1.1111}"))
             elif col == self.rank_id:
                 tooltips.append(("rank","@{" + self.rank_id + "}{1.1111}"))
-            elif col in casm.plotting.float_dtypes:
+            elif col in float_dtypes:
                 tooltips.append((col,"@{" + col + "}{1.1111}"))
             else:
                 tooltips.append((col,"@{" + col + "}"))
@@ -1332,7 +1322,12 @@ class RankPlot(object):
     'scoring' function.
     """
     if self.scoring_query is not None:
-        self.sel.data.loc[:,self.score_id] = self.sel.data.loc[:,self.scoring_query]
+        try:
+            self.sel.data.loc[:,self.score_id] = self.sel.data.loc[:,self.scoring_query]
+        except Exception as e:
+            print("scoring_query:", self.scoring_query)
+            print("columns:", self.sel.data.columns)
+            raise e
     else:
         f, filename, description = imp.find_module(self.scoring_module)
         try:
@@ -1412,7 +1407,7 @@ class RankSelect(object):
     self._min_score = None
     
     # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
+    self.tools = "crosshair,pan,reset,box_zoom,wheel_zoom,save"
     self.tooltips = None
     
     # bokeh DataSource for cutoff line
@@ -1430,8 +1425,8 @@ class RankSelect(object):
     self._plot()
     
     # store plot in layout with widgets
-    _hplot = hplot(self.input['cutoff'].widget, self.select_mode, self.select_action)
-    self.layout = vplot(self.p, _hplot, self.msg.widget, width=self.p.plot_width)
+    _hplot = bk_layouts.row(self.input['cutoff'].widget, self.select_mode, self.select_action)
+    self.layout = bk_layouts.column(self.p, _hplot, self.msg.widget, width=self.p.plot_width)
     
   
   @property
@@ -1488,10 +1483,11 @@ class RankSelect(object):
     self.p_.select(type=bokeh.models.CrosshairTool).dimensions = ['width']
     
     p_click=bokeh.models.CustomJS(args={'src':self.cutoff_line_src, 'loc': self.mouse_location_src}, code="""
-      var data = src.get('data');
-      data['y'][0] = loc.get('data')['y'][0];
-      data['y'][1] = loc.get('data')['y'][0];
-      src.set('data', data);
+      var data = src.data;
+      var loc_data = loc.data;
+      data['y'][0] = loc_data['y'][0];
+      data['y'][1] = loc_data['y'][0];
+      src.data = data;
       """)
     self.p_.select(type=bokeh.models.CrosshairTool).dimensions = ['width']
     self.p_.add_tools(bokeh.models.TapTool(callback=p_click))
@@ -1548,8 +1544,9 @@ class RankSelect(object):
     self.mouse = bokeh.models.HoverTool(
       tooltips=None,
       callback=bokeh.models.CustomJS(args={'src': self.mouse_location_src}, code="""
-        src.get('data')['y'][0] = cb_data.geometry.y;
-        src.get('data')['y'][1] = cb_data.geometry.y;
+        var data = src.data;
+        data['y'][0] = cb_data.geometry.y;
+        data['y'][1] = cb_data.geometry.y;
         """))
     
     self.msg = Messages()
@@ -1581,7 +1578,7 @@ class RankSelect(object):
           self.sel.update_selection()
           update_glyphs(self.sel, selected=self.sel.data['to_be_selected'])
           self.msg.value = "Applied selection and saved: " + self.sel.path
-        except Exception, e:
+        except Exception as e:
           self.msg.value = str(e)
       self.select_action.value = "Select action"
     self.select_action.on_change('value', select_action_f)
@@ -1608,7 +1605,7 @@ class RankSelect(object):
       f = self._set_off_f
     
     self.sel.data.loc[:,'to_be_selected'] = self.df.apply(f, axis='columns')
-    self.cutoff_line_src.data['y'] = [self.input['cutoff'].value, self.input['cutoff'].value]
+    set_src_data(self.cutoff_line_src, 'y', [self.input['cutoff'].value, self.input['cutoff'].value], force=True)
     self.sel.update_selection()
     update_glyphs(self.sel, selected=self.sel.data['to_be_selected'])
   
@@ -1655,9 +1652,10 @@ class WeightSelect(object):
     self.hullplot_kwargs = hullplot_kwargs
     if not os.path.exists(input_filename):
       self.fit_input = casm.learn.example_input()
-      compat.dump(json, self.fit_input, self.input_filename, 'w' , indent=2)
+      with open(self.input_filename, 'wb') as file:
+        file.write(six.u(json.dumps(self.fit_input, indent=2)).encode('utf-8'))
     else:
-      self.fit_input = json.load(open(self.input_filename, 'r'))
+      self.fit_input = json.loads(open(self.input_filename, 'rb').read().decode('utf-8'))
     
     # create select box with weighting method options
     self.select_method = SelectInput(
@@ -1767,9 +1765,10 @@ class WeightSelect(object):
       self.fit_input["weight"]["kwargs"]["kT"] = self.input['kT'].value
       if self.select_method.value == ["wEref"]:
         self.fit_input["weight"]["kwargs"]["Eref"] = self.input['Eref'].value
-      compat.dump(json, self.fit_input, self.input_filename, 'w', indent=2)
+      with open(self.input_filename, 'wb') as file:
+        file.write(six.u(json.dumps(self.fit_input, indent=2)).encode('utf-8'))
       self.msg.value = "Saved input file: " + self.input_filename
-    except Exception, e:
+    except Exception as e:
       self.msg.value = str(e)
   
   def _apply_and_save(self):
@@ -1777,7 +1776,7 @@ class WeightSelect(object):
       self._apply()
       self._save()
       self.msg.value = "Applied sample weights and saved input file: " + self.input_filename
-    except Exception, e:
+    except Exception as e:
       self.msg.value = str(e)
   
   def _set_value(self):
@@ -1829,16 +1828,16 @@ class WeightSelect(object):
         self.ref_line = self.hullplot.p.line('x', 'y', source=self.ref_line_src, line_color='red', line_width=1.0)
     if self.ref_line is not None:
       if self.select_method.value == "wEref":
-        self.ref_line_src.data['x'] = [self.x_min, self.x_max]
-        self.ref_line_src.data['y'] = [self.input['Eref'].value, self.input['Eref'].value]
+        set_src_data(self.ref_line_src, 'x', [self.x_min, self.x_max], force=True)
+        set_src_data(self.ref_line_src, 'y', [self.input['Eref'].value, self.input['Eref'].value], force=True)
       elif self.select_method.value == "wEmin":
-        self.ref_line_src.data['x'] = [self.x_min, self.x_max]
-        self.ref_line_src.data['y'] = [self.Ef_min, self.Ef_min]
+        set_src_data(self.ref_line_src, 'x', [self.x_min, self.x_max], force=True)
+        set_src_data(self.ref_line_src, 'y', [self.Ef_min, self.Ef_min], force=True)
       elif self.select_method.value == "wHullDist":
-        self.ref_line_src.data['x'] = []
-        self.ref_line_src.data['y'] = []
+        set_src_data(self.ref_line_src, 'x', [], force=True)
+        set_src_data(self.ref_line_src, 'y', [], force=True)
     if self.select_method.value == "wEref":
-      self.ref_line_src.data['y'] = [self.input['Eref'].value, self.input['Eref'].value]
+      set_src_data(self.ref_line_src, 'y', [self.input['Eref'].value, self.input['Eref'].value], force=True) 
     
     self.whullplot.update_hull_line()
   
@@ -1898,8 +1897,8 @@ class WeightSelect(object):
     else:
       children = [self.hullplot.layout, self.whullplot.layout]
     grid = bokeh.models.GridPlot(children=[children])
-    row = hplot(vplot(*self._widget_layout()), grid)
-    return vplot(row, self.msg.widget, width=self.whullplot.p.plot_width*3 + 300)
+    row = bk_layouts.row(bk_layouts.column(*self._widget_layout()), grid)
+    return bk_layouts.column(row, self.msg.widget, width=self.whullplot.p.plot_width*3 + 300)
   
   def _widget_layout(self):
     if self.select_method.value in ["wHullDist", "wEmin"]:
@@ -1933,7 +1932,7 @@ class ECISelection(object):
     if cwd is None:
       cwd = os.getcwd()
     self.input_filename = os.path.join(cwd, input_filename,)
-    self.fit_input = json.load(open(self.input_filename, 'r'))
+    self.fit_input = json.loads(open(self.input_filename, 'rb').read().decode('utf-8'))
     halloffame_filename = os.path.join(cwd, self.fit_input.get("halloffame_filename", "halloffame.pkl"))
     self.hall = pickle.load(open(halloffame_filename, 'rb'))
     
@@ -1990,7 +1989,7 @@ class ECISelect(object):
     self._cv_rankplot()
     self._eci_stemplot(0)
     
-    self.layout = hplot(self.cv_rankplot.layout, self.eci_stemplot)
+    self.layout = bk_layouts.row(self.cv_rankplot.layout, self.eci_stemplot)
     
   
   def _cv_rankplot(self):
@@ -2020,7 +2019,7 @@ class ECISelect(object):
       if len(sel.src.selected['1d']['indices']) == 1:
         print("update!")
         index = sel.src.selected['1d']['indices'][0]
-        sel.eci_src.data["current"] = sel.eci_src.data[str(index)]
+        set_src_data(sel.eci_src, 'current', sel.eci_src.data[str(index)], force=True)
     
     # self, sel, scoring, name="Score", mode='set', tooltips=None, on_tap=view_on_tap)
     self.cv_rankplot = RankPlot( self.sel, score, name="CV Score", 
@@ -2033,20 +2032,20 @@ class ECISelect(object):
     
     self.sel.eci_src = bokeh.models.ColumnDataSource(data=self.sel.eci)
     
-    with open(self.proj.dir.basis(self.proj.settings.default_clex), 'r') as f:
-      self.basis = json.load(f)
+    with open(self.proj.dir.basis(self.proj.settings.default_clex), 'rb') as f:
+      self.basis = json.loads(f.read().decode('utf-8'))
     
-    self.sel.eci_src.data["index"] = range(self.sel.eci.shape[0])
-    self.sel.eci_src.data["branch"] = [j["orbit"][0] for j in self.basis["cluster_functions"] ]
-    self.sel.eci_src.data["mult"] = [j["mult"] for j in self.basis["cluster_functions"] ]
-    self.sel.eci_src.data["max_length"] = [j["prototype"]["max_length"] for j in self.basis["cluster_functions"] ]
-    self.sel.eci_src.data["min_length"] = [j["prototype"]["min_length"] for j in self.basis["cluster_functions"] ]
+    set_src_data(sel.eci_src, 'index', range(self.sel.eci.shape[0]), force=True)
+    set_src_data(sel.eci_src, 'branch', [j["orbit"][0] for j in self.basis["cluster_functions"] ], force=True)
+    set_src_data(sel.eci_src, 'mult', [j["mult"] for j in self.basis["cluster_functions"] ], force=True)
+    set_src_data(sel.eci_src, 'max_length', [j["prototype"]["max_length"] for j in self.basis["cluster_functions"] ], force=True)
+    set_src_data(sel.eci_src, 'min_length', [j["prototype"]["min_length"] for j in self.basis["cluster_functions"] ], force=True)
     colormap = ["black", "blue", "red", "green", "cyan", "magenta", "yellow", "orange"]
-    self.sel.eci_src.data["color"] = map(lambda x: colormap[x % len(colormap)], self.sel.eci_src.data["branch"])
-    self.sel.eci_src.data["current"] = self.sel.eci_src.data[str(index)]
+    set_src_data(sel.eci_src, 'color', list(map(lambda x: colormap[x % len(colormap)], self.sel.eci_src.data["branch"])), force=True)
+    set_src_data(sel.eci_src, 'current', self.sel.eci_src.data[str(index)], force=True)
     
     # TOOLS in bokeh plot
-    _tools = ["crosshair,pan,reset,resize,box_zoom"]
+    _tools = ["crosshair,pan,reset,box_zoom,wheel_zoom,save"]
     
     self.eci_stemplot = bokeh.plotting.Figure(plot_width=800, plot_height=400, 
       tools=_tools, y_range=(self.sel.eci.min().min()*1.1, self.sel.eci.max().max()*1.1))
@@ -2213,7 +2212,7 @@ class GUIOptions(object):
     self.update.append(select_action_f)
     
     self.widget.on_change('value', self.on_change)
-    self.layout = hplot(self.widget, width=200)
+    self.layout = bk_layouts.row(self.widget, width=200)
   
   def on_change(self, attrname, old, new):
     for f in self.update:

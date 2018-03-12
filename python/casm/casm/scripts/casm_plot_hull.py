@@ -1,25 +1,14 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
-from casm.project import Project, Selection
-import casm.plotting
-import argparse
-import os
-import sys
 import json
-from bokeh.io import curdoc
-from bokeh.client import push_session
 import bokeh.plotting
 import bokeh.models
 
-input_help = "Input file"
-desc_help = "Print extended usage description"
+import casm.plotting
+
 usage_desc = """
 Plot the convex hull of calculated formation energies
-
-Before running you must start the bokeh server:
-- install bokeh with: 'pip install bokeh'
-- start server: 'bokeh serve'
 
 If you have 'casm view' setup, then clicking on a configuration in the plot
 will attempt to use 'casm view' to view that configuration.
@@ -59,19 +48,17 @@ Input file attributes:
       Visual styling attribute values for predicted energies. Defaults are 
       determined casm.plotting.clex_hull_style. The 'marker' value should be one 
       of the methods of bokeh.models.Figure
-    
+"""    
 
-Example input file:
-
-{
+input_example = {
   "figure_kwargs": {
     "plot_height": 400,
     "plot_width": 800,
-    "tools": "crosshair,pan,reset,resize,box_zoom"
+    "tools": "crosshair,pan,reset,box_zoom,wheel_zoom,save"
   },
   "series": [
     {
-      "project": null,
+      "project": None,
       "selection": "MASTER",
       "hull_selection":"MASTER",
       "x": "comp(a)",
@@ -83,9 +70,7 @@ Example input file:
   ]
 }
 
-'dft_style' example:
-
-{
+style_example = {
   "hull_line_dash": "", 
   "hover_alpha": 0.7, 
   "fill_alpha": 0.5, 
@@ -109,48 +94,50 @@ Example input file:
     "line_color": "blue", 
     "line_width": 0.0, 
     "line_alpha": 0.0
-  }
+  },
+  'clex_of_dft_hull_line_dash': "4 4"
 }
 
-'clex_style' has one additional property: 
-  'clex_of_dft_hull_line_dash': "4 4"
+class PlotHullCommand(casm.plotting.PlotTypeCommand):
+    
+    @classmethod
+    def name(self):
+        return "hull"
+    
+    @classmethod
+    def short_desc(self):
+        return "Plot convex hull"
+    
+    @classmethod
+    def long_desc(self):
+        return usage_desc
+    
+    @classmethod
+    def style_example(self):
+        return style_example
+    
+    @classmethod
+    def input_example(self):
+        return input_example
+    
+    @classmethod
+    def plot(self, doc, args):
+        with open(args.input, 'rb') as f:
+            input = json.loads(f.read().decode('utf-8'))
+        
+        data = casm.plotting.PlottingData()
+        figure_kwargs = input.get('figure_kwargs', casm.plotting.default_figure_kwargs)
+        fig = bokeh.plotting.Figure(**figure_kwargs)
+        tap_action = casm.plotting.TapAction(data)
+        
+        hullplot = casm.plotting.ConvexHullPlot(data, **input['series'][0])
+        hullplot.query()
+        hullplot.plot(fig, tap_action)
+        
+        # add tools
+        fig.add_tools(tap_action.tool())
+        fig.add_tools(bokeh.models.BoxSelectTool(renderers=hullplot.renderers))
+        fig.add_tools(bokeh.models.LassoSelectTool(renderers=hullplot.renderers))
+        
+        doc.add_root(fig)
 
-"""
-
-def main():
-    parser = argparse.ArgumentParser(description = 'Plot convex hull')
-    parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
-    parser.add_argument('input', help=input_help, type=str)
-    
-    # ignore 'mc casm'
-    args = parser.parse_args(sys.argv[1:])
-    
-    if args.desc:
-        print(usage_desc)
-        sys.exit(1)
-    
-    with open(args.input, 'r') as f:
-        input = json.load(f)
-    
-    data = casm.plotting.PlottingData()
-    figure_kwargs = input.get('figure_kwargs', casm.plotting.default_figure_kwargs)
-    fig = bokeh.plotting.Figure(**figure_kwargs)
-    tap_action = casm.plotting.TapAction(data)
-    
-    hullplot = casm.plotting.ConvexHullPlot(data, **input['series'][0])
-    hullplot.query()
-    hullplot.plot(fig, tap_action)
-    
-    # add tools
-    fig.add_tools(tap_action.tool())
-    fig.add_tools(bokeh.models.BoxSelectTool(renderers=hullplot.renderers))
-    fig.add_tools(bokeh.models.LassoSelectTool(renderers=hullplot.renderers))
-    
-    # set up session
-    session = push_session(curdoc())
-    curdoc().add_root(fig)
-    session.show() # open the document in a browser
-    session.loop_until_closed() # run forever
-
-if __name__ == "__main__":
-    main()

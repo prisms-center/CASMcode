@@ -1,5 +1,5 @@
 """Functions used by wrappers"""
-from misc import jobname
+from casm.wrapper.misc import jobname
 
 __all__ = [
     'jobname']

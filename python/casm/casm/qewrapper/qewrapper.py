@@ -1,7 +1,7 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
-import os, shutil, re, subprocess, json
+import os, shutil, six, re, subprocess, json
 import warnings
 import casm.quantumespresso.qeio as qeio
 
@@ -55,9 +55,8 @@ def read_settings(filename):
         "err_types" : list of errors to check for. Allowed entries are "IbzkptError" and "SubSpaceMatrixError". Default: ["SubSpaceMatrixError"] <---- STILL NEED TO IMPLEMENT
     """
     try:
-        file = open(filename)
-        settings = json.load(file)
-        file.close()
+        with open(filename, 'rb') as file:
+            settings = json.loads(file.read().decode('utf-8'))
     except (IOError, ValueError) as e:
         print("Error reading settings file:", filename)
         raise e
@@ -102,9 +101,8 @@ def read_settings(filename):
 
 def write_settings(settings, filename):
     """ Write 'settings' as json file, 'filename' """
-    file = open(filename,'w')
-    json.dump( settings, file, indent=4)
-    file.close()
+    with open(filename, 'wb') as file:
+        file.write(six.u(json.dumps( settings, file, indent=4)).encode('utf-8'))
 
       
 def qe_input_file_names(dirstruc, configname, clex, infilename):

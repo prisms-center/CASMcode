@@ -14,7 +14,7 @@ namespace CASM {
 
       // --- If not in 'must converge mode' -----
 
-      if(((int) settings.is_N_step()) + ((int) settings.is_N_step()) + ((int) settings.is_N_step()) > 1) {
+      if(((int) settings.is_N_step()) + ((int) settings.is_N_pass()) + ((int) settings.is_N_sample()) > 1) {
         throw std::runtime_error(
           std::string("Error in MonteCounter constructor\n") +
           "  Zero or one of 'N_step', 'N_pass', and 'N_sample' should be given");

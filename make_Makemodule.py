@@ -6,6 +6,7 @@ import os
 import re
 from glob import glob
 from os.path import join
+from six import iteritems
 
 # Notes:
 #
@@ -15,7 +16,7 @@ from os.path import join
 # libraries necessary for them to be built and run.
 #
 # Typical usage is something like (configure options may vary):
-# ./make_Makemodule.py
+# python make_Makemodule.py
 # ./bootstrap.sh
 # ./configure CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-register"
 # make -j 4
@@ -119,6 +120,34 @@ def has_tests(dir):
     """Check if '*_test.cpp' files exist in dir"""
     return len(glob(join(dir, '*_test.cpp'))) > 0
 
+def includedir(f, includedir, include=default_include, exclude=default_exclude):
+    """Write contents of Makemodule.am for copying header files
+    
+    - Write Makemodule.am file to copy all files/dir from include directories
+    
+    f: file object
+    includedir: join('include', 'casm') or join('include', 'ccasm')
+    """
+    files = find_files(includedir, include=include, exclude=exclude)
+    
+    # create dictionary of '<direcoryname>:[filepaths of files in directory]'
+    data = {}
+    for file in files:
+        dir = os.path.split(file)[0]
+        if dir not in data:
+            data[dir] = []
+        data[dir].append(file)
+    for (dir,filelist) in iteritems(data):
+        # ex: dir=include/casm/app
+        # ex: subpath_parts = ['casm','app']
+        subpath_parts = dir.split(os.sep)[1:]
+        # ex: subpath = 'casm/app'
+        subpath = os.path.join(*subpath_parts)
+        # ex: subpathname = 'casm_app_include'
+        subpathname = '_'.join(subpath_parts + ['include'])
+        f.write(subpathname + 'dir=$(includedir)/' + subpath + '\n\n')
+        write_option(f, subpathname, 'HEADERS', filelist)
+
 def testdir(f, group, extradist_ext=['*.hh', '*.cc', '*.json', '*.txt'], verbose=True):
     """Include portion of Makemodule.am for unit tests
     
@@ -213,16 +242,14 @@ def main():
     print('Working on', dir)
     makemodules.append(join('include', 'casm', 'Makemodule.am'))
     with open(makemodules[-1], 'w') as f:
-        f.write('casmincludedir=$(includedir)/casm\n\n')
-        write_option(f, 'casminclude', 'HEADERS', find_files(dir))
+        includedir(f, dir)
     
     # include/ccasm/Makemodule.am
     dir = join('include', 'ccasm')
     print('Working on', dir)
     makemodules.append(join('include', 'ccasm', 'Makemodule.am'))
     with open(makemodules[-1], 'w') as f:
-        f.write('ccasmincludedir=$(includedir)/ccasm\n\n')
-        write_option(f, 'ccasminclude', 'HEADERS', find_files(dir))
+        includedir(f, dir)
     
     # src/casm/Makemodule.am
     dir = join('src', 'casm')
@@ -231,12 +258,13 @@ def main():
     with open(makemodules[-1], 'w') as f:
         name = 'libcasm_la'
         append(f, 'lib_LTLIBRARIES', ['libcasm.la'])
-        write_option(f, name, 'SOURCES', find_files(dir, include='.*\.(c|cc|cpp|C)'))
+        src_exclude = '(' + default_exclude + ')|(.*test_g(un)?zip.C)'
+        write_option(f, name, 'SOURCES', find_files(dir, include='.*\.(c|cc|cpp|C)', exclude=src_exclude))
         write_option(f, name, 'LIBADD', boost_libs)
         write_option(f, name, 'LDFLAGS', ['-avoid-version', '$(BOOST_LDFLAGS)'])
         
         # always keep version uptodate
-        f.write('src/casm/version/version.o: .FORCE\n\n')
+        f.write('src/casm/version/autoversion.o: .FORCE\n\n')
     
     # src/ccasm/Makemodule.am
     dir = join('src', 'ccasm')
@@ -248,15 +276,15 @@ def main():
         write_option(f, name, 'SOURCES', find_files(dir, include='.*\.(c|cc|cpp|C)'))
         write_option(f, name, 'LDFLAGS', ['-avoid-version'])
     
-    # apps/casm/Makemodule.am
-    dir = join('apps', 'casm')
+    # apps/ccasm/Makemodule.am
+    dir = join('apps', 'ccasm')
     print('Working on', dir)
-    makemodules.append(join('apps', 'casm', 'Makemodule.am'))
+    makemodules.append(join('apps', 'ccasm', 'Makemodule.am'))
     with open(makemodules[-1], 'w') as f:
-        append(f, 'bin_PROGRAMS', ['casm'])
-        append(f, 'man1_MANS', ['man/casm.1'])
-        write_option(f, 'casm', 'SOURCES', ['apps/casm/casm.cpp'])
-        write_option(f, 'casm', 'LDADD', lib_casm + boost_libs)
+        append(f, 'bin_PROGRAMS', ['ccasm'])
+        append(f, 'man1_MANS', ['man/ccasm.1'])
+        write_option(f, 'ccasm', 'SOURCES', ['apps/ccasm/ccasm.cpp'])
+        write_option(f, 'ccasm', 'LDADD', lib_casm + boost_libs)
         
     
     # apps/completer/Makemodule.am
@@ -280,7 +308,7 @@ def main():
     with open(makemodules[-1], 'w') as f:
         
         # PROGRAMS (complete tests)
-        append_option(f, 'check', 'PROGRAMS', ['casm'])
+        append_option(f, 'check', 'PROGRAMS', ['ccasm'])
         
         # LIBRARIES
         append(f, 'noinst_LIBRARIES', ['libcasmtesting.a'])

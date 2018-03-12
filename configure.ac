@@ -22,14 +22,8 @@ AC_PROG_CC
 AC_PROG_CPP
 
 ## Checks for libraries.
-## FIXME: Replace `main' with a function in `-lgzstream':
-#AC_CHECK_LIB([gzstream], [main])
-## FIXME: Replace `main' with a function in `-lz':
-AC_CHECK_LIB([z], [gzread], [], AC_MSG_ERROR(gzread from z library not found!))
-AC_CHECK_LIB([dl], [dlopen], [], AC_MSG_ERROR(dlopen from dl library not found!))
-#AC_CHECK_LIB([z], [gzwrite])
-#AC_CHECK_LIB([z], [gzopen])
-#AC_CHECK_LIB([z], [gzclose])
+AC_SEARCH_LIBS([dlopen], [dl], [], AC_MSG_ERROR(dlopen from dl library not found!))
+AX_CHECK_ZLIB(,[AC_MSG_ERROR([Could not find zlib])])
 
 #I added this
 LT_INIT([shared disable-static])

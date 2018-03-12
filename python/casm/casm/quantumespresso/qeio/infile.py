@@ -4,6 +4,8 @@ from builtins import *
 import numpy as np
 import re,copy,math
 
+from casm.wrapper.misc import remove_chars
+
 ##############################################CONTROL MODULE BEGINS HERE############################################
 QUANTUM_ESPRESSO_CONTROL_INT_LIST=['nstep','iprint','nberrycyc','gdir','nppstr']
 QUANTUM_ESPRESSO_CONTROL_FLOAT_LIST=['dt','max_seconds','etot_conv_thr','forc_conv_thr']
@@ -885,8 +887,6 @@ QUANTUM_ESPRESSO_CARD_OBJ_LIST = ['ATOMIC_SPECIES','ATOMIC_POSITIONS','K_POINTS'
 QUANTUM_ESPRESSO_BLOCK_LIST= QUANTUM_ESPRESSO_NAMELIST_LIST + QUANTUM_ESPRESSO_CARD_LIST
 
 
-
-
 class InfileError(Exception):
     def __init__(self,msg):
         self.msg = msg
@@ -1066,12 +1066,12 @@ class Infile:
                 pass
             else:
                 if namelist in QUANTUM_ESPRESSO_NAMELIST_OBJ_LIST:
-                    infile_write.write('&{}\n'.format(namelist).translate(None,"[],'"))
-                    infile_write.write('{}'.format(self.namelists[namelist].make_string()).translate(None,"[]"))
+                    infile_write.write(remove_chars('&{}\n'.format(namelist),"[\[\],]'"))
+                    infile_write.write(remove_chars('{}'.format(self.namelists[namelist].make_string()),"[\[\]]'"))
                     infile_write.write('/\n')
                 else:
-                    infile_write.write('&{}\n'.format(namelist).translate(None,"[],'"))
-                    infile_write.write('{}'.format(self.namelists[namelist]).translate(None,"[]"))
+                    infile_write.write(remove_chars('&{}\n'.format(namelist),"[\[\],]'"))
+                    infile_write.write(remove_chars('{}'.format(self.namelists[namelist]),"[\[\]]'"))
                     infile_write.write('/\n')
         for card in sorted(self.cards.keys(),key=lambda x: QUANTUM_ESPRESSO_CARD_LIST.index(x)):
             if self.cards[card] == None or str(self.cards[card]).strip() == "":
@@ -1082,11 +1082,11 @@ class Infile:
                         infile_write.write('{} {}\n'.format(card,self.cards[card].units))
                     else:
                         infile_write.write('{}\n'.format(card))
-                    infile_write.write('{}'.format(self.cards[card].make_string()).translate(None,"[]"))
+                    infile_write.write(remove_chars('{}'.format(self.cards[card].make_string()),"[\[\]]'"))
                     infile_write.write('\n')
                 else:
                     infile_write.write('{}\n'.format(card))
-                    infile_write.write('{}'.format(self.cards[card]).translate(None,"[]"))
+                    infile_write.write(remove_chars('{}'.format(self.cards[card]),"[\[\]]'"))
                     infile_write.write('\n')
         infile_write.close()
 
