@@ -1,6 +1,7 @@
 #include "casm/system/RuntimeLibrary.hh"
 
 #include <vector>
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include "casm/casm_io/Log.hh"
 

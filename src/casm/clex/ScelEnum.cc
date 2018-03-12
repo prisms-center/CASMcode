@@ -48,6 +48,10 @@ namespace CASM {
     _init();
   }
 
+  std::string ScelEnumByName::name() const {
+    return ScelEnumByName::enumerator_name;
+  }
+
   /// Random access implementation
   const Supercell *ScelEnumByName::at_step(step_type n) {
     return m_scelptr[n];
@@ -122,6 +126,10 @@ namespace CASM {
   ScelEnumByProps::ScelEnumByProps(const PrimClex &primclex, const jsonParser &input) :
     ScelEnumByProps(primclex, make_scel_enum_props(primclex, input), _get_else(input, "existing_only", false)) {}
 
+  std::string ScelEnumByProps::name() const {
+    return ScelEnumByProps::enumerator_name;
+  }
+
   /// Implements increment over supercells
   void ScelEnumByProps::increment() {
     ++m_lat_it;
@@ -147,6 +155,10 @@ namespace CASM {
       return m_primclex->db<Supercell>().find(name) != m_primclex->db<Supercell>().end();
     }
     return true;
+  }
+
+  std::string ScelEnum::name() const {
+    return ScelEnum::enumerator_name;
   }
 
   /// \relates ::ScelEnumT

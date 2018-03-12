@@ -110,7 +110,7 @@ namespace CASM {
       m_valid(false),
       m_step(0) {}
 
-    ~EnumeratorBase() {}
+    virtual ~EnumeratorBase() {}
 
     /// Increments with each enumerated object
     step_type step() const {

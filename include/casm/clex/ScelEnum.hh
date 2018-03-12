@@ -83,6 +83,7 @@ namespace CASM {
 
     ScelEnumByProps(const ScelEnumByProps &) = delete;
     ScelEnumByProps &operator=(const ScelEnumByProps &) = delete;
+    ~ScelEnumByProps() {}
 
 
     std::string name() const override;

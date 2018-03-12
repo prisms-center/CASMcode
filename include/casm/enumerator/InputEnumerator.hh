@@ -31,8 +31,6 @@ namespace CASM {
     InputEnumIteratorBase(InputEnumeratorBase<ValueType, IsConst> &enumerator, bool is_end) :
       ValEnumIterator<ValueType, IsConst>(enumerator), m_constructed_as_end(is_end) {}
 
-    virtual ~InputEnumIteratorBase() {}
-
 
     using EnumIteratorBase::source;
     using EnumIteratorBase::name;

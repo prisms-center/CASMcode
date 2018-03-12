@@ -293,7 +293,7 @@ namespace CASM {
       InputEnumeratorBase<ValueType, IsConst>(),
       m_size(size) {}
 
-    ~RandomAccessEnumeratorBase() {}
+    virtual ~RandomAccessEnumeratorBase() {}
 
 
     using InputEnumeratorBase<ValueType, IsConst>::step;
