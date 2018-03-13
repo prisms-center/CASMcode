@@ -22,7 +22,7 @@ namespace CASM {
 
   std::string SuperConfigEnum::interface_help() {
 
-    "SuperConfigEnum: \n\n"
+    return "SuperConfigEnum: \n\n"
 
     "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
     "    Indicate supercells to enumerate super-configurations in using ScelEnum\n"
