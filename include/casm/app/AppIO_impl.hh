@@ -15,6 +15,8 @@
 #include "casm/casm_io/SafeOfstream.hh"
 
 #include "casm/database/Selection_impl.hh"
+#include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/InvariantSubgroup_impl.hh"
 
 
 namespace CASM {
@@ -42,10 +44,151 @@ namespace CASM {
     return result;
   }
 
+  template<typename OrbitPrinter, typename Element>
+  void print_coordinates(OrbitPrinter &printer, const Element &element, Log &out) {
+    out << out.indent_str() << "Coordinates:" << std::endl;
+    printer.increase_indent(out);
+    printer.print(element, out);
+    printer.decrease_indent(out);
+  }
 
-  // ---------- casm bspecs --orbits -----------------------------------------------------------
+  template<typename OrbitType>
+  void PrinterBase::print_equivalence_map(const OrbitType &orbit, Index equiv_index, Log &out) {
+    out << out.indent_str() << "Equivalence map: " << std::endl;
+    this->increase_indent(out);
+    int j = 0;
+    for(const auto &op : orbit.equivalence_map()[equiv_index]) {
+      out << out.indent_str() << j << ": (" << op.index() << ") "
+          << brief_description(op, orbit.prototype().prim().lattice(), this->opt.coord_type)
+          << std::endl;
+      ++j;
+    }
+    this->decrease_indent(out);
+  }
+
+  template<typename OrbitType>
+  void PrinterBase::print_equivalence_map(const OrbitType &orbit, Log &out) {
+    out << out.indent_str() << "Orbit equivalence map: " << std::endl;
+    this->increase_indent(out);
+    for(int i = 0; i < orbit.size(); ++i) {
+      out << out.indent_str() << "Element: " << i << std::endl;
+      this->increase_indent(out);
+      int j = 0;
+      for(const auto &op : orbit.equivalence_map()[i]) {
+        out << out.indent_str() << j << ": (" << op.index() << ") "
+            << brief_description(op, orbit.prototype().prim().lattice(), this->opt.coord_type)
+            << std::endl;
+        ++j;
+      }
+      this->decrease_indent(out);
+    }
+    this->decrease_indent(out);
+  }
+
+  template<typename OrbitType, typename Element>
+  void PrinterBase::print_invariant_group(const OrbitType &orbit, const Element &element, Log &out) {
+    out << out.indent_str() << "Invariant group:" << std::endl;
+    SymGroup invariant_group = make_invariant_subgroup(element, orbit.generating_group(), orbit.sym_compare());
+    this->increase_indent(out);
+    SymInfoOptions topt = this->opt.sym_info_opt;
+    brief_description(out, invariant_group, orbit.prototype().prim().lattice(), topt);
+    this->decrease_indent(out);
+  }
+
+  // --- OrbitPrinter templates ---
 
 
+  template<typename _Element>
+  template<typename OrbitType>
+  void OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO>::operator()(
+    const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) {
+
+    out << out.indent_str() << "Prototype" << " of " << orbit.size()
+        << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
+    this->increase_indent(out);
+
+    if(this->opt.print_coordinates) {
+      print_coordinates(*this, orbit.prototype(), out);
+    }
+    if(this->opt.print_invariant_grp) {
+      this->print_invariant_group(orbit, orbit.prototype(), out);
+    }
+    this->decrease_indent(out);
+
+  }
+
+  /// \brief Print to JSON
+  ///
+  /// Note: for 'read_clust' to work, "prototype" must be written
+  template<typename _Element>
+  template<typename OrbitType>
+  jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO>::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) {
+    json.put_obj();
+    json["prototype"] = orbit.prototype();
+    json["linear_orbit_index"] = orbit_index;
+    return json;
+  }
+
+  template<typename _Element>
+  template<typename OrbitType>
+  void OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL>::operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) {
+
+    for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
+      out << out.indent_str() << equiv_index << " of " << orbit.size()
+          << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
+      this->increase_indent(out);
+
+      if(this->opt.print_coordinates) {
+        print_coordinates(*this, orbit[equiv_index], out);
+      }
+      if(this->opt.print_invariant_grp) {
+        this->print_invariant_group(orbit, orbit[equiv_index], out);
+      }
+      if(this->opt.print_equivalence_map) {
+        this->print_equivalence_map(orbit, equiv_index, out);
+      }
+      this->decrease_indent(out);
+
+    }
+  }
+
+  /// \brief Print to JSON
+  ///
+  /// Note: for 'read_clust' to work, "prototype" must be written
+  template<typename _Element>
+  template<typename OrbitType>
+  jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL>::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) {
+    json.put_obj();
+    json["prototype"] = orbit.prototype();
+    json["elements"].put_array(orbit.begin(), orbit.end());
+    json["linear_orbit_index"] = orbit_index;
+    return json;
+  }
+
+  template<typename OrbitType>
+  void ProtoFuncsPrinter::operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) {
+    out << out.indent_str() << "Prototype" << " of " << orbit.size()
+        << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+    this->increase_indent(out);
+    print(orbit.prototype(), out);
+    this->decrease_indent(out);
+
+    throw std::runtime_error("Error printing basis functions: ProtoFuncsPrinter not implemented");
+    //print_clust_basis(out, nf, 8, '\n');
+    //nf += prototype(i, j).clust_basis.size();
+    //out << "\n\n" << std::flush;
+  }
+
+  template<typename OrbitType>
+  jsonParser &ProtoFuncsPrinter::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) {
+    json.put_obj();
+    json["prototype"] = orbit.prototype();
+    json["linear_orbit_index"] = orbit_index;
+
+    throw std::runtime_error("Error printing basis functions: ProtoFuncsPrinter not implemented");
+
+    return json;
+  }
 
   /// \brief Print IntegralCluster orbits
   ///
@@ -56,7 +199,7 @@ namespace CASM {
   ///
   /// Printer is expected to have:
   /// - \code std::string Printer::indent(); \endcode
-  /// - \code void Printer::coord_mode(Log& out); \endcode
+  /// - \code void Printer::coord_type(Log& out); \endcode
   /// - \code void Printer::operator()(const Orbit<IntegralCluster, SymCompareType>& orbit, Log& out, Index orbit_index, Index Norbits); \endcode
   ///
   template<typename ClusterOrbitIterator, typename OrbitPrinter>
@@ -66,7 +209,7 @@ namespace CASM {
     Log &out,
     OrbitPrinter printer) {
 
-    printer.coord_mode(out);
+    printer.coord_type(out);
 
     out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
     out.ostream().precision(5);
@@ -74,24 +217,23 @@ namespace CASM {
     Index branch = -1;
     Index orbit_index = 0;
     Index Norbits = std::distance(begin, end);
-    std::string indent = printer.indent();
 
     for(auto it = begin; it != end; ++it) {
       if(it->prototype().size() != branch) {
         branch = it->prototype().size();
         out << out.indent_str() << "** Branch " << branch << " ** " << std::endl;
       }
-      printer.indent_level++;
-      out << out.indent_str() << printer.indent() << "** " << orbit_index << " of " << Norbits << " Orbits **"
+      printer.increase_indent(out);
+      out << out.indent_str() << "** " << orbit_index << " of " << Norbits << " Orbits **"
           << "  Points: " << it->prototype().size()
           << "  Mult: " << it->size()
           << "  MinLength: " << it->prototype().min_length()
           << "  MaxLength: " << it->prototype().max_length() << std::endl;
-      printer.indent_level++;
+      printer.increase_indent(out);
       printer(*it, out, orbit_index, Norbits);
       out << std::endl;
-      printer.indent_level--;
-      printer.indent_level--;
+      printer.decrease_indent(out);
+      printer.decrease_indent(out);
       ++orbit_index;
     }
 
@@ -103,22 +245,19 @@ namespace CASM {
     ClusterOrbitIterator begin,
     ClusterOrbitIterator end,
     Log &out,
-    ORBIT_PRINT_MODE _orbit_print_mode,
-    COORD_TYPE _coord_mode,
-    int _indent_space,
-    char _delim) {
+    const OrbitPrinterOptions &opt) {
 
     //typedef typename ClusterOrbitIterator::container_type container_type;
     //typedef typename container_type::value_type orbit_type;
     typedef typename std::iterator_traits<ClusterOrbitIterator>::value_type orbit_type;
     typedef typename orbit_type::Element Element;
 
-    if(_orbit_print_mode == ORBIT_PRINT_MODE::PROTO) {
-      OrbitPrinter<Element, ORBIT_PRINT_MODE::PROTO> orbit_printer(_indent_space, _delim, _coord_mode);
+    if(opt.orbit_print_mode == ORBIT_PRINT_MODE::PROTO) {
+      OrbitPrinter<Element, ORBIT_PRINT_MODE::PROTO> orbit_printer(opt);
       print_clust(begin, end, out, orbit_printer);
     }
-    else if(_orbit_print_mode == ORBIT_PRINT_MODE::FULL) {
-      OrbitPrinter<Element, ORBIT_PRINT_MODE::FULL> orbit_printer(_indent_space, _delim, _coord_mode);
+    else if(opt.orbit_print_mode == ORBIT_PRINT_MODE::FULL) {
+      OrbitPrinter<Element, ORBIT_PRINT_MODE::FULL> orbit_printer(opt);
       print_clust(begin, end, out, orbit_printer);
     }
   }

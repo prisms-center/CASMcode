@@ -226,14 +226,12 @@ namespace CASM {
     bool _required) :
     InputParser(_input, _path, _required) {
 
-    auto _relpath = Relpath(_path);
-
     this->kwargs["orbit_branch_specs"] =
       std::make_shared<PrimPeriodicOrbitBranchSpecsParser>(
-        input, _relpath("orbit_branch_specs"), false);
+        input, relpath("orbit_branch_specs"), false);
     this->kwargs["orbit_specs"] =
       std::make_shared<PrimPeriodicOrbitSpecsParser>(
-        _primclex, _generating_grp, _sym_compare, input, _relpath("orbit_specs"), false);
+        _primclex, _generating_grp, _sym_compare, input, relpath("orbit_specs"), false);
     warn_unnecessary({"orbit_branch_specs", "orbit_specs"});
   }
 

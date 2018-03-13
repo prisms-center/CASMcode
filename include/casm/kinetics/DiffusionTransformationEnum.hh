@@ -39,13 +39,15 @@ namespace CASM {
 
       const PrimPeriodicClustersByMaxLength &cspecs() const;
 
+      const OrbitPrinterOptions &orbit_printer_opt() const;
+
       static std::set<std::string> expected();
 
     private:
       std::shared_ptr<SpeciesSetParser> m_require;
       std::shared_ptr<SpeciesSetParser> m_exclude;
       std::shared_ptr<PrimPeriodicClustersByMaxLength> m_cspecs_parser;
-
+      std::shared_ptr<OrbitPrinterOptionsParser> m_orbit_printer_opt_parser;
     };
 
 

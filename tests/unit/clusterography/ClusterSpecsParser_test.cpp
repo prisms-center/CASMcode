@@ -111,7 +111,9 @@ namespace {
 
     BOOST_CHECK_EQUAL(count, ts.scel.num_sites());
 
-    FullOrbitPrinter<IntegralCluster> orbit_printer(6, '\n', CART);
+    OrbitPrinterOptions opt;
+    opt.coord_type = CART;
+    FullOrbitPrinter<IntegralCluster> orbit_printer(opt);
     print_clust(local_point_orbits.begin(), local_point_orbits.end(), ts.scel.primclex().log(), orbit_printer);
 
   }
@@ -149,7 +151,9 @@ namespace {
 
     BOOST_CHECK_EQUAL(count, ts.scel.num_sites() * (ts.scel.num_sites() - 1) / 2);
 
-    FullOrbitPrinter<IntegralCluster> orbit_printer(6, '\n', CART);
+    OrbitPrinterOptions opt;
+    opt.coord_type = CART;
+    FullOrbitPrinter<IntegralCluster> orbit_printer(opt);
     print_clust(local_pair_orbits.begin(), local_pair_orbits.end(), ts.scel.primclex().log(), orbit_printer);
 
   }
@@ -183,19 +187,25 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_THROW(parser->max_length(3), std::invalid_argument);
     BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   {
     auto parser = PrimParser(primclex, R"({})");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
+    BOOST_CHECK_EQUAL(parser->valid(), false);
+    BOOST_CHECK_EQUAL(parser->error.size(), 1);
+    BOOST_CHECK_EQUAL(parser->warning.size(), 0);
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 0);
 
     BOOST_CHECK_EQUAL(parser->max_branch(), 1);
     BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   {
@@ -204,7 +214,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->valid(), false);
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 1);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   {
@@ -218,7 +230,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->valid(), true);
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 1);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   {
@@ -232,7 +246,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 0);
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 1);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   {
@@ -247,7 +263,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 0);
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 1);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   {
@@ -262,7 +280,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 0);
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   {
@@ -278,7 +298,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 2);
     BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- PrimPeriodicOrbitSpecsParser ----
@@ -303,7 +325,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 0);
     BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 3);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- valid, no subclusters ---
@@ -327,7 +351,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 0);
     BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 1);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- valid, include_subclusters ---
@@ -351,7 +377,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 0);
     BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 4);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- valid w/warning ---
@@ -375,7 +403,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 0);
     BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 4);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- error, not array ---
@@ -393,7 +423,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->valid(), false);
     BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 1);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 }
 
@@ -401,7 +433,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
   /// Make test project
   test::FCCTernaryProj proj;
   proj.check_init();
-  Log &log = default_log();
+  Log &log = null_log();
   PrimClex primclex(proj.dir, null_log());
   BOOST_CHECK_EQUAL(true, true);
 
@@ -415,17 +447,17 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
   BOOST_CHECK_EQUAL(diff_trans_db.size(), 28);
   BOOST_CHECK_EQUAL(success, 0);
 
-  PrototypePrinter<Kinetics::DiffusionTransformation> dt_orbit_printer(6, '\n', CART);
+  OrbitPrinterOptions opt;
+  opt.coord_type = CART;
+  PrototypePrinter<Kinetics::DiffusionTransformation> dt_orbit_printer(opt);
 
-  {
-    Index i = 0;
-    for(const auto &orbit : diff_trans_db) {
-      log << "\n --- " << orbit.name() << " ---" << std::endl;
-      dt_orbit_printer(orbit, log, i++, diff_trans_db.size());
-    }
-  }
-
-
+  //  {
+  //    Index i = 0;
+  //    for(const auto &orbit : diff_trans_db) {
+  //      log << "\n --- " << orbit.name() << " ---" << std::endl;
+  //      dt_orbit_printer(orbit, log, i++, diff_trans_db.size());
+  //    }
+  //  }
 
   // generate local orbits (w/ scel symmetry) using a 3x3x3 standard FCC supercell (so 3x3x3x4 sites)
   test::TestStandardFCCSupercell ts(primclex, 3, 3, 3);
@@ -464,7 +496,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- typical ---
@@ -492,7 +526,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- typical, warning for max_length on brach 1 w/out max_length_including_phenomenal option ---
@@ -513,7 +549,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 1);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- typical, error for nonincreasing ---
@@ -534,7 +572,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 2);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- typical, w/ max_length_including_phenomenal ---
@@ -563,7 +603,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- typical, w/ max_length_including_phenomenal && max_length="inf" (all clusters of branch in neighborhood) ---
@@ -593,7 +635,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- w/ max_length_including_phenomenal, error for nonincreasing ---
@@ -615,7 +659,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 2);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- custom orbit_branch_specs, equivalence_type=prim (default)  ---
@@ -635,7 +681,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
               {"from_value" : 2, "to_value" : 2, "uccoord" : [ 0, 0, 0, 0 ]},
               {"from_value" : 2, "to_value" : 2, "uccoord" : [ 0, 0, 0, 1 ]}
             ],
-            "specie_traj" : [
+            "species_traj" : [
               {
                 "from" : {"occ" : 2, "pos" : 0, "uccoord" : [ 0, 0, 0, 0 ]},
                 "to" : {"occ" : 2, "pos" : 0, "uccoord" : [ 0, 0, 0, 1 ]}
@@ -657,6 +703,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     })");
 
     BOOST_CHECK_EQUAL(parser->valid(), true);
+
     BOOST_CHECK_EQUAL(parser->standard->max_branch, 2);
     BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), true);
     BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
@@ -677,7 +724,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
     // only clusters in orbit to.diff_trans_orbits[0] should be found
-    {
+    if(parser->valid()) {
       Index linear_orbit_index = 0;
       for(const auto &orbit : to.diff_trans_orbits) {
         for(const auto &equiv : orbit) {
@@ -711,7 +758,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
   // --- custom orbit_branch_specs, equivalence_type=prim (default), specified by name  ---
@@ -812,7 +861,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
               {"from_value" : 2, "to_value" : 2, "uccoord" : [ 0, 0, 0, 0 ]},
               {"from_value" : 2, "to_value" : 2, "uccoord" : [ 0, 0, 0, 1 ]}
             ],
-            "specie_traj" : [
+            "species_traj" : [
               {
                 "from" : {"occ" : 2, "pos" : 0, "uccoord" : [ 0, 0, 0, 0 ]},
                 "to" : {"occ" : 2, "pos" : 0, "uccoord" : [ 0, 0, 0, 1 ]}
@@ -852,7 +901,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
     // only clusters in orbit to.diff_trans_orbits[0] should be found
-    {
+    if(parser->valid()) {
       Index linear_orbit_index = 0;
       for(const auto &orbit : to.diff_trans_orbits) {
         Index equiv_index = 0;
@@ -910,7 +959,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 }
 
@@ -918,7 +969,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
   /// Make test project
   test::FCCTernaryProj proj;
   proj.check_init();
-  Log &log = default_log();
+  Log &log = null_log();
   PrimClex primclex(proj.dir, null_log());
   BOOST_CHECK_EQUAL(true, true);
 
@@ -946,7 +997,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
               {"from_value" : 2, "to_value" : 2, "uccoord" : [ 0, 0, 0, 0 ]},
               {"from_value" : 2, "to_value" : 2, "uccoord" : [ 0, 0, 0, 1 ]}
             ],
-            "specie_traj" : [
+            "species_traj" : [
               {
                 "from" : {"occ" : 2, "pos" : 0, "uccoord" : [ 0, 0, 0, 0 ]},
                 "to" : {"occ" : 2, "pos" : 0, "uccoord" : [ 0, 0, 0, 1 ]}
@@ -973,7 +1024,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
               {"from_value" : 2, "to_value" : 2, "uccoord" : [ 0, 0, 0, 0 ]},
               {"from_value" : 2, "to_value" : 2, "uccoord" : [ 0, 1, 0, 0 ]}
             ],
-            "specie_traj" : [
+            "species_traj" : [
               {
                 "from" : {"occ" : 2, "pos" : 0, "uccoord" : [ 0, 0, 0, 0 ]},
                 "to" : {"occ" : 2, "pos" : 0, "uccoord" : [ 0, 1, 0, 0 ]}
@@ -995,8 +1046,6 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
         }
       ]
     })");
-
-    log << parser->report() << std::endl;
 
     BOOST_CHECK_EQUAL(parser->valid(), true);
     BOOST_CHECK_EQUAL(parser->standard->max_branch, 2);
@@ -1020,10 +1069,12 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
     // 4/6 clusters in orbit to.diff_trans_orbits[0] should match the first custom phenom
     // 2/6 should match the other custom phenom
 
-    Printer<IntegralCluster> cluster_printer(6, '\n', CART);
+    OrbitPrinterOptions opt;
+    opt.coord_type = CART;
+    Printer<IntegralCluster> cluster_printer(opt);
 
     //    log << "check # matches" << std::endl;
-    {
+    if(parser->valid()) {
       std::vector<Index> count = {0, 0};
       BOOST_CHECK_EQUAL(to.diff_trans_orbits[0].size(), 6);
       for(const auto &equiv : to.diff_trans_orbits[0]) {
@@ -1101,7 +1152,9 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
     BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
     BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
 
+    log.begin("Report");
     log << parser->report() << std::endl;
+    log << std::endl;
   }
 
 }
@@ -1110,7 +1163,7 @@ BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_FCCTernary) {
   /// Make test project
   test::FCCTernaryProj proj;
   proj.check_init();
-  Log &log = default_log();
+  Log &log = null_log();
   PrimClex primclex(proj.dir, null_log());
   BOOST_CHECK_EQUAL(true, true);
 
@@ -1158,7 +1211,7 @@ BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_ZrO) {
   /// Make test project
   test::ZrOProj proj;
   proj.check_init();
-  Log &log = default_log();
+  Log &log = null_log();
   PrimClex primclex(proj.dir, null_log());
   BOOST_CHECK_EQUAL(true, true);
 

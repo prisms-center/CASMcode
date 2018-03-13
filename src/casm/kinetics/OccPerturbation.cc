@@ -162,7 +162,7 @@ namespace CASM {
     if(!out.print()) {
       return;
     }
-    COORD_MODE printer_mode(mode);
+    COORD_MODE printer_mode(this->opt.coord_type);
 
     Printer<Kinetics::OccupationTransformation> printer;
     for(const auto &trans : perturb) {

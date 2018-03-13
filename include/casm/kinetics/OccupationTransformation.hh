@@ -103,8 +103,8 @@ namespace CASM {
     typedef Kinetics::OccupationTransformation Element;
     static const std::string element_name;
 
-    Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = INTEGRAL) :
-      PrinterBase(_indent_space, _delim, _mode) {}
+    Printer(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
+      PrinterBase(_opt) {}
 
     void print(const Element &element, Log &out);
   };

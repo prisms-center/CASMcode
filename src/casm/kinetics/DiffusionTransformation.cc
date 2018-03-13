@@ -763,20 +763,20 @@ namespace CASM {
       return;
     }
 
-    COORD_MODE printer_mode(mode);
+    COORD_MODE printer_mode(this->opt.coord_type);
 
     if(trans.is_valid()) {
-      if(mode != INTEGRAL) {
+      if(this->opt.coord_type != INTEGRAL) {
         // calculate nice widths
         int name_width = 0;
-        int prec = 7;
+        int prec = this->opt.prec;
         int width = prec;
         out.ostream().precision(prec);
         out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
         for(const auto &traj : trans.species_traj()) {
           if(traj.from.species().name().length() > name_width) name_width = traj.from.species().name().length();
           Eigen::Vector3d vec_from, vec_to;
-          if(mode == CART) {
+          if(this->opt.coord_type == CART) {
             vec_from = traj.from.uccoord.coordinate().cart();
             vec_to = traj.to.uccoord.coordinate().cart();
           }
@@ -791,7 +791,7 @@ namespace CASM {
         // print
         Eigen::IOFormat format(prec, width + 1);
         for(const auto &traj : trans.species_traj()) {
-          out << out.indent_str() << indent();
+          out << out.indent_str();
           out << std::setw(name_width) << traj.from.species().name() << ": ";
           {
             const auto &obj = traj.from;
@@ -804,8 +804,8 @@ namespace CASM {
             obj.uccoord.coordinate().print(out, 0, format);
             out << " : " << obj.occ << " " << obj.pos;
           }
-          if(delim)
-            out << delim;
+          if(this->opt.delim)
+            out << this->opt.delim;
           out << std::flush;
         }
       }
@@ -825,7 +825,7 @@ namespace CASM {
         // print
         Eigen::IOFormat format(prec, width);
         for(const auto &traj : trans.species_traj()) {
-          out << out.indent_str() << indent();
+          out << out.indent_str();
           out << std::setw(name_width) << traj.from.species().name() << ": ";
           {
             const auto &obj = traj.from;
@@ -836,26 +836,26 @@ namespace CASM {
             const auto &obj = traj.to;
             out << obj.uccoord.sublat() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
           }
-          if(delim)
-            out << delim;
+          if(this->opt.delim)
+            out << this->opt.delim;
           out << std::flush;
         }
       }
     }
     else {
-      out << out.indent_str() << indent() << "occupation transformation:" << delim;
+      out << out.indent_str() << "occupation transformation:" << this->opt.delim;
       for(const auto &t : trans.occ_transform()) {
         out << t;
       }
-      out << out.indent_str() << indent() << "species trajectory:" << delim;
+      out << out.indent_str() << "species trajectory:" << this->opt.delim;
       for(const auto &traj : trans.species_traj()) {
-        out << out.indent_str() << indent();
+        out << out.indent_str();
         out << traj.from << " (" << traj.from.species().name() << ")";
         out << "  ->  ";
         out << traj.to << " (" << traj.to.species().name() << ")";
 
-        if(delim)
-          out << delim;
+        if(this->opt.delim)
+          out << this->opt.delim;
         out << std::flush;
       }
     }

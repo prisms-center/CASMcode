@@ -245,8 +245,6 @@ namespace CASM {
         return;
       }
 
-      auto _relpath = Relpath(_path);
-
       for(Index i = 0; i < self.size(); ++i) {
         data.push_back(CustomSpecs());
 
@@ -254,17 +252,17 @@ namespace CASM {
 
         fs::path p_phenom = p_base / "phenomenal";
         data.back().phenom = std::make_shared<ClusterEquivalenceParser<PhenomenalType>>(
-                               _scel, input, _relpath(p_phenom), true);
+                               _scel, input, relpath(p_phenom), true);
         this->kwargs[p_phenom] = data.back().phenom;
 
         fs::path p_branch_specs = p_base / "orbit_branch_specs";
         data.back().orbit_branch_specs = std::make_shared<LocalOrbitBranchSpecsParser>(
-                                           input, _relpath(p_branch_specs), false);
+                                           input, relpath(p_branch_specs), false);
         this->kwargs[p_branch_specs] = data.back().orbit_branch_specs;
 
         fs::path p_orbit_specs = p_base / "orbit_specs";
         data.back().orbit_specs = std::make_shared<LocalOrbitSpecsParser>(
-                                    _scel.primclex(), input, _relpath(p_orbit_specs), false);
+                                    _scel.primclex(), input, relpath(p_orbit_specs), false);
         this->kwargs[p_orbit_specs] = data.back().orbit_specs;
       }
     }
@@ -300,17 +298,15 @@ namespace CASM {
     bool _required):
     InputParser(_input, _path, _required) {
 
-    auto _relpath = Relpath(_path);
-
     // Add parsers for standard clusters
     fs::path p = fs::path("standard") / "orbit_branch_specs";
-    standard = std::make_shared<LocalOrbitBranchSpecsParser>(input, _relpath(p), true);
+    standard = std::make_shared<LocalOrbitBranchSpecsParser>(input, relpath(p), true);
     this->kwargs[p] = standard;
 
     // Add parsers for custom clusters
     p = fs::path("custom");
     custom = std::make_shared<CustomLocalClustersByMaxLength<PhenomenalType>>(
-               _scel, input, _relpath(p), true);
+               _scel, input, relpath(p), true);
     this->kwargs[p] = custom;
   }
 

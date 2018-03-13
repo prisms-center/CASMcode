@@ -70,6 +70,10 @@ namespace CASM {
       return new QueryHandler<DataObject>(*this);
     }
 
+    QueryHandler<DataObject> *_move() override {
+      return new QueryHandler<DataObject>(std::move(*this));
+    }
+
     const ProjectSettings *m_set;
 
     std::map<std::string, std::string> m_aliases;

@@ -158,15 +158,15 @@ namespace CASM {
     if(!out.print()) {
       return;
     }
-    COORD_MODE printer_mode(mode);
+    COORD_MODE printer_mode(this->opt.coord_type);
 
-    out << out.indent_str() << indent() << indent() << indent();
+    out << out.indent_str();
     out << trans.uccoord << " : ";
     out << trans.from_value << " (" << trans.from_mol().name() << ")";
     out << "  ->  ";
     out << trans.to_value << " (" << trans.to_mol().name() << ")";
-    if(delim)
-      out << delim;
+    if(this->opt.delim)
+      out << this->opt.delim;
     out << std::flush;
   }
 

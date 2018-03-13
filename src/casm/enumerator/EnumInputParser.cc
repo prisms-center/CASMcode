@@ -4,9 +4,8 @@ namespace CASM {
 
   std::string EnumInputParser::standard_help() {
     return InputParser::dry_run_help()
-           + InputParser::coordinate_mode_help()
-           + InputParser::orbit_print_mode_help()
-           + InputParser::verbosity_help();
+           + InputParser::verbosity_help()
+           + InputParser::coordinate_mode_help();
   }
 
 
@@ -20,16 +19,15 @@ namespace CASM {
     m_primclex(_primclex),
     m_enum_opt(_enum_opt),
     m_dry_run(false),
-    m_coord_mode(FRAC),
-    m_orbit_print_mode(ORBIT_PRINT_MODE::PROTO),
+    m_coord_type(FRAC),
     m_verbosity(Log::standard) {
 
     m_enum_opt.desc();
 
     if(exists()) {
+
       m_dry_run = parse_dry_run(m_enum_opt);
-      m_coord_mode = parse_coord_type(m_enum_opt);
-      m_orbit_print_mode = parse_orbit_print_mode(m_enum_opt);
+      m_coord_type = parse_coord_type(m_enum_opt);
       m_verbosity = parse_verbosity(m_enum_opt);
       m_filter_expr = parse_filter_expr(m_enum_opt);
       // warn_unnecessary should be done in derived
@@ -44,12 +42,8 @@ namespace CASM {
     return CASM::dry_run_msg(dry_run());
   }
 
-  COORD_TYPE EnumInputParser::coord_mode() const {
-    return m_coord_mode;
-  }
-
-  ORBIT_PRINT_MODE EnumInputParser::orbit_print_mode() const {
-    return m_orbit_print_mode;
+  COORD_TYPE EnumInputParser::coord_type() const {
+    return m_coord_type;
   }
 
   int EnumInputParser::verbosity() const {
@@ -61,7 +55,7 @@ namespace CASM {
   }
 
   std::set<std::string> EnumInputParser::expected() {
-    return std::set<std::string>({"dry_run", "coordinate_mode", "verbosity", "orbit_print_mode", "filter"});
+    return std::set<std::string>({"dry_run", "coordinate_mode", "verbosity", "filter"});
   }
 
   const PrimClex &EnumInputParser::primclex() const {

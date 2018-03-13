@@ -43,31 +43,26 @@ namespace CASM {
       bool _required) :
       EnumInputParser(_primclex, _input, _enum_opt, _path, _required) {
 
-      if(exists()) {
-        auto _relpath = Relpath(_path);
+      // check "cspecs"
+      PrimPeriodicSymCompare<IntegralCluster> sym_compare(_primclex);
+      this->kwargs["cspecs"] = m_cspecs_parser =
+                                 std::make_shared<PrimPeriodicClustersByMaxLength>(
+                                   _primclex, _primclex.prim().factor_group(), sym_compare, input, relpath("cspecs"), true);
 
-        // check "cspecs"
-        PrimPeriodicSymCompare<IntegralCluster> sym_compare(_primclex);
-        this->kwargs["cspecs"] = m_cspecs_parser =
-                                   std::make_shared<PrimPeriodicClustersByMaxLength>(
-                                     _primclex, _primclex.prim().factor_group(), sym_compare, input, _relpath("cspecs"), true);
+      // check "require" and "exclude"
+      this->kwargs["require"] = m_require =
+                                  std::make_shared<SpeciesSetParser>(
+                                    _primclex, ALLOWED_SPECIES_TYPES::ALL, "require", input, relpath("require"), false);
 
-        // check "require" and "exclude"
-        this->kwargs["require"] = m_require =
-                                    std::make_shared<SpeciesSetParser>(
-                                      _primclex, ALLOWED_SPECIES_TYPES::ALL, "require", input, _relpath("require"), true);
+      this->kwargs["exclude"] = m_exclude =
+                                  std::make_shared<SpeciesSetParser>(
+                                    _primclex, ALLOWED_SPECIES_TYPES::ALL, "exclude", input, relpath("exclude"), false);
 
-        this->kwargs["exclude"] = m_exclude =
-                                    std::make_shared<SpeciesSetParser>(
-                                      _primclex, ALLOWED_SPECIES_TYPES::ALL, "exclude", input, _relpath("exclude"), true);
+      this->kwargs["orbit_printer_opt"] = m_orbit_printer_opt_parser =
+                                            std::make_shared<OrbitPrinterOptionsParser>(_primclex, input, _enum_opt, relpath("orbit_printer_opt"), false);
 
-        // check values for optional dry_run, coordinate_mode, orbit_print_mode
-        optional<bool>("dry_run");
-        optional<COORD_TYPE>(traits<COORD_TYPE>::name);
-        optional<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name);
-
-        warn_unnecessary(expected());
-      }
+      // check values for optional dry_run, coordinate_mode
+      warn_unnecessary(expected());
     }
 
     std::set<std::string> DiffTransEnumParser::required_species() const {
@@ -82,9 +77,13 @@ namespace CASM {
       return *m_cspecs_parser;
     }
 
+    const OrbitPrinterOptions &DiffTransEnumParser::orbit_printer_opt() const {
+      return m_orbit_printer_opt_parser->orbit_printer_opt();
+    }
+
     std::set<std::string> DiffTransEnumParser::expected() {
       std::set<std::string> res = EnumInputParser::expected();
-      res.insert({"cspecs", "require", "exclude"});
+      res.insert({"cspecs", "require", "exclude", "orbit_printer_opt"});
       return res;
     }
 
@@ -123,7 +122,8 @@ namespace CASM {
              + PrimPeriodicClustersByMaxLength::cspecs_help()
              + SpeciesSetParser::require_all_help()
              + SpeciesSetParser::exclude_all_help()
-             + EnumInputParser::standard_help() +
+             + EnumInputParser::standard_help()
+             + OrbitPrinterOptionsParser::brief_help() +
 
              "  Example:\n"
              "  {\n"
@@ -196,32 +196,33 @@ namespace CASM {
 
       const PrimClex &primclex = parser.primclex();
       Log &log = primclex.log();
-      COORD_TYPE coord_mode = parser.coord_mode();
-      ORBIT_PRINT_MODE orbit_print_mode = parser.orbit_print_mode();
+      OrbitPrinterOptions orbit_printer_opt = parser.orbit_printer_opt();
       std::string dry_run_msg = parser.dry_run_msg();
       std::set<std::string> require = parser.required_species();
       std::set<std::string> exclude = parser.excluded_species();
-      std::string lead = dry_run_msg;
+      auto lead = [&]() {
+        return log.indent_str() + dry_run_msg;
+      };
 
       log.begin(enumerator_name);
       Index Ninit = db.size();
-      log << lead << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
+      log << lead() << "# diffusion transformations in this project: " << Ninit << "\n" << std::endl;
 
       log.increase_indent();
       log << std::endl;
 
       if(!parser.valid()) {
         parser.print_errors(log);
-        log << std::endl << parser.report() << std::endl;
+        log << std::endl << parser.report() << std::endl << std::endl;
         log.decrease_indent();
         return 1;
       }
       if(parser.all_warnings().size()) {
         parser.print_warnings(log);
-        log << std::endl << parser.report() << std::endl;
+        log << std::endl << parser.report() << std::endl << std::endl;
       }
 
-      Printer<Kinetics::DiffusionTransformation> dt_printer(6, '\n', coord_mode);
+      Printer<Kinetics::DiffusionTransformation> dt_printer(orbit_printer_opt);
 
       log.begin<Log::verbose>("Calculate cluster orbits");
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
@@ -232,7 +233,7 @@ namespace CASM {
                    primclex.crystallography_tol(),
                    std::back_inserter(orbits),
                    primclex.log());
-      print_clust(orbits.begin(), orbits.end(), log, orbit_print_mode, coord_mode);
+      print_clust(orbits.begin(), orbits.end(), log, orbit_printer_opt);
       log << std::endl;
 
       log.begin<Log::verbose>("Calculate diff_trans orbits");
@@ -243,26 +244,27 @@ namespace CASM {
                     primclex.crystallography_tol(),
                     std::back_inserter(diff_trans_orbits),
                     &primclex);
-      print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), log, orbit_print_mode, coord_mode);
+      print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), log, orbit_printer_opt);
       log << std::endl;
 
-      log.begin<Log::verbose>("Check diff_trans orbits");
-      log << lead << "COORD_MODE = " << coord_mode << std::endl << std::endl;
-      lead = log.indent_str() + dry_run_msg;
+      log.begin<Log::verbose>("Filter diff_trans orbits for required/excluded species");
+      jsonParser tjson;
+      log << lead() << "require: " << to_json(require, tjson) << std::endl;
+      log << lead() << "exclude: " << to_json(exclude, tjson) << std::endl;
       for(auto &diff_trans_orbit : diff_trans_orbits) {
-        log << lead << "Checking: \n";
+        log << lead() << "Checking: \n";
         log.increase_indent();
         dt_printer.print(diff_trans_orbit.prototype(), log);
         auto species_count = diff_trans_orbit.prototype().species_count();
 
         if(!includes_all(species_count, require.begin(), require.end())) {
-          log << lead << "- Missing required species, do not insert" << std::endl;
+          log << lead() << "- Missing required species, do not insert" << std::endl;
           log.decrease_indent();
           log << std::endl;
           continue;
         }
         if(!excludes_all(species_count, exclude.begin(), exclude.end())) {
-          log << lead << "- Includes excluded species, do not insert" << std::endl;
+          log << lead() << "- Includes excluded species (" << to_json(exclude, tjson) << "), do not insert" << std::endl;
           log.decrease_indent();
           log << std::endl;
           continue;
@@ -271,24 +273,23 @@ namespace CASM {
         //insert current into database
         auto res = db.insert(diff_trans_orbit);
         if(res.second) {
-          log << lead << "- Inserted as: " << res.first->name() << std::endl;
+          log << lead() << "- Inserted as: " << res.first->name() << std::endl;
         }
         else {
-          log << lead << "- Already exists: " << res.first->name() << std::endl;
+          log << lead() << "- Already exists: " << res.first->name() << std::endl;
         }
         log << std::endl;
         log.decrease_indent();
 
       }
 
-      log << lead << "  DONE." << std::endl << std::endl;
+      log << lead() << "  DONE." << std::endl << std::endl;
       log.decrease_indent();
-      lead = log.indent_str() + dry_run_msg;
 
       Index Nfinal = db.size();
 
-      log << lead << "# new diffusion transformations: " << Nfinal - Ninit << "\n";
-      log << lead << "# diffusion transformations in this project: " << Nfinal << "\n" << std::endl;
+      log << lead() << "# new diffusion transformations: " << Nfinal - Ninit << "\n";
+      log << lead() << "# diffusion transformations in this project: " << Nfinal << "\n" << std::endl;
 
       return 0;
     }

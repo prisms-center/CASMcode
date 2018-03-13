@@ -100,6 +100,10 @@ namespace CASM {
 
     bool exists() const;
 
+    /// Return this->path / val, ensuring the result is a relative path
+    fs::path relpath(const fs::path &val) const {
+      return path.empty() ? val : path / val;
+    };
 
     // --- Optional, check CLI and JSON options ---
 
@@ -125,7 +129,9 @@ namespace CASM {
 
     static std::string dry_run_help();
     static std::string coordinate_mode_help();
+    static std::string indent_space_help();
     static std::string orbit_print_mode_help();
+    static std::string prec_help(std::string what, int default_prec);
     static std::string verbosity_help();
 
 
@@ -148,19 +154,6 @@ namespace CASM {
     std::set<std::string> all_warnings() const;
 
     std::set<std::string> all_errors() const;
-  };
-
-  /// \brief Return path `base / val`, ensuring result is a relative path
-  struct Relpath {
-
-    fs::path base;
-
-    Relpath(const fs::path &_base) :
-      base(_base) {}
-
-    fs::path operator()(const fs::path &val) const {
-      return base.empty() ? val : base / val;
-    };
   };
 }
 
