@@ -177,6 +177,36 @@ namespace CASM {
     }
 
     //************************************************************
+    std::string clexulator_point_prepare_string(Structure const &_prim,
+                                                std::vector<BasisSet> const &site_bases,
+                                                std::string const &indent) const override {
+      std::stringstream ss;
+      ss
+          << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n"
+      for(Index n = 0; n < site_bases.size(); n++) {
+        for(Index f = 0; f < site_bases[n].size(); f++) {
+          ss << indent << "  m_occ_func_vals_n" << n << "[" << f << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
+        }
+      }
+      ss << "}\n";
+    }
+
+    //************************************************************
+
+    std::string clexulator_global_prepare_string(Structure const &_prim,
+                                                 std::vector<BasisSet> const &site_bases,
+                                                 std::string const &indent) const override {
+      std::stringstream ss;
+      ss
+          << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n"
+      for(Index n = 0; n < site_bases.size(); n++) {
+        for(Index f = 0; f < site_bases[n].size(); f++) {
+          ss << indent << "  m_occ_func_vals_n" << n << "[" << f << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
+        }
+      }
+      ss << "}\n";
+    }
+    //************************************************************
 
     std::string OccupationDoFTraits::clexulator_member_definitions_string(Structure const &_prim,
                                                                           std::vector<BasisSet> const &_site_bases,

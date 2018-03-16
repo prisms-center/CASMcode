@@ -64,8 +64,26 @@ namespace CASM {
 
   //****************************************************
 
-  DoFSet const &Site::displacement() const {
-    return *m_displacement;
+  DoFSet const &Site::dof(std::string const &_dof_type) const {
+    auto it = find(m_dof_map(dof_type));
+    if(it != m_dof_map.end())
+      return *it;
+    else
+      throw std::exception(std::string("In Structure::dof(), this structure does not contain any global DoF's of type " + dof_type));
+  }
+
+  //****************************************************
+  bool Site::has_dof(std::string const &_dof_type) const {
+    return find(m_dof_map(dof_type)) != m_dof_map.end();
+  }
+
+  //****************************************************
+
+  std::vector<std::string> dof_types() const {
+    std::vector<std::string> result;
+    for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
+      result.push_back(it->first);
+    return result;
   }
 
   //****************************************************

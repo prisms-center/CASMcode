@@ -14,6 +14,7 @@ namespace CASM {
         return std::unique_ptr<BaseKey>(_clone());
       }
 
+
     private:
 
       /// \brief Clone the ClexParamKey
@@ -39,23 +40,22 @@ namespace CASM {
 
   /// \brief Abstract base class for reading/writing clexulator parameters
   class ClexParamPack {
-
   public:
 
     typedef unsigned int size_type;
 
-    size_type size(ClexParamKey  const &_key, size_type _ind) const;
+    size_type size(ClexParamKey  const &_key) const;
 
     std::vector<double> const &read(ClexParamKey  const &_key) const;
     double read(ClexParamKey  const &_key, size_type _ind) const;
 
-
     void write(ClexParamKey const &_key, std::vector<double> const &_val);
     void write(ClexParamKey const &_key, size_type _ind, double val);
+
+  private:
+    //possible implementation:
+    //std::vector<std::vector<double> m_data;
   };
-
-
-
 }
 
 #endif

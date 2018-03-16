@@ -7,38 +7,12 @@ namespace CASM {
   class ClexBasis;
   class Structure;
   class PrimNeighborList;
-  class ParamPackMixIn
-
-  /// \brief virtual base class for printing orbit functions of type specified by implementation.
-    class OrbitFunctionWriter {
-    public:
-
-      // Constructor? OrbitFunctionWriter()
-      //
-      virtual void print_param_pack_initilialization() const {}
-
-      virtual void print_to_point_prepare() const {}
-
-      virtual void print_to_global_prepare() const {}
-
-      virtual void print_typedefs(std::ostream &out,
-                                  std::string const &class_name,
-                                  std::string const &indent)const {}
+  class ParamPackMixIn;
+  class OrbitFunctionTraits;
 
 
-      virtual void print_eval_table_definitions(std::ostream &out,
-                                                std::string const &class_name,
-                                                ClexBasis const &clex,
-                                                std::string const &indent)const {}
 
-    private:
-      std::string m_name;
-      std::vector<std::string> m_signature;
-      std::vector<std::string> m_arg_names;
-      std::string m_short_desc;
-      std::string m_long_desc;
-
-    };
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   class ClexBasisWriter {
   public:
@@ -52,12 +26,13 @@ namespace CASM {
                           ClexBasis const &clex,
                           std::vector<OrbitType > const &_tree,
                           PrimNeighborList &_nlist,
+                          std::vector<UnitCellCoord> const &_flower_pivots,
                           std::ostream &stream,
                           double xtal_tol);
 
   private:
     std::vector<std::unique_ptr<FunctionVisitor> > const &_function_label_visitors() const;
-    std::vector<std::unique_ptr<OrbitFunctionWriter> > const &_orbit_func_writers() const;
+    std::vector<std::unique_ptr<OrbitFunctionTraits> > const &_orbit_func_traits() const;
 
     /// \brief Print ClexParamPack specialization
     template <typename OrbitType>
@@ -65,6 +40,7 @@ namespace CASM {
                           ClexBasis const &clex,
                           std::vector<OrbitType > const &_tree,
                           PrimNeighborList &_nlist,
+                          std::vector<UnitCellCoord> const &_flower_pivots,
                           std::ostream &stream,
                           double xtal_tol);
 
@@ -77,7 +53,7 @@ namespace CASM {
 
     std::string clexulator_member_definitions(std::string const &class_name,
                                               ClexBasis const &clex,
-                                              std::vector<std::unique_ptr<OrbitFunctionWriter> > const &orbit_func_writers,
+                                              std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
                                               std::string const &indent);
     //*******************************************************************************************
 
@@ -162,7 +138,7 @@ namespace CASM {
                                                         ClexBasis const &clex,
                                                         std::vector<OrbitType> const &_tree,
                                                         PrimNeighborList &_nlist,
-                                                        std::vector<std::unique_ptr<OrbitFunctionWriter> > const &orbit_func_writers,
+                                                        std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
                                                         //Something that contains info about DoF requirements
                                                         std::string const &indent);
     //*******************************************************************************************
@@ -172,7 +148,7 @@ namespace CASM {
                                                          ClexBasis const &clex,
                                                          std::vector<OrbitType> const &_tree,
                                                          PrimNeighborList &_nlist,
-                                                         std::vector<std::unique_ptr<OrbitFunctionWriter> > const &orbit_func_writers,
+                                                         std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
                                                          //Something that contains info about DoF requirements
                                                          std::string const &indent);
 
@@ -193,6 +169,7 @@ namespace CASM {
                                                                                  PrimNeighborList &_nlist,
                                                                                  std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
                                                                                  Index sublat_index);
+
     //*******************************************************************************************
 
     template<typename OrbitType>

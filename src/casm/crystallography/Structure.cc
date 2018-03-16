@@ -225,10 +225,40 @@ namespace CASM {
     return tnum_each_molecule;
   }
 
+  //************************************************************
 
+  DoFSet const &dof(std::string const &dof_type) const {
+    auto it = find(m_dof_map(dof_type));
+    if(it != m_dof_map.end())
+      return *it;
+    else
+      throw std::exception(std::string("In Structure::dof(), this structure does not contain any global DoF's of type " + dof_type));
 
+  }
 
   //************************************************************
+
+  std::vector<std::string> local_dof_types() const {
+    std::set<std::string> tresult;
+
+    for(Site cons &site : basis) {
+      auto sitetypes = site.dof_types();
+      tresult.insert(sitetypes.begin(), sitetypes.end());
+    }
+    return std::vector<std::string>(tresult.begin(), tresult.end());
+  }
+
+  //************************************************************
+
+  std::vector<std::string> global_dof_types() const {
+    std::vector<std::string> result;
+    for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
+      result.push_back(it->first);
+    return result;
+  }
+
+  //************************************************************
+
   void Structure::fg_converge(double small_tol, double large_tol, double increment) {
     BasicStructure<Site>::fg_converge(m_factor_group, small_tol, large_tol, increment);
     return;
@@ -712,24 +742,19 @@ namespace CASM {
 
   // Assumes constructor CoordType::CoordType(Lattice) exists
   void Structure::from_json(const jsonParser &json) {
-    try {
 
-      // class Structure : public BasicStructure<Site>
-      BasicStructure<Site> &basic = *this;
-      basic.from_json(json);
 
-      // mutable MasterSymGroup m_factor_group;
-      m_factor_group.clear();
-      m_factor_group.from_json(json["factor_group"]);
+    // class Structure : public BasicStructure<Site>
+    BasicStructure<Site> &basic = *this;
+    basic.from_json(json);
 
-      // bool SD_flag;
-      CASM::from_json(SD_flag, json["SD_flag"]);
+    // mutable MasterSymGroup m_factor_group;
+    m_factor_group.clear();
+    m_factor_group.from_json(json["factor_group"]);
 
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    // bool SD_flag;
+    CASM::from_json(SD_flag, json["SD_flag"]);
+
     update();
   }
 

@@ -289,6 +289,8 @@ namespace CASM {
     std::string m_name;
 
     notstd::cloneable_ptr<EnumeratorHandler> m_enumerator_handler;
+
+    // Datatype name : QueryHandler<DataType> map (type erased)
     std::map<std::string, notstd::cloneable_ptr<notstd::Cloneable> > m_query_handler;
 
     // CASM project current settings

@@ -13,7 +13,7 @@ namespace CASM {
 
     std::string clexulator_member_definitions(std::string const &class_name,
                                               ClexBasis const &clex,
-                                              std::vector<std::unique_ptr<OrbitFunctionWriter> > const &orbit_func_writers,
+                                              std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_writers,
                                               std::string const &indent) {
       Index N_corr = clex.n_functions();
       Index N_sublat = clex.n_sublat();

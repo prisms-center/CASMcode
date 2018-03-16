@@ -37,9 +37,11 @@ namespace CASM {
 
     const MoleculeOccupant &site_occupant() const;
 
-    DoFSet const &displacement() const;
+    DoFSet const &dof(std::string const &_dof_type) const;
 
-    DoFSet const &dof(std::string const &dof_type) const;
+    bool has_dof(std::string const &_dof_type) const;
+
+    std::vector<std::string> dof_types() const;
 
     /// Checks if current occupant is a vacancy
     bool is_vacant() const;
@@ -112,10 +114,6 @@ namespace CASM {
     // so we'll treat it separately. 'occupant' is the discrete degree of freedom associated
     // with the molecule that occupies the site
     notstd::cloneable_ptr<MoleculeOccupant> m_site_occupant;
-
-    /// displacement degrees of freedom of the molecule.
-    /// These may be x,y,z, or a subspace (e.g., displacement only in the x--y plane).
-    notstd::cloneable_ptr<DoFSet> m_displacement;
 
     /// additional continuous degrees of freedom
     std::map <std::string, notstd::cloneable_ptr<DoFSet> > m_dof_map;

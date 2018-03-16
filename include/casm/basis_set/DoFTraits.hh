@@ -63,6 +63,14 @@ namespace CASM {
                                                         std::vector<BasisSet> const &site_bases,
                                                         std::string const &indent) const = 0;
 
+      virtual std::string clexulator_point_prepare_string(Structure const &_prim,
+                                                          std::vector<BasisSet> const &site_bases,
+                                                          std::string const &indent) const = 0;
+
+      virtual std::string clexulator_global_prepare_string(Structure const &_prim,
+                                                           std::vector<BasisSet> const &site_bases,
+                                                           std::string const &indent) const = 0;
+
       virtual std::string clexulator_member_definitions_string(Structure const &_prim,
                                                                std::vector<BasisSet> const &site_bases,
                                                                std::string const &indent) const = 0;
@@ -111,6 +119,14 @@ namespace CASM {
                                                 std::vector<BasisSet> const &site_bases,
                                                 std::string const &indent) const override;
 
+      std::string clexulator_point_prepare_string(Structure const &_prim,
+                                                  std::vector<BasisSet> const &site_bases,
+                                                  std::string const &indent) const override //todo;
+
+      std::string clexulator_global_prepare_string(Structure const &_prim,
+                                                   std::vector<BasisSet> const &site_bases,
+                                                   std::string const &indent) const override // todo;
+
       std::string clexulator_member_definitions_string(Structure const &_prim,
                                                        std::vector<BasisSet> const &site_bases,
                                                        std::string const &indent) const override;
@@ -118,6 +134,16 @@ namespace CASM {
       std::string clexulator_private_method_definitions_string(Structure const &_prim,
                                                                std::vector<BasisSet> const &site_bases,
                                                                std::string const &indent) const override;
+
+      std::string clexulator_private_method_implementations_string(Structure const &_prim,
+                                                                   std::vector<BasisSet> const &site_bases,
+                                                                   std::string const &indent) const override;
+
+      std::string clexulator_public_method_implementations_string(Structure const &_prim,
+                                                                  std::vector<BasisSet> const &site_bases,
+                                                                  std::string const &indent) const override {
+        return std::string();
+      }
 
       std::string clexulator_public_method_definitions_string(Structure const &_prim,
                                                               std::vector<BasisSet> const &site_bases,
@@ -138,46 +164,8 @@ namespace CASM {
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    /// \brief Conversion Functor for inserting BasicTraits into unique_cloneable_map
-    struct DictionaryConverter {
-      // performs a static_cast of value.clone().unique().release()
-      notstd::cloneable_ptr<BasicTraits> operator()(const BasicTraits &_traits) {
-        return notstd::cloneable_ptr<BasicTraits>(_traits.clone().release());
-      }
-    };
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
     /// \brief  Parsing dictionary for obtaining the correct BasicTraits given a name
-    class TraitsDictionary :
-      public notstd::unique_cloneable_map<std::string, BasicTraits> {
-
-    public:
-      typedef notstd::unique_cloneable_map<std::string, BasicTraits> UniqueMapType;
-      typedef typename UniqueMapType::key_type key_type;
-      typedef typename UniqueMapType::value_type value_type;
-      typedef typename UniqueMapType::size_type size_type;
-      typedef typename UniqueMapType::iterator iterator;
-      typedef typename UniqueMapType::const_iterator const_iterator;
-
-      TraitsDictionary() :
-        UniqueMapType([](const value_type & value)->std::string {
-        return value.type_name();
-      },
-      DictionaryConverter()) {}
-
-      using UniqueMapType::insert;
-
-      /// \brief Equivalent to find, but throw error with suggestion if @param _name not found
-      notstd::cloneable_ptr<BasicTraits> lookup(const key_type &_name) const;
-
-      /// \brief True if dictionary contains entry for @param _name
-      bool contains(const key_type &_name) const {
-        return this->find(_name) != this->end();
-      }
-
-      //void print_help(std::ostream &_stream) const;
-    };
+    using TraitsDictionary = ParsingDictionary<BasicTraits>;
 
     /// This will eventually be managed by ProjectSettings
     TraitsDictionary const &traits_dict();

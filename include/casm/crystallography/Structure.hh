@@ -16,6 +16,8 @@ namespace CASM {
 
   class SiteCluster;
 
+  class DoFSet;
+
   //  template<typename ClustType>
   //  class GenericOrbitree;
 
@@ -36,6 +38,10 @@ namespace CASM {
     mutable SymGroupRepID basis_perm_rep_ID;
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
+
+    /// continuous global degrees of freedom
+    std::map <std::string, notstd::cloneable_ptr<DoFSet> > m_dof_map;
+
 
   public: //PUBLIC DATA MEMBERS (Public for now)
 
@@ -79,6 +85,12 @@ namespace CASM {
     std::vector<std::string> struc_molecule_name() const;
     Eigen::VectorXi num_each_specie() const;
     Eigen::VectorXi num_each_molecule() const;
+
+    DoFSet const &dof(std::string const &dof_type) const;
+
+    std::vector<std::string> local_dof_types() const;
+
+    std::vector<std::string> global_dof_types() const;
 
     // ****Mutators****
 

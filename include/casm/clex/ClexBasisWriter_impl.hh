@@ -2,6 +2,7 @@
 #define CASM_ClexBasisWriter_impl
 
 #include "casm/clex/ClexBasisWriter.hh"
+#include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
@@ -14,6 +15,7 @@ namespace CASM {
                                          ClexBasis const &clex,
                                          std::vector<OrbitType > const &_tree,
                                          PrimNeighborList &_nlist,
+                                         std::vector<UnitCellCoord> const &_flower_pivots,
                                          std::ostream &stream,
                                          double xtal_tol) {
 
@@ -23,6 +25,15 @@ namespace CASM {
 
     Index N_corr = clex.n_functions();
     std::stringstream bfunc_imp_stream, bfunc_def_stream;
+
+    std::stringstream parampack_stream;
+    print_param_pack(class_name + "_ParamPack",
+                     clex,
+                     _tree,
+                     _nlist,
+                     _flower_pivots,
+                     parampack_stream,
+                     xtal_tol);
 
     std::string uclass_name;
     for(Index i = 0; i < class_name.size(); i++)
@@ -139,6 +150,13 @@ namespace CASM {
 
     std::string interface_implementation = ClexBasisWriter_impl::clexulator_interface_implementation(class_name, clex, indent);
 
+    std::string prepare_methods_implementation = ClexBasisWriter_impl::clexulator_prepare_methods_implementations(class_name,
+                                                 clex,
+                                                 _tree,
+                                                 _orbit_func_writers()
+                                                 _nlist,
+                                                 indent);
+
     jsonParser json_prim;
     write_prim(clex.prim(), json_prim, FRAC);
 
@@ -148,7 +166,7 @@ namespace CASM {
         << "#include \"casm/clex/Clexulator.hh\"\n"
         << "\n\n\n"
 
-        << "/****** GENERATED CLEXULATOR CLASS ******\n\n"
+        << "/****** PROJECT SPECIFICATIONS ******\n\n"
 
         << "         ****** prim.json ******\n\n"
         << json_prim << "\n\n"
@@ -162,6 +180,12 @@ namespace CASM {
 
         << "namespace CASM {\n\n"
 
+
+        << "/****** GENERATED CLEXPARAMPACK IMPLEMENTATION ******\n\n"
+
+        << parampack_stream.string() << "\n\n"
+
+        << "/****** GENERATED CLEXULATOR IMPLEMENTATION ******\n\n"
 
         << indent << "class " << class_name << " : public Clexulator_impl::Base {\n\n"
 
@@ -180,6 +204,7 @@ namespace CASM {
 
         << constructor_implementation << "\n"
         << interface_implementation << "\n"
+        << prepare_methods_implementation << "\n"
         << bfunc_imp_stream.str()
         << "}\n\n\n"      // close namespace
 
@@ -196,6 +221,16 @@ namespace CASM {
     return;
   }
 
+  template<typename OrbitType>
+  void ClexBasisWriter::print_param_pack(std::string class_name,
+                                         ClexBasis const &clex,
+                                         std::vector<OrbitType > const &_tree,
+                                         PrimNeighborList &_nlist,
+                                         std::vector<UnitCellCoord> const &_flower_pivots,
+                                         std::ostream &stream,
+                                         double xtal_tol) {
+
+  }
   namespace ClexBasisWriter_impl {
     //*******************************************************************************************
     template<typename OrbitType>
@@ -448,6 +483,8 @@ namespace CASM {
 
       std::string prefix, suffix;
       std::set<UnitCellCoord> trans_set;
+
+      //Find all unique translations of neighborhood for current neighbor
       for(IntegralCluster const &equiv : _clust_orbit) {
         for(UnitCellCoord const &site : equiv.elements()) {
           if(site.sublat() == sublat_index)
