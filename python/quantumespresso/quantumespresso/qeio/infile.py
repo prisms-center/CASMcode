@@ -83,7 +83,7 @@ class NamelistBase:
         self.read(nameliststring)
 
     def read(self, nameliststring):
-        """ Read a Control namelist """
+        """ Read a  namelist """
         self.tags=dict()
         line_segments=re.split('\n',nameliststring)
         # parse nameliststringlist into self.tags
@@ -92,7 +92,8 @@ class NamelistBase:
                 if len(commasplit) > 0:
                     line = re.split('=',commasplit[0])
                     if len(line) == 2:
-                        self.tags[line[0].strip()] =  line[1].strip()
+                        if line[0].strip()[0]!= '!':
+                            self.tags[line[0].strip()] =  line[1].strip()
         self._verify_tags()
         self._make_natural_type()
 
@@ -712,7 +713,8 @@ class Infile:
 
         # parse Infile into self.namelist and self.cards
         for line in file:
-            if line[0] == '&':
+            line=line.strip()
+            if len(line)>0 and line[0] == '&':
                 #The check a new namelist is a line starting with &
                 if namelist_open:
                     raise InfileError("namelist embedding...Please check '" + filename + "' for proper formatting")
@@ -720,7 +722,7 @@ class Infile:
                 nameliststring=""
                 line = re.split('&',line)
                 curr_namelist = line[1].strip()
-            elif line[0] == '/':
+            elif len(line)>0 and line[0] == '/':
                 #The end of a namelist is denoted by /
                 if not namelist_open:
                     raise InfileError("namelist embedding...Please check '" + filename + "' for proper formatting")
