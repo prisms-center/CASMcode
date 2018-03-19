@@ -632,8 +632,10 @@ namespace CASM {
       recip.col(i) *= radius / recip.col(i).norm();
     }
     //recip contains three column vectors of length 'radius' pointed along plane normals
-
-    return (inv_lat_column_mat() * recip).cwiseAbs().unaryExpr(std::ptr_fun(ceil)).colwise().maxCoeff().cast<int>();
+    auto lambda = [](double val) {
+      return ceil(val);
+    };
+    return (inv_lat_column_mat() * recip).cwiseAbs().unaryExpr(lambda).colwise().maxCoeff().cast<int>();
   }
 
   //********************************************************************

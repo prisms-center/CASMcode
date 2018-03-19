@@ -1,0 +1,12 @@
+quantumespresso_PYTHON=python/quantumespresso/quantumespresso/__init__.py\
+			  python/quantumespresso/quantumespresso/quantumespresso.py\
+        python/quantumespresso/quantumespresso/relax.py
+quantumespressodir=$(pythondir)/quantumespresso
+
+quantumespresso_qeio_PYTHON=python/quantumespresso/quantumespresso/qeio/__init__.py\
+			  python/quantumespresso/quantumespresso/qeio/infile.py\
+        python/quantumespresso/quantumespresso/qeio/outfile.py\
+        python/quantumespresso/quantumespresso/qeio/q_e_io.py\
+        python/quantumespresso/quantumespresso/qeio/qerun.py\
+        python/quantumespresso/quantumespresso/qeio/species.py
+quantumespresso_qeiodir=$(quantumespressodir)/qeio

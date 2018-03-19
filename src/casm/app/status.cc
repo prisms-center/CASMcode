@@ -116,7 +116,7 @@ namespace CASM {
              "Enumerate configurations\n\
 - Several options are possible:                                        \n\
 - Execute: 'casm enum --method ConfigEnumAllOccupations --all' \n\
-  to enumerate configurations for for all supercells.                  \n\
+  to enumerate configurations for all supercells.                  \n\
 - Execute: 'casm enum --method ConfigEnumAllOccupations --min MINV --max MAXV'\n\
   to enumerate configurations for supercells ranging in volume    \n\
    from MINV to MAXV (units: number of primitive cells).            \n\

@@ -1,5 +1,6 @@
 vasppy_PYTHON=python/vasp/vasp/relax.py\
 			  python/vasp/vasp/__init__.py\
+			  python/vasp/vasp/converge.py\
 			  python/vasp/vasp/vasp.py
 vasppydir=$(pythondir)/vasp
 

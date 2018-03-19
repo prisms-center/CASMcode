@@ -10,6 +10,7 @@ clexinclude_HEADERS=./include/casm/clex/ChemicalReference.hh\
 					./include/casm/clex/ConfigEnumAllOccupations.hh\
 					./include/casm/clex/ConfigEnumEquivalents.hh\
 					./include/casm/clex/ConfigEnumInterpolation.hh\
+					./include/casm/clex/ConfigEnumRandomOccupations.hh\
 					./include/casm/clex/ConfigEnumStrain.hh\
 					./include/casm/clex/ConfigIO.hh\
 					./include/casm/clex/ConfigIOHull.hh\

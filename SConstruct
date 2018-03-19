@@ -1,7 +1,7 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: Sconstruct
 
-import sys, os, glob, copy, shutil, subprocess, imp, re
+import sys, os, glob, copy, shutil, subprocess, imp, re, textwrap
 
 from os.path import join
 
@@ -50,19 +50,22 @@ Help("""
         Sets to compile with debugging symbols. In this case, the optimization level gets 
         set to -O0, and NDEBUG does not get set.
 
-      $LD_LIBRARY_PATH (Linux) or $DYLD_FALLBACK_LIBRARY_PATH (Mac):
-        Search path for dynamic libraries, may need $CASM_BOOST_LIBDIR 
-        and $CASM_LIBDIR added to it.
-        This should be added to your ~/.bash_profile (Linux) or ~/.profile (Mac).
-      
       $CASM_BOOST_NO_CXX11_SCOPED_ENUMS:
         If defined, will compile with -DCASM_BOOST_NO_CXX11_SCOPED_ENUMS. Use this
         if linking to boost libraries compiled without c++11.
+      
+      $CASM_BASH_COMPLETION_DIR:
+        If defined, bash-completion scripts for CASM will be installed in the 
+        location given. If not defined, standard locations will be searched for
+        'bash_completion'. 
       
       
       Additional options that override environment variables:
       
       Use 'cxx=X' to set the C++ compiler. Default is chosen by scons.
+          'ccflags=X' to set C compiler flags. Default is '-Wno-unused-parameter'.
+          'cxxflags=X' to set compiler flags. Default is '-Wno-deprecated-register -Wno-deprecated-declarations'.
+          'ldflags=X' to set linker flags. Default is empty.
           'opt=X' to set optimization level, '-OX'. Default is 3.
           'debug=X' with X=0 to use '-DNDEBUG', 
              or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
@@ -237,11 +240,14 @@ def boost_no_cxx11_scoped_enums():
 
 def compile_flags():
   # command-line variables (C and C++)
-  ccflags = []
-  cxxflags = []
-
-  #ccflags.append('-Wall')
-  ccflags.append('-Wno-unused-parameter')
+  if 'ccflags' in ARGUMENTS:
+    ccflags = ARGUMENTS.get('ccflags').split()
+  else:
+    ccflags = ['-Wno-unused-parameter']
+  if 'cxxflags' in ARGUMENTS:
+    cxxflags = ARGUMENTS.get('cxxflags').split()
+  else:
+    cxxflags = ['-Wno-deprecated-register', '-Wno-deprecated-declarations']
 
   _debug_level = debug_level()
   
@@ -260,8 +266,6 @@ def compile_flags():
   # C++ only
   #cxxflags = []
   cxxflags.append('--std=c++11')
-  cxxflags.append('-Wno-deprecated-register')
-  cxxflags.append('-Wno-deprecated-declarations')
   cxxflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
 
   if boost_no_cxx11_scoped_enums():
@@ -271,6 +275,41 @@ def compile_flags():
   ccflags.append('-DGZSTREAM_NAMESPACE=gz')
   
   return (ccflags, cxxflags)
+
+def ldflags():
+  if 'ldflags' in ARGUMENTS:
+    return ARGUMENTS.get('ldflags').split()
+  else:
+    return []
+
+def set_bash_completion_dir(env):
+  if 'CASM_BASH_COMPLETION_DIR' in os.environ:
+    result = os.environ['CASM_BASH_COMPLETION_DIR']
+  else:
+    try:
+      args = ['pkg-config', '--variable=completionsdir', 'bash-completion']
+      stderr = subprocess.PIPE
+      result = subprocess.check_output(args, stderr=stderr).rstrip()
+    except:
+      try:
+        args = ['pkg-config', '--variable=completionsdir', 'bash-completion']
+        stderr = subprocess.PIPE
+        result = subprocess.check_output(args, stderr=stderr).rstrip()
+      except:
+        path = os.environ['PATH']
+        path += os.pathsep + '/etc' # debian location?
+        path += os.pathsep + join('/usr', 'local', 'etc') # brew location
+        path += os.pathsep + join('/sw', 'etc') # git location
+        
+        path = path.split(os.pathsep)
+        result = None 
+        for d in path:
+            test = join(d, 'bash_completion')
+            if os.path.isfile(test):
+                result = test + ".d"
+                break
+  if result is not None:
+    env['BASH_COMPLETION_DIR'] = result
 
 ##### Set version_number
 
@@ -288,7 +327,7 @@ env.Replace(CXX=cxx())
 
 # C and C++ flags
 ccflags, cxxflags = compile_flags()
-env.Replace(CCFLAGS=ccflags, CXXFLAGS=cxxflags)
+env.Replace(CCFLAGS=ccflags, CXXFLAGS=cxxflags, LDFLAGS=ldflags())
 
 # where the shared libraries should be built
 env.Append(LIBDIR = join(os.getcwd(), 'lib'))
@@ -332,6 +371,9 @@ env.Replace(BOOST_LIBDIR=boost_libdir())
 env.Replace(z='z') 
 env.Replace(dl='dl') 
 
+# bash-completion
+set_bash_completion_dir(env)
+
 boost_libs = [
   'boost_system', 
   'boost_filesystem', 
@@ -345,7 +387,8 @@ for x in boost_libs:
   env[x] = lib_name(env['BOOST_LIBDIR'], x)
 
 # make compiler errors and warnings in color
-env['ENV']['TERM'] = os.environ['TERM']
+if 'TERM' in os.environ:
+  env['ENV']['TERM'] = os.environ['TERM']
 
 # set testing environment (for running tests)
 env['ENV']['PATH'] = env['BINDIR'] + ":" + env['ENV']['PATH']
@@ -390,9 +433,9 @@ build_lib_paths = [env['LIBDIR'], env['BOOST_LIBDIR']]
 Export('build_lib_paths')
 
 # link flags
-linkflags = ""
+linkflags = ldflags()
 if env['PLATFORM'] == 'darwin':
-  linkflags = ['-install_name', '@rpath/libcasm.dylib']
+  linkflags += ['-install_name', '@rpath/libcasm.dylib']
 
 # use boost libraries
 libs = [
@@ -424,7 +467,7 @@ casm_lib_install = env.SharedLibrary(join(env['CASM_LIBDIR'], 'casm'),
                                      LIBS=libs)
 Export('casm_lib_install')
 env.Alias('casm_lib_install', casm_lib_install)
-env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_lib_install]
+env.Append(INSTALL_TARGETS = [casm_lib_install])
 
 if 'casm_lib_install' in COMMAND_LINE_TARGETS:
     env['IS_INSTALL'] = 1
@@ -459,7 +502,7 @@ ccasm_lib_install = env.SharedLibrary(join(env['CASM_LIBDIR'], 'ccasm'),
                                       LIBS=libs + ['casm'])
 Export('ccasm_lib_install')
 env.Alias('ccasm_lib_install', ccasm_lib_install)
-env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [ccasm_lib_install]
+env.Append(INSTALL_TARGETS = [ccasm_lib_install])
 
 if 'ccasm_lib_install' in COMMAND_LINE_TARGETS:
     env['IS_INSTALL'] = 1
@@ -471,7 +514,7 @@ casm_include_install = env.Install(env['CASM_INCLUDEDIR'], join(env['INCDIR'], '
 Export('casm_include_install')
 env.Alias('casm_include_install', casm_include_install)
 env.Clean('casm_include_install', join(env['CASM_INCLUDEDIR'],'casm'))
-env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + casm_include_install
+env.Append(INSTALL_TARGETS = [casm_include_install])
 
 if 'casm_include_install' in COMMAND_LINE_TARGETS:
   env['IS_INSTALL'] = 1
@@ -480,6 +523,7 @@ if 'casm_include_install' in COMMAND_LINE_TARGETS:
 
 # build apps/casm
 SConscript(['apps/casm/SConscript'], {'env':env})
+SConscript(['apps/completer/SConscript'], {'env':env})
 
 # tests/unit
 SConscript(['tests/unit/SConscript'], {'env': env})
@@ -490,6 +534,7 @@ SConscript(['tests/unit/SConscript'], {'env': env})
 # install python packages and scripts
 SConscript(['python/casm/SConscript'], {'env':env})
 SConscript(['python/vasp/SConscript'], {'env':env})
+SConscript(['python/seqquest/SConscript'], {'env':env})
 SConscript(['python/quantumespresso/SConscript'], {'env':env})
 
 # python/casm/tests
@@ -509,8 +554,7 @@ if 'test' in COMMAND_LINE_TARGETS:
 ##### Make combined alias 'install'
 
 # Execute 'scons install' to install all binaries, scripts and python modules
-installable = ['casm_include_install', 'casm_lib_install', 'ccasm_lib_install', 'casm_install', 'pycasm_install', 'pyvasp_install','pyquantumespresso_install']
-env.Alias('install', installable)
+env.Alias('install', env['INSTALL_TARGETS'])
 
 if 'install' in COMMAND_LINE_TARGETS:
     env['IS_INSTALL'] = 1
@@ -649,6 +693,36 @@ if 'configure' in COMMAND_LINE_TARGETS:
     print "no"
     return 0
   
+  def CheckBashCompletion(conf):
+    """Optional casm implemenation for 'bash-completion'"""
+    
+    if 'BASH_COMPLETION_DIR' not in conf.env:
+      print "Checking for 'bash-completion'... ",
+      msg = """ 'bash-completion' is not found. To use tab completion with the 
+      'casm' executable please install 'bash-completion'. If installed in a 
+      non-standard location set the CASM_BASH_COMPLETION_DIR environment variable.
+      """
+      conf.Result(0)
+      return 0, msg
+    elif not os.access(conf.env['BASH_COMPLETION_DIR'], os.W_OK):
+      print "Found 'bash-completion' dir:", conf.env['BASH_COMPLETION_DIR'], \
+        "but it is not writeable... ",
+      msg = textwrap.dedent(
+          """
+          To use 'bash-completion', please setup your ~/.bash_completion configuration  
+          file to 'source' bash-completion files from a custom location, i.e.:
+          
+              for f in $HOME/completions/*; do source $f; done
+          
+          and set the CASM_BASH_COMPLETION_DIR environment variable to specify that location.
+          """)
+      conf.Result(0)
+      return 0, msg
+    else:
+      print "Found 'bash-completion' dir:", conf.env['BASH_COMPLETION_DIR'], "... ",
+      conf.Result(1)
+      return 1, None
+  
   conf = Configure(
     env.Clone(LIBPATH=install_lib_paths,
               CPPPATH=cpppath),
@@ -657,7 +731,8 @@ if 'configure' in COMMAND_LINE_TARGETS:
       'CheckBoost_includedir' : CheckBoost_includedir,
       'CheckBoost_libname' : CheckBoost_libname,
       'CheckBoost_version' : CheckBoost_version,
-      'CheckBOOST_NO_CXX11_SCOPED_ENUMS': CheckBOOST_NO_CXX11_SCOPED_ENUMS})
+      'CheckBOOST_NO_CXX11_SCOPED_ENUMS': CheckBOOST_NO_CXX11_SCOPED_ENUMS,
+      'CheckBashCompletion': CheckBashCompletion})
   
   def if_failed(msg):
     print "\nConfiguration checks failed."
@@ -694,7 +769,10 @@ if 'configure' in COMMAND_LINE_TARGETS:
         **It is not the module available from pip**"
         It is available from: https://github.com/prisms-center/pbs
       """
-  
+  result = conf.CheckBashCompletion()
+  if not result[0]:
+      print result[1]
+      
   
   print "Configuration checks passed."
   exit(0)

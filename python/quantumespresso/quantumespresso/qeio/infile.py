@@ -2,7 +2,6 @@ from __future__ import division
 import numpy as np
 import re,copy,math
 
-
 ##############################################NAMELIST BASE CLASS TO SHARE COMMON METHODS#########################
 
 #These dictionaries represent the recognized options read from quantum espresso namelists
@@ -96,7 +95,6 @@ class NamelistBase:
                             self.tags[line[0].strip()] =  line[1].strip()
         self._verify_tags()
         self._make_natural_type()
-
 
     def _make_natural_type(self):
         """ Convert self.tags values from strings into their 'natural type' (int, float, etc.) """
@@ -244,6 +242,7 @@ class ElectronsError(Exception):
         return self.msg
 
 class Electrons(NamelistBase):
+
     """
     The Electrons class contains:
         tags: a dict of all Electrons tags
@@ -288,10 +287,11 @@ class Ions(NamelistBase):
 
     All namelist tags and associated values are stored as key-value pairs in the dictionary called 'tags'.
    """
+
     def __init__(self,title, nameliststring):
         """ Construct an Ions object from 'nameliststring'"""
         NamelistBase.__init__(self,title,nameliststring)
-
+        
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
         if tag.lower() == 'ion_dynamics':
@@ -320,6 +320,7 @@ class CellError(Exception):
 
     def __str__(self):
         return self.msg
+
 
 class Cell(NamelistBase):
     """
@@ -549,6 +550,7 @@ class KPoints:
                 raise KPointsError("Non integer number of kpoints")
             line_segments=line_segments[1:]
             for line in line_segments:
+
                 line = line.strip().split()
                 if len(line) == 4:
                     try:
@@ -604,6 +606,7 @@ class KPoints:
                     prim._lattice = 0.52918*prim._lattice
                     prim.scaling = "angstrom"
                 prim._reciprocal_lattice = 2.0*math.pi*np.linalg.inv(np.transpose(prim._lattice))
+
 
 
         super_kpoints.coords = [1, 1, 1, self.coords[3], self.coords[4], self.coords[5]] #4th 5th and 6th numbers are shifts
@@ -738,7 +741,7 @@ class Infile:
 
                 self.namelists[curr_namelist]=namelistobj
             elif namelist_open:
-                    # white space in name list is removed later on
+              # white space in name list is removed later on
                     nameliststring=nameliststring + line + '\n'
             else:
                 if not card_open:
@@ -766,7 +769,6 @@ class Infile:
                     self.cards[curr_card]=cardobj
                 else:
                     cardstring=cardstring + line + '\n'
-
         self._verify_blocks()
 
         file.close()
@@ -800,7 +802,6 @@ class Infile:
             self.namelists["SYSTEM"].tags["ibrav"]=0
             if "celldm(1)" in self.namelists["SYSTEM"].tags.keys():
                 del self.namelists["SYSTEM"].tags["celldm(1)"]
-        
         if "ATOMIC_POSITIONS" in self.cards.keys():
             if poscar.coord_mode in ['alat','bohr','angstrom','crystal']:
                 self.cards["ATOMIC_POSITIONS"].units=poscar.coord_mode

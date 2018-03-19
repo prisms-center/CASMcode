@@ -764,7 +764,6 @@ LCHARG = .FALSE.\n";
                "  species with a given ALIAS has a '1'. For that species the fourth \n" <<
                "  column must contain the path that should be appended to the       \n" <<
                "  PSEUDO_DIR_PATH to specify the UPF file for that species.      \n\n" <<
-
                "  Additional columns, such as 'if_pos' in the example below are     \n\n" <<
                "  and used to specify the value used for a particular species in the\n" <<
                "  infile. The column heading must match a valid quantum espresso input setting.\n"

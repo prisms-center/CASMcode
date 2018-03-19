@@ -15,6 +15,7 @@ cmd += ' --record installed.txt'
 
 pyquantumespresso_install = env.Command('installed.txt', [pyquantumespresso_setup], cmd)
 AlwaysBuild(pyquantumespresso_install)
+env.Append(INSTALL_TARGETS = [pyquantumespresso_install])
 Alias('pyquantumespresso_install', pyquantumespresso_install)  
 
 # with setup.py, must uninstall files manually, 
