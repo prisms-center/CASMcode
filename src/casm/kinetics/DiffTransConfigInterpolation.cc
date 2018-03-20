@@ -135,53 +135,43 @@ namespace CASM {
         jsonParser endpt_info;
         endpt_info["from_configname"] = config.from_config().name();
         endpt_info["to_configname"] = config.to_config().name();
-        std::cout << "DTC::config.from_configname" << config.from_configname() << std::endl;
-        std::cout << "config.from_config().canonical_form().name()" << config.from_config().canonical_form().name() << std::endl;
-        std::cout << "config.from_config().name()" << config.from_config().name() << std::endl;
         endpt_info["calctype"] = endpt_calctype;
         fs::ofstream outfile(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(n_images)) / "endpoint_specs.json");
         endpt_info.print(outfile);
         outfile.close();
         fs::ofstream endpts(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(n_images)) / "endpoint_props.json");
         endpts << "{" << std::endl << '"' << 0 << '"' << ":";
-        //std::cout << endpt_info["from_configname"].get<std::string>() << std::endl;
         std::vector<std::string> tokens;
         std::string name = endpt_info["from_configname"].get<std::string>();
         boost::split(tokens, name, boost::is_any_of("."), boost::token_compress_on);
         std::string canon_config_name = tokens[0];
-        if(tokens.size() == 4) {
-          Configuration canon_config = *primclex.db<Configuration>().find(config.from_config().canonical_form().name());
-          Index fg_index = boost::lexical_cast<Index>(tokens[2]);
-          Index trans_index = boost::lexical_cast<Index>(tokens[3]);
-          canon_config.calc_properties(endpt_calctype);
-          apply(config.from_config_from_canonical(), canon_config).print_properties(endpt_calctype, endpts);
-        }
-        else {
-          make_configuration(primclex, endpt_info["from_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
+
+        if(canon_config_name.find("none") == std::string::npos) {
+          if(tokens.size() == 4) {
+            Configuration canon_config = *primclex.db<Configuration>().find(config.from_config().canonical_form().name());
+            canon_config.calc_properties(endpt_calctype);
+            apply(config.from_config_from_canonical(), canon_config).print_properties(endpt_calctype, endpts);
+          }
+          else {
+            make_configuration(primclex, endpt_info["from_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
+          }
         }
         endpts << "," << std::endl << '"' << std::to_string(n_images + 1) << '"' << ":";
         std::vector<std::string> tokens2;
         std::string name2 = endpt_info["to_configname"].get<std::string>();
-        //std::cout << name2 << std::endl;
         boost::split(tokens2, name2, boost::is_any_of("."), boost::token_compress_on);
         std::string canon_config_name2 = tokens2[0];
-        if(tokens2.size() == 4) {
-          Configuration canon_config = *primclex.db<Configuration>().find(config.to_config().canonical_form().name());
-          Index fg_index = boost::lexical_cast<Index>(tokens2[2]);
-          Index trans_index = boost::lexical_cast<Index>(tokens2[3]);
-          //	  std::cout << "canon json" << std::endl;
-          //	  std::cout << canon_config.calc_properties(endpt_calctype)<<std::endl;
-          //	  std::cout << "canon props" << std::endl;
-          //	  canon_config.print_properties(endpt_calctype,std::cout);
-          //	  std::cout << "rotated props" << std::endl;
-          //	  copy_apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype, std::cout);
-          canon_config.calc_properties(endpt_calctype);
-          apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype, endpts);
-          //	  std::cout << "rotated json" << std::endl;
-          //	  std::cout << canon_config.calc_properties(endpt_calctype) <<std::endl;
-        }
-        else {
-          make_configuration(primclex, endpt_info["to_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
+
+        if(canon_config_name2.find("none") == std::string::npos) {
+          if(tokens2.size() == 4) {
+            Configuration canon_config = *primclex.db<Configuration>().find(config.to_config().canonical_form().name());
+            canon_config.calc_properties(endpt_calctype);
+            apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype, endpts);
+
+          }
+          else {
+            make_configuration(primclex, endpt_info["to_configname"].get<std::string>()).print_properties(endpt_calctype, endpts);
+          }
         }
         endpts << std::endl << "}" << std::endl;
         endpts.close();
@@ -227,9 +217,17 @@ namespace CASM {
         Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
         ret_frm = copy_apply(dfc.from_config_from_canonical(), rlx_frm);
       }
+      else {
+        dfc.primclex().log() << ">>>>>>!!!!!WARNING: FROM (INITIAL) CONFIGURATION NOT PRESENT IN CONFIG LIST!!!!!" << std::endl
+                             << "I suggest enumerating and calculating it before interpolating!!!!!<<<<<<" << std::endl << std::endl;
+      }
       if(dfc.to_configname().find("none") == std::string::npos) {
         Configuration rlx_to = copy_apply_properties(make_configuration(dfc.primclex(), dfc.to_configname()), calctype);
         ret_to = copy_apply(dfc.to_config_from_canonical(), rlx_to);
+      }
+      else {
+        dfc.primclex().log() << ">>>>>>!!!!!WARNING: TO (FINAL) CONFIGURATION NOT PRESENT IN CONFIG LIST!!!!!" << std::endl
+                             << "I suggest enumerating and calculating it before interpolating!!!!!<<<<<<" << std::endl << std::endl;
       }
       return std::make_pair(ret_frm, ret_to);
     }

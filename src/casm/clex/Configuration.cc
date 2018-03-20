@@ -1208,6 +1208,10 @@ namespace CASM {
   /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
   /// \param config must have a canonical name
   Configuration &apply_properties(Configuration &config, std::string calctype) {
+    if(!is_calculated(config, calctype)) {
+      config.primclex().log() << ">>>>>>!!!!!WARNING: Attempting to extract properties from a configuration without properties!!!!" << std::endl
+                              << "Endpoint " << config.name() << " is not calculated in calctype " << calctype << "!!!!<<<<<<" << std::endl << std::endl;;
+    }
     jsonParser calc_props = config.calc_properties(calctype);
     config.init_deformation();
     config.init_displacement();

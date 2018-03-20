@@ -416,15 +416,15 @@ namespace CASM {
     GenericConfigFormatter<std::string> calc_status() {
       return GenericConfigFormatter<std::string>("calc_status",
                                                  "Status of calculation.",
-                                                 CASM::calc_status<Configuration>,
-                                                 CASM::has_calc_status<Configuration>);
+                                                 [](const Configuration & config)->std::string{return CASM::calc_status<Configuration>(config);},
+                                                 [](const Configuration & config)->bool{return CASM::has_calc_status<Configuration>(config);});
     }
 
     GenericConfigFormatter<std::string> failure_type() {
       return GenericConfigFormatter<std::string>("failure_type",
                                                  "Reason for calculation failure.",
-                                                 CASM::failure_type<Configuration>,
-                                                 CASM::has_failure_type<Configuration>);
+                                                 [](const Configuration & config)->std::string{return CASM::failure_type<Configuration>(config);},
+                                                 [](const Configuration & config)->bool{return CASM::has_failure_type<Configuration>(config);});
     }
 
     GenericConfigFormatter<std::string> diff_trans_endpoint_of() {
@@ -521,7 +521,7 @@ namespace CASM {
     GenericConfigFormatter<bool> is_calculated() {
       return GenericConfigFormatter<bool>("is_calculated",
                                           "True (1) if all current properties have been been calculated for the configuration",
-                                          static_cast<bool(*)(const Configuration &)>(CASM::is_calculated));
+                                          [](const Configuration & config)->bool{return CASM::is_calculated(config);});
     }
 
     GenericConfigFormatter<bool> is_primitive() {
