@@ -175,6 +175,7 @@ namespace CASM {
           //	  canon_config.print_properties(endpt_calctype,std::cout);
           //	  std::cout << "rotated props" << std::endl;
           //	  copy_apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype, std::cout);
+          canon_config.calc_properties(endpt_calctype);
           apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype, endpts);
           //	  std::cout << "rotated json" << std::endl;
           //	  std::cout << canon_config.calc_properties(endpt_calctype) <<std::endl;

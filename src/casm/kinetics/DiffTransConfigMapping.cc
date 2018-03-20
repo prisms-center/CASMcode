@@ -72,6 +72,12 @@ namespace CASM {
                           primclex().crystallography_tol());
       //Find out which species are moving from which basis site to the other
 
+      if(hint_ptr != nullptr) {
+        Configuration tmp = hint_ptr->from_config().canonical_form();
+        std::vector<std::string> scelname;
+        scelname.push_back(tmp.supercell().name());
+        mapper.force_lattices(scelname);
+      }
       ConfigDoF from_dof;
       Lattice from_lat;
       mapper.struc_to_configdof(result.structures[0], from_dof, from_lat);
@@ -80,13 +86,6 @@ namespace CASM {
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
       ConfigMapperResult from_res;
-      if(hint_ptr != nullptr) {
-        Configuration tmp = hint_ptr->from_config().canonical_form();
-        from_res = mapper.import_structure_occupation(result.structures[0], &(tmp));
-      }
-      else {
-        from_res = mapper.import_structure_occupation(result.structures[0]);
-      }
       std::set<UnitCellCoord> vacancy_from;
       std::set<UnitCellCoord> vacancy_to;
       //This rigid rotation and rigid shift seems unnecessary surprisingly
