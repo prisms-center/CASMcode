@@ -278,7 +278,7 @@ namespace CASM {
     if(calctype == "") {
       calctype = primclex.settings().default_clex().calctype;
     }
-    return primclex.dir().calculated_properties(configname, primclex.settings().default_clex().calctype);
+    return primclex.dir().calculated_properties(configname, calctype);
   }
 
   fs::path pos_path(const PrimClex &primclex, const std::string &configname) {
@@ -289,7 +289,32 @@ namespace CASM {
     if(calctype == "") {
       calctype = primclex.settings().default_clex().calctype;
     }
-    return primclex.dir().calc_status(configname, primclex.settings().default_clex().calctype);
+
+    if(configname[0] == 'd') {
+      jsonParser calcjson;
+      std::vector<std::string> name;
+      boost::split(name, configname, boost::is_any_of("/"), boost::token_compress_on);
+      if(fs::exists(primclex.dir().configuration_calc_settings_dir(configname, calctype) / "calc.json")) {
+        calcjson.read(primclex.dir().configuration_calc_dir(configname, calctype) / "calc.json");
+      }
+      else if(fs::exists(primclex.dir().supercell_calc_settings_dir(name[0]
+                                                                    + name[1]
+                                                                    + name[2]
+                                                                    , calctype) / "calc.json")) {
+        calcjson.read(primclex.dir().supercell_calc_settings_dir(name[0]
+                                                                 + name[1]
+                                                                 + name[2]
+                                                                 , calctype) / "calc.json");
+      }
+      else {
+        calcjson.read(primclex.dir().calc_settings_dir(calctype) / "calc.json");
+      }
+      int n_images;
+      calcjson.get_else<int>(n_images, "n_images", 0);
+      fs::path tmp = primclex.dir().calc_status(configname, calctype);
+      return tmp.parent_path() / ("/N_images_" + std::to_string(n_images)) / tmp.filename();
+    }
+    return primclex.dir().calc_status(configname, calctype);
   }
 
 

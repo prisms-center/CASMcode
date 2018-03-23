@@ -1,9 +1,11 @@
 #include "casm/app/DirectoryStructure.hh"
 
+#include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string/classification.hpp>
 #include "casm/clex/Configuration.hh"
 #include "casm/casm_io/Log.hh"
-
+#include "casm/casm_io/jsonParser.hh"
 namespace CASM {
 
   /// return path to current or parent directory containing ".casm" directory
@@ -286,7 +288,6 @@ namespace CASM {
   /// - For Configuration: use 'SCELV_A_B_C_D_E_F'
   /// - For DiffTransConfiguration: use 'diff_trans.0/SCELV_A_B_C_D_E_F'
   fs::path DirectoryStructure::supercell_dir(std::string scelname) const {
-    std::cout << "Warning: check supercell directory path for DiffTransConfiguration" << std::endl;
     return m_root / m_calc_dir / scelname;
   }
 
@@ -318,7 +319,6 @@ namespace CASM {
   /// - For Configuration: use 'SCELV_A_B_C_D_E_F'
   /// - For DiffTransConfiguration: use 'diff_trans.0/SCELV_A_B_C_D_E_F'
   fs::path DirectoryStructure::supercell_calc_settings_dir(std::string scelname, std::string calctype) const {
-    std::cout << "Warning: check supercell directory path for DiffTransConfiguration" << std::endl;
     return supercell_dir(scelname) / m_set_dir / _calctype(calctype);
   }
 
@@ -337,8 +337,33 @@ namespace CASM {
     return configuration_calc_dir(configname, calctype) / "properties.calc.json";
   }
 
+  // This function should work differently for Configuration and DiffTransConfiguration due to N_images folders
+  // Additional parsing could be moved to Calculable as well
   /// \brief Return calculation status file path
   fs::path DirectoryStructure::calc_status(std::string configname, std::string calctype) const {
+    //if (configname[0]=='d'){
+    //    jsonParser calcjson;
+    //    std::vector<std::string> name;
+    //    boost::split(name,configname,boost::is_any_of("/"),boost::token_compress_on);
+    //    if (fs::exists(configuration_calc_settings_dir(configname,calctype) / "calc.json")){
+    //    	calcjson.read(configuration_calc_dir(configname,calctype) / "calc.json");
+    //    }
+    //    else if (fs::exists(supercell_calc_settings_dir(name[0]
+    //    						+name[1]
+    //    						+name[2]
+    //    						,calctype) / "calc.json")){
+    //    	calcjson.read(supercell_calc_settings_dir(name[0]
+    //    						+name[1]
+    //    						+name[2]
+    //    						,calctype) / "calc.json");
+    //    }
+    //    else {
+    //    	calcjson.read(calc_settings_dir(calctype) / "calc.json");
+    //    }
+    //    int n_images;
+    //    calcjson.get_else<int>(n_images,"n_images",0);
+    //    return configuration_calc_dir(configname,calctype) / ("N_images_" + std::to_string(n_images)) / "status.json";
+    //}
     return configuration_calc_dir(configname, calctype) / "status.json";
   }
 

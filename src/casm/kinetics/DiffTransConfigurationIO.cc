@@ -341,6 +341,20 @@ namespace CASM {
           return dtconfig.bg_configname();
         });
       }
+      GenericDiffTransConfigFormatter<std::string> calc_status() {
+        return GenericDiffTransConfigFormatter<std::string>("calc_status",
+                                                            "Status of calculation.",
+                                                            [](const DiffTransConfiguration & config)->std::string{return CASM::calc_status<DiffTransConfiguration>(config);},
+                                                            [](const DiffTransConfiguration & config)->bool{return CASM::has_calc_status<DiffTransConfiguration>(config);});
+      }
+
+      GenericDiffTransConfigFormatter<std::string> failure_type() {
+        return GenericDiffTransConfigFormatter<std::string>("failure_type",
+                                                            "Reason for calculation failure.",
+                                                            [](const DiffTransConfiguration & config)->std::string{return CASM::failure_type<DiffTransConfiguration>(config);},
+                                                            [](const DiffTransConfiguration & config)->bool{return CASM::has_failure_type<DiffTransConfiguration>(config);});
+      }
+
 
       GenericDiffTransConfigFormatter<double> kra_barrier() {
         return GenericDiffTransConfigFormatter<double>("kra",
@@ -363,7 +377,9 @@ namespace CASM {
       to_configname(),
       bg_configname(),
       scelname(),
-      orbitname()
+      orbitname(),
+      calc_status(),
+      failure_type()
     );
     return dict;
   }
