@@ -389,6 +389,9 @@ namespace CASM {
         m_base.emplace_back(
           canonical_diff_trans.sorted(),
           copy_apply(gen.to_canonical(), m_background_config));
+        if(!canonical_diff_trans.sorted().is_canonical(_supercell())) {
+          throw std::runtime_error("ScelCanonicalGenerator did not work to make diff_trans canonical");
+        }
       }
 
       m_base_it = m_base.begin();
@@ -553,13 +556,13 @@ namespace CASM {
       m_current->set_source(this->source(step()));
       this->_set_current_ptr(&(*m_current));
 
-      /*
+
       // --- debug check ---
       // m_current should be in canonical form at this point
       if(!m_current->is_canonical()) {
 
         // diff_trans is canonical wrt all supercell permutations
-        const auto& dt = m_current->diff_trans();
+        const auto &dt = m_current->diff_trans();
         if(!dt.is_canonical(_supercell())) {
           throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: diff trans not canonical");
         }
@@ -570,7 +573,7 @@ namespace CASM {
         }
         throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical, for unknown reason");
       }
-      */
+
     }
 
     bool has_local_bubble_overlap(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, const Supercell &scel) {

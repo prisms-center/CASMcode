@@ -25,7 +25,7 @@ namespace CASM {
       EnumInterface<ScelEnum>(),
       EnumInterface<ConfigEnumAllOccupations>(),
       EnumInterface<SuperConfigEnum>(),
-      EnumInterface<ConfigEnumStrain>(),
+      //      EnumInterface<ConfigEnumStrain>(),
       EnumInterface<Kinetics::DiffusionTransformationEnum>(),
       EnumInterface<Kinetics::DiffTransConfigEnumOccPerturbations>(),
       EnumInterface<Kinetics::DiffTransConfigInterpolation>(),
