@@ -337,33 +337,8 @@ namespace CASM {
     return configuration_calc_dir(configname, calctype) / "properties.calc.json";
   }
 
-  // This function should work differently for Configuration and DiffTransConfiguration due to N_images folders
-  // Additional parsing could be moved to Calculable as well
   /// \brief Return calculation status file path
   fs::path DirectoryStructure::calc_status(std::string configname, std::string calctype) const {
-    //if (configname[0]=='d'){
-    //    jsonParser calcjson;
-    //    std::vector<std::string> name;
-    //    boost::split(name,configname,boost::is_any_of("/"),boost::token_compress_on);
-    //    if (fs::exists(configuration_calc_settings_dir(configname,calctype) / "calc.json")){
-    //    	calcjson.read(configuration_calc_dir(configname,calctype) / "calc.json");
-    //    }
-    //    else if (fs::exists(supercell_calc_settings_dir(name[0]
-    //    						+name[1]
-    //    						+name[2]
-    //    						,calctype) / "calc.json")){
-    //    	calcjson.read(supercell_calc_settings_dir(name[0]
-    //    						+name[1]
-    //    						+name[2]
-    //    						,calctype) / "calc.json");
-    //    }
-    //    else {
-    //    	calcjson.read(calc_settings_dir(calctype) / "calc.json");
-    //    }
-    //    int n_images;
-    //    calcjson.get_else<int>(n_images,"n_images",0);
-    //    return configuration_calc_dir(configname,calctype) / ("N_images_" + std::to_string(n_images)) / "status.json";
-    //}
     return configuration_calc_dir(configname, calctype) / "status.json";
   }
 

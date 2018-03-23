@@ -362,6 +362,16 @@ namespace CASM {
                                                        CASM::Kinetics::kra,
                                                        CASM::Kinetics::has_kra);
       }
+      GenericDiffTransConfigFormatter<bool> is_calculated() {
+        return GenericDiffTransConfigFormatter<bool>("is_calculated",
+                                                     "True (1) if all current properties have been been calculated for the diff_trans_config",
+                                                     [](const DiffTransConfiguration & config)->bool{return CASM::is_calculated(config);});
+      }
+      GenericDiffTransConfigFormatter<bool> is_canonical() {
+        return GenericDiffTransConfigFormatter<bool>("is_canonical",
+                                                     "True (1) if the diff_trans_config cannot be transformed by symmetry to a diff_trans_config with higher lexicographic order",
+                                                     [](const DiffTransConfiguration & config)->bool{return config.is_canonical();});
+      }
     }
   }
 
@@ -390,7 +400,9 @@ namespace CASM {
     using namespace Kinetics::DiffTransConfigIO;
     BooleanAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
     dict.insert(
-      DB::Selected<Kinetics::DiffTransConfiguration>()
+      DB::Selected<Kinetics::DiffTransConfiguration>(),
+      is_calculated(),
+      is_canonical()
     );
     return dict;
   }
