@@ -95,6 +95,48 @@ namespace CASM {
 
       };
 
+      /// \brief Calculate param composition of a DiffTransConfiguration
+      ///
+      class LocalComp : public StringAttribute<DiffTransConfiguration> {
+
+      public:
+
+        static const std::string Name;
+
+        static const std::string Desc;
+
+
+        LocalComp(): BaseValueFormatter(Name, Desc) {}
+
+
+        // --- Required implementations -----------
+
+        /// \brief Returns the local composition in terms off species count
+        std::string evaluate(const DiffTransConfiguration &dtconfig) const override;
+
+        /// \brief Clone using copy constructor
+        std::unique_ptr<LocalComp> clone() const {
+          return std::unique_ptr<LocalComp>(this->_clone());
+        }
+
+
+        // --- Specialized implementation -----------
+
+        /// \brief Expects arguments of the form 'local_comp(radius)' etc.
+        bool parse_args(const std::string &args) override;
+
+
+      private:
+
+        /// \brief Clone using copy constructor
+        LocalComp *_clone() const override {
+          return new LocalComp(*this);
+        }
+
+        double m_radius;
+
+      };
+
 
       /// \brief Calculate number of each species per unit cell
       ///
@@ -331,9 +373,9 @@ namespace CASM {
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<Index> transformation_size();
 
-      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> min_length();
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> min_perturb_radius();
 
-      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> max_length();
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> max_perturb_radius();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> dtconfigname();
 

@@ -16,6 +16,7 @@
 #include "casm/database/Cache.hh"
 #include "casm/database/Named.hh"
 #include "casm/database/Database.hh"
+#include "casm/clusterography/ClusterDecl.hh"
 
 namespace CASM {
 
@@ -604,7 +605,11 @@ namespace CASM {
   /// \brief Returns the relaxed magnetic moment for each molecule
   Eigen::VectorXd relaxed_mag(const Configuration &_config);
 
+  /// \brief Returns an Integral Cluster representing the perturbed sites between the configs
+  IntegralCluster config_diff(const Configuration &_config1, const Configuration &_config2);
 
+  /// \brief Returns a Configuration with the sites in _clust clipped from _config and placed in _bg
+  Configuration config_clip(const Configuration &_config, const Configuration &_bg, IntegralCluster &_clust);
 
   /// \brief returns true if _config describes primitive cell of the configuration it describes
   bool is_primitive(const Configuration &_config);

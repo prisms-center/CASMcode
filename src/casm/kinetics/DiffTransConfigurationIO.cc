@@ -5,7 +5,8 @@
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/Selected.hh"
-
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include  "casm/clusterography/ClusterOrbits.hh"
 namespace CASM {
 
   template class BaseDatumFormatter<Kinetics::DiffTransConfiguration>;
@@ -108,6 +109,56 @@ namespace CASM {
         return col;
       }
 
+
+      // --- LocalComp implementations -----------
+
+      const std::string LocalComp::Name = "local_comp";
+
+      const std::string LocalComp::Desc =
+        "Number of each species within radius, including vacancies. ";
+
+      /// \brief Returns the number of each species per unit cell
+      std::string LocalComp::evaluate(const DiffTransConfiguration &dtconfig) const {
+        std::vector<UnitCellCoord> candidate_sites;
+        neighborhood<Site>(dtconfig.diff_trans(), m_radius, all_sites_filter, std::back_inserter(candidate_sites), dtconfig.primclex().crystallography_tol());
+        std::map<std::string, int> species_map;
+        for(auto &site : candidate_sites) {
+          Index l = dtconfig.from_config().linear_index(site);
+          Index occ_idx = dtconfig.from_config().occ(l);
+          std::string occ_name = dtconfig.from_config().prim().basis[ dtconfig.from_config().sublat(l) ].site_occupant()[occ_idx].name();
+          if(species_map.find(occ_name) == species_map.end()) {
+            species_map.emplace(occ_name, 1);
+          }
+          else {
+            species_map[occ_name]++;
+          }
+        }
+        std::string ret_string;
+        for(auto it = species_map.begin(); it != species_map.end(); ++it) {
+          if(ret_string != "") {
+            ret_string = ret_string + "_";
+          }
+          ret_string = ret_string + it->first + "_" + std::to_string(it->second) ;
+        }
+        return ret_string;
+      }
+
+      bool LocalComp::parse_args(const std::string &args) {
+        try {
+          double rad = std::stod(args);
+          if(rad >= 0) {
+            m_radius = rad;
+          }
+          else {
+            throw std::runtime_error(std::string("Format tag: 'local_comp(") + args + ") is invalid.\n");
+            return false;
+          }
+        }
+        catch(const std::invalid_argument &e) {
+          throw std::runtime_error("Argument could not be converted to double. Received: " + args);
+        }
+        return true;
+      }
 
       // --- CompN implementations -----------
 
@@ -389,7 +440,8 @@ namespace CASM {
       scelname(),
       orbitname(),
       calc_status(),
-      failure_type()
+      failure_type(),
+      LocalComp()
     );
     return dict;
   }

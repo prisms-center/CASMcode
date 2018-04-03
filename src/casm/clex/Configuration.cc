@@ -1386,6 +1386,39 @@ namespace CASM {
     return _config.calc_properties()["relaxed_mag"].get<Eigen::VectorXd>();
   }
 
+  /// \brief Returns an IntegralCluster representing the perturbation between the configs
+  IntegralCluster config_diff(const Configuration &_config1, const Configuration &_config2) {
+    if(_config1.supercell() != _config2.supercell()) {
+      throw std::runtime_error("Misuse of basic config_diff: configs are not in same supercell");
+    }
+    std::vector<UnitCellCoord> uccoords;
+    for(Index i = 0 ; i < _config1.occupation().size(); i++) {
+      if(_config1.occ(i) != _config2.occ(i)) {
+        uccoords.push_back(_config1.uccoord(i));
+      }
+    }
+    IntegralCluster perturb(_config1.prim(), uccoords.begin(), uccoords.end());
+    return perturb;
+  }
+
+  /// \brief Returns a Configuration with the sites in _clust clipped from _config and placed in _bg
+  Configuration config_clip(const Configuration &_config, const Configuration &_bg, IntegralCluster &_clust) {
+    if(_config.supercell() != _bg.supercell()) {
+      throw std::runtime_error("Misuse of basic config_clip: configs are not in same supercell");
+    }
+    Configuration tmp = _bg;
+    std::vector<Index> l_inds;
+    std::vector<Index> l_values;
+    for(auto &site : _clust) {
+      l_inds.push_back(_config.linear_index(site));
+      l_values.push_back(_config.occ(_config.linear_index(site)));
+    }
+    for(Index i = 0; i < l_inds.size(); i++) {
+      tmp.set_occ(l_inds[i], l_values[i]);
+    }
+    return tmp;
+  }
+
   /// \brief returns true if _config describes primitive cell of the configuration it describes
   bool is_primitive(const Configuration &_config) {
     return _config.is_primitive();
