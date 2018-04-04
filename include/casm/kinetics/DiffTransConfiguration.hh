@@ -168,6 +168,11 @@ namespace CASM {
     /// \brief Returns kra for DiffTransConfiguration
     double kra(const DiffTransConfiguration &dtc);
 
+    /// \brief Returns the distance to furthest perturbation from diffusion hop
+    double max_perturb_rad(const DiffTransConfiguration &dtc);
+
+    /// \brief Returns the distance to closest perturbation from diffusion hop
+    double min_perturb_rad(const DiffTransConfiguration &dtc);
 
   }
 

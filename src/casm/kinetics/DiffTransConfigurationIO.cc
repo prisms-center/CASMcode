@@ -407,6 +407,18 @@ namespace CASM {
       }
 
 
+      GenericDiffTransConfigFormatter<double> min_perturb_radius() {
+        return GenericDiffTransConfigFormatter<double>("min_perturb_radius",
+                                                       "gives the distance from the diffusion hop of the closest perturbed site from the hop. A value of 0 indicates no perturbation",
+                                                       CASM::Kinetics::min_perturb_rad);
+      }
+      GenericDiffTransConfigFormatter<double> max_perturb_radius() {
+        return GenericDiffTransConfigFormatter<double>("max_perturb_radius",
+                                                       "gives the distance from the diffusion hop of the furthest perturbed site from the hop. A value of 0 indicates no perturbation",
+                                                       CASM::Kinetics::max_perturb_rad);
+      }
+
+
       GenericDiffTransConfigFormatter<double> kra_barrier() {
         return GenericDiffTransConfigFormatter<double>("kra",
                                                        "kinetically resolved activation barrier, this is the distance from the average energy of the two endpoints to the highest point on the diffusion energy landscape",
@@ -474,7 +486,9 @@ namespace CASM {
     ScalarAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
     dict.insert(
       LocalClex(),
-      kra_barrier()
+      kra_barrier(),
+      max_perturb_radius(),
+      min_perturb_radius()
     );
     return dict;
   }

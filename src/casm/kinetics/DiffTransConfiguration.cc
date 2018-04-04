@@ -427,6 +427,40 @@ namespace CASM {
       return dtc.calc_properties()["kra"].get<double>();
     }
 
+    /// \brief Returns the distance to furthest perturbation from diffusion hop
+    double max_perturb_rad(const DiffTransConfiguration &dtc) {
+      Configuration bg = make_configuration(dtc.primclex(), dtc.bg_configname());
+      Configuration jumbo_bg = bg.fill_supercell(dtc.from_config().supercell());
+      DiffTransConfiguration tmp(make_attachable(dtc.diff_trans(), jumbo_bg), dtc.diff_trans());
+      tmp.canonical_form();
+      auto clust = config_diff(tmp.from_config(), dtc.from_config());
+      double max_dist = 0;
+      for(auto &site : clust) {
+        if(dist_to_path(dtc.diff_trans(), site)	> max_dist) {
+          max_dist = dist_to_path(dtc.diff_trans(), site);
+        }
+      }
+      return max_dist;
+    }
+
+    /// \brief Returns the distance to closest perturbation from diffusion hop
+    double min_perturb_rad(const DiffTransConfiguration &dtc) {
+      Configuration bg = make_configuration(dtc.primclex(), dtc.bg_configname());
+      Configuration jumbo_bg = bg.fill_supercell(dtc.from_config().supercell());
+      DiffTransConfiguration tmp(make_attachable(dtc.diff_trans(), jumbo_bg), dtc.diff_trans());
+      tmp.canonical_form();
+      auto clust = config_diff(tmp.from_config(), dtc.from_config());
+      double min_dist = 100;
+      for(auto &site : clust) {
+        if(dist_to_path(dtc.diff_trans(), site)	< min_dist && dist_to_path(dtc.diff_trans(), site) > dtc.primclex().crystallography_tol()) {
+          min_dist = dist_to_path(dtc.diff_trans(), site);
+        }
+      }
+      if(clust.size() == 0) {
+        min_dist = 0;
+      }
+      return min_dist;
+    }
   }
 
   Kinetics::DiffTransConfiguration jsonConstructor<Kinetics::DiffTransConfiguration>::from_json(
