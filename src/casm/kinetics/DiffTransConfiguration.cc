@@ -436,8 +436,8 @@ namespace CASM {
       auto clust = config_diff(tmp.from_config(), dtc.from_config());
       double max_dist = 0;
       for(auto &site : clust) {
-        if(dist_to_path(dtc.diff_trans(), site)	> max_dist) {
-          max_dist = dist_to_path(dtc.diff_trans(), site);
+        if(dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell())	> max_dist) {
+          max_dist = dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell());
         }
       }
       return max_dist;
@@ -452,8 +452,8 @@ namespace CASM {
       auto clust = config_diff(tmp.from_config(), dtc.from_config());
       double min_dist = 100;
       for(auto &site : clust) {
-        if(dist_to_path(dtc.diff_trans(), site)	< min_dist && dist_to_path(dtc.diff_trans(), site) > dtc.primclex().crystallography_tol()) {
-          min_dist = dist_to_path(dtc.diff_trans(), site);
+        if(dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell()) < min_dist && dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell()) > dtc.primclex().crystallography_tol()) {
+          min_dist = dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell());
         }
       }
       if(clust.size() == 0) {

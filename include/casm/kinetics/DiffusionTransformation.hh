@@ -314,6 +314,14 @@ namespace CASM {
     //std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit);
 
     // \brief Returns the distance from uccoord to the closest point on a linearly
+    /// interpolated diffusion path considers the shortest path across PBC. (Could be an end point)
+    double dist_to_path_pbc(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord, const Supercell &scel);
+
+    // \brief Returns the vector from uccoord to the closest point on a linearly
+    /// interpolated diffusion path considers the shortest path across PBC. (Could be an end point)
+    Eigen::Vector3d vector_to_path_pbc(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord, const Supercell &scel);
+
+    // \brief Returns the distance from uccoord to the closest point on a linearly
     /// interpolated diffusion path. (Could be an end point)
     double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord);
 

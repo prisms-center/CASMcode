@@ -2,7 +2,8 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
-
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/container/Counter.hh"
 namespace CASM {
 
   namespace DB {
@@ -533,6 +534,33 @@ namespace CASM {
       Printer<Kinetics::DiffusionTransformation> printer;
       printer.print(trans, sout);
       return sout;
+    }
+
+    /// \brief Returns the vector from uccoord to the closest point on a linearly
+    /// interpolated diffusion path considers the shortest path across periodic boundaries. (Could be an end point)
+    Eigen::Vector3d vector_to_path_pbc(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord, const Supercell &scel) {
+      EigenCounter<Eigen::Vector3l> counter(Eigen::Vector3l::Constant(-1), Eigen::Vector3l::Constant(1), Eigen::Vector3l::Ones());
+      double min_dist = dist_to_path(diff_trans, uccoord);
+      Eigen::Vector3d vec = vector_to_path(diff_trans, uccoord);
+      while(counter.valid()) {
+        Eigen::Vector3l scelvec = (scel.uccoord(scel.num_sites() - 1).unitcell() + Eigen::Vector3l::Constant(1));
+        UnitCell shift = counter().cwiseProduct(scelvec);
+        UnitCellCoord new_coord = uccoord;
+        new_coord += shift;
+        if(vector_to_path(diff_trans, new_coord).norm() < min_dist) {
+          vec = vector_to_path(diff_trans, new_coord);
+          min_dist = vec.norm();
+        }
+        counter++;
+      }
+      return vec;
+    }
+
+
+    /// \brief Returns the distance from uccoord to the closest point on a linearly
+    /// interpolated diffusion path considers the shortest path across periodic boundaries. (Could be an end point)
+    double dist_to_path_pbc(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord, const Supercell &scel) {
+      return vector_to_path_pbc(diff_trans, uccoord, scel).norm();
     }
 
     /// \brief Returns the distance from uccoord to the closest point on a linearly
