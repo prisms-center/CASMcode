@@ -62,6 +62,9 @@ namespace CASM {
         json[m_prefix + "basis"].push_back(*it2);
     }
 
+    //Please use -Werror=return-type in your compiler flags
+    return json;
+
   }
 
   template< bool IsConst >
