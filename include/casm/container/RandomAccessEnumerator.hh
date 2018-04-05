@@ -458,12 +458,14 @@ namespace CASM {
     }
 
     jsonParser source(step_type step) const {
-      ptr->source(step);
+      //Please use -Werror=return-type in your compiler flags
+      return ptr->source(step);
     }
 
     /// Derived enumerators must implement name
     std::string name() const {
-      ptr->name();
+      //Please use -Werror=return-type in your compiler flags
+      return ptr->name();
     }
 
     std::unique_ptr<RandomAccessEnumeratorBase<ValueType, IsConst> > ptr;
