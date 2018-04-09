@@ -26,7 +26,7 @@ casmproject_PYTHON=python/casm/casm/project/project.py\
 				   python/casm/casm/project/query.py\
 				   python/casm/casm/project/selection.py\
 				   python/casm/casm/project/__init__.py\
-				   python/casm/casm/project/syminfo.py
+				   python/casm/casm/project/syminfo.py\
 				   python/casm/casm/project/io.py
 casmprojectdir=$(casmpydir)/project
 
