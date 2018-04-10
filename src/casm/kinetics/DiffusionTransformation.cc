@@ -2,7 +2,6 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
-#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/container/Counter.hh"
 namespace CASM {
 

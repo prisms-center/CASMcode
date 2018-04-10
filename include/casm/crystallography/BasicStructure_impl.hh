@@ -784,16 +784,22 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::print_xyz(std::ostream &stream) const {
+  void BasicStructure<CoordType>::print_xyz(std::ostream &stream, bool frac) const {
     stream << basis.size() << '\n';
     stream << title << '\n';
     stream.precision(7);
     stream.width(11);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-
+    stream << "      a       b       c" << '\n';
+    stream << lattice().lat_column_mat() << '\n';
     for(Index i = 0; i < basis.size(); i++) {
       stream << std::setw(2) << basis[i].occ_name() << " ";
-      stream << std::setw(12) << basis[i].cart() << '\n';
+      if(frac) {
+        stream << std::setw(12) << basis[i].frac() << '\n';
+      }
+      else {
+        stream << std::setw(12) << basis[i].cart() << '\n';
+      }
     }
 
   }
@@ -903,6 +909,7 @@ namespace CASM {
     tsuper.fill_supercell(RHS);
     return tsuper;
   }
+
 
   //****************************************************
 

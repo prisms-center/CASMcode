@@ -80,31 +80,46 @@ namespace CASM {
       }
       ConfigDoF from_dof;
       Lattice from_lat;
-      mapper.struc_to_configdof(result.structures[0], from_dof, from_lat);
+      Eigen::MatrixXd cart_op;
+      std::vector<int> best_assign;
+      mapper.struc_to_configdof(result.structures[0], from_dof, from_lat/*,best_assign,cart_op*/);
       auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_lat);
-      Configuration from_config(scel_ptr, jsonParser(), from_dof);
+      Configuration non_canon_from_config(scel_ptr, jsonParser(), from_dof);
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
-      ConfigMapperResult from_res;
+      ConfigMapperResult from_res = mapper.import_structure(result.structures[0]);
+      Configuration from_config = *(from_res.config);
       std::set<UnitCellCoord> vacancy_from;
       std::set<UnitCellCoord> vacancy_to;
       //This rigid rotation and rigid shift seems unnecessary surprisingly
-      /*
-         SymOp op(from_res.cart_op);
-          Coordinate rigid_shift = copy_apply(op,result.structures[0].basis[0]) - Coordinate(from_config.uccoord(from_res.best_assignment[0]));
+
+      SymOp op(from_res.cart_op);
+      Coordinate rigid_shift = result.structures[0].basis[0] - Coordinate(non_canon_from_config.uccoord(from_res.best_assignment[0]));
       Coordinate t_shift(primclex().prim().lattice());
       t_shift.cart() = rigid_shift.cart();
-      */
+      //std::cout << "t shift " << t_shift.const_frac() << std::endl;
       //Maybe check coordinate similarity after applying deformations
       //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config
       //This max_displacement is not considering rigid translational shifts of the structures's basis to the primclex's basis
-      std::vector<Index> moving_atoms = _analyze_atoms(result.structures[0],
-                                                       result.structures[result.structures.size() - 1],
-                                                       from_config,
-                                                       from_uccoords,
-                                                       to_uccoords,
-                                                       vacancy_from,
-                                                       vacancy_to);
+      BasicStructure<Site> from = result.structures[0];
+      BasicStructure<Site> to = result.structures[result.structures.size() - 1];
+      //std::cout << "unconditioned from struc" << std::endl;
+      //from.print_xyz(std::cout,true);
+      //std::cout << "unconditioned to struc" << std::endl;
+      //to.print_xyz(std::cout,true);
+      _precondition_from_and_to(from_res.cart_op, from_config.deformation(), from_res.trans - t_shift.const_cart(), from, to);
+      //std::cout << "cart_op"<<from_res.cart_op<< std::endl;
+      //std::cout << "from struc" << std::endl;
+      //from.print_xyz(std::cout,true);
+      //std::cout << "to struc" << std::endl;
+      //to.print_xyz(std::cout,true);
+      std::vector<Index> moving_atoms = _analyze_atoms_ideal(from,
+                                                             to,
+                                                             from_config,
+                                                             from_uccoords,
+                                                             to_uccoords,
+                                                             vacancy_from,
+                                                             vacancy_to);
 
       Kinetics::DiffusionTransformation diff_trans = _make_hop(result.structures[0],
                                                                from_uccoords,
@@ -124,11 +139,14 @@ namespace CASM {
       //or stick with prepareless workaround. Alternatively check if sorted, if not then sort diff trans and flip from/to then create.
       //Need to somehow only use occupation from the config to construct diff_trans_config
       diff_trans = final_diff_trans;
+      //std::cout << "diff_trans is " << std::endl;
+      //std::cout << diff_trans << std::endl;
       //Attach hop to ideal from config in same orientation
       from_config.clear_deformation();
       from_config.clear_displacement();
       from_config.init_deformation();
       from_config.init_displacement();
+      //std::cout << "from config is " << std::endl << from_config << std::endl;
       result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
       //NEED TO SET ORBIT NAME OF DTC SOMEHOW FOR NEW DIFF TRANS
       PrimPeriodicDiffTransSymCompare sym_c {primclex().crystallography_tol()};
@@ -175,38 +193,22 @@ namespace CASM {
       return result;
     }
 
-    std::vector<Index> DiffTransConfigMapper::_analyze_atoms(BasicStructure<Site> &from,
-                                                             BasicStructure<Site> &to,
-                                                             Configuration &config,
-                                                             std::vector<UnitCellCoord> &from_uccoords,
-                                                             std::vector<UnitCellCoord> &to_uccoords,
-                                                             std::set<UnitCellCoord> &vacancy_from,
-                                                             std::set<UnitCellCoord> &vacancy_to) const {
+    std::vector<Index> DiffTransConfigMapper::_analyze_atoms_ideal(const BasicStructure<Site> &from,
+                                                                   const BasicStructure<Site> &to,
+                                                                   const Configuration &config,
+                                                                   std::vector<UnitCellCoord> &from_uccoords,
+                                                                   std::vector<UnitCellCoord> &to_uccoords,
+                                                                   std::set<UnitCellCoord> &vacancy_from,
+                                                                   std::set<UnitCellCoord> &vacancy_to) const {
       // For image 00 set reference of POSCAR index to  basis site linear index
       double max_disp = config.displacement().colwise().norm().maxCoeff() + primclex().crystallography_tol();
-      Eigen::MatrixXd strain = config.deformation();
-      Lattice mapped_lat = config.supercell().lattice();
-      Structure strained_prim = primclex().prim();
-      strained_prim.set_lattice(Lattice(strain * primclex().prim().lattice().lat_column_mat()), FRAC);
       for(auto &site : from.basis) {
-        UnitCellCoord ucc(strained_prim, site, max_disp);
-        ucc.set_unit(primclex().prim());
-        Coordinate tmp = ucc.coordinate();
-        tmp.set_lattice(mapped_lat, CART);
-        tmp.within();
-        UnitCellCoord wucc(primclex().prim(), tmp, primclex().crystallography_tol());
-        from_uccoords.push_back(wucc);
+        from_uccoords.push_back(_site_to_uccoord(site, primclex(), max_disp));
       }
 
       // For last image  find POSCAR index to basis site linear index
       for(auto &site : to.basis) {
-        UnitCellCoord ucc(strained_prim, site, max_disp);
-        ucc.set_unit(primclex().prim());
-        Coordinate tmp = ucc.coordinate();
-        tmp.set_lattice(mapped_lat, CART);
-        tmp.within();
-        UnitCellCoord wucc(primclex().prim(), tmp, primclex().crystallography_tol());
-        to_uccoords.push_back(wucc);
+        to_uccoords.push_back(_site_to_uccoord(site, primclex(), max_disp));
       }
       std::vector<Index> moving_atoms;
       for(int i = 0 ; i < from_uccoords.size(); i++) {
@@ -234,7 +236,19 @@ namespace CASM {
       return moving_atoms;
     }
 
-    Kinetics::DiffusionTransformation DiffTransConfigMapper::_shortest_hop(Kinetics::DiffusionTransformation &diff_trans, const Supercell &scel) const {
+    UnitCellCoord DiffTransConfigMapper::_site_to_uccoord(const Site &site, const PrimClex &pclex, double tol) const {
+      return UnitCellCoord(pclex.prim(), site, tol);
+    }
+
+    void DiffTransConfigMapper::_precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure<Site> &from, BasicStructure<Site> &to) const {
+      from.set_lattice(Lattice(strain.inverse() * (cart_op.transpose()*from.lattice().lat_column_mat())), FRAC);
+      from += Coordinate(trans, from.lattice(), CART);
+      to.set_lattice(Lattice(strain.inverse() * (cart_op.transpose()*to.lattice().lat_column_mat())), FRAC);
+      to += Coordinate(trans, to.lattice(), CART);
+      return;
+    }
+
+    Kinetics::DiffusionTransformation DiffTransConfigMapper::_shortest_hop(const Kinetics::DiffusionTransformation &diff_trans, const Supercell &scel) const {
       Kinetics::DiffusionTransformation final_diff_trans = diff_trans;
       EigenCounter<Eigen::Vector3l> counter(Eigen::Vector3l::Constant(-1), Eigen::Vector3l::Constant(1), Eigen::Vector3l::Ones());
       for(int i = 0 ; i < diff_trans.occ_transform().size(); i++) {
@@ -261,12 +275,12 @@ namespace CASM {
       return final_diff_trans;
     }
 
-    Kinetics::DiffusionTransformation DiffTransConfigMapper::_make_hop(BasicStructure<Site> &from_struc,
-                                                                       std::vector<UnitCellCoord> &from_coords,
-                                                                       std::vector<UnitCellCoord> &to_coords,
-                                                                       std::set<UnitCellCoord> &vacancy_from,
-                                                                       std::set<UnitCellCoord> &vacancy_to,
-                                                                       std::vector<Index> &moving_atoms) const {
+    Kinetics::DiffusionTransformation DiffTransConfigMapper::_make_hop(const BasicStructure<Site> &from_struc,
+                                                                       const std::vector<UnitCellCoord> &from_coords,
+                                                                       const std::vector<UnitCellCoord> &to_coords,
+                                                                       const std::set<UnitCellCoord> &vacancy_from,
+                                                                       const std::set<UnitCellCoord> &vacancy_to,
+                                                                       const std::vector<Index> &moving_atoms) const {
       //From the moving species and basis sites, should be able to create hop
       Kinetics::DiffusionTransformation diff_trans(primclex().prim());
       for(int i = 0; i < moving_atoms.size(); i++) {
@@ -332,17 +346,6 @@ namespace CASM {
           }
         }
       }
-      /* else if(fs::exists(pos_path / "properties.calc.json")) {
-         jsonParser all_strucs;
-         to_json(pos_path / "properties.calc.json", all_strucs);
-         int count = 0;
-         for(auto &img : all_strucs) {
-           BasicStructure<Site> struc;
-           from_json(simple_json(struc, "relaxed_"), img);
-           bins.insert(std::make_pair(count, struc));
-           count++;
-         }
-       }*/
       else {
         fs::directory_iterator end;
         for(fs::directory_iterator begin(pos_path); begin != end; ++begin) {

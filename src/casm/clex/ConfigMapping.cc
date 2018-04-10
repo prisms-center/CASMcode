@@ -307,7 +307,6 @@ namespace CASM {
     ConfigDoF trans_configdof = copy_apply(it_canon, best_configdof);
     result.relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation();
     result.relaxation_properties["best_mapping"]["relaxation_displacement"] = trans_configdof.displacement().transpose();
-
     result.cart_op = it_canon.sym_op().matrix() * result.cart_op;
 
     // compose permutations
@@ -357,7 +356,6 @@ namespace CASM {
                            mapped_lat, // mappe
                            result.best_assignment,
                            result.cart_op);
-
     if(!valid_mapping) {
       result.success = false;
       result.fail_msg = "Structure is incompatible with PRIM.";
@@ -384,7 +382,8 @@ namespace CASM {
 
     // store cart op
     result.cart_op = it_canon.sym_op().matrix() * result.cart_op;
-
+    //store trans
+    result.trans = it_canon.sym_op().tau();
     // compose permutations
     std::vector<Index> tperm = it_canon.combined_permute().permute(result.best_assignment);
 
@@ -427,7 +426,6 @@ namespace CASM {
                                                cart_op);
       valid_mapping = valid_mapping && ConfigMapping::basis_cost(mapped_configdof, struc.basis.size()) < (10 * m_tol);
     }
-
     // If structure's lattice is not a supercell of the primitive lattice, then import as deformed_structure
     if(!valid_mapping) { // if not a supercell or m_robust_flag=true, treat as deformed
       valid_mapping = deformed_struc_to_configdof(struc,
