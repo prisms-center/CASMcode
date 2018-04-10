@@ -188,22 +188,26 @@ namespace CASM {
 
       std::vector<BasicStructure<Site>> _get_structures(const fs::path &pos_path) const;
 
-      Kinetics::DiffusionTransformation _make_hop(BasicStructure<Site> &from_struc,
-                                                  std::vector<UnitCellCoord> &from_coords,
-                                                  std::vector<UnitCellCoord> &to_coords,
-                                                  std::set<UnitCellCoord> &vacancy_from,
-                                                  std::set<UnitCellCoord> &vacancy_to,
-                                                  std::vector<Index> &moving_atoms) const;
+      Kinetics::DiffusionTransformation _make_hop(BasicStructure<Site> const &from_struc,
+                                                  std::vector<UnitCellCoord> const &from_coords,
+                                                  std::vector<UnitCellCoord> const &to_coords,
+                                                  std::set<UnitCellCoord> const &vacancy_from,
+                                                  std::set<UnitCellCoord> const &vacancy_to,
+                                                  std::vector<Index> const &moving_atoms) const;
 
-      Kinetics::DiffusionTransformation _shortest_hop(Kinetics::DiffusionTransformation &diff_trans, const Supercell &scel) const;
+      Kinetics::DiffusionTransformation _shortest_hop(const Kinetics::DiffusionTransformation &diff_trans, const Supercell &scel) const;
 
-      std::vector<Index> _analyze_atoms(BasicStructure<Site> &from,
-                                        BasicStructure<Site> &to,
-                                        Configuration &config,
-                                        std::vector<UnitCellCoord> &from_uccoords,
-                                        std::vector<UnitCellCoord> &to_uccoords,
-                                        std::set<UnitCellCoord> &vacancy_from,
-                                        std::set<UnitCellCoord> &vacancy_to) const;
+      UnitCellCoord _site_to_uccoord(const Site &site, const PrimClex &pclex, double tol) const;
+
+      void _precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure<Site> &from, BasicStructure<Site> &to) const;
+
+      std::vector<Index> _analyze_atoms_ideal(BasicStructure<Site> const &from,
+                                              BasicStructure<Site> const &to,
+                                              Configuration const &config,
+                                              std::vector<UnitCellCoord> &from_uccoords,
+                                              std::vector<UnitCellCoord> &to_uccoords,
+                                              std::set<UnitCellCoord> &vacancy_from,
+                                              std::set<UnitCellCoord> &vacancy_to) const;
     private:
 
       const PrimClex *m_pclex;

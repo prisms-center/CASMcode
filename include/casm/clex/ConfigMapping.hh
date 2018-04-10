@@ -52,6 +52,9 @@ namespace CASM {
     /// structure onto the coordinate system of the ideal crystal
     Eigen::Matrix3d cart_op;
 
+    /// Rigid translation isometry that puts the imported structures origin onto the origin of ideal crystal
+    Eigen::Vector3d trans;
+
     /// True if could map to prim, false if not
     bool success;
 

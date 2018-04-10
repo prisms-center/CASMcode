@@ -15,9 +15,15 @@ namespace CASM {
     Coordinate coord_in_unit(unit.lattice());
     coord_in_unit.cart() = coord.cart();
     for(Index b = 0; b < unit.basis.size(); ++b) {
+      //Standard debugging statements when things go wrong - Please leave in
+      //std::cout << "Coord" << coord_in_unit.const_frac() <<std::endl;
+      //std::cout << "b" << unit.basis[b].const_frac() <<std::endl;
       auto diff = coord_in_unit - unit.basis[b];
+      //std::cout << "diff" << diff.const_frac() <<std::endl;
       Coordinate tmp = diff;
       tmp.frac() = round(diff.const_frac());
+
+      //std::cout << "tmp" << tmp.const_frac() <<std::endl;
       if((diff - tmp).const_cart().norm() < tol) {
         *this = UnitCellCoord(unit, b, lround(diff.const_frac()));
         return;

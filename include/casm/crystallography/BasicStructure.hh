@@ -156,7 +156,7 @@ namespace CASM {
     virtual void read(std::istream &stream);  //John do this
 
     /// Output other formats
-    void print_xyz(std::ostream &stream) const;
+    void print_xyz(std::ostream &stream, bool frac = false) const;
     //void print_cif(std::ostream &stream) const;
 
     jsonParser &to_json(jsonParser &json) const;
