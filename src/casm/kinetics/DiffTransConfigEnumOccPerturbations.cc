@@ -552,15 +552,25 @@ namespace CASM {
                     m_base_it->diff_trans);
       m_current->set_orbit_name("test");
       m_current->set_orbit_name(m_diff_trans_orbit.name());
+      m_current->set_suborbit_ind(std::distance(m_base.begin(), m_base_it));
       m_current->set_bg_configname(m_background_config.primitive().name());
       m_current->set_source(this->source(step()));
       this->_set_current_ptr(&(*m_current));
+      if(m_current->is_dud()) {
+        throw std::runtime_error("Error in DTEOCP is dud");
+      }
 
 
       // --- debug check ---
       // m_current should be in canonical form at this point
       if(!m_current->is_canonical()) {
-
+        if(m_current->is_dud()) {
+          throw std::runtime_error("Error in DTEOCP is dud and not canonical");
+        }
+        *m_current = m_current->canonical_form();
+        if(m_current->is_dud()) {
+          throw std::runtime_error("Error in DTEOCP is dud and canonical now");
+        }
         // diff_trans is canonical wrt all supercell permutations
         const auto &dt = m_current->diff_trans();
         if(!dt.is_canonical(_supercell())) {
@@ -568,10 +578,10 @@ namespace CASM {
         }
 
         // from_config is canonical wrt all supercell permutations that leave diff_trans invariant
-        if(!m_current->from_config().is_canonical(m_base_it->diff_trans_g.begin(), m_base_it->diff_trans_g.end())) {
+        /*if(!m_current->from_config().is_canonical(m_base_it->diff_trans_g.begin(), m_base_it->diff_trans_g.end())) {
           throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: from_config not canonical");
         }
-        throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical, for unknown reason");
+        throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical, for unknown reason");*/
       }
 
     }

@@ -195,19 +195,6 @@ namespace CASM {
                             ConfigDoF &mapped_configdof,
                             Lattice &mapped_lat) const;
 
-    ///\brief specify which lattices should be searched when mapping configurations
-    void force_lattices(const std::vector<std::string> &lattice_names) const;
-
-    ///\brief unset the enforcement of particular lattices (default behavior)
-    void unforce_lattices() const;
-
-    ///\brief returns true if lattices were set to be forced as candidates
-    bool lattices_are_forced() const {
-      return m_forced_superlat_map.size();
-    }
-
-  private:
-
     ///\brief Low-level routine to map a structure onto a ConfigDof
     ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
     ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
@@ -223,6 +210,20 @@ namespace CASM {
                             std::vector<Index> &best_assignment,
                             Eigen::Matrix3d &cart_op,
                             double best_cost = 1e20) const;
+
+
+    ///\brief specify which lattices should be searched when mapping configurations
+    void force_lattices(const std::vector<std::string> &lattice_names) const;
+
+    ///\brief unset the enforcement of particular lattices (default behavior)
+    void unforce_lattices() const;
+
+    ///\brief returns true if lattices were set to be forced as candidates
+    bool lattices_are_forced() const {
+      return m_forced_superlat_map.size();
+    }
+
+  private:
 
 
     ///\brief Low-level routine to map a structure onto a ConfigDof if it is known to be ideal

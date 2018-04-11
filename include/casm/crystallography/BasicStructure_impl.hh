@@ -795,7 +795,7 @@ namespace CASM {
     for(Index i = 0; i < basis.size(); i++) {
       stream << std::setw(2) << basis[i].occ_name() << " ";
       if(frac) {
-        stream << std::setw(12) << basis[i].frac() << '\n';
+        stream << std::setw(12) << basis[i].frac().transpose() << '\n';
       }
       else {
         stream << std::setw(12) << basis[i].cart() << '\n';

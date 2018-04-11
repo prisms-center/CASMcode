@@ -86,12 +86,22 @@ namespace CASM {
 
       void set_bg_configname(const std::string &configname);
 
+      void set_suborbit_ind(const int &suborbit_ind);
+
+      int suborbit_ind() const {
+        return m_suborbit_ind;
+      }
+
       std::string orbit_name() const {
         return m_orbit_name;
       }
 
       std::string bg_configname() const {
         return m_bg_configname;
+      }
+
+      bool is_dud() const {
+        return from_config() == to_config();
       }
 
       /// States whether the diffusion transformation is possible with the given Configuration
@@ -141,6 +151,7 @@ namespace CASM {
       bool m_from_config_is_A;
 
       std::string m_orbit_name;
+      int m_suborbit_ind;
       std::string m_bg_configname;
     };
 

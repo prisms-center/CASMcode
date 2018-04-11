@@ -80,21 +80,20 @@ namespace CASM {
       }
       ConfigDoF from_dof;
       Lattice from_lat;
-      Eigen::MatrixXd cart_op;
-      std::vector<int> best_assign;
-      mapper.struc_to_configdof(result.structures[0], from_dof, from_lat/*,best_assign,cart_op*/);
+      Eigen::Matrix3d cart_op;
+      std::vector<Index> best_assign;
+      mapper.struc_to_configdof(result.structures[0], from_dof, from_lat, best_assign, cart_op);
       auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_lat);
       Configuration non_canon_from_config(scel_ptr, jsonParser(), from_dof);
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
-      ConfigMapperResult from_res = mapper.import_structure(result.structures[0]);
-      Configuration from_config = *(from_res.config);
+      Configuration from_config = non_canon_from_config;
       std::set<UnitCellCoord> vacancy_from;
       std::set<UnitCellCoord> vacancy_to;
       //This rigid rotation and rigid shift seems unnecessary surprisingly
 
-      SymOp op(from_res.cart_op);
-      Coordinate rigid_shift = result.structures[0].basis[0] - Coordinate(non_canon_from_config.uccoord(from_res.best_assignment[0]));
+      SymOp op(cart_op);
+      Coordinate rigid_shift = copy_apply(op, result.structures[0].basis[0]) - Coordinate(non_canon_from_config.uccoord(std::find(best_assign.begin(), best_assign.end(), 0) - best_assign.begin()));
       Coordinate t_shift(primclex().prim().lattice());
       t_shift.cart() = rigid_shift.cart();
       //std::cout << "t shift " << t_shift.const_frac() << std::endl;
@@ -107,8 +106,9 @@ namespace CASM {
       //from.print_xyz(std::cout,true);
       //std::cout << "unconditioned to struc" << std::endl;
       //to.print_xyz(std::cout,true);
-      _precondition_from_and_to(from_res.cart_op, from_config.deformation(), from_res.trans - t_shift.const_cart(), from, to);
-      //std::cout << "cart_op"<<from_res.cart_op<< std::endl;
+      _precondition_from_and_to(cart_op, non_canon_from_config.deformation(), t_shift.const_cart(), from, to);
+      //std::cout << "cart_op"<<cart_op<< std::endl;
+      //std::cout << "trans" << t_shift.const_cart() << std::endl;
       //std::cout << "from struc" << std::endl;
       //from.print_xyz(std::cout,true);
       //std::cout << "to struc" << std::endl;
@@ -120,13 +120,14 @@ namespace CASM {
                                                              to_uccoords,
                                                              vacancy_from,
                                                              vacancy_to);
-
+      //std::cout << " MOVING ATOM IS GOING FROM " << from_uccoords[moving_atoms[0]]<< " TO " << to_uccoords[moving_atoms[0]]    << std::endl;
       Kinetics::DiffusionTransformation diff_trans = _make_hop(result.structures[0],
                                                                from_uccoords,
                                                                to_uccoords,
                                                                vacancy_from,
                                                                vacancy_to,
                                                                moving_atoms);
+      //std::cout << "possibly not shortest hop" << diff_trans << std::endl;
       //diff_trans constructed from end points might not be shortest path
       //in order to set up shortest path create eigen counter that represents all adjacent supercells
       //to which the unitcell coords will be reachable from the from uccoords
@@ -148,6 +149,7 @@ namespace CASM {
       from_config.init_displacement();
       //std::cout << "from config is " << std::endl << from_config << std::endl;
       result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
+      //std::cout << "to config is " << std::endl << non_canon_to_config << std::endl;
       //NEED TO SET ORBIT NAME OF DTC SOMEHOW FOR NEW DIFF TRANS
       PrimPeriodicDiffTransSymCompare sym_c {primclex().crystallography_tol()};
       OrbitGenerators<PrimPeriodicDiffTransOrbit> generators(primclex().prim().factor_group(), sym_c);
@@ -243,8 +245,14 @@ namespace CASM {
     void DiffTransConfigMapper::_precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure<Site> &from, BasicStructure<Site> &to) const {
       from.set_lattice(Lattice(strain.inverse() * (cart_op.transpose()*from.lattice().lat_column_mat())), FRAC);
       from += Coordinate(trans, from.lattice(), CART);
+      for(auto &site : from.basis) {
+        site.within();
+      }
       to.set_lattice(Lattice(strain.inverse() * (cart_op.transpose()*to.lattice().lat_column_mat())), FRAC);
       to += Coordinate(trans, to.lattice(), CART);
+      for(auto &site : to.basis) {
+        site.within();
+      }
       return;
     }
 
@@ -252,9 +260,9 @@ namespace CASM {
       Kinetics::DiffusionTransformation final_diff_trans = diff_trans;
       EigenCounter<Eigen::Vector3l> counter(Eigen::Vector3l::Constant(-1), Eigen::Vector3l::Constant(1), Eigen::Vector3l::Ones());
       for(int i = 0 ; i < diff_trans.occ_transform().size(); i++) {
+        Eigen::Matrix3d lat_mat = scel.lattice().lat_column_mat();
         while(counter.valid()) {
-          Eigen::Vector3l scelvec = (scel.uccoord(scel.num_sites() - 1).unitcell() + Eigen::Vector3l::Constant(1));
-          UnitCell shift = counter().cwiseProduct(scelvec);
+          UnitCell shift = lround(scel.prim().lattice().inv_lat_column_mat() * lat_mat * counter().cast<double>());
           Kinetics::DiffusionTransformation tmp = diff_trans;
           UnitCellCoord replace_this = tmp.occ_transform()[i].uccoord;
           tmp.occ_transform()[i].uccoord = replace_this + shift;

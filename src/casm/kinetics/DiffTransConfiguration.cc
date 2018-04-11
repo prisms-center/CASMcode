@@ -40,6 +40,7 @@ namespace CASM {
       m_config_B(_from_config),
       m_sym_compare(_from_config.supercell()),
       m_diff_trans(_diff_trans) {
+      m_from_config_is_A = true;
       if(_diff_trans != m_sym_compare.prepare(_diff_trans)) {
         throw std::runtime_error("Error in DiffTransConfiguration constructor diff trans not prepared");
       }
@@ -51,6 +52,9 @@ namespace CASM {
       }
       m_diff_trans.apply_to(m_config_B);
       _sort();
+      if(m_config_A == m_config_B) {
+        throw std::runtime_error("Error in DiffTransConfiguration constructor both endpoints are exactly the same config!");
+      }
     }
 
     /// Construct a DiffTransConfiguration from JSON data
@@ -153,11 +157,38 @@ namespace CASM {
 
     /// \brief Apply symmetry, does not sort
     DiffTransConfiguration &DiffTransConfiguration::apply_sym(const PermuteIterator &it) {
+
+      if(!has_valid_from_occ(m_diff_trans, from_config())) {
+        throw std::runtime_error("Application of symmetry to an already invalid DTC");
+      }
       m_diff_trans = m_sym_compare.prepare(m_diff_trans.apply_sym(it));
       m_config_A.apply_sym(it);
-      m_config_B = m_config_A;
-      m_diff_trans.apply_to(m_config_B);
-      _sort();
+      m_config_B.apply_sym(it);
+      if(m_from_config_is_A) {
+        if(!has_valid_from_occ(m_diff_trans, m_config_A)) {
+          m_diff_trans.reverse();
+        }
+        if(!has_valid_from_occ(m_diff_trans, m_config_A)) {
+          throw std::runtime_error("Application of symmetry to DTC makes hop incompatible with from even with reverse");
+        }
+        _sort();
+      }
+      else {
+        if(!has_valid_from_occ(m_diff_trans, m_config_B)) {
+          m_diff_trans.reverse();
+        }
+        if(!has_valid_from_occ(m_diff_trans, m_config_B)) {
+          throw std::runtime_error("Application of symmetry to DTC makes hop incompatible with from even with reverse");
+        }
+        _sort();
+      }
+
+      if(!has_valid_from_occ(m_diff_trans, from_config())) {
+        throw std::runtime_error("Application of symmetry resulted in invalidation");
+      }
+      if(is_dud()) {
+        throw std::runtime_error("Application of symmetry resulted in dud");
+      }
       return *this;
     }
 
@@ -167,6 +198,10 @@ namespace CASM {
 
     void DiffTransConfiguration::set_orbit_name(const std::string &orbit_name) {
       m_orbit_name = orbit_name;
+    }
+
+    void DiffTransConfiguration::set_suborbit_ind(const int &suborbit_ind) {
+      m_suborbit_ind = suborbit_ind;
     }
 
     void DiffTransConfiguration::set_bg_configname(const std::string &configname) {
@@ -181,6 +216,7 @@ namespace CASM {
       CASM::to_json(diff_trans(), json["diff_trans"]);
       json["orbit_name"] = orbit_name();
       json["bg_configname"] = bg_configname();
+      json["suborbit_ind"] = suborbit_ind();
       json["cache"].put_obj();
       if(cache_updated()) {
         json["cache"] = cache();
@@ -206,6 +242,7 @@ namespace CASM {
       m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim());
       m_diff_trans.apply_to(m_config_B);
       set_orbit_name(json["orbit_name"].get<std::string>());
+      set_suborbit_ind(json["suborbit_ind"].get<int>());
       set_bg_configname(json["bg_configname"].get<std::string>());
 
 
@@ -333,10 +370,12 @@ namespace CASM {
     std::ostream &DiffTransConfiguration::write_pos(std::ostream &sout) const {
       sout << "Initial POS:" << std::endl;
       VaspIO::PrintPOSCAR from(sorted().from_config());
+      from.sort();
       from.print(sout);
       sout << std::endl;
       sout << "Final POS:" << std::endl;
       VaspIO::PrintPOSCAR to(sorted().to_config());
+      to.sort();
       to.print(sout);
       return sout;
     }
@@ -350,10 +389,15 @@ namespace CASM {
 
     void DiffTransConfiguration::_sort() {
       if(m_config_B < m_config_A) {
+        if(m_from_config_is_A) {
+          m_diff_trans.reverse();
+        }
         m_from_config_is_A = false;
-        m_diff_trans.reverse();
       }
       else {
+        if(!m_from_config_is_A) {
+          m_diff_trans.reverse();
+        }
         m_from_config_is_A = true;
       }
     }
