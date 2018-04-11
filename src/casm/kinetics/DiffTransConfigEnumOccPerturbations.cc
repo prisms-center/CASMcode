@@ -552,6 +552,7 @@ namespace CASM {
                     m_base_it->diff_trans);
       m_current->set_orbit_name("test");
       m_current->set_orbit_name(m_diff_trans_orbit.name());
+      m_current->set_suborbit_ind(std::distance(m_base.begin(), m_base_it));
       m_current->set_bg_configname(m_background_config.primitive().name());
       m_current->set_source(this->source(step()));
       this->_set_current_ptr(&(*m_current));

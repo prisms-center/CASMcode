@@ -387,6 +387,8 @@ namespace CASM {
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> orbitname();
 
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> suborbit_ind();
+
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> bg_configname();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> calc_status();

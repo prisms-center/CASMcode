@@ -200,6 +200,10 @@ namespace CASM {
       m_orbit_name = orbit_name;
     }
 
+    void DiffTransConfiguration::set_suborbit_ind(const int &suborbit_ind) {
+      m_suborbit_ind = suborbit_ind;
+    }
+
     void DiffTransConfiguration::set_bg_configname(const std::string &configname) {
       m_bg_configname = configname;
     }
@@ -212,6 +216,7 @@ namespace CASM {
       CASM::to_json(diff_trans(), json["diff_trans"]);
       json["orbit_name"] = orbit_name();
       json["bg_configname"] = bg_configname();
+      json["suborbit_ind"] = suborbit_ind();
       json["cache"].put_obj();
       if(cache_updated()) {
         json["cache"] = cache();
@@ -237,6 +242,7 @@ namespace CASM {
       m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim());
       m_diff_trans.apply_to(m_config_B);
       set_orbit_name(json["orbit_name"].get<std::string>());
+      set_suborbit_ind(json["suborbit_ind"].get<int>());
       set_bg_configname(json["bg_configname"].get<std::string>());
 
 

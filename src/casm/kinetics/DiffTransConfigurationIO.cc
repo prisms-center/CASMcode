@@ -385,6 +385,14 @@ namespace CASM {
         });
       }
 
+      GenericDiffTransConfigFormatter<std::string> suborbit_ind() {
+        return GenericDiffTransConfigFormatter<std::string>("suborbit_ind",
+                                                            "suborbit index of $orbitname within $bg_configname tiled into $scelname, distinguishes unique types of hops given a decorated background",
+        [](const DiffTransConfiguration & dtconfig)->std::string {
+          return std::to_string(dtconfig.suborbit_ind());
+        });
+      }
+
       GenericDiffTransConfigFormatter<std::string> bg_configname() {
         return GenericDiffTransConfigFormatter<std::string>("bg_configname",
                                                             "canonical Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#', that represents the background configuration this was generated from",
@@ -451,6 +459,7 @@ namespace CASM {
       bg_configname(),
       scelname(),
       orbitname(),
+      suborbit_ind(),
       calc_status(),
       failure_type(),
       LocalComp()
