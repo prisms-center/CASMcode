@@ -94,6 +94,10 @@ namespace CASM {
         return m_bg_configname;
       }
 
+      bool is_dud() const {
+        return from_config() == to_config();
+      }
+
       /// States whether the diffusion transformation is possible with the given Configuration
       bool is_valid() const;
 
