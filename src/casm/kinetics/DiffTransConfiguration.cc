@@ -242,7 +242,7 @@ namespace CASM {
       m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim());
       m_diff_trans.apply_to(m_config_B);
       set_orbit_name(json["orbit_name"].get<std::string>());
-      //set_suborbit_ind(json["suborbit_ind"].get<int>());
+      set_suborbit_ind(json["suborbit_ind"].get<int>());
       set_bg_configname(json["bg_configname"].get<std::string>());
 
 
