@@ -385,11 +385,11 @@ namespace CASM {
         });
       }
 
-      GenericDiffTransConfigFormatter<std::string> suborbit_ind() {
-        return GenericDiffTransConfigFormatter<std::string>("suborbit_ind",
-                                                            "suborbit index of $orbitname within $bg_configname tiled into $scelname, distinguishes unique types of hops given a decorated background",
-        [](const DiffTransConfiguration & dtconfig)->std::string {
-          return std::to_string(dtconfig.suborbit_ind());
+      GenericDiffTransConfigFormatter<Index> suborbit_ind() {
+        return GenericDiffTransConfigFormatter<Index>("suborbit_ind",
+                                                      "suborbit index of $orbitname within $bg_configname tiled into $scelname, distinguishes unique types of hops given a decorated background",
+        [](const DiffTransConfiguration & dtconfig)->Index {
+          return dtconfig.suborbit_ind();
         });
       }
 
@@ -459,7 +459,6 @@ namespace CASM {
       bg_configname(),
       scelname(),
       orbitname(),
-      suborbit_ind(),
       calc_status(),
       failure_type(),
       LocalComp()
@@ -485,6 +484,9 @@ namespace CASM {
 
     using namespace Kinetics::DiffTransConfigIO;
     IntegerAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
+    dict.insert(
+      suborbit_ind()
+    );
     return dict;
   }
 
