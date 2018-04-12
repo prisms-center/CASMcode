@@ -351,7 +351,7 @@ namespace CASM {
       fs::path p = calc_dir(configname);
       if(!fs::exists(p)) {
         if(!dry_run) {
-          fs::create_directory(p);
+          fs::create_directories(p);
         }
       }
 
