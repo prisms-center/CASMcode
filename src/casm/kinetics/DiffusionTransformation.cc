@@ -541,11 +541,15 @@ namespace CASM {
       EigenCounter<Eigen::Vector3l> counter(Eigen::Vector3l::Constant(-1), Eigen::Vector3l::Constant(1), Eigen::Vector3l::Ones());
       double min_dist = dist_to_path(diff_trans, uccoord);
       Eigen::Vector3d vec = vector_to_path(diff_trans, uccoord);
+      Eigen::Matrix3d lat_mat = scel.lattice().lat_column_mat();
       while(counter.valid()) {
-        Eigen::Vector3l scelvec = (scel.uccoord(scel.num_sites() - 1).unitcell() + Eigen::Vector3l::Constant(1));
-        UnitCell shift = counter().cwiseProduct(scelvec);
+        UnitCell shift = lround(scel.prim().lattice().inv_lat_column_mat() * lat_mat * counter().cast<double>());
         UnitCellCoord new_coord = uccoord;
         new_coord += shift;
+        //std::cout << " shifted coord" << new_coord << std::endl;
+        //std::cout << "curr dist" << vector_to_path(diff_trans, new_coord).norm() << std::endl;
+
+        //std::cout << "min dist" << min_dist<< std::endl;
         if(vector_to_path(diff_trans, new_coord).norm() < min_dist) {
           vec = vector_to_path(diff_trans, new_coord);
           min_dist = vec.norm();

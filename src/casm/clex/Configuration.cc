@@ -1401,6 +1401,32 @@ namespace CASM {
     return perturb;
   }
 
+  /// Returns a rotated/translated version of config 2 that leaves it closest to the occupation of config1
+  Configuration closest_setting(const Configuration &_config1, const Configuration &_config2) {
+    std::vector<PermuteIterator> non_fg_its;
+    std::set_difference(_config2.supercell().permute_begin(),
+                        _config2.supercell().permute_end(),
+                        _config2.factor_group().begin(),
+                        _config2.factor_group().end(),
+                        std::back_inserter(non_fg_its));
+    int min_size = config_diff(_config1, _config2).size();
+    if(non_fg_its.size() == 0) {
+      return _config2;
+    }
+    PermuteIterator best_it = *(non_fg_its.begin());
+    for(auto it = non_fg_its.begin(); it != non_fg_its.end(); ++it) {
+      int size = config_diff(_config1, copy_apply(*it, _config2)).size();
+      if(size < min_size) {
+        best_it = *it;
+        min_size = size;
+      }
+    }
+    return copy_apply(best_it, _config2);
+
+  }
+
+
+
   /// \brief Returns a Configuration with the sites in _clust clipped from _config and placed in _bg
   Configuration config_clip(const Configuration &_config, const Configuration &_bg, IntegralCluster &_clust) {
     if(_config.supercell() != _bg.supercell()) {

@@ -608,6 +608,9 @@ namespace CASM {
   /// \brief Returns an Integral Cluster representing the perturbed sites between the configs
   IntegralCluster config_diff(const Configuration &_config1, const Configuration &_config2);
 
+  /// Returns a rotated/translated version of config 2 that leaves it closest to the occupation of config1
+  Configuration closest_setting(const Configuration &_config1, const Configuration &_config2);
+
   /// \brief Returns a Configuration with the sites in _clust clipped from _config and placed in _bg
   Configuration config_clip(const Configuration &_config, const Configuration &_bg, IntegralCluster &_clust);
 

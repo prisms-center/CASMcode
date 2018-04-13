@@ -388,7 +388,9 @@ namespace CASM {
 
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
       // the 'used' settings
-      std::vector<std::string> dof {"occupation", "deformation", "displacement"};
+      // ONLY FOR SITUATIONS WHERE RELAXATION PROPERTIES NEED TO BE IMPOSED
+      /*std::vector<std::string> dof {"occupation", "deformation", "displacement"};*/
+      std::vector<std::string> dof {"occupation"};
       jsonParser map_json;
       kwargs.get_else(map_json, "mapping", jsonParser());
       StructureMap<Configuration> mapper(primclex, map_json, primitive_only, dof);
