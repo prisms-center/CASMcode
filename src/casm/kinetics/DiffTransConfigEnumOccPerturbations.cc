@@ -10,6 +10,7 @@
 #include "casm/app/AppIO_impl.hh"
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/database/Selection_impl.hh"
+#include "casm/database/ScelDatabase.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
@@ -168,6 +169,9 @@ namespace CASM {
           // Store in selection
           tmp_sel.data()[insert_res.canonical_it.name()] = true;
         }
+        log << "Writing supercell database..." << std::endl;
+        primclex.db<Supercell>().commit();
+        log << "  DONE" << std::endl;
 
         log << "Writing configuration database..." << std::endl;
         primclex.db<Configuration>().commit();

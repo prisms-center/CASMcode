@@ -352,6 +352,7 @@ namespace CASM {
     std::vector<std::string> all_columns;
     if(!m_cmd.opt().verbatim_flag()) {
       all_columns.push_back("name");
+      /*all_columns.push_back("alias_or_name");*/
       all_columns.push_back("selected");
     }
     all_columns.insert(all_columns.end(), _columns_vec().begin(), _columns_vec().end());

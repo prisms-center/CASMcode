@@ -454,6 +454,8 @@ namespace CASM {
 
     dict.insert(
       name<Kinetics::DiffTransConfiguration>(),
+      alias_or_name<Kinetics::DiffTransConfiguration>(),
+      alias<Kinetics::DiffTransConfiguration>(),
       from_configname(),
       to_configname(),
       bg_configname(),
