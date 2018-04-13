@@ -457,18 +457,17 @@ namespace CASM {
         const auto &proto = test.prototype();
         return std::all_of(proto.begin(), proto.end(), uccoord_does_not_overlap);
       };
-
       m_local_orbit.clear();
       std::copy_if(_tmp.begin(), _tmp.end(), std::back_inserter(m_local_orbit), orbit_does_not_overlap);
       m_local_orbit_it = m_local_orbit.begin();
 
-      /*
-      print_clust(
-        m_local_orbit.begin(),
-        m_local_orbit.end(),
-        std::cout,
-        PrototypePrinter<IntegralCluster>());
-      */
+
+      /* print_clust(
+         m_local_orbit.begin(),
+         m_local_orbit.end(),
+         std::cout,
+         PrototypePrinter<IntegralCluster>());
+       */
     }
 
     /// Generate the 'from_value' for the perturbation,
@@ -517,11 +516,11 @@ namespace CASM {
         perturb.elements().emplace_back(proto[i], m_from_value(i), m_occ_counter()[i]);
       }
 
-      auto begin = m_base_it->generating_g.begin();
+      /*auto begin = m_base_it->generating_g.begin();
       auto end = m_base_it->generating_g.end();
-
       // return perturbation and check if canonical wrt local orbit sub group
-      return std::make_pair(perturb, perturb.is_canonical(_supercell(), begin, end));
+      return std::make_pair(perturb, perturb.is_canonical(_supercell(), begin, end));*/
+      return std::make_pair(perturb, true);
     }
 
     /// Applies current perturbation to m_base_config and stores result in m_current
@@ -533,10 +532,10 @@ namespace CASM {
       // here we use the group of operations that leaves the diff_trans invariant,
       // and not necessarily the from_config, to find the canonical perturbed from_config
 
-      /*auto to_canonical = perturbed_from_config.to_canonical(
+      auto to_canonical = perturbed_from_config.to_canonical(
                             m_base_it->diff_trans_g.begin(),
-                            m_base_it->diff_trans_g.end()); */
-      PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
+                            m_base_it->diff_trans_g.end());
+      /*PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
       Configuration greatest = perturbed_from_config;
       for(auto it = m_base_it->diff_trans_g.begin(); it != m_base_it->diff_trans_g.end(); ++it) {
         DiffTransConfiguration tmp(make_attachable(m_base_it->diff_trans, copy_apply(*it, perturbed_from_config)), m_base_it->diff_trans);
@@ -544,7 +543,7 @@ namespace CASM {
           greatest = copy_apply(*it, perturbed_from_config);
           to_canonical = *it;
         }
-      }
+      }*/
 
       /// construct canonical DiffTransConfiguration as m_current
       m_current = notstd::make_cloneable<DiffTransConfiguration>(
