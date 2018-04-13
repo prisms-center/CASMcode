@@ -210,6 +210,14 @@ namespace CASM {
 
     /// Writes the DiffTransConfiguration to JSON
     jsonParser &DiffTransConfiguration::to_json(jsonParser &json) const {
+
+      if(!has_valid_from_occ()) {
+        throw std::runtime_error("Attempting to write a diff trans config to json with invalid from occ");
+      }
+      if(is_dud()) {
+        throw std::runtime_error("Attempting to write a diff trans config to json that is a dud");
+      }
+
       json.put_obj();
       json["from_configname"] = from_config().name();
       from_config().to_json(json["from_config_data"]);
@@ -226,7 +234,6 @@ namespace CASM {
 
     /// Reads the DiffTransConfiguration from JSON
     void DiffTransConfiguration::from_json(const jsonParser &json, const Supercell &_scel) {
-
       // get cache
       CASM::from_json(cache(), json["cache"]);
 
@@ -240,11 +247,31 @@ namespace CASM {
       // get diff trans
       m_sym_compare = ScelPeriodicDiffTransSymCompare(_scel);
       m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim());
-      m_diff_trans.apply_to(m_config_B);
+      if(!has_valid_from_occ() && m_from_config_is_A) {
+        m_diff_trans.reverse();
+        m_from_config_is_A = false;
+        m_diff_trans.apply_to(m_config_A);
+      }
+      else if(!has_valid_from_occ() && !m_from_config_is_A) {
+        m_diff_trans.reverse();
+        m_from_config_is_A = true;
+        m_diff_trans.apply_to(m_config_B);
+      }
+      else if(has_valid_from_occ() && !m_from_config_is_A) {
+        m_diff_trans.apply_to(m_config_A);
+      }
+      else {
+        m_diff_trans.apply_to(m_config_B);
+      }
       set_orbit_name(json["orbit_name"].get<std::string>());
       set_suborbit_ind(json["suborbit_ind"].get<int>());
       set_bg_configname(json["bg_configname"].get<std::string>());
-
+      if(!has_valid_from_occ()) {
+        throw std::runtime_error("The reading of a diff trans config from json resulted in invalid from occ");
+      }
+      if(is_dud()) {
+        throw std::runtime_error("The reading of a diff trans config from json resulted in dud");
+      }
 
       _sort();
     }

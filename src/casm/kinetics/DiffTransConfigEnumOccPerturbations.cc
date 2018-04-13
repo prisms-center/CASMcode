@@ -553,6 +553,9 @@ namespace CASM {
       m_current = notstd::make_cloneable<DiffTransConfiguration>(
                     make_attachable(m_base_it->diff_trans, copy_apply(to_canonical, perturbed_from_config)),
                     m_base_it->diff_trans);
+      if(!m_current->has_valid_from_occ()) {
+        throw std::runtime_error("Make attachable didn't seem to work in DTCEOP");
+      }
       m_current->set_orbit_name("test");
       m_current->set_orbit_name(m_diff_trans_orbit.name());
       m_current->set_suborbit_ind(std::distance(m_base.begin(), m_base_it));
