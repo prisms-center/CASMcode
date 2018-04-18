@@ -546,10 +546,7 @@ namespace CASM {
         UnitCell shift = lround(scel.prim().lattice().inv_lat_column_mat() * lat_mat * counter().cast<double>());
         UnitCellCoord new_coord = uccoord;
         new_coord += shift;
-        //std::cout << " shifted coord" << new_coord << std::endl;
-        //std::cout << "curr dist" << vector_to_path(diff_trans, new_coord).norm() << std::endl;
 
-        //std::cout << "min dist" << min_dist<< std::endl;
         if(vector_to_path(diff_trans, new_coord).norm() < min_dist) {
           vec = vector_to_path(diff_trans, new_coord);
           min_dist = vec.norm();

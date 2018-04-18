@@ -1421,6 +1421,9 @@ namespace CASM {
         min_size = size;
       }
     }
+    if(min_size == config_diff(_config1, _config2).size()) {
+      return _config2;
+    }
     return copy_apply(best_it, _config2);
 
   }
