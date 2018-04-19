@@ -126,7 +126,7 @@ class VaspCalculatorBase(object):
             sel_tmp.data = pandas.DataFrame({"configname":configname, "selected":1},
                                             index=range(1))
             try:
-                os.mkdir(os.path.join(proj.path, ".casm/tmp"))
+                os.mkdir(os.path.join(self.selection.proj.path, ".casm/tmp"))
             except:
                 pass
             sel_config = sel_tmp.saveas(os.path.join(self.selection.proj.path, ".casm/tmp",
