@@ -94,6 +94,7 @@ class Relax(VaspCalculatorBase):
                 POSCAR: sample structure of the configuration to be relaxed
 
         """
+        settings = self.read_settings(config_data["setfile"])
         super(Relax, self).config_setup(config_data)
         if settings["initial_deformation"] != None:
             deformation = self.get_deformation(settings)
