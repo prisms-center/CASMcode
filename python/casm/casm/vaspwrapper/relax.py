@@ -81,6 +81,24 @@ class Relax(VaspCalculatorBase):
             except:
                 pass
 
+    def config_setup(self, config_data):
+        """ Setup initial relaxation run for a configuration
+
+            Uses the following files from the most local .../settings/calctype.name directory:
+                INCAR: VASP input settings
+                KPOINTS: VASP kpoints settings
+                POSCAR: reference for KPOINTS if KPOINTS mode is not A/AUTO/Automatic
+                SPECIES: info for each species such as which POTCAR files to use, MAGMOM, GGA+U, etc.
+
+            Uses the following files from the .../config_calcdir/00 directory:
+                POSCAR: sample structure of the configuration to be relaxed
+
+        """
+        super(Relax, self).config_setup(config_data)
+        if settings["initial_deformation"] != None:
+            deformation = self.get_deformation(settings)
+            self.apply_deformation(deformation, config_data["calcdir"])
+
     def setup(self):
         """Setup initial relaxation run for the selection"""
         super(Relax, self).setup()

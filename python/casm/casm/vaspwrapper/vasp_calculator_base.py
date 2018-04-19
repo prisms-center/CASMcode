@@ -114,9 +114,6 @@ class VaspCalculatorBase(object):
                                  super_poscarfile, speciesfile,
                                  self.sort, extra_input_files,
                                  settings["strict_kpoints"])
-        if settings["initial_deformation"] != None:
-            deformation = self.get_deformation(settings)
-            self.apply_deformation(deformation, config_data["calcdir"])
 
     def get_deformation(self, settings):
         """ Either reads or queries for deformation matrix from settings dict"""
@@ -136,8 +133,8 @@ class VaspCalculatorBase(object):
                                                      configname.replace('/', '.')), True)
             sel_config.query(["relaxation_strain(U,0:5,{})".format(calctype)])
             deformation = np.array([float(sel_config.data["relaxation_strain(U,{},{})".format(i, calctype)].loc[0]) for i in range(6)])
-            os.remove(os.path.join(self.selection.proj.path, ".casm/tmp",
-                                   configname.replace('/', '.')))
+            if os.path.isfile(os.path.join(self.selection.proj.path, ".casm/tmp",configname.replace('/', '.'))):
+                os.remove(os.path.join(self.selection.proj.path, ".casm/tmp",configname.replace('/', '.')))
         else:
             raise vaspwrapper.VaspWrapperError("use manual or auto mode to set initial deformation. see casm format --vasp for settings")
 
@@ -274,6 +271,7 @@ class VaspCalculatorBase(object):
             currdir = os.getcwd()
             os.chdir(config_data["calcdir"])
 
+            self.config_setup(config_data)
             nodes, ppn = self._calc_submit_node_info(settings, config_data)
 
             # construct command to be run
@@ -385,7 +383,6 @@ class VaspCalculatorBase(object):
 
     def run(self):
         """run the job of a selection"""
-        self.pre_setup()
         for index,config_data in self.selection.data.iterrows():
             settings = self.read_settings(config_data["setfile"])
             calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
@@ -418,8 +415,6 @@ class VaspCalculatorBase(object):
 
             elif status == "incomplete":
 
-                if task == "setup":
-                    self.config_setup(config_data)
 
                 self.report_status(config_data["calcdir"], "started")
                 (status, task) = calculation.run()

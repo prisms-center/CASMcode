@@ -137,7 +137,8 @@ class Neb(VaspCalculatorBase):
         args = "enum --method DiffTransConfigInterpolation -s {}".format(os.path.join(tmp_folder, filename))
         output = proj.command(args)
         print "Interpolation complete"
-        #os.remove(os.path.join(tmp_folder, filename))
+        if os.path.isfile(os.path.join(tmp_folder, filename)):
+            os.remove(os.path.join(tmp_folder, filename))
 
     def setup(self):
         """ Setup initial relaxation run for the selection"""
