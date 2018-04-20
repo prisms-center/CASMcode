@@ -26,6 +26,18 @@ namespace CASM {
       return uccoord.unit();
     }
 
+    const UnitCellCoord OccupationTransformation::coord() const {
+      return uccoord;
+    }
+
+    const Index OccupationTransformation::from_occ() const {
+      return from_value;
+    }
+
+    const Index OccupationTransformation::to_occ() const {
+      return to_value;
+    }
+
     const Molecule &OccupationTransformation::from_mol() const {
       return this->uccoord.sublat_site().site_occupant()[from_value];
     }

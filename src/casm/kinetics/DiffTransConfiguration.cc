@@ -443,7 +443,6 @@ namespace CASM {
     bool DiffTransConfiguration::has_valid_from_occ(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
       for(auto traj : diff_trans.specie_traj()) {
         Index l = bg_config.supercell().linear_index(traj.from.uccoord);
-        //std::cout << "comparing " << from_config().occ(l) << " to " << traj.from.occ << " on site " << l << std::endl;
         if(bg_config.occ(l) != traj.from.occ) {
           return false;
         }

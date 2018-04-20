@@ -38,6 +38,15 @@ namespace CASM {
       /// OccupationTransformation lives in
       const Structure &prim() const;
 
+      /// \brief The UnitCellCoord that is changing occupants
+      const UnitCellCoord coord() const;
+
+      /// The current occupant of the site
+      const Index from_occ() const;
+
+      /// The future occupant of the site
+      const Index to_occ() const;
+
       /// The current occupant of the site
       const Molecule &from_mol() const;
 

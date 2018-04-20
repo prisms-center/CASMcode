@@ -39,6 +39,7 @@ namespace CASM {
       DiffTransConfiguration(const PrimClex &_primclex,
                              const jsonParser &_data);
 
+      /// \brief Returns the supercell
       const Supercell &supercell() const;
 
       /// \brief Returns the initial configuration
@@ -56,8 +57,12 @@ namespace CASM {
       /// - Comparison is made using the sorted forms
       bool operator<(const DiffTransConfiguration &B) const;
 
+      /// \brief creates a comparison object that can determine if this
+      /// is less than another DiffTransConfiguration
       DiffTransConfigCompare less() const;
 
+      /// \brief creates a comparison object that can determine if this
+      /// is equal to another DiffTransConfiguration
       DiffTransConfigIsEqual equal_to() const;
 
       /// \brief sort DiffTransConfiguration in place
@@ -82,24 +87,33 @@ namespace CASM {
       /// Reads the DiffTransConfiguration from JSON
       void from_json(const jsonParser &json, const PrimClex &primclex);
 
+      /// Used to store the diff_trans name of this diff_trans_config during enumeration
       void set_orbit_name(const std::string &orbit_name);
 
+      /// Used to store the background config used to generate this diff_trans_config
       void set_bg_configname(const std::string &configname);
 
+      /// Used to store the sub orbit prototype of diff_trans name that this diff_trans_config
+      /// contains
       void set_suborbit_ind(const int &suborbit_ind);
 
+      /// \brief This returns an identifier that distinguishes supercell inequivalent but prim equivalent diff_trans
+      /// within this diff_trans_config and others with the same orbit_name
       int suborbit_ind() const {
         return m_suborbit_ind;
       }
 
+      /// \brief The name of the prototypical diff_trans that was used to generate this diff_trans_config
       std::string orbit_name() const {
         return m_orbit_name;
       }
 
+      /// \brief The name of the background that was used to generate this diff_trans_config
       std::string bg_configname() const {
         return m_bg_configname;
       }
 
+      /// \brief Sanity check to see if this diff_trans_config has any transformation at all
       bool is_dud() const {
         return from_config() == to_config();
       }
@@ -122,18 +136,24 @@ namespace CASM {
       /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
       PermuteIterator to_config_from_canonical() const;
 
+      /// writes the initial and final positions of atoms to a file
       void write_pos() const;
+      /// writes the initial and final positions of atoms to a file
       std::ostream &write_pos(std::ostream &sout) const;
 
+      /// \brief Determines if diff_trans is possible with bg_config
       static bool is_valid(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
 
+      /// \brief Determines if diff_trans and bg config are compatible with respect to occupants
       static bool has_valid_from_occ(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
 
+      /// \brief Inserts this into the DiffTransConfigurationDatabase
       DiffTransConfigInsertResult insert() const;
 
     private:
 
       friend Named<CRTPBase<DiffTransConfiguration>>;
+      /// \brief uses internal fields to generate a name for this diff_trans_config
       std::string generate_name_impl() const;
 
       void _sort();
@@ -150,6 +170,7 @@ namespace CASM {
       /// else it is the reverse
       bool m_from_config_is_A;
 
+      /// fields used to track history of creation for queries and name generation
       std::string m_orbit_name;
       int m_suborbit_ind;
       std::string m_bg_configname;
@@ -179,10 +200,10 @@ namespace CASM {
     /// \brief Returns kra for DiffTransConfiguration
     double kra(const DiffTransConfiguration &dtc);
 
-    /// \brief Returns the distance to furthest perturbation from diffusion hop
+    /// \brief Returns the distance to furthest perturbation of the background config from diffusion hop
     double max_perturb_rad(const DiffTransConfiguration &dtc);
 
-    /// \brief Returns the distance to closest perturbation from diffusion hop
+    /// \brief Returns the distance to closest perturbation of the background config from diffusion hop
     double min_perturb_rad(const DiffTransConfiguration &dtc);
 
   }

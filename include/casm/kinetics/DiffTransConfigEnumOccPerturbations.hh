@@ -43,7 +43,7 @@ namespace CASM {
       //class OccPerturbation;
     public:
 
-      /// \brief Construct with an IntegralCluster
+      /// \brief Construct with background config, diff_trans orbit, and specification of perturbations
       DiffTransConfigEnumOccPerturbations(
         const Configuration &background_config,
         const PrimPeriodicDiffTransOrbit &diff_trans_orbit, // or const DiffusionTransformation &diff_trans
@@ -56,7 +56,7 @@ namespace CASM {
 
       static const std::string enumerator_name;
       static const std::string interface_help;
-
+      /// \brief Command Line Interface uses this function to parse and construct enumerator
       static int run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
 
     private:
@@ -67,7 +67,7 @@ namespace CASM {
       /// Crystallography tolerance
       double _tol() const;
 
-      /// Supercell
+      /// Prim
       const Structure &_prim() const;
 
       /// Supercell
@@ -77,7 +77,7 @@ namespace CASM {
       /// Determines unique canonical diff trans for given background config
       void _init_base();
 
-      /// Generate local orbits for current base diff trans
+      /// Generate local orbits that represent perturbations for current base diff trans
       void _init_local_orbits();
 
       /// Generate the 'from_value' for the perturbation,
@@ -170,8 +170,10 @@ namespace CASM {
       notstd::cloneable_ptr<DiffTransConfiguration> m_current;
     };
 
+    /// \brief determines if perturbation range overlaps with its own periodic image
     bool has_local_bubble_overlap(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, const Supercell &scel);
 
+    /// \brief determines the supercells in which the perturbation range does not over lap with itself
     std::vector<Supercell> viable_supercells(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, std::vector<Supercell>);
 
 
