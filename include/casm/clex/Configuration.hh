@@ -357,9 +357,11 @@ namespace CASM {
     ///        Configuration unchanged
     std::vector<PermuteIterator> factor_group() const;
 
+    /// \brief Gives the subgroup of the supercell that leaves this configuration unchanged
     using ConfigurationBase::invariant_subgroup;
     std::vector<PermuteIterator> invariant_subgroup() const;
 
+    /// \brief Determines if this Configuration is in canonical form
     using ConfigurationBase::is_canonical;
     bool is_canonical() const;
 
