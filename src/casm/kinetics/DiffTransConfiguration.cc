@@ -247,25 +247,20 @@ namespace CASM {
       // get diff trans
       m_sym_compare = ScelPeriodicDiffTransSymCompare(_scel);
       m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim());
-      if(!has_valid_from_occ() && m_from_config_is_A) {
-        m_diff_trans.reverse();
-        m_from_config_is_A = false;
-        m_diff_trans.apply_to(m_config_A);
+
+      //Makes sure we have a from config and to config, though we don't
+      //know which is which yet
+      m_diff_trans.apply_to(m_config_B);
+
+      //Figure out wheter A or B is the from config
+      if(!this->has_valid_from_occ()) {
+        m_from_config_is_A = !m_from_config_is_A;
       }
-      else if(!has_valid_from_occ() && !m_from_config_is_A) {
-        m_diff_trans.reverse();
-        m_from_config_is_A = true;
-        m_diff_trans.apply_to(m_config_B);
-      }
-      else if(has_valid_from_occ() && !m_from_config_is_A) {
-        m_diff_trans.apply_to(m_config_A);
-      }
-      else {
-        m_diff_trans.apply_to(m_config_B);
-      }
+
       set_orbit_name(json["orbit_name"].get<std::string>());
       set_suborbit_ind(json["suborbit_ind"].get<int>());
       set_bg_configname(json["bg_configname"].get<std::string>());
+
       if(!has_valid_from_occ()) {
         throw std::runtime_error("The reading of a diff trans config from json resulted in invalid from occ");
       }
