@@ -62,7 +62,7 @@ namespace CASM {
     DiffTransConfigMapperResult DiffTransConfigMapper::import_structure_occupation(
       const fs::path &pos_path,
       const Kinetics::DiffTransConfiguration *hint_ptr) const {
-
+      //	std::cout << "pos path is " << pos_path << std::endl;
       DiffTransConfigMapperResult result;
       result.structures = _get_structures(pos_path);
       ConfigMapper mapper(primclex(),
@@ -77,7 +77,9 @@ namespace CASM {
         std::vector<std::string> scelname;
         scelname.push_back(tmp.supercell().name());
         mapper.force_lattices(scelname);
+        //	*result.config =*hint_ptr;
       }
+      //      else {
       ConfigDoF from_dof;
       Lattice from_lat;
       Eigen::Matrix3d cart_op;
@@ -91,9 +93,10 @@ namespace CASM {
       std::set<UnitCellCoord> vacancy_from;
       std::set<UnitCellCoord> vacancy_to;
       //This rigid rotation and rigid shift seems unnecessary surprisingly
-
+      BasicStructure<Site> cpy = result.structures[0];
+      cpy.set_lattice(Lattice(non_canon_from_config.deformation().inverse() * result.structures[0].lattice().lat_column_mat()), FRAC);
       SymOp op(cart_op);
-      Coordinate rigid_shift = copy_apply(op, result.structures[0].basis[0]) - Coordinate(non_canon_from_config.uccoord(std::find(best_assign.begin(), best_assign.end(), 0) - best_assign.begin()));
+      Coordinate rigid_shift = copy_apply(op, cpy.basis[0]) - Coordinate(non_canon_from_config.uccoord(std::find(best_assign.begin(), best_assign.end(), 0) - best_assign.begin()));
       Coordinate t_shift(primclex().prim().lattice());
       t_shift.cart() = rigid_shift.cart();
       //std::cout << "t shift " << t_shift.const_frac() << std::endl;
@@ -103,16 +106,17 @@ namespace CASM {
       BasicStructure<Site> from = result.structures[0];
       BasicStructure<Site> to = result.structures[result.structures.size() - 1];
       //std::cout << "unconditioned from struc" << std::endl;
-      //from.print_xyz(std::cout,true);
+      ///from.print_xyz(std::cout,true);
       //std::cout << "unconditioned to struc" << std::endl;
-      //to.print_xyz(std::cout,true);
+      ///to.print_xyz(std::cout,true);
       _precondition_from_and_to(cart_op, non_canon_from_config.deformation(), t_shift.const_cart(), from, to);
-      //std::cout << "cart_op"<<cart_op<< std::endl;
-      //std::cout << "trans" << t_shift.const_cart() << std::endl;
-      //std::cout << "from struc" << std::endl;
-      //from.print_xyz(std::cout,true);
-      //std::cout << "to struc" << std::endl;
-      //to.print_xyz(std::cout,true);
+      ///std::cout << "cart_op"<<cart_op<< std::endl;
+      ///std::cout << "deformation"<<non_canon_from_config.deformation()<< std::endl;
+      ///std::cout << "trans" << t_shift.const_cart() << std::endl;
+      ///std::cout << "from struc" << std::endl;
+      ///from.print_xyz(std::cout,true);
+      ///std::cout << "to struc" << std::endl;
+      ///to.print_xyz(std::cout,true);
       std::vector<Index> moving_atoms = _analyze_atoms_ideal(from,
                                                              to,
                                                              from_config,
@@ -159,6 +163,8 @@ namespace CASM {
       auto insert_res = primclex().db<PrimPeriodicDiffTransOrbit>().insert(dt_orbits.front());
       primclex().db<PrimPeriodicDiffTransOrbit>().commit();
       result.config->set_orbit_name(insert_res.first.name());
+      //    }
+
       //use this to interpolate same amount of images
       Kinetics::DiffTransConfigInterpolation interpolater(result.config->diff_trans(), result.config->from_config(), result.config->to_config(), result.structures.size() - 2); //<- using current calctype here
       int image_no = 0;
@@ -203,14 +209,21 @@ namespace CASM {
                                                                    std::set<UnitCellCoord> &vacancy_from,
                                                                    std::set<UnitCellCoord> &vacancy_to) const {
       // For image 00 set reference of POSCAR index to  basis site linear index
-      double max_disp = config.displacement().colwise().norm().maxCoeff() + primclex().crystallography_tol();
+      // tolerance for UnitCellCoord mapping has 20% wiggle room from max displacement
+      // instead of introducing wiggle room maybe take max disp between from map and to map
+      double max_disp = config.displacement().colwise().norm().maxCoeff() * 1.2 + primclex().crystallography_tol();
+      int from_count = 0;
       for(auto &site : from.basis) {
+        site.print(std::cout);
         from_uccoords.push_back(_site_to_uccoord(site, primclex(), max_disp));
+        from_count++;
       }
 
       // For last image  find POSCAR index to basis site linear index
+      int to_count = 0;
       for(auto &site : to.basis) {
         to_uccoords.push_back(_site_to_uccoord(site, primclex(), max_disp));
+        to_count++;
       }
       std::vector<Index> moving_atoms;
       for(int i = 0 ; i < from_uccoords.size(); i++) {

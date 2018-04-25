@@ -24,6 +24,7 @@ namespace CASM {
       tmp.frac() = round(diff.const_frac());
 
       //std::cout << "tmp" << tmp.const_frac() <<std::endl;
+      //std::cout << "error is " << (diff - tmp).const_cart().norm() << "tol is " << tol<< std::endl;
       if((diff - tmp).const_cart().norm() < tol) {
         *this = UnitCellCoord(unit, b, lround(diff.const_frac()));
         return;
