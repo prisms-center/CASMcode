@@ -10,7 +10,7 @@
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/kinetics/DiffTransConfigInterpolation.hh"
-
+#include "casm/crystallography/jsonStruc.hh"
 
 #include "casm/completer/Handlers.hh"
 #include "casm/database/DatabaseTypesTraits.hh"
@@ -33,7 +33,8 @@ namespace CASM {
       add_configtype_suboption(traits<Configuration>::short_name, DB::config_types_short());
       add_configlist_nodefault_suboption();
       m_desc.add_options()
-      ("images,i", po::value<int>(&m_images)->default_value(0), "Number of images between initial and final state when viewing diff_trans_configs.");
+      ("images,i", po::value<int>(&m_images)->default_value(0), "Number of images between initial and final state when viewing diff_trans_configs.")
+      ("relaxed,r", "Attempt to display corresponding relaxed structures to the given configurations.");
 
       return;
     }
@@ -155,45 +156,74 @@ namespace CASM {
 
       // execute the 'casm view' command for each selected configuration
       for(const auto &config : config_select.selected()) {
-        // write '.casm/tmp/POSCAR'
-        if(view_opt.m_images) {
-          Kinetics::DiffTransConfigInterpolation interpol(config, view_opt.m_images);
-          for(int count = 0; count != (view_opt.m_images + 2); ++count) {
+        if(vm.count("relaxed") && is_calculated(config)) {
+          fs::path pos_path = calc_properties_path(primclex, config.name());
+          args.log() << "Obtaining relaxed structure from:\n";
+          args.log() << pos_path.string() << std::endl;
+          jsonParser datajson(pos_path);
+          for(auto it = datajson.begin() ; it != datajson.end() ; ++it) {
+            BasicStructure<Site> import_struc;
+            from_json(simple_json(import_struc, "relaxed_"), *it);
             fs::ofstream file;
-            std::ostringstream ostr;
-            ostr << std::setfill('0') << std::setw(2) << count;
-            fs::path POSCARpath = tmp_dir / ("POSCAR" + ostr.str());
+            fs::path POSCARpath = tmp_dir / ("POSCAR" + it.name());
             file.open(POSCARpath);
-            VaspIO::PrintPOSCAR p(interpol.config_enum_interpol()[count]);
+            VaspIO::PrintPOSCAR p(import_struc);
             p.sort();
             p.print(file);
             file.close();
           }
           fs::path POSCARpath_i = tmp_dir / "POSCAR00";
-          args.log() << config.name() << ":\n";
+          args.log() << config.name() << " relaxed:\n";
           Popen popen;
           popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
           popen.print(args.log());
+
         }
         else {
-          fs::ofstream file_i;
-          fs::path POSCARpath_i = tmp_dir / "POSCAR00";
-          file_i.open(POSCARpath_i);
-          VaspIO::PrintPOSCAR p_i(config.sorted().from_config());
-          p_i.print(file_i);
-          file_i.close();
+          // write '.casm/tmp/POSCAR'
+          if(vm.count("relaxed")) {
+            args.log() << "Could not find relaxed calculation for: " << config.name() << std::endl;
+            args.log() << "Using images tag instead on ideal diff_trans_config" << std::endl;
+          }
+          if(view_opt.m_images) {
+            Kinetics::DiffTransConfigInterpolation interpol(config, view_opt.m_images);
+            for(int count = 0; count != (view_opt.m_images + 2); ++count) {
+              fs::ofstream file;
+              std::ostringstream ostr;
+              ostr << std::setfill('0') << std::setw(2) << count;
+              fs::path POSCARpath = tmp_dir / ("POSCAR" + ostr.str());
+              file.open(POSCARpath);
+              VaspIO::PrintPOSCAR p(interpol.config_enum_interpol()[count]);
+              p.sort();
+              p.print(file);
+              file.close();
+            }
+            fs::path POSCARpath_i = tmp_dir / "POSCAR00";
+            args.log() << config.name() << ":\n";
+            Popen popen;
+            popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
+            popen.print(args.log());
+          }
+          else {
+            fs::ofstream file_i;
+            fs::path POSCARpath_i = tmp_dir / "POSCAR00";
+            file_i.open(POSCARpath_i);
+            VaspIO::PrintPOSCAR p_i(config.sorted().from_config());
+            p_i.print(file_i);
+            file_i.close();
 
-          fs::ofstream file_f;
-          fs::path POSCARpath_f = tmp_dir / "POSCAR01";
-          file_f.open(POSCARpath_f);
-          VaspIO::PrintPOSCAR p_f(config.sorted().to_config());
-          p_f.print(file_f);
-          file_f.close();
+            fs::ofstream file_f;
+            fs::path POSCARpath_f = tmp_dir / "POSCAR01";
+            file_f.open(POSCARpath_f);
+            VaspIO::PrintPOSCAR p_f(config.sorted().to_config());
+            p_f.print(file_f);
+            file_f.close();
 
-          args.log() << config.name() << ":\n";
-          Popen popen;
-          popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
-          popen.print(args.log());
+            args.log() << config.name() << ":\n";
+            Popen popen;
+            popen.popen(set.view_command_video() + " " + POSCARpath_i.string());
+            popen.print(args.log());
+          }
         }
       }
     }
@@ -221,20 +251,45 @@ namespace CASM {
 
     // execute the 'casm view' command for each selected configuration
     for(const auto &config : config_select.selected()) {
-      // write '.casm/tmp/POSCAR'
-      fs::ofstream file;
-      fs::path POSCARpath = tmp_dir / "POSCAR";
-      file.open(POSCARpath);
-      VaspIO::PrintPOSCAR p(config);
-      p.sort();
-      p.print(file);
-      file.close();
+      if(vm.count("relaxed") && is_calculated(config)) {
+        fs::ofstream file;
+        fs::path POSCARpath = tmp_dir / "POSCAR";
 
-      args.log() << config.name() << ":\n";
-      Popen popen;
-      popen.popen(set.view_command() + " " + POSCARpath.string());
-      popen.print(args.log());
+        //Make pos_path the path to properties.calc.json constructed from it
+        fs::path pos_path = calc_properties_path(primclex, config.name());
+        args.log() << "Obtaining relaxed structure from:\n";
+        args.log() << pos_path.string() << std::endl;
+        BasicStructure<Site> import_struc;
+        jsonParser datajson(pos_path);
+        from_json(simple_json(import_struc, "relaxed_"), datajson);
 
+        file.open(POSCARpath);
+        VaspIO::PrintPOSCAR p(import_struc);
+        p.sort();
+        p.print(file);
+        file.close();
+        args.log() << config.name() << " relaxed" << ":\n";
+        Popen popen;
+        popen.popen(set.view_command() + " " + POSCARpath.string());
+        popen.print(std::cout);
+      }
+      else {
+        // write '.casm/tmp/POSCAR'
+        fs::ofstream file;
+        fs::path POSCARpath = tmp_dir / "POSCAR";
+        file.open(POSCARpath);
+        VaspIO::PrintPOSCAR p(config);
+        p.sort();
+        p.print(file);
+        file.close();
+        if(vm.count("relaxed")) {
+          args.log() << "No relaxed structure found." << "\n";
+        }
+        args.log() << config.name() << ":\n";
+        Popen popen;
+        popen.popen(set.view_command() + " " + POSCARpath.string());
+        popen.print(args.log());
+      }
     }
 
     return 0;
