@@ -439,6 +439,9 @@ namespace CASM {
     /// Writes incomplete properties.calc.json of config for kra purposes
     std::ostream &print_properties(std::string calctype, std::ostream &sout) const;
 
+    /// Writes incomplete properties.calc.json of config for kra purposes
+    jsonParser print_properties(std::string calctype) const;
+
     /// \brief Split configuration name string into scelname and config id
     static std::pair<std::string, std::string> split_name(std::string configname);
 
