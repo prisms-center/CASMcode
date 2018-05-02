@@ -1,6 +1,5 @@
 libcasm_la_SOURCES +=\
 ./src/casm/kinetics/DiffTransConfigurationIO.cc\
-./src/casm/kinetics/DiffTransEnumEquivalents.cc\
 ./src/casm/kinetics/EnumDiffTransConfigEndpoints.cc\
 ./src/casm/kinetics/PrimPeriodicDiffTransOrbitIO.cc\
 ./src/casm/kinetics/DiffusionTransformationEnum.cc\

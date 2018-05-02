@@ -357,9 +357,11 @@ namespace CASM {
     ///        Configuration unchanged
     std::vector<PermuteIterator> factor_group() const;
 
+    /// \brief Gives the subgroup of the supercell that leaves this configuration unchanged
     using ConfigurationBase::invariant_subgroup;
     std::vector<PermuteIterator> invariant_subgroup() const;
 
+    /// \brief Determines if this Configuration is in canonical form
     using ConfigurationBase::is_canonical;
     bool is_canonical() const;
 
@@ -436,6 +438,9 @@ namespace CASM {
 
     /// Writes incomplete properties.calc.json of config for kra purposes
     std::ostream &print_properties(std::string calctype, std::ostream &sout) const;
+
+    /// Writes incomplete properties.calc.json of config for kra purposes
+    jsonParser print_properties(std::string calctype) const;
 
     /// \brief Split configuration name string into scelname and config id
     static std::pair<std::string, std::string> split_name(std::string configname);

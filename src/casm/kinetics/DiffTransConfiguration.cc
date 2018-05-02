@@ -247,25 +247,20 @@ namespace CASM {
       // get diff trans
       m_sym_compare = ScelPeriodicDiffTransSymCompare(_scel);
       m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim());
-      if(!has_valid_from_occ() && m_from_config_is_A) {
-        m_diff_trans.reverse();
-        m_from_config_is_A = false;
-        m_diff_trans.apply_to(m_config_A);
+
+      //Makes sure we have a from config and to config, though we don't
+      //know which is which yet
+      m_diff_trans.apply_to(m_config_B);
+
+      //Figure out wheter A or B is the from config
+      if(!this->has_valid_from_occ()) {
+        m_from_config_is_A = !m_from_config_is_A;
       }
-      else if(!has_valid_from_occ() && !m_from_config_is_A) {
-        m_diff_trans.reverse();
-        m_from_config_is_A = true;
-        m_diff_trans.apply_to(m_config_B);
-      }
-      else if(has_valid_from_occ() && !m_from_config_is_A) {
-        m_diff_trans.apply_to(m_config_A);
-      }
-      else {
-        m_diff_trans.apply_to(m_config_B);
-      }
+
       set_orbit_name(json["orbit_name"].get<std::string>());
       set_suborbit_ind(json["suborbit_ind"].get<int>());
       set_bg_configname(json["bg_configname"].get<std::string>());
+
       if(!has_valid_from_occ()) {
         throw std::runtime_error("The reading of a diff trans config from json resulted in invalid from occ");
       }
@@ -443,7 +438,6 @@ namespace CASM {
     bool DiffTransConfiguration::has_valid_from_occ(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
       for(auto traj : diff_trans.specie_traj()) {
         Index l = bg_config.supercell().linear_index(traj.from.uccoord);
-        //std::cout << "comparing " << from_config().occ(l) << " to " << traj.from.occ << " on site " << l << std::endl;
         if(bg_config.occ(l) != traj.from.occ) {
           return false;
         }
@@ -504,19 +498,11 @@ namespace CASM {
       Configuration jumbo_bg = bg.fill_supercell(dtc.from_config().supercell());
       Configuration shift_jumbo = closest_setting(dtc.from_config(), jumbo_bg);
       DiffTransConfiguration tmp(make_attachable(dtc.diff_trans(), shift_jumbo), dtc.diff_trans());
-      //tmp.canonical_form();
       auto clust = config_diff(tmp.from_config(), dtc.from_config());
-      //std::cout << std::endl<< "diff cluster size" << clust.size() << std::endl;
-      if(clust.size() == 1) {
-        //std::cout << "point clust at " << clust[0] <<std::endl;
-        //std::cout << "hop at " << dtc.diff_trans() <<std::endl;
-        //std::cout << tmp.from_config() << std::endl;
-        //std::cout << dtc.from_config() << std::endl;
-      }
       double max_dist = 0;
       for(auto &site : clust) {
-        if(dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell())	> max_dist) {
-          max_dist = dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell());
+        if(dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell())	> max_dist) {
+          max_dist = dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell());
         }
       }
       return max_dist;
@@ -526,13 +512,13 @@ namespace CASM {
     double min_perturb_rad(const DiffTransConfiguration &dtc) {
       Configuration bg = make_configuration(dtc.primclex(), dtc.bg_configname());
       Configuration jumbo_bg = bg.fill_supercell(dtc.from_config().supercell());
-      DiffTransConfiguration tmp(make_attachable(dtc.diff_trans(), jumbo_bg), dtc.diff_trans());
-      tmp.canonical_form();
+      Configuration shift_jumbo = closest_setting(dtc.from_config(), jumbo_bg);
+      DiffTransConfiguration tmp(make_attachable(dtc.diff_trans(), shift_jumbo), dtc.diff_trans());
       auto clust = config_diff(tmp.from_config(), dtc.from_config());
       double min_dist = 100;
       for(auto &site : clust) {
-        if(dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell()) < min_dist && dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell()) > dtc.primclex().crystallography_tol()) {
-          min_dist = dist_to_path_pbc(dtc.diff_trans(), site, bg.supercell());
+        if(dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell()) < min_dist && dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell()) > dtc.primclex().crystallography_tol()) {
+          min_dist = dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell());
         }
       }
       if(clust.size() == 0) {

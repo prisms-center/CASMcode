@@ -114,6 +114,22 @@ namespace CASM {
       return from == to;
     }
 
+    /// \brief Gives the starting coordinate of the specie moving
+    UnitCellCoord SpecieTrajectory::from_loc() const {
+      return from.uccoord;
+    }
+    /// \brief Gives the ending coordinate of the specie moving
+    UnitCellCoord SpecieTrajectory::to_loc() const {
+      return to.uccoord;
+    }
+    /// \brief Gives the name of the specie moving
+    AtomSpecie SpecieTrajectory::specie() const {
+      if(specie_types_map()) {
+        return from.specie();
+      }
+      throw std::runtime_error("Attempting to access single specie of a malformed SpecieTrajectory");
+    }
+
     bool SpecieTrajectory::operator<(const SpecieTrajectory &B) const {
       return _tuple() < B._tuple();
     }
@@ -484,7 +500,6 @@ namespace CASM {
       if(occ_transform().size() > B.occ_transform().size()) {
         return false;
       }
-
       {
         auto it = occ_transform().begin();
         auto B_it = B.occ_transform().begin();
@@ -497,7 +512,6 @@ namespace CASM {
           }
         }
       }
-
       {
         auto it = specie_traj().begin();
         auto B_it = B.specie_traj().begin();
@@ -546,10 +560,7 @@ namespace CASM {
         UnitCell shift = lround(scel.prim().lattice().inv_lat_column_mat() * lat_mat * counter().cast<double>());
         UnitCellCoord new_coord = uccoord;
         new_coord += shift;
-        //std::cout << " shifted coord" << new_coord << std::endl;
-        //std::cout << "curr dist" << vector_to_path(diff_trans, new_coord).norm() << std::endl;
 
-        //std::cout << "min dist" << min_dist<< std::endl;
         if(vector_to_path(diff_trans, new_coord).norm() < min_dist) {
           vec = vector_to_path(diff_trans, new_coord);
           min_dist = vec.norm();
@@ -629,19 +640,12 @@ namespace CASM {
       for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); ++it) {
         UnitCellCoord fromcoord = it->from.uccoord;
         UnitCellCoord tocoord = it->to.uccoord;
-
         nlist.expand(fromcoord);
-        fromcoord += pos;
-        nlist.expand(fromcoord);
-        fromcoord -= pos;
-        fromcoord -= pos;
-        nlist.expand(fromcoord);
+        nlist.expand(fromcoord + pos);
+        nlist.expand(fromcoord - pos);
         nlist.expand(tocoord);
-        tocoord += pos;
-        nlist.expand(tocoord);
-        tocoord -= pos;
-        tocoord -= pos;
-        nlist.expand(tocoord);
+        nlist.expand(tocoord + pos);
+        nlist.expand(tocoord - pos);
       }
       for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
         for(int b = 0; b < prim.basis.size(); b++) {

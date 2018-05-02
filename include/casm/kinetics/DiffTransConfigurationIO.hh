@@ -373,9 +373,7 @@ namespace CASM {
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<Index> transformation_size();
 
-      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> min_perturb_radius();
-
-      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> max_perturb_radius();
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<Index> suborbit_ind();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> dtconfigname();
 
@@ -386,8 +384,6 @@ namespace CASM {
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> scelname();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> orbitname();
-
-      DiffTransConfigIO::GenericDiffTransConfigFormatter<Index> suborbit_ind();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<std::string> bg_configname();
 
@@ -402,6 +398,11 @@ namespace CASM {
       DiffTransConfigIO::GenericDiffTransConfigFormatter<bool> is_canonical();
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<double> kra_barrier();
+
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> min_perturb_radius();
+
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> max_perturb_radius();
+
     }
 
   }

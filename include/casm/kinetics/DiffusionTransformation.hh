@@ -35,6 +35,8 @@ namespace CASM {
       /// an occ index into that basis site's occupant array
       SpecieLocation(const UnitCellCoord &_uccoord, Index _occ, Index _pos);
 
+      //THESE FIELDS SHOULD REALLY BE PRIVATE and have setters and getters
+      /// Unitcell coordinate of where this resides
       UnitCellCoord uccoord;
 
       /// Occupant index
@@ -103,6 +105,14 @@ namespace CASM {
       /// Tells whether or not the SpecieTrajectory is moving a species or not
       /// true indicates the trajectory is useless
       bool is_no_change() const;
+
+      /// \brief Gives the starting coordinate of the specie moving
+      UnitCellCoord from_loc() const;
+      /// \brief Gives the ending coordinate of the specie moving
+      UnitCellCoord to_loc() const;
+      /// \brief Gives the name of the specie moving
+      AtomSpecie specie() const;
+
 
       SpecieLocation from;
       SpecieLocation to;

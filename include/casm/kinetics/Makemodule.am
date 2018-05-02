@@ -17,10 +17,8 @@ kineticsinclude_HEADERS=\
 ./include/casm/kinetics/DiffusionTransformation.hh\
 ./include/casm/kinetics/PrimPeriodicDiffTransOrbitIO.hh\
 ./include/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh\
-./include/casm/kinetics/SubOrbitGenerators.hh\
 ./include/casm/kinetics/DiffusionTransformationEnum.hh\
 ./include/casm/kinetics/KineticsOrbits_impl.hh\
-./include/casm/kinetics/DiffTransEnumEquivalents.hh\
 ./include/casm/kinetics/OccPerturbation.hh\
 ./include/casm/kinetics/DiffTransConfiguration.hh\
 ./include/casm/kinetics/DiffTransConfigurationIO.hh\

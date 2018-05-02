@@ -17,7 +17,7 @@ namespace CASM {
 
     class DiffTransConfiguration;
 
-    /// \brief Class for less than comparison of Configurations
+    /// \brief Class for less than comparison of DiffTransConfigurations
     ///
     /// - Possibly more efficient implementation because symops/permutations are
     ///   applied one-by-one as needed until the comparison can be made instead
@@ -70,7 +70,7 @@ namespace CASM {
       mutable bool m_is_less;
     };
 
-    /// \brief Class for less than comparison of Configurations
+    /// \brief Class for less than comparison of DiffTransConfigurations
     ///
     /// - Easy to understand implementation
     class DiffTransConfigIsEqualSimple {

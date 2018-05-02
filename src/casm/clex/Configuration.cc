@@ -825,6 +825,12 @@ namespace CASM {
   //*********************************************************************************
 
   std::ostream &Configuration::print_properties(std::string calctype, std::ostream &sout) const {
+    jsonParser prop_calc_json = print_properties(calctype);
+    sout << prop_calc_json;
+    return sout;
+  }
+
+  jsonParser Configuration::print_properties(std::string calctype) const {
     jsonParser prop_calc_json;
     Lattice ref_lat = supercell().lattice();
     if(calc_properties(calctype).contains("relaxation_deformation")) {
@@ -882,10 +888,8 @@ namespace CASM {
     if(calc_properties(calctype).contains("relaxed_forces")) {
       prop_calc_json["relaxed_forces"] = calc_properties(calctype)["relaxed_forces"];
     }
-    sout << prop_calc_json;
-    return sout;
+    return prop_calc_json;
   }
-
   //*********************************************************************************
 
   /// Private members:
@@ -1420,6 +1424,9 @@ namespace CASM {
         best_it = *it;
         min_size = size;
       }
+    }
+    if(min_size == config_diff(_config1, _config2).size()) {
+      return _config2;
     }
     return copy_apply(best_it, _config2);
 
