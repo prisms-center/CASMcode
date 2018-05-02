@@ -162,6 +162,9 @@ namespace CASM {
         std::string name = config.from_config().name();
         boost::split(tokens, name, boost::is_any_of("."), boost::token_compress_on);
         std::string canon_config_name = tokens[0];
+        //lol
+        canon_config_name = config.from_config().canonical_form().name();
+
         if(canon_config_name.find("none") == std::string::npos) {
           if(tokens.size() == 4) {
             Configuration canon_config = *primclex.db<Configuration>().find(config.from_config().canonical_form().name());
@@ -172,10 +175,16 @@ namespace CASM {
             endpts_json["0"] = make_configuration(primclex, config.from_config().name()).print_properties(endpt_calctype);
           }
         }
+        else {
+          std::cout << "Found 'none' in your from configname" << std::endl;
+        }
+
         std::vector<std::string> tokens2;
         std::string name2 = config.to_config().name();
         boost::split(tokens2, name2, boost::is_any_of("."), boost::token_compress_on);
         std::string canon_config_name2 = tokens2[0];
+        //lol
+        canon_config_name2 = config.to_config().canonical_form().name();
 
         if(canon_config_name2.find("none") == std::string::npos) {
           if(tokens2.size() == 4) {
@@ -186,6 +195,9 @@ namespace CASM {
           else {
             endpts_json[std::to_string(i - 1)] = make_configuration(primclex, config.to_config().name()).print_properties(endpt_calctype);
           }
+        }
+        else {
+          std::cout << "Found 'none' in your to configname" << std::endl;
         }
         endpts_json.print(endpts);
         endpts.close();
