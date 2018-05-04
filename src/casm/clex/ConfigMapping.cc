@@ -532,7 +532,16 @@ namespace CASM {
     Eigen::Matrix3d deformation;
     double num_atoms = double(struc.basis.size());
     int min_vol, max_vol;
+    std::unordered_set<Eigen::Matrix3i, HermiteHash> ref_hermites;
 
+    Eigen::Matrix3i ref_hermite = hermite_normal_form(iround(primclex().prim().lattice().inv_lat_column_mat() *
+                                                             niggli(struc.lattice(), primclex().crystallography_tol()).lat_column_mat())).first;
+    ref_hermites.insert(ref_hermite);
+    for(auto &g : primclex().prim().point_group()) {
+      Eigen::Matrix3i transformed = iround(primclex().prim().lattice().lat_column_mat().inverse() * g.matrix() * primclex().prim().lattice().lat_column_mat()) * ref_hermite;
+      Eigen::Matrix3i H_transformed = hermite_normal_form(transformed).first;
+      ref_hermites.insert(H_transformed);
+    }
     mapped_configdof.clear();
     if(m_fixed_components.size() > 0) {
       std::string tcompon = m_fixed_components[0].first;
@@ -584,7 +593,13 @@ namespace CASM {
     // First pass:  Find a reasonable upper bound
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
 
-      const auto &lattice_candidates = _lattices_of_vol(i_vol);
+      std::vector<Lattice> lattice_candidates;
+      if(m_restricted) {
+        lattice_candidates = _lattices_of_vol_restricted(i_vol, ref_hermites);
+      }
+      else {
+        lattice_candidates = _lattices_of_vol(i_vol);
+      }
       if(lattice_candidates.size() == 0) {
         //This means you forced lattices on
         continue;
@@ -638,7 +653,13 @@ namespace CASM {
 
     //Second pass: Find the absolute best mapping
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
-      const std::vector<Lattice> &lat_vec = _lattices_of_vol(i_vol);
+      std::vector<Lattice> lat_vec;
+      if(m_restricted) {
+        lat_vec = _lattices_of_vol_restricted(i_vol, ref_hermites);
+      }
+      else {
+        lat_vec = _lattices_of_vol(i_vol);
+      }
       for(auto it = lat_vec.cbegin(); it != lat_vec.cend(); ++it) {
         if(!deformed_struc_to_configdof_of_lattice(struc,
                                                    *it,
@@ -799,14 +820,77 @@ namespace CASM {
     //Save all the lattices we enumerate in their canonical form
     Index l = 0;
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-      lat_vec.push_back(canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol));
+      Lattice canon_lat = *it;
+      if(!is_canonical_lattice(canon_lat, primclex().prim().point_group(), m_tol)) {
+        canon_lat = canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol);
+      }
+      lat_vec.push_back(canon_lat);
     }
+
 
     //Save the lattices we enumerated to the map, and return their value
     return m_superlat_map[prim_vol] = std::move(lat_vec);
 
   }
 
+  //*******************************************************************************************
+  const std::vector<Lattice> ConfigMapper::_lattices_of_vol_restricted(Index prim_vol, std::unordered_set<Eigen::Matrix3i, HermiteHash> &ref_hermites) const {
+    //If you specified that you wanted certain lattices, return those, otherwise do the
+    //usual enumeration
+    if(this->lattices_are_forced()) {
+      //This may very well return an empty vector, saving painful time enumerating things
+      return m_forced_superlat_map[prim_vol];
+
+    }
+
+    if(!valid_index(prim_vol)) {
+      throw std::runtime_error("Cannot enumerate lattice of volume " + std::to_string(prim_vol) + ", which is out of bounds.\n");
+    }
+
+    //If we already have candidate lattices for the given volume, return those
+    auto it = m_superlat_map.find(prim_vol);
+    if(it != m_superlat_map.end())
+      return it->second;
+
+    //We don't have any lattices for the provided volume, enumerate them all!!!
+    std::vector<Lattice> lat_vec;
+    SupercellEnumerator<Lattice> enumerator(
+      primclex().prim().lattice(),
+      primclex().prim().point_group(),
+      ScelEnumProps(prim_vol, prim_vol + 1));
+
+    //Save all the lattices we enumerate in their canonical form
+    Index l = 0;
+    //std::cout << "size of enumerator" << std::distance(enumerator.begin(),enumerator.end());
+    //std::cout << " size of equivalent set " << ref_hermites.size() << std::endl;
+    for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
+
+      if(std::none_of(ref_hermites.begin(), ref_hermites.end(), [&](const Eigen::Matrix3i x)->bool{
+      return hermite_adjacency(iround(primclex().prim().lattice().inv_lat_column_mat() *
+      it->lat_column_mat()), x);
+      })) {
+        continue;
+      }
+      Lattice canon_lat = *it;
+      if(!is_canonical_lattice(canon_lat, primclex().prim().point_group(), m_tol)) {
+        canon_lat = canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol);
+      }
+      lat_vec.push_back(canon_lat);
+    }
+
+
+    //return the lattices within range of the reference hermite normal form of approximate transf_mat
+    return lat_vec;
+
+  }
+
+  bool ConfigMapper::hermite_adjacency(const Eigen::Matrix3i test, const Eigen::Matrix3i ref) const {
+    auto func = [](int a, int b) {
+      return std::abs(a - b) < 3;
+    };
+    bool all_checks = func(test(0, 0), ref(0, 0)) && func(test(1, 1), ref(1, 1)) && func(test(2, 2), ref(2, 2));
+    return all_checks;
+  }
   //****************************************************************************************************************
 
   namespace ConfigMap_impl {

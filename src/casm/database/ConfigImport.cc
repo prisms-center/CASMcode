@@ -82,7 +82,11 @@ namespace CASM {
       if(lattices_forced_in_settings) {
         m_used["forced_lattices"] = forced_lattice_names;
       }
-
+      bool restricted;
+      kwargs.get_else(restricted, "restricted", false);
+      if(restricted) {
+        m_used["restricted"] = restricted;
+      }
       // -- construct ConfigMapper --
       int map_opt = ConfigMapper::none;
       if(rotate) map_opt |= ConfigMapper::rotate;
@@ -103,6 +107,10 @@ namespace CASM {
         m_configmapper->force_lattices(forced_lattice_names);
       }
 
+      //If the settings specified use boxiness, then force that on the configmapper
+      if(restricted) {
+        m_configmapper->restricted();
+      }
     }
 
     const jsonParser &StructureMap<Configuration>::used() const {
