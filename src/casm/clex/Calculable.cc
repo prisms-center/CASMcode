@@ -121,7 +121,7 @@ namespace CASM {
     if(calctype.empty()) {
       calctype = primclex.settings().default_clex().calctype;
     }
-    auto it = db.find_via_from(this->name());
+    auto it = db.find_via_to(this->name());
     if(it != db.end()) {
       m_calc_properties_map[calctype] = *it;
     }

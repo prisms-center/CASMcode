@@ -3,6 +3,7 @@
 
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/container/Counter.hh"
+#include "casm/crystallography/Lattice.hh"
 
 namespace CASM {
 

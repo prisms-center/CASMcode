@@ -179,6 +179,16 @@ namespace CASM {
       ///
       DiffTransConfigMapperResult import_structure(const fs::path &pos_path) const;
 
+      ///\brief specify to use restricted hermites when mapping
+      void restricted() {
+        m_restricted = true;
+      }
+
+      ///\brief specify which lattices should be searched when mapping configurations
+      void set_forced_lattices(const std::vector<std::string> &lattice_names) {
+        m_lattices_to_force = lattice_names;
+      }
+
     private:
 
       /// \brief loads structures from folder of poscars or compound properties.calc.json
@@ -204,7 +214,8 @@ namespace CASM {
       /// Takes an aligned  set of initial and final position and determines which atoms are moving
       std::vector<Index> _analyze_atoms_ideal(BasicStructure<Site> const &from,
                                               BasicStructure<Site> const &to,
-                                              Configuration const &config,
+                                              const Supercell &scel,
+                                              double uccoord_tol,
                                               std::vector<UnitCellCoord> &from_uccoords,
                                               std::vector<UnitCellCoord> &to_uccoords,
                                               std::set<UnitCellCoord> &vacancy_from,
@@ -220,6 +231,8 @@ namespace CASM {
       double m_tol;
       std::vector<std::pair<std::string, Index> > m_fixed_components;
       const std::vector<Lattice> &_lattices_of_vol(Index prim_vol) const;
+      std::vector<std::string> m_lattices_to_force;
+      bool m_restricted = false;
     };
   }
 

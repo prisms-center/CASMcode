@@ -91,8 +91,9 @@ namespace CASM {
 
     ConfigMapperResult structure_mapping(Structure &host, Structure &other, double lattice_weight) {
       const PrimClex &pclex = PrimClex(host, null_log());
-      ConfigMapper tmp_mapper(pclex, lattice_weight);
-      return tmp_mapper.import_structure(other);
+      ConfigMapper tmp_mapper(pclex, lattice_weight, 0.0);
+      tmp_mapper.set_max_va_frac(0.0);
+      return tmp_mapper.import_structure_occupation(other);
     }
   }
 
@@ -129,7 +130,6 @@ namespace CASM {
       const Supercell &force_scel = CASM::make_supercell(*m_pclex, name);
       const Lattice &force_lat = force_scel.lattice();
       Index force_vol = force_scel.volume();
-
       m_forced_superlat_map[force_vol].push_back(force_lat);
     }
     return;
@@ -537,10 +537,12 @@ namespace CASM {
     Eigen::Matrix3i ref_hermite = hermite_normal_form(iround(primclex().prim().lattice().inv_lat_column_mat() *
                                                              niggli(struc.lattice(), primclex().crystallography_tol()).lat_column_mat())).first;
     ref_hermites.insert(ref_hermite);
-    for(auto &g : primclex().prim().point_group()) {
-      Eigen::Matrix3i transformed = iround(primclex().prim().lattice().lat_column_mat().inverse() * g.matrix() * primclex().prim().lattice().lat_column_mat()) * ref_hermite;
-      Eigen::Matrix3i H_transformed = hermite_normal_form(transformed).first;
-      ref_hermites.insert(H_transformed);
+    if(m_restricted) {
+      for(auto &g : primclex().prim().point_group()) {
+        Eigen::Matrix3i transformed = iround(primclex().prim().lattice().lat_column_mat().inverse() * g.matrix() * primclex().prim().lattice().lat_column_mat()) * ref_hermite;
+        Eigen::Matrix3i H_transformed = hermite_normal_form(transformed).first;
+        ref_hermites.insert(H_transformed);
+      }
     }
     mapped_configdof.clear();
     if(m_fixed_components.size() > 0) {
@@ -562,13 +564,11 @@ namespace CASM {
       double max_va_frac_limit = double(max_n_va) / double(primclex().prim().basis.size());
       double t_min_va_frac = min(min_va_frac(), max_va_frac_limit);
       double t_max_va_frac = min(max_va_frac(), max_va_frac_limit);
-
       // min_vol assumes min number vacancies -- best case scenario
       min_vol = ceil((num_atoms / (double(primclex().prim().basis.size())) * 1. - t_min_va_frac) - m_tol);
 
       // This is for the worst case scenario -- lots of vacancies
       max_vol = ceil(num_atoms / (double(primclex().prim().basis.size()) * (1.0 - t_max_va_frac)) - m_tol);
-
       if(t_max_va_frac > TOL) {
         //Nvol is rounded integer volume-- assume that answer is within 30% of this volume, and use it to tighten our bounds
         int Nvol = round(std::abs(struc.lattice().vol() / primclex().prim().lattice().vol()));
@@ -604,7 +604,6 @@ namespace CASM {
         //This means you forced lattices on
         continue;
       }
-
       tlat = ConfigMapping::find_nearest_super_lattice(primclex().prim().lattice(),
                                                        struc.lattice(),
                                                        primclex().prim().point_group(),

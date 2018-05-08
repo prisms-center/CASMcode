@@ -123,12 +123,10 @@ namespace CASM {
           //          do not import
           //      !better_score:
           //        do not import
-
           // if could not map, no data, or do not import data, continue
           if(res.mapped_props.to.empty() || !res.has_data || !m_import_data) {
             continue;
           }
-
           // else we will try to import data
           // for import we currently don't have a way to get the initial config,
           // so set from = to, if not already so

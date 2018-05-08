@@ -230,7 +230,7 @@ namespace CASM {
     ///\brief unset the enforcement of particular lattices (default behavior)
     void unforce_lattices() const;
 
-    ///\brief specify to use boxiness when mapping
+    ///\brief specify to use restricted hermites when mapping
     void restricted() {
       m_restricted = true;
     }

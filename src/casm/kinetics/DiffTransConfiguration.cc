@@ -210,7 +210,6 @@ namespace CASM {
 
     /// Writes the DiffTransConfiguration to JSON
     jsonParser &DiffTransConfiguration::to_json(jsonParser &json) const {
-
       if(!has_valid_from_occ()) {
         throw std::runtime_error("Attempting to write a diff trans config to json with invalid from occ");
       }

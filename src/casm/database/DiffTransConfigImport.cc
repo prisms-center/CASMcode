@@ -58,6 +58,19 @@ namespace CASM {
       m_used["min_va_frac"] = min_va_frac;
       m_used["max_va_frac"] = max_va_frac;
 
+      //These are names of the lattices you want to restrict searches to
+      std::vector<std::string> forced_lattice_names;
+      kwargs.get_else(forced_lattice_names, "forced_lattices", std::vector<std::string>());
+
+      bool lattices_forced_in_settings = (forced_lattice_names.size() > 0);
+      if(lattices_forced_in_settings) {
+        m_used["forced_lattices"] = forced_lattice_names;
+      }
+      bool restricted;
+      kwargs.get_else(restricted, "restricted", false);
+      if(restricted) {
+        m_used["restricted"] = restricted;
+      }
       // -- construct ConfigMapper --
       int map_opt = Kinetics::DiffTransConfigMapper::Options::none;
       if(rotate) map_opt |= Kinetics::DiffTransConfigMapper::Options::rotate;
@@ -73,6 +86,15 @@ namespace CASM {
       m_difftransconfigmapper->set_min_va_frac(min_va_frac);
       m_difftransconfigmapper->set_max_va_frac(max_va_frac);
 
+      //If the settings specified at least one lattice, then force that on the configmapper
+      if(lattices_forced_in_settings) {
+        m_difftransconfigmapper->set_forced_lattices(forced_lattice_names);
+      }
+
+      //If the settings specified use boxiness, then force that on the configmapper
+      if(restricted) {
+        m_difftransconfigmapper->restricted();
+      }
     }
 
     const jsonParser &StructureMap<Kinetics::DiffTransConfiguration>::used() const {
@@ -113,6 +135,10 @@ namespace CASM {
         //Maybe move kra calculation from DiffTransConfigMapping to here
       }
       // insert in database (note that this also/only inserts primitive)
+      if(!map_result.config->has_valid_from_occ()) {
+        throw std::runtime_error("You forgot to set m_from_config_is_A");
+
+      }
       Kinetics::DiffTransConfigInsertResult insert_result = map_result.config->insert();
       res.is_new_config = insert_result.insert_canonical;
       res.mapped_props.to = insert_result.canonical_it->name();

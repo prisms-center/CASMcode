@@ -62,7 +62,6 @@ namespace CASM {
     DiffTransConfigMapperResult DiffTransConfigMapper::import_structure_occupation(
       const fs::path &pos_path,
       const Kinetics::DiffTransConfiguration *hint_ptr) const {
-      //	std::cout << "pos path is " << pos_path << std::endl;
       DiffTransConfigMapperResult result;
       result.structures = _get_structures(pos_path);
       ConfigMapper mapper(primclex(),
@@ -71,20 +70,31 @@ namespace CASM {
                           m_robust_flag || m_rotate_flag || m_strict_flag,
                           primclex().crystallography_tol());
       //Find out which species are moving from which basis site to the other
-
+      mapper.set_max_va_frac(m_max_va_frac);
+      mapper.set_min_va_frac(m_min_va_frac);
+      if(m_restricted) {
+        mapper.restricted();
+      }
+      if(m_lattices_to_force.size()) {
+        mapper.force_lattices(m_lattices_to_force);
+      }
       if(hint_ptr != nullptr) {
         Configuration tmp = hint_ptr->from_config().canonical_form();
         std::vector<std::string> scelname;
         scelname.push_back(tmp.supercell().name());
+        mapper.unforce_lattices();
         mapper.force_lattices(scelname);
         //	*result.config =*hint_ptr;
       }
       //      else {
       ConfigDoF from_dof;
+      ConfigDoF to_dof;
       Lattice from_lat;
+      Lattice to_lat;
       Eigen::Matrix3d cart_op;
       std::vector<Index> best_assign;
       mapper.struc_to_configdof(result.structures[0], from_dof, from_lat, best_assign, cart_op);
+      mapper.struc_to_configdof(result.structures.back(), to_dof, to_lat);
       auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_lat);
       Configuration non_canon_from_config(scel_ptr, jsonParser(), from_dof);
       std::vector<UnitCellCoord> from_uccoords;
@@ -106,20 +116,23 @@ namespace CASM {
       BasicStructure<Site> from = result.structures[0];
       BasicStructure<Site> to = result.structures[result.structures.size() - 1];
       //std::cout << "unconditioned from struc" << std::endl;
-      ///from.print_xyz(std::cout,true);
+      //from.print_xyz(std::cout,true);
       //std::cout << "unconditioned to struc" << std::endl;
-      ///to.print_xyz(std::cout,true);
+      //to.print_xyz(std::cout,true);
       _precondition_from_and_to(cart_op, non_canon_from_config.deformation(), t_shift.const_cart(), from, to);
-      ///std::cout << "cart_op"<<cart_op<< std::endl;
-      ///std::cout << "deformation"<<non_canon_from_config.deformation()<< std::endl;
-      ///std::cout << "trans" << t_shift.const_cart() << std::endl;
-      ///std::cout << "from struc" << std::endl;
-      ///from.print_xyz(std::cout,true);
-      ///std::cout << "to struc" << std::endl;
-      ///to.print_xyz(std::cout,true);
+      //std::cout << "cart_op"<<cart_op<< std::endl;
+      //std::cout << "deformation"<<non_canon_from_config.deformation()<< std::endl;
+      //std::cout << "trans" << t_shift.const_cart() << std::endl;
+      //std::cout << "from struc" << std::endl;
+      //from.print_xyz(std::cout,true);
+      //std::cout << "to struc" << std::endl;
+      //to.print_xyz(std::cout,true);
+      double uccoord_tol = 1.1 * max(from_dof.displacement().colwise().norm().maxCoeff(), to_dof.displacement().colwise().norm().maxCoeff()) + cuberoot(abs(from_lat.vol())) * primclex().crystallography_tol();
+      //std::cout << "uccoord_tol " << uccoord_tol <<std::endl;
       std::vector<Index> moving_atoms = _analyze_atoms_ideal(from,
                                                              to,
-                                                             from_config,
+                                                             *scel_ptr,
+                                                             uccoord_tol,
                                                              from_uccoords,
                                                              to_uccoords,
                                                              vacancy_from,
@@ -153,6 +166,9 @@ namespace CASM {
       from_config.init_displacement();
       //std::cout << "from config is " << std::endl << from_config << std::endl;
       result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
+      if(!result.config->has_valid_from_occ()) {
+        throw std::runtime_error("Moving forward with invalid diff_trans_config is a bad idea.");
+      }
       //std::cout << "to config is " << std::endl << non_canon_to_config << std::endl;
       //NEED TO SET ORBIT NAME OF DTC SOMEHOW FOR NEW DIFF TRANS
       PrimPeriodicDiffTransSymCompare sym_c {primclex().crystallography_tol()};
@@ -166,16 +182,19 @@ namespace CASM {
       //    }
 
       //use this to interpolate same amount of images
+
       Kinetics::DiffTransConfigInterpolation interpolater(result.config->diff_trans(), result.config->from_config(), result.config->to_config(), result.structures.size() - 2); //<- using current calctype here
       int image_no = 0;
       for(auto it = interpolater.begin(); it != interpolater.end(); ++it) {
         result.relaxation_properties.push_back(jsonParser());
         result.relaxation_properties[image_no].put_obj();
-        Structure pseudoprim = make_deformed_struc(*it);
-        Structure img = Structure(result.structures[image_no]);
-        ConfigMapperResult tmp_result = ConfigMapping::structure_mapping(pseudoprim, img, lattice_weight());
-        result.relaxation_properties[image_no]["lattice_deformation"] = tmp_result.relaxation_properties["best_mapping"]["lattice_deformation"];
-        result.relaxation_properties[image_no]["basis_deformation"] = tmp_result.relaxation_properties["best_mapping"]["basis_deformation"];
+        //Structure pseudoprim = make_deformed_struc(*it);
+        //Structure img = Structure(result.structures[image_no]);
+        // ConfigMapperResult tmp_result = ConfigMapping::structure_mapping(pseudoprim, img, lattice_weight());
+        //result.relaxation_properties[image_no]["lattice_deformation"] = tmp_result.relaxation_properties["best_mapping"]["lattice_deformation"];
+        result.relaxation_properties[image_no]["lattice_deformation"] = -1.0;
+        //result.relaxation_properties[image_no]["basis_deformation"] = tmp_result.relaxation_properties["best_mapping"]["basis_deformation"];
+        result.relaxation_properties[image_no]["basis_deformation"] = -1.0;
         image_no++;
       }
 
@@ -203,7 +222,8 @@ namespace CASM {
 
     std::vector<Index> DiffTransConfigMapper::_analyze_atoms_ideal(const BasicStructure<Site> &from,
                                                                    const BasicStructure<Site> &to,
-                                                                   const Configuration &config,
+                                                                   const Supercell &scel,
+                                                                   double uccoord_tol,
                                                                    std::vector<UnitCellCoord> &from_uccoords,
                                                                    std::vector<UnitCellCoord> &to_uccoords,
                                                                    std::set<UnitCellCoord> &vacancy_from,
@@ -211,18 +231,16 @@ namespace CASM {
       // For image 00 set reference of POSCAR index to  basis site linear index
       // tolerance for UnitCellCoord mapping has 20% wiggle room from max displacement
       // instead of introducing wiggle room maybe take max disp between from map and to map
-      double max_disp = config.displacement().colwise().norm().maxCoeff() * 1.2 + primclex().crystallography_tol();
       int from_count = 0;
       for(auto &site : from.basis) {
-        site.print(std::cout);
-        from_uccoords.push_back(_site_to_uccoord(site, primclex(), max_disp));
+        from_uccoords.push_back(scel.prim_grid().within(_site_to_uccoord(site, primclex(), uccoord_tol)));
         from_count++;
       }
 
       // For last image  find POSCAR index to basis site linear index
       int to_count = 0;
       for(auto &site : to.basis) {
-        to_uccoords.push_back(_site_to_uccoord(site, primclex(), max_disp));
+        to_uccoords.push_back(scel.prim_grid().within(_site_to_uccoord(site, primclex(), uccoord_tol)));
         to_count++;
       }
       std::vector<Index> moving_atoms;
