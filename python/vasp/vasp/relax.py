@@ -5,9 +5,9 @@ import vasp, io
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
 
-        The relaxation is initialized in a directory containing VASP input files, called 'relaxdir'.
+        The relaxation is initialized in a directory containing VASP input files, called 'calcdir'.
         It then creates the following directory structure:
-        .../relaxdir/
+        .../calcdir/
             run.0/
             run.1/
             ...
@@ -19,18 +19,18 @@ class Relax(object):
         'run.final' is a final constant volume run {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}.
 
         Contains:
-            self.relaxdir  (.../relax)
+            self.calcdir  (.../relax)
             self.rundir    (list of .../relax/run.i)
             self.finaldir (.../relax/run.final)
     """
-    def __init__(self, relaxdir=None, settings=None):
+    def __init__(self, calcdir=None, settings=None):
         """
         Construct a VASP relaxation job object.
 
         Args:
             configdir:  path to vasp relaxation directory
             settings:   dictionary-like object containing settings, or if None, it reads
-                        the json file: .../relaxdir/relax.json
+                        the json file: .../calcdir/relax.json
 
                 possible settings keys are:
                     used by vasp.run() function:
@@ -47,21 +47,21 @@ class Relax(object):
         print "Constructing a VASP Relax object"
         sys.stdout.flush()
 
-        # store path to .../relaxdir, and create if not existing
-        if relaxdir is None:
-            relaxdir = os.getcwd()
-        self.relaxdir = os.path.abspath(relaxdir)
+        # store path to .../calcdir, and create if not existing
+        if calcdir is None:
+            calcdir = os.getcwd()
+        self.calcdir = os.path.abspath(calcdir)
 
-        print "  Relax directory:", self.relaxdir
+        print "  Relax directory:", self.calcdir
         sys.stdout.flush()
 
-        # find existing .../relaxdir/run.run_index directories, store paths in self.rundir list
+        # find existing .../calcdir/run.run_index directories, store paths in self.rundir list
         self.rundir = []
         self.errdir = []
         self.update_rundir()
         self.update_errdir()
 
-        self.finaldir = os.path.join(self.relaxdir, "run.final")
+        self.finaldir = os.path.join(self.calcdir, "run.final")
 
         if settings is None:
             self.settings = dict()
@@ -94,7 +94,7 @@ class Relax(object):
 
     def add_rundir(self):
         """Make a new run.i directory"""
-        os.mkdir(os.path.join(self.relaxdir, "run." + str(len(self.rundir))))
+        os.mkdir(os.path.join(self.calcdir, "run." + str(len(self.rundir))))
         self.update_rundir()
         self.update_errdir()
 
@@ -103,8 +103,8 @@ class Relax(object):
         """Find all .../config/vasp/relax/run.i directories, store paths in self.rundir list"""
         self.rundir = []
         run_index = len(self.rundir)
-        while os.path.isdir( os.path.join(self.relaxdir, "run." + str(run_index))):
-                self.rundir.append( os.path.join(self.relaxdir, "run." + str(run_index)) )
+        while os.path.isdir( os.path.join(self.calcdir, "run." + str(run_index))):
+                self.rundir.append( os.path.join(self.calcdir, "run." + str(run_index)) )
                 run_index += 1
 
 
@@ -131,18 +131,18 @@ class Relax(object):
 
         print "Moving files into initial run directory:", initdir
         initdir = os.path.abspath(initdir)
-        for p in os.listdir(self.relaxdir):
-            if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.relaxdir, p) != initdir):
-                os.rename(os.path.join(self.relaxdir,p), os.path.join(initdir,p))
+        for p in os.listdir(self.calcdir):
+            if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.calcdir, p) != initdir):
+                os.rename(os.path.join(self.calcdir,p), os.path.join(initdir,p))
         print ""
         sys.stdout.flush()
 
         # Keep a backup copy of the base INCAR
-        shutil.copyfile(os.path.join(initdir,"INCAR"),os.path.join(self.relaxdir,"INCAR.base"))
+        shutil.copyfile(os.path.join(initdir,"INCAR"),os.path.join(self.calcdir,"INCAR.base"))
 
         # If an initial incar is called for, copy it in and set the appropriate flag
-        if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["initial"]))):
-            new_values = io.Incar(os.path.join(self.relaxdir,self.settings["initial"])).tags
+        if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.calcdir,self.settings["initial"]))):
+            new_values = io.Incar(os.path.join(self.calcdir,self.settings["initial"])).tags
             io.set_incar_tag(new_values, initdir)
             print "  Set INCAR tags:", new_values, "\n"
             sys.stdout.flush()
@@ -217,15 +217,15 @@ class Relax(object):
             elif task == "relax":
                 self.add_rundir()
                 vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
-                shutil.copyfile(os.path.join(self.relaxdir,"INCAR.base"),os.path.join(self.rundir[-1],"INCAR"))
+                shutil.copyfile(os.path.join(self.calcdir,"INCAR.base"),os.path.join(self.rundir[-1],"INCAR"))
 
             elif task == "constant":
                 self.add_rundir()
                 vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
                 # set INCAR to ISIF = 2, ISMEAR = -5, NSW = 0, IBRION = -1
-                if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["final"]))):
-                    new_values = io.Incar(os.path.join(self.relaxdir, self.settings["final"])).tags
+                if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.calcdir,self.settings["final"]))):
+                    new_values = io.Incar(os.path.join(self.calcdir, self.settings["final"])).tags
                 else:
                     new_values = {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}
 
@@ -273,7 +273,7 @@ class Relax(object):
                                         "ngy" : init_outcar.ngy*2,
                                         "ngz" : init_outcar.ngz*2}
                                     print ng_tags
-                                    io.set_incar_tag(ng_tags, self.relaxdir, "INCAR.base")
+                                    io.set_incar_tag(ng_tags, self.calcdir, "INCAR.base")
                     break
 
                 # else, attempt to fix first error

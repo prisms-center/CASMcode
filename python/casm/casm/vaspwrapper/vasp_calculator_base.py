@@ -250,7 +250,8 @@ class VaspCalculatorBase(object):
 
                 # ensure results report written
                 if not os.path.isfile(os.path.join(config_data["calcdir"], "properties.calc.json")):
-                    self.finalize(config_data)
+                    if (is_converged(calculation)):
+                        self.finalize(config_data)
 
                 continue
 
@@ -403,7 +404,8 @@ class VaspCalculatorBase(object):
                         sys.stdout.flush()
 
                 # write results to properties.calc.json
-                self.finalize(config_data)
+                if (is_converged(calculation)):
+                    self.finalize(config_data)
                 continue
 
             elif status == "not_converging":
@@ -471,7 +473,8 @@ class VaspCalculatorBase(object):
                         sys.stdout.flush()
 
                 # write results to properties.calc.json
-                self.finalize(config_data)
+                if is_converged(calculation):
+                    self.finalize(config_data)
 
             else:
                 self.report_status(config_data["calcdir"], "failed", "unknown")
@@ -544,6 +547,7 @@ class VaspCalculatorBase(object):
         # Verify that the last relaxation reached electronic convergence
         for i in range(len(calculation.rundir)):
             try:
+                print calculation.rundir[-i-1]
                 vrun_oszicar = vasp.io.Oszicar(os.path.join(calculation.calcdir, calculation.rundir[-i-1],
                                                             self.results_subdir, "OSZICAR"))
                 vrun_nelm = vasp.io.get_incar_tag("NELM", os.path.join(calculation.calcdir, calculation.rundir[-i-1]))
