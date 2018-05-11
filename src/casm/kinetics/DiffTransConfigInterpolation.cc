@@ -157,7 +157,7 @@ namespace CASM {
           enumerator.at_step(i)->write_pos(file);
         }
         jsonParser endpts_json;
-        fs::ofstream endpts(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(n_images)) / "endpoint_props.json");
+        fs::ofstream endpts(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(length)) / "endpoint_props.json");
         std::vector<std::string> tokens;
         std::string name = config.from_config().name();
         boost::split(tokens, name, boost::is_any_of("."), boost::token_compress_on);

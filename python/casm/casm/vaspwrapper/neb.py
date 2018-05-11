@@ -6,6 +6,8 @@ import json
 import shutil
 import vasp
 import casm
+import pandas
+from casm.project import Project, Selection
 import vaspwrapper
 from casm.vaspwrapper.vasp_calculator_base import VaspCalculatorBase
 from vasp import Neb as calculator
@@ -116,15 +118,15 @@ class Neb(VaspCalculatorBase):
             conf_dict = {"n_images" : config_data["n_images"],
                          "endstate_calctype" : config_data["endstate_calctype"]}
             dict[config_data["name"]] = conf_dict
-            try:
-                os.makedirs(config_data["calcdir"])
-            except:
-                pass
-            try:
-                for i in range(config_data["n_images"] + 2):
-                    os.makedirs(os.path.join(config_data["calcdir"], 'poscars', str(i).zfill(2)))
-            except:
-                pass
+            #try:
+            #    os.makedirs(config_data["calcdir"])
+            #except:
+            #    pass
+            #try:
+            #    for i in range(config_data["n_images"] + 2):
+                   #os.makedirs(os.path.join(config_data["calcdir"], 'poscars', str(i).zfill(2)))
+            #except:
+            #    pass
         dict["n_images"] = conf_dict["n_images"]
         dict["endstate_calctype"] = conf_dict["endstate_calctype"]
         dict["calctype"]=self.calctype
@@ -157,8 +159,22 @@ class Neb(VaspCalculatorBase):
                 POSCAR: sample structure of the configuration to be relaxed
 
         """
+        settings = self.read_settings(config_data["setfile"])
+        difftransconfigname=config_data["name"]
+        sel_tmp = Selection(self.selection.proj, "EMPTY", "diff_trans_config", False)
+        sel_tmp.data = pandas.DataFrame({"name":difftransconfigname, "selected":1},index=range(1))
+        sel_tmp = sel_tmp.saveas(os.path.join(self.selection.proj.path, ".casm/tmp","mirrors"),True)
+        sel_config = Selection(self.selection.proj,os.path.join(self.selection.proj.path, ".casm/tmp","mirrors"), "diff_trans_config", False)
+        sel_config.query(["and(rs(from_configname,to_configname),rs(to_configname,from_configname))"])
+        symmetric=bool(sel_config.data["and(rs(from_configname,to_configname),rs(to_configname,from_configname))"].loc[0])
+        override_mirrors=False
+        if "override_mirrors" in settings.keys():
+            override_mirrors=settings["override_mirrors"]
+        if (not override_mirrors and symmetric):
+            config_data["calcdir"] = config_data["calcdir"][:-1] + "1"
         super(Neb, self).config_setup(config_data)
         ## settings the images tag in incar file
+        
         tmp_dict = {"images": config_data["n_images"]}
         vasp.io.set_incar_tag(tmp_dict, config_data["calcdir"])
 

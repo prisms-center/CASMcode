@@ -386,6 +386,7 @@ class VaspCalculatorBase(object):
         """run the job of a selection"""
         for index,config_data in self.selection.data.iterrows():
             settings = self.read_settings(config_data["setfile"])
+            print config_data["calcdir"]
             calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
 
             # check the current status
