@@ -11,6 +11,7 @@ from casm.project import Project, Selection
 import vaspwrapper
 from casm.vaspwrapper.vasp_calculator_base import VaspCalculatorBase
 from vasp import Neb as calculator
+from vasp import Relax as fake_calculator
     
 def shuffle_endpoint_props(myjson,pos):
     positions=map(lambda site: site.position.tolist(),pos.basis)
@@ -89,6 +90,7 @@ class Neb(VaspCalculatorBase):
         VaspCalculatorBase.__init__(self, selection, calctype, auto, sort)
         self.results_subdir = '01'
         self.calculator = calculator
+        self.fake_calculator = fake_calculator
 
     def config_properties(self, config_data):
         """return configuration properties as a dict"""
@@ -182,16 +184,258 @@ class Neb(VaspCalculatorBase):
         """returns filenames of a vasp neb calculation"""
         vaspfiles = super(Neb, self).get_vasp_input_files(config_data, settings)
         incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files = vaspfiles
-        super_poscarfile = os.path.join(config_data["calcdir"], "poscars", "00", "POSCAR")
+        super_poscarfile = os.path.join(config_data["calcdir"], "poscars", "01", "POSCAR")
         return incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files
 
     def submit(self):
         """submit a job for each configuration"""
-        super(Neb, self).submit()
+        self.pre_setup()
+        db = pbs.JobDB()
+        for index,config_data in self.selection.data.iterrows():
+            settings = self.read_settings(config_data["setfile"])
+            difftransconfigname=config_data["name"]
+            sel_tmp = Selection(self.selection.proj, "EMPTY", "diff_trans_config", False)
+            sel_tmp.data = pandas.DataFrame({"name":difftransconfigname, "selected":1},index=range(1))
+            sel_tmp = sel_tmp.saveas(os.path.join(self.selection.proj.path, ".casm/tmp","mirrors"),True)
+            sel_config = Selection(self.selection.proj,os.path.join(self.selection.proj.path, ".casm/tmp","mirrors"), "diff_trans_config", False)
+            sel_config.query(["and(rs(from_configname,to_configname),rs(to_configname,from_configname))"])
+            symmetric=bool(sel_config.data["and(rs(from_configname,to_configname),rs(to_configname,from_configname))"].loc[0])
+            override_mirrors=False
+            if "override_mirrors" in settings.keys():
+                override_mirrors=settings["override_mirrors"]
+            if (not override_mirrors and symmetric):
+                config_data["calcdir"] = config_data["calcdir"][:-1] + "1"
+            print "Submitting..."
+            print "Configuration:", config_data["name"]
+            #first, check if the job has already been submitted and is not completed
+            print "Calculation directory:", config_data["calcdir"]
+            id = db.select_regex_id("rundir", config_data["calcdir"])
+            print "JobID:", id
+            sys.stdout.flush()
+            try:
+                if id != []:
+                    db.update()
+                    for j in id:
+                        job = db.select_job(j)
+                        if job["jobstatus"] != "C":
+                            print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
+                            sys.stdout.flush()
+                            raise BreakException
+            except BreakException:
+                continue
+            settings = self.read_settings(config_data["setfile"])
+            # construct the Relax object
+            if (not override_mirrors and symmetric):
+                settings["subdir"] ="01"
+                calculation = self.fake_calculator(config_data["calcdir"], self.run_settings(settings))
+            else:
+                calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
+            # check the current status
+            (status, task) = calculation.status()
+
+            if status == "complete":
+                print "Status:", status, "  Not submitting."
+                sys.stdout.flush()
+
+                # ensure job marked as complete in db
+                if self.auto:
+                    for j in id:
+                        job = db.select_job(j)
+                        if job["taskstatus"] == "Incomplete":
+                            try:
+                                pbs.complete_job(jobid=j)
+                            except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                                print str(e)
+                                sys.stdout.flush()
+
+                # ensure results report written
+                if not os.path.isfile(os.path.join(config_data["calcdir"], "properties.calc.json")):
+                    if (is_converged(calculation)):
+                        self.finalize(config_data)
+
+                continue
+
+            elif status == "not_converging":
+                print "Status:", status, "  Not submitting."
+                sys.stdout.flush()
+                continue
+
+            elif status != "incomplete":
+                raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+                sys.stdout.flush()
+                continue
+
+            print "Preparing to submit a VASP relaxation PBS job"
+            sys.stdout.flush()
+
+            # cd to configdir, submit jobs from configdir, then cd back to currdir
+            currdir = os.getcwd()
+            os.chdir(config_data["calcdir"])
+
+            self.config_setup(config_data)
+            nodes, ppn = self._calc_submit_node_info(settings, config_data)
+
+            # construct command to be run
+            cmd = ""
+            if settings["preamble"] is not None:
+                # Append any instructions given in the 'preamble' file, if given
+                preamble = self.casm_directories.settings_path_crawl(settings["preamble"],
+                                                                     config_data["name"],
+                                                                     self.clex,
+                                                                     self.calc_subdir)
+                with open(preamble) as my_preamble:
+                    cmd += "".join(my_preamble)
+            # Or just execute a single prerun line, if given
+            if settings["prerun"] is not None:
+                cmd += settings["prerun"] + "\n"
+            cmd += self.run_cmd(config_data["configdir"], self.calctype)
+            if settings["postrun"] is not None:
+                cmd += settings["postrun"] + "\n"
+
+            print "Constructing a PBS job"
+            sys.stdout.flush()
+            # construct a pbs.Job
+            job = pbs.Job(name=casm.jobname(config_data["configdir"]),\
+                          account=settings["account"],\
+                          nodes=nodes, ppn=ppn,\
+                          walltime=settings["walltime"],\
+                          pmem=settings["pmem"],\
+                          qos=settings["qos"],\
+                          queue=settings["queue"],\
+                          message=settings["message"],\
+                          email=settings["email"],\
+                          priority=settings["priority"],\
+                          command=cmd,\
+                          auto=self.auto,
+			  software=db.config["software"])
+
+            print "Submitting"
+            sys.stdout.flush()
+            # submit the job
+            job.submit()
+            self.report_status(config_data["calcdir"], "submitted")
+
+            # return to current directory
+            os.chdir(currdir)
+
+            print "CASM VASPWrapper relaxation PBS job submission complete\n"
+            sys.stdout.flush()
+               
 
     def run(self):
-        """runs the neb calcutation on the selection"""
-        super(Neb, self).run()
+        """runs the neb calculation on the selection"""
+        for index,config_data in self.selection.data.iterrows():
+            settings = self.read_settings(config_data["setfile"])
+            difftransconfigname=config_data["name"]
+            sel_tmp = Selection(self.selection.proj, "EMPTY", "diff_trans_config", False)
+            sel_tmp.data = pandas.DataFrame({"name":difftransconfigname, "selected":1},index=range(1))
+            sel_tmp = sel_tmp.saveas(os.path.join(self.selection.proj.path, ".casm/tmp","mirrors"),True)
+            sel_config = Selection(self.selection.proj,os.path.join(self.selection.proj.path, ".casm/tmp","mirrors"), "diff_trans_config", False)
+            sel_config.query(["and(rs(from_configname,to_configname),rs(to_configname,from_configname))"])
+            symmetric=bool(sel_config.data["and(rs(from_configname,to_configname),rs(to_configname,from_configname))"].loc[0])
+            override_mirrors=False
+            if "override_mirrors" in settings.keys():
+                override_mirrors=settings["override_mirrors"]
+            if (not override_mirrors and symmetric):
+                config_data["calcdir"] = config_data["calcdir"][:-1] + "1"
+            if (not override_mirrors and symmetric):
+                settings["subdir"] ="01"
+                calculation = self.fake_calculator(config_data["calcdir"], self.run_settings(settings))
+            else:
+                calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
+
+            # check the current status
+            (status, task) = calculation.status()
+
+            if status == "complete":
+                print "Status:", status
+                sys.stdout.flush()
+
+                # mark job as complete in db
+                if self.auto:
+                    try:
+                        pbs.complete_job()
+                    except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                        print str(e)
+                        sys.stdout.flush()
+
+                # write results to properties.calc.json
+                if (is_converged(calculation)):
+                    self.finalize(config_data)
+                continue
+
+            elif status == "not_converging":
+                print "Status:", status
+                self.report_status(config_data["calcdir"], "failed", "run_limit")
+                print "Returning"
+                sys.stdout.flush()
+                continue
+
+            elif status == "incomplete":
+
+
+                self.report_status(config_data["calcdir"], "started")
+                (status, task) = calculation.run()
+
+            else:
+                self.report_status(config_data["calcdir"], "failed", "unknown")
+                raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            sys.stdout.flush()
+
+
+            # once the run is done, update database records accordingly
+
+            if status == "not_converging":
+
+                # mark error
+                if self.auto:
+                    try:
+                        pbs.error_job("Not converging")
+                    except (pbs.PBSError, pbs.JobDBError) as e:
+                        print str(e)
+                        sys.stdout.flush()
+
+                print "Not Converging!"
+                sys.stdout.flush()
+                self.report_status(config_data["calcdir"], "failed", "run_limit")
+
+                # print a local settings file, so that the run_limit can be extended if the
+                #   convergence problems are fixed
+
+                config_set_dir = self.casm_directories.configuration_calc_settings_dir(config_data["name"],
+                                                                                       self.clex,
+                                                                                       self.calc_subdir)
+
+                try:
+                    os.makedirs(config_set_dir)
+                except:
+                    pass
+                settingsfile = os.path.join(config_set_dir, "calc.json")
+                vaspwrapper.write_settings(settings, settingsfile)
+
+                print "Writing:", settingsfile
+                print "Edit the 'run_limit' property if you wish to continue."
+                sys.stdout.flush()
+                continue
+
+            elif status == "complete":
+
+                # mark job as complete in db
+                if self.auto:
+                    try:
+                        pbs.complete_job()
+                    except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                        print str(e)
+                        sys.stdout.flush()
+
+                # write results to properties.calc.json
+                if is_converged(calculation):
+                    self.finalize(config_data)
+
+            else:
+                self.report_status(config_data["calcdir"], "failed", "unknown")
+                raise vaspwrapper.VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
+            sys.stdout.flush()
 
     def report(self):
         """reports results for the selection"""

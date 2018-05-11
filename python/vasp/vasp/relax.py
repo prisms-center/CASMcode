@@ -22,6 +22,7 @@ class Relax(object):
             self.calcdir  (.../relax)
             self.rundir    (list of .../relax/run.i)
             self.finaldir (.../relax/run.final)
+            self.subdir (adds to path of run.i for subdirectory runs)
     """
     def __init__(self, calcdir=None, settings=None):
         """
@@ -46,7 +47,7 @@ class Relax(object):
 
         print "Constructing a VASP Relax object"
         sys.stdout.flush()
-
+        self.subdir = ""
         # store path to .../calcdir, and create if not existing
         if calcdir is None:
             calcdir = os.getcwd()
@@ -87,6 +88,8 @@ class Relax(object):
             self.settings["compress"] = []
         if not "err_types" in self.settings:
             self.settings["err_types"] = ['SubSpaceMatrixError']
+        if "subdir" in self.settings:
+            self.subdir=self.settings["subdir"]
 
         print "VASP Relax object constructed\n"
         sys.stdout.flush()
@@ -94,7 +97,7 @@ class Relax(object):
 
     def add_rundir(self):
         """Make a new run.i directory"""
-        os.mkdir(os.path.join(self.calcdir, "run." + str(len(self.rundir))))
+        os.makedirs(os.path.join(self.calcdir, "run." + str(len(self.rundir)),self.subdir))
         self.update_rundir()
         self.update_errdir()
 
@@ -103,8 +106,8 @@ class Relax(object):
         """Find all .../config/vasp/relax/run.i directories, store paths in self.rundir list"""
         self.rundir = []
         run_index = len(self.rundir)
-        while os.path.isdir( os.path.join(self.calcdir, "run." + str(run_index))):
-                self.rundir.append( os.path.join(self.calcdir, "run." + str(run_index)) )
+        while os.path.isdir( os.path.join(self.calcdir, "run." + str(run_index),self.subdir)):
+                self.rundir.append( os.path.join(self.calcdir, "run." + str(run_index),self.subdir) )
                 run_index += 1
 
 
@@ -136,7 +139,10 @@ class Relax(object):
                 os.rename(os.path.join(self.calcdir,p), os.path.join(initdir,p))
         print ""
         sys.stdout.flush()
-
+        if "subdir" in settings:
+            if settings["subdir"]=="01":
+                new_values = {"IMAGES":None,"SPRING":None}
+                io.set_incar_tag(new_values,initdir)
         # Keep a backup copy of the base INCAR
         shutil.copyfile(os.path.join(initdir,"INCAR"),os.path.join(self.calcdir,"INCAR.base"))
 
