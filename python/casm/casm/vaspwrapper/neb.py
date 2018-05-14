@@ -1,4 +1,5 @@
 """Defines the neb module methods"""
+import pbs
 import numpy as np
 import os
 import sys
