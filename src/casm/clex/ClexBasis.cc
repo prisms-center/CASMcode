@@ -33,7 +33,7 @@ namespace CASM {
 
   ClexBasis::ClexBasis(Structure const &_prim, jsonParser const &_bspecs) :
     m_prim_ptr(&_prim),
-    m_basis_builder(std::unique_ptr<ClexBasisBuilder>(new InvariantPolyBasisBuilder())),
+    m_basis_builder(std::unique_ptr<ClexBasisBuilder>(new InvariantPolyBasisBuilder("invariant_poly"))),
     m_bspecs(_bspecs) {
 
     _populate_site_bases();

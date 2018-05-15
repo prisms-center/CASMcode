@@ -2,6 +2,8 @@
 #define CASM_IntegralCluster_impl
 
 #include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/symmetry/Orbit.hh"
 
 namespace CASM {
 

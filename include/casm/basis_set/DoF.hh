@@ -1,9 +1,11 @@
 #ifndef DOF_HH
 #define DOF_HH
+
 #include<vector>
 #include<set>
 #include<functional>
 #include<boost/algorithm/string.hpp>
+#include "casm/basis_set/DoFDecl.hh"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/CASM_math.hh"

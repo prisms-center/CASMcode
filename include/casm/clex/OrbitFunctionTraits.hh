@@ -6,6 +6,7 @@
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/clusterography/ClusterDecl.hh"
+#include "casm/basis_set/DoFDecl.hh"
 
 namespace CASM {
 
@@ -16,13 +17,19 @@ namespace CASM {
 
   class ClexBasisBuilder {
   public:
+    ClexBasisBuilder(std::string const &_name) : m_name(_name) {}
+
     virtual ~ClexBasisBuilder() {}
+
+    std::string const &name() const {
+      return m_name;
+    }
 
     virtual void prepare(Structure const &_prim) {
 
     }
 
-    virtual std::vector<ClexBasis::DoFKey> filter_dof_types(std::vector<ClexBasis::DoFKey> const &_dof_types) {
+    virtual std::vector<DoFKey> filter_dof_types(std::vector<DoFKey> const &_dof_types) {
       return _dof_types;
     }
 
@@ -42,7 +49,7 @@ namespace CASM {
 
   private:
     virtual ClexBasisBuilder *_clone()const = 0;
-
+    std::string m_name;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,6 +113,9 @@ namespace CASM {
 
   class InvariantPolyBasisBuilder : public ClexBasisBuilder {
   public:
+    InvariantPolyBasisBuilder(std::string const &_name) :
+      ClexBasisBuilder(_name) {}
+
     BasisSet build_proto(IntegralCluster const &_prototype,
                          SymGroup const &_generating_group,
                          std::vector<BasisSet const *> const &_arg_bases,
@@ -131,7 +141,7 @@ namespace CASM {
 
 
     std::unique_ptr<ClexBasisBuilder> basis_builder() const override {
-      return std::unique_ptr<ClexBasisBuilder>(new InvariantPolyBasisBuilder());
+      return std::unique_ptr<ClexBasisBuilder>(new InvariantPolyBasisBuilder(name()));
     }
 
 

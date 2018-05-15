@@ -3,6 +3,8 @@
 
 #include <string>
 #include "casm/basis_set/BasisSet.hh"
+#include "casm/basis_set/DoFDecl.hh"
+#include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/CASM_global_enum.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 
@@ -21,7 +23,6 @@ namespace CASM {
   class ClexBasis {
   public:
     typedef std::vector<BasisSet> BSetOrbit;
-    typedef std::string DoFKey;
     typedef std::vector<BSetOrbit>::const_iterator BSetOrbitIterator;
 
     /// \brief Initialize from Structure, in order to get Site DoF and global DoF info
@@ -139,7 +140,7 @@ namespace CASM {
 
 
   namespace ClexBasis_impl {
-    std::vector<ClexBasis::DoFKey> extract_dof_types(Structure const &_prim);
+    std::vector<DoFKey> extract_dof_types(Structure const &_prim);
 
     template<typename OrbitType>
     BasisSet construct_proto_dof_basis(OrbitType const &_orbit,
