@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <string>
+#include <exception>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <boost/filesystem.hpp>
@@ -227,21 +228,21 @@ namespace CASM {
 
   //************************************************************
 
-  DoFSet const &dof(std::string const &dof_type) const {
-    auto it = find(m_dof_map(dof_type));
+  DoFSet const &Structure::dof(std::string const &_dof_type) const {
+    auto it = m_dof_map.find(_dof_type);
     if(it != m_dof_map.end())
-      return *it;
+      return *(it->second);
     else
-      throw std::exception(std::string("In Structure::dof(), this structure does not contain any global DoF's of type " + dof_type));
+      throw std::runtime_error(std::string("In Structure::dof(), this structure does not contain any global DoF's of type " + _dof_type));
 
   }
 
   //************************************************************
 
-  std::vector<std::string> local_dof_types() const {
+  std::vector<std::string> Structure::local_dof_types() const {
     std::set<std::string> tresult;
 
-    for(Site cons &site : basis) {
+    for(Site const &site : basis) {
       auto sitetypes = site.dof_types();
       tresult.insert(sitetypes.begin(), sitetypes.end());
     }
@@ -250,7 +251,7 @@ namespace CASM {
 
   //************************************************************
 
-  std::vector<std::string> global_dof_types() const {
+  std::vector<std::string> Structure::global_dof_types() const {
     std::vector<std::string> result;
     for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
       result.push_back(it->first);

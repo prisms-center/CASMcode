@@ -462,7 +462,7 @@ namespace CASM {
 
   // ** Clexulator names **
 
-  std::string ProjectSettings::clexulator() const {
+  std::string ProjectSettings::global_clexulator_name() const {
     return name() + "_Clexulator";
   }
 

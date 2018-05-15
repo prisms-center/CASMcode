@@ -348,7 +348,10 @@ namespace CASM {
     auto it = m_data->clex_basis.find(key);
     if(it == m_data->clex_basis.end()) {
 
-      it = m_data->clex_basis.insert(std::make_pair(key, ClexBasis(prim()))).first;
+      jsonParser bspecs_json;
+      bspecs_json.read(dir().bspecs(key.bset));
+
+      it = m_data->clex_basis.insert(std::make_pair(key, ClexBasis(prim(), bspecs_json))).first;
 
       std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
 
@@ -360,9 +363,6 @@ namespace CASM {
         PrimPeriodicSymCompare<IntegralCluster>(crystallography_tol()),
         crystallography_tol()
       );
-
-      jsonParser bspecs_json;
-      bspecs_json.read(dir().bspecs(key.bset));
 
       ClexBasis &clex_basis = it->second;
       clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json);

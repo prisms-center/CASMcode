@@ -375,6 +375,12 @@ namespace CASM {
       return this->sorted()._lt(B.sorted());
     }
 
+    Permutation DiffusionTransformation::sort_permutation() const {
+      throw std::runtime_error("DiffusionTransformation::sort_permutation() not yet implemented.");
+      return Permutation(0);
+
+    }
+
     /// \brief Puts this in a sorted form, to enable comparisons
     ///
     /// - the forward and reverse occ_transform and specie_traj are sorted in

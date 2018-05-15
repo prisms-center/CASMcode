@@ -18,7 +18,7 @@ namespace CASM {
   public:
 
     /// \brief Construct ClexBasisWriter, collecting requisite DoF info from '_prim'
-    ClexBasisWriter(Structure const &_prim, ParamPackMixIn const *parampack_mix_in = null_ptr);
+    ClexBasisWriter(Structure const &_prim, ParamPackMixIn const *parampack_mix_in = nullptr);
 
     /// \brief Print clexulator
     template <typename OrbitType>
@@ -31,8 +31,13 @@ namespace CASM {
                           double xtal_tol);
 
   private:
-    std::vector<std::unique_ptr<FunctionVisitor> > const &_function_label_visitors() const;
-    std::vector<std::unique_ptr<OrbitFunctionTraits> > const &_orbit_func_traits() const;
+    std::vector<std::unique_ptr<FunctionVisitor> > const &_function_label_visitors() const {
+      return m_function_label_visitors;
+    }
+
+    std::vector<std::unique_ptr<OrbitFunctionTraits> > const &_orbit_func_traits() const {
+      return m_orbit_func_traits;
+    }
 
     /// \brief Print ClexParamPack specialization
     template <typename OrbitType>
@@ -43,7 +48,8 @@ namespace CASM {
                           std::vector<UnitCellCoord> const &_flower_pivots,
                           std::ostream &stream,
                           double xtal_tol);
-
+    std::vector<std::unique_ptr<FunctionVisitor> > m_function_label_visitors;
+    std::vector<std::unique_ptr<OrbitFunctionTraits> > m_orbit_func_traits;
   };
 
 
@@ -51,20 +57,20 @@ namespace CASM {
   namespace ClexBasisWriter_impl {
 
 
-    std::string clexulator_member_definitions(std::string const &class_name,
-                                              ClexBasis const &clex,
-                                              std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
-                                              std::string const &indent);
+    std::string clexulator_member_declarations(std::string const &class_name,
+                                               ClexBasis const &clex,
+                                               std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
+                                               std::string const &indent);
     //*******************************************************************************************
 
-    std::string clexulator_private_method_definitions(std::string const &class_name,
+    std::string clexulator_private_method_declarations(std::string const &class_name,
+                                                       ClexBasis const &clex,
+                                                       std::string const &indent);
+    //*******************************************************************************************
+
+    std::string clexulator_public_method_declarations(std::string const &class_name,
                                                       ClexBasis const &clex,
                                                       std::string const &indent);
-    //*******************************************************************************************
-
-    std::string clexulator_public_method_definitions(std::string const &class_name,
-                                                     ClexBasis const &clex,
-                                                     std::string const &indent);
     //*******************************************************************************************
 
     template <typename OrbitType>
@@ -133,12 +139,13 @@ namespace CASM {
 
     //*******************************************************************************************
 
+
     template <typename OrbitType>
     std::string clexulator_point_prepare_implementation(std::string const &class_name,
                                                         ClexBasis const &clex,
                                                         std::vector<OrbitType> const &_tree,
-                                                        PrimNeighborList &_nlist,
                                                         std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
+                                                        PrimNeighborList &_nlist,
                                                         //Something that contains info about DoF requirements
                                                         std::string const &indent);
     //*******************************************************************************************
@@ -147,8 +154,8 @@ namespace CASM {
     std::string clexulator_global_prepare_implementation(std::string const &class_name,
                                                          ClexBasis const &clex,
                                                          std::vector<OrbitType> const &_tree,
-                                                         PrimNeighborList &_nlist,
                                                          std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
+                                                         PrimNeighborList &_nlist,
                                                          //Something that contains info about DoF requirements
                                                          std::string const &indent);
 
@@ -185,5 +192,8 @@ namespace CASM {
                                                                  IntegralClusterSymCompareType const &sym_compare);
   }
 }
+
+
+#include "casm/clex/ClexBasisWriter_impl.hh"
 
 #endif

@@ -177,40 +177,48 @@ namespace CASM {
     }
 
     //************************************************************
-    std::string clexulator_point_prepare_string(Structure const &_prim,
-                                                std::vector<BasisSet> const &site_bases,
-                                                std::string const &indent) const override {
+    std::string OccupationDoFTraits::clexulator_point_prepare_string(Structure const &_prim,
+                                                                     std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                                     std::vector<BasisSet> const &site_bases,
+                                                                     std::string const &indent) const {
       std::stringstream ss;
       ss
-          << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n"
-      for(Index n = 0; n < site_bases.size(); n++) {
-        for(Index f = 0; f < site_bases[n].size(); f++) {
-          ss << indent << "  m_occ_func_vals_n" << n << "[" << f << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
+          << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n";
+      for(auto const &nbor : _nhood) {
+        Index n = nbor.first;
+        Index b = nbor.second.sublat();
+        for(Index f = 0; f < site_bases[b].size(); f++) {
+          ss << indent << "  m_occ_func_vals_f" << f << "[" << n  << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
         }
       }
       ss << "}\n";
+      return ss.str();
     }
 
     //************************************************************
 
-    std::string clexulator_global_prepare_string(Structure const &_prim,
-                                                 std::vector<BasisSet> const &site_bases,
-                                                 std::string const &indent) const override {
+    std::string OccupationDoFTraits::clexulator_global_prepare_string(Structure const &_prim,
+                                                                      std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                                      std::vector<BasisSet> const &site_bases,
+                                                                      std::string const &indent) const {
       std::stringstream ss;
       ss
-          << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n"
-      for(Index n = 0; n < site_bases.size(); n++) {
+          << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n";
+      for(auto const &nbor : _nhood) {
+        Index n = nbor.first;
+        Index b = nbor.second.sublat();
         for(Index f = 0; f < site_bases[n].size(); f++) {
-          ss << indent << "  m_occ_func_vals_n" << n << "[" << f << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
+          ss << indent << "  m_occ_func_vals_f" << f << "[" << n  << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
         }
       }
       ss << "}\n";
+      return ss.str();
     }
     //************************************************************
 
-    std::string OccupationDoFTraits::clexulator_member_definitions_string(Structure const &_prim,
-                                                                          std::vector<BasisSet> const &_site_bases,
-                                                                          std::string const &indent) const {
+    std::string OccupationDoFTraits::clexulator_member_declarations_string(Structure const &_prim,
+                                                                           std::vector<BasisSet> const &_site_bases,
+                                                                           std::string const &indent) const {
       std::stringstream stream;
       std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
@@ -243,9 +251,9 @@ namespace CASM {
 
     //************************************************************
 
-    std::string OccupationDoFTraits::clexulator_private_method_definitions_string(Structure const &_prim,
-                                                                                  std::vector<BasisSet> const &_site_bases,
-                                                                                  const std::string &indent) const {
+    std::string OccupationDoFTraits::clexulator_private_method_declarations_string(Structure const &_prim,
+                                                                                   std::vector<BasisSet> const &_site_bases,
+                                                                                   const std::string &indent) const {
       std::stringstream stream;
       std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);

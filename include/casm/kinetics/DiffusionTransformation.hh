@@ -192,6 +192,8 @@ namespace CASM {
       /// - Comparison is made using the sorted forms
       bool operator<(const DiffusionTransformation &B) const;
 
+      Permutation sort_permutation() const;
+
       DiffusionTransformation &sort();
 
       DiffusionTransformation sorted() const;

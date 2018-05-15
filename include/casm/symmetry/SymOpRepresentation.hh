@@ -54,6 +54,15 @@ namespace CASM {
       return nullptr;
     }
 
+    std::unique_ptr<SymOpRepresentation> inverse() const {
+      SymOpRepresentation *res = inverse_impl();
+      res->m_master_group = m_master_group;
+      res->m_rep_ID = m_rep_ID;
+      if(has_valid_master())
+        res->m_op_index = ind_inverse();
+      return std::unique_ptr<SymOpRepresentation>(res);
+    }
+
 
     /// get pointer to matrix representation corresponding to rep_ID
     Eigen::MatrixXd const *get_matrix_rep(SymGroupRepID _rep_ID) const;
@@ -116,6 +125,11 @@ namespace CASM {
     SymOpRepresentation(MasterSymGroup const *_master_group_ptr, SymGroupRepID _rep_ID, Index _op_index) :
       m_master_group(_master_group_ptr), m_rep_ID(_rep_ID), m_op_index(_op_index) {
       _set_integral_tau();
+    }
+
+    virtual SymOpRepresentation *inverse_impl()const {
+      throw std::runtime_error("Attempting to use unimplemented SymOpRepresentation::inverse_impl()");
+      return nullptr;
     }
 
     virtual void _set_integral_tau() {

@@ -174,6 +174,7 @@ namespace CASM {
 
       try {
         if(bspecs_json.contains("local_bspecs")) {
+          jsonParser local_bspecs_json = bspecs_json["local_bspecs"];
           //this is a local basis set
           //get hop from bspecs
           args.log().construct("Orbitree");
@@ -188,8 +189,8 @@ namespace CASM {
             std::back_inserter(local_orbits),
             args.log());
 
-          clex_basis.reset(new ClexBasis(prim));
-          clex_basis->generate(local_orbits.begin(), local_orbits.end(), bspecs_json["local_bspecs"]);
+          clex_basis.reset(new ClexBasis(prim, local_bspecs_json));
+          clex_basis->generate(local_orbits.begin(), local_orbits.end(), local_bspecs_json);
 
         }
         else {
@@ -204,7 +205,7 @@ namespace CASM {
             std::back_inserter(orbits),
             args.log());
 
-          clex_basis.reset(new ClexBasis(prim));
+          clex_basis.reset(new ClexBasis(prim, bspecs_json));
           clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json);
         }
 
@@ -263,8 +264,14 @@ namespace CASM {
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), bset));
 
-        throw std::runtime_error("Error: print_clexulator is being re-implemented");
-        //print_clexulator(...);
+        ClexBasisWriter clexwriter(prim);
+        clexwriter.print_clexulator(set.global_clexulator_name(),
+                                    *clex_basis,
+                                    orbits,
+                                    nlist,
+                                    std::vector<UnitCellCoord>(),
+                                    outfile,
+                                    primclex.crystallography_tol());
         outfile.close();
 
         args.log().write(dir.clexulator_src(set.name(), bset).string());

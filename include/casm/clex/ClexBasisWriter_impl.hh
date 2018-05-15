@@ -1,8 +1,12 @@
 #ifndef CASM_ClexBasisWriter_impl
 #define CASM_ClexBasisWriter_impl
 
+#include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clex/ClexBasisWriter.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
+#include "casm/clex/NeighborList.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
@@ -19,7 +23,7 @@ namespace CASM {
                                          std::ostream &stream,
                                          double xtal_tol) {
 
-    enum FuncStringType {func_definition = 0, func_implementation = 1};
+    enum FuncStringType {func_declaration = 0, func_implementation = 1};
 
     Index N_sublat = clex.n_sublat();
 
@@ -41,11 +45,11 @@ namespace CASM {
 
     std::string indent(2, ' ');
 
-    std::string private_definitions = ClexBasisWriter_impl::clexulator_member_definitions(class_name, clex, _orbit_func_writers(), indent + "  ");
+    std::string private_declarations = ClexBasisWriter_impl::clexulator_member_declarations(class_name, clex, _orbit_func_traits(), indent + "  ");
 
-    private_definitions += ClexBasisWriter_impl::clexulator_private_method_definitions(class_name, clex, indent + "  ");
+    private_declarations += ClexBasisWriter_impl::clexulator_private_method_declarations(class_name, clex, indent + "  ");
 
-    std::string public_definitions = ClexBasisWriter_impl::clexulator_public_method_definitions(class_name, clex, indent + "  ");
+    std::string public_declarations = ClexBasisWriter_impl::clexulator_public_method_declarations(class_name, clex, indent + "  ");
 
 
     //linear function index
@@ -75,7 +79,7 @@ namespace CASM {
       else {
         bfunc_imp_stream <<
                          indent << "/**** Basis functions for orbit " << no << "****\n";
-        _tree[no].prototype().print(bfunc_imp_stream, '\n');
+        ProtoSitesPrinter().print(_tree[no].prototype(), bfunc_imp_stream);
         bfunc_imp_stream << "****/\n";
       }
 
@@ -87,11 +91,12 @@ namespace CASM {
       std::tuple<std::string, std::string> orbit_functions = ClexBasisWriter_impl::clexulator_orbit_function_strings(class_name,
                                                              clex.bset_orbit(no),
                                                              _tree[no],
-                                                             lf,
+                                                             orbit_method_namer,
                                                              _nlist,
-                                                             labelers);
+                                                             labelers,
+                                                             indent);
 
-      bfunc_def_stream << std::get<func_definition>(orbit_functions);
+      bfunc_def_stream << std::get<func_declaration>(orbit_functions);
       bfunc_imp_stream << std::get<func_implementation>(orbit_functions);
 
       auto flower_method_namer = [lf, no, &flower_method_names](Index nb, Index nf)->std::string{
@@ -102,11 +107,12 @@ namespace CASM {
       std::tuple<std::string, std::string> flower_functions = ClexBasisWriter_impl::clexulator_flower_function_strings(class_name,
                                                               clex.bset_orbit(no),
                                                               _tree[no],
-                                                              lf,
+                                                              flower_method_namer,
                                                               _nlist,
-                                                              labelers);
+                                                              labelers,
+                                                              indent);
 
-      bfunc_def_stream << std::get<func_definition>(flower_functions);
+      bfunc_def_stream << std::get<func_declaration>(flower_functions);
       bfunc_imp_stream << std::get<func_implementation>(flower_functions);
 
       auto dflower_method_namer = [lf, no, &dflower_method_names](Index nb, Index nf)->std::string{
@@ -115,7 +121,7 @@ namespace CASM {
       };
 
       // Hard-coded for occupation currently... this should be encoded in DoFTraits instead.
-      std::string dof_key("occupation");
+      std::string dof_key("occ");
       OccFuncLabeler site_prefactor_labeler("(m_occ_func_%b_%f[occ_f] - m_occ_func_%b_%f[occ_i])");
 
       auto site_bases_iter = clex.site_bases().find(dof_key);
@@ -126,13 +132,14 @@ namespace CASM {
                                                                clex.bset_orbit(no),
                                                                site_bases_iter->second,
                                                                _tree[no],
-                                                               lf,
+                                                               dflower_method_namer,
                                                                _nlist,
                                                                labelers,
-                                                               site_prefactor_labeler);
+                                                               site_prefactor_labeler,
+                                                               indent);
 
 
-      bfunc_def_stream << std::get<func_definition>(dflower_functions);
+      bfunc_def_stream << std::get<func_declaration>(dflower_functions);
       bfunc_imp_stream << std::get<func_implementation>(dflower_functions);
 
       lf += clex.bset_orbit(no)[0].size();
@@ -150,12 +157,19 @@ namespace CASM {
 
     std::string interface_implementation = ClexBasisWriter_impl::clexulator_interface_implementation(class_name, clex, indent);
 
-    std::string prepare_methods_implementation = ClexBasisWriter_impl::clexulator_prepare_methods_implementations(class_name,
+    std::string prepare_methods_implementation = ClexBasisWriter_impl::clexulator_point_prepare_implementation(class_name,
                                                  clex,
                                                  _tree,
-                                                 _orbit_func_writers()
+                                                 _orbit_func_traits(),
                                                  _nlist,
                                                  indent);
+
+    prepare_methods_implementation += ClexBasisWriter_impl::clexulator_global_prepare_implementation(class_name,
+                                      clex,
+                                      _tree,
+                                      _orbit_func_traits(),
+                                      _nlist,
+                                      indent);
 
     jsonParser json_prim;
     write_prim(clex.prim(), json_prim, FRAC);
@@ -183,18 +197,18 @@ namespace CASM {
 
         << "/****** GENERATED CLEXPARAMPACK IMPLEMENTATION ******\n\n"
 
-        << parampack_stream.string() << "\n\n"
+        << parampack_stream.str() << "\n\n"
 
         << "/****** GENERATED CLEXULATOR IMPLEMENTATION ******\n\n"
 
         << indent << "class " << class_name << " : public Clexulator_impl::Base {\n\n"
 
         << indent << "public:\n\n"
-        << public_definitions << "\n"
+        << public_declarations << "\n"
         << bfunc_def_stream.str() << "\n"
 
         << indent << "private:\n\n"
-        << private_definitions << "\n"
+        << private_declarations << "\n"
 
         << indent << "};\n\n" // close class definition
 
@@ -232,7 +246,7 @@ namespace CASM {
 
   }
   namespace ClexBasisWriter_impl {
-    //*******************************************************************************************
+
     template<typename OrbitType>
     std::tuple<std::string, std::string> clexulator_orbit_function_strings(std::string const &class_name,
                                                                            ClexBasis::BSetOrbit const &_bset_orbit,
@@ -492,7 +506,7 @@ namespace CASM {
         }
       }
 
-      std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_trans = ClexBasis_impl::unique_ucc(trans_set.begin(),
+      std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_trans = ClexBasisWriter_impl::unique_ucc(trans_set.begin(),
                                                                        trans_set.end(),
                                                                        _clust_orbit.sym_compare());
 
@@ -505,7 +519,7 @@ namespace CASM {
 
       for(std::pair<UnitCellCoord, std::set<UnitCellCoord> > const &trans_orbit : unique_trans) {
 
-        Formulae &formulae(result.emplace(std::make_pair(trans_orbit.first, Formulae(_bset_orbit[0].size()))).first->second);
+        Formulae &formulae(result.emplace(std::make_pair(trans_orbit.first.unitcell(), Formulae(_bset_orbit[0].size()))).first->second);
 
         // loop over equivalent clusters
         for(Index ne = 0; ne < _clust_orbit.size(); ne++) {
@@ -629,8 +643,8 @@ namespace CASM {
       // store orbits as we find them
       std::set<orbit_type> orbits;
 
-      SymGroup identity_group(begin->prim().factor_group.begin(), begin->prim().factor_group.begin()++);
-      orbit_type empty_orbit(cluster_type(begin->prim()), identity_group, sym_compare);
+      SymGroup identity_group((begin->unit()).factor_group().begin(), ((begin->unit()).factor_group().begin()) + 1);
+      orbit_type empty_orbit(cluster_type(begin->unit()), identity_group, sym_compare);
 
       // by looping over each site in the grid,
       for(; begin != end; ++begin) {
@@ -645,7 +659,7 @@ namespace CASM {
         // try to find test cluster in already found orbits
         auto it = find_orbit(orbits.begin(), orbits.end(), test);
         if(it != orbits.end()) {
-          tresult[it->prototype().element[0]].insert(*begin);
+          tresult[it->prototype().element(0)].insert(*begin);
           continue;
         }
 
@@ -781,6 +795,31 @@ namespace CASM {
 
       return ss.str();
     }
+
+
+
+    template<typename OrbitType>
+    std::string clexulator_point_prepare_implementation(std::string const &class_name,
+                                                        ClexBasis const &clex,
+                                                        std::vector<OrbitType> const &_tree,
+                                                        std::vector<std::unique_ptr<OrbitFunctionTraits> > const &_orbit_func_traits,
+                                                        PrimNeighborList &_nlist,
+                                                        std::string const &indent) {
+      throw std::runtime_error("clexulator_point_prepare_implementation not implemented");
+      return std::string();
+    }
+
+    template<typename OrbitType>
+    std::string clexulator_global_prepare_implementation(std::string const &class_name,
+                                                         ClexBasis const &clex,
+                                                         std::vector<OrbitType> const &_tree,
+                                                         std::vector<std::unique_ptr<OrbitFunctionTraits> > const &_orbit_func_traits,
+                                                         PrimNeighborList &_nlist,
+                                                         std::string const &indent) {
+      throw std::runtime_error("clexulator_global_prepare_implementation not implemented");
+      return std::string();
+    }
+
 
   }
 }

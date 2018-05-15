@@ -64,24 +64,35 @@ namespace CASM {
                                                         std::string const &indent) const = 0;
 
       virtual std::string clexulator_point_prepare_string(Structure const &_prim,
+                                                          std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
                                                           std::vector<BasisSet> const &site_bases,
                                                           std::string const &indent) const = 0;
 
       virtual std::string clexulator_global_prepare_string(Structure const &_prim,
+                                                           std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
                                                            std::vector<BasisSet> const &site_bases,
                                                            std::string const &indent) const = 0;
 
-      virtual std::string clexulator_member_definitions_string(Structure const &_prim,
-                                                               std::vector<BasisSet> const &site_bases,
-                                                               std::string const &indent) const = 0;
+      virtual std::string clexulator_member_declarations_string(Structure const &_prim,
+                                                                std::vector<BasisSet> const &site_bases,
+                                                                std::string const &indent) const = 0;
 
-      virtual std::string clexulator_private_method_definitions_string(Structure const &_prim,
+      virtual std::string clexulator_private_method_declarations_string(Structure const &_prim,
+                                                                        std::vector<BasisSet> const &site_bases,
+                                                                        std::string const &indent) const = 0;
+
+      virtual std::string clexulator_public_method_declarations_string(Structure const &_prim,
                                                                        std::vector<BasisSet> const &site_bases,
                                                                        std::string const &indent) const = 0;
 
-      virtual std::string clexulator_public_method_definitions_string(Structure const &_prim,
-                                                                      std::vector<BasisSet> const &site_bases,
-                                                                      std::string const &indent) const = 0;
+      virtual std::string clexulator_private_method_implementations_string(Structure const &_prim,
+                                                                           std::vector<BasisSet> const &site_bases,
+                                                                           std::string const &indent) const = 0;
+
+      virtual std::string clexulator_public_method_implementations_string(Structure const &_prim,
+                                                                          std::vector<BasisSet> const &site_bases,
+                                                                          std::string const &indent) const = 0;
+
       /// \brief non-virtual method to obtain copy through Traits pointer
       std::unique_ptr<Traits> clone() const {
         return std::unique_ptr<Traits>(static_cast<Traits *>(_clone()));
@@ -93,7 +104,7 @@ namespace CASM {
     class OccupationDoFTraits : public Traits {
     public:
       OccupationDoFTraits():
-        Traits("occupation",
+        Traits("occ",
                DISCRETE,
                LOCAL) {
       }
@@ -120,34 +131,41 @@ namespace CASM {
                                                 std::string const &indent) const override;
 
       std::string clexulator_point_prepare_string(Structure const &_prim,
+                                                  std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
                                                   std::vector<BasisSet> const &site_bases,
-                                                  std::string const &indent) const override //todo;
+                                                  std::string const &indent) const override;
 
       std::string clexulator_global_prepare_string(Structure const &_prim,
+                                                   std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
                                                    std::vector<BasisSet> const &site_bases,
-                                                   std::string const &indent) const override // todo;
+                                                   std::string const &indent) const override;
 
-      std::string clexulator_member_definitions_string(Structure const &_prim,
-                                                       std::vector<BasisSet> const &site_bases,
-                                                       std::string const &indent) const override;
+      std::string clexulator_member_declarations_string(Structure const &_prim,
+                                                        std::vector<BasisSet> const &site_bases,
+                                                        std::string const &indent) const override;
 
-      std::string clexulator_private_method_definitions_string(Structure const &_prim,
+      std::string clexulator_private_method_declarations_string(Structure const &_prim,
+                                                                std::vector<BasisSet> const &site_bases,
+                                                                std::string const &indent) const override;
+
+      std::string clexulator_public_method_declarations_string(Structure const &_prim,
                                                                std::vector<BasisSet> const &site_bases,
-                                                               std::string const &indent) const override;
+                                                               std::string const &indent) const override {
+        //todo
+        return std::string();
+      }
 
       std::string clexulator_private_method_implementations_string(Structure const &_prim,
                                                                    std::vector<BasisSet> const &site_bases,
-                                                                   std::string const &indent) const override;
+                                                                   std::string const &indent) const override {
+        // todo
+        return std::string();
+      }
 
       std::string clexulator_public_method_implementations_string(Structure const &_prim,
                                                                   std::vector<BasisSet> const &site_bases,
                                                                   std::string const &indent) const override {
-        return std::string();
-      }
-
-      std::string clexulator_public_method_definitions_string(Structure const &_prim,
-                                                              std::vector<BasisSet> const &site_bases,
-                                                              std::string const &indent) const override {
+        // todo
         return std::string();
       }
 

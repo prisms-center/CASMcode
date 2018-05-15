@@ -162,7 +162,7 @@ namespace CASM {
 
     // ** Clexulator names **
 
-    std::string clexulator() const;
+    std::string global_clexulator_name() const;
 
 
     // ** Add directories for additional project data **

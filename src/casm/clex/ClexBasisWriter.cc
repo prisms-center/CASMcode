@@ -1,20 +1,21 @@
 #include "casm/clex/ClexBasisWriter.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 namespace CASM {
 
-  ClexBasisWriter::ClexBasisWriter(Structure const &_prim) {
-    throw std::runtime_error("Error: print_clexulator is being re-implemented");
+  ClexBasisWriter::ClexBasisWriter(Structure const &_prim, ParamPackMixIn const *parampack_mix_in /*= nullptr*/) {
+    //throw std::runtime_error("Error: print_clexulator is being re-implemented");
 
   }
 
   namespace ClexBasisWriter_impl {
 
-    std::string clexulator_member_definitions(std::string const &class_name,
-                                              ClexBasis const &clex,
-                                              std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_writers,
-                                              std::string const &indent) {
+    std::string clexulator_member_declarations(std::string const &class_name,
+                                               ClexBasis const &clex,
+                                               std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_writers,
+                                               std::string const &indent) {
       Index N_corr = clex.n_functions();
       Index N_sublat = clex.n_sublat();
       std::stringstream ss;
@@ -30,7 +31,7 @@ namespace CASM {
       }
 
       for(auto const &writer_ptr : orbit_func_writers) {
-        writer_ptr->print_eval_table_definitions(ss, class_name, clex, indent);
+        writer_ptr->print_eval_table_declarations(ss, class_name, clex, indent);
       }
 
 
@@ -52,16 +53,16 @@ namespace CASM {
 
       auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
       for(; it != end_it; ++it) {
-        ss << DoFType::traits(it->first).clexulator_member_definitions_string(clex.prim(), it->second, indent);
+        ss << DoFType::traits(it->first).clexulator_member_declarations_string(clex.prim(), it->second, indent);
       }
       return ss.str();
     }
 
     //*******************************************************************************************
 
-    std::string clexulator_private_method_definitions(std::string const &class_name,
-                                                      ClexBasis const &clex,
-                                                      std::string const &indent) {
+    std::string clexulator_private_method_declarations(std::string const &class_name,
+                                                       ClexBasis const &clex,
+                                                       std::string const &indent) {
       std::stringstream ss;
       ss <<
          indent << "  /// \\brief Clone the " << class_name << "\n" <<
@@ -93,7 +94,7 @@ namespace CASM {
          indent << "  /// \\brief Calculate the change in select point correlations due to changing an occupant at neighbor site 'n_index'\n" <<
          indent << "  /// For global clexulators, 'n_index' only ranges over sites in the cell\n" <<
          indent << "  /// For local clexulators, 'n_index' ranges over all sites in the neighborhood\n" <<
-         indent << "  void _calc_restricted_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n"
+         indent << "  void _calc_restricted_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n" <<
 
          indent << "  void _global_prepare() const override;\n\n" <<
 
@@ -103,7 +104,7 @@ namespace CASM {
 
       auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
       for(; it != end_it; ++it) {
-        ss << DoFType::traits(it->first).clexulator_private_method_definitions_string(clex.prim(), it->second, indent);
+        ss << DoFType::traits(it->first).clexulator_private_method_declarations_string(clex.prim(), it->second, indent);
       }
 
       ss <<
@@ -116,9 +117,9 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    std::string clexulator_public_method_definitions(std::string const &class_name,
-                                                     ClexBasis const &clex,
-                                                     std::string const &indent) {
+    std::string clexulator_public_method_declarations(std::string const &class_name,
+                                                      ClexBasis const &clex,
+                                                      std::string const &indent) {
       std::stringstream ss;
       ss <<
          indent << "  " << class_name << "();\n\n" <<
@@ -126,7 +127,7 @@ namespace CASM {
 
       auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
       for(; it != end_it; ++it) {
-        ss << DoFType::traits(it->first).clexulator_public_method_definitions_string(clex.prim(), it->second, indent);
+        ss << DoFType::traits(it->first).clexulator_public_method_declarations_string(clex.prim(), it->second, indent);
       }
       return ss.str();
     }

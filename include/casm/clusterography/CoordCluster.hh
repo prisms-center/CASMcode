@@ -93,6 +93,8 @@ namespace CASM {
 
   };
 
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
   template<typename CoordType>
   struct traits<CoordCluster<CoordType>> {
     typedef CoordType Element;
@@ -100,6 +102,8 @@ namespace CASM {
     static CoordType position(const CoordCluster<CoordType> &clust);
     typedef unsigned int size_type;
   };
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   template<typename CoordType>
   class CoordCluster : public
@@ -149,6 +153,8 @@ namespace CASM {
     const PrimType *m_prim_ptr;
 
   };
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   template<typename CoordType>
   CoordType traits<CoordCluster<CoordType>>::position(const CoordCluster<CoordType> &clust) {

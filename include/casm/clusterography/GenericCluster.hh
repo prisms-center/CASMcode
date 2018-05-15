@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "casm/container/algorithm.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 #include "casm/symmetry/SymCompare.hh"
 #include "casm/symmetry/PermuteIterator.hh"
@@ -130,6 +131,10 @@ namespace CASM {
       return derived().is_sorted_impl();
     }
 
+    Permutation sort_permutation() const {
+      return derived().sort_permutation_impl();
+    }
+
     bool operator<(const GenericCluster &B) const {
       if(size() != B.size()) {
         return size() < B.size();
@@ -150,6 +155,18 @@ namespace CASM {
     bool is_sorted_impl() const {
       return std::is_sorted(begin(), end());
     }
+
+    Permutation sort_permutation_impl() const {
+      if(size() == 0)
+        return Permutation(0);
+      std::vector<Index> ind = sequence(Index(0), Index(size() - 1));
+      std::sort(ind.begin(), ind.end(),
+      [&](const Index & a, const Index & b) {
+        return (this->derived().element(a) < this->derived().element(b));
+      });
+      return Permutation(std::move(ind));
+    }
+
   };
 
 

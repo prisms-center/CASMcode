@@ -78,6 +78,9 @@ namespace CASM {
     /// \brief Compares 'prepared' elements
     bool compare_impl(const Element &A, const Element &B) const;
 
+    /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
+    // For now, this is the the sorting permutation in all cases
+    std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj)const;
   protected:
 
     /// \brief type-specific way to get position of element

@@ -103,6 +103,13 @@ namespace CASM {
       return std::make_pair(m_equivalence_map[index].begin(), m_equivalence_map[index].end());
     }
 
+    /// \brief Return the canonization symmetry representation ID
+    SymGroupRepID canonization_rep_ID() const {
+      if(m_canonization_rep_ID.empty())
+        _construct_canonization_rep();
+      return m_canonization_rep_ID;
+    }
+
     /// \brief Find element in Orbit
     ///
     /// - Assumes 'e' is 'prepared', uses SymCompare<Element>::intra_orbit_equal
@@ -138,6 +145,8 @@ namespace CASM {
 
   private:
 
+    void _construct_canonization_rep() const;
+
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry rep
     template<typename SymOpIterator>
     void _construct(Element generating_element,
@@ -149,6 +158,9 @@ namespace CASM {
 
     /// \brief element(i) compares equivalent to prototype().copy_apply(m_equivalence_map[i][j]) for all j
     multivector<SymOp>::X<2> m_equivalence_map;
+
+    /// \brief ID of symmetry representation that describes the effect of each SymOp with respect to the canonical equivalent
+    mutable SymGroupRepID m_canonization_rep_ID;
 
     /// \brief Functor used to check compare Element, including symmetry rules,
     /// and make canonical forms

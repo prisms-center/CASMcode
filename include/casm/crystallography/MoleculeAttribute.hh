@@ -5,6 +5,7 @@
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
+#include "casm/misc/ParsingDictionary.hh"
 
 namespace CASM {
   class jsonParser;
@@ -13,9 +14,13 @@ namespace CASM {
   class SymOp;
 
   namespace MoleculeAttribute_impl {
-    class TraitsDictionary;
     class BasicTraits {
     public:
+
+      static std::string class_desc() {
+        return "Molecule Attribute";
+      }
+
       /// \brief allow destruction through base pointer
       virtual ~BasicTraits() {}
 

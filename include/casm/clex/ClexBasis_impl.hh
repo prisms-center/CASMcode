@@ -1,7 +1,9 @@
 #ifndef CASM_ClexBasis_impl
 #define CASM_ClexBasis_impl
 
+#include "casm/container/algorithm.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/IntegralCluster.hh"
@@ -28,6 +30,7 @@ namespace CASM {
         local_keys.push_back(key);
       }
       else {
+        assert(0);
         throw std::runtime_error(std::string("Attempting to build Clex basis set, but missing degree of freedom \"") + key + "\n");
       }
     }
@@ -125,14 +128,49 @@ namespace CASM {
           site_args[i] = &tlocal.back();
         }
       }
-      all_local.push_back(ClexBasis_impl::construct_clust_dof_basis(_orbit.prototype(), site_args));
+      all_local.push_back(ClexBasis_impl::construct_proto_dof_basis(_orbit, site_args));
       if(all_local.back().size())
         arg_subsets.push_back(&(all_local.back()));
     }
-
-    return m_basis_builder->build(_orbit.prototype(), arg_subsets, max_poly_order, 1);
+    SymGroup clust_group(_orbit.equivalence_map(0).first, _orbit.equivalence_map(0).second);
+    return m_basis_builder->build_proto(_orbit.prototype(), clust_group, arg_subsets, max_poly_order, 1);
   }
 
-}
+  namespace ClexBasis_impl {
+    template<typename OrbitType>
+    BasisSet construct_proto_dof_basis(OrbitType const &_orbit, std::vector<BasisSet const *> const &site_dof_sets) {
+      //throw std::runtime_error("ClexBasis_impl::construct_clust_dof_basis() needs to be re-implemented!\n");
+      BasisSet result;
 
+      auto const &clust(_orbit.prototype());
+      SymGroup clust_group(_orbit.equivalence_map(0).first, _orbit.equivalence_map(0).second);
+
+      if(clust.size() > 0) {
+        result.set_dof_IDs(sequence(Index(0), Index(clust.size() - 1)));
+      }
+      std::vector<SymGroupRep const *> subspace_reps;
+
+      for(BasisSet const *site_bset_ptr : site_dof_sets) {
+        if(site_bset_ptr) {
+          result.append(*site_bset_ptr);
+          subspace_reps.push_back(SymGroupRep::RemoteHandle(clust_group,
+                                                            site_bset_ptr->basis_symrep_ID()).rep_ptr());
+        }
+        else {
+          subspace_reps.push_back(SymGroupRep::RemoteHandle(clust_group,
+                                                            SymGroupRepID::identity(0)).rep_ptr());
+        }
+      }
+      SymGroupRep const *permute_rep = SymGroupRep::RemoteHandle(clust_group, _orbit.canonization_rep_ID()).rep_ptr();
+      result.set_basis_symrep_ID(permuted_direct_sum_rep(*(permute_rep),
+                                                         subspace_reps).add_copy_to_master());
+
+      return result;
+
+
+    }
+
+
+  }
+}
 #endif

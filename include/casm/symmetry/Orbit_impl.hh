@@ -180,6 +180,26 @@ namespace CASM {
     return *this;
   }
 
+  template<typename _Element, typename _SymCompareType>
+  void GenericOrbit<_Element, _SymCompareType>::_construct_canonization_rep() const {
+    if(equivalence_map().size() == 0)
+      throw std::runtime_error("In GenericOrbit::_construct_canonization_rep(), equivalenc_map is uninitialized or empty! Cannot continue.");
+
+    if(size() == 0) {
+      m_canonization_rep_ID = SymGroupRepID::identity(0);
+      return;
+    }
+
+    MasterSymGroup const &master_group(equivalence_map()[0][0].master_group());
+    m_canonization_rep_ID = master_group.add_empty_representation();
+
+    for(SymOp const &op : master_group) {
+      op.set_rep(m_canonization_rep_ID,
+                 *(m_sym_compare.canonical_transform(copy_apply(op, prototype()))->inverse()));
+    }
+    return;
+  }
+
 
   /// \brief Find orbit containing an element in a range of Orbit<ClusterType>
   ///

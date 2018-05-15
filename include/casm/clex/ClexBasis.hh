@@ -16,7 +16,7 @@ namespace CASM {
 
   class PrimNeighborList;
 
-  class BasisBuilder;
+  class ClexBasisBuilder;
 
   class ClexBasis {
   public:
@@ -25,7 +25,7 @@ namespace CASM {
     typedef std::vector<BSetOrbit>::const_iterator BSetOrbitIterator;
 
     /// \brief Initialize from Structure, in order to get Site DoF and global DoF info
-    ClexBasis(Structure const &_prim);
+    ClexBasis(Structure const &_prim, jsonParser const &_bspecs);
 
     Structure const &prim() const;
 
@@ -43,7 +43,9 @@ namespace CASM {
                                 Index equiv_ind) const;
 
     /// \brief Const access of BSetOrbit of orbit @param orbit_ind
-    BSetOrbit const &bset_orbit(Index orbit_ind) const;
+    BSetOrbit const &bset_orbit(Index orbit_ind) const {
+      return m_bset_tree[orbit_ind];
+    }
 
     /// \brief Const iterator to first BasisSet orbit
     BSetOrbitIterator begin() const {
@@ -94,11 +96,11 @@ namespace CASM {
                                         Index max_poly_order) const;
 
     /// \brief Performs heavy lifting for populating site bases in m_site_bases
-    void _populate_site_bases(Structure const &_prim);
+    void _populate_site_bases();
 
     Structure const *m_prim_ptr;
 
-    notstd::cloneable_ptr<BasisBuilder> m_basis_builder;
+    notstd::cloneable_ptr<ClexBasisBuilder> m_basis_builder;
 
     /// \brief Collection of all cluster orbits (are we keeping this?)
     //std::vector<OrbitType> m_orbitree
@@ -117,35 +119,6 @@ namespace CASM {
   };
 
 
-  class BasisBuilder {
-  public:
-    virtual ~BasisBuilder() {}
-
-    virtual void prepare(Structure const &_prim) {
-
-    }
-
-    virtual std::vector<ClexBasis::DoFKey> filter_dof_types(std::vector<ClexBasis::DoFKey> const &_dof_types) {
-      return _dof_types;
-    }
-
-    virtual void pre_generate() {
-
-    }
-
-    virtual BasisSet build(IntegralCluster const &_prototype,
-                           std::vector<BasisSet const *> const &_arg_bases,
-                           Index max_poly_order,
-                           Index min_poly_order) = 0;
-
-    std::unique_ptr<BasisBuilder> clone()const {
-      return std::unique_ptr<BasisBuilder>(_clone());
-    }
-
-  private:
-    virtual BasisBuilder *_clone()const = 0;
-
-  };
 
   /// Print cluster with basis_index and nlist_index (from 0 to size()-1), followed by cluster basis functions
   /// Functions are labeled \Phi_{i}, starting from i = @param begin_ind
@@ -168,13 +141,14 @@ namespace CASM {
   namespace ClexBasis_impl {
     std::vector<ClexBasis::DoFKey> extract_dof_types(Structure const &_prim);
 
-    BasisSet construct_clust_dof_basis(IntegralCluster const &_clust,
+    template<typename OrbitType>
+    BasisSet construct_proto_dof_basis(OrbitType const &_orbit,
                                        std::vector<BasisSet const *> const &site_dof_sets);
 
-    template<typename UCCIterType, typename IntegralClusterSymCompareType>
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
-                                                                 UCCIterType end,
-                                                                 IntegralClusterSymCompareType const &sym_compare);
+    //template<typename UCCIterType, typename IntegralClusterSymCompareType>
+    //std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
+    //UCCIterType end,
+    //IntegralClusterSymCompareType const &sym_compare);
   }
 }
 

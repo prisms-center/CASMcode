@@ -1,3 +1,5 @@
+#include <exception>
+
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/casm_io/Log.hh"
@@ -65,22 +67,24 @@ namespace CASM {
   //****************************************************
 
   DoFSet const &Site::dof(std::string const &_dof_type) const {
-    auto it = find(m_dof_map(dof_type));
+    auto it = m_dof_map.find(_dof_type);
     if(it != m_dof_map.end())
-      return *it;
+      return *(it->second);
     else
-      throw std::exception(std::string("In Structure::dof(), this structure does not contain any global DoF's of type " + dof_type));
+      throw std::runtime_error(std::string("In Structure::dof(), this structure does not contain any global DoF's of type ") + _dof_type);
   }
 
   //****************************************************
   bool Site::has_dof(std::string const &_dof_type) const {
-    return find(m_dof_map(dof_type)) != m_dof_map.end();
+    return site_occupant().size() > 1 || m_dof_map.find(_dof_type) != m_dof_map.end();
   }
 
   //****************************************************
 
-  std::vector<std::string> dof_types() const {
+  std::vector<std::string> Site::dof_types() const {
     std::vector<std::string> result;
+    if(site_occupant().size() > 1)
+      result.push_back(site_occupant().type_name());
     for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
       result.push_back(it->first);
     return result;
