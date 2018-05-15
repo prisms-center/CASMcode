@@ -749,7 +749,7 @@ namespace CASM {
     if(!generating_group.size()) {
       const SymGroup &prim_grp = diff_trans.prim().factor_group();
       PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(xtal_tol);
-      SymGroup generating_grp = make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
+      generating_grp = make_invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
     }
 
     LocalSymCompare<IntegralCluster> sym_compare(xtal_tol);
