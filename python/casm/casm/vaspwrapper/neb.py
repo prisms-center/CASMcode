@@ -296,7 +296,7 @@ class Neb(VaspCalculatorBase):
             print "Constructing a PBS job"
             sys.stdout.flush()
             # construct a pbs.Job
-            job = pbs.Job(name=casm.jobname(config_data["configdir"]),\
+            job = pbs.Job(name=config_data["name"].replace("/",".")),\
                           account=settings["account"],\
                           nodes=nodes, ppn=ppn,\
                           walltime=settings["walltime"],\
