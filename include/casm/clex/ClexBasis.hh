@@ -41,7 +41,9 @@ namespace CASM {
 
     /// \brief Const access of clust basis of orbit @param orbit_ind and equivalent cluster @param equiv_ind
     BasisSet const &clust_basis(Index orbit_ind,
-                                Index equiv_ind) const;
+                                Index equiv_ind) const {
+      return m_bset_tree[orbit_ind][equiv_ind];
+    }
 
     /// \brief Const access of BSetOrbit of orbit @param orbit_ind
     BSetOrbit const &bset_orbit(Index orbit_ind) const {

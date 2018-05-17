@@ -754,7 +754,7 @@ namespace CASM {
 
   const std::string Printer<Kinetics::DiffusionTransformation>::element_name = "DiffusionTransformation";
 
-  void Printer<Kinetics::DiffusionTransformation>::print(const Kinetics::DiffusionTransformation &trans, std::ostream &out) {
+  void Printer<Kinetics::DiffusionTransformation>::print(const Kinetics::DiffusionTransformation &trans, std::ostream &out) const {
     COORD_MODE printer_mode(mode);
 
     if(trans.is_valid()) {

@@ -300,7 +300,7 @@ namespace CASM {
     Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = INTEGRAL) :
       PrinterBase(_indent_space, _delim, _mode) {}
 
-    void print(const Element &element, std::ostream &out);
+    void print(const Element &element, std::ostream &out) const;
   };
 
 }

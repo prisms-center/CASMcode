@@ -234,9 +234,12 @@ namespace CASM {
       {
         jsonParser basis_json;
         if(bspecs_json.contains("local_bspecs")) {
-          write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json["local_bspecs"]);
+          throw std::runtime_error("No pretty printing of local cluster functions");
+          // clex_basis should be replaced with local_clex_basisl
+          //write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json["local_bspecs"]);
         }
         else {
+          write_site_basis_funcs(primclex.prim(), primclex.clex_basis(clex_desc), basis_json);
           write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json);
         }
         basis_json.write(dir.basis(bset));
@@ -303,6 +306,7 @@ namespace CASM {
         print_clust(orbits.begin(), orbits.end(), args.log(), FullSitesPrinter());
       }
       if(vm.count("functions")) {
+        print_site_basis_funcs(primclex.prim(), primclex.clex_basis(clex_desc), args.log());
         print_clust(
           orbits.begin(),
           orbits.end(),

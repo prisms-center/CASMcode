@@ -9,6 +9,7 @@
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
 
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/clex.hh"
@@ -45,7 +46,80 @@ namespace CASM {
 
   // ---------- casm bspecs --orbits -----------------------------------------------------------
 
+  template<typename OrbitType>
+  jsonParser &ProtoFuncsPrinter::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const {
+    json.put_obj();
+    json["prototype"] = orbit.prototype();
+    json["linear_orbit_index"] = orbit_index;
+    json["mult"] = orbit.size();
 
+    jsonParser &orbitf = json["cluster_functions"];
+    orbitf = jsonParser::array();
+
+    // basis function info
+    Index func_index = 0;
+    for(Index i = 0; i < orbit_index; i++)
+      func_index += clex_basis.clust_basis(i, 0).size();
+
+    BasisSet tbasis(clex_basis.clust_basis(orbit_index, 0));
+    tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+    for(Index nf = 0; nf < tbasis.size(); ++nf) {
+      orbitf.push_back(json_pair("\\Phi_" + std::to_string(func_index + nf), tbasis[nf]->tex_formula()));
+    }
+
+    return json;
+  }
+
+  template<typename OrbitType>
+  void ProtoFuncsPrinter::operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) const {
+    out << indent() << indent() << "Prototype" << " of " << orbit.size()
+        << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
+
+    out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+    out.precision(5);
+
+    COORD_TYPE _mode = mode;
+    if(_mode == COORD_DEFAULT) {
+      _mode = COORD_MODE::CHECK();
+    }
+    COORD_MODE printer_mode(_mode);
+
+    auto const &clust = orbit.prototype();
+    Index np = 0;
+    for(const auto &coord : clust) {
+      out << indent() << indent() << indent();
+      if(_mode == INTEGRAL) {
+        out << coord;
+        out << " ";
+        coord.site().site_occupant().print(out);
+        out << std::flush;
+      }
+      else {
+        out.setf(std::ios::showpoint, std::ios_base::fixed);
+        out.precision(5);
+        out.width(9);
+        coord.site().print(out);
+      }
+      out << "  basis_index: " << coord.sublat() << "  clust_index: " << np++ << " ";
+      if(delim)
+        out << delim;
+      out << std::flush;
+    }
+
+    Index func_index = 0;
+    for(Index i = 0; i < orbit_index; i++)
+      func_index += clex_basis.clust_basis(i, 0).size();
+
+    // From clust:
+    out << "            Basis Functions:\n";
+    BasisSet tbasis(clex_basis.clust_basis(orbit_index, 0));
+    tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+    for(Index i = 0; i < tbasis.size(); i++) {
+      out << "              \\Phi_" << func_index + i << " = " << tbasis[i]->tex_formula() << std::endl;
+    }
+    out << "\n\n" << std::flush;
+
+  }
 
   /// \brief Print IntegralCluster orbits
   ///

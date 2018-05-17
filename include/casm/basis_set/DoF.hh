@@ -151,7 +151,7 @@ namespace CASM {
     // For now this isn't used, but may be in the future if we need a dynamic clexulator class for prototyping
     class RemoteHandle {
     public:
-      // \brief Initialize pointer to double
+      // \brief Construct with basic identification info
       RemoteHandle(std::string const &_type_name,
                    std::string const &_var_name,
                    Index _dof_ID) :

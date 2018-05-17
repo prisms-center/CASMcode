@@ -137,7 +137,7 @@ namespace CASM {
                                                              m_var->handle());
     if(it != remote_handles.end()) {
       if(!valid_index(m_var->ID())) {
-        throw std::runtime_error(std::string("In Variable::register_remotes(), attempting to register dof with ID = ")
+        throw std::runtime_error(std::string("In OccupantFunction::register_remotes(), attempting to register dof with ID = ")
                                  + std::to_string(m_var->ID()) + ", which is out of bounds.\n");
       }
       m_var->register_remote(*it);

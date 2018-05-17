@@ -127,7 +127,7 @@ namespace CASM {
 
     std::string indent() const;
 
-    void coord_mode(std::ostream &out);
+    void coord_mode(std::ostream &out) const;
 
   };
 
@@ -139,7 +139,7 @@ namespace CASM {
     Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
       PrinterBase(_indent_space, _delim, _mode) {}
 
-    void print(const Element &element, std::ostream &out) {
+    void print(const Element &element, std::ostream &out) const {
       COORD_MODE printer_mode(mode);
       out << element;
     }
@@ -154,7 +154,7 @@ namespace CASM {
     Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
       PrinterBase(_indent_space, _delim, _mode) {}
 
-    void print(const Element &element, std::ostream &out);
+    void print(const Element &element, std::ostream &out) const;
   };
 
   typedef Printer<IntegralCluster> SitesPrinter;
@@ -172,7 +172,7 @@ namespace CASM {
 
 
     template<typename OrbitType>
-    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) const {
       out << indent() << indent() << "Prototype" << " of " << orbit.size()
           << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
       print(orbit.prototype(), out);
@@ -182,7 +182,7 @@ namespace CASM {
     ///
     /// Note: for 'read_clust' to work, "prototype" must be written
     template<typename OrbitType>
-    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) {
+    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const {
       json.put_obj();
       json["prototype"] = orbit.prototype();
       json["linear_orbit_index"] = orbit_index;
@@ -205,7 +205,7 @@ namespace CASM {
 
 
     template<typename OrbitType>
-    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) const {
       for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
         out << indent() << indent() << equiv_index << " of " << orbit.size()
             << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
@@ -217,7 +217,7 @@ namespace CASM {
     ///
     /// Note: for 'read_clust' to work, "prototype" must be written
     template<typename OrbitType>
-    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) {
+    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const {
       json.put_obj();
       json["prototype"] = orbit.prototype();
       json["elements"].put_array(orbit.begin(), orbit.end());
@@ -231,9 +231,9 @@ namespace CASM {
   /// \brief Print Orbit<IntegralCluster, SymCompareType> & ClexBasis, including prototypes and prototype basis functions
   struct ProtoFuncsPrinter : public SitesPrinter {
 
-    const ClexBasis &clex_basis;
+    ClexBasis const &clex_basis;
 
-    ProtoFuncsPrinter(const ClexBasis &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+    ProtoFuncsPrinter(ClexBasis const &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
       SitesPrinter(_indent_space, _delim, _mode),
       clex_basis(_clex_basis) {}
 
@@ -241,27 +241,10 @@ namespace CASM {
     ///
     /// Note: for 'read_clust' to work, "prototype" must be written
     template<typename OrbitType>
-    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
-      out << indent() << indent() << "Prototype" << " of " << orbit.size()
-          << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
-      print(orbit.prototype(), out);
-
-      throw std::runtime_error("Error printing basis functions: ProtoFuncsPrinter not implemented");
-      //print_clust_basis(out, nf, 8, '\n');
-      //nf += prototype(i, j).clust_basis.size();
-      //out << "\n\n" << std::flush;
-    }
+    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) const;
 
     template<typename OrbitType>
-    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) {
-      json.put_obj();
-      json["prototype"] = orbit.prototype();
-      json["linear_orbit_index"] = orbit_index;
-
-      throw std::runtime_error("Error printing basis functions: ProtoFuncsPrinter not implemented");
-
-      return json;
-    }
+    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const;
 
   };
 
@@ -276,13 +259,17 @@ namespace CASM {
     OrbitPrinter printer);
 
   /// \brief Print site basis functions, as for 'casm bset --functions'
-  template<typename ClusterOrbitIterator>
   void print_site_basis_funcs(
-    ClusterOrbitIterator begin,
-    ClusterOrbitIterator end,
-    const ClexBasis &clex_basis,
+    Structure const &prim,
+    ClexBasis const &clex_basis,
     std::ostream &out,
-    COORD_TYPE mode);
+    Index indent_space = 6,
+    COORD_TYPE mode = FRAC);
+
+  void write_site_basis_funcs(
+    Structure const &prim,
+    ClexBasis const &clex_basis,
+    jsonParser &json);
 
 
   // ---------- clust.json IO ------------------------------------------------------------------
