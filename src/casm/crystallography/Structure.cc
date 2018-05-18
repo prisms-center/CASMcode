@@ -157,12 +157,12 @@ namespace CASM {
     Index i, j;
 
     //loop over all Sites in basis
-    for(i = 0; i < basis.size(); i++) {
+    for(i = 0; i < basis().size(); i++) {
       //loop over all Molecules in Site
-      for(j = 0; j < basis[i].site_occupant().size(); j++) {
+      for(j = 0; j < basis()[i].site_occupant().size(); j++) {
         //Collect unique Molecules
-        if(!contains(tstruc_molecule, basis[i].site_occupant()[j])) {
-          tstruc_molecule.push_back(basis[i].site_occupant()[j]);
+        if(!contains(tstruc_molecule, basis()[i].site_occupant()[j])) {
+          tstruc_molecule.push_back(basis()[i].site_occupant()[j]);
         }
       }
     }//end loop over all Sites
@@ -196,11 +196,11 @@ namespace CASM {
 
     Index i, j;
     // For each site
-    for(i = 0; i < basis.size(); i++) {
+    for(i = 0; i < basis().size(); i++) {
       // For each atomposition in the molecule on the site
-      for(j = 0; j < basis[i].occ().size(); j++) {
+      for(j = 0; j < basis()[i].occ().size(); j++) {
         // Count the present specie
-        tnum_each_specie(find_index(tstruc_specie, basis[i].occ().atom(j).specie()))++;
+        tnum_each_specie(find_index(tstruc_specie, basis()[i].occ().atom(j).specie()))++;
       }
     }
 
@@ -218,9 +218,9 @@ namespace CASM {
 
     Index i;
     // For each site
-    for(i = 0; i < basis.size(); i++) {
+    for(i = 0; i < basis().size(); i++) {
       // Count the molecule
-      tnum_each_molecule(find_index(tstruc_molecule, basis[i].occ()))++;
+      tnum_each_molecule(find_index(tstruc_molecule, basis()[i].occ()))++;
     }
 
     return tnum_each_molecule;
@@ -242,7 +242,7 @@ namespace CASM {
   std::vector<std::string> Structure::local_dof_types() const {
     std::set<std::string> tresult;
 
-    for(Site const &site : basis) {
+    for(Site const &site : basis()) {
       auto sitetypes = site.dof_types();
       tresult.insert(sitetypes.begin(), sitetypes.end());
     }
@@ -307,26 +307,22 @@ namespace CASM {
     SD_flag = prim.SD_flag;
     PrimGrid prim_grid(prim.lattice(), lattice());
 
-    basis.clear();
+    m_basis.clear();
     Coordinate tcoord(lattice());
 
     //loop over basis sites of prim
-    for(j = 0; j < prim.basis.size(); j++) {
+    for(j = 0; j < prim.basis().size(); j++) {
 
       //loop over prim_grid points
       for(i = 0; i < prim_grid.size(); i++) {
 
         //push back translated basis site of prim onto superstructure basis
-        basis.push_back(prim.basis[j] + prim_grid.coord(i, PRIM));
+        push_back(prim.basis()[j] + prim_grid.coord(i, PRIM));
 
-        //reset lattice for most recent superstructure Site
-        //set_lattice() converts fractional coordinates to be compatible with new lattice
-        basis.back().set_lattice(lattice(), CART);
-
-        basis.back().within();
-        for(Index k = 0; k < basis.size() - 1; k++) {
-          if(basis[k].compare(basis.back())) {
-            basis.pop_back();
+        m_basis.back().within();
+        for(Index k = 0; k < basis().size() - 1; k++) {
+          if(basis()[k].compare(basis().back())) {
+            m_basis.pop_back();
             break;
           }
         }
@@ -423,8 +419,8 @@ namespace CASM {
   void Structure::reset() {
     //std::cout << "begin reset() " << this << std::endl;
 
-    for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].set_basis_ind(nb);
+    for(Index nb = 0; nb < basis().size(); nb++) {
+      m_basis[nb].set_basis_ind(nb);
     }
     within();
     m_factor_group.clear();
@@ -465,8 +461,8 @@ namespace CASM {
     // Translate each of the prim atoms by prim_grid translation
     // vectors, and map that translated atom in the supercell.
     for(Index pg = 0; pg < prim_grid.size(); pg++) {
-      for(Index pb = 0; pb < prim.basis.size(); pb++) {
-        shifted_site = prim.basis[pb];
+      for(Index pb = 0; pb < prim.basis().size(); pb++) {
+        shifted_site = prim.basis()[pb];
         shifted_site += prim_grid.coord(pg, PRIM);
         shifted_site.set_lattice(lattice(), CART);
         shifted_site.within();
@@ -479,7 +475,7 @@ namespace CASM {
         shifted_site.set_basis_ind(-1);
         prim_to_scel = find(shifted_site);
 
-        if(prim_to_scel == basis.size()) {
+        if(prim_to_scel == basis().size()) {
           default_err_log() << "*******************************************\n"
                             << "ERROR in Structure::map_superstruc_to_prim:\n"
                             << "Cannot associate site \n"
@@ -504,8 +500,8 @@ namespace CASM {
 
     m_lattice = new_lat;
 
-    for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].set_lattice(lattice(), mode);
+    for(Index nb = 0; nb < basis().size(); nb++) {
+      m_basis[nb].set_lattice(lattice(), mode);
     }
 
     if(is_equiv)
@@ -527,15 +523,15 @@ namespace CASM {
 
   void Structure::sort_basis() {
 
-    for(Index i = 0; i < basis.size(); i++) {
-      for(Index j = 0; j < basis.size() - 1; j++) {
+    for(Index i = 0; i < basis().size(); i++) {
+      for(Index j = 0; j < basis().size() - 1; j++) {
 
-        if(basis[j].occ_name() > basis[j + 1].occ_name()) {
-          basis.swap_elem(j, j + 1);
+        if(basis()[j].occ_name() > basis()[j + 1].occ_name()) {
+          m_basis.swap_elem(j, j + 1);
         }
       }
     }
-
+    set_site_internals();
     return;
   }
 
@@ -552,24 +548,24 @@ namespace CASM {
     //First make a copy of your current basis
     //This copy will eventually become the new average basis.
     reset();
-    Array<Site> avg_basis = basis;
+    Array<Site> avg_basis = basis();
 
     //Loop through given symmetry group an fill a temporary "operated basis"
     Array<Site> operbasis;
     for(Index rf = 0; rf < relaxed_factors.size(); rf++) {
       operbasis.clear();
-      for(Index b = 0; b < basis.size(); b++) {
-        operbasis.push_back(relaxed_factors[rf]*basis[b]);
+      for(Index b = 0; b < basis().size(); b++) {
+        operbasis.push_back(relaxed_factors[rf]*basis()[b]);
         operbasis.back().print(std::cout);
         std::cout << std::endl;
       }
       //Now that you have a transformed basis, find the closest mapping of atoms
       //Then average the distance and add it to the average basis
-      for(Index b = 0; b < basis.size(); b++) {
+      for(Index b = 0; b < basis().size(); b++) {
         double smallest = 1000000;
         Coordinate bshift(lattice()), tshift(lattice());
         for(Index ob = 0; ob < operbasis.size(); ob++) {
-          double dist = operbasis[ob].min_dist(basis[b], tshift);
+          double dist = operbasis[ob].min_dist(basis()[b], tshift);
           if(dist < smallest) {
             bshift = tshift;
             smallest = dist;
@@ -604,51 +600,6 @@ namespace CASM {
     return;
   }
 
-  // Added by Donghee
-
-  //***********************************************************
-  /**
-   * Creates N of image POSCAR files in seperate directories by
-   * interpolating linearly between structures.
-   * For exact interpolation, choose " LOCAL " or "1" in mode
-   * For nearest-image interpolation, chosse "PERIODIC" or "0"
-   *
-   * Stored in Array<Structure> images;
-   * images[0] = start structure, images[Nofimage+1] = end structure
-   */
-  //***********************************************************
-
-  void Structure::intpol(Structure end_struc, int Nofimag, PERIODICITY_TYPE mode, Array<Structure> &images) {
-
-    for(int m = 0; m < Nofimag + 1; m++) {
-
-      Structure tstruc(end_struc);
-
-      // Change title
-      std::string header = "POSCAR 0";
-      std::stringstream convert; // stringstream used for the conversion;
-      convert << m;
-      tstruc.title = header + convert.str(); // title of submiges is POSCAR0X
-
-
-      for(Index i = 0 ; i < basis.size(); i++) {
-        Coordinate temp(lattice());
-
-        temp.frac() = (basis[i] - end_struc.basis[i]).const_frac() * m / (Nofimag + 1);
-
-        tstruc.basis[i] = basis[i] + temp;
-
-      }
-
-      images.push_back(tstruc);
-
-    }
-    images.push_back(end_struc);
-
-    return ;
-  }
-
-
 
   //***********************************************************
 
@@ -661,7 +612,7 @@ namespace CASM {
 
   SymGroupRepID Structure::generate_basis_permutation_representation(bool verbose) const {
 
-    if(factor_group().size() <= 0 || !basis.size()) {
+    if(factor_group().size() <= 0 || !basis().size()) {
       default_err_log() << "ERROR in BasicStructure::generate_basis_permutation_representation" << std::endl;
       default_err_log() << "You have NOT generated the factor group, or something is very wrong with your structure. I'm quitting!" << std::endl;;
       exit(1);
@@ -692,20 +643,20 @@ namespace CASM {
 
   //Sets the occupants in the basis sites to those specified by occ_index
   void Structure::set_occs(Array <int> occ_index) {
-    if(occ_index.size() != basis.size()) {
+    if(occ_index.size() != basis().size()) {
       default_err_log() << "The size of the occ index and basis index do not match!\nEXITING\n";
       exit(1);
     }
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].set_occ_value(occ_index[i]);
+    for(Index i = 0; i < basis().size(); i++) {
+      m_basis[i].set_occ_value(occ_index[i]);
     }
   }
 
   //***********************************************************
   Structure &Structure::operator+=(const Coordinate &shift) {
 
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i] += shift;
+    for(Index i = 0; i < basis().size(); i++) {
+      m_basis[i] += shift;
     }
 
     m_factor_group += shift.cart();
@@ -716,8 +667,8 @@ namespace CASM {
   //***********************************************************
   Structure &Structure::operator-=(const Coordinate &shift) {
 
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i] -= shift;
+    for(Index i = 0; i < basis().size(); i++) {
+      m_basis[i] -= shift;
     }
     m_factor_group -= shift.cart();
     return (*this);
@@ -795,13 +746,13 @@ namespace CASM {
   ///   mol_list_index = converter[basis_site][site_occupant_index]
   std::vector< std::vector<Index> > make_index_converter(const Structure &struc, std::vector<Molecule> mol_list) {
 
-    std::vector< std::vector<Index> > converter(struc.basis.size());
+    std::vector< std::vector<Index> > converter(struc.basis().size());
 
-    for(Index i = 0; i < struc.basis.size(); i++) {
-      converter[i].resize(struc.basis[i].site_occupant().size());
+    for(Index i = 0; i < struc.basis().size(); i++) {
+      converter[i].resize(struc.basis()[i].site_occupant().size());
 
-      for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        converter[i][j] = find_index(mol_list, struc.basis[i].site_occupant()[j]);
+      for(Index j = 0; j < struc.basis()[i].site_occupant().size(); j++) {
+        converter[i][j] = find_index(mol_list, struc.basis()[i].site_occupant()[j]);
       }
     }
 
@@ -813,13 +764,13 @@ namespace CASM {
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
   std::vector< std::vector<Index> > make_index_converter(const Structure &struc, std::vector<std::string> mol_name_list) {
 
-    std::vector< std::vector<Index> > converter(struc.basis.size());
+    std::vector< std::vector<Index> > converter(struc.basis().size());
 
-    for(Index i = 0; i < struc.basis.size(); i++) {
-      converter[i].resize(struc.basis[i].site_occupant().size());
+    for(Index i = 0; i < struc.basis().size(); i++) {
+      converter[i].resize(struc.basis()[i].site_occupant().size());
 
-      for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        converter[i][j] = find_index(mol_name_list, struc.basis[i].site_occupant()[j].name());
+      for(Index j = 0; j < struc.basis()[i].site_occupant().size(); j++) {
+        converter[i][j] = find_index(mol_name_list, struc.basis()[i].site_occupant()[j].name());
       }
     }
 
@@ -830,17 +781,17 @@ namespace CASM {
   /// Returns 'converter_inverse' which converts 'mol_name_list' indices to Site::site_occupant indices:
   ///  site_occupant_index = converter_inverse[basis_site][mol_name_list_index]
   ///
-  /// If mol is not allowed on basis_site, return struc.basis[basis_site].site_occupant().size()
+  /// If mol is not allowed on basis_site, return struc.basis()[basis_site].site_occupant().size()
   std::vector< std::vector<Index> > make_index_converter_inverse(const Structure &struc, std::vector<std::string> mol_name_list) {
 
-    std::vector< std::vector<Index> > converter_inv(struc.basis.size());
+    std::vector< std::vector<Index> > converter_inv(struc.basis().size());
 
-    for(Index i = 0; i < struc.basis.size(); i++) {
+    for(Index i = 0; i < struc.basis().size(); i++) {
       converter_inv[i].resize(mol_name_list.size());
 
       std::vector<std::string> site_occ_name_list;
-      for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        site_occ_name_list.push_back(struc.basis[i].site_occupant()[j].name());
+      for(Index j = 0; j < struc.basis()[i].site_occupant().size(); j++) {
+        site_occ_name_list.push_back(struc.basis()[i].site_occupant()[j].name());
       }
 
       for(Index j = 0; j < mol_name_list.size(); j++) {

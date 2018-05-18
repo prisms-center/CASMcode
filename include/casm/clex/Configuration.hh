@@ -141,7 +141,7 @@ namespace CASM {
     /// which occupant is at each of the 'N' sites of the configuration. The
     /// occupant on site l can be obtained from the occupation variable using:
     /// \code
-    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
+    /// Molecule on_site_l = config.prim().basis()[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
     /// \endcode
     /// - For a CASM project, the occupation variables will be ordered according
     /// to the occupant DoF in a "prim.json" file. This means that for the
@@ -158,7 +158,7 @@ namespace CASM {
     /// which occupant is at each of the 'N' sites of the configuration. The
     /// occupant on site l can be obtained from the occupation variable using:
     /// \code
-    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
+    /// Molecule on_site_l = config.prim().basis()[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
     /// \endcode
     /// - For a CASM project, the occupation variables will be ordered according
     /// to the occupant DoF in a "prim.json" file. This means that for the
@@ -172,7 +172,7 @@ namespace CASM {
     ///
     /// The occupant on site l can be obtained from the occupation variable using:
     /// \code
-    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[config.occ(l)];
+    /// Molecule on_site_l = config.prim().basis()[ config.sublat(l) ].site_occupant[config.occ(l)];
     /// \endcode
     /// - For a CASM project, the occupation variables will be ordered according
     /// to the occupant DoF in a "prim.json" file. This means that for the
@@ -186,7 +186,7 @@ namespace CASM {
     ///
     /// The occupant on site l can be obtained from the occupation variable using:
     /// \code
-    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[config.occ(l)];
+    /// Molecule on_site_l = config.prim().basis()[ config.sublat(l) ].site_occupant[config.occ(l)];
     /// \endcode
     /// - For a CASM project, the occupation variables will be ordered according
     /// to the occupant DoF in a "prim.json" file. This means that for the
@@ -200,7 +200,7 @@ namespace CASM {
     ///
     /// Equivalent to:
     /// \code
-    /// config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
+    /// config.prim().basis()[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
     /// \endcode
     ///
     const Molecule &mol(Index site_l) const;

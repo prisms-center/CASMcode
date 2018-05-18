@@ -99,7 +99,7 @@ namespace CASM {
     auto dim = unit.lattice().enclose_sphere(max_radius);
     EigenCounter<Eigen::Vector3i> grid_count(-dim, dim, Eigen::Vector3i::Constant(1));
     Coordinate lat_point(unit.lattice());
-    const auto &basis = unit.basis;
+    const auto &basis = unit.basis();
 
     do {
       lat_point.frac() = grid_count().cast<double>();
@@ -165,7 +165,7 @@ namespace CASM {
     ///lattice scaling
     Coordinate lat_point(diff_trans.prim().lattice());
 
-    const auto &basis = diff_trans.prim().basis;
+    const auto &basis = diff_trans.prim().basis();
 
     do {
       lat_point.frac() = grid_count().cast<double>();
@@ -239,7 +239,7 @@ namespace CASM {
       typedef typename OrbitType::Element cluster_type;
 
       // for all sites in the basis
-      for(int i = 0; i < prim.basis.size(); i++) {
+      for(int i = 0; i < prim.basis().size(); i++) {
         // create a prototype cluster
         cluster_type test(prim);
         test.elements().push_back(UnitCellCoord(prim, i, UnitCell(0, 0, 0)));
@@ -531,8 +531,8 @@ namespace CASM {
     PrimPeriodicSymCompare<IntegralCluster> sym_compare(xtal_tol);
 
     std::vector<UnitCellCoord> candidate_sites;
-    for(int i = 0; i < prim.basis.size(); ++i) {
-      if(site_filter(prim.basis[i])) {
+    for(int i = 0; i < prim.basis().size(); ++i) {
+      if(site_filter(prim.basis()[i])) {
         candidate_sites.emplace_back(prim, i, 0, 0, 0);
       }
     }
@@ -607,8 +607,8 @@ namespace CASM {
 
     // --- add specs for asymmetric unit orbit ------------------
     if(max_length.size() >= 2) {
-      for(int i = 0; i < prim.basis.size(); ++i) {
-        if(site_filter(prim.basis[i])) {
+      for(int i = 0; i < prim.basis().size(); ++i) {
+        if(site_filter(prim.basis()[i])) {
           candidate_sites.emplace_back(prim, i, 0, 0, 0);
         }
       }

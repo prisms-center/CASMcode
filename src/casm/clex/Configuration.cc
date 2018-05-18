@@ -592,7 +592,7 @@ namespace CASM {
 
   //*********************************************************************************
   const Molecule &Configuration::mol(Index site_l) const {
-    return prim().basis[ sublat(site_l) ].site_occupant()[ occ(site_l) ];
+    return prim().basis()[ sublat(site_l) ].site_occupant()[ occ(site_l) ];
   }
 
   //*********************************************************************************
@@ -647,8 +647,8 @@ namespace CASM {
 
     // create an array to count the number of each molecule
     std::vector<Eigen::VectorXi> sublat_num_each_molecule;
-    for(i = 0; i < prim().basis.size(); i++) {
-      sublat_num_each_molecule.push_back(Eigen::VectorXi::Zero(prim().basis[i].site_occupant().size()));
+    for(i = 0; i < prim().basis().size(); i++) {
+      sublat_num_each_molecule.push_back(Eigen::VectorXi::Zero(prim().basis()[i].site_occupant().size()));
     }
 
     // count the number of each molecule by sublattice
@@ -1184,7 +1184,7 @@ namespace CASM {
 
   /// \brief Returns the composition as site fraction, in the order of Structure::struc_molecule
   Eigen::VectorXd site_frac(const Configuration &config) {
-    return comp_n(config) / config.prim().basis.size();
+    return comp_n(config) / config.prim().basis().size();
   }
 
   /// \brief Returns the relaxed energy, normalized per unit cell

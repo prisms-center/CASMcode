@@ -745,6 +745,11 @@ namespace CASM {
       return m_type_name;
     }
 
+    void set_ID(Index _ID) {
+      for(auto &c : m_components)
+        c.set_ID(_ID);
+    }
+
     ContinuousDoF const &operator[](Index i) const {
       return m_components[i];
     }

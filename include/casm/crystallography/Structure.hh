@@ -155,10 +155,6 @@ namespace CASM {
     Structure &operator+=(const Coordinate &shift);
     Structure &operator-=(const Coordinate &shift);
 
-    /// Creates Nofimag POSCAR files by interpolating linearly between structures in star_stru and end_stru
-    /// for exact interpolation, choose "LOCAL" or "1", for nearest-image interpolation, choose "PERIODIC" or "0"
-    void intpol(Structure end_struc, int Nofimag, PERIODICITY_TYPE mode, Array<Structure> &images);
-
     // ****Input/Output****
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself

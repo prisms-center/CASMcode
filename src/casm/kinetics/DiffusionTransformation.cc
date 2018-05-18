@@ -582,7 +582,7 @@ namespace CASM {
       Eigen::Vector3d ret_vec;
       Structure prim(diff_trans.specie_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
-      for(int i = 0; i < prim.basis.size(); i++) {
+      for(int i = 0; i < prim.basis().size(); i++) {
         sublat_indices.insert(i);
       }
       UnitCellCoord ret_coord(prim);
@@ -611,7 +611,7 @@ namespace CASM {
         nlist.expand(tocoord);
       }
       for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
-        for(int b = 0; b < prim.basis.size(); b++) {
+        for(int b = 0; b < prim.basis().size(); b++) {
           UnitCellCoord uccoord(prim, b, *n_it);
           bool in_diff_trans = false;
           for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {

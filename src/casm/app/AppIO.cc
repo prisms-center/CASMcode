@@ -40,7 +40,7 @@ namespace CASM {
       BasicStructure<Site> prim(lat);
 
       // read title
-      from_json(prim.title, json["title"]);
+      prim.set_title(json["title"].get<std::string>());
 
       Eigen::Vector3d vec;
 
@@ -80,7 +80,7 @@ namespace CASM {
         site.set_occ_value(0);
 
         // add site to prim
-        prim.basis.push_back(site);
+        prim.push_back(site);
 
       }
 
@@ -111,7 +111,7 @@ namespace CASM {
 
     json = jsonParser::object();
 
-    json["title"] = prim.title;
+    json["title"] = prim.title();
 
     json["lattice_vectors"] = prim.lattice().lat_column_mat().transpose();
 
@@ -126,25 +126,25 @@ namespace CASM {
       json["coordinate_mode"] = "Cartesian";
     }
 
-    json["basis"] = jsonParser::array(prim.basis.size());
-    for(int i = 0; i < prim.basis.size(); i++) {
+    json["basis"] = jsonParser::array(prim.basis().size());
+    for(int i = 0; i < prim.basis().size(); i++) {
       json["basis"][i] = jsonParser::object();
       json["basis"][i]["coordinate"].put_array();
       if(mode == FRAC) {
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(0));
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(1));
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(2));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].frac(0));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].frac(1));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].frac(2));
       }
       else if(mode == CART) {
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(0));
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(1));
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(2));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].cart(0));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].cart(1));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].cart(2));
       }
 
-      json["basis"][i]["occupant_dof"] = jsonParser::array(prim.basis[i].site_occupant().size());
+      json["basis"][i]["occupant_dof"] = jsonParser::array(prim.basis()[i].site_occupant().size());
 
-      for(int j = 0; j < prim.basis[i].site_occupant().size(); j++) {
-        json["basis"][i]["occupant_dof"][j] = prim.basis[i].site_occupant()[j].name();
+      for(int j = 0; j < prim.basis()[i].site_occupant().size(); j++) {
+        json["basis"][i]["occupant_dof"][j] = prim.basis()[i].site_occupant()[j].name();
       }
 
     }
@@ -515,17 +515,17 @@ namespace CASM {
             if(dofset.first == "occ") {
               BasisSet tbasis(dofset.second[b]);
               int s;
-              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis[b].site_occupant().ID()));
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].site_occupant().ID()));
               remote[0] = s;
               tbasis.register_remotes(remote);
 
 
-              for(s = 0; s < prim.basis[b].site_occupant().size(); s++) {
+              for(s = 0; s < prim.basis()[b].site_occupant().size(); s++) {
                 if(s == 0)
                   out << "    ";
-                out << "    \\phi_" << b << '_' << f << '[' << prim.basis[b].site_occupant()[s].name() << "] = "
+                out << "    \\phi_" << b << '_' << f << '[' << prim.basis()[b].site_occupant()[s].name() << "] = "
                     << dofset.second[b][f]->remote_eval();
-                if(s + 1 == prim.basis[b].site_occupant().size())
+                if(s + 1 == prim.basis()[b].site_occupant().size())
                   out << "\n";
                 else
                   out << ",   ";
@@ -562,7 +562,7 @@ namespace CASM {
     //   ],
 
     jsonParser &sitef = json["site_functions"];
-    sitef = jsonParser::array(prim.basis.size(), jsonParser::object());
+    sitef = jsonParser::array(prim.basis().size(), jsonParser::object());
 
     std::ostream nullstream(0);
     std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
@@ -594,12 +594,12 @@ namespace CASM {
             if(dofset.first == "occ") {
               BasisSet tbasis(dofset.second[b]);
               int s;
-              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis[b].site_occupant().ID()));
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].site_occupant().ID()));
               remote[0] = s;
               tbasis.register_remotes(remote);
 
-              for(s = 0; s < prim.basis[b].site_occupant().size(); s++) {
-                sitef[b]["basis"][fname.str()][prim.basis[b].site_occupant()[s].name()] = tbasis[f]->remote_eval();
+              for(s = 0; s < prim.basis()[b].site_occupant().size(); s++) {
+                sitef[b]["basis"][fname.str()][prim.basis()[b].site_occupant()[s].name()] = tbasis[f]->remote_eval();
               }
             }
             else {

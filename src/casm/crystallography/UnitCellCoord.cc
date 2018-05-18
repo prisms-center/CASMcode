@@ -12,8 +12,8 @@ namespace CASM {
 
   UnitCellCoord::UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol) :
     m_unit(&unit) {
-    for(Index b = 0; b < unit.basis.size(); ++b) {
-      auto diff = coord - unit.basis[b];
+    for(Index b = 0; b < unit.basis().size(); ++b) {
+      auto diff = coord - unit.basis()[b];
       if(is_integer(diff.const_frac(), tol)) {
         *this = UnitCellCoord(unit, b, lround(diff.const_frac()));
         return;
@@ -41,24 +41,24 @@ namespace CASM {
 
   /// \brief Get corresponding site
   Site UnitCellCoord::site() const {
-    if(sublat() < 0 || sublat() >= unit().basis.size()) {
+    if(sublat() < 0 || sublat() >= unit().basis().size()) {
       unit().print_xyz(std::cout);
       std::cerr << "CRITICAL ERROR: In BasicStructure<CoordType>::get_site(), UnitCellCoord " << *this << " is out of bounds!\n"
-                << "                Cannot index basis, which contains " << unit().basis.size() << " objects.\n";
+                << "                Cannot index basis, which contains " << unit().basis().size() << " objects.\n";
       throw std::runtime_error("Error: in 'UnitCellCoord::site()': Cannot convert UnitCellCoord to Site");
     }
-    return unit().basis[sublat()] + Coordinate(unitcell().cast<double>(), unit().lattice(), FRAC);
+    return unit().basis()[sublat()] + Coordinate(unitcell().cast<double>(), unit().lattice(), FRAC);
   }
 
   /// \brief Get reference to corresponding sublattice site in the unit structure
   const Site &UnitCellCoord::sublat_site() const {
-    if(sublat() < 0 || sublat() >= unit().basis.size()) {
+    if(sublat() < 0 || sublat() >= unit().basis().size()) {
       unit().print_xyz(std::cout);
       std::cerr << "CRITICAL ERROR: In BasicStructure<CoordType>::get_site(), UnitCellCoord " << *this << " is out of bounds!\n"
-                << "                Cannot index basis, which contains " << unit().basis.size() << " objects.\n";
+                << "                Cannot index basis, which contains " << unit().basis().size() << " objects.\n";
       throw std::runtime_error("Error: in 'UnitCellCoord::site()': Cannot convert UnitCellCoord to Site");
     }
-    return unit().basis[sublat()];
+    return unit().basis()[sublat()];
   }
 
   UnitCellCoord &UnitCellCoord::apply_sym(const SymOp &op) {

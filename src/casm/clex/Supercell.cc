@@ -38,7 +38,7 @@ namespace CASM {
   Supercell::Supercell(const Supercell &RHS) :
     m_primclex(&RHS.primclex()),
     m_lattice(RHS.m_lattice),
-    m_prim_grid(prim().lattice(), m_lattice, prim().basis.size()),
+    m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()),
     m_nlist(RHS.m_nlist),
     m_transf_mat(RHS.m_transf_mat) {
   }
@@ -46,7 +46,7 @@ namespace CASM {
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     m_primclex(_prim),
     m_lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
-    m_prim_grid(prim().lattice(), m_lattice, prim().basis.size()),
+    m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()),
     m_transf_mat(transf_mat_init) {
     //    fill_reciprocal_supercell();
   }
@@ -54,7 +54,7 @@ namespace CASM {
   Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
     m_primclex(_prim),
     m_lattice(superlattice),
-    m_prim_grid(prim().lattice(), m_lattice, prim().basis.size()) {
+    m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()) {
 
     auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
     if(!res.first) {
@@ -118,7 +118,7 @@ namespace CASM {
   ///
   Coordinate Supercell::coord(Index linear_index) const {
     Coordinate tcoord(m_prim_grid.coord(linear_index % volume(), SCEL));
-    tcoord.cart() += prim().basis[linear_index / volume()].cart();
+    tcoord.cart() += prim().basis()[linear_index / volume()].cart();
     return tcoord;
     // return uccoord(linear_index).coordinate();
   }
@@ -138,8 +138,8 @@ namespace CASM {
     std::vector<int> max_allowed;
 
     // Figures out the maximum number of occupants in each basis site, to initialize counter with
-    for(Index i = 0; i < prim().basis.size(); i++) {
-      std::vector<int> tmp(volume(), prim().basis[i].site_occupant().size() - 1);
+    for(Index i = 0; i < prim().basis().size(); i++) {
+      std::vector<int> tmp(volume(), prim().basis()[i].site_occupant().size() - 1);
       max_allowed.insert(max_allowed.end(), tmp.begin(), tmp.end());
     }
     //std::cout << "max_allowed_occupation is:  " << max_allowed << "\n\n";
@@ -181,8 +181,8 @@ namespace CASM {
     int val;
 
     // For each site in superstruc, set occ index
-    for(Index i = 0; i < superstruc.basis.size(); i++) {
-      _linear_index = linear_index(Coordinate(superstruc.basis[i]), tol);
+    for(Index i = 0; i < superstruc.basis().size(); i++) {
+      _linear_index = linear_index(Coordinate(superstruc.basis()[i]), tol);
       b = sublat(_linear_index);
 
       // check that we're not over-writing something already set
@@ -193,9 +193,9 @@ namespace CASM {
       }
 
       // check that the Molecule in superstruc is allowed on the site in 'prim'
-      if(!prim().basis[b].contains(superstruc.basis[i].occ_name(), val)) {
+      if(!prim().basis()[b].contains(superstruc.basis()[i].occ_name(), val)) {
         default_err_log() << "Error in Supercell::config." << std::endl;
-        default_err_log() << "  The molecule: " << superstruc.basis[i].occ_name() << " is not allowed on basis site " << b << " of the Supercell prim." << std::endl;
+        default_err_log() << "  The molecule: " << superstruc.basis()[i].occ_name() << " is not allowed on basis site " << b << " of the Supercell prim." << std::endl;
         throw std::runtime_error("Error in Supercell::configuration: molecule site mapping not allowed");
       }
       config.set_occ(_linear_index, val);
@@ -206,7 +206,7 @@ namespace CASM {
       if(config.occ(i) == -1) {
         b = sublat(i);
 
-        if(prim().basis[b].contains("Va", val)) {
+        if(prim().basis()[b].contains("Va", val)) {
           config.set_occ(i, val);
         }
         else {
@@ -233,9 +233,9 @@ namespace CASM {
     //   This sorting may not be necessary,
     //   but it depends on how we construct the config_index_to_bijk,
     //   so I'll leave it in for now just to be safe
-    for(Index i = 0; i < superstruc.basis.size(); i++) {
-      superstruc.basis.swap_elem(i, linear_index(superstruc.basis[i]));
-    }
+    //for(Index i = 0; i < superstruc.basis().size(); i++) {
+    //superstruc.basis.swap_elem(i, linear_index(superstruc.basis()[i]));
+    //}
 
     //superstruc.reset();
 
@@ -257,8 +257,8 @@ namespace CASM {
     Structure superstruc = superstructure();
 
     // set basis site occupants
-    for(Index i = 0; i < superstruc.basis.size(); i++) {
-      superstruc.basis[i].set_occ_value(config.occ(i));
+    for(Index i = 0; i < superstruc.basis().size(); i++) {
+      superstruc.set_occ(i, config.occ(i));
     }
 
     // setting the occupation changes symmetry properties, so must reset
@@ -278,7 +278,7 @@ namespace CASM {
   };
 
   Index Supercell::basis_size() const {
-    return prim().basis.size();
+    return prim().basis().size();
   }
 
   Index Supercell::num_sites() const {
@@ -440,7 +440,7 @@ namespace CASM {
     int b, index;
     for(Index i = 0; i < num_sites(); i++) {
       b = sublat(i);
-      if(prim().basis[b].contains("Va", index)) {
+      if(prim().basis()[b].contains("Va", index)) {
         occupation[i] = index;
       }
     }

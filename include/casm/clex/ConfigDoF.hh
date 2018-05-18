@@ -168,11 +168,11 @@ namespace CASM {
     /// describes which occupant is at each of the 'N' sites of the configuration
     ///
     /// 'occupation' is a list of the indices describing the occupants in each crystal site.
-    ///   prim().basis[ sublat(i) ].site_occupant[ occupation[i]] -> Molecule on site i
+    ///   prim().basis()[ sublat(i) ].site_occupant[ occupation[i]] -> Molecule on site i
     ///   This means that for the background structure, 'occupation' is all 0
     ///
     /// Configuration sites are arranged by basis, and then prim:
-    ///   occupation: [basis0                |basis1               |basis2          |...] up to prim.basis.size()
+    ///   occupation: [basis0                |basis1               |basis2          |...] up to prim.basis().size()
     ///       basis0: [prim0|prim1|prim2|...] up to supercell.volume()
     ///
     ///

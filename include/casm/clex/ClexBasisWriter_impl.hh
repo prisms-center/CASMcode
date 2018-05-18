@@ -594,9 +594,9 @@ namespace CASM {
         for(Index nb = 0; nb < (it->second).size(); ++nb) {
           out << "  Basis site " << nb + 1 << ":\n"
               << "  ";
-          clex.prim().basis[nb].print(out);
+          clex.prim().basis()[nb].print(out);
           out << "\n";
-          out << DoFType::traits(it->first).site_basis_description((it->second)[nb], clex.prim().basis[nb]);
+          out << DoFType::traits(it->first).site_basis_description((it->second)[nb], clex.prim().basis()[nb]);
         }
       }
 

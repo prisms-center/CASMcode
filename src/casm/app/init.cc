@@ -119,14 +119,16 @@ namespace CASM {
       }
 
 
-      std::string poscar_prim_title = prim.title;
+      std::string poscar_prim_title = prim.title();
       args.log() << "Converting 'PRIM' to 'prim.json'.\n\n" << std::endl;
 
       args.log() << "Please enter a short title for this project.\n";
       args.log() << "  Use something suitable as a prefix for files specific to this project, such as 'ZrO' or 'TiAl'.\n\n";
 
+      std::string ttitle;
       args.log() << "Title: ";
-      std::cin >> prim.title;
+      std::cin >> ttitle;
+      prim.set_title(ttitle);
       args.log() << "\n\n";
 
       jsonParser json;
@@ -154,7 +156,7 @@ namespace CASM {
 
     /// Check if PRIM is primitive
     BasicStructure<Site> true_prim;
-    true_prim.title = prim.title;
+    true_prim.set_title(prim.title());
     if(!prim.is_primitive(true_prim)) {
       if(!vm.count("force")) {
         args.err_log() << "ERROR: The structure in the prim.json file is not primitive. Writing the most       \n"
@@ -241,8 +243,8 @@ namespace CASM {
     }
 
     try {
-      args.log() << "Initializing CASM project '" << prim.title << "'" << std::endl;
-      ProjectBuilder builder(root, prim.title, "formation_energy");
+      args.log() << "Initializing CASM project '" << prim.title() << "'" << std::endl;
+      ProjectBuilder builder(root, prim.title(), "formation_energy");
       builder.build();
     }
     catch(std::runtime_error &e) {

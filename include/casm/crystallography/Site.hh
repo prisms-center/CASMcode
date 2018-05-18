@@ -77,7 +77,7 @@ namespace CASM {
     std::vector<std::string> allowed_occupants() const;
 
     /// set basis_ind of site and its occupant functions
-    void set_basis_ind(Index);
+    void set_basis_ind(Index _basis_ind);
 
     /// set m_label of Site
     void set_label(Index _new_label);

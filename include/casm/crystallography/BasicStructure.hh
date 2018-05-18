@@ -33,12 +33,13 @@ namespace CASM {
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
 
-  public: // PUBLIC DATA MEMBERS -- (long-term, at least lattice should be made private and only updated via Structure::set_lattice)
     /// User-specified name of this Structure
-    std::string title;
+    std::string m_title;
 
     /// Lattice vectors that specifies periodicity of the crystal
-    Array<CoordType> basis;
+    Array<CoordType> m_basis;
+
+    //public: // PUBLIC DATA MEMBERS -- (long-term, at least lattice should be made private and only updated via Structure::set_lattice)
 
 
   private: // PRIVATE METHODS
@@ -72,6 +73,14 @@ namespace CASM {
 
     const Lattice &lattice() const {
       return m_lattice;
+    }
+
+    const Array<CoordType> &basis() const {
+      return m_basis;
+    }
+
+    const std::string &title() const {
+      return m_title;
     }
 
     /// Return the UnitCellCoord corresponding to test_site (i.e., finds the basis index and
@@ -112,8 +121,19 @@ namespace CASM {
     ///       invalidates the FRAC coordinates, and changes the lattice
     void set_lattice(const Lattice &lattice, COORD_TYPE mode);
 
+    /// Set the title of the structure
+    void set_title(std::string const &_title);
+
     /// Manually set the basis sites
-    void set_basis(Array<CoordType> basis_in);
+    void set_basis(Array<CoordType> const &_basis, COORD_TYPE mode = CART);
+
+    /// Clear the basis atoms
+    void clear_basis();
+
+    void set_occ(Index basis_ind, int _val);
+
+    /// Manually set the basis sites
+    void push_back(CoordType const &_site, COORD_TYPE mode = CART);
 
     //  - Symmetry
 

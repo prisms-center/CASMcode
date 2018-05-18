@@ -46,8 +46,8 @@ namespace CASM {
 
     StrucType &struc(*m_struc_ptr);
     std::map<std::string, std::vector<Site> > site_map;
-    for(Index i = 0; i < struc.basis.size(); i++)
-      site_map[struc.basis[i].occ_name()].push_back(struc.basis[i]);
+    for(Index i = 0; i < struc.basis().size(); i++)
+      site_map[struc.basis()[i].occ_name()].push_back(struc.basis()[i]);
 
     json[m_prefix + "basis"].put_array();
     json["atoms_per_type"].put_array();
@@ -66,7 +66,7 @@ namespace CASM {
 
   template< bool IsConst >
   void SimpleJSonSiteStructure<IsConst>::_from_json(BasicStructure<Site> &struc, const jsonParser &json) const {
-    struc.basis.clear();
+    struc.clear_basis();
     struc.reset();
     try {
       std::string tstr;
@@ -86,7 +86,7 @@ namespace CASM {
         CASM::from_json(tstr, json["atom_type"][i]);
         for(Index j = 0; j < json["atoms_per_type"][i].get<Index>(); j++) {
           CASM::from_json(tvec, json[m_prefix + "basis"][l++]);
-          struc.basis.push_back(Site(Coordinate(tvec, struc.lattice(), mode), tstr));
+          struc.push_back(Site(Coordinate(tvec, struc.lattice(), mode), tstr));
         }
       }
     }

@@ -81,7 +81,7 @@ namespace CASM {
 
   /// \brief Total number of basis sites in primitive cell
   Index ClexBasis::n_sublat() const {
-    return prim().basis.size();
+    return prim().basis().size();
   }
 
   /// \brief Total number of cluster orbits

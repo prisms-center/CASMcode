@@ -29,8 +29,8 @@ namespace CASM {
   std::set<int> _default_nlist_sublat_indices(const Structure &prim) {
     // for now, include sublattices with >= 2 components
     std::set<int> sublat_indices;
-    for(int b = 0; b < prim.basis.size(); ++b) {
-      if(prim.basis[b].site_occupant().size() >= 2) {
+    for(int b = 0; b < prim.basis().size(); ++b) {
+      if(prim.basis()[b].site_occupant().size() >= 2) {
         sublat_indices.insert(b);
       }
     }

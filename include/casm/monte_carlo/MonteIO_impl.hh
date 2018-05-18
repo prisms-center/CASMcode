@@ -89,7 +89,7 @@ namespace CASM {
       auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
         const MonteType *mc_ptr = static_cast<const MonteType *>(mc);
         Eigen::VectorXd comp_n = mc_ptr->comp_n();
-        Eigen::VectorXd site_frac = comp_n / mc->primclex().prim().basis.size();
+        Eigen::VectorXd site_frac = comp_n / mc->primclex().prim().basis().size();
         return site_frac(index);
       };
       std::string header = std::string("site_frac(") + mc.primclex().prim().struc_molecule_name()[index] + ")";

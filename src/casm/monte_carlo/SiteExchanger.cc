@@ -110,14 +110,14 @@ namespace CASM {
       int scel_volume = scel.volume();
 
       //int scel_basis = scel->basis_size();
-      int prim_basis = scel.prim().basis.size();
+      int prim_basis = scel.prim().basis().size();
       std::vector<std::string> allowed_components = scel.primclex().composition_axes().components();
 
       //Count over sites in prim basis.
       for(Index prim_basis_site = 0; prim_basis_site < prim_basis; prim_basis_site++) {
 
         //If the site we're working allows multiple occupants, we're interested in filling up values for it.
-        const auto &allowed = scel.prim().basis[prim_basis_site].allowed_occupants();
+        const auto &allowed = scel.prim().basis()[prim_basis_site].allowed_occupants();
         std::vector<std::string> site_allowed_occ(allowed.cbegin(), allowed.cend());
 
         if(site_allowed_occ.size() > 1) {
@@ -186,7 +186,7 @@ namespace CASM {
           std::vector<int> single_site_to_mol;
 
           //The one and only allowed occupant at prim_basis_site must be
-          std::string only_site_occ = scel.prim().basis[prim_basis_site].allowed_occupants()[0];
+          std::string only_site_occ = scel.prim().basis()[prim_basis_site].allowed_occupants()[0];
 
           //And the corresponding index for that occupant in terms of allowed_components is
           int mol_ind = std::find(allowed_components.cbegin(), allowed_components.cend(), only_site_occ) - allowed_components.cbegin();

@@ -170,7 +170,7 @@ namespace CASM {
           }
         }
 
-        comp_n = comp_n / comp_n.sum() * primclex.prim().basis.size();
+        comp_n = comp_n / comp_n.sum() * primclex.prim().basis().size();
         comp = primclex.composition_axes().param_composition(comp_n);
       }
       else {

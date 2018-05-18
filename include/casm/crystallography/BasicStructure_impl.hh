@@ -32,9 +32,9 @@ namespace CASM {
 
   template<typename CoordType>
   BasicStructure<CoordType>::BasicStructure(const BasicStructure &RHS) :
-    m_lattice(RHS.lattice()), title(RHS.title), basis(RHS.basis) {
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].set_lattice(lattice(), CART);
+    m_lattice(RHS.lattice()), m_title(RHS.title()), m_basis(RHS.basis()) {
+    for(Index i = 0; i < basis().size(); i++) {
+      m_basis[i].set_lattice(lattice(), CART);
     }
   }
 
@@ -48,11 +48,8 @@ namespace CASM {
   template<typename CoordType>
   BasicStructure<CoordType> &BasicStructure<CoordType>::operator=(const BasicStructure<CoordType> &RHS) {
     m_lattice = RHS.lattice();
-    title = RHS.title;
-    basis = RHS.basis;
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].set_lattice(lattice(), CART);
-    }
+    m_title = RHS.title();
+    set_basis(RHS.basis());
 
     return *this;
   }
@@ -69,8 +66,8 @@ namespace CASM {
   /*
   template<typename CoordType>
   BasicStructure<CoordType> &BasicStructure<CoordType>::apply_sym(const SymOp &op) {
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].apply_sym(op);
+    for(Index i = 0; i < basis().size(); i++) {
+      m_basis[i].apply_sym(op);
     }
     return *this;
   }
@@ -79,14 +76,9 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::reset() {
+    set_site_internals();
 
-
-    for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].set_basis_ind(nb);
-    }
     within();
-    //set_site_internals();
-
   }
 
   //***********************************************************
@@ -100,8 +92,8 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::within() {
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].within();
+    for(Index i = 0; i < basis().size(); i++) {
+      m_basis[i].within();
     }
     return;
   }
@@ -134,30 +126,30 @@ namespace CASM {
       trans_basis.clear();
       //First, generate the symmetrically transformed basis sites
       //Loop over all sites in basis
-      for(b0 = 0; b0 < basis.size(); b0++) {
-        trans_basis.push_back(point_group[pg]*basis[b0]);
+      for(b0 = 0; b0 < basis().size(); b0++) {
+        trans_basis.push_back(point_group[pg]*m_basis[b0]);
       }
 
       //Using the symmetrically transformed basis, find all possible translations
       //that MIGHT map the symmetrically transformed basis onto the original basis
       for(b0 = 0; b0 < trans_basis.size(); b0++) {
 
-        if(!basis[0].compare_type(trans_basis[b0]))
+        if(!m_basis[0].compare_type(trans_basis[b0]))
           continue;
 
-        t_tau = basis[0] - trans_basis[b0];
+        t_tau = m_basis[0] - trans_basis[b0];
 
         t_tau.within();
         num_suc_maps = 0; //Keeps track of number of old->new basis site mappings that are found
 
         double tdist = 0.0;
         double max_error = 0.0;
-        for(b1 = 0; b1 < basis.size(); b1++) { //Loop over original basis sites
+        for(b1 = 0; b1 < basis().size(); b1++) { //Loop over original basis sites
           for(b2 = 0; b2 < trans_basis.size(); b2++) { //Loop over symmetrically transformed basis sites
 
             //see if translation successfully maps the two sites
-            if(basis[b1].compare(trans_basis[b2], t_tau)) {
-              tdist = basis[b1].min_dist(Coordinate(trans_basis[b2]) + t_tau);
+            if(m_basis[b1].compare(trans_basis[b2], t_tau)) {
+              tdist = m_basis[b1].min_dist(Coordinate(trans_basis[b2]) + t_tau);
               if(tdist > max_error) {
                 max_error = tdist;
               }
@@ -174,7 +166,7 @@ namespace CASM {
 
         //If all atoms in the basis are mapped successfully, try to add the corresponding
         //symmetry operation to the factor_group
-        if(num_suc_maps == basis.size()) {
+        if(num_suc_maps == basis().size()) {
           SymOp tSym(SymOp::translation(t_tau.cart())*point_group[pg]);
           tSym.set_map_error(max_error);
 
@@ -299,26 +291,20 @@ namespace CASM {
 
     PrimGrid prim_grid(prim.lattice(), lattice());
 
-    basis.clear();
+    m_basis.clear();
 
     //loop over basis sites of prim
-    for(j = 0; j < prim.basis.size(); j++) {
+    for(j = 0; j < prim.basis().size(); j++) {
 
       //loop over prim_grid points
       for(i = 0; i < prim_grid.size(); i++) {
 
         //push back translated basis site of prim onto superstructure basis
-        basis.push_back(prim.basis[j] + prim_grid.coord(i, PRIM));
+        push_back(prim.basis()[j] + prim_grid.coord(i, PRIM));
 
-        //reset lattice for most recent superstructure CoordType
-        //set_lattice() converts fractional coordinates to be compatible with new lattice
-        basis.back().set_lattice(lattice(), CART);
-
-        basis.back().within();
+        m_basis.back().within();
       }
     }
-
-    set_site_internals();
 
     return;
   }
@@ -353,27 +339,27 @@ namespace CASM {
     Coordinate tshift(lattice());//, bshift(lattice);
     Index b1, b2, b3, num_suc_maps;
 
-    for(b1 = 1; b1 < basis.size(); b1++) {
-      if(!basis[0].compare_type(basis[b1])) {
+    for(b1 = 1; b1 < basis().size(); b1++) {
+      if(!m_basis[0].compare_type(m_basis[b1])) {
         continue;
       }
 
-      tshift = basis[0] - basis[b1];
+      tshift = m_basis[0] - m_basis[b1];
       num_suc_maps = 0;
-      for(b2 = 0; b2 < basis.size(); b2++) {
-        for(b3 = 0; b3 < basis.size(); b3++) {
-          //if(basis[b3].compare_type(basis[b2], bshift) && tshift.min_dist(bshift) < lattice().tol()) {
-          if(basis[b3].compare(basis[b2], tshift)) {
+      for(b2 = 0; b2 < basis().size(); b2++) {
+        for(b3 = 0; b3 < basis().size(); b3++) {
+          //if(m_basis[b3].compare_type(m_basis[b2], bshift) && tshift.min_dist(bshift) < lattice().tol()) {
+          if(m_basis[b3].compare(m_basis[b2], tshift)) {
             num_suc_maps++;
             break;
           }
         }
-        if(b3 == basis.size()) {
+        if(b3 == basis().size()) {
           break;
         }
       }
 
-      if(num_suc_maps == basis.size()) {
+      if(num_suc_maps == basis().size()) {
         return false;
       }
 
@@ -399,25 +385,25 @@ namespace CASM {
     Index num_suc_maps;
     double tvol, min_vol;
     bool prim_flag = true;
-    double prim_vol_tol = std::abs(0.5 * lattice().vol() / double(basis.size())); //sets a hard lower bound for the minimum value of the volume of the primitive cell
+    double prim_vol_tol = std::abs(0.5 * lattice().vol() / double(basis().size())); //sets a hard lower bound for the minimum value of the volume of the primitive cell
 
-    for(b1 = 1; b1 < basis.size(); b1++) {
-      tshift = basis[0] - basis[b1];
+    for(b1 = 1; b1 < basis().size(); b1++) {
+      tshift = m_basis[0] - m_basis[b1];
       if(almost_zero(tshift.min_dist(Coordinate::origin(lattice()))))
         continue;
       num_suc_maps = 0;
-      for(b2 = 0; b2 < basis.size(); b2++) {
-        for(b3 = 0; b3 < basis.size(); b3++) {
-          if(basis[b3].compare(basis[b2], tshift)) {
+      for(b2 = 0; b2 < basis().size(); b2++) {
+        for(b3 = 0; b3 < basis().size(); b3++) {
+          if(m_basis[b3].compare(m_basis[b2], tshift)) {
             num_suc_maps++;
             break;
           }
         }
-        if(b3 == basis.size()) {
+        if(b3 == basis().size()) {
           break;
         }
       }
-      if(num_suc_maps == basis.size()) {
+      if(num_suc_maps == basis().size()) {
         prim_flag = false;
         shift.push_back(tshift.cart());
       }
@@ -481,12 +467,12 @@ namespace CASM {
 
     new_prim.set_lattice(reconstructed_reduced_new_lat, CART);
     CoordType tsite(new_prim.lattice());
-    for(Index nb = 0; nb < basis.size(); nb++) {
-      tsite = basis[nb];
+    for(Index nb = 0; nb < basis().size(); nb++) {
+      tsite = m_basis[nb];
       tsite.set_lattice(new_prim.lattice(), CART);
-      if(new_prim.find(tsite) == new_prim.basis.size()) {
+      if(new_prim.find(tsite) == new_prim.basis().size()) {
         tsite.within();
-        new_prim.basis.push_back(tsite);
+        new_prim.push_back(tsite);
       }
     }
 
@@ -507,38 +493,33 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::set_site_internals() {
-    //std::cout << "begin set_site_internals() " << this << std::endl;
-    Index nb;
-
-
-    for(nb = 0; nb < basis.size(); nb++) {
-      basis[nb].set_basis_ind(nb);
+    for(Index nb = 0; nb < basis().size(); nb++) {
+      m_basis[nb].set_basis_ind(nb);
     }
-
   }
 
   //***********************************************************
 
   template<typename CoordType> template<typename CoordType2>
   Index BasicStructure<CoordType>::find(const CoordType2 &test_site) const {
-    for(Index i = 0; i < basis.size(); i++) {
-      if(basis[i].compare(test_site)) {
+    for(Index i = 0; i < basis().size(); i++) {
+      if(m_basis[i].compare(test_site)) {
         return i;
       }
     }
-    return basis.size();
+    return basis().size();
   }
 
   //***********************************************************
 
   template<typename CoordType> template<typename CoordType2>
   Index BasicStructure<CoordType>::find(const CoordType2 &test_site, const Coordinate &shift) const {
-    for(Index i = 0; i < basis.size(); i++) {
-      if(basis[i].compare(test_site, shift)) {
+    for(Index i = 0; i < basis().size(); i++) {
+      if(m_basis[i].compare(test_site, shift)) {
         return i;
       }
     }
-    return basis.size();
+    return basis().size();
   }
 
   //***********************************************************
@@ -548,9 +529,17 @@ namespace CASM {
 
     m_lattice = new_lat;
 
-    for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].set_lattice(lattice(), mode);
+    for(Index nb = 0; nb < basis().size(); nb++) {
+      m_basis[nb].set_lattice(lattice(), mode);
     }
+  }
+
+  //***********************************************************
+
+
+  template<typename CoordType>
+  void BasicStructure<CoordType>::set_title(std::string const &_title) {
+    m_title = _title;
   }
 
   //\Liz D 032514
@@ -563,9 +552,31 @@ namespace CASM {
 
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::set_basis(Array<CoordType> basis_in) {
-    basis = basis_in;
-    set_site_internals();
+  void BasicStructure<CoordType>::set_basis(Array<CoordType> const &_basis, COORD_TYPE mode) {
+    m_basis.clear();
+    m_basis.reserve(_basis.size());
+    for(CoordType const &site : _basis)
+      push_back(site, mode);
+
+  }
+
+  template<typename CoordType>
+  void BasicStructure<CoordType>::clear_basis() {
+    m_basis.clear();
+    this->reset();
+
+  }
+
+  template<typename CoordType>
+  void BasicStructure<CoordType>::set_occ(Index basis_ind, int _val) {
+    m_basis[basis_ind].set_occ_value(_val);
+  }
+
+  template<typename CoordType>
+  void BasicStructure<CoordType>::push_back(CoordType const &_site, COORD_TYPE mode) {
+    m_basis.push_back(_site);
+    m_basis.back().set_basis_ind(basis().size() - 1);
+    m_basis.back().set_lattice(lattice(), mode);
   }
 
 
@@ -584,7 +595,7 @@ namespace CASM {
   void BasicStructure<CoordType>::symmetrize(const SymGroup &relaxed_factors) {
     //First make a copy of your current basis
     //This copy will eventually become the new average basis.
-    Array<CoordType> avg_basis = basis;
+    Array<CoordType> avg_basis = basis();
 
     //Loop through given symmetry group an fill a temporary "operated basis"
     Array<CoordType> operbasis;
@@ -592,18 +603,18 @@ namespace CASM {
     //assume identity comes first, so we skip it
     for(Index rf = 0; rf < relaxed_factors.size(); rf++) {
       operbasis.clear();
-      for(Index b = 0; b < basis.size(); b++) {
-        operbasis.push_back(relaxed_factors[rf]*basis[b]);
+      for(Index b = 0; b < basis().size(); b++) {
+        operbasis.push_back(relaxed_factors[rf]*basis()[b]);
         operbasis.back().print(std::cout);
         std::cout << std::endl;
       }
       //Now that you have a transformed basis, find the closest mapping of atoms
       //Then average the distance and add it to the average basis
-      for(Index b = 0; b < basis.size(); b++) {
+      for(Index b = 0; b < basis().size(); b++) {
         double smallest = 1000000;
         Coordinate bshift(lattice()), tshift(lattice());
         for(Index ob = 0; ob < operbasis.size(); ob++) {
-          double dist = operbasis[ob].min_dist(basis[b], tshift);
+          double dist = operbasis[ob].min_dist(m_basis[b], tshift);
           if(dist < smallest) {
             bshift = tshift;
             smallest = dist;
@@ -646,8 +657,8 @@ namespace CASM {
   template<typename CoordType>
   Index BasicStructure<CoordType>::max_possible_vacancies()const {
     Index result(0);
-    for(Index i = 0; i < basis.size(); i++) {
-      if(basis[i].contains("Va"))
+    for(Index i = 0; i < basis().size(); i++) {
+      if(m_basis[i].contains("Va"))
         ++result;
     }
     return result;
@@ -671,8 +682,8 @@ namespace CASM {
     CoordType tsite(lattice());
 
     SD_flag = false;
-    getline(stream, title);
-    if(title.back() == '\r')
+    getline(stream, m_title);
+    if(title().back() == '\r')
       throw std::runtime_error(std::string("Structure file is formatted for DOS. Please convert to Unix format. (This can be done with the dos2unix command.)"));
 
     m_lattice.read(stream);
@@ -756,15 +767,15 @@ namespace CASM {
 
     stream.ignore(1000, '\n');
     //Clear basis if it is not empty
-    if(basis.size() != 0) {
+    if(basis().size() != 0) {
       std::cerr << "The structure is going to be overwritten." << std::endl;
-      basis.clear();
+      m_basis.clear();
     }
 
     if(read_elem) {
       int j = -1;
       int sum_elem = 0;
-      basis.reserve(num_sites);
+      m_basis.reserve(num_sites);
       for(i = 0; i < num_sites; i++) {
         if(i == sum_elem) {
           j++;
@@ -772,19 +783,19 @@ namespace CASM {
         }
 
         tsite.read(stream, elem_array[j], SD_flag);
-        basis.push_back(tsite);
+        push_back(tsite);
       }
     }
     else {
       //read the site info
-      basis.reserve(num_sites);
+      m_basis.reserve(num_sites);
       for(i = 0; i < num_sites; i++) {
         tsite.read(stream, SD_flag);
         if((stream.rdstate() & std::ifstream::failbit) != 0) {
           std::cerr << "Error reading site " << i + 1 << " from structure input file." << std::endl;
           exit(1);
         }
-        basis.push_back(tsite);
+        push_back(tsite);
       }
     }
 
@@ -807,15 +818,15 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::print_xyz(std::ostream &stream) const {
-    stream << basis.size() << '\n';
-    stream << title << '\n';
+    stream << basis().size() << '\n';
+    stream << title() << '\n';
     stream.precision(7);
     stream.width(11);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
 
-    for(Index i = 0; i < basis.size(); i++) {
-      stream << std::setw(2) << basis[i].occ_name() << " ";
-      stream << std::setw(12) << basis[i].cart() << '\n';
+    for(Index i = 0; i < basis().size(); i++) {
+      stream << std::setw(2) << m_basis[i].occ_name() << " ";
+      stream << std::setw(12) << m_basis[i].cart() << '\n';
     }
 
   }
@@ -886,8 +897,8 @@ namespace CASM {
   template<typename CoordType>
   BasicStructure<CoordType> &BasicStructure<CoordType>::operator+=(const Coordinate &shift) {
 
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i] += shift;
+    for(Index i = 0; i < basis().size(); i++) {
+      m_basis[i] += shift;
     }
 
     //factor_group += shift;
@@ -901,8 +912,8 @@ namespace CASM {
   template<typename CoordType>
   BasicStructure<CoordType> &BasicStructure<CoordType>::operator-=(const Coordinate &shift) {
 
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i] -= shift;
+    for(Index i = 0; i < basis().size(); i++) {
+      m_basis[i] -= shift;
     }
     //factor_group -= shift;
     //asym_unit -= shift;
@@ -933,13 +944,13 @@ namespace CASM {
     json.put_obj();
 
     // std::string title;
-    json["title"] = title;
+    json["title"] = title();
 
     // Lattice lattice;
     json["lattice"] = lattice();
 
     // Array<CoordType> basis;
-    json["basis"] = basis;
+    json["basis"] = basis();
 
     return json;
   }
@@ -949,26 +960,19 @@ namespace CASM {
   // Assumes constructor CoordType::CoordType(Lattice) exists
   template<typename CoordType>
   void BasicStructure<CoordType>::from_json(const jsonParser &json) {
-    try {
 
-      // std::string title;
-      CASM::from_json(title, json["title"]);
+    // std::string title;
+    set_title(json["title"].get<std::string>());
 
-      // Lattice lattice;
-      CASM::from_json(m_lattice, json["lattice"], lattice().tol());
+    // Lattice lattice;
+    CASM::from_json(m_lattice, json["lattice"], lattice().tol());
 
-      // Array<CoordType> basis;
-      basis.clear();
-      CoordType coordtype(lattice());
-      for(int i = 0; i < json["basis"].size(); i++) {
-        CASM::from_json(coordtype, json["basis"][i]);
-        basis.push_back(coordtype);
-      }
-
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+    // Array<CoordType> basis;
+    m_basis.clear();
+    CoordType coordtype(lattice());
+    for(int i = 0; i < json["basis"].size(); i++) {
+      CASM::from_json(coordtype, json["basis"][i]);
+      push_back(coordtype);
     }
 
   }
