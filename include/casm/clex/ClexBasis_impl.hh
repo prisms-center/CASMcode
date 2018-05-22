@@ -37,13 +37,17 @@ namespace CASM {
     m_bset_tree.resize(std::distance(_orbit_begin, _orbit_end));
 
     auto bset_it = m_bset_tree.begin();
+    Index i = 0;
     for(; _orbit_begin != _orbit_end; ++_orbit_begin, ++bset_it) {
       bset_it->reserve(_orbit_begin->size());
+      std::cout << "Constructing orbit " << i++ << "\n";
       bset_it->push_back(_construct_prototype_basis(*_orbit_begin,
                                                     local_keys,
                                                     global_keys,
                                                     -1/* polynomial_order */));
+      std::cout << "Done constructing orbit " << i << "!" << std::endl;
       for(Index j = 1; j < _orbit_begin->size(); j++) {
+        std::cout << "Transforming onto " << j << std::endl;
         bset_it->push_back((*(_orbit_begin->equivalence_map(j).first)) * (*bset_it)[0]);
       }
     }
@@ -95,6 +99,7 @@ namespace CASM {
 
     //std::cout<<"Max_poly_order "<<max_poly_order<<std::endl;
 
+    // record pointers to global dof arguments
     std::vector<BasisSet const *> arg_subsets;
     for(DoFKey const &key : global_keys) {
       auto find_it = m_global_bases.find(key);
@@ -104,7 +109,7 @@ namespace CASM {
         throw std::runtime_error("Unable to construct basis sets. No known global DoF: " + key + "\n");
     }
 
-    // copy local site bases to
+    // copy local site bases to a temporary location where we can alter their DoF IDs
     std::vector<BasisSet> all_local;
     all_local.reserve(local_keys.size());
 
@@ -126,13 +131,18 @@ namespace CASM {
           tlocal.push_back(arg_vec[_orbit.prototype()[i].sublat()]);
           tlocal.back().set_dof_IDs(std::vector<Index>(1, i));
           site_args[i] = &tlocal.back();
+          std::cout << "site_args[" << i << "].dof_IDs = " << tlocal.back().dof_IDs() << std::endl;
         }
       }
+      std::cout << "Before proto_dof_basis " << std::endl;
       all_local.push_back(ClexBasis_impl::construct_proto_dof_basis(_orbit, site_args));
+      std::cout << "After proto_dof_basis " << std::endl;
+      std::cout << "all_local.back().dof_IDs() " << all_local.back().dof_IDs() << std::endl;
       if(all_local.back().size())
         arg_subsets.push_back(&(all_local.back()));
     }
     SymGroup clust_group(_orbit.equivalence_map(0).first, _orbit.equivalence_map(0).second);
+    std::cout << "End construct_prototype_basis" << std::endl;
     return m_basis_builder->build_proto(_orbit.prototype(), clust_group, arg_subsets, max_poly_order, 1);
   }
 
@@ -149,9 +159,10 @@ namespace CASM {
         result.set_dof_IDs(sequence(Index(0), Index(clust.size() - 1)));
       }
       std::vector<SymGroupRep const *> subspace_reps;
-
+      std::cout << "Result.m_dof_IDs: " << result.dof_IDs() << std::endl;
       for(BasisSet const *site_bset_ptr : site_dof_sets) {
         if(site_bset_ptr) {
+          std::cout << "added_bset.m_dof_IDs: " << site_bset_ptr->dof_IDs() << std::endl;
           result.append(*site_bset_ptr);
           subspace_reps.push_back(SymGroupRep::RemoteHandle(clust_group,
                                                             site_bset_ptr->basis_symrep_ID()).rep_ptr());

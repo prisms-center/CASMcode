@@ -320,5 +320,20 @@ namespace CASM {
       return ss.str();
     }
 
+
+
+
+    std::vector<std::unique_ptr<FunctionVisitor> > OccupationDoFTraits::site_function_visitors() const {
+      std::vector<std::unique_ptr<FunctionVisitor> > result;
+      result.push_back(std::unique_ptr<FunctionVisitor>(new OccFuncLabeler("occ_func_%b_%f(%n)")));
+      return result;
+    }
+
+    std::vector<std::unique_ptr<FunctionVisitor> > OccupationDoFTraits::clust_function_visitors() const {
+      std::vector<std::unique_ptr<FunctionVisitor> > result;
+      result.push_back(std::unique_ptr<FunctionVisitor>(new OccFuncLabeler("occ_func_%b_%f(%n)")));
+      return result;
+    }
+
   }
 }

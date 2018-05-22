@@ -55,8 +55,8 @@ namespace CASM {
     //linear function index
     Index lf = 0;
 
-    std::vector<std::unique_ptr<FunctionVisitor> > const &labelers(_function_label_visitors());
-    //std::cout << "Initialized " << labelers.size() << " labelers \n";
+    std::vector<std::unique_ptr<FunctionVisitor> > const &visitors(_clust_function_visitors());
+    //std::cout << "Initialized " << visitors.size() << " visitors \n";
 
     std::vector<std::string> orbit_method_names(N_corr, "zero_func");
 
@@ -93,7 +93,7 @@ namespace CASM {
                                                              _tree[no],
                                                              orbit_method_namer,
                                                              _nlist,
-                                                             labelers,
+                                                             visitors,
                                                              indent);
 
       bfunc_def_stream << std::get<func_declaration>(orbit_functions);
@@ -109,7 +109,7 @@ namespace CASM {
                                                               _tree[no],
                                                               flower_method_namer,
                                                               _nlist,
-                                                              labelers,
+                                                              visitors,
                                                               indent);
 
       bfunc_def_stream << std::get<func_declaration>(flower_functions);
@@ -134,7 +134,7 @@ namespace CASM {
                                                                _tree[no],
                                                                dflower_method_namer,
                                                                _nlist,
-                                                               labelers,
+                                                               visitors,
                                                                site_prefactor_labeler,
                                                                indent);
 
@@ -253,14 +253,14 @@ namespace CASM {
                                                                            OrbitType const &_clust_orbit,
                                                                            std::function<std::string(Index, Index)> method_namer,
                                                                            PrimNeighborList &_nlist,
-                                                                           std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                           std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
                                                                            std::string const &indent) {
 
       std::stringstream bfunc_def_stream;
       std::stringstream bfunc_imp_stream;
 
 
-      std::vector<std::string>formulae = orbit_function_cpp_strings(_bset_orbit, _clust_orbit, _nlist, labelers);
+      std::vector<std::string>formulae = orbit_function_cpp_strings(_bset_orbit, _clust_orbit, _nlist, visitors);
       std::string method_name;
 
       bool make_newline = false;
@@ -292,7 +292,7 @@ namespace CASM {
                                                                             OrbitType const &_clust_orbit,
                                                                             std::function<std::string(Index, Index)> method_namer,
                                                                             PrimNeighborList &_nlist,
-                                                                            std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                            std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
                                                                             std::string const &indent) {
       std::stringstream bfunc_def_stream, bfunc_imp_stream;
       std::string method_name;
@@ -308,7 +308,7 @@ namespace CASM {
                                                                          CASM_TMP::UnaryIdentity<BasisSet>(),
                                                                          _clust_orbit,
                                                                          _nlist,
-                                                                         labelers,
+                                                                         visitors,
                                                                          sublat_index);
 
         if(formulae_pack.size() > 1) {
@@ -353,7 +353,7 @@ namespace CASM {
                                                                              OrbitType const &_clust_orbit,
                                                                              std::function<std::string(Index, Index)> method_namer,
                                                                              PrimNeighborList &_nlist,
-                                                                             std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                             std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
                                                                              FunctionVisitor const &_site_func_labeler,
                                                                              std::string const &indent) {
       std::stringstream bfunc_def_stream, bfunc_imp_stream;
@@ -380,7 +380,7 @@ namespace CASM {
                                                                            get_quotient_bset,
                                                                            _clust_orbit,
                                                                            _nlist,
-                                                                           labelers,
+                                                                           visitors,
                                                                            sublat_index);
 
           if(formulae_pack.size() > 1) {
@@ -444,7 +444,7 @@ namespace CASM {
     std::vector<std::string> orbit_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
                                                         OrbitType const &_clust_orbit,
                                                         PrimNeighborList &_nlist,
-                                                        std::vector<std::unique_ptr<FunctionVisitor> > const &labelers) {
+                                                        std::vector<std::unique_ptr<FunctionVisitor> > const &visitors) {
       std::string prefix, suffix;
       std::vector<std::string> formulae(_bset_orbit[0].size(), std::string());
       if(_clust_orbit.size() > 1) {
@@ -457,8 +457,8 @@ namespace CASM {
           _nlist.neighbor_indices(_clust_orbit[ne].elements().begin(),
                                   _clust_orbit[ne].elements().end());
         _bset_orbit[ne].set_dof_IDs(std::vector<Index>(nbor_IDs.begin(), nbor_IDs.end()));
-        for(Index nl = 0; nl < labelers.size(); nl++)
-          _bset_orbit[ne].accept(*labelers[nl]);
+        for(Index nl = 0; nl < visitors.size(); nl++)
+          _bset_orbit[ne].accept(*visitors[nl]);
       }
 
       for(Index nf = 0; nf < _bset_orbit[0].size(); nf++) {
@@ -487,7 +487,7 @@ namespace CASM {
                                                                                  std::function<BasisSet(BasisSet const &)> _bset_transform,
                                                                                  OrbitType const &_clust_orbit,
                                                                                  PrimNeighborList &_nlist,
-                                                                                 std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                                 std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
                                                                                  Index sublat_index) {
 
 
@@ -523,29 +523,36 @@ namespace CASM {
 
         // loop over equivalent clusters
         for(Index ne = 0; ne < _clust_orbit.size(); ne++) {
+          std::cout << "ne = " << ne << std::endl;
 
           // loop over cluster sites
-          auto it(_clust_orbit[ne].cbegin()), end_it(_clust_orbit[ne].cbegin());
-          for(; it != end_it; ++it) {
-
+          for(auto const &ucc : _clust_orbit[ne]) {
+            std::cout << "considering on ucc " << ucc << std::endl;
             // Continue if the cluster site doesn't belong to the target sublattice, or if we are working on a different translation
-            if(sublat_index != it -> sublat() || trans_orbit.second.find(*it) == trans_orbit.second.end())
+            if(sublat_index != ucc.sublat() || trans_orbit.second.find(ucc) == trans_orbit.second.end())
               continue;
 
-            IntegralCluster trans_clust = _clust_orbit[ne] - it->unitcell();
+            std::cout << "passed check!" << std::endl;
+
+            IntegralCluster trans_clust = _clust_orbit[ne] - ucc.unitcell();
 
             std::vector<PrimNeighborList::Scalar> nbor_IDs =
               _nlist.neighbor_indices(trans_clust.elements().begin(),
                                       trans_clust.elements().end());
+            std::cout << "new nbor_IDs: " << nbor_IDs << std::endl;
             _bset_orbit[ne].set_dof_IDs(std::vector<Index>(nbor_IDs.begin(), nbor_IDs.end()));
 
             BasisSet transformed_bset(_bset_transform(_bset_orbit[ne]));
-            for(Index nl = 0; nl < labelers.size(); nl++)
-              transformed_bset.accept(*labelers[nl]);
+            for(Index nl = 0; nl < visitors.size(); nl++)
+              transformed_bset.accept(*visitors[nl]);
 
+            std::cout << "Transformed BSet size: " << transformed_bset.size() << std::endl;
             for(Index nf = 0; nf < transformed_bset.size(); nf++) {
+              std::cout << "Formula before transform: " << _bset_orbit[ne][nf]->formula() << std::endl;
+              std::cout << "Transformed BSet " << nf << " of " << transformed_bset.size() << std::endl;
               if(!transformed_bset[nf] || (transformed_bset[nf]->is_zero()))
                 continue;
+              std::cout << "Formula after transform: " << transformed_bset[nf]->formula() << std::endl;
 
               if(formulae[nf].empty())
                 formulae[nf] += prefix;
@@ -567,6 +574,7 @@ namespace CASM {
         for(Index nf = 0; nf < formulae.size(); nf++) {
           if(!formulae[nf].empty())
             formulae[nf] += suffix;
+          std::cout << "Formula [" << trans_it->first << "] " << nf << ":  " << formulae[nf] << "\n";
         }
       }
 
@@ -633,15 +641,15 @@ namespace CASM {
     std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
                                                                  UCCIterType end,
                                                                  IntegralClusterSymCompareType const &sym_compare) {
-      std::map<UnitCellCoord, std::set<UnitCellCoord> > tresult;
+      std::map<UnitCellCoord, std::set<UnitCellCoord> > result;
 
       typedef IntegralCluster cluster_type;
       typedef Orbit<cluster_type, IntegralClusterSymCompareType> orbit_type;
 
       if(begin == end)
-        return tresult;
+        return result;
       // store orbits as we find them
-      std::set<orbit_type> orbits;
+      //std::set<orbit_type> orbits;
 
       SymGroup identity_group((begin->unit()).factor_group().begin(), ((begin->unit()).factor_group().begin()) + 1);
       orbit_type empty_orbit(cluster_type(begin->unit()), identity_group, sym_compare);
@@ -654,24 +662,27 @@ namespace CASM {
 
         // add the new site
         test.elements().push_back(*begin);
-
+        //std::cout << "Before prepare: " << test.element(0) << std::endl;
+        test = sym_compare.prepare(test);
+        //std::cout << "After prepare: " << test.element(0) << std::endl << std::endl;
 
         // try to find test cluster in already found orbits
-        auto it = find_orbit(orbits.begin(), orbits.end(), test);
-        if(it != orbits.end()) {
-          tresult[it->prototype().element(0)].insert(*begin);
-          continue;
-        }
+        //auto it = find_orbit(orbits.begin(), orbits.end(), test);
+        //if(it != orbits.end()) {
+        //tresult[it->prototype().element(0)].insert(*begin);
+        //continue;
+        //}
+        //else
 
-        tresult[test.element(0)].insert(*begin);
+        result[test.element(0)].insert(*begin);
 
         // if not yet found, use test to generate a new Orbit
-        orbits.insert(orbit_type(test, identity_group, sym_compare));
+        //orbits.insert(orbit_type(test, identity_group, sym_compare));
       }
 
-      std::map<UnitCellCoord, std::set<UnitCellCoord> > result;
-      for(auto &_set_pair : tresult)
-        result.emplace(std::make_pair(*_set_pair.second.begin(), std::move(_set_pair.second)));
+      //std::map<UnitCellCoord, std::set<UnitCellCoord> > result;
+      //for(auto &_set_pair : tresult)
+      //result.emplace(std::make_pair(*_set_pair.second.begin(), std::move(_set_pair.second)));
       return result;
 
     }
@@ -805,7 +816,9 @@ namespace CASM {
                                                         std::vector<std::unique_ptr<OrbitFunctionTraits> > const &_orbit_func_traits,
                                                         PrimNeighborList &_nlist,
                                                         std::string const &indent) {
-      throw std::runtime_error("clexulator_point_prepare_implementation not implemented");
+      //throw std::runtime_error("clexulator_point_prepare_implementation not implemented");
+
+
       return std::string();
     }
 

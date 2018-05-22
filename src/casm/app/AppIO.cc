@@ -514,17 +514,17 @@ namespace CASM {
           for(Index f = 0; f < dofset.second[b].size(); f++) {
             if(dofset.first == "occ") {
               BasisSet tbasis(dofset.second[b]);
+
               int s;
               std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].site_occupant().ID()));
               remote[0] = s;
               tbasis.register_remotes(remote);
 
-
               for(s = 0; s < prim.basis()[b].site_occupant().size(); s++) {
                 if(s == 0)
                   out << "    ";
                 out << "    \\phi_" << b << '_' << f << '[' << prim.basis()[b].site_occupant()[s].name() << "] = "
-                    << dofset.second[b][f]->remote_eval();
+                    << tbasis[f]->remote_eval();
                 if(s + 1 == prim.basis()[b].site_occupant().size())
                   out << "\n";
                 else

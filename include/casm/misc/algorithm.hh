@@ -89,6 +89,27 @@ namespace CASM {
     return container.end() != std::find_if_not(container.begin(), container.end(), q);
   }
 
+
+  /// \brief Returns true if each elements of 'values' is contained in 'container'
+  template<typename Container1, typename Container2>
+  bool contains_all(const Container1 &container, const Container2 &values) {
+    for(auto const &v : values)
+      if(!contains(container, v))
+        return false;
+
+    return true;
+  }
+
+  /// \brief Returns true if each elements of 'values' is contained in 'container', using comparison functor 'q'
+  template<typename Container1, typename Container2, typename BinaryCompare>
+  bool contains_all(const Container1 &container, const Container2 &values, BinaryCompare q) {
+    for(auto const &v : values)
+      if(!contains(container, v, q))
+        return false;
+
+    return true;
+  }
+
   template<typename Container>
   typename Container::value_type sum(const Container &container, typename Container::value_type init_val = 0) {
     for(const auto &val : container) {

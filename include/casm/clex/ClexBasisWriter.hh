@@ -31,8 +31,12 @@ namespace CASM {
                           double xtal_tol);
 
   private:
-    std::vector<std::unique_ptr<FunctionVisitor> > const &_function_label_visitors() const {
-      return m_function_label_visitors;
+    std::vector<std::unique_ptr<FunctionVisitor> > const &_site_function_visitors() const {
+      return m_site_visitors;
+    }
+
+    std::vector<std::unique_ptr<FunctionVisitor> > const &_clust_function_visitors() const {
+      return m_clust_visitors;
     }
 
     std::vector<std::unique_ptr<OrbitFunctionTraits> > const &_orbit_func_traits() const {
@@ -48,7 +52,9 @@ namespace CASM {
                           std::vector<UnitCellCoord> const &_flower_pivots,
                           std::ostream &stream,
                           double xtal_tol);
-    std::vector<std::unique_ptr<FunctionVisitor> > m_function_label_visitors;
+
+    std::vector<std::unique_ptr<FunctionVisitor> > m_site_visitors;
+    std::vector<std::unique_ptr<FunctionVisitor> > m_clust_visitors;
     std::vector<std::unique_ptr<OrbitFunctionTraits> > m_orbit_func_traits;
   };
 
@@ -79,7 +85,7 @@ namespace CASM {
                                                                            OrbitType const &_clust_orbit,
                                                                            std::function<std::string(Index, Index)> method_namer,
                                                                            PrimNeighborList &_nlist,
-                                                                           std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                           std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
                                                                            std::string const &indent);
     //*******************************************************************************************
 
@@ -104,7 +110,7 @@ namespace CASM {
                                                                             OrbitType const &_clust_orbit,
                                                                             std::function<std::string(Index, Index)> method_namer,
                                                                             PrimNeighborList &_nlist,
-                                                                            std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                            std::vector<std::unique_ptr<FunctionVisitor> > const &visitor,
                                                                             std::string const &indent);
 
     //*******************************************************************************************
@@ -116,7 +122,7 @@ namespace CASM {
                                                                              OrbitType const &_clust_orbit,
                                                                              std::function<std::string(Index, Index)> method_namer,
                                                                              PrimNeighborList &_nlist,
-                                                                             std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                             std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
                                                                              FunctionVisitor const &prefactor_labeler,
                                                                              std::string const &indent);
     //*******************************************************************************************
@@ -166,7 +172,7 @@ namespace CASM {
     std::vector<std::string> orbit_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
                                                         OrbitType const &_clust_orbit,
                                                         PrimNeighborList &_nlist,
-                                                        std::vector<std::unique_ptr<FunctionVisitor> > const &labelers);
+                                                        std::vector<std::unique_ptr<FunctionVisitor> > const &visitors);
     //*******************************************************************************************
     /// nlist_index is the index of the basis site in the neighbor list
     template<typename OrbitType>
@@ -174,7 +180,7 @@ namespace CASM {
                                                                                  std::function<BasisSet(BasisSet const &)> _bset_transform,
                                                                                  OrbitType const &_clust_orbit,
                                                                                  PrimNeighborList &_nlist,
-                                                                                 std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                                 std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
                                                                                  Index sublat_index);
 
     //*******************************************************************************************
