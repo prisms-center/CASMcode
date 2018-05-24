@@ -127,43 +127,43 @@ namespace CASM {
                                                                              std::string const &indent);
     //*******************************************************************************************
 
-    std::string clexulator_interface_implementation(std::string const &class_name,
+    std::string clexulator_interface_declaration(std::string const &class_name,
+                                                 ClexBasis const &clex,
+                                                 std::string const &indent);
+
+    //*******************************************************************************************
+
+    template <typename OrbitType>
+    std::string clexulator_constructor_definition(std::string const &class_name,
+                                                  ClexBasis const &clex,
+                                                  std::vector<OrbitType> const &_tree,
+                                                  PrimNeighborList &_nlist,
+                                                  std::vector<std::string> const &orbit_method_names,
+                                                  std::vector< std::vector<std::string> > const &flower_method_names,
+                                                  std::vector< std::vector<std::string> > const &dflower_method_names,
+                                                  std::string const &indent);
+
+    //*******************************************************************************************
+
+
+    template <typename OrbitType>
+    std::string clexulator_point_prepare_definition(std::string const &class_name,
                                                     ClexBasis const &clex,
+                                                    std::vector<OrbitType> const &_tree,
+                                                    std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
+                                                    PrimNeighborList &_nlist,
+                                                    //Something that contains info about DoF requirements
                                                     std::string const &indent);
-
     //*******************************************************************************************
 
     template <typename OrbitType>
-    std::string clexulator_constructor_implementation(std::string const &class_name,
-                                                      ClexBasis const &clex,
-                                                      std::vector<OrbitType> const &_tree,
-                                                      PrimNeighborList &_nlist,
-                                                      std::vector<std::string> const &orbit_method_names,
-                                                      std::vector< std::vector<std::string> > const &flower_method_names,
-                                                      std::vector< std::vector<std::string> > const &dflower_method_names,
-                                                      std::string const &indent);
-
-    //*******************************************************************************************
-
-
-    template <typename OrbitType>
-    std::string clexulator_point_prepare_implementation(std::string const &class_name,
-                                                        ClexBasis const &clex,
-                                                        std::vector<OrbitType> const &_tree,
-                                                        std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
-                                                        PrimNeighborList &_nlist,
-                                                        //Something that contains info about DoF requirements
-                                                        std::string const &indent);
-    //*******************************************************************************************
-
-    template <typename OrbitType>
-    std::string clexulator_global_prepare_implementation(std::string const &class_name,
-                                                         ClexBasis const &clex,
-                                                         std::vector<OrbitType> const &_tree,
-                                                         std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
-                                                         PrimNeighborList &_nlist,
-                                                         //Something that contains info about DoF requirements
-                                                         std::string const &indent);
+    std::string clexulator_global_prepare_definition(std::string const &class_name,
+                                                     ClexBasis const &clex,
+                                                     std::vector<OrbitType> const &_tree,
+                                                     std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
+                                                     PrimNeighborList &_nlist,
+                                                     //Something that contains info about DoF requirements
+                                                     std::string const &indent);
 
     //*******************************************************************************************
 
@@ -189,6 +189,12 @@ namespace CASM {
     void print_proto_clust_funcs(ClexBasis const &clex,
                                  std::ostream &out,
                                  std::vector<OrbitType > const &_tree);
+
+    //*******************************************************************************************
+
+    template<typename OrbitIterType>
+    std::map<UnitCellCoord, std::set<UnitCellCoord> > dependency_neighborhood(OrbitIterType begin,
+                                                                              OrbitIterType end);
 
     //*******************************************************************************************
 

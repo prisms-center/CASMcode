@@ -153,9 +153,9 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    std::string clexulator_interface_implementation(std::string const &class_name,
-                                                    ClexBasis const &clex,
-                                                    std::string const &indent) {
+    std::string clexulator_interface_declaration(std::string const &class_name,
+                                                 ClexBasis const &clex,
+                                                 std::string const &indent) {
       std::stringstream ss;
       // Write destructor
       ss <<

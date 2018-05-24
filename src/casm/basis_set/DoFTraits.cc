@@ -6,6 +6,7 @@
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/clex/NeighborList.hh"
 
 namespace CASM {
   namespace DoF_impl {
@@ -69,6 +70,10 @@ namespace CASM {
       }
     }
 
+
+    BasicTraits *OccupationDoFTraits::_clone() const {
+      return new OccupationDoFTraits(*this);
+    }
 
     /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
     std::vector<BasisSet> OccupationDoFTraits::construct_site_bases(Structure const &_prim,
@@ -149,36 +154,50 @@ namespace CASM {
 
     //************************************************************
     std::string OccupationDoFTraits::clexulator_point_prepare_string(Structure const &_prim,
-                                                                     std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                                     std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                                     PrimNeighborList &_nlist,
                                                                      std::vector<BasisSet> const &site_bases,
                                                                      std::string const &indent) const {
+
       std::stringstream ss;
       ss
           << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n";
+      ss << indent << "  switch(nlist_ind) {\n";
       for(auto const &nbor : _nhood) {
-        Index n = nbor.first;
-        Index b = nbor.second.sublat();
-        for(Index f = 0; f < site_bases[b].size(); f++) {
-          ss << indent << "  m_occ_func_vals_f" << f << "[" << n  << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
+        ss << indent << "    case " << _nlist.neighbor_index(nbor.first) << ":\n";
+        //Index n = nbor.first;
+        for(UnitCellCoord const &ucc : nbor.second) {
+          Index b = ucc.sublat();
+          Index n = _nlist.neighbor_index(ucc);
+          for(Index f = 0; f < site_bases[b].size(); f++) {
+            ss << indent << "      m_occ_func_vals_f" << f << "[" << n  << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
+          }
         }
+        ss << indent << "      break;\n";
       }
-      ss << "}\n";
+      ss << indent << "  }\n"
+         << indent << "}\n";
       return ss.str();
     }
 
     //************************************************************
 
     std::string OccupationDoFTraits::clexulator_global_prepare_string(Structure const &_prim,
-                                                                      std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                                      std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                                      PrimNeighborList &_nlist,
                                                                       std::vector<BasisSet> const &site_bases,
                                                                       std::string const &indent) const {
       std::stringstream ss;
       ss
           << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n";
-      for(auto const &nbor : _nhood) {
-        Index n = nbor.first;
-        Index b = nbor.second.sublat();
-        for(Index f = 0; f < site_bases[n].size(); f++) {
+      std::set<UnitCellCoord> tot_nhood;
+      for(auto const &nbor : _nhood)
+        tot_nhood.insert(nbor.second.begin(), nbor.second.end());
+
+      for(auto const &ucc : tot_nhood) {
+        Index n = _nlist.neighbor_index(ucc);
+        Index b = ucc.sublat();
+        for(Index f = 0; f < site_bases[b].size(); f++) {
           ss << indent << "  m_occ_func_vals_f" << f << "[" << n  << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
         }
       }

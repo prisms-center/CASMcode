@@ -3,17 +3,20 @@
 
 #include <vector>
 #include <string>
+#include <map>
+#include <set>
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 #include "casm/basis_set/DoFDecl.hh"
 
 namespace CASM {
-
+  class UnitCellCoord;
   class Structure;
   class BasisSet;
   class SymGroup;
   class ClexBasis;
+  class PrimNeighborList;
 
   class ClexBasisBuilder {
   public:
@@ -86,10 +89,19 @@ namespace CASM {
 
     virtual void print_param_pack_initilialization() const {}
 
-    virtual void print_to_point_prepare() const {}
+    virtual std::string clexulator_point_prepare_string(Structure const &_prim,
+                                                        std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                        PrimNeighborList &_nlist,
+                                                        std::string const &indent) const {
+      return "";
+    }
 
-    virtual void print_to_global_prepare() const {}
-
+    virtual std::string clexulator_global_prepare_string(Structure const &_prim,
+                                                         std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                         PrimNeighborList &_nlist,
+                                                         std::string const &indent) const {
+      return "";
+    }
     virtual void print_typedefs(std::ostream &out,
                                 std::string const &class_name,
                                 std::string const &indent)const {}

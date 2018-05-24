@@ -12,6 +12,7 @@
 namespace CASM {
   class jsonParser;
   class MasterSymGroup;
+  class PrimNeighborList;
   class Structure;
 
   namespace DoF_impl {
@@ -68,12 +69,14 @@ namespace CASM {
                                                         std::string const &indent) const = 0;
 
       virtual std::string clexulator_point_prepare_string(Structure const &_prim,
-                                                          std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                          std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                          PrimNeighborList &_nlist,
                                                           std::vector<BasisSet> const &site_bases,
                                                           std::string const &indent) const = 0;
 
       virtual std::string clexulator_global_prepare_string(Structure const &_prim,
-                                                           std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                           std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                           PrimNeighborList &_nlist,
                                                            std::vector<BasisSet> const &site_bases,
                                                            std::string const &indent) const = 0;
 
@@ -140,12 +143,14 @@ namespace CASM {
                                                 std::string const &indent) const override;
 
       std::string clexulator_point_prepare_string(Structure const &_prim,
-                                                  std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                  std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                  PrimNeighborList &_nlist,
                                                   std::vector<BasisSet> const &site_bases,
                                                   std::string const &indent) const override;
 
       std::string clexulator_global_prepare_string(Structure const &_prim,
-                                                   std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                   std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                   PrimNeighborList &_nlist,
                                                    std::vector<BasisSet> const &site_bases,
                                                    std::string const &indent) const override;
 
@@ -183,9 +188,7 @@ namespace CASM {
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                  jsonParser const &_bspecs) const override;
     protected:
-      BasicTraits *_clone() const override {
-        return new OccupationDoFTraits(*this);
-      }
+      BasicTraits *_clone() const override;
     };
 
 
