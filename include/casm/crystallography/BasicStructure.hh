@@ -142,6 +142,7 @@ namespace CASM {
 
     void generate_factor_group(SymGroup &factor_group) const;
     void generate_factor_group_slow(SymGroup &factor_group) const;
+    void _generate_factor_group_slow(SymGroup &factor_group, SymGroup &starter_group) const;
     void fg_converge(double small_tol, double large_tol, double increment);
     void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
@@ -175,7 +176,7 @@ namespace CASM {
     virtual void read(std::istream &stream);  //John do this
 
     /// Output other formats
-    void print_xyz(std::ostream &stream) const;
+    void print_xyz(std::ostream &stream, bool frac = false) const;
     //void print_cif(std::ostream &stream) const;
 
     jsonParser &to_json(jsonParser &json) const;

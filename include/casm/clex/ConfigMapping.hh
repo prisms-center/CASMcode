@@ -2,12 +2,25 @@
 #define CASM_ConfigMapping
 
 #include <vector>
+#include <unordered_set>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/casm_io/jsonParser.hh"
-
+#include "casm/crystallography/SupercellEnumerator.hh"
+struct HermiteHash {
+  std::size_t operator()(Eigen::Matrix3i mat) const {
+    std::string unroll_str;
+    Eigen::VectorXi vec = CASM::HermiteCounter_impl::_canonical_unroll(mat);
+    for(int i = 0; i < vec.size(); ++i) {
+      unroll_str = unroll_str + std::to_string(vec(i)) + ",";
+    }
+    std::size_t const h(std::hash<std::string> {}(unroll_str));
+    return h;
+  }
+};
 namespace CASM {
   class Supercell;
   class Lattice;
@@ -51,6 +64,9 @@ namespace CASM {
     /// structure onto the coordinate system of the ideal crystal
     Eigen::Matrix3d cart_op;
 
+    /// Rigid translation isometry that puts the imported structures origin onto the origin of ideal crystal
+    Eigen::Vector3d trans;
+
     /// True if could map to prim, false if not
     bool success;
 
@@ -67,6 +83,7 @@ namespace CASM {
   /// \ingroup Configuration
   class ConfigMapper {
   public:
+    typedef std::map<Index, std::vector<Lattice> > LatMapType;
     enum NullInitializer {null_initializer};
     enum Options {none = 0,
                   rotate = (1u << 0),
@@ -121,7 +138,7 @@ namespace CASM {
       return *m_pclex;
     }
 
-    void set_primclex(PrimClex &_pclex) {
+    void set_primclex(const PrimClex &_pclex) {
       m_pclex = &_pclex;
     }
 
@@ -190,8 +207,6 @@ namespace CASM {
                             ConfigDoF &mapped_configdof,
                             Lattice &mapped_lat) const;
 
-  private:
-
     ///\brief Low-level routine to map a structure onto a ConfigDof
     ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
     ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
@@ -207,6 +222,25 @@ namespace CASM {
                             std::vector<Index> &best_assignment,
                             Eigen::Matrix3d &cart_op,
                             double best_cost = 1e20) const;
+
+
+    ///\brief specify which lattices should be searched when mapping configurations
+    void force_lattices(const std::vector<std::string> &lattice_names) const;
+
+    ///\brief unset the enforcement of particular lattices (default behavior)
+    void unforce_lattices() const;
+
+    ///\brief specify to use restricted hermites when mapping
+    void restricted() {
+      m_restricted = true;
+    }
+
+    ///\brief returns true if lattices were set to be forced as candidates
+    bool lattices_are_forced() const {
+      return m_forced_superlat_map.size();
+    }
+
+  private:
 
 
     ///\brief Low-level routine to map a structure onto a ConfigDof if it is known to be ideal
@@ -261,16 +295,23 @@ namespace CASM {
   private:
 
     const PrimClex *m_pclex;
-    mutable std::map<Index, std::vector<Lattice> > m_superlat_map;
+    ///Maps the supercell volume to a vector of Lattices with that volume
+    mutable LatMapType m_superlat_map;
+    mutable LatMapType m_forced_superlat_map;
     double m_lattice_weight;
     double m_max_volume_change;
     double m_min_va_frac;
     double m_max_va_frac;
     bool m_robust_flag, m_strict_flag, m_rotate_flag;
+    bool m_restricted = false;
     double m_tol;
     std::vector<std::pair<std::string, Index> > m_fixed_components;
     const std::vector<Lattice> &_lattices_of_vol(Index prim_vol) const;
+    const std::vector<Lattice> _lattices_of_vol_restricted(Index prim_vol, std::unordered_set<Eigen::Matrix3i, HermiteHash> &ref_hermites) const;
+    bool hermite_adjacency(const Eigen::Matrix3i test, const Eigen::Matrix3i ref) const;
   };
+
+
 
   namespace ConfigMap_impl {
 
@@ -368,6 +409,7 @@ namespace CASM {
                                        double _tol);
 
 
+    ConfigMapperResult structure_mapping(Structure &host, Structure &other, double lattice_weight);
   }
 
 

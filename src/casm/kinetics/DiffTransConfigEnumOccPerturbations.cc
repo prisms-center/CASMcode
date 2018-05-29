@@ -10,6 +10,7 @@
 #include "casm/app/AppIO_impl.hh"
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/database/Selection_impl.hh"
+#include "casm/database/ScelDatabase.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
@@ -106,7 +107,7 @@ namespace CASM {
       "      \"diff_trans/1\"\n"
       "    ],\n"
       "    \"orbit_selection\": \"low_barrier_diff_trans\",\n"
-      "    \"background_configs\": [\n"
+      "    \"background_confignames\": [\n"
       "      \"SCEL8_2_2_2_0_0_0/2\",\n"
       "      \"SCEL8_2_2_2_0_0_0/13\"\n"
       "     ],\n"
@@ -168,6 +169,9 @@ namespace CASM {
           // Store in selection
           tmp_sel.data()[insert_res.canonical_it.name()] = true;
         }
+        log << "Writing supercell database..." << std::endl;
+        primclex.db<Supercell>().commit();
+        log << "  DONE" << std::endl;
 
         log << "Writing configuration database..." << std::endl;
         primclex.db<Configuration>().commit();
@@ -208,7 +212,6 @@ namespace CASM {
         const Configuration &bg_config,
         const PrimPeriodicDiffTransOrbit &dtorbit,
         const jsonParser &local_cspecs) {
-
         /// check if configuration is big enough for local cspecs here
         /// give warning if not
         std::vector<LocalOrbit<IntegralCluster>> local_orbits;
@@ -236,7 +239,6 @@ namespace CASM {
         const PrimPeriodicDiffTransOrbit &dtorbit,
         const jsonParser &local_cspecs,
         std::vector<std::string> filter_expr) {
-
         auto &db = primclex.db<DiffTransConfiguration>();
         primclex.log() << "\tUsing " << dtorbit.name() << "... " << std::flush;
         Index Ninit_spec = db.size();
@@ -277,14 +279,11 @@ namespace CASM {
       const Completer::EnumOption &enum_opt) {
 
       Log &log = primclex.log();
-
       // Validate and construct input
       DB::Selection<PrimPeriodicDiffTransOrbit> dtorbit_sel = make_selection<PrimPeriodicDiffTransOrbit>(
                                                                 primclex, kwargs, "orbit_names", "orbit_selection", enumerator_name, OnError::THROW);
-
       DB::Selection<Configuration> background_sel = make_selection<Configuration>(
                                                       primclex, kwargs, "background_confignames", "background_selection", enumerator_name, OnError::THROW);
-
       // If requested, fill all configurations into background supercell
       if(kwargs.contains("background_scel")) {
         // Get requested background scel
@@ -292,9 +291,7 @@ namespace CASM {
         const auto &background_scel = make_supercell(primclex, scelname);
         background_sel = _fill_background_scel(background_sel, background_scel);
       }
-
       jsonParser local_cspecs = _parse_local_cspecs(kwargs);
-
       std::vector<std::string> filter_expr = make_enumerator_filter_expr(kwargs, enum_opt);
       auto &db = primclex.db<DiffTransConfiguration>();
       std::string type_name = traits<DiffTransConfiguration>::name;
@@ -396,6 +393,9 @@ namespace CASM {
         m_base.emplace_back(
           canonical_diff_trans.sorted(),
           copy_apply(gen.to_canonical(), m_background_config));
+        if(!canonical_diff_trans.sorted().is_canonical(_supercell())) {
+          throw std::runtime_error("ScelCanonicalGenerator did not work to make diff_trans canonical");
+        }
       }
 
       m_base_it = m_base.begin();
@@ -461,18 +461,17 @@ namespace CASM {
         const auto &proto = test.prototype();
         return std::all_of(proto.begin(), proto.end(), uccoord_does_not_overlap);
       };
-
       m_local_orbit.clear();
       std::copy_if(_tmp.begin(), _tmp.end(), std::back_inserter(m_local_orbit), orbit_does_not_overlap);
       m_local_orbit_it = m_local_orbit.begin();
 
-      /*
-      print_clust(
-        m_local_orbit.begin(),
-        m_local_orbit.end(),
-        std::cout,
-        PrototypePrinter<IntegralCluster>());
-      */
+
+      /* print_clust(
+         m_local_orbit.begin(),
+         m_local_orbit.end(),
+         std::cout,
+         PrototypePrinter<IntegralCluster>());
+       */
     }
 
     /// Generate the 'from_value' for the perturbation,
@@ -521,11 +520,11 @@ namespace CASM {
         perturb.elements().emplace_back(proto[i], m_from_value(i), m_occ_counter()[i]);
       }
 
-      auto begin = m_base_it->generating_g.begin();
+      /*auto begin = m_base_it->generating_g.begin();
       auto end = m_base_it->generating_g.end();
-
       // return perturbation and check if canonical wrt local orbit sub group
-      return std::make_pair(perturb, perturb.is_canonical(_supercell(), begin, end));
+      return std::make_pair(perturb, perturb.is_canonical(_supercell(), begin, end));*/
+      return std::make_pair(perturb, true);
     }
 
     /// Applies current perturbation to m_base_config and stores result in m_current
@@ -537,47 +536,60 @@ namespace CASM {
       // here we use the group of operations that leaves the diff_trans invariant,
       // and not necessarily the from_config, to find the canonical perturbed from_config
 
-      /*auto to_canonical = perturbed_from_config.to_canonical(
+      auto to_canonical = perturbed_from_config.to_canonical(
                             m_base_it->diff_trans_g.begin(),
-                            m_base_it->diff_trans_g.end()); */
-      PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
+                            m_base_it->diff_trans_g.end());
+      /*PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
       Configuration greatest = perturbed_from_config;
       for(auto it = m_base_it->diff_trans_g.begin(); it != m_base_it->diff_trans_g.end(); ++it) {
-        DiffTransConfiguration tmp(copy_apply(*it, perturbed_from_config), m_base_it->diff_trans);
+        DiffTransConfiguration tmp(make_attachable(m_base_it->diff_trans, copy_apply(*it, perturbed_from_config)), m_base_it->diff_trans);
         if(copy_apply(*it, perturbed_from_config) > greatest && tmp.has_valid_from_occ()) {
           greatest = copy_apply(*it, perturbed_from_config);
           to_canonical = *it;
         }
-      }
+      }*/
 
       /// construct canonical DiffTransConfiguration as m_current
       m_current = notstd::make_cloneable<DiffTransConfiguration>(
-                    copy_apply(to_canonical, perturbed_from_config),
+                    make_attachable(m_base_it->diff_trans, copy_apply(to_canonical, perturbed_from_config)),
                     m_base_it->diff_trans);
+      if(!m_current->has_valid_from_occ()) {
+        throw std::runtime_error("Make attachable didn't seem to work in DTCEOP");
+      }
       m_current->set_orbit_name("test");
       m_current->set_orbit_name(m_diff_trans_orbit.name());
+      m_current->set_suborbit_ind(std::distance(m_base.begin(), m_base_it));
       m_current->set_bg_configname(m_background_config.primitive().name());
       m_current->set_source(this->source(step()));
       this->_set_current_ptr(&(*m_current));
+      if(m_current->is_dud()) {
+        throw std::runtime_error("Error in DTEOCP is dud");
+      }
 
-      /*
+
       // --- debug check ---
       // m_current should be in canonical form at this point
       if(!m_current->is_canonical()) {
-
+        if(m_current->is_dud()) {
+          throw std::runtime_error("Error in DTEOCP is dud and not canonical");
+        }
+        *m_current = m_current->canonical_form();
+        if(m_current->is_dud()) {
+          throw std::runtime_error("Error in DTEOCP is dud and canonical now");
+        }
         // diff_trans is canonical wrt all supercell permutations
-        const auto& dt = m_current->diff_trans();
+        const auto &dt = m_current->diff_trans();
         if(!dt.is_canonical(_supercell())) {
           throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: diff trans not canonical");
         }
 
         // from_config is canonical wrt all supercell permutations that leave diff_trans invariant
-        if(!m_current->from_config().is_canonical(m_base_it->diff_trans_g.begin(), m_base_it->diff_trans_g.end())) {
+        /*if(!m_current->from_config().is_canonical(m_base_it->diff_trans_g.begin(), m_base_it->diff_trans_g.end())) {
           throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: from_config not canonical");
         }
-        throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical, for unknown reason");
+        throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical, for unknown reason");*/
       }
-      */
+
     }
 
     bool has_local_bubble_overlap(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, const Supercell &scel) {

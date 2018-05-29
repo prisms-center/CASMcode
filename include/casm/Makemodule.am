@@ -1,7 +1,10 @@
 #include include/casm/experimental.am
 
 casmincludedir=$(includedir)/casm
-casminclude_HEADERS=include/casm/CASM_global_definitions.hh
+casminclude_HEADERS=\
+include/casm/CASM_global_definitions.hh\
+include/casm/CASM_global_Eigen.hh\
+include/casm/CASM_global_enum.hh
 
 include include/casm/strain/Makemodule.am
 include include/casm/basis_set/Makemodule.am
@@ -20,3 +23,4 @@ include include/casm/crystallography/Makemodule.am
 include include/casm/monte_carlo/Makemodule.am
 include include/casm/completer/Makemodule.am
 include include/casm/kinetics/Makemodule.am
+include include/casm/database/Makemodule.am

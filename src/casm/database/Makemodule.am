@@ -1,0 +1,20 @@
+libcasm_la_SOURCES +=\
+./src/casm/database/DatabaseTypes.cc\
+./src/casm/database/Selected.cc\
+./src/casm/database/json/jsonDatabase.cc\
+./src/casm/database/json/jsonPropertiesDatabase.cc\
+./src/casm/database/DiffTransOrbitDatabase.cc\
+./src/casm/database/ConfigData.cc\
+./src/casm/database/ScelDatabase.cc\
+./src/casm/database/ConfigDatabase.cc\
+./src/casm/database/Remove.cc\
+./src/casm/database/MappedProperties.cc\
+./src/casm/database/Selection.cc\
+./src/casm/database/PropertiesDatabase.cc\
+./src/casm/database/DatabaseHandler.cc\
+./src/casm/database/DiffTransConfigDatabase.cc\
+./src/casm/database/ConfigImport.cc\
+./src/casm/database/Database.cc\
+./src/casm/database/Update.cc\
+./src/casm/database/DiffTransConfigImport.cc\
+./src/casm/database/Import.cc

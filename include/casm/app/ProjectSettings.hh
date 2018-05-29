@@ -173,6 +173,9 @@ namespace CASM {
     /// \brief Create new symmetry directory
     bool new_symmetry_dir() const;
 
+    /// \brief Create new reports directory
+    bool new_reports_dir() const;
+
     /// \brief Add a basis set directory
     bool new_bset_dir(std::string bset) const;
 

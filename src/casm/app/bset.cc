@@ -33,7 +33,7 @@ namespace CASM {
       ("orbits", "Pretty-print orbit prototypes")
       ("functions", "Pretty-print prototype cluster functions for each orbit")
       ("clusters", "Pretty-print all clusters")
-      ("clex", po::value<std::string>(), "Name of the cluster expansion using the basis set")
+      ("clex", po::value<std::string>()->value_name(ArgHandler::clex()), "Name of the cluster expansion using the basis set")
       ("force,f", "Force overwrite");
       return;
     }

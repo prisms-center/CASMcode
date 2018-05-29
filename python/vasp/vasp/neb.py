@@ -1,5 +1,4 @@
 import os, math, sys, shutil
-#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) ##sets unbuffered output
 import vasp
 import io
 
@@ -124,7 +123,7 @@ class Neb(object):
         ## copying the folders with image poscars into initdir
         for i in range(settings["n_images"]+2):
             folder_name = str(i).zfill(2) #max(2, len(str(settings["n_images"]))+1 )) ##too fancy!!!
-            shutil.move(os.path.join(self.calcdir,folder_name),initdir)
+            shutil.copytree(os.path.join(self.calcdir,"poscars",folder_name),os.path.join(initdir,folder_name))
 
         print ""
         sys.stdout.flush()
@@ -298,7 +297,8 @@ class Neb(object):
             # elif constant volume run (but not the final one)
             if io.get_incar_tag("ISIF", self.rundir[-1]) in [0, 1, 2]:
                 if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1], "01",  "OSZICAR")).E):
-                    return ("incomplete", "new_run")    # static run hit NSW limit and so isn't "done"
+			print "first "
+			return ("incomplete", "new_run")    # static run hit NSW limit and so isn't "done"
                 else:
                     return ("incomplete", "constant")
 

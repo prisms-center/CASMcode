@@ -123,12 +123,10 @@ namespace CASM {
           //          do not import
           //      !better_score:
           //        do not import
-
           // if could not map, no data, or do not import data, continue
           if(res.mapped_props.to.empty() || !res.has_data || !m_import_data) {
             continue;
           }
-
           // else we will try to import data
           // for import we currently don't have a way to get the initial config,
           // so set from = to, if not already so
@@ -146,7 +144,6 @@ namespace CASM {
             data_res_it->second.preexisting = has_existing_data_or_files(from);
           }
           ConfigIO::ImportData &data_res = data_res_it->second;
-
           // if preexisting data, do not import new data unless overwrite option set
           if(data_res.preexisting && !m_overwrite) {
             continue;

@@ -1,7 +1,10 @@
 lib_LTLIBRARIES += libcasm.la
 libcasm_la_SOURCES=
 
-libcasm_la_SOURCES+=src/casm/CASM_global_definitions.cc
+libcasm_la_SOURCES+=\
+src/casm/CASM_global_definitions.cc\
+src/casm/CASM_global_enum.cc
+
 include src/casm/strain/Makemodule.am
 include src/casm/basis_set/Makemodule.am
 include src/casm/app/Makemodule.am
@@ -19,6 +22,7 @@ include src/casm/crystallography/Makemodule.am
 include src/casm/monte_carlo/Makemodule.am
 include src/casm/completer/Makemodule.am
 include src/casm/kinetics/Makemodule.am
+include src/casm/database/Makemodule.am
 
 #These extra libraries to link agains exist solely for the ctypes implementation we've got
 libcasm_la_LIBADD=$(BOOST_SYSTEM_LIB)\

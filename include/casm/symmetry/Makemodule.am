@@ -1,12 +1,29 @@
 symmetryincludedir=$(includedir)/casm/symmetry
-symmetryinclude_HEADERS=./include/casm/symmetry/EnumEquivalents.hh\
-            ./include/casm/symmetry/SymOp.hh\
-						./include/casm/symmetry/SymGroupRepID.hh\
-						./include/casm/symmetry/SymBasisPermute.hh\
-						./include/casm/symmetry/SymMatrixXd.hh\
-						./include/casm/symmetry/SymPermutation.hh\
-						./include/casm/symmetry/PermuteIterator.hh\
-						./include/casm/symmetry/SymGroup.hh\
-						./include/casm/symmetry/SymGroupRep.hh\
-						./include/casm/symmetry/SymOpRepresentation.hh\
-						./include/casm/symmetry/SymInfo.hh
+symmetryinclude_HEADERS=\
+./include/casm/symmetry/Orbit_impl.hh\
+./include/casm/symmetry/SymGroupRepID.hh\
+./include/casm/symmetry/InvariantSubgroup_impl.hh\
+./include/casm/symmetry/SymCompare.hh\
+./include/casm/symmetry/SymPermutation.hh\
+./include/casm/symmetry/SymGroupRep.hh\
+./include/casm/symmetry/Orbit.hh\
+./include/casm/symmetry/ConfigSubOrbits_impl.hh\
+./include/casm/symmetry/SubOrbits.hh\
+./include/casm/symmetry/ConfigSubOrbits.hh\
+./include/casm/symmetry/SymBasisPermute.hh\
+./include/casm/symmetry/SymGroup.hh\
+./include/casm/symmetry/SymMatrixXd.hh\
+./include/casm/symmetry/OrbitGeneration.hh\
+./include/casm/symmetry/ScelSubOrbits_impl.hh\
+./include/casm/symmetry/PermuteIterator.hh\
+./include/casm/symmetry/SymOp.hh\
+./include/casm/symmetry/SymInfo.hh\
+./include/casm/symmetry/OrbitDecl.hh\
+./include/casm/symmetry/ScelOrbitGeneration_impl.hh\
+./include/casm/symmetry/EnumEquivalents.hh\
+./include/casm/symmetry/InvariantSubgroup.hh\
+./include/casm/symmetry/ScelOrbitGeneration.hh\
+./include/casm/symmetry/ScelSubOrbits.hh\
+./include/casm/symmetry/SubOrbits_impl.hh\
+./include/casm/symmetry/SymOpRepresentation.hh
+

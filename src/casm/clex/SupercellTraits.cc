@@ -6,13 +6,17 @@
 #include <string>
 #include <vector>
 #include "casm/CASM_global_definitions.hh"
-
+#include <iostream>
 namespace CASM {
 
   const std::string traits<Supercell>::name = "Supercell";
 
   const std::string traits<Supercell>::short_name = "scel";
-
+  namespace {
+    bool _check_int_only(std::string &str) {
+      return str.find_first_not_of("0123456789") == std::string::npos;
+    }
+  }
   /// Tokenizes 'SCELV_A_B_C_D_E_F' to integral values {V, A, B, C, D, E, F} and
   /// does lexicographical comparison
   bool traits<Supercell>::name_compare(std::string A, std::string B) {
@@ -29,4 +33,5 @@ namespace CASM {
     }
     return false;
   };
+
 }

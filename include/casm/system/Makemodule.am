@@ -1,3 +1,5 @@
 systemincludedir=$(includedir)/casm/system
-systeminclude_HEADERS=./include/casm/system/RuntimeLibrary.hh\
-					  ./include/casm/system/Popen.hh
+systeminclude_HEADERS=\
+./include/casm/system/Popen.hh\
+./include/casm/system/RuntimeLibrary.hh
+

@@ -2,7 +2,7 @@
 #define CASM_ClusterSymCompare_impl
 
 #include "casm/clusterography/ClusterSymCompare.hh"
-#include "casm/Symmetry/SymPermutation.hh"
+#include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"

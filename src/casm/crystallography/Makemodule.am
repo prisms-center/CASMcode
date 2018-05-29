@@ -1,14 +1,16 @@
-libcasm_la_SOURCES += ./src/casm/crystallography/BasicStructure.cc\
-                      ./src/casm/crystallography/Coordinate.cc\
-                      ./src/casm/crystallography/CoordinateSystems.cc\
-                      ./src/casm/crystallography/Lattice.cc\
-                      ./src/casm/crystallography/LatticeEnumEquivalents.cc\
-                      ./src/casm/crystallography/LatticeIsEquivalent.cc\
-                      ./src/casm/crystallography/LatticeMap.cc\
-                      ./src/casm/crystallography/Molecule.cc\
-                      ./src/casm/crystallography/Niggli.cc\
-                      ./src/casm/crystallography/PrimGrid.cc\
-                      ./src/casm/crystallography/Site.cc\
-                      ./src/casm/crystallography/Structure.cc\
-                      ./src/casm/crystallography/SupercellEnumerator.cc\
-                      ./src/casm/crystallography/UnitCellCoord.cc
+libcasm_la_SOURCES +=\
+./src/casm/crystallography/LatticeEnumEquivalents.cc\
+./src/casm/crystallography/Molecule.cc\
+./src/casm/crystallography/Structure.cc\
+./src/casm/crystallography/SupercellEnumerator.cc\
+./src/casm/crystallography/Coordinate.cc\
+./src/casm/crystallography/MoleculeAttribute.cc\
+./src/casm/crystallography/PrimGrid.cc\
+./src/casm/crystallography/Lattice.cc\
+./src/casm/crystallography/Niggli.cc\
+./src/casm/crystallography/LatticeIsEquivalent.cc\
+./src/casm/crystallography/UnitCellCoord.cc\
+./src/casm/crystallography/BasicStructure.cc\
+./src/casm/crystallography/LatticeMap.cc\
+./src/casm/crystallography/Site.cc\
+./src/casm/crystallography/CoordinateSystems.cc

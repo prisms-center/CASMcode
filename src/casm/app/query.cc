@@ -18,8 +18,6 @@ namespace CASM {
       add_general_help_suboption();
       add_selection_suboption();
       add_db_type_suboption(traits<Configuration>::short_name, DB::types_short());
-      //add_db_type_suboption(traits<Supercell>::short_name, DB::types_short());
-      //add_db_type_suboption(traits<PrimPeriodicDiffTransOrbit>::short_name, DB::types_short());
       add_output_suboption();
       add_gzip_suboption();
 
@@ -354,6 +352,7 @@ namespace CASM {
     std::vector<std::string> all_columns;
     if(!m_cmd.opt().verbatim_flag()) {
       all_columns.push_back("name");
+      /*all_columns.push_back("alias_or_name");*/
       all_columns.push_back("selected");
     }
     all_columns.insert(all_columns.end(), _columns_vec().begin(), _columns_vec().end());

@@ -479,6 +479,10 @@ namespace CASM {
     return fs::create_directory(m_dir.symmetry_dir());
   }
 
+  /// \brief Create new reports directory
+  bool ProjectSettings::new_reports_dir() const {
+    return fs::create_directory(m_dir.reports_dir());
+  }
   /// \brief Add a basis set directory
   bool ProjectSettings::new_bset_dir(std::string bset) const {
     return fs::create_directories(m_dir.bset_dir(bset));

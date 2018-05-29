@@ -29,7 +29,8 @@ namespace CASM {
 
     public:
 
-      /// \brief Construct with a Diffusion configuration
+      /// \brief Construct with a DiffTransConfiguration
+      /// Adds the end points of an in project DiffTransConfiguration to the CASM project
       EnumDiffTransConfigEndpoints(const DiffTransConfiguration &_diff_trans_config);
 
       std::string name() const override {
@@ -39,12 +40,10 @@ namespace CASM {
       static const std::string enumerator_name;
       static const std::string interface_help;
 
+      /// Command line interface parsing to give instructions on how to enumerate the endpoints
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
     private:
-      // Returns to config that are edited to have same occupants on the diff_trans_orbit
-      // output used to intepolate rest of the configuration other that diff trans orbit
-
       Configuration m_current;
       DiffTransConfiguration m_source;
     };

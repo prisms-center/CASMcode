@@ -341,6 +341,9 @@ namespace CASM {
   ///        Configuration unchanged
   std::vector<PermuteIterator> Configuration::invariant_subgroup() const {
     std::vector<PermuteIterator> fg = ConfigurationBase::invariant_subgroup();
+    if(fg.size() == 0) {
+      default_err_log() << "Something went very wrong in invariant_subgroup returning group size 0" << std::endl;
+    }
     int mult = this->prim().factor_group().size() / fg.size();
     cache_insert("multiplicity", mult);
     return fg;
@@ -601,7 +604,9 @@ namespace CASM {
   /// - equal to prim.factor_group().size() / this->factor_group().size()
   int Configuration::multiplicity() const {
     if(!cache().contains("multiplicity")) {
-      this->factor_group();
+      int result = this->prim().factor_group().size() / this->factor_group().size();
+      cache_insert("multiplicity", result);
+      return result;
     }
     return cache()["multiplicity"].get<int>();
   }
@@ -609,7 +614,31 @@ namespace CASM {
   //*********************************************************************************
 
   Configuration &Configuration::apply_sym(const PermuteIterator &it) {
+    auto all_props = calc_properties_map();
     configdof().apply_sym(it);
+    for(auto ii = all_props.begin(); ii != all_props.end(); ++ii) {
+      std::string calctype = ii->first;
+      jsonParser transformed_props;
+      for(auto json_it = all_props[calctype]["mapped"].begin(); json_it != all_props[calctype]["mapped"].end(); ++json_it) {
+        if(json_it.name() == "relaxed_energy") {
+          transformed_props["relaxed_energy"] = *json_it;
+        }
+        Eigen::Matrix3d fg_cart_op = it.sym_op().matrix();
+        if(json_it.name() == "relaxation_deformation") {
+          transformed_props["relaxation_deformation"] = fg_cart_op * json_it->get<Eigen::Matrix3d>() * fg_cart_op.transpose();
+        }
+        Permutation tperm(it.combined_permute());
+        if(json_it.name() == "relaxation_displacement" || json_it.name() == "relaxed_forces") {
+          Eigen::MatrixXd new_matrix = fg_cart_op * json_it->get<Eigen::MatrixXd>().transpose();
+          Eigen::MatrixXd permuted_matrix(3, size());
+          for(Index i = 0; i < size(); i++) {
+            permuted_matrix.col(i) = new_matrix.col(tperm[i]);
+          }
+          transformed_props[json_it.name()] = permuted_matrix.transpose();
+        }
+      }
+      set_calc_properties(transformed_props, calctype);
+    }
     return *this;
   }
 
@@ -793,6 +822,74 @@ namespace CASM {
     return;
   }
 
+  //*********************************************************************************
+
+  std::ostream &Configuration::print_properties(std::string calctype, std::ostream &sout) const {
+    jsonParser prop_calc_json = print_properties(calctype);
+    sout << prop_calc_json;
+    return sout;
+  }
+
+  jsonParser Configuration::print_properties(std::string calctype) const {
+    jsonParser prop_calc_json;
+    Lattice ref_lat = supercell().lattice();
+    if(calc_properties(calctype).contains("relaxation_deformation")) {
+      ref_lat = Lattice(calc_properties(calctype)["relaxation_deformation"].get<Eigen::Matrix3d>() * supercell().lattice().lat_column_mat());
+    }
+    prop_calc_json["relaxed_lattice"] = ref_lat.lat_column_mat().transpose();
+    std::vector<std::pair<std::string, Coordinate>> basis;
+    for(int i = 0 ; i < supercell().num_sites(); i++) {
+      Coordinate ref_coord = supercell().coord(i);
+      if(calc_properties(calctype).contains("relaxation_displacement")) {
+        ref_coord.cart() += calc_properties(calctype)["relaxation_displacement"].get<Eigen::MatrixXd>().row(i).transpose();
+      }
+      if(calc_properties(calctype).contains("relaxation_deformation")) {
+        ref_coord.cart() = calc_properties(calctype)["relaxation_deformation"].get<Eigen::Matrix3d>() * ref_coord.const_cart();
+      }
+      Coordinate deformed_coord(ref_coord.const_cart(), ref_lat, CART);
+      deformed_coord.within();
+      std::pair<std::string, Coordinate> site(mol(i).name(), deformed_coord);
+      basis.push_back(site);
+    }
+    std::sort(basis.begin(), basis.end(), [ = ](const std::pair<std::string, Coordinate> &A, const std::pair<std::string, Coordinate> &B) {
+      return A.first < B.first;
+    });
+    std::map<std::string, int> atom_type_count;
+    Eigen::MatrixXd relaxed_basis(supercell().num_sites(), 3);
+    int i = 0;
+    for(auto it = basis.begin(); it != basis.end(); ++it) {
+      if(it->first != "Va" && it->first != "va" && it->first != "VA") {
+        auto search = atom_type_count.find(it->first);
+        if(search == atom_type_count.end()) {
+          atom_type_count.emplace(it->first, 1);
+        }
+        else {
+          search->second++;
+        }
+        relaxed_basis.row(i) = it->second.const_frac().transpose();
+        ++i;
+      }
+    }
+    Eigen::MatrixXd tmp = relaxed_basis.topLeftCorner(i, 3);
+    relaxed_basis = tmp;
+    prop_calc_json["coord_mode"] = "Direct";
+    std::vector<std::string> atom_type;
+    std::vector<int> atoms_per_type;
+    for(auto it = atom_type_count.begin(); it != atom_type_count.end(); ++it) {
+      atom_type.push_back(it->first);
+      atoms_per_type.push_back(it->second);
+    }
+    prop_calc_json["atom_type"] = atom_type;
+    prop_calc_json["atoms_per_type"] = atoms_per_type;
+    prop_calc_json["relaxed_basis"] = relaxed_basis;
+    if(calc_properties(calctype).contains("relaxed_energy")) {
+      prop_calc_json["relaxed_energy"] = calc_properties(calctype)["relaxed_energy"];
+    }
+    if(calc_properties(calctype).contains("relaxed_forces")) {
+      prop_calc_json["relaxed_forces"] = calc_properties(calctype)["relaxed_forces"];
+    }
+    return prop_calc_json;
+  }
   //*********************************************************************************
 
   /// Private members:
@@ -996,7 +1093,6 @@ namespace CASM {
       Configuration canon_config = *primclex.db<Configuration>().find(canon_config_name);
       Index fg_index = boost::lexical_cast<Index>(tokens[2]);
       Index trans_index = boost::lexical_cast<Index>(tokens[3]);
-
       return apply(canon_config.supercell().permute_it(fg_index, trans_index), canon_config);
     }
 
@@ -1116,6 +1212,10 @@ namespace CASM {
   /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
   /// \param config must have a canonical name
   Configuration &apply_properties(Configuration &config, std::string calctype) {
+    if(!is_calculated(config, calctype)) {
+      config.primclex().log() << ">>>>>>!!!!!WARNING: Attempting to extract properties from a configuration without properties!!!!" << std::endl
+                              << "Endpoint " << config.name() << " is not calculated in calctype " << calctype << "!!!!<<<<<<" << std::endl << std::endl;;
+    }
     jsonParser calc_props = config.calc_properties(calctype);
     config.init_deformation();
     config.init_displacement();
@@ -1123,7 +1223,7 @@ namespace CASM {
     if(calc_props.contains("relaxation_displacement")) {
       Eigen::MatrixXd disp;
       disp = calc_props["relaxation_displacement"].get<Eigen::MatrixXd>();
-      config.set_displacement(disp);
+      config.set_displacement(disp.transpose());
     }
     if(calc_props.contains("relaxation_deformation")) {
       Eigen::Matrix3d deform;
@@ -1288,6 +1388,68 @@ namespace CASM {
   /// \brief Returns the relaxed magnetic moment for each molecule
   Eigen::VectorXd relaxed_mag(const Configuration &_config) {
     return _config.calc_properties()["relaxed_mag"].get<Eigen::VectorXd>();
+  }
+
+  /// \brief Returns an IntegralCluster representing the perturbation between the configs
+  IntegralCluster config_diff(const Configuration &_config1, const Configuration &_config2) {
+    if(_config1.supercell() != _config2.supercell()) {
+      throw std::runtime_error("Misuse of basic config_diff: configs are not in same supercell");
+    }
+    std::vector<UnitCellCoord> uccoords;
+    for(Index i = 0 ; i < _config1.occupation().size(); i++) {
+      if(_config1.occ(i) != _config2.occ(i)) {
+        uccoords.push_back(_config1.uccoord(i));
+      }
+    }
+    IntegralCluster perturb(_config1.prim(), uccoords.begin(), uccoords.end());
+    return perturb;
+  }
+
+  /// Returns a rotated/translated version of config 2 that leaves it closest to the occupation of config1
+  Configuration closest_setting(const Configuration &_config1, const Configuration &_config2) {
+    std::vector<PermuteIterator> non_fg_its;
+    std::set_difference(_config2.supercell().permute_begin(),
+                        _config2.supercell().permute_end(),
+                        _config2.factor_group().begin(),
+                        _config2.factor_group().end(),
+                        std::back_inserter(non_fg_its));
+    int min_size = config_diff(_config1, _config2).size();
+    if(non_fg_its.size() == 0) {
+      return _config2;
+    }
+    PermuteIterator best_it = *(non_fg_its.begin());
+    for(auto it = non_fg_its.begin(); it != non_fg_its.end(); ++it) {
+      int size = config_diff(_config1, copy_apply(*it, _config2)).size();
+      if(size < min_size) {
+        best_it = *it;
+        min_size = size;
+      }
+    }
+    if(min_size == config_diff(_config1, _config2).size()) {
+      return _config2;
+    }
+    return copy_apply(best_it, _config2);
+
+  }
+
+
+
+  /// \brief Returns a Configuration with the sites in _clust clipped from _config and placed in _bg
+  Configuration config_clip(const Configuration &_config, const Configuration &_bg, IntegralCluster &_clust) {
+    if(_config.supercell() != _bg.supercell()) {
+      throw std::runtime_error("Misuse of basic config_clip: configs are not in same supercell");
+    }
+    Configuration tmp = _bg;
+    std::vector<Index> l_inds;
+    std::vector<Index> l_values;
+    for(auto &site : _clust) {
+      l_inds.push_back(_config.linear_index(site));
+      l_values.push_back(_config.occ(_config.linear_index(site)));
+    }
+    for(Index i = 0; i < l_inds.size(); i++) {
+      tmp.set_occ(l_inds[i], l_values[i]);
+    }
+    return tmp;
   }
 
   /// \brief returns true if _config describes primitive cell of the configuration it describes
@@ -1518,7 +1680,19 @@ namespace CASM {
 
     return sout;
   }
-
+  Structure make_deformed_struc(const Configuration &c) {
+    Structure tmp = c.supercell().superstructure(c);
+    if(c.has_displacement()) {
+      for(int i = 0 ; i < tmp.basis.size(); i++) {
+        tmp.basis[i].cart() += c.disp(i);
+      }
+    }
+    if(c.has_deformation()) {
+      Lattice tmp_lat(c.deformation() * tmp.lattice().lat_column_mat());
+      tmp.set_lattice(tmp_lat, FRAC);
+    }
+    return tmp;
+  }
 }
 
 

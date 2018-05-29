@@ -34,21 +34,23 @@ namespace CASM {
 
       static const std::string enumerator_name;
       static const std::string interface_help;
-      /// Implements run
+      /// The Command Line Interface uses this function to parse and construct the DiffusionTransformation enumerator
       static int run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
 
     private:
 
 
-      /// Implements increment
+      /// Implements increment and creates new diffusion transformation
       void increment() override;
 
 
 
       // -- Unique -------------------
 
+      // Gives primitive structure of project
       const Structure &prim() const;
 
+      /// gives the cluster of sites to determine diffusion transformations on
       const IntegralCluster &cluster() const;
 
       /// \brief The occ_counter contains the from/to occupation values for each site
@@ -69,7 +71,7 @@ namespace CASM {
       void _set_current_loc();
       void _update_current_to_loc();
 
-
+      ///Storage for enumeration details
       Counter<std::vector<Index> > m_occ_counter;
       std::vector<SpecieLocation> m_from_loc;
       std::vector<SpecieLocation> m_to_loc;
@@ -78,6 +80,7 @@ namespace CASM {
       notstd::cloneable_ptr<DiffusionTransformation> m_current;
     };
 
+    /// Invokes the Constructed Enumerators run method for every cluster in the orbit range given as input
     template<typename OrbitOutputIterator, typename IntegralClusterOrbitInputIterator>
     OrbitOutputIterator make_prim_periodic_diff_trans_orbits(
       IntegralClusterOrbitInputIterator begin,

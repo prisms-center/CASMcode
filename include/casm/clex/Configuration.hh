@@ -16,6 +16,7 @@
 #include "casm/database/Cache.hh"
 #include "casm/database/Named.hh"
 #include "casm/database/Database.hh"
+#include "casm/clusterography/ClusterDecl.hh"
 
 namespace CASM {
 
@@ -356,9 +357,11 @@ namespace CASM {
     ///        Configuration unchanged
     std::vector<PermuteIterator> factor_group() const;
 
+    /// \brief Gives the subgroup of the supercell that leaves this configuration unchanged
     using ConfigurationBase::invariant_subgroup;
     std::vector<PermuteIterator> invariant_subgroup() const;
 
+    /// \brief Determines if this Configuration is in canonical form
     using ConfigurationBase::is_canonical;
     bool is_canonical() const;
 
@@ -432,6 +435,12 @@ namespace CASM {
 
     /// Write the POS file to pos_path
     void write_pos() const;
+
+    /// Writes incomplete properties.calc.json of config for kra purposes
+    std::ostream &print_properties(std::string calctype, std::ostream &sout) const;
+
+    /// Writes incomplete properties.calc.json of config for kra purposes
+    jsonParser print_properties(std::string calctype) const;
 
     /// \brief Split configuration name string into scelname and config id
     static std::pair<std::string, std::string> split_name(std::string configname);
@@ -601,7 +610,14 @@ namespace CASM {
   /// \brief Returns the relaxed magnetic moment for each molecule
   Eigen::VectorXd relaxed_mag(const Configuration &_config);
 
+  /// \brief Returns an Integral Cluster representing the perturbed sites between the configs
+  IntegralCluster config_diff(const Configuration &_config1, const Configuration &_config2);
 
+  /// Returns a rotated/translated version of config 2 that leaves it closest to the occupation of config1
+  Configuration closest_setting(const Configuration &_config1, const Configuration &_config2);
+
+  /// \brief Returns a Configuration with the sites in _clust clipped from _config and placed in _bg
+  Configuration config_clip(const Configuration &_config, const Configuration &_bg, IntegralCluster &_clust);
 
   /// \brief returns true if _config describes primitive cell of the configuration it describes
   bool is_primitive(const Configuration &_config);
@@ -678,7 +694,7 @@ namespace CASM {
   };
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c);
-
+  Structure make_deformed_struc(const Configuration &c);
   /** @} */
 
 }

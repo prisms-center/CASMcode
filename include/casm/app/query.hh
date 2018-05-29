@@ -6,7 +6,7 @@
 #include "casm/app/DBInterface.hh"
 
 namespace CASM {
-  namespace Completer {
+  /*namespace Completer {
 
     class QueryOption : public OptionHandlerBase {
 
@@ -37,7 +37,7 @@ namespace CASM {
 
     };
 
-  }
+  }*/
 }
 
 namespace CASM {

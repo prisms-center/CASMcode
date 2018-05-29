@@ -27,8 +27,13 @@ namespace CASM {
   Lattice::Lattice(const Eigen::Vector3d &vec1,
                    const Eigen::Vector3d &vec2,
                    const Eigen::Vector3d &vec3,
-                   double xtal_tol) : m_tol(xtal_tol) {
+                   double xtal_tol,
+                   bool force) : m_tol(xtal_tol) {
     m_lat_mat << vec1, vec2, vec3;
+    if(!force && m_lat_mat.determinant() < 0) {
+      this->make_right_handed();
+      //throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
+    }
     m_inv_lat_mat = m_lat_mat.inverse();
   }
 
@@ -36,10 +41,14 @@ namespace CASM {
 
   ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
   ///(e.g., lat_mat is equivalent to lat_column_mat())
-  Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat, double xtal_tol) :
+  Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat, double xtal_tol, bool force) :
     m_lat_mat(lat_mat),
     m_inv_lat_mat(lat_mat.inverse()),
     m_tol(xtal_tol) {
+    if(!force && m_lat_mat.determinant() < 0) {
+      this->make_right_handed();
+      //throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
+    }
   }
 
   //********************************************************************
@@ -158,6 +167,9 @@ namespace CASM {
     return Lattice(2 * M_PI * inv_lat_column_mat().transpose(), tol()); //equivalent expression
   }
 
+  double Lattice::boxiness() const {
+    return 1 / (this->inv_lat_column_mat().colwise().norm().sum());
+  }
   //********************************************************************
 
   Array<int> Lattice::calc_kpoints(Array<int> prim_kpoints, Lattice prim_lat) {
@@ -168,21 +180,16 @@ namespace CASM {
     double prim_density = (prim_kpoints[0] * prim_kpoints[1] * prim_kpoints[2]) / (prim_recip_lat.vol());
     double super_density = 0;
 
-    //        std::cout << prim_recip_lat << std::endl;
-    //std::cout << recip_lat << std::endl;
+
 
     Array<double> prim_vec_lengths;
 
     for(int i = 0; i < 3; i++) {
       prim_vec_lengths.push_back(prim_recip_lat.length(i));
     }
-    //std::cout<<prim_vec_lengths<<"\n";
+
     double shortest = prim_vec_lengths.min();
     int short_ind = prim_vec_lengths.find(shortest);
-
-    //std::cout << "prim kpoints "<< prim_kpoints << std::endl;
-    //    std::cout << "prim recip vol " << prim_recip_lat.vol << std::endl;
-    //std::cout << "prim kpoint density " << prim_density << std::endl;
 
     double scale = (prim_kpoints[short_ind] / shortest);
 
@@ -192,27 +199,19 @@ namespace CASM {
 
     super_density = (super_kpoints[0] * super_kpoints[1] * super_kpoints[2]) / (recip_lat.vol());
 
-    //std::cout << "super kpoint density " << super_density << std::endl;
-    //std::cout << super_kpoints << std::endl;
 
     while(super_density < prim_density) {
-      //  std::cout << prim_kpoints[short_ind] << std::endl;
       prim_kpoints[short_ind]++;
-      //std::cout << prim_kpoints[short_ind] << std::endl;
+
       scale = (prim_kpoints[short_ind] / shortest);
-      //std::cout << scale << std::endl;
 
       for(int i = 0; i < 3; i++) {
         super_kpoints[i] = int(ceil(scale * recip_lat.length(i)));
       }
 
-      //std::cout << super_kpoints << std::endl;
-
       super_density = (super_kpoints[0] * super_kpoints[1] * super_kpoints[2]) / (recip_lat.vol());
 
-      //std::cout << super_density << std::endl;
     }
-    //std::cout << "---------------\n";
 
     return super_kpoints;
   }
@@ -347,106 +346,61 @@ namespace CASM {
   //********************************************************************
   /**This function finds the reduced cell from the given primitive cell.
    *
-   *
-   * First, the translation vectors of the primitive cell are determined, then reduced.
-   * The Bravais lattice is determined using Niggli's transformations. The method used to
-   * determine the basis vectors are to find body and face diagonals across the cell.
-   * The vectors satisfying these main conditions can be found by ensuring:
-   * 		 i) the shortest face diagonal is not shorter than the longest edge of the same face
-   * 		 ii) the shortest body diagonal is not shorter than the longest edge of the cell
-   *
-   * This is accomplished by enumerating the skew matrices (identity matrix with one of the
-   * off-diagonal terms =1 or =-1).  This will replace one of the lattice vectors with the
-   * face diagonal corresponding to that linear combination.  If the length of any of the
-   * new skewed lattice vectors is shorter than the length of the original cell, it is replaced.
-   * All skew matrices have determinants equal to 1, which preserves the volume of the original
-   * cell.
+   * This implementation is the LLL algorithm as laid out by Hoffstein, Jeffrey; Pipher, Jill; Silverman, J.H. (2008).
+   * An Introduction to Mathematical Cryptography. Springer. ISBN 978-0-387-77993-5.
+   * Some corrections have been made from  Silverman, Joseph. "Introduction to Mathematical Cryptography Errata" (PDF).
+   * Brown University Mathematics Dept. Retrieved 5 May 2015.
    *
    */
   Lattice Lattice::reduced_cell() const {
-
-    int i, j, k, nv;
-    Array<Eigen::Matrix3d > skew;
-    Eigen::Matrix3d tskew(Eigen::Matrix3d::Identity());
-    bool minimized = false;
-
-    //std::cout << "Before reduction: \n";
-    //print(std::cout);
-
-
-    //Creates 12 skew matrices
-    //Do we also need the 12 "double skew" matrices corresponding to body diagonal substitution? YES
-    skew.reserve(24);
-    for(i = 0; i < 3; i++) {
-      for(j = 0; j < 3; j++) {
-        if(i != j) { //Checks to make sure we're not at a diagonal
-          tskew(i, j) = 1;
-          skew.push_back(tskew);
-          tskew(i, j) = -1;
-          skew.push_back(tskew);
-          tskew(i, j) = 0;
+    Eigen::Matrix3d reduced_lat = lat_column_mat();
+    bool right_handed = (reduced_lat.determinant() > 0);
+    Eigen::HouseholderQR<Eigen::Matrix3d> qr(reduced_lat);
+    Eigen::Matrix3d Q = qr.householderQ();
+    Eigen::Matrix3d R = Q.inverse() * reduced_lat;
+    Eigen::Matrix3d ortho = Q;
+    ortho.col(0) = ortho.col(0) * R(0, 0);
+    ortho.col(1) = ortho.col(1) * R(1, 1);
+    ortho.col(2) = ortho.col(2) * R(2, 2);
+    Index k = 1;
+    while(k < 3) {
+      for(int j = k - 1; j >= 0; j--) {
+        double mu = reduced_lat.col(k).dot(ortho.col(j)) / ortho.col(j).squaredNorm();
+        if(fabs(mu) > 0.5001) {
+          reduced_lat.col(k) = reduced_lat.col(k) - round(mu) * reduced_lat.col(j);
+          Eigen::HouseholderQR<Eigen::Matrix3d> qr2(reduced_lat);
+          Q = qr2.householderQ();
+          R = Q.inverse() * reduced_lat;
+          ortho = Q;
+          ortho.col(0) = ortho.col(0) * R(0, 0);
+          ortho.col(1) = ortho.col(1) * R(1, 1);
+          ortho.col(2) = ortho.col(2) * R(2, 2);
+        }
+      }
+      double mu2 = reduced_lat.col(k).dot(ortho.col(k - 1)) / ortho.col(k - 1).squaredNorm();
+      if((ortho.col(k) + mu2 * ortho.col(k - 1)).squaredNorm() > 0.75 * ortho.col(k - 1).squaredNorm()) {
+        k = k + 1;
+      }
+      else {
+        Eigen::Vector3d tmp = reduced_lat.col(k);
+        reduced_lat.col(k) = reduced_lat.col(k - 1);
+        reduced_lat.col(k - 1) = tmp;
+        Eigen::HouseholderQR<Eigen::Matrix3d> qr3(reduced_lat);
+        Q = qr3.householderQ();
+        R = Q.inverse() * reduced_lat;
+        ortho = Q;
+        ortho.col(0) = ortho.col(0) * R(0, 0);
+        ortho.col(1) = ortho.col(1) * R(1, 1);
+        ortho.col(2) = ortho.col(2) * R(2, 2);
+        if(k > 1) {
+          k = k - 1;
         }
       }
     }
-
-    //the 12 "double skew" matrices corresponding to body diagonal substitution
-    for(i = 0; i < 3; i++) {		// column
-
-      j = (i + 1) % 3;
-      k = (i + 2) % 3;
-
-      tskew(j, i) = 1;
-      tskew(k, i) = 1;
-      skew.push_back(tskew);
-
-      tskew(j, i) = 1;
-      tskew(k, i) = -1;
-      skew.push_back(tskew);
-
-      tskew(j, i) = -1;
-      tskew(k, i) = 1;
-      skew.push_back(tskew);
-
-      tskew(j, i) = -1;
-      tskew(k, i) = -1;
-      skew.push_back(tskew);
-
-      tskew(j, i) = 0;
-      tskew(k, i) = 0;
-
+    if(right_handed) {
+      return Lattice(reduced_lat).make_right_handed();
     }
-
-
-    Eigen::Matrix3d tMat, reduced_lat_mat;
-    Eigen::Matrix3d tMat_mags, reduced_mags;
-    reduced_lat_mat = lat_column_mat();  //Matrix3
-    reduced_mags = reduced_lat_mat.transpose() * reduced_lat_mat;
-
-    while(!minimized) {
-      minimized = true;
-      for(Index s = 0; s < skew.size(); s++) {
-
-        //Multiply the original lattice (columns are lattice vectors) with the skew matrix
-        //Right multiply does elementary column operation on lattice vectors
-        tMat = (reduced_lat_mat * skew[s]);
-
-        //Lattice vectors times their transpose give length and angle info
-        tMat_mags = tMat.transpose() * tMat;
-
-        for(nv = 0; nv < 3; nv++) {
-          if(tMat_mags(nv, nv) < reduced_mags(nv, nv)) {
-            reduced_lat_mat = tMat;
-            reduced_mags = reduced_lat_mat.transpose() * reduced_lat_mat;
-            minimized = false;
-            s--; //try the same skew operator again.
-            break;
-          }
-        }
-      }
-    }
-
-    Lattice reduced_lat(reduced_lat_mat);
-    return reduced_lat;
+    return Lattice(reduced_lat);
   }
 
   //********************************************************************
@@ -693,8 +647,6 @@ namespace CASM {
       //Turn integer millers into doubles for mathematical purposes (inverse)
       millers_dubs = millers.cast<double>();
 
-      //std::cout<<millers_dubs<<std::endl;
-
       Eigen::Vector3d inv_miller_dubs;
       Eigen::Vector3i inv_miller;
 
@@ -900,7 +852,6 @@ namespace CASM {
     }
     while(new_vol / vol() < max_vol && orthoscore < 1); //John G 121030
 
-    //std::cout<<"SURFACE:"<<surface_cell<<std::endl;
 
     Lattice surface_lat(surface_cell.col(0), surface_cell.col(1), surface_cell.col(2));
     surface_lat.make_right_handed();
@@ -954,19 +905,18 @@ namespace CASM {
       frac_mat = iround(inv_lat_column_mat() * relaxed_pg[ng].matrix() * lat_column_mat()).cast<double>();
       tLat2 += frac_mat.transpose() * lat_column_mat().transpose() * lat_column_mat() * frac_mat;
     }
-
     tLat2 /= double(relaxed_pg.size());
 
     // tLat2 has the symmetrized lengths and angles -- it is equal to L.transpose()*L, where L=lat_column_mat()
     // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
     Eigen::Matrix3d tMat(tLat2), tMat2;
 
-    Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat);
+    Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat, Eigen::ComputeFullU | Eigen::ComputeFullV);
     tMat = Eigen::Matrix3d::Zero();
-    for(int i = 0; i < 3; i++) {
+    /*for(int i = 0; i < 3; i++) {
       tMat(i, i) = tSVD.singularValues()[i];
-    }
-
+    }*/
+    tMat.diagonal() = tSVD.singularValues().cwiseSqrt();
     tMat2 = tSVD.matrixU() * tMat * tSVD.matrixV().transpose();
 
     tMat = lat_column_mat();
@@ -1089,14 +1039,10 @@ namespace CASM {
       }
     }
 
-    //std::cout << "dA is:\n" << dA << "\n\n";
-    //std::cout << "and N is:\n" << N << "\n\n";
+
     Eigen::Matrix3l U, S, V;
     smith_normal_form(lround(dA), U, S, V);
-    //std::cout << "Smith U is:\n" << U << "\n\n";
-    //std::cout << "Smith S is:\n" << S << "\n\n";
-    //std::cout << "Smith V is:\n" << V << "\n\n";
-    //std::cout << "and U*S*V is:\n" << U*S*V << "\n\n";
+
     denom = N;
 
     //reuse matrix S for matrix 'R', as above

@@ -5,7 +5,7 @@
 #include "casm/app/APICommand.hh"
 
 namespace CASM {
-  namespace Completer {
+  /*namespace Completer {
 
     class UpdateOption : public OptionHandlerBase {
 
@@ -24,7 +24,7 @@ namespace CASM {
       void initialize() override;
 
     };
-  }
+  }*/
 
   class UpdateCommandImplBase;
   template<typename T> class UpdateCommandImpl;

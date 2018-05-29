@@ -1,2 +1,3 @@
-libcasm_la_SOURCES += ./src/casm/clusterography/ClusterOrbits.cc\
-                      ./src/casm/clusterography/IntegralCluster.cc
+libcasm_la_SOURCES +=\
+./src/casm/clusterography/IntegralCluster.cc\
+./src/casm/clusterography/ClusterOrbits.cc

@@ -1,17 +1,23 @@
-libcasm_la_SOURCES +=  ./src/casm/monte_carlo/grand_canonical/GrandCanonical.cc\
-                       ./src/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.cc\
-                       ./src/casm/monte_carlo/grand_canonical/GrandCanonicalIO.cc\
-                       ./src/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.cc\
-                       ./src/casm/monte_carlo/canonical/Canonical.cc\
-                       ./src/casm/monte_carlo/canonical/CanonicalConditions.cc\
-                       ./src/casm/monte_carlo/canonical/CanonicalIO.cc\
-                       ./src/casm/monte_carlo/canonical/CanonicalSettings.cc\
-                       ./src/casm/monte_carlo/MCData.cc\
-                       ./src/casm/monte_carlo/MonteCarlo.cc\
-                       ./src/casm/monte_carlo/MonteCarloEnum.cc\
-                       ./src/casm/monte_carlo/MonteCounter.cc\
-                       ./src/casm/monte_carlo/MonteDefinitions.cc\
-                       ./src/casm/monte_carlo/MonteIO.cc\
-                       ./src/casm/monte_carlo/MonteSampler.cc\
-                       ./src/casm/monte_carlo/MonteSettings.cc\
-                       ./src/casm/monte_carlo/SiteExchanger.cc
+libcasm_la_SOURCES +=\
+./src/casm/monte_carlo/Conversions.cc\
+./src/casm/monte_carlo/MonteIO.cc\
+./src/casm/monte_carlo/OccCandidate.cc\
+./src/casm/monte_carlo/OccLocation.cc\
+./src/casm/monte_carlo/MCData.cc\
+./src/casm/monte_carlo/MonteDriver.cc\
+./src/casm/monte_carlo/SiteExchanger.cc\
+./src/casm/monte_carlo/MonteCounter.cc\
+./src/casm/monte_carlo/MonteSampler.cc\
+./src/casm/monte_carlo/MonteCarlo.cc\
+./src/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.cc\
+./src/casm/monte_carlo/grand_canonical/GrandCanonicalIO.cc\
+./src/casm/monte_carlo/grand_canonical/GrandCanonical.cc\
+./src/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.cc\
+./src/casm/monte_carlo/MonteCarloEnum.cc\
+./src/casm/monte_carlo/MonteSettings.cc\
+./src/casm/monte_carlo/canonical/CanonicalConditions.cc\
+./src/casm/monte_carlo/canonical/CanonicalEvent.cc\
+./src/casm/monte_carlo/canonical/Canonical.cc\
+./src/casm/monte_carlo/canonical/CanonicalSettings.cc\
+./src/casm/monte_carlo/canonical/CanonicalIO.cc\
+./src/casm/monte_carlo/MonteDefinitions.cc

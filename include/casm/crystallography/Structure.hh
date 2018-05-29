@@ -166,6 +166,7 @@ namespace CASM {
 
     jsonParser &to_json(jsonParser &json) const;
     void from_json(const jsonParser &json);
+
   };
 
   //Structure operator*(const SymOp &LHS, const Structure &RHS);

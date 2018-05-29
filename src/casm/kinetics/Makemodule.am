@@ -1,8 +1,20 @@
-libcasm_la_SOURCES += ./src/casm/kinetics/DiffusionTransformation.cc\
-                      ./src/casm/kinetics/DiffusionTransformationEnum.cc\
-                      ./src/casm/kinetics/DoFTransformation.cc\
-                      ./src/casm/kinetics/OccupationTransformation.cc\
-                      ./src/casm/kinetics/DiffTransConfiguration.cc\
-                      ./src/casm/kinetics/DiffTransConfigEnumPerturbations.cc
-                      ./src/casm/kinetics/DiffTransOrbitQuery.cc
-
+libcasm_la_SOURCES +=\
+./src/casm/kinetics/DiffTransConfigurationIO.cc\
+./src/casm/kinetics/EnumDiffTransConfigEndpoints.cc\
+./src/casm/kinetics/PrimPeriodicDiffTransOrbitIO.cc\
+./src/casm/kinetics/DiffusionTransformationEnum.cc\
+./src/casm/kinetics/RemovePrimPeriodicDiffTransOrbit.cc\
+./src/casm/kinetics/KineticsOrbits.cc\
+./src/casm/kinetics/DiffTransConfigEnumOccPerturbations.cc\
+./src/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.cc\
+./src/casm/kinetics/DiffTransConfigurationTraits.cc\
+./src/casm/kinetics/DiffTransConfigIsEqual.cc\
+./src/casm/kinetics/DiffTransConfiguration.cc\
+./src/casm/kinetics/OccupationTransformationTraits.cc\
+./src/casm/kinetics/OccPerturbation.cc\
+./src/casm/kinetics/DiffTransConfigMapping.cc\
+./src/casm/kinetics/DiffusionTransformationTraits.cc\
+./src/casm/kinetics/OccupationTransformation.cc\
+./src/casm/kinetics/DiffusionTransformation.cc\
+./src/casm/kinetics/DoFTransformation.cc\
+./src/casm/kinetics/DiffTransConfigInterpolation.cc

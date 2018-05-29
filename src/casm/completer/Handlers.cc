@@ -4,8 +4,19 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/database/DatabaseTypes.hh"
+#include "casm/container/Enumerator.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/app/APICommand.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/app/ProjectSettings.hh"
 
 namespace CASM {
   namespace Completer {
@@ -66,6 +77,41 @@ namespace CASM {
       return m_argument_table[6].first;
     }
 
+    std::string ArgHandler::dbtype() {
+      return m_argument_table[7].first;
+    }
+
+    std::string ArgHandler::enummethod() {
+      return m_argument_table[8].first;
+    }
+
+    std::string ArgHandler::configtype() {
+      return m_argument_table[9].first;
+    }
+
+    std::string ArgHandler::calctype() {
+      return m_argument_table[10].first;
+    }
+
+    std::string ArgHandler::bset() {
+      return m_argument_table[11].first;
+    }
+
+    std::string ArgHandler::clex() {
+      return m_argument_table[12].first;
+    }
+
+    std::string ArgHandler::ref() {
+      return m_argument_table[13].first;
+    }
+
+    std::string ArgHandler::eci() {
+      return m_argument_table[14].first;
+    }
+
+    std::string ArgHandler::property() {
+      return m_argument_table[15].first;
+    }
 
     void ArgHandler::void_to_bash(std::vector<std::string> &arguments) {
       return;
@@ -81,16 +127,21 @@ namespace CASM {
       return;
     }
 
-    void scelname_to_bash(std::vector<std::string> &arguments) {
+    void ArgHandler::scelname_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(const auto &scel : pclex.const_db<Supercell>()) {
+          arguments.push_back(scel.name());
+        }
+      }
       return;
     }
 
-    void ArgHandler::query_to_bash(std::vector<std::string> &arguments) {
-      DataFormatterDictionary<Configuration> dict = make_dictionary<Configuration>();
-
-      for(auto it = dict.begin(); it != dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Configuration>::Property) {
-          arguments.push_back(it->name());
+    void ArgHandler::configname_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(const auto &config : pclex.const_db<Configuration>()) {
+          arguments.push_back(config.name());
         }
       }
       return;
@@ -107,6 +158,120 @@ namespace CASM {
       return;
     }
 
+    void ArgHandler::query_to_bash(std::vector<std::string> &arguments) {
+      DataFormatterDictionary<Configuration> config_dict = make_dictionary<Configuration>();
+
+      for(auto it = config_dict.begin(); it != config_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Configuration>::Property) {
+          arguments.push_back("config:" + it->name());
+        }
+      }
+      DataFormatterDictionary<Supercell> scel_dict = make_dictionary<Supercell>();
+
+      for(auto it = scel_dict.begin(); it != scel_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Supercell>::Property) {
+          arguments.push_back("scel:" + it->name());
+        }
+      }
+      DataFormatterDictionary<Kinetics::PrimPeriodicDiffTransOrbit> dt_dict = make_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>();
+
+      for(auto it = dt_dict.begin(); it != dt_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Kinetics::PrimPeriodicDiffTransOrbit>::Property) {
+          arguments.push_back("diff_trans:" + it->name());
+        }
+      }
+      DataFormatterDictionary<Kinetics::DiffTransConfiguration> dtc_dict = make_dictionary<Kinetics::DiffTransConfiguration>();
+
+      for(auto it = dtc_dict.begin(); it != dtc_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Kinetics::DiffTransConfiguration>::Property) {
+          arguments.push_back("diff_trans_config:" + it->name());
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::dbtype_to_bash(std::vector<std::string> &arguments) {
+      for(auto &item : DB::types_short()) {
+        arguments.push_back(item);
+      }
+      return;
+    }
+
+    void ArgHandler::enummethod_to_bash(std::vector<std::string> &arguments) {
+      const EnumeratorMap map = *(make_standard_enumerator_map().get());
+      for(const auto &e : map) {
+        arguments.push_back(e.name());
+      }
+      return;
+    }
+
+    void ArgHandler::configtype_to_bash(std::vector<std::string> &arguments) {
+      for(auto &item : DB::config_types_short()) {
+        arguments.push_back(item);
+      }
+      return;
+    }
+
+    void ArgHandler::calctype_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        for(auto &item : dir.all_calctype()) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::bset_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        for(auto &item : dir.all_bset()) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::clex_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(auto &item : set.cluster_expansions()) {
+          arguments.push_back(item.first);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::ref_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(auto &item : set.dir().all_ref(set.default_clex().calctype)) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::eci_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+        const ClexDescription d = set.default_clex();
+        for(auto &item : set.dir().all_eci(d.property, d.calctype, d.ref, d.bset)) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::property_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        for(auto &item : dir.all_property()) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
 
     /**
      * This construction right here determines what the value_name of the boost options
@@ -121,7 +286,16 @@ namespace CASM {
       std::make_pair("<query>", ARG_TYPE::QUERY),
       std::make_pair("<operation>", ARG_TYPE::OPERATOR),
       std::make_pair("<configuration>", ARG_TYPE::CONFIGNAME),
-      std::make_pair("<type>", ARG_TYPE::COORDTYPE)
+      std::make_pair("<type>", ARG_TYPE::COORDTYPE),
+      std::make_pair("<dbtype>", ARG_TYPE::DBTYPE),
+      std::make_pair("<enummethod>", ARG_TYPE::ENUMMETHOD),
+      std::make_pair("<configtype>", ARG_TYPE::CONFIGTYPE),
+      std::make_pair("<calctype>", ARG_TYPE::CALCTYPE),
+      std::make_pair("<bset>", ARG_TYPE::BSET),
+      std::make_pair("<clex>", ARG_TYPE::CLEX),
+      std::make_pair("<ref>", ARG_TYPE::REF),
+      std::make_pair("<eci>", ARG_TYPE::ECI),
+      std::make_pair("<property>", ARG_TYPE::PROPERTY)
     });
 
 
@@ -328,7 +502,7 @@ namespace CASM {
 
       m_desc.add_options()
       ("type,t",
-       po::value<std::string>(&m_configtype)->default_value(_default),
+       po::value<std::string>(&m_configtype)->default_value(_default)->value_name(ArgHandler::configtype()),
        help.str().c_str());
     }
 
@@ -366,7 +540,7 @@ namespace CASM {
 
       m_desc.add_options()
       ("type,t",
-       po::value<std::string>(&m_db_type)->default_value(_default),
+       po::value<std::string>(&m_db_type)->default_value(_default)->value_name(ArgHandler::dbtype()),
        help.str().c_str());
     }
 

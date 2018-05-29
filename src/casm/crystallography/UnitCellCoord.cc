@@ -12,9 +12,20 @@ namespace CASM {
 
   UnitCellCoord::UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol) :
     m_unit(&unit) {
+    Coordinate coord_in_unit(unit.lattice());
+    coord_in_unit.cart() = coord.cart();
     for(Index b = 0; b < unit.basis().size(); ++b) {
-      auto diff = coord - unit.basis()[b];
-      if(is_integer(diff.const_frac(), tol)) {
+      //Standard debugging statements when things go wrong - Please leave in
+      //std::cout << "Coord" << coord_in_unit.const_frac() <<std::endl;
+      //std::cout << "b" << unit.basis[b].const_frac() <<std::endl;
+      auto diff = coord_in_unit - unit.basis()[b];
+      //std::cout << "diff" << diff.const_frac() <<std::endl;
+      Coordinate tmp = diff;
+      tmp.frac() = round(diff.const_frac());
+
+      //std::cout << "tmp" << tmp.const_frac() <<std::endl;
+      //std::cout << "error is " << (diff - tmp).const_cart().norm() << "tol is " << tol<< std::endl;
+      if((diff - tmp).const_cart().norm() < tol) {
         *this = UnitCellCoord(unit, b, lround(diff.const_frac()));
         return;
       }
@@ -63,7 +74,7 @@ namespace CASM {
 
   UnitCellCoord &UnitCellCoord::apply_sym(const SymOp &op) {
     const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID());
-    unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell() + (unit().lattice().inv_lat_column_mat() * op.integral_tau()).cast<long>();
+    unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell() + lround(unit().lattice().inv_lat_column_mat() * op.integral_tau());
     sublat() = rep[sublat()].sublat();
 
     return *this;

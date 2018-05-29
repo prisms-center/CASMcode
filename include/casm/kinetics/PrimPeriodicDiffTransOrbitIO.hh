@@ -39,7 +39,7 @@ namespace CASM {
       /// \brief Expects 'contains("Specie1","Specie2",...)'
       bool parse_args(const std::string &args) override;
 
-      /// \brief Short header returns: 'is_diff_trans_endpoint_of(diff_trans_name)', etc.
+      /// \brief Short header returns: 'contains(specie1)', etc.
       std::string short_header(const PrimPeriodicDiffTransOrbit &_tmplt) const override {
         std::string big_string = m_search_list[0];
         auto it = m_search_list.begin();
@@ -62,17 +62,17 @@ namespace CASM {
 
     PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<Index> cluster_size();
 
-    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_length();
-
-    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> max_length();
+    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<bool> path_collision();
 
     PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> species_list();
 
     PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> diff_trans_orbitname();
 
-    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_dist_to_path();
+    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_length();
 
-    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<bool> path_collision();
+    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> max_length();
+
+    PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_dist_to_path();
 
     PrimPeriodicDiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> activation_barrier();
   }
