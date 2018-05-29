@@ -92,8 +92,10 @@ namespace CASM {
   /// \brief Total number of basis functions
   Index ClexBasis::n_functions() const {
     Index nf = 0;
+
     for(auto const &bo : m_bset_tree) {
-      nf += bo.size();
+      if(bo.size())
+        nf += bo[0].size();
     }
     return nf;
   }
