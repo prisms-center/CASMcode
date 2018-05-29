@@ -106,7 +106,7 @@ namespace CASM {
       BasicStructure<Site> cpy = result.structures[0];
       cpy.set_lattice(Lattice(non_canon_from_config.deformation().inverse() * result.structures[0].lattice().lat_column_mat()), FRAC);
       SymOp op(cart_op);
-      Coordinate rigid_shift = copy_apply(op, cpy.basis[0]) - Coordinate(non_canon_from_config.uccoord(std::find(best_assign.begin(), best_assign.end(), 0) - best_assign.begin()));
+      Coordinate rigid_shift = copy_apply(op, cpy.basis()[0]) - Coordinate(non_canon_from_config.uccoord(std::find(best_assign.begin(), best_assign.end(), 0) - best_assign.begin()));
       Coordinate t_shift(primclex().prim().lattice());
       t_shift.cart() = rigid_shift.cart();
       //std::cout << "t shift " << t_shift.const_frac() << std::endl;
@@ -232,14 +232,14 @@ namespace CASM {
       // tolerance for UnitCellCoord mapping has 20% wiggle room from max displacement
       // instead of introducing wiggle room maybe take max disp between from map and to map
       int from_count = 0;
-      for(auto &site : from.basis) {
+      for(auto &site : from.basis()) {
         from_uccoords.push_back(scel.prim_grid().within(_site_to_uccoord(site, primclex(), uccoord_tol)));
         from_count++;
       }
 
       // For last image  find POSCAR index to basis site linear index
       int to_count = 0;
-      for(auto &site : to.basis) {
+      for(auto &site : to.basis()) {
         to_uccoords.push_back(scel.prim_grid().within(_site_to_uccoord(site, primclex(), uccoord_tol)));
         to_count++;
       }
@@ -276,12 +276,12 @@ namespace CASM {
     void DiffTransConfigMapper::_precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure<Site> &from, BasicStructure<Site> &to) const {
       from.set_lattice(Lattice(strain.inverse() * (cart_op.transpose()*from.lattice().lat_column_mat())), FRAC);
       from += Coordinate(trans, from.lattice(), CART);
-      for(auto &site : from.basis) {
+      for(auto &site : from.set_basis()) {
         site.within();
       }
       to.set_lattice(Lattice(strain.inverse() * (cart_op.transpose()*to.lattice().lat_column_mat())), FRAC);
       to += Coordinate(trans, to.lattice(), CART);
-      for(auto &site : to.basis) {
+      for(auto &site : to.set_basis()) {
         site.within();
       }
       return;
@@ -329,12 +329,12 @@ namespace CASM {
         diff_trans.occ_transform().emplace_back(*vacancy_from.begin(), 0, 0);
       }
       for(int i = 0; i < moving_atoms.size(); i++) {
-        std::vector<std::string> allowed_from_occs = primclex().prim().basis[from_coords[moving_atoms[i]].sublat()].allowed_occupants();
-        Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), from_struc.basis[moving_atoms[i]].occ_name()));
+        std::vector<std::string> allowed_from_occs = primclex().prim().basis()[from_coords[moving_atoms[i]].sublat()].allowed_occupants();
+        Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), from_struc.basis()[moving_atoms[i]].occ_name()));
         //for now pos is 0 because Molecules are hard
         Kinetics::SpecieLocation from_loc(from_coords[moving_atoms[i]], from_occ_index, 0);
-        std::vector<std::string> allowed_to_occs = primclex().prim().basis[to_coords[moving_atoms[i]].sublat()].allowed_occupants();
-        Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), from_struc.basis[moving_atoms[i]].occ_name()));
+        std::vector<std::string> allowed_to_occs = primclex().prim().basis()[to_coords[moving_atoms[i]].sublat()].allowed_occupants();
+        Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), from_struc.basis()[moving_atoms[i]].occ_name()));
         //for now pos is 0 because Molecules are hard
         Kinetics::SpecieLocation to_loc(to_coords[moving_atoms[i]], to_occ_index, 0);
         diff_trans.specie_traj().emplace_back(from_loc, to_loc);
@@ -348,10 +348,10 @@ namespace CASM {
         }
       }
       if(vacancy_from.size() && vacancy_to.size()) {
-        std::vector<std::string> allowed_from_occs = primclex().prim().basis[vacancy_from.begin()->sublat()].allowed_occupants();
+        std::vector<std::string> allowed_from_occs = primclex().prim().basis()[vacancy_from.begin()->sublat()].allowed_occupants();
         Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), "Va"));
         Kinetics::SpecieLocation from_loc(*vacancy_from.begin(), from_occ_index, 0);
-        std::vector<std::string> allowed_to_occs = primclex().prim().basis[vacancy_to.begin()->sublat()].allowed_occupants();
+        std::vector<std::string> allowed_to_occs = primclex().prim().basis()[vacancy_to.begin()->sublat()].allowed_occupants();
         Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), "Va"));
         Kinetics::SpecieLocation to_loc(*vacancy_to.begin(), to_occ_index, 0);
         diff_trans.specie_traj().emplace_back(from_loc, to_loc);

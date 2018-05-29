@@ -1683,8 +1683,8 @@ namespace CASM {
   Structure make_deformed_struc(const Configuration &c) {
     Structure tmp = c.supercell().superstructure(c);
     if(c.has_displacement()) {
-      for(int i = 0 ; i < tmp.basis.size(); i++) {
-        tmp.basis[i].cart() += c.disp(i);
+      for(int i = 0 ; i < tmp.basis().size(); i++) {
+        tmp.set_basis()[i].cart() += c.disp(i);
       }
     }
     if(c.has_deformation()) {

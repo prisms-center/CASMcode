@@ -79,6 +79,9 @@ namespace CASM {
       return m_basis;
     }
 
+    Array<CoordType> &set_basis() {
+      return m_basis;
+    }
     const std::string &title() const {
       return m_title;
     }
