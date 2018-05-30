@@ -58,11 +58,14 @@ namespace CASM {
       /// \brief Generate a symmetry representation for this DoF
       virtual SymGroupRepID generate_symrep(MasterSymGroup const &_group) const = 0;
 
+
       virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const = 0;
 
       virtual std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const = 0;
 
       virtual std::string site_basis_description(BasisSet site_bset, Site site) const = 0;
+
+      virtual std::vector<std::pair<std::string, Index> > param_pack_allocation(Structure const &_prim) const = 0;
 
       virtual std::string clexulator_constructor_string(Structure const &_prim,
                                                         std::vector<BasisSet> const &site_bases,
@@ -137,6 +140,7 @@ namespace CASM {
 
       std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const override;
 
+      std::vector<std::pair<std::string, Index> > param_pack_allocation(Structure const &_prim) const override;
 
       std::string clexulator_constructor_string(Structure const &_prim,
                                                 std::vector<BasisSet> const &site_bases,

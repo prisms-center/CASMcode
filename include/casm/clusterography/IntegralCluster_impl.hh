@@ -103,6 +103,82 @@ namespace CASM {
     return result;
   }
 
+
+  /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
+  ///
+  /// \param orbit an Orbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// \result the resulting OutputIterator
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters.
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename OutputIterator, typename OrbitType>
+  OutputIterator flower_neighborhood(
+    OrbitType const &orbit,
+    OutputIterator result) {
+
+    UnitCellCoord const *ucc_ptr(nullptr);
+    for(auto const &equiv : orbit) {
+      for(UnitCellCoord const &ucc : equiv) {
+        ucc_ptr = &ucc;
+        break;
+      }
+      if(ucc_ptr)
+        break;
+    }
+
+    if(!ucc_ptr)
+      return result;
+
+    SymGroup identity_group((ucc_ptr->unit()).factor_group().begin(), ((ucc_ptr->unit()).factor_group().begin()) + 1);
+    OrbitType empty_orbit(typename OrbitType::Element(ucc_ptr->unit()), identity_group, orbit.sym_compare());
+    typename OrbitType::Element test(empty_orbit.prototype());
+    test.elements().push_back(*ucc_ptr);
+
+    // Loop over each site in each cluster of the orbit
+    for(auto const &equiv : orbit) {
+      for(UnitCellCoord const &ucc : equiv) {
+        // create a test cluster from prototype
+        // add the new site
+        test.elements()[0] = ucc;
+
+        test = orbit.sym_compare().prepare(test);
+
+        UnitCell trans = test.element(0).unitcell() - ucc.unitcell();
+        for(UnitCellCoord const &ucc2 : equiv) {
+          *result++ = (ucc2 + trans);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /// \brief Iterate over all sites in all orbits and insert a UnitCellCoord
+  ///
+  /// \param begin,end Range of Orbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters.
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename ClusterOrbitIterator, typename OutputIterator>
+  OutputIterator flower_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result) {
+    // create a neighborhood of all UnitCellCoord that an Orbitree touches
+    for(auto it = begin; it != end; ++it) {
+      result = flower_neighborhood(*it, result);
+    }
+    return result;
+  }
+
 }
 
 #endif

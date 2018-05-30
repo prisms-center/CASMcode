@@ -56,6 +56,9 @@ namespace CASM {
          indent << "// typedef for method pointers\n" <<
          indent << "typedef double (" << class_name << "::*DeltaBasisFuncPtr)(int, int) const;\n\n" <<
 
+         indent << "// ParamPack object, which stores temporary data for calculations\n" <<
+         indent << class_name << "ParamPack m_params;\n\n" <<
+
          indent << "// array of pointers to member functions for calculating basis functions\n" <<
          indent << "BasisFuncPtr m_orbit_func_table[" << N_corr << "];\n\n" <<
 

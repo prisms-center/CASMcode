@@ -72,13 +72,13 @@ namespace CASM {
 
       /// \brief The UnitCellCoord involved in calculating the basis functions,
       /// relative origin UnitCell
-      const std::set<UnitCellCoord> &neighborhood() const {
+      const std::set<UnitCell> &neighborhood() const {
         return m_neighborhood;
       }
 
       /// \brief The UnitCellCoord involved in calculating the basis functions
       /// for a particular orbit, relative origin UnitCell
-      const std::set<UnitCellCoord> &neighborhood(size_type linear_orbit_index) const {
+      const std::set<UnitCell> &neighborhood(size_type linear_orbit_index) const {
         return m_orbit_neighborhood[linear_orbit_index];
       }
 
@@ -331,11 +331,11 @@ namespace CASM {
 
       /// \brief The UnitCellCoord involved in calculating the basis functions,
       /// relative origin UnitCell
-      std::set<UnitCellCoord> m_neighborhood;
+      std::set<UnitCell> m_neighborhood;
 
       /// \brief The UnitCellCoord involved in calculating the basis functions
       /// for a particular orbit, relative origin UnitCell
-      std::vector<std::set<UnitCellCoord> > m_orbit_neighborhood;
+      std::vector<std::set<UnitCell> > m_orbit_neighborhood;
 
       /// \brief The weight matrix used for ordering the neighbor list
       PrimNeighborList::Matrix3Type m_weight_matrix;
@@ -516,13 +516,13 @@ namespace CASM {
 
     /// \brief The UnitCellCoord involved in calculating the basis functions,
     /// relative origin UnitCell
-    const std::set<UnitCellCoord> &neighborhood() const {
+    const std::set<UnitCell> &neighborhood() const {
       return m_clex->neighborhood();
     }
 
     /// \brief The UnitCellCoord involved in calculating the basis functions
     /// for a particular orbit, relative origin UnitCell
-    const std::set<UnitCellCoord> &neighborhood(size_type linear_orbit_index) const {
+    const std::set<UnitCell> &neighborhood(size_type linear_orbit_index) const {
       return m_clex->neighborhood(linear_orbit_index);
     }
 

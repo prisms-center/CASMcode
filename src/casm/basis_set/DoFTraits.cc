@@ -170,7 +170,7 @@ namespace CASM {
           Index b = ucc.sublat();
           Index n = _nlist.neighbor_index(ucc);
           for(Index f = 0; f < site_bases[b].size(); f++) {
-            ss << indent << "      m_occ_func_vals_f" << f << "[" << n  << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
+            ss << indent << "      m_params.write(m_occ_func_" << f << "_key, " << n  << ", m_occ_func_" << b << "_" << f << "[*(m_occ_ptr+*(m_nlist_ptr+" << n << "))]);\n";
           }
         }
         ss << indent << "      break;\n";
@@ -198,7 +198,7 @@ namespace CASM {
         Index n = _nlist.neighbor_index(ucc);
         Index b = ucc.sublat();
         for(Index f = 0; f < site_bases[b].size(); f++) {
-          ss << indent << "  m_occ_func_vals_f" << f << "[" << n  << "] = m_occ_func_" << b << "_" << f << "[m_config_ptr->occ(" << n << ")];\n";
+          ss << indent << "  m_params.write(m_occ_func_" << f << "_key, " << n  << ", m_occ_func_" << b << "_" << f << "[*(m_occ_ptr+*(m_nlist_ptr+" << n << "))]);\n";
         }
       }
       ss << "}\n";
@@ -267,8 +267,9 @@ namespace CASM {
                  indent << "// Occupation Function accessors for basis site " << nb << ":\n";
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
             stream <<
-                   indent << "const double &occ_func_" << nb << '_' << f
-                   << "(const int &nlist_ind)const{return " << "m_occ_func_" << nb << '_' << f << "[*(m_occ_ptr+*(m_nlist_ptr+nlist_ind))];}\n";
+                   indent << "const double &occ_func_" << nb << '_' << f << "(const int &nlist_ind)const{\n" <<
+                   indent << "  return " << "m_occ_func_" << nb << '_' << f << "[*(m_occ_ptr+*(m_nlist_ptr+nlist_ind))];\n" <<
+                   indent << "}\n";
           }
           stream << '\n';
         }
@@ -277,6 +278,19 @@ namespace CASM {
       return stream.str();
     }
 
+    //************************************************************
+    std::vector<std::pair<std::string, Index> > OccupationDoFTraits::param_pack_allocation(Structure const &_prim) const {
+      std::vector<std::pair<std::string, Index> > result;
+      Index NB = 0;
+      for(Site const &site : _prim.basis()) {
+        NB = max(site.site_occupant().size(), NB);
+      }
+      for(Index i = 0; i < NB; NB++)
+        result.push_back(make_pair(std::string("occ_func_") + std::to_string(i), Index(-1)));
+
+      return result;
+
+    }
     //************************************************************
 
     std::string OccupationDoFTraits::clexulator_constructor_string(Structure const &_prim,

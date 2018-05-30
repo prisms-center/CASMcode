@@ -5,7 +5,7 @@
 #include "casm/clex/ClexBasisWriter.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/clex/NeighborList.hh"
-#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clusterography/IntegralCluster_impl.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/app/AppIO.hh"
@@ -38,20 +38,22 @@ namespace CASM {
 
     std::stringstream bfunc_imp_stream, bfunc_def_stream;
 
+    std::string indent(2, ' ');
+
     std::stringstream parampack_stream;
-    print_param_pack(class_name + "_ParamPack",
+    print_param_pack(class_name,
                      clex,
                      _tree,
                      _nlist,
                      _flower_pivots,
                      parampack_stream,
-                     xtal_tol);
+                     indent);
+
 
     std::string uclass_name;
     for(Index i = 0; i < class_name.size(); i++)
       uclass_name.push_back(std::toupper(class_name[i]));
 
-    std::string indent(2, ' ');
 
     std::string private_declarations = ClexBasisWriter_impl::clexulator_member_declarations(class_name, clex, _orbit_func_traits(), nhood, indent + "  ");
 
@@ -248,13 +250,20 @@ namespace CASM {
   }
 
   template<typename OrbitType>
-  void ClexBasisWriter::print_param_pack(std::string class_name,
+  void ClexBasisWriter::print_param_pack(std::string clexclass_name,
                                          ClexBasis const &clex,
                                          std::vector<OrbitType > const &_tree,
                                          PrimNeighborList &_nlist,
                                          std::vector<UnitCellCoord> const &_flower_pivots,
                                          std::ostream &stream,
-                                         double xtal_tol) {
+                                         std::string const &_indent) const {
+
+    std::string ppclass_name = clexclass_name + "ParamPack";
+
+
+    stream <<
+           _indent << "typedef BasicClexParamPack " << ppclass_name << ";\n";
+
 
   }
   namespace ClexBasisWriter_impl {
@@ -505,15 +514,20 @@ namespace CASM {
 
       std::set<UnitCellCoord> trans_set;
 
-      //Find ucc's that might be equivalent to current neighbor
+      //Find ucc's that might be translationally equivalent to current neighbor
       for(IntegralCluster const &equiv : _clust_orbit) {
         for(UnitCellCoord const &site : equiv.elements()) {
           if(site.sublat() == nbor.sublat()) {
-            std::cout << "Inserting into trans_set " << site << "\n\n";
             trans_set.insert(site);
           }
         }
       }
+
+      std::cout << "Trans_set:\n";
+      for(UnitCellCoord const &site : trans_set)
+        std::cout << "        " << site << "\n";
+
+      std::cout << "\n";
 
       std::set<UnitCellCoord> equiv_ucc = ClexBasisWriter_impl::equiv_ucc(trans_set.begin(),
                                                                           trans_set.end(),
@@ -521,6 +535,11 @@ namespace CASM {
                                                                           _clust_orbit.sym_compare());
 
 
+      std::cout << "equiv_ucc:\n";
+      for(UnitCellCoord const &site : equiv_ucc)
+        std::cout << "        " << site << "\n";
+
+      std::cout << "\n";
       //normalize by multiplicity (by convention)
       if(_clust_orbit.size() > 1) {
         prefix = "(";
@@ -538,7 +557,7 @@ namespace CASM {
           if(!contains(_clust_orbit[ne].elements(), trans))
             continue;
 
-          typename OrbitType::Element trans_clust = _clust_orbit[ne] - trans.unitcell();
+          typename OrbitType::Element trans_clust = _clust_orbit[ne] - (trans.unitcell() - nbor.unitcell());
 
 
           std::vector<PrimNeighborList::Scalar> nbor_IDs =
@@ -555,9 +574,13 @@ namespace CASM {
           for(Index nf = 0; nf < transformed_bset.size(); nf++) {
             std::cout << "Formula before transform: " << _bset_orbit[ne][nf]->formula() << std::endl;
             std::cout << "Transformed BSet " << nf << " of " << transformed_bset.size() << std::endl;
-            if(!transformed_bset[nf] || (transformed_bset[nf]->is_zero()))
+            std::cout << "Formula after transform: " << (transformed_bset[nf] ? transformed_bset[nf]->formula() : " NULL ") << std::endl;
+            if(!transformed_bset[nf] || (transformed_bset[nf]->is_zero())) {
+              std::cout << "DISCARDING\n\n";
               continue;
-            std::cout << "Formula after transform: " << transformed_bset[nf]->formula() << std::endl;
+
+            }
+            std::cout << "KEEPING\n\n";
 
             if(formulae[nf].empty())
               formulae[nf] += prefix;
@@ -734,7 +757,6 @@ namespace CASM {
 
 
         if(sym_compare.equal(test, pclust)) {
-          std::cout << "adding equiv_ucc: \n" << *begin << " to pivot " << pivot << "\n\n";
           result.insert(*begin);
 
         }
@@ -811,17 +833,18 @@ namespace CASM {
       // Write neighborhood of UnitCellCoord
       // expand the _nlist to contain 'global_orbitree' (all that is needed for now)
       std::set<UnitCellCoord> nbors;
-      prim_periodic_neighborhood(_tree.begin(), _tree.end(), std::inserter(nbors, nbors.begin()));
+      flower_neighborhood(_tree.begin(), _tree.end(), std::inserter(nbors, nbors.begin()));
 
 
-      ss << indent << "  m_neighborhood = std::set<UnitCellCoord> {\n";
+      ss << indent << "  m_neighborhood = std::set<Index> {\n" << indent;
       auto it = nbors.begin();
       while(it != nbors.end()) {
-        ss << indent << "    {UnitCellCoord("
-           << it->sublat() << ", "
-           << it->unitcell(0) << ", "
-           << it->unitcell(1) << ", "
-           << it->unitcell(2) << ")}";
+        ss <<  "  " <<  _nlist.neighbor_index(*it);
+        //ss << indent << "    {UnitCellCoord("
+        // << it->sublat() << ", "
+        // << it->unitcell(0) << ", "
+        // << it->unitcell(1) << ", "
+        // << it->unitcell(2) << ")}";
         ++it;
         if(it != nbors.end()) {
           ss << ",";
@@ -835,18 +858,19 @@ namespace CASM {
       Index lno = 0;
       for(Index no = 0; no < clex.n_orbits(); ++no) {
         std::set<UnitCellCoord> orbit_nbors;
-        prim_periodic_orbit_neighborhood(_tree[no], std::inserter(orbit_nbors, orbit_nbors.begin()));
+        flower_neighborhood(_tree[no], std::inserter(orbit_nbors, orbit_nbors.begin()));
 
         Index proto_index = lno;
 
-        ss << indent << "  m_orbit_neighborhood[" << lno << "] = std::set<UnitCellCoord> {\n";
+        ss << indent << "  m_orbit_neighborhood[" << lno << "] = std::set<Index> {\n" << indent;
         auto it = orbit_nbors.begin();
         while(it != orbit_nbors.end()) {
-          ss << indent << "    {UnitCellCoord("
-             << it->sublat() << ", "
-             << it->unitcell(0) << ", "
-             << it->unitcell(1) << ", "
-             << it->unitcell(2) << ")}";
+          ss <<  "  " <<  _nlist.neighbor_index(*it);
+          //ss << indent << "    {UnitCellCoord("
+          //<< it->sublat() << ", "
+          // << it->unitcell(0) << ", "
+          // << it->unitcell(1) << ", "
+          // << it->unitcell(2) << ")}";
           ++it;
           if(it != orbit_nbors.end()) {
             ss << ",";
@@ -916,27 +940,27 @@ namespace CASM {
 
       // Use known clexbasis dependencies to construct point_prepare routine
       for(auto const &doftype : clex.site_bases()) {
-        result += DoFType::traits(doftype.first).clexulator_point_prepare_string(clex.prim(),
-                                                                                 _nhood,
-                                                                                 _nlist,
-                                                                                 doftype.second,
-                                                                                 indent);
+        result += DoFType::traits(doftype.first).clexulator_global_prepare_string(clex.prim(),
+                                                                                  _nhood,
+                                                                                  _nlist,
+                                                                                  doftype.second,
+                                                                                  indent);
       }
 
       // Use known clexbasis dependencies to construct point_prepare routine
       for(auto const &doftype : clex.global_bases()) {
-        result += DoFType::traits(doftype.first).clexulator_point_prepare_string(clex.prim(),
-                                                                                 _nhood,
-                                                                                 _nlist,
-                                                                                 std::vector<BasisSet>(1, doftype.second),
-                                                                                 indent);
+        result += DoFType::traits(doftype.first).clexulator_global_prepare_string(clex.prim(),
+                                                                                  _nhood,
+                                                                                  _nlist,
+                                                                                  std::vector<BasisSet>(1, doftype.second),
+                                                                                  indent);
       }
 
       for(auto const &func_trait : _orbit_func_traits) {
-        result += func_trait->clexulator_point_prepare_string(clex.prim(),
-                                                              _nhood,
-                                                              _nlist,
-                                                              indent);
+        result += func_trait->clexulator_global_prepare_string(clex.prim(),
+                                                               _nhood,
+                                                               _nlist,
+                                                               indent);
       }
 
       result += "}\n";

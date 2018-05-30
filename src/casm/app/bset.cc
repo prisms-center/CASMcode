@@ -168,13 +168,15 @@ namespace CASM {
       }
 
       jsonParser bspecs_json(dir.bspecs(bset));
+      jsonParser local_bspecs_json;
+      std::unique_ptr<ClexBasis> clex_basis_ptr;
+
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       std::vector<LocalIntegralClusterOrbit> local_orbits;
-      std::unique_ptr<ClexBasis> clex_basis;
 
       try {
         if(bspecs_json.contains("local_bspecs")) {
-          jsonParser local_bspecs_json = bspecs_json["local_bspecs"];
+          local_bspecs_json = bspecs_json["local_bspecs"];
           //this is a local basis set
           //get hop from bspecs
           args.log().construct("Orbitree");
@@ -183,14 +185,14 @@ namespace CASM {
           PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
           make_local_orbits(
             dtorbit.prototype(),
-            bspecs_json["local_bspecs"],
+            local_bspecs_json,
             alloy_sites_filter,
             primclex.crystallography_tol(),
             std::back_inserter(local_orbits),
             args.log());
 
-          clex_basis.reset(new ClexBasis(prim, local_bspecs_json));
-          clex_basis->generate(local_orbits.begin(), local_orbits.end(), local_bspecs_json);
+          clex_basis_ptr.reset(new ClexBasis(prim, local_bspecs_json));
+          clex_basis_ptr->generate(local_orbits.begin(), local_orbits.end(), local_bspecs_json);
 
         }
         else {
@@ -205,8 +207,8 @@ namespace CASM {
             std::back_inserter(orbits),
             args.log());
 
-          clex_basis.reset(new ClexBasis(prim, bspecs_json));
-          clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json);
+          clex_basis_ptr.reset(new ClexBasis(prim, bspecs_json));
+          clex_basis_ptr->generate(orbits.begin(), orbits.end(), bspecs_json);
         }
 
       }
@@ -219,7 +221,7 @@ namespace CASM {
       {
         jsonParser clust_json;
         if(bspecs_json.contains("local_bspecs")) {
-          write_clust(local_orbits.begin(), local_orbits.end(), clust_json, ProtoSitesPrinter(), bspecs_json["local_bspecs"]);
+          write_clust(local_orbits.begin(), local_orbits.end(), clust_json, ProtoSitesPrinter(), local_bspecs_json);
         }
         else {
           write_clust(orbits.begin(), orbits.end(), clust_json, ProtoSitesPrinter(), bspecs_json);
@@ -234,13 +236,14 @@ namespace CASM {
       {
         jsonParser basis_json;
         if(bspecs_json.contains("local_bspecs")) {
-          throw std::runtime_error("No pretty printing of local cluster functions");
+          //throw std::runtime_error("No pretty printing of local cluster functions");
           // clex_basis should be replaced with local_clex_basisl
-          //write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json["local_bspecs"]);
+          write_site_basis_funcs(primclex.prim(), *clex_basis_ptr, basis_json);
+          write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis_ptr), local_bspecs_json);
         }
         else {
-          write_site_basis_funcs(primclex.prim(), primclex.clex_basis(clex_desc), basis_json);
-          write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json);
+          write_site_basis_funcs(primclex.prim(), *clex_basis_ptr, basis_json);
+          write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis_ptr), bspecs_json);
         }
         basis_json.write(dir.basis(bset));
 
@@ -250,7 +253,37 @@ namespace CASM {
 
 
       // -- write global Clexulator
-      {
+      if(bspecs_json.contains("local_bspecs")) {
+        // get the neighbor list
+        PrimNeighborList nlist(
+          set.nlist_weight_matrix(),
+          set.nlist_sublat_indices().begin(),
+          set.nlist_sublat_indices().end()
+        );
+
+        // expand the nlist to contain sites in all orbits
+        std::set<UnitCellCoord> nbors;
+        local_neighborhood(local_orbits.begin(), local_orbits.end(), std::inserter(nbors, nbors.begin()));
+        nlist.expand(nbors.begin(), nbors.end());
+
+        // write source code
+        fs::ofstream outfile;
+        outfile.open(dir.clexulator_src(set.name(), bset));
+
+        ClexBasisWriter clexwriter(prim);
+        clexwriter.print_clexulator(set.global_clexulator_name(),
+                                    *clex_basis_ptr,
+                                    local_orbits,
+                                    nlist,
+                                    std::vector<UnitCellCoord>(),
+                                    outfile,
+                                    primclex.crystallography_tol());
+        outfile.close();
+
+        args.log().write(dir.clexulator_src(set.name(), bset).string());
+        args.log() << std::endl;
+      }
+      else {
         // get the neighbor list
         PrimNeighborList nlist(
           set.nlist_weight_matrix(),
@@ -269,7 +302,7 @@ namespace CASM {
 
         ClexBasisWriter clexwriter(prim);
         clexwriter.print_clexulator(set.global_clexulator_name(),
-                                    *clex_basis,
+                                    *clex_basis_ptr,
                                     orbits,
                                     nlist,
                                     std::vector<UnitCellCoord>(),
