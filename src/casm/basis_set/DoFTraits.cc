@@ -80,15 +80,11 @@ namespace CASM {
                                                                     std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                                     jsonParser const &_bspecs) const {
       std::vector<BasisSet> result(_prim.basis().size());
-      std::cout << "Inside construct_site_bases!!!\n";
-
 
       //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
 
       for(Index i = 0; i < _asym_unit.size(); i++) {
         Site const &_site = _asym_unit[i].prototype()[0].sublat_site();
-
-        std::cout << "SITE OCCUPANT ID FOR SITE " << i << " aka " << _asym_unit[i].prototype()[0].sublat() << ": " << _site.site_occupant().ID() << std::endl;
 
         if(_site.site_occupant().size() < 2)
           continue;
@@ -160,23 +156,32 @@ namespace CASM {
                                                                      std::string const &indent) const {
 
       std::stringstream ss;
-      ss
-          << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n";
-      ss << indent << "  switch(nlist_ind) {\n";
+      ss << indent << "switch(nlist_ind) {\n";
       for(auto const &nbor : _nhood) {
-        ss << indent << "    case " << _nlist.neighbor_index(nbor.first) << ":\n";
+        std::vector<std::string> paramtypes;
+        ss << indent << "  case " << _nlist.neighbor_index(nbor.first) << ":\n";
         //Index n = nbor.first;
         for(UnitCellCoord const &ucc : nbor.second) {
           Index b = ucc.sublat();
           Index n = _nlist.neighbor_index(ucc);
+          while(paramtypes.size() < site_bases[b].size())
+            paramtypes.push_back("");
+
           for(Index f = 0; f < site_bases[b].size(); f++) {
-            ss << indent << "      m_params.write(m_occ_func_" << f << "_key, " << n  << ", m_occ_func_" << b << "_" << f << "[*(m_occ_ptr+*(m_nlist_ptr+" << n << "))]);\n";
+            std::stringstream ss2;
+            ss2 << indent << "      m_params.write(m_occ_func_" << f << "_param_key, " << n  << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
+            paramtypes[f] += ss2.str();
           }
         }
-        ss << indent << "      break;\n";
+        for(Index f = 0; f < paramtypes.size(); f++) {
+          ss <<
+             indent << "    if(m_params.eval_mode(m_occ_func_" << f << "_param_key)==ParamPack::DEFAULT){\n" <<
+             paramtypes[f] <<
+             indent << "    }\n" <<
+             indent << "    break;\n";
+        }
       }
-      ss << indent << "  }\n"
-         << indent << "}\n";
+      ss << indent << "}\n";
       return ss.str();
     }
 
@@ -188,20 +193,32 @@ namespace CASM {
                                                                       std::vector<BasisSet> const &site_bases,
                                                                       std::string const &indent) const {
       std::stringstream ss;
-      ss
-          << indent << "if(eval_mode(occ_func_paramkey)==DEFAULT){\n";
+
       std::set<UnitCellCoord> tot_nhood;
       for(auto const &nbor : _nhood)
         tot_nhood.insert(nbor.second.begin(), nbor.second.end());
 
+      std::vector<std::string> paramtypes;
       for(auto const &ucc : tot_nhood) {
         Index n = _nlist.neighbor_index(ucc);
         Index b = ucc.sublat();
+
+        while(paramtypes.size() < site_bases[b].size())
+          paramtypes.push_back("");
+
         for(Index f = 0; f < site_bases[b].size(); f++) {
-          ss << indent << "  m_params.write(m_occ_func_" << f << "_key, " << n  << ", m_occ_func_" << b << "_" << f << "[*(m_occ_ptr+*(m_nlist_ptr+" << n << "))]);\n";
+          std::stringstream ss2;
+          ss2 << indent << "  m_params.write(m_occ_func_" << f << "_param_key, " << n  << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
+          paramtypes[f] += ss2.str();
         }
       }
-      ss << "}\n";
+      for(Index f = 0; f < paramtypes.size(); f++) {
+        ss <<
+           indent << "if(m_params.eval_mode(m_occ_func_" << f << "_param_key)==ParamPack::DEFAULT){\n" <<
+           paramtypes[f] <<
+           indent << "}\n";
+      }
+
       return ss.str();
     }
     //************************************************************
@@ -264,11 +281,15 @@ namespace CASM {
           nb = asym_unit[no][ne][0].sublat();
 
           stream <<
-                 indent << "// Occupation Function accessors for basis site " << nb << ":\n";
+                 indent << "// Occupation Function evaluators and accessors for basis site " << nb << ":\n";
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
             stream <<
-                   indent << "const double &occ_func_" << nb << '_' << f << "(const int &nlist_ind)const{\n" <<
-                   indent << "  return " << "m_occ_func_" << nb << '_' << f << "[*(m_occ_ptr+*(m_nlist_ptr+nlist_ind))];\n" <<
+                   indent << "double const &eval_occ_func_" << nb << '_' << f << "(const int &nlist_ind)const{\n" <<
+                   indent << "  return " << "m_occ_func_" << nb << '_' << f << "[_configdof().occ(_l(nlist_ind))];\n" <<
+                   indent << "}\n\n" <<
+
+                   indent << "double const &occ_func_" << nb << '_' << f << "(const int &nlist_ind)const{\n" <<
+                   indent << "  return " << "m_params.read(m_occ_func_" << f << "_param_key, nlist_ind);\n" <<
                    indent << "}\n";
           }
           stream << '\n';
@@ -279,13 +300,14 @@ namespace CASM {
     }
 
     //************************************************************
-    std::vector<std::pair<std::string, Index> > OccupationDoFTraits::param_pack_allocation(Structure const &_prim) const {
+
+    std::vector<std::pair<std::string, Index> > OccupationDoFTraits::param_pack_allocation(std::vector<BasisSet> const &_bases) const {
       std::vector<std::pair<std::string, Index> > result;
       Index NB = 0;
-      for(Site const &site : _prim.basis()) {
-        NB = max(site.site_occupant().size(), NB);
+      for(BasisSet const &basis : _bases) {
+        NB = max(basis.size(), NB);
       }
-      for(Index i = 0; i < NB; NB++)
+      for(Index i = 0; i < NB; i++)
         result.push_back(make_pair(std::string("occ_func_") + std::to_string(i), Index(-1)));
 
       return result;
@@ -308,13 +330,15 @@ namespace CASM {
                                          std::back_inserter(asym_unit),
                                          nullstream);
 
-      for(Index no = 0; no < asym_unit.size(); no++) {
-        for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
-          Index nb = asym_unit[no][ne][0].sublat();
+      for(const auto &asym : asym_unit) {
+        for(const auto &equiv : asym) {
+          Index nb = equiv[0].sublat();
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
+
             for(Index s = 0; s < _prim.basis()[nb].site_occupant().size(); s++) {
               OccFuncEvaluator t_eval(s);
               _site_bases[nb][f]->accept(t_eval);
+
               if(s == 0)
                 stream << indent;
               stream << "m_occ_func_" << nb << '_' << f << '[' << s << "] = "

@@ -19,7 +19,6 @@ namespace CASM {
                                          ClexBasis const &clex,
                                          std::vector<OrbitType > const &_tree,
                                          PrimNeighborList &_nlist,
-                                         std::vector<UnitCellCoord> const &_flower_pivots,
                                          std::ostream &stream,
                                          double xtal_tol) {
 
@@ -45,7 +44,6 @@ namespace CASM {
                      clex,
                      _tree,
                      _nlist,
-                     _flower_pivots,
                      parampack_stream,
                      indent);
 
@@ -192,6 +190,7 @@ namespace CASM {
     stream
         << "#include <cstddef>\n"
         << "#include \"casm/clex/Clexulator.hh\"\n"
+        << "#include \"casm/clex/BasicClexParamPack.hh\"\n"
         << "\n\n\n"
 
         << "/****** PROJECT SPECIFICATIONS ******\n\n"
@@ -254,11 +253,10 @@ namespace CASM {
                                          ClexBasis const &clex,
                                          std::vector<OrbitType > const &_tree,
                                          PrimNeighborList &_nlist,
-                                         std::vector<UnitCellCoord> const &_flower_pivots,
                                          std::ostream &stream,
                                          std::string const &_indent) const {
 
-    std::string ppclass_name = clexclass_name + "ParamPack";
+    std::string ppclass_name = "ParamPack";
 
 
     stream <<
@@ -324,7 +322,6 @@ namespace CASM {
       for(auto const &nbor : _nhood) {
         make_newline = false;
 
-        std::cout << "Entering flower functions...\n";
         std::vector<std::string> formulae = flower_function_cpp_strings(_bset_orbit,
                                                                         CASM_TMP::UnaryIdentity<BasisSet>(),
                                                                         _clust_orbit,
@@ -395,7 +392,6 @@ namespace CASM {
             return bset.poly_quotient_set(func_ptr);
           };
 
-          std::cout << "Entering dflower functions...\n";
           std::vector<std::string> tformulae = flower_function_cpp_strings(_bset_orbit,
                                                                            get_quotient_bset,
                                                                            _clust_orbit,
@@ -523,23 +519,12 @@ namespace CASM {
         }
       }
 
-      std::cout << "Trans_set:\n";
-      for(UnitCellCoord const &site : trans_set)
-        std::cout << "        " << site << "\n";
-
-      std::cout << "\n";
-
       std::set<UnitCellCoord> equiv_ucc = ClexBasisWriter_impl::equiv_ucc(trans_set.begin(),
                                                                           trans_set.end(),
                                                                           nbor,
                                                                           _clust_orbit.sym_compare());
 
 
-      std::cout << "equiv_ucc:\n";
-      for(UnitCellCoord const &site : equiv_ucc)
-        std::cout << "        " << site << "\n";
-
-      std::cout << "\n";
       //normalize by multiplicity (by convention)
       if(_clust_orbit.size() > 1) {
         prefix = "(";
@@ -550,7 +535,6 @@ namespace CASM {
       for(Index ne = 0; ne < _clust_orbit.size(); ne++) {
         if(formulae.empty())
           formulae.resize(_bset_orbit[ne].size());
-        std::cout << "ne = " << ne << std::endl;
 
         /// For each equivalent ucc that is in the equivalent cluster, translate the cluster so that the site coincides with nbor
         for(UnitCellCoord const &trans : equiv_ucc) {
@@ -563,24 +547,16 @@ namespace CASM {
           std::vector<PrimNeighborList::Scalar> nbor_IDs =
             _nlist.neighbor_indices(trans_clust.elements().begin(),
                                     trans_clust.elements().end());
-          std::cout << "new nbor_IDs: " << nbor_IDs << std::endl;
+
           _bset_orbit[ne].set_dof_IDs(std::vector<Index>(nbor_IDs.begin(), nbor_IDs.end()));
 
           BasisSet transformed_bset(_bset_transform(_bset_orbit[ne]));
           for(Index nl = 0; nl < visitors.size(); nl++)
             transformed_bset.accept(*visitors[nl]);
 
-          std::cout << "Transformed BSet size: " << transformed_bset.size() << std::endl;
           for(Index nf = 0; nf < transformed_bset.size(); nf++) {
-            std::cout << "Formula before transform: " << _bset_orbit[ne][nf]->formula() << std::endl;
-            std::cout << "Transformed BSet " << nf << " of " << transformed_bset.size() << std::endl;
-            std::cout << "Formula after transform: " << (transformed_bset[nf] ? transformed_bset[nf]->formula() : " NULL ") << std::endl;
-            if(!transformed_bset[nf] || (transformed_bset[nf]->is_zero())) {
-              std::cout << "DISCARDING\n\n";
+            if(!transformed_bset[nf] || (transformed_bset[nf]->is_zero()))
               continue;
-
-            }
-            std::cout << "KEEPING\n\n";
 
             if(formulae[nf].empty())
               formulae[nf] += prefix;
@@ -596,7 +572,6 @@ namespace CASM {
       for(Index nf = 0; nf < formulae.size(); nf++) {
         if(!formulae[nf].empty())
           formulae[nf] += suffix;
-        std::cout << "Formula [" << nbor_ind  << "] " << nf << ":  " << formulae[nf] << "\n";
       }
 
       return formulae;
@@ -782,23 +757,62 @@ namespace CASM {
 
       Index N_corr = clex.n_functions();
 
+      //Lower bound of branch entries
       Index N_branch = _nhood.size();
 
-      for(auto const &nbor : _nhood)
+      //Lower bound of maximum neighbor index
+      Index N_hood = 0;
+
+      //Find exact value of N_branch and N_hood by increasing lower bounds
+      for(auto const &nbor : _nhood) {
         N_branch = max(_nlist.neighbor_index(nbor.first) + 1, N_branch);
+        for(UnitCellCoord const &ucc : nbor.second) {
+          N_hood = max(_nlist.neighbor_index(ucc) + 1, N_hood);
+        }
+      }
 
       std::stringstream ss;
       // Write constructor
       ss <<
          indent << class_name << "::" << class_name << "() :\n" <<
-         indent << "  Clexulator_impl::Base(" << N_branch << ", " << N_corr << ") {\n";
+         indent << "  Clexulator_impl::Base(" << N_hood << ", " << N_corr << ") {\n";
 
-      {
-        auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
-        for(; it != end_it; ++it) {
-          DoFType::traits(it->first).clexulator_constructor_string(clex.prim(), it->second, indent + "  ");
+
+      for(auto const &dof : clex.site_bases()) {
+        ss << DoFType::traits(dof.first).clexulator_constructor_string(clex.prim(), dof.second, indent + "  ");
+
+        std::vector<std::pair<std::string, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(dof.second);
+        if(allo.empty())
+          continue;
+
+        for(const auto &el : allo) {
+          Index psize = el.second;
+          if(!valid_index(psize))
+            psize = N_hood;
+          ss << indent << "m_" << el.first << "_param_key = m_params.allocate(\"" << el.first << "\", " << psize << ");\n";
         }
+        ss << "\n";
       }
+
+
+      for(auto const &dof : clex.global_bases()) {
+        ss << DoFType::traits(dof.first).clexulator_constructor_string(clex.prim(), dof.second, indent + "  ");
+
+        std::vector<std::pair<std::string, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(dof.second);
+        if(allo.empty())
+          continue;
+
+        for(const auto &el : allo) {
+          Index psize = el.second;
+          if(!valid_index(psize))
+            psize = N_branch;
+          ss << indent << "m_" << el.first << "_param_key = m_params.allocate(" << el.first << ", " << psize << ");\n";
+        }
+        ss << "\n";
+      }
+
+
+
 
       for(Index nf = 0; nf < orbit_method_names.size(); nf++) {
         ss <<
@@ -830,56 +844,70 @@ namespace CASM {
       ss << indent << "  m_weight_matrix.row(1) << " << W(1, 0) << ", " << W(1, 1) << ", " << W(1, 2) << ";\n";
       ss << indent << "  m_weight_matrix.row(2) << " << W(2, 0) << ", " << W(2, 1) << ", " << W(2, 2) << ";\n\n";
 
-      // Write neighborhood of UnitCellCoord
-      // expand the _nlist to contain 'global_orbitree' (all that is needed for now)
-      std::set<UnitCellCoord> nbors;
-      flower_neighborhood(_tree.begin(), _tree.end(), std::inserter(nbors, nbors.begin()));
+      {
+        // Write neighborhood of UnitCellCoord
+        // expand the _nlist to contain 'global_orbitree' (all that is needed for now)
+        std::set<UnitCellCoord> nbors; //restricted scope
+        flower_neighborhood(_tree.begin(), _tree.end(), std::inserter(nbors, nbors.begin()));
 
+        std::set<UnitCell> ucnbors;
+        for(UnitCellCoord const &ucc : nbors)
+          ucnbors.insert(ucc.unitcell());
 
-      ss << indent << "  m_neighborhood = std::set<Index> {\n" << indent;
-      auto it = nbors.begin();
-      while(it != nbors.end()) {
-        ss <<  "  " <<  _nlist.neighbor_index(*it);
-        //ss << indent << "    {UnitCellCoord("
-        // << it->sublat() << ", "
-        // << it->unitcell(0) << ", "
-        // << it->unitcell(1) << ", "
-        // << it->unitcell(2) << ")}";
-        ++it;
-        if(it != nbors.end()) {
-          ss << ",";
+        if(!ucnbors.empty()) {
+
+          ss << indent << "  m_neighborhood = std::set<UnitCell> {\n";
+          auto it = ucnbors.begin();
+          while(it != ucnbors.end()) {
+            //ss <<  "  " <<  _nlist.neighbor_index(*it);
+            ss << indent << "    UnitCell("
+               << (*it)[0] << ", "
+               << (*it)[1] << ", "
+               << (*it)[2] << ")";
+            ++it;
+            if(it != ucnbors.end()) {
+              ss << ",";
+            }
+            ss << "\n";
+          }
+          ss << indent << "  };\n";
+          ss << "\n\n";
         }
-        ss << "\n";
       }
-      ss << indent << "  };\n";
-      ss << "\n\n";
-
       ss << indent <<  "  m_orbit_neighborhood.resize(corr_size());\n";
       Index lno = 0;
       for(Index no = 0; no < clex.n_orbits(); ++no) {
-        std::set<UnitCellCoord> orbit_nbors;
-        flower_neighborhood(_tree[no], std::inserter(orbit_nbors, orbit_nbors.begin()));
+        std::set<UnitCellCoord> nbors;
+        flower_neighborhood(_tree[no], std::inserter(nbors, nbors.begin()));
+
+        std::set<UnitCell> ucnbors;
+        for(UnitCellCoord const &ucc : nbors)
+          ucnbors.insert(ucc.unitcell());
 
         Index proto_index = lno;
 
-        ss << indent << "  m_orbit_neighborhood[" << lno << "] = std::set<Index> {\n" << indent;
-        auto it = orbit_nbors.begin();
-        while(it != orbit_nbors.end()) {
-          ss <<  "  " <<  _nlist.neighbor_index(*it);
-          //ss << indent << "    {UnitCellCoord("
-          //<< it->sublat() << ", "
-          // << it->unitcell(0) << ", "
-          // << it->unitcell(1) << ", "
-          // << it->unitcell(2) << ")}";
+        if(ucnbors.empty())
+          continue;
+
+        ss << indent << "  m_orbit_neighborhood[" << lno << "] = std::set<UnitCell> {\n";
+
+        auto it = ucnbors.begin();
+        while(it != ucnbors.end()) {
+          ss << indent << "    UnitCell("
+             << (*it)[0] << ", "
+             << (*it)[1] << ", "
+             << (*it)[2] << ")";
           ++it;
-          if(it != orbit_nbors.end()) {
+          if(it != ucnbors.end()) {
             ss << ",";
           }
           ss << "\n";
         }
         ss << indent << "  };\n";
         ++lno;
-        for(Index nf = 1; nf < clex.bset_orbit(no).size(); ++nf) {
+        if(clex.bset_orbit(no).size() == 0)
+          continue;
+        for(Index nf = 1; nf < clex.bset_orbit(no)[0].size(); ++nf) {
           ss << indent << "  m_orbit_neighborhood[" << lno << "] = m_orbit_neighborhood[" << proto_index << "];\n";
           ++lno;
         }
@@ -905,7 +933,7 @@ namespace CASM {
                                                     PrimNeighborList &_nlist,
                                                     std::string const &indent) {
 
-      std::string result("void " + class_name + "::_point_prepare(int neighbor_ind) const{\n");
+      std::string result("void " + class_name + "::_point_prepare(int nlist_ind) const{\n");
 
       // Use known clexbasis dependencies to construct point_prepare routine
       for(auto const &doftype : clex.site_bases()) {
@@ -952,7 +980,7 @@ namespace CASM {
         result += DoFType::traits(doftype.first).clexulator_global_prepare_string(clex.prim(),
                                                                                   _nhood,
                                                                                   _nlist,
-                                                                                  std::vector<BasisSet>(1, doftype.second),
+                                                                                  doftype.second,
                                                                                   indent);
       }
 

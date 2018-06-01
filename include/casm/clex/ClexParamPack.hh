@@ -1,6 +1,8 @@
 #ifndef CLEXPARAMPACK_HH
 #define CLEXPARAMPACK_HH
 #include <cstddef>
+#include <map>
+#include <vector>
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
@@ -42,6 +44,13 @@ namespace CASM {
   /// \brief Key for indexing clexulator parameters
   class ClexParamKey {
   public:
+    ClexParamKey() {}
+
+    ClexParamKey(ClexParamPack_impl::BaseKey const &_key) :
+      m_key_ptr(_key.clone()) {
+
+    }
+
     //friend class Clexulator_impl::Base;
     std::string const &name() const {
       return m_key_ptr->name();
@@ -62,93 +71,36 @@ namespace CASM {
 
     typedef unsigned int size_type;
 
+    std::map<std::string, ClexParamKey> const &keys() const {
+      return m_keys;
+    }
+
+    ClexParamKey const &key(std::string const &_name) const {
+      auto it = keys().find(_name);
+      if(it == keys().end())
+        throw std::runtime_error("In ClexParamPack::key(), ClexParamPack does not contain parameters corresponding to name " + _name + ".");
+      return it->second;
+    }
+
     virtual size_type size(ClexParamKey  const &_key) const = 0;
 
+    virtual std::string eval_mode(ClexParamKey const &_key) const = 0;
+
     virtual std::vector<double> const &read(ClexParamKey  const &_key) const = 0;
-    virtual double read(ClexParamKey  const &_key, size_type _ind) const = 0;
+    virtual double const &read(ClexParamKey  const &_key, size_type _ind) const = 0;
+
+    virtual void set_eval_mode(ClexParamKey const &_key, std::string const &_mode) = 0;
 
     virtual void write(ClexParamKey const &_key, std::vector<double> const &_val) = 0;
     virtual void write(ClexParamKey const &_key, size_type _ind, double val) = 0;
 
+  protected:
+    std::map<std::string, ClexParamKey> m_keys;
   private:
     //possible implementation:
     //std::vector<std::vector<double> m_data;
   };
 
-  class BasicClexParamKey : public ClexParamPack_impl::BaseKey {
-  public:
-    typedef ClexParamPack::size_type size_type;
-
-    BasicClexParamKey(std::string const &_name, size_type _ind) :
-      ClexParamPack_impl::BaseKey(_name),
-      m_index(_ind) {}
-
-    size_type index() const {
-      return m_index;
-    }
-  protected:
-
-    ClexParamPack_impl::BaseKey *_clone() const override {
-      return new BasicClexParamKey(*this);
-    }
-
-    size_type m_index;
-  };
-
-  /// \brief Abstract base class for reading/writing clexulator parameters
-  class BasicClexParamPack : public ClexParamPack {
-  public:
-
-    BasicClexParamPack(Index Nkey);
-
-    size_type size(ClexParamKey  const &_key) const override {
-      return size(*static_cast<BasicClexParamKey const *>(_key.ptr()));
-    }
-
-    size_type size(BasicClexParamKey  const &_key) const {
-      return m_data[_key.index()].size();
-    }
-
-    std::vector<double> const &read(ClexParamKey const &_key) const override {
-      return read(*static_cast<BasicClexParamKey const *>(_key.ptr()));
-    }
-
-    std::vector<double> const &read(BasicClexParamKey const &_key) const {
-      return m_data[_key.index()];
-    }
-
-    double read(ClexParamKey const &_key, size_type _ind) const override {
-      return read(*static_cast<BasicClexParamKey const *>(_key.ptr()), _ind);
-    }
-
-    double read(BasicClexParamKey const &_key, size_type _ind) const {
-      return m_data[_key.index()][_ind];
-    }
-
-    void write(ClexParamKey const &_key, std::vector<double> const &_val) override {
-      write(*static_cast<BasicClexParamKey const *>(_key.ptr()), _val);
-    }
-
-    void write(BasicClexParamKey const &_key, std::vector<double> const &_val) {
-      m_data[_key.index()] = _val;
-    }
-
-    void write(ClexParamKey const &_key, size_type _ind, double _val) override {
-      write(*static_cast<BasicClexParamKey const *>(_key.ptr()), _ind, _val);
-    }
-
-    void write(BasicClexParamKey const &_key, size_type _ind, double _val) {
-      m_data[_key.index()][_ind] = _val;
-    }
-
-    void resize(BasicClexParamKey  const &_key, Index _size) {
-      m_data[_key.index()].resize(_size);
-    }
-
-
-  private:
-    std::vector<std::vector<double> > m_data;
-  };
 }
 
 #endif

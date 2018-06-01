@@ -275,7 +275,6 @@ namespace CASM {
                                     *clex_basis_ptr,
                                     local_orbits,
                                     nlist,
-                                    std::vector<UnitCellCoord>(),
                                     outfile,
                                     primclex.crystallography_tol());
         outfile.close();
@@ -305,7 +304,6 @@ namespace CASM {
                                     *clex_basis_ptr,
                                     orbits,
                                     nlist,
-                                    std::vector<UnitCellCoord>(),
                                     outfile,
                                     primclex.crystallography_tol());
         outfile.close();

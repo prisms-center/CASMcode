@@ -80,7 +80,7 @@ namespace CASM {
     }
 
     /// \brief Const access to dictionary of all global BasisSets
-    std::map<DoFKey, BasisSet> const &global_bases()const {
+    std::map<DoFKey, std::vector<BasisSet> > const &global_bases()const {
       return m_global_bases;
     }
 
@@ -103,6 +103,7 @@ namespace CASM {
 
     Structure const *m_prim_ptr;
 
+    /// \brief pointer to class that constructs cluster functions
     notstd::cloneable_ptr<ClexBasisBuilder> m_basis_builder;
 
     /// \brief Collection of all cluster orbits (are we keeping this?)
@@ -112,10 +113,11 @@ namespace CASM {
     std::vector<BSetOrbit> m_bset_tree;
 
     /// \brief Dictionary of all site BasisSets, initialized on construction
+    /// m_site_basis[DOF][b] gives site basis functions for 'DOF' at site 'b' of prim
     std::map<DoFKey, std::vector<BasisSet> > m_site_bases;
 
     /// \brief Dictionary of all global BasisSets, initialized
-    std::map<DoFKey, BasisSet> m_global_bases;
+    std::map<DoFKey, std::vector<BasisSet> > m_global_bases;
 
     jsonParser m_bspecs;
 

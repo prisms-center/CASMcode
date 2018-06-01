@@ -5,17 +5,16 @@
 #include <boost/filesystem/path.hpp>
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clex/ClexParamPack.hh"
+
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/casm_io/Log.hh"
 
-namespace PRISMS {
-  template< class VarContainer, class OutType>
-  class PFunction;
-}
 
 namespace CASM {
+
+  class ClexParamPack;
+  class ClexParamKey;
 
   namespace Clexulator_impl {
 
@@ -48,27 +47,27 @@ namespace CASM {
       }
 
       /// \brief Obtain const reference to abstract ClexParamPack object
-      ClexParamPack const &param_pack() const;
+      virtual ClexParamPack const &param_pack() const = 0;
 
       /// \brief Obtain reference to abstract ClexParamPack object
-      ClexParamPack &param_pack();
+      virtual ClexParamPack &param_pack() = 0;
 
       /// \brief Obtain ClexParamKey for a particular parameter
-      ClexParamKey param_key(std::string const &_param_name)const;
+      ClexParamKey const &param_key(std::string const &_param_name)const;
 
       /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom double -> double function set
-      void set_evaluation(ClexParamKey const _param_key, std::vector<PRISMS::PFunction<std::vector<double>, double> > const   &_basis_set);
+      void set_evaluation(ClexParamKey const &_param_key, std::vector<std::function<double(ConfigDoF const &) > > const   &_basis_set);
 
       /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom int -> double function set
-      void set_evaluation(ClexParamKey const _param_key, std::vector<PRISMS::PFunction<std::vector<int>, double> > const &_basis_set);
+      void set_evaluation(ClexParamKey const &_param_key, std::vector<std::function<double(std::vector<double> const &) > > const &_basis_set);
 
       /// \brief Alter evaluation of parameters specified by @param _param_key, using the string  @param _eval_type,
       // which can be at least either "READ" (i.e., read from ClexParamPack) or "DEFAULT" (i.e., the Clexulator's default implementation)
-      void set_evaluation(ClexParamKey const _param_key, std::string _eval_type);
+      void set_evaluation(ClexParamKey const &_param_key, std::string const &_eval_type);
 
       /// \brief Check evaluation mode of parameters specified by @param _param_key, which can be one of (at least)
       /// "READ" (i.e., read from ClexParamPack), "CUSTOM", or "DEFAULT" (i.e., the Clexulator's default implementation)
-      std::string check_evaluation(ClexParamKey const _param_key) const;
+      std::string check_evaluation(ClexParamKey const &_param_key) const;
 
       /// \brief The UnitCellCoord involved in calculating the basis functions,
       /// relative origin UnitCell
@@ -309,6 +308,15 @@ namespace CASM {
 
       virtual void _point_prepare(int neighbor_ind) const = 0;
 
+      /// \brief access reference to internally pointed ConfigDoF
+      ConfigDoF const &_configdof() const {
+        return *m_config_ptr;
+      }
+
+      /// \brief access reference to internally pointed ConfigDoF
+      Index const &_l(Index nlist_ind) const {
+        return *(m_nlist_ptr + nlist_ind);
+      }
 
       /// \brief Set pointer to neighbor list
       ///
@@ -323,12 +331,6 @@ namespace CASM {
         return;
       }
 
-      /// \brief Pointer to ConfigDoF for which evaluation is occuring
-      mutable ConfigDoF const *m_config_ptr;
-
-      /// \brief Pointer to neighbor list
-      mutable long int const *m_nlist_ptr;
-
       /// \brief The UnitCellCoord involved in calculating the basis functions,
       /// relative origin UnitCell
       std::set<UnitCell> m_neighborhood;
@@ -339,6 +341,14 @@ namespace CASM {
 
       /// \brief The weight matrix used for ordering the neighbor list
       PrimNeighborList::Matrix3Type m_weight_matrix;
+
+    private:
+      /// \brief Pointer to ConfigDoF for which evaluation is occuring
+      mutable ConfigDoF const *m_config_ptr;
+
+      /// \brief Pointer to neighbor list
+      mutable long int const *m_nlist_ptr;
+
 
     };
   }
@@ -488,31 +498,21 @@ namespace CASM {
     }
 
     /// \brief Obtain ClexParamKey for a particular parameter
-    ClexParamKey param_key(std::string const &_param_name)const {
-      return m_clex->param_key(_param_name);
-    }
+    ClexParamKey const &param_key(std::string const &_param_name)const;
 
     /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom double -> double function set
-    void set_evaluation(ClexParamKey const _param_key, std::vector<PRISMS::PFunction<std::vector<double>, double> > const   &_basis_set) {
-      m_clex->set_evaluation(_param_key, _basis_set);
-    }
+    void set_evaluation(ClexParamKey const _param_key, std::vector<std::function<double(ConfigDoF const &) > > const   &_basis_set);
 
     /// \brief Alter evaluation of parameters specified by @param _param_key, using a custom int -> double function set
-    void set_evaluation(ClexParamKey const _param_key, std::vector<PRISMS::PFunction<std::vector<int>, double> > const &_basis_set) {
-      m_clex->set_evaluation(_param_key, _basis_set);
-    }
+    void set_evaluation(ClexParamKey const _param_key, std::vector<std::function<double(std::vector<double> const &) > > const &_basis_set);
 
     /// \brief Alter evaluation of parameters specified by @param _param_key, using the string  @param _eval_type,
     /// which can be at least either "READ" (i.e., read from ClexParamPack) or "DEFAULT" (i.e., the Clexulator's default implementation)
-    void set_evaluation(ClexParamKey const _param_key, std::string _eval_type) {
-      m_clex->set_evaluation(_param_key, _eval_type);
-    }
+    void set_evaluation(ClexParamKey const _param_key, std::string _eval_type);
 
     /// \brief Check evaluation mode of parameters specified by @param _param_key, which can be one of (at least)
     /// "READ" (i.e., read from ClexParamPack), "CUSTOM", or "DEFAULT" (i.e., the Clexulator's default implementation)
-    std::string check_evaluation(ClexParamKey const _param_key) const {
-      return m_clex->check_evaluation(_param_key);
-    }
+    std::string check_evaluation(ClexParamKey const _param_key) const;
 
     /// \brief The UnitCellCoord involved in calculating the basis functions,
     /// relative origin UnitCell

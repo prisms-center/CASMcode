@@ -104,7 +104,7 @@ namespace CASM {
     for(DoFKey const &key : global_keys) {
       auto find_it = m_global_bases.find(key);
       if(find_it != m_global_bases.end())
-        arg_subsets.push_back(&(find_it->second));
+        arg_subsets.push_back(&(find_it->second[0]));
       else
         throw std::runtime_error("Unable to construct basis sets. No known global DoF: " + key + "\n");
     }
