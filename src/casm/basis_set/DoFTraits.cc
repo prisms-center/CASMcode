@@ -159,7 +159,7 @@ namespace CASM {
       ss << indent << "switch(nlist_ind) {\n";
       for(auto const &nbor : _nhood) {
         std::vector<std::string> paramtypes;
-        ss << indent << "  case " << _nlist.neighbor_index(nbor.first) << ":\n";
+        ss << indent << "case " << _nlist.neighbor_index(nbor.first) << ":\n";
         //Index n = nbor.first;
         for(UnitCellCoord const &ucc : nbor.second) {
           Index b = ucc.sublat();
@@ -169,16 +169,16 @@ namespace CASM {
 
           for(Index f = 0; f < site_bases[b].size(); f++) {
             std::stringstream ss2;
-            ss2 << indent << "      m_params.write(m_occ_func_" << f << "_param_key, " << n  << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
+            ss2 << indent << "    m_params.write(m_occ_func_" << f << "_param_key, " << n  << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
             paramtypes[f] += ss2.str();
           }
         }
         for(Index f = 0; f < paramtypes.size(); f++) {
           ss <<
-             indent << "    if(m_params.eval_mode(m_occ_func_" << f << "_param_key)==ParamPack::DEFAULT){\n" <<
+             indent << "  if(m_params.eval_mode(m_occ_func_" << f << "_param_key) == ParamPack::DEFAULT) {\n" <<
              paramtypes[f] <<
-             indent << "    }\n" <<
-             indent << "    break;\n";
+             indent << "  }\n" <<
+             indent << "  break;\n";
         }
       }
       ss << indent << "}\n";
@@ -214,7 +214,7 @@ namespace CASM {
       }
       for(Index f = 0; f < paramtypes.size(); f++) {
         ss <<
-           indent << "if(m_params.eval_mode(m_occ_func_" << f << "_param_key)==ParamPack::DEFAULT){\n" <<
+           indent << "if(m_params.eval_mode(m_occ_func_" << f << "_param_key) == ParamPack::DEFAULT) {\n" <<
            paramtypes[f] <<
            indent << "}\n";
       }
@@ -284,11 +284,11 @@ namespace CASM {
                  indent << "// Occupation Function evaluators and accessors for basis site " << nb << ":\n";
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
             stream <<
-                   indent << "double const &eval_occ_func_" << nb << '_' << f << "(const int &nlist_ind)const{\n" <<
+                   indent << "double const &eval_occ_func_" << nb << '_' << f << "(const int &nlist_ind) const {\n" <<
                    indent << "  return " << "m_occ_func_" << nb << '_' << f << "[_configdof().occ(_l(nlist_ind))];\n" <<
                    indent << "}\n\n" <<
 
-                   indent << "double const &occ_func_" << nb << '_' << f << "(const int &nlist_ind)const{\n" <<
+                   indent << "double const &occ_func_" << nb << '_' << f << "(const int &nlist_ind) const {\n" <<
                    indent << "  return " << "m_params.read(m_occ_func_" << f << "_param_key, nlist_ind);\n" <<
                    indent << "}\n";
           }

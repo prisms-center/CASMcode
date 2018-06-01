@@ -203,16 +203,16 @@ namespace CASM {
 
 
         << "/// \\brief Returns a Clexulator_impl::Base* owning a " << class_name << "\n"
-        << "extern \"C\" CASM::Clexulator_impl::Base* make_" + class_name << "();\n\n"
+        << "extern \"C\" CASM::Clexulator_impl::Base *make_" + class_name << "();\n\n"
 
         << "namespace CASM {\n\n"
 
 
-        << "/****** GENERATED CLEXPARAMPACK DEFINITION ******/\n\n"
+        << "  /****** GENERATED CLEXPARAMPACK DEFINITION ******/\n\n"
 
         << parampack_stream.str() << "\n\n"
 
-        << "/****** GENERATED CLEXULATOR DEFINITION ******/\n\n"
+        << "  /****** GENERATED CLEXULATOR DEFINITION ******/\n\n"
 
         << indent << "class " << class_name << " : public Clexulator_impl::Base {\n\n"
 
@@ -237,7 +237,7 @@ namespace CASM {
 
         << "extern \"C\" {\n"
         << indent << "/// \\brief Returns a Clexulator_impl::Base* owning a " << class_name << "\n"
-        << indent << "CASM::Clexulator_impl::Base* make_" + class_name << "() {\n"
+        << indent << "CASM::Clexulator_impl::Base *make_" + class_name << "() {\n"
         << indent << "  return new CASM::" + class_name + "();\n"
         << indent << "}\n\n"
         << "}\n"
@@ -293,7 +293,7 @@ namespace CASM {
                          indent << "  double " << method_name << "() const;\n";
 
         bfunc_imp_stream <<
-                         indent << "double " << class_name << "::" << method_name << "() const{\n" <<
+                         indent << "double " << class_name << "::" << method_name << "() const {\n" <<
                          indent << "  return " << formulae[nf] << ";\n" <<
                          indent << "}\n";
       }
@@ -342,7 +342,7 @@ namespace CASM {
                            indent << "  double " << method_name << "() const;\n";
 
           bfunc_imp_stream <<
-                           indent << "double " << class_name << "::" << method_name << "() const{\n" <<
+                           indent << "double " << class_name << "::" << method_name << "() const {\n" <<
                            indent << "  return " << formulae[nf] << ";\n" <<
                            indent << "}\n";
 
@@ -413,7 +413,7 @@ namespace CASM {
             if(tformulae[nf] == "1" || tformulae[nf] == "(1)")
               continue;
 
-            formulae[nf] += "*";
+            formulae[nf] += " * ";
             formulae[nf] += tformulae[nf];
             //formulae[nf] += ")";
           }
@@ -433,7 +433,7 @@ namespace CASM {
                            indent << "  double " << method_name << "(int occ_i, int occ_f) const;\n";
 
           bfunc_imp_stream <<
-                           indent << "double " << class_name << "::" << method_name << "(int occ_i, int occ_f) const{\n" <<
+                           indent << "double " << class_name << "::" << method_name << "(int occ_i, int occ_f) const {\n" <<
                            indent << "  return " << formulae[nf] << ";\n" <<
                            indent << "}\n";
         }
@@ -459,7 +459,7 @@ namespace CASM {
       std::vector<std::string> formulae(_bset_orbit[0].size(), std::string());
       if(_clust_orbit.size() > 1) {
         prefix = "(";
-        suffix = ")/" + std::to_string(_clust_orbit.size()) + ".";
+        suffix = ") / " + std::to_string(_clust_orbit.size()) + ".";
       }
 
       for(Index ne = 0; ne < _bset_orbit.size(); ne++) {
@@ -528,7 +528,7 @@ namespace CASM {
       //normalize by multiplicity (by convention)
       if(_clust_orbit.size() > 1) {
         prefix = "(";
-        suffix = ")/" + std::to_string(_clust_orbit.size()) + ".";
+        suffix = ") / " + std::to_string(_clust_orbit.size()) + ".";
       }
 
       // loop over equivalent clusters
@@ -789,7 +789,7 @@ namespace CASM {
           Index psize = el.second;
           if(!valid_index(psize))
             psize = N_hood;
-          ss << indent << "m_" << el.first << "_param_key = m_params.allocate(\"" << el.first << "\", " << psize << ");\n";
+          ss << indent << "  m_" << el.first << "_param_key = m_params.allocate(\"" << el.first << "\", " << psize << ");\n";
         }
         ss << "\n";
       }
@@ -806,7 +806,7 @@ namespace CASM {
           Index psize = el.second;
           if(!valid_index(psize))
             psize = N_branch;
-          ss << indent << "m_" << el.first << "_param_key = m_params.allocate(" << el.first << ", " << psize << ");\n";
+          ss << indent << "  m_" << el.first << "_param_key = m_params.allocate(" << el.first << ", " << psize << ");\n";
         }
         ss << "\n";
       }
@@ -933,7 +933,7 @@ namespace CASM {
                                                     PrimNeighborList &_nlist,
                                                     std::string const &indent) {
 
-      std::string result("void " + class_name + "::_point_prepare(int nlist_ind) const{\n");
+      std::string result(indent + "void " + class_name + "::_point_prepare(int nlist_ind) const {\n");
 
       // Use known clexbasis dependencies to construct point_prepare routine
       for(auto const &doftype : clex.site_bases()) {
@@ -941,16 +941,16 @@ namespace CASM {
                                                                                  _nhood,
                                                                                  _nlist,
                                                                                  doftype.second,
-                                                                                 indent);
+                                                                                 indent + "  ");
       }
 
       for(auto const &func_trait : _orbit_func_traits) {
         result += func_trait->clexulator_point_prepare_string(clex.prim(),
                                                               _nhood,
                                                               _nlist,
-                                                              indent);
+                                                              indent + "  ");
       }
-      result += "}\n";
+      result += (indent + "}\n");
       return result;
     }
 
@@ -962,7 +962,7 @@ namespace CASM {
                                                      std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                      PrimNeighborList &_nlist,
                                                      std::string const &indent) {
-      std::string result("void " + class_name + "::_global_prepare() const{\n");
+      std::string result(indent + "void " + class_name + "::_global_prepare() const {\n");
 
 
 
@@ -972,7 +972,7 @@ namespace CASM {
                                                                                   _nhood,
                                                                                   _nlist,
                                                                                   doftype.second,
-                                                                                  indent);
+                                                                                  indent + "  ");
       }
 
       // Use known clexbasis dependencies to construct point_prepare routine
@@ -981,17 +981,17 @@ namespace CASM {
                                                                                   _nhood,
                                                                                   _nlist,
                                                                                   doftype.second,
-                                                                                  indent);
+                                                                                  indent + "  ");
       }
 
       for(auto const &func_trait : _orbit_func_traits) {
         result += func_trait->clexulator_global_prepare_string(clex.prim(),
                                                                _nhood,
                                                                _nlist,
-                                                               indent);
+                                                               indent + "  ");
       }
 
-      result += "}\n";
+      result += (indent + "}\n");
       return result;
     }
 
