@@ -162,8 +162,12 @@ namespace CASM {
       std::vector<Index> ind = sequence(Index(0), Index(size() - 1));
       std::sort(ind.begin(), ind.end(),
       [&](const Index & a, const Index & b) {
-        return (this->derived().element(a) < this->derived().element(b));
+        return (derived().element(a) < derived().element(b));
       });
+      std::cout << "Elements:\n";
+      for(auto const &ucc : derived().elements())
+        std::cout << ucc << "\n";
+      std::cout << "Permutation " <<  ind << "\n";
       return Permutation(std::move(ind));
     }
 

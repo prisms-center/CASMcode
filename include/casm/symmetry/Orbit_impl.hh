@@ -183,19 +183,32 @@ namespace CASM {
   template<typename _Element, typename _SymCompareType>
   void GenericOrbit<_Element, _SymCompareType>::_construct_canonization_rep() const {
     if(equivalence_map().size() == 0)
-      throw std::runtime_error("In GenericOrbit::_construct_canonization_rep(), equivalenc_map is uninitialized or empty! Cannot continue.");
+      throw std::runtime_error("In GenericOrbit::_construct_canonization_rep(), equivalence_map is uninitialized or empty! Cannot continue.");
 
     if(size() == 0) {
       m_canonization_rep_ID = SymGroupRepID::identity(0);
       return;
     }
-
+    std::cout << "Protototype:\n";
+    for(auto const &ucc : prototype().elements())
+      std::cout << ucc << "\n";
+    std::cout << "\n";
     MasterSymGroup const &master_group(equivalence_map()[0][0].master_group());
     m_canonization_rep_ID = master_group.add_empty_representation();
+    for(Index j = 0; j < equivalence_map()[0].size(); j++) {
 
-    for(SymOp const &op : master_group) {
-      op.set_rep(m_canonization_rep_ID,
-                 *(m_sym_compare.canonical_transform(copy_apply(op, prototype()))->inverse()));
+      auto A = copy_apply(equivalence_map()[0][j], prototype());
+      std::cout << "Transformed Protototype:\n";
+      for(auto const &ucc : A.elements())
+        std::cout << ucc << "\n";
+      std::cout << "\n";
+
+      std::unique_ptr<SymOpRepresentation> new_rep = m_sym_compare.canonical_transform(copy_apply(equivalence_map()[0][j], prototype()))->inverse();
+
+      for(Index i = 0; i < equivalence_map().size(); i++) {
+        std::cout << "Operation : " << equivalence_map()[i][j].index() << "\n";
+        equivalence_map()[i][j].set_rep(m_canonization_rep_ID, *new_rep);
+      }
     }
     return;
   }
