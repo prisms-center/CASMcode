@@ -45,7 +45,7 @@ void prim1_read_test(Structure &struc) {
     BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name(), check_name[i]);
     BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
     BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).name(), check_name[i]);
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).specie().name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).species().name(), check_name[i]);
   }
 
   // FCC motif
@@ -89,7 +89,7 @@ void prim2_read_test(Structure &struc) {
       BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].name(), check_name[j]);
       BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
       BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].atom(0).name(), check_name[j]);
-      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].atom(0).specie().name(), check_name[j]);
+      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].atom(0).species().name(), check_name[j]);
     }
     BOOST_CHECK_EQUAL(struc.basis[i].site_occupant().value(), check_value[i]);
   }
@@ -152,7 +152,7 @@ void pos1_read_test(Structure &struc) {
     BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].name(), check_name[i]);
     BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
     BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].atom(0).name(), check_name[i]);
-    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].atom(0).specie().name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].atom(0).species().name(), check_name[i]);
   }
 
   // FCC structure
@@ -166,11 +166,11 @@ BOOST_AUTO_TEST_CASE(PRIM1Test) {
   fs::path testdir = "tests/unit/crystallography";
 
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "PRIM1"));
+  Structure struc(fs::path(testdir / "PRIM1.txt"));
   prim1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "PRIM1_out";
+  fs::path tmp_file = testdir / "PRIM1_out.txt";
   write_prim(struc, tmp_file, FRAC);
 
   // Read new file and run tests again
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(PRIM2Test) {
   fs::path testdir = "tests/unit/crystallography";
 
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "PRIM2"));
+  Structure struc(fs::path(testdir / "PRIM2.txt"));
   prim2_read_test(struc);
 }
 
@@ -193,11 +193,11 @@ BOOST_AUTO_TEST_CASE(POS1Test) {
   fs::path testdir = "tests/unit/crystallography";
 
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "POS1"));
+  Structure struc(fs::path(testdir / "POS1.txt"));
   pos1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "POS1_out";
+  fs::path tmp_file = testdir / "POS1_out.txt";
   fs::ofstream sout(tmp_file);
   VaspIO::PrintPOSCAR printer(struc);
   printer.set_append_atom_names_off();
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(POS1Test) {
   sout.close();
 
   // Read new file and run tests again
-  Structure struc2(fs::path(testdir / "POS1_out"));
+  Structure struc2(fs::path(testdir / "POS1_out.txt"));
   pos1_read_test(struc2);
 
 }
@@ -215,17 +215,17 @@ BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
   fs::path testdir = "tests/unit/crystallography";
 
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "POS1"));
+  Structure struc(fs::path(testdir / "POS1.txt"));
   pos1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "POS1_vasp5_out";
+  fs::path tmp_file = testdir / "POS1_vasp5_out.txt";
   fs::ofstream sout(tmp_file);
   VaspIO::PrintPOSCAR(struc).print(sout);
   sout.close();
 
   // Read new file and run tests again
-  Structure struc2(fs::path(testdir / "POS1_vasp5_out"));
+  Structure struc2(fs::path(testdir / "POS1_vasp5_out.txt"));
   pos1_read_test(struc2);
 
 }
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE(POS1jsonPrimTest) {
   fs::path testdir = "tests/unit/crystallography";
 
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "POS1"));
+  Structure struc(fs::path(testdir / "POS1.txt"));
   pos1_read_test(struc);
 
   // Write test PRIM back out

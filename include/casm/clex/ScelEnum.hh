@@ -3,8 +3,8 @@
 
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
-#include "casm/container/InputEnumerator.hh"
-#include "casm/container/RandomAccessEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
+#include "casm/enumerator/RandomAccessEnumerator.hh"
 #include "casm/clex/Supercell.hh"
 
 /** \defgroup ScelEnumGroup Supercell Enumerators
@@ -135,7 +135,7 @@ namespace CASM {
     }
 
     static const std::string enumerator_name;
-    static const std::string interface_help;
+    static std::string interface_help();
     static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
 

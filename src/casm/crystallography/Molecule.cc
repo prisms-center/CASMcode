@@ -6,13 +6,14 @@
 
 namespace CASM {
 
-  void from_json(AtomSpecie &_specie, jsonParser const &json) {
-    _specie = AtomSpecie(json.get<std::string>());
+  void from_json(AtomSpecies &_species, jsonParser const &json) {
+    _species = AtomSpecies(json.get<std::string>());
   }
 
-  jsonParser &to_json(AtomSpecie const &_specie, jsonParser &json) {
-    return json = _specie.name();
+  jsonParser &to_json(AtomSpecies const &_species, jsonParser &json) {
+    return json = _species.name();
   }
+
 
 
   //****************************************************
@@ -56,8 +57,8 @@ namespace CASM {
   //****************************************************
 
   bool identical(AtomPosition const &LHS, AtomPosition const &RHS, double _tol = TOL) {
-    return LHS.specie() == RHS.specie()
-           && almost_zero((LHS.cart() - RHS.cart()).squaredNorm(), _tol * _tol);
+    return LHS.species() == RHS.species()
+           && almost_equal(LHS.cart(), RHS.cart(), _tol);
   }
   //****************************************************
   //
@@ -66,7 +67,7 @@ namespace CASM {
   jsonParser &to_json(AtomPosition const &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat) {
     json.put_obj();
     to_json_array(c2f_mat * apos.cart(), json["coordinate"]);
-    json["specie"] = apos.specie();
+    json["species"] = apos.species();
     json["SD_flag"] = apos.sd_flag();
     return json;
   }
@@ -80,7 +81,7 @@ namespace CASM {
     Eigen::Vector3d _pos(0., 0., 0.);
     AtomPosition::sd_type _SD_flag({false, false, false});
     if(json.is_obj()) {
-      _name = json["specie"].get<std::string>();
+      _name = json["species"].get<std::string>();
       if(json.contains("coordinate"))
         _pos = f2c_mat * json["coordinate"].get<Eigen::Vector3d>();
       if(json.contains("SD_flag"))
@@ -91,7 +92,7 @@ namespace CASM {
     }
     else
       throw std::runtime_error("Invalid JSON input encountered. Unable to parse AtomPosition object.\n");
-    apos = AtomPosition(_pos, AtomSpecie(_name), _SD_flag);
+    apos = AtomPosition(_pos, AtomSpecies(_name), _SD_flag);
     return;
   }
 
@@ -101,7 +102,7 @@ namespace CASM {
     Eigen::Vector3d _pos(0., 0., 0.);
     AtomPosition::sd_type _SD_flag({false, false, false});
     if(json.is_obj()) {
-      _name = json["specie"].get<std::string>();
+      _name = json["species"].get<std::string>();
       if(json.contains("coordinate"))
         _pos = f2c_mat * json["coordinate"].get<Eigen::Vector3d>();
       if(json.contains("SD_flag"))
@@ -112,7 +113,7 @@ namespace CASM {
     }
     else
       throw std::runtime_error("Invalid JSON input encountered. Unable to parse AtomPosition object.\n");
-    return AtomPosition(_pos, AtomSpecie(_name), _SD_flag);
+    return AtomPosition(_pos, AtomSpecies(_name), _SD_flag);
   }
 
   bool Molecule::is_vacancy() const {

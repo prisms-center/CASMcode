@@ -19,7 +19,8 @@ namespace CASM {
     std::vector<PrimPeriodicDiffTransOrbit> container;
     container.push_back(orbit);
     PrototypePrinter<Kinetics::DiffusionTransformation> printer;
-    print_clust(container.begin(), container.end(), sout, printer);
+    Log out(sout);
+    print_clust(container.begin(), container.end(), out, printer);
   };
 
   std::string PrimPeriodicDiffTransOrbitTraits::generate_name_impl(const OrbitType &orbit) {

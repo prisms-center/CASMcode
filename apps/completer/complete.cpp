@@ -10,8 +10,10 @@ namespace CASM {
     Engine build_casm_engine() {
       Completer::Engine casm_engine;
 
-      QueryOption dumbquery;
-      casm_engine.push_back(Option(dumbquery.tag(), dumbquery.desc()));
+      // TODO: Fix includes
+
+      //QueryOption dumbquery;
+      //casm_engine.push_back(Option(dumbquery.tag(), dumbquery.desc()));
 
       MonteOption dumbmonte;
       casm_engine.push_back(Option(dumbmonte.tag(), dumbmonte.desc()));
@@ -34,8 +36,8 @@ namespace CASM {
       FormatOption dumbformat;
       casm_engine.push_back(Option(dumbformat.tag(), dumbformat.desc()));
 
-      ImportOption dumbimport;
-      casm_engine.push_back(Option(dumbimport.tag(), dumbimport.desc()));
+      //ImportOption dumbimport;
+      //casm_engine.push_back(Option(dumbimport.tag(), dumbimport.desc()));
 
       InitOption dumbinit;
       casm_engine.push_back(Option(dumbinit.tag(), dumbinit.desc()));
@@ -43,8 +45,8 @@ namespace CASM {
       PerturbOption dumbperturb;
       casm_engine.push_back(Option(dumbperturb.tag(), dumbperturb.desc()));
 
-      SelectOption dumbselect;
-      casm_engine.push_back(Option(dumbselect.tag(), dumbselect.desc()));
+      //SelectOption dumbselect;
+      //casm_engine.push_back(Option(dumbselect.tag(), dumbselect.desc()));
 
       SettingsOption dumbsettings;
       casm_engine.push_back(Option(dumbsettings.tag(), dumbsettings.desc()));
@@ -58,14 +60,14 @@ namespace CASM {
       SymOption dumbsym;
       casm_engine.push_back(Option(dumbsym.tag(), dumbsym.desc()));
 
-      UpdateOption dumbupdate;
-      casm_engine.push_back(Option(dumbupdate.tag(), dumbupdate.desc()));
+      //UpdateOption dumbupdate;
+      //casm_engine.push_back(Option(dumbupdate.tag(), dumbupdate.desc()));
 
       ViewOption dumbview;
       casm_engine.push_back(Option(dumbview.tag(), dumbview.desc()));
 
-      EnumOption dumbenum;
-      casm_engine.push_back(Option(dumbenum.tag(), dumbenum.desc()));
+      //EnumOption dumbenum;
+      //casm_engine.push_back(Option(dumbenum.tag(), dumbenum.desc()));
 
       return casm_engine;
     }

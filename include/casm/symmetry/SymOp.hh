@@ -149,6 +149,7 @@ namespace CASM {
       m_mat(_mat),
       m_tau(_tau),
       m_map_error(_map_error) {
+      _set_integral_tau();
     }
 
     /*** Inherited from SymOpRepresentation ***/

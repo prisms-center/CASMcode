@@ -6,6 +6,7 @@
 #include "casm/clusterography/IntegralCluster.hh"
 
 /// What is being used to test it:
+#include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
@@ -58,6 +59,7 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
   // read test file
   fs::path test_cases_path("tests/unit/clusterography/test_cases.json");
   jsonParser tests(test_cases_path);
+  double tol = TOL;
 
   Log &log = null_log();
 

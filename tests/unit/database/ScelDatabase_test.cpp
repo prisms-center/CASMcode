@@ -19,8 +19,10 @@ BOOST_AUTO_TEST_SUITE(ScelDatabase_Test)
 
 BOOST_AUTO_TEST_CASE(Test1) {
 
+  BOOST_CHECK_EQUAL(1, 1);
   test::FCCTernaryProj proj;
   proj.check_init();
+  BOOST_CHECK_EQUAL(1, 1);
 
   PrimClex primclex(proj.dir, null_log());
   const Structure &prim(primclex.prim());
@@ -79,9 +81,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(true, true);
   BOOST_CHECK_EQUAL(std::distance(lat_enum.begin(), lat_enum.end()), 87);
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
-    std::cout << "LOOP" << std::endl;
-    std::cout << it.matrix().cast<double>() << std::endl;
-    db_scel.emplace(&primclex, it.matrix());
+    BOOST_CHECK_EQUAL(1, 1);
+    db_scel.emplace(&primclex, it->canonical_form(prim.point_group()));
+    BOOST_CHECK_EQUAL(1, 1);
   }
   BOOST_CHECK_EQUAL(db_scel.size(), 87);
 

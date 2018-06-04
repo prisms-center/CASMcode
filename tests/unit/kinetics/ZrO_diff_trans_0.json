@@ -1,0 +1,9 @@
+{
+  "require": ["Va"],
+  "cspecs": {
+    "orbit_branch_specs" : {
+      "2" : {"max_length" : 9.0},
+      "3" : {"max_length" : 7.0}
+    }
+  }
+}

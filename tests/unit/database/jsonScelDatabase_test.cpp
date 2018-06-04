@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   ScelEnumProps enum_props(minvol, maxvol + 1);
   SupercellEnumerator<Lattice> lat_enum(prim.lattice(), prim.factor_group(), enum_props);
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
-    db_scel.emplace(&primclex, it.matrix());
+    db_scel.emplace(&primclex, it->canonical_form(prim.point_group()));
   }
   BOOST_CHECK_EQUAL(db_scel.size(), 87);
 

@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
 
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   //test make attachable
   Configuration result = make_attachable(trans, config3);
   BOOST_CHECK_EQUAL(config3 == result, 0);
-  for(auto traj : trans.specie_traj()) {
+  for(auto traj : trans.species_traj()) {
     Index l = result.supercell().linear_index(traj.from.uccoord);
     BOOST_CHECK_EQUAL(result.occ(l), traj.from.occ);
   }

@@ -53,20 +53,20 @@ namespace CASM {
       Index to_species;       ///<Species index after transformation
     };
 
-    struct SpecieLocation {
+    struct SpeciesLocation {
       Index l;        ///<Config occupant that is being transformed
       Index mol_id;   ///<Location in OccLocation.m_mol
       Index mol_comp;   ///<Location in mol.components
     };
 
-    struct SpecieTraj {
-      SpecieLocation from;
-      SpecieLocation to;
+    struct SpeciesTraj {
+      SpeciesLocation from;
+      SpeciesLocation to;
     };
 
     struct OccEvent {
       std::vector<OccTransform> occ_transform;
-      std::vector<SpecieTraj> species_traj;
+      std::vector<SpeciesTraj> species_traj;
     };
 
 

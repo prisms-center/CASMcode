@@ -4,7 +4,7 @@
       "input" : {
         "max_vol" : 6,
         "min_vol" : 2,
-        "source" : "POS1"
+        "source" : "POS1.txt"
       },
       "output" : {
         "lats" : [
@@ -1120,7 +1120,7 @@
       "input" : {
         "max_vol" : 9,
         "min_vol" : 2,
-        "source" : "PRIM1"
+        "source" : "PRIM1.txt"
       },
       "output" : {
         "lats" : [
@@ -2287,7 +2287,7 @@
       "input" : {
         "max_vol" : 7,
         "min_vol" : 3,
-        "source" : "PRIM2"
+        "source" : "PRIM2.txt"
       },
       "output" : {
         "lats" : [
@@ -3539,7 +3539,7 @@
       "input" : {
         "max_vol" : 8,
         "min_vol" : 1,
-        "source" : "PRIM4"
+        "source" : "PRIM4.txt"
       },
       "output" : {
         "lats" : [
@@ -4485,7 +4485,7 @@
       "input" : {
         "max_vol" : 8,
         "min_vol" : 1,
-        "source" : "PRIM5"
+        "source" : "PRIM5.txt"
       },
       "output" : {
         "lats" : [
@@ -6368,7 +6368,7 @@
       "input" : {
         "max_vol" : 6,
         "min_vol" : 1,
-        "source" : "POS1"
+        "source" : "POS1.txt"
       },
       "output" : {
         "mats" : [
@@ -6709,7 +6709,7 @@
       "input" : {
         "max_vol" : 9,
         "min_vol" : 2,
-        "source" : "PRIM1"
+        "source" : "PRIM1.txt"
       },
       "output" : {
         "mats" : [
@@ -7060,7 +7060,7 @@
       "input" : {
         "max_vol" : 7,
         "min_vol" : 4,
-        "source" : "PRIM2"
+        "source" : "PRIM2.txt"
       },
       "output" : {
         "mats" : [
@@ -7411,7 +7411,7 @@
       "input" : {
         "max_vol" : 8,
         "min_vol" : 1,
-        "source" : "PRIM4"
+        "source" : "PRIM4.txt"
       },
       "output" : {
         "mats" : [

@@ -33,9 +33,10 @@ namespace CASM {
       m_background_config(background_config),
       m_diff_trans_orbit(diff_trans_orbit),
       m_local_cspecs(local_cspecs),
-      m_scel_sym_compare(_supercell().prim_grid(), _tol()),
+      m_scel_sym_compare(_supercell()),
       m_include_unperturbed(true),
-      m_skip_subclusters(true) {
+      m_skip_subclusters(true),
+      m_curr(OccPerturbation(_prim())) {
 
       this->_initialize();
 
@@ -45,12 +46,13 @@ namespace CASM {
       _init_perturbations_data();
 
       // check if initial perturb is valid or not
-      auto res = _current_perturb();
-      if(!res.second) {
+      // (currently null perturbation is valid, so I think this should always be valid)
+      _update_current_perturb();
+      if(!check_increment()) {
         increment();
       }
       else {
-        _set_current(res.first);
+        _set_current(m_curr.perturb);
       }
 
       if(valid()) {
@@ -60,65 +62,67 @@ namespace CASM {
     }
 
     const std::string DiffTransConfigEnumOccPerturbations::enumerator_name = "DiffTransConfigEnumOccPerturbations";
-    const std::string DiffTransConfigEnumOccPerturbations::interface_help =
-      "DiffTransConfigEnumOccPerturbations: \n\n"
 
-      "  orbit_names: JSON array of strings \n"
-      "    The names of diffusion transformation orbits whose local environments\n"
-      "    will be perturbed.\n\n"
+    std::string DiffTransConfigEnumOccPerturbations::interface_help() {
+      return "DiffTransConfigEnumOccPerturbations: \n\n"
 
-      "  orbit_selection: string \n"
-      "    The names of a selection diffusion transformation orbits whose local \n"
-      "    environments will be perturbed.\n\n"
+             "  orbit_names: JSON array of strings \n"
+             "    The names of diffusion transformation orbits whose local environments\n"
+             "    will be perturbed.\n\n"
 
-      "  background_scel: string (optional, default=None)\n"
-      "    The name of the supercell in which DiffTransConfiguration should be \n"
-      "    created. If given, the supercell must be a supercell that can contain \n"
-      "    all of the configurations specified by \"background_confignames\" and \n"
-      "    \"background_selection\". Prim point group operations are allowed to \n"
-      "    transform configurations so that they fit into the supercell. Newly \n"
-      "    created configurations in the background supercell will be added to \n"
-      "    the configuration database.\n\n"
+             "  orbit_selection: string \n"
+             "    The names of a selection diffusion transformation orbits whose local \n"
+             "    environments will be perturbed.\n\n"
 
-      "  background_confignames: JSON array of string \n "
-      "    Names of background configurations to be perturbed. Should be names of \n"
-      "    Configurations that exist in your CASM project.\n\n"
+             "  background_scel: string (optional, default=None)\n"
+             "    The name of the supercell in which DiffTransConfiguration should be \n"
+             "    created. If given, the supercell must be a supercell that can contain \n"
+             "    all of the configurations specified by \"background_confignames\" and \n"
+             "    \"background_selection\". Prim point group operations are allowed to \n"
+             "    transform configurations so that they fit into the supercell. Newly \n"
+             "    created configurations in the background supercell will be added to \n"
+             "    the configuration database.\n\n"
 
-      "  background_selection: string\n "
-      "    The name of a selection of background configurations to be perturbed.\n\n"
+             "  background_confignames: JSON array of string \n "
+             "    Names of background configurations to be perturbed. Should be names of \n"
+             "    Configurations that exist in your CASM project.\n\n"
 
-      "  local_cspecs: JSON object (optional,default= {}) \n "
-      "    Specify the clusters that should be use for perturbations. The string \n"
-      "    \"local_cspecs\" should be a local cspecs style initialization as used \n "
-      "    in 'casm bset' local basis function enumeration. This option takes \n"
-      "    precedence over the following option.\n\n"
+             "  background_selection: string\n "
+             "    The name of a selection of background configurations to be perturbed.\n\n"
 
-      "  local_cspecs_filepath: string (optional,default=\"\") \n "
-      "    Indicate the local cspecs file that specifies the clusters around \n"
-      "    the transformation that should be perturbed. The string \n"
-      "    \"local_cspecs_filepath\" should be the file path to a JSON file \n"
-      "    containing the local cspecs.\n\n"
+             "  local_cspecs: JSON object (optional,default= {}) \n "
+             "    Specify the clusters that should be use for perturbations. The string \n"
+             "    \"local_cspecs\" should be a local cspecs style initialization as used \n "
+             "    in 'casm bset' local basis function enumeration. This option takes \n"
+             "    precedence over the following option.\n\n"
 
-      "  Example:\n"
-      "  {\n"
-      "    \"orbit_names\": [\n"
-      "      \"diff_trans/0\",\n"
-      "      \"diff_trans/1\"\n"
-      "    ],\n"
-      "    \"orbit_selection\": \"low_barrier_diff_trans\",\n"
-      "    \"background_configs\": [\n"
-      "      \"SCEL8_2_2_2_0_0_0/2\",\n"
-      "      \"SCEL8_2_2_2_0_0_0/13\"\n"
-      "     ],\n"
-      "    \"background_selection\": \"groundstates\",\n"
-      "    \"local_cspecs\": {\n"
-      "      \"orbit_branch_specs\" : { \n"
-      "        \"1\" : {\"cutoff_radius\" : 6.0},\n"
-      "        \"2\" : {\"max_length\" : 6.01,\"cutoff_radius\" : 6.0},\n"
-      "        \"3\" : {\"max_length\" : 4.01,\"cutoff_radius\" : 5.0}\n"
-      "      }\n"
-      "    }\n"
-      "  }\n\n";
+             "  local_cspecs_filepath: string (optional,default=\"\") \n "
+             "    Indicate the local cspecs file that specifies the clusters around \n"
+             "    the transformation that should be perturbed. The string \n"
+             "    \"local_cspecs_filepath\" should be the file path to a JSON file \n"
+             "    containing the local cspecs.\n\n"
+
+             "  Example:\n"
+             "  {\n"
+             "    \"orbit_names\": [\n"
+             "      \"diff_trans/0\",\n"
+             "      \"diff_trans/1\"\n"
+             "    ],\n"
+             "    \"orbit_selection\": \"low_barrier_diff_trans\",\n"
+             "    \"background_configs\": [\n"
+             "      \"SCEL8_2_2_2_0_0_0/2\",\n"
+             "      \"SCEL8_2_2_2_0_0_0/13\"\n"
+             "     ],\n"
+             "    \"background_selection\": \"groundstates\",\n"
+             "    \"local_cspecs\": {\n"
+             "      \"orbit_branch_specs\" : { \n"
+             "        \"1\" : {\"cutoff_radius\" : 6.0},\n"
+             "        \"2\" : {\"max_length\" : 6.01,\"cutoff_radius\" : 6.0},\n"
+             "        \"3\" : {\"max_length\" : 4.01,\"cutoff_radius\" : 5.0}\n"
+             "      }\n"
+             "    }\n"
+             "  }\n\n";
+    }
 
 
     namespace {
@@ -209,17 +213,26 @@ namespace CASM {
         const PrimPeriodicDiffTransOrbit &dtorbit,
         const jsonParser &local_cspecs) {
 
-        /// check if configuration is big enough for local cspecs here
+        /// check if supercell is big enough for local cspecs here
         /// give warning if not
-        std::vector<LocalOrbit<IntegralCluster>> local_orbits;
+
+        std::vector<ScelPeriodicOrbit<IntegralCluster>> local_orbits;
+        std::vector<PermuteIterator> diff_trans_g {
+          dtorbit.prototype().invariant_subgroup(bg_config.supercell())};
+        SymGroup diff_trans_sym_g { make_sym_group(diff_trans_g) };
+        ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare {bg_config.supercell()};
+
         make_local_orbits(
           dtorbit.prototype(),
+          diff_trans_sym_g,
+          scel_sym_compare,
           local_cspecs,
           alloy_sites_filter,
           primclex.crystallography_tol(),
           std::back_inserter(local_orbits),
           null_log());
-        if(has_local_bubble_overlap(local_orbits, bg_config.supercell())) {
+
+        if(has_local_neighborhood_overlap(local_orbits, bg_config.supercell())) {
           std::string msg = "Warning in " +
                             DiffTransConfigEnumOccPerturbations::enumerator_name + ": Choice of background "
                             "configuration " + bg_config.name() + " results in an overlap in the local "
@@ -230,15 +243,18 @@ namespace CASM {
       }
 
       /// Construct and execute enumerator
+      template<typename DatabaseType>
       void _enumerate(
         const PrimClex &primclex,
         const Configuration &bg_config,
         const PrimPeriodicDiffTransOrbit &dtorbit,
         const jsonParser &local_cspecs,
-        std::vector<std::string> filter_expr) {
+        std::vector<std::string> filter_expr,
+        DatabaseType &db,
+        bool dry_run) {
 
-        auto &db = primclex.db<DiffTransConfiguration>();
-        primclex.log() << "\tUsing " << dtorbit.name() << "... " << std::flush;
+        std::string dry_run_msg = CASM::dry_run_msg(dry_run);
+        primclex.log() << dry_run_msg << "\tUsing " << dtorbit.name() << "... " << std::flush;
         Index Ninit_spec = db.size();
 
         DiffTransConfigEnumOccPerturbations enumerator(bg_config, dtorbit, local_cspecs);
@@ -265,18 +281,24 @@ namespace CASM {
         }
 
         Index Nfinal_spec = db.size();
-        primclex.log() << "Found " << Nfinal_spec - Ninit_spec
+        primclex.log() << dry_run_msg << "Found " << Nfinal_spec - Ninit_spec
                        << " new " << traits<DiffTransConfiguration>::short_name << std::endl;
       }
 
     }
 
+    /// Enumerate DiffTransConfigEnumOccPerturbations into any std::set-like database
+    template<typename DatabaseType>
     int DiffTransConfigEnumOccPerturbations::run(
       const PrimClex &primclex,
       const jsonParser &kwargs,
-      const Completer::EnumOption &enum_opt) {
+      const Completer::EnumOption &enum_opt,
+      DatabaseType &db) {
 
       Log &log = primclex.log();
+
+      bool dry_run = CASM::dry_run(kwargs, enum_opt);
+      std::string dry_run_msg = CASM::dry_run_msg(dry_run);
 
       // Validate and construct input
       DB::Selection<PrimPeriodicDiffTransOrbit> dtorbit_sel = make_selection<PrimPeriodicDiffTransOrbit>(
@@ -296,38 +318,109 @@ namespace CASM {
       jsonParser local_cspecs = _parse_local_cspecs(kwargs);
 
       std::vector<std::string> filter_expr = make_enumerator_filter_expr(kwargs, enum_opt);
-      auto &db = primclex.db<DiffTransConfiguration>();
       std::string type_name = traits<DiffTransConfiguration>::name;
 
       Index Ninit = db.size();
-      log << "# " << type_name << " in this project: " << Ninit << "\n" << std::endl;
+      log << dry_run_msg << "# " << type_name << " in this project: " << Ninit << "\n" << std::endl;
 
       log.begin(enumerator_name);
       for(auto bg_config : background_sel.selected()) {
         auto prim_config = bg_config.primitive().in_canonical_supercell();
-        log << "Searching in " << bg_config.name()
+        log << dry_run_msg << "Searching in " << bg_config.name()
             << " (primitive = " << prim_config.name() << ") ..." << std::endl;
 
         for(const auto &dtorbit : dtorbit_sel.selected()) {
           _check_overlap(primclex, bg_config, dtorbit, local_cspecs);
-          _enumerate(primclex, bg_config, dtorbit, local_cspecs, filter_expr);
+          _enumerate(primclex, bg_config, dtorbit, local_cspecs, filter_expr, db, dry_run);
         }
       }
 
-      log << "  DONE." << std::endl << std::endl;
+      log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
       Index Nfinal = db.size();
 
-      log << "# new " << type_name << ": " << Nfinal - Ninit << "\n";
-      log << "# " << type_name << " in this project: " << Nfinal << "\n" << std::endl;
+      log << dry_run_msg << "# new " << type_name << ": " << Nfinal - Ninit << "\n";
+      log << dry_run_msg << "# " << type_name << " in this project: " << Nfinal << "\n" << std::endl;
 
-      log << "Writing " << type_name << " database..." << std::endl;
-      db.commit();
-      log << "  DONE" << std::endl;
       return 0;
     }
 
+    /// Enumerate DiffTransConfigEnumOccPerturbations into the project database
+    int DiffTransConfigEnumOccPerturbations::run(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      const Completer::EnumOption &enum_opt) {
+
+      auto &db = primclex.db<DiffTransConfiguration>();
+      std::string type_name = traits<DiffTransConfiguration>::name;
+
+      return DiffTransConfigEnumOccPerturbations::run(
+               primclex,
+               kwargs,
+               enum_opt,
+               primclex.db<DiffTransConfiguration>());
+
+      if(!CASM::dry_run(kwargs, enum_opt)) {
+        primclex.log() << "Writing " << type_name << " database..." << std::endl;
+        db.commit();
+        primclex.log() << "  DONE" << std::endl;
+      }
+      return 0;
+    }
+
+    template int DiffTransConfigEnumOccPerturbations::run<std::set<DiffTransConfiguration>>(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      const Completer::EnumOption &,
+      std::set<DiffTransConfiguration> &);
+
     ///------------------------------------Internal functions-------------------------------///
+
+    void DiffTransConfigEnumOccPerturbations::partial_increment(bool complete_perturb) {
+      // increment occ_counter once
+      // if no more occupations, increment m_local_orbit_it
+      // if no more local orbits, increment m_base_it
+      // if no more base diff trans, _invalidate
+
+      ++m_occ_counter;
+      ++m_occ_counter_index;
+      if(m_occ_counter.valid()) {
+        _update_current_perturb(complete_perturb);
+      }
+      else if(++m_local_orbit_it != m_local_orbit.end()) {
+        _init_perturbations_data();
+        _update_current_perturb(complete_perturb);
+      }
+      else if(++m_base_it != m_base.end()) {
+        _init_local_orbits();
+        _init_perturbations_data();
+        _update_current_perturb(complete_perturb);
+      }
+      else {
+        // at this point m_base_it == m_base.end(): pass
+      }
+      return;
+    }
+
+    /// \returns True if current perturb is valid and canonical or enumerator is complete
+    bool DiffTransConfigEnumOccPerturbations::check_increment() {
+
+      bool valid = m_curr.is_not_subcluster && m_curr.is_canonical;
+      if(!valid && m_base_it != m_base.end()) {
+        return false;
+      }
+
+      if(valid) {
+        // find canonical from_config set current
+        this->_increment_step();
+        _set_current(m_curr.perturb);
+      }
+      else {
+        // if no more base diff trans, we're done
+        _invalidate();
+      }
+      return true;
+    }
 
     void DiffTransConfigEnumOccPerturbations::increment() {
 
@@ -337,34 +430,11 @@ namespace CASM {
       // if no more base diff trans, _invalidate
 
       // current Perturbation & 'is_valid'
-      std::pair<OccPerturbation, bool> curr_perturb {OccPerturbation(_prim()), false};
 
       do {
-        ++m_occ_counter;
-        if(m_occ_counter.valid()) {
-          curr_perturb = _current_perturb();
-        }
-        else if(++m_local_orbit_it != m_local_orbit.end()) {
-          _init_perturbations_data();
-          curr_perturb = _current_perturb();
-        }
-        else if(++m_base_it != m_base.end()) {
-          _init_local_orbits();
-          _init_perturbations_data();
-          curr_perturb = _current_perturb();
-        }
+        partial_increment();
       }
-      while(!curr_perturb.second && m_base_it != m_base.end());
-
-      if(curr_perturb.second) {
-        // find canonical from_config set current
-        this->_increment_step();
-        _set_current(curr_perturb.first);
-      }
-      else {
-        // if no more base diff trans, we're done
-        _invalidate();
-      }
+      while(!check_increment());
     };
 
     double DiffTransConfigEnumOccPerturbations::_tol() const {
@@ -416,6 +486,40 @@ namespace CASM {
       generating_sym_g(make_sym_group(generating_g)) {
     }
 
+    const std::vector<DiffTransConfigEnumOccPerturbations::Base> &
+    DiffTransConfigEnumOccPerturbations::base() const {
+      return m_base;
+    }
+
+    Index DiffTransConfigEnumOccPerturbations::base_index() const {
+      return std::distance(
+               m_base.begin(),
+               std::vector<Base>::const_iterator(m_base_it));
+    }
+
+    const std::vector<ScelPeriodicOrbit<IntegralCluster>> &
+    DiffTransConfigEnumOccPerturbations::local_orbit() const {
+      return m_local_orbit;
+    }
+
+    Index DiffTransConfigEnumOccPerturbations::local_orbit_index() const {
+      return std::distance(
+               m_local_orbit.begin(),
+               std::vector<ScelPeriodicOrbit<IntegralCluster>>::const_iterator(m_local_orbit_it));
+    }
+
+    Index DiffTransConfigEnumOccPerturbations::occ_counter_index() const {
+      return m_occ_counter_index;
+    }
+
+    /// Return the current OccPerturbation (non-canonical) and whether it is valid
+    ///
+    /// - If not valid, the OccPerturbation itself may not be complete
+    const DiffTransConfigEnumOccPerturbations::CurrentPerturbation &
+    DiffTransConfigEnumOccPerturbations::current_perturb() const {
+      return m_curr;
+    }
+
     /// Generate local orbits for current base diff trans
     void DiffTransConfigEnumOccPerturbations::_init_local_orbits() {
 
@@ -423,21 +527,22 @@ namespace CASM {
       ///
       /// - local orbit generating group is set of operations that leave
       ///   diff_trans and config invariant
-      std::vector<LocalOrbit<IntegralCluster>> _tmp;
+      std::vector<ScelPeriodicOrbit<IntegralCluster>> _tmp;
       make_local_orbits(
         m_base_it->diff_trans,
+        m_base_it->generating_sym_g,
+        m_scel_sym_compare,
         m_local_cspecs,
         alloy_sites_filter,
         _tol(),
         std::back_inserter(_tmp),
-        null_log(),
-        m_base_it->generating_sym_g);
+        null_log());
 
       /// Exclude orbits that would alter the hop due small supercell size
 
       // get list of linear indices of hopping sites
       std::set<Index> hop_cluster_indices;
-      for(auto &traj : m_base_it->diff_trans.specie_traj()) {
+      for(auto &traj : m_base_it->diff_trans.species_traj()) {
         auto res = hop_cluster_indices.insert(_supercell().linear_index(traj.from.uccoord));
         if(!res.second) {
           std::string msg = "Error in " + enumerator_name + ": Background "
@@ -457,7 +562,7 @@ namespace CASM {
       };
 
       // lambda function returns true if no overlap between hop cluster and local cluster
-      auto orbit_does_not_overlap = [&](const LocalOrbit<IntegralCluster> &test) {
+      auto orbit_does_not_overlap = [&](const ScelPeriodicOrbit<IntegralCluster> &test) {
         const auto &proto = test.prototype();
         return std::all_of(proto.begin(), proto.end(), uccoord_does_not_overlap);
       };
@@ -499,33 +604,41 @@ namespace CASM {
                         Eigen::VectorXi::Zero(proto.size()),
                         max_count,
                         Eigen::VectorXi::Constant(proto.size(), 1));
-
+      m_occ_counter_index = 0;
     }
 
-    std::pair<OccPerturbation, bool> DiffTransConfigEnumOccPerturbations::_current_perturb() const {
+    void DiffTransConfigEnumOccPerturbations::_update_current_perturb(bool complete_perturb) {
 
-      OccPerturbation perturb {_prim()};
+      m_curr.perturb.elements().clear();
       const auto &proto = m_scel_sym_compare.prepare(m_local_orbit_it->prototype());
 
       // check for null perturbation
       if(proto.size() == 0 && m_include_unperturbed) {
-        return std::make_pair(perturb, true);
+        m_curr.is_not_subcluster = true;
+        m_curr.is_canonical = true;
       }
 
       // generate next perturbation consistent with from_config
+      m_curr.is_not_subcluster = true;
       for(int i = 0; i < proto.size(); ++i) {
         // check for subcluster perturbation
         if(m_from_value(i) == m_occ_counter()[i] && m_skip_subclusters) {
-          return std::make_pair(perturb, false);
+          m_curr.is_not_subcluster = false;
+          m_curr.is_canonical = false;
+          if(!complete_perturb) {
+            return;
+          }
         }
-        perturb.elements().emplace_back(proto[i], m_from_value(i), m_occ_counter()[i]);
+        m_curr.perturb.elements().emplace_back(proto[i], m_from_value(i), m_occ_counter()[i]);
       }
 
       auto begin = m_base_it->generating_g.begin();
       auto end = m_base_it->generating_g.end();
 
       // return perturbation and check if canonical wrt local orbit sub group
-      return std::make_pair(perturb, perturb.is_canonical(_supercell(), begin, end));
+      if(m_curr.is_not_subcluster) {
+        m_curr.is_canonical = m_curr.perturb.is_canonical(_supercell(), begin, end);
+      }
     }
 
     /// Applies current perturbation to m_base_config and stores result in m_current
@@ -578,35 +691,6 @@ namespace CASM {
         throw std::runtime_error("Error in DiffTransConfigEnumOccPerturbations: not canonical, for unknown reason");
       }
       */
-    }
-
-    bool has_local_bubble_overlap(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, const Supercell &scel) {
-      std::set<int> present;
-      std::set<UnitCellCoord> coords;
-      for(auto &orbit : local_orbits) {
-        for(auto &cluster : orbit) {
-          for(int i = 0; i < cluster.size(); ++i) {
-            coords.insert(cluster[i]);
-          }
-        }
-      }
-      for(auto &coord : coords) {
-        if(!present.insert(scel.linear_index(coord)).second) {
-          return true;
-        }
-      }
-      //If no set insertion collision then no problems
-      return false;
-    }
-
-    std::vector<Supercell> viable_supercells(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, std::vector<Supercell> scel_options) {
-      std::vector<Supercell> results;
-      for(auto &scel : scel_options) {
-        if(!has_local_bubble_overlap(local_orbits, scel)) {
-          results.push_back(scel);
-        }
-      }
-      return results;
     }
 
   }

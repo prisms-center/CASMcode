@@ -62,9 +62,16 @@ namespace CASM {
   }
 
   UnitCellCoord &UnitCellCoord::apply_sym(const SymOp &op) {
+
+    // transform using stored SymBasisPermute representation
     const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID());
-    unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell() + (unit().lattice().inv_lat_column_mat() * op.integral_tau()).cast<long>();
+    unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell();
     sublat() = rep[sublat()].sublat();
+
+    // additional translations (such as needed for supercell factor groups),
+    // are stored in SymOp::integral_tau() (in cartesian coordinates)
+    // this converts that to fractional coordinates and adds it to this->unitcell()
+    unitcell() += lround(unit().lattice().inv_lat_column_mat() * op.integral_tau());
 
     return *this;
   }

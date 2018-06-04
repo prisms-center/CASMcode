@@ -1,31 +1,31 @@
-import bokeh.plotting
-import bokeh.models
-import numpy as np
-import pandas
-import uuid
-import casm
-import casm.project
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
-import os
-import casm.learn
+import imp
+import copy
 import json
+import os
 import pickle
 import re
-import copy
-import imp
+import uuid
 
 import bokeh.client
 import bokeh.io
-
+import bokeh.models
+import bokeh.plotting
 from bokeh.plotting import hplot, vplot
+import numpy as np
+import pandas
+import six
+
+import casm
+import casm.project
+import casm.learn
+from casm.misc import compat
 
 int_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
 float_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
 numerics = int_dtypes + float_dtypes
-
-class Generic(object):
-    def __init__(self):
-        pass
 
 class Session(object):
   def __init__(self, doc=None):
@@ -533,8 +533,8 @@ class ConvexHullPlot(object):
     
     prim = proj.prim
     if prim.n_independent_compositions != 1:
-        print "in project:", proj.path
-        print "n_independent_compositions:", prim.n_independent_compositions
+        print("in project:", proj.path)
+        print("n_independent_compositions:", prim.n_independent_compositions)
         raise Exception("Currently ConvexHullPlot only works for binary alloys")
     
     if selection is None:
@@ -1167,7 +1167,7 @@ class GridPlot(object):
           casm_row.append(_type(self.sel, x=_x, y=_y, **_kwargs))
           row.append(casm_row[-1].p)
         else:
-          print "Unknown or unsupported plot type:", _type.name
+          print("Unknown or unsupported plot type:", _type.name)
           casm_row.append(None)
           row.append(None)
       
@@ -1527,7 +1527,7 @@ class RankSelect(object):
       self.df = pandas.DataFrame(self.scoring(self.sel), columns=['score'])
       self.df.loc[:,'selected'] = self.sel.data.loc[:,'selected']
     except:
-      print "Error applying scoring function"
+      print("Error applying scoring function")
       raise
       
     # add 'score' to src, as self.score_id
@@ -1655,8 +1655,7 @@ class WeightSelect(object):
     self.hullplot_kwargs = hullplot_kwargs
     if not os.path.exists(input_filename):
       self.fit_input = casm.learn.example_input()
-      with open(self.input_filename, 'w') as f:
-        json.dump(self.fit_input, f, indent=2)
+      compat.dump(json, self.fit_input, self.input_filename, 'w' , indent=2)
     else:
       self.fit_input = json.load(open(self.input_filename, 'r'))
     
@@ -1709,7 +1708,7 @@ class WeightSelect(object):
     self.input['kT'] = bokeh.models.Slider(**self.kT_params)
     self.input['Eref'] = bokeh.models.Slider(**self.Eref_params)
     
-    for key, widget in self.input.iteritems():
+    for key, widget in six.iteritems(self.input):
       widget.on_change('value', self._update_wvalue)
     
     # create select action input
@@ -1768,8 +1767,7 @@ class WeightSelect(object):
       self.fit_input["weight"]["kwargs"]["kT"] = self.input['kT'].value
       if self.select_method.value == ["wEref"]:
         self.fit_input["weight"]["kwargs"]["Eref"] = self.input['Eref'].value
-      with open(self.input_filename, 'w') as f:
-        json.dump(self.fit_input, f, indent=2)
+      compat.dump(json, self.fit_input, self.input_filename, 'w', indent=2)
       self.msg.value = "Saved input file: " + self.input_filename
     except Exception, e:
       self.msg.value = str(e)
@@ -1959,7 +1957,7 @@ class ECISelection(object):
     for index, indiv in enumerate(self.hall):
       for bfunc in indiv.eci:
         eci[bfunc[0], index] = bfunc[1]
-    self.eci = pandas.DataFrame(eci, columns=[str(i) for i in xrange(len(self.hall))])
+    self.eci = pandas.DataFrame(eci, columns=[str(i) for i in range(len(self.hall))])
     
     self.src = None
 
@@ -2018,9 +2016,9 @@ class ECISelect(object):
       """
       Change viewed individual on tap
       """
-      print "tap!"
+      print("tap!")
       if len(sel.src.selected['1d']['indices']) == 1:
-        print "update!"
+        print("update!")
         index = sel.src.selected['1d']['indices'][0]
         sel.eci_src.data["current"] = sel.eci_src.data[str(index)]
     

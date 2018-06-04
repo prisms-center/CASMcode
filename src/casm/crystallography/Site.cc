@@ -224,6 +224,12 @@ namespace CASM {
     return (compare_type(test_site) && Coordinate::operator==(test_site));
   }
 
+  //*******************************************************************************************
+
+  bool Site::almost_equal(const Site &test_site) const {
+    return (compare_type(test_site) && dist(test_site) < lattice().tol());
+  }
+
   //****************************************************
 
   bool Site::contains(const std::string &name) const {
@@ -428,9 +434,9 @@ namespace CASM {
    */
   //****************************************************
 
-  void Site::print(std::ostream &stream) const {
+  void Site::print(std::ostream &stream, Eigen::IOFormat format) const {
     //site_occupant().occ().print(stream, *this, SD_is_on);
-    Coordinate::print(stream);
+    Coordinate::print(stream, 0, format);
     stream << " ";
     site_occupant().print(stream);
     stream << std::flush;
@@ -443,9 +449,9 @@ namespace CASM {
    */
   //****************************************************
 
-  void Site::print_occ(std::ostream &stream) const {
+  void Site::print_occ(std::ostream &stream, Eigen::IOFormat format) const {
     //site_occupant().occ().print(stream, *this, SD_is_on);
-    Site::print(stream);
+    Site::print(stream, format);
     stream << " :: ";
     site_occupant().print_occ(stream);
     stream << std::flush;

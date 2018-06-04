@@ -1,4 +1,7 @@
 #!/bin/bash
+GROUP=kinetics
 export PATH=@abs_top_builddir@:$PATH
 cd @abs_top_srcdir@
-@abs_top_builddir@/casm_unit_kinetics --log_level=test_suite --catch_system_errors=no
+mkdir -p @abs_top_srcdir@/tests/unit/test_projects
+: ${TEST_FLAGS:="--log_level=test_suite --catch_system_errors=no"}
+@abs_top_builddir@/casm_unit_$GROUP ${TEST_FLAGS}

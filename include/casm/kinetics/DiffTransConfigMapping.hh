@@ -7,6 +7,7 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
   class Supercell;
@@ -183,7 +184,7 @@ namespace CASM {
 
   private:
 
-    std::vector<BasicStructure<Site>> _get_structures(const fs::path &pos_path) const;
+    std::vector<Structure> _get_structures(const fs::path &pos_path) const;
 
   private:
 

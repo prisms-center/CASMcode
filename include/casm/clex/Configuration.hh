@@ -438,7 +438,7 @@ namespace CASM {
 
   private:
 
-    friend class Comparisons<Calculable<CRTPBase<Configuration>>>;
+    friend struct Comparisons<Calculable<CRTPBase<Configuration>>>;
     friend class DB::Named<CRTPBase<Configuration>>;
 
     std::string generate_name_impl() const;

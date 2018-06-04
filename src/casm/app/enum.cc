@@ -23,11 +23,11 @@ namespace CASM {
       m_desc.add_options()
       ("help,h", "Print help message.")
       ("desc",
-       po::value<std::vector<std::string> >(&m_desc_vec)->multitoken()->zero_tokens(),
+       po::value<std::vector<std::string> >(&m_desc_vec)->multitoken()->zero_tokens()->value_name(ArgHandler::enummethod()),
        "Print extended usage description. "
        "Use '--desc MethodName [MethodName2...]' for detailed option description. "
        "Partial matches of method names will be included.")
-      ("method,m", po::value<std::string>(&m_method), "Method to use: Can use number shortcuts in this option.")
+      ("method,m", po::value<std::string>(&m_method)->value_name(ArgHandler::enummethod()), "Method to use: Can use number shortcuts in this option.")
       ("min", po::value<int>(&m_min_volume)->default_value(1), "Min volume")
       ("max", po::value<int>(&m_max_volume), "Max volume")
       ("filter",
@@ -43,6 +43,7 @@ namespace CASM {
       add_input_suboption(required);
       add_scelnames_suboption();
       add_confignames_suboption();
+      add_dry_run_suboption();
 
       return;
     }

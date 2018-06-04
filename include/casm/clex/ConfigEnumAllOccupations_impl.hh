@@ -2,7 +2,7 @@
 #define CASM_ConfigEnumAllOccupations_impl
 
 #include "casm/clex/ConfigEnumAllOccupations.hh"
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 
 namespace CASM {
 
@@ -11,7 +11,8 @@ namespace CASM {
     const PrimClex &primclex,
     ScelIterator begin,
     ScelIterator end,
-    const std::vector<std::string> &filter_expr) {
+    const std::vector<std::string> &filter_expr,
+    bool dry_run) {
 
     auto lambda = [&](const Supercell & scel) {
       return notstd::make_unique<ConfigEnumAllOccupations>(scel);
@@ -23,7 +24,8 @@ namespace CASM {
                        begin,
                        end,
                        lambda,
-                       filter_expr);
+                       filter_expr,
+                       dry_run);
 
     return returncode;
   }

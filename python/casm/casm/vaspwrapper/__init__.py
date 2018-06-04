@@ -1,13 +1,13 @@
 """A wrapper for running vasp through casm"""
-from vaspwrapper import VaspWrapperError, read_settings, write_settings, \
+from casm.vaspwrapper.vaspwrapper import VaspWrapperError, read_settings, write_settings, \
   vasp_input_file_names
-from relax import Relax
-from neb import Neb
-from converge import Converge
+from casm.vaspwrapper.converge import Converge
+from casm.vaspwrapper.neb import Neb
+from casm.vaspwrapper.relax import Relax
 __all__ = [
-  'Relax',
-  'Neb',
   'Converge',
+  'Neb',
+  'Relax',
   'VaspWrapperError',
   'read_settings',
   'write_settings',

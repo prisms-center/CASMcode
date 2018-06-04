@@ -93,7 +93,6 @@ namespace CASM {
   void Structure::generate_factor_group() const {
     m_factor_group.clear();
     m_factor_group.set_lattice(lattice());
-    //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &m_factor_group << "\n";
     BasicStructure<Site>::generate_factor_group(m_factor_group);
     return;
   }
@@ -128,10 +127,10 @@ namespace CASM {
   //************************************************************
 
   /// Returns an Array of each *possible* Specie in this Structure
-  std::vector<AtomSpecie> Structure::struc_specie() const {
+  std::vector<AtomSpecies> Structure::struc_species() const {
 
     std::vector<Molecule> tstruc_molecule = struc_molecule();
-    std::vector<AtomSpecie> tstruc_specie;
+    std::vector<AtomSpecies> tstruc_species;
 
     Index i, j;
 
@@ -139,13 +138,13 @@ namespace CASM {
     for(i = 0; i < tstruc_molecule.size(); i++) {
       // For each atomposition in the molecule
       for(j = 0; j < tstruc_molecule[i].size(); j++) {
-        if(!contains(tstruc_specie, tstruc_molecule[i].atom(j).specie())) {
-          tstruc_specie.push_back(tstruc_molecule[i].atom(j).specie());
+        if(!contains(tstruc_species, tstruc_molecule[i].atom(j).species())) {
+          tstruc_species.push_back(tstruc_molecule[i].atom(j).species());
         }
       }
     }
 
-    return tstruc_specie;
+    return tstruc_species;
   }
 
   //************************************************************
@@ -170,10 +169,25 @@ namespace CASM {
     return tstruc_molecule;
   }
 
+  /// Returns an Array of each *possible* AtomSpecie in this Structure
+  std::vector<std::string> Structure::struc_species_name() const {
+
+    // get AtomSpecie allowed in struc
+    std::vector<AtomSpecies> struc_spec = struc_species();
+
+    // store AtomSpecie names in vector
+    std::vector<std::string> struc_spec_name;
+    for(int i = 0; i < struc_spec.size(); i++) {
+      struc_spec_name.push_back(struc_spec[i].name());
+    }
+
+    return struc_spec_name;
+  }
+
   /// Returns an Array of each *possible* Molecule in this Structure
   std::vector<std::string> Structure::struc_molecule_name() const {
 
-    // get Molecule allowed in prim, and how many there are
+    // get Molecule allowed in struc
     std::vector<Molecule> struc_mol = struc_molecule();
 
     // store Molecule names in vector
@@ -187,24 +201,24 @@ namespace CASM {
 
   //************************************************************
 
-  /// Returns a list of how many of each specie exist in this Structure
-  ///   The Specie types are ordered according to struc_specie()
-  Eigen::VectorXi Structure::num_each_specie() const {
+  /// Returns a list of how many of each species exist in this Structure
+  ///   The Specie types are ordered according to struc_species()
+  Eigen::VectorXi Structure::num_each_species() const {
 
-    std::vector<AtomSpecie> tstruc_specie = struc_specie();
-    Eigen::VectorXi tnum_each_specie = Eigen::VectorXi::Zero(tstruc_specie.size());
+    std::vector<AtomSpecies> tstruc_species = struc_species();
+    Eigen::VectorXi tnum_each_species = Eigen::VectorXi::Zero(tstruc_species.size());
 
     Index i, j;
     // For each site
     for(i = 0; i < basis().size(); i++) {
       // For each atomposition in the molecule on the site
       for(j = 0; j < basis()[i].occ().size(); j++) {
-        // Count the present specie
-        tnum_each_specie(find_index(tstruc_specie, basis()[i].occ().atom(j).specie()))++;
+        // Count the present species
+        tnum_each_species(find_index(tstruc_species, basis()[i].occ().atom(j).species()))++;
       }
     }
 
-    return tnum_each_specie;
+    return tnum_each_species;
   }
 
   //************************************************************
@@ -328,7 +342,6 @@ namespace CASM {
         }
       }
     }
-    //std::cout << "WORKING ON FACTOR GROUP " << &m_factor_group << " for structure with volume " << prim_grid.size() << ":\n";
     //trans_and_expand primitive factor_group
     for(i = 0; i < prim.factor_group().size(); i++) {
       if(latvec_pg.find_no_trans(prim.factor_group()[i]) == latvec_pg.size()) {
@@ -349,7 +362,6 @@ namespace CASM {
 #endif
       m_factor_group.invalidate_multi_tables();
     }
-    //std::cout << "Final size is: " << m_factor_group.size() << "\n";
     update();
 
     return;
@@ -430,7 +442,6 @@ namespace CASM {
       basis[i].site_occupant.set_value(-1);
     }
     */
-    //std::cout << "finish reset()" << std::endl;
     return;
   }
 
@@ -556,9 +567,8 @@ namespace CASM {
       operbasis.clear();
       for(Index b = 0; b < basis().size(); b++) {
         operbasis.push_back(relaxed_factors[rf]*basis()[b]);
-        operbasis.back().print(std::cout);
-        std::cout << std::endl;
       }
+
       //Now that you have a transformed basis, find the closest mapping of atoms
       //Then average the distance and add it to the average basis
       for(Index b = 0; b < basis().size(); b++) {
@@ -576,6 +586,7 @@ namespace CASM {
       }
 
     }
+    set_basis(avg_basis);
     //generate_factor_group();
     update();
     return;
@@ -595,7 +606,8 @@ namespace CASM {
     double orig_tol = lattice().tol();
     m_lattice.set_tol(tolerance);
     generate_factor_group();
-    symmetrize(factor_group());
+    SymGroup g = factor_group();
+    symmetrize(g);
     m_lattice.set_tol(orig_tol);
     return;
   }

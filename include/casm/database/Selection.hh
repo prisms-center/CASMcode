@@ -8,6 +8,21 @@
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/casm_io/DataFormatterDecl.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/EnumIO.hh"
+
+namespace CASM {
+  namespace DB {
+    enum class SELECTION_TYPE {
+      MASTER, ALL, NONE, EMPTY, CALCULATED
+    };
+
+    ENUM_IO_DECL(CASM::DB::SELECTION_TYPE)
+  }
+  template<> inline std::string singleline_enum_help<DB::SELECTION_TYPE>() {
+    return standard_singleline_enum_help<DB::SELECTION_TYPE>(to_string(DB::SELECTION_TYPE::MASTER), "filename");
+  }
+  ENUM_TRAITS(DB::SELECTION_TYPE)
+}
 
 namespace CASM {
 
@@ -81,7 +96,6 @@ namespace CASM {
       BaseIterator m_it;
       bool m_selected_only;
     };
-
 
     /// Provides a means of selecting and iterating over a subset of objects in
     /// a database

@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   // Make PrimPeriodicIntegralClusterOrbit
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-  fs::path difftrans_path = "tests/unit/kinetics/diff_trans.json";
+  fs::path difftrans_path = "tests/unit/kinetics/FCCTernary_diff_trans_0.json";
   jsonParser diff_trans_json {difftrans_path};
   auto end = make_prim_periodic_orbits(
                primclex.prim(),

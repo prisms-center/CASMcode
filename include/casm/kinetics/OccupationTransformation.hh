@@ -11,7 +11,7 @@ namespace CASM {
 
   class Configuration;
   class SymOp;
-  class AtomSpecie;
+  class AtomSpecies;
   class Molecule;
 
   namespace Kinetics {
@@ -63,13 +63,13 @@ namespace CASM {
 
   }
 
-  std::map<AtomSpecie, Index> empty_specie_count(const Structure &prim);
+  std::map<AtomSpecies, Index> empty_species_count(const Structure &prim);
 
   template<typename OccTransfIt>
-  std::map<AtomSpecie, Index> from_specie_count(OccTransfIt begin, OccTransfIt end);
+  std::map<AtomSpecies, Index> from_species_count(OccTransfIt begin, OccTransfIt end);
 
   template<typename OccTransfIt>
-  std::map<AtomSpecie, Index> to_specie_count(OccTransfIt begin, OccTransfIt end);
+  std::map<AtomSpecies, Index> to_species_count(OccTransfIt begin, OccTransfIt end);
 
 
   /// \brief Write OccupationTransformation to JSON object
@@ -92,7 +92,7 @@ namespace CASM {
     Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = INTEGRAL) :
       PrinterBase(_indent_space, _delim, _mode) {}
 
-    void print(const Element &element, std::ostream &out);
+    void print(const Element &element, Log &out);
   };
 }
 

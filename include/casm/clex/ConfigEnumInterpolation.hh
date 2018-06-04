@@ -1,7 +1,7 @@
 #ifndef CASM_ConfigEnumInterpolation
 #define CASM_ConfigEnumInterpolation
 
-#include "casm/container/RandomAccessEnumerator.hh"
+#include "casm/enumerator/RandomAccessEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 
 extern "C" {
@@ -28,7 +28,7 @@ namespace CASM {
     }
 
     static const std::string enumerator_name;
-    static const std::string interface_help;
+    static std::string interface_help();
     static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
   private:

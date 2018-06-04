@@ -33,7 +33,7 @@ namespace CASM {
       ("orbits", "Pretty-print orbit prototypes")
       ("functions", "Pretty-print prototype cluster functions for each orbit")
       ("clusters", "Pretty-print all clusters")
-      ("clex", po::value<std::string>(), "Name of the cluster expansion using the basis set")
+      ("clex", po::value<std::string>()->value_name(ArgHandler::clex()), "Name of the cluster expansion using the basis set")
       ("force,f", "Force overwrite");
       return;
     }
@@ -183,8 +183,16 @@ namespace CASM {
           args.log() << std::endl;
           std::string orbitname = bspecs_json["diff_trans"].get<std::string>();
           PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
+
+          const SymGroup &prim_grp = primclex.prim().factor_group();
+          PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(primclex.crystallography_tol());
+          SymGroup generating_grp {
+            make_invariant_subgroup(dtorbit.prototype(), prim_grp, dt_sym_compare)};
+
           make_local_orbits(
             dtorbit.prototype(),
+            generating_grp,
+            LocalSymCompare<IntegralCluster>(primclex.crystallography_tol()),
             local_bspecs_json,
             alloy_sites_filter,
             primclex.crystallography_tol(),

@@ -24,16 +24,16 @@ namespace test {
         0.000000000000, 0.000000000000, 5.168678340000;
 
     BasicStructure<Site> struc(Lattice(lat.transpose()));
-    struc.title = "ZrO";
+    struc.set_title("ZrO");
 
     Molecule O = Molecule::make_atom("O");
     Molecule Zr = Molecule::make_atom("Zr");
     Molecule Va = Molecule::make_vacancy();
 
-    struc.basis.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), FRAC), {Zr}));
-    struc.basis.push_back(Site(Coordinate(Eigen::Vector3d(2. / 3., 1. / 3., 1. / 2.), struc.lattice(), FRAC), {Zr}));
-    struc.basis.push_back(Site(Coordinate(Eigen::Vector3d(1. / 3., 2. / 3., 1. / 4.), struc.lattice(), FRAC), {Va, O}));
-    struc.basis.push_back(Site(Coordinate(Eigen::Vector3d(1. / 3., 2. / 3., 3. / 4.), struc.lattice(), FRAC), {Va, O}));
+    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), FRAC), {Zr}));
+    struc.push_back(Site(Coordinate(Eigen::Vector3d(2. / 3., 1. / 3., 1. / 2.), struc.lattice(), FRAC), {Zr}));
+    struc.push_back(Site(Coordinate(Eigen::Vector3d(1. / 3., 2. / 3., 1. / 4.), struc.lattice(), FRAC), {Va, O}));
+    struc.push_back(Site(Coordinate(Eigen::Vector3d(1. / 3., 2. / 3., 3. / 4.), struc.lattice(), FRAC), {Va, O}));
 
     return struc;
   }
@@ -128,7 +128,7 @@ namespace test {
         auto end = boost::sregex_iterator();
         auto count = std::distance(begin, end);
 
-        BOOST_CHECK_EQUAL(count, 5);
+        BOOST_CHECK_MESSAGE(count == 5, m_p.gets());
       }
 
       // check that you can't overwrite without using -f

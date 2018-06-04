@@ -48,7 +48,7 @@ namespace CASM {
     /// *** Inherited from BasicStructure<Site>
     //std::string title;     // user-specified name of this structure
     //Lattice lattice;     // Lattice vectors that specifies periodicity of the crystal
-    //Array<Site> basis;   // List of basis sites of the crystal.  Each site may host a molecule or a specie
+    //Array<Site> basis;   // List of basis sites of the crystal.  Each site may host a molecule or a species
 
 
 
@@ -80,10 +80,11 @@ namespace CASM {
     SymGroupRep const *basis_permutation_symrep()const;
     SymGroupRepID basis_permutation_symrep_ID()const;
 
-    std::vector<AtomSpecie> struc_specie() const;
+    std::vector<AtomSpecies> struc_species() const;
     std::vector<Molecule> struc_molecule() const;
+    std::vector<std::string> struc_species_name() const;
     std::vector<std::string> struc_molecule_name() const;
-    Eigen::VectorXi num_each_specie() const;
+    Eigen::VectorXi num_each_species() const;
     Eigen::VectorXi num_each_molecule() const;
 
     DoFSet const &dof(std::string const &dof_type) const;
@@ -158,7 +159,7 @@ namespace CASM {
     // ****Input/Output****
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
-    void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag);
+    void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag, double tol);
     //void print_factor_group(std::ostream &stream) const;
 
     bool read_species(); //Ivy 11/27/12

@@ -1,6 +1,6 @@
 #include "casm/kinetics/EnumDiffTransConfigEndpoints.hh"
 
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
@@ -37,18 +37,20 @@ namespace CASM {
 
     const std::string EnumDiffTransConfigEndpoints::enumerator_name = "EnumDiffTransConfigEndpoints";
 
-    const std::string EnumDiffTransConfigEndpoints::interface_help =
-      "EnumDiffTransConfigEndpoints: \n\n"
-      "  selection: string (optional, default="") \n"
-      "    The name of a selection of diff_trans_configs for which to enumerate endpoints \n"
-      "  names: JSON array of strings (optional, default=[]) \n"
-      "    The names of diff_trans_configs for which to enumerate endpoints \n"
-      "  NOTE: although both of these are considered optional one of them must be specified.\n\n"
-      "  Example:\n"
-      "  {\n"
-      "    \"names\": [\"diff_trans/0/SCEL8_2_2_2_0_0_0/2\",\"diff_trans/0/SCEL8_2_2_2_0_0_0/4\"],\n"
-      "    \"selection\": \"dtc_to_calculate\"\n"
-      "  }\n\n";
+    std::string EnumDiffTransConfigEndpoints::interface_help() {
+      return
+        "EnumDiffTransConfigEndpoints: \n\n"
+        "  selection: string (optional, default="") \n"
+        "    The name of a selection of diff_trans_configs for which to enumerate endpoints \n"
+        "  names: JSON array of strings (optional, default=[]) \n"
+        "    The names of diff_trans_configs for which to enumerate endpoints \n"
+        "  NOTE: although both of these are considered optional one of them must be specified.\n\n"
+        "  Example:\n"
+        "  {\n"
+        "    \"names\": [\"diff_trans/0/SCEL8_2_2_2_0_0_0/2\",\"diff_trans/0/SCEL8_2_2_2_0_0_0/4\"],\n"
+        "    \"selection\": \"dtc_to_calculate\"\n"
+        "  }\n\n";
+    }
 
     int EnumDiffTransConfigEndpoints::run(const PrimClex &primclex,
                                           const jsonParser &kwargs,

@@ -1,7 +1,8 @@
 #ifndef CASM_DiffTransConfigEnumOccPerturbations
 #define CASM_DiffTransConfigEnumOccPerturbations
 
-#include "casm/container/InputEnumerator.hh"
+#include <iterator>
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/container/Counter.hh"
 #include "casm/symmetry/Orbit.hh"
 #include "casm/symmetry/ScelOrbitGeneration.hh"
@@ -17,6 +18,9 @@ namespace CASM {
     /// \brief Enumerate DiffTransConfiguration for a particular DiffusionTransformation,
     ///        set of local clusters, and a particular initial Configuration
     ///
+    /// Note:
+    /// - DiffTransConfiguration output are unique and canonical
+    ///
     /// Algorithm:
     /// - Make suborbit generators of the specified diff_trans_orbit due to
     ///   symmetry breaking by the background_config
@@ -27,7 +31,10 @@ namespace CASM {
     ///   of the supercell factor group that leaves the 'base' diff trans invariant
     ///   is the 'diff_trans_g'.
     /// - For each 'base' diff trans, generate local orbits using the base config
-    ///   & diff trans invariant group
+    ///   & diff trans invariant group. Note: local orbits are actually
+    ///   ScelPeriodicOrbit<IntegralCluster> because we take supercell symmetry
+    ///   into account. This means there may be more perturbations then the local
+    ///   basis functions may indicate.
     /// - For each local orbit, enumerate perturbations. Only include perturbations
     ///   that modify every site in the cluster to avoid repeats.
     /// - The subgroup of the 'diff_trans_g' that leaves the local orbit protype
@@ -55,60 +62,22 @@ namespace CASM {
       }
 
       static const std::string enumerator_name;
-      static const std::string interface_help;
+      static std::string interface_help();
 
-      static int run(const PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
+      /// Enumerate DiffTransConfigEnumOccPerturbations into the project database
+      static int run(
+        const PrimClex &primclex,
+        const jsonParser &_kwargs,
+        const Completer::EnumOption &enum_opt);
 
-    private:
+      /// Enumerate DiffTransConfigEnumOccPerturbations into any std::set-like database
+      template<typename DatabaseType>
+      static int run(
+        const PrimClex &primclex,
+        const jsonParser &kwargs,
+        const Completer::EnumOption &enum_opt,
+        DatabaseType &db);
 
-      /// Implements increment: generate the next DiffTransConfiguration
-      void increment() override;
-
-      /// Crystallography tolerance
-      double _tol() const;
-
-      /// Supercell
-      const Structure &_prim() const;
-
-      /// Supercell
-      const Supercell &_supercell() const;
-
-
-      /// Determines unique canonical diff trans for given background config
-      void _init_base();
-
-      /// Generate local orbits for current base diff trans
-      void _init_local_orbits();
-
-      /// Generate the 'from_value' for the perturbation,
-      ///   the 'to_value' counter for the perturbation,
-      ///   and the local orbit prototype invariant subgroup
-      ///   (w/ respect to base diff trans invariant group)
-      void _init_perturbations_data();
-
-      /// Generate the current OccPerturbation (non-canonical) and whether it is valid
-      ///
-      /// - If not valid, the OccPerturbation itself may not be complete
-      std::pair<OccPerturbation, bool> _current_perturb() const;
-
-      /// Apply perturbation, find canonical 'from_config' and set current DiffTransConfiguration
-      void _set_current(const OccPerturbation &perturb);
-
-
-      /// The background configuration which will be perturbed
-      const Configuration m_background_config;
-
-      /// The DiffusingTransformation to be applied in all symmetrically unique
-      /// places in the background config
-      const PrimPeriodicDiffTransOrbit m_diff_trans_orbit;
-
-      /// Include the base DiffTransConfiguration in the output
-      bool m_include_unperturbed;
-
-      /// Avoid repeating perturbations
-      bool m_skip_subclusters;
-
-    public:
       /// Stores base DiffTrans and Config to enable construction of DiffTransConfig
       /// in canonical form
       struct Base {
@@ -132,7 +101,83 @@ namespace CASM {
         SymGroup generating_sym_g;
       };
 
+      /// Stores the current OccPertubation (non-canonical) and its validity
+      struct CurrentPerturbation {
+        CurrentPerturbation(const OccPerturbation &_perturb) :
+          perturb(_perturb),
+          is_not_subcluster(false),
+          is_canonical(false) {}
+
+        OccPerturbation perturb;
+        bool is_not_subcluster;
+        bool is_canonical;
+      };
+
+      const std::vector<Base> &base() const;
+
+      Index base_index() const;
+
+      const std::vector<ScelPeriodicOrbit<IntegralCluster>> &local_orbit() const;
+
+      Index local_orbit_index() const;
+
+      Index occ_counter_index() const;
+
+      void partial_increment(bool complete_perturb = false);
+
+      bool check_increment();
+
+      /// Return the current OccPerturbation (non-canonical) and whether it is valid
+      const CurrentPerturbation &current_perturb() const;
+
     private:
+
+      /// Implements increment: generate the next DiffTransConfiguration
+      void increment() override;
+
+      /// Crystallography tolerance
+      double _tol() const;
+
+      /// Supercell
+      const Structure &_prim() const;
+
+      /// Supercell
+      const Supercell &_supercell() const;
+
+      /// Determines unique canonical diff trans for given background config
+      void _init_base();
+
+      /// Generate local orbits for current base diff trans
+      void _init_local_orbits();
+
+      /// Generate the 'from_value' for the perturbation,
+      ///   the 'to_value' counter for the perturbation,
+      ///   and the local orbit prototype invariant subgroup
+      ///   (w/ respect to base diff trans invariant group)
+      void _init_perturbations_data();
+
+      /// Generate the current OccPerturbation (non-canonical) and whether it is valid
+      ///
+      /// - If not valid, the OccPerturbation itself may not be complete
+      void _update_current_perturb(bool complete_perturb = false);
+
+      /// Apply perturbation, find canonical 'from_config' and set current DiffTransConfiguration
+      void _set_current(const OccPerturbation &perturb);
+
+
+      /// The background configuration which will be perturbed
+      const Configuration m_background_config;
+
+      /// The DiffusingTransformation to be applied in all symmetrically unique
+      /// places in the background config
+      const PrimPeriodicDiffTransOrbit m_diff_trans_orbit;
+
+      /// Include the base DiffTransConfiguration in the output
+      bool m_include_unperturbed;
+
+      /// Avoid repeating perturbations
+      bool m_skip_subclusters;
+
       /// Vector of bases to be perturbed
       /// - Each represents the DiffusionTransformation in unique local
       ///   environment of the background config, with the DiffTrans in its
@@ -149,10 +194,10 @@ namespace CASM {
       ScelPeriodicSymCompare<IntegralCluster> m_scel_sym_compare;
 
       /// Local orbits for the current base diff trans
-      std::vector<LocalOrbit<IntegralCluster>> m_local_orbit;
+      std::vector<ScelPeriodicOrbit<IntegralCluster>> m_local_orbit;
 
       /// The current local orbit
-      std::vector<LocalOrbit<IntegralCluster>>::iterator m_local_orbit_it;
+      std::vector<ScelPeriodicOrbit<IntegralCluster>>::iterator m_local_orbit_it;
 
       /// The subgroup of the current diff trans group that leaves the local orbit prototype invariant
       /// - i.e. The subgroup of m_base_it->diff_trans_g that leaves
@@ -166,14 +211,16 @@ namespace CASM {
       /// Counts over 'to_value' for the perturbation
       EigenCounter<Eigen::VectorXi> m_occ_counter;
 
+      /// Counts over m_occ_counter
+      Index m_occ_counter_index;
+
       /// The base DiffTransConfiguration with the current perturbation applied
       notstd::cloneable_ptr<DiffTransConfiguration> m_current;
+
+      /// Current OccPerturbation and its validity
+      CurrentPerturbation m_curr;
+
     };
-
-    bool has_local_bubble_overlap(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, const Supercell &scel);
-
-    std::vector<Supercell> viable_supercells(std::vector<LocalOrbit<IntegralCluster>> &local_orbits, std::vector<Supercell>);
-
 
   }
 }

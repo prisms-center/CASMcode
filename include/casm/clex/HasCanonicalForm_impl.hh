@@ -343,6 +343,14 @@ namespace CASM {
   }
 
   template<typename Base>
+  Lattice SupercellCanonicalForm<Base>::canonical_lattice() const {
+    return canonical_equivalent_lattice(
+             derived().lattice(),
+             derived().prim().point_group(),
+             derived().crystallography_tol());
+  }
+
+  template<typename Base>
   const Supercell &SupercellCanonicalForm<Base>::canonical_form() const {
     if(!m_canonical) {
       m_canonical = &*derived().insert().first;

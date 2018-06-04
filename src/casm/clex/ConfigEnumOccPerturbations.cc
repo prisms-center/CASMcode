@@ -7,7 +7,7 @@
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_ConfigEnumOccPerturbations_interface() {
@@ -19,7 +19,8 @@ namespace CASM {
 
   const std::string ConfigEnumOccPerturbations::enumerator_name = "ConfigEnumOccPerturbations";
 
-  const std::string ConfigEnumOccPerturbations::interface_help =
+  std::string ConfigEnumOccPerturbations::interface_help() {
+    return
     "ConfigEnumOccPerturbations: \n\n"
 
     "  background_configs: JSON array of strings \n "
@@ -37,6 +38,9 @@ namespace CASM {
     "    be perturbed. The string \"local_cspecs_filepath\" should be the file "
     "    path to a JSON file containing the local cspecs.\n\n"
 
+    "  dry_run: bool (optional, default=false)\n"
+    "    Perform dry run.\n\n"
+
     "  Example:\n"
     "  {\n"
     "   \"background_configs\":[\"SCEL8_2_2_2_0_0_0/2\"],\n"
@@ -51,6 +55,7 @@ namespace CASM {
     "      }\n"
     "    }\n"
     "  }\n\n";
+  }
 
   int ConfigEnumOccPerturbations::run(
     const PrimClex &primclex,

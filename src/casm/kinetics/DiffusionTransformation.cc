@@ -22,7 +22,7 @@ namespace CASM {
   namespace Kinetics {
 
     namespace {
-      std::ostream &operator<<(std::ostream &sout, const std::map<AtomSpecie, Index> &count) {
+      std::ostream &operator<<(std::ostream &sout, const std::map<AtomSpecies, Index> &count) {
         for(const auto &t : count) {
           sout << "  " << t.first.name() << ": " << t.second << std::endl;
         }
@@ -32,36 +32,36 @@ namespace CASM {
 
     // SpecieLocation
 
-    SpecieLocation::SpecieLocation(const UnitCellCoord &_uccoord, Index _occ, Index _pos) :
+    SpeciesLocation::SpeciesLocation(const UnitCellCoord &_uccoord, Index _occ, Index _pos) :
       uccoord(_uccoord),
       occ(_occ),
       pos(_pos) {}
 
-    bool SpecieLocation::operator<(const SpecieLocation &B) const {
+    bool SpeciesLocation::operator<(const SpeciesLocation &B) const {
       return _tuple() < B._tuple();
     }
 
-    const Molecule &SpecieLocation::mol() const {
+    const Molecule &SpeciesLocation::mol() const {
       return uccoord.sublat_site().site_occupant()[occ];
     }
 
-    const AtomSpecie &SpecieLocation::specie() const {
-      return mol().atom(pos).specie();
+    const AtomSpecies &SpeciesLocation::species() const {
+      return mol().atom(pos).species();
     }
 
-    std::tuple<UnitCellCoord, Index, Index> SpecieLocation::_tuple() const {
+    std::tuple<UnitCellCoord, Index, Index> SpeciesLocation::_tuple() const {
       return std::make_tuple(uccoord, occ, pos);
     }
 
     /// \brief Print DiffTransInvariants
-    std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj) {
+    std::ostream &operator<<(std::ostream &sout, const SpeciesLocation &obj) {
       sout << obj.uccoord << " : " << obj.occ << " " << obj.pos;
       return sout;
     }
 
   }
 
-  jsonParser &to_json(const Kinetics::SpecieLocation &obj, jsonParser &json) {
+  jsonParser &to_json(const Kinetics::SpeciesLocation &obj, jsonParser &json) {
     json.put_obj();
     json["uccoord"] = obj.uccoord;
     json["occ"] = obj.occ;
@@ -69,15 +69,15 @@ namespace CASM {
     return json;
   }
 
-  Kinetics::SpecieLocation jsonConstructor<Kinetics::SpecieLocation>::from_json(const jsonParser &json, const Structure &prim) {
-    return Kinetics::SpecieLocation {
+  Kinetics::SpeciesLocation jsonConstructor<Kinetics::SpeciesLocation>::from_json(const jsonParser &json, const Structure &prim) {
+    return Kinetics::SpeciesLocation {
       jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
       json["occ"].get<Index>(),
       json["pos"].get<Index>()
     };
   }
 
-  void from_json(Kinetics::SpecieLocation &obj, const jsonParser &json) {
+  void from_json(Kinetics::SpeciesLocation &obj, const jsonParser &json) {
     from_json(obj.uccoord, json["uccoord"]);
     from_json(obj.occ, json["occ"]);
     from_json(obj.pos, json["pos"]);
@@ -89,8 +89,8 @@ namespace CASM {
 
     // SpecieTrajectory
 
-    SpecieTrajectory::SpecieTrajectory(const SpecieLocation &_from,
-                                       const SpecieLocation &_to) :
+    SpecieTrajectory::SpecieTrajectory(const SpeciesLocation &_from,
+                                       const SpeciesLocation &_to) :
       from(_from),
       to(_to) {}
 
@@ -106,8 +106,8 @@ namespace CASM {
       return *this;
     }
 
-    bool SpecieTrajectory::specie_types_map() const {
-      return from.specie() == to.specie();
+    bool SpecieTrajectory::species_types_map() const {
+      return from.species() == to.species();
     }
 
     bool SpecieTrajectory::is_no_change() const {
@@ -122,7 +122,7 @@ namespace CASM {
       from.uccoord.apply_sym(op);
       to.uccoord.apply_sym(op);
 
-      //MOLECULE_SUPPORT: apply permutation to to/from_value & to/from_specie_index
+      //MOLECULE_SUPPORT: apply permutation to to/from_value & to/from_species_index
       return *this;
     }
 
@@ -131,7 +131,7 @@ namespace CASM {
       swap(from, to);
     }
 
-    std::tuple<SpecieLocation, SpecieLocation> SpecieTrajectory::_tuple() const {
+    std::tuple<SpeciesLocation, SpeciesLocation> SpecieTrajectory::_tuple() const {
       return std::make_tuple(from, to);
     }
   }
@@ -145,8 +145,8 @@ namespace CASM {
 
   Kinetics::SpecieTrajectory jsonConstructor<Kinetics::SpecieTrajectory>::from_json(const jsonParser &json, const Structure &prim) {
     return Kinetics::SpecieTrajectory {
-      jsonConstructor<Kinetics::SpecieLocation>::from_json(json["from"], prim),
-      jsonConstructor<Kinetics::SpecieLocation>::from_json(json["to"], prim)
+      jsonConstructor<Kinetics::SpeciesLocation>::from_json(json["from"], prim),
+      jsonConstructor<Kinetics::SpeciesLocation>::from_json(json["to"], prim)
     };
   }
 
@@ -164,13 +164,13 @@ namespace CASM {
     DiffTransInvariants::DiffTransInvariants(
       const DiffusionTransformation &trans) :
       cluster_invariants(trans.cluster().invariants()),
-      specie_count(trans.specie_count()) {}
+      species_count(trans.species_count()) {}
   }
 
   /// \brief Check if DiffTransInvariants are equal
   bool almost_equal(const Kinetics::DiffTransInvariants &A, const Kinetics::DiffTransInvariants &B, double tol) {
     return almost_equal(A.cluster_invariants, B.cluster_invariants, tol) &&
-           A.specie_count == B.specie_count;
+           A.species_count == B.species_count;
   }
 
   /// \brief Compare DiffTransInvariants
@@ -181,14 +181,14 @@ namespace CASM {
     if(compare(B.cluster_invariants, A.cluster_invariants, tol)) {
       return false;
     }
-    return A.specie_count < B.specie_count;
+    return A.species_count < B.species_count;
   }
 
   /// \brief Print DiffTransInvariants
   std::ostream &operator<<(std::ostream &sout, const Kinetics::DiffTransInvariants &obj) {
     sout << obj.cluster_invariants;
-    if(obj.specie_count.size() > 0) {
-      for(const auto &t : obj.specie_count) {
+    if(obj.species_count.size() > 0) {
+      for(const auto &t : obj.species_count) {
         sout << " " << t.first.name() << ":" << t.second;
       }
     }
@@ -208,11 +208,12 @@ namespace CASM {
     }
 
     DiffusionTransformation &DiffusionTransformation::operator+=(UnitCell frac) {
+      m_cluster.reset();
       for(auto &t : m_occ_transform) {
         t += frac;
       }
 
-      for(auto &t : m_specie_traj) {
+      for(auto &t : m_species_traj) {
         t += frac;
       }
       return *this;
@@ -223,7 +224,7 @@ namespace CASM {
     /// Returns true if:
     /// - number of species of each type remains constant
     bool DiffusionTransformation::is_valid_occ_transform() const {
-      return _from_specie_count() == _to_specie_count();
+      return _from_species_count() == _to_species_count();
     }
 
     /// \brief Check if valid specie trajectories
@@ -232,17 +233,17 @@ namespace CASM {
     /// - species map to the correct specie type for occupation values,
     /// - no indivisble molecules are broken up,
     /// - some change occurs on every unitcell site (not a sub-hopcluster)
-    bool DiffusionTransformation::is_valid_specie_traj() const {
-      return specie_types_map() && !breaks_indivisible_mol() && !is_subcluster_transformation();
+    bool DiffusionTransformation::is_valid_species_traj() const {
+      return species_types_map() && !breaks_indivisible_mol() && !is_subcluster_transformation();
     }
 
     /// \brief Check if any SpecieTrajectory maps a Specie onto the wrong type
-    bool DiffusionTransformation::specie_types_map() const {
+    bool DiffusionTransformation::species_types_map() const {
       return std::all_of(
-               specie_traj().begin(),
-               specie_traj().end(),
+               species_traj().begin(),
+               species_traj().end(),
       [ = ](const SpecieTrajectory & t) {
-        return t.specie_types_map();
+        return t.species_types_map();
       });
     }
 
@@ -250,7 +251,7 @@ namespace CASM {
     bool DiffusionTransformation::breaks_indivisible_mol() const {
 
       // sort by 'from' uccoord (this may not typically be necessary, but let's be safe)
-      auto tmp = specie_traj();
+      auto tmp = species_traj();
       std::sort(tmp.begin(), tmp.end());
 
       // if species from the same 'from' molecule end up on different 'to' molecule (checked via uccoord),
@@ -281,7 +282,7 @@ namespace CASM {
       // sort SpecieTrajectory by 'from' molecule
       typedef std::map<UnitCellCoord, std::vector<SpecieTrajectory> > map_type;
       map_type m;
-      for(const auto &t : m_specie_traj) {
+      for(const auto &t : m_species_traj) {
         m[t.from.uccoord].push_back(t);
       }
 
@@ -296,9 +297,9 @@ namespace CASM {
       return std::any_of(m.begin(), m.end(), is_no_change_mol);
     }
 
-    /// \brief Check if specie_traj() and occ_transform() are consistent
+    /// \brief Check if species_traj() and occ_transform() are consistent
     ///
-    /// - Checks if specie_traj occ indices match occ_transform indices
+    /// - Checks if species_traj occ indices match occ_transform indices
     ///   and that there as many traj as AtomSpecie in a Molecule
     ///
     bool DiffusionTransformation::is_self_consistent() const {
@@ -306,7 +307,7 @@ namespace CASM {
         auto is_from_match = [&](const SpecieTrajectory & traj) {
           return trans.uccoord == traj.from.uccoord && trans.from_mol() == traj.from.mol();
         };
-        auto from_match_count = std::count_if(specie_traj().begin(), specie_traj().end(), is_from_match);
+        auto from_match_count = std::count_if(species_traj().begin(), species_traj().end(), is_from_match);
         if(from_match_count != trans.from_mol().size()) {
           return false;
         }
@@ -314,7 +315,7 @@ namespace CASM {
         auto is_to_match = [&](const SpecieTrajectory & traj) {
           return trans.uccoord == traj.to.uccoord && trans.to_mol() == traj.to.mol();
         };
-        auto to_match_count = std::count_if(specie_traj().begin(), specie_traj().end(), is_to_match);
+        auto to_match_count = std::count_if(species_traj().begin(), species_traj().end(), is_to_match);
         if(from_match_count != trans.to_mol().size()) {
           return false;
         }
@@ -322,13 +323,13 @@ namespace CASM {
       return true;
     }
 
-    /// \brief Check if occ_transform and specie_traj are valid and self consistent
+    /// \brief Check if occ_transform and species_traj are valid and self consistent
     bool DiffusionTransformation::is_valid() const {
-      return is_valid_occ_transform() && is_valid_specie_traj() && is_self_consistent();
+      return is_valid_occ_transform() && is_valid_species_traj() && is_self_consistent();
     }
 
     std::vector<OccupationTransformation> &DiffusionTransformation::occ_transform() {
-      reset_invariants();
+      _reset();
       return m_occ_transform;
     }
 
@@ -336,13 +337,13 @@ namespace CASM {
       return m_occ_transform;
     }
 
-    std::vector<SpecieTrajectory> &DiffusionTransformation::specie_traj() {
-      reset_invariants();
-      return m_specie_traj;
+    std::vector<SpecieTrajectory> &DiffusionTransformation::species_traj() {
+      _reset();
+      return m_species_traj;
     }
 
-    const std::vector<SpecieTrajectory> &DiffusionTransformation::specie_traj() const {
-      return m_specie_traj;
+    const std::vector<SpecieTrajectory> &DiffusionTransformation::species_traj() const {
+      return m_species_traj;
     }
 
     /// \brief IntegralCluster as determined from sites in occ_transform()
@@ -360,16 +361,16 @@ namespace CASM {
     ///
     /// - Uses occ_transform() 'from' specie
     /// - Is equal to 'to' specie count if is_valid_occ_transform() == true
-    const std::map<AtomSpecie, Index> &DiffusionTransformation::specie_count() const {
-      if(!m_specie_count) {
-        m_specie_count = notstd::make_cloneable<std::map<AtomSpecie, Index> >(_from_specie_count());
+    const std::map<AtomSpecies, Index> &DiffusionTransformation::species_count() const {
+      if(!m_species_count) {
+        m_species_count = notstd::make_cloneable<std::map<AtomSpecies, Index> >(_from_species_count());
       }
-      return *m_specie_count;
+      return *m_species_count;
     }
 
     /// \brief Compare DiffusionTransformation
     ///
-    /// - lexicographic comparison of [size, occ_transform, specie_traj], for the sorted
+    /// - lexicographic comparison of [size, occ_transform, species_traj], for the sorted
     ///   versions of this and B.
     bool DiffusionTransformation::operator<(const DiffusionTransformation &B) const {
       return this->sorted()._lt(B.sorted());
@@ -383,7 +384,7 @@ namespace CASM {
 
     /// \brief Puts this in a sorted form, to enable comparisons
     ///
-    /// - the forward and reverse occ_transform and specie_traj are sorted in
+    /// - the forward and reverse occ_transform and species_traj are sorted in
     ///   ascending order
     /// - this becomes the minimum of the forward and reverse
     ///
@@ -435,11 +436,12 @@ namespace CASM {
     }
 
     DiffusionTransformation &DiffusionTransformation::apply_sym(const SymOp &op) {
+      m_cluster.reset();
       for(auto &t : m_occ_transform) {
         t.apply_sym(op);
       }
 
-      for(auto &t : m_specie_traj) {
+      for(auto &t : m_species_traj) {
         t.apply_sym(op);
       }
       return *this;
@@ -455,7 +457,7 @@ namespace CASM {
         t.reverse();
       }
 
-      for(auto &t : m_specie_traj) {
+      for(auto &t : m_species_traj) {
         t.reverse();
       }
     }
@@ -471,7 +473,7 @@ namespace CASM {
     /// \brief Puts this in a sorted form, without considering the reverse
     void DiffusionTransformation::_forward_sort() {
       std::sort(occ_transform().begin(), occ_transform().end());
-      std::sort(specie_traj().begin(), specie_traj().end());
+      std::sort(species_traj().begin(), species_traj().end());
     }
 
     /// \brief Comparison of this and B, without sorting or considering reverse
@@ -497,9 +499,9 @@ namespace CASM {
       }
 
       {
-        auto it = specie_traj().begin();
-        auto B_it = B.specie_traj().begin();
-        for(; it != specie_traj().end(); ++it, ++B_it) {
+        auto it = species_traj().begin();
+        auto B_it = B.species_traj().begin();
+        for(; it != species_traj().end(); ++it, ++B_it) {
           if(*it < *B_it) {
             return true;
           }
@@ -515,21 +517,22 @@ namespace CASM {
     void DiffusionTransformation::_reset() {
       m_cluster.reset();
       reset_invariants();
-      m_specie_count.reset();
+      m_species_count.reset();
     }
 
-    std::map<AtomSpecie, Index> DiffusionTransformation::_from_specie_count() const {
-      return from_specie_count(m_occ_transform.begin(), m_occ_transform.end());
+    std::map<AtomSpecies, Index> DiffusionTransformation::_from_species_count() const {
+      return from_species_count(m_occ_transform.begin(), m_occ_transform.end());
     }
 
-    std::map<AtomSpecie, Index> DiffusionTransformation::_to_specie_count() const {
-      return to_specie_count(m_occ_transform.begin(), m_occ_transform.end());
+    std::map<AtomSpecies, Index> DiffusionTransformation::_to_species_count() const {
+      return to_species_count(m_occ_transform.begin(), m_occ_transform.end());
     }
 
     /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
     std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans) {
       Printer<Kinetics::DiffusionTransformation> printer;
-      printer.print(trans, sout);
+      Log out(sout);
+      printer.print(trans, out);
       return sout;
     }
 
@@ -544,7 +547,7 @@ namespace CASM {
     Eigen::Vector3d vector_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
       double dist = std::numeric_limits<double>::max();
       Eigen::Vector3d result;
-      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
+      for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); it++) {
         //vector from -> input
         Coordinate v1 = (uccoord.coordinate() - it->from.uccoord.coordinate());
         //vector from -> to
@@ -580,7 +583,7 @@ namespace CASM {
     std::pair<UnitCellCoord, Eigen::Vector3d> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
       double dist = std::numeric_limits<double>::max();
       Eigen::Vector3d ret_vec;
-      Structure prim(diff_trans.specie_traj().begin()->from.uccoord.unit());
+      Structure prim(diff_trans.species_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
       for(int i = 0; i < prim.basis().size(); i++) {
         sublat_indices.insert(i);
@@ -593,7 +596,7 @@ namespace CASM {
         sublat_indices.end()
       );
       UnitCell pos(1, 1, 1);
-      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); ++it) {
+      for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); ++it) {
         UnitCellCoord fromcoord = it->from.uccoord;
         UnitCellCoord tocoord = it->to.uccoord;
 
@@ -614,7 +617,7 @@ namespace CASM {
         for(int b = 0; b < prim.basis().size(); b++) {
           UnitCellCoord uccoord(prim, b, *n_it);
           bool in_diff_trans = false;
-          for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
+          for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); it++) {
             if(uccoord == it->from.uccoord || uccoord == it->to.uccoord) {
               in_diff_trans = true;
             }
@@ -654,8 +657,8 @@ namespace CASM {
     /// \brief Determines whether the atoms moving in the diffusion transformation will collide on a linearly interpolated path
     bool path_collision(const DiffusionTransformation &diff_trans) {
       std::vector<SpecieTrajectory> paths_to_check;
-      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); ++it) {
-        if(!is_vacancy(it->from.specie().name())) {
+      for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); ++it) {
+        if(!is_vacancy(it->from.species().name())) {
           paths_to_check.push_back(*it);
         }
       }
@@ -718,13 +721,20 @@ namespace CASM {
   jsonParser &to_json(const Kinetics::DiffusionTransformation &trans, jsonParser &json) {
     json.put_obj();
     json["occ_transform"].put_array(trans.occ_transform().begin(), trans.occ_transform().end());
-    json["specie_traj"].put_array(trans.specie_traj().begin(), trans.specie_traj().end());
+    json["species_traj"].put_array(trans.species_traj().begin(), trans.species_traj().end());
     return json;
   }
 
   Kinetics::DiffusionTransformation jsonConstructor<Kinetics::DiffusionTransformation>::from_json(const jsonParser &json, const Structure &prim) {
     Kinetics::DiffusionTransformation trans {prim};
     CASM::from_json(trans, json, prim);
+    return trans;
+  }
+
+  Kinetics::DiffusionTransformation jsonConstructor<Kinetics::DiffusionTransformation>::from_json(
+    const jsonParser &json, const PrimClex &primclex) {
+    Kinetics::DiffusionTransformation trans {primclex.prim()};
+    CASM::from_json(trans, json, primclex.prim());
     return trans;
   }
 
@@ -740,44 +750,115 @@ namespace CASM {
         json["occ_transform"],
         json["occ_transform"][0].get<Kinetics::OccupationTransformation>(prim));*/
     }
-    if(json["specie_traj"].size() > 0) {
-      trans.specie_traj().clear();
-      for(auto it = json["specie_traj"].begin(); it != json["specie_traj"].end(); ++it) {
-        trans.specie_traj().push_back(jsonConstructor<Kinetics::SpecieTrajectory>::from_json(*it, prim));
+    if(json["species_traj"].size() > 0) {
+      trans.species_traj().clear();
+      for(auto it = json["species_traj"].begin(); it != json["species_traj"].end(); ++it) {
+        trans.species_traj().push_back(jsonConstructor<Kinetics::SpecieTrajectory>::from_json(*it, prim));
       }
       /*from_json(
-        trans.specie_traj(),
-        json["specie_traj"],
-        json["specie_traj"][0].get<Kinetics::SpecieTrajectory>(prim));*/
+        trans.species_traj(),
+        json["species_traj"],
+        json["species_traj"][0].get<Kinetics::SpecieTrajectory>(prim));*/
     }
   }
 
   const std::string Printer<Kinetics::DiffusionTransformation>::element_name = "DiffusionTransformation";
 
-  void Printer<Kinetics::DiffusionTransformation>::print(const Kinetics::DiffusionTransformation &trans, std::ostream &out) const {
+  void Printer<Kinetics::DiffusionTransformation>::print(const Kinetics::DiffusionTransformation &trans, Log &out) const {
+    if(!out.print()) {
+      return;
+    }
+
     COORD_MODE printer_mode(mode);
 
     if(trans.is_valid()) {
-      for(const auto &traj : trans.specie_traj()) {
-        out << indent() << indent() << indent();
-        out << traj.from.specie().name() + ": " << traj.from << "  ->  " << traj.to;
+      if(mode != INTEGRAL) {
+        // calculate nice widths
+        int name_width = 0;
+        int prec = 7;
+        int width = prec;
+        out.ostream().precision(prec);
+        out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+        for(const auto &traj : trans.species_traj()) {
+          if(traj.from.species().name().length() > name_width) name_width = traj.from.species().name().length();
+          Eigen::Vector3d vec_from, vec_to;
+          if(mode == CART) {
+            vec_from = traj.from.uccoord.coordinate().cart();
+            vec_to = traj.to.uccoord.coordinate().cart();
+          }
+          else {
+            vec_from = traj.from.uccoord.coordinate().frac();
+            vec_to = traj.to.uccoord.coordinate().frac();
+          }
+          width = print_matrix_width(out, vec_from, width);
+          width = print_matrix_width(out, vec_to, width);
+        }
 
-        if(delim)
-          out << delim;
-        out << std::flush;
+        // print
+        Eigen::IOFormat format(prec, width + 1);
+        for(const auto &traj : trans.species_traj()) {
+          out << out.indent_str() << indent();
+          out << std::setw(name_width) << traj.from.species().name() << ": ";
+          {
+            const auto &obj = traj.from;
+            obj.uccoord.coordinate().print(out, 0, format);
+            out << " : " << obj.occ << " " << obj.pos;
+          }
+          out << "  ->  ";
+          {
+            const auto &obj = traj.to;
+            obj.uccoord.coordinate().print(out, 0, format);
+            out << " : " << obj.occ << " " << obj.pos;
+          }
+          if(delim)
+            out << delim;
+          out << std::flush;
+        }
+      }
+      else {
+        // calculate nice widths
+        int name_width = 0;
+        int prec = 1;
+        int width = prec;
+        out.ostream().precision(prec);
+        out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+        for(const auto &traj : trans.species_traj()) {
+          if(traj.from.species().name().length() > name_width) name_width = traj.from.species().name().length();
+          width = print_matrix_width(out, traj.from.uccoord.unitcell(), width);
+          width = print_matrix_width(out, traj.to.uccoord.unitcell(), width);
+        }
+
+        // print
+        Eigen::IOFormat format(prec, width);
+        for(const auto &traj : trans.species_traj()) {
+          out << out.indent_str() << indent();
+          out << std::setw(name_width) << traj.from.species().name() << ": ";
+          {
+            const auto &obj = traj.from;
+            out << obj.uccoord.sublat() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
+          }
+          out << "  ->  ";
+          {
+            const auto &obj = traj.to;
+            out << obj.uccoord.sublat() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
+          }
+          if(delim)
+            out << delim;
+          out << std::flush;
+        }
       }
     }
     else {
-      out << indent() << indent() << indent() << "occupation transformation:" << delim;
+      out << out.indent_str() << indent() << "occupation transformation:" << delim;
       for(const auto &t : trans.occ_transform()) {
         out << t;
       }
-      out << indent() << indent() << indent() << "specie trajectory:" << delim;
-      for(const auto &traj : trans.specie_traj()) {
-        out << indent() << indent() << indent();
-        out << traj.from << " (" << traj.from.specie().name() << ")";
+      out << out.indent_str() << indent() << "specie trajectory:" << delim;
+      for(const auto &traj : trans.species_traj()) {
+        out << out.indent_str() << indent();
+        out << traj.from << " (" << traj.from.species().name() << ")";
         out << "  ->  ";
-        out << traj.to << " (" << traj.to.specie().name() << ")";
+        out << traj.to << " (" << traj.to.species().name() << ")";
 
         if(delim)
           out << delim;

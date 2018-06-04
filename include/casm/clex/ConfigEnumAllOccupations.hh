@@ -2,7 +2,7 @@
 #define CASM_ConfigEnumAllOccupations
 
 #include "casm/container/Counter.hh"
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
@@ -35,7 +35,7 @@ namespace CASM {
     }
 
     static const std::string enumerator_name;
-    static const std::string interface_help;
+    static std::string interface_help();
 
     static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
@@ -44,7 +44,8 @@ namespace CASM {
       const PrimClex &primclex,
       ScelIterator begin,
       ScelIterator end,
-      const std::vector<std::string> &filter_expr = {});
+      const std::vector<std::string> &filter_expr = {},
+      bool dry_run = false);
 
   private:
 

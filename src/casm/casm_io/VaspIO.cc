@@ -17,10 +17,20 @@ namespace CASM {
       void PrintPOSCARBase::_print(std::ostream &sout,
                                    TupleIterator begin,
                                    TupleIterator end) const {
+        Log log(sout);
+        this->_print(log, begin, end);
+      }
 
-        int tprec = sout.precision();
-        std::ios::fmtflags tflags = sout.flags();
-        sout.precision(8);
+      /// \brief Print POSCAR, providing a range of std::tuple<AtomName, Coordinate, SelectiveDynamics>
+      template<typename TupleIterator>
+      void PrintPOSCARBase::_print(Log &sout,
+                                   TupleIterator begin,
+                                   TupleIterator end) const {
+
+        int tprec = sout.ostream().precision();
+        std::ios::fmtflags tflags = sout.ostream().flags();
+        int prec = 8;
+        sout.ostream().precision(prec);
 
         typedef std::tuple<std::string, Coordinate, SelectiveDynamics> tuple_type;
 
@@ -42,14 +52,24 @@ namespace CASM {
         }
 
         // print title, scale, and lattice
-        sout << m_title << "\n";
-        sout << std::fixed << std::setprecision(8) << m_scale << "\n";
+        sout << sout.indent_str() << m_title << "\n";
+        sout << sout.indent_str() << std::fixed << std::setprecision(prec) << m_scale << "\n";
 
-        sout.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+        sout.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
 
-        sout << ' ' << std::setw(16) << m_lat[0].transpose() << '\n';
-        sout << ' ' << std::setw(16) << m_lat[1].transpose() << '\n';
-        sout << ' ' << std::setw(16) << m_lat[2].transpose() << '\n';
+        int width = 12;
+        width = print_matrix_width(sout, m_lat.lat_column_mat().transpose(), width);
+        for(auto it = atom.cbegin(); it != atom.cend(); ++it) {
+          Eigen::Vector3d vec;
+          if(m_coord_mode == CART) vec = std::get<1>(*it).cart();
+          else if(m_coord_mode == FRAC) vec = std::get<1>(*it).frac();
+          width = print_matrix_width(sout, vec.transpose(), width);
+        }
+        Eigen::IOFormat format(prec, width + 1);
+
+        sout << sout.indent_str() << m_lat[0].transpose().format(format) << '\n';
+        sout << sout.indent_str() << m_lat[1].transpose().format(format) << '\n';
+        sout << sout.indent_str() << m_lat[2].transpose().format(format) << '\n';
 
         // if after filtering out ignored atoms none are left, return
         if(atom.size() == 0) {
@@ -61,7 +81,7 @@ namespace CASM {
         auto it = atom.cbegin();
         std::string curr_atom = std::get<0>(*it);
         if(m_atom_names) {
-          sout << curr_atom << " ";
+          sout << sout.indent_str() << curr_atom << " ";
         }
         ++it;
         for(; it != atom.cend(); ++it) {
@@ -80,6 +100,7 @@ namespace CASM {
           sout << "\n";
         }
 
+        sout << sout.indent_str();
         for(int i = 0; i < atom_count.size(); i++) {
           sout << atom_count[i] << " ";
         }
@@ -87,15 +108,16 @@ namespace CASM {
 
         // print 'Selective Dynamics' if using selective dynamics
         if(m_sel_dynamics) {
-          sout << "Selective Dynamics\n";
+          sout << sout.indent_str() << "Selective Dynamics\n";
         }
 
         // print coord mode
-        sout << COORD_MODE::NAME(m_coord_mode) << "\n";
+        sout << sout.indent_str() << COORD_MODE::NAME(m_coord_mode) << "\n";
 
         // print all coordinates, and seletive dynamics settings, and atom names if applicable
         for(auto it = atom.cbegin(); it != atom.cend(); ++it) {
-          std::get<1>(*it).print(sout, m_coord_mode);
+          sout << sout.indent_str();
+          std::get<1>(*it).print(sout, m_coord_mode, 0, format);
           if(m_sel_dynamics) {
             sout << " " << std::get<2>(*it);
           }
@@ -106,13 +128,18 @@ namespace CASM {
         }
         sout << "\n";
 
-        sout.precision(tprec);
-        sout.flags(tflags);
+        sout.ostream().precision(tprec);
+        sout.ostream().flags(tflags);
 
       }
 
       template void PrintPOSCARBase::_print(
         std::ostream &sout,
+        PrintPOSCAR::const_iterator begin,
+        PrintPOSCAR::const_iterator end) const;
+
+      template void PrintPOSCARBase::_print(
+        Log &sout,
         PrintPOSCAR::const_iterator begin,
         PrintPOSCAR::const_iterator end) const;
     }
@@ -269,6 +296,11 @@ namespace CASM {
 
     /// \brief Print POSCAR to stream
     void PrintPOSCAR::print(std::ostream &sout) const {
+      _print(sout, m_atom_order.begin(), m_atom_order.end());
+    }
+
+    /// \brief Print POSCAR to log (enables indentation)
+    void PrintPOSCAR::print(Log &sout) const {
       _print(sout, m_atom_order.begin(), m_atom_order.end());
     }
 

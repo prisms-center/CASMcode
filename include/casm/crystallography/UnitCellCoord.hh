@@ -162,7 +162,7 @@ namespace CASM {
   private:
 
     /// make _eq accessible
-    friend class Comparisons<Translatable<CRTPBase<UnitCellCoord>>>;
+    friend struct Comparisons<Translatable<CRTPBase<UnitCellCoord>>>;
 
     bool eq_impl(const UnitCellCoord &B) const;
 

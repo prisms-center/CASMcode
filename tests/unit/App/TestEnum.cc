@@ -6,7 +6,7 @@
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_TestEnum_interface() {
@@ -18,36 +18,41 @@ namespace CASM {
 
   const std::string TestEnum::enumerator_name = "TestEnum";
 
-  const std::string TestEnum::interface_help =
-    "TestEnum: \n\n"
+  std::string TestEnum::interface_help() {
+    return
+      "TestEnum: \n\n"
 
-    "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
-    "    Indicate supercells to enumerate all occupational configurations in. May \n"
-    "    be a JSON array of supercell names, or a JSON object specifying          \n"
-    "    supercells in terms of size and unit cell. By default, all existing      \n"
-    "    supercells are used. See 'ScelEnum' description for details.         \n\n"
+      "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
+      "    Indicate supercells to enumerate all occupational configurations in. May \n"
+      "    be a JSON array of supercell names, or a JSON object specifying          \n"
+      "    supercells in terms of size and unit cell. By default, all existing      \n"
+      "    supercells are used. See 'ScelEnum' description for details.         \n\n"
 
-    "  filter: string (optional, default=None)\n"
-    "    A query command to use to filter which Configurations are kept.          \n"
-    "\n"
-    "  Examples:\n"
-    "    To enumerate all occupations in supercells up to and including size 4:\n"
-    "      casm enum --method TestEnum -i '{\"supercells\": {\"max\": 4}}' \n"
-    "\n"
-    "    To enumerate all occupations in all existing supercells:\n"
-    "      casm enum --method TestEnum\n"
-    "\n"
-    "    To enumerate all occupations in all particular supercells:\n"
-    "      casm enum --method TestEnum -i \n"
-    "      '{ \n"
-    "        \"supercells\": { \n"
-    "          \"name\": [\n"
-    "            \"SCEL1_1_1_1_0_0_0\",\n"
-    "            \"SCEL2_1_2_1_0_0_0\",\n"
-    "            \"SCEL4_1_4_1_0_0_0\"\n"
-    "          ]\n"
-    "        } \n"
-    "      }' \n\n";
+      "  filter: string (optional, default=None)\n"
+      "    A query command to use to filter which Configurations are kept.          \n\n"
+
+      "  dry_run: bool (optional, default=false)\n"
+      "    Perform dry run.\n\n"
+
+      "  Examples:\n"
+      "    To enumerate all occupations in supercells up to and including size 4:\n"
+      "      casm enum --method TestEnum -i '{\"supercells\": {\"max\": 4}}' \n"
+      "\n"
+      "    To enumerate all occupations in all existing supercells:\n"
+      "      casm enum --method TestEnum\n"
+      "\n"
+      "    To enumerate all occupations in all particular supercells:\n"
+      "      casm enum --method TestEnum -i \n"
+      "      '{ \n"
+      "        \"supercells\": { \n"
+      "          \"name\": [\n"
+      "            \"SCEL1_1_1_1_0_0_0\",\n"
+      "            \"SCEL2_1_2_1_0_0_0\",\n"
+      "            \"SCEL4_1_4_1_0_0_0\"\n"
+      "          ]\n"
+      "        } \n"
+      "      }' \n\n";
+  }
 
   int TestEnum::run(
     const PrimClex &primclex,
@@ -57,7 +62,7 @@ namespace CASM {
     std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
-    return run(primclex, scel_enum->begin(), scel_enum->end(), filter_expr);
+    return run(primclex, scel_enum->begin(), scel_enum->end(), filter_expr, CASM::dry_run(_kwargs, enum_opt));
   }
 
   /// \brief Construct with a Supercell, using all permutations

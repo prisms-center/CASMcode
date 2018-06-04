@@ -35,11 +35,11 @@ namespace CASM {
     /// \brief Returns true if all of the species in m_search_list are in the prototype
     ///  of the orbit
     bool Contains::evaluate(const PrimPeriodicDiffTransOrbit &orbit) const {
-      auto speciemap = orbit.prototype().specie_count();
+      auto speciesmap = orbit.prototype().species_count();
       bool ret_val = true;
       for(auto it = m_search_list.begin(); it != m_search_list.end(); ++it) {
         bool tmp = false;
-        for(auto it2 = speciemap.begin(); it2 != speciemap.end(); ++it2) {
+        for(auto it2 = speciesmap.begin(); it2 != speciesmap.end(); ++it2) {
           if(it2->first.name() == *it && it2->second != 0) {
             tmp = true;
           }
@@ -112,9 +112,9 @@ namespace CASM {
                                                          "Returns the species that move in this diffusion transformation",
       [](const PrimPeriodicDiffTransOrbit & orbit)-> std::string {
 
-        auto speciemap = orbit.prototype().specie_count();
+        auto speciesmap = orbit.prototype().species_count();
         std::string result = "";
-        for(auto it = speciemap.begin(); it != speciemap.end(); ++it) {
+        for(auto it = speciesmap.begin(); it != speciesmap.end(); ++it) {
           for(int i = 0; i < it->second; i++) {
             result += (it->first.name() + " ");
           }

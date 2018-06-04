@@ -20,10 +20,6 @@ namespace CASM {
       return vm().count("force");
     }
 
-    bool RmOption::dry_run() const {
-      return vm().count("dry-run");
-    }
-
     bool RmOption::data() const {
       return vm().count("data");
     }
@@ -35,9 +31,10 @@ namespace CASM {
       add_db_type_suboption(traits<Configuration>::short_name, DB::types_short());
 
       m_desc.add_options()
-      ("dry-run,n", "Dry run")
       ("data,d", "Remove calculation data only.")
       ("force,f", "Force remove including data and dependent objects (for --type=scel).");
+
+      add_dry_run_suboption();
 
       return;
     }

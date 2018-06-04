@@ -120,6 +120,8 @@ namespace CASM {
       return !(*this == RHS);
     }
 
+    bool almost_equal(const Coordinate &RHS) const;
+
     /// Returns true if this->min_dist(RHS)<this->lattice().tol()
     bool compare(const Coordinate &RHS) const;
 
@@ -160,7 +162,7 @@ namespace CASM {
     bool voronoi_within(Coordinate &translation);
 
     ///Checks to see if coordinate is at a lattice translation with respect to the origin
-    bool is_lattice_shift() const;
+    bool is_lattice_shift(double tol = TOL) const;
 
     /// \brief  Change the home lattice of the coordinate, selecting one representation
     ///         (either CART or FRAC) that remains invariant
@@ -201,11 +203,11 @@ namespace CASM {
 
     //term is terminal character, prec is precision, pad is field width - precision  (should be greater than 3)
     void read(std::istream &stream, COORD_TYPE mode);
-    void print(std::ostream &stream, COORD_TYPE mode, char term = 0, int prec = 7, int pad = 5) const;
-    void print(std::ostream &stream, char term = 0, int prec = 7, int pad = 5) const;
+    void print(std::ostream &stream, COORD_TYPE mode, char term = 0, Eigen::IOFormat format = Eigen::IOFormat(7, 12)) const;
+    void print(std::ostream &stream, char term = 0, Eigen::IOFormat format = Eigen::IOFormat(7, 12)) const;
 
     /// \brief Print normalized vector
-    void print_axis(std::ostream &stream, COORD_TYPE mode, char term = 0, int prec = 7, int pad = 5) const;
+    void print_axis(std::ostream &stream, COORD_TYPE mode, char term = 0, Eigen::IOFormat format  = Eigen::IOFormat(7, 12)) const;
 
     /// \brief distance (in Angstr) of neighbor from *this
     double dist(const Coordinate &neighbor) const;

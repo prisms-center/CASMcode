@@ -26,6 +26,7 @@ namespace CASM {
   typedef LocalOrbit<IntegralCluster> LocalIntegralClusterOrbit;
   typedef PrimPeriodicOrbit<IntegralCluster> PrimPeriodicIntegralClusterOrbit;
   typedef ScelPeriodicOrbit<IntegralCluster> ScelPeriodicIntegralClusterOrbit;
+  typedef WithinScelOrbit<IntegralCluster> WithinScelIntegralClusterOrbit;
 
 }
 

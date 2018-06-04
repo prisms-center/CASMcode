@@ -107,6 +107,19 @@ namespace CASM {
     return ScelEnumProps(min_vol, max_vol + 1, dirs, generating_matrix);
   }
 
+  jsonParser &to_json(const ScelEnumProps &props, jsonParser &json) {
+    json.put_obj();
+    json["min"] = props.begin_volume();
+    json["max"] = props.end_volume() - 1;
+    json["dirs"] = props.dirs();
+    json["unit_cell"] = props.generating_matrix();
+    return json;
+  }
+
+  ScelEnumProps jsonConstructor<ScelEnumProps>::from_json(const jsonParser &json, const PrimClex &primclex) {
+    return make_scel_enum_props(primclex, json);
+  }
+
   /**
    * If you really need a n x m (vs n x n) matrix, or to allow
    * zeros along the longest diagonal, this class won't work.

@@ -143,9 +143,8 @@ namespace CASM {
   /// Check for existing supercells
   bool ScelEnumByProps::_include(const Lattice &lat) const {
     if(m_existing_only) {
-      Lattice canon_lat = m_lat_it->canonical_form(m_primclex->prim().point_group());
-      Supercell tmp(m_primclex, canon_lat);
-      return m_primclex->db<Supercell>().find(tmp.name()) != m_primclex->db<Supercell>().end();
+      std::string name = canonical_scelname(*m_primclex, *m_lat_it);
+      return m_primclex->db<Supercell>().find(name) != m_primclex->db<Supercell>().end();
     }
     return true;
   }
@@ -154,83 +153,88 @@ namespace CASM {
   const std::string ScelEnum::enumerator_name = "ScelEnum";
 
   /// \relates ::ScelEnumT
-  const std::string ScelEnum::interface_help =
+  std::string ScelEnum::interface_help() {
+    return
 
-    "ScelEnum: \n\n"
+      "ScelEnum: \n\n"
 
-    "  min: int, >0 (default=1)\n"
-    "    The minimum volume supercell to enumerate. The volume is measured\n"
-    "    relative the unit cell being used to generate supercells.\n"
-    "\n"
-    "  max: int, >= min (default=max existing scel_size)\n"
-    "    The maximum volume supercell to enumerate. The volume is measured\n"
-    "    relative the unit cell being used to generate supercells.\n"
-    "\n"
-    "  existing_only: bool (default=true)\n"
-    "    If true, only existing supercells are used. This is useful when it\n"
-    "    is used as input to a Configuration enumeration method.\n"
-    "\n"
-    "  dirs: string (default=\"abc\")\n"
-    "    This option may be used to restrict the supercell enumeration to 1, \n"
-    "    2 or 3 of the lattice vectors, to get 1-, 2-, or 3-dimensional      \n"
-    "    supercells. By specifying combinations of 'a', 'b', and 'c', you    \n"
-    "    determine which of the unit cell lattice vectors you want to        \n"
-    "    enumerate over. For example, to enumerate 1-dimensional supercells  \n"
-    "    along the 'c' use \"dirs\":\"c\". If you want 2-dimensional        \n"
-    "    supercells along the 'a' and 'c' lattice vectors, specify           \n"
-    "    \"dirs\":\"ac\". \n"
-    "\n"
-    "  unit_cell: 3x3 matrix of int, or string (default=identity matrix)     \n"
-    "    This option may be used to specify the unit cell. It may be         \n"
-    "    specified using a 3x3 matrix of int, representing the transformation\n"
-    "    matrix, T, such that U = P*T, where P are the primitive lattice     \n"
-    "    and U are the unit cell lattice vectors. For example, a unit cell   \n"
-    "    that whose lattice vectors are (2*a+b, b, c) (with respect to the   \n"
-    "    the primitive cell vectors) could be specified using:\n"
-    "\n"
-    "      \"unit_cell\" : [\n"
-    "        [2, 0, 0],\n"
-    "        [1, 1, 0],\n"
-    "        [0, 0, 1]\n"
-    "       ]\n"
-    "\n"
-    "    Or it may be specified by  \n"
-    "    the name of the existing supercell to use as the unit cell, for     \n"
-    "    example: \n"
-    "\n"
-    "      \"unit_cell\" : \"SCEL2_1_1_2_0_0_0\"\n"
-    "\n"
-    "  name: JSON array of string (optional)\n"
-    "    As an alternative to the above options, an array of existing supercell\n"
-    "    names to explicitly indicate which supercells to act on. If this is \n"
-    "    included, other properties are ignored. This is useful as an input \n"
-    "    to other enumeration methods, such as ConfigEnumAllOccupations when \n"
-    "    supercells have already been enumerated. \n"
-    "\n"
-    "Examples:\n"
-    "\n"
-    "    To enumerate supercells up to and including size 4:\n"
-    "      casm enum --method ScelEnum -i '{\"max\": 4}' \n"
-    "\n"
-    "    To enumerate 2d supercells up to and including size 4:\n"
-    "      casm enum --method ScelEnum -i '{\"max\": 4, \"dirs\": \"ab\"}' \n"
-    "\n"
-    "    If the prim is primitive FCC, two dimensional supercells of the \n"
-    "    conventional FCC unit cell up to and including 4x the unit cell volume\n"
-    "    could be enumerated using:\n"
-    "\n"
-    "     casm enum --method ScelEnum -i \n"
-    "     '{\n"
-    "        \"min\": 1,\n"
-    "        \"max\": 4,\n"
-    "        \"dirs\": \"ab\",\n"
-    "        \"unit_cell\" : [\n"
-    "          [-1,  1,  1],\n"
-    "          [ 1, -1,  1],\n"
-    "          [ 1,  1, -1]\n"
-    "        ]\n"
-    "      }'\n"
-    "\n";
+      "  min: int, >0 (default=1)\n"
+      "    The minimum volume supercell to enumerate. The volume is measured\n"
+      "    relative the unit cell being used to generate supercells.\n"
+      "\n"
+      "  max: int, >= min (default=max existing scel_size)\n"
+      "    The maximum volume supercell to enumerate. The volume is measured\n"
+      "    relative the unit cell being used to generate supercells.\n"
+      "\n"
+      "  existing_only: bool (default=true)\n"
+      "    If true, only existing supercells are used. This is useful when it\n"
+      "    is used as input to a Configuration enumeration method.\n"
+      "\n"
+      "  dirs: string (default=\"abc\")\n"
+      "    This option may be used to restrict the supercell enumeration to 1, \n"
+      "    2 or 3 of the lattice vectors, to get 1-, 2-, or 3-dimensional      \n"
+      "    supercells. By specifying combinations of 'a', 'b', and 'c', you    \n"
+      "    determine which of the unit cell lattice vectors you want to        \n"
+      "    enumerate over. For example, to enumerate 1-dimensional supercells  \n"
+      "    along the 'c' use \"dirs\":\"c\". If you want 2-dimensional        \n"
+      "    supercells along the 'a' and 'c' lattice vectors, specify           \n"
+      "    \"dirs\":\"ac\". \n"
+      "\n"
+      "  unit_cell: 3x3 matrix of int, or string (default=identity matrix)     \n"
+      "    This option may be used to specify the unit cell. It may be         \n"
+      "    specified using a 3x3 matrix of int, representing the transformation\n"
+      "    matrix, T, such that U = P*T, where P are the primitive lattice     \n"
+      "    and U are the unit cell lattice vectors. For example, a unit cell   \n"
+      "    that whose lattice vectors are (2*a+b, b, c) (with respect to the   \n"
+      "    the primitive cell vectors) could be specified using:\n"
+      "\n"
+      "      \"unit_cell\" : [\n"
+      "        [2, 0, 0],\n"
+      "        [1, 1, 0],\n"
+      "        [0, 0, 1]\n"
+      "       ]\n"
+      "\n"
+      "    Or it may be specified by  \n"
+      "    the name of the existing supercell to use as the unit cell, for     \n"
+      "    example: \n"
+      "\n"
+      "      \"unit_cell\" : \"SCEL2_1_1_2_0_0_0\"\n"
+      "\n"
+      "  name: JSON array of string (optional)\n"
+      "    As an alternative to the above options, an array of existing supercell\n"
+      "    names to explicitly indicate which supercells to act on. If this is \n"
+      "    included, other properties are ignored. This is useful as an input \n"
+      "    to other enumeration methods, such as ConfigEnumAllOccupations when \n"
+      "    supercells have already been enumerated. \n"
+      "\n"
+      "  dry_run: bool (optional, default=false)\n"
+      "    Perform dry run.\n"
+      "\n"
+      "Examples:\n"
+      "\n"
+      "    To enumerate supercells up to and including size 4:\n"
+      "      casm enum --method ScelEnum -i '{\"max\": 4}' \n"
+      "\n"
+      "    To enumerate 2d supercells up to and including size 4:\n"
+      "      casm enum --method ScelEnum -i '{\"max\": 4, \"dirs\": \"ab\"}' \n"
+      "\n"
+      "    If the prim is primitive FCC, two dimensional supercells of the \n"
+      "    conventional FCC unit cell up to and including 4x the unit cell volume\n"
+      "    could be enumerated using:\n"
+      "\n"
+      "     casm enum --method ScelEnum -i \n"
+      "     '{\n"
+      "        \"min\": 1,\n"
+      "        \"max\": 4,\n"
+      "        \"dirs\": \"ab\",\n"
+      "        \"unit_cell\" : [\n"
+      "          [-1,  1,  1],\n"
+      "          [ 1, -1,  1],\n"
+      "          [ 1,  1, -1]\n"
+      "        ]\n"
+      "      }'\n"
+      "\n";
+  }
 
   /// \relates ::ScelEnumT
   int ScelEnum::run(
@@ -255,23 +259,27 @@ namespace CASM {
     }
 
     ScelEnum scel_enum(primclex, input);
+
+    bool dry_run = CASM::dry_run(kwargs, enum_opt);
+    std::string dry_run_msg = CASM::dry_run_msg(dry_run);
     for(auto &scel : scel_enum) {
       if(verbose) {
         if(primclex.db<Supercell>().size() != list_size) {
-          log << "  Generated: " << scel.name() << "\n";
+          log << dry_run_msg << "  Generated: " << scel.name() << "\n";
         }
         else {
-          log << "  Generated: " << scel.name() << " (already existed)\n";
+          log << dry_run_msg << "  Generated: " << scel.name() << " (already existed)\n";
         }
       }
       list_size = primclex.db<Supercell>().size();
     }
-    log << "  DONE." << std::endl << std::endl;
+    log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
-    log << "Write supercells..." << std::endl;
-    primclex.db<Supercell>().commit();
-    log << "  DONE" << std::endl << std::endl;
-
+    if(!dry_run) {
+      log << "Write supercells..." << std::endl;
+      primclex.db<Supercell>().commit();
+      log << "  DONE" << std::endl << std::endl;
+    }
     return 0;
   }
 

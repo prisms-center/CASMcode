@@ -6,9 +6,12 @@
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/symmetry/Orbit.hh"
 #include "casm/symmetry/Orbit_impl.hh"
+#include "casm/symmetry/SymBasisPermute.hh"
 
 /// What is being used to test it:
 #include "Common.hh"
+#include "TestConfiguration.hh"
+#include "casm/casm_io/jsonFile.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
@@ -16,6 +19,23 @@
 #include "casm/symmetry/ConfigSubOrbits_impl.hh"
 
 using namespace CASM;
+
+namespace {
+  struct TestConfig0 : test::TestConfiguration {
+
+    TestConfig0(const PrimClex &primclex) :
+      TestConfiguration(
+        primclex,
+        Eigen::Vector3i(2, 1, 1).asDiagonal(), {
+      0, 0,  0, 0,  1, 1,  0, 0
+    }) {
+
+      BOOST_CHECK_EQUAL(this->scel_fg().size(), 16);
+      BOOST_CHECK_EQUAL(this->config_sym_fg().size(), 8);
+    }
+
+  };
+}
 
 BOOST_AUTO_TEST_SUITE(OrbitTest)
 
@@ -94,10 +114,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
     BOOST_CHECK_EQUAL(diff_trans.is_valid_occ_transform(), true);
 
     // Add trajectory
-    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
-    diff_trans.specie_traj().emplace_back(SpecieLocation(uccoordB, iO, 0), SpecieLocation(uccoordA, iO, 0));
+    diff_trans.species_traj().emplace_back(SpeciesLocation(uccoordA, iVa, 0), SpeciesLocation(uccoordB, iVa, 0));
+    diff_trans.species_traj().emplace_back(SpeciesLocation(uccoordB, iO, 0), SpeciesLocation(uccoordA, iO, 0));
     BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(diff_trans.is_valid_specie_traj(), true);
+    BOOST_CHECK_EQUAL(diff_trans.is_valid_species_traj(), true);
     BOOST_CHECK_EQUAL(diff_trans.is_valid(), true);
 
     PrimPeriodicDiffTransSymCompare sym_compare(primclex);
@@ -107,6 +127,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
 }
 
 BOOST_AUTO_TEST_CASE(Test1) {
+
   test::ZrOProj proj;
   proj.check_init();
 
@@ -115,12 +136,10 @@ BOOST_AUTO_TEST_CASE(Test1) {
   const Structure &prim = primclex.prim();
   const Lattice &lat = prim.lattice();
   Supercell prim_scel(&primclex, Eigen::Matrix3i::Identity());
-
   BOOST_CHECK_EQUAL(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
-  jsonParser bspecs {bspecs_path};
+  jsonFile bspecs {"tests/unit/kinetics/ZrO_bspecs_0.json"};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -179,38 +198,16 @@ BOOST_AUTO_TEST_CASE(Test1) {
                                                       1, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 4, 1, 1, 2, 2, 6, 3
                                                      };
 
-    // Make vol 2 supercell & and background configuration
-    Eigen::Vector3d a, b, c;
-    std::tie(a, b, c) = primclex.prim().lattice().vectors();
-    Supercell scel_vol2 {&primclex, Lattice(2 * a, 1 * b, 1 * c)};
-    Configuration config(scel_vol2);
-    config.set_occupation({
-      0, 0,
-      0, 0,
-      1, 1,
-      0, 0,
-    });
-
-    // Prim sym_compare
-    PrimPeriodicSymCompare<IntegralCluster> prim_sym_compare(primclex);
-
-    // Scel sym_compare
-    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2);
-
-    // Get the scel factor group
-    SymGroup scel_fg = make_sym_group(scel_vol2.permute_begin(), scel_vol2.permute_end());
-
-    // Get the config factor group (should just be the Supercell factor group)
-    std::vector<PermuteIterator> _config_fg = config.factor_group();
-    SymGroup config_fg = make_sym_group(_config_fg.begin(), _config_fg.end());
+    // Make vol 2 supercell & and background configuration test data ('td')
+    TestConfig0 td(primclex);
 
     Index index = 0;
     Index suborbit_index = 0;
     for(const auto &orbit : orbits) {
 
-      //std::cout << "\n ---------- Orbit: " << index << " ----------- \n" << std::endl;
-      //std::cout << "orbit.prototype(): \n" << orbit.prototype() << std::endl;
-      //std::cout << "orbit.size(): " << orbit.size() << std::endl;
+      //      std::cout << "\n ---------- Orbit: " << index << " ----------- \n" << std::endl;
+      //      std::cout << "orbit.prototype(): \n" << orbit.prototype() << std::endl;
+      //      std::cout << "orbit.size(): " << orbit.size() << std::endl;
 
       orbit_size.push_back(orbit.size());
       BOOST_CHECK_EQUAL(expected_orbit_size[index], orbit.size());
@@ -218,7 +215,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
       {
         SymGroup cluster_group = make_invariant_subgroup(orbit);
 
-        //std::cout << "  cluster_group.size(): " << cluster_group.size() << std::endl;
+        //        std::cout << "  cluster_group.size(): " << cluster_group.size() << std::endl;
         cluster_group_size.push_back(cluster_group.size());
         BOOST_CHECK_EQUAL(expected_cluster_group_size[index], cluster_group.size());
       }
@@ -227,10 +224,10 @@ BOOST_AUTO_TEST_CASE(Test1) {
       {
         BOOST_CHECK_EQUAL(true, true);
         std::vector<IntegralCluster> generators;
-        make_suborbit_generators(orbit, config, std::back_inserter(generators));
+        make_suborbit_generators(orbit, td.config, std::back_inserter(generators));
         BOOST_CHECK_EQUAL(true, true);
 
-        //std::cout << "suborbits: " << generators.size() << std::endl;
+        //        std::cout << "suborbits: " << generators.size() << std::endl;
         num_suborbits.push_back(generators.size());
         BOOST_CHECK_EQUAL(expected_num_suborbits[index], generators.size());
 
@@ -238,7 +235,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
         for(const auto &el : generators) {
 
           BOOST_CHECK_EQUAL(true, true);
-          ScelPeriodicIntegralClusterOrbit scel_suborbit(el, config_fg, scel_sym_compare);
+          ScelPeriodicIntegralClusterOrbit scel_suborbit(el, td.config_sym_fg(), td.scel_sym_compare);
+          BOOST_CHECK_EQUAL(true, true);
           N_clust += scel_suborbit.size();
 
           BOOST_CHECK_EQUAL(true, true);
@@ -246,28 +244,28 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
           BOOST_CHECK_EQUAL(true, true);
           SymGroup cluster_group_alt1 = make_invariant_subgroup(
-                                          el, config_fg, scel_sym_compare);
+                                          el, td.config_sym_fg(), td.scel_sym_compare);
 
           BOOST_CHECK_EQUAL(true, true);
           std::vector<PermuteIterator> cluster_group_alt2 = make_invariant_subgroup(
-                                                              el, scel_vol2, _config_fg.begin(), _config_fg.end());
+                                                              el, td.scel, td.config_permute_fg().begin(), td.config_permute_fg().end());
 
           BOOST_CHECK_EQUAL(true, true);
-          //std::cout << "suborbit: "
-          //  << "  scel_fg.size(): " << scel_vol2.factor_group().size()*scel_vol2.volume()
-          //  << "  config_fg.size(): " << config_fg.size()
-          //  << "  cluster_group.size(): " << cluster_group.size()
-          //  << "  cluster_group_alt1.size(): " << cluster_group_alt1.size()
-          //  << "  cluster_group_alt2.size(): " << cluster_group_alt2.size()
-          //  << "  scel_suborbit.size(): " << scel_suborbit.size()
-          //  << std::endl;
+          //          std::cout << "suborbit: "
+          //            << "  scel_fg().size(): " << td.scel.factor_group().size()*td.scel.volume()
+          //            << "  td.config_sym_fg().size(): " << td.config_sym_fg().size()
+          //            << "  cluster_group.size(): " << cluster_group.size()
+          //            << "  cluster_group_alt1.size(): " << cluster_group_alt1.size()
+          //            << "  cluster_group_alt2.size(): " << cluster_group_alt2.size()
+          //            << "  scel_suborbit.size(): " << scel_suborbit.size()
+          //            << std::endl;
 
           suborbit_size.push_back(scel_suborbit.size());
           BOOST_CHECK_EQUAL(expected_suborbit_size[suborbit_index], scel_suborbit.size());
 
-          BOOST_CHECK_EQUAL(cluster_group.size()*scel_suborbit.size(), config_fg.size());
-          BOOST_CHECK_EQUAL(cluster_group_alt1.size()*scel_suborbit.size(), config_fg.size());
-          BOOST_CHECK_EQUAL(cluster_group_alt2.size()*scel_suborbit.size(), config_fg.size());
+          BOOST_CHECK_EQUAL(cluster_group.size()*scel_suborbit.size(), td.config_sym_fg().size());
+          BOOST_CHECK_EQUAL(cluster_group_alt1.size()*scel_suborbit.size(), td.config_sym_fg().size());
+          BOOST_CHECK_EQUAL(cluster_group_alt2.size()*scel_suborbit.size(), td.config_sym_fg().size());
 
           suborbit_index++;
         }
@@ -275,17 +273,17 @@ BOOST_AUTO_TEST_CASE(Test1) {
         if(orbit.prototype().size()) {
           // except for null cluster, check that number of subcluster elements
           //   is consistent with number of orbit elements
-          BOOST_CHECK_EQUAL(N_clust, orbit.size()*scel_vol2.volume());
+          BOOST_CHECK_EQUAL(N_clust, orbit.size()*td.scel.volume());
         }
       }
 
       index++;
     }
 
-    //test::print_computed_result(std::cout, "orbit_size", orbit_size);
-    //test::print_computed_result(std::cout, "cluster_group_size", cluster_group_size);
-    //test::print_computed_result(std::cout, "suborbit_size", suborbit_size);
-    //test::print_computed_result(std::cout, "num_suborbits", num_suborbits);
+    //    test::print_computed_result(std::cout, "orbit_size", orbit_size);
+    //    test::print_computed_result(std::cout, "cluster_group_size", cluster_group_size);
+    //    test::print_computed_result(std::cout, "suborbit_size", suborbit_size);
+    //    test::print_computed_result(std::cout, "num_suborbits", num_suborbits);
     BOOST_CHECK_EQUAL(true, true);
   }
 }

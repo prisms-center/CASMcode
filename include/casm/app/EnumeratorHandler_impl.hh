@@ -3,7 +3,7 @@
 
 #include <boost/filesystem.hpp>
 #include "casm/system/RuntimeLibrary.hh"
-#include "casm/container/Enumerator.hh"
+#include "casm/enumerator/Enumerator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"

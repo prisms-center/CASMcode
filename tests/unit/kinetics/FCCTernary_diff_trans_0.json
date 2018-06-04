@@ -1,0 +1,8 @@
+{
+  "cspecs": {
+    "orbit_branch_specs" : {
+      "2" : {"max_length" : 5.0},
+      "3" : {"max_length" : 3.0}
+    }
+  }
+}

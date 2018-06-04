@@ -9,6 +9,23 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/app/DirectoryStructure.hh"
 
+namespace CASM {
+
+  const std::string traits<DB::SELECTION_TYPE>::name = "selection";
+
+  const std::multimap<DB::SELECTION_TYPE, std::vector<std::string> > traits<DB::SELECTION_TYPE>::strval = {
+    {DB::SELECTION_TYPE::MASTER, {"MASTER", "Master", "master"} },
+    {DB::SELECTION_TYPE::ALL, {"ALL", "All", "all"} },
+    {DB::SELECTION_TYPE::NONE, {"NONE", "None", "none"} },
+    {DB::SELECTION_TYPE::EMPTY, {"EMPTY", "Empty", "empty"} },
+    {DB::SELECTION_TYPE::CALCULATED, {"CALCULATED", "Calculated", "calculated"} }
+  };
+
+  namespace Monte {
+    ENUM_IO_DEF(CASM::DB::SELECTION_TYPE)
+  }
+}
+
 // explicit template instantiations
 #define INST_Selection(r, data, type) \
 template class SelectionIterator<type,Selection<type>::base_iterator>; \
@@ -42,7 +59,7 @@ namespace CASM {
         typename Selection<ObjType>::map_type &m_data,
         Database<ObjType> &db) {
         std::stringstream msg;
-        msg << "Selection \"CALCULATED\" is not allowed for type: " << traits<ObjType>::short_name;
+        msg << "Selection 'CALCULATED' is not allowed for type: " << traits<ObjType>::short_name;
         throw std::runtime_error(msg.str());
       }
     }
@@ -130,40 +147,47 @@ namespace CASM {
       m_primclex(&m_db->primclex()),
       m_name(selection_path.string()) {
 
-      if(selection_path == "MASTER" || selection_path.empty()) {
-        fs::path master_selection_path = primclex().dir().template master_selection<ObjType>();
-        if(fs::exists(master_selection_path)) {
-          fs::ifstream select_file(master_selection_path);
-          read(select_file);
-          select_file.close();
+      auto _match = matches<DB::SELECTION_TYPE>(selection_path.string());
+
+      if(_match.size() == 1 || selection_path.empty()) {
+
+        DB::SELECTION_TYPE sel = selection_path.empty() ? DB::SELECTION_TYPE::MASTER : *_match.begin();
+
+        if(sel == DB::SELECTION_TYPE::MASTER) {
+          fs::path master_selection_path = primclex().dir().template master_selection<ObjType>();
+          if(fs::exists(master_selection_path)) {
+            fs::ifstream select_file(master_selection_path);
+            read(select_file);
+            select_file.close();
+          }
+          else {
+            for(const auto &obj : db()) {
+              m_data.insert(std::make_pair(obj.name(), false));
+            }
+          }
         }
-        else {
+        else if(sel == DB::SELECTION_TYPE::NONE) {
           for(const auto &obj : db()) {
             m_data.insert(std::make_pair(obj.name(), false));
           }
         }
-      }
-      else if(selection_path == "NONE") {
-        for(const auto &obj : db()) {
-          m_data.insert(std::make_pair(obj.name(), false));
-        }
-      }
-      else if(selection_path == "EMPTY") {
+        else if(sel == DB::SELECTION_TYPE::EMPTY) {
 
-      }
-      else if(selection_path == "ALL") {
-        for(const auto &obj : db()) {
-          m_data.insert(std::make_pair(obj.name(), true));
         }
-      }
-      else if(selection_path == "CALCULATED") {
-        init_calculated(m_data, db());
+        else if(sel == DB::SELECTION_TYPE::ALL) {
+          for(const auto &obj : db()) {
+            m_data.insert(std::make_pair(obj.name(), true));
+          }
+        }
+        else if(sel == DB::SELECTION_TYPE::CALCULATED) {
+          init_calculated(m_data, db());
+        }
       }
       else {
         if(!fs::exists(selection_path)) {
           std::stringstream ss;
           ss << "ERROR in parsing configuration selection name. \n"
-             << "  Expected <filename>, 'ALL', 'NONE', 'EMPTY', 'CALCULATED', or 'MASTER' <--default \n"
+             << "  " << singleline_help<DB::SELECTION_TYPE>() << "\n"
              << "  Received: '" << selection_path << "'\n"
              << "  No file named '" << selection_path << "'.";
           throw std::runtime_error(ss.str());
@@ -473,7 +497,8 @@ namespace CASM {
                                    bool only_selected) const {
 
       fs::path out_path(_out_path);
-      if(out_path.string() == "MASTER") {
+      auto _matches = matches<DB::SELECTION_TYPE>(out_path.string());
+      if(_matches.size() == 1 && *_matches.begin() == DB::SELECTION_TYPE::MASTER) {
         out_path = primclex().dir().template master_selection<ObjType>();
         force = true;
       }

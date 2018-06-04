@@ -14,7 +14,7 @@
 /// What is being used to test it:
 #include "Common.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 
 #include "casm/casm_io/VaspIO.hh"
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
 
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
+  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -143,14 +143,14 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
     //std::cout << "prim_config: \n" << prim_config << std::endl;
 
     auto print_res = [&](std::string name, const DiffTransVec & diff_trans_vec, ScelDiffTransSymCompare sym_compare) {
-      std::cout << name << ":" << std::endl;
+      primclex.log() << name << ":" << std::endl;
       Index index = 0;
       for(const auto &el : diff_trans_vec) {
-        std::cout << "index: " << index << std::endl;
-        diff_trans_printer.print(sym_compare.prepare(el), std::cout);
+        primclex.log() << "index: " << index << std::endl;
+        diff_trans_printer.print(sym_compare.prepare(el), primclex.log());
         ++index;
       }
-      std::cout << std::endl;
+      primclex.log() << std::endl;
     };
 
     /// prim -> prim_config.supercell() symmetry breaking
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
   BOOST_CHECK_EQUAL(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_1.json";
+  fs::path bspecs_path = "tests/unit/kinetics/FCCTernary_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
     diff_trans_orbits.end(),
     std::cout,
     PrototypePrinter<Kinetics::DiffusionTransformation>());
-  /**/
+  */
 
   Printer<Kinetics::DiffusionTransformation> diff_trans_printer;
   typedef std::vector<Kinetics::DiffusionTransformation> DiffTransVec;
@@ -357,14 +357,14 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
     //std::cout << "prim_config: \n" << prim_config << std::endl;
 
     auto print_res = [&](std::string name, const DiffTransVec & diff_trans_vec, ScelDiffTransSymCompare sym_compare) {
-      std::cout << name << ":" << std::endl;
+      primclex.log() << name << ":" << std::endl;
       Index index = 0;
       for(const auto &el : diff_trans_vec) {
-        std::cout << "index: " << index << std::endl;
-        diff_trans_printer.print(sym_compare.prepare(el), std::cout);
+        primclex.log() << "index: " << index << std::endl;
+        diff_trans_printer.print(sym_compare.prepare(el), primclex.log());
         ++index;
       }
-      std::cout << std::endl;
+      primclex.log() << std::endl;
     };
 
     /// prim -> prim_config.supercell() symmetry breaking
@@ -484,7 +484,7 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
   BOOST_CHECK_EQUAL(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_1.json";
+  fs::path bspecs_path = "tests/unit/kinetics/FCCTernary_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
     diff_trans_orbits.end(),
     std::cout,
     PrototypePrinter<Kinetics::DiffusionTransformation>());
-  /**/
+  */
 
   Printer<Kinetics::DiffusionTransformation> diff_trans_printer;
   typedef std::vector<Kinetics::DiffusionTransformation> DiffTransVec;
@@ -580,14 +580,14 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
     // std::cout << "prim_config: \n" << prim_config << std::endl;
 
     auto print_res = [&](std::string name, const DiffTransVec & diff_trans_vec, ScelDiffTransSymCompare sym_compare) {
-      std::cout << name << ":" << std::endl;
+      primclex.log() << name << ":" << std::endl;
       Index index = 0;
       for(const auto &el : diff_trans_vec) {
-        std::cout << "index: " << index << std::endl;
-        diff_trans_printer.print(sym_compare.prepare(el), std::cout);
+        primclex.log() << "index: " << index << std::endl;
+        diff_trans_printer.print(sym_compare.prepare(el), primclex.log());
         ++index;
       }
-      std::cout << std::endl;
+      primclex.log() << std::endl;
     };
 
     /// prim -> prim_config.supercell() symmetry breaking

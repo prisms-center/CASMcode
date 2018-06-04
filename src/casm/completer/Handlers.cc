@@ -3,9 +3,21 @@
 
 #include "casm/completer/Handlers.hh"
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/EnumIO.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/kinetics/DiffTransConfiguration.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/database/DatabaseTypes.hh"
+#include "casm/enumerator/Enumerator.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/app/APICommand.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/app/ProjectSettings.hh"
 
 namespace CASM {
   namespace Completer {
@@ -66,6 +78,41 @@ namespace CASM {
       return m_argument_table[6].first;
     }
 
+    std::string ArgHandler::dbtype() {
+      return m_argument_table[7].first;
+    }
+
+    std::string ArgHandler::enummethod() {
+      return m_argument_table[8].first;
+    }
+
+    std::string ArgHandler::configtype() {
+      return m_argument_table[9].first;
+    }
+
+    std::string ArgHandler::calctype() {
+      return m_argument_table[10].first;
+    }
+
+    std::string ArgHandler::bset() {
+      return m_argument_table[11].first;
+    }
+
+    std::string ArgHandler::clex() {
+      return m_argument_table[12].first;
+    }
+
+    std::string ArgHandler::ref() {
+      return m_argument_table[13].first;
+    }
+
+    std::string ArgHandler::eci() {
+      return m_argument_table[14].first;
+    }
+
+    std::string ArgHandler::property() {
+      return m_argument_table[15].first;
+    }
 
     void ArgHandler::void_to_bash(std::vector<std::string> &arguments) {
       return;
@@ -81,16 +128,21 @@ namespace CASM {
       return;
     }
 
-    void scelname_to_bash(std::vector<std::string> &arguments) {
+    void ArgHandler::scelname_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(const auto &scel : pclex.const_db<Supercell>()) {
+          arguments.push_back(scel.name());
+        }
+      }
       return;
     }
 
-    void ArgHandler::query_to_bash(std::vector<std::string> &arguments) {
-      DataFormatterDictionary<Configuration> dict = make_dictionary<Configuration>();
-
-      for(auto it = dict.begin(); it != dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Configuration>::Property) {
-          arguments.push_back(it->name());
+    void ArgHandler::configname_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(const auto &config : pclex.const_db<Configuration>()) {
+          arguments.push_back(config.name());
         }
       }
       return;
@@ -107,6 +159,120 @@ namespace CASM {
       return;
     }
 
+    void ArgHandler::query_to_bash(std::vector<std::string> &arguments) {
+      DataFormatterDictionary<Configuration> config_dict = make_dictionary<Configuration>();
+
+      for(auto it = config_dict.begin(); it != config_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Configuration>::Property) {
+          arguments.push_back("config:" + it->name());
+        }
+      }
+      DataFormatterDictionary<Supercell> scel_dict = make_dictionary<Supercell>();
+
+      for(auto it = scel_dict.begin(); it != scel_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Supercell>::Property) {
+          arguments.push_back("scel:" + it->name());
+        }
+      }
+      DataFormatterDictionary<Kinetics::PrimPeriodicDiffTransOrbit> dt_dict = make_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>();
+
+      for(auto it = dt_dict.begin(); it != dt_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Kinetics::PrimPeriodicDiffTransOrbit>::Property) {
+          arguments.push_back("diff_trans:" + it->name());
+        }
+      }
+      DataFormatterDictionary<Kinetics::DiffTransConfiguration> dtc_dict = make_dictionary<Kinetics::DiffTransConfiguration>();
+
+      for(auto it = dtc_dict.begin(); it != dtc_dict.cend(); ++it) {
+        if(it->type() ==  BaseDatumFormatter<Kinetics::DiffTransConfiguration>::Property) {
+          arguments.push_back("diff_trans_config:" + it->name());
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::dbtype_to_bash(std::vector<std::string> &arguments) {
+      for(auto &item : DB::types_short()) {
+        arguments.push_back(item);
+      }
+      return;
+    }
+
+    void ArgHandler::enummethod_to_bash(std::vector<std::string> &arguments) {
+      const EnumeratorMap map = *(make_standard_enumerator_map().get());
+      for(const auto &e : map) {
+        arguments.push_back(e.name());
+      }
+      return;
+    }
+
+    void ArgHandler::configtype_to_bash(std::vector<std::string> &arguments) {
+      for(auto &item : DB::config_types_short()) {
+        arguments.push_back(item);
+      }
+      return;
+    }
+
+    void ArgHandler::calctype_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        for(auto &item : dir.all_calctype()) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::bset_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        for(auto &item : dir.all_bset()) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::clex_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(auto &item : set.cluster_expansions()) {
+          arguments.push_back(item.first);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::ref_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+        for(auto &item : set.dir().all_ref(set.default_clex().calctype)) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::eci_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+        const ClexDescription d = set.default_clex();
+        for(auto &item : set.dir().all_eci(d.property, d.calctype, d.ref, d.bset)) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
+
+    void ArgHandler::property_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        for(auto &item : dir.all_property()) {
+          arguments.push_back(item);
+        }
+      }
+      return;
+    }
 
     /**
      * This construction right here determines what the value_name of the boost options
@@ -121,7 +287,16 @@ namespace CASM {
       std::make_pair("<query>", ARG_TYPE::QUERY),
       std::make_pair("<operation>", ARG_TYPE::OPERATOR),
       std::make_pair("<configuration>", ARG_TYPE::CONFIGNAME),
-      std::make_pair("<type>", ARG_TYPE::COORDTYPE)
+      std::make_pair("<type>", ARG_TYPE::COORDTYPE),
+      std::make_pair("<dbtype>", ARG_TYPE::DBTYPE),
+      std::make_pair("<enummethod>", ARG_TYPE::ENUMMETHOD),
+      std::make_pair("<configtype>", ARG_TYPE::CONFIGTYPE),
+      std::make_pair("<calctype>", ARG_TYPE::CALCTYPE),
+      std::make_pair("<bset>", ARG_TYPE::BSET),
+      std::make_pair("<clex>", ARG_TYPE::CLEX),
+      std::make_pair("<ref>", ARG_TYPE::REF),
+      std::make_pair("<eci>", ARG_TYPE::ECI),
+      std::make_pair("<property>", ARG_TYPE::PROPERTY)
     });
 
 
@@ -186,6 +361,16 @@ namespace CASM {
       return m_verbosity_str;
     }
 
+    /// Will throw if not expected string or int in range [0, 100]
+    int OptionHandlerBase::verbosity() const {
+      auto val = Log::verbosity_level(verbosity_str());
+      if(val.first) {
+        return val.second;
+      }
+
+      throw std::invalid_argument(Log::invalid_verbosity_msg(verbosity_str()));
+    }
+
     const fs::path OptionHandlerBase::settings_path() const {
       return m_settings_path;
     }
@@ -227,30 +412,15 @@ namespace CASM {
     }
 
     COORD_TYPE OptionHandlerBase::coordtype_enum() const {
-      COORD_TYPE selected_mode;
-
-      if(m_coordtype_str[0] == 'F' || m_coordtype_str[0] == 'f') {
-        selected_mode = COORD_TYPE::FRAC;
-      }
-
-      else if(m_coordtype_str[0] == 'C' || m_coordtype_str[0] == 'c') {
-        selected_mode = COORD_TYPE::CART;
-      }
-
-      else {
-        selected_mode = COORD_TYPE::COORD_DEFAULT;
-      }
-
-      return selected_mode;
+      return from_string<COORD_TYPE>(coordtype_str());
     }
 
     void OptionHandlerBase::add_selection_suboption(const fs::path &_default) {
       m_desc.add_options()
       ("selection,c",
        po::value<fs::path>(&m_selection_path)->default_value(_default)->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected objects from the given selection file. "
-                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+       (std::string("Only consider the selected objects from the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
       return;
     }
 
@@ -258,9 +428,8 @@ namespace CASM {
       m_desc.add_options()
       ("config,c",
        po::value<fs::path>(&m_selection_path)->default_value(_default)->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected configurations of the given selection file. "
-                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+       (std::string("Only consider the selected configurations of the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
       return;
     }
 
@@ -268,9 +437,8 @@ namespace CASM {
       m_desc.add_options()
       ("selections,c",
        po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {_default})->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected objects from the given selection file. "
-                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+       (std::string("Only consider the selected objects from the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
       return;
     }
 
@@ -278,9 +446,8 @@ namespace CASM {
       m_desc.add_options()
       ("configs,c",
        po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {_default})->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected configurations of the given selection file. "
-                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+       (std::string("Only consider the selected configurations of the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
       return;
     }
 
@@ -288,8 +455,8 @@ namespace CASM {
       m_desc.add_options()
       ("config,c",
        po::value<fs::path>(&m_selection_path)->value_name(ArgHandler::path()),
-       "Only consider the selected configurations of the given selection file. "
-       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. ");
+       (std::string("Only consider the selected configurations of the given selection file. ") +
+        standard_singleline_enum_help<DB::SELECTION_TYPE>("", "filename")).c_str());
       return;
     }
 
@@ -297,8 +464,8 @@ namespace CASM {
       m_desc.add_options()
       ("configs,c",
        po::value<std::vector<fs::path> >(&m_selection_paths)->value_name(ArgHandler::path()),
-       "Only consider the selected configurations of the given selection files. "
-       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. ");
+       (std::string("Only consider the selected configurations of the given selection files. ") +
+        standard_singleline_enum_help<DB::SELECTION_TYPE>("", "filename")).c_str());
       return;
     }
 
@@ -312,23 +479,11 @@ namespace CASM {
       }
 
       std::stringstream help;
-      help << "Type of configurations. Options are: ";
-      int i = 0;
-      for(std::string s : m_configtype_opts) {
-        help << "\"" << s << "\"";
-        if(s == _default) {
-          help << " (default)";
-        }
-        if(i != m_configtype_opts.size() - 1) {
-          help << ", ";
-        }
-        ++i;
-      }
-      help << ".";
+      help << "Type of configurations. " << standard_singleline_help(m_configtype_opts, _default) << ".";
 
       m_desc.add_options()
       ("type,t",
-       po::value<std::string>(&m_configtype)->default_value(_default),
+       po::value<std::string>(&m_configtype)->default_value(_default)->value_name(ArgHandler::configtype()),
        help.str().c_str());
     }
 
@@ -350,23 +505,11 @@ namespace CASM {
       }
 
       std::stringstream help;
-      help << "Type of database objects. Options are: ";
-      int i = 0;
-      for(std::string s : m_db_type_opts) {
-        help << "\"" << s << "\"";
-        if(s == _default) {
-          help << " (default)";
-        }
-        if(i != m_db_type_opts.size() - 1) {
-          help << ", ";
-        }
-        ++i;
-      }
-      help << ".";
+      help << "Type of database objects. " << standard_singleline_help(m_db_type_opts, _default) << ".";
 
       m_desc.add_options()
       ("type,t",
-       po::value<std::string>(&m_db_type)->default_value(_default),
+       po::value<std::string>(&m_db_type)->default_value(_default)->value_name(ArgHandler::dbtype()),
        help.str().c_str());
     }
 
@@ -397,7 +540,7 @@ namespace CASM {
     void OptionHandlerBase::add_verbosity_suboption() {
       //TODO: add ArgHandler for this
       m_desc.add_options()
-      ("verbosity", po::value<std::string>(&m_verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: all).");
+      ("verbosity", po::value<std::string>(&m_verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: debug).");
       return;
     }
 
@@ -511,9 +654,25 @@ namespace CASM {
 
     void OptionHandlerBase::add_coordtype_suboption() {
       m_desc.add_options()
-      ("coord", po::value<std::string>(&m_coordtype_str)->default_value("frac")->value_name(ArgHandler::coordtype()), "Type of coordinate system to use. Use 'frac' for fractional (default) or 'cart' for Cartesian.");
+      ("coord", po::value<std::string>(&m_coordtype_str)->default_value("frac")
+       ->value_name(ArgHandler::coordtype()), (std::string("Type of coordinate system to use. ") +
+                                               singleline_help<COORD_TYPE>()).c_str());
       return;
     }
+
+    void OptionHandlerBase::add_dry_run_suboption(std::string msg) {
+      m_desc.add_options()
+      ("dry-run,n", msg.c_str());
+    }
+
+    std::string OptionHandlerBase::default_dry_run_msg() {
+      return std::string("Dry run (if supported by method)");
+    }
+
+    bool OptionHandlerBase::dry_run() const {
+      return vm().count("dry-run");
+    }
+
 
     //*****************************************************************************************************//
 

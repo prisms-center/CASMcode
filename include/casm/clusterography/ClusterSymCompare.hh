@@ -221,6 +221,47 @@ namespace CASM {
     const PrimGrid *m_prim_grid;
   };
 
+  /// \brief Comparisons of GenericCluster-derived types using supercell periodic symmetry
+  ///
+  /// The ClusterSymCompare hierarchy:
+  /// - SymCompare<Derived>
+  ///   - ClusterSymCompare<Derived> (implements 'compare_impl', 'invariants_compare_impl')
+  ///     - LocalSymCompare<ClusterType> (implements 'prepare_impl')
+  ///     - PrimPeriodicSymCompare<ClusterType> (implements 'prepare_impl')
+  ///     - ScelPeriodicSymCompare<ClusterType> (implements 'prepare_impl')
+  ///     - WithinScelSymCompare<ClusterType> (implements 'prepare_impl')
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename Element>
+  class WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/> :
+    public ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> {
+
+  public:
+
+    typedef ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> Base;
+    using Base::position;
+
+    /// \brief Constructor
+    ///
+    /// \param tol Tolerance for invariants_compare of site-to-site distances
+    ///
+    WithinScelSymCompare(const PrimGrid &prim_grid, double tol);
+
+    /// \brief Constructor
+    WithinScelSymCompare(const Supercell &scel);
+
+  protected:
+    friend SymCompare<CRTPBase<WithinScelSymCompare<Element>>>;
+
+    /// \brief Prepare an element for comparison
+    ///
+    /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
+    Element prepare_impl(Element obj) const;
+
+    const PrimGrid *m_prim_grid;
+  };
+
 }
 
 #endif

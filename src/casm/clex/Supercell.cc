@@ -45,7 +45,7 @@ namespace CASM {
 
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     m_primclex(_prim),
-    m_lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
+    m_lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), _prim->crystallography_tol()),
     m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()),
     m_transf_mat(transf_mat_init) {
     //    fill_reciprocal_supercell();
@@ -53,20 +53,9 @@ namespace CASM {
 
   Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
     m_primclex(_prim),
-    m_lattice(superlattice),
-    m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()) {
-
-    auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
-    if(!res.first) {
-      _prim->err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
-                       << "  Bad supercell, the transformation matrix is not integer." << std::endl;
-      _prim->err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
-      _prim->err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
-      _prim->err_log() << "lin_alg_tol: " << primclex().settings().lin_alg_tol() << std::endl;
-      _prim->err_log() << "transformation matrix: \n" << prim().lattice().lat_column_mat().inverse() * superlattice.lat_column_mat() << std::endl;
-      throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
-    }
-    m_transf_mat = res.second;
+    m_lattice(superlattice.lat_column_mat(), _prim->crystallography_tol()),
+    m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()),
+    m_transf_mat(CASM::transf_mat(*_prim, m_lattice)) {
   }
 
   Supercell::~Supercell() {}
@@ -527,12 +516,7 @@ namespace CASM {
   ///   then the FG_INDEX-th prim factor_group operation is applied
   ///
   std::string Supercell::generate_name_impl() const {
-    if(lattice().is_equivalent(canonical_form().lattice())) {
-      return CASM::generate_name(m_transf_mat);
-    }
-    else {
-      return canonical_form().name() + "." + std::to_string(from_canonical().index());
-    }
+    return scelname(primclex(), lattice());
   }
 
   /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
@@ -549,32 +533,46 @@ namespace CASM {
       return *it;
     }
 
-    // else construct transf_mat from name (make sure to remove any empty tokens)
     std::vector<std::string> tmp, tokens;
-    boost::split(tmp, name, boost::is_any_of("SCEL_"), boost::token_compress_on);
-    std::copy_if(tmp.begin(), tmp.end(), std::back_inserter(tokens),
-    [](const std::string & val) {
-      return !val.empty();
-    });
-    if(tokens.size() != 7) {
+    try {
+      // else construct transf_mat from name (make sure to remove any empty tokens)
+      boost::split(tmp, name, boost::is_any_of("SCEL_"), boost::token_compress_on);
+      std::copy_if(tmp.begin(), tmp.end(), std::back_inserter(tokens),
+      [](const std::string & val) {
+        return !val.empty();
+      });
+      if(tokens.size() != 7) {
+        throw std::invalid_argument("Error in make_supercell: supercell name format error");
+      }
+    }
+    catch(std::exception &e) {
       std::string format = "SCELV_T00_T11_T22_T12_T02_T01";
       primclex.err_log().error("In make_supercell");
       primclex.err_log() << "expected format: " << format << "\n";
       primclex.err_log() << "name: |" << name << "|" << std::endl;
       primclex.err_log() << "tokens: " << tokens << std::endl;
-      for(const auto &val : tokens) {
-        std::cout << "|" << val << "|" << std::endl;
-      }
       primclex.err_log() << "tokens.size(): " << tokens.size() << std::endl;
-      throw std::invalid_argument("Error in make_supercell: supercell name format error");
+      primclex.err_log() << e.what() << std::endl;
+      throw e;
     }
+
     Eigen::Matrix3i T;
-    auto cast = [](std::string val) {
-      return boost::lexical_cast<Index>(val);
-    };
-    T << cast(tokens[1]), cast(tokens[6]), cast(tokens[5]),
-    0, cast(tokens[2]), cast(tokens[4]),
-    0, 0, cast(tokens[3]);
+    try {
+      auto cast = [](std::string val) {
+        return boost::lexical_cast<Index>(val);
+      };
+      T << cast(tokens[1]), cast(tokens[6]), cast(tokens[5]),
+      0, cast(tokens[2]), cast(tokens[4]),
+      0, 0, cast(tokens[3]);
+    }
+    catch(std::exception &e) {
+      primclex.err_log().error("In make_supercell");
+      primclex.err_log() << "Could not construct transformation matrix from supercell name" << std::endl;
+      primclex.err_log() << "  name: " << name << std::endl;
+      primclex.err_log() << "  tokens: " << tokens << std::endl;
+      primclex.err_log() << e.what() << std::endl;
+      throw e;
+    }
 
     // construct supercell, insert into database, and return result
     Supercell scel(&primclex, T);
@@ -618,6 +616,20 @@ namespace CASM {
     return Supercell(&scel.primclex(), copy_apply(op, scel.lattice()));
   }
 
+  Eigen::Matrix3i transf_mat(const PrimClex &primclex, const Lattice &super_lat) {
+    auto res = is_supercell(super_lat, primclex.prim().lattice(), primclex.settings().crystallography_tol());
+    if(!res.first) {
+      primclex.err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
+                         << "  Bad supercell, the transformation matrix is not integer." << std::endl;
+      primclex.err_log() << "superlattice: \n" << super_lat.lat_column_mat() << std::endl;
+      primclex.err_log() << "prim lattice: \n" << primclex.prim().lattice().lat_column_mat() << std::endl;
+      primclex.err_log() << "lin_alg_tol: " << primclex.settings().lin_alg_tol() << std::endl;
+      primclex.err_log() << "transformation matrix: \n" << primclex.prim().lattice().lat_column_mat().inverse() * super_lat.lat_column_mat() << std::endl;
+      throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
+    }
+    return res.second;
+  }
+
   std::string generate_name(const Eigen::Matrix3i &transf_mat) {
     std::string name_str;
 
@@ -632,6 +644,24 @@ namespace CASM {
 
     return name_str;
   }
+
+  std::string scelname(const PrimClex &primclex, const Lattice &lat) {
+    const SymGroup &pg = primclex.prim().point_group();
+    Lattice canon_lat = lat.canonical_form(pg);
+    if(lat.is_equivalent(canon_lat)) {
+      return CASM::generate_name(transf_mat(primclex, lat));
+    }
+    else {
+      return CASM::generate_name(transf_mat(primclex, canon_lat)) +
+             "." + std::to_string(lat.from_canonical(pg).index());
+    }
+  }
+
+  std::string canonical_scelname(const PrimClex &primclex, const Lattice &lat) {
+    const SymGroup &pg = primclex.prim().point_group();
+    return CASM::generate_name(transf_mat(primclex, lat.canonical_form(pg)));
+  }
+
 
 }
 

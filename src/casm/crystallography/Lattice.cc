@@ -132,13 +132,11 @@ namespace CASM {
     int tprec = stream.precision();
     std::ios::fmtflags tflags = stream.flags();
     stream.precision(_prec);
-    stream.width(_prec + 3);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-    stream  << 1.0 << '\n';
+    Eigen::IOFormat format(_prec);
 
-    stream << ' ' << std::setw(_prec + 8) << m_lat_mat.col(0).transpose() << '\n';
-    stream << ' ' << std::setw(_prec + 8) << m_lat_mat.col(1).transpose() << '\n';
-    stream << ' ' << std::setw(_prec + 8) << m_lat_mat.col(2).transpose() << '\n';
+    stream  << 1.0 << '\n';
+    stream << m_lat_mat.transpose().format(format);
 
     stream.precision(tprec);
     stream.flags(tflags);
@@ -168,21 +166,16 @@ namespace CASM {
     double prim_density = (prim_kpoints[0] * prim_kpoints[1] * prim_kpoints[2]) / (prim_recip_lat.vol());
     double super_density = 0;
 
-    //        std::cout << prim_recip_lat << std::endl;
-    //std::cout << recip_lat << std::endl;
+
 
     Array<double> prim_vec_lengths;
 
     for(int i = 0; i < 3; i++) {
       prim_vec_lengths.push_back(prim_recip_lat.length(i));
     }
-    //std::cout<<prim_vec_lengths<<"\n";
+
     double shortest = prim_vec_lengths.min();
     int short_ind = prim_vec_lengths.find(shortest);
-
-    //std::cout << "prim kpoints "<< prim_kpoints << std::endl;
-    //    std::cout << "prim recip vol " << prim_recip_lat.vol << std::endl;
-    //std::cout << "prim kpoint density " << prim_density << std::endl;
 
     double scale = (prim_kpoints[short_ind] / shortest);
 
@@ -192,27 +185,19 @@ namespace CASM {
 
     super_density = (super_kpoints[0] * super_kpoints[1] * super_kpoints[2]) / (recip_lat.vol());
 
-    //std::cout << "super kpoint density " << super_density << std::endl;
-    //std::cout << super_kpoints << std::endl;
 
     while(super_density < prim_density) {
-      //  std::cout << prim_kpoints[short_ind] << std::endl;
       prim_kpoints[short_ind]++;
-      //std::cout << prim_kpoints[short_ind] << std::endl;
+
       scale = (prim_kpoints[short_ind] / shortest);
-      //std::cout << scale << std::endl;
 
       for(int i = 0; i < 3; i++) {
         super_kpoints[i] = int(ceil(scale * recip_lat.length(i)));
       }
 
-      //std::cout << super_kpoints << std::endl;
-
       super_density = (super_kpoints[0] * super_kpoints[1] * super_kpoints[2]) / (recip_lat.vol());
 
-      //std::cout << super_density << std::endl;
     }
-    //std::cout << "---------------\n";
 
     return super_kpoints;
   }
@@ -369,10 +354,6 @@ namespace CASM {
     Array<Eigen::Matrix3d > skew;
     Eigen::Matrix3d tskew(Eigen::Matrix3d::Identity());
     bool minimized = false;
-
-    //std::cout << "Before reduction: \n";
-    //print(std::cout);
-
 
     //Creates 12 skew matrices
     //Do we also need the 12 "double skew" matrices corresponding to body diagonal substitution? YES
@@ -693,8 +674,6 @@ namespace CASM {
       //Turn integer millers into doubles for mathematical purposes (inverse)
       millers_dubs = millers.cast<double>();
 
-      //std::cout<<millers_dubs<<std::endl;
-
       Eigen::Vector3d inv_miller_dubs;
       Eigen::Vector3i inv_miller;
 
@@ -900,7 +879,6 @@ namespace CASM {
     }
     while(new_vol / vol() < max_vol && orthoscore < 1); //John G 121030
 
-    //std::cout<<"SURFACE:"<<surface_cell<<std::endl;
 
     Lattice surface_lat(surface_cell.col(0), surface_cell.col(1), surface_cell.col(2));
     surface_lat.make_right_handed();
@@ -954,19 +932,18 @@ namespace CASM {
       frac_mat = iround(inv_lat_column_mat() * relaxed_pg[ng].matrix() * lat_column_mat()).cast<double>();
       tLat2 += frac_mat.transpose() * lat_column_mat().transpose() * lat_column_mat() * frac_mat;
     }
-
     tLat2 /= double(relaxed_pg.size());
 
     // tLat2 has the symmetrized lengths and angles -- it is equal to L.transpose()*L, where L=lat_column_mat()
     // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
     Eigen::Matrix3d tMat(tLat2), tMat2;
 
-    Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat);
+    Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat, Eigen::ComputeFullU | Eigen::ComputeFullV);
     tMat = Eigen::Matrix3d::Zero();
-    for(int i = 0; i < 3; i++) {
+    /*for(int i = 0; i < 3; i++) {
       tMat(i, i) = tSVD.singularValues()[i];
-    }
-
+    }*/
+    tMat.diagonal() = tSVD.singularValues().cwiseSqrt();
     tMat2 = tSVD.matrixU() * tMat * tSVD.matrixV().transpose();
 
     tMat = lat_column_mat();
@@ -1089,14 +1066,10 @@ namespace CASM {
       }
     }
 
-    //std::cout << "dA is:\n" << dA << "\n\n";
-    //std::cout << "and N is:\n" << N << "\n\n";
+
     Eigen::Matrix3l U, S, V;
     smith_normal_form(lround(dA), U, S, V);
-    //std::cout << "Smith U is:\n" << U << "\n\n";
-    //std::cout << "Smith S is:\n" << S << "\n\n";
-    //std::cout << "Smith V is:\n" << V << "\n\n";
-    //std::cout << "and U*S*V is:\n" << U*S*V << "\n\n";
+
     denom = N;
 
     //reuse matrix S for matrix 'R', as above

@@ -9,12 +9,15 @@
 /// What is being used to test it:
 
 #include "Common.hh"
+#include "TestConfiguration.hh"
+#include "TestOrbits.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/ScelEnum_impl.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/casm_io/jsonFile.hh"
 #include "casm/casm_io/stream_io/container.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
@@ -25,6 +28,49 @@
 
 using namespace CASM;
 
+namespace {
+  struct TestConfig0 : test::TestConfiguration {
+
+    TestConfig0(const PrimClex &primclex) :
+      TestConfiguration(
+        primclex,
+        lattice(primclex.prim()),
+        std::vector<int>(108, 0)) {}
+
+    static Lattice lattice(const Structure &prim) {
+      Eigen::Vector3d a, b, c;
+      std::tie(a, b, c) = prim.lattice().vectors();
+      return Lattice(3 * (c + b - a), 3 * (a - b + c), 3 * (a + b - c));
+    }
+
+  };
+
+  struct TestOrbits0 : test::TestPrimPeriodicDiffusionTransformationOrbits {
+    TestOrbits0(const PrimClex &primclex) :
+      test::TestPrimPeriodicDiffusionTransformationOrbits(
+        primclex,
+        jsonFile("tests/unit/kinetics/FCCTernary_bspecs_0.json"),
+        2, 4) {}
+  };
+
+  struct TestEnumerator0 {
+
+    TestEnumerator0() :
+      diff_perturb_specs("tests/unit/kinetics/FCCTernary_diff_perturb_0.json") {}
+
+    typedef Kinetics::DiffTransConfigEnumOccPerturbations EnumType;
+    typedef std::unique_ptr<EnumType> EnumPtr;
+
+    EnumPtr enumerator(
+      const Configuration &bg_config,
+      const Kinetics::PrimPeriodicDiffTransOrbit &dt_orbit) const {
+      return notstd::make_unique<EnumType>(bg_config, dt_orbit, diff_perturb_specs["local_cspecs"]);
+    }
+
+    jsonFile diff_perturb_specs;
+  };
+}
+
 BOOST_AUTO_TEST_SUITE(jsonDiffTransConfigDatabase_Test)
 
 BOOST_AUTO_TEST_CASE(Test1) {
@@ -32,53 +78,11 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // Make test project
   test::FCCTernaryProj proj;
   proj.check_init();
-
   PrimClex primclex(proj.dir, null_log());
-  const Structure &prim(primclex.prim());
-  primclex.settings().set_crystallography_tol(1e-5);
-  BOOST_CHECK_EQUAL(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
 
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
-  jsonParser bspecs {bspecs_path};
-
-  fs::path diffperturb_path = "tests/unit/kinetics/diff_perturb.json";
-  jsonParser diff_perturb_json {diffperturb_path};
-  BOOST_CHECK_EQUAL(true, true);
-
-  // Make PrimPeriodicIntegralClusterOrbit
-  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-  make_prim_periodic_orbits(
-    primclex.prim(),
-    bspecs,
-    alloy_sites_filter,
-    primclex.crystallography_tol(),
-    std::back_inserter(orbits),
-    null_log());
-  BOOST_CHECK_EQUAL(true, true);
-
-  // Make PrimPeriodicDiffTransOrbit
-  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(
-    orbits.begin() + 2,  // use pairs+
-    orbits.begin() + 4,
-    primclex.crystallography_tol(),
-    std::back_inserter(diff_trans_orbits),
-    &primclex);
-  BOOST_CHECK_EQUAL(true, true);
-
-  // Make background config
-  Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = prim.lattice().vectors();
-  BOOST_CHECK_EQUAL(true, true);
-
-  Supercell tscel(
-    &primclex,
-    Lattice(3 * (c + b - a), 3 * (a - b + c), 3 * (a + b - c)));
-  BOOST_CHECK_EQUAL(true, true);
-  const Supercell &scel = *tscel.insert().first;
-  Configuration config(scel);
-  config.init_occupation();
-  BOOST_CHECK_EQUAL(true, true);
+  TestOrbits0 to(primclex);
+  TestEnumerator0 te;
+  TestConfig0 tc(primclex);
 
   // Make DiffTransConfiguration database
   DB::jsonDatabase<Kinetics::DiffTransConfiguration> db_diff_trans_config(primclex);
@@ -89,10 +93,10 @@ BOOST_AUTO_TEST_CASE(Test1) {
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
 
   // Make DiffTransConfiguration enumerator and enumerate configs
+  auto enum_ptr = te.enumerator(tc.config, to.diff_trans_orbits[0]);
+
   //std::cout << "skipping DiffTransConfigEnumOccPerturbations dependent parts" << std::endl;
-  Kinetics::DiffTransConfigEnumOccPerturbations enum_diff_trans_config(
-    config, diff_trans_orbits[0], diff_perturb_json["local_cspecs"]);
-  for(const auto &diff_trans_config : enum_diff_trans_config) {
+  for(const auto &diff_trans_config : *enum_ptr) {
     db_diff_trans_config.insert(diff_trans_config);
   }
   db_diff_trans_config.commit();

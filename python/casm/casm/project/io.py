@@ -1,5 +1,10 @@
-import casm
+"""casm.project file io"""
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import json
+import six
+from casm.misc import compat, noindent
 
 def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     """
@@ -11,9 +16,9 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
       proj: casm.project.Project instance
         The CASM project
       
-      eci: an iterable of tuple of (index, values)
-        index: linear index of basis function
-        value: ECI value
+      eci: List[(index, value)]
+        index (int): linear index of basis function
+        value (float): ECI value
 
       fit_details: Dict
         Description of the fitting method used to generate the ECI,
@@ -29,8 +34,9 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     
     # read basis.json
     filename = dir.basis(clex)
-    with open(filename,'r') as f:
-      j = json.load(f)
+    with open(filename, 'r') as f:
+        j = json.load(f)
+    #print(json.dumps(j, indent=2))
     
     # edit to add fitting settings
     j["fit"] = fit_details
@@ -44,21 +50,20 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
       if entry["basis"] != None:
         basis = entry["basis"]
         for key, val in basis.items():
-          basis[key] = casm.NoIndent(val)
+          basis[key] = noindent.NoIndent(val)
     for entry in j["cluster_functions"]:
-      entry["orbit"] = casm.NoIndent(entry["orbit"])
+      entry["orbit"] = noindent.NoIndent(entry["orbit"])
       sites = entry["prototype"]["sites"]
       for i in range(len(sites)):
-        sites[i] = casm.NoIndent(sites[i])
+        sites[i] = noindent.NoIndent(sites[i])
     
     # write eci.json
     filename = dir.eci(clex)
     
     if verbose:
-      print "Writing:", filename, "\n"
-    with open(filename, 'w') as f:
-      f.write(json.dumps(j, indent=2, cls=casm.NoIndentEncoder))
+      print("Writing:", filename, "\n")
+    with open(filename, 'wb') as f:
+      f.write(six.u(json.dumps(j, indent=2, cls=noindent.NoIndentEncoder)).encode('utf-8'))
     
     # refresh proj to reflect new eci
     proj.refresh(clear_clex=True)
-

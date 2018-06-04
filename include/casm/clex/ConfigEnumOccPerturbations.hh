@@ -3,7 +3,7 @@
 #define CASM_ConfigEnumOccPerturbations
 
 #include "casm/container/Counter.hh"
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
@@ -35,7 +35,7 @@ namespace CASM {
     }
 
     static const std::string enumerator_name;
-    static const std::string interface_help;
+    static std::string interface_help();
 
     static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 

@@ -154,7 +154,7 @@ namespace CASM {
        "(Default: set project-wide references). \n"
        "See examples below for the form of expected input.")
       ("erase", "Erase reference states (Default: clear project-wide references).")
-      ("clex", po::value<std::string>(), "Name of the cluster expansion using the reference");
+      ("clex", po::value<std::string>()->value_name(ArgHandler::clex()), "Name of the cluster expansion using the reference");
 
       return;
     }

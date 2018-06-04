@@ -2,6 +2,7 @@
 #define CASM_TestEnum_impl
 
 #include "TestEnum.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 
 namespace CASM {
 
@@ -10,7 +11,8 @@ namespace CASM {
     const PrimClex &primclex,
     ScelIterator begin,
     ScelIterator end,
-    const std::vector<std::string> &filter_expr) {
+    const std::vector<std::string> &filter_expr,
+    bool dry_run) {
 
     auto lambda = [&](const Supercell & scel) {
       return notstd::make_unique<TestEnum>(scel);
@@ -22,7 +24,8 @@ namespace CASM {
                        begin,
                        end,
                        lambda,
-                       filter_expr);
+                       filter_expr,
+                       dry_run);
 
     return returncode;
   }

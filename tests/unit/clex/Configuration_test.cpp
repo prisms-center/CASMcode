@@ -7,6 +7,7 @@
 /// What is being used to test it:
 
 #include "Common.hh"
+#include "TestConfiguration.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
@@ -31,6 +32,33 @@ void check_made_from_name(const Configuration &config, std::string name) {
   // fill supercell and check that config are identical
   Configuration in_same_supercell = made_from_name.fill_supercell(config.supercell());
   BOOST_CHECK_EQUAL((config == in_same_supercell), true);
+}
+
+Lattice non_canonical_equiv_test_lat(const PrimClex &primclex) {
+
+  Eigen::Vector3d a, b, c;
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
+
+  // Test non-canonical equivalent unit cell
+  Eigen::Vector3d standard_a = c + b - a;
+  Eigen::Vector3d standard_b = a - b + c;
+  Eigen::Vector3d standard_c = a + b - c;
+
+  Lattice canon_lat = canonical_equivalent_lattice(
+                        Lattice(standard_a, standard_b, 2 * standard_c),
+                        primclex.prim().point_group(),
+                        primclex.crystallography_tol());
+  Lattice test_lat;
+  Index scel_op_index = 0;
+  for(const auto &op : primclex.prim().point_group()) {
+    test_lat = copy_apply(op, canon_lat);
+    if(!test_lat.is_equivalent(canon_lat)) {
+      return test_lat;
+    }
+    ++scel_op_index;
+  }
+
+  throw std::runtime_error("could not find non_canonical_equiv_test_lat");
 }
 
 BOOST_AUTO_TEST_SUITE(ConfigurationTest)
@@ -287,25 +315,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
   }
 
   {
-    // Test non-canonical equivalent unit cell
-    Eigen::Vector3d standard_a = c + b - a;
-    Eigen::Vector3d standard_b = a - b + c;
-    Eigen::Vector3d standard_c = a + b - c;
-
-    Lattice canon_lat = canonical_equivalent_lattice(
-                          Lattice(standard_a, standard_b, 2 * standard_c),
-                          primclex.prim().point_group(),
-                          primclex.crystallography_tol());
-    Lattice test_lat;
-    Index scel_op_index = 0;
-    for(const auto &op : primclex.prim().point_group()) {
-      test_lat = copy_apply(op, canon_lat);
-      if(!test_lat.is_equivalent(canon_lat)) {
-        break;
-      }
-      ++scel_op_index;
-    }
-
+    Lattice test_lat = non_canonical_equiv_test_lat(primclex);
     Supercell scel {&primclex, test_lat};
 
     {

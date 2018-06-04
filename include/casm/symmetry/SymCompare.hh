@@ -40,6 +40,13 @@ namespace CASM {
     typedef ScelPeriodicSymCompare<Element> MostDerived;
   };
 
+  /// \brief Traits class for ScelPeriodicSymCompare
+  template<typename _Element>
+  struct traits<WithinScelSymCompare<_Element>> {
+    typedef _Element Element;
+    typedef WithinScelSymCompare<Element> MostDerived;
+  };
+
   /// \brief CRTP base class for implementing element and orbit comparison
   ///
   /// Derived needs to implement the following *private* methods:

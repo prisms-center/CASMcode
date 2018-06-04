@@ -87,7 +87,8 @@ namespace CASM {
       else {
         bfunc_imp_stream <<
                          indent << "/**** Basis functions for orbit " << no << "****\n";
-        ProtoSitesPrinter().print(_tree[no].prototype(), bfunc_imp_stream);
+        Log l(bfunc_imp_stream);
+        ProtoSitesPrinter().print(_tree[no].prototype(), l);
         bfunc_imp_stream << indent << "****/\n";
       }
 

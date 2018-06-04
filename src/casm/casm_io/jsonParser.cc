@@ -186,10 +186,11 @@ namespace CASM {
 
   std::istream &operator>>(std::istream &stream, jsonParser &json) {
     if(!json.read(stream)) {
-      std::cerr << "ERROR: Unable to successfully parse JSON file.  File parsed as:\n"
-                << json
-                << "\nPlease correct input file and try again. Exiting...\n";
-      exit(1);
+      std::stringstream msg;
+      msg << "Error: Unable to successfully parse JSON file.  File parsed as:\n"
+          << json
+          << "\nPlease correct input file and try again. Exiting...\n";
+      throw std::invalid_argument(msg.str());
     }
     return stream;
   }
@@ -352,11 +353,12 @@ namespace CASM {
           curr = &((*curr)[index]);
         }
         else {
-          std::string msg = "Error in jsonParser::at: attempted to access element outside of array range";
-          std::cerr << "path: " << path << std::endl;
-          std::cerr << "index: " << index << std::endl;
-          std::cerr << "curr->size(): " << curr->size() << std::endl;
-          throw std::invalid_argument(msg);
+          std::stringstream msg;
+          msg << "Error in jsonParser::at: attempted to access element outside of array range. "
+              << "path: '" << path << "' "
+              << "index: " << index << " "
+              << "curr->size(): " << curr->size();
+          throw std::invalid_argument(msg.str());
         }
       }
       else {
@@ -365,10 +367,10 @@ namespace CASM {
           curr = &((*curr)[it->string()]);
         }
         else {
-          std::string msg = "Error in jsonParser::at: key not found";
-          std::cerr << "path: " << path << std::endl;
-          std::cerr << "key: " << it->string() << std::endl;
-          throw std::invalid_argument(msg);
+          std::stringstream msg;
+          msg << "Error in jsonParser::at: key '" << it->string() << "' not found at '"
+              << path << "'.";
+          throw std::invalid_argument(msg.str());
         }
       }
     }
@@ -377,14 +379,36 @@ namespace CASM {
   }
 
   /// Return a reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
-  jsonParser &jsonParser::operator[](const int &element) {
+  jsonParser &jsonParser::operator[](const size_type &element) {
 
     return (jsonParser &) get_array()[element];
   }
 
   /// Return a const reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
-  const jsonParser &jsonParser::operator[](const int &element) const {
+  const jsonParser &jsonParser::operator[](const size_type &element) const {
 
+    return (const jsonParser &) get_array()[element];
+  }
+
+  /// Return a reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
+  jsonParser &jsonParser::at(const size_type &element) {
+    if(!is_array()) {
+      throw std::invalid_argument("Error in jsonParser::at: attempting to access non-array with index");
+    }
+    if(!(element < size())) {
+      throw std::out_of_range("Error in jsonParser::at: out of range");
+    }
+    return (jsonParser &) get_array()[element];
+  }
+
+  /// Return a const reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
+  const jsonParser &jsonParser::at(const size_type &element) const {
+    if(!is_array()) {
+      throw std::invalid_argument("Error in jsonParser::at: attempting to access non-array with index");
+    }
+    if(!(element < size())) {
+      throw std::out_of_range("Error in jsonParser::at: out of range");
+    }
     return (const jsonParser &) get_array()[element];
   }
 
@@ -519,6 +543,47 @@ namespace CASM {
   /// Return const_iterator to JSON object value with 'name'
   jsonParser::const_iterator jsonParser::find(const std::string &name) const {
     return const_iterator(this, get_obj().find(name));
+  }
+
+  /// Return iterator to sub-object or element, or 'end' if not found
+  jsonParser::iterator jsonParser::find_at(const fs::path &path) {
+    if(!path.is_relative()) {
+      throw std::invalid_argument(
+        "Error in jsonParser::operator[](const fs::path &path): path must be relative");
+    }
+    jsonParser *curr = this;
+    jsonParser::iterator res = this->end();
+    for(auto it = path.begin(); it != path.end(); ++it) {
+      if(curr->is_array()) {
+        int index = std::stoi(it->string());
+        if(curr->size() > index) {
+          res = curr->begin();
+          for(int i = 0; i < index; ++i) {
+            ++res;
+          }
+          curr = &(*res);
+        }
+        else {
+          return this->end();
+        }
+      }
+      else {
+        res = curr->find(it->string());
+        if(res != curr->end()) {
+          curr = &((*curr)[it->string()]);
+        }
+        else {
+          return this->end();
+        }
+      }
+    }
+
+    return res;
+  }
+
+  /// Return iterator to sub-object or element, or 'end' if not found
+  jsonParser::const_iterator jsonParser::find_at(const fs::path &path) const {
+    return const_cast<jsonParser *>(this)->find_at(path);
   }
 
   /// Return true if JSON object contains 'name'

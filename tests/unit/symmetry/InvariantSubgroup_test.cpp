@@ -7,6 +7,7 @@
 
 /// What is being used to test it:
 #include "Common.hh"
+#include "casm/casm_io/jsonFile.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
@@ -28,8 +29,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   BOOST_CHECK_EQUAL(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/bspecs_0.json";
-  jsonParser bspecs {bspecs_path};
+  jsonFile bspecs {"tests/unit/kinetics/ZrO_bspecs_0.json"};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -132,7 +132,8 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
       index++;
     }
-    test::print_computed_result(std::cout, "cluster_group_size", cluster_group_size);
+    //test::print_computed_result(std::cout, "expected_cluster_group_size", expected_cluster_group_size);
+    //test::print_computed_result(std::cout, "cluster_group_size", cluster_group_size);
     BOOST_CHECK_EQUAL(true, true);
   }
 }

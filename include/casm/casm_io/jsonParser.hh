@@ -203,10 +203,16 @@ namespace CASM {
     const jsonParser &at(const fs::path &path) const;
 
     /// Return a reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
-    jsonParser &operator[](const int &element);
+    jsonParser &operator[](const size_type &element);
 
     /// Return a const reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
-    const jsonParser &operator[](const int &element) const;
+    const jsonParser &operator[](const size_type &element) const;
+
+    /// Return a reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
+    jsonParser &at(const size_type &element);
+
+    /// Return a const reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
+    const jsonParser &at(const size_type &element) const;
 
     /// Returns array size if *this is a JSON array, object size if *this is a JSON object, 1 otherwise
     size_type size() const;
@@ -236,6 +242,12 @@ namespace CASM {
     /// Return const_iterator to JSON object value with 'name'
     const_iterator find(const std::string &name) const;
 
+    /// Return iterator to sub-object or element, or 'end' if not found
+    jsonParser::iterator find_at(const fs::path &path);
+
+    /// Return iterator to sub-object or element, or 'end' if not found
+    jsonParser::const_iterator find_at(const fs::path &path) const;
+
     /// Return true if JSON object contains 'name'
     bool contains(const std::string &name) const;
 
@@ -257,6 +269,10 @@ namespace CASM {
     ///   Returns true if 'key' found, else false
     template<typename T, typename...Args>
     bool get_if(T &t, const std::string &key, Args &&... args) const;
+
+    /// Get data from json, if 'this' contains 'key', else return to 'default_value'
+    template<typename T, typename...Args>
+    T get_if_else(const std::string &key, const T &default_value, Args &&... args) const;
 
     /// Get data from json, if 'this' contains 'key', else set to 'default_value'
     ///   Returns true if 'key' found, else false
@@ -542,7 +558,7 @@ namespace CASM {
       : parser(j), type(json_spirit::null_type), val_iter(iter) {
     }
 
-    reference operator*() {
+    reference operator*() const {
       if(type == json_spirit::obj_type)
         return (reference) obj_iter->second;
       else if(type == json_spirit::array_type)
@@ -551,7 +567,7 @@ namespace CASM {
         return *parser;
     }
 
-    pointer operator->() {
+    pointer operator->() const {
       if(type == json_spirit::obj_type)
         return (pointer) &obj_iter->second;
       else if(type == json_spirit::array_type)
@@ -561,7 +577,7 @@ namespace CASM {
     }
 
 
-    bool operator==(const jsonParserIterator &iter) {
+    bool operator==(const jsonParserIterator &iter) const {
       if(parser != iter.parser)
         return false;
 
@@ -573,7 +589,7 @@ namespace CASM {
         return true;
     }
 
-    bool operator!=(const jsonParserIterator &iter) {
+    bool operator!=(const jsonParserIterator &iter) const {
       return !(*this == iter);
     }
 
@@ -643,7 +659,7 @@ namespace CASM {
       }
     }
 
-    operator jsonParser::const_iterator() {
+    operator jsonParser::const_iterator() const {
       if(type == json_spirit::obj_type)
         return jsonParser::const_iterator(parser, obj_iter);
       else if(type == json_spirit::array_type)
@@ -653,7 +669,7 @@ namespace CASM {
     }
 
     /// When iterating over a JSON object, returns the 'name' of the 'name':value pair the iterator is pointing at
-    std::string name() {
+    std::string name() const {
       if(type == json_spirit::obj_type)
         return obj_iter->first;
       else
@@ -737,6 +753,17 @@ namespace CASM {
       return true;
     }
     return false;
+  }
+
+  template<typename T, typename...Args>
+  T jsonParser::get_if_else(const std::string &key, const T &default_value, Args &&... args) const {
+    auto it = find(key);
+    if(it != end()) {
+      return it->get<T>(std::forward<Args>(args)...);
+    }
+    else {
+      return default_value;
+    }
   }
 
   template<typename T, typename...Args>

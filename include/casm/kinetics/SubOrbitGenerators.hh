@@ -2,7 +2,7 @@
 #ifndef CASM_SubOrbitGenerators
 #define CASM_SubOrbitGenerators
 
-#include "casm/container/InputEnumerator.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/symmetry/SymOp.hh"
 

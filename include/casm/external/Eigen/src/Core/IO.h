@@ -50,12 +50,12 @@ std::ostream & print_matrix(std::ostream & s, const Derived& _m, const IOFormat&
 struct IOFormat
 {
   /** Default contructor, see class IOFormat for the meaning of the parameters */
-  IOFormat(int _precision = StreamPrecision, int _flags = 0,
+  IOFormat(int _precision = StreamPrecision, int _width = StreamPrecision, int _flags = 0,
     const std::string& _coeffSeparator = " ",
     const std::string& _rowSeparator = "\n", const std::string& _rowPrefix="", const std::string& _rowSuffix="",
     const std::string& _matPrefix="", const std::string& _matSuffix="")
   : matPrefix(_matPrefix), matSuffix(_matSuffix), rowPrefix(_rowPrefix), rowSuffix(_rowSuffix), rowSeparator(_rowSeparator),
-    rowSpacer(""), coeffSeparator(_coeffSeparator), precision(_precision), flags(_flags)
+    rowSpacer(""), coeffSeparator(_coeffSeparator), precision(_precision), width(_width), flags(_flags)
   {
     int i = int(matSuffix.length())-1;
     while (i>=0 && matSuffix[i]!='\n')
@@ -68,6 +68,7 @@ struct IOFormat
   std::string rowPrefix, rowSuffix, rowSeparator, rowSpacer;
   std::string coeffSeparator;
   int precision;
+  int width;
   int flags;
 };
 
@@ -147,6 +148,30 @@ struct significant_decimals_impl
   : significant_decimals_default_impl<Scalar, NumTraits<Scalar>::IsInteger>
 {};
 
+// compute the largest width
+template<typename Derived, typename Index = typename Derived::Index>
+Index print_matrix_width(std::ostream & s, const Derived& m, Index width) {
+  for(Index j = 0; j < m.cols(); ++j) {
+    for(Index i = 0; i < m.rows(); ++i)
+    {
+      std::stringstream sstr;
+      sstr.copyfmt(s);
+      sstr << m.coeff(i,j);
+      width = std::max<Index>(width, Index(sstr.str().length()));
+    }
+  }
+  return width;
+}
+
+// compute the largest width
+template<typename DerivedIterator, typename Index = typename std::iterator_traits<DerivedIterator>::value_type::Index>
+Index print_matrix_width(std::ostream & s, DerivedIterator begin, DerivedIterator end, Index width) {
+  for(; begin != end; ++begin) {
+    width = print_matrix_width(s, *begin, width);
+  }
+  return width;
+}
+
 /** \internal
   * print the matrix \a _m to the output stream \a s using the output format \a fmt */
 template<typename Derived>
@@ -162,7 +187,7 @@ std::ostream & print_matrix(std::ostream & s, const Derived& _m, const IOFormat&
   typedef typename Derived::Scalar Scalar;
   typedef typename Derived::Index Index;
 
-  Index width = 0;
+  Index width = fmt.width;
 
   std::streamsize explicit_precision;
   if(fmt.precision == StreamPrecision)

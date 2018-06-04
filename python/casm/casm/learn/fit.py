@@ -1,22 +1,34 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import sklearn.linear_model
 import sklearn.cross_validation
 import sklearn.metrics
 import random, re, time, os, types, json, pickle, copy, uuid, shutil, tempfile
-from os.path import splitext, basename, join
 import numpy as np
+import pandas
+import six
+
+if six.PY2:
+    from funcsigs import signature
+else:
+    from inspect import signature
+
 from math import sqrt
-from casm.project import Project, Selection, query, write_eci
+from os.path import splitext, basename, join
+
 import casm.learn.linear_model
 import casm.learn.tools
 import casm.learn.selection_wrapper
-import pandas
+from casm.misc import noindent
+from casm.project import Project, Selection, query, write_eci
 
 def _find_method(mods, attrname):
   for m in mods:
     if hasattr(m, attrname):
       return getattr(m, attrname)
-  print "ERROR: Could not find a method named:", attrname
-  print "Tried:", mods
+  print("ERROR: Could not find a method named:", attrname)
+  print("Tried:", mods)
   raise AttributeError("Could not find: " + attrname)
 
 
@@ -393,9 +405,9 @@ def example_input_DirectSelection():
   d = {
     "use_saved_estimator" : False,
     "population" : [
-      {"from_halloffame" : "my_halloffame.pkl", "individuals" : casm.NoIndent([0, 2, 5]) },
+      {"from_halloffame" : "my_halloffame.pkl", "individuals" : noindent.NoIndent([0, 2, 5]) },
       {"bitstring": "111000"},
-      {"indices" : casm.NoIndent([1, 2, 3, 12, 13, 21])}
+      {"indices" : noindent.NoIndent([1, 2, 3, 12, 13, 21])}
     ]
   }
   input["feature_selection"]["kwargs"] = d
@@ -408,8 +420,7 @@ def example_input_DirectSelection():
 
 def print_input_help():
   
-  print \
-  """
+  print("""
   Settings file description:
   ------------------------------------------------------------------------------
   {
@@ -991,7 +1002,7 @@ def print_input_help():
   
   }
   ------------------------------------------------------------------------------
-  """
+  """)
 
 
 def default_filename(prefix, default, suffix):
@@ -1079,7 +1090,7 @@ def set_input_defaults(input, input_filename=None):
     "y":"formation_energy",
   }
   
-  for key, val in defaults.iteritems():
+  for key, val in six.iteritems(defaults):
     if key not in specs["data"]:
       specs["data"][key] = val
   
@@ -1159,7 +1170,7 @@ def open_input(input_filename):
     try:
       input = set_input_defaults(json.load(f), input_filename)
     except Exception as e:
-      print "Error parsing JSON in", args.settings[0]
+      print("Error parsing JSON in", args.settings[0])
       raise e
   return input
 
@@ -1277,9 +1288,9 @@ class FittingData(object):
     # data
     if tdata is not None:
       self.data = tdata.data.copy()
-      for i in xrange(self.n_features):
+      for i in range(self.n_features):
         self.data.loc[:,"weighted_" + tdata.X_name + "(" + str(i) + ")"] = self.weighted_X[:,i]
-      for i in xrange(self.n_features):
+      for i in range(self.n_features):
         self.data.loc[:,"weighted_" + tdata.y_name] = self.weighted_y
 
 
@@ -1368,7 +1379,7 @@ class TrainingData(object):
         hull_selection = specs["weight"]["kwargs"]["hull_selection"]
         hull_dist_name = "hull_dist(" + hull_selection + ",atom_frac)"
         if verbose:
-          print "# wHullDist: Will calculate hull distance:", hull_dist_name
+          print("# wHullDist: Will calculate hull distance:", hull_dist_name)
         columns.append(hull_dist_name)
       
       # perform query
@@ -1437,8 +1448,8 @@ def read_sample_weight(input, tdata, verbose=True):
   specs = input["problem_specs"]
   
   if verbose:
-    print "# Weighting:"
-    print json.dumps(specs["weight"], indent=2)
+    print("# Weighting:")
+    print(json.dumps(specs["weight"], indent=2))
   
   # get kwargs
   weight_kwargs = copy.deepcopy(specs["weight"]["kwargs"])
@@ -1446,12 +1457,12 @@ def read_sample_weight(input, tdata, verbose=True):
   # use method to get weights
   if specs["weight"]["method"] == "wCustom":
     if verbose:
-      print "# Reading custom weights"
+      print("# Reading custom weights")
     sample_weight = tdata.data["weight"].values
   elif specs["weight"]["method"] == "wCustom2d":
     if verbose:
-      print "# Reading custom2d weights"
-    cols = ["weight(" + str(i) + ")" for i in xrange(tdata.n_samples)]
+      print("# Reading custom2d weights")
+    cols = ["weight(" + str(i) + ")" for i in range(tdata.n_samples)]
     sample_weight = tdata.data.loc[:,cols].values
   elif specs["weight"]["method"] == "wHullDist":
     sample_weight = casm.learn.tools.wHullDist(tdata.hull_dist, **weight_kwargs)
@@ -1466,7 +1477,7 @@ def read_sample_weight(input, tdata, verbose=True):
     sample_weight = None
   
   if verbose:
-    print ""
+    print("")
   
   return sample_weight
       
@@ -1504,7 +1515,7 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
       
   """
   if verbose:
-    print "# Get problem data..."
+    print("# Get problem data...")
   
   specs = input["problem_specs"]
   
@@ -1514,10 +1525,10 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
   
   if read_existing and os.path.exists(fit_data_filename):
     if verbose:
-      print "# Reading existing problem specs from:", fit_data_filename
+      print("# Reading existing problem specs from:", fit_data_filename)
     fdata = pickle.load(open(fit_data_filename, 'rb'))
     if verbose:
-      print "#   DONE\n"
+      print("#   DONE\n")
     
     s = "Problem specifications have changed.\n\n" + \
         "To proceed with the existing specs adjust your input settings \"problem_specs\" to match.\n" + \
@@ -1525,10 +1536,10 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     
     def check_input(name):
       if fdata.input["problem_specs"][name] != specs[name]:
-        print "ERROR: Input file and stored data differ. Input '" + name + "' has changed."
-        print "Stored data:\n", json.dumps(fdata.input["problem_specs"][name], indent=2)
-        print "Input:\n", json.dumps(specs[name], indent=2)
-        print s
+        print("ERROR: Input file and stored data differ. Input '" + name + "' has changed.")
+        print("Stored data:\n", json.dumps(fdata.input["problem_specs"][name], indent=2))
+        print("Input:\n", json.dumps(specs[name], indent=2))
+        print(s)
         exit()
     
     for name in ["data", "cv", "weight"]:
@@ -1541,9 +1552,9 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     tdata = TrainingData(input, verbose=verbose)
     
     if verbose:
-      print "# Target:", tdata.y_name
-      print "# Training samples:", tdata.n_samples
-      print "# Features:", tdata.n_features, "\n"
+      print("# Target:", tdata.y_name)
+      print("# Training samples:", tdata.n_samples)
+      print("# Features:", tdata.n_features, "\n")
     
     ## weight (optional)
     sample_weight = read_sample_weight(input, tdata, verbose=verbose)
@@ -1556,8 +1567,8 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     cv = cv_method(tdata.n_samples, **cv_kwargs)
     
     if verbose:
-      print "# CV:"
-      print json.dumps(specs["cv"], indent=2), "\n"
+      print("# CV:")
+      print(json.dumps(specs["cv"], indent=2), "\n")
     
     ## scoring
     scoring = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error, greater_is_better=True)
@@ -1572,11 +1583,12 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     fdata.input["problem_specs"] = specs
     
     if save == True:
-      pickle.dump(fdata, open(fit_data_filename, 'wb'))
+      with open(fit_data_filename, 'wb') as f:
+          pickle.dump(fdata, f, protocol=2)
     
     if verbose:
-      print "# Writing problem specs to:", fit_data_filename
-      print "# To inspect or customize the problem specs further, use the '--checkspecs' method\n"
+      print("# Writing problem specs to:", fit_data_filename)
+      print("# To inspect or customize the problem specs further, use the '--checkspecs' method\n")
     
   
   # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
@@ -1611,8 +1623,8 @@ def make_estimator(input, verbose = True):
   """""
   
   if verbose:
-    print "# Estimator:"
-    print json.dumps(input["estimator"], indent=2), "\n"
+    print("# Estimator:")
+    print(json.dumps(input["estimator"], indent=2), "\n")
   
   ## estimator
   
@@ -1673,24 +1685,39 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
   kwargs = copy.deepcopy(input["feature_selection"]["kwargs"])
   
   if verbose:
-    print "# Feature Selection:"
-    print json.dumps(input["feature_selection"], indent=2), "\n"
+    print("# Feature Selection:")
+    print(json.dumps(input["feature_selection"], indent=2), "\n")
   
   mods = [casm.learn.feature_selection, sklearn.feature_selection, casm.learn.selection_wrapper]
   
   selector_method = _find_method(mods, input["feature_selection"]["method"])
   
   # check if 'cv', 'scoring', 'penalty' are allowed kwargs 
-  arg_count = selector_method.__init__.func_code.co_argcount
-  allowed_kwargs = selector_method.__init__.func_code.co_varnames[:arg_count]
+
+#  arg_count = selector_method.__init__.func_code.co_argcount
+#  allowed_kwargs = selector_method.__init__.func_code.co_varnames[:arg_count]
   
-  if "cv" in allowed_kwargs:
+#  print("allowed_kwargs:", str(allowed_kwargs))
+  
+#  if "cv" in allowed_kwargs:
+#    kwargs["cv"] = cv
+#  if "scoring" in allowed_kwargs:
+#    kwargs["scoring"] = scoring
+#  if "penalty" in allowed_kwargs:
+#    kwargs["penalty"] = penalty
+#  if "verbose" in allowed_kwargs:
+#    kwargs["verbose"] = verbose
+  
+  sig = signature(selector_method.__init__)
+#  print("sig.parameters.keys():", str(sig.parameters.keys()))
+      
+  if "cv" in sig.parameters:
     kwargs["cv"] = cv
-  if "scoring" in allowed_kwargs:
+  if "scoring" in sig.parameters:
     kwargs["scoring"] = scoring
-  if "penalty" in allowed_kwargs:
+  if "penalty" in sig.parameters:
     kwargs["penalty"] = penalty
-  if "verbose" in allowed_kwargs:
+  if "verbose" in sig.parameters:
     kwargs["verbose"] = verbose
   
   selector = selector_method(estimator, **kwargs)
@@ -1930,7 +1957,7 @@ def checkhull(input, hall, indices=None, verbose=True):
     "ranged_rms":[0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
   }
   
-  for key, val in opt.iteritems():
+  for key, val in six.iteritems(opt):
     if key not in input["checkhull"] or input["checkhull"][key] is None:
       input["checkhull"][key] = val
   
@@ -1958,12 +1985,12 @@ def checkhull(input, hall, indices=None, verbose=True):
   
   # not sure of all the edge cases, enforcing these seems simpler for now...
   if clex.name != "formation_energy":
-    print "default clex:", clex.name
-    print "use 'casm settings --set-default-clex formation_energy' to change the default clex"
+    print("default clex:", clex.name)
+    print("use 'casm settings --set-default-clex formation_energy' to change the default clex")
     raise Exception("Error using checkhull: default clex must be 'formation_energy'")
   
   if input["problem_specs"]["data"]["y"] != "formation_energy":
-    print "property:", input["problem_specs"]["data"]["y"]
+    print("property:", input["problem_specs"]["data"]["y"])
     raise Exception("Error using checkhull: property must be 'formation_energy'")
   
   # load hull selection
@@ -2019,9 +2046,9 @@ def checkhull(input, hall, indices=None, verbose=True):
   for indiv_i in indices:
     
     if verbose:
-      print "-- Check: individual", indiv_i, " --"
+      print("-- Check: individual", indiv_i, " --")
       print_individual(hall, [indiv_i])
-      print ""
+      print("")
     
     # write ECI to use
     indiv = hall[indiv_i]
@@ -2082,12 +2109,12 @@ def checkhull(input, hall, indices=None, verbose=True):
       kwargs = {"index":False}
       if df.shape[0]:
         if verbose:
-          print title + ":"
-          print df.drop(to_drop, axis=1, errors='ignore').to_string(**kwargs)
+          print(title + ":")
+          print(df.drop(to_drop, axis=1, errors='ignore').to_string(**kwargs))
           if write_results:
-            print "write:", output_name, "\n"
+            print("write:", output_name, "\n")
           else:
-            print ""
+            print("")
         if write_results:
           output_sel = Selection(proj, output_name)
           output_sel.save(data=df, force=True)
@@ -2114,11 +2141,11 @@ def checkhull(input, hall, indices=None, verbose=True):
       ranged_rms.append({"range": r, "n_config": res[0], "rms": res[1] })
     ranged_rms.append({"range": "all", "n_config":df_calc.shape[0], "rms":indiv.rms})
     if verbose:
-      print "ranged_rms:"
+      print("ranged_rms:")
       for d in ranged_rms:
-        print "  RMS error for", d["n_config"], "calculated configurations within", 
-        print d["range"], "eV/unitcell of the DFT hull:", d["rms"]
-      print ""
+        print("  RMS error for", d["n_config"], "calculated configurations within", end=' ') 
+        print(d["range"], "eV/unitcell of the DFT hull:", d["rms"])
+      print("")
     
     sel.data.drop([clex_dft_hull_dist_long], axis=1, inplace=True)
     
@@ -2126,7 +2153,7 @@ def checkhull(input, hall, indices=None, verbose=True):
     indiv.checkhull_settings = input["checkhull"]
     
     if verbose:
-      print "\n"
+      print("\n")
     
   # reset eci setting
   proj.command("settings --set-eci " + orig_clex.eci)
@@ -2205,8 +2232,8 @@ def checkspecs(input, verbose=True):
   fdata = casm.learn.fit.make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
   
   if verbose:
-    print "# Check problem specs:"
-    print json.dumps(input["checkspecs"], indent=2), "\n"
+    print("# Check problem specs:")
+    print(json.dumps(input["checkspecs"], indent=2), "\n")
   
   # print training data
   filetype = specs["data"]["filetype"]
@@ -2223,16 +2250,16 @@ def checkspecs(input, verbose=True):
     fdata.data.to_json(filename, **kwargs)
   
   if verbose:
-    print "# Wrote training data (including weights) to:", filename
+    print("# Wrote training data (including weights) to:", filename)
   
   # print cv
   cv_filename = input["checkspecs"]["cv_filename"]
   cv_kwargs = input["checkspecs"]["cv_kwargs"]
   with open(cv_filename, 'wb') as f:
-    pickle.dump(fdata.cv, f, **cv_kwargs)
+    pickle.dump(fdata.cv, f, protocol=2)
   
   if verbose:
-    print "# Wrote CV data to:", cv_filename, "\n"
+    print("# Wrote CV data to:", cv_filename, "\n")
 
 
 def bitstr(indiv, n_bits_max=None):
@@ -2271,11 +2298,11 @@ def print_population(pop):
       boolean list of shape [n_features], in which an element is True iff its 
       corresponding feature is selected for retention.
   """
-  print "{0:5}: {1:43} {2:<12} {3:<12}".format("Index", "Selected", "#Selected", "CV")
-  print "-"*100
+  print("{0:5}: {1:43} {2:<12} {3:<12}".format("Index", "Selected", "#Selected", "CV"))
+  print("-"*100)
   form_str = "{0:5}: {1} {2:<12} {3:<12.8g}"
   for i in range(len(pop)):
-    print form_str.format(i, bitstr(pop[i], 40), sum(pop[i]), pop[i].fitness.values[0])
+    print(form_str.format(i, bitstr(pop[i], 40), sum(pop[i]), pop[i].fitness.values[0]))
 
 
 def to_json(index, indiv):
@@ -2325,15 +2352,15 @@ def to_json(index, indiv):
   Note
   ----
   
-    ECI are serialized using cls=casm.NoIndent, so when writing with json.dump or 
-    json.dumps, include 'cls=casm.NoIndentEncoder'.
+    ECI are serialized using cls=casm.misc.noident.noindent.NoIndent, so when writing with json.dump or 
+    json.dumps, include 'cls=casm.misc.noindent.noindent.NoIndentEncoder'.
   
   """
   d = dict()
   d["index"] = index
   d["id"] = str(indiv.id)
   d["selected"] = bitstr(indiv)
-  d["n_selected"] = sum(indiv)
+  d["n_selected"] = int(sum(indiv))
   d["cv"] = indiv.fitness.values[0]
   
   attr = [
@@ -2353,7 +2380,7 @@ def to_json(index, indiv):
       d[attr] = json.loads(getattr(indiv, attr).to_json(orient='records'))
   d["eci"] = []
   for bfunc in indiv.eci:
-    d["eci"].append(casm.NoIndent(bfunc))
+    d["eci"].append(noindent.NoIndent(bfunc))
   
   return d
 
@@ -2403,7 +2430,7 @@ def to_dataframe(indices, hall):
   """
   data = [to_json(i, hall[i]) for i in indices]
   for d in data:
-    d["eci"] = json.dumps(d["eci"], cls=casm.NoIndentEncoder)
+    d["eci"] = json.dumps(d["eci"], cls=noindent.NoIndentEncoder)
   return pandas.DataFrame.from_records(data)
     
 
@@ -2425,21 +2452,21 @@ def _print_individual(index, indiv, format=None):
     else:
       bitstr_len = len(indiv)
     form_str = "{0:5}: {1:<" + str(max([12, bitstr_len])) + "} {2:<12} {3:<12.8g} {4:<12.8g} {5:<12.8g} {6:<24} {7:<24} {8}"
-    print form_str.format(index, bitstr(indiv,40), sum(indiv), indiv.fitness.values[0], 
-      indiv.rms, indiv.wrms, indiv.estimator_method, indiv.feature_selection_method, indiv.note)
+    print(form_str.format(index, bitstr(indiv,40), sum(indiv), indiv.fitness.values[0], 
+      indiv.rms, indiv.wrms, indiv.estimator_method, indiv.feature_selection_method, indiv.note))
     return
     
   elif format.lower() == "json":
-    print json.dumps(to_json(index,indiv), indent=2, cls=casm.NoIndentEncoder)
+    print(json.dumps(to_json(index,indiv), indent=2, cls=noindent.NoIndentEncoder))
     return
     
   elif format.lower() == "details":
-    print "##"
-    print "Index:", index
-    print "ID:", indiv.id
-    print "Selected:", bitstr(indiv)
-    print "#Selected:", sum(indiv)
-    print "CV:", indiv.fitness.values[0]
+    print("##")
+    print("Index:", index)
+    print("ID:", indiv.id)
+    print("Selected:", bitstr(indiv))
+    print("#Selected:", sum(indiv))
+    print("CV:", indiv.fitness.values[0])
     
     attr = [
       "rms", "wrms",
@@ -2450,22 +2477,22 @@ def _print_individual(index, indiv, format=None):
     ]
     for a in attr:
       if hasattr(indiv, a):
-        print a + ":", getattr(indiv, a)
+        print(a + ":", getattr(indiv, a))
     if hasattr(indiv, "ranged_rms"):
-      print "ranged_rms:\n", json.dumps(indiv.ranged_rms, indent=2)
+      print("ranged_rms:\n", json.dumps(indiv.ranged_rms, indent=2))
     
     
-    print "eci:\n"
+    print("eci:\n")
     print_eci(indiv.eci)
     
     for attr in ["clex_gs", "dft_gs", "uncalculated", "gs_spurious", "gs_missing", "below_hull"]:
       if hasattr(indiv, attr):
-        print attr + ":"
-        print getattr(indiv, attr).to_string(index=False)
+        print(attr + ":")
+        print(getattr(indiv, attr).to_string(index=False))
     
-    print "Input:\n", json.dumps(indiv.input, indent=2)
+    print("Input:\n", json.dumps(indiv.input, indent=2))
     if hasattr(indiv, "checkhull_settings"):
-      print "Checkhull settings:\n", json.dumps(indiv.checkhull_settings, indent=2)
+      print("Checkhull settings:\n", json.dumps(indiv.checkhull_settings, indent=2))
     return
 
 
@@ -2477,9 +2504,9 @@ def _print_halloffame_header(hall):
     bitstr_len = 43
   else:
     bitstr_len = len(hall[0])
-  print ("{0:5}: {1:<" + str(max([12, bitstr_len])) + "} {2:<12} {3:<12} {4:<12} {5:<12} {6:<24} {7:<24} {8}").format(
-    "Index", "Selected", "#Selected", "CV", "RMS", "wRMS", "Estimator", "FeatureSelection", "Note")
-  print "-"*(6+max([12, bitstr_len])+13*5+25*2)
+  print(("{0:5}: {1:<" + str(max([12, bitstr_len])) + "} {2:<12} {3:<12} {4:<12} {5:<12} {6:<24} {7:<24} {8}").format(
+    "Index", "Selected", "#Selected", "CV", "RMS", "wRMS", "Estimator", "FeatureSelection", "Note"))
+  print("-"*(6+max([12, bitstr_len])+13*5+25*2))
 
 
 def print_individual(hall, indices, format=None):
@@ -2513,16 +2540,16 @@ def print_individual(hall, indices, format=None):
     for index in indices:
       d = to_json(index, hall[index])
       h.append(d)
-    print json.dumps(h, indent=2, cls=casm.NoIndentEncoder)
+    print(json.dumps(h, indent=2, cls=noindent.NoIndentEncoder))
   
   elif format.lower() == "csv":
     df = to_dataframe(range(len(hall)), hall) 
-    print df.to_csv()
+    print(df.to_csv())
     
   elif format.lower() == "details":
     for index in indices:
       _print_individual(index, hall[index], format=format)
-    print ""
+    print("")
   return
 
 
@@ -2555,17 +2582,17 @@ def print_halloffame(hall, format=None):
     for index, indiv in enumerate(hall):
       d = to_json(index, indiv)
       h.append(d)
-    print json.dumps(h, indent=2, cls=casm.NoIndentEncoder)
+    print(json.dumps(h, indent=2, cls=noindent.NoIndentEncoder))
       
     
   elif format.lower() == "csv":
     df = to_dataframe(range(len(hall)), hall) 
-    print df.to_csv()
+    print(df.to_csv())
     
   elif format.lower() == "details":
     for index, indiv in enumerate(hall):
       _print_individual(index, indiv, format=format)
-      print ""
+      print("")
     
     return
 
@@ -2589,7 +2616,7 @@ def print_eci(eci):
   
   """
   for bfunc in eci:
-    print "{index:>5}: {value:< .12g}".format(index=bfunc[0], value=bfunc[1])
+    print("{index:>5}: {value:< .12g}".format(index=bfunc[0], value=bfunc[1]))
 
 
 def open_halloffame(halloffame_filename, verbose=False):
@@ -2613,7 +2640,7 @@ def open_halloffame(halloffame_filename, verbose=False):
     
   """
   if verbose:
-    print "Loading Hall of Fame:", halloffame_filename
+    print("Loading Hall of Fame:", halloffame_filename)
         
   with open(halloffame_filename, 'rb') as f:
     hall = pickle.load(f)
@@ -2644,10 +2671,10 @@ def save_halloffame(hall, halloffame_filename, verbose=False):
     
   """
   if verbose:
-    print "\nPickling Hall of Fame to:", halloffame_filename
-  f = open(halloffame_filename, 'wb')
-  pickle.dump(hall, f)
-  f.close()
+    print("\nPickling Hall of Fame to:", halloffame_filename)
+  with open(halloffame_filename, 'wb') as f:
+      pickle.dump(hall, f, protocol=2)
+
   
 
 

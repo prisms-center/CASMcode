@@ -33,7 +33,8 @@ namespace CASM {
       add_configtype_suboption(traits<Configuration>::short_name, DB::config_types_short());
       add_configlist_nodefault_suboption();
       m_desc.add_options()
-      ("images,i", po::value<int>(&m_images)->default_value(0), "Number of images between initial and final state when viewing diff_trans_configs.");
+      ("relaxed", "Attempt to display corresponding relaxed structures to the given configurations.")
+      ("images", po::value<int>(&m_images)->default_value(0), "Number of images between initial and final state when viewing diff_trans_configs.");
 
       return;
     }

@@ -10,10 +10,12 @@ namespace CASM {
 
   const std::string ConfigEnumInterpolation::enumerator_name = "ConfigEnumInterpolation";
 
-  const std::string ConfigEnumInterpolation::interface_help =
-    "ConfigEnumInterpolation: \n\n"
+  std::string ConfigEnumInterpolation::interface_help() {
+    return
+      "ConfigEnumInterpolation: \n\n"
 
-    "  ... include help documentation here ... \n\n";
+      "  ... include help documentation here ... \n\n";
+  }
 
   int ConfigEnumInterpolation::run(
     const PrimClex &primclex,

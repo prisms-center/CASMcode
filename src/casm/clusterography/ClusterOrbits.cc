@@ -92,27 +92,29 @@ namespace CASM {
     std::ostream &status); \
   \
 
-#define LOCAL_CLUSTER_ORBITS_INST(INSERTER) \
+#define LOCAL_CLUSTER_ORBITS_INST(INSERTER,SYMCOMPARE) \
   \
-  template INSERTER make_local_orbits<INSERTER>( \
+  template INSERTER make_local_orbits<INSERTER,SYMCOMPARE>( \
     const Kinetics::DiffusionTransformation &diff_trans, \
+    const SymGroup &generating_group, \
+    const SYMCOMPARE &sym_compare, \
     const std::vector<double> &cutoff_radius, \
     const std::vector<double> &max_length, \
     const std::vector<IntegralCluster> &custom_generators, \
     const std::function<bool (Site)> &site_filter, \
     double xtal_tol, \
     INSERTER result, \
-    std::ostream &status, \
-    const SymGroup &generating_group); \
+    std::ostream &status); \
   \
-  template INSERTER make_local_orbits<INSERTER>( \
+  template INSERTER make_local_orbits<INSERTER,SYMCOMPARE>( \
     const Kinetics::DiffusionTransformation &diff_trans, \
+    const SymGroup &generating_group, \
+    const SYMCOMPARE &sym_compare, \
     const jsonParser &bspecs, \
     const std::function<bool (Site)> &site_filter, \
     double xtal_tol, \
     INSERTER result, \
-    std::ostream &status, \
-    const SymGroup &generating_group); \
+    std::ostream &status); \
   \
 
 #define _SPECS_IT(ORBIT) std::vector<OrbitBranchSpecs<ORBIT> >::iterator
@@ -134,6 +136,7 @@ namespace CASM {
   CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, LocalSymCompare<IntegralCluster>)
   CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, PrimPeriodicSymCompare<IntegralCluster>)
   CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, ScelPeriodicSymCompare<IntegralCluster>)
+  CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, WithinScelSymCompare<IntegralCluster>)
 
 #define PRIM_PERIODIC_CLUSTER_ORBITS_VECTOR_INST(ELEMENT,SYMCOMPARE) \
   PRIM_PERIODIC_CLUSTER_ORBITS_INST( \
@@ -143,8 +146,11 @@ namespace CASM {
 
 #define LOCAL_CLUSTER_ORBITS_VECTOR_INST(ELEMENT,SYMCOMPARE) \
   LOCAL_CLUSTER_ORBITS_INST( \
-    _VECTOR_INSERTER(_ORBIT(ELEMENT,SYMCOMPARE)))
+    _VECTOR_INSERTER(_ORBIT(ELEMENT,SYMCOMPARE)), \
+    SYMCOMPARE)
 
   LOCAL_CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, LocalSymCompare<IntegralCluster>)
+  LOCAL_CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, ScelPeriodicSymCompare<IntegralCluster>)
+  LOCAL_CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, WithinScelSymCompare<IntegralCluster>)
 
 }

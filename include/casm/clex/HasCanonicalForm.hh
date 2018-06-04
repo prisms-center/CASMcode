@@ -236,6 +236,9 @@ namespace CASM {
     /// The inverse of to_canonical()
     SymOp from_canonical() const;
 
+    /// \brief Return canonical equivalent lattice
+    Lattice canonical_lattice() const;
+
     /// \brief Return canonical equivalent Supercell
     ///
     /// - Will be inserted in Database if necessary

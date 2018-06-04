@@ -1,0 +1,19 @@
+ISPIN = 1 # spin polarization
+ENCUT = 250 # cutoff energy
+ISMEAR = 0 # Gaussian smearing
+SIGMA = 0.1
+ISYM = 2
+LWAVE = .FALSE.
+LCHARG = .FALSE.
+PREC = Accurate # precision
+EDIFF = 1.D-7
+NELM = 200
+ALGO = Normal
+LREAL = .FALSE.
+ADDGRID = .TRUE.  
+
+IBRION = 2 # conjugate gradient ionic minimization
+NSW = 61  # number of steps
+ISIF= 3 # relax ions and volume
+EDIFFG = -0.02
+

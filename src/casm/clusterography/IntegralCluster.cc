@@ -41,10 +41,22 @@ namespace CASM {
     ClusterInvariants<IntegralCluster> const &) const;
   */
 
+  template class ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<IntegralCluster> > > >;
+  template class WithinScelSymCompare<IntegralCluster>;
+  /*
+  template bool ClusterSymCompare<WithinScelSymCompare<IntegralCluster> >::compare_impl(
+    IntegralCluster const &,
+    IntegralCluster const &) const;
+  template bool ClusterSymCompare<WithinScelSymCompare<IntegralCluster> >::invariants_compare_impl(
+    ClusterInvariants<IntegralCluster> const &,
+    ClusterInvariants<IntegralCluster> const &) const;
+  */
+
   /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
   std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust) {
     SitesPrinter printer {6, '\n', INTEGRAL};
-    printer.print(clust, sout);
+    Log log(sout);
+    printer.print(clust, log);
     return sout;
   }
 
@@ -131,6 +143,14 @@ namespace CASM {
     double xtal_tol) {
     IntegralCluster clust(prim);
     CASM::from_json(clust, json, xtal_tol);
+    return clust;
+  }
+
+  IntegralCluster jsonConstructor<IntegralCluster>::from_json(
+    const jsonParser &json,
+    const PrimClex &primclex) {
+    IntegralCluster clust(primclex.prim());
+    CASM::from_json(clust, json, primclex.crystallography_tol());
     return clust;
   }
 

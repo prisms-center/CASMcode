@@ -15,6 +15,9 @@ namespace CASM {
 
   class Structure;
   class Site;
+  class Supercell;
+
+  template<typename OrbitType> class OrbitGenerators;
 
   /** \defgroup IntegralCluster
 
@@ -129,6 +132,13 @@ namespace CASM {
     OutputIterator result,
     double xtal_tol);
 
+  template<typename OrbitType>
+  bool has_local_neighborhood_overlap(std::vector<OrbitType> &local_orbits, const Supercell &scel);
+
+  template<typename OrbitType>
+  std::vector<Supercell> viable_supercells(std::vector<OrbitType> &local_orbits, std::vector<Supercell>);
+
+
 
   /* -- Cluster Orbit generating function declarations ------------------------------------- */
 
@@ -157,6 +167,14 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status);
 
+  /* -- Custom clusters --- */
+
+  /// \brief Given a cluster, generate all subcluster generators
+  template<typename OrbitType>
+  OrbitGenerators<OrbitType> &insert_subcluster_generators(
+    typename OrbitType::Element cluster,
+    OrbitGenerators<OrbitType> &generators,
+    std::ostream &status);
 
   /* -- Generate prim periodic orbits --------------------------------------- */
 
@@ -194,29 +212,31 @@ namespace CASM {
 
   /// \brief Generate Orbit<IntegralCluster> around a DiffusionTransformation
   /// by specifying max cluster length for each branch and cut off radius for local environment
-  template<typename OrbitOutputIterator>
+  template<typename OrbitOutputIterator, typename SymCompareType>
   OrbitOutputIterator make_local_orbits(
     const Kinetics::DiffusionTransformation &diff_trans,
+    const SymGroup &generating_group,
+    const SymCompareType &sym_compare,
     const std::vector<double> &cutoff_radius,
     const std::vector<double> &max_length,
     const std::vector<IntegralCluster> &custom_generators,
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
-    std::ostream &status,
-    const SymGroup &generating_group = SymGroup());
+    std::ostream &status);
 
   /// \brief Generate Orbit<IntegralCluster> around a DiffusionTransformation from
   /// bspecs.json-type JSON input file
-  template<typename OrbitOutputIterator>
+  template<typename OrbitOutputIterator, typename SymCompareType>
   OrbitOutputIterator make_local_orbits(
     const Kinetics::DiffusionTransformation &diff_trans,
+    const SymGroup &generating_group,
+    const SymCompareType &sym_compare,
     const jsonParser &bspecs,
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
-    std::ostream &status,
-    const SymGroup &generating_group = SymGroup());
+    std::ostream &status);
 
 
   /* -- Orbit access/usage function declarations ------------------------------------- */

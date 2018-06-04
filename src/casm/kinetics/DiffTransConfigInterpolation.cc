@@ -1,7 +1,7 @@
 #include "casm/kinetics/DiffTransConfigInterpolation.hh"
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
@@ -77,28 +77,30 @@ namespace CASM {
 
     const std::string DiffTransConfigInterpolation::enumerator_name = "DiffTransConfigInterpolation";
 
-    const std::string DiffTransConfigInterpolation::interface_help =
-      "DiffTransConfigInterpolation: \n\n"
-      "  n_images: integer \n"
-      "    The number of images to interpolate for each diff_trans_config\n\n"
+    std::string DiffTransConfigInterpolation::interface_help() {
+      return
+        "DiffTransConfigInterpolation: \n\n"
+        "  n_images: integer \n"
+        "    The number of images to interpolate for each diff_trans_config\n\n"
 
-      "  selection: string (optional, default="") \n"
-      "    The names of a selection of diff_trans_configs to interpolate images \n"
-      "    within.\n\n"
-      "  names: JSON array of strings (optional, default=[]) \n"
-      "    The names of a selection of diff_trans_configs to interpolate images \n"
-      "    within.\n\n"
+        "  selection: string (optional, default="") \n"
+        "    The names of a selection of diff_trans_configs to interpolate images \n"
+        "    within.\n\n"
+        "  names: JSON array of strings (optional, default=[]) \n"
+        "    The names of a selection of diff_trans_configs to interpolate images \n"
+        "    within.\n\n"
 
-      "  calctype: string (optional, default=$current_calctype)\n"
-      "    The name of the calctype to obtain the fixed lattice calculations for  \n"
-      "    the endpoints of the diff_trans_configs. \n\n"
+        "  calctype: string (optional, default=$current_calctype)\n"
+        "    The name of the calctype to obtain the fixed lattice calculations for  \n"
+        "    the endpoints of the diff_trans_configs. \n\n"
 
-      "  Example:\n"
-      "  {\n"
-      "    \"n_images\": 4,\n"
-      "    \"selection\": \"low_barrier_diff_trans\",\n"
-      "    \"calctype\": \"fixed_lattice\""
-      "  }\n\n";
+        "  Example:\n"
+        "  {\n"
+        "    \"n_images\": 4,\n"
+        "    \"selection\": \"low_barrier_diff_trans\",\n"
+        "    \"calctype\": \"fixed_lattice\""
+        "  }\n\n";
+    }
 
     int DiffTransConfigInterpolation::run(const PrimClex &primclex,
                                           const jsonParser &kwargs,
@@ -118,6 +120,8 @@ namespace CASM {
         i = 0;
         for(const auto &img_config : enumerator) {
           // file_path = $project_dir/training_data/diff_trans/$diff_trans_name/$scelname/$configid/$image_number/POSCAR
+          int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
+          std::string calctype = kwargs[config.name()]["calctype"].get<std::string>();
           auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
           file_path += "N_images_" + std::to_string(n_images) + "/0" + std::to_string(i) + "/POSCAR";
           fs::ofstream file(file_path);
@@ -132,7 +136,7 @@ namespace CASM {
     Configuration DiffTransConfigInterpolation::prepare_to_config(const Configuration &config,
                                                                   const DiffusionTransformation &diff_trans) {
       Configuration result = config;
-      for(auto traj : diff_trans.specie_traj()) {
+      for(auto traj : diff_trans.species_traj()) {
         Index k = config.supercell().linear_index(traj.from.uccoord);
         Index l = config.supercell().linear_index(traj.to.uccoord);
 
@@ -140,8 +144,8 @@ namespace CASM {
 
         Eigen::Vector3d displacement = config.disp(l);
 
-        const Eigen::Vector3d from_pos = config.supercell().coord(k).const_cart();
-        const Eigen::Vector3d to_pos = config.supercell().coord(l).const_cart();
+        const Eigen::Vector3d from_pos = traj.from.uccoord.coordinate().const_cart();
+        const Eigen::Vector3d to_pos = traj.to.uccoord.coordinate().const_cart();
         Eigen::Vector3d ideal_pos_inc = to_pos - from_pos;
         Eigen::Vector3d final_disp = displacement + ideal_pos_inc;
 

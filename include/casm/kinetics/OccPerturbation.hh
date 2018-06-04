@@ -21,8 +21,8 @@ namespace CASM {
     OccPerturbationInvariants(const OccPerturbation &perturb);
 
     ClusterInvariants<IntegralCluster> cluster_invariants;
-    std::map<AtomSpecie, Index> from_specie_count;
-    std::map<AtomSpecie, Index> to_specie_count;
+    std::map<AtomSpecies, Index> from_species_count;
+    std::map<AtomSpecies, Index> to_species_count;
   };
 
   /// \brief Check if DiffTransInvariants are equal
@@ -118,7 +118,7 @@ namespace CASM {
     Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = INTEGRAL) :
       PrinterBase(_indent_space, _delim, _mode) {}
 
-    void print(const Element &element, std::ostream &out);
+    void print(const Element &element, Log &out);
   };
 }
 

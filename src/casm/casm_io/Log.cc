@@ -2,7 +2,9 @@
 
 namespace CASM {
 
-  Log::Log(std::ostream &_ostream, int _verbosity, bool _show_clock) {
+  Log::Log(std::ostream &_ostream, int _verbosity, bool _show_clock, int _indent_space) :
+    m_indent_space(_indent_space),
+    m_indent_level(0) {
     reset(_ostream, _verbosity, _show_clock);
   }
 
@@ -57,6 +59,12 @@ namespace CASM {
     return *m_stream;
   }
 
+  std::string Log::invalid_verbosity_msg(std::string s) {
+    return std::string("Error: Received '") + s +
+           "', expected one of 'none', 'quiet', 'standard', 'verbose', 'debug', "
+           "or an int in range [0, 100]";
+  }
+
   /// \brief Read verbosity level from a string
   ///
   /// \returns result, a pair of bool,int
@@ -99,6 +107,10 @@ namespace CASM {
     }
 
   };
+
+  bool Log::print() const {
+    return _print();
+  }
 
 
   void Log::_add_time() {

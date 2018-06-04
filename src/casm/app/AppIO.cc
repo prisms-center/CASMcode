@@ -432,45 +432,83 @@ namespace CASM {
 
   // ---------- Orbit<IntegralCluster> & ClexBasis IO ------------------------------------------------------------------
 
+  const std::string traits<ORBIT_PRINT_MODE>::name = "orbit_print_mode";
+
+  const std::multimap<ORBIT_PRINT_MODE, std::vector<std::string> > traits<ORBIT_PRINT_MODE>::strval = {
+    {ORBIT_PRINT_MODE::PROTO, {"PROTO", "Proto", "proto"} },
+    {ORBIT_PRINT_MODE::FULL, {"FULL", "Full", "full"} }
+  };
+
+  ENUM_IO_DEF(ORBIT_PRINT_MODE)
+
+
   PrinterBase::PrinterBase(int _indent_space, char _delim, COORD_TYPE _mode) :
     indent_space(_indent_space),
+    indent_level(0),
     delim(_delim),
     mode(_mode) {}
 
   std::string PrinterBase::indent() const {
-    return std::string(indent_space, ' ');
+    return std::string(indent_space * indent_level, ' ');
   }
 
-  void PrinterBase::coord_mode(std::ostream &out) const {
-    out << "COORD_MODE = " << mode << std::endl << std::endl;
+  void PrinterBase::coord_mode(Log &out) const {
+    out << out.indent_str() << "COORD_MODE = " << mode << std::endl << std::endl;
   }
 
 
   const std::string Printer<IntegralCluster>::element_name = "Clusters";
 
-  void Printer<IntegralCluster>::print(const IntegralCluster &clust, std::ostream &out) const {
+  void Printer<IntegralCluster>::print(const IntegralCluster &clust, Log &out) const {
+    if(!out.print()) {
+      return;
+    }
     COORD_TYPE _mode = mode;
     if(_mode == COORD_DEFAULT) {
       _mode = COORD_MODE::CHECK();
     }
     COORD_MODE printer_mode(_mode);
-    for(const auto &coord : clust) {
-      out << indent() << indent() << indent();
-      if(_mode == INTEGRAL) {
-        out << coord;
-        out << " ";
-        coord.site().site_occupant().print(out);
+    if(_mode != INTEGRAL) {
+      // calculate nice widths
+      int prec = 7;
+      int width = prec;
+      Eigen::Vector3d vec;
+      out.ostream().precision(prec);
+      out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+      for(const auto &coord : clust) {
+        if(_mode == CART) vec = coord.coordinate().cart();
+        else if(_mode == FRAC) vec = coord.coordinate().frac();
+        width = print_matrix_width(out, vec.transpose(), width);
+      }
+
+      // calculate nice widths
+      Eigen::IOFormat format(prec, width + 1);
+      for(const auto &coord : clust) {
+        out << out.indent_str() << indent();
+        coord.site().print(out, format);
+        if(delim) out << delim;
         out << std::flush;
       }
-      else {
-        out.setf(std::ios::showpoint, std::ios_base::fixed);
-        out.precision(5);
-        out.width(9);
-        coord.site().print(out);
+    }
+    else {
+      // calculate nice widths
+      int prec = 1;
+      int width = prec;
+      out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+      for(const auto &coord : clust) {
+        width = print_matrix_width(out, coord.unitcell().transpose(), width);
       }
-      if(delim)
-        out << delim;
-      out << std::flush;
+
+      // print
+      Eigen::IOFormat format(prec, width);
+      for(const auto &coord : clust) {
+        out << out.indent_str() << indent();
+        out << coord << " ";
+        coord.site().site_occupant().print(out);
+        out << std::flush;
+        if(delim) out << delim;
+        out << std::flush;
+      }
     }
   }
 
@@ -614,7 +652,7 @@ namespace CASM {
   // explicit template instantiations
 
 #define PRINT_CLUST_INST(ITERATOR,INSERTER,PRINTER) \
-  template void print_clust<ITERATOR,PRINTER>(ITERATOR begin, ITERATOR end, std::ostream &out, PRINTER printer); \
+  template void print_clust<ITERATOR,PRINTER>(ITERATOR begin, ITERATOR end, Log &out, PRINTER printer); \
   template jsonParser &write_clust<ITERATOR>(ITERATOR begin, ITERATOR end, jsonParser &json, PRINTER printer); \
   template jsonParser &write_clust<ITERATOR>(ITERATOR begin, ITERATOR end, jsonParser &json, PRINTER printer, const jsonParser &bspecs);
 
@@ -642,10 +680,12 @@ namespace CASM {
   ORBIT_VECTOR_INST(LocalIntegralClusterOrbit)
   ORBIT_VECTOR_INST(PrimPeriodicIntegralClusterOrbit)
   ORBIT_VECTOR_INST(ScelPeriodicIntegralClusterOrbit)
+  ORBIT_VECTOR_INST(WithinScelIntegralClusterOrbit)
 
   ORBIT_SET_INST(LocalIntegralClusterOrbit)
   ORBIT_SET_INST(PrimPeriodicIntegralClusterOrbit)
   ORBIT_SET_INST(ScelPeriodicIntegralClusterOrbit)
+  ORBIT_SET_INST(WithinScelIntegralClusterOrbit)
 
 
 #define DIFFTRANS_VECTOR_INST(ORBIT) \

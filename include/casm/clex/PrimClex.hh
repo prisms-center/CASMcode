@@ -10,7 +10,7 @@ namespace CASM {
 
   class DirectoryStructure;
   class ProjectSettings;
-  class ClexDescription;
+  struct ClexDescription;
   class CompositionConverter;
   class ChemicalReference;
   class Structure;

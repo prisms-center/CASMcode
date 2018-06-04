@@ -30,13 +30,13 @@ namespace test {
         2.0, 2.0, 0.0;
 
     BasicStructure<Site> struc {Lattice{lat}};
-    struc.title = "FCC_ternary";
+    struc.set_title("FCC_ternary");
 
     Molecule A = Molecule::make_atom("A");
     Molecule B = Molecule::make_atom("B");
     Molecule C = Molecule::make_atom("C");
 
-    struc.basis.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), {A, B, C}));
+    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), {A, B, C}));
 
     return struc;
 
@@ -189,7 +189,7 @@ namespace test {
         auto end = boost::sregex_iterator();
         auto count = std::distance(begin, end);
 
-        BOOST_CHECK_EQUAL(count, 5);
+        BOOST_CHECK_MESSAGE(count == 5, m_p.gets());
       }
 
       // check that you can't overwrite without using -f

@@ -2,7 +2,7 @@
 #define CASM_DiffTransConfigInterpolation
 
 #include "casm/container/Counter.hh"
-#include "casm/container/RandomAccessEnumerator.hh"
+#include "casm/enumerator/RandomAccessEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/clex/ConfigEnumInterpolation.hh"
@@ -42,7 +42,7 @@ namespace CASM {
       }
 
       static const std::string enumerator_name;
-      static const std::string interface_help;
+      static std::string interface_help();
 
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 

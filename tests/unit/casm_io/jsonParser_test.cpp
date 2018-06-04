@@ -53,6 +53,73 @@ BOOST_AUTO_TEST_CASE(Basic) {
   BOOST_CHECK_EQUAL(4.0023, json["number"].get<double>());
 }
 
+template<typename T>
+void test_at(T &json) {
+  BOOST_CHECK_EQUAL(json.at("int").template get<int>(), 34);
+  BOOST_CHECK_THROW(json.at("mistake"), std::invalid_argument);
+
+  BOOST_CHECK_EQUAL(json.at(fs::path("object") / "int").template get<int>(), 34);
+  BOOST_CHECK_THROW(json.at(fs::path("object") / "mistake"), std::invalid_argument);
+
+  BOOST_CHECK_EQUAL(json.at(fs::path("mixed_array") / "1").template get<int>(), 34);
+  BOOST_CHECK_THROW(json.at(fs::path("mixed_array") / "10"), std::invalid_argument);
+
+  BOOST_CHECK_EQUAL(json["uniform_array"].at(0).template get<int>(), 1);
+  BOOST_CHECK_THROW(json["object"].at(0), std::invalid_argument);
+  BOOST_CHECK_THROW(json["uniform_array"].at(-1), std::out_of_range);
+  BOOST_CHECK_THROW(json["uniform_array"].at(4), std::out_of_range);
+  BOOST_CHECK_THROW(json["uniform_array"].at(100), std::out_of_range);
+}
+
+BOOST_AUTO_TEST_CASE(At) {
+
+  jsonParser json = jsonParser::parse(json_str);
+  test_at(json);
+}
+
+BOOST_AUTO_TEST_CASE(ConstAt) {
+
+  const jsonParser json = jsonParser::parse(json_str);
+  test_at(json);
+}
+
+template<typename T>
+void test_find_at(T &json) {
+
+  BOOST_CHECK_EQUAL(json.end() == json.find_at(fs::path()), true);
+  BOOST_CHECK_EQUAL(json.end() == json.find_at(""), true);
+
+  BOOST_CHECK_EQUAL(json.find_at("int")->template get<int>(), 34);
+  BOOST_CHECK_EQUAL(json.find_at("mistake") == json.end(), true);
+
+  BOOST_CHECK_EQUAL(json.find_at(fs::path("object") / "int")->template get<int>(), 34);
+  BOOST_CHECK_EQUAL(json.find_at(fs::path("object") / "mistake") == json.end(), true);
+
+  BOOST_CHECK_EQUAL(json.find_at(fs::path("mixed_array") / "1")->template get<int>(), 34);
+  BOOST_CHECK_EQUAL(json.find_at(fs::path("mixed_array") / "10") == json.end(), true);
+}
+
+BOOST_AUTO_TEST_CASE(FindAt) {
+
+  jsonParser json = jsonParser::parse(json_str);
+  test_find_at(json);
+}
+
+BOOST_AUTO_TEST_CASE(ConstFindAt) {
+
+  const jsonParser json = jsonParser::parse(json_str);
+
+  test_find_at(json);
+}
+
+BOOST_AUTO_TEST_CASE(Get) {
+
+  const jsonParser json = jsonParser::parse(json_str);
+
+  BOOST_CHECK_EQUAL(json["int"].get<int>(), 34);
+  BOOST_CHECK_THROW(json["int"].get<std::string>(), std::runtime_error);
+}
+
 BOOST_AUTO_TEST_CASE(ArrayExtraTrailingComma) {
 
   std::string json_extra_trailing_comma =
@@ -77,13 +144,6 @@ BOOST_AUTO_TEST_CASE(ArrayExtraTrailingComma) {
 {"int" : 34, "number" : 4.0023}
 ]
 })";
-
-  jsonParser json;
-
-  json.read(json_extra_trailing_comma);
-
-  BOOST_CHECK_EQUAL(json.read(json_extra_trailing_comma), false);
-
 
   BOOST_CHECK_THROW(jsonParser::parse(json_extra_trailing_comma), std::runtime_error);
 
@@ -113,13 +173,6 @@ BOOST_AUTO_TEST_CASE(ArrayMissingComma) {
 {"int" : 34, "number" : 4.0023}
 ]
 })";
-
-  jsonParser json;
-
-  json.read(json_missing_comma);
-
-  BOOST_CHECK_EQUAL(json.read(json_missing_comma), false);
-
 
   BOOST_CHECK_THROW(jsonParser::parse(json_missing_comma), std::runtime_error);
 

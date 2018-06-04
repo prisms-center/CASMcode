@@ -62,6 +62,7 @@ namespace CASM {
     bool compare(const Site &test_site, const Coordinate &shift) const;
     bool compare_type(const Site &test_site) const; //Ivy
     bool operator==(const Site &test_site) const;
+    bool almost_equal(const Site &test_site) const;
 
     //checks to see if species with name 'name' is allowed at site.
     bool contains(const std::string &name) const;
@@ -88,8 +89,8 @@ namespace CASM {
     void read(std::istream &stream, bool SD_is_on = false);
     void read(std::istream &stream, std::string &elem, bool SD_is_on);
 
-    void print(std::ostream &stream) const;
-    void print_occ(std::ostream &stream) const;
+    void print(std::ostream &stream, Eigen::IOFormat format = Eigen::IOFormat(7, 12)) const;
+    void print_occ(std::ostream &stream, Eigen::IOFormat format = Eigen::IOFormat(7, 12)) const;
     void print_mol(std::ostream &stream, int spaces, char delim, bool SD_is_on = false)const;
 
 
