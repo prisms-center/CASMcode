@@ -23,9 +23,11 @@ namespace CASM {
   /// Implements:
   /// - 'invariants_compare_impl' using 'compare'
   /// - 'compare_impl'
+  /// - 'canonical_transform_impl'
   ///
   /// Does not implement:
-  /// - 'prepare_impl'
+  /// - 'spatial_prepare_impl'
+  /// - 'representation_prepare_impl'
   ///
   /// traits<Element> requires:
   /// - static UnitCellCoord position(const Element& el) const;
@@ -79,8 +81,9 @@ namespace CASM {
     bool compare_impl(const Element &A, const Element &B) const;
 
     /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
-    // For now, this is the the sorting permutation in all cases
+    // For now, this is the the sorting permutation
     std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj)const;
+
   protected:
 
     /// \brief type-specific way to get position of element
@@ -135,10 +138,16 @@ namespace CASM {
   protected:
     friend SymCompare<CRTPBase<AperiodicSymCompare<Element>>>;
 
-    /// \brief Prepare an element for comparison
+    /// \brief Prepare an element for comparison via an isometric affine transformation
+    ///
+    /// - For aperiodic casses, no isometric transformations are allowed, so apply and return identity
+    Element spatial_prepare_impl(Element obj) const;
+
+
+    /// \brief Prepare an element for comparison via transformation of its internal representation
     ///
     /// - Returns sorted
-    Element prepare_impl(Element obj) const;
+    Element representation_prepare_impl(Element obj) const;
 
   };
 
@@ -174,10 +183,15 @@ namespace CASM {
   protected:
     friend SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>;
 
-    /// \brief Prepare an element for comparison
+    /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
-    /// - Sorts and translates so that obj[0] is in the origin unit cell
-    Element prepare_impl(Element obj) const;
+    /// - Applies lattice translation such that first site of cluster is in UnitCell (0,0,0)
+    Element spatial_prepare_impl(Element obj) const;
+
+    /// \brief Prepare an element for comparison via transformation of its internal representation
+    ///
+    /// - Returns sorted
+    Element representation_prepare_impl(Element obj) const;
 
   };
 
@@ -213,10 +227,15 @@ namespace CASM {
   protected:
     friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
 
-    /// \brief Prepare an element for comparison
+    /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
-    /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
-    Element prepare_impl(Element obj) const;
+    /// - Applies superlattice translation such that first site of cluster is within supercell
+    Element spatial_prepare_impl(Element obj) const;
+
+    /// \brief Prepare an element for comparison via transformation of its internal representation
+    ///
+    /// - Returns sorted
+    Element representation_prepare_impl(Element obj) const;
 
     const PrimGrid *m_prim_grid;
   };
@@ -254,10 +273,20 @@ namespace CASM {
   protected:
     friend SymCompare<CRTPBase<WithinScelSymCompare<Element>>>;
 
-    /// \brief Prepare an element for comparison
+    /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
     ///
-    /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
-    Element prepare_impl(Element obj) const;
+    std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj)const;
+
+    /// \brief Prepare an element for comparison via an isometric affine transformation
+    ///
+    /// - Applies superlattice translation such that first site of cluster is within supercell
+    Element spatial_prepare_impl(Element obj) const;
+
+
+    /// \brief Prepare an element for comparison via transformation of its internal representation
+    ///
+    /// - Returns sorted
+    Element representation_prepare_impl(Element obj) const;
 
     const PrimGrid *m_prim_grid;
   };

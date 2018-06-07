@@ -35,7 +35,7 @@ namespace CASM {
     result.clear();
     for(const auto &op : generating_grp) {
       if(sym_compare.equal(e, sym_compare.prepare(copy_apply(op, e)))) {
-        result.push_back(sym_compare.translation(element.prim())*op);
+        result.push_back(sym_compare.spatial_transform()*op);
       }
     }
     return result;
@@ -100,11 +100,13 @@ namespace CASM {
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
     std::vector<PermuteIterator> result;
+    Coordinate coord(scel.prim_grid().prim_lattice());
     auto it = begin;
     while(it != end) {
       auto test = sym_compare.prepare(copy_apply(it.sym_op(), e));
       if(sym_compare.equal(test, e)) {
-        auto trans_it = scel.permute_it(0, scel.prim_grid().find(sym_compare.integral_tau()));
+        coord.cart() = sym_compare.spatial_transform().integral_tau();
+        auto trans_it = scel.permute_it(0, make_unitcell(coord));
         result.push_back(trans_it * it);
       }
       ++it;
@@ -133,11 +135,13 @@ namespace CASM {
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
     std::vector<PermuteIterator> result;
+    Coordinate coord(scel.prim_grid().prim_lattice());
     auto it = begin;
     while(it != end) {
       auto test = sym_compare.prepare(copy_apply(it->sym_op(), e));
       if(sym_compare.equal(test, e)) {
-        auto trans_it = scel.permute_it(0, scel.prim_grid().find(sym_compare.integral_tau()));
+        coord.cart() = sym_compare.spatial_transform().integral_tau();
+        auto trans_it = scel.permute_it(0, make_unitcell(coord));
         result.push_back(trans_it * (*it));
       }
       ++it;

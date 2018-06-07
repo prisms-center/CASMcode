@@ -17,6 +17,9 @@
 #include "casm/database/Database.hh"
 #include "casm/app/DirectoryStructure.hh"
 
+//REMOVE
+#include "casm/container/Permutation.hh"
+
 namespace CASM {
 
   namespace Orbit_impl {
@@ -66,13 +69,13 @@ namespace CASM {
           for(Index b = 0; b < tmp_eq_map.size(); ++b) {
             map.emplace(a, b, tmp_eq_map, g);
           }
-          col.resize(map.begin()->values.size());
-          for(const auto &row : map) {
-            Index c = 0;
-            for(const auto &val : row.values) {
-              col[c++].push_back(val);
-            }
-          }
+          //col.resize(map.begin()->values.size());
+          //for(const auto &row : map) {
+          //Index c = 0;
+          //for(const auto &val : row.values) {
+          //  col[c++].push_back(val);
+          //}
+          //}
         }
         catch(const std::exception &e) {
           default_err_log() << "Error in GenericOrbit constructor: \n"
@@ -83,10 +86,10 @@ namespace CASM {
 
       Index a; // 'a' in tmp_eq_map[a]
       std::set<EqMapRow> map;  // equivalence_map for b, relative to a
-      std::vector<std::vector<Index>> col; // equivalence_map as columns
+      //std::vector<std::vector<Index>> col; // equivalence_map as columns
 
       bool operator<(const RelEqMap &other) const {
-        return this->col < other.col;
+        return this->map < other.map;
       }
     };
 
@@ -137,14 +140,12 @@ namespace CASM {
 
     // -- Equivalence map sorting using index multiplication ---
 
-    // generate equivalents, using std::set to remove duplicates
-    std::set<Element, decltype(compare)> t_equiv(compare);
-    std::vector<Element> tmp_element;
+    // generate equivalents using std::set to remove duplicates
+    std::map<Element, std::set<Index>, decltype(compare)> t_equiv(compare);
     try {
       for(const auto &op : g) {
-        t_equiv.insert(prepare(op, generating_element));
+        t_equiv[prepare(op, generating_element)].insert(op.index());
       }
-      std::copy(t_equiv.begin(), t_equiv.end(), std::back_inserter(tmp_element));
     }
     catch(const std::exception &e) {
       default_err_log() << "Error in GenericOrbit constructor: \n"
@@ -153,16 +154,18 @@ namespace CASM {
     }
 
     // generate equivalence_map w/ tmp ordering
+    std::vector<Element> tmp_element;
     std::vector<std::vector<Index>> tmp_equivalence_map;
     try {
-      tmp_equivalence_map.resize(tmp_element.size());
-      for(Index op_i = 0; op_i < g.size(); ++op_i) {
-        Index i = find_index(tmp_element, prepare(g[op_i], tmp_element[0]), equal);
-        if(i == tmp_equivalence_map.size()) {
-          throw std::runtime_error("Error in GenericOrbit constructor: "
-                                   "comparison failure while constructing the equivalance map");
+
+      Index first2proto = g.ind_inverse(*(t_equiv.begin()->second.begin()));
+
+      for(auto const &_equiv : t_equiv) {
+        tmp_element.push_back(_equiv.first);
+        tmp_equivalence_map.emplace_back();
+        for(Index op_i : _equiv.second) {
+          tmp_equivalence_map.back().push_back(g.ind_prod(op_i, first2proto));
         }
-        tmp_equivalence_map[i].push_back(op_i);
       }
 
       // sanity check that equivalence_map is rectangular
@@ -203,11 +206,30 @@ namespace CASM {
 
     /// copy results
     try {
-      m_equivalence_map.resize(tmp_element.size());
+      Index newproto_i = best.map.begin()->b;
+
+      //Loop over equivalents 'i'
       for(const auto &row : best.map) {
-        m_element.push_back(tmp_element[row.b]);
-        for(const auto &value : row.values) {
-          m_equivalence_map[row.b].push_back(g[value]);
+
+
+        //Index of group element that maps proto to equiv 'i'
+        Index proto2i = *(row.values.begin());
+
+        Element tequiv = m_sym_compare.prepare(copy_apply(g[proto2i], tmp_element[newproto_i]));
+        SymOp ttrans = m_sym_compare.spatial_transform();
+
+        m_element.push_back(copy_apply(ttrans * g[proto2i], tmp_element[newproto_i]));
+        m_equivalence_map.emplace_back();
+        // Loop over elements 'j' of new, sorted clust_group (0 row of best.map)
+        for(const auto &cg_j : best.map.begin()->values) {
+          Index value = g.ind_prod(proto2i, cg_j);
+
+          tequiv = m_sym_compare.prepare(copy_apply(g[value], tmp_element[newproto_i]));
+          ttrans = m_sym_compare.spatial_transform();
+
+
+          m_equivalence_map.back().push_back(ttrans * g[value]);
+
         }
       }
     }
@@ -249,24 +271,13 @@ namespace CASM {
       m_canonization_rep_ID = SymGroupRepID::identity(0);
       return;
     }
-    std::cout << "Protototype:\n";
-    for(auto const &ucc : prototype().elements())
-      std::cout << ucc << "\n";
-    std::cout << "\n";
-    MasterSymGroup const &master_group(equivalence_map()[0][0].master_group());
-    m_canonization_rep_ID = master_group.add_empty_representation();
+
+    m_canonization_rep_ID = equivalence_map()[0][0].master_group().add_empty_representation();
+
     for(Index j = 0; j < equivalence_map()[0].size(); j++) {
-
-      auto A = copy_apply(equivalence_map()[0][j], prototype());
-      std::cout << "Transformed Protototype:\n";
-      for(auto const &ucc : A.elements())
-        std::cout << ucc << "\n";
-      std::cout << "\n";
-
       std::unique_ptr<SymOpRepresentation> new_rep = m_sym_compare.canonical_transform(copy_apply(equivalence_map()[0][j], prototype()))->inverse();
 
       for(Index i = 0; i < equivalence_map().size(); i++) {
-        std::cout << "Operation : " << equivalence_map()[i][j].index() << "\n";
         equivalence_map()[i][j].set_rep(m_canonization_rep_ID, *new_rep);
       }
     }

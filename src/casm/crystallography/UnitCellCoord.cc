@@ -10,6 +10,11 @@
 
 namespace CASM {
 
+  /// Convert lattice point a unitcell
+  UnitCell make_unitcell(Coordinate const &lattice_point) {
+    return UnitCell(lround(lattice_point.const_frac()));
+  }
+
   UnitCellCoord::UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol) :
     m_unit(&unit) {
     for(Index b = 0; b < unit.basis().size(); ++b) {

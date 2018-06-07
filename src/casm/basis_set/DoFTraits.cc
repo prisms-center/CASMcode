@@ -177,9 +177,10 @@ namespace CASM {
           ss <<
              indent << "  if(m_params.eval_mode(m_occ_func_" << f << "_param_key) == ParamPack::DEFAULT) {\n" <<
              paramtypes[f] <<
-             indent << "  }\n" <<
-             indent << "  break;\n";
+             indent << "  }\n";
+
         }
+        ss << indent << "break;\n";
       }
       ss << indent << "}\n";
       return ss.str();
