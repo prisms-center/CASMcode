@@ -259,7 +259,7 @@ namespace CASM {
       file.close();
 
       auto super = unitcell.create_superstruc(make_supercell(unitcell.lattice(), Tm));
-      super.title = std::string("Supercell of ") + unitcell.title;
+      super.set_title(std::string("Supercell of ") + unitcell.title());
 
       print(super);
 
@@ -519,7 +519,7 @@ namespace CASM {
 
 
         BasicStructure<Site> super = unit.create_superstruc(make_supercell(unit.lattice(), T));
-        super.title = std::string("Supercell of ") + con.name();
+        super.set_title(std::string("Supercell of ") + con.name());
 
         args.log() << "Super structure:";
         args.log() << "\n------\n";

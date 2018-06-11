@@ -268,7 +268,7 @@ namespace CASM {
       }
     }
     if(first_niggli) {
-      //throw std::runtime_error("First niggli guess was accepted, this shouldn't happen");
+      throw std::runtime_error("First niggli guess was accepted, this shouldn't happen");
     }
     return Lattice(best_lat_mat);
   }
@@ -283,6 +283,25 @@ namespace CASM {
 
   Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
     return _canonical_equivalent_lattice(in_lat, point_grp, compare_tol).first;
+  }
+
+  bool is_canonical_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
+    if(!is_niggli(in_lat, compare_tol)) {
+      return false;
+    }
+    else {
+      for(auto &op : point_grp) {
+        if(!is_niggli(copy_apply(op, in_lat), compare_tol)) {
+          throw std::runtime_error("SymOp made niggli cell non niggli");
+        }
+        if(standard_orientation_compare(in_lat.lat_column_mat(),
+                                        copy_apply(op, in_lat).lat_column_mat(),
+                                        compare_tol)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   /// Return canonical equivalent lattice, and 'to_canonical' SymOp
@@ -305,6 +324,10 @@ namespace CASM {
 
     for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
 
+      //Skip operations that change the handedness of the lattice
+      if(it->matrix().determinant() <= 0.0) {
+        continue;
+      }
       Eigen::Matrix3d transformed_lat_mat = it->matrix() * ref_lat_mat;
       // Eigen::Matrix3d transformed_lat_mat = it->matrix() * in_lat.lat_column_mat();
 
@@ -313,11 +336,6 @@ namespace CASM {
 
       if(!is_niggli(candidate_lat_mat, compare_tol)) {
         throw std::runtime_error("Result of 'niggli()' is not a Niggli cell");
-      }
-
-      //Skip operations that change the handedness of the lattice
-      if(candidate_lat_mat.determinant() <= 0.0) {
-        continue;
       }
 
       if(standard_orientation_compare(most_canonical_lat_mat, candidate_lat_mat, compare_tol)) {

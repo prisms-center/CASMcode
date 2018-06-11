@@ -63,8 +63,8 @@ namespace CASM {
     //figuring out the number of sublattices on which alloying is happening
     std::vector< std::vector< std::string> > tocc;
     std::vector< std::string > tlist;
-    for(Index i = 0; i < m_prim_struc->basis.size(); i++) {
-      tlist = m_prim_struc->basis[i].allowed_occupants();
+    for(Index i = 0; i < m_prim_struc->basis().size(); i++) {
+      tlist = m_prim_struc->basis()[i].allowed_occupants();
       //keep only those sublattices where alloying is allowed
       // if(tlist.size() == 1) {
       //   continue;

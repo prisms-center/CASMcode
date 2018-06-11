@@ -28,7 +28,7 @@ namespace CASM {
   //****************************************************
 
   void AtomPosition::print(std::ostream &stream,
-                           Eigen::Ref<const Eigen::Vector3d> const &trans,
+                           Eigen::Ref<const Eigen::Vector3d> const &translation,
                            Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
                            int spaces,
                            bool print_sd_flags /* = false */) const {
@@ -36,7 +36,7 @@ namespace CASM {
       stream << ' ';
     }
 
-    stream << (cart2frac * (cart() + trans)).transpose();
+    stream << (cart2frac * (cart() + translation)).transpose();
 
     if(print_sd_flags) {
       for(int i = 0; i < 3; i++) {
@@ -63,7 +63,15 @@ namespace CASM {
   //
   //****************************************************
 
-  jsonParser &to_json(AtomPosition const &apos, jsonParser &json, Eigen::Matrix3d const &c2f_mat) {
+  bool identical(AtomPosition const &LHS, AtomPosition const &RHS, double _tol = TOL) {
+    return LHS.specie() == RHS.specie()
+           && almost_zero((LHS.cart() - RHS.cart()).squaredNorm(), _tol * _tol);
+  }
+  //****************************************************
+  //
+  //****************************************************
+
+  jsonParser &to_json(AtomPosition const &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat) {
     json.put_obj();
     to_json_array(c2f_mat * apos.cart(), json["coordinate"]);
     json["species"] = apos.species();
@@ -75,7 +83,7 @@ namespace CASM {
   //
   //****************************************************
 
-  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
+  void from_json(AtomPosition &apos, const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
     std::string _name;
     Eigen::Vector3d _pos(0., 0., 0.);
     AtomPosition::sd_type _SD_flag({false, false, false});
@@ -150,7 +158,7 @@ namespace CASM {
     for(Index i = 0; i < RHS.size(); i++) {
       Index j = 0;
       for(j = 0; j < size(); j++) {
-        if(atom(i).identical(RHS.atom(i), _tol))
+        if(CASM::identical(atom(i), RHS.atom(j), _tol))
           break;
       }
       if(j == size())
@@ -183,13 +191,13 @@ namespace CASM {
   //****************************************************
 
   void Molecule::print(std::ostream &stream,
-                       Eigen::Ref<const Eigen::Vector3d> const &trans,
+                       Eigen::Ref<const Eigen::Vector3d> const &translation,
                        Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
                        int spaces,
                        char delim,
                        bool print_sd_flags /* = false */) const {
     for(Index i = 0; i < size(); i++) {
-      atom(i).print(stream, trans, cart2frac, spaces, print_sd_flags);
+      atom(i).print(stream, translation, cart2frac, spaces, print_sd_flags);
       stream << delim;
     }
     return;
@@ -252,7 +260,7 @@ namespace CASM {
   //
   //****************************************************
 
-  jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Matrix3d const &c2f_mat) {
+  jsonParser &to_json(const Molecule &mol, jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat) {
     return mol.to_json(json, c2f_mat);
   }
 
@@ -260,11 +268,11 @@ namespace CASM {
   //
   //****************************************************
 
-  void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
+  void from_json(Molecule &mol, const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
     mol.from_json(json, f2c_mat);
   }
 
-  Molecule jsonConstructor<Molecule>::from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
+  Molecule jsonConstructor<Molecule>::from_json(const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
     return json.get<Molecule>(f2c_mat);
   }
 

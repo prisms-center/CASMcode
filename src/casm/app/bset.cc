@@ -13,6 +13,7 @@
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/clex/ClexBasisWriter.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/completer/Handlers.hh"
@@ -173,6 +174,7 @@ namespace CASM {
 
       try {
         if(bspecs_json.contains("local_bspecs")) {
+          jsonParser local_bspecs_json = bspecs_json["local_bspecs"];
           //this is a local basis set
           //get hop from bspecs
           args.log().construct("Orbitree");
@@ -195,8 +197,8 @@ namespace CASM {
             std::back_inserter(local_orbits),
             args.log());
 
-          clex_basis.reset(new ClexBasis(prim));
-          clex_basis->generate(local_orbits.begin(), local_orbits.end(), bspecs_json["local_bspecs"]);
+          clex_basis.reset(new ClexBasis(prim, local_bspecs_json));
+          clex_basis->generate(local_orbits.begin(), local_orbits.end(), local_bspecs_json);
 
         }
         else {
@@ -211,7 +213,7 @@ namespace CASM {
             std::back_inserter(orbits),
             args.log());
 
-          clex_basis.reset(new ClexBasis(prim));
+          clex_basis.reset(new ClexBasis(prim, bspecs_json));
           clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json);
         }
 
@@ -240,9 +242,12 @@ namespace CASM {
       {
         jsonParser basis_json;
         if(bspecs_json.contains("local_bspecs")) {
-          write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json["local_bspecs"]);
+          throw std::runtime_error("No pretty printing of local cluster functions");
+          // clex_basis should be replaced with local_clex_basisl
+          //write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json["local_bspecs"]);
         }
         else {
+          write_site_basis_funcs(primclex.prim(), primclex.clex_basis(clex_desc), basis_json);
           write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json);
         }
         basis_json.write(dir.basis(bset));
@@ -269,8 +274,15 @@ namespace CASM {
         // write source code
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), bset));
-        throw std::runtime_error("Error: print_clexulator is being re-implemented");
-        //print_clexulator(...);
+
+        ClexBasisWriter clexwriter(prim);
+        clexwriter.print_clexulator(set.global_clexulator_name(),
+                                    *clex_basis,
+                                    orbits,
+                                    nlist,
+                                    std::vector<UnitCellCoord>(),
+                                    outfile,
+                                    primclex.crystallography_tol());
         outfile.close();
 
         args.log().write(dir.clexulator_src(set.name(), bset).string());
@@ -302,6 +314,7 @@ namespace CASM {
         print_clust(orbits.begin(), orbits.end(), args.log(), FullSitesPrinter());
       }
       if(vm.count("functions")) {
+        print_site_basis_funcs(primclex.prim(), primclex.clex_basis(clex_desc), args.log());
         print_clust(
           orbits.begin(),
           orbits.end(),

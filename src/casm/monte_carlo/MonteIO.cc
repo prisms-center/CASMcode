@@ -305,9 +305,9 @@ namespace CASM {
           sout.close();
 
           int max_allowed = 0;
-          for(int i = 0; i < prim.basis.size(); i++) {
-            if(prim.basis[i].allowed_occupants().size() > max_allowed) {
-              max_allowed = prim.basis[i].allowed_occupants().size();
+          for(int i = 0; i < prim.basis().size(); i++) {
+            if(prim.basis()[i].allowed_occupants().size() > max_allowed) {
+              max_allowed = prim.basis()[i].allowed_occupants().size();
             }
           }
 
@@ -325,11 +325,11 @@ namespace CASM {
           }
           keyout << "\n";
 
-          for(int i = 0; i < prim.basis.size(); i++) {
+          for(int i = 0; i < prim.basis().size(); i++) {
             keyout << i;
             for(int j = 0; j < max_allowed; j++) {
-              if(j < prim.basis[i].allowed_occupants().size()) {
-                keyout << "\t" << prim.basis[i].allowed_occupants()[j];
+              if(j < prim.basis()[i].allowed_occupants().size()) {
+                keyout << "\t" << prim.basis()[i].allowed_occupants()[j];
               }
               else {
                 keyout << "\t-";
@@ -364,8 +364,8 @@ namespace CASM {
           // [["A", "B"],["A" "C"], ... ]
 
           jsonParser key = jsonParser::array();
-          for(int i = 0; i < prim.basis.size(); i++) {
-            key.push_back(prim.basis[i].allowed_occupants());
+          for(int i = 0; i < prim.basis().size(); i++) {
+            key.push_back(prim.basis()[i].allowed_occupants());
           }
           key.write(dir.occupation_key_json());
           _log << "write: " << dir.occupation_key_json() << "\n";
@@ -492,13 +492,13 @@ namespace CASM {
         sin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
         size_type _pass, _step;
-        ConfigDoF config_dof(superstruc.basis.size());
+        ConfigDoF config_dof(superstruc.basis().size());
 
         while(sin) {
           sin >> _pass >> _step;
           pass.push_back(_pass);
           step.push_back(_step);
-          for(size_type i = 0; i < superstruc.basis.size(); i++) {
+          for(size_type i = 0; i < superstruc.basis().size(); i++) {
             sin >> config_dof.occ(i);
           }
           trajectory.push_back(config_dof);
@@ -509,13 +509,13 @@ namespace CASM {
 
         // copy occupation
         for(size_type j = 0; j < trajectory[i].size(); j++) {
-          superstruc.basis[j].set_occ_value(trajectory[i].occ(j));
+          superstruc.set_occ(j, trajectory[i].occ(j));
         }
 
         // POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
         std::stringstream ss;
         ss << "Sample: " << i << "  Pass: " << pass[i] << "  Step: " << step[i];
-        superstruc.title = ss.str();
+        superstruc.set_title(ss.str());
 
         // write file
         fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));

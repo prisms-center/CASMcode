@@ -1,9 +1,11 @@
 #ifndef DOF_HH
 #define DOF_HH
+
 #include<vector>
 #include<set>
 #include<functional>
 #include<boost/algorithm/string.hpp>
+#include "casm/basis_set/DoFDecl.hh"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/CASM_math.hh"
@@ -149,7 +151,7 @@ namespace CASM {
     // For now this isn't used, but may be in the future if we need a dynamic clexulator class for prototyping
     class RemoteHandle {
     public:
-      // \brief Initialize pointer to double
+      // \brief Construct with basic identification info
       RemoteHandle(std::string const &_type_name,
                    std::string const &_var_name,
                    Index _dof_ID) :
@@ -743,6 +745,11 @@ namespace CASM {
       return m_type_name;
     }
 
+    void set_ID(Index _ID) {
+      for(auto &c : m_components)
+        c.set_ID(_ID);
+    }
+
     ContinuousDoF const &operator[](Index i) const {
       return m_components[i];
     }
@@ -806,6 +813,7 @@ namespace CASM {
   };
 
   //********************************************************************
+
   template<typename OccType> template<typename...Args>
   void OccupantDoF<OccType>::from_json(const jsonParser &json, Args &&... args) {
     _set_type_name(json["type_name"].get<std::string>());

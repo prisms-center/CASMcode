@@ -31,8 +31,12 @@ namespace CASM {
     std::vector<DoFKey> const &global_keys,
     Index max_poly_order) const;
 
-  ClexBasis::ClexBasis(Structure const &_prim) :
-    m_prim_ptr(&_prim) {
+  ClexBasis::ClexBasis(Structure const &_prim, jsonParser const &_bspecs) :
+    m_prim_ptr(&_prim),
+    m_basis_builder(std::unique_ptr<ClexBasisBuilder>(new InvariantPolyBasisBuilder("invariant_poly"))),
+    m_bspecs(_bspecs) {
+
+    _populate_site_bases();
 
   }
 
@@ -77,12 +81,23 @@ namespace CASM {
 
   /// \brief Total number of basis sites in primitive cell
   Index ClexBasis::n_sublat() const {
-    throw std::runtime_error("ClexBasis::n_sublat is not implemented");
+    return prim().basis().size();
+  }
+
+  /// \brief Total number of cluster orbits
+  Index ClexBasis::n_orbits() const {
+    return m_bset_tree.size();
   }
 
   /// \brief Total number of basis functions
   Index ClexBasis::n_functions() const {
-    throw std::runtime_error("ClexBasis::n_functions is not implemented");
+    Index nf = 0;
+
+    for(auto const &bo : m_bset_tree) {
+      if(bo.size())
+        nf += bo[0].size();
+    }
+    return nf;
   }
 
 
@@ -135,53 +150,23 @@ namespace CASM {
   */
   //********************************************************************
 
-  void ClexBasis::_populate_site_bases(Structure const &_prim) {
+  void ClexBasis::_populate_site_bases() {
     std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
     std::ostream nullstream(0);
-    make_prim_periodic_asymmetric_unit(_prim,
+    make_prim_periodic_asymmetric_unit(prim(),
                                        CASM_TMP::ConstantFunctor<bool>(true),
                                        TOL,
                                        std::back_inserter(asym_unit),
                                        nullstream);
-    for(DoFKey const &dof_type : ClexBasis_impl::extract_dof_types(_prim))
-      m_site_bases[dof_type] = DoFType::traits(dof_type).construct_site_bases(_prim, asym_unit, bspecs());
+
+    for(DoFKey const &dof_type : prim().local_dof_types())
+      m_site_bases[dof_type] = DoFType::traits(dof_type).construct_site_bases(prim(), asym_unit, bspecs());
   }
 
   //********************************************************************
 
 
   namespace ClexBasis_impl {
-    std::vector<ClexBasis::DoFKey> extract_dof_types(Structure const &_prim) {
-      throw std::runtime_error("ClexBasis_impl::extract_dof_types() is not yet implemented!!\n");
-      return std::vector<ClexBasis::DoFKey>();
-    }
-
-    BasisSet construct_clust_dof_basis(IntegralCluster const &_clust, std::vector<BasisSet const *> const &site_dof_sets) {
-      throw std::runtime_error("ClexBasis_impl::construct_clust_dof_basis() needs to be re-implemented!\n");
-      BasisSet result;
-      // UPDATE to replace _clust.clust_group(), _clust.nlist_inds(), etc
-      /*
-      result.set_dof_IDs(_clust.nlist_inds());
-      std::vector<SymGroupRep const *> subspace_reps;
-      for(BasisSet const *site_bset_ptr : site_dof_sets) {
-        if(site_bset_ptr) {
-          result.append(*site_bset_ptr);
-          subspace_reps.push_back(SymGroupRep::RemoteHandle(_clust.clust_group(),
-                                                            site_bset_ptr->basis_symrep_ID()).rep_ptr());
-        }
-        else {
-          subspace_reps.push_back(SymGroupRep::RemoteHandle(_clust.clust_group(),
-                                                            SymGroupRepID::identity(0)).rep_ptr());
-        }
-      }
-      result.set_basis_symrep_ID(permuted_direct_sum_rep(*(_clust.permute_rep().rep_ptr()),
-                                                               subspace_reps).add_copy_to_master());
-      */
-      return result;
-
-
-    }
-
   }
 
 }

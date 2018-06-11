@@ -153,6 +153,8 @@ namespace CASM {
 
     dict.insert(
       name<PrimPeriodicDiffTransOrbit>(),
+      alias_or_name<PrimPeriodicDiffTransOrbit>(),
+      alias<PrimPeriodicDiffTransOrbit>(),
       species_list(),
       diff_trans_orbitname()
     );

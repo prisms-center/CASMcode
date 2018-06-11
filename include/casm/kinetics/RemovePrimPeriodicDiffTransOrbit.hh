@@ -19,7 +19,7 @@ namespace CASM {
 
     template<>
     class Remove<PrimPeriodicDiffTransOrbit> {
-
+      /// THIS IS LIKELY BUGGY/ NOT IMPLEMENTED
     public:
       Remove(const PrimClex &primclex, fs::path report_dir, Log &_file_log);
 

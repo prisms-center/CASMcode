@@ -21,7 +21,7 @@ namespace CASM {
   template<typename T> struct jsonConstructor;
 
   //****************************************************
-  ///\brief Lightweight container for atom properties.
+  ///\brief Lightweight container for intrinsic atom properties.
 
   /// - For now, it only contains the name, but in future other properties
   /// may be needed (mass, atomic number, etc).
@@ -33,6 +33,7 @@ namespace CASM {
     AtomSpecies(std::string const &_name) :
       m_name(_name) {}
 
+    /// \brief Return name of species
     std::string const &name() const {
       return m_name;
     }
@@ -57,6 +58,8 @@ namespace CASM {
   /// \brief An atomic species associated with a position in space
   class AtomPosition {
   public:
+
+    /// Typedef for selective dynamics array
     typedef std::array<bool, 3> sd_type;
 
     template<typename AtomSpeciesConvertible>
@@ -87,24 +90,24 @@ namespace CASM {
       return m_species;
     }
 
-    /// Const access of Cartesian position of atom
+    /// \brief Const access of Cartesian position of atom
     Eigen::Vector3d const &cart() const {
       return m_position;
     }
 
-    /// Const access of selective dynamics flags
+    /// \brief Const access of selective dynamics flags
     sd_type const &sd_flag() const {
       return m_sd_flag;
     }
 
-    bool identical(AtomPosition const &RHS, double _tol) const;
-
+    /// \brief Print AtomPosition after applying affine transformation cart2frac*cart()+trans
     void print(std::ostream &stream,
                Eigen::Ref<const Eigen::Vector3d> const &trans,
                Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
                int spaces,
                bool print_sd_flags = false) const;
 
+    /// \brief Apply symmetry (translation is ignored)
     AtomPosition &apply_sym(const SymOp &op);
 
   private:
@@ -118,9 +121,14 @@ namespace CASM {
     sd_type m_sd_flag;
   };
 
-  jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Matrix3d const &c2f_mat);
+  /// \brief Comparison with tolerance (max allowed distance between LHS and RHS, in Angstr.)
+  bool identical(AtomPosition const &LHS, AtomPosition const &RHS, double _tol);
 
-  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+  /// \brief Print AtomPosition to json after applying affine transformation cart2frac*cart()+trans
+  jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &cart2frac);
+
+  /// \brief Read AtomPosition from json and then apply affine transformation cart2frac*cart()+trans
+  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &frac2cart);
 
   template<>
   struct jsonConstructor<AtomPosition> {
@@ -243,13 +251,13 @@ namespace CASM {
     return mol.name() == name || (mol.is_vacancy() && is_vacancy(name));
   }
 
-  jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Matrix3d const &c2f_mat);
+  jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat);
 
   void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
 
   template<>
   struct jsonConstructor<Molecule> {
-    static Molecule from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+    static Molecule from_json(const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat);
   };
   /** @} */
 }

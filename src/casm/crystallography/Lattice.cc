@@ -165,6 +165,9 @@ namespace CASM {
     return Lattice(2 * M_PI * inv_lat_column_mat().transpose(), tol()); //equivalent expression
   }
 
+  double Lattice::boxiness() const {
+    return 1 / (this->inv_lat_column_mat().colwise().norm().sum());
+  }
   //********************************************************************
 
   Array<int> Lattice::calc_kpoints(Array<int> prim_kpoints, Lattice prim_lat) {

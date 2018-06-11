@@ -126,6 +126,10 @@ namespace CASM {
     /// \brief Return reciprocal lattice
     Lattice reciprocal() const;
 
+    /// \brief Return boxiness factor directly proportional to volume/SA ratio
+    double boxiness() const;
+
+
     /// \brief Populate \param point_group with the point group of this lattice
     /// \param point_group should be empty
     /// \param pg_tol can be increased to find point group of lattice vectors

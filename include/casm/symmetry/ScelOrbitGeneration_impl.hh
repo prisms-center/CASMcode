@@ -51,7 +51,6 @@ namespace CASM {
   template<typename PermuteIteratorIt>
   typename ScelCanonicalGenerator<_ElementType>::Element
   ScelCanonicalGenerator<_ElementType>::operator()(const Element &e, PermuteIteratorIt begin, PermuteIteratorIt end) const {
-    std::cout << "begin ScelCanonicalGenerator<_ElementType>::operator()" << std::endl;
     Element result = m_sym_compare.prepare(e);
     auto it = begin;
     m_to_canonical = *it;
@@ -63,7 +62,6 @@ namespace CASM {
       }
       ++it;
     }
-    std::cout << "end ScelCanonicalGenerator<_ElementType>::operator()" << std::endl;
     return result;
   }
 
@@ -110,11 +108,11 @@ namespace CASM {
     const Element &e,
     PermuteIteratorIt begin,
     PermuteIteratorIt end) const {
-
     auto less_than = [&](const PermuteIterator & op) {
       auto test = m_sym_compare.prepare(copy_apply(op, e));
       return m_sym_compare.compare(e, test);
     };
+
     return std::none_of(begin, end, less_than);
   }
 

@@ -836,6 +836,14 @@ namespace CASM {
     value = std::make_pair<Key, T>(it.name(), *it);
   }
 
+  /// Create pair/value json object without intermediate temporary
+  template<typename T>
+  jsonParser json_pair(const std::string &key, const T &value) {
+    jsonParser tjson;
+    tjson[key] = value;
+    return tjson;
+  }
+
   /** @} */
 }
 

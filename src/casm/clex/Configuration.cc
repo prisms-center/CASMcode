@@ -595,7 +595,7 @@ namespace CASM {
 
   //*********************************************************************************
   const Molecule &Configuration::mol(Index site_l) const {
-    return prim().basis[ sublat(site_l) ].site_occupant()[ occ(site_l) ];
+    return prim().basis()[ sublat(site_l) ].site_occupant()[ occ(site_l) ];
   }
 
   //*********************************************************************************
@@ -676,8 +676,8 @@ namespace CASM {
 
     // create an array to count the number of each molecule
     std::vector<Eigen::VectorXi> sublat_num_each_molecule;
-    for(i = 0; i < prim().basis.size(); i++) {
-      sublat_num_each_molecule.push_back(Eigen::VectorXi::Zero(prim().basis[i].site_occupant().size()));
+    for(i = 0; i < prim().basis().size(); i++) {
+      sublat_num_each_molecule.push_back(Eigen::VectorXi::Zero(prim().basis()[i].site_occupant().size()));
     }
 
     // count the number of each molecule by sublattice
@@ -825,6 +825,12 @@ namespace CASM {
   //*********************************************************************************
 
   std::ostream &Configuration::print_properties(std::string calctype, std::ostream &sout) const {
+    jsonParser prop_calc_json = print_properties(calctype);
+    sout << prop_calc_json;
+    return sout;
+  }
+
+  jsonParser Configuration::print_properties(std::string calctype) const {
     jsonParser prop_calc_json;
     Lattice ref_lat = supercell().lattice();
     if(calc_properties(calctype).contains("relaxation_deformation")) {
@@ -882,10 +888,8 @@ namespace CASM {
     if(calc_properties(calctype).contains("relaxed_forces")) {
       prop_calc_json["relaxed_forces"] = calc_properties(calctype)["relaxed_forces"];
     }
-    sout << prop_calc_json;
-    return sout;
+    return prop_calc_json;
   }
-
   //*********************************************************************************
 
   /// Private members:
@@ -1208,6 +1212,10 @@ namespace CASM {
   /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
   /// \param config must have a canonical name
   Configuration &apply_properties(Configuration &config, std::string calctype) {
+    if(!is_calculated(config, calctype)) {
+      config.primclex().log() << ">>>>>>!!!!!WARNING: Attempting to extract properties from a configuration without properties!!!!" << std::endl
+                              << "Endpoint " << config.name() << " is not calculated in calctype " << calctype << "!!!!<<<<<<" << std::endl << std::endl;;
+    }
     jsonParser calc_props = config.calc_properties(calctype);
     config.init_deformation();
     config.init_displacement();
@@ -1276,7 +1284,7 @@ namespace CASM {
 
   /// \brief Returns the composition as site fraction, in the order of Structure::struc_molecule
   Eigen::VectorXd site_frac(const Configuration &config) {
-    return comp_n(config) / config.prim().basis.size();
+    return comp_n(config) / config.prim().basis().size();
   }
 
   /// \brief Returns the relaxed energy, normalized per unit cell
@@ -1380,6 +1388,68 @@ namespace CASM {
   /// \brief Returns the relaxed magnetic moment for each molecule
   Eigen::VectorXd relaxed_mag(const Configuration &_config) {
     return _config.calc_properties()["relaxed_mag"].get<Eigen::VectorXd>();
+  }
+
+  /// \brief Returns an IntegralCluster representing the perturbation between the configs
+  IntegralCluster config_diff(const Configuration &_config1, const Configuration &_config2) {
+    if(_config1.supercell() != _config2.supercell()) {
+      throw std::runtime_error("Misuse of basic config_diff: configs are not in same supercell");
+    }
+    std::vector<UnitCellCoord> uccoords;
+    for(Index i = 0 ; i < _config1.occupation().size(); i++) {
+      if(_config1.occ(i) != _config2.occ(i)) {
+        uccoords.push_back(_config1.uccoord(i));
+      }
+    }
+    IntegralCluster perturb(_config1.prim(), uccoords.begin(), uccoords.end());
+    return perturb;
+  }
+
+  /// Returns a rotated/translated version of config 2 that leaves it closest to the occupation of config1
+  Configuration closest_setting(const Configuration &_config1, const Configuration &_config2) {
+    std::vector<PermuteIterator> non_fg_its;
+    std::set_difference(_config2.supercell().permute_begin(),
+                        _config2.supercell().permute_end(),
+                        _config2.factor_group().begin(),
+                        _config2.factor_group().end(),
+                        std::back_inserter(non_fg_its));
+    int min_size = config_diff(_config1, _config2).size();
+    if(non_fg_its.size() == 0) {
+      return _config2;
+    }
+    PermuteIterator best_it = *(non_fg_its.begin());
+    for(auto it = non_fg_its.begin(); it != non_fg_its.end(); ++it) {
+      int size = config_diff(_config1, copy_apply(*it, _config2)).size();
+      if(size < min_size) {
+        best_it = *it;
+        min_size = size;
+      }
+    }
+    if(min_size == config_diff(_config1, _config2).size()) {
+      return _config2;
+    }
+    return copy_apply(best_it, _config2);
+
+  }
+
+
+
+  /// \brief Returns a Configuration with the sites in _clust clipped from _config and placed in _bg
+  Configuration config_clip(const Configuration &_config, const Configuration &_bg, IntegralCluster &_clust) {
+    if(_config.supercell() != _bg.supercell()) {
+      throw std::runtime_error("Misuse of basic config_clip: configs are not in same supercell");
+    }
+    Configuration tmp = _bg;
+    std::vector<Index> l_inds;
+    std::vector<Index> l_values;
+    for(auto &site : _clust) {
+      l_inds.push_back(_config.linear_index(site));
+      l_values.push_back(_config.occ(_config.linear_index(site)));
+    }
+    for(Index i = 0; i < l_inds.size(); i++) {
+      tmp.set_occ(l_inds[i], l_values[i]);
+    }
+    return tmp;
   }
 
   /// \brief returns true if _config describes primitive cell of the configuration it describes
@@ -1612,8 +1682,8 @@ namespace CASM {
   Structure make_deformed_struc(const Configuration &c) {
     Structure tmp = c.supercell().superstructure(c);
     if(c.has_displacement()) {
-      for(int i = 0 ; i < tmp.basis.size(); i++) {
-        tmp.basis[i].cart() += c.disp(i);
+      for(int i = 0 ; i < tmp.basis().size(); i++) {
+        tmp.set_basis()[i].cart() += c.disp(i);
       }
     }
     if(c.has_deformation()) {

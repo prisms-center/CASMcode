@@ -2,6 +2,7 @@
 #define CASM_algorithm
 
 #include <algorithm>
+#include <vector>
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
@@ -53,7 +54,8 @@ namespace CASM {
   /// \brief Equivalent to std::distance(begin, std::find_if_not(begin, end, q))
   template<typename Iterator, typename UnaryPredicate>
   Index find_index_if_not(Iterator begin, Iterator end, UnaryPredicate q) {
-    std::distance(begin, std::find_if_not(begin, end, q));
+    //Please use -Werror=return-type in your compiler flags
+    return std::distance(begin, std::find_if_not(begin, end, q));
   }
 
 
@@ -88,6 +90,27 @@ namespace CASM {
     return container.end() != std::find_if_not(container.begin(), container.end(), q);
   }
 
+
+  /// \brief Returns true if each elements of 'values' is contained in 'container'
+  template<typename Container1, typename Container2>
+  bool contains_all(const Container1 &container, const Container2 &values) {
+    for(auto const &v : values)
+      if(!contains(container, v))
+        return false;
+
+    return true;
+  }
+
+  /// \brief Returns true if each elements of 'values' is contained in 'container', using comparison functor 'q'
+  template<typename Container1, typename Container2, typename BinaryCompare>
+  bool contains_all(const Container1 &container, const Container2 &values, BinaryCompare q) {
+    for(auto const &v : values)
+      if(!contains(container, v, q))
+        return false;
+
+    return true;
+  }
+
   template<typename Container>
   typename Container::value_type sum(const Container &container, typename Container::value_type init_val = 0) {
     for(const auto &val : container) {
@@ -95,6 +118,19 @@ namespace CASM {
     }
     return init_val;
   }
+
+  ///\brief Return pointer one past end of vector. Equivalent to convainer.data()+container.size()
+  template<typename T>
+  T *end_ptr(std::vector<T> &container) {
+    return container.data() + container.size();
+  }
+
+  ///\brief Return const pointer one past end of vector. Equivalent to convainer.data()+container.size()
+  template<typename T>
+  T const *end_ptr(std::vector<T> const &container) {
+    return container.data() + container.size();
+  }
+
 }
 
 #endif

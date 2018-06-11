@@ -5,6 +5,7 @@
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
+#include "casm/misc/ParsingDictionary.hh"
 
 namespace CASM {
   class jsonParser;
@@ -13,9 +14,13 @@ namespace CASM {
   class SymOp;
 
   namespace MoleculeAttribute_impl {
-    class TraitsDictionary;
     class BasicTraits {
     public:
+
+      static std::string class_desc() {
+        return "Molecule Attribute";
+      }
+
       /// \brief allow destruction through base pointer
       virtual ~BasicTraits() {}
 
@@ -41,53 +46,11 @@ namespace CASM {
       virtual BasicTraits *_clone() const = 0;
     };
 
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    /// \brief Conversion Functor for inserting BasicTraits into unique_cloneable_map
-    struct DictionaryConverter {
-      // performs a static_cast of value.clone().unique().release()
-      notstd::cloneable_ptr<BasicTraits> operator()(const BasicTraits &_traits) {
-        return notstd::cloneable_ptr<BasicTraits>(static_cast<BasicTraits *>(_traits.clone().release()));
-      }
-    };
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     /// \brief  Parsing dictionary for obtaining the correct MoleculeAttribute given a name
-    class TraitsDictionary :
-      public notstd::unique_cloneable_map<std::string, BasicTraits> {
-
-    public:
-      typedef notstd::unique_cloneable_map<std::string, BasicTraits> Base;
-
-      typedef typename Base::key_type key_type;
-      typedef typename Base::value_type value_type;
-      typedef typename Base::size_type size_type;
-      typedef typename Base::iterator iterator;
-      typedef typename Base::const_iterator const_iterator;
-
-      using Base::find;
-      using Base::begin;
-      using Base::end;
-
-      TraitsDictionary() :
-        Base([](const value_type & value)->std::string {
-        return value.name();
-      },
-      DictionaryConverter()) {}
-
-      using Base::insert;
-
-      /// \brief Equivalent to find, but throw error with suggestion if @param _name not found
-      notstd::cloneable_ptr<BasicTraits> lookup(const key_type &_name) const;
-
-      /// \brief True if dictionary contains entry for @param _name
-      bool contains(const key_type &_name) const {
-        return find(_name) != end();
-      }
-
-      //void print_help(std::ostream &_stream) const;
-    };
+    using TraitsDictionary = ParsingDictionary<BasicTraits>;
 
   }
 

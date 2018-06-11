@@ -35,6 +35,8 @@ namespace CASM {
       /// an occ index into that basis site's occupant array
       SpeciesLocation(const UnitCellCoord &_uccoord, Index _occ, Index _pos);
 
+      //THESE FIELDS SHOULD REALLY BE PRIVATE and have setters and getters
+      /// Unitcell coordinate of where this resides
       UnitCellCoord uccoord;
 
       /// Occupant index
@@ -104,8 +106,16 @@ namespace CASM {
       /// true indicates the trajectory is useless
       bool is_no_change() const;
 
-      SpeciesLocation from;
-      SpeciesLocation to;
+      /// \brief Gives the starting coordinate of the specie moving
+      UnitCellCoord from_loc() const;
+      /// \brief Gives the ending coordinate of the specie moving
+      UnitCellCoord to_loc() const;
+      /// \brief Gives the name of the specie moving
+      AtomSpecie specie() const;
+
+
+      SpecieLocation from;
+      SpecieLocation to;
 
       /// Lexicographical comparison of SpecieTrajectories for sorting purposes
       bool operator<(const SpecieTrajectory &B) const;
@@ -243,6 +253,8 @@ namespace CASM {
       /// - Comparison is made using the sorted forms
       bool operator<(const DiffusionTransformation &B) const;
 
+      Permutation sort_permutation() const;
+
       /// Puts Transformation in sorted form
       DiffusionTransformation &sort();
 
@@ -312,6 +324,14 @@ namespace CASM {
 
     /// \brief Return a standardized name for this diffusion transformation orbit
     //std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit);
+
+    // \brief Returns the distance from uccoord to the closest point on a linearly
+    /// interpolated diffusion path considers the shortest path across PBC. (Could be an end point)
+    double dist_to_path_pbc(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord, const Supercell &scel);
+
+    // \brief Returns the vector from uccoord to the closest point on a linearly
+    /// interpolated diffusion path considers the shortest path across PBC. (Could be an end point)
+    Eigen::Vector3d vector_to_path_pbc(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord, const Supercell &scel);
 
     // \brief Returns the distance from uccoord to the closest point on a linearly
     /// interpolated diffusion path. (Could be an end point)

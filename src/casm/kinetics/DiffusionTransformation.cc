@@ -2,7 +2,7 @@
 #include "casm/clex/NeighborList.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
-
+#include "casm/container/Counter.hh"
 namespace CASM {
 
   namespace DB {
@@ -112,6 +112,22 @@ namespace CASM {
 
     bool SpecieTrajectory::is_no_change() const {
       return from == to;
+    }
+
+    /// \brief Gives the starting coordinate of the specie moving
+    UnitCellCoord SpecieTrajectory::from_loc() const {
+      return from.uccoord;
+    }
+    /// \brief Gives the ending coordinate of the specie moving
+    UnitCellCoord SpecieTrajectory::to_loc() const {
+      return to.uccoord;
+    }
+    /// \brief Gives the name of the specie moving
+    AtomSpecie SpecieTrajectory::specie() const {
+      if(specie_types_map()) {
+        return from.specie();
+      }
+      throw std::runtime_error("Attempting to access single specie of a malformed SpecieTrajectory");
     }
 
     bool SpecieTrajectory::operator<(const SpecieTrajectory &B) const {
@@ -376,6 +392,12 @@ namespace CASM {
       return this->sorted()._lt(B.sorted());
     }
 
+    Permutation DiffusionTransformation::sort_permutation() const {
+      throw std::runtime_error("DiffusionTransformation::sort_permutation() not yet implemented.");
+      return Permutation(0);
+
+    }
+
     /// \brief Puts this in a sorted form, to enable comparisons
     ///
     /// - the forward and reverse occ_transform and species_traj are sorted in
@@ -478,7 +500,6 @@ namespace CASM {
       if(occ_transform().size() > B.occ_transform().size()) {
         return false;
       }
-
       {
         auto it = occ_transform().begin();
         auto B_it = B.occ_transform().begin();
@@ -491,7 +512,6 @@ namespace CASM {
           }
         }
       }
-
       {
         auto it = species_traj().begin();
         auto B_it = B.species_traj().begin();
@@ -528,6 +548,34 @@ namespace CASM {
       Log out(sout);
       printer.print(trans, out);
       return sout;
+    }
+
+    /// \brief Returns the vector from uccoord to the closest point on a linearly
+    /// interpolated diffusion path considers the shortest path across periodic boundaries. (Could be an end point)
+    Eigen::Vector3d vector_to_path_pbc(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord, const Supercell &scel) {
+      EigenCounter<Eigen::Vector3l> counter(Eigen::Vector3l::Constant(-1), Eigen::Vector3l::Constant(1), Eigen::Vector3l::Ones());
+      double min_dist = dist_to_path(diff_trans, uccoord);
+      Eigen::Vector3d vec = vector_to_path(diff_trans, uccoord);
+      Eigen::Matrix3d lat_mat = scel.lattice().lat_column_mat();
+      while(counter.valid()) {
+        UnitCell shift = lround(scel.prim().lattice().inv_lat_column_mat() * lat_mat * counter().cast<double>());
+        UnitCellCoord new_coord = uccoord;
+        new_coord += shift;
+
+        if(vector_to_path(diff_trans, new_coord).norm() < min_dist) {
+          vec = vector_to_path(diff_trans, new_coord);
+          min_dist = vec.norm();
+        }
+        counter++;
+      }
+      return vec;
+    }
+
+
+    /// \brief Returns the distance from uccoord to the closest point on a linearly
+    /// interpolated diffusion path considers the shortest path across periodic boundaries. (Could be an end point)
+    double dist_to_path_pbc(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord, const Supercell &scel) {
+      return vector_to_path_pbc(diff_trans, uccoord, scel).norm();
     }
 
     /// \brief Returns the distance from uccoord to the closest point on a linearly
@@ -579,7 +627,7 @@ namespace CASM {
       Eigen::Vector3d ret_vec;
       Structure prim(diff_trans.species_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
-      for(int i = 0; i < prim.basis.size(); i++) {
+      for(int i = 0; i < prim.basis().size(); i++) {
         sublat_indices.insert(i);
       }
       UnitCellCoord ret_coord(prim);
@@ -593,22 +641,15 @@ namespace CASM {
       for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); ++it) {
         UnitCellCoord fromcoord = it->from.uccoord;
         UnitCellCoord tocoord = it->to.uccoord;
-
         nlist.expand(fromcoord);
-        fromcoord += pos;
-        nlist.expand(fromcoord);
-        fromcoord -= pos;
-        fromcoord -= pos;
-        nlist.expand(fromcoord);
+        nlist.expand(fromcoord + pos);
+        nlist.expand(fromcoord - pos);
         nlist.expand(tocoord);
-        tocoord += pos;
-        nlist.expand(tocoord);
-        tocoord -= pos;
-        tocoord -= pos;
-        nlist.expand(tocoord);
+        nlist.expand(tocoord + pos);
+        nlist.expand(tocoord - pos);
       }
       for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
-        for(int b = 0; b < prim.basis.size(); b++) {
+        for(int b = 0; b < prim.basis().size(); b++) {
           UnitCellCoord uccoord(prim, b, *n_it);
           bool in_diff_trans = false;
           for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); it++) {

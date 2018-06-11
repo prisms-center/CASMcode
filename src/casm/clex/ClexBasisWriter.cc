@@ -1,31 +1,51 @@
 #include "casm/clex/ClexBasisWriter.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 namespace CASM {
 
+  ClexBasisWriter::ClexBasisWriter(Structure const &_prim, ParamPackMixIn const *parampack_mix_in /*= nullptr*/) {
+    //throw std::runtime_error("Error: print_clexulator is being re-implemented");
+    auto doftypes = _prim.local_dof_types();
+    for(auto const &doftype : doftypes) {
+      auto cv = DoFType::traits(doftype).clust_function_visitors();
+      auto sv = DoFType::traits(doftype).site_function_visitors();
+      for(auto &e : cv)
+        m_clust_visitors.push_back(std::move(e));
+      for(auto &e : sv)
+        m_site_visitors.push_back(std::move(e));
+    }
+
+    doftypes = _prim.global_dof_types();
+    for(auto const &doftype : doftypes) {
+      auto cv = DoFType::traits(doftype).clust_function_visitors();
+      auto sv = DoFType::traits(doftype).site_function_visitors();
+      for(auto &e : cv)
+        m_clust_visitors.push_back(std::move(e));
+      for(auto &e : sv)
+        m_site_visitors.push_back(std::move(e));
+    }
+  }
+
   namespace ClexBasisWriter_impl {
 
-    std::string clexulator_member_definitions(std::string const &class_name,
-                                              ClexBasis const &clex,
-                                              std::vector<std::unique_ptr<OrbitFunctionWriter> > const &orbit_func_writers,
-                                              std::string const &indent) {
+    std::string clexulator_member_declarations(std::string const &class_name,
+                                               ClexBasis const &clex,
+                                               std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_writers,
+                                               std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                               std::string const &indent) {
       Index N_corr = clex.n_functions();
-      Index N_sublat = clex.n_sublat();
-      std::stringstream ss;
-      ss <<
+      Index N_branch = _nhood.size();
 
-         indent << "/// \\brief Clone the Clexulator\n" <<
-         indent << "virtual " << class_name << "* _clone() const override {\n" <<
-         indent << "  return new " << class_name << "(*this);\n" <<
-         indent << "}\n\n";
+      std::stringstream ss;
 
       for(auto const &writer_ptr : orbit_func_writers) {
         writer_ptr->print_typedefs(ss, class_name, indent);
       }
 
       for(auto const &writer_ptr : orbit_func_writers) {
-        writer_ptr->print_eval_table_definitions(ss, class_name, clex, indent);
+        writer_ptr->print_eval_table_declarations(ss, class_name, clex, indent);
       }
 
 
@@ -40,67 +60,81 @@ namespace CASM {
          indent << "BasisFuncPtr m_orbit_func_table[" << N_corr << "];\n\n" <<
 
          indent << "// array of pointers to member functions for calculating flower functions\n" <<
-         indent << "BasisFuncPtr m_flower_func_table[" << N_sublat << "][" << N_corr << "];\n\n" <<
+         indent << "BasisFuncPtr m_flower_func_table[" << N_branch << "][" << N_corr << "];\n\n" <<
 
          indent << "// array of pointers to member functions for calculating DELTA flower functions\n" <<
-         indent << "DeltaBasisFuncPtr m_delta_func_table[" << N_sublat << "][" << N_corr << "];\n\n";
+         indent << "DeltaBasisFuncPtr m_delta_func_table[" << N_branch << "][" << N_corr << "];\n\n";
 
       auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
       for(; it != end_it; ++it) {
-        ss << DoFType::traits(it->first).clexulator_member_definitions_string(clex.prim(), it->second, indent);
+        ss << DoFType::traits(it->first).clexulator_member_declarations_string(clex.prim(), it->second, indent);
       }
       return ss.str();
     }
 
     //*******************************************************************************************
 
-    std::string clexulator_private_method_definitions(std::string const &class_name,
-                                                      ClexBasis const &clex,
-                                                      std::string const &indent) {
+    std::string clexulator_private_method_declarations(std::string const &class_name,
+                                                       ClexBasis const &clex,
+                                                       std::string const &indent) {
       std::stringstream ss;
       ss <<
-         indent << "  /// \\brief Clone the " << class_name << "\n" <<
-         indent << "  std::unique_ptr<" << class_name << "> clone() const { \n" <<
-         indent << "    return std::unique_ptr<" << class_name << ">(_clone()); \n" <<
-         indent << "  }\n\n" <<
 
-         indent << "  /// \\brief Calculate contribution to global correlations from one unit cell\n" <<
-         indent << "  void _calc_global_corr_contribution(double *corr_begin) const override;\n\n" <<
+         indent << "/// \\brief Clone the " << class_name << "\n" <<
+         indent  << class_name << "* _clone() const override {\n" <<
+         indent << "return new " << class_name << "(*this);\n" <<
+         indent << "}\n\n" <<
 
-         indent << "  /// \\brief Calculate contribution to select global correlations from one unit cell\n" <<
-         indent << "  void _calc_restricted_global_corr_contribution(double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n" <<
+         indent << "/// \\brief Calculate contribution to global correlations from one unit cell\n" <<
+         indent << "void _calc_global_corr_contribution(double *corr_begin) const override;\n\n" <<
 
-         indent << "  /// \\brief Calculate point correlations about basis site 'b_index'\n" <<
-         indent << "  void _calc_point_corr(int b_index, double *corr_begin) const override;\n\n" <<
+         indent << "/// \\brief Calculate contribution to select global correlations from one unit cell\n" <<
+         indent << "void _calc_restricted_global_corr_contribution(double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n" <<
 
-         indent << "  /// \\brief Calculate select point correlations about basis site 'b_index'\n" <<
-         indent << "  void _calc_restricted_point_corr(int b_index, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n" <<
+         indent << "/// \\brief Calculate point correlations about neighbor site 'n_index'\n" <<
+         indent << "/// For global clexulators, 'n_index' only ranges over sites in the cell\n" <<
+         indent << "/// For local clexulators, 'n_index' ranges over all sites in the neighborhood\n" <<
+         indent << "void _calc_point_corr(int n_index, double *corr_begin) const override;\n\n" <<
 
-         indent << "  /// \\brief Calculate the change in point correlations due to changing an occupant\n" <<
-         indent << "  void _calc_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin) const override;\n\n" <<
+         indent << "/// \\brief Calculate select point correlations about neighbor site 'n_index'\n" <<
+         indent << "/// For global clexulators, 'n_index' only ranges over sites in the cell\n" <<
+         indent << "/// For local clexulators, 'n_index' ranges over all sites in the neighborhood\n" <<
+         indent << "void _calc_restricted_point_corr(int n_index, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n" <<
 
-         indent << "  /// \\brief Calculate the change in select point correlations due to changing an occupant\n" <<
-         indent << "  void _calc_restricted_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n";
+         indent << "/// \\brief Calculate the change in point correlations due to changing an occupant at neighbor site 'n_index'\n" <<
+         indent << "/// For global clexulators, 'n_index' only ranges over sites in the cell\n" <<
+         indent << "/// For local clexulators, 'n_index' ranges over all sites in the neighborhood\n" <<
+         indent << "void _calc_delta_point_corr(int n_index, int occ_i, int occ_f, double *corr_begin) const override;\n\n" <<
+
+         indent << "/// \\brief Calculate the change in select point correlations due to changing an occupant at neighbor site 'n_index'\n" <<
+         indent << "/// For global clexulators, 'n_index' only ranges over sites in the cell\n" <<
+         indent << "/// For local clexulators, 'n_index' ranges over all sites in the neighborhood\n" <<
+         indent << "void _calc_restricted_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n" <<
+
+         indent << "void _global_prepare() const override;\n\n" <<
+
+         indent << "void _point_prepare(int neighbor_ind) const override;\n\n";
+
 
 
       auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
       for(; it != end_it; ++it) {
-        ss << DoFType::traits(it->first).clexulator_private_method_definitions_string(clex.prim(), it->second, indent);
+        ss << DoFType::traits(it->first).clexulator_private_method_declarations_string(clex.prim(), it->second, indent);
       }
 
       ss <<
-         indent << "  //default functions for basis function evaluation \n" <<
-         indent << "  double zero_func() const{ return 0.0;};\n" <<
-         indent << "  double zero_func(int,int) const{ return 0.0;};\n\n";
+         indent << "//default functions for basis function evaluation \n" <<
+         indent << "double zero_func() const{ return 0.0;};\n" <<
+         indent << "double zero_func(int,int) const{ return 0.0;};\n\n";
 
       return ss.str();
     }
 
     //*******************************************************************************************
 
-    std::string clexulator_public_method_definitions(std::string const &class_name,
-                                                     ClexBasis const &clex,
-                                                     std::string const &indent) {
+    std::string clexulator_public_method_declarations(std::string const &class_name,
+                                                      ClexBasis const &clex,
+                                                      std::string const &indent) {
       std::stringstream ss;
       ss <<
          indent << "  " << class_name << "();\n\n" <<
@@ -108,7 +142,7 @@ namespace CASM {
 
       auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
       for(; it != end_it; ++it) {
-        ss << DoFType::traits(it->first).clexulator_public_method_definitions_string(clex.prim(), it->second, indent);
+        ss << DoFType::traits(it->first).clexulator_public_method_declarations_string(clex.prim(), it->second, indent);
       }
       return ss.str();
     }
@@ -116,9 +150,9 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    std::string clexulator_interface_implementation(std::string const &class_name,
-                                                    ClexBasis const &clex,
-                                                    std::string const &indent) {
+    std::string clexulator_interface_declaration(std::string const &class_name,
+                                                 ClexBasis const &clex,
+                                                 std::string const &indent) {
       std::stringstream ss;
       // Write destructor
       ss <<

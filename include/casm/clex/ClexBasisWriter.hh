@@ -5,43 +5,57 @@
 #include "casm/clex/ClexBasis.hh"
 namespace CASM {
   class ClexBasis;
+  class Structure;
   class PrimNeighborList;
+  class ParamPackMixIn;
+  class OrbitFunctionTraits;
 
 
-  class OrbitFunctionWriter {
-  public:
-    virtual void print_typedefs(std::ostream &out,
-                                std::string const &class_name,
-                                std::string const &indent)const {}
 
-    virtual void print_eval_table_definitions(std::ostream &out,
-                                              std::string const &class_name,
-                                              ClexBasis const &clex,
-                                              std::string const &indent)const {}
-
-  private:
-    std::string m_name;
-    std::vector<std::string> m_signature;
-    std::vector<std::string> arg_names;
-    std::string m_short_desc;
-    std::string m_long_desc;
-
-  };
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   class ClexBasisWriter {
   public:
+
+    /// \brief Construct ClexBasisWriter, collecting requisite DoF info from '_prim'
+    ClexBasisWriter(Structure const &_prim, ParamPackMixIn const *parampack_mix_in = nullptr);
+
     /// \brief Print clexulator
     template <typename OrbitType>
     void print_clexulator(std::string class_name,
                           ClexBasis const &clex,
                           std::vector<OrbitType > const &_tree,
                           PrimNeighborList &_nlist,
+                          std::vector<UnitCellCoord> const &_flower_pivots,
                           std::ostream &stream,
                           double xtal_tol);
 
   private:
-    std::vector<std::unique_ptr<FunctionVisitor> > const &_function_label_visitors() const;
-    std::vector<std::unique_ptr<OrbitFunctionWriter> > const &_orbit_func_writers() const;
+    std::vector<std::unique_ptr<FunctionVisitor> > const &_site_function_visitors() const {
+      return m_site_visitors;
+    }
+
+    std::vector<std::unique_ptr<FunctionVisitor> > const &_clust_function_visitors() const {
+      return m_clust_visitors;
+    }
+
+    std::vector<std::unique_ptr<OrbitFunctionTraits> > const &_orbit_func_traits() const {
+      return m_orbit_func_traits;
+    }
+
+    /// \brief Print ClexParamPack specialization
+    template <typename OrbitType>
+    void print_param_pack(std::string class_name,
+                          ClexBasis const &clex,
+                          std::vector<OrbitType > const &_tree,
+                          PrimNeighborList &_nlist,
+                          std::vector<UnitCellCoord> const &_flower_pivots,
+                          std::ostream &stream,
+                          double xtal_tol);
+
+    std::vector<std::unique_ptr<FunctionVisitor> > m_site_visitors;
+    std::vector<std::unique_ptr<FunctionVisitor> > m_clust_visitors;
+    std::vector<std::unique_ptr<OrbitFunctionTraits> > m_orbit_func_traits;
   };
 
 
@@ -49,20 +63,21 @@ namespace CASM {
   namespace ClexBasisWriter_impl {
 
 
-    std::string clexulator_member_definitions(std::string const &class_name,
-                                              ClexBasis const &clex,
-                                              std::vector<std::unique_ptr<OrbitFunctionWriter> > const &orbit_func_writers,
-                                              std::string const &indent);
+    std::string clexulator_member_declarations(std::string const &class_name,
+                                               ClexBasis const &clex,
+                                               std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
+                                               std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                               std::string const &indent);
     //*******************************************************************************************
 
-    std::string clexulator_private_method_definitions(std::string const &class_name,
+    std::string clexulator_private_method_declarations(std::string const &class_name,
+                                                       ClexBasis const &clex,
+                                                       std::string const &indent);
+    //*******************************************************************************************
+
+    std::string clexulator_public_method_declarations(std::string const &class_name,
                                                       ClexBasis const &clex,
                                                       std::string const &indent);
-    //*******************************************************************************************
-
-    std::string clexulator_public_method_definitions(std::string const &class_name,
-                                                     ClexBasis const &clex,
-                                                     std::string const &indent);
     //*******************************************************************************************
 
     template <typename OrbitType>
@@ -71,7 +86,7 @@ namespace CASM {
                                                                            OrbitType const &_clust_orbit,
                                                                            std::function<std::string(Index, Index)> method_namer,
                                                                            PrimNeighborList &_nlist,
-                                                                           std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                           std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
                                                                            std::string const &indent);
     //*******************************************************************************************
 
@@ -95,8 +110,9 @@ namespace CASM {
                                                                             ClexBasis::BSetOrbit const &_bset_orbit,
                                                                             OrbitType const &_clust_orbit,
                                                                             std::function<std::string(Index, Index)> method_namer,
+                                                                            std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                                             PrimNeighborList &_nlist,
-                                                                            std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                            std::vector<std::unique_ptr<FunctionVisitor> > const &visitor,
                                                                             std::string const &indent);
 
     //*******************************************************************************************
@@ -107,27 +123,51 @@ namespace CASM {
                                                                              ClexBasis::BSetOrbit const &_site_bases,
                                                                              OrbitType const &_clust_orbit,
                                                                              std::function<std::string(Index, Index)> method_namer,
+                                                                             std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                                              PrimNeighborList &_nlist,
-                                                                             std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
+                                                                             std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
                                                                              FunctionVisitor const &prefactor_labeler,
                                                                              std::string const &indent);
     //*******************************************************************************************
 
-    std::string clexulator_interface_implementation(std::string const &class_name,
-                                                    ClexBasis const &clex,
-                                                    std::string const &indent);
+    std::string clexulator_interface_declaration(std::string const &class_name,
+                                                 ClexBasis const &clex,
+                                                 std::string const &indent);
 
     //*******************************************************************************************
 
     template <typename OrbitType>
-    std::string clexulator_constructor_implementation(std::string const &class_name,
-                                                      ClexBasis const &clex,
-                                                      std::vector<OrbitType> const &_tree,
-                                                      PrimNeighborList &_nlist,
-                                                      std::vector<std::string> const &orbit_method_names,
-                                                      std::vector< std::vector<std::string> > const &flower_method_names,
-                                                      std::vector< std::vector<std::string> > const &dflower_method_names,
-                                                      std::string const &indent);
+    std::string clexulator_constructor_definition(std::string const &class_name,
+                                                  ClexBasis const &clex,
+                                                  std::vector<OrbitType> const &_tree,
+                                                  std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                  PrimNeighborList &_nlist,
+                                                  std::vector<std::string> const &orbit_method_names,
+                                                  std::vector< std::vector<std::string> > const &flower_method_names,
+                                                  std::vector< std::vector<std::string> > const &dflower_method_names,
+                                                  std::string const &indent);
+
+    //*******************************************************************************************
+
+
+    template <typename OrbitType>
+    std::string clexulator_point_prepare_definition(std::string const &class_name,
+                                                    ClexBasis const &clex,
+                                                    std::vector<OrbitType> const &_tree,
+                                                    std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
+                                                    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                    PrimNeighborList &_nlist,
+                                                    std::string const &indent);
+    //*******************************************************************************************
+
+    template <typename OrbitType>
+    std::string clexulator_global_prepare_definition(std::string const &class_name,
+                                                     ClexBasis const &clex,
+                                                     std::vector<OrbitType> const &_tree,
+                                                     std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
+                                                     std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                     PrimNeighborList &_nlist,
+                                                     std::string const &indent);
 
     //*******************************************************************************************
 
@@ -136,16 +176,18 @@ namespace CASM {
     std::vector<std::string> orbit_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
                                                         OrbitType const &_clust_orbit,
                                                         PrimNeighborList &_nlist,
-                                                        std::vector<std::unique_ptr<FunctionVisitor> > const &labelers);
+                                                        std::vector<std::unique_ptr<FunctionVisitor> > const &visitors);
     //*******************************************************************************************
     /// nlist_index is the index of the basis site in the neighbor list
     template<typename OrbitType>
-    std::map< UnitCell, std::vector< std::string > > flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
-                                                                                 std::function<BasisSet(BasisSet const &)> _bset_transform,
-                                                                                 OrbitType const &_clust_orbit,
-                                                                                 PrimNeighborList &_nlist,
-                                                                                 std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
-                                                                                 Index sublat_index);
+    std::vector<std::string>  flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                          std::function<BasisSet(BasisSet const &)> _bset_transform,
+                                                          OrbitType const &_clust_orbit,
+                                                          std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+                                                          PrimNeighborList &_nlist,
+                                                          std::vector<std::unique_ptr<FunctionVisitor> > const &_visitors,
+                                                          UnitCellCoord const &_nbor);
+
     //*******************************************************************************************
 
     template<typename OrbitType>
@@ -155,11 +197,21 @@ namespace CASM {
 
     //*******************************************************************************************
 
+    template<typename OrbitIterType>
+    std::map<UnitCellCoord, std::set<UnitCellCoord> > dependency_neighborhood(OrbitIterType begin,
+                                                                              OrbitIterType end);
+
+    //*******************************************************************************************
+
     template<typename UCCIterType, typename IntegralClusterSymCompareType>
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
-                                                                 UCCIterType end,
-                                                                 IntegralClusterSymCompareType const &sym_compare);
+    std::set<UnitCellCoord>  equiv_ucc(UCCIterType begin,
+                                       UCCIterType end,
+                                       UnitCellCoord const &_pivot,
+                                       IntegralClusterSymCompareType const &_sym_compare);
   }
 }
+
+
+#include "casm/clex/ClexBasisWriter_impl.hh"
 
 #endif

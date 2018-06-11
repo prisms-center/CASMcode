@@ -4,6 +4,7 @@
 
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/casm_io/stream_io/container.hh"
 
 #include "casm/casm_io/jsonParser.hh"
 
@@ -41,6 +42,8 @@ namespace CASM {
     m_min_poly_constraints(init_basis.min_poly_constraints()),
     m_max_poly_constraints(init_basis.max_poly_constraints()) {
 
+    //std::cout << "Constructing B BSet " << this << ", copy of " << &init_basis << std::endl;
+
     for(Index i = 0; i < init_basis.m_argument.size(); i++) {
       m_argument.push_back(init_basis.m_argument[i]->shared_copy());
     }
@@ -50,7 +53,6 @@ namespace CASM {
         push_back(nullptr);
       else {
         push_back(init_basis[i]->copy());
-        _back()->set_arguments(m_argument);
       }
     }
 
@@ -59,6 +61,7 @@ namespace CASM {
   //*******************************************************************************************
 
   const BasisSet &BasisSet::operator=(const BasisSet &RHS) {
+    //std::cout << "Copying to C BSet " << this << ", copy of " << &RHS << std::endl;
     if(this == &RHS) {
       return *this;
     }
@@ -81,12 +84,12 @@ namespace CASM {
     for(Index i = 0; i < RHS.m_argument.size(); i++) {
       m_argument.push_back(RHS.m_argument[i]->shared_copy());
     }
+
     for(Index i = 0; i < RHS.size(); i++) {
       if(!RHS[i])
         push_back(nullptr);
       else {
         push_back(RHS[i]->copy());
-        _back()->set_arguments(m_argument);
       }
     }
     return *this;
@@ -96,6 +99,7 @@ namespace CASM {
   //*******************************************************************************************
 
   BasisSet::~BasisSet() {
+    //std::cout << "Deleting BSet " << this << std::endl;
     clear();
   }
 
@@ -113,34 +117,40 @@ namespace CASM {
   //*******************************************************************************************
 
   void BasisSet::append(const BasisSet &RHS) {
-    //Before appending functions, copy over  DoF IDs and subbasis info
-    for(Index i = 0; i < RHS.m_dof_IDs.size(); i++) {
-      Index ID_ind = find_index(m_dof_IDs, RHS.m_dof_IDs[i]);
-      if(ID_ind == m_dof_IDs.size()) {
-        assert(0 && "In BasisSet::append(), it is unsafe to append a BasisSet whose dependencies differ from (this).");
-        m_dof_IDs.push_back(RHS.m_dof_IDs[i]);
-        m_dof_subbases.push_back(SubBasis());
-      }
 
-      for(Index j = 0; j < RHS.m_dof_subbases[i].size(); j++) {
-        //std::cout << "*** Push back " << j << " to subbases " << ID_ind << " value " << RHS.m_dof_subbases[i][j] + size() << "\n\n";
-        m_dof_subbases[ID_ind].push_back(RHS.m_dof_subbases[i][j] + size());
+    //Before appending functions, copy over  DoF IDs and subbasis info
+    if(dof_IDs().size()) {
+      for(Index i = 0; i < RHS.m_dof_IDs.size(); i++) {
+        Index ID_ind = find_index(m_dof_IDs, RHS.m_dof_IDs[i]);
+        if(ID_ind == m_dof_IDs.size()) {
+          throw std::runtime_error("In BasisSet::append(), it is unsafe to append a BasisSet whose dependencies differ from (this).");
+          //m_dof_IDs.push_back(RHS.m_dof_IDs[i]);
+          //m_dof_subbases.push_back(SubBasis());
+        }
+
+        for(Index j = 0; j < RHS.m_dof_subbases[i].size(); j++) {
+          //std::cout << "*** Push back " << j << " to subbases " << ID_ind << " value " << RHS.m_dof_subbases[i][j] + size() << "\n\n";
+          m_dof_subbases[ID_ind].push_back(RHS.m_dof_subbases[i][j] + size());
+        }
       }
     }
+    else
+      set_dof_IDs(RHS.dof_IDs());
+
 
     //Convert polynomial constraints
     _min_poly_constraints().reserve(min_poly_constraints().size() + RHS.min_poly_constraints().size());
     for(Index i = 0; i < RHS.min_poly_constraints().size(); i++) {
       _min_poly_constraints().push_back(RHS.min_poly_constraints()[i]);
       for(Index j = 0; j < min_poly_constraints().back().first.size(); j++)
-        _min_poly_constraints().back().first[i] += size();
+        _min_poly_constraints().back().first[j] += size();
     }
 
     _max_poly_constraints().reserve(max_poly_constraints().size() + RHS.max_poly_constraints().size());
     for(Index i = 0; i < RHS.max_poly_constraints().size(); i++) {
       _max_poly_constraints().push_back(RHS.max_poly_constraints()[i]);
       for(Index j = 0; j < max_poly_constraints().back().first.size(); j++)
-        _max_poly_constraints().back().first[i] += size();
+        _max_poly_constraints().back().first[j] += size();
     }
 
     //Convert RHS.min_poly_order() and RHS.max_poly_order into polynomial constraints
@@ -155,7 +165,6 @@ namespace CASM {
         push_back(nullptr);
       else {
         push_back(RHS[i]->copy());
-        _back()->set_arguments(m_argument);
       }
     }
     _refresh_ID();
@@ -309,13 +318,10 @@ namespace CASM {
   }
   //*******************************************************************************************
   // Pass before_IDs by value to avoid aliasing issues when called from BasisSet::set_dof_IDs()
-  void BasisSet::_update_dof_IDs(const std::vector<Index> before_IDs, const std::vector<Index> &after_IDs) {
+  void BasisSet::_update_dof_IDs(std::vector<Index> before_IDs, const std::vector<Index> &after_IDs) {
     //std::cout << "BasisSet " << this << " --> m_dof_IDs is " << m_dof_IDs << "; before_IDs: " << before_IDs << "; after_ID: " << after_IDs << "\n" << std::endl;
     if(before_IDs.size() != after_IDs.size() && size() > 0) {
-      std::cerr << "CRITICAL ERROR: In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
+      throw std::runtime_error("In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.");
     }
 
     //update m_dof_IDs after the other stuff, for easier debugging
@@ -327,12 +333,9 @@ namespace CASM {
       Index m;
       for(Index i = 0; i < m_dof_IDs.size(); i++) {
         m = find_index(before_IDs, m_dof_IDs[i]);
-        if(m == before_IDs.size()) {
-          std::cerr << "CRITICAL ERROR: In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.\n"
-                    << "                Exiting...\n";
-          assert(0);
-          exit(1);
-        }
+        if(m == before_IDs.size())
+          throw std::runtime_error("In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.");
+
         m_dof_IDs[i] = after_IDs[m];
       }
     }
@@ -547,6 +550,7 @@ namespace CASM {
                                                           const SymGroup &symgroup) {
 
     m_argument.clear();
+
     m_max_poly_order = 1;
     Index N = allowed_occs.size();
     if(N <= 1) {
@@ -558,23 +562,23 @@ namespace CASM {
       set_dof_IDs(std::vector<Index>(1, allowed_occs.ID()));
       m_dof_subbases[0] = Array<Index>::sequence(0, N - 2);
     }
+
     //std::cout << "INSIDE construct_orthonormal_discrete_functions and gram_mat is \n";
     //std::cout << gram_mat << "\n\n";
     if(!almost_zero(Eigen::MatrixXd(gram_mat - gram_mat.transpose()))) {
       // we could 'fix' gram_mat, but that could cause mysterious behavior - leave it to the user
-      std::cerr << "CRITICAL ERROR: Passed a Gram Matrix to BasisSet::construct_orthonormal_discrete_functions that is not symmetric.\n"
-                << "                Gram Matrix is:\n" << gram_mat << "\nExiting...\n";
-      exit(1);
+      throw std::runtime_error("Passed a Gram Matrix to BasisSet::construct_orthonormal_discrete_functions that is not symmetric.");
     }
 
     Eigen::VectorXd conc_vec(gram_mat * Eigen::MatrixXd::Ones(N, 1));
 
     if(!almost_equal(1.0, conc_vec.sum())) {
+      std::stringstream ss;
       // we could 'fix' gram_mat, but that could cause mysterious behavior - leave it to the user
-      std::cerr << "CRITICAL ERROR: Passed ill-conditioned Gram Matrix to BasisSet::construct_orthonormal_discrete_functions.\n"
-                << "                The sum of the elements of the Gram matrix must be equal to 1.\n"
-                << "                Gram Matrix is:\n" << gram_mat << "\nExiting...\n";
-      exit(1);
+      ss << "Passed ill-conditioned Gram Matrix to BasisSet::construct_orthonormal_discrete_functions."
+         << "The sum of the elements of the Gram matrix must be equal to 1."
+         << "Gram Matrix is:\n" << gram_mat;
+      throw std::runtime_error(ss.str());
     }
 
 
@@ -583,10 +587,11 @@ namespace CASM {
     //Use SVD instead of eigendecomposition so that 'U' and 'V' matrices are orthogonal
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> teig(gram_mat, Eigen::ComputeEigenvectors);
     if(teig.eigenvalues().minCoeff() < TOL) {
+      std::stringstream ss;
       // we could 'fix' gram_mat, but that could cause mysterious behavior - leave it to the user
-      std::cerr << "CRITICAL ERROR: Passed a Gram Matrix to BasisSet::construct_orthonormal_discrete_functions that is not positive-definite.\n"
-                << "                Gram Matrix is:\n" << gram_mat << "\nSmallest Eigenvalue = " << teig.eigenvalues().minCoeff() << "; Exiting...\n";
-      exit(1);
+      ss << "Gram Matrix in BasisSet::construct_orthonormal_discrete_functions is not positive-definite."
+         << "Gram Matrix is:\n" << gram_mat << "\nSmallest Eigenvalue = " << teig.eigenvalues().minCoeff();
+      throw std::runtime_error(ss.str());
     }
 
     // B matrix is matrix square root of gram_mat.inverse(). Its columns form an orthonormal basis wrt gram_mat
@@ -809,8 +814,16 @@ namespace CASM {
     Array<Function *>::push_back(new_func);
     m_eval_cache.push_back(0.0);
     m_deval_cache.push_back(0.0);
-    if(m_argument.size() == 0 && new_func != nullptr) {
-      _set_arguments(new_func->argument_bases());
+
+    // Nothing having to do with DoF_IDs should be touched here.
+    // That should happen before pushing back onto the BasisSet
+    if(new_func != nullptr) {
+
+      if(m_argument.size() == 0)
+        _set_arguments(new_func->argument_bases());
+
+      _back()->set_arguments(m_argument);
+
     }
   }
 
@@ -888,13 +901,20 @@ namespace CASM {
 
   void BasisSet::_set_arguments(const Array<BasisSet const *> &new_args) {
     if(m_argument.size()) {
-      std::cerr << "CRITICAL ERROR: In BasisSet::_set_arguments(), cannot reset arguments of already-initialized BasisSet.\n"
-                << "                Exiting...\n";
-      exit(1);
+      throw std::runtime_error("In BasisSet::_set_arguments(), cannot reset arguments of already-initialized BasisSet.");
     }
     m_argument.reserve(new_args.size());
-    for(Index i = 0; i < new_args.size(); i++)
+
+
+    for(Index i = 0; i < new_args.size(); i++) {
+      if(dof_IDs().empty())
+        set_dof_IDs(new_args[i]->dof_IDs());
+      else if(!contains_all(dof_IDs(), new_args[i]->dof_IDs()))
+        throw std::runtime_error("Called BasisSet::_set_arguments() on a BasisSet whose DoF_IDs are not a superset of the DoF_IDs of new arguments.");
+
       m_argument.push_back(new_args[i]->shared_copy());
+    }
+
   }
 
   //*******************************************************************************************

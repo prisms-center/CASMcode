@@ -254,7 +254,7 @@ namespace CASM {
   /// \brief Print Orbit<IntegralCluster, SymCompareType> & ClexBasis, including prototypes and prototype basis functions
   struct ProtoFuncsPrinter : public SitesPrinter {
 
-    const ClexBasis &clex_basis;
+    ClexBasis const &clex_basis;
 
     ProtoFuncsPrinter(const ClexBasis &_clex_basis, const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
       SitesPrinter(_opt),
@@ -290,7 +290,6 @@ namespace CASM {
     const OrbitPrinterOptions &opt = OrbitPrinterOptions());
 
   /// \brief Print site basis functions, as for 'casm bset --functions'
-  template<typename ClusterOrbitIterator>
   void print_site_basis_funcs(
     ClusterOrbitIterator begin,
     ClusterOrbitIterator end,

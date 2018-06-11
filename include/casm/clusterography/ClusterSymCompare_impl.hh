@@ -2,6 +2,7 @@
 #define CASM_ClusterSymCompare_impl
 
 #include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
@@ -45,6 +46,15 @@ namespace CASM {
   template<typename Base>
   bool ClusterSymCompare<Base>::compare_impl(const Element &A, const Element &B) const {
     return A < B;
+  }
+
+
+  /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
+  ///
+  /// - For now returns pointer to SymPermutation object that encodes permutation due to sorting elements
+  template<typename Base>
+  std::unique_ptr<SymOpRepresentation> ClusterSymCompare<Base>::canonical_transform_impl(Element const &obj)const {
+    return std::unique_ptr<SymOpRepresentation>(new SymPermutation(obj.sort_permutation()));
   }
 
   /// \brief type-specific way to get position of element

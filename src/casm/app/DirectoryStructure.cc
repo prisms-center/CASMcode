@@ -1,9 +1,11 @@
 #include "casm/app/DirectoryStructure.hh"
 
+#include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string/classification.hpp>
 #include "casm/clex/Configuration.hh"
 #include "casm/casm_io/Log.hh"
-
+#include "casm/casm_io/jsonParser.hh"
 namespace CASM {
 
   /// return path to current or parent directory containing ".casm" directory
@@ -286,7 +288,6 @@ namespace CASM {
   /// - For Configuration: use 'SCELV_A_B_C_D_E_F'
   /// - For DiffTransConfiguration: use 'diff_trans.0/SCELV_A_B_C_D_E_F'
   fs::path DirectoryStructure::supercell_dir(std::string scelname) const {
-    std::cout << "Warning: check supercell directory path for DiffTransConfiguration" << std::endl;
     return m_root / m_calc_dir / scelname;
   }
 
@@ -318,7 +319,6 @@ namespace CASM {
   /// - For Configuration: use 'SCELV_A_B_C_D_E_F'
   /// - For DiffTransConfiguration: use 'diff_trans.0/SCELV_A_B_C_D_E_F'
   fs::path DirectoryStructure::supercell_calc_settings_dir(std::string scelname, std::string calctype) const {
-    std::cout << "Warning: check supercell directory path for DiffTransConfiguration" << std::endl;
     return supercell_dir(scelname) / m_set_dir / _calctype(calctype);
   }
 

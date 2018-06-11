@@ -62,6 +62,11 @@ namespace CASM {
 
     void from_json(const jsonParser &json) override;
 
+  protected:
+    SymOpRepresentation *inverse_impl() const override {
+      return new SymPermutation(m_permute.inverse());
+    }
+
   private:
     /// Array of indices, of length 'n'. An index 'm_permute[j]' before application of symmetry
     /// resides at index 'j' after application of symmetry

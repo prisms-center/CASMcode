@@ -50,7 +50,7 @@ namespace CASM {
       //class OccPerturbation;
     public:
 
-      /// \brief Construct with an IntegralCluster
+      /// \brief Construct with background config, diff_trans orbit, and specification of perturbations
       DiffTransConfigEnumOccPerturbations(
         const Configuration &background_config,
         const PrimPeriodicDiffTransOrbit &diff_trans_orbit, // or const DiffusionTransformation &diff_trans
@@ -138,7 +138,7 @@ namespace CASM {
       /// Crystallography tolerance
       double _tol() const;
 
-      /// Supercell
+      /// Prim
       const Structure &_prim() const;
 
       /// Supercell
@@ -147,7 +147,7 @@ namespace CASM {
       /// Determines unique canonical diff trans for given background config
       void _init_base();
 
-      /// Generate local orbits for current base diff trans
+      /// Generate local orbits that represent perturbations for current base diff trans
       void _init_local_orbits();
 
       /// Generate the 'from_value' for the perturbation,

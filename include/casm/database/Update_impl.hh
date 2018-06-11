@@ -51,7 +51,6 @@ namespace CASM {
         auto config_it = db_config().find(name);
         m_structure_mapper.map(pos, config_it, std::back_inserter(tvec));
         for(auto &res : tvec) {
-
           results.push_back(res);
           // if mapped && has data, insert
           if(!res.mapped_props.to.empty() && res.has_data) {
@@ -89,7 +88,7 @@ namespace CASM {
       std::string prefix = "update_";
       prefix += traits<ConfigType>::short_name;
 
-      std::set<std::string> all_to;
+      std::map<std::string, int> all_to;
 
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
@@ -97,14 +96,17 @@ namespace CASM {
           fail.push_back(res);
         }
         else {
-          all_to.insert(res.mapped_props.to);
+          if(all_to.find(res.mapped_props.to) == all_to.end()) {
+            all_to.insert(std::make_pair(res.mapped_props.to, 0));
+          }
+          all_to[res.mapped_props.to]++;
           success.push_back(res);
         }
       }
 
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
-        if(all_to.count(res.mapped_props.to) > 1) {
+        if(all_to[res.mapped_props.to] > 1) {
           conflict.push_back(res);
           if(res.mapped_props.from != res.mapped_props.to) {
             unstable.push_back(res);

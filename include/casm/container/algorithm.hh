@@ -1,6 +1,8 @@
 #ifndef CONTAINER_ALGO_HH
 #define CONTAINER_ALGO_HH
 
+#include <vector>
+
 namespace CASM {
 
   template<typename T>

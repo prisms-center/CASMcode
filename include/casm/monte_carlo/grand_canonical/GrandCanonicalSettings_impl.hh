@@ -263,10 +263,10 @@ namespace CASM {
 
         // if 'must converge'
         if(must_converge) {
-          ptr = new SiteFracMonteSampler(i, primclex.prim().basis.size(), print_name, prec, confidence(), data_maxlength);
+          ptr = new SiteFracMonteSampler(i, primclex.prim().basis().size(), print_name, prec, confidence(), data_maxlength);
         }
         else {
-          ptr = new SiteFracMonteSampler(i, primclex.prim().basis.size(), print_name, confidence(), data_maxlength);
+          ptr = new SiteFracMonteSampler(i, primclex.prim().basis().size(), print_name, confidence(), data_maxlength);
         }
 
         *result++ = std::make_pair(print_name, notstd::cloneable_ptr<MonteSampler>(ptr));

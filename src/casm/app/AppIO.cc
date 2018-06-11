@@ -2,6 +2,7 @@
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 
@@ -39,7 +40,7 @@ namespace CASM {
       BasicStructure<Site> prim(lat);
 
       // read title
-      from_json(prim.title, json["title"]);
+      prim.set_title(json["title"].get<std::string>());
 
       Eigen::Vector3d vec;
 
@@ -79,7 +80,7 @@ namespace CASM {
         site.set_occ_value(0);
 
         // add site to prim
-        prim.basis.push_back(site);
+        prim.push_back(site);
 
       }
 
@@ -110,7 +111,7 @@ namespace CASM {
 
     json = jsonParser::object();
 
-    json["title"] = prim.title;
+    json["title"] = prim.title();
 
     json["lattice_vectors"] = prim.lattice().lat_column_mat().transpose();
 
@@ -125,25 +126,25 @@ namespace CASM {
       json["coordinate_mode"] = "Cartesian";
     }
 
-    json["basis"] = jsonParser::array(prim.basis.size());
-    for(int i = 0; i < prim.basis.size(); i++) {
+    json["basis"] = jsonParser::array(prim.basis().size());
+    for(int i = 0; i < prim.basis().size(); i++) {
       json["basis"][i] = jsonParser::object();
       json["basis"][i]["coordinate"].put_array();
       if(mode == FRAC) {
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(0));
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(1));
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(2));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].frac(0));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].frac(1));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].frac(2));
       }
       else if(mode == CART) {
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(0));
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(1));
-        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(2));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].cart(0));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].cart(1));
+        json["basis"][i]["coordinate"].push_back(prim.basis()[i].cart(2));
       }
 
-      json["basis"][i]["occupant_dof"] = jsonParser::array(prim.basis[i].site_occupant().size());
+      json["basis"][i]["occupant_dof"] = jsonParser::array(prim.basis()[i].site_occupant().size());
 
-      for(int j = 0; j < prim.basis[i].site_occupant().size(); j++) {
-        json["basis"][i]["occupant_dof"][j] = prim.basis[i].site_occupant()[j].name();
+      for(int j = 0; j < prim.basis()[i].site_occupant().size(); j++) {
+        json["basis"][i]["occupant_dof"][j] = prim.basis()[i].site_occupant()[j].name();
       }
 
     }
@@ -536,6 +537,142 @@ namespace CASM {
     }
   }
 
+  void print_site_basis_funcs(Structure const &prim,
+                              ClexBasis const &clex_basis,
+                              std::ostream &out,
+                              Index indent_space,
+                              COORD_TYPE mode) {
+    std::string indent(indent_space, ' ');
+
+    std::ostream nullstream(0);
+    COORD_MODE printer_mode(mode);
+    std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
+    make_prim_periodic_asymmetric_unit(prim,
+                                       CASM_TMP::ConstantFunctor<bool>(true),
+                                       TOL,
+                                       std::back_inserter(asym_unit),
+                                       nullstream);
+
+
+    for(auto const &dofset : clex_basis.site_bases()) {
+      out << indent << indent << "Site basis functions for DoF \"" << dofset.first << "\":\n";
+      for(Index no = 0; no < asym_unit.size(); no++) {
+        out << indent << indent << "Asymmetric unit " << no + 1 << ":\n";
+        for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
+          Index b = asym_unit[no][ne][0].sublat();
+          out << indent << indent << "  Basis site " << b << ":\n"
+              << "  ";
+          if(printer_mode.check() == INTEGRAL) {
+            out << indent << indent << asym_unit[no][ne][0] << ' ';
+            asym_unit[no][ne][0].site().site_occupant().print(out);
+            out << std::flush;
+          }
+          else
+            asym_unit[no][ne][0].site().print(out);
+
+          out << "\n";
+          if(dofset.second[b].size() == 0)
+            out << "        [No site basis functions]\n\n";
+
+          for(Index f = 0; f < dofset.second[b].size(); f++) {
+            if(dofset.first == "occ") {
+              BasisSet tbasis(dofset.second[b]);
+
+              int s;
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].site_occupant().ID()));
+              remote[0] = s;
+              tbasis.register_remotes(remote);
+
+              for(s = 0; s < prim.basis()[b].site_occupant().size(); s++) {
+                if(s == 0)
+                  out << "    ";
+                out << "    \\phi_" << b << '_' << f << '[' << prim.basis()[b].site_occupant()[s].name() << "] = "
+                    << tbasis[f]->remote_eval();
+                if(s + 1 == prim.basis()[b].site_occupant().size())
+                  out << "\n";
+                else
+                  out << ",   ";
+              }
+            }
+            else {
+              out << "        \\phi_" << b << '_' << f << " = " << dofset.second[b][f]->tex_formula() << "\n";
+
+            }
+          }
+        }
+      }
+    }
+    out << "\n\n";
+
+
+  }
+
+  void write_site_basis_funcs(Structure const &prim,
+                              ClexBasis const &clex_basis,
+                              jsonParser &json) {
+
+
+    //   "site_functions":[
+    //     {
+    //       "asym_unit": X,
+    //       "sublat": 2,
+    //       "basis": {
+    //         "phi_b_0": {"Va":0.0, "O":1.0},
+    //         "phi_b_1": {"Va":0.0, "O":1.0}
+    //       }
+    //     },
+    //     ...
+    //   ],
+
+    jsonParser &sitef = json["site_functions"];
+    sitef = jsonParser::array(prim.basis().size(), jsonParser::object());
+
+    std::ostream nullstream(0);
+    std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
+    make_prim_periodic_asymmetric_unit(prim,
+                                       CASM_TMP::ConstantFunctor<bool>(true),
+                                       TOL,
+                                       std::back_inserter(asym_unit),
+                                       nullstream);
+
+
+    for(auto const &dofset : clex_basis.site_bases()) {
+      for(Index no = 0; no < asym_unit.size(); no++) {
+
+        for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
+          Index b = asym_unit[no][ne][0].sublat();
+          sitef[b]["sublat"] = b;
+          sitef[b]["asym_unit"] = no;
+
+          if(dofset.second[b].size() == 0) {
+            sitef[b]["basis"].put_null();
+            continue;
+          }
+
+
+          for(Index f = 0; f < dofset.second[b].size(); f++) {
+            std::stringstream fname;
+            fname << "\\phi_" << b << '_' << f;
+
+            if(dofset.first == "occ") {
+              BasisSet tbasis(dofset.second[b]);
+              int s;
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].site_occupant().ID()));
+              remote[0] = s;
+              tbasis.register_remotes(remote);
+
+              for(s = 0; s < prim.basis()[b].site_occupant().size(); s++) {
+                sitef[b]["basis"][fname.str()][prim.basis()[b].site_occupant()[s].name()] = tbasis[f]->remote_eval();
+              }
+            }
+            else {
+              sitef[b]["basis"][fname.str()] = dofset.second[b][f]->tex_formula();
+            }
+          }
+        }
+      }
+    }
+  }
 
   // explicit template instantiations
 

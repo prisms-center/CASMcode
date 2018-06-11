@@ -9,6 +9,7 @@
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
 
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/clex.hh"

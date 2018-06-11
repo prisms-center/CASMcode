@@ -25,17 +25,17 @@ namespace CASM {
     std::map<AtomSpecies, Index> to_species_count;
   };
 
-  /// \brief Check if DiffTransInvariants are equal
+  /// \brief Check if OccPerturbationInvariants are equal
   bool almost_equal(const OccPerturbationInvariants &A,
                     const OccPerturbationInvariants &B,
                     double tol);
 
-  /// \brief Compare DiffTransInvariants
+  /// \brief Compare OccPerturbationInvariants
   bool compare(const OccPerturbationInvariants &A,
                const OccPerturbationInvariants &B,
                double tol);
 
-  /// \brief Print DiffTransInvariants
+  /// \brief Print OccPerturbationInvariants
   std::ostream &operator<<(std::ostream &sout, const OccPerturbationInvariants &obj);
 
 
@@ -64,6 +64,7 @@ namespace CASM {
       m_prim_ptr(&_prim),
       m_element(_begin, _end) {}
 
+    /// \brief primtive structure of project
     const PrimType &prim() const;
 
     /// \brief Access vector of elements
@@ -72,10 +73,13 @@ namespace CASM {
     /// \brief const Access vector of elements
     const std::vector<Element> &elements() const;
 
+    /// \brief cluster of sites this perturbation lives on
     const IntegralCluster &cluster() const;
 
+    /// \brief inplace applies this perturbation to config
     Configuration &apply_to(Configuration &config) const;
 
+    /// switches the initial and final states of this perturbation
     void reverse();
 
   protected:
@@ -83,8 +87,10 @@ namespace CASM {
     friend GenericCoordCluster<CRTPBase<OccPerturbation>>;
     friend DoFTransformation<GenericCoordCluster<CRTPBase<OccPerturbation>>>;
 
+    /// \brief inplace applies the opposite of this perturbation
     Configuration &apply_reverse_to_impl(Configuration &config) const;
 
+    /// \brief gives the ith coordinate of this perturbation cluster
     Coordinate coordinate_impl(size_type i) const;
 
   private:

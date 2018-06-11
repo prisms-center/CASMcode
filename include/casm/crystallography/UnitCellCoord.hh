@@ -43,7 +43,23 @@ namespace CASM {
       this->Eigen::Vector3l::operator=(other);
       return *this;
     }
+
+    /// \brief Compare UnitCell
+    bool operator<(const UnitCell &B) const {
+      const auto &A = *this;
+      for(Index i = 0; i < 3; i++) {
+        if(A(i) < B(i)) {
+          return true;
+        }
+        if(A(i) > B(i)) {
+          return false;
+        }
+      }
+      return false;
+    }
+
   };
+
 
   /// \brief CRTP class to implement '-=', '+', and '-' in terms of '+='
   ///
@@ -60,12 +76,12 @@ namespace CASM {
       return derived() += -frac;
     }
 
-    MostDerived operator+(UnitCell frac) {
+    MostDerived operator+(UnitCell frac) const {
       MostDerived tmp {derived()};
       return tmp += frac;
     }
 
-    MostDerived operator-(UnitCell frac) {
+    MostDerived operator-(UnitCell frac) const {
       MostDerived tmp {derived()};
       return tmp += -frac;
     }

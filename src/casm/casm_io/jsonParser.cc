@@ -321,7 +321,7 @@ namespace CASM {
 
     // if 'name' not found, add it and with value 'null'
     if(it == obj.end()) {
-      throw std::runtime_error("Const operator[] access, but " + name + " does not exist");
+      throw std::runtime_error("JSON const operator[] access, but " + name + " does not exist");
     }
     return (const jsonParser &) it->second;
   }

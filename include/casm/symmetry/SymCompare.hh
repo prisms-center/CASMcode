@@ -155,6 +155,11 @@ namespace CASM {
       return *this;
     }
 
+    /// \brief Access transform that took cluster from unprepared to prepared state
+    std::unique_ptr<SymOpRepresentation> canonical_transform(Element const  &obj) const {
+      return derived().canonical_transform_impl(obj);
+    }
+
     /// \brief Access integral adjustment shift due to varying symmetry of object vs. generating group
     const UnitCell integral_tau() const {
       return m_integral_tau;

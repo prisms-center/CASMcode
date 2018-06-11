@@ -127,9 +127,6 @@ class VaspCalculatorBase(object):
                                  super_poscarfile, speciesfile,
                                  self.sort, extra_input_files,
                                  settings["strict_kpoints"])
-        if settings["initial_deformation"] != None:
-            deformation = self.get_deformation(settings)
-            self.apply_deformation(deformation, config_data["calcdir"])
 
     def get_deformation(self, settings):
         """ Either reads or queries for deformation matrix from settings dict"""
@@ -142,15 +139,15 @@ class VaspCalculatorBase(object):
             sel_tmp.data = pandas.DataFrame({"configname":configname, "selected":1},
                                             index=range(1))
             try:
-                os.mkdir(os.path.join(proj.path, ".casm/tmp"))
+                os.mkdir(os.path.join(self.selection.proj.path, ".casm/tmp"))
             except:
                 pass
             sel_config = sel_tmp.saveas(os.path.join(self.selection.proj.path, ".casm/tmp",
                                                      configname.replace('/', '.')), True)
             sel_config.query(["relaxation_strain(U,0:5,{})".format(calctype)])
             deformation = np.array([float(sel_config.data["relaxation_strain(U,{},{})".format(i, calctype)].loc[0]) for i in range(6)])
-            os.remove(os.path.join(self.selection.proj.path, ".casm/tmp",
-                                   configname.replace('/', '.')))
+            if os.path.isfile(os.path.join(self.selection.proj.path, ".casm/tmp",configname.replace('/', '.'))):
+                os.remove(os.path.join(self.selection.proj.path, ".casm/tmp",configname.replace('/', '.')))
         else:
             raise VaspWrapperError("use manual or auto mode to set initial deformation. see casm format --vasp for settings")
 
@@ -220,6 +217,39 @@ class VaspCalculatorBase(object):
                 raise vasp.VaspError("Neb.setup failed. No final INCAR file " + settings["final"] + " found in CASM project.")
         return incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, extra_input_files
 
+    def is_converged(self, calculation):
+        # Check for electronic convergence in completed calculations. Returns True or False.
+        # Verify that the last relaxation reached electronic convergence
+        for i in range(len(calculation.rundir)):
+            try:
+                print calculation.rundir[-i-1]
+                vrun_oszicar = vasp.io.Oszicar(os.path.join(calculation.calcdir, calculation.rundir[-i-1],
+                                                            self.results_subdir, "OSZICAR"))
+                vrun_nelm = vasp.io.get_incar_tag("NELM", os.path.join(calculation.calcdir, calculation.rundir[-i-1]))
+                if vrun_nelm == None: vrun_nelm = 60 ##pushing the default. may be write an addon to get it from outcar
+                if len(vrun_oszicar.num_elm[-1]) >= vrun_nelm:
+                    print('The last relaxation run (' +
+                          os.path.basename(relaxation.rundir[-i-1]) +
+                          ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+                    self.report_status(calculation.calcdir, 'failed', 'electronic_convergence')
+                    return False
+                break
+            except:
+                pass
+
+        # Verify that the final static run reached electronic convergence
+        vrun_oszicar = vasp.io.Oszicar(os.path.join(calculation.calcdir, "run.final",
+                                                    self.results_subdir, "OSZICAR"))
+        vrun_nelm = vasp.io.get_incar_tag("NELM", os.path.join(calculation.calcdir, "run.final"))
+        if vrun_nelm == None: vrun_nelm = 60 ##pushing the default. may be write an addon to get it from outcar
+        if vrun_oszicar.num_elm[-1] >= vrun_nelm:
+            print('The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+            self.report_status(calculation.calcdir, 'failed', 'electronic_convergence')
+            return False
+
+        return True
+
+
     def submit(self):
         """ submit jobs for a selection"""
         self.pre_setup()
@@ -266,7 +296,8 @@ class VaspCalculatorBase(object):
 
                 # ensure results report written
                 if not os.path.isfile(os.path.join(config_data["calcdir"], "properties.calc.json")):
-                    self.finalize(config_data)
+                    if (is_converged(calculation)):
+                        self.finalize(config_data)
 
                 continue
 
@@ -287,6 +318,7 @@ class VaspCalculatorBase(object):
             currdir = os.getcwd()
             os.chdir(config_data["calcdir"])
 
+            self.config_setup(config_data)
             nodes, ppn = self._calc_submit_node_info(settings, config_data)
 
             # construct command to be run
@@ -398,7 +430,6 @@ class VaspCalculatorBase(object):
 
     def run(self):
         """run the job of a selection"""
-        self.pre_setup()
         for index,config_data in self.selection.data.iterrows():
             settings = self.read_settings(config_data["setfile"])
             calculation = self.calculator(config_data["calcdir"], self.run_settings(settings))
@@ -419,7 +450,8 @@ class VaspCalculatorBase(object):
                         sys.stdout.flush()
 
                 # write results to properties.calc.json
-                self.finalize(config_data)
+                if (is_converged(calculation)):
+                    self.finalize(config_data)
                 continue
 
             elif status == "not_converging":
@@ -431,8 +463,6 @@ class VaspCalculatorBase(object):
 
             elif status == "incomplete":
 
-                if task == "setup":
-                    self.config_setup(config_data)
 
                 self.report_status(config_data["calcdir"], "started")
                 (status, task) = calculation.run()
@@ -489,7 +519,8 @@ class VaspCalculatorBase(object):
                         sys.stdout.flush()
 
                 # write results to properties.calc.json
-                self.finalize(config_data)
+                if is_converged(calculation):
+                    self.finalize(config_data)
 
             else:
                 self.report_status(config_data["calcdir"], "failed", "unknown")
@@ -556,37 +587,6 @@ class VaspCalculatorBase(object):
         print("Wrote " + outputfile)
         sys.stdout.flush()
         self.report_status(config_data["calcdir"], 'complete')
-
-    def is_converged(self, calculation):
-        # Check for electronic convergence in completed calculations. Returns True or False.
-        # Verify that the last relaxation reached electronic convergence
-        for i in range(len(calculation.rundir)):
-            try:
-                vrun_oszicar = vasp.io.Oszicar(os.path.join(calculation.calcdir, calculation.rundir[-i-1],
-                                                            self.results_subdir, "OSZICAR"))
-                vrun_nelm = vasp.io.get_incar_tag("NELM", os.path.join(calculation.calcdir, calculation.rundir[-i-1]))
-                if vrun_nelm == None: vrun_nelm = 60 ##pushing the default. may be write an addon to get it from outcar
-                if len(vrun_oszicar.num_elm[-1]) >= vrun_nelm:
-                    print('The last relaxation run (' +
-                          os.path.basename(relaxation.rundir[-i-1]) +
-                          ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
-                    self.report_status(calculation.calcdir, 'failed', 'electronic_convergence')
-                    return False
-                break
-            except:
-                pass
-
-        # Verify that the final static run reached electronic convergence
-        vrun_oszicar = vasp.io.Oszicar(os.path.join(calculation.calcdir, "run.final",
-                                                    self.results_subdir, "OSZICAR"))
-        vrun_nelm = vasp.io.get_incar_tag("NELM", os.path.join(calculation.calcdir, "run.final"))
-        if vrun_nelm == None: vrun_nelm = 60 ##pushing the default. may be write an addon to get it from outcar
-        if vrun_oszicar.num_elm[-1] >= vrun_nelm:
-            print('The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n')
-            self.report_status(calculation.calcdir, 'failed', 'electronic_convergence')
-            return False
-
-        return True
 
     @staticmethod
     def properties(vaspdir, super_poscarfile=None, speciesfile=None):

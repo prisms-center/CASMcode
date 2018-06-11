@@ -91,8 +91,9 @@ namespace CASM {
 
     ConfigMapperResult structure_mapping(Structure &host, Structure &other, double lattice_weight) {
       const PrimClex &pclex = PrimClex(host, null_log());
-      ConfigMapper tmp_mapper(pclex, lattice_weight);
-      return tmp_mapper.import_structure(other);
+      ConfigMapper tmp_mapper(pclex, lattice_weight, 0.0);
+      tmp_mapper.set_max_va_frac(0.0);
+      return tmp_mapper.import_structure_occupation(other);
     }
   }
 
@@ -129,7 +130,6 @@ namespace CASM {
       const Supercell &force_scel = CASM::make_supercell(*m_pclex, name);
       const Lattice &force_lat = force_scel.lattice();
       Index force_vol = force_scel.volume();
-
       m_forced_superlat_map[force_vol].push_back(force_lat);
     }
     return;
@@ -192,11 +192,11 @@ namespace CASM {
       if(valid_mapping) {
 
         mapped_lat = (hint_ptr->supercell()).lattice();
-        bc = ConfigMapping::basis_cost(suggested_configdof, result.structure.basis.size());
+        bc = ConfigMapping::basis_cost(suggested_configdof, result.structure.basis().size());
         sc = ConfigMapping::strain_cost(
                result.structure.lattice(),
                suggested_configdof,
-               result.structure.basis.size());
+               result.structure.basis().size());
 
         result.relaxation_properties["suggested_mapping"]["basis_deformation"] = bc;
         result.relaxation_properties["suggested_mapping"]["lattice_deformation"] = sc;
@@ -227,11 +227,11 @@ namespace CASM {
     // - store relaxation properties in "best_mapping"
     if(valid_mapping) {
 
-      bc = ConfigMapping::basis_cost(best_configdof, result.structure.basis.size());
+      bc = ConfigMapping::basis_cost(best_configdof, result.structure.basis().size());
       sc = ConfigMapping::strain_cost(
              result.structure.lattice(),
              best_configdof,
-             result.structure.basis.size());
+             result.structure.basis().size());
       robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
       result.relaxation_properties["best_mapping"]["basis_deformation"] = bc;
       result.relaxation_properties["best_mapping"]["lattice_deformation"] = sc;
@@ -307,15 +307,14 @@ namespace CASM {
     ConfigDoF trans_configdof = copy_apply(it_canon, best_configdof);
     result.relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation();
     result.relaxation_properties["best_mapping"]["relaxation_displacement"] = trans_configdof.displacement().transpose();
-
     result.cart_op = it_canon.sym_op().matrix() * result.cart_op;
 
     // compose permutations
     std::vector<Index> tperm = it_canon.combined_permute().permute(result.best_assignment);
 
     //copy non-vacancy part of permutation into best_assignment
-    result.best_assignment.resize(result.structure.basis.size());
-    Index num_atoms = result.structure.basis.size();
+    result.best_assignment.resize(result.structure.basis().size());
+    Index num_atoms = result.structure.basis().size();
     std::copy_if(tperm.cbegin(), tperm.cend(),
                  result.best_assignment.begin(),
     [num_atoms](Index i) {
@@ -357,7 +356,6 @@ namespace CASM {
                            mapped_lat, // mappe
                            result.best_assignment,
                            result.cart_op);
-
     if(!valid_mapping) {
       result.success = false;
       result.fail_msg = "Structure is incompatible with PRIM.";
@@ -366,9 +364,9 @@ namespace CASM {
 
     // store "best_mapping" in 'relaxation_properties
     result.relaxation_properties["best_mapping"]["basis_deformation"] =
-      ConfigMapping::basis_cost(best_configdof, result.structure.basis.size());
+      ConfigMapping::basis_cost(best_configdof, result.structure.basis().size());
     result.relaxation_properties["best_mapping"]["lattice_deformation"] =
-      ConfigMapping::strain_cost(result.structure.lattice(), best_configdof, result.structure.basis.size());
+      ConfigMapping::strain_cost(result.structure.lattice(), best_configdof, result.structure.basis().size());
     result.relaxation_properties["best_mapping"]["volume_change"] =
       best_configdof.deformation().determinant();
 
@@ -384,13 +382,14 @@ namespace CASM {
 
     // store cart op
     result.cart_op = it_canon.sym_op().matrix() * result.cart_op;
-
+    //store trans
+    result.trans = it_canon.sym_op().tau();
     // compose permutations
     std::vector<Index> tperm = it_canon.combined_permute().permute(result.best_assignment);
 
     //copy non-vacancy part of permutation into best_assignment
-    result.best_assignment.resize(result.structure.basis.size());
-    Index num_atoms = result.structure.basis.size();
+    result.best_assignment.resize(result.structure.basis().size());
+    Index num_atoms = result.structure.basis().size();
     std::copy_if(tperm.cbegin(), tperm.cend(),
                  result.best_assignment.begin(),
     [num_atoms](Index i) {
@@ -425,9 +424,8 @@ namespace CASM {
                                                mapped_lat,
                                                best_assignment,
                                                cart_op);
-      valid_mapping = valid_mapping && ConfigMapping::basis_cost(mapped_configdof, struc.basis.size()) < (10 * m_tol);
+      valid_mapping = valid_mapping && ConfigMapping::basis_cost(mapped_configdof, struc.basis().size()) < (10 * m_tol);
     }
-
     // If structure's lattice is not a supercell of the primitive lattice, then import as deformed_structure
     if(!valid_mapping) { // if not a supercell or m_robust_flag=true, treat as deformed
       valid_mapping = deformed_struc_to_configdof(struc,
@@ -532,15 +530,26 @@ namespace CASM {
     //Add new Supercell if it doesn't exist already. Use primitive point group to check for equivalence and
     //store transformation matrix
     Eigen::Matrix3d deformation;
-    double num_atoms = double(struc.basis.size());
+    double num_atoms = double(struc.basis().size());
     int min_vol, max_vol;
+    std::unordered_set<Eigen::Matrix3i, HermiteHash> ref_hermites;
 
+    Eigen::Matrix3i ref_hermite = hermite_normal_form(iround(primclex().prim().lattice().inv_lat_column_mat() *
+                                                             niggli(struc.lattice(), primclex().crystallography_tol()).lat_column_mat())).first;
+    ref_hermites.insert(ref_hermite);
+    if(m_restricted) {
+      for(auto &g : primclex().prim().point_group()) {
+        Eigen::Matrix3i transformed = iround(primclex().prim().lattice().lat_column_mat().inverse() * g.matrix() * primclex().prim().lattice().lat_column_mat()) * ref_hermite;
+        Eigen::Matrix3i H_transformed = hermite_normal_form(transformed).first;
+        ref_hermites.insert(H_transformed);
+      }
+    }
     mapped_configdof.clear();
     if(m_fixed_components.size() > 0) {
       std::string tcompon = m_fixed_components[0].first;
       int ncompon(0);
-      for(Index i = 0; i < struc.basis.size(); i++) {
-        if(struc.basis[i].occ_name() == tcompon)
+      for(Index i = 0; i < struc.basis().size(); i++) {
+        if(struc.basis()[i].occ_name() == tcompon)
           ncompon++;
       }
       min_vol = ncompon / int(m_fixed_components[0].second);
@@ -552,15 +561,14 @@ namespace CASM {
       // routines
 
       int max_n_va = primclex().prim().max_possible_vacancies();
-      double max_va_frac_limit = double(max_n_va) / double(primclex().prim().basis.size());
+      double max_va_frac_limit = double(max_n_va) / double(primclex().prim().basis().size());
       double t_min_va_frac = min(min_va_frac(), max_va_frac_limit);
       double t_max_va_frac = min(max_va_frac(), max_va_frac_limit);
-
       // min_vol assumes min number vacancies -- best case scenario
-      min_vol = ceil((num_atoms / (double(primclex().prim().basis.size())) * 1. - t_min_va_frac) - m_tol);
+      min_vol = ceil((num_atoms / (double(primclex().prim().basis().size())) * 1. - t_min_va_frac) - m_tol);
 
       // This is for the worst case scenario -- lots of vacancies
-      max_vol = ceil(num_atoms / (double(primclex().prim().basis.size()) * (1.0 - t_max_va_frac)) - m_tol);
+      max_vol = ceil(num_atoms / (double(primclex().prim().basis().size()) * (1.0 - t_max_va_frac)) - m_tol);
 
       if(t_max_va_frac > TOL) {
         //Nvol is rounded integer volume-- assume that answer is within 30% of this volume, and use it to tighten our bounds
@@ -586,12 +594,17 @@ namespace CASM {
     // First pass:  Find a reasonable upper bound
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
 
-      const auto &lattice_candidates = _lattices_of_vol(i_vol);
+      std::vector<Lattice> lattice_candidates;
+      if(m_restricted) {
+        lattice_candidates = _lattices_of_vol_restricted(i_vol, ref_hermites);
+      }
+      else {
+        lattice_candidates = _lattices_of_vol(i_vol);
+      }
       if(lattice_candidates.size() == 0) {
         //This means you forced lattices on
         continue;
       }
-
       tlat = ConfigMapping::find_nearest_super_lattice(primclex().prim().lattice(),
                                                        struc.lattice(),
                                                        primclex().prim().point_group(),
@@ -624,7 +637,7 @@ namespace CASM {
                                                             true,
                                                             m_tol))
         continue;
-      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
+      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis().size());
       tot_cost = strain_cost + basis_cost;
       if(tot_cost < best_cost) {
         best_cost = tot_cost - m_tol;
@@ -640,7 +653,13 @@ namespace CASM {
 
     //Second pass: Find the absolute best mapping
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
-      const std::vector<Lattice> &lat_vec = _lattices_of_vol(i_vol);
+      std::vector<Lattice> lat_vec;
+      if(m_restricted) {
+        lat_vec = _lattices_of_vol_restricted(i_vol, ref_hermites);
+      }
+      else {
+        lat_vec = _lattices_of_vol(i_vol);
+      }
       for(auto it = lat_vec.cbegin(); it != lat_vec.cend(); ++it) {
         if(!deformed_struc_to_configdof_of_lattice(struc,
                                                    *it,
@@ -677,7 +696,7 @@ namespace CASM {
     Supercell scel(&primclex(), imposed_lat);
     double lw = m_lattice_weight;
     double bw = 1.0 - lw;
-    double num_atoms = double(struc.basis.size());
+    double num_atoms = double(struc.basis().size());
     //Determine best mapping for this supercell
 
     //Initialize with simplest mapping onto supercell 'i', so that we don't change the crystal setting unnecessarily
@@ -703,7 +722,7 @@ namespace CASM {
                                                             m_tol))
         return false;
 
-      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
+      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis().size());
       tot_cost = strain_cost + basis_cost;
 
       if(tot_cost < best_cost) {
@@ -749,7 +768,7 @@ namespace CASM {
         //no longer unexpected
         //throw std::runtime_error("Unexpected error in deformed_struc_to_config_dof(). This should never happen!\n");
       }
-      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
+      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis().size());
 
       tot_cost = strain_cost + basis_cost;
 
@@ -801,14 +820,77 @@ namespace CASM {
     //Save all the lattices we enumerate in their canonical form
     Index l = 0;
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-      lat_vec.push_back(canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol));
+      Lattice canon_lat = *it;
+      if(!is_canonical_lattice(canon_lat, primclex().prim().point_group(), m_tol)) {
+        canon_lat = canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol);
+      }
+      lat_vec.push_back(canon_lat);
     }
+
 
     //Save the lattices we enumerated to the map, and return their value
     return m_superlat_map[prim_vol] = std::move(lat_vec);
 
   }
 
+  //*******************************************************************************************
+  const std::vector<Lattice> ConfigMapper::_lattices_of_vol_restricted(Index prim_vol, std::unordered_set<Eigen::Matrix3i, HermiteHash> &ref_hermites) const {
+    //If you specified that you wanted certain lattices, return those, otherwise do the
+    //usual enumeration
+    if(this->lattices_are_forced()) {
+      //This may very well return an empty vector, saving painful time enumerating things
+      return m_forced_superlat_map[prim_vol];
+
+    }
+
+    if(!valid_index(prim_vol)) {
+      throw std::runtime_error("Cannot enumerate lattice of volume " + std::to_string(prim_vol) + ", which is out of bounds.\n");
+    }
+
+    //If we already have candidate lattices for the given volume, return those
+    auto it = m_superlat_map.find(prim_vol);
+    if(it != m_superlat_map.end())
+      return it->second;
+
+    //We don't have any lattices for the provided volume, enumerate them all!!!
+    std::vector<Lattice> lat_vec;
+    SupercellEnumerator<Lattice> enumerator(
+      primclex().prim().lattice(),
+      primclex().prim().point_group(),
+      ScelEnumProps(prim_vol, prim_vol + 1));
+
+    //Save all the lattices we enumerate in their canonical form
+    Index l = 0;
+    //std::cout << "size of enumerator" << std::distance(enumerator.begin(),enumerator.end());
+    //std::cout << " size of equivalent set " << ref_hermites.size() << std::endl;
+    for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
+
+      if(std::none_of(ref_hermites.begin(), ref_hermites.end(), [&](const Eigen::Matrix3i x)->bool{
+      return hermite_adjacency(iround(primclex().prim().lattice().inv_lat_column_mat() *
+                                      it->lat_column_mat()), x);
+      })) {
+        continue;
+      }
+      Lattice canon_lat = *it;
+      if(!is_canonical_lattice(canon_lat, primclex().prim().point_group(), m_tol)) {
+        canon_lat = canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol);
+      }
+      lat_vec.push_back(canon_lat);
+    }
+
+
+    //return the lattices within range of the reference hermite normal form of approximate transf_mat
+    return lat_vec;
+
+  }
+
+  bool ConfigMapper::hermite_adjacency(const Eigen::Matrix3i test, const Eigen::Matrix3i ref) const {
+    auto func = [](int a, int b) {
+      return std::abs(a - b) < 3;
+    };
+    bool all_checks = func(test(0, 0), ref(0, 0)) && func(test(1, 1), ref(1, 1)) && func(test(2, 2), ref(2, 2));
+    return all_checks;
+  }
   //****************************************************************************************************************
 
   namespace ConfigMap_impl {
@@ -830,7 +912,7 @@ namespace CASM {
                           const Eigen::Matrix3d &metric,
                           Eigen::MatrixXd &cost_matrix) {
 
-      if(rstruc.basis.size() > scel.num_sites())
+      if(rstruc.basis().size() > scel.num_sites())
         return false;
       double inf = 10E10;
       //if(cost_matrix.rows()!=scel.num_sites() || cost_matrix.cols()!=scel.num_sites())
@@ -839,8 +921,8 @@ namespace CASM {
       double dist;
       // loop through all the sites of the structure
       Index j = 0;
-      for(; j < rstruc.basis.size(); j++) {
-        Coordinate current_relaxed_coord(rstruc.basis[j].frac(), scel.lattice(), FRAC);
+      for(; j < rstruc.basis().size(); j++) {
+        Coordinate current_relaxed_coord(rstruc.basis()[j].frac(), scel.lattice(), FRAC);
         current_relaxed_coord.cart() += trans.cart();
         // loop through all the sites in the supercell
         inf_counter = 0;
@@ -848,7 +930,7 @@ namespace CASM {
 
           // Check if relaxed atom j is allowed on site i
           // If so, populate cost_matrix normally
-          if(scel.prim().basis[scel.sublat(i)].contains(rstruc.basis[j].occ_name())) {
+          if(scel.prim().basis()[scel.sublat(i)].contains(rstruc.basis()[j].occ_name())) {
             cost_matrix(i, j) = scel.coord(i).min_dist2(current_relaxed_coord, metric);
           }
           // If not, set cost_matrix (i,j) = inf
@@ -869,7 +951,7 @@ namespace CASM {
         for(Index i = 0; i < scel.num_sites(); i++) {
 
           // Check if vacancies are allowed at each position in the supercell
-          if(scel.prim().basis[scel.sublat(i)].contains("Va")) {
+          if(scel.prim().basis()[scel.sublat(i)].contains("Va")) {
             cost_matrix(i, j) = 0;
           }
           else {
@@ -906,8 +988,8 @@ namespace CASM {
       double dist;
       // loop through all the sites of the structure
       Index j;
-      for(j = 0; j < rstruc.basis.size(); j++) {
-        Coordinate current_relaxed_coord(rstruc.basis[j].frac(), scel.lattice(), FRAC);
+      for(j = 0; j < rstruc.basis().size(); j++) {
+        Coordinate current_relaxed_coord(rstruc.basis()[j].frac(), scel.lattice(), FRAC);
         current_relaxed_coord.cart() += trans.cart();
         // loop through all the sites in the supercell
         inf_counter = 0;
@@ -915,7 +997,7 @@ namespace CASM {
 
           // Check if relaxed atom j is allowed on site i
           // If so, populate cost_matrix normally
-          if(config.mol(i).name() == rstruc.basis[j].occ_name()) {
+          if(config.mol(i).name() == rstruc.basis()[j].occ_name()) {
             cost_matrix(i, j) = scel.coord(i).min_dist2(current_relaxed_coord, metric);
           }
           // If not, set cost_matrix (i,j) = inf
@@ -1030,8 +1112,8 @@ namespace CASM {
 
       Index num_translations(1);
 
-      if(rstruc.basis.size())
-        num_translations += scel.prim().basis.size();
+      if(rstruc.basis().size())
+        num_translations += scel.prim().basis().size();
 
       for(Index n = 0; n < num_translations; n++) {
         double mean;
@@ -1040,7 +1122,7 @@ namespace CASM {
         //BasicStructure<Site> shift_struc(rstruc);
 
 
-        if(n > 0 && !scel.prim().basis[n - 1].contains(rstruc.basis[0].occ_name()))
+        if(n > 0 && !scel.prim().basis()[n - 1].contains(rstruc.basis()[0].occ_name()))
           continue;
 
         Coordinate translation(scel.prim().lattice());
@@ -1048,7 +1130,7 @@ namespace CASM {
         // Always try the non-translated case (n==0), in case it gives best result
         // Also try translating first basis atom onto each chemically compatible site of PRIM (n>0)
         if(n > 0) {
-          translation.cart() = scel.coord((n - 1) * scel.volume()).const_cart() - rstruc.basis[0].const_cart();
+          translation.cart() = scel.coord((n - 1) * scel.volume()).const_cart() - rstruc.basis()[0].const_cart();
           translation.voronoi_within();
         }
 
@@ -1060,9 +1142,9 @@ namespace CASM {
         // The mapping routine is called here
         mean = hungarian_method(cost_matrix, optimal_assignments, _tol);
 
-        // if optimal_assignments is smaller than rstruc.basis.size(), then rstruc is incompattible with supercell
+        // if optimal_assignments is smaller than rstruc.basis().size(), then rstruc is incompattible with supercell
         // (optimal_assignments.size()==0 if the hungarian routine detects an incompatibility)
-        if(optimal_assignments.size() < rstruc.basis.size()) {
+        if(optimal_assignments.size() < rstruc.basis().size()) {
           return false;
         }
 
@@ -1100,7 +1182,7 @@ namespace CASM {
       for(Index i = 0; i < best_assignments.size(); i++) {
 
         // If we are dealing with a vacancy, its displacment must be zero.
-        //if(best_assignments(i) >= rstruc.basis.size()) {
+        //if(best_assignments(i) >= rstruc.basis().size()) {
         //  --DO NOTHING--
         //}
 
@@ -1109,18 +1191,18 @@ namespace CASM {
         // to the distance used in the Cost Matrix and Hungarian Algorithm
         // The method returns the displacement vector pointing from the
         // IDEAL coordinate to the RELAXED coordinate
-        if(best_assignments[i] < rstruc.basis.size()) {
+        if(best_assignments[i] < rstruc.basis().size()) {
 
           Coordinate ideal_coord(scel.coord(i).frac(), rstruc.lattice(), FRAC);
 
-          (rstruc.basis[best_assignments[i]] + best_trans).min_dist(ideal_coord, disp_coord);
+          (rstruc.basis()[best_assignments[i]] + best_trans).min_dist(ideal_coord, disp_coord);
           config_dof.disp(i) = disp_coord.const_cart();
 
           avg_disp += config_dof.disp(i);
         }
       }
 
-      avg_disp /= max(double(rstruc.basis.size()), 1.);
+      avg_disp /= max(double(rstruc.basis().size()), 1.);
 
 
       // End of filling displacements
@@ -1133,7 +1215,7 @@ namespace CASM {
       std::string rel_basis_atom;
       for(Index i = 0; i < best_assignments.size(); i++) {
         // subtract off average displacement
-        if(best_assignments[i] < rstruc.basis.size()) {
+        if(best_assignments[i] < rstruc.basis().size()) {
           config_dof.disp(i) -= avg_disp;
           // suppress small ugly numbers.
           for(Index j = 0; j < 3; j++) {
@@ -1142,7 +1224,7 @@ namespace CASM {
           }
 
           //Record basis atom
-          rel_basis_atom = rstruc.basis[best_assignments[i]].occ_name();
+          rel_basis_atom = rstruc.basis()[best_assignments[i]].occ_name();
         }
         else {
           // Any value of the assignment vector larger than the number
@@ -1152,7 +1234,7 @@ namespace CASM {
         }
 
         // set occupant and check for errors
-        if(!scel.prim().basis[scel.sublat(i)].contains(rel_basis_atom, config_dof.occ(i))) {
+        if(!scel.prim().basis()[scel.sublat(i)].contains(rel_basis_atom, config_dof.occ(i))) {
 
           return false;
         }
@@ -1201,13 +1283,13 @@ namespace CASM {
 
       Index num_translations(1);
 
-      num_translations += rstruc.basis.size();
+      num_translations += rstruc.basis().size();
 
-      //num_translations = rstruc.basis.size();
+      //num_translations = rstruc.basis().size();
       for(Index n = 0; n < num_translations; n++) {
         double mean;
 
-        if(n > 0 && config.mol(0).name() != rstruc.basis[n - 1].occ_name())
+        if(n > 0 && config.mol(0).name() != rstruc.basis()[n - 1].occ_name())
           continue;
 
         Coordinate translation(scel.lattice());
@@ -1215,7 +1297,7 @@ namespace CASM {
         // Always try the non-translated case (n==0), in case it gives best result
         // Also try translating first basis atom onto each chemically compatible site of PRIM (n>0)
         if(n > 0) {
-          translation.cart() = scel.coord(0).const_cart() - rstruc.basis[n - 1].const_cart();
+          translation.cart() = scel.coord(0).const_cart() - rstruc.basis()[n - 1].const_cart();
           translation.voronoi_within();
         }
 
@@ -1229,9 +1311,9 @@ namespace CASM {
         // The mapping routine is called here
         mean = hungarian_method(cost_matrix, optimal_assignments, _tol);
 
-        // if optimal_assignments is smaller than rstruc.basis.size(), then rstruc is incompattible
+        // if optimal_assignments is smaller than rstruc.basis().size(), then rstruc is incompattible
         // with the supercell (optimal_assignments.size()==0 if the hungarian routine detects an incompatibility)
-        if(optimal_assignments.size() < rstruc.basis.size()) {
+        if(optimal_assignments.size() < rstruc.basis().size()) {
           return false;
         }
 
@@ -1267,7 +1349,7 @@ namespace CASM {
       for(Index i = 0; i < best_assignments.size(); i++) {
 
         // If we are dealing with a vacancy, its displacment must be zero.
-        //if(best_assignments(i) >= rstruc.basis.size()) {
+        //if(best_assignments(i) >= rstruc.basis().size()) {
         //  --DO NOTHING--
         //}
 
@@ -1276,11 +1358,11 @@ namespace CASM {
         // to the distance used in the Cost Matrix and Hungarian Algorithm
         // The method returns the displacement vector pointing from the
         // IDEAL coordinate to the RELAXED coordinate
-        if(best_assignments[i] < rstruc.basis.size()) {
+        if(best_assignments[i] < rstruc.basis().size()) {
 
           Coordinate ideal_coord(scel.coord(i).frac(), rstruc.lattice(), FRAC);
 
-          (rstruc.basis[best_assignments[i]] + best_trans).min_dist(ideal_coord, disp_coord);
+          (rstruc.basis()[best_assignments[i]] + best_trans).min_dist(ideal_coord, disp_coord);
 
           config_dof.disp(i) = disp_coord.const_cart();
 
@@ -1288,7 +1370,7 @@ namespace CASM {
         }
       }
 
-      avg_disp /= max(double(rstruc.basis.size()), 1.);
+      avg_disp /= max(double(rstruc.basis().size()), 1.);
 
 
       // End of filling displacements
@@ -1304,7 +1386,7 @@ namespace CASM {
         // Any value of the assignment vector larger than the number
         // of sites in the relaxed structure is by construction
         // specified as a vacancy.
-        if(best_assignments[i] < rstruc.basis.size()) {
+        if(best_assignments[i] < rstruc.basis().size()) {
           config_dof.disp(i) -= avg_disp;
           // suppress small ugly numbers.
           for(Index j = 0; j < 3; j++) {

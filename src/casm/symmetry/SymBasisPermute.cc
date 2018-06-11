@@ -22,8 +22,8 @@ namespace CASM {
     m_point_mat = lround(frac_op);
 
     // Determine how basis sites transform from the origin unit cell
-    for(int b = 0; b < struc.basis.size(); b++) {
-      m_ucc_permute.push_back(UnitCellCoord(struc, CASM::copy_apply(op, struc.basis[b]), tol));
+    for(int b = 0; b < struc.basis().size(); b++) {
+      m_ucc_permute.push_back(UnitCellCoord(struc, CASM::copy_apply(op, struc.basis()[b]), tol));
     }
   }
 

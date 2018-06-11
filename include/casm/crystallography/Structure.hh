@@ -16,6 +16,8 @@ namespace CASM {
 
   class SiteCluster;
 
+  class DoFSet;
+
   //  template<typename ClustType>
   //  class GenericOrbitree;
 
@@ -36,6 +38,10 @@ namespace CASM {
     mutable SymGroupRepID basis_perm_rep_ID;
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
+
+    /// continuous global degrees of freedom
+    std::map <std::string, notstd::cloneable_ptr<DoFSet> > m_dof_map;
+
 
   public: //PUBLIC DATA MEMBERS (Public for now)
 
@@ -80,6 +86,12 @@ namespace CASM {
     std::vector<std::string> struc_molecule_name() const;
     Eigen::VectorXi num_each_species() const;
     Eigen::VectorXi num_each_molecule() const;
+
+    DoFSet const &dof(std::string const &dof_type) const;
+
+    std::vector<std::string> local_dof_types() const;
+
+    std::vector<std::string> global_dof_types() const;
 
     // ****Mutators****
 
@@ -143,10 +155,6 @@ namespace CASM {
     ///Translates all atoms in cell
     Structure &operator+=(const Coordinate &shift);
     Structure &operator-=(const Coordinate &shift);
-
-    /// Creates Nofimag POSCAR files by interpolating linearly between structures in star_stru and end_stru
-    /// for exact interpolation, choose "LOCAL" or "1", for nearest-image interpolation, choose "PERIODIC" or "0"
-    void intpol(Structure end_struc, int Nofimag, PERIODICITY_TYPE mode, Array<Structure> &images);
 
     // ****Input/Output****
 

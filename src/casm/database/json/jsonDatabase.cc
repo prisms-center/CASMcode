@@ -751,6 +751,9 @@ namespace CASM {
       for(const auto &diff_trans_config : m_diff_trans_config_list) {
         std::string dtconfig_name = diff_trans_config.orbit_name();
         std::string scelname = diff_trans_config.from_config().supercell().name();
+        if(!diff_trans_config.has_valid_from_occ()) {
+          throw std::runtime_error("dtc does not have compatible occupants");
+        }
         diff_trans_config.to_json(
           json["prototypes"][dtconfig_name][scelname][diff_trans_config.id()]);
       }

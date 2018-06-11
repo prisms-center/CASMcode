@@ -48,13 +48,8 @@ namespace CASM {
     template<typename IterType>
     SymGroup(IterType begin,
              IterType end,
-             PERIODICITY_TYPE init_type = PERIODIC) :
-      Array<SymOp>(begin, end),
-      m_lat_ptr(nullptr),
-      m_group_periodicity(init_type),
-      m_max_error(-1) {
+             PERIODICITY_TYPE init_type = PERIODIC);
 
-    }
 
     virtual void push_back(const SymOp &new_op);
     virtual void clear();
@@ -388,6 +383,21 @@ namespace CASM {
                         double _tol);
 
   SymOp within_cell(const SymOp &a, const Lattice &lat, PERIODICITY_TYPE periodicity);
+
+
+  template<typename IterType>
+  SymGroup::SymGroup(IterType begin,
+                     IterType end,
+                     PERIODICITY_TYPE init_type):
+    Array<SymOp>(begin, end),
+    m_lat_ptr(nullptr),
+    m_group_periodicity(init_type),
+    m_max_error(-1) {
+
+    if(size())
+      set_lattice(master_group().lattice());
+
+  }
 
   /** @} */
 }

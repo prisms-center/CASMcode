@@ -49,13 +49,7 @@ namespace CASM {
     /// - 'relaxed_energy': the energy of the relaxed configuration
     std::vector<jsonParser> relaxation_properties;
 
-    /// best_assignment is populated by the permutation of sites in the imported
-    /// structure that maps them onto sites of the ideal crystal (excluding vacancies)
-    std::vector<Index> best_assignment;
     double kra;
-    /// cart_op is populated by the cartesian isometry that rotates the imported
-    /// structure onto the coordinate system of the ideal crystal
-    Eigen::Matrix3d cart_op;
 
     /// True if could map to prim, false if not
     bool success;
@@ -132,6 +126,7 @@ namespace CASM {
         m_pclex = &_pclex;
       }
 
+      /// \brief the relative weighting between strain cost and basis cost
       double lattice_weight() const {
         return m_lattice_weight;
       }
@@ -184,27 +179,47 @@ namespace CASM {
       ///
       DiffTransConfigMapperResult import_structure(const fs::path &pos_path) const;
 
-      //private:
+      ///\brief specify to use restricted hermites when mapping
+      void restricted() {
+        m_restricted = true;
+      }
 
+      ///\brief specify which lattices should be searched when mapping configurations
+      void set_forced_lattices(const std::vector<std::string> &lattice_names) {
+        m_lattices_to_force = lattice_names;
+      }
+
+    private:
+
+      /// \brief loads structures from folder of poscars or compound properties.calc.json
       std::vector<BasicStructure<Site>> _get_structures(const fs::path &pos_path) const;
 
-      Kinetics::DiffusionTransformation _make_hop(BasicStructure<Site> &from_struc,
-                                                  std::vector<UnitCellCoord> &from_coords,
-                                                  std::vector<UnitCellCoord> &to_coords,
-                                                  std::set<UnitCellCoord> &vacancy_from,
-                                                  std::set<UnitCellCoord> &vacancy_to,
-                                                  std::vector<Index> &moving_atoms) const;
+      /// \brief Helper function that creates a diff_trans from the information of which atoms are moving
+      Kinetics::DiffusionTransformation _make_hop(BasicStructure<Site> const &from_struc,
+                                                  std::vector<UnitCellCoord> const &from_coords,
+                                                  std::vector<UnitCellCoord> const &to_coords,
+                                                  std::set<UnitCellCoord> const &vacancy_from,
+                                                  std::set<UnitCellCoord> const &vacancy_to,
+                                                  std::vector<Index> const &moving_atoms) const;
 
-      Kinetics::DiffusionTransformation _shortest_hop(Kinetics::DiffusionTransformation &diff_trans, const Supercell &scel) const;
+      /// \brief Adjusts the diff_trans to have a direction that is the shortest distance across a periodic boundary
+      Kinetics::DiffusionTransformation _shortest_hop(const Kinetics::DiffusionTransformation &diff_trans, const Supercell &scel) const;
 
-      std::vector<Index> _analyze_atoms(BasicStructure<Site> &from,
-                                        BasicStructure<Site> &to,
-                                        Configuration &config,
-                                        std::vector<UnitCellCoord> &from_uccoords,
-                                        std::vector<UnitCellCoord> &to_uccoords,
-                                        std::set<UnitCellCoord> &vacancy_from,
-                                        std::set<UnitCellCoord> &vacancy_to) const;
-    private:
+      /// \brief transforms a site into a unit cell coord for ease of diff_trans construction
+      UnitCellCoord _site_to_uccoord(const Site &site, const PrimClex &pclex, double tol) const;
+
+      /// Rotates,Strains  and translates the structures being imported/updated into the frame of reference of the prim
+      void _precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure<Site> &from, BasicStructure<Site> &to) const;
+
+      /// Takes an aligned  set of initial and final position and determines which atoms are moving
+      std::vector<Index> _analyze_atoms_ideal(BasicStructure<Site> const &from,
+                                              BasicStructure<Site> const &to,
+                                              const Supercell &scel,
+                                              double uccoord_tol,
+                                              std::vector<UnitCellCoord> &from_uccoords,
+                                              std::vector<UnitCellCoord> &to_uccoords,
+                                              std::set<UnitCellCoord> &vacancy_from,
+                                              std::set<UnitCellCoord> &vacancy_to) const;
 
       const PrimClex *m_pclex;
       mutable std::map<Index, std::vector<Lattice> > m_superlat_map;
@@ -216,6 +231,8 @@ namespace CASM {
       double m_tol;
       std::vector<std::pair<std::string, Index> > m_fixed_components;
       const std::vector<Lattice> &_lattices_of_vol(Index prim_vol) const;
+      std::vector<std::string> m_lattices_to_force;
+      bool m_restricted = false;
     };
   }
 

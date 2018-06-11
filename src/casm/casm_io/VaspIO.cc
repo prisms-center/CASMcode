@@ -163,14 +163,14 @@ namespace CASM {
     PrintPOSCAR::PrintPOSCAR(const BasicStructure<Site> &struc) :
       vaspio_impl::PrintPOSCARBase(struc.lattice()) {
 
-      set_title(struc.title);
+      set_title(struc.title());
 
       // create tuples collecting (Atom name, Coordinate, SelectiveDynamics) for each site
-      for(int i = 0; i < struc.basis.size(); ++i) {
+      for(int i = 0; i < struc.basis().size(); ++i) {
         m_atom_order.push_back(
           tuple_type(
-            struc.basis[i].occ_name(),
-            struc.basis[i],
+            struc.basis()[i].occ_name(),
+            struc.basis()[i],
             SelectiveDynamics()
           )
         );
@@ -268,7 +268,7 @@ namespace CASM {
 
       // get occupant name for site i in configdof
       auto occ_name = [&](int i) {
-        return scel.prim().basis[scel.sublat(i)].site_occupant()[configdof.occ(i)].name();
+        return scel.prim().basis()[scel.sublat(i)].site_occupant()[configdof.occ(i)].name();
       };
 
       // create tuples collecting (Atom name, Coordinate, SelectiveDynamics) for each site
