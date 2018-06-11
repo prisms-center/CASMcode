@@ -45,7 +45,7 @@ namespace CASM {
 
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     m_primclex(_prim),
-    m_lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
+    m_lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), _prim->crystallography_tol()),
     m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()),
     m_transf_mat(transf_mat_init) {
     //    fill_reciprocal_supercell();

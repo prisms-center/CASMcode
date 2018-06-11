@@ -30,6 +30,7 @@ namespace CASM {
   class AtomSpecies : public Comparisons<CRTPBase<AtomSpecies>> {
   public:
 
+    /// \brief Constructor
     AtomSpecies(std::string const &_name) :
       m_name(_name) {}
 
@@ -38,6 +39,7 @@ namespace CASM {
       return m_name;
     }
 
+    /// \brief Equality comparison for two AtomSpecies
     bool operator==(AtomSpecies const &RHS) const {
       return name() == RHS.name();
     }
@@ -62,6 +64,8 @@ namespace CASM {
     /// Typedef for selective dynamics array
     typedef std::array<bool, 3> sd_type;
 
+
+    /// \brief Construct with x,y,z position coordinates and AtomSpecie
     template<typename AtomSpeciesConvertible>
     AtomPosition(double _pos1,
                  double _pos2,
@@ -72,6 +76,7 @@ namespace CASM {
       m_position(_pos1, _pos2, _pos3),
       m_sd_flag(_sd_flag) { }
 
+    /// \brief Construct with vector position and AtomSpecies
     template<typename AtomSpeciesConvertible>
     AtomPosition(Eigen::Ref<const Eigen::Vector3d> const &_pos,
                  AtomSpeciesConvertible _species,

@@ -1,6 +1,8 @@
 #ifndef CLEXPARAMPACK_HH
 #define CLEXPARAMPACK_HH
 #include <cstddef>
+#include <map>
+#include <vector>
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
@@ -9,17 +11,27 @@ namespace CASM {
     /// \brief BaseKey class that hides implementation-specific access attributes
     class BaseKey {
     public:
+      BaseKey(std::string const &_name) : m_name(_name) {}
+
+      virtual ~BaseKey() {};
+
+      std::string const &name() const {
+        return m_name;
+      }
+
       /// \brief Clone the ClexParamKey
       std::unique_ptr<BaseKey> clone() const {
         return std::unique_ptr<BaseKey>(_clone());
       }
 
 
-    private:
+    protected:
 
       /// \brief Clone the ClexParamKey
       virtual BaseKey *_clone() const = 0;
 
+    private:
+      std::string m_name;
     };
   }
 
@@ -31,7 +43,22 @@ namespace CASM {
 
   /// \brief Key for indexing clexulator parameters
   class ClexParamKey {
-    friend class Clexulator_impl::Base;
+  public:
+    ClexParamKey() {}
+
+    ClexParamKey(ClexParamPack_impl::BaseKey const &_key) :
+      m_key_ptr(_key.clone()) {
+
+    }
+
+    //friend class Clexulator_impl::Base;
+    std::string const &name() const {
+      return m_key_ptr->name();
+    }
+
+    ClexParamPack_impl::BaseKey const *ptr() const {
+      return m_key_ptr.unique().get();
+    }
   private:
     /// \brief  ptr to BaseKey class that hides implementation-specific access attributes
     notstd::cloneable_ptr<ClexParamPack_impl::BaseKey> m_key_ptr;
@@ -44,18 +71,36 @@ namespace CASM {
 
     typedef unsigned int size_type;
 
-    size_type size(ClexParamKey  const &_key) const;
+    std::map<std::string, ClexParamKey> const &keys() const {
+      return m_keys;
+    }
 
-    std::vector<double> const &read(ClexParamKey  const &_key) const;
-    double read(ClexParamKey  const &_key, size_type _ind) const;
+    ClexParamKey const &key(std::string const &_name) const {
+      auto it = keys().find(_name);
+      if(it == keys().end())
+        throw std::runtime_error("In ClexParamPack::key(), ClexParamPack does not contain parameters corresponding to name " + _name + ".");
+      return it->second;
+    }
 
-    void write(ClexParamKey const &_key, std::vector<double> const &_val);
-    void write(ClexParamKey const &_key, size_type _ind, double val);
+    virtual size_type size(ClexParamKey  const &_key) const = 0;
 
+    virtual std::string eval_mode(ClexParamKey const &_key) const = 0;
+
+    virtual std::vector<double> const &read(ClexParamKey  const &_key) const = 0;
+    virtual double const &read(ClexParamKey  const &_key, size_type _ind) const = 0;
+
+    virtual void set_eval_mode(ClexParamKey const &_key, std::string const &_mode) = 0;
+
+    virtual void write(ClexParamKey const &_key, std::vector<double> const &_val) = 0;
+    virtual void write(ClexParamKey const &_key, size_type _ind, double val) = 0;
+
+  protected:
+    std::map<std::string, ClexParamKey> m_keys;
   private:
     //possible implementation:
     //std::vector<std::vector<double> m_data;
   };
+
 }
 
 #endif

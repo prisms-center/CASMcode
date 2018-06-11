@@ -21,11 +21,8 @@ casm_misc_include_HEADERS = \
   include/casm/misc/HierarchyID.hh\
   include/casm/misc/CASM_Array_math.hh\
   include/casm/misc/HallOfFame.hh\
-  include/casm/misc/CASM_Eigen_math.hh
-
-casm_database_includedir=$(includedir)/casm/database
-
-casm_database_include_HEADERS = \
+  include/casm/misc/CASM_Eigen_math.hh\
+  include/casm/misc/ParsingDictionary.hh\
   include/casm/database/Named_impl.hh\
   include/casm/database/ScelDatabase.hh\
   include/casm/database/DiffTransConfigImport.hh\
@@ -237,6 +234,7 @@ casm_basis_set_includedir=$(includedir)/casm/basis_set
 casm_basis_set_include_HEADERS = \
   include/casm/basis_set/BasisSet.hh\
   include/casm/basis_set/DoF.hh\
+  include/casm/basis_set/DoFDecl.hh\
   include/casm/basis_set/Variable.hh\
   include/casm/basis_set/FunctionVisitor.hh\
   include/casm/basis_set/OccupantFunction.hh\
@@ -318,7 +316,11 @@ casm_clex_include_HEADERS = \
   include/casm/clex/HasCanonicalForm_impl.hh\
   include/casm/clex/PrimClex_impl.hh\
   include/casm/clex/Clexulator.hh\
+  include/casm/clex/ClexParamPack.hh\
+  include/casm/clex/BasicClexParamPack.hh\
   include/casm/clex/ClexBasisWriter.hh\
+  include/casm/clex/OrbitFunctionTraits.hh\
+  include/casm/clex/OrbitFunctionWriter.hh\
   include/casm/clex/ClexBasis_impl.hh\
   include/casm/clex/ConfigIsEquivalent.hh\
   include/casm/clex/ChemicalReference.hh\

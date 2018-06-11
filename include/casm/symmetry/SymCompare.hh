@@ -50,8 +50,12 @@ namespace CASM {
   /// \brief CRTP base class for implementing element and orbit comparison
   ///
   /// Derived needs to implement the following *private* methods:
-  /// - Element Derived::prepare_impl(const Element &A) const
-  ///   - use to put Element into a canonical comparison form, i.e. sort a cluster
+  /// - Element Derived::spatial_prepare_impl(const Element &A) const
+  ///   - position/orient Element in a canonical way for comparison
+  ///     (i.e., translate cluster so first site is at [0,0,0] cell)
+  /// - Element Derived::representation_prepare_impl(const Element &A) const
+  ///   - construct one canonical representation of Element amongst all equivalent representations
+  ///     (i.e. sort sites of a cluster), used for comparison
   /// - bool Derived::compare_impl(const Element &A, const Element &B) const
   ///   - used to identify unique equivalents
   /// - bool Derived::invariants_compare_impl(const Element &A, const Element &B) const
@@ -84,15 +88,32 @@ namespace CASM {
     typedef typename traits<MostDerived>::Element Element;
     typedef typename traits<Element>::InvariantsType InvariantsType;
 
-
-    SymCompare() : m_integral_tau(Eigen::Vector3l::Zero(3)) {}
-
-    /// \brief Prepare an element for comparison
+    /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
-    /// - For instance, sort and/or translate a cluster so comparison may be
+    /// - For instance, translate a cluster so comparison may be
+    ///   performed more efficiently.
+    /// - Returns pair such that pair.first = apply_sym(pair.second, obj)
+    ///
+    Element spatial_prepare(Element obj) const {
+      return derived().spatial_prepare_impl(obj);
+    }
+
+    /// \brief Prepare an element for comparison via transformation of its internal representation
+    ///
+    /// - For instance, sort sites of a cluster so comparison may be
     ///   performed more efficiently
+    Element representation_prepare(Element obj) const {
+      return derived().representation_prepare_impl(obj);
+    }
+
+    /// \brief Prepare an element for comparison via an isometric affine transformation
+    ///
+    /// - For instance, translate a cluster so comparison may be
+    ///   performed more efficiently.
+    /// - Returns pair such that pair.first = apply_sym(pair.second, obj)
+    ///
     Element prepare(Element obj) const {
-      return derived().prepare_impl(obj);
+      return spatial_prepare(representation_prepare(obj));
     }
 
     /// \brief Orders 'prepared' elements
@@ -160,15 +181,9 @@ namespace CASM {
       return derived().canonical_transform_impl(obj);
     }
 
-    /// \brief Access integral adjustment shift due to varying symmetry of object vs. generating group
-    const UnitCell integral_tau() const {
-      return m_integral_tau;
-    }
-
-    /// \brief Access SymOp adjustment due to varying symmetry of object vs. generating group
-    const SymOp translation(const Structure &prim) const {
-      Coordinate tau(m_integral_tau.cast<double>(), prim.lattice(), FRAC);
-      return SymOp::translation(tau.const_cart());
+    /// \brief Access spatial transform that was used during most recent preparation of an element
+    SymOp const &spatial_transform() const {
+      return m_spatial_transform;
     }
 
   protected:
@@ -200,7 +215,7 @@ namespace CASM {
       return *this;
     }
 
-    mutable UnitCell m_integral_tau;
+    mutable SymOp m_spatial_transform;
   };
 
 

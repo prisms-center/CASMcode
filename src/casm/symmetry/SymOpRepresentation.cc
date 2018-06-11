@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "casm/symmetry/SymOpRepresentation.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
@@ -5,6 +7,16 @@
 #include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
+  //*******************************************************************************************
+
+  std::unique_ptr<SymOpRepresentation> SymOpRepresentation::inverse() const {
+    SymOpRepresentation *res = inverse_impl();
+    res->m_master_group = m_master_group;
+    res->m_rep_ID = m_rep_ID;
+    if(has_valid_master())
+      res->m_op_index = ind_inverse();
+    return std::unique_ptr<SymOpRepresentation>(res);
+  }
 
   //*******************************************************************************************
   Eigen::MatrixXd const *SymOpRepresentation::get_matrix_rep(SymGroupRepID _rep_ID) const {

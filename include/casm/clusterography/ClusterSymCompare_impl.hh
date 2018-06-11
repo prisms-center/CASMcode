@@ -82,8 +82,18 @@ namespace CASM {
   /// - Returns sorted
   template<typename Element>
   Element AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  prepare_impl(Element obj) const {
+  representation_prepare_impl(Element obj) const {
     return obj.sort();
+  }
+
+  /// \brief Prepare an element for comparison
+  ///
+  /// - Returns sorted
+  template<typename Element>
+  Element AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  spatial_prepare_impl(Element obj) const {
+
+    return obj;
   }
 
 
@@ -112,13 +122,28 @@ namespace CASM {
   /// - Sorts and translates so that obj[0] is in the origin unit cell
   template<typename Element>
   Element PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  prepare_impl(Element obj) const {
+  spatial_prepare_impl(Element obj) const {
+    if(!obj.size()) {
+      return obj;
+    }
+    auto pos = position(obj);
+    this->m_spatial_transform = SymOp::translation(-pos.lattice().lat_column_mat() * pos.unitcell().template cast<double>());
+    return obj - pos.unitcell();
+  }
+
+
+  /// \brief Prepare an element for comparison
+  ///
+  /// - Sorts and translates so that obj[0] is in the origin unit cell
+  template<typename Element>
+  Element PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  representation_prepare_impl(Element obj) const {
     if(!obj.size()) {
       return obj;
     }
     obj.sort();
-    this->m_integral_tau = -position(obj).unitcell();
-    return obj + this->m_integral_tau;;
+
+    return obj;
   }
 
 
@@ -148,14 +173,28 @@ namespace CASM {
   /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
   template<typename Element>
   Element ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  prepare_impl(Element obj) const {
+  spatial_prepare_impl(Element obj) const {
+    if(!obj.size()) {
+      return obj;
+    }
+    auto pos = position(obj);
+    this->m_spatial_transform = SymOp::translation(-pos.lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
+    return obj + (m_prim_grid->within(pos).unitcell() - pos.unitcell());
+  }
+
+
+  /// \brief Prepare an element for comparison
+  ///
+  /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
+  template<typename Element>
+  Element ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  representation_prepare_impl(Element obj) const {
     if(!obj.size()) {
       return obj;
     }
     obj.sort();
-    auto pos = position(obj);
-    this->m_integral_tau = m_prim_grid->within(pos).unitcell() - pos.unitcell();
-    return obj + this->m_integral_tau;
+
+    return obj;
   }
 
 
@@ -180,12 +219,46 @@ namespace CASM {
   WithinScelSymCompare(const Supercell &scel):
     WithinScelSymCompare<Element>(scel.prim_grid(), scel.crystallography_tol()) {}
 
+  /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
+  ///
+  /// - For now returns pointer to SymPermutation object that encodes permutation due to sorting elements
+  template<typename Element>
+  std::unique_ptr<SymOpRepresentation> WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  canonical_transform_impl(Element const &obj)const {
+    Element tobj = obj;
+    for(Index i = 0; i < tobj.size(); ++i) {
+      tobj[i] = m_prim_grid->within(tobj[i]);
+    }
+
+    return std::unique_ptr<SymOpRepresentation>(new SymPermutation(tobj.sort_permutation()));
+  }
+
   /// \brief Prepare an element for comparison
   ///
   /// - Puts all sites within the supercell, then sorts
   template<typename Element>
   Element WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  prepare_impl(Element obj) const {
+  spatial_prepare_impl(Element obj) const {
+    if(!obj.size()) {
+      return obj;
+    }
+    Element tobj = obj;
+    for(Index i = 0; i < tobj.size(); ++i) {
+      tobj[i] = m_prim_grid->within(tobj[i]);
+    }
+
+    auto pos = tobj[tobj.sort_permutation()[0]];
+
+    this->m_spatial_transform = SymOp::translation(-pos.lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
+    return obj + (m_prim_grid->within(pos).unitcell() - pos.unitcell());
+  }
+
+  /// \brief Prepare an element for comparison
+  ///
+  /// - Puts all sites within the supercell, then sorts
+  template<typename Element>
+  Element WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  representation_prepare_impl(Element obj) const {
     if(!obj.size()) {
       return obj;
     }

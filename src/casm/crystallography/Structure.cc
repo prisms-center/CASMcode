@@ -586,7 +586,7 @@ namespace CASM {
       }
 
     }
-    m_basis = avg_basis;
+    set_basis(avg_basis);
     //generate_factor_group();
     update();
     return;

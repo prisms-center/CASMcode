@@ -160,10 +160,12 @@ namespace CASM {
       if(size() == 0)
         return Permutation(0);
       std::vector<Index> ind = sequence(Index(0), Index(size() - 1));
+
       std::sort(ind.begin(), ind.end(),
       [&](const Index & a, const Index & b) {
         return (this->derived().element(a) < this->derived().element(b));
       });
+
       return Permutation(std::move(ind));
     }
 

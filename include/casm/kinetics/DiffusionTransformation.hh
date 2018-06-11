@@ -24,7 +24,7 @@ namespace CASM {
 
   namespace Kinetics {
 
-    /// \brief Specifies a particular specie
+    /// \brief Specifies a particular species
     /// A SpeciesLocation object describes a particular specie at a specific
     /// lattice + basis site within the infinite crystal
     /// contains the UnitCellCoord (b, i, j, k) and occupant index (integer describing
@@ -380,7 +380,7 @@ namespace CASM {
     Printer(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
       PrinterBase(_opt) {}
 
-    void print(const Element &element, Log &out);
+    void print(const Element &element, Log &out) const;
   };
 
   template<typename NameIterator>

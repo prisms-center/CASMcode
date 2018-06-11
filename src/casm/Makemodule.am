@@ -145,6 +145,7 @@ libcasm_la_SOURCES = \
   src/casm/monte_carlo/grand_canonical/GrandCanonical.cc\
   src/casm/monte_carlo/grand_canonical/GrandCanonicalIO.cc\
   src/casm/clex/ClexBasisWriter.cc\
+  src/casm/clex/OrbitFunctionTraits.cc\
   src/casm/clex/ChemicalReference.cc\
   src/casm/clex/ConfigIsEquivalent.cc\
   src/casm/clex/ConfigEnumInterpolation.cc\

@@ -297,6 +297,19 @@ namespace CASM {
     Log &out,
     COORD_TYPE mode);
 
+  /// \brief Print site basis functions, as for 'casm bset --functions'
+  void print_site_basis_funcs(
+    Structure const &prim,
+    ClexBasis const &clex_basis,
+    Log &out,
+    Index indent_space = 6,
+    COORD_TYPE mode = FRAC);
+
+  void write_site_basis_funcs(
+    Structure const &prim,
+    ClexBasis const &clex_basis,
+    jsonParser &json);
+
 
   // ---------- clust.json IO ------------------------------------------------------------------
 

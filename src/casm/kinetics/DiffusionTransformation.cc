@@ -799,7 +799,7 @@ namespace CASM {
 
   const std::string Printer<Kinetics::DiffusionTransformation>::element_name = "DiffusionTransformation";
 
-  void Printer<Kinetics::DiffusionTransformation>::print(const Kinetics::DiffusionTransformation &trans, Log &out) {
+  void Printer<Kinetics::DiffusionTransformation>::print(const Kinetics::DiffusionTransformation &trans, Log &out) const {
     if(!out.print()) {
       return;
     }

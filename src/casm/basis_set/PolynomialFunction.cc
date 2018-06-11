@@ -315,7 +315,7 @@ namespace CASM {
         tformula << '-';
       }
       else if(!almost_zero(prefactor[np] - 1)) {
-        tformula << prefactor[np] << '*';
+        tformula << prefactor[np] << " * ";
       }
 
       if(np > 0 && prefactor[np] / func_scale > 0.0) {
@@ -334,7 +334,7 @@ namespace CASM {
       for(Index linear_ind = 0; linear_ind < unique_product[np].size(); linear_ind++) {
         if(!unique_product[np][linear_ind]) continue;
         if(tot_pow > 0) {
-          tformula << '*';
+          tformula << " * ";
         }
         tot_pow += unique_product[np][linear_ind];
 

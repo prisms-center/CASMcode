@@ -472,8 +472,7 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::set_site_internals() {
-    Index nb;
-    for(nb = 0; nb < basis().size(); nb++) {
+    for(Index nb = 0; nb < basis().size(); nb++) {
       m_basis[nb].set_basis_ind(nb);
     }
   }
@@ -604,7 +603,7 @@ namespace CASM {
       }
 
     }
-    m_basis = avg_basis;
+    set_basis(avg_basis);
     //update();
     return;
   }

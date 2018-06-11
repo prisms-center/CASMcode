@@ -30,13 +30,13 @@ namespace test {
         2.0, 2.0, 0.0;
 
     BasicStructure<Site> struc {Lattice{lat}};
-    struc.title = "FCC_ternary";
+    struc.set_title("FCC_ternary");
 
     Molecule A = Molecule::make_atom("A");
     Molecule B = Molecule::make_atom("B");
     Molecule C = Molecule::make_atom("C");
 
-    struc.basis.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), {A, B, C}));
+    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), {A, B, C}));
 
     return struc;
 

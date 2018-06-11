@@ -97,7 +97,7 @@ namespace CASM {
     }
 
     virtual std::string clexulator_global_prepare_string(Structure const &_prim,
-                                                         std::vector<std::pair<Index, UnitCellCoord> > &_nhood,
+                                                         std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                          PrimNeighborList &_nlist,
                                                          std::string const &indent) const {
       return "";

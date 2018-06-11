@@ -216,6 +216,10 @@ namespace CASM {
       m_integral_tau = tau() - master_group()[index()].tau();
       m_valid_integral_tau = true;
     }
+    else if(is_identity()) {
+      m_integral_tau = tau();
+      m_valid_integral_tau = true;
+    }
     else {
       m_valid_integral_tau = false;
     }

@@ -12,18 +12,33 @@ namespace CASM {
   }
 
   /// \brief Expand the neighbor list to include the given UnitCellCoord
-  void PrimNeighborList::expand(UnitCellCoord uccoord) {
+  void PrimNeighborList::expand(UnitCellCoord const &uccoord) {
+    expand(uccoord.unitcell());
+  }
+
+  /// \brief Expand the neighbor list to include the given UnitCellCoord
+  void PrimNeighborList::expand(UnitCell const &uc) {
 
     // save the old range
     Scalar prev_range = m_range;
 
-    auto result = m_neighborhood.insert(uccoord.unitcell());
+    auto result = m_neighborhood.insert(uc);
 
     // if a new UnitCell
     if(result.second) {
       // ensure all intermediate UnitCell are included
       _expand(prev_range);
     }
+  }
+
+  /// \brief Expand the neighbor list to include the given UnitCellCoord
+  bool PrimNeighborList::_expand(UnitCellCoord const &uccoord) {
+    return _expand(uccoord.unitcell());
+  }
+
+  /// \brief Expand the neighbor list to include the given UnitCellCoord
+  bool PrimNeighborList::_expand(UnitCell const &uc) {
+    return m_neighborhood.insert(uc).second;
   }
 
   /// \brief Ensure that all intermediate UnitCell are included in our neighborhood

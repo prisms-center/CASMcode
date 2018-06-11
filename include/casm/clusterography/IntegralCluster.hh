@@ -102,6 +102,43 @@ namespace CASM {
   template<typename ClusterOrbitIterator, typename OutputIterator>
   OutputIterator prim_periodic_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result);
 
+  /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
+  ///
+  /// \param orbit an Orbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// \result the resulting OutputIterator
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters. Respects translational
+  /// properties of local orbits, so can be used when translational type is unknown.
+  ///
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename OutputIterator, typename OrbitType>
+  OutputIterator flower_neighborhood(
+    OrbitType const &orbit,
+    OutputIterator result);
+
+
+  /// \brief Iterate over all sites in all orbits and insert a UnitCellCoord
+  ///
+  /// \param begin,end Range of Orbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters. Respects translational
+  /// properties of local orbits, so can be used when translational type is unknown.
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename ClusterOrbitIterator, typename OutputIterator>
+  OutputIterator flower_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result);
+
+
 }
 
 #endif

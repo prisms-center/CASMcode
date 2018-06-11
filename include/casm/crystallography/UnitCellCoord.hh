@@ -60,6 +60,8 @@ namespace CASM {
 
   };
 
+  /// Convert lattice point a unitcell
+  UnitCell make_unitcell(Coordinate const &lattice_point);
 
   /// \brief CRTP class to implement '-=', '+', and '-' in terms of '+='
   ///

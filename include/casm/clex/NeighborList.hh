@@ -49,7 +49,10 @@ namespace CASM {
     Matrix3Type weight_matrix() const;
 
     /// \brief Expand the neighbor list to include the given UnitCellCoord
-    void expand(UnitCellCoord uccoord);
+    void expand(UnitCell const &uc);
+
+    /// \brief Expand the neighbor list to include the given UnitCellCoord
+    void expand(UnitCellCoord const &uccoord);
 
     /// \brief Expand the neighbor list to include the given range of UnitCellCoord
     template<typename UnitCellCoordIterator>
@@ -91,6 +94,14 @@ namespace CASM {
   private:
     /// \brief Get neighborlist index of UnitCellCoord @param _ucc, without expanding neighborhood
     Scalar _neighbor_index(UnitCellCoord const &_ucc) const;
+
+    /// \brief Expand the neighbor list to include the given UnitCell, but do not do additional updates
+    /// returns true if added UnitCell is new
+    bool _expand(UnitCell const &uc);
+
+    /// \brief Expand the neighbor list to include the given UnitCellCoord, but do not do additional updates
+    /// returns true if added UnitCellCoord is new
+    bool _expand(UnitCellCoord const &uccoord);
 
     /// \brief Ensure that all intermediate UnitCell are included in our neighborhood
     void _expand(Scalar prev_range);
@@ -239,9 +250,7 @@ namespace CASM {
 
     bool any_new = false;
     for(auto it = begin; it != end; ++it) {
-      if(m_neighborhood.insert(it->unitcell()).second) {
-        any_new = true;
-      }
+      any_new = any_new || _expand(*it);
     }
 
     if(!any_new) {

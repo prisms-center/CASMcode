@@ -26,7 +26,6 @@ namespace CASM {
                           ClexBasis const &clex,
                           std::vector<OrbitType > const &_tree,
                           PrimNeighborList &_nlist,
-                          std::vector<UnitCellCoord> const &_flower_pivots,
                           std::ostream &stream,
                           double xtal_tol);
 
@@ -49,9 +48,8 @@ namespace CASM {
                           ClexBasis const &clex,
                           std::vector<OrbitType > const &_tree,
                           PrimNeighborList &_nlist,
-                          std::vector<UnitCellCoord> const &_flower_pivots,
                           std::ostream &stream,
-                          double xtal_tol);
+                          std::string const &_indent)const;
 
     std::vector<std::unique_ptr<FunctionVisitor> > m_site_visitors;
     std::vector<std::unique_ptr<FunctionVisitor> > m_clust_visitors;

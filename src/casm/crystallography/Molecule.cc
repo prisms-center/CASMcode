@@ -15,13 +15,6 @@ namespace CASM {
   }
 
 
-  //****************************************************
-  //
-  //****************************************************
-
-  bool AtomPosition::identical(AtomPosition const &RHS, double _tol) const {
-    return species() == RHS.species() && almost_equal(cart(), RHS.cart(), _tol);
-  }
 
   //****************************************************
   //
@@ -64,8 +57,8 @@ namespace CASM {
   //****************************************************
 
   bool identical(AtomPosition const &LHS, AtomPosition const &RHS, double _tol = TOL) {
-    return LHS.specie() == RHS.specie()
-           && almost_zero((LHS.cart() - RHS.cart()).squaredNorm(), _tol * _tol);
+    return LHS.species() == RHS.species()
+           && almost_equal(LHS.cart(), RHS.cart(), _tol);
   }
   //****************************************************
   //
