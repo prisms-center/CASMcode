@@ -120,21 +120,14 @@ namespace CASM {
     auto compare = [&](const Element & A, const Element & B) {
       return m_sym_compare.compare(A, B);
     };
-    auto equal = [&](const Element & A, const Element & B) {
-      return m_sym_compare.equal(A, B);
-    };
-    auto prepare = [&](const SymOp & op, const Element & el) {
-      return m_sym_compare.prepare(copy_apply(op, el));
-    };
 
 
-    // -- Equivalence map sorting using index multiplication ---
-
-    // generate equivalents using std::set to remove duplicates
+    // generate equivalents using std::map to remove duplicates
+    // store ordered symop indices corresponding to transformations for each equivalent
     std::map<Element, std::set<Index>, decltype(compare)> t_equiv(compare);
     try {
-      for(const auto &op : g) {
-        t_equiv[prepare(op, generating_element)].insert(op.index());
+      for(Index i = 0; i < g.size(); i++) {
+        t_equiv[m_sym_compare.prepare(copy_apply(g[i], generating_element))].insert(i); // not g[i].index()!!;
       }
     }
     catch(const std::exception &e) {
@@ -147,7 +140,6 @@ namespace CASM {
     std::vector<Element> tmp_element;
     std::vector<std::vector<Index>> tmp_equivalence_map;
     try {
-
       Index first2proto = g.ind_inverse(*(t_equiv.begin()->second.begin()));
 
       for(auto const &_equiv : t_equiv) {
@@ -177,15 +169,26 @@ namespace CASM {
 
     /// find the best equivalence map out of all possible
     ///   (lowest lexicographical sorting columnwise)
+    /// ties are resolved by virtue of fact that 'tmp_element' is already sorted by m_sym_compare.compare
     Index best_a = 0;
     Orbit_impl::RelEqMap best(best_a, tmp_equivalence_map, g);
     try {
       for(Index a = 1; a < tmp_equivalence_map.size(); ++a) {
         Orbit_impl::RelEqMap test(a, tmp_equivalence_map, g);
+
+        std::cout << "\n\nBEST:\n" << best << "\n" << tmp_element[best_a] << "TEST:\n" << test <<  "\n" << tmp_element[a] << "\n";
         if(test < best) {
           best_a = a;
           best = std::move(test);
+          std::cout << "++ TEST IS BETTER THAN BEST\n";
         }
+        else if(best < test)
+          std::cout << "-- BEST IS BETTER THAN TEST\n";
+        else
+          std::cout << "== BEST IS EQUAL TO TEST\n";
+
+
+
       }
     }
     catch(const std::exception &e) {

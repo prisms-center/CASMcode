@@ -104,15 +104,12 @@ namespace CASM {
     ///
     /// - For instance, sort sites of a cluster so comparison may be
     ///   performed more efficiently
+    ///
     Element representation_prepare(Element obj) const {
       return derived().representation_prepare_impl(obj);
     }
 
-    /// \brief Prepare an element for comparison via an isometric affine transformation
-    ///
-    /// - For instance, translate a cluster so comparison may be
-    ///   performed more efficiently.
-    /// - Returns pair such that pair.first = apply_sym(pair.second, obj)
+    /// \brief Prepare an element for comparison via representation_prepare(), followed by spatial_prepare()
     ///
     Element prepare(Element obj) const {
       return spatial_prepare(representation_prepare(obj));
@@ -183,7 +180,7 @@ namespace CASM {
       return derived().canonical_transform_impl(obj);
     }
 
-    /// \brief Access spatial transform that was used during most recent preparation of an element
+    /// \brief Access spatial transform that was used during most recent spatial preparation of an element
     SymOp const &spatial_transform() const {
       return m_spatial_transform;
     }
@@ -217,6 +214,8 @@ namespace CASM {
       return *this;
     }
 
+    /// \brief Spatial transform that reproduces most recent application of SymCompare::spatial_prepare()
+    /// - Default SymOp constructor initializes to identity
     mutable SymOp m_spatial_transform;
   };
 

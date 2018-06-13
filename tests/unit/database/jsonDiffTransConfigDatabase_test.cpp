@@ -84,14 +84,17 @@ BOOST_AUTO_TEST_CASE(Test1) {
   TestEnumerator0 te;
   TestConfig0 tc(primclex);
 
+  std::cout << "point 1\n";
   // Make DiffTransConfiguration database
   DB::jsonDatabase<Kinetics::DiffTransConfiguration> db_diff_trans_config(primclex);
   BOOST_CHECK_EQUAL(true, true);
 
+  std::cout << "point 2\n";
   // Open DiffTransConfiguration database
   db_diff_trans_config.open();
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
 
+  std::cout << "point 3\n";
   // Make DiffTransConfiguration enumerator and enumerate configs
   auto enum_ptr = te.enumerator(tc.config, to.diff_trans_orbits[0]);
 
@@ -101,7 +104,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   }
   db_diff_trans_config.commit();
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 29); // not checked for accuracy
-
+  std::cout << "point 4\n";
 
   // Check cached properties
   std::cout << "skipping cache check" << std::endl;
@@ -122,7 +125,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
       BOOST_CHECK_EQUAL(*it < *next, true);
     }
   }
-
+  std::cout << "point 5\n";
   // Close DiffTransConfiguration database
   db_diff_trans_config.close();
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
@@ -130,7 +133,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // Re-open DiffTransConfiguration database
   db_diff_trans_config.open();
   BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 29); // not checked for accuracy
-
+  std::cout << "point 6\n";
   //  // Check cached properties
   std::cout << "skipping cache check" << std::endl;
   ////  for(const auto &diff_trans_config : db_diff_trans_config) {
