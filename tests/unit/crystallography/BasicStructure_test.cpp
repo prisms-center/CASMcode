@@ -35,10 +35,10 @@ void prim1_read_test(BasicStructure<Site> &struc) {
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(0.0, 2.0, 2.0), tol), true);
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(2.0, 0.0, 2.0), tol), true);
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(2.0, 2.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.basis.size(), 1);
+  BOOST_CHECK_EQUAL(struc.basis().size(), 1);
 
   // basis site 0 has three possible occupants
-  BOOST_CHECK_EQUAL(struc.basis[0].site_occupant().size(), 3);
+  BOOST_CHECK_EQUAL(struc.basis()[0].site_occupant().size(), 3);
 
   std::string check_name[3] = {"A", "B", "C"};
 
@@ -46,10 +46,10 @@ void prim1_read_test(BasicStructure<Site> &struc) {
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name(), check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).name(), check_name[i]);
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].atom(0).species().name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis()[0].site_occupant()[i].name(), check_name[i]);
+    BOOST_CHECK_EQUAL(almost_equal(struc.basis()[0].site_occupant()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    BOOST_CHECK_EQUAL(struc.basis()[0].site_occupant()[i].atom(0).name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis()[0].site_occupant()[i].atom(0).species().name(), check_name[i]);
   }
 
   // FCC motif
@@ -79,10 +79,10 @@ void prim2_read_test(BasicStructure<Site> &struc) {
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.basis.size(), 4);
+  BOOST_CHECK_EQUAL(struc.basis().size(), 4);
 
   // basis site 0 has three possible occupants
-  BOOST_CHECK_EQUAL(struc.basis[0].site_occupant().size(), 3);
+  BOOST_CHECK_EQUAL(struc.basis()[0].site_occupant().size(), 3);
 
   std::string check_name[3] = {"A", "B", "C"};
   int check_value[4] = {0, 0, 1, 2};
@@ -92,12 +92,12 @@ void prim2_read_test(BasicStructure<Site> &struc) {
       // occupants are Molecule with name "A", etc.
       // Molecule are composed of AtomPosition
       // An AtomPosition 'is' a Coordinate with a Specie
-      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].name(), check_name[j]);
-      BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].atom(0).name(), check_name[j]);
-      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].atom(0).species().name(), check_name[j]);
+      BOOST_CHECK_EQUAL(struc.basis()[i].site_occupant()[j].name(), check_name[j]);
+      BOOST_CHECK_EQUAL(almost_equal(struc.basis()[i].site_occupant()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+      BOOST_CHECK_EQUAL(struc.basis()[i].site_occupant()[j].atom(0).name(), check_name[j]);
+      BOOST_CHECK_EQUAL(struc.basis()[i].site_occupant()[j].atom(0).species().name(), check_name[j]);
     }
-    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant().value(), check_value[i]);
+    BOOST_CHECK_EQUAL(struc.basis()[i].site_occupant().value(), check_value[i]);
   }
 
   // ordering on FCC motif
@@ -146,21 +146,21 @@ void pos1_read_test(BasicStructure<Site> &struc) {
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
   BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.basis.size(), 4);
+  BOOST_CHECK_EQUAL(struc.basis().size(), 4);
 
   std::string check_name[4] = {"A", "A", "B", "C"};
 
   for(int i = 0; i < 4; i++) {
     // basis site 0 and 1 have one possible occupant
-    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant().size(), 1);
+    BOOST_CHECK_EQUAL(struc.basis()[i].site_occupant().size(), 1);
 
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].name(), check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].atom(0).name(), check_name[i]);
-    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].atom(0).species().name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis()[i].site_occupant()[0].name(), check_name[i]);
+    BOOST_CHECK_EQUAL(almost_equal(struc.basis()[i].site_occupant()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    BOOST_CHECK_EQUAL(struc.basis()[i].site_occupant()[0].atom(0).name(), check_name[i]);
+    BOOST_CHECK_EQUAL(struc.basis()[i].site_occupant()[0].atom(0).species().name(), check_name[i]);
   }
 
   // FCC structure

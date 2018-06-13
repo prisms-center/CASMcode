@@ -10,6 +10,7 @@ namespace CASM {
     {COORD_TYPE::FRAC, {"FRAC", "Direct", "direct", "Fractional", "fractional"} },
     {COORD_TYPE::CART, {"CART", "Cartesian", "cartesian"} },
     {COORD_TYPE::INTEGRAL, {"INTEGRAL", "Integral", "integral"} }
+    //,{COORD_TYPE::COORD_DEFAULT, {"DEFAULT", "Default", "default", ""} }
   };
 
   ENUM_IO_DEF(COORD_TYPE)
@@ -22,6 +23,7 @@ namespace CASM {
     {PERIODICITY_TYPE::PERIODIC, {"PERIODIC"} },
     {PERIODICITY_TYPE::LOCAL, {"LOCAL"} },
     {PERIODICITY_TYPE::APERIODIC, {"APERIODIC"} }
+    //,{PERIODICITY_TYPE::PERIODICITY_DEFAULT, {"DEFAULT", ""} }
   };
 
   ENUM_IO_DEF(PERIODICITY_TYPE)

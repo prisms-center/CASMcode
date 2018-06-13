@@ -2,7 +2,7 @@
 #define CASM_ClusterSymCompare_impl
 
 #include "casm/clusterography/ClusterSymCompare.hh"
-#include "casm/Symmetry/SymPermutation.hh"
+#include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
@@ -170,7 +170,7 @@ namespace CASM {
 
   /// \brief Prepare an element for comparison
   ///
-  /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
+  /// - translates so that obj[0] is within the supercell
   template<typename Element>
   Element ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   spatial_prepare_impl(Element obj) const {
@@ -178,14 +178,14 @@ namespace CASM {
       return obj;
     }
     auto pos = position(obj);
-    this->m_spatial_transform = SymOp::translation(-pos.lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
+    this->m_spatial_transform = SymOp::translation(pos.lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
     return obj + (m_prim_grid->within(pos).unitcell() - pos.unitcell());
   }
 
 
   /// \brief Prepare an element for comparison
   ///
-  /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
+  /// - Sorts UnitCellCoord
   template<typename Element>
   Element ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   representation_prepare_impl(Element obj) const {
@@ -235,22 +235,23 @@ namespace CASM {
 
   /// \brief Prepare an element for comparison
   ///
-  /// - Puts all sites within the supercell, then sorts
+  /// - Does nothing, since fully prepared version is just sorted and 'within'-ed version of the cluster
   template<typename Element>
   Element WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   spatial_prepare_impl(Element obj) const {
-    if(!obj.size()) {
-      return obj;
-    }
-    Element tobj = obj;
-    for(Index i = 0; i < tobj.size(); ++i) {
-      tobj[i] = m_prim_grid->within(tobj[i]);
-    }
+    //if(!obj.size()) {
+    //return obj;
+    //}
+    //Element tobj = obj;
+    //for(Index i = 0; i < tobj.size(); ++i) {
+    //tobj[i] = m_prim_grid->within(tobj[i]);
+    //}
 
-    auto pos = tobj[tobj.sort_permutation()[0]];
+    //auto pos = tobj[tobj.sort_permutation()[0]];
 
-    this->m_spatial_transform = SymOp::translation(-pos.lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
-    return obj + (m_prim_grid->within(pos).unitcell() - pos.unitcell());
+    //this->m_spatial_transform = SymOp::translation(pos.lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
+    //return obj + (m_prim_grid->within(pos).unitcell() - pos.unitcell());
+    return obj;
   }
 
   /// \brief Prepare an element for comparison

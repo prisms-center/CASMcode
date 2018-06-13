@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_SUITE(NeighborListTest)
 BOOST_AUTO_TEST_CASE(PrimNeighborListBasics) {
   Structure prim(test::FCC_ternary_prim());
   std::set<int> sublat_indices;
-  for(int i = 0; i < prim.basis.size(); i++) {
+  for(int i = 0; i < prim.basis().size(); i++) {
     sublat_indices.insert(i);
   }
 
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(PrimNeighborListBasics) {
 BOOST_AUTO_TEST_CASE(SuperNeighborListBasics) {
   Structure prim(test::FCC_ternary_prim());
   std::set<int> sublat_indices;
-  for(int i = 0; i < prim.basis.size(); i++) {
+  for(int i = 0; i < prim.basis().size(); i++) {
     sublat_indices.insert(i);
   }
 
