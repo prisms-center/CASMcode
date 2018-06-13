@@ -18,11 +18,11 @@ BOOST_AUTO_TEST_SUITE(PrimClexTest)
 BOOST_AUTO_TEST_CASE(Basics) {
 
   Structure prim(test::FCC_ternary_prim());
-  BOOST_CHECK_EQUAL(prim.basis.size(), 1);
+  BOOST_CHECK_EQUAL(prim.basis().size(), 1);
 
   // Construct from prim
   PrimClex primclex(prim, null_log());
-  BOOST_CHECK_EQUAL(primclex.prim().basis.size(), 1);
+  BOOST_CHECK_EQUAL(primclex.prim().basis().size(), 1);
 
 }
 

@@ -1,9 +1,11 @@
 casm_includedir=$(includedir)/casm
 
 casm_include_HEADERS = \
+  include/casm/.DS_Store\
   include/casm/CASM_global_definitions.hh\
   include/casm/CASM_global_Eigen.hh\
-  include/casm/CASM_global_enum.hh
+  include/casm/CASM_global_enum.hh\
+  include/casm/CASM_global_definitions.hh.gch
 
 casm_misc_includedir=$(includedir)/casm/misc
 
@@ -16,13 +18,17 @@ casm_misc_include_HEADERS = \
   include/casm/misc/cloneable_ptr.hh\
   include/casm/misc/CASM_math.hh\
   include/casm/misc/Comparisons.hh\
+  include/casm/misc/ParsingDictionary.hh\
   include/casm/misc/algorithm.hh\
   include/casm/misc/TypeInfo.hh\
   include/casm/misc/HierarchyID.hh\
   include/casm/misc/CASM_Array_math.hh\
   include/casm/misc/HallOfFame.hh\
-  include/casm/misc/CASM_Eigen_math.hh\
-  include/casm/misc/ParsingDictionary.hh\
+  include/casm/misc/CASM_Eigen_math.hh
+
+casm_database_includedir=$(includedir)/casm/database
+
+casm_database_include_HEADERS = \
   include/casm/database/Named_impl.hh\
   include/casm/database/ScelDatabase.hh\
   include/casm/database/DiffTransConfigImport.hh\
@@ -126,7 +132,6 @@ casm_kinetics_include_HEADERS = \
   include/casm/kinetics/KineticsOrbits.hh\
   include/casm/kinetics/DiffTransConfigurationTraits.hh\
   include/casm/kinetics/DiffTransConfigMapping.hh\
-  include/casm/kinetics/DiffTransEnumEquivalents.hh\
   include/casm/kinetics/KineticsOrbits_impl.hh\
   include/casm/kinetics/DiffusionTransformationEnum_impl.hh\
   include/casm/kinetics/OccupationTransformationTraits.hh\
@@ -234,9 +239,9 @@ casm_basis_set_includedir=$(includedir)/casm/basis_set
 casm_basis_set_include_HEADERS = \
   include/casm/basis_set/BasisSet.hh\
   include/casm/basis_set/DoF.hh\
-  include/casm/basis_set/DoFDecl.hh\
   include/casm/basis_set/Variable.hh\
   include/casm/basis_set/FunctionVisitor.hh\
+  include/casm/basis_set/DoFDecl.hh\
   include/casm/basis_set/OccupantFunction.hh\
   include/casm/basis_set/PolynomialFunction.hh\
   include/casm/basis_set/DoFTraits.hh\
@@ -304,6 +309,7 @@ casm_clex_include_HEADERS = \
   include/casm/clex/ConfigIONovelty.hh\
   include/casm/clex/ConfigEnumOccPerturbations.hh\
   include/casm/clex/ConfigMapping.hh\
+  include/casm/clex/.DS_Store\
   include/casm/clex/SupercellTraits.hh\
   include/casm/clex/ClexBasis.hh\
   include/casm/clex/FilteredConfigIterator.hh\
@@ -313,14 +319,12 @@ casm_clex_include_HEADERS = \
   include/casm/clex/ScelEnum_impl.hh\
   include/casm/clex/ParamComposition.hh\
   include/casm/clex/ConfigIO.hh\
+  include/casm/clex/OrbitFunctionTraits.hh\
+  include/casm/clex/OrbitFunctionWriter.hh\
   include/casm/clex/HasCanonicalForm_impl.hh\
   include/casm/clex/PrimClex_impl.hh\
   include/casm/clex/Clexulator.hh\
-  include/casm/clex/ClexParamPack.hh\
-  include/casm/clex/BasicClexParamPack.hh\
   include/casm/clex/ClexBasisWriter.hh\
-  include/casm/clex/OrbitFunctionTraits.hh\
-  include/casm/clex/OrbitFunctionWriter.hh\
   include/casm/clex/ClexBasis_impl.hh\
   include/casm/clex/ConfigIsEquivalent.hh\
   include/casm/clex/ChemicalReference.hh\
@@ -329,6 +333,7 @@ casm_clex_include_HEADERS = \
   include/casm/clex/HasSupercell_impl.hh\
   include/casm/clex/RemoveSupercell.hh\
   include/casm/clex/Calculable.hh\
+  include/casm/clex/ClexParamPack.hh\
   include/casm/clex/PrimClex.hh\
   include/casm/clex/ChemicalReference_impl.hh\
   include/casm/clex/SupercellIO.hh\
@@ -339,6 +344,7 @@ casm_clex_include_HEADERS = \
   include/casm/clex/HasCanonicalForm.hh\
   include/casm/clex/Configuration_impl.hh\
   include/casm/clex/ConfigIOStrucScore.hh\
+  include/casm/clex/BasicClexParamPack.hh\
   include/casm/clex/ConfigEnumEquivalents.hh\
   include/casm/clex/Configuration.hh\
   include/casm/clex/Supercell.hh\

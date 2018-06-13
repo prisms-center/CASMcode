@@ -54,7 +54,7 @@ namespace CASM {
   }
 
   template<typename OrbitType>
-  void PrinterBase::print_equivalence_map(const OrbitType &orbit, Index equiv_index, Log &out) {
+  void PrinterBase::print_equivalence_map(const OrbitType &orbit, Index equiv_index, Log &out) const {
     out << out.indent_str() << "Equivalence map: " << std::endl;
     this->increase_indent(out);
     int j = 0;
@@ -68,7 +68,7 @@ namespace CASM {
   }
 
   template<typename OrbitType>
-  void PrinterBase::print_equivalence_map(const OrbitType &orbit, Log &out) {
+  void PrinterBase::print_equivalence_map(const OrbitType &orbit, Log &out) const {
     out << out.indent_str() << "Orbit equivalence map: " << std::endl;
     this->increase_indent(out);
     for(int i = 0; i < orbit.size(); ++i) {
@@ -87,7 +87,7 @@ namespace CASM {
   }
 
   template<typename OrbitType, typename Element>
-  void PrinterBase::print_invariant_group(const OrbitType &orbit, const Element &element, Log &out) {
+  void PrinterBase::print_invariant_group(const OrbitType &orbit, const Element &element, Log &out) const {
     out << out.indent_str() << "Invariant group:" << std::endl;
     SymGroup invariant_group = make_invariant_subgroup(element, orbit.generating_group(), orbit.sym_compare());
     this->increase_indent(out);
@@ -102,7 +102,7 @@ namespace CASM {
   template<typename _Element>
   template<typename OrbitType>
   void OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO>::operator()(
-    const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) {
+    const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const {
 
     out << out.indent_str() << "Prototype" << " of " << orbit.size()
         << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
@@ -123,7 +123,7 @@ namespace CASM {
   /// Note: for 'read_clust' to work, "prototype" must be written
   template<typename _Element>
   template<typename OrbitType>
-  jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO>::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) {
+  jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO>::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const {
     json.put_obj();
     json["prototype"] = orbit.prototype();
     json["linear_orbit_index"] = orbit_index;
@@ -132,7 +132,7 @@ namespace CASM {
 
   template<typename _Element>
   template<typename OrbitType>
-  void OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL>::operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) {
+  void OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL>::operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const {
 
     for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
       out << out.indent_str() << equiv_index << " of " << orbit.size()
@@ -158,12 +158,61 @@ namespace CASM {
   /// Note: for 'read_clust' to work, "prototype" must be written
   template<typename _Element>
   template<typename OrbitType>
-  jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL>::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) {
+  jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL>::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const {
     json.put_obj();
     json["prototype"] = orbit.prototype();
     json["elements"].put_array(orbit.begin(), orbit.end());
     json["linear_orbit_index"] = orbit_index;
     return json;
+  }
+
+  template<typename OrbitType>
+  void ProtoFuncsPrinter::operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const {
+
+    out << out.indent_str() << "Prototype" << " of " << orbit.size()
+        << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
+
+    // out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+    // out.precision(5);
+
+    COORD_MODE printer_mode(opt.coord_type);
+
+    auto const &clust = orbit.prototype();
+    Index np = 0;
+    this->increase_indent(out);
+    for(const auto &coord : clust) {
+      out.indent();
+      if(opt.coord_type == INTEGRAL) {
+        out << coord;
+        out << " ";
+        coord.site().site_occupant().print(out);
+        out << std::flush;
+      }
+      else {
+        coord.site().print(out);
+      }
+      out << "  basis_index: " << coord.sublat() << "  clust_index: " << np++ << " ";
+      if(opt.delim)
+        out << opt.delim;
+      out << std::flush;
+    }
+    this->decrease_indent(out);
+
+    Index func_index = 0;
+    for(Index i = 0; i < orbit_index; i++)
+      func_index += clex_basis.clust_basis(i, 0).size();
+
+    // From clust:
+    out.indent() << "Basis Functions:\n";
+    BasisSet tbasis(clex_basis.clust_basis(orbit_index, 0));
+    tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+    this->increase_indent(out);
+    for(Index i = 0; i < tbasis.size(); i++) {
+      out.indent() << "\\Phi_" << func_index + i << " = " << tbasis[i]->tex_formula() << std::endl;
+    }
+    this->decrease_indent(out);
+    out << "\n\n" << std::flush;
+
   }
 
   template<typename OrbitType>
@@ -188,58 +237,6 @@ namespace CASM {
     }
 
     return json;
-  }
-
-  template<typename OrbitType>
-  void ProtoFuncsPrinter::operator()(const OrbitType &orbit, Log &_out, Index orbit_index, Index Norbits) const {
-    std::ostream &out = _out.ostream();
-    out << indent() << indent() << "Prototype" << " of " << orbit.size()
-        << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
-
-    out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
-    out.precision(5);
-
-    COORD_TYPE _mode = mode;
-    if(_mode == COORD_DEFAULT) {
-      _mode = COORD_MODE::CHECK();
-    }
-    COORD_MODE printer_mode(_mode);
-
-    auto const &clust = orbit.prototype();
-    Index np = 0;
-    for(const auto &coord : clust) {
-      out << indent() << indent() << indent();
-      if(_mode == INTEGRAL) {
-        out << coord;
-        out << " ";
-        coord.site().site_occupant().print(out);
-        out << std::flush;
-      }
-      else {
-        out.setf(std::ios::showpoint, std::ios_base::fixed);
-        out.precision(5);
-        out.width(9);
-        coord.site().print(out);
-      }
-      out << "  basis_index: " << coord.sublat() << "  clust_index: " << np++ << " ";
-      if(delim)
-        out << delim;
-      out << std::flush;
-    }
-
-    Index func_index = 0;
-    for(Index i = 0; i < orbit_index; i++)
-      func_index += clex_basis.clust_basis(i, 0).size();
-
-    // From clust:
-    out << "            Basis Functions:\n";
-    BasisSet tbasis(clex_basis.clust_basis(orbit_index, 0));
-    tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
-    for(Index i = 0; i < tbasis.size(); i++) {
-      out << "              \\Phi_" << func_index + i << " = " << tbasis[i]->tex_formula() << std::endl;
-    }
-    out << "\n\n" << std::flush;
-
   }
 
   /// \brief Print IntegralCluster orbits

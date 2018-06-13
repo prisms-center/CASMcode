@@ -90,8 +90,10 @@ namespace CASM {
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
-    /// - For instance, translate a cluster so comparison may be
-    ///   performed more efficiently.
+    /// - For instance, translate a cluster so comparison may be performed more efficiently.
+    /// - The transformation that is applied is stored and available as `spatial_transform`
+    /// - The `spatial_transform` is also included in the symmetry operations stored in the
+    ///   Orbit equivalence_map (i.e. equivalence_map_element = spatial_transform * generating_group_op)
     /// - Returns pair such that pair.first = apply_sym(pair.second, obj)
     ///
     Element spatial_prepare(Element obj) const {

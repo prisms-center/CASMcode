@@ -79,6 +79,10 @@ namespace CASM {
       return m_basis;
     }
 
+    const CoordType &basis(Index i) const {
+      return m_basis[i];
+    }
+
     Array<CoordType> &set_basis() {
       return m_basis;
     }

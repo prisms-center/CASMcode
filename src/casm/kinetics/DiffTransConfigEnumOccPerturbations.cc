@@ -648,10 +648,11 @@ namespace CASM {
 
       /// Applies current perturbation to m_base_config and stores result in m_current
       void DiffTransConfigEnumOccPerturbations::_set_current(const OccPerturbation &perturb) {
+      */
 
       // generate perturbed from_config
       Configuration perturbed_from_config {m_base_it->config};
-      perturb.apply_to(perturbed_from_config);
+      m_curr.perturb.apply_to(perturbed_from_config);
       // here we use the group of operations that leaves the diff_trans invariant,
       // and not necessarily the from_config, to find the canonical perturbed from_config
 

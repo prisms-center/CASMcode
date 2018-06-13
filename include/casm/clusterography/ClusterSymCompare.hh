@@ -140,7 +140,7 @@ namespace CASM {
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
-    /// - For aperiodic casses, no isometric transformations are allowed, so apply and return identity
+    /// - For aperiodic cases, no isometric transformations are allowed, so apply and return identity
     Element spatial_prepare_impl(Element obj) const;
 
 

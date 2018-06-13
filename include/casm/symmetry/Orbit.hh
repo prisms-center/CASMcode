@@ -29,6 +29,14 @@ namespace CASM {
   /// includes any necessary tolerance for floating point comparison. See `SymCompare`
   /// for how to implement the necessary methods.
   ///
+  /// The following relationships will be valid:
+  ///    element(i) = copy_apply(equivalence_map()[i][j], prototype()), for all j < equivalence_map()[i].size()
+  ///    equivalence_map()[i][j] = t * g;
+  ///      where g is a generating group element,
+  ///      and t is the "spatial_transform" defined by the SymCompareType for equivalent elements such that:
+  ///    sym_compare.representation_prepare(element(i)) ==
+  ///      copy_apply(t, sym_compare.representation_prepare(copy_apply(g, prototype)))
+  ///
   /// \ingroup Clusterography
   ///
   template<typename _Element, typename _SymCompareType>
@@ -74,16 +82,22 @@ namespace CASM {
     }
 
     /// \brief Return Element at index, without bounds checking
+    ///
+    /// - May not be prepared
     const Element &operator[](size_type index) const {
       return element(index);
     }
 
     /// \brief Equivalent to operator[](size_type index) const
+    ///
+    /// - May not be prepared
     const Element &element(size_type index) const {
       return m_element[index];
     }
 
     /// \brief const Access vector of Element
+    ///
+    /// - May not be prepared
     const std::vector<Element> &elements() const {
       return m_element;
     }
@@ -159,7 +173,8 @@ namespace CASM {
                     SymOpIterator begin,
                     SymOpIterator end);
 
-    /// \brief All symmetrically equivalent elements (excluding translations)
+    /// \brief All symmetrically equivalent elements (excluding those that SymCompare equivalent)
+    ///
     std::vector<Element> m_element;
 
     /// \brief element(i) compares equivalent to prototype().copy_apply(m_equivalence_map[i][j]) for all j

@@ -485,7 +485,7 @@ namespace CASM {
 
   const std::string Printer<IntegralCluster>::element_name = "Clusters";
 
-  void Printer<IntegralCluster>::print(const IntegralCluster &clust, Log &out) {
+  void Printer<IntegralCluster>::print(const IntegralCluster &clust, Log &out) const {
     if(!out.print()) {
       return;
     }
@@ -719,4 +719,3 @@ namespace CASM {
 
   DIFFTRANS_VECTOR_INST(PrimPeriodicDiffTransOrbit)
 }
-

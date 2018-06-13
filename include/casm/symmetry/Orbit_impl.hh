@@ -66,13 +66,6 @@ namespace CASM {
           for(Index b = 0; b < tmp_eq_map.size(); ++b) {
             map.emplace(a, b, tmp_eq_map, g);
           }
-          //col.resize(map.begin()->values.size());
-          //for(const auto &row : map) {
-          //Index c = 0;
-          //for(const auto &val : row.values) {
-          //  col[c++].push_back(val);
-          //}
-          //}
         }
         catch(const std::exception &e) {
           default_err_log() << "Error in GenericOrbit constructor: \n"
@@ -83,7 +76,6 @@ namespace CASM {
 
       Index a; // 'a' in tmp_eq_map[a]
       std::set<EqMapRow> map;  // equivalence_map for b, relative to a
-      //std::vector<std::vector<Index>> col; // equivalence_map as columns
 
       bool operator<(const RelEqMap &other) const {
         return this->map < other.map;
@@ -209,7 +201,6 @@ namespace CASM {
       //Loop over equivalents 'i'
       for(const auto &row : best.map) {
 
-
         //Index of group element that maps proto to equiv 'i'
         Index proto2i = *(row.values.begin());
 
@@ -229,7 +220,6 @@ namespace CASM {
           m_equivalence_map.back().push_back(ttrans * g[value]);
 
         }
-        ++row_i;
       }
     }
     catch(const std::exception &e) {

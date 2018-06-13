@@ -188,7 +188,7 @@ namespace CASM {
     for(const auto &op : g) {
       auto tmp = sym_compare.prepare(copy_apply(op, *phenom));
       if(sym_compare.equal(tmp, _test)) {
-        return std::make_pair(true, sym_compare.translation(test.prim()) * op);
+        return std::make_pair(true, sym_compare.spatial_transform() * op);
       }
     }
     return std::make_pair(false, g[0]);
@@ -205,7 +205,7 @@ namespace CASM {
     for(auto it = begin; it != end; ++it) {
       auto tmp = sym_compare.prepare(copy_apply(it, *phenom));
       if(sym_compare.equal(tmp, _test)) {
-        return std::make_pair(true, sym_compare.translation(test.prim()) * it.sym_op());
+        return std::make_pair(true, sym_compare.spatial_transform() * it.sym_op());
       }
     }
     return std::make_pair(false, begin.sym_op());
@@ -222,7 +222,7 @@ namespace CASM {
     for(auto it = begin; it != end; ++it) {
       auto tmp = sym_compare.prepare(copy_apply(*it, *phenom));
       if(sym_compare.equal(tmp, _test)) {
-        return std::make_pair(true, sym_compare.translation(test.prim()) * it->sym_op());
+        return std::make_pair(true, sym_compare.spatial_transform() * it->sym_op());
       }
     }
     return std::make_pair(false, begin->sym_op());

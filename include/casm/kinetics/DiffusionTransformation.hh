@@ -25,7 +25,7 @@ namespace CASM {
   namespace Kinetics {
 
     /// \brief Specifies a particular species
-    /// A SpeciesLocation object describes a particular specie at a specific
+    /// A SpeciesLocation object describes a particular species at a specific
     /// lattice + basis site within the infinite crystal
     /// contains the UnitCellCoord (b, i, j, k) and occupant index (integer describing
     /// configurational degrees of freedom)
@@ -81,28 +81,28 @@ namespace CASM {
     /// one site to another within the infinite crystal
     /// it contains two SpeciesLocations from and to representing the initial and
     /// final site the species is found on. Both SpecieLocation objects should
-    /// have the same Specie Information (a single atom is moving)
-    class SpecieTrajectory : public Comparisons<CRTPBase<SpecieTrajectory>> {
+    /// have the same Species Information (a single atom is moving)
+    class SpeciesTrajectory : public Comparisons<CRTPBase<SpeciesTrajectory>> {
 
     public:
-      /// Constructor Creates SpecieTrajectory from two SpecieLocation objects
+      /// Constructor Creates SpeciesTrajectory from two SpecieLocation objects
       /// SpecieLocation objects should have the same Specie information
       /// transforming a Ni into an Al does not make sense
-      SpecieTrajectory(const SpeciesLocation &_from, const SpeciesLocation &_to);
+      SpeciesTrajectory(const SpeciesLocation &_from, const SpeciesLocation &_to);
 
-      /// Rigidly shifts all sites within a SpecieTrajectory
+      /// Rigidly shifts all sites within a SpeciesTrajectory
       /// by a lattice translation
-      SpecieTrajectory &operator+=(UnitCell frac);
+      SpeciesTrajectory &operator+=(UnitCell frac);
 
       /// Rigidly shifts (negatively) all sites within a
-      /// SpecieTrajectory by a lattice translation
-      SpecieTrajectory &operator-=(UnitCell frac);
+      /// SpeciesTrajectory by a lattice translation
+      SpeciesTrajectory &operator-=(UnitCell frac);
 
       /// Tells whether or not the SpeciesTrajectory is valid due to
       /// having the same Species moving
       bool species_types_map() const;
 
-      /// Tells whether or not the SpecieTrajectory is moving a species or not
+      /// Tells whether or not the SpeciesTrajectory is moving a species or not
       /// true indicates the trajectory is useless
       bool is_no_change() const;
 
@@ -111,17 +111,17 @@ namespace CASM {
       /// \brief Gives the ending coordinate of the specie moving
       UnitCellCoord to_loc() const;
       /// \brief Gives the name of the specie moving
-      AtomSpecie specie() const;
+      AtomSpecies species() const;
 
 
-      SpecieLocation from;
-      SpecieLocation to;
+      SpeciesLocation from;
+      SpeciesLocation to;
 
       /// Lexicographical comparison of SpecieTrajectories for sorting purposes
-      bool operator<(const SpecieTrajectory &B) const;
+      bool operator<(const SpeciesTrajectory &B) const;
 
       /// Apply symmetry to locations within the trajectory
-      SpecieTrajectory &apply_sym(const SymOp &op);
+      SpeciesTrajectory &apply_sym(const SymOp &op);
 
       /// Swaps the direction of the trajectory
       void reverse();
@@ -133,15 +133,15 @@ namespace CASM {
     };
   }
 
-  jsonParser &to_json(const Kinetics::SpecieTrajectory &traj, jsonParser &json);
+  jsonParser &to_json(const Kinetics::SpeciesTrajectory &traj, jsonParser &json);
 
   template<>
-  struct jsonConstructor<Kinetics::SpecieTrajectory> {
+  struct jsonConstructor<Kinetics::SpeciesTrajectory> {
 
-    static Kinetics::SpecieTrajectory from_json(const jsonParser &json, const Structure &prim);
+    static Kinetics::SpeciesTrajectory from_json(const jsonParser &json, const Structure &prim);
   };
 
-  void from_json(Kinetics::SpecieTrajectory &traj, const jsonParser &json);
+  void from_json(Kinetics::SpeciesTrajectory &traj, const jsonParser &json);
 
 
   namespace Kinetics {
@@ -236,12 +236,12 @@ namespace CASM {
       /// Const access to OccupationTransformation vector
       /// (view point of sites and species moving through them)
       const std::vector<OccupationTransformation> &occ_transform() const;
-      /// Non-const access to SpecieTrajectory vector
+      /// Non-const access to SpeciesTrajectory vector
       /// (view point of tracking a single species and locations it moves through)
-      std::vector<SpecieTrajectory> &species_traj();
-      /// Const access to SpecieTrajectory vector
+      std::vector<SpeciesTrajectory> &species_traj();
+      /// Const access to SpeciesTrajectory vector
       /// (view point of tracking a single species and locations it moves through)
-      const std::vector<SpecieTrajectory> &species_traj() const;
+      const std::vector<SpeciesTrajectory> &species_traj() const;
       /// Gives the cluster (sites only) that this Diffusion Transformation
       /// lives on
       const IntegralCluster &cluster() const;
@@ -308,7 +308,7 @@ namespace CASM {
       const Structure *m_prim_ptr;
 
       std::vector<OccupationTransformation> m_occ_transform;
-      std::vector<SpecieTrajectory> m_species_traj;
+      std::vector<SpeciesTrajectory> m_species_traj;
 
       // stores IntegralCluster, based on occ_transform uccoord
       mutable notstd::cloneable_ptr<IntegralCluster> m_cluster;

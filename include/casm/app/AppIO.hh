@@ -156,21 +156,21 @@ namespace CASM {
 
     void coord_type(Log &out);
 
-    void increase_indent(Log &out) {
+    void increase_indent(Log &out) const {
       out.increase_indent_spaces(opt.indent_space);
     }
-    void decrease_indent(Log &out) {
+    void decrease_indent(Log &out) const {
       out.decrease_indent_spaces(opt.indent_space);
     }
 
     template<typename OrbitType>
-    void print_equivalence_map(const OrbitType &orbit, Index equiv_index, Log &out);
+    void print_equivalence_map(const OrbitType &orbit, Index equiv_index, Log &out) const;
 
     template<typename OrbitType>
-    void print_equivalence_map(const OrbitType &orbit, Log &out);
+    void print_equivalence_map(const OrbitType &orbit, Log &out) const;
 
     template<typename OrbitType, typename Element>
-    void print_invariant_group(const OrbitType &orbit, const Element &element, Log &out);
+    void print_invariant_group(const OrbitType &orbit, const Element &element, Log &out) const;
 
   };
 
@@ -182,7 +182,7 @@ namespace CASM {
     Printer(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
       PrinterBase(_opt) {}
 
-    void print(const Element &element, Log &out) {
+    void print(const Element &element, Log &out) const {
       COORD_MODE printer_mode(opt.coord_type);
       out << element;
     }
@@ -197,7 +197,7 @@ namespace CASM {
     Printer(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
       PrinterBase(_opt) {}
 
-    void print(const Element &element, Log &out);
+    void print(const Element &element, Log &out) const;
   };
 
   typedef Printer<IntegralCluster> SitesPrinter;
@@ -217,10 +217,10 @@ namespace CASM {
 
 
     template<typename OrbitType>
-    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits);
+    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const;
 
     template<typename OrbitType>
-    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits);
+    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const;
   };
 
   template<typename _Element>
@@ -240,10 +240,10 @@ namespace CASM {
 
 
     template<typename OrbitType>
-    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits);
+    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const;
 
     template<typename OrbitType>
-    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits);
+    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const;
   };
 
   template<typename _Element>
@@ -264,10 +264,10 @@ namespace CASM {
     ///
     /// Note: for 'read_clust' to work, "prototype" must be written
     template<typename OrbitType>
-    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits);
+    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const;
 
     template<typename OrbitType>
-    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits);
+    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const;
 
   };
 
@@ -289,13 +289,14 @@ namespace CASM {
     Log &out,
     const OrbitPrinterOptions &opt = OrbitPrinterOptions());
 
-  /// \brief Print site basis functions, as for 'casm bset --functions'
-  void print_site_basis_funcs(
-    ClusterOrbitIterator begin,
-    ClusterOrbitIterator end,
-    const ClexBasis &clex_basis,
-    Log &out,
-    COORD_TYPE mode);
+  // /// \brief Print site basis functions, as for 'casm bset --functions'
+  // template<typename ClusterOrbitIterator>
+  // void print_site_basis_funcs(
+  //   ClusterOrbitIterator begin,
+  //   ClusterOrbitIterator end,
+  //   const ClexBasis &clex_basis,
+  //   Log &out,
+  //   COORD_TYPE mode);
 
   /// \brief Print site basis functions, as for 'casm bset --functions'
   void print_site_basis_funcs(
