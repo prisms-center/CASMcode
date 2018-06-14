@@ -81,7 +81,7 @@ namespace CASM {
 
     // transform using stored SymBasisPermute representation
     const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID());
-    unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell() + lround(unit().lattice().inv_lat_column_mat() * op.integral_tau());
+    unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell();
     sublat() = rep[sublat()].sublat();
 
     // additional translations (such as needed for supercell factor groups),
@@ -127,4 +127,3 @@ namespace CASM {
     return;
   }
 }
-

@@ -175,20 +175,10 @@ namespace CASM {
     try {
       for(Index a = 1; a < tmp_equivalence_map.size(); ++a) {
         Orbit_impl::RelEqMap test(a, tmp_equivalence_map, g);
-
-        std::cout << "\n\nBEST:\n" << best << "\n" << tmp_element[best_a] << "TEST:\n" << test <<  "\n" << tmp_element[a] << "\n";
         if(test < best) {
           best_a = a;
           best = std::move(test);
-          std::cout << "++ TEST IS BETTER THAN BEST\n";
         }
-        else if(best < test)
-          std::cout << "-- BEST IS BETTER THAN TEST\n";
-        else
-          std::cout << "== BEST IS EQUAL TO TEST\n";
-
-
-
       }
     }
     catch(const std::exception &e) {

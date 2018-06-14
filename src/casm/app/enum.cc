@@ -15,7 +15,9 @@
 namespace CASM {
   namespace Completer {
 
-    EnumOption::EnumOption(): OptionHandlerBase("enum") {}
+    EnumOption::EnumOption(): OptionHandlerBase("enum") {
+      initialize();
+    }
 
     void EnumOption::initialize() {
       bool required = false;
@@ -207,4 +209,3 @@ namespace CASM {
   }
 
 }
-
