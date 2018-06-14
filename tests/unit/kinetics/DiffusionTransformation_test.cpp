@@ -14,6 +14,7 @@
 #include "casm/app/enum.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/casm_io/jsonFile.hh"
+#include "casm/casm_io/stream_io/container.hh"
 
 using namespace CASM;
 using namespace test;
@@ -564,47 +565,48 @@ BOOST_AUTO_TEST_CASE(EnumTest1) {
   proj.check_init();
   proj.check_composition();
 
-  default_log().set_verbosity(Log::verbose);
-  PrimClex primclex(proj.dir, default_log());
+  auto &log = null_log();
+  log.set_verbosity(Log::verbose);
+  PrimClex primclex(proj.dir, null_log());
 
-  default_log().custom("Prim");
+  log.custom("Prim");
   jsonParser tjson;
   write_prim(primclex.prim(), tjson, FRAC);
-  default_log() << tjson << std::endl << std::endl;
+  log << tjson << std::endl << std::endl;
   write_prim(primclex.prim(), tjson, CART);
-  default_log() << tjson << std::endl;
+  log << tjson << std::endl;
 
   SymInfoOptions opt;
 
   opt.coord_type = FRAC;
-  default_log().custom("Prim factor group (FRAC)");
-  description(default_log(), primclex.prim().factor_group(), primclex.prim().lattice(), opt);
-  default_log() << std::endl;
+  log.custom("Prim factor group (FRAC)");
+  description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
 
   opt.coord_type = CART;
-  default_log().custom("Prim factor group (CART)");
-  description(default_log(), primclex.prim().factor_group(), primclex.prim().lattice(), opt);
-  default_log() << std::endl;
+  log.custom("Prim factor group (CART)");
+  description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
 
   opt.prec = 5;
   opt.coord_type = FRAC;
-  default_log().custom("Prim factor group (brief FRAC)");
-  brief_description(default_log(), primclex.prim().factor_group(), primclex.prim().lattice(), opt);
-  default_log() << std::endl;
+  log.custom("Prim factor group (brief FRAC)");
+  brief_description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
 
   opt.coord_type = CART;
-  default_log().custom("Prim factor group (brief CART)");
-  brief_description(default_log(), primclex.prim().factor_group(), primclex.prim().lattice(), opt);
-  default_log() << std::endl;
+  log.custom("Prim factor group (brief CART)");
+  brief_description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
 
-  default_log().custom(Kinetics::DiffusionTransformationEnum::enumerator_name + " interface help");
-  default_log() << Kinetics::DiffusionTransformationEnum::interface_help() << std::endl;
+  log.custom(Kinetics::DiffusionTransformationEnum::enumerator_name + " interface help");
+  log << Kinetics::DiffusionTransformationEnum::interface_help() << std::endl;
 
-  default_log().custom("OrbitPrinterOptionsParser standard help");
-  default_log() << OrbitPrinterOptionsParser::standard_help() << std::endl;
+  log.custom("OrbitPrinterOptionsParser standard help");
+  log << OrbitPrinterOptionsParser::standard_help() << std::endl;
 
-  default_log().custom("SymInfoOptionsParser interface help");
-  default_log() << SymInfoOptionsParser::standard_help() << std::endl;
+  log.custom("SymInfoOptionsParser interface help");
+  log << SymInfoOptionsParser::standard_help() << std::endl;
 
 
   jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
@@ -624,38 +626,39 @@ BOOST_AUTO_TEST_CASE(EnumTest2) {
   proj.check_init();
   proj.check_composition();
 
-  default_log().set_verbosity(Log::verbose);
-  PrimClex primclex(proj.dir, default_log());
+  auto &log = null_log();
+  log.set_verbosity(Log::verbose);
+  PrimClex primclex(proj.dir, log);
 
-  default_log().custom("Prim");
+  log.custom("Prim");
   jsonParser tjson;
   write_prim(primclex.prim(), tjson, FRAC);
-  default_log() << tjson << std::endl << std::endl;
+  log << tjson << std::endl << std::endl;
   write_prim(primclex.prim(), tjson, CART);
-  default_log() << tjson << std::endl;
+  log << tjson << std::endl;
 
   SymInfoOptions opt;
 
   opt.coord_type = FRAC;
-  default_log().custom("Prim factor group (FRAC)");
-  description(default_log(), primclex.prim().factor_group(), primclex.prim().lattice(), opt);
-  default_log() << std::endl;
+  log.custom("Prim factor group (FRAC)");
+  description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
 
   opt.coord_type = CART;
-  default_log().custom("Prim factor group (CART)");
-  description(default_log(), primclex.prim().factor_group(), primclex.prim().lattice(), opt);
-  default_log() << std::endl;
+  log.custom("Prim factor group (CART)");
+  description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
 
   opt.prec = 5;
   opt.coord_type = FRAC;
-  default_log().custom("Prim factor group (brief FRAC)");
-  brief_description(default_log(), primclex.prim().factor_group(), primclex.prim().lattice(), opt);
-  default_log() << std::endl;
+  log.custom("Prim factor group (brief FRAC)");
+  brief_description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
 
   opt.coord_type = CART;
-  default_log().custom("Prim factor group (brief CART)");
-  brief_description(default_log(), primclex.prim().factor_group(), primclex.prim().lattice(), opt);
-  default_log() << std::endl;
+  log.custom("Prim factor group (brief CART)");
+  brief_description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
 
 
   jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_err_0.json"};

@@ -50,16 +50,14 @@ namespace CASM {
                                    _primclex, _primclex.prim().factor_group(), sym_compare, input, relpath("cspecs"), true);
 
       // check "require" and "exclude"
-      this->kwargs["require"] = m_require =
-                                  std::make_shared<SpeciesSetParser>(
-                                    _primclex, ALLOWED_SPECIES_TYPES::ALL, "require", input, relpath("require"), false);
+      this->kwargs["require"] = m_require = std::make_shared<SpeciesSetParser>(
+                                              _primclex, ALLOWED_SPECIES_TYPES::ALL, "require", input, relpath("require"), false);
 
-      this->kwargs["exclude"] = m_exclude =
-                                  std::make_shared<SpeciesSetParser>(
-                                    _primclex, ALLOWED_SPECIES_TYPES::ALL, "exclude", input, relpath("exclude"), false);
+      this->kwargs["exclude"] = m_exclude = std::make_shared<SpeciesSetParser>(
+                                              _primclex, ALLOWED_SPECIES_TYPES::ALL, "exclude", input, relpath("exclude"), false);
 
-      this->kwargs["orbit_printer_opt"] = m_orbit_printer_opt_parser =
-                                            std::make_shared<OrbitPrinterOptionsParser>(_primclex, input, _enum_opt, relpath("orbit_printer_opt"), false);
+      this->kwargs["orbit_printer_opt"] = m_orbit_printer_opt_parser = std::make_shared<OrbitPrinterOptionsParser>(
+                                                                         _primclex, input, _enum_opt, relpath("orbit_printer_opt"), false);
 
       // check values for optional dry_run, coordinate_mode
       warn_unnecessary(expected());
