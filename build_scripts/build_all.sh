@@ -49,6 +49,7 @@ echo "  (metapackage) casm "$CASM_CONDA_VERSION
 echo
 echo "using: "
 echo "  c/c++/fortran:"
+echo "    "$CASM_CONDACLANG_BUILD_STR" ([clang|clangxx|gfortran]_osx-64"$CASM_CONDACLANG_VERSION")"
 echo "    "$CASM_XCODE_BUILD_STR" (xcode"$CASM_XCODE_VERSION")"
 echo "    "$CASM_CONDAGCC_BUILD_STR" (g[cc|xx|fortran]_linux-64 "$CASM_CONDAGCC_VERSION"*)"
 echo "    "$CASM_DEVTOOLSET_BUILD_STR" (devtoolset-"$CASM_DEVTOOLSET_VERSION")"
@@ -68,11 +69,11 @@ then
 fi
 
 ### Build base docker images for building linux conda packages
-build_docker "casm-build" "condagcc" \
+build_docker "casm-base" "condagcc" \
 "--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
 "--build-arg CONDAGCC_VERSION=$CASM_CONDAGCC_VERSION" 
 
-build_docker "casm-build" "devtoolset" \
+build_docker "casm-base" "devtoolset" \
 "--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
 "--build-arg DEVTOOLSET_VERSION=$CASM_DEVTOOLSET_VERSION" 
 
@@ -87,12 +88,18 @@ linux_build_casm_python
 linux_build_conda "condagcc"
 linux_build_conda "devtoolset"
 
-### Build casm docker images
-build_docker "casm" "condagcc" \
-"--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
-"--build-arg CONDAGCC_VERSION=$CASM_CONDAGCC_VERSION" 
+### Build docker images w/boost for build tests
+COMMON_ARGS="--build-arg CASM_BRANCH=$CASM_BRANCH "\
+"--build-arg CASM_CONDA_VERSION=$CASM_CONDA_VERSION "\
+"--build-arg CASM_PYTHON_VERSION=$CASM_PYTHON_VERSION "\
+"--build-arg CASM_BOOST_VERSION=$CASM_BOOST_VERSION "\
+"--build-arg CASM_CONDA_CHANNEL=$CASM_CONDA_CHANNEL "
 
-build_docker "casm" "devtoolset" \
-"--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
-"--build-arg DEVTOOLSET_VERSION=$CASM_DEVTOOLSET_VERSION" 
+BUILD_ARGS=$COMMON_ARGS\
+"--build-arg CASM_BOOST_CONDAGCC_BUILD_STR=$CASM_BOOST_CONDAGCC_BUILD_STR "
+build_docker "casm-test" "condagcc" "$BUILD_ARGS"
+
+BUILD_ARGS=$COMMON_ARGS\
+"--build-arg CASM_BOOST_DEVTOOLSET_BUILD_STR=$CASM_BOOST_DEVTOOLSET_BUILD_STR "
+build_docker "casm-test" "devtoolset" "$BUILD_ARGS"
 

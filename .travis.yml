@@ -12,20 +12,7 @@ matrix:
           sources:
           - ubuntu-toolchain-r-test
           packages:
-          - gcc-4.8
-          - g++-4.8
-          # boost1.54
-          - libboost-all-dev
-          - autoconf-archive
           - bash-completion
-      env:
-        - CC=gcc-4.8
-        - CXX=g++-4.8
-        
-        # set environment variables for boost
-        - CASM_BOOST_INCLUDEDIR="/usr/include/"
-        - CASM_BOOST_LIBDIR="/usr/lib/x86_64-linux-gnu/"
-        - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
 
     - os: osx
       compiler: clang
@@ -37,16 +24,28 @@ before_install:
 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
         CASM_NCPU=2;
+        bash install_miniconda-linux.sh;
+        export PATH=$HOME/.local/conda/bin:$PATH;
+        conda create -c prisms-center -c bpuchala/label/dev -c defaults -c conda-forge -y -n casm 
+          "python =3"
+          "casm-boost 1.66.0 condagcc_0"
+          "m4 >=1.4.18"
+          autoconf
+          automake
+          libtool
+          pkg-config
+          wget
+          bzip2
+          six;
+        source activate casm
         . /usr/share/bash-completion/bash_completion;
-        CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations";
-        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR --with-boost-libdir=$CASM_BOOST_LIBDIR";
+        CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations";
+        CONFIGFLAGS="--prefix=$CONDA_PREFIX ";
+        CONFIGFLAGS+="--with-zlib=$CONDA_PREFIX ";
+        CONFIGFLAGS+="--with-bash-completion-dir=$BASH_COMPLETION_DIR ";
+        CONFIGFLAGS+="--with-boost-libdir=$CONDA_PREFIX/lib";
     fi
   
-  # boost1.61 is installed at /usr/local
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew update;
-      brew list;
-    fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         brew install bash-completion autoconf-archive;
         CASM_NCPU=2;
@@ -55,21 +54,19 @@ before_install:
         CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR";
     fi
   
+  # check env
+  - printenv
+  
   # check g++ version
-  - g++ --version
+  - $GXX --version
   
   # check python
   - python --version
   - python -c "import sys; print sys.path"
   
   # upgrade pip and install testing requirements
-  - export PATH=`python -m site --user-site`/../../../bin:$PATH
-  - pip install --upgrade pip
-  - pip install --user -r python/casm/test_requirements.txt
-  
-  # check env
-  - printenv
-  
+  - pip install -r python/casm/test_requirements.txt
+
 
 script: 
   - set -e
@@ -83,5 +80,5 @@ script:
 
   # Python
   - cd python/casm
-  - pip install --user .
+  - pip install .
   - pytest -r ap -s test_casm

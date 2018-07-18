@@ -46,6 +46,7 @@ conda_dev_version () {
   echo $S
 }
 
-export CASM_CONDA_VERSION=$(conda_dev_version) # choose $(conda_dev_version) or "X.Y.Z"
+export CASM_CONDA_VERSION="0.3.dev132+g5e2a68" #$(conda_dev_version) # choose $(conda_dev_version) or "X.Y.Z"
 export CASM_CONDA_LABEL="dev"  # choose "dev" or "main"
-
+export CASM_CONDA_CHANNEL="$CASM_CONDA_ID_USER/label/$CASM_CONDA_LABEL"
+    

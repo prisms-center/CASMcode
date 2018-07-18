@@ -16,8 +16,7 @@ build_conda_package () {
     echo "!! building: "$1" "$3" feature="$2" build="$4" python="$CASM_PYTHON_VERSION" ..."
     echo
     
-    BUILD_FLAGS="--override-channels "
-    BUILD_FLAGS+="-c $CASM_CONDA_ID_USER/label/$CASM_CONDA_LABEL "
+    BUILD_FLAGS="--override-channels -c $CASM_CONDA_CHANNEL "
     BUILD_FLAGS+="-c defaults -c conda-forge -c prisms-center "
     BUILD_FLAGS+="--python $CASM_PYTHON_VERSION "
     
@@ -48,8 +47,6 @@ build_conda_all () {
 
 # build conda-recipes/casm-python/linux using Docker container $DOCKER_ID_USER/casm-build-condagcc:$CASM_CONDA_VERSION
 linux_build_casm_python () {
-  echo "anaconda login"
-  anaconda login --username $CASM_CONDA_ID_USER
   CASM_GIT_DIR_INSIDE="/home/casmuser/CASMcode"
   CASM_CONDA_TOKEN_DIR_INSIDE="/home/casmuser/tokens/anaconda"
   docker run --rm -it \
@@ -66,8 +63,6 @@ linux_build_casm_python () {
 
 # build conda-recipes/*/$1 using Docker container $DOCKER_ID_USER/casm-build-$1:$CASM_CONDA_VERSION
 linux_build_conda () {
-  echo "anaconda login"
-  anaconda login --username $CASM_CONDA_ID_USER
   CASM_GIT_DIR_INSIDE="/home/casmuser/CASMcode"
   CASM_CONDA_TOKEN_DIR_INSIDE="/home/casmuser/tokens/anaconda"
   docker run --rm -it \
@@ -95,21 +90,23 @@ osx_build_conda () {
   export NCPUS=$CASM_DOCKER_NCPUS
 }
 
-# build Docker image $DOCKER_ID_USER/$1-$2:$CASM_CONDA_VERSION from docker/$1/$2/Dockerfile,
+# build Docker image $DOCKER_ID_USER/$1:$CASM_BRANCH_$2 from docker/$1/$2/Dockerfile,
 # use a third argument to pass other args
 build_docker () {
-  docker build $CASM_GIT_DIR/docker/$1/$2 $3 -t $CASM_DOCKER_ID_USER/$1-$2:$CASM_BRANCH
+  echo "docker build $CASM_GIT_DIR/docker/$1/$2 $3 -t $CASM_DOCKER_ID_USER/$1:$CASM_BRANCH"_"$2" 
+  echo "\$3: "$3
+  docker build $CASM_GIT_DIR/docker/$1/$2 $3 -t $CASM_DOCKER_ID_USER/$1:$CASM_BRANCH"_"$2
 }
 
-# push Docker image from $DOCKER_ID_USER/$1-$2:$CASM_CONDA_VERSION
+# push Docker image from $DOCKER_ID_USER/$1:$CASM_BRANCH"_"$2
 push_docker () {
-  docker push $CASM_DOCKER_ID_USER/$1-$2:$CASM_BRANCH
+  docker push $CASM_DOCKER_ID_USER/$1:$CASM_BRANCH"_"$2
 }
 
-# build and push docker image $DOCKER_ID_USER/$1-$2:$CASM_CONDA_VERSION from docker/$1/$2/Dockerfile
+# build and push docker image $DOCKER_ID_USER/$1:$CASM_BRANCH"_"$2 from docker/$1/$2/Dockerfile
 build_and_push_docker () {
-  build_docker $1 $2 $3
-  push_docker $1 $2
+  build_docker "$1" "$2" "$3"
+  push_docker "$1" "$2"
 }
 
 
