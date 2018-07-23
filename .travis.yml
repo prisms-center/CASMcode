@@ -37,4 +37,4 @@ install:
 
 
 script:
-  - $TRAVIS_BUILD_DIR/build_scripts/travis-install-$TRAVIS_OS_NAME.sh
+  - source $TRAVIS_BUILD_DIR/build_scripts/travis-script-$TRAVIS_OS_NAME.sh
