@@ -2,6 +2,11 @@ sudo: false
 
 language: cpp
 
+cache:
+  - ccache
+  diretories:
+    - $HOME/.local/conda
+
 matrix:
   include:
     - os: linux
@@ -9,76 +14,27 @@ matrix:
       compiler: gcc
       addons:
         apt:
-          sources:
-          - ubuntu-toolchain-r-test
           packages:
           - bash-completion
+          - curl
 
     - os: osx
       compiler: clang
-      env:
-        - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
-        
 
-before_install:
 
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
-        CASM_NCPU=2;
-        bash install_miniconda-linux.sh;
-        export PATH=$HOME/.local/conda/bin:$PATH;
-        conda create -c prisms-center -c bpuchala/label/dev -c defaults -c conda-forge -y -n casm 
-          "python =3"
-          "casm-boost 1.66.0 condagcc_0"
-          "m4 >=1.4.18"
-          autoconf
-          automake
-          libtool
-          pkg-config
-          wget
-          bzip2
-          six;
-        source activate casm
-        . /usr/share/bash-completion/bash_completion;
-        CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations";
-        CONFIGFLAGS="--prefix=$CONDA_PREFIX ";
-        CONFIGFLAGS+="--with-zlib=$CONDA_PREFIX ";
-        CONFIGFLAGS+="--with-bash-completion-dir=$BASH_COMPLETION_DIR ";
-        CONFIGFLAGS+="--with-boost-libdir=$CONDA_PREFIX/lib";
-    fi
-  
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        brew install bash-completion autoconf-archive;
-        CASM_NCPU=2;
-        . /usr/local/etc/bash_completion;
-        CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations";
-        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR";
-    fi
-  
+install:
+  - source $TRAVIS_BUILD_DIR/build_scripts/travis-install-$TRAVIS_OS_NAME.sh
+
   # check env
   - printenv
-  
+
   # check g++ version
   - $GXX --version
-  
+
   # check python
   - python --version
-  - python -c "import sys; print sys.path"
-  
-  # upgrade pip and install testing requirements
-  - pip install -r python/casm/test_requirements.txt
+  - python -c "import sys; print(sys.path)"
 
 
-script: 
-  - set -e
-  - 'echo "CASM_NCPU: $CASM_NCPU"'
-  
-  # C++ and CLI
-  - ./bootstrap.sh
-  - ./configure CXXFLAGS="${CXXFLAGS}" ${CONFIGFLAGS}
-  - make -j $CASM_NCPU
-  - make check -j $CASM_NCPU
-
-  # Python
-  - cd python/casm
-  - pip install .
-  - pytest -r ap -s test_casm
+script:
+  - $TRAVIS_BUILD_DIR/build_scripts/travis-install-$TRAVIS_OS_NAME.sh
