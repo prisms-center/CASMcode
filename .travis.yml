@@ -3,7 +3,7 @@ sudo: false
 language: cpp
 
 cache:
-  - ccache
+  ccache: true
   diretories:
     - $HOME/.local/conda
 
