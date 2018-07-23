@@ -67,7 +67,7 @@ namespace test {
 [ 2, 0, 0, 0 ],
 [ 2, 3, 0, 0 ]
 ],
-"include_subclusters" : false  
+"include_subclusters" : false
 }
 ]
 })";
@@ -92,7 +92,7 @@ namespace test {
       // check for success with a valid bspecs
       bspecs().write(dir / "basis_sets" / "bset.default" / "bspecs.json");
 
-      m_p.popen(cd_and() + "casm bset -u");
+      m_p.popen(cd_and() + "ccasm bset -u");
       BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
 
       BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*clust\.json)")) == true, m_p.gets());
@@ -111,9 +111,9 @@ namespace test {
       boost::regex re(pattern);
 
       std::vector<std::string> checks = {
-        "casm bset --orbits",
-        "casm bset --clusters",
-        "casm bset --functions"
+        "ccasm bset --orbits",
+        "ccasm bset --clusters",
+        "ccasm bset --functions"
       };
 
       for(auto it = checks.begin(); it != checks.end(); ++it) {
@@ -128,19 +128,19 @@ namespace test {
       }
 
       // check that you can't overwrite without using -f
-      m_p.popen(cd_and() + "casm bset -u");
+      m_p.popen(cd_and() + "ccasm bset -u");
       BOOST_CHECK_EQUAL(m_p.exit_code(), 6);
 
-      m_p.popen(cd_and() + "casm bset -uf");
+      m_p.popen(cd_and() + "ccasm bset -uf");
       BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
 
     }
 
-    /// \brief Check "casm enum"
+    /// \brief Check "ccasm enum"
     void check_enum() override {
 
       {
-        m_p.popen(cd_and() + "casm enum --method ScelEnum --max 10");
+        m_p.popen(cd_and() + "ccasm enum --method ScelEnum --max 10");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
@@ -148,7 +148,7 @@ namespace test {
       }
 
       {
-        m_p.popen(cd_and() + "casm enum --method ConfigEnumAllOccupations --max 6");
+        m_p.popen(cd_and() + "ccasm enum --method ConfigEnumAllOccupations --max 6");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);

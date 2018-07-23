@@ -54,19 +54,19 @@ BOOST_AUTO_TEST_CASE(Test1) {
     return !casm_api(args);
   };
 
-  BOOST_CHECK(check(R"(casm select -h)"));
+  BOOST_CHECK(check(R"(ccasm select -h)"));
 
-  BOOST_CHECK(check(R"(casm select --set-on)"));
+  BOOST_CHECK(check(R"(ccasm select --set-on)"));
 
-  BOOST_CHECK(check(R"(casm query -h p)"));
+  BOOST_CHECK(check(R"(ccasm query -h p)"));
 
-  BOOST_CHECK(check(R"(casm query -k test_comp_n)"));
+  BOOST_CHECK(check(R"(ccasm query -k test_comp_n)"));
 
-  BOOST_CHECK(check(R"(casm query -k 'test_comp_n(Zr)')"));
+  BOOST_CHECK(check(R"(ccasm query -k 'test_comp_n(Zr)')"));
 
-  BOOST_CHECK(check(R"(casm query -k 'test_comp_n(O)')"));
+  BOOST_CHECK(check(R"(ccasm query -k 'test_comp_n(O)')"));
 
-  BOOST_CHECK(check(R"(casm query -k 'test_configname')"));
+  BOOST_CHECK(check(R"(ccasm query -k 'test_configname')"));
 
 }
 

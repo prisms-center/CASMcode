@@ -140,7 +140,7 @@ namespace test {
 
   /// \brief Check that 'casm sym' runs without error
   void Proj::check_symmetry() {
-    m_p.popen(cd_and() + "casm sym");
+    m_p.popen(cd_and() + "ccasm sym");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
   }
 
@@ -155,7 +155,7 @@ namespace test {
     check_symgroup(jsonParser(m_dirs.crystal_point_group()), xtal_pg_op, xtal_pg_class);
     check_symgroup(jsonParser(m_dirs.factor_group()), fg_op, fg_class);
 
-    m_p.popen(cd_and() + "casm sym");
+    m_p.popen(cd_and() + "ccasm sym");
 
     BOOST_CHECK_EQUAL(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Lattice point group is:\s+)" + lat_pg_name)), true);
     BOOST_CHECK_EQUAL(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Crystal point group is:\s+)" + xtal_pg_name)), true);
@@ -163,35 +163,34 @@ namespace test {
 
   /// \brief Default checks '-d' runs without error
   void Proj::check_composition() {
-    m_p.popen(cd_and() + "casm composition -d");
+    m_p.popen(cd_and() + "ccasm composition -d");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
   }
 
   /// \brief Default checks that enumerating supercells and configurations can
   /// be run for '--max 2' without error, but doesn't check results
   void Proj::check_enum() {
-    m_p.popen(cd_and() + "casm enum --method ScelEnum --max 2");
+    m_p.popen(cd_and() + "ccasm enum --method ScelEnum --max 2");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
 
-    m_p.popen(cd_and() + "casm enum --method ConfigEnumAllOccupations --all");
+    m_p.popen(cd_and() + "ccasm enum --method ConfigEnumAllOccupations --all");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
   }
 
   /// \brief Default checks that several options run without error
   void Proj::check_select() {
-    m_p.popen(cd_and() + "casm select --set-on");
+    m_p.popen(cd_and() + "ccasm select --set-on");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
 
-    m_p.popen(cd_and() + "casm select --set-off");
+    m_p.popen(cd_and() + "ccasm select --set-off");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
   }
 
   /// \brief Default checks that several options run without error
   void Proj::check_query() {
-    m_p.popen(cd_and() + "casm query --columns comp");
+    m_p.popen(cd_and() + "ccasm query --columns comp");
     BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
 
   }
 
 }
-
