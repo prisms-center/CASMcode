@@ -28,8 +28,8 @@ install:
   # check env
   - printenv
 
-  # check g++ version
-  - $GXX --version
+  # check compiler version
+  - $CXX --version
 
   # check python
   - python --version
