@@ -74,7 +74,7 @@ namespace CASM {
     struct CompareVertex {
       CompareVertex() {}
 
-      bool operator()(orgQhull::QhullVertex A, orgQhull::QhullVertex B) {
+      bool operator()(orgQhull::QhullVertex A, orgQhull::QhullVertex B) const {
         return A.id() < B.id();
       }
     };
