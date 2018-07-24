@@ -21,6 +21,14 @@ check_python () {
   fi
 }
 
+ldd_check () {
+  if [ -f $1 ]; then
+    ldd $1
+  else
+    echo "does not exist: $1"
+  if
+}
+
 run_checks () {
   printenv
   check_dir $HOME/.ccache
