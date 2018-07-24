@@ -14,7 +14,7 @@ CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-dep
 
 CONFIGFLAGS="--prefix=$CONDA_PREFIX "
 CONFIGFLAGS+="--with-zlib=$CONDA_PREFIX "
-CONFIGFLAGS+="--with-boost=$CONDA_PREFIX "
+CONFIGFLAGS+="--with-boost-libdir=$CONDA_PREFIX/lib "
 CONFIGFLAGS+="--with-bash-completion-dir=$CASM_BASH_COMPLETION_DIR "
 
 CASM_NCPU=2
