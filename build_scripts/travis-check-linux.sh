@@ -26,7 +26,7 @@ ldd_check () {
     ldd $1
   else
     echo "does not exist: $1"
-  if
+  fi
 }
 
 run_checks () {
