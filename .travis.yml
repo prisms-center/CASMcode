@@ -23,15 +23,44 @@ matrix:
 
 
 install:
+
+  - set -e
+  - set -v
+
+  # check env
+  - printenv
+
+  # check caches:
+  - ls $HOME/.ccache
+  - du -h $HOME/.ccache
+  - ls $HOME/.local/conda
+  - du -h $HOME/.local/conda
+
+  # check for pre-installed
+  - which conda
+  - which $CXX
+  - which ccache
+  - which python
+  
   - source $TRAVIS_BUILD_DIR/build_scripts/travis-install-$TRAVIS_OS_NAME.sh
 
   # check env
   - printenv
 
+  # check conda
+  - which conda
+  - conda --version
+
+  # check ccache version
+  - which ccache
+  - ccache --version
+
   # check compiler version
+  - which $CXX
   - $CXX --version
 
   # check python
+  - which python
   - python --version
   - python -c "import sys; print(sys.path)"
 

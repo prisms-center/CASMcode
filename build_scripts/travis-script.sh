@@ -2,7 +2,6 @@
 INIT_DIR=$(pwd)
 cd $TRAVIS_BUILD_DIR
 
-#set -e
 CASM_NCPU=2
 echo "CASM_NCPU: $CASM_NCPU"
 

@@ -12,3 +12,6 @@ CONFIGFLAGS+="--with-bash-completion-dir=${BASH_COMPLETION_DIR:-$BASH_COMPLETION
 CONFIGFLAGS+="--with-boost-libdir=$CONDA_PREFIX/lib"
 
 source $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
+
+# check
+otool -L $TRAVIS_BUILD_DIR/.libs/ccasm
