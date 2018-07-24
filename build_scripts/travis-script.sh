@@ -1,5 +1,3 @@
-set -x
-
 # common script to be called from travis-script-$TRAVIS_OS_NAME.sh
 INIT_DIR=$(pwd)
 cd $TRAVIS_BUILD_DIR

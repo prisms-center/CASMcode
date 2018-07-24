@@ -1,4 +1,3 @@
-set -x
 source $TRAVIS_BUILD_DIR/build_scripts/travis-check-linux.sh
 
 # set variables

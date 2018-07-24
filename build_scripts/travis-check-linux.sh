@@ -23,6 +23,7 @@ check_python () {
 
 ldd_check () {
   if [ -f $1 ]; then
+    echo "ldd $1:"
     ldd $1
   else
     echo "does not exist: $1"
