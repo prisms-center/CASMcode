@@ -1,5 +1,3 @@
-source $TRAVIS_BUILD_DIR/build_scripts/travis-check-linux.sh
-
 # activate conda environment
 source activate casm
 
@@ -23,8 +21,6 @@ echo "CASM_BASH_COMPLETION_DIR: $CASM_BASH_COMPLETION_DIR"
 echo "CXXFLAGS: $CXXFLAGS"
 echo "CONFIGFLAGS: $CONFIGFLAGS"
 
-run_checks
-
 # begin ### build and test #######################
 INIT_DIR=$(pwd)
 cd $TRAVIS_BUILD_DIR
@@ -33,12 +29,6 @@ cd $TRAVIS_BUILD_DIR
 ./bootstrap.sh
 ./configure CXXFLAGS="${CXXFLAGS}" CC="ccache $CC" CXX="ccache $CXX" ${CONFIGFLAGS}
 make -j $CASM_NCPU
-
-# ldd checks ccasm
-ldd_check $TRAVIS_BUILD_DIR/.libs/ccasm
-ldd_check $TRAVIS_BUILD_DIR/.libs/casm-complete
-ldd_check $TRAVIS_BUILD_DIR/.libs/libcasm.so
-ldd_check $TRAVIS_BUILD_DIR/.libs/libccasm.so
 
 make check -j $CASM_NCPU CASM_BOOST_PREFIX="$CONDA_PREFIX"
 if [ $TRAVIS_BUILD_DIR/test-suite.log $1 ]; then
@@ -50,12 +40,6 @@ fi
 
 # used in casm-python tests
 make install
-
-# ldd checks ccasm
-ldd_check $CONDA_PREFIX/bin/ccasm
-ldd_check $CONDA_PREFIX/bin/casm-complete
-ldd_check $CONDA_PREFIX/lib/libcasm.so
-ldd_check $CONDA_PREFIX/lib/libccasm.so
 
 # Python
 cd python/casm
@@ -70,8 +54,6 @@ pytest -r ap -s test_casm
 cd $INIT_DIR
 
 # end ### build and test #######################
-
-run_checks
 
 # source bash-completion scripts
 source $CONDA_PREFIX/.bash_completion

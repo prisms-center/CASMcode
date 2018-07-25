@@ -1,9 +1,5 @@
-source $TRAVIS_BUILD_DIR/build_scripts/travis-check-linux.sh
-
 # set variables
 source $TRAVIS_BUILD_DIR/build_scripts/build_versions.sh
-
-run_checks
 
 # install miniconda
 source $TRAVIS_BUILD_DIR/build_scripts/install-miniconda-linux.sh
@@ -29,5 +25,3 @@ conda create -c prisms-center -c bpuchala/label/dev -c defaults -c conda-forge -
 # pip install testing requirements
 source activate casm
 pip install -r $TRAVIS_BUILD_DIR/python/casm/test_requirements.txt
-
-run_checks
