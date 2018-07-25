@@ -20,6 +20,8 @@ CASM_NCPU=2
 echo "CASM_BASH_COMPLETION_DIR: $CASM_BASH_COMPLETION_DIR"
 echo "CXXFLAGS: $CXXFLAGS"
 echo "CONFIGFLAGS: $CONFIGFLAGS"
+echo "CC: $CC"
+echo "CXX: $CXX"
 
 # begin ### build and test #######################
 INIT_DIR=$(pwd)

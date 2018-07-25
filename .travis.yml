@@ -18,8 +18,8 @@ matrix:
           - bash-completion
           - curl
 
-    # - os: osx
-    #   compiler: clang
+    - os: osx
+      compiler: clang
 
 
 install:
