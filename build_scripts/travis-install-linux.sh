@@ -28,12 +28,15 @@ pip install -r $TRAVIS_BUILD_DIR/python/casm/test_requirements.txt
 
 # If accessible, get CASM test projects data from Materials Commons
 # Tests against the test projects should check for CASM_TEST_PROJECTS_DIR
-if [ -n "$MC_API_KEY" ]; then
-  pip install materials-commons pathlib2 requests python-magic tabulate sortedcontainers
-  export CASM_TEST_PROJECTS_DIR=$TRAVIS_BUILD_DIR/CASM_test_projects \
+if [ -n "$MC_API_KEY" ] && [-n "$CASM_TEST_PROJECTS_ID" ]; then
+  echo "Will download CASM test projects"
+  pip install materials-commons pathlib2 requests python-magic tabulate sortedcontainers \
+    && export CASM_TEST_PROJECTS_DIR=$TRAVIS_BUILD_DIR/CASM_test_projects \
     && python $TRAVIS_BUILD_DIR/build_scripts/write_mc_config.py \
     && mc clone $CASM_TEST_PROJECTS_ID >/dev/null 2>&1 \
     && (cd $CASM_TEST_PROJECTS_DIR && mc down -r 0.3.X)
+    || {echo "download test projects failed"; exit 1;}
 else
+  echo "Will not download CASM test projects"
   unset CASM_TEST_PROJECTS_DIR
 fi

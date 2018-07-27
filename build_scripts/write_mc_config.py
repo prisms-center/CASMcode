@@ -1,6 +1,14 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import json
 import os
+import sys
 from os.path import join, exists, dirname
+
+if 'MC_API_KEY' not in os.environ:
+    print("No MC_API_KEY")
+    sys.exit(0)
 
 config = {
   "apikey": os.environ['MC_API_KEY'],
