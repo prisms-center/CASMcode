@@ -23,39 +23,28 @@ echo "CONFIGFLAGS: $CONFIGFLAGS"
 echo "CC: $CC"
 echo "CXX: $CXX"
 
-# begin ### build and test #######################
-INIT_DIR=$(pwd)
-cd $TRAVIS_BUILD_DIR
+### CASM C++ build and test #######################
 
 # C++ and CLI
-./bootstrap.sh
-./configure CXXFLAGS="${CXXFLAGS}" CC="ccache $CC" CXX="ccache $CXX" ${CONFIGFLAGS}
-make -j $CASM_NCPU
+./bootstrap.sh \
+  && ./configure CXXFLAGS="${CXXFLAGS}" CC="ccache $CC" CXX="ccache $CXX" ${CONFIGFLAGS} \
+  && make -j $CASM_NCPU \
+  || { echo "make failure"; exit 1;}
 
-make check -j $CASM_NCPU CASM_BOOST_PREFIX="$CONDA_PREFIX"
-if [ $TRAVIS_BUILD_DIR/test-suite.log $1 ]; then
-  echo "$TRAVIS_BUILD_DIR/test-suite.log: "
+# Run tests and print output
+if ! make check -j $CASM_NCPU CASM_BOOST_PREFIX="$CONDA_PREFIX"; then
   cat $TRAVIS_BUILD_DIR/test-suite.log
-else
-  echo "does not exist: $TRAVIS_BUILD_DIR/test-suite.log"
+  echo "make check failure"
+  exit 1
 fi
 
-# used in casm-python tests
-make install
 
-# Python
-cd python/casm
-pip install .
+### CASM Python install and test #######################
 
-# skip tests that require a project
-unset CASM_TEST_PROJECTS_DIR
+# Installed CASM is used in casm-python tests
+make install \
+  || { echo "make install failure"; exit 1;}
 
-# run tests
-pytest -r ap -s test_casm
-
-cd $INIT_DIR
-
-# end ### build and test #######################
-
-# source bash-completion scripts
-source $CONDA_PREFIX/.bash_completion
+# Python tests
+pip install $TRAVIS_BUILD_DIR/python/casm \
+  && (cd $TRAVIS_BUILD_DIR/python/casm && pytest -r ap -s test_casm)

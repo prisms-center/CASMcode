@@ -21,9 +21,8 @@ matrix:
     - os: osx
       compiler: clang
 
-
 install:
   - source $TRAVIS_BUILD_DIR/build_scripts/travis-install-$TRAVIS_OS_NAME.sh
 
 script:
-  - source $TRAVIS_BUILD_DIR/build_scripts/travis-script-$TRAVIS_OS_NAME.sh
+  - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script-$TRAVIS_OS_NAME.sh

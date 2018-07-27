@@ -31,7 +31,6 @@ ldd_check () {
 }
 
 run_checks () {
-  printenv
   check_dir $HOME/.ccache
   check_dir $HOME/.local/conda
   check_program conda
