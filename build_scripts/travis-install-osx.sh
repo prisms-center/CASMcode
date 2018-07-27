@@ -35,7 +35,7 @@ if [ -n "$MC_API_KEY" ] && [-n "$CASM_TEST_PROJECTS_ID" ]; then
     && export CASM_TEST_PROJECTS_DIR=$TRAVIS_BUILD_DIR/CASM_test_projects \
     && python $TRAVIS_BUILD_DIR/build_scripts/write_mc_config.py \
     && mc clone $CASM_TEST_PROJECTS_ID >/dev/null 2>&1 \
-    && (cd $CASM_TEST_PROJECTS_DIR && mc down -r 0.3.X)
+    && (cd $CASM_TEST_PROJECTS_DIR && mc down -r 0.3.X) \
     || {echo "download test projects failed"; exit 1;}
 else
   echo "Will not download CASM test projects"
