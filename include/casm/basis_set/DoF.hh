@@ -784,7 +784,7 @@ namespace CASM {
     }
 
     SymGroupRepID const &sym_rep_ID() const {
-      return m_sym_rep_ID;
+      return m_col_rep_ID;
     }
 
     /// \brief Return values of DoFs as a vector
@@ -806,7 +806,8 @@ namespace CASM {
 
   private:
     std::string m_type_name;
-    mutable SymGroupRepID m_sym_rep_ID;
+    mutable SymGroupRepID m_row_rep_ID;
+    mutable SymGroupRepID m_col_rep_ID;
     std::vector<ContinuousDoF> m_components;
     std::set<std::string> m_excluded_occs;
     Eigen::MatrixXd m_coordinate_space;

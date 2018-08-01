@@ -141,6 +141,7 @@ namespace CASM {
     bool visit(Variable &host, BasisSet const *bset_ptr)const;
   };
 
+
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   class SubExpressionLabeler : public FunctionVisitor {
   public:

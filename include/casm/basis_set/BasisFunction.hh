@@ -70,12 +70,14 @@ namespace CASM {
 
     void print(std::ostream &stream) const;
     void print_tex(std::ostream &stream) const;
+
     void set_label_format(const std::string &format) {
       m_label_format = format;
     }
     const std::string &label_format()const {
       return m_label_format;
     }
+
     void set_formula(const std::string &new_formula) {
       m_formula = new_formula;
       m_tex_formula = new_formula;

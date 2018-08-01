@@ -6,6 +6,24 @@
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/misc/CASM_math.hh"
 namespace CASM {
+  std::vector<std::string> parse_label_template(std::string const &_template) {
+    // parse _template into the Array m_sub_strings
+    std::vector<std::string> result;
+    if(_template.size())
+      result.push_back(std::string());
+    for(Index i = 0; i < _template.size(); i++) {
+      if(_template[i] == '%') {
+        if(result.back().size())
+          result.push_back(std::string());
+        result.back() = _template.substr(i, 2);
+        if((++i) + 1 < _template.size())
+          result.push_back(std::string());
+      }
+      else
+        result.back().push_back(_template[i]);
+    }
+    //std::cout << "substring expression: " << result << '\n';
+  }
 
   bool FunctionVisitor::visit(Variable const &host, BasisSet const *bset_ptr)const {
     return this->_generic_visit(host, bset_ptr);
@@ -52,21 +70,7 @@ namespace CASM {
   }
 
   OccFuncLabeler::OccFuncLabeler(const std::string &_template) {
-    // parse _template into the Array m_sub_strings
-    if(_template.size())
-      m_sub_strings.push_back(std::string());
-    for(Index i = 0; i < _template.size(); i++) {
-      if(_template[i] == '%') {
-        if(m_sub_strings.back().size())
-          m_sub_strings.push_back(std::string());
-        m_sub_strings.back() = _template.substr(i, 2);
-        if((++i) + 1 < _template.size())
-          m_sub_strings.push_back(std::string());
-      }
-      else
-        m_sub_strings.back().push_back(_template[i]);
-    }
-    //std::cout << "substring expression: " << m_sub_strings << '\n';
+    m_sub_strings = parse_label_template(_template);
   }
 
   //*******************************************************************************************
@@ -104,24 +108,11 @@ namespace CASM {
     return true;
   }
 
+
   //*******************************************************************************************
 
   VariableLabeler::VariableLabeler(const std::string &_template) {
-    // parse _template into the Array m_sub_strings
-    if(_template.size())
-      m_sub_strings.push_back(std::string());
-    for(Index i = 0; i < _template.size(); i++) {
-      if(_template[i] == '%') {
-        if(m_sub_strings.back().size())
-          m_sub_strings.push_back(std::string());
-        m_sub_strings.back() = _template.substr(i, 2);
-        if((++i) + 1 < _template.size())
-          m_sub_strings.push_back(std::string());
-      }
-      else
-        m_sub_strings.back().push_back(_template[i]);
-    }
-    //std::cout << "substring expression: " << m_sub_strings << '\n';
+    m_sub_strings = parse_label_template(_template);
   }
 
   //*******************************************************************************************
@@ -233,21 +224,7 @@ namespace CASM {
 
   //*******************************************************************************************
   SubExpressionLabeler::SubExpressionLabeler(const std::string &_bset_name, const std::string &_template) : m_bset_name(_bset_name) {
-    // parse _template into the Array m_sub_strings
-    if(_template.size())
-      m_sub_strings.push_back(std::string());
-    for(Index i = 0; i < _template.size(); i++) {
-      if(_template[i] == '%') {
-        if(m_sub_strings.back().size())
-          m_sub_strings.push_back(std::string());
-        m_sub_strings.back() = _template.substr(i, 2);
-        if((++i) + 1 < _template.size())
-          m_sub_strings.push_back(std::string());
-      }
-      else
-        m_sub_strings.back().push_back(_template[i]);
-    }
-    //std::cout << "substring expression: " << m_sub_strings << " and bset_name is " << m_bset_name << '\n';
+    m_sub_strings = parse_label_template(_template);
   }
 
 
