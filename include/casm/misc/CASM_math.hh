@@ -457,11 +457,11 @@ namespace CASM {
     bool within_tol = false;
 
     dub_mat_type tdubs;
-    Index i, j;
     for(Index factor = 1; factor < 1000 && !within_tol; factor++) {
+      Index i, j;
       tdubs = double(factor) * dubs;
-      for(Index i = 0; i < dubs.rows(); i++) {
-        for(Index j = 0; j < dubs.cols(); j++) {
+      for(i = 0; i < dubs.rows(); i++) {
+        for(j = 0; j < dubs.cols(); j++) {
           if(!almost_zero(round(tdubs(i, j)) - tdubs(i, j), _tol))
             break;
         }

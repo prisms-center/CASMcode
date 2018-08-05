@@ -35,7 +35,6 @@ namespace CASM {
   int perturb_command(const CommandArgs &args) {
 
     double tol = CASM::TOL;
-    bool is_trans = false;
     fs::path cspecs_path, abs_cspecs_path;
     fs::path selection;
     COORD_TYPE coordtype = CASM::FRAC;
@@ -43,7 +42,7 @@ namespace CASM {
     std::vector<Index> subgrids;
     std::vector<double> mags;
     std::string strain_mode;
-    Index poly_order;
+    //Index poly_order;
 
     /// Set command line options using boost program_options
     Completer::PerturbOption perturb_opt;
@@ -112,81 +111,81 @@ namespace CASM {
     DirectoryStructure dir(root);
     ProjectSettings set(root);
 
-    if(vm.count("strain")) {
-      StrainConverter sconvert(strain_mode);
-      sconvert.set_symmetrized_sop(primclex.get_prim().point_group());
-
-      Eigen::MatrixXd axes = sconvert.sop_transf_mat();
-      std::vector<Index> mult;
-      std::vector<Eigen::MatrixXd> wedges = sconvert.irreducible_wedges(primclex.get_prim().point_group(), mult);
-
-      Index num_sub = wedges.size();
-
-      BasisSet strain_vars;
-      Array<ContinuousDoF> tvars;
-      for(Index i = 1; i <= 6; i++) {
-        tvars.push_back(ContinuousDoF("E", i, -1e+15, 1e+15));
-        tvars.back().lock_ID();
-      }
-      strain_vars.set_variable_basis(tvars, sconvert.symrep_ID());
-      Eigen::MatrixXd trans_mat(2, 6);
-      trans_mat << 0, 1, 0, 0, 0, 0,
-                0, 0, 1, 0, 0, 0;
-      BasisSet sub_vars(strain_vars.transform_copy(trans_mat));
-      BasisSet poly;
-      for(Index i = 0; i <= poly_order; i++) {
-        BasisSet tmono;
-        tmono.construct_invariant_polynomials(Array<BasisSet const *>(1, &strain_vars), primclex.get_prim().point_group(), i);
-        poly.append(tmono);
-      }
-
-      poly.accept(VariableLabeler("E(:,%n)"));
-      fs::ofstream mfile(root / "poly.m");
-      mfile << "corr =[\n";
-      for(Index i = 0; i < poly.size(); i++) {
-        mfile << "    " << poly[i]->formula();
-        if(i + 1 < poly.size())
-          mfile << ",...";
-        mfile << "\n";
-      }
-      mfile << "];\n";
-      mfile.close();
-      if(num_sub != subgrids.size() || num_sub != mags.size()) {
-        args.log << "Option --strain selected.  Based on crystal symmetry, strains can be independently enumerated in the following subspaces:\n";
-
-        static_cast<std::ostream &>(args.log).precision(8);
-        static_cast<std::ostream &>(args.log).flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-        Index nc = 0;
-        for(Index i = 0; i < num_sub; i++) {
-          args.log << " Subspace " << i + 1 << ":\n";
-          args.log << wedges[i].transpose() << "\n\n";
-        }
-        args.log << "To proceed, you must specify " << num_sub << " values for both '--mag' and '--subgrids'\n";
-        return 1;
-      }
-
-      ConfigSelection<false> config_select;
-      if(!vm.count("config") || selection == "MASTER") {
-        config_select = ConfigSelection<false>(primclex);
-      }
-      else {
-        config_select = ConfigSelection<false>(primclex, selection);
-      }
-
-      args.log << "\n***************************\n" << std::endl;
-
-      args.log << "Generating perturbations about configurations " << std::endl << std::endl;
-
-      bool verbose = false;
-      bool print = true;
-      for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-        Index num_before = (it->get_supercell()).get_config_list().size();
-        ConfigEnumStrain enumerator(it->get_supercell(), *it, subgrids, mags, strain_mode);
-        (it->get_supercell()).add_unique_canon_configs(enumerator.begin(), enumerator.end());
-        args.log << "Enumerated " << (it->get_supercell()).get_config_list().size() - num_before << " deformations.\n";
-      }
-    }
-    else if(vm.count("occ")) {
+    // if(vm.count("strain")) {
+    //   StrainConverter sconvert(strain_mode);
+    //   sconvert.set_symmetrized_sop(primclex.get_prim().point_group());
+    //
+    //   Eigen::MatrixXd axes = sconvert.sop_transf_mat();
+    //   std::vector<Index> mult;
+    //   std::vector<Eigen::MatrixXd> wedges = sconvert.irreducible_wedges(primclex.get_prim().point_group(), mult);
+    //
+    //   Index num_sub = wedges.size();
+    //
+    //   BasisSet strain_vars;
+    //   Array<ContinuousDoF> tvars;
+    //   for(Index i = 1; i <= 6; i++) {
+    //     tvars.push_back(ContinuousDoF("E", i, -1e+15, 1e+15));
+    //     tvars.back().lock_ID();
+    //   }
+    //   strain_vars.set_variable_basis(tvars, sconvert.symrep_ID());
+    //   Eigen::MatrixXd trans_mat(2, 6);
+    //   trans_mat << 0, 1, 0, 0, 0, 0,
+    //             0, 0, 1, 0, 0, 0;
+    //   BasisSet sub_vars(strain_vars.transform_copy(trans_mat));
+    //   BasisSet poly;
+    //   for(Index i = 0; i <= poly_order; i++) {
+    //     BasisSet tmono;
+    //     tmono.construct_invariant_polynomials(Array<BasisSet const *>(1, &strain_vars), primclex.get_prim().point_group(), i);
+    //     poly.append(tmono);
+    //   }
+    //
+    //   poly.accept(VariableLabeler("E(:,%n)"));
+    //   fs::ofstream mfile(root / "poly.m");
+    //   mfile << "corr =[\n";
+    //   for(Index i = 0; i < poly.size(); i++) {
+    //     mfile << "    " << poly[i]->formula();
+    //     if(i + 1 < poly.size())
+    //       mfile << ",...";
+    //     mfile << "\n";
+    //   }
+    //   mfile << "];\n";
+    //   mfile.close();
+    //   if(num_sub != subgrids.size() || num_sub != mags.size()) {
+    //     args.log << "Option --strain selected.  Based on crystal symmetry, strains can be independently enumerated in the following subspaces:\n";
+    //
+    //     static_cast<std::ostream &>(args.log).precision(8);
+    //     static_cast<std::ostream &>(args.log).flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+    //     for(Index i = 0; i < num_sub; i++) {
+    //       args.log << " Subspace " << i + 1 << ":\n";
+    //       args.log << wedges[i].transpose() << "\n\n";
+    //     }
+    //     args.log << "To proceed, you must specify " << num_sub << " values for both '--mag' and '--subgrids'\n";
+    //     return 1;
+    //   }
+    //
+    //   ConfigSelection<false> config_select;
+    //   if(!vm.count("config") || selection == "MASTER") {
+    //     config_select = ConfigSelection<false>(primclex);
+    //   }
+    //   else {
+    //     config_select = ConfigSelection<false>(primclex, selection);
+    //   }
+    //
+    //   args.log << "\n***************************\n" << std::endl;
+    //
+    //   args.log << "Generating perturbations about configurations " << std::endl << std::endl;
+    //
+    //   //bool verbose = false;
+    //   //bool print = true;
+    //   for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
+    //     Index num_before = (it->get_supercell()).get_config_list().size();
+    //     ConfigEnumStrain enumerator(it->get_supercell(), *it, subgrids, mags, strain_mode);
+    //     (it->get_supercell()).add_unique_canon_configs(enumerator.begin(), enumerator.end());
+    //     args.log << "Enumerated " << (it->get_supercell()).get_config_list().size() - num_before << " deformations.\n";
+    //   }
+    // }
+    // else
+    if(vm.count("occ")) {
       // want absolute paths
       abs_cspecs_path = fs::absolute(cspecs_path);
 
@@ -240,4 +239,3 @@ namespace CASM {
   };
 
 }
-

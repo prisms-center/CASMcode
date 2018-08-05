@@ -283,7 +283,7 @@ namespace CASM {
   DataFormatterDictionary<DataObject, DatumFormatterType>::lookup(
     const key_type &_name) const {
 
-    typedef DataFormatterDictionary<DataObject, DatumFormatterType> dict_type;
+    //typedef DataFormatterDictionary<DataObject, DatumFormatterType> dict_type;
 
     auto res = this->find(_name);
     if(res != this->end()) {

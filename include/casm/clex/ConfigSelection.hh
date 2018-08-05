@@ -255,7 +255,7 @@ namespace CASM {
     const typename ConfigSelectionIterator<IsConst, IsConstIterator>::MapIterator &end,
     typename ConfigSelectionIterator<IsConst, IsConstIterator>::PrimClexType *prim,
     bool _selected_only) :
-    m_it(it), m_begin(begin), m_end(end), m_primclex(prim), m_selected_only(_selected_only) {
+    m_primclex(prim), m_it(it), m_begin(begin), m_end(end), m_selected_only(_selected_only) {
 
     while(m_selected_only && m_begin != m_end && !m_begin->second)
       ++m_begin;

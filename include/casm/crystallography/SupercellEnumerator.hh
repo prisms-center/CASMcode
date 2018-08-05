@@ -474,9 +474,9 @@ namespace CASM {
   SupercellIterator<UnitType>::SupercellIterator(const SupercellEnumerator<UnitType> &enumerator,
                                                  int volume,
                                                  int dims):
-    m_current(notstd::make_cloneable<HermiteCounter>(volume, dims)),
     m_super_updated(false),
-    m_enum(&enumerator) {
+    m_enum(&enumerator),
+    m_current(notstd::make_cloneable<HermiteCounter>(volume, dims)) {
     if(enumerator.begin_volume() > enumerator.end_volume()) {
       throw std::runtime_error("The beginning volume of the SupercellEnumerator cannot be greater than the end volume!");
     }
@@ -691,4 +691,3 @@ namespace CASM {
 }
 
 #endif
-

@@ -67,7 +67,7 @@ namespace CASM {
 
     void set_lattice(const Lattice &new_home, COORD_TYPE mode);
 
-    virtual void push_back(const CoordType &new_coord);
+    void push_back(const CoordType &new_coord);
 
     ///Translate entire cluster so that point at(pivot_ind) is inside unit cell
     void within(Index pivot_ind = 0);
