@@ -47,7 +47,7 @@ if [ -n "$CASM_TEST_PROJECTS_DIR" ]; then
     echo "  rm -r $CASM_TEST_PROJECTS_DIR"
   else
     echo "Will download CASM test projects"
-    (cd $(dirname $CASM_TEST_PROJECTS_DIR) && mc clone $CASM_TEST_PROJECTS_ID >/dev/null 2>&1) \
+    (cd $(dirname $CASM_TEST_PROJECTS_DIR) && mc clone $CASM_TEST_PROJECTS_ID) \
       || print_msg_if_failed "Clone test projects failed"
 
     (cd $CASM_TEST_PROJECTS_DIR && mc down -r 0.3.X) \
