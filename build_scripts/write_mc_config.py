@@ -7,7 +7,7 @@ import sys
 from os.path import join, exists, dirname
 
 if 'MC_API_KEY' not in os.environ:
-    print("No MC_API_KEY")
+    print("write_mc_config.py failed: No MC_API_KEY")
     sys.exit(0)
 
 config = {

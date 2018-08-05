@@ -7,7 +7,7 @@ import json
 import os
 import six
 from distutils.spawn import find_executable
-from os.path import dirname, join
+from os.path import basename, dirname, join
 from sys import platform
 
 import sh
@@ -36,31 +36,72 @@ class API(object):
 
     """
     def __init__(self):
-      """Loads dynamic libraries"""
-      
+      """
+      Loads dynamic libraries
+
+      Order of priority for libcasm.*:
+        1) $LIBCASM
+        2) find 'ccasm' in PATH and determine libcasm path from ldd / otool output
+
+      The libccasm location is determined by string subsitution of the libcasm path.
+
+      """
+
       try:
-          casm_path = find_executable('ccasm')
-          if platform == 'darwin':
-              libcasm_path = sh.grep(sh.otool('-L', casm_path), 'libcasm').split()[0]
-              libcasm_path = libcasm_path.replace('@loader_path', dirname(casm_path))
+          if 'LIBCASM' in os.environ:
+              libcasm_path = os.environ['LIBCASM']
           else:
-              libcasm_path = sh.grep(sh.ldd(casm_path), 'libcasm').split()[2]
+              casm_path = find_executable('ccasm')
+              if platform == 'darwin':
+                  libcasm_path = sh.grep(sh.otool('-L', casm_path), 'libcasm').split()[0]
+                  libcasm_path = libcasm_path.replace('@loader_path', dirname(casm_path))
+              else:
+                  libcasm_path = sh.grep(sh.ldd(casm_path), 'libcasm').split()[2]
           libccasm_path = libcasm_path.replace('libcasm', 'libccasm')
-          
+
           self.lib_casm = ctypes.CDLL(libcasm_path, mode=ctypes.RTLD_GLOBAL)
           self.lib_ccasm = ctypes.CDLL(libccasm_path, mode=ctypes.RTLD_GLOBAL)
       except Exception as e:
-          print("Error loading casm libraries")
-          casm_path = find_executable('ccasm')
-          print("Find 'ccasm':", casm_path)
-          if platform == 'darwin':
-              print("Find 'libcasm':")
-              print(sh.otool('-L', casm_path))
+          print("\n~~~ Error loading casm libraries ~~~")
+          if 'LIBCASM' in os.environ:
+              libcasm_path = os.environ['LIBCASM']
+              print("Looking for libcasm at LIBCASM:", libcasm_path)
+              if not os.path.exists(libcasm_path):
+                  print("File does not exist")
+                  print("Install CASM if it is not installed, or update your PATH, or set LIBCASM to the location of libcasm.")
+              else:
+                  print("File exists, but for unknown reason could not be loaded.")
           else:
-              print("Find 'libcasm':")
-              print(sh.ldd(casm_path))
+              casm_path = find_executable('ccasm')
+              print("find_executable('ccasm'):", casm_path)
+              if casm_path is None:
+                  print("Could not find 'ccasm' executable. CASM is not installed on your PATH.")
+                  print("Install CASM if it is not installed, or update your PATH, or set LIBCASM to the location of libcasm.")
+              elif basename(dirname(casm_path)) == ".libs":
+                  print("Found 'ccasm' executable in a '.libs' directory. Are you running tests?")
+                  if platform == 'darwin':
+                      check = join(dirname(casm_path), "libcasm.dylib")
+                  else:
+                      check = join(dirname(casm_path), "libcasm.so")
+                  if os.path.exists(check):
+                      print("You probably need to set LIBCASM="+check)
+                  else:
+                      print("You probably need to re-make or update your PATH")
+              else:
+                  print("Found 'ccasm', but for unknown reason could not determine libcasm location.")
+                  if platform == 'darwin':
+                      print("otool -L:")
+                      res = sh.otool('-L', casm_path)
+                      for val in res:
+                          print(val.strip())
+                  else:
+                      print("ldd:")
+                      res = sh.ldd(casm_path)
+                      for val in res:
+                          print(val.strip())
+          print("")
           raise e
-      
+
       #### Argument types
 
       self.lib_ccasm.casm_STDOUT.restype = ctypes.c_void_p
@@ -95,7 +136,7 @@ class API(object):
 
       self.lib_ccasm.casm_command_list.argtypes = [ctypes.c_void_p]
       self.lib_ccasm.casm_command_list.restype = None
-      
+
       self.lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
       self.lib_ccasm.casm_capi.restype = ctypes.c_int
 
@@ -279,7 +320,7 @@ class API(object):
   def command_list(self):
     """
     Get list of recognized casm commands implemented at the libcasm level
-    
+
     Returns
     -------
       s: str
@@ -370,8 +411,8 @@ class API(object):
 
 def casm_capi(args, primclex=None, root=None):
     """
-    Execute a command via the c api, printing to stdout, stderr. 
-    
+    Execute a command via the c api, printing to stdout, stderr.
+
     Arguments
     ---------
 
@@ -390,26 +431,24 @@ def casm_capi(args, primclex=None, root=None):
 
     Returns:
       returncode: The result of running the command via the command line iterface.
-          
+
     """
     _api = API()
-    
+
     # this also ensures self._api is not None
     if primclex is None:
         _primclex = _api.primclex_null()
     else:
         _primclex = primclex
-    
+
     if root is None:
         root = os.getcwd()
-    
+
     # construct stringstream objects to capture stdout, debug, stderr
     ss = _api.stdout()
     ss_debug = _api.stdout()
     ss_err = _api.stderr()
-    
+
     res = self._api(args, _primclex, root, ss, ss_debug, ss_err)
-    
+
     return res
-    
-    

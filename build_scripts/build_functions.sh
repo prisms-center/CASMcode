@@ -8,21 +8,22 @@
 . $CASM_GIT_DIR/build_scripts/build_variables.sh
 
 # function to build and upload package with recipe at conda-recipes/$1/$2 $3=version $4=buildnumber
+#   skips package if file '$CASM_GIT_DIR/conda-recipes/$1/$2result_py$CASM_PYTHON_VERSION"_"$3"."$4/DONE' exists
 build_conda_package () {
   RECIPE_DIR=$CASM_GIT_DIR/conda-recipes/$1/$2
   RESULT_DIR=$RECIPE_DIR/result_py$CASM_PYTHON_VERSION"_"$3"."$4
   if [ ! -f "$RESULT_DIR/DONE" ]; then
-    echo 
+    echo
     echo "!! building: "$1" "$3" feature="$2" build="$4" python="$CASM_PYTHON_VERSION" ..."
     echo
-    
+
     BUILD_FLAGS="--override-channels -c $CASM_CONDA_CHANNEL "
     BUILD_FLAGS+="-c defaults -c conda-forge -c prisms-center "
     BUILD_FLAGS+="--python $CASM_PYTHON_VERSION "
-    
+
     UPLOAD_FLAGS="--user $CASM_CONDA_ID_USER "
     UPLOAD_FLAGS+="--label $CASM_CONDA_LABEL "
-    
+
     mkdir -p $RESULT_DIR \
       && conda build $BUILD_FLAGS $RECIPE_DIR > $RESULT_DIR/tmp.out \
       && LOCATION=$(grep 'conda upload' $RESULT_DIR/tmp.out | cut -f3 -d ' ') \
@@ -93,7 +94,7 @@ osx_build_conda () {
 # build Docker image $DOCKER_ID_USER/$1:$CASM_BRANCH_$2 from docker/$1/$2/Dockerfile,
 # use a third argument to pass other args
 build_docker () {
-  echo "docker build $CASM_GIT_DIR/docker/$1/$2 $3 -t $CASM_DOCKER_ID_USER/$1:$CASM_BRANCH"_"$2" 
+  echo "docker build $CASM_GIT_DIR/docker/$1/$2 $3 -t $CASM_DOCKER_ID_USER/$1:$CASM_BRANCH"_"$2"
   echo "\$3: "$3
   docker build $CASM_GIT_DIR/docker/$1/$2 $3 -t $CASM_DOCKER_ID_USER/$1:$CASM_BRANCH"_"$2
 }
@@ -108,5 +109,3 @@ build_and_push_docker () {
   build_docker "$1" "$2" "$3"
   push_docker "$1" "$2"
 }
-
-

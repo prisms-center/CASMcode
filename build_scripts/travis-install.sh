@@ -4,6 +4,13 @@
 #     CASM_TEST_PROJECTS_ID and MC_API_KEY
 
 set -e
+
+if [ -n "$TRAVIS_BUILD_DIR" ]; then
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        brew install bash-completion curl
+    fi
+fi
+
 export CASM_BUILD_DIR=${CASM_BUILD_DIR:-${TRAVIS_BUILD_DIR:-$(pwd)}}
 . $CASM_BUILD_DIR/build_scripts/install-functions.sh
 . $CASM_BUILD_DIR/build_scripts/build_versions.sh
@@ -15,17 +22,4 @@ check_var "CASM_PYTHON_VERSION" "Python version"
 check_var "CASM_ENV_NAME" "CASM conda environment name" "casm_${CASM_VERSION}_py${CASM_PYTHON_VERSION}"
 check_var "CASM_TEST_PROJECTS_DIR" "Location to download CASM_test_projects" ""
 
-# activate conda
-. $CASM_CONDA_DIR/etc/profile.d/conda.sh
-conda activate $CASM_ENV_NAME
-
-# set OS-dependent variables
-. $CASM_BUILD_DIR/build_scripts/travis-variables-$CASM_OS_NAME.sh
-
-# make-check-cpp
-bash $CASM_BUILD_DIR/build_scripts/make-check-cpp.sh \
-  || { echo "'make-check-cpp.sh' failed"; exit 1; }
-
-# check-python
-bash $CASM_BUILD_DIR/build_scripts/check-python.sh \
-  || { echo "'check-python.sh' failed"; exit 1; }
+bash $CASM_BUILD_DIR/build_scripts/conda-devel.sh
