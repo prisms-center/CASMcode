@@ -22,7 +22,7 @@ matrix:
       compiler: clang
 
 install:
-  - bash $CASM_BUILD_DIR/build_scripts/travis-install.sh
+  - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
 
 script:
-  - bash $CASM_BUILD_DIR/build_scripts/travis-script.sh
+  - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
