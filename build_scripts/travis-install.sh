@@ -7,7 +7,7 @@ set -e
 
 if [ -n "$TRAVIS_BUILD_DIR" ]; then
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        brew install bash-completion curl
+        brew install bash-completion curl libmagic
     fi
 fi
 
