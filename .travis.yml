@@ -5,22 +5,51 @@ language: cpp
 cache:
   ccache: true
 
-matrix:
+# Build on pull request or push to:
+#  - branches explicitly listed
+#  - tags matching regex (of form: "vX.Y(.<alphanumeric>)?(-<anything>)?")
+#    (tags should be vX.Y.dev, vX.Y.0, vX.Y.1, ...)
+branches:
+  only:
+    - 0.2.X
+    - 0.3.X
+    - /^v\d+\.\w+(\.\w+)?(-\S*)?$/
+
+jobs:
   include:
-    - os: linux
+    - stage: test_it
+      os: linux
       dist: trusty
       compiler: gcc
       addons:
         apt:
           packages:
-          - bash-completion
-          - curl
-
-    - os: osx
+            - bash-completion
+            - curl
+      install:
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
+      script:
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
+    - stage: test_it
+      os: osx
       compiler: clang
-
-install:
-  - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
-
-script:
-  - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
+      install:
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
+      script:
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
+    - stage: package_it
+      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+      os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - bash-completion
+            - curl
+      script: echo "package_it on $TRAVIS_OS_NAME"
+    - stage: package_it
+      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+      os: osx
+      compiler: clang
+      script: echo "package_it on $TRAVIS_OS_NAME"
