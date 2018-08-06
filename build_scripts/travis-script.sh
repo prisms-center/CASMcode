@@ -18,6 +18,8 @@ check_var "CASM_TEST_PROJECTS_DIR" "Location to download CASM_test_projects" ""
 . $CASM_CONDA_DIR/etc/profile.d/conda.sh
 conda activate $CASM_ENV_NAME
 
+export CASM_PREFIX=$CONDA_PREFIX
+
 # set OS-dependent variables
 . $CASM_BUILD_DIR/build_scripts/travis-variables-$CASM_OS_NAME.sh
 

@@ -1,11 +1,11 @@
 # variables necessary for travis, linux
 
-check_var "CONDA_PREFIX" "Require the CASM development environment is activated"
+check_var "CASM_PREFIX" "Specify the install location"
 
-CASM_PREFIX=$CONDA_PREFIX
+CASM_PREFIX=$CASM_PREFIX
 export CASM_BOOST_PREFIX=${CASM_BOOST_PREFIX:-$CASM_PREFIX}
 
-export CASM_BASH_COMPLETION_DIR=${CASM_BASH_COMPLETION_DIR:-$CONDA_PREFIX/.bash_completion.d}
+export CASM_BASH_COMPLETION_DIR=${CASM_BASH_COMPLETION_DIR:-$CASM_PREFIX/.bash_completion.d}
 export CASM_BASH_COMPLETION=${CASM_BASH_COMPLETION:-"/usr/share/bash-completion/bash_completion"}
 
 CASM_CONFIGFLAGS="--prefix=$CASM_PREFIX "
