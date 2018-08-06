@@ -8,12 +8,20 @@ set -e
 detect_os
 
 check_var "CASM_BUILD_DIR" "CASMcode repository location"
+check_var "CASM_TESTS" "Particular test categories to run (default="", runs all tests)" ""
+check_var "CASM_TEST_FLAGS" "Customize the options given to the test programs" "--log_level=test_suite --catch_system_errors=no"
 
 . $CASM_BUILD_DIR/build_scripts/make-cpp.sh
 
 # Run tests and print output
 cd $CASM_BUILD_DIR
-make check -j $CASM_NCPU CASM_BOOST_PREFIX="$CASM_BOOST_PREFIX" \
+echo "CASM_TESTS: '$CASM_TESTS'"
+echo "CASM_TEST_FLAGS: '$CASM_TEST_FLAGS'"
+echo "CASM_BOOST_PREFIX: '$CASM_BOOST_PREFIX'"
+echo 'make check -j $CASM_NCPU CASM_BOOST_PREFIX=$CASM_BOOST_PREFIX TESTS="$CASM_TESTS" TEST_FLAGS="$CASM_TEST_FLAGS"'
+
+# works
+make check -j $CASM_NCPU CASM_BOOST_PREFIX="$CASM_BOOST_PREFIX" ${CASM_TESTS:+TESTS="$CASM_TESTS"} TEST_FLAGS="$CASM_TEST_FLAGS" \
   || bash ./build_scripts/check-rpath.sh \
   || do_if_failed "cat $CASM_BUILD_DIR/test-suite.log" \
-  || { echo "'make check' failed"; exit 1; }
+  || { echo "'make check -j $CASM_NCPU CASM_BOOST_PREFIX=$CASM_BOOST_PREFIX' failed"; exit 1; }

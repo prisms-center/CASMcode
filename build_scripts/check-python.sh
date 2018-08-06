@@ -3,6 +3,15 @@ set -e
 detect_os
 
 check_var "CASM_BUILD_DIR" "CASMcode repository location"
+check_var "CASM_BOOST_PREFIX" "Must be set when testing" "$CONDA_PREFIX"
+
+. $CASM_BUILD_DIR/build_scripts/make-cpp.sh
+
+
+# get all arguments and assign to TEST_ARGS
+#   if no arguments, use "test_casm"
+check_var "CASM_PYTEST_ARGS" "Arguments to pass to pytest" "test_casm"
+
 
 ### CASM Python install and test #######################
 cd $CASM_BUILD_DIR/python/casm
@@ -20,4 +29,5 @@ PATH=$CASM_BUILD_DIR/.libs:$PATH
 check_program ccasm
 pip install -e .
 pip install -r test_requirements.txt
-pytest -r ap -s test_casm
+echo "pytest -r ap -s ${CASM_PYTEST_ARGS}"
+pytest -r ap -s ${CASM_PYTEST_ARGS}

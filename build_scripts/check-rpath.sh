@@ -40,7 +40,12 @@ if [ -n "$SET_RPATH" ]; then
   done
 
   # now re-run checks
-  make check -j $CASM_NCPU CASM_BOOST_PREFIX="$CASM_BOOST_PREFIX"
+  echo "CASM_TESTS: '$CASM_TESTS'"
+  echo "CASM_TEST_FLAGS: '$CASM_TEST_FLAGS'"
+  echo "CASM_BOOST_PREFIX: '$CASM_BOOST_PREFIX'"
+
+  make check -j $CASM_NCPU CASM_BOOST_PREFIX="$CASM_BOOST_PREFIX" ${CASM_TESTS:+TESTS="$CASM_TESTS"} TEST_FLAGS="$CASM_TEST_FLAGS"
+
 
 else
   echo "^ That probably failed because a test really did fail"

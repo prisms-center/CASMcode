@@ -1,5 +1,4 @@
-# setup environment and run conda-devel.sh
-#   should work on local machine (run from CASMcode repo or with CASM_BUILD_DIR set) or travis for osx and linux
+# use CASM conda development environment to build and run all tests for casm-cpp and casm-python
 #   if CASM_TEST_PROJECTS_DIR is non-zero length, requires
 #     CASM_TEST_PROJECTS_ID and MC_API_KEY
 

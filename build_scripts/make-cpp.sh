@@ -39,5 +39,6 @@ else
   echo "'configure' already exists; continuing... (delete it to re-configure)"
 fi
 
+echo "make -s -j $CASM_NCPU"
 make -s -j $CASM_NCPU \
-  || { echo "'make' failed"; exit 1; }
+  || { echo "'make -s -j $CASM_NCPU' failed"; exit 1; }
