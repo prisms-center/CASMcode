@@ -4,8 +4,6 @@ language: cpp
 
 cache:
   ccache: true
-  diretories:
-    - $HOME/.local/conda
 
 matrix:
   include:

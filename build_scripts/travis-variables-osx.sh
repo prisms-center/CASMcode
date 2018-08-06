@@ -1,12 +1,9 @@
 # variables necessary for travis, osx, building in a conda environment
 
 check_var "CASM_PREFIX" "Specify the install location"
-
-CASM_PREFIX=$CASM_PREFIX
-export CASM_BOOST_PREFIX=${CASM_BOOST_PREFIX:-$CASM_PREFIX}
-
-export CASM_BASH_COMPLETION_DIR=${CASM_BASH_COMPLETION_DIR:-$CASM_PREFIX/.bash_completion.d}
-export CASM_BASH_COMPLETION=${CASM_BASH_COMPLETION:-/usr/local/etc/bash_completion}
+check_var "CASM_BOOST_PREFIX" "Specify the where boost libraries are installed" "$CASM_PREFIX"
+check_var "CASM_BASH_COMPLETION" "Specify where bash-completion is installed" "/usr/local/etc/bash_completion"
+check_var "CASM_BASH_COMPLETION_DIR" "Specify where to install the casm bash-completion script" "$CASM_PREFIX/.bash_completion.d"
 
 CASM_CONFIGFLAGS="--prefix=$CASM_PREFIX "
 CASM_CONFIGFLAGS+="--with-zlib=$CASM_PREFIX "
@@ -14,6 +11,6 @@ CASM_CONFIGFLAGS+="--with-boost=$CASM_BOOST_PREFIX "
 CASM_CONFIGFLAGS+="--with-bash-completion-dir=$CASM_BASH_COMPLETION_DIR "
 export CASM_CONFIGFLAGS
 
-export CASM_CXXFLAGS=${CASM_CXXFLAGS:-"-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations"}
-export CASM_CC=${CASM_CC:-"cc"}
-export CASM_CXX=${CASM_CXX:"c++"}
+check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations"
+check_var "CASM_CC" "C compiler" ${CC:-"cc"}
+check_var "CASM_CXX" "C++ compiler" ${CXX:-"c++"}
