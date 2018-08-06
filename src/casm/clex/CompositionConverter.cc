@@ -613,7 +613,6 @@ namespace CASM {
 
       from_json(independent_compositions, json["independent_compositions"]);
       Eigen::MatrixXd end_members(components.size(), independent_compositions);
-      int var = (int) 'a';
       Eigen::VectorXd tvec;
       for(int i = 0; i < independent_compositions; i++) {
         from_json(tvec, json[CompositionConverter::comp_var(i)]);

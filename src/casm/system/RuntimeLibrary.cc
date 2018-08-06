@@ -154,17 +154,17 @@ namespace CASM {
       };
     }
 
-    std::vector<std::string> _casm_env() {
-      return std::vector<std::string> {
-        "CASM_PREFIX"
-      };
-    }
-
-    std::vector<std::string> _boost_env() {
-      return std::vector<std::string> {
-        "CASM_BOOST_PREFIX"
-      };
-    }
+    // std::vector<std::string> _casm_env() {
+    //   return std::vector<std::string> {
+    //     "CASM_PREFIX"
+    //   };
+    // }
+    //
+    // std::vector<std::string> _boost_env() {
+    //   return std::vector<std::string> {
+    //     "CASM_BOOST_PREFIX"
+    //   };
+    // }
 
     /// \brief Some function of environment variables
     std::pair<std::string, std::string> _use_env(std::vector<std::string> var, std::string _default = "") {

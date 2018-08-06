@@ -45,12 +45,10 @@ namespace CASM {
     const MonteSampler &sampler1 = *(mc->samplers().find(prop_name1)->second);
     const Eigen::VectorXd &obs1 = sampler1.data().observations();
     const Eigen::VectorXd &X = obs1.segment(equil.second, obs1.size() - equil.second);
-    double k1 = X(0);
 
     const MonteSampler &sampler2 = *(mc->samplers().find(prop_name2)->second);
     const Eigen::VectorXd &obs2 = sampler2.data().observations();
     const Eigen::VectorXd &Y = obs2.segment(equil.second, obs2.size() - equil.second);
-    double k2 = Y(0);
 
     double Xsum = 0.0;
     double Ysum = 0.0;
@@ -520,4 +518,3 @@ namespace CASM {
 
 
 }
-

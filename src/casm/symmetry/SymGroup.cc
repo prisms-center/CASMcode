@@ -3566,7 +3566,7 @@ namespace CASM {
     // floating point comparison tolerance
     double tol = TOL;
 
-    COORD_TYPE print_mode = CART;
+    //COORD_TYPE print_mode = CART;
 
     // compare on vector of '-det', '-trace', 'angle', 'axis', 'tau'
     typedef Eigen::Matrix<double, 9, 1> key_type;
@@ -4668,4 +4668,3 @@ namespace CASM {
 
 
 }
-

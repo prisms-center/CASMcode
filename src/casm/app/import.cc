@@ -246,7 +246,7 @@ namespace CASM {
       bool new_import = false;
       jsonParser relax_data;
       std::pair<bool, double> checkenergy(false, 0.0);
-      double energy;
+
       try {
         if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
           jsonParser datajson(pos_path);
@@ -571,4 +571,3 @@ namespace CASM {
     }
   }
 }
-

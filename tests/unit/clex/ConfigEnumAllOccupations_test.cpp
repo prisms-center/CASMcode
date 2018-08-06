@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsTest) {
   // read test file
   fs::path test_cases_path("tests/unit/clex/ConfigEnumAllOccupations_test_cases.json");
   jsonParser tests(test_cases_path);
-  double tol = TOL;
+  // double tol = TOL;
   fs::path test_proj_dir("tests/unit/clex/test_proj");
 
   for(auto test_it = tests.begin(); test_it != tests.end(); ++test_it) {

@@ -85,7 +85,7 @@ extern "C" {
   int casm_capi(char *args, cPrimClex *primclex, char *root, costream *log, costream *debug_log, costream *err_log) {
     PrimClex *_primclex = reinterpret_cast<PrimClex *>(primclex);
     Log &_log(*reinterpret_cast<Log *>(log));
-    Log &_debug_log(*reinterpret_cast<Log *>(debug_log));
+    //Log &_debug_log(*reinterpret_cast<Log *>(debug_log));
     Log &_err_log(*reinterpret_cast<Log *>(err_log));
 
     std::string s("casm ");

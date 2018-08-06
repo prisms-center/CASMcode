@@ -727,9 +727,9 @@ namespace CASM {
     //real_super_lattice((get_prim()).lattice().lat_column_mat()*transf_mat),
     real_super_lattice(superlattice),
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
-    m_canonical(nullptr),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
+    m_canonical(nullptr),
     transf_mat(primclex->calc_transf_mat(superlattice)) {
     /*std::cerr << "IN SUPERCELL CONSTRUCTOR:\n"
               << "transf_mat is\n" << transf_mat << '\n'
@@ -1287,4 +1287,3 @@ namespace CASM {
   }
 
 }
-

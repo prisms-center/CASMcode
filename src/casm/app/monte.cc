@@ -171,11 +171,7 @@ namespace CASM {
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     Log &log = args.log;
-    Log &err_log = args.err_log;
 
-
-    const DirectoryStructure &dir = primclex.dir();
-    ProjectSettings &set = primclex.settings();
 
     //Get path to settings json file
     settings_path = fs::absolute(settings_path);
@@ -439,4 +435,3 @@ namespace CASM {
     }
   }
 }
-

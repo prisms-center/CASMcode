@@ -541,4 +541,3 @@ namespace CASM {
 }
 
 #endif
-

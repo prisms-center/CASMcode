@@ -64,7 +64,6 @@ namespace CASM {
       //We only bother checking pre-existing supercells of min_vol <= volume <=max_vol;
       SupercellEnumerator<Lattice> enumerator(prim_lat, sym_group, ScelEnumProps(min_vol, max_vol + 1));
 
-      Index l = 0;
       //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
       for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
         //std::cout << "Enumeration step " << l++ << " best cost is " << best_cost << "\n";
@@ -755,7 +754,6 @@ namespace CASM {
       primclex().get_prim().point_group(),
       ScelEnumProps(prim_vol, prim_vol + 1));
 
-    Index l = 0;
     //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       //std::cout << "Enumeration step " << l++ << " best cost is " << best_cost << "\n";
@@ -793,7 +791,6 @@ namespace CASM {
       //if(cost_matrix.rows()!=scel.num_sites() || cost_matrix.cols()!=scel.num_sites())
       cost_matrix = Eigen::MatrixXd::Constant(scel.num_sites(), scel.num_sites(), inf);
       Index inf_counter;
-      double dist;
       // loop through all the sites of the structure
       Index j = 0;
       for(; j < rstruc.basis.size(); j++) {
@@ -860,7 +857,6 @@ namespace CASM {
       //if(cost_matrix.rows()!=scel.num_sites() || cost_matrix.cols()!=scel.num_sites())
       cost_matrix = Eigen::MatrixXd::Constant(scel.num_sites(), scel.num_sites(), inf);
       Index inf_counter;
-      double dist;
       // loop through all the sites of the structure
       Index j;
       for(j = 0; j < rstruc.basis.size(); j++) {

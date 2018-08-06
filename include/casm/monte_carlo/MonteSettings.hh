@@ -351,7 +351,6 @@ namespace CASM {
     }
 
     catch(std::runtime_error &e) {
-      T t;
       Log &err_log = default_err_log();
       std::stringstream ss;
       ss << "Monte Carlo setting [\"" << level1 << "\"][\"" << level2 << "\"]";
@@ -385,7 +384,6 @@ namespace CASM {
     }
 
     catch(std::runtime_error &e) {
-      T t;
       Log &err_log = default_err_log();
       std::stringstream ss;
       ss << "Monte Carlo setting [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]";
