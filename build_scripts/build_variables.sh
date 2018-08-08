@@ -1,11 +1,9 @@
 # variables used in conda-recipes/<package>/<os>/meta.yaml files:
 
-. $CASM_GIT_DIR/build_scripts/build_versions.sh
+set -e
+. $CASM_BUILD_DIR/build_scripts/build_versions.sh
 
-# ncpus
-export CASM_DOCKER_NCPUS="2"
-export CASM_OSX_NCPUS="4"
-export NCPUS=$CASM_DOCKER_NCPUS
+check_program git
 
 # get development version tag, uses latest tag (i.e. "v0.3.1") as a reference
 conda_dev_version () {
@@ -17,7 +15,11 @@ conda_dev_version () {
   S=${S//-/+}
   echo $S
 }
+export -f conda_dev_version
 
-export CASM_CONDA_VERSION=$(conda_dev_version) # choose $(conda_dev_version) or "X.Y.Z"
-export CASM_CONDA_LABEL="dev"  # choose "dev" or "main"
-export CASM_CONDA_CHANNEL="$CASM_CONDA_ID_USER/label/$CASM_CONDA_LABEL"
+# choose $(conda_dev_version) or "X.Y.Z"
+check_var "CASM_CONDA_VERSION" "Version number for conda package" "$(cd /CASMcode && conda_dev_version)"
+
+check_var "CASM_CONDA_LABEL" "Conda channel label (\"dev\" or \"main\")" "dev"
+check_var "CASM_CONDA_ID_USER" "Where to push conda packages (https://anaconda.org/\$CONDA_ID_USER)"
+check_var "CASM_CONDA_CHANNEL" "Conda channel to push package to" "$CASM_CONDA_ID_USER/label/$CASM_CONDA_LABEL"

@@ -17,6 +17,11 @@ branches:
 
 jobs:
   include:
+
+    # stage 1:
+    #  Run tests
+
+    # test on linux
     - stage: test_it
       os: linux
       dist: trusty
@@ -29,14 +34,25 @@ jobs:
       install:
         - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
       script:
+        - echo "test_it on $TRAVIS_OS_NAME"
         - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
+
+    # test on osx
     - stage: test_it
       os: osx
       compiler: clang
       install:
         - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
       script:
+        - echo "test_it on $TRAVIS_OS_NAME"
         - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
+
+    # stage 2:
+    #  If tests pass, and this is a merge or push to primary development branches, then we will
+    #    upload updated conda packages
+    #  If this commit is tagged, push to "main"; else push to "dev"
+
+    # primary linux package
     - stage: package_it
       if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
       os: linux
@@ -47,9 +63,30 @@ jobs:
           packages:
             - bash-completion
             - curl
-      script: echo "package_it on $TRAVIS_OS_NAME"
+      script:
+        - echo "package_it on $TRAVIS_OS_NAME"
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
+
+    # centos:6 linux package, for old OS
+    - stage: package_it
+      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+      sudo: required
+      os: linux
+      dist: trusty
+      compiler: gcc
+      env:
+        - CASM_DOCKER_CONTAINER="centos:6"
+        - CASM_DOCKER_CMD="yum install curl git -y && bash /CASMcode/build_conda.sh"
+        - CASM_CONDA_FEATURE="condagcc_centos6"
+      script:
+        - echo "package_it w/docker on $TRAVIS_OS_NAME"
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda-docker.sh
+
+    # osx package
     - stage: package_it
       if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
       os: osx
       compiler: clang
-      script: echo "package_it on $TRAVIS_OS_NAME"
+      script:
+        - echo "package_it on $TRAVIS_OS_NAME"
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh

@@ -12,7 +12,7 @@ build:
   number: {{ CASM_BUILD_NUMBER }}
   string: {{ CASM_XCODE_BUILD_STR }}
   script_env:
-    - NCPUS
+    - CASM_NCPU
   features:
     - xcode
 
@@ -28,10 +28,10 @@ requirements:
     - wget
     - bzip2
     - six
-  
+
   run:
     - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_XCODE_BUILD_STR }}
-  
+
 about:
   home: {{ CASM_URL }}
   license: LGPLv2

@@ -3,7 +3,8 @@
 #     CASM_TEST_PROJECTS_ID and MC_API_KEY
 
 set -e
-export CASM_BUILD_DIR=${CASM_BUILD_DIR:-${TRAVIS_BUILD_DIR:-$(pwd)}}
+BUILD_SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+export CASM_BUILD_DIR=$(dirname $BUILD_SCRIPTS_DIR)
 . $CASM_BUILD_DIR/build_scripts/install-functions.sh
 . $CASM_BUILD_DIR/build_scripts/build_versions.sh
 detect_os

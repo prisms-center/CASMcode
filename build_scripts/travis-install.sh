@@ -4,17 +4,15 @@
 #     CASM_TEST_PROJECTS_ID and MC_API_KEY
 
 set -e
-
-if [ -n "$TRAVIS_BUILD_DIR" ]; then
-    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        brew install bash-completion curl libmagic
-    fi
-fi
-
-export CASM_BUILD_DIR=${CASM_BUILD_DIR:-${TRAVIS_BUILD_DIR:-$(pwd)}}
+BUILD_SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+export CASM_BUILD_DIR=$(dirname $BUILD_SCRIPTS_DIR)
 . $CASM_BUILD_DIR/build_scripts/install-functions.sh
 . $CASM_BUILD_DIR/build_scripts/build_versions.sh
 detect_os
+
+if [[ "$CASM_OS_NAME" == "osx" ]]; then
+    brew install bash-completion curl libmagic
+fi
 
 check_var "CASM_CONDA_DIR" "Location to install conda and conda environments" "$HOME/.local/conda"
 check_var "CASM_VERSION" "CASM version (used for naming conda env)" "0.3"

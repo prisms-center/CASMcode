@@ -10,16 +10,19 @@ source:
 
 build:
   number: {{ CASM_BOOST_BUILD_NUMBER }}
-  string: {{ CASM_BOOST_XCODE_BUILD_STR }}
+  string: {{ CASM_BOOST_CONDAGCC_CENTOS6_BUILD_STR }}
   script_env:
     - CASM_NCPU
   track_features:
-    - xcode
+    - condagcc_centos6
 
 requirements:
   build:
     - wget
     - bzip2
+    - gcc_linux-64 {{ CASM_CONDAGCC_CENTOS6_VERSION }}*
+    - gxx_linux-64 {{ CASM_CONDAGCC_CENTOS6_VERSION }}*
+    - gfortran_linux-64 {{ CASM_CONDAGCC_CENTOS6_VERSION }}*
 
   run:
 

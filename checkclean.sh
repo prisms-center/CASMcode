@@ -1,4 +1,5 @@
 #!/bin/bash
+rm -r ccasm
 rm -f casm_unit_*
 rm -f .libs/casm_unit_*
 find . -name "*.trs" -exec rm {} \;

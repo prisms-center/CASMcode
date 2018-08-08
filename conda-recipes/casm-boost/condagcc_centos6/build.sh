@@ -1,6 +1,9 @@
 echo "printenv: "
 printenv
 
+echo "$GCC --version: "
+$GCC --version
+
 echo "$GXX --version: "
 $GXX --version
 
