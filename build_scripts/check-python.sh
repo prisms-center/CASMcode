@@ -17,6 +17,7 @@ check_var "CASM_PYTEST_ARGS" "Arguments to pass to pytest" "test_casm"
 cd $CASM_BUILD_DIR/python/casm
 
 # make sure we can find the made, but not installed, casm
+export CASM_INCLUDEDIR=$CASM_BUILD_DIR/include
 if [[ "$CASM_OS_NAME" == "osx" ]]; then
   export LIBCASM=$CASM_BUILD_DIR/.libs/libcasm.dylib
 elif [[ "$CASM_OS_NAME" == "linux" ]]; then

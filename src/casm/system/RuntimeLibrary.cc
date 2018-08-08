@@ -23,12 +23,11 @@ namespace CASM {
       if(fs::exists(m_filename_base + ".cc")) {
 
         // Compile it
+        log().compiling<Log::standard>(m_filename_base + ".cc");
+        log().begin_lap();
+        log() << compile_msg << std::endl;
         try {
-          log().compiling<Log::standard>(m_filename_base + ".cc");
-          log().begin_lap();
-          log() << compile_msg << std::endl;
           _compile();
-          log() << "compile time: " << log().lap_time() << " (s)\n" << std::endl;
         }
         catch(std::exception &e) {
           log() << "Error compiling clexulator. To fix: \n";
@@ -36,9 +35,9 @@ namespace CASM {
           log() << "  - Check compiler options with 'casm settings -l'\n";
           log() << "    - Update compiler options with 'casm settings --set-compile-options '...options...'\n";
           log() << "    - Make sure the casm headers can be found by including '-I/path/to/casm'\n";
-          log() << "  - The default compiler is 'g++'. Override by setting the environment variable CXX\n" << std::endl;
-          throw e;
+          throw;
         }
+        log() << "compile time: " << log().lap_time() << " (s)\n" << std::endl;
       }
       else {
         throw std::runtime_error(

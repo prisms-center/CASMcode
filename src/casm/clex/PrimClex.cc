@@ -1047,9 +1047,14 @@ namespace CASM {
                                               settings().so_options()))).first;
       }
       catch(std::exception &e) {
-        log() << "Error compiling clexulator. Current settings: \n";
-        settings().print_compiler_settings_summary(log());
-        throw e;
+        // not sure why this fails...
+        // log() << "Error constructing Clexulator. Current settings: \n" << std::endl;
+        // settings().print_compiler_settings_summary(log());
+
+        std::cout << "Error constructing Clexulator. Current settings: \n" << std::endl;
+        Log tlog(std::cout);
+        settings().print_compiler_settings_summary(tlog);
+        throw;
       }
     }
     return it->second;

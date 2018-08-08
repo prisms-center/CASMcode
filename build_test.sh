@@ -36,21 +36,21 @@ check_var "CASM_PYTEST_ARGS" "Arguments to pass to pytest" "test_casm"
 
 # Set CASM_SKIP_MAKE to skip make
 if ! [ -n "$CASM_SKIP_MAKE" ]; then
-  bash $CASM_BUILD_DIR/build_scripts/make-cpp.sh \
+  bash $CASM_BUILD_DIR/build_scripts/make-cpp.sh
 else
   echo "skipping make"
 fi
 
 # Set CASM_SKIP_CPP to skip C++ tests
 if ! [ -n "$CASM_SKIP_CPP_TESTS" ]; then
-  bash $CASM_BUILD_DIR/build_scripts/make-check-cpp.sh \
+  bash $CASM_BUILD_DIR/build_scripts/make-check-cpp.sh
 else
   echo "skipping c++ tests"
 fi
 
 # Set CASM_SKIP_PYTHON to skip Python tests (Cpp must be built to run Python tests)
 if ! [ -n "$CASM_SKIP_PYTHON_TESTS" ]; then
-  bash $CASM_BUILD_DIR/build_scripts/check-python.sh "${PYTEST_ARGS[@]}" \
+  bash $CASM_BUILD_DIR/build_scripts/check-python.sh "${PYTEST_ARGS[@]}"
 else
   echo "skipping Python tests"
 fi
