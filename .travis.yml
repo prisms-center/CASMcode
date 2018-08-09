@@ -65,10 +65,6 @@ jobs:
             - curl
       script:
         - echo "package_it on $TRAVIS_OS_NAME"
-        - printenv
-        - ( echo "initial directory:"; pwd )
-        - ( git status; git tag )
-        - ( cd $TRAVIS_BUILD_DIR; git status; git tag )
         - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
 
     # centos:6 linux package, for old OS

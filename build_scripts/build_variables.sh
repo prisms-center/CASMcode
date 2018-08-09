@@ -7,7 +7,6 @@ check_program git
 
 # get development version tag, uses latest tag (i.e. "v0.3.1") as a reference
 conda_dev_version () {
-  git fetch --unshallow
   S=$(git describe --abbrev=6 --dirty --always --tags )
   if [ ${S:0:1} == "v" ]; then
     S=${S:1}
@@ -19,6 +18,7 @@ conda_dev_version () {
 export -f conda_dev_version
 
 # choose $(conda_dev_version) or "X.Y.Z"
+git fetch --unshallow || echo "git fetch --unshallow done"
 check_var "CASM_CONDA_VERSION" "Version number for conda package" "$(cd $CASM_BUILD_DIR && conda_dev_version)"
 
 check_var "CASM_CONDA_LABEL" "Conda channel label (\"dev\" or \"main\")" "dev"

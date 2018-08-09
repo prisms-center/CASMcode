@@ -13,13 +13,13 @@ export CASM_PREFIX=$CONDA_PREFIX
 
 ### variables - Control how CASM is built  ###
 
-check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations"
 check_var "CASM_NCPU" "Compiler -j option" 2
-
-### end variables ###
 
 # set OS-dependent variable defaults
 #   only CASM_CONFIGFLAGS can't be overridden from this script
 . $CASM_BUILD_DIR/build_scripts/travis-variables-$CASM_OS_NAME.sh
+
+### end variables ###
+
 
 bash $CASM_BUILD_DIR/build_scripts/make-cpp.sh
