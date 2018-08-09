@@ -10,6 +10,7 @@
 set -e
 
 check_var "CASM_TEST_PROJECTS_DIR" "Location to download CASM_test_projects" ""
+check_var "CASM_PYTHON" "Which python is used"
 
 echo ""
 if [ -n "$CASM_TEST_PROJECTS_DIR" ]; then
@@ -38,7 +39,7 @@ if [ -n "$CASM_TEST_PROJECTS_DIR" ]; then
       exit 1
     fi
 
-    python $CASM_BUILD_DIR/build_scripts/write_mc_config.py
+    $CASM_PYTHON $CASM_BUILD_DIR/build_scripts/write_mc_config.py
   fi
 
   if [ -d $CASM_TEST_PROJECTS_DIR ]; then

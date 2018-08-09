@@ -32,4 +32,4 @@ check_program ccasm
 pip install -e .
 pip install -r test_requirements.txt
 echo "pytest ${CASM_PYTEST_OPTIONS} ${CASM_PYTEST_ARGS}"
-pytest ${CASM_PYTEST_OPTIONS} ${CASM_PYTEST_ARGS}
+$CASM_PYTHON -m pytest ${CASM_PYTEST_OPTIONS} ${CASM_PYTEST_ARGS}
