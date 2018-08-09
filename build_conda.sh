@@ -45,7 +45,7 @@ if [ -n "$CASM_BUILD_BOOST" ]; then
 else
   # only build casm-python once for linux/osx
   if [ "$CASM_CONDA_FEATURE" == "$CASM_DEFAULT_CONDA_FEATURE" ]; then
-    build_conda_package "casm-python" $CASM_OS_NAME $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
+    # (temporary) build_conda_package "casm-python" $CASM_OS_NAME $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
   fi
 
   build_conda_package "casm-cpp" $CASM_CONDA_FEATURE $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
