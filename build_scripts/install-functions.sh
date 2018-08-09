@@ -44,11 +44,6 @@ check_program () {
     echo "missing required program: $1"
     return 1
   fi
-  echo "begin debug in check_program"
-  ( which $1 || exit 0 )
-  ( ls -l "$(dirname $(which $1))" || exit 0 )
-  ( $1 --version || exit 0)
-  echo "end debug in check_program"
 }
 export -f check_program
 

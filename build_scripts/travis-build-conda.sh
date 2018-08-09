@@ -37,8 +37,5 @@ if [[ "$CASM_OS_NAME" == "osx" ]]; then
 fi
 
 # build and push conda packages
-echo "begin build_conda.sh"
-printenv
-( git status; git tag )
 bash $CASM_BUILD_DIR/build_conda.sh \
   || { echo "build_conda.sh failed"; exit 1; }
