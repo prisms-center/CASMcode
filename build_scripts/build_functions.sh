@@ -32,7 +32,8 @@ build_conda_package () {
     echo "!! begin conda build !!"
     mkdir -p $RESULT_DIR \
       && conda build $BUILD_FLAGS $RECIPE_DIR > $RESULT_DIR/tmp.out \
-      || do_if_failed '( echo "!! conda build failed !!"; cat $RESULT_DIR/tmp.out )' \
+      || do_if_failed "echo \"!! conda build failed !!\"" \
+      || do_if_failed "cat $RESULT_DIR/tmp.out" \
       || print_msg_if_failed "!! conda build failed !!" \
       || return 1
 
