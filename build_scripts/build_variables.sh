@@ -7,6 +7,7 @@ check_program git
 
 # get development version tag, uses latest tag (i.e. "v0.3.1") as a reference
 conda_dev_version () {
+  git fetch --tags
   S=$(git describe --abbrev=6 --dirty --always --tags )
   if [ ${S:0:1} == "v" ]; then
     S=${S:1}
