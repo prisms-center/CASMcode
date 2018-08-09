@@ -51,9 +51,9 @@ namespace CASM {
 
 
     Suboption::Suboption(const po::option_description &init_boost_option):
-      m_expected_arg(ArgHandler::determine_type(init_boost_option)),
+      m_long(Suboption_impl::pull_long(init_boost_option)),
       m_short(Suboption_impl::pull_short(init_boost_option)),
-      m_long(Suboption_impl::pull_long(init_boost_option)) {
+      m_expected_arg(ArgHandler::determine_type(init_boost_option)) {
       _sanity_throw();
     }
 

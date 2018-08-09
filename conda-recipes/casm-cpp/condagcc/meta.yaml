@@ -12,10 +12,10 @@ build:
   number: {{ CASM_BUILD_NUMBER }}
   string: {{ CASM_CONDAGCC_BUILD_STR }}
   script_env:
-    - NCPUS
+    - CASM_NCPU
   features:
     - condagcc
-   
+
 requirements:
   build:
     - python {{ CASM_PYTHON_VERSION }}*

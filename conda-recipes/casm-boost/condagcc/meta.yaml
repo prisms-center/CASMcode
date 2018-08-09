@@ -12,10 +12,10 @@ build:
   number: {{ CASM_BOOST_BUILD_NUMBER }}
   string: {{ CASM_BOOST_CONDAGCC_BUILD_STR }}
   script_env:
-    - NCPUS
+    - CASM_NCPU
   track_features:
     - condagcc
-    
+
 requirements:
   build:
     - wget
@@ -23,10 +23,10 @@ requirements:
     - gcc_linux-64 {{ CASM_CONDAGCC_VERSION }}*
     - gxx_linux-64 {{ CASM_CONDAGCC_VERSION }}*
     - gfortran_linux-64 {{ CASM_CONDAGCC_VERSION }}*
-  
+
   run:
-    
-  
+
+
 about:
   home: http://www.boost.org/
   license: Boost

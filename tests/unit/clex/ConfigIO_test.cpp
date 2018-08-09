@@ -102,15 +102,20 @@ BOOST_AUTO_TEST_CASE(Make) {
     DataFormatterDictionary<Configuration>::const_iterator it = dict.begin();
     ss << "get ref from transform iterator" << std::endl;
     BaseDatumFormatter<Configuration> &transform_ref = *it;
+    (void) transform_ref;
     ss << "get const ref from transform iterator" << std::endl;
     const BaseDatumFormatter<Configuration> &const_transform_ref = *it;
+    (void) const_transform_ref;
 
     ss << "get ref from iterator" << std::endl;
     const BaseDatumFormatter<Configuration> &ref = *(it.base()->second);
+    (void) ref;
     ss << "get pair ref from base iterator" << std::endl;
     auto &pair_ref = *(it.base());
+    (void) pair_ref;
     ss << "get const pair ref from base iterator" << std::endl;
     const auto &const_pair_ref = *(it.base());
+    (void) const_pair_ref;
     ss << "use ref from iterator, name: " << ref.name() << std::endl;
 
     ss << "\n---\n";

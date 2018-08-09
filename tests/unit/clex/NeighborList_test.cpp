@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(Proj) {
   primclex.settings().set_crystallography_tol(TOL);
   double tol = primclex.crystallography_tol();
   Structure prim = primclex.get_prim();
-  const DirectoryStructure &dir = primclex.dir();
+
   const ProjectSettings &set = primclex.settings();
 
   // initialize nlist

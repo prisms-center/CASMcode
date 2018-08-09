@@ -60,7 +60,7 @@ namespace CASM {
       for(; it2 != end_it2; ++it2)
         json[m_prefix + "basis"].push_back(*it2);
     }
-
+    return json;
   }
 
   template< bool IsConst >

@@ -14,7 +14,7 @@ namespace CASM {
   class SymGroup;
   class MasterSymGroup;
   class SymGroupRep;
-  class SymInfo;
+  struct SymInfo;
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

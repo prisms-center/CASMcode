@@ -1,24 +1,12 @@
 echo "printenv: "
 printenv
 
-echo "g++ --version: "
-g++ --version
+export CASM_BUILD_DIR=$(pwd)
+export CASM_BASH_COMPLETION_DIR=$PREFIX/.bash_completion.d
+export CASM_WRITE_BC_SHORTCUT=$PREFIX/.bash_completion
 
-WD=`pwd`
-echo "wd: "$WD
-
-CASM_BASH_COMPLETION_DIR="$PREFIX"/.bash_completion.d
-mkdir -p $CASM_BASH_COMPLETION_DIR \
-  && printf "for bcfile in $CASM_BASH_COMPLETION_DIR/* ; do\n  . \$bcfile\ndone" > $PREFIX/.bash_completion
-
-cd $WD \
-  && pip install --no-cache-dir six \
-  && python make_Makemodule.py \
-  && ./bootstrap.sh \
-  && ./configure \
-    CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations" \
-    --prefix=$PREFIX \
-    --with-boost=$PREFIX \
-    --with-bash-completion-dir=$CASM_BASH_COMPLETION_DIR \
-  && make -j $NCPUS \
-  && make install
+. $CASM_BUILD_DIR/build_scripts/install-functions.sh
+bash $CASM_BUILD_DIR/build_scripts/install-bash-completion.sh
+bash $CASM_BUILD_DIR/build.sh
+# pip install --no-cache-dir six
+make install

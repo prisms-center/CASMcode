@@ -21,8 +21,8 @@ namespace CASM {
   template class ScelEnumByPropsT<true>;
   template class ScelEnumByPropsT<false>;
 
-  template class CASM_TMP::traits<ScelEnumT<true> >;
-  template class CASM_TMP::traits<ScelEnumT<false> >;
+  template struct CASM_TMP::traits<ScelEnumT<true> >;
+  template struct CASM_TMP::traits<ScelEnumT<false> >;
   template class EnumInterface<ScelEnumT<true> >;
   template class EnumInterface<ScelEnumT<false> >;
   template class ScelEnumT<true>;

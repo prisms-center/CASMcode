@@ -189,13 +189,11 @@ namespace CASM {
     // collect supercells to delete
     std::set<std::string> scel_to_delete;
 
-    bool msg = false;
     args.log.custom("Check supercells");
     for(const auto &scelname : rm_opt.supercell_strs()) {
       Index index;
       if(!primclex.contains_supercell(scelname, index)) {
         args.log << "skipping " << scelname << ": does not exist.\n";
-        msg = true;
         continue;
       }
 
@@ -204,7 +202,6 @@ namespace CASM {
       if(!rm_opt.force() && scel.get_config_list().size()) {
         args.log << "skipping " << scelname << ": has "
                  << scel.get_config_list().size() << " configurations and --force not given.\n";
-        msg = true;
       }
       else {
         args.log << "will erase " << scelname << "\n";
@@ -236,5 +233,3 @@ namespace CASM {
   };
 
 }
-
-

@@ -248,7 +248,7 @@ namespace CASM {
       std::map<Configuration *, Update_impl::Data> &datamap(it->second);
       bool self_mapped(false);
 
-      double lowest_energy(1e20), self_energy(1e20);
+      double lowest_energy(std::numeric_limits<double>::max());
       std::map<Configuration *, Update_impl::Data>::iterator best_it;
       double best_cost(1e20);
 
@@ -294,8 +294,6 @@ namespace CASM {
         }
         if(source_data.contains("relaxed_energy")) {
           double energy = source_data["relaxed_energy"].get<double>();
-          if(it2->first == it->first)
-            self_energy = energy;
           if(energy < lowest_energy)
             lowest_energy = energy;
           t_ss << "                    -- relaxed_energy = " << source_data["relaxed_energy"].get<double>() << std::endl;
@@ -420,4 +418,3 @@ namespace CASM {
     return 0;
   }
 }
-

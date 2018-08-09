@@ -2,86 +2,91 @@ sudo: false
 
 language: cpp
 
-matrix:
+cache:
+  ccache: true
+
+# Build on pull request or push to:
+#  - branches explicitly listed
+#  - tags matching regex (of form: "vX.Y(.<alphanumeric>)?(-<anything>)?")
+#    (tags should be vX.Y.dev, vX.Y.0, vX.Y.1, ...)
+branches:
+  only:
+    - 0.2.X
+    - 0.3.X
+    - /^v\d+\.\w+(\.\w+)?(-\S*)?$/
+
+jobs:
   include:
-    - os: linux
+
+    # stage 1:
+    #  Run tests
+
+    # test on linux
+    - stage: test_it
+      os: linux
       dist: trusty
       compiler: gcc
       addons:
         apt:
-          sources:
-          - ubuntu-toolchain-r-test
           packages:
-          - gcc-4.8
-          - g++-4.8
-          # boost1.54
-          - libboost-all-dev
-          - autoconf-archive
-          - bash-completion
-      env:
-        - CC=gcc-4.8
-        - CXX=g++-4.8
-        
-        # set environment variables for boost
-        - CASM_BOOST_INCLUDEDIR="/usr/include/"
-        - CASM_BOOST_LIBDIR="/usr/lib/x86_64-linux-gnu/"
-        - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
+            - bash-completion
+            - curl
+      install:
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
+      script:
+        - echo "test_it on $TRAVIS_OS_NAME"
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
 
-    - os: osx
+    # test on osx
+    - stage: test_it
+      os: osx
       compiler: clang
+      install:
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
+      script:
+        - echo "test_it on $TRAVIS_OS_NAME"
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
+
+    # stage 2:
+    #  If tests pass, and this is a merge or push to primary development branches, then we will
+    #    upload updated conda packages
+    #  If this commit is tagged, push to "main"; else push to "dev"
+
+    # primary linux package
+    - stage: package_it
+      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+      os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - bash-completion
+            - curl
+      script:
+        - echo "package_it on $TRAVIS_OS_NAME"
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
+
+    # centos:6 linux package, for old OS
+    - stage: package_it
+      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+      sudo: required
+      os: linux
+      dist: trusty
+      compiler: gcc
       env:
-        - CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1
-        
+        - CASM_DOCKER_CONTAINER="centos:6"
+        - CASM_DOCKER_CMD="yum install curl git -y && bash /CASMcode/build_conda.sh"
+        - CASM_CONDA_FEATURE="condagcc_centos6"
+      script:
+        - echo "package_it w/docker on $TRAVIS_OS_NAME"
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda-docker.sh
 
-before_install:
-
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
-        CASM_NCPU=2;
-        . /usr/share/bash-completion/bash_completion;
-        CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations";
-        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR --with-boost-libdir=$CASM_BOOST_LIBDIR";
-    fi
-  
-  # boost1.61 is installed at /usr/local
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew update;
-      brew list;
-    fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        brew install bash-completion autoconf-archive;
-        CASM_NCPU=2;
-        . /usr/local/etc/bash_completion;
-        CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations";
-        CONFIGFLAGS="--with-bash-completion-dir=$BASH_COMPLETION_DIR";
-    fi
-  
-  # check g++ version
-  - g++ --version
-  
-  # check python
-  - python --version
-  - python -c "import sys; print sys.path"
-  
-  # upgrade pip and install testing requirements
-  - export PATH=`python -m site --user-site`/../../../bin:$PATH
-  - pip install --upgrade pip
-  - pip install --user -r python/casm/test_requirements.txt
-  
-  # check env
-  - printenv
-  
-
-script: 
-  - set -e
-  - 'echo "CASM_NCPU: $CASM_NCPU"'
-  
-  # C++ and CLI
-  - ./bootstrap.sh
-  - ./configure CXXFLAGS="${CXXFLAGS}" ${CONFIGFLAGS}
-  - make -j $CASM_NCPU
-  - make check -j $CASM_NCPU
-
-  # Python
-  - cd python/casm
-  - pip install --user .
-  - pytest -r ap -s test_casm
+    # osx package
+    - stage: package_it
+      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+      os: osx
+      compiler: clang
+      script:
+        - echo "package_it on $TRAVIS_OS_NAME"
+        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh

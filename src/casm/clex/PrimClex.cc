@@ -71,8 +71,9 @@ namespace CASM {
     bool read_composition = true;
     bool read_chem_ref = true;
     bool read_configs = true;
+    bool clear_clex = false;
 
-    refresh(false, true, true, true);
+    refresh(read_settings, read_composition, read_chem_ref, read_configs, clear_clex);
   }
 
   /// \brief Reload PrimClex data from settings
@@ -1036,13 +1037,25 @@ namespace CASM {
           std::string("Error loading clexulator ") + key.bset + ". No basis functions exist.");
       }
 
-      it = m_clexulator.insert(
-             std::make_pair(key, Clexulator(settings().name() + "_Clexulator",
-                                            dir().clexulator_dir(key.bset),
-                                            nlist(),
-                                            log(),
-                                            settings().compile_options(),
-                                            settings().so_options()))).first;
+      try {
+        it = m_clexulator.insert(
+               std::make_pair(key, Clexulator(settings().name() + "_Clexulator",
+                                              dir().clexulator_dir(key.bset),
+                                              nlist(),
+                                              log(),
+                                              settings().compile_options(),
+                                              settings().so_options()))).first;
+      }
+      catch(std::exception &e) {
+        // not sure why this fails...
+        // log() << "Error constructing Clexulator. Current settings: \n" << std::endl;
+        // settings().print_compiler_settings_summary(log());
+
+        std::cout << "Error constructing Clexulator. Current settings: \n" << std::endl;
+        Log tlog(std::cout);
+        settings().print_compiler_settings_summary(tlog);
+        throw;
+      }
     }
     return it->second;
   }
@@ -1697,4 +1710,3 @@ namespace CASM {
 
 
 }
-

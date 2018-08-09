@@ -10,7 +10,7 @@
 namespace CASM {
 
   class jsonParser;
-  template<typename T> class jsonConstructor;
+  template<typename T> struct jsonConstructor;
 
   namespace Monte {
 

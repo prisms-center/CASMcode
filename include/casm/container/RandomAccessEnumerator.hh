@@ -459,12 +459,12 @@ namespace CASM {
     }
 
     jsonParser source(step_type step) const {
-      ptr->source(step);
+      return ptr->source(step);
     }
 
     /// Derived enumerators must implement name
     std::string name() const {
-      ptr->name();
+      return ptr->name();
     }
 
     std::unique_ptr<RandomAccessEnumeratorBase<ValueType, IsConst> > ptr;

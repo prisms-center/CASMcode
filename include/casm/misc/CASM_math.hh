@@ -422,7 +422,7 @@ namespace CASM {
 
     dub_mat_type dubs(val);
 
-    Index min_i(-1), min_j(-1);
+    Index min_i(-1);
     double min_coeff = 2; //all values are <=1;
     for(Index i = 0; i < dubs.rows(); i++) {
       for(Index j = 0; j < dubs.cols(); j++) {
@@ -432,7 +432,6 @@ namespace CASM {
         else if(std::abs(dubs(i, j)) < std::abs(min_coeff)) {
           min_coeff = dubs(i, j);
           min_i = i;
-          min_j = j;
         }
       }
     }
@@ -457,11 +456,11 @@ namespace CASM {
     bool within_tol = false;
 
     dub_mat_type tdubs;
-    Index i, j;
     for(Index factor = 1; factor < 1000 && !within_tol; factor++) {
+      Index i, j;
       tdubs = double(factor) * dubs;
-      for(Index i = 0; i < dubs.rows(); i++) {
-        for(Index j = 0; j < dubs.cols(); j++) {
+      for(i = 0; i < dubs.rows(); i++) {
+        for(j = 0; j < dubs.cols(); j++) {
           if(!almost_zero(round(tdubs(i, j)) - tdubs(i, j), _tol))
             break;
         }

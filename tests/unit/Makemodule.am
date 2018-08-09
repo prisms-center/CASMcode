@@ -28,13 +28,13 @@ casm_unit_App_SOURCES = \
 
 casm_unit_App_LDADD = \
   libcasm.la\
+  libcasmtesting.a\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-  libcasmtesting.a
+  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 EXTRA_DIST += \
   tests/unit/App/TestConfigname.hh\
@@ -66,13 +66,13 @@ casm_unit_crystallography_SOURCES = \
 
 casm_unit_crystallography_LDADD = \
   libcasm.la\
+  libcasmtesting.a\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-  libcasmtesting.a
+  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 EXTRA_DIST += \
   tests/unit/crystallography/POS1_prim.json\
@@ -96,13 +96,13 @@ casm_unit_container_SOURCES = \
 
 casm_unit_container_LDADD = \
   libcasm.la\
+  libcasmtesting.a\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-  libcasmtesting.a
+  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 TESTS += \
   tests/unit/container/run_test_container
@@ -120,13 +120,13 @@ casm_unit_system_SOURCES = \
 
 casm_unit_system_LDADD = \
   libcasm.la\
+  libcasmtesting.a\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-  libcasmtesting.a
+  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 TESTS += \
   tests/unit/system/run_test_system
@@ -145,13 +145,13 @@ casm_unit_monte_carlo_SOURCES = \
 
 casm_unit_monte_carlo_LDADD = \
   libcasm.la\
+  libcasmtesting.a\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-  libcasmtesting.a
+  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 EXTRA_DIST += \
   tests/unit/monte_carlo/bspecs_0.json\
@@ -186,13 +186,13 @@ casm_unit_clex_SOURCES = \
 
 casm_unit_clex_LDADD = \
   libcasm.la\
+  libcasmtesting.a\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-  libcasmtesting.a
+  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 EXTRA_DIST += \
   tests/unit/clex/test_Clexulator.cc\
@@ -215,13 +215,13 @@ casm_unit_clusterography_SOURCES = \
 
 casm_unit_clusterography_LDADD = \
   libcasm.la\
+  libcasmtesting.a\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-  libcasmtesting.a
+  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 EXTRA_DIST += \
   tests/unit/clusterography/test_cases.json
@@ -242,13 +242,13 @@ casm_unit_casm_io_SOURCES = \
 
 casm_unit_casm_io_LDADD = \
   libcasm.la\
+  libcasmtesting.a\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-  libcasmtesting.a
+  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 TESTS += \
   tests/unit/casm_io/run_test_casm_io

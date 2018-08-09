@@ -503,7 +503,6 @@ namespace CASM {
     if(test.size() != col.size()) {
       std::stringstream ss;
       ss << "Error constructing Monte Carlo samplers from query: '" << prop_name << "'";
-      Log &err_log = primclex.err_log();
       primclex.err_log() << ss.str();
       primclex.err_log() << "headers: " << col << std::endl;
       primclex.err_log() << "  Some queries may not be available for sampling at this time." << std::endl;
@@ -537,4 +536,3 @@ namespace CASM {
 }
 
 #endif
-

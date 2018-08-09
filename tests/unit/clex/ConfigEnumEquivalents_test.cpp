@@ -96,6 +96,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
         for(auto &equiv : equiv_enum) {
           ++total_count[i];
           ++prim_count[i];
+          (void) equiv;
         }
       }
 

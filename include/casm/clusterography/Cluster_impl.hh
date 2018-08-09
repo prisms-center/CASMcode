@@ -260,7 +260,7 @@ namespace CASM {
   //Array 'index' holds indices of (*this) that yield test_cluster
   template <typename CoordType>
   Index GenericCluster<CoordType>::find(const CoordType &test_elem, double tol) const {
-    Index i, j;
+    Index j;
 
     for(j = 0; j < size(); j++) {
       if(test_elem.almost_equal(at(j), tol))
@@ -908,4 +908,3 @@ namespace CASM {
 
 
 }
-
