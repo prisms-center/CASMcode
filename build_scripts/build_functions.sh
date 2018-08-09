@@ -11,6 +11,7 @@
 build_conda_package () {
   RECIPE_DIR=$CASM_BUILD_DIR/conda-recipes/$1/$2
   RESULT_DIR=$RECIPE_DIR/result_py$CASM_PYTHON_VERSION"_"$3"."$4
+  unset LOCATION
   if [ ! -f "$RESULT_DIR/DONE" ]; then
     echo
     echo "!! building: "$1" "$3" feature="$2" build="$4" python="$CASM_PYTHON_VERSION" ..."
@@ -25,21 +26,26 @@ build_conda_package () {
 
     mkdir -p $RESULT_DIR \
       && conda build $BUILD_FLAGS $RECIPE_DIR > $RESULT_DIR/tmp.out \
-      && LOCATION=$(grep 'conda upload' $RESULT_DIR/tmp.out | cut -f3 -d ' ') \
+      || do_if_failed "cat $RESULT_DIR/tmp.out" \
+      || print_msg_if_failed "conda build failed" \
+      || return 1
+
+    LOCATION=$(grep 'conda upload' $RESULT_DIR/tmp.out | cut -f3 -d ' ') \
       && if [ -z $LOCATION ]; then \
            LOCATION=$(grep 'Nothing to test for' $RESULT_DIR/tmp.out | cut -f5 -d ' '); \
          fi \
       && cp $LOCATION $RESULT_DIR
 
     conda create -n casm-anaconda-upload anaconda-client -y \
-      || echo "casm-anconda-upload already exists"
+      || echo "casm-anaconda-upload already exists"
     conda activate casm-anaconda-upload
 
     if [ -n "$CASM_CONDA_DRY_RUN" ]; then
       echo "(dry run) anaconda -t $CASM_CONDA_TOKEN upload $UPLOAD_FLAGS $LOCATION"
     else
       (anaconda -t $CASM_CONDA_TOKEN upload $UPLOAD_FLAGS $LOCATION && echo "true" > $RESULT_DIR/DONE) \
-        || print_msg_if_failed "anaconda upload failed"
+        || print_msg_if_failed "anaconda upload failed" \
+        || return 1
     fi
   else
     echo "$RESULT_DIR/DONE already exists. skipping..."

@@ -44,6 +44,7 @@ check_program () {
     echo "missing required program: $1"
     return 1
   fi
+  ( $1 --version || exit 0)
 }
 export -f check_program
 
