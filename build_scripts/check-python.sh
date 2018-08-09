@@ -11,6 +11,7 @@ check_var "CASM_BOOST_PREFIX" "Must be set when testing" "$CONDA_PREFIX"
 # get all arguments and assign to TEST_ARGS
 #   if no arguments, use "test_casm"
 check_var "CASM_PYTEST_ARGS" "Arguments to pass to pytest" "test_casm"
+check_var "CASM_PYTEST_OPTIONS" "Options to give pytest" "-r ap -s"
 
 
 ### CASM Python install and test #######################
@@ -30,5 +31,5 @@ PATH=$CASM_BUILD_DIR/.libs:$PATH
 check_program ccasm
 pip install -e .
 pip install -r test_requirements.txt
-echo "pytest -r ap -s ${CASM_PYTEST_ARGS}"
-pytest -r ap -s ${CASM_PYTEST_ARGS}
+echo "pytest ${CASM_PYTEST_OPTIONS} ${CASM_PYTEST_ARGS}"
+pytest ${CASM_PYTEST_OPTIONS} ${CASM_PYTEST_ARGS}

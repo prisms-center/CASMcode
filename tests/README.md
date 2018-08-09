@@ -1,19 +1,8 @@
-CASM tests
+CASM C++ tests
 ==========
 
-`CASM` uses the [boost unit test framework](http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/index.html) for testing.
+`CASM` uses the [boost unit test framework](http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/index.html) for C++ testing.
 
-
-Testing dependencies
---------------------
-
-No differences from installation.
-
-
-Testing configuration
----------------------
-
-No differences from installation.
 
 Writing Tests
 -------------
@@ -55,42 +44,57 @@ Run all tests
 From ``CASMcode`` directory:
 
 ```
-    make check
+$ bash build_test.sh
 ```
+
+Options:
+
+- Set ``CASM_SKIP_CPP_TESTS`` to non-zero length to skip C++ tests.
+- Do ``unset CASM_SKIP_CPP_TESTS`` to re-enable C++ tests.
+- Set ``CASM_SKIP_PYTHON_TESTS`` to non-zero length to skip Python tests.
+- Do ``unset CASM_SKIP_PYTHON_TESTS`` to re-enable Python tests.
+- Use the ``CASM_PYTEST_ARGS`` environment variable to pass arguments to pytest.
+- Use the ``CASM_PYTEST_OPTIONS`` environment variable to set pytest options. Default is ``"-r ap -s"``
+- Add a file named `'skip'` to a test directory to skip all test classes in that directory.
+- Add a file named `'skip_TestCase'` to skip the `TestCase` class in that directory.
+
 
 Run particular test categories
 ---------------------------------------
-- To run particular test categories, set the ``TESTS`` variable
+- To run particular C++ test categories, set the ``CASM_TESTS`` environment variable
 
 From ``CASMcode`` directory:
 
 ```
-	TEST1=tests/unit/App/run_test_App
-	TEST2=tests/unit/clex/run_test_clex
-	...
-	make check TESTS="$TEST1 $TEST2 ..."
+$ TEST1=tests/unit/App/run_test_App
+$ TEST2=tests/unit/clex/run_test_clex
+  ...
+$ export CASM_TESTS="$TEST1 $TEST2 ..."
+$ bash build_test.sh
 ```
 
 Run particular test cases
 -------------------------
 
-- To customize the options given to the test programs, for instance to run only particular test suites or test cases, set ``TEST_FLAGS``.
+- To customize the options given to the test programs, for instance to run only particular test suites or test cases, set the ``CASM_TEST_FLAGS`` environment variable.
 - For more options see [docs](http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/utf/user-guide/runtime-config/run-by-name.html)
  
 From ``CASMcode`` directory:
 
 ```
-    TEST1=tests/unit/clex/run_test_clex
-    TEST_FLAGS="--run_test=ScelEnumEquivalentsTest/Test2 "
-    TEST_FLAGS+="--log_level=test_suite "
-    TEST_FLAGS+="--catch_system_errors=no "
-    make check TESTS="$TEST1" TEST_FLAGS="$TEST_FLAGS"
+$ export CASM_TESTS="tests/unit/clex/run_test_clex"
+$ CASM_TEST_FLAGS="--run_test=ScelEnumEquivalentsTest/Test2 "
+$ CASM_TEST_FLAGS+="--log_level=test_suite "
+$ CASM_TEST_FLAGS+="--catch_system_errors=no "
+$ export CASM_TEST_FLAGS
+$ 
+$ bash build_test.sh
 ```
 
-The default ``TEST_FLAGS`` are:
+The default ``CASM_TEST_FLAGS`` are:
 
 ```
-    TEST_FLAGS="--log_level=test_suite --catch_system_errors=no"
+$ CASM_TEST_FLAGS="--log_level=test_suite --catch_system_errors=no"
 ```
 
 Clean test output
@@ -98,7 +102,7 @@ Clean test output
 From ``CASMcode`` directory:
 
 ```
-    ./checkclean.sh
+$ bash checkclean.sh
 ```
 
 CI Testing

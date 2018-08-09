@@ -18,7 +18,7 @@ conda_dev_version () {
 export -f conda_dev_version
 
 # choose $(conda_dev_version) or "X.Y.Z"
-check_var "CASM_CONDA_VERSION" "Version number for conda package" "$(cd /CASMcode && conda_dev_version)"
+check_var "CASM_CONDA_VERSION" "Version number for conda package" "$(cd $CASM_BUILD_DIR && conda_dev_version)"
 
 check_var "CASM_CONDA_LABEL" "Conda channel label (\"dev\" or \"main\")" "dev"
 check_var "CASM_CONDA_ID_USER" "Where to push conda packages (https://anaconda.org/\$CONDA_ID_USER)"
