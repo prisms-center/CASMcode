@@ -1,4 +1,5 @@
 import os, math, sys, shutil, gzip
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 import quantumespresso, qeio
 
 class Relax(object):
@@ -36,7 +37,7 @@ class Relax(object):
                         "ncpus": number of ncpus to run mpi on
 			"npar" or "ncore": number of ways to parallelize
                         "kpar": number of ways to parallelize k-points
-                        "quantumespresso_cmd": (default, see quantumespresso.run) shell command to execute quantumespresso, or None to use default mpirun
+                        "qe_cmd": (default, see quantumespresso.run) shell command to execute quantumespresso, or None to use default mpirun
                         "strict_kpoint": force strict copying of KPOINTS file, otherwise kpoints are scaled based on supercell size
                     used by not_converging():
                         "run_limit": (default 10) maximum number of runs to allow before setting status to "not_converging"

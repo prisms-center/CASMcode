@@ -340,6 +340,20 @@ class Poscar:
             raise PoscarError("Lattice shape error: " + np.array_str(self._lattice))
         self._reciprocal_lattice = 2.0*math.pi*np.linalg.inv(np.transpose(self._lattice))
         file.seek(0)
+        if self.scaling == "alat":
+            line = file.readline().strip()
+            m = re.match(".*celldm.*",line)
+            if not m:
+                while not m:
+                   line = file.readline()
+                   #print line
+                   if line=='':
+                        raise PoscarError("EOF reach without finding celldm(1)")
+                   line = line.strip()
+                   m = re.match(".*celldm.*",line)
+            m=re.split("=",m.group(0))
+            self.celldm=float(m[1].strip())
+        file.seek(0)
         return
 
     def _read_lattice_from_outfile(self,file):
@@ -362,6 +376,8 @@ class Poscar:
         file.readline()
         file.readline()
         line=file.readline().strip().split()
+        while len(line)==0:
+            line=file.readline().strip().split()
         if not (re.match("CELL_PARAMETERS.*",line[0])):
             file.seek(0)
             line = file.readline().strip()

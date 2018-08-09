@@ -9,7 +9,7 @@ from casm.project import Project, Selection
 from casm.vaspwrapper import Relax
 
 # casm-calc --configs selection
-#           --calculator "quantumespresso" "vasp"
+#           --software "quantumespresso" "vasp"
 #           --scheduler "pbs"
 #           --run / --submit / --setup / --report
 
@@ -74,16 +74,14 @@ if __name__ == "__main__":
       else:
           print "Using "+str(setfile)+" as settings..."
       settings = casm.qewrapper.read_settings(setfile)
-      if settings["calculator"] is None:
-        settings["calculator"]="vasp"
-      calculator=settings["calculator"]
-      if args.method is not None:
-        calculator=args.method
-      print "Relevant calculator is:", calculator
+      if settings["software"] is None:
+        settings["software"]="vasp"
+      software=settings["software"]
+      print "Relevant software is:", software
     if args.setup:
       sel.write_pos()
       for configname in sel.data["configname"]:
-        if calculator == "quantumespresso":
+        if software == "quantumespresso":
           relaxation = casm.qewrapper.Relax(proj.dir.configuration_dir(configname))
         else:
           relaxation = Relax(proj.dir.configuration_dir(configname))
@@ -92,7 +90,7 @@ if __name__ == "__main__":
     elif args.submit:
       sel.write_pos()
       for configname in sel.data["configname"]:
-        if calculator == "quantumespresso":
+        if software == "quantumespresso":
           relaxation = casm.qewrapper.Relax(proj.dir.configuration_dir(configname))
         else:
           relaxation = Relax(proj.dir.configuration_dir(configname))
@@ -101,7 +99,7 @@ if __name__ == "__main__":
     elif args.run:
       sel.write_pos()
       for configname in sel.data["configname"]:
-        if calculator == "quantumespresso":
+        if software == "quantumespresso":
           relaxation = casm.qewrapper.Relax(proj.dir.configuration_dir(configname))
         else:
           relaxation = Relax(proj.dir.configuration_dir(configname))
@@ -114,7 +112,7 @@ if __name__ == "__main__":
         calcdir = proj.dir.calctype_dir(configname, clex)
         finaldir = join(calcdir, "run.final")
         try:
-          if calculator == "quantumespresso":
+          if software == "quantumespresso":
             if settings["outfilename"] is None:
                 print "WARNING: No output file specified in relax.json using default outfilename of std.out"
                 settings["outfilename"]="std.out"

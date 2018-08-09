@@ -130,9 +130,9 @@ def continue_job(jobdir, contdir, settings):
 
     # Rewrite new positions into infile if necessary 
     if os.path.isfile(os.path.join(jobdir,outfilename)) and os.path.isfile(os.path.join(contdir,infilename)):
-        postpos=qeio.Poscar(os.path.join(jobdir,outfilename))
+        postpos=qeio.Poscar(os.path.join(jobdir,outfilename)) # see poscar.py regarding run transfer errors
         newinfile=qeio.Infile(os.path.join(contdir,infilename))
-        newinfile.rewrite_poscar_info(postpos)
+        newinfile.rewrite_poscar_info(postpos) # see infile.py regarding run transfer errors
         newinfile.write(os.path.join(contdir,infilename))
         print "Overwrote " + infilename + " positions and lattice with positions and lattice from " + outfilename
     else:

@@ -688,7 +688,7 @@ LCHARG = .FALSE.\n";
                "    \"ppn\": processors (cores) per node to request                 \n" <<
                "    \"atom_per_proc\": max number of atoms per processor (core)     \n" <<
                "    \"walltime\": walltime to request (ex. \"48:00:00\")            \n\n" <<
-               "    \"calculator\": needs to be quantumespresso for quantum espresso to be used\n\n" <<
+               "    \"software\": needs to be quantumespresso for quantum espresso to be used\n\n" <<
 
                " Optional keys are:                                                 \n" <<
                "    \"account\": account to submit job under (default None)         \n" <<
@@ -699,8 +699,8 @@ LCHARG = .FALSE.\n";
                "    \"email\": where to send messages (ex. \"me@fake.com\", default \n" <<
                "             None)                                                  \n" <<
                "    \"qos\": quality of service, 'qos' option (ex. \"fluxoe\")      \n" <<
-               "    \"qe_cmd\": quantum espresso execution command (default is \"vasp\" if    \n" <<
-               "                ncpus=1, else \"mpirun -np {NCPUS} vasp\"           \n" <<
+               "    \"qe_cmd\": quantum espresso execution command (default is \"pw.x < {INFILE} > {OUTFILE}\" if    \n" <<
+               "                ncpus=1, else \"mpirun -np {NCPUS} pw.x < {INFILE} > {OUTFILE}\"           \n" <<
                "    \"infile\": quantum espresso input file name (default is \"std.in\"\n" <<
                "    \"outfile\": quantum espresso output file name (default is \"std.out\"\n" <<
                "    \"ncpus\": number of cpus (cores) to run on (default $PBS_NP)   \n" <<
@@ -764,17 +764,17 @@ LCHARG = .FALSE.\n";
                "  species with a given ALIAS has a '1'. For that species the fourth \n" <<
                "  column must contain the path that should be appended to the       \n" <<
                "  PSEUDO_DIR_PATH to specify the UPF file for that species.      \n\n" <<
-
-               "  Additional columns, such as 'magnetic moment' in the example below are     \n\n" <<
+               "  Additional columns, such as 'if_pos' in the example below are     \n\n" <<
                "  and used to specify the value used for a particular species in the\n" <<
-               "  infile. The column heading must match a valid quantum espress input setting.  \n\n";
+               "  infile. The column heading must match a valid quantum espresso input setting.\n"
+               "  For now only supported additional tag is if_pos, a way to fixed certain lattice positions.\n\n";
 
       args.log << "EXAMPLE: SPECIES \n";
       args.log << "-------\n" <<
                "PSEUDO_DIR_PATH = /absolute/path/to/quantumespresso_potentials\n" <<
-               "SPECIES    ALIAS    UPF  UPF_location\n" <<
-               "Ni         Ni       1       PAW_PBE/Ni.UPF \n" <<
-               "Al        Al       1       PAW_PBE/Al.UPF \n";
+               "SPECIES    ALIAS    UPF  UPF_location     if_pos\n" <<
+               "Ni         Ni       1       PAW_PBE/Ni.UPF     1,1,1\n" <<
+               "Al        Al       1       PAW_PBE/Al.UPF      1,1,1\n";
       args.log << "-------\n\n\n";
 
       args.log << "$infilename:                                                              \n" <<
