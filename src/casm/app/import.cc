@@ -413,7 +413,7 @@ namespace CASM {
 
         fs::path import_target = import_path / ("calctype." + primclex.settings().default_clex().calctype);
 
-        _cp_files(pos_path, imported_config, vm.count("copy_additional_files"), args.log);
+        _cp_files(pos_path, imported_config, vm.count("copy-additional-files"), args.log);
 
         if(!fs::exists(imported_config.get_pos_path()))
           imported_config.write_pos();
