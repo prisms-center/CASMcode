@@ -11,7 +11,8 @@ CASM_CONFIGFLAGS+="--with-boost-libdir=$CASM_BOOST_PREFIX/lib "
 CASM_CONFIGFLAGS+="--with-bash-completion-dir=$CASM_BASH_COMPLETION_DIR "
 export CASM_CONFIGFLAGS
 
-check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-int-in-bool-context -Wno-sign-compare -Wno-misleading-indentation"
+check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-int-in-bool-context -Wno-sign-compare -Wno-misleading-indentation"
 check_var "CASM_CC" "C compiler" ${CC:-"cc"}
 check_var "CASM_CXX" "C++ compiler" ${CXX:-"c++"}
 check_var "CASM_PYTHON" "C++ compiler" ${PYTHON:-"python"}
+check_var "CASM_MAKE_OPTIONS" "Options to give 'make'" ""

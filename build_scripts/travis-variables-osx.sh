@@ -15,3 +15,4 @@ check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG
 check_var "CASM_CC" "C compiler" ${CC:-"cc"}
 check_var "CASM_CXX" "C++ compiler" ${CXX:-"c++"}
 check_var "CASM_PYTHON" "C++ compiler" ${PYTHON:-"python"}
+check_var "CASM_MAKE_OPTIONS" "Options to give 'make'" ""

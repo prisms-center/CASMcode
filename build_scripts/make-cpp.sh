@@ -12,6 +12,7 @@ check_var "CASM_CC" "C compiler" ${CC:-"cc"}
 check_var "CASM_CXX" "C++ compiler" ${CXX:-"c++"}
 check_var "CASM_PYTHON" "Python interpreter" ${PYTHON:-"python"}
 check_var "CASM_NCPU" "Compiler -j option" 2
+check_var "CASM_MAKE_OPTIONS" "Options to give 'make'"
 
 check_program "$CASM_PYTHON"
 check_program autoreconf
@@ -40,6 +41,6 @@ else
   echo "'configure' already exists; continuing... (delete it to re-configure)"
 fi
 
-echo "make -s -j $CASM_NCPU"
-make -s -j $CASM_NCPU \
-  || { echo "'make -s -j $CASM_NCPU' failed"; exit 1; }
+echo "make $CASM_MAKE_OPTIONS -j $CASM_NCPU"
+make "$CASM_MAKE_OPTIONS" -j $CASM_NCPU > make.out \
+  || { cat make.out; echo "'make -s -j $CASM_NCPU' failed"; exit 1; }
