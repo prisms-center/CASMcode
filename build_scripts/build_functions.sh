@@ -25,6 +25,8 @@ build_conda_package () {
     UPLOAD_FLAGS+="--label $CASM_CONDA_LABEL "
 
     echo "!! before conda build !!"
+    echo "BUILD_FLAGS: $BUILD_FLAGS"
+    echo "UPLOAD_FLAGS: $UPLOAD_FLAGS"
     printenv
 
     echo "!! begin conda build !!"
@@ -40,7 +42,7 @@ build_conda_package () {
          fi \
       && cp $LOCATION $RESULT_DIR
 
-    conda create -n casm-anaconda-upload anaconda-client -y \
+    conda create -n casm-anaconda-upload "python =$CASM_PYTHON_VERSION" anaconda-client -y \
       || echo "casm-anaconda-upload already exists"
     conda activate casm-anaconda-upload
 
@@ -51,6 +53,9 @@ build_conda_package () {
         || print_msg_if_failed "anaconda upload failed" \
         || return 1
     fi
+
+    conda deactivate
+
   else
     echo "$RESULT_DIR/DONE already exists. skipping..."
   fi
