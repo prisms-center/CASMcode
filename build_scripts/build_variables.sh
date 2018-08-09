@@ -18,7 +18,8 @@ conda_dev_version () {
 export -f conda_dev_version
 
 # choose $(conda_dev_version) or "X.Y.Z"
-git fetch --unshallow || echo "git fetch --unshallow done"
+( cd $CASM_BUILD_DIR; git fetch --unshallow || echo "git fetch --unshallow done"; git tag; )
+
 check_var "CASM_CONDA_VERSION" "Version number for conda package" "$(cd $CASM_BUILD_DIR && conda_dev_version)"
 
 check_var "CASM_CONDA_LABEL" "Conda channel label (\"dev\" or \"main\")" "dev"
