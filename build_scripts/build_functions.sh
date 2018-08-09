@@ -24,10 +24,14 @@ build_conda_package () {
     UPLOAD_FLAGS="--user $CASM_CONDA_ID_USER "
     UPLOAD_FLAGS+="--label $CASM_CONDA_LABEL "
 
+    echo "!! before conda build !!"
+    printenv
+
+    echo "!! begin conda build !!"
     mkdir -p $RESULT_DIR \
       && conda build $BUILD_FLAGS $RECIPE_DIR > $RESULT_DIR/tmp.out \
-      || do_if_failed "cat $RESULT_DIR/tmp.out" \
-      || print_msg_if_failed "conda build failed" \
+      || do_if_failed '( echo "!! conda build failed !!"; cat $RESULT_DIR/tmp.out )' \
+      || print_msg_if_failed "!! conda build failed !!" \
       || return 1
 
     LOCATION=$(grep 'conda upload' $RESULT_DIR/tmp.out | cut -f3 -d ' ') \
