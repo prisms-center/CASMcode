@@ -41,6 +41,6 @@ else
   echo "'configure' already exists; continuing... (delete it to re-configure)"
 fi
 
-echo "make $CASM_MAKE_OPTIONS -j $CASM_NCPU"
-make "$CASM_MAKE_OPTIONS" -j $CASM_NCPU > make.out \
-  || { cat make.out; echo "'make -s -j $CASM_NCPU' failed"; exit 1; }
+echo "make ${CASM_MAKE_OPTIONS:+$CASM_MAKE_OPTIONS} -j $CASM_NCPU"
+make ${CASM_MAKE_OPTIONS:+$CASM_MAKE_OPTIONS} -j $CASM_NCPU > make.out \
+  || { cat make.out; echo "'make ${CASM_MAKE_OPTIONS:+$CASM_MAKE_OPTIONS} -j $CASM_NCPU' failed"; exit 1; }
