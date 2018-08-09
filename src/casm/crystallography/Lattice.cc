@@ -930,7 +930,7 @@ namespace CASM {
 
     tnormal = normal;
     double new_vol;
-
+    bool one_found = false;
     do {
       normal = tnormal * factor;
 
@@ -958,6 +958,7 @@ namespace CASM {
         std::cout << "Gamma :" << (180 / M_PI)*CASM::angle(surface_cell.col(0), surface_cell.col(1)) << "\u00B0" << std::endl << std::endl << std::endl;
 
         last_surface_cell = surface_cell; //Remember currect generated cell, in case we can't find anything better later
+        one_found = true;
 
         new_vol = fabs(surface_cell.col(2).dot(surface_cell.col(0).cross(surface_cell.col(1))));
 
@@ -968,6 +969,9 @@ namespace CASM {
       factor++;
 
       if(factor == 100) {
+        if(!one_found) {
+          throw std::runtime_error("failed get_lattice_in_plane");
+        }
         std::cerr << "Reached an outrageous size. Returning last generated cell" << std::endl;
         surface_cell = last_surface_cell;
         break;
@@ -1230,6 +1234,3 @@ namespace CASM {
   }
 
 }
-
-
-

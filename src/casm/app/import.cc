@@ -243,7 +243,6 @@ namespace CASM {
       }
 
       //Import structure and make note of path
-      bool new_import = false;
       jsonParser relax_data;
       std::pair<bool, double> checkenergy(false, 0.0);
 
@@ -266,7 +265,6 @@ namespace CASM {
         if(configmapper.import_structure_occupation(import_struc, imported_name, fullrelax_data, best_assignment, cart_op, true)) {
           args.log << "  " << pos_path << "\n  was imported successfully as " << imported_name << std::endl << std::endl;
           n_unique++;
-          new_import = true;
         }
         else {
           args.log << "  " << pos_path << "\n  mapped onto pre-existing equivalent structure " << imported_name << std::endl << std::endl;

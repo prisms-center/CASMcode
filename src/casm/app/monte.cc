@@ -107,7 +107,6 @@ namespace CASM {
 
     fs::path settings_path;
     std::string verbosity_str;
-    Index condition_index;
 
     // Set command line options using boost program_options
     Completer::MonteOption monte_opt;
@@ -133,7 +132,6 @@ namespace CASM {
 
       settings_path = monte_opt.settings_path();
       verbosity_str = monte_opt.verbosity_str();
-      condition_index = monte_opt.condition_index();
 
       if(vm.count("verbosity")) {
         auto res = Log::verbosity_level(verbosity_str);

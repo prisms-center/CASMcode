@@ -233,7 +233,7 @@ namespace CASM {
       auto begin = primclex.config_begin();
       auto end = primclex.config_end();
       auto res = end;
-      double close_dist;
+      double close_dist = std::numeric_limits<double>::max();
       for(auto it = begin; it != end; ++it) {
         if(!it->calc_properties().contains("relaxed_energy")) {
           continue;

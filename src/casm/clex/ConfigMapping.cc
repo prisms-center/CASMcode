@@ -163,7 +163,7 @@ namespace CASM {
     ConfigDoF tconfigdof, suggested_configdof;
     Lattice mapped_lat;
     bool is_new_config(true);
-    double bc(1e20), sc(1e20), hint_cost = 1e20, robust_cost = 1e20;
+    double bc(1e20), sc(1e20), hint_cost = 1e20;
 
     relaxation_properties.put_obj();
     //std::vector<Index> best_assignment;
@@ -196,7 +196,7 @@ namespace CASM {
 
       bc = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
       sc = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
-      robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
+      // robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
       relaxation_properties["best_mapping"]["basis_deformation"] = bc;
       relaxation_properties["best_mapping"]["lattice_deformation"] = sc;
       relaxation_properties["best_mapping"]["volume_relaxation"] = tconfigdof.deformation().determinant();
