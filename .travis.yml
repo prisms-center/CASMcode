@@ -2,6 +2,9 @@ sudo: false
 
 language: cpp
 
+git:
+  depth: false
+
 cache:
   ccache: true
 
@@ -65,7 +68,7 @@ jobs:
             - curl
       script:
         - echo "package_it on $TRAVIS_OS_NAME"
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
+        - travis_wait 40 bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
 
     # centos:6 linux package, for old OS
     - stage: package_it
@@ -80,7 +83,7 @@ jobs:
         - CASM_CONDA_FEATURE="condagcc_centos6"
       script:
         - echo "package_it w/docker on $TRAVIS_OS_NAME"
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda-docker.sh
+        - travis_wait 40 bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda-docker.sh
 
     # osx package
     - stage: package_it
@@ -89,4 +92,4 @@ jobs:
       compiler: clang
       script:
         - echo "package_it on $TRAVIS_OS_NAME"
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
+        - travis_wait 40 bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
