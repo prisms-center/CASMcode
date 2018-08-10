@@ -1,15 +1,15 @@
 """A module for interacting with SeqQuest"""
-from seqquest import \
+from casm.seqquest.seqquest import \
     SeqQuestError,\
     SeqQuestWarning,\
     continue_job,\
     complete_job,\
     run
 
-from relax import RelaxError, Relax
+from casm.seqquest.relax import RelaxError, Relax
 
 __all__ = [
-    'RelaxError', 
+    'RelaxError',
     'Relax',
     'SeqQuestError',
     'SeqQuestWarning',
