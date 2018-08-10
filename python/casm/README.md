@@ -62,7 +62,7 @@ Options:
 - Set ``CASM_SKIP_PYTHON_TESTS`` to non-zero length to skip Python tests.
 - Do ``unset CASM_SKIP_PYTHON_TESTS`` to re-enable Python tests.
 - Use the ``CASM_PYTEST_ARGS`` environment variable to pass arguments to pytest. Default is `test_casm`.
-- Use the ``CASM_PYTEST_OPTIONS`` environment variable to set pytest options Default is ``"-r ap -s"``.
+- Use the ``CASM_PYTEST_OPTIONS`` environment variable to set pytest options. Default is ``"-r ap -s"``.
 - Add a file named `'skip'` to a test directory to skip all test classes in that directory.
 - Add a file named `'skip_TestCase'` to skip the `TestCase` class in that directory.
 
@@ -122,9 +122,9 @@ From ``CASMcode/python/casm`` directory:
 
 	# Generate an index.rst file including all casm subpackages
 	python build_doc_api_index.py
-	
+
 	# Generate docs
 	python setup.py build_sphinx
-	
+
 	# Open
 	open doc/build/html/index.html
