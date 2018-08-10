@@ -62,7 +62,7 @@ else
   rm -rf $CASM_CONDA_BUILD_DIR/miniconda.sh
   conda install -y "python =$CASM_PYTHON_VERSION"
   if [ -n "$CASM_CONDA_DIST" ]; then
-    conda install -y conda-build anaconda-client
+    conda install -y conda-build conda-verify anaconda-client
   fi
   conda update --all --yes
   conda clean --all --yes
