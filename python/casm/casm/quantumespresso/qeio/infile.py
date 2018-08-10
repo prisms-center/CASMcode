@@ -4,47 +4,97 @@ from builtins import *
 import numpy as np
 import re,copy,math
 
-from casm.wrapper.misc import remove_chars
+##############################################NAMELIST BASE CLASS TO SHARE COMMON METHODS#########################
 
-##############################################CONTROL MODULE BEGINS HERE############################################
-QUANTUM_ESPRESSO_CONTROL_INT_LIST=['nstep','iprint','nberrycyc','gdir','nppstr']
-QUANTUM_ESPRESSO_CONTROL_FLOAT_LIST=['dt','max_seconds','etot_conv_thr','forc_conv_thr']
-QUANTUM_ESPRESSO_CONTROL_BOOL_LIST=['wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield',\
-                                    'lelfield','lorbm','lberry','lfcpopt']
-QUANTUM_ESPRESSO_CONTROL_STR_LIST=['calculation','title','verbosity','restart_mode','outdir','wfcdir',\
-                                    'prefix','disk_io','pseudo_dir']
+#These dictionaries represent the recognized options read from quantum espresso namelists
+QUANTUM_ESPRESSO_INT_LIST ={
+            'CONTROL' : ['nstep','iprint','nberrycyc','gdir','nppstr'],
+            'SYSTEM' :['ibrav','nat','ntyp','nbnd','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin',\
+                    'nqx1','nqx2','nqx3','lda_plus_u_kind','edir','report','esm_nfit','space_group','origin_choice'],
+            'ELECTRONS' :['electron_maxstep','mixing_ndim','mixing_fixed_ns','ortho_para','diago_cg_maxiter','diago_david_ndim'],
+            'IONS' : ['nraise','bfgs_ndim'],
+            'CELL' : []
+}
+QUANTUM_ESPRESSO_FLOAT_LIST ={
+            'CONTROL' : ['dt','max_seconds','etot_conv_thr','forc_conv_thr'],
+            'SYSTEM' : ['celldm(1)','celldm(2)','celldm(3)','celldm(4)','celldm(5)','celldm(6)',\
+                        'a','b','c','cosab','cosac','cosbc','tot_charge','ecutwfc','ecutrho',\
+                        'degauss','ecfixed','qcutz','q2sigma','exx_fraction','screening_parameter',\
+                        'ecutvcut','emaxpos','eopreg','eamp','fixed_magnetization(1)','fixed_magnetization(2)','fixed_magnetization(3)'\
+                        'lambda','esm_w','esm_efield','fcp_mu','london_s6','london_rcut','xdm_a1','xdm_a2'],
+            'ELECTRONS' :['conv_thr','conv_thr_init','conv_thr_multi','mixing_beta','diago_thr_init','efield','efield_cart(1)','efield_cart(2)','efield_cart(3)'],
+            'IONS' : ['tempw','tolp','delta_t','upscale','trust_radius_max','trust_radius_max','trust_radius_ini','w_1','w_2'],
+            'CELL' : ['press','wmass','cell_factor','press_conv_thr']
+}
+QUANTUM_ESPRESSO_BOOL_LIST ={
+            'CONTROL' : ['wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield',\
+                        'lelfield','lorbm','lberry','lfcpopt'],
+            'SYSTEM' : ['nosym','nosym_evc','noinv','no_t_rev','force_symmorphic','use_all_frac',\
+                        'one_atom_occupations','starting_spin_angle','noncolin','x_gamma_extrapolation',\
+                        'lda_plus_u','lspinorb','london','xdm','uniqueb','rhombohedral'],
+            'ELECTRONS' : ['scf_must_converge','adaptive_thr','diago_full_acc','tqr'],
+            'IONS' : ['remove_rigid_rot','refold_pos'],
+            'CELL' : []
+}
+QUANTUM_ESPRESSO_STR_LIST ={
+            'CONTROL' : ['calculation','title','verbosity','restart_mode','outdir','wfcdir',\
+                        'prefix','disk_io','pseudo_dir'],
+            'SYSTEM' : ['occupations','smearing','input_dft','exxdiv_treatment','u_projection_type','constrained_magnetization'\
+                        'assume_isolated','esm_bc','vdw_corr'],
+            'ELECTRONS' :['mixing_mode','diagonalization','startingpot','startingwfc'],
+            'IONS' : ['ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation','ion_temperature'],
+            'CELL' : ['cell_dynamics','cell_dofree']
+}
 
-QUANTUM_ESPRESSO_CONTROL_LIST= QUANTUM_ESPRESSO_CONTROL_STR_LIST + QUANTUM_ESPRESSO_CONTROL_BOOL_LIST + QUANTUM_ESPRESSO_CONTROL_FLOAT_LIST + QUANTUM_ESPRESSO_CONTROL_INT_LIST
+QUANTUM_ESPRESSO_TOTAL_LIST ={
+            'CONTROL' : QUANTUM_ESPRESSO_INT_LIST['CONTROL'] + QUANTUM_ESPRESSO_FLOAT_LIST['CONTROL'] + QUANTUM_ESPRESSO_BOOL_LIST['CONTROL'] + QUANTUM_ESPRESSO_STR_LIST['CONTROL'],
+            'SYSTEM' : QUANTUM_ESPRESSO_INT_LIST['SYSTEM'] + QUANTUM_ESPRESSO_FLOAT_LIST['SYSTEM'] + QUANTUM_ESPRESSO_BOOL_LIST['SYSTEM'] + QUANTUM_ESPRESSO_STR_LIST['SYSTEM'],
+            'ELECTRONS' :QUANTUM_ESPRESSO_INT_LIST['ELECTRONS'] + QUANTUM_ESPRESSO_FLOAT_LIST['ELECTRONS'] + QUANTUM_ESPRESSO_BOOL_LIST['ELECTRONS'] + QUANTUM_ESPRESSO_STR_LIST['ELECTRONS'],
+            'IONS' : QUANTUM_ESPRESSO_INT_LIST['IONS'] + QUANTUM_ESPRESSO_FLOAT_LIST['IONS'] + QUANTUM_ESPRESSO_BOOL_LIST['IONS'] + QUANTUM_ESPRESSO_STR_LIST['IONS'],
+            'CELL' : QUANTUM_ESPRESSO_INT_LIST['CELL'] + QUANTUM_ESPRESSO_FLOAT_LIST['CELL'] + QUANTUM_ESPRESSO_BOOL_LIST['CELL'] + QUANTUM_ESPRESSO_STR_LIST['CELL']
+}
 
 
 
-class ControlError(Exception):
+
+QUANTUM_ESPRESSO_CONTROL_LIST = QUANTUM_ESPRESSO_INT_LIST['CONTROL'] + QUANTUM_ESPRESSO_FLOAT_LIST['CONTROL'] + QUANTUM_ESPRESSO_BOOL_LIST['CONTROL'] + QUANTUM_ESPRESSO_STR_LIST['CONTROL']
+QUANTUM_ESPRESSO_SYSTEM_LIST = QUANTUM_ESPRESSO_INT_LIST['SYSTEM'] + QUANTUM_ESPRESSO_FLOAT_LIST['SYSTEM'] + QUANTUM_ESPRESSO_BOOL_LIST['SYSTEM'] + QUANTUM_ESPRESSO_STR_LIST['SYSTEM']
+QUANTUM_ESPRESSO_ELECTRONS_LIST = QUANTUM_ESPRESSO_INT_LIST['ELECTRONS'] + QUANTUM_ESPRESSO_FLOAT_LIST['ELECTRONS'] + QUANTUM_ESPRESSO_BOOL_LIST['ELECTRONS'] + QUANTUM_ESPRESSO_STR_LIST['ELECTRONS']
+QUANTUM_ESPRESSO_IONS_LIST = QUANTUM_ESPRESSO_INT_LIST['IONS'] + QUANTUM_ESPRESSO_FLOAT_LIST['IONS'] + QUANTUM_ESPRESSO_BOOL_LIST['IONS'] + QUANTUM_ESPRESSO_STR_LIST['IONS']
+QUANTUM_ESPRESSO_CELL_LIST = QUANTUM_ESPRESSO_INT_LIST['CELL'] + QUANTUM_ESPRESSO_FLOAT_LIST['CELL'] + QUANTUM_ESPRESSO_BOOL_LIST['CELL'] + QUANTUM_ESPRESSO_STR_LIST['CELL']
+
+class NamelistError(Exception):
     def __init__(self,msg):
         self.msg = msg
 
     def __str__(self):
         return self.msg
 
-class Control:
+class NamelistBase:
     """
-    The Control class contains:
-        tags: a dict of all Control tags
+    The Namelist class contains:
+        title: header of the namelist
+        tags: a dict of all Namelist tags
 
     All namelist tags and associated values are stored as key-value pairs in the dictionary called 'tags'.
-   """
-    def __init__(self,nameliststring):
-        """ Construct a Control object from 'nameliststring'"""
+    """
+    def __init__(self, title, nameliststring):
+        """ Construct a Namelist object from 'nameliststring'"""
+        self.title = title
         self.read(nameliststring)
 
     def read(self, nameliststring):
-        """ Read a Control namelist """
+        """ Read a  namelist """
         self.tags=dict()
         line_segments=re.split('\n',nameliststring)
         # parse nameliststringlist into self.tags
         for line in line_segments:
-                line = re.split('=',re.split(',',line)[0])
-                if len(line) == 2:
-                    self.tags[line[0].strip()] =  line[1].strip()
+                commasplit = re.split(',',line)
+                if len(commasplit) > 0:
+                    line = re.split('=',commasplit[0])
+                    if len(line) == 2:
+                        if line[0].strip()[0]!= '!':
+                            self.tags[line[0].strip()] =  line[1].strip()
         self._verify_tags()
         self._make_natural_type()
 
@@ -54,31 +104,67 @@ class Control:
             if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
                 self.tags[tag] = None
             else:
-                if tag.lower() in QUANTUM_ESPRESSO_CONTROL_INT_LIST:
+                if tag.lower() in QUANTUM_ESPRESSO_INT_LIST[self.title]:
                     try:
                         self.tags[tag] = int(self.tags[tag])
                     except ValueError:
-                        raise ControlError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to int")
-                elif tag.lower() in QUANTUM_ESPRESSO_CONTROL_FLOAT_LIST:
+                        raise NamelistError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to int")
+                elif tag.lower() in QUANTUM_ESPRESSO_FLOAT_LIST[self.title]:
                     try:
                         self.tags[tag] = float(self.tags[tag].lower().replace('d','e'))
                     except ValueError:
-                        raise ControlError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to float")
-                elif tag.lower() in QUANTUM_ESPRESSO_CONTROL_BOOL_LIST:
+                        raise NamelistError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to float")
+                elif tag.lower() in QUANTUM_ESPRESSO_BOOL_LIST[self.title]:
                     if not self.tags[tag].lower() in ['.true.','.false.']:
-                        raise ControlError("Could not find '" + tag + "' : '" + self.tags[tag].lower() + "' in ['.true.','.false.']")
+                        raise NamelistError("Could not find '" + tag + "' : '" + self.tags[tag].lower() + "' in ['.true.','.false.']")
                     else:
                         self.tags[tag] = (self.tags[tag].lower() == '.true.')
-                elif tag.lower() in QUANTUM_ESPRESSO_CONTROL_STR_LIST:
+                elif tag.lower() in QUANTUM_ESPRESSO_STR_LIST[self.title]:
                     self._check_string_tag(tag,self.tags[tag])
 
     def _verify_tags(self):
-        """ Check that only allowed Control tags are in self.tags """
+        """ Check that only allowed Namelist tags are in self.tags """
+        TOT_LIST = QUANTUM_ESPRESSO_INT_LIST[self.title] + QUANTUM_ESPRESSO_FLOAT_LIST[self.title] + QUANTUM_ESPRESSO_BOOL_LIST[self.title] + QUANTUM_ESPRESSO_STR_LIST[self.title]
         for tag in self.tags:
-            if tag in QUANTUM_ESPRESSO_CONTROL_LIST:
+            if tag in TOT_LIST:
                 continue
             else:
-                print(("Warning: unknown Control tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
+                print("Warning: unknown "+ self.title + " tag '" + tag + "' with value '" + str(self.tags[tag]) + "'")
+
+    def make_string(self):
+        """Convert namelist to string for writing"""
+        nameliststr=""
+        for tag in self.tags:
+            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
+                pass
+            elif type(self.tags[tag])==type(True):
+                nameliststr= nameliststr + " " + tag + " = ." + str(self.tags[tag]).lower() + ".,\n"
+            else:
+                nameliststr= nameliststr + " " + tag + " = " + str(self.tags[tag]) + ",\n" 
+        return nameliststr
+
+    def _check_string_tag(self,tag,value):
+        pass
+
+##############################################CONTROL MODULE BEGINS HERE############################################
+class ControlError(Exception):
+    def __init__(self,msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+class Control(NamelistBase):
+    """
+    The Control class contains:
+        tags: a dict of all Control tags
+
+    All namelist tags and associated values are stored as key-value pairs in the dictionary called 'tags'.
+   """
+    def __init__(self, title, nameliststring):
+        """ Construct a Control object from 'nameliststring'"""
+        #self.read(nameliststring)
+        NamelistBase.__init__(self,title,nameliststring)
 
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
@@ -95,104 +181,28 @@ class Control:
             if value.lower() not in ["'high'","'medium'","'low'","'none'"]:
                 raise ControlError("Unknown 'disk_io' value: '" + value)
 
-    def make_string(self):
-        """Convert namelist to string for writing"""
-        nameliststr=""
-        for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
-                pass
-            elif type(self.tags[tag])==type(True):
-                nameliststr= nameliststr + " " + tag + " = ." + str(self.tags[tag]).lower() + ".,\n"
-            else:
-                nameliststr= nameliststr + " " + tag + " = " + str(self.tags[tag]) + ",\n" 
-        return nameliststr
 ##############################################END CONTROL MODULE#############################################################
 
 
 
 ##############################################SYSTEM MODULE BEGINS HERE############################################
-QUANTUM_ESPRESSO_SYSTEM_INT_LIST=['ibrav','nat','ntyp','nbnd','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin',\
-                                    'nqx1','nqx2','nqx3','lda_plus_u_kind','edir','report','esm_nfit','space_group','origin_choice']
-QUANTUM_ESPRESSO_SYSTEM_FLOAT_LIST=['celldm(1)','celldm(2)','celldm(3)','celldm(4)','celldm(5)','celldm(6)',\
-                                    'a','b','c','cosab','cosac','cosbc','tot_charge','ecutwfc','ecutrho',\
-                                    'degauss','ecfixed','qcutz','q2sigma','exx_fraction','screening_parameter',\
-                                    'ecutvcut','emaxpos','eopreg','eamp','fixed_magnetization(1)','fixed_magnetization(2)','fixed_magnetization(3)'\
-                                    'lambda','esm_w','esm_efield','fcp_mu','london_s6','london_rcut','xdm_a1','xdm_a2']
-QUANTUM_ESPRESSO_SYSTEM_BOOL_LIST=['nosym','nosym_evc','noinv','no_t_rev','force_symmorphic','use_all_frac',\
-                                    'one_atom_occupations','starting_spin_angle','noncolin','x_gamma_extrapolation',\
-                                    'lda_plus_u','lspinorb','london','xdm','uniqueb','rhombohedral']
-QUANTUM_ESPRESSO_SYSTEM_STR_LIST=['occupations','smearing','input_dft','exxdiv_treatment','u_projection_type','constrained_magnetization'\
-                                    'assume_isolated','esm_bc','vdw_corr']
-
-QUANTUM_ESPRESSO_SYSTEM_LIST= QUANTUM_ESPRESSO_SYSTEM_STR_LIST + QUANTUM_ESPRESSO_SYSTEM_BOOL_LIST + QUANTUM_ESPRESSO_SYSTEM_FLOAT_LIST + QUANTUM_ESPRESSO_SYSTEM_INT_LIST
-
-
-
-class SysError(Exception):
+class SystemError(Exception):
     def __init__(self,msg):
         self.msg = msg
 
     def __str__(self):
         return self.msg
 
-class Sys:
+class System(NamelistBase):
     """
     The Sys class contains:
         tags: a dict of all System tags
 
     All namelist tags and associated values are stored as key-value pairs in the dictionary called 'tags'.
    """
-    def __init__(self,nameliststring):
+    def __init__(self, title, nameliststring):
         """ Construct a Sys object from 'nameliststring'"""
-        self.read(nameliststring)
-
-    def read(self, nameliststring):
-        """ Read a System namelist """
-        self.tags=dict()
-        line_segments=re.split('\n',nameliststring)
-        # parse nameliststringlist into self.tags
-        for line in line_segments:
-                line = re.split('=',re.split(',',line)[0])
-                if len(line) == 2:
-                    self.tags[line[0].strip()] =  line[1].strip()
-
-
-
-
-        self._verify_tags()
-        self._make_natural_type()
-
-    def _make_natural_type(self):
-        """ Convert self.tags values from strings into their 'natural type' (int, float, etc.) """
-        for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
-                self.tags[tag] = None
-            else:
-                if tag.lower() in QUANTUM_ESPRESSO_SYSTEM_INT_LIST:
-                    try:
-                        self.tags[tag] = int(self.tags[tag])
-                    except ValueError:
-                        raise SysError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to int")
-                elif tag.lower() in QUANTUM_ESPRESSO_SYSTEM_FLOAT_LIST:
-                    try:
-                        self.tags[tag] = float(self.tags[tag].lower().replace('d','e'))
-                    except ValueError:
-                        raise SysError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to float")
-                elif tag.lower() in QUANTUM_ESPRESSO_SYSTEM_BOOL_LIST:
-                    if not self.tags[tag].lower() in ['.true.','.false.']:
-                        raise SysError("Could not find '" + tag + "' : '" + self.tags[tag].lower() + "' in ['.true.','.false.']")
-                    else:
-                        self.tags[tag] = (self.tags[tag].lower() == '.true.')
-                elif tag.lower() in QUANTUM_ESPRESSO_SYSTEM_STR_LIST:
-                    self._check_string_tag(tag,self.tags[tag])
-
-    def _verify_tags(self):
-        """ Check that only allowed System tags self.tags """
-        for tag in self.tags:
-            if tag in QUANTUM_ESPRESSO_SYSTEM_LIST:
-                continue
-            else:
-                print(("Warning: unknown System tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
+        NamelistBase.__init__(self,title,nameliststring)
 
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
@@ -221,31 +231,11 @@ class Sys:
             if value.lower() not in ["'grimme-d2'","'dft-d'","'ts'","'ts-vdw'","'xdm'"]:
                 raise SysError("Unknown 'esm_bc' value: '" + value)
 
-    def make_string(self):
-        """Convert namelist to string for writing"""
-        nameliststr=""
-        for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
-                pass
-            elif type(self.tags[tag])==type(True):
-                nameliststr= nameliststr + " " + tag + " = ." + str(self.tags[tag]).lower() + ".,\n"
-            else:
-                nameliststr= nameliststr + " " + tag + " = " + str(self.tags[tag]) + ",\n" 
-        return nameliststr
 ##############################################END SYSTEM MODULE#############################################################
 
 
 
 ##############################################ELECTRONS MODULE BEGINS HERE############################################
-QUANTUM_ESPRESSO_ELECTRONS_INT_LIST=['electron_maxstep','mixing_ndim','mixing_fixed_ns','ortho_para','diago_cg_maxiter','diago_david_ndim']
-QUANTUM_ESPRESSO_ELECTRONS_FLOAT_LIST=['conv_thr','conv_thr_init','conv_thr_multi','mixing_beta','diago_thr_init','efield','efield_cart(1)','efield_cart(2)','efield_cart(3)']
-QUANTUM_ESPRESSO_ELECTRONS_BOOL_LIST=['scf_must_converge','adaptive_thr','diago_full_acc','tqr']
-QUANTUM_ESPRESSO_ELECTRONS_STR_LIST=['mixing_mode','diagonalization','startingpot','startingwfc']
-
-QUANTUM_ESPRESSO_ELECTRONS_LIST= QUANTUM_ESPRESSO_ELECTRONS_STR_LIST + QUANTUM_ESPRESSO_ELECTRONS_BOOL_LIST + QUANTUM_ESPRESSO_ELECTRONS_FLOAT_LIST + QUANTUM_ESPRESSO_ELECTRONS_INT_LIST
-
-
-
 class ElectronsError(Exception):
     def __init__(self,msg):
         self.msg = msg
@@ -253,64 +243,17 @@ class ElectronsError(Exception):
     def __str__(self):
         return self.msg
 
-class Electrons:
+class Electrons(NamelistBase):
+
     """
     The Electrons class contains:
         tags: a dict of all Electrons tags
 
     All namelist tags and associated values are stored as key-value pairs in the dictionary called 'tags'.
    """
-    def __init__(self,nameliststring):
+    def __init__(self,title, nameliststring):
         """ Construct an Electrons object from 'nameliststring'"""
-        self.read(nameliststring)
-
-    def read(self, nameliststring):
-        """ Read an Electrons namelist """
-        self.tags=dict()
-        line_segments=re.split('\n',nameliststring)
-        # parse nameliststringlist into self.tags
-        for line in line_segments:
-                line = re.split('=',re.split(',',line)[0])
-                if len(line) == 2:
-                    self.tags[line[0].strip()] =  line[1].strip()
-
-
-
-
-        self._verify_tags()
-        self._make_natural_type()
-
-    def _make_natural_type(self):
-        """ Convert self.tags values from strings into their 'natural type' (int, float, etc.) """
-        for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
-                self.tags[tag] = None
-            else:
-                if tag.lower() in QUANTUM_ESPRESSO_ELECTRONS_INT_LIST:
-                    try:
-                        self.tags[tag] = int(self.tags[tag])
-                    except ValueError:
-                        raise ElectronsError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to int")
-                elif tag.lower() in QUANTUM_ESPRESSO_ELECTRONS_FLOAT_LIST:
-                    try:
-                        self.tags[tag] = float(self.tags[tag].lower().replace('d','e'))
-                    except ValueError:
-                        raise ElectronsError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to float")
-                elif tag.lower() in QUANTUM_ESPRESSO_ELECTRONS_BOOL_LIST:
-                    if not self.tags[tag].lower() in ['.true.','.false.']:
-                        raise ElectronsError("Could not find '" + tag + "' : '" + self.tags[tag].lower() + "' in ['.true.','.false.']")
-                    else:
-                        self.tags[tag] = (self.tags[tag].lower() == '.true.')
-                elif tag.lower() in QUANTUM_ESPRESSO_ELECTRONS_STR_LIST:
-                    self._check_string_tag(tag,self.tags[tag])
-
-    def _verify_tags(self):
-        """ Check that only allowed Electrons tags  self.tags """
-        for tag in self.tags:
-            if tag in QUANTUM_ESPRESSO_ELECTRONS_LIST:
-                continue
-            else:
-                print(("Warning: unknown Electrons tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
+        NamelistBase.__init__(self,title,nameliststring)
 
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
@@ -327,31 +270,11 @@ class Electrons:
             if value.lower() not in ["'atomic'","'atomic+random'","'random'","'file'"]:
                 raise ElectronsError("Unknown 'startingwfc' value: '" + value)
                 
-    def make_string(self):
-        """Convert namelist to string for writing"""
-        nameliststr=""
-        for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
-                pass
-            elif type(self.tags[tag])==type(True):
-                nameliststr= nameliststr + " " + tag + " = ." + str(self.tags[tag]).lower() + ".,\n"
-            else:
-                nameliststr= nameliststr + " " + tag + " = " + str(self.tags[tag]) + ",\n" 
-        return nameliststr
 ##############################################END ELECTRONS MODULE#############################################################
 
 
 
 ##############################################IONS MODULE BEGINS HERE############################################
-QUANTUM_ESPRESSO_IONS_INT_LIST=['nraise','bfgs_ndim']
-QUANTUM_ESPRESSO_IONS_FLOAT_LIST=['tempw','tolp','delta_t','upscale','trust_radius_max','trust_radius_max','trust_radius_ini','w_1','w_2']
-QUANTUM_ESPRESSO_IONS_BOOL_LIST=['remove_rigid_rot','refold_pos']
-QUANTUM_ESPRESSO_IONS_STR_LIST=['ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation','ion_temperature']
-
-QUANTUM_ESPRESSO_IONS_LIST= QUANTUM_ESPRESSO_IONS_STR_LIST + QUANTUM_ESPRESSO_IONS_BOOL_LIST + QUANTUM_ESPRESSO_IONS_FLOAT_LIST + QUANTUM_ESPRESSO_IONS_INT_LIST
-
-
-
 class IonsError(Exception):
     def __init__(self,msg):
         self.msg = msg
@@ -359,65 +282,18 @@ class IonsError(Exception):
     def __str__(self):
         return self.msg
 
-class Ions:
+class Ions(NamelistBase):
     """
     The Ions class contains:
         tags: a dict of all Ions tags
 
     All namelist tags and associated values are stored as key-value pairs in the dictionary called 'tags'.
    """
-    def __init__(self,nameliststring):
+
+    def __init__(self,title, nameliststring):
         """ Construct an Ions object from 'nameliststring'"""
-        self.read(nameliststring)
-
-    def read(self, nameliststring):
-        """ Read an Ions namelist """
-        self.tags=dict()
-        line_segments=re.split('\n',nameliststring)
-        # parse nameliststringlist into self.tags
-        for line in line_segments:
-                line = re.split('=',re.split(',',line)[0])
-                if len(line) == 2:
-                    self.tags[line[0].strip()] =  line[1].strip()
-
-
-
-
-        self._verify_tags()
-        self._make_natural_type()
-
-    def _make_natural_type(self):
-        """ Convert self.tags values from strings into their 'natural type' (int, float, etc.) """
-        for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
-                self.tags[tag] = None
-            else:
-                if tag.lower() in QUANTUM_ESPRESSO_IONS_INT_LIST:
-                    try:
-                        self.tags[tag] = int(self.tags[tag])
-                    except ValueError:
-                        raise IonsError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to int")
-                elif tag.lower() in QUANTUM_ESPRESSO_IONS_FLOAT_LIST:
-                    try:
-                        self.tags[tag] = float(self.tags[tag].lower().replace('d','e'))
-                    except ValueError:
-                        raise IonsError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to float")
-                elif tag.lower() in QUANTUM_ESPRESSO_IONS_BOOL_LIST:
-                    if not self.tags[tag].lower() in ['.true.','.false.']:
-                        raise IonsError("Could not find '" + tag + "' : '" + self.tags[tag].lower() + "' in ['.true.','.false.']")
-                    else:
-                        self.tags[tag] = (self.tags[tag].lower() == '.true.')
-                elif tag.lower() in QUANTUM_ESPRESSO_IONS_STR_LIST:
-                    self._check_string_tag(tag,self.tags[tag])
-
-    def _verify_tags(self):
-        """ Check that only allowed Ions tags are in self.tags """
-        for tag in self.tags:
-            if tag in QUANTUM_ESPRESSO_IONS_LIST:
-                continue
-            else:
-                print(("Warning: unknown Ions tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
-
+        NamelistBase.__init__(self,title,nameliststring)
+        
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
         if tag.lower() == 'ion_dynamics':
@@ -436,28 +312,9 @@ class Ions:
             if value.lower() not in ["'rescaling'","'rescale-v'","'rescale-t'","'reduce-t'","'berendsen'","'andersen'","'initial'","'not_controlled'"]:
                 raise IonsError("Unknown 'ion_temperature' value: '" + value)
 
-    def make_string(self):
-        """Convert namelist to string for writing"""
-        nameliststr=""
-        for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
-                pass
-            elif type(self.tags[tag])==type(True):
-                nameliststr= nameliststr + " " + tag + " = ." + str(self.tags[tag]).lower() + ".,\n"
-            else:
-                nameliststr= nameliststr + " " + tag + " = " + str(self.tags[tag]) + ",\n" 
-        return nameliststr
 ##############################################END IONS MODULE#############################################################
 
 ##############################################CELL MODULE BEGINS HERE############################################
-QUANTUM_ESPRESSO_CELL_INT_LIST=[]
-QUANTUM_ESPRESSO_CELL_FLOAT_LIST=['press','wmass','cell_factor','press_conv_thr']
-QUANTUM_ESPRESSO_CELL_BOOL_LIST=[]
-QUANTUM_ESPRESSO_CELL_STR_LIST=['cell_dynamics','cell_dofree']
-
-QUANTUM_ESPRESSO_CELL_LIST= QUANTUM_ESPRESSO_CELL_STR_LIST + QUANTUM_ESPRESSO_CELL_BOOL_LIST + QUANTUM_ESPRESSO_CELL_FLOAT_LIST + QUANTUM_ESPRESSO_CELL_INT_LIST
-
-
 
 class CellError(Exception):
     def __init__(self,msg):
@@ -466,64 +323,17 @@ class CellError(Exception):
     def __str__(self):
         return self.msg
 
-class Cell:
+
+class Cell(NamelistBase):
     """
     The Cell class contains:
         tags: a dict of all Cell tags
 
     All namelist tags and associated values are stored as key-value pairs in the dictionary called 'tags'.
    """
-    def __init__(self,nameliststring):
+    def __init__(self, title, nameliststring):
         """ Construct a Cell object from 'nameliststring'"""
-        self.read(nameliststring)
-
-    def read(self, nameliststring):
-        """ Read a Cell namelist """
-        self.tags=dict()
-        line_segments=re.split('\n',nameliststring)
-        # parse nameliststringlist into self.tags
-        for line in line_segments:
-                line = re.split('=',re.split(',',line)[0])
-                if len(line) == 2:
-                    self.tags[line[0].strip()] =  line[1].strip()
-
-
-
-
-        self._verify_tags()
-        self._make_natural_type()
-
-    def _make_natural_type(self):
-        """ Convert self.tags values from strings into their 'natural type' (int, float, etc.) """
-        for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
-                self.tags[tag] = None
-            else:
-                if tag.lower() in QUANTUM_ESPRESSO_CELL_INT_LIST:
-                    try:
-                        self.tags[tag] = int(self.tags[tag])
-                    except ValueError:
-                        raise IonsError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to int")
-                elif tag.lower() in QUANTUM_ESPRESSO_CELL_FLOAT_LIST:
-                    try:
-                        self.tags[tag] = float(self.tags[tag].lower().replace('d','e'))
-                    except ValueError:
-                        raise IonsError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to float")
-                elif tag.lower() in QUANTUM_ESPRESSO_CELL_BOOL_LIST:
-                    if not self.tags[tag].lower() in ['.true.','.false.']:
-                        raise IonsError("Could not find '" + tag + "' : '" + self.tags[tag].lower() + "' in ['.true.','.false.']")
-                    else:
-                        self.tags[tag] = (self.tags[tag].lower() == '.true.')
-                elif tag.lower() in QUANTUM_ESPRESSO_CELL_STR_LIST:
-                    self._check_string_tag(tag,self.tags[tag])
-
-    def _verify_tags(self):
-        """ Check that only allowed Cell tags are in self.tags """
-        for tag in self.tags:
-            if tag in QUANTUM_ESPRESSO_CELL_LIST:
-                continue
-            else:
-                print(("Warning: unknown Cell tag '" + tag + "' with value '" + str(self.tags[tag]) + "'"))
+        NamelistBase.__init__(self,title,nameliststring)
 
     def _check_string_tag(self,tag,value):
         """ Check that string-valued tags are allowed values """
@@ -534,17 +344,6 @@ class Cell:
             if value.lower() not in ["'all'","'x'","'y'","'z'","'xy'","'xz'","'yz'","'xyz'","'shape'","'volume'","'2dxy'","'2dshape'"]:
                 raise CellError("Unknown 'cell_dofree' value: '" + value)
 
-    def make_string(self):
-        """Convert namelist to string for writing"""
-        nameliststr=""
-        for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
-                pass
-            elif type(self.tags[tag])==type(True):
-                nameliststr= nameliststr + " " + tag + " = ." + str(self.tags[tag]).lower() + ".,\n"
-            else:
-                nameliststr= nameliststr + " " + tag + " = " + str(self.tags[tag]) + ",\n" 
-        return nameliststr
 ##############################################END CELL MODULE#############################################################
 
 ##############################################ATOMIC_SPECIES MODULE BEGINS HERE############################################
@@ -574,7 +373,7 @@ class AtomicSpecies:
         line_segments=re.split('\n',cardstring)
         # parse card into self.species, self.masses, self.pseudos
         for line in line_segments:
-                line = re.split(' ',line.strip())
+                line = line.strip().split()
                 line=filter(bool,line)
                 if len(line) == 3:
                     self.species = self.species + [line[0].strip()]
@@ -583,10 +382,6 @@ class AtomicSpecies:
                     except ValueError:
                         raise AtomicSpeciesError("Could not convert mass to float")
                     self.pseudos = self.pseudos + [line[2].strip()]
-
-
-
-
     
     def make_string(self):
         """Convert card to string for writing"""
@@ -627,7 +422,7 @@ class AtomicPositions:
         # parse card into self.coords
         # NOTE: This function has trouble because it assumes integer and float arithmetic are separate unlike the documentation of Quantum Espresso indicates.
         for line in line_segments:
-                line = re.split(' ',line.strip())
+                line = line.strip().split()
                 if len(line) == 4:
                     try:
                         self.coords = self.coords + [(line[0].strip(),[float(eval(line[1].strip().replace('d','e'))),float(eval(line[2].strip().replace('d','e'))),float(eval(line[3].strip().replace('d','e')))])]
@@ -685,7 +480,7 @@ class CellParameters:
         line_segments=re.split('\n',cardstring)
         # parse card into self.vectors
         for line in line_segments:
-                line = re.split(' ',line.strip())
+                line = line.strip().split()
                 if len(line) == 3:
                     try:
                         self.vectors = self.vectors + [[float((line[0].strip().replace('d','e'))),float(line[1].strip().replace('d','e')),float(line[2].strip().replace('d','e'))]]
@@ -742,7 +537,7 @@ class KPoints:
         if self.units == "gamma":
             pass
         elif self.units == "automatic":
-            line=re.split(" ",line_segments[0].strip())
+            line=line_segments[0].strip().split()
             if len(line)==6:
                 try: #automatic mesh settings are stored as [nk1,nk2,nk3,sk1,sk2,sk3]
                     self.coords=[int(line[0].strip()),int(line[1].strip()),int(line[2].strip()),int(line[3].strip()),int(line[4].strip()),int(line[5].strip())]
@@ -757,7 +552,8 @@ class KPoints:
                 raise KPointsError("Non integer number of kpoints")
             line_segments=line_segments[1:]
             for line in line_segments:
-                line = re.split(' ',line.strip())
+
+                line = line.strip().split()
                 if len(line) == 4:
                     try:
                         self.coords = self.coords + [((float(line[0].strip()),float(line[1].strip()),float(line[2].strip())),float(line[3].strip()))]
@@ -814,6 +610,7 @@ class KPoints:
                 prim._reciprocal_lattice = 2.0*math.pi*np.linalg.inv(np.transpose(prim._lattice))
 
 
+
         super_kpoints.coords = [1, 1, 1, self.coords[3], self.coords[4], self.coords[5]] #4th 5th and 6th numbers are shifts
         
         # calculate prim volumetric kpoint densities
@@ -839,7 +636,6 @@ class KPoints:
         super = backup_super
         return super_kpoints
     
-    
     def density(self, poscar):
         """ Return the kpoint density with respect to a Poscar.
             
@@ -847,7 +643,6 @@ class KPoints:
                 poscar: a Poscar object
         """
         return (self.coords[0] * self.coords[1] * self.coords[2]) / poscar.reciprocal_volume() 
-    
     
     def make_string(self):
         """Convert card to string for writing"""
@@ -886,7 +681,6 @@ QUANTUM_ESPRESSO_CARD_OBJ_LIST = ['ATOMIC_SPECIES','ATOMIC_POSITIONS','K_POINTS'
 
 QUANTUM_ESPRESSO_BLOCK_LIST= QUANTUM_ESPRESSO_NAMELIST_LIST + QUANTUM_ESPRESSO_CARD_LIST
 
-
 class InfileError(Exception):
     def __init__(self,msg):
         self.msg = msg
@@ -924,40 +718,49 @@ class Infile:
 
         # parse Infile into self.namelist and self.cards
         for line in file:
-            if line[0] == '&':
+            line=line.strip()
+            if len(line)>0 and line[0] == '&':
+                #The check a new namelist is a line starting with &
                 if namelist_open:
                     raise InfileError("namelist embedding...Please check '" + filename + "' for proper formatting")
                 namelist_open = True
                 nameliststring=""
                 line = re.split('&',line)
                 curr_namelist = line[1].strip()
-            elif line[0] == '/':
+            elif len(line)>0 and line[0] == '/':
+                #The end of a namelist is denoted by /
                 if not namelist_open:
                     raise InfileError("namelist embedding...Please check '" + filename + "' for proper formatting")
                 namelist_open = False
 
                 namelistobj={
-                  'CONTROL': lambda x : Control(x),
-                  'SYSTEM':lambda x : Sys(x),
-                  'ELECTRONS':lambda x : Electrons(x),
-                  'IONS':lambda x :Ions(x),
-                  'CELL':lambda x :Cell(x),
+                  'CONTROL': lambda x : Control(curr_namelist,x),
+                  'SYSTEM':lambda x : System(curr_namelist,x),
+                  'ELECTRONS':lambda x : Electrons(curr_namelist,x),
+                  'IONS':lambda x :Ions(curr_namelist,x),
+                  'CELL':lambda x :Cell(curr_namelist,x),
                 }.get(curr_namelist, lambda x: x)(nameliststring)
 
                 self.namelists[curr_namelist]=namelistobj
             elif namelist_open:
+              # white space in name list is removed later on
                     nameliststring=nameliststring + line + '\n'
             else:
                 if not card_open:
-                    line = re.split(' ',line)
-                    if line[0].isupper():
-                        card_open = True
-                        cardstring=""
-                        curr_card = line[0].strip()
-                        extratag=""
-                        if curr_card in ["ATOMIC_POSITIONS","K_POINTS","CELL_PARAMETERS"] and len(line)>=2:
-                            extratag=line[1].strip()
+                    line = line.split()
+                    #if a card isn't open for reading and empty line is found skip to next line
+                    if len(line) > 0: 
+                        #this check for the start of a card is a Capitalized phrase
+                        if line[0].isupper():
+                            card_open = True
+                            cardstring=""
+                            curr_card = line[0].strip()
+                            extratag=""
+                            if curr_card in ["ATOMIC_POSITIONS","K_POINTS","CELL_PARAMETERS"] and len(line)>=2:
+                                extratag=line[1].strip()
                 elif line.strip()=='':
+                    #the only way to check for end of card is an empty line
+                    # new line type white space in card is detrimental because it ends the card prematurely
                     card_open = False
                     cardobj={
                       'ATOMIC_SPECIES': lambda x : AtomicSpecies(x),
@@ -968,8 +771,6 @@ class Infile:
                     self.cards[curr_card]=cardobj
                 else:
                     cardstring=cardstring + line + '\n'
-
-
         self._verify_blocks()
 
         file.close()
@@ -980,15 +781,18 @@ class Infile:
             if namelist in QUANTUM_ESPRESSO_NAMELIST_LIST:
                 continue
             else:
-                print(("Warning: unknown Infile namelist: " + namelist))
+                print("Warning: unknown Infile namelist: " + namelist)
         for card in self.cards:
             if card in QUANTUM_ESPRESSO_CARD_LIST:
                 continue
             else:
-                print(("Warning: unknown Infile card: " + card))
+                print("Warning: unknown Infile card: " + card)
 
     def rewrite_poscar_info(self,poscar,species=None):
         """Update Infile object to a new set of coordinates and lattice vectors"""
+        ## This function is called on subsequent runs of quantum espresso i.e. moving from run.0 to run.1 etc.
+        ## Knowing what is going on here is dependent on knowledge of quantumespresso/qeio/poscar.py
+        ## Knowing what is going on here is dependent on knowledge of quantumespresso/qeio/species.py
         if "CELL_PARAMETERS" not in self.cards.keys():
             self.cards["CELL_PARAMETERS"]=CellParameters("0.0 0.0 0.0 \n  0.0 0.0 0.0 \n 0.0 0.0 0.0")
         if poscar.scaling in ['alat','bohr','angstrom']:
@@ -1000,8 +804,6 @@ class Infile:
             self.namelists["SYSTEM"].tags["ibrav"]=0
             if "celldm(1)" in self.namelists["SYSTEM"].tags.keys():
                 del self.namelists["SYSTEM"].tags["celldm(1)"]
-        
-
         if "ATOMIC_POSITIONS" in self.cards.keys():
             if poscar.coord_mode in ['alat','bohr','angstrom','crystal']:
                 self.cards["ATOMIC_POSITIONS"].units=poscar.coord_mode
@@ -1017,12 +819,13 @@ class Infile:
                     for flag in flags:
                         int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
                     coords+= [(specie.occ_alias,specie.position,int_flags)]
-                elif species[specie.occupant].tags["if_pos"] !="":
-                    flags=species[specie.occupant].tags["if_pos"].split(',')
-                    int_flags=[]
-                    for flag in flags:
-                        int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
-                    coords+= [(specie.occ_alias,specie.position,int_flags)]
+                elif species!=None:
+                    if "if_pos" in species[specie.occupant].tags.keys() and species[specie.occupant].tags["if_pos"] !="":
+                        flags=species[specie.occupant].tags["if_pos"].split(',')
+                        int_flags=[]
+                        for flag in flags:
+                            int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
+                        coords+= [(specie.occ_alias,specie.position,int_flags)]
                 else:
                     coords+= [(specie.occ_alias,specie.position)]
             self.cards["ATOMIC_POSITIONS"].coords=coords
@@ -1070,6 +873,7 @@ class Infile:
                     infile_write.write(remove_chars('{}'.format(self.namelists[namelist].make_string()),"[\[\]]'"))
                     infile_write.write('/\n')
                 else:
+                    #This branch is for namelists unrecognized by the qe wrapper
                     infile_write.write(remove_chars('&{}\n'.format(namelist),"[\[\],]'"))
                     infile_write.write(remove_chars('{}'.format(self.namelists[namelist]),"[\[\]]'"))
                     infile_write.write('/\n')
@@ -1085,6 +889,7 @@ class Infile:
                     infile_write.write(remove_chars('{}'.format(self.cards[card].make_string()),"[\[\]]'"))
                     infile_write.write('\n')
                 else:
+                    #This branch is for cards unrecognized by the qe wrapper
                     infile_write.write('{}\n'.format(card))
                     infile_write.write(remove_chars('{}'.format(self.cards[card]),"[\[\]]'"))
                     infile_write.write('\n')

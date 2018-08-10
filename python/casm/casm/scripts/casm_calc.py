@@ -28,6 +28,10 @@ Path to CASM project. Default=current working directory.
 run_help = """
 Run calculation for all selected configurations.
 """
+method_help = """
+Choose what method to use to calculate training data options are vasp or quantumespresso (default="").
+Overrides the calculator tag in relax.json. If calculator tag in relax.json is empty then VASP will be used.
+"""
 
 submit_help = """
 Submit calculation for all selected configurations.
@@ -48,6 +52,7 @@ def main(argv = None):
   parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
   parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
   parser.add_argument('--path', help=path_help, type=str, default=None)
+  parser.add_argument('-m','--method', help=method_help, type=str, default=None)
   parser.add_argument('--run', help=run_help, action="store_true", default=False)
   parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
   parser.add_argument('--setup', help=setup_help, action="store_true", default=False)
