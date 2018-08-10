@@ -10,7 +10,7 @@
 set -e
 
 check_var "CASM_TEST_PROJECTS_DIR" "Location to download CASM_test_projects" ""
-check_var "CASM_PYTHON" "Which python is used" "Python interpreter" ${PYTHON:-"python"}
+check_var "CASM_PYTHON" "Python interpreter" ${PYTHON:-"python"}
 
 echo ""
 if [ -n "$CASM_TEST_PROJECTS_DIR" ]; then
