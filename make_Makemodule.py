@@ -80,7 +80,7 @@ def find_files(loc, include=default_include, exclude=default_exclude, verbose=Fa
             else:
                 if verbose:
                     print("skipping:", join(root,f), f, bool(re.match(exclude, f)))
-    return res
+    return sorted(res)
 
 def write_files(f, files):
     """Write a list of files to a Makemodule.am file"""
@@ -166,7 +166,7 @@ def testdir(f, group, extradist_ext=['*.hh', '*.cc', '*.json', '*.txt'], verbose
     write_option(f, 'casm_unit_' + group, 'CXXFLAGS', ['$(AM_CXXFLAGS)', '-I$(top_srcdir)/tests/unit/'])
 
     # SOURCES
-    files = glob(join(loc, '*_test.cpp'))
+    files = sorted(glob(join(loc, '*_test.cpp')))
     if verbose:
         print("Test sources:")
         for file in files:
@@ -180,6 +180,7 @@ def testdir(f, group, extradist_ext=['*.hh', '*.cc', '*.json', '*.txt'], verbose
     extradist_files = []
     for ext in extradist_ext:
         extradist_files += glob(join(loc, ext))
+    extradist_files.sort()
     if len(extradist_files):
         if verbose:
             print("Extra-dist files:")
@@ -286,7 +287,7 @@ def main():
         write_option(f, 'ccasm', 'SOURCES', ['apps/ccasm/ccasm.cpp'])
         write_option(f, 'ccasm', 'LDADD', lib_casm + boost_libs)
 
-    
+
     # apps/completer/Makemodule.am
     dir = join('apps', 'completer')
     print('Working on', dir)
@@ -318,6 +319,7 @@ def main():
         libcasmtesting_files += glob(join(unittest_dir,'*.cpp'))
         libcasmtesting_files += glob(join(unittest_dir,'*.cc'))
         libcasmtesting_files += glob(join(unittest_dir,'*.hh'))
+        libcasmtesting_files.sort()
         write_option(f, 'libcasmtesting_a', 'SOURCES', libcasmtesting_files)
 
         # find tests
@@ -328,11 +330,14 @@ def main():
             if os.path.isdir(test_dir) and has_tests(test_dir):
                 print(test_dir + " has tests!")
                 testnames.append(file_or_dir)
-                testdir(f, file_or_dir)
-                run_test_in(file_or_dir)
             else:
                 pass
                 #print(test_dir + " does not have tests!")
+        testnames.sort()
+        for name in testnames:
+            testdir(f, name)
+            run_test_in(name)
+    makemodules.sort()
 
     # Update 'Makefile.am' to include all Makemodule.am
     replace_lines('Makefile.am', ['include $(srcdir)/'+val+'\n' for val in makemodules])
