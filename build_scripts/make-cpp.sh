@@ -41,6 +41,14 @@ else
   echo "'configure' already exists; continuing... (delete it to re-configure)"
 fi
 
+if grep dirty build-aux/casm_version.txt; then
+  git status
+  echo "git is dirty"
+  exit 1
+else
+  echo "git is clean"
+fi
+
 echo "make ${CASM_MAKE_OPTIONS:+$CASM_MAKE_OPTIONS} -j $CASM_NCPU"
 make ${CASM_MAKE_OPTIONS:+$CASM_MAKE_OPTIONS} -j $CASM_NCPU \
   || { echo "'make ${CASM_MAKE_OPTIONS:+$CASM_MAKE_OPTIONS} -j $CASM_NCPU' failed"; exit 1; }
