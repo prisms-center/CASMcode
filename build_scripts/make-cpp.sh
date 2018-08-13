@@ -43,7 +43,7 @@ echo "git --no-pager diff:"
 git --no-pager diff
 
 echo "git config --global core.autocrlf:"
-git config --global core.autocrlf
+git config --global core.autocrlf || echo "default: false"
 
 # C++ and CLI
 if ! [ -f ./configure ]; then
@@ -69,7 +69,7 @@ if grep dirty build-aux/casm_version.txt; then
   git --no-pager diff
 
   echo "git config --global core.autocrlf:"
-  git config --global core.autocrlf
+  git config --global core.autocrlf || echo "default: false"
 
   echo "git is dirty"
   exit 1
