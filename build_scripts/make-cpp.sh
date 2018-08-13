@@ -37,7 +37,7 @@ echo "git status:"
 git status
 
 echo "git --no-pager diff -–name-only:"
-git diff -–name-only
+git --no-pager diff -–name-only
 
 echo "git --no-pager diff:"
 git --no-pager diff
@@ -63,7 +63,7 @@ if grep dirty build-aux/casm_version.txt; then
   git status
 
   echo "git --no-pager diff -–name-only:"
-  git diff -–name-only
+  git --no-pager diff -–name-only
 
   echo "git --no-pager diff:"
   git --no-pager diff
