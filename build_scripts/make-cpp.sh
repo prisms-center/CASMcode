@@ -31,6 +31,8 @@ if which ccache >/dev/null 2>&1; then
   CASM_CXX="ccache $CASM_CXX"
 fi
 
+git status
+
 # C++ and CLI
 if ! [ -f ./configure ]; then
   $CASM_PYTHON make_Makemodule.py \
@@ -43,6 +45,7 @@ fi
 
 if grep dirty build-aux/casm_version.txt; then
   git status
+  git diff
   echo "git is dirty"
   exit 1
 else
