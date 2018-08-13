@@ -443,3 +443,16 @@ def casm_capi(args, primclex=None, root=None):
     res = self._api(args, _primclex, root, ss, ss_debug, ss_err)
 
     return res
+
+def command_list():
+    """
+    Get list of recognized casm commands implemented at the libcasm level
+
+    Returns
+    -------
+      s: str
+        JSON array containing the list of recognized casm commands
+
+    """
+    _api = API()
+    return _api.command_list()
