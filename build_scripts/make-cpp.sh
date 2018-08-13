@@ -45,7 +45,7 @@ fi
 
 if grep dirty build-aux/casm_version.txt; then
   git status
-  git diff
+  git --no-pager diff
   echo "git is dirty"
   exit 1
 else
