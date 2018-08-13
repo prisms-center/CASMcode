@@ -31,7 +31,19 @@ if which ccache >/dev/null 2>&1; then
   CASM_CXX="ccache $CASM_CXX"
 fi
 
+echo "version: $(git describe --abbrev=6 --dirty --always --tags)"
+
+echo "git status:"
 git status
+
+echo "git diff -–name-only:"
+git diff -–name-only
+
+echo "git --no-pager diff:"
+git --no-pager diff
+
+echo "git config --global core.autocrlf:"
+git config --global core.autocrlf
 
 # C++ and CLI
 if ! [ -f ./configure ]; then
@@ -44,8 +56,21 @@ else
 fi
 
 if grep dirty build-aux/casm_version.txt; then
+
+  echo "version: $(git describe --abbrev=6 --dirty --always --tags)"
+
+  echo "git status:"
   git status
+
+  echo "git diff -–name-only:"
+  git diff -–name-only
+
+  echo "git --no-pager diff:"
   git --no-pager diff
+
+  echo "git config --global core.autocrlf:"
+  git config --global core.autocrlf
+
   echo "git is dirty"
   exit 1
 else

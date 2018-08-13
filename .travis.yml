@@ -25,50 +25,50 @@ jobs:
     #  Run tests
 
     # # test on linux
-    - stage: test_it
-      os: linux
-      dist: trusty
-      compiler: gcc
-      addons:
-        apt:
-          packages:
-            - bash-completion
-            - curl
-      install:
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
-      script:
-        - echo "test_it on $TRAVIS_OS_NAME"
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
+    # - stage: test_it
+    #   os: linux
+    #   dist: trusty
+    #   compiler: gcc
+    #   addons:
+    #     apt:
+    #       packages:
+    #         - bash-completion
+    #         - curl
+    #   install:
+    #     - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
+    #   script:
+    #     - echo "test_it on $TRAVIS_OS_NAME"
+    #     - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
 
     # # test on osx
-    - stage: test_it
-      os: osx
-      compiler: clang
-      install:
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
-      script:
-        - echo "test_it on $TRAVIS_OS_NAME"
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
+    # - stage: test_it
+    #   os: osx
+    #   compiler: clang
+    #   install:
+    #     - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
+    #   script:
+    #     - echo "test_it on $TRAVIS_OS_NAME"
+    #     - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
 
     # stage 2:
     #  If tests pass, and this is a merge or push to primary development branches, then we will
     #    upload updated conda packages
     #  If this commit is tagged, push to "main"; else push to "dev"
 
-    # primary linux package
-    - stage: package_it
-      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
-      os: linux
-      dist: trusty
-      compiler: gcc
-      addons:
-        apt:
-          packages:
-            - bash-completion
-            - curl
-      script:
-        - echo "package_it on $TRAVIS_OS_NAME"
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
+    # # primary linux package
+    # - stage: package_it
+    #   if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+    #   os: linux
+    #   dist: trusty
+    #   compiler: gcc
+    #   addons:
+    #     apt:
+    #       packages:
+    #         - bash-completion
+    #         - curl
+    #   script:
+    #     - echo "package_it on $TRAVIS_OS_NAME"
+    #     - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
 
     # centos:6 linux package, for old OS
     - stage: package_it
@@ -85,11 +85,11 @@ jobs:
         - echo "package_it w/docker on $TRAVIS_OS_NAME"
         - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda-docker.sh
 
-    # osx package
-    - stage: package_it
-      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
-      os: osx
-      compiler: clang
-      script:
-        - echo "package_it on $TRAVIS_OS_NAME"
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
+    # # osx package
+    # - stage: package_it
+    #   if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+    #   os: osx
+    #   compiler: clang
+    #   script:
+    #     - echo "package_it on $TRAVIS_OS_NAME"
+    #     - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
