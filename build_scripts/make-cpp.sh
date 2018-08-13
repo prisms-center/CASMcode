@@ -36,7 +36,7 @@ echo "version: $(git describe --abbrev=6 --dirty --always --tags)"
 echo "git status:"
 git status
 
-echo "git diff -–name-only:"
+echo "git --no-pager diff -–name-only:"
 git diff -–name-only
 
 echo "git --no-pager diff:"
@@ -62,7 +62,7 @@ if grep dirty build-aux/casm_version.txt; then
   echo "git status:"
   git status
 
-  echo "git diff -–name-only:"
+  echo "git --no-pager diff -–name-only:"
   git diff -–name-only
 
   echo "git --no-pager diff:"
