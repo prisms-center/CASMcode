@@ -73,14 +73,16 @@ namespace CASM {
 
     }
 
-    if(fs::current_path() == find_casmroot(fs::current_path())) {
+    fs::path root = fs::current_path();
+    if(!args.root.empty()) {
+      root = args.root;
+    }
+    if(!find_casmroot(root).empty()) {
       args.log << "Already in a casm project." << std::endl;
       return ERR_OTHER_PROJ;
     }
 
     args.log << "\n***************************\n" << std::endl;
-
-    fs::path root = fs::current_path();
 
     DirectoryStructure dir(root);
     Structure prim;
@@ -252,4 +254,3 @@ namespace CASM {
   };
 
 }
-
