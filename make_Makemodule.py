@@ -2,11 +2,13 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
+import filecmp
 import os
 import re
 from glob import glob
 from os.path import join
 from six import iteritems
+from shutil import copyfile
 
 # Notes:
 #
@@ -216,8 +218,10 @@ def replace_lines(filename, lines_to_insert):
         filename (str): filename
         lines_to_insert (List[str]): list of lines to insert (should include '\n')
     """
+    tmpfile = filename + ".tmp"
+    copyfile(filename, tmpfile)
     lines_to_write = []
-    with open(filename, 'r') as f:
+    with open(tmpfile, 'r') as f:
         line = f.readline()
         while len(line):
             if line.rstrip() == '# BEGIN MAKEMODULE':
@@ -227,9 +231,14 @@ def replace_lines(filename, lines_to_insert):
                     line = f.readline()
             lines_to_write.append(line)
             line = f.readline()
-    with open(filename, 'w') as f:
+    with open(tmpfile, 'w') as f:
         for line in lines_to_write:
             f.write(line)
+    if filecmp.cmp(filename, tmpfile):
+        os.remove(tmpfile)
+    else:
+        os.remove(filename)
+        os.rename(tmpfile, filename)
 
 def main():
 
