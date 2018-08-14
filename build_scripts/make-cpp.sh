@@ -45,17 +45,25 @@ if grep dirty build-aux/casm_version.txt; then
 
   echo "version: $(git describe --abbrev=6 --dirty --always --tags)"
 
-  echo "git status:"
-  git status
+  DIFF=$(git --no-pager diff --name-only)
+  if [ -n "$DIFF" ]; then
+    echo "git status:"
+    git status
 
-  echo "git --no-pager diff --name-only:"
-  git --no-pager diff --name-only
+    echo "git --no-pager diff --name-only:"
+    git --no-pager diff --name-only
 
-  echo "git --no-pager diff:"
-  git --no-pager diff
+    echo "git --no-pager diff:"
+    git --no-pager diff
 
-  echo "git is dirty"
-  exit 1
+    echo "git is dirty"
+    exit 1
+  else
+    echo "files touched, but git is clean"
+    git reset --hard
+
+    bash version.sh
+  fi
 else
   echo "git is clean"
 fi
