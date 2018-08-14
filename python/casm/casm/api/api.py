@@ -440,7 +440,7 @@ def casm_capi(args, primclex=None, root=None):
     ss_debug = _api.stdout()
     ss_err = _api.stderr()
 
-    res = self._api(args, _primclex, root, ss, ss_debug, ss_err)
+    res = _api(args, _primclex, root, ss, ss_debug, ss_err)
 
     return res
 
