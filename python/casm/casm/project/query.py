@@ -29,7 +29,7 @@ def query(proj, columns, selection=None, verbatim=True, all=False):
   """
   args = _query_args(proj, columns, selection, verbatim, all, api=True)
 
-  stdout, stderr, returncode = proj.command(args)
+  stdout, stderr, returncode = proj.capture(args)
 
   try:
     sout = StringIO(stdout)

@@ -1,7 +1,8 @@
 """Access libcasm via Python"""
-from casm.api.api import API, casm_capi, command_list
+from casm.api.api import API, command_list, casm_command, casm_capture
 __all__ = [
-  'API'
-  'casm_capi',
-  'command_list'
+  'API',
+  'command_list',
+  'casm_command',
+  'casm_capture'
  ]

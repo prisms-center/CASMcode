@@ -256,7 +256,7 @@ class Selection(object):
             whether selected or not. If False, only write POS file for selected
             configurations.
         """
-        self.proj.command("query -c " + self.path + " --write-pos")
+        self.proj.capture("query -c " + self.path + " --write-pos")
 
 
     def add_data(self, name, data=None, force=False):

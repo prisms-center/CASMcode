@@ -2008,7 +2008,7 @@ def checkhull(input, hall, indices=None, verbose=True):
     os.mkdir(tmp_dir)
   dft_selection = join(tmp_dir, selection + "_dft")
   dft_hull_selection = join(tmp_dir, selection + "_dft_hull")
-  proj.command("select -c " + selection + " --set-off 'not(is_calculated)' -f -o " + dft_selection)
+  proj.capture("select -c " + selection + " --set-off 'not(is_calculated)' -f -o " + dft_selection)
 
   # properties to query
   selected = "selected"
@@ -2044,9 +2044,9 @@ def checkhull(input, hall, indices=None, verbose=True):
   eci = "__tmp"
   clex.eci = eci
   if eci not in all_eci:
-    proj.command("settings --new-eci " + eci)
+    proj.capture("settings --new-eci " + eci)
   else:
-    proj.command("settings --set-eci " + eci)
+    proj.capture("settings --set-eci " + eci)
 
   # for each individual specified...
   for indiv_i in indices:
@@ -2162,7 +2162,7 @@ def checkhull(input, hall, indices=None, verbose=True):
       print("\n")
 
   # reset eci setting
-  proj.command("settings --set-eci " + orig_clex.eci)
+  proj.capture("settings --set-eci " + orig_clex.eci)
 
   # remove __tmp eci and tmp selections
   shutil.rmtree(proj.dir.eci_dir(clex))
