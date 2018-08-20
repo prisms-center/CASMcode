@@ -57,7 +57,13 @@ if grep dirty build-aux/casm_version.txt; then
     git --no-pager diff
 
     echo "git is dirty"
-    exit 1
+
+    if [ -n "$CASM_DIRTY_IS_OK" ]; then
+      echo "CASM_DIRTY_IS_OK=$CASM_DIRTY_IS_OK # (Unset to stop if dirty)"
+    else
+      echo "CASM_DIRTY_IS_OK=$CASM_DIRTY_IS_OK # (Set to non-zero length to continue anyway)"
+      exit 1
+    fi
   else
     echo "files touched, but git is clean"
     git reset --hard
