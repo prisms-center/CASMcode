@@ -41,7 +41,6 @@ EXTRA_DIST=
 
 EXTRA_DIST+=./build-aux/casm_version.txt\
 			./man\
-			./casmenv.sh\
 			./sample_input_files\
       LICENSE
 
@@ -82,4 +81,3 @@ test:
 #============================================================#
 #Recurse into these places (must be direct children, don't be fancy)
 #SUBDIRS= ##DO NOT USE THIS. SERIOUSLY.##
-
