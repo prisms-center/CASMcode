@@ -12,23 +12,11 @@ namespace CASM {
 
   class SymInfoOptionsParser : public InputParser {
   public:
-    static std::string brief_help() {
-      return
-        "  sym_info_opt: JSON object (optional, see 'casm format --sym-info')\n"
-        "    Options controlling the printing of symmetry operations.\n\n";
-    }
+    static std::string brief_help();
 
-    static std::string print_matrix_tau_help() {
-      return
-        "  print_matrix_tau: bool (optional, default=false)\n"
-        "    Print the symmetry operations that map the prototype to each orbit element.\n\n";
-    }
+    static std::string print_matrix_tau_help();
 
-    static std::string standard_help() {
-      return InputParser::coordinate_mode_help()
-             + InputParser::prec_help("printing coordinates of symmetry operations", 7)
-             + print_matrix_tau_help();
-    }
+    static std::string standard_help();
 
     template<typename CompleterOptionType>
     SymInfoOptionsParser(
@@ -52,16 +40,20 @@ namespace CASM {
       m_sym_info_opt.tol = _primclex.crystallography_tol();
       m_sym_info_opt.coord_type = parse_coord_type(_opt);
       m_sym_info_opt.prec = optional_else<int>("prec", 7);
+
+      std::cout << "end SymInfoOptionsParser: " << _path << std::endl;
+      std::cout << "opt.vm().count(\"coord\"): " << _opt.vm().count("coord") << std::endl;
+      if(_opt.vm().count("coord")) {
+        std::cout << "_opt.coordtype_enum(): " << _opt.coordtype_enum() << std::endl;
+      }
+      std::cout << "optinal_else: " << optional_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC) << std::endl;
+      std::cout << "m_sym_info_opt.coord_type: " << to_string(m_sym_info_opt.coord_type) << std::endl;
     }
 
-    const SymInfoOptions &sym_info_opt() const {
-      return m_sym_info_opt;
-    }
+    const SymInfoOptions &sym_info_opt() const;
 
   protected:
-    static std::set<std::string> expected() {
-      return std::set<std::string>({"tol", "coordinate_mode", "prec", "print_matrix_tau"});
-    }
+    static std::set<std::string> expected();
 
   private:
     SymInfoOptions m_sym_info_opt;
@@ -71,40 +63,15 @@ namespace CASM {
   class OrbitPrinterOptionsParser : public InputParser {
   public:
 
-    static std::string print_coordinates_help() {
-      return
-        "  print_coordinates: bool (optional, default=true)\n"
-        "    Print coordinates of orbit elements.\n\n";
-    }
+    static std::string print_coordinates_help();
 
-    static std::string print_equivalence_map_help() {
-      return
-        "  print_equivalence_map: bool (optional, default=false)\n"
-        "    Print the symmetry operations that map the prototype to each orbit element.\n\n";
-    }
+    static std::string print_equivalence_map_help();
 
-    static std::string print_invariant_grp_help() {
-      return
-        "  print_invariant_grp: bool (optional, default=false)\n"
-        "    Print the symmetry operations that leave each orbit element invariant.\n\n";
-    }
+    static std::string print_invariant_grp_help();
 
-    static std::string brief_help() {
-      return
-        "  orbit_printer_opt: JSON object (optional, see 'casm format --orbit-printer')\n"
-        "    Options controlling the printing of orbits.\n\n";
-    }
+    static std::string brief_help();
 
-    static std::string standard_help() {
-      return InputParser::indent_space_help()
-             + InputParser::prec_help("printing coordinates of orbit elements", 7)
-             + InputParser::coordinate_mode_help()
-             + InputParser::orbit_print_mode_help()
-             + SymInfoOptionsParser::brief_help()
-             + print_coordinates_help()
-             + print_equivalence_map_help()
-             + print_invariant_grp_help();
-    }
+    static std::string standard_help();
 
     template<typename CompleterOptionType>
     OrbitPrinterOptionsParser(
@@ -128,22 +95,28 @@ namespace CASM {
       m_orbit_printer_opt.coord_type = parse_coord_type(_opt);
       m_orbit_printer_opt.prec = optional_else<int>("prec", 7);
 
+      std::cout << "OrbitPrinterOptionsParser, before parsing sym_info_opt: " << _path << std::endl;
+      std::cout << "opt.vm().count(\"coord\"): " << _opt.vm().count("coord") << std::endl;
+      if(_opt.vm().count("coord")) {
+        std::cout << "_opt.coordtype_enum(): " << _opt.coordtype_enum() << std::endl;
+      }
+      std::cout << "optinal_else: " << optional_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC) << std::endl;
+      std::cout << "orbit_printer_opt().coord_type: " << to_string(orbit_printer_opt().coord_type) << std::endl;
+      std::cout << "orbit_printer_opt().sym_info_opt.coord_type: " << to_string(orbit_printer_opt().sym_info_opt.coord_type) << std::endl;
+
       this->kwargs["sym_info_opt"] = m_sym_info_opt_parser =
                                        std::make_shared<SymInfoOptionsParser>(_primclex, input, _opt, relpath("sym_info_opt"), false);
       m_orbit_printer_opt.sym_info_opt = m_sym_info_opt_parser->sym_info_opt();
+
+      std::cout << "end OrbitPrinterOptionsParser: " << _path << std::endl;
+      std::cout << "orbit_printer_opt().coord_type: " << to_string(orbit_printer_opt().coord_type) << std::endl;
+      std::cout << "orbit_printer_opt().sym_info_opt.coord_type: " << to_string(orbit_printer_opt().sym_info_opt.coord_type) << std::endl;
     }
 
-    const OrbitPrinterOptions &orbit_printer_opt() const {
-      return m_orbit_printer_opt;
-    }
+    const OrbitPrinterOptions &orbit_printer_opt() const;
 
   protected:
-    static std::set<std::string> expected() {
-      return std::set<std::string>({"indent_space", "prec", traits<COORD_TYPE>::name,
-                                    traits<ORBIT_PRINT_MODE>::name, "print_coordinates", "print_equivalence_map",
-                                    "print_invariant_grp", "sym_info_opt"
-                                   });
-    }
+    static std::set<std::string> expected();
 
   private:
     OrbitPrinterOptions m_orbit_printer_opt;

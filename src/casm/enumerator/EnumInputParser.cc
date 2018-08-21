@@ -2,6 +2,80 @@
 
 namespace CASM {
 
+  std::string SymInfoOptionsParser::brief_help() {
+    return
+      "  sym_info_opt: JSON object (optional, see 'casm format --sym-info')\n"
+      "    Options controlling the printing of symmetry operations.\n\n";
+  }
+
+  std::string SymInfoOptionsParser::print_matrix_tau_help() {
+    return
+      "  print_matrix_tau: bool (optional, default=false)\n"
+      "    Print the symmetry operations that map the prototype to each orbit element.\n\n";
+  }
+
+  std::string SymInfoOptionsParser::standard_help() {
+    return InputParser::coordinate_mode_help()
+           + InputParser::prec_help("printing coordinates of symmetry operations", 7)
+           + print_matrix_tau_help();
+  }
+
+  const SymInfoOptions &SymInfoOptionsParser::sym_info_opt() const {
+    return m_sym_info_opt;
+  }
+
+  std::set<std::string> SymInfoOptionsParser::expected() {
+    return std::set<std::string>({"tol", "coordinate_mode", "prec", "print_matrix_tau"});
+  }
+
+
+  std::string OrbitPrinterOptionsParser::print_coordinates_help() {
+    return
+      "  print_coordinates: bool (optional, default=true)\n"
+      "    Print coordinates of orbit elements.\n\n";
+  }
+
+  std::string OrbitPrinterOptionsParser::print_equivalence_map_help() {
+    return
+      "  print_equivalence_map: bool (optional, default=false)\n"
+      "    Print the symmetry operations that map the prototype to each orbit element.\n\n";
+  }
+
+  std::string OrbitPrinterOptionsParser::print_invariant_grp_help() {
+    return
+      "  print_invariant_grp: bool (optional, default=false)\n"
+      "    Print the symmetry operations that leave each orbit element invariant.\n\n";
+  }
+
+  std::string OrbitPrinterOptionsParser::brief_help() {
+    return
+      "  orbit_printer_opt: JSON object (optional, see 'casm format --orbit-printer')\n"
+      "    Options controlling the printing of orbits.\n\n";
+  }
+
+  std::string OrbitPrinterOptionsParser::standard_help() {
+    return InputParser::indent_space_help()
+           + InputParser::prec_help("printing coordinates of orbit elements", 7)
+           + InputParser::coordinate_mode_help()
+           + InputParser::orbit_print_mode_help()
+           + SymInfoOptionsParser::brief_help()
+           + print_coordinates_help()
+           + print_equivalence_map_help()
+           + print_invariant_grp_help();
+  }
+
+  const OrbitPrinterOptions &OrbitPrinterOptionsParser::orbit_printer_opt() const {
+    return m_orbit_printer_opt;
+  }
+
+  std::set<std::string> OrbitPrinterOptionsParser::expected() {
+    return std::set<std::string>({"indent_space", "prec", traits<COORD_TYPE>::name,
+                                  traits<ORBIT_PRINT_MODE>::name, "print_coordinates", "print_equivalence_map",
+                                  "print_invariant_grp", "sym_info_opt"
+                                 });
+  }
+
+
   std::string EnumInputParser::standard_help() {
     return InputParser::dry_run_help()
            + InputParser::verbosity_help()

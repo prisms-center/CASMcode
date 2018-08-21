@@ -5,7 +5,7 @@
 #include <iostream>
 #include <utility>
 
-#include "casm/misc/CASM_TMP.hh"
+#include "casm/misc/type_traits.hh"
 
 /// Include in a class/struct definition that inherits from Cloneable
 /// to make it also cloneable
@@ -24,6 +24,22 @@ private:\
   virtual T *_move() = 0;\
 public:\
 
+/// Include in a class/struct definition that inherits from Cloneable
+/// to make it also cloneable
+#define ABSTRACT_CLONEABLE_DERIVED(T) \
+public: \
+  virtual ~T() {}\
+  \
+  std::unique_ptr<T> clone() const {\
+    return std::unique_ptr<T>(this->_clone());\
+  }\
+  std::unique_ptr<T> move() {\
+    return std::unique_ptr<T>(this->_move());\
+  }\
+private:\
+  virtual T *_clone() const override = 0;\
+  virtual T *_move() override = 0;\
+public:\
 
 /// Include in a class/struct definition that inherits from Cloneable
 /// to make it also cloneable
@@ -87,7 +103,7 @@ namespace notstd {
 
   /// \brief Specialized case inherits from std::true_type if T does have clone method
   template <typename T>
-struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_type {
+struct has_clone<T, void_t<decltype(&T::clone)> > : std::true_type {
   };
 
   template < typename T, typename std::enable_if < !has_clone<T>::value, void >::type * = nullptr >
@@ -95,6 +111,25 @@ struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_ty
 
   template<typename T, typename std::enable_if<has_clone<T>::value, void>::type * = nullptr>
   std::unique_ptr<T> clone(const T &obj);
+
+
+  /// \brief Base type inherits from std::false_type if T does not have move method
+  template <typename T, typename = void>
+  struct has_move : std::false_type {
+  };
+
+  /// \brief Specialized case inherits from std::true_type if T does have move method
+  template <typename T>
+struct has_move<T, void_t<decltype(&T::move)> > : std::true_type {
+  };
+
+  /// \brief Construct std::unique_ptr<T> from rvalue reference
+  template < typename T, typename std::enable_if < !has_move<T>::value, void >::type * = nullptr >
+  std::unique_ptr<T> clone_move(T && obj);
+
+  /// \brief Construct std::unique_ptr<T> from rvalue reference
+  template<typename T, typename std::enable_if<has_move<T>::value, void>::type * = nullptr>
+  std::unique_ptr<T> clone_move(T && obj);
 
 
   /// \brief A 'cloneable_ptr' can be used in place of 'unique_ptr'
@@ -210,6 +245,27 @@ struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_ty
   std::unique_ptr<T> clone(const T &obj) {
     return obj.clone();
   }
+
+  /// \brief Construct std::unique_ptr<T> from rvalue reference
+  ///
+  /// - If obj.move() is valid, use that;
+  /// - else if obj.clone() is valid use that;
+  /// - else copy-construct (fails if T is abstract)
+  template < typename T, typename std::enable_if < !has_move<T>::value, void >::type * >
+  std::unique_ptr<T> clone_move(T &&obj) {
+    return clone(std::move(obj));
+  }
+
+  /// \brief Construct std::unique_ptr<T> from rvalue reference
+  ///
+  /// - If obj.move() is valid, use that;
+  /// - else if obj.clone() is valid use that;
+  /// - else copy-construct (fails if T is abstract)
+  template<typename T, typename std::enable_if<has_move<T>::value, void>::type * >
+  std::unique_ptr<T> clone_move(T &&obj) {
+    return obj.move();
+  }
+
 
   /// \brief Construct by taking ownership of ptr
   template<typename Type>

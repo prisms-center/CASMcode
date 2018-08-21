@@ -517,7 +517,7 @@ namespace CASM {
     else if(is_array())
       return iterator(this, get_array().end());
     else
-      return iterator(this, 0);
+      return iterator(this, 1);
   }
 
   /// Returns iterator to end of JSON object or JSON array
@@ -532,7 +532,7 @@ namespace CASM {
     else if(is_array())
       return const_iterator(this, get_array().cend());
     else
-      return const_iterator(this, 0);
+      return const_iterator(this, 1);
   }
 
   /// Return iterator to JSON object value with 'name'
@@ -546,10 +546,15 @@ namespace CASM {
   }
 
   /// Return iterator to sub-object or element, or 'end' if not found
+  ///
+  /// - If path.empty(), return iterator that dereferences to this, and one increment results in end
   jsonParser::iterator jsonParser::find_at(const fs::path &path) {
     if(!path.is_relative()) {
       throw std::invalid_argument(
         "Error in jsonParser::operator[](const fs::path &path): path must be relative");
+    }
+    if(path.empty()) {
+      return jsonParser::iterator(this, 0);
     }
     jsonParser *curr = this;
     jsonParser::iterator res = this->end();
@@ -582,6 +587,8 @@ namespace CASM {
   }
 
   /// Return iterator to sub-object or element, or 'end' if not found
+  ///
+  /// - If path.empty(), return iterator that dereferences to this, and one increment results in end
   jsonParser::const_iterator jsonParser::find_at(const fs::path &path) const {
     return const_cast<jsonParser *>(this)->find_at(path);
   }

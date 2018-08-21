@@ -9,9 +9,9 @@
 namespace CASM {
 
   class Log;
-  class LogText;
-  class LogParagraph;
-  class LogVerbatim;
+  struct LogText;
+  struct LogParagraph;
+  struct LogVerbatim;
 
   enum class JustificationType {
     Left, Right, Center, Full
@@ -145,7 +145,7 @@ namespace CASM {
       static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
       m_print = (m_verbosity >= _required_verbosity);
       if(_print()) {
-        *m_stream << "-- " << what << " -- ";
+        *m_stream << indent_str() << "-- " << what << " -- ";
         _add_time();
         *m_stream << std::endl;
       }

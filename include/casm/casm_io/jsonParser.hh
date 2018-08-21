@@ -280,6 +280,31 @@ namespace CASM {
     bool get_else(T &t, const std::string &key, const T &default_value, Args &&... args) const;
 
 
+    /// Get data from json
+    template<typename T, typename...Args>
+    std::unique_ptr<T> make(Args &&... args) const;
+
+    /// Get data from json
+    template<typename T, typename...Args>
+    void make(std::unique_ptr<T> &ptr, Args &&... args) const;
+
+    /// Get data from json if key exists
+    template<typename T, typename...Args>
+    bool make_if(std::unique_ptr<T> &ptr, const std::string &key, Args &&... args) const;
+
+    /// Get data from json if key exists, else return empty ptr
+    template<typename T, typename...Args>
+    std::unique_ptr<T> make_optional(const std::string &key, Args &&... args) const;
+
+    /// Get data from json if 'this' contains 'key', else return 'default_value'
+    template<typename T, typename...Args>
+    std::unique_ptr<T> make_if_else(const std::string &key, std::unique_ptr<T> default_value, Args &&... args) const;
+
+
+    /// Get data from json if key exists, else assign default_value
+    template<typename T, typename...Args>
+    bool make_else(std::unique_ptr<T> &ptr, const std::string &key, std::unique_ptr<T> default_value, Args &&... args) const;
+
     // ---- Data addition Methods (Overwrites any existing data with same 'name') ---
 
     /// Puts data of any type T for which 'jsonParser& to_json( const T &value, jsonParser &json)' is defined
@@ -422,6 +447,9 @@ namespace CASM {
   template<typename T>
   T from_json(const jsonParser &json);
 
+  /// Make from JSON for basic types
+  template<typename T>
+  std::unique_ptr<T> make_from_json(const jsonParser &json);
 
   template<> bool from_json<bool>(const jsonParser &json);
   template<> int from_json<int>(const jsonParser &json);
@@ -502,13 +530,54 @@ namespace CASM {
     }
   };
 
+  /// \brief Helper struct for constructing objects that need additional data
+  ///
+  /// \code jsonParser::make<T>(Args&&...args) \endcode is equivalent to:
+  /// - \code jsonMake<T>::make_from_json(*this, args...) \endcode
+  ///
+  /// This struct can be specialized to create new jsonMake<T>::make_from_json
+  /// as needed.
+  template<typename ValueType>
+  struct jsonMake {
 
-  /// Default works if T::T(args...) and 'void from_json(T&, const jsonParser&)' exist
+    /// \brief Default make_from_json is equivalent to \code CASM::make_from_json<ValueType>(json) \endcode
+    static std::unique_ptr<ValueType> make_from_json(const jsonParser &json) {
+      std::cout << "begin ptr jsonMake::make_from_json()" << std::endl;
+      std::cout << *CASM::make_from_json<ValueType>(json) << std::endl;
+      return CASM::make_from_json<ValueType>(json);
+    }
+  };
+
+
+  /// Default works if T::T() and 'void from_json(T&, const jsonParser&)' exist
   template<typename T>
   T from_json(const jsonParser &json) {
     T value;
     from_json(value, json);
     return value;
+  }
+
+  /// Default uses 'from_json<T>(const jsonParser&)' with copy constructor
+  template<typename T>
+  std::unique_ptr<T> make_from_json(const jsonParser &json) {
+    std::cout << "begin ptr make_from_json(json)" << std::endl;
+    std::cout << from_json<T>(json) << std::endl;
+    auto tmp = std::unique_ptr<T>(new T(from_json<T>(json)));
+    std::cout << *tmp << std::endl;
+    return std::unique_ptr<T>(new T(from_json<T>(json)));
+  }
+
+  // /// Make from JSON for basic types
+  // template<typename T>
+  // void make_from_json(std::unique_ptr<T>& ptr, const jsonParser &json) {
+  //   ptr = jsonMake<T>::make_from_json(json);
+  // }
+
+  /// Make from JSON for basic types
+  template<typename T, typename... Args>
+  void make_from_json(std::unique_ptr<T> &ptr, const jsonParser &json, Args &&... args) {
+    std::cout << "begin make_from_json(ptr)" << std::endl;
+    ptr = jsonMake<T>::make_from_json(json, std::forward<Args>(args)...);
   }
 
 
@@ -585,8 +654,9 @@ namespace CASM {
         return obj_iter == iter.obj_iter;
       else if(type == json_spirit::array_type)
         return array_iter == iter.array_iter;
-      else
-        return true;
+      else if(type == json_spirit::null_type)
+        return val_iter == iter.val_iter;
+      return false;
     }
 
     bool operator!=(const jsonParserIterator &iter) const {
@@ -737,24 +807,46 @@ namespace CASM {
   ///
   template<typename T, typename...Args>
   T jsonParser::get(Args &&... args) const {
-    return jsonConstructor<T>::from_json(*this, args...);
+    return jsonConstructor<T>::from_json(*this, std::forward<Args>(args)...);
   }
 
+  /// Get data from json
+  ///
+  /// This is equivalent to:
+  /// \code
+  /// from_json(t, *this, std::forward<Args>(args)...);
+  /// \endcode
+  ///
   template<typename T, typename...Args>
   void jsonParser::get(T &t, Args &&... args) const {
-    from_json(t, *this, args...);
+    from_json(t, *this, std::forward<Args>(args)...);
   }
 
 
+  /// Get data from json if key exists
+  ///
+  /// If 'key' exists, this is equivalent to:
+  /// \code
+  /// find(key)->get(t, std::forward<Args>(args)...);
+  /// \endcode
+  ///
   template<typename T, typename...Args>
   bool jsonParser::get_if(T &t, const std::string &key, Args &&... args) const {
-    if(find(key) != cend()) {
-      from_json(t, (*this)[key], args...);
+    auto it = find(key);
+    if(it != cend()) {
+      it->get(t, std::forward<Args>(args)...);
       return true;
     }
     return false;
   }
 
+  /// Get data from json if key exists, else return default_value
+  ///
+  /// If 'key' exists, this is equivalent to:
+  /// \code
+  /// find(key)->get<T>(std::forward<Args>(args)...);
+  /// \endcode
+  ///
   template<typename T, typename...Args>
   T jsonParser::get_if_else(const std::string &key, const T &default_value, Args &&... args) const {
     auto it = find(key);
@@ -766,16 +858,130 @@ namespace CASM {
     }
   }
 
+  /// Get data from json if key exists, else assign default_value
+  ///
+  /// If 'key' exists, this is equivalent to:
+  /// \code
+  /// find(key)->get(t, std::forward<Args>(args)...);
+  /// \endcode
+  ///
   template<typename T, typename...Args>
   bool jsonParser::get_else(T &t, const std::string &key, const T &default_value, Args &&... args) const {
-    if(find(key) != cend()) {
-      from_json(t, (*this)[key], args...);
+    auto it = find(key);
+    if(it != cend()) {
+      it->get(t, std::forward<Args>(args)...);
       return true;
     }
 
     t = default_value;
     return false;
   }
+
+  /// Get data from json, using one of several alternatives
+  ///
+  /// Use for any type T for which the either of the following is specialized
+  /// (they are called in the following order):
+  /// - \code
+  ///   template<typename T>
+  ///   template<typename...Args>
+  ///   std::unique_ptr<T> jsonMake<T>::make_from_json(const jsonParser& json, Args&&...args);
+  ///   \endcode
+  /// - \code
+  ///   template<typename T>
+  ///   std::unique_ptr<T> make_from_json(const jsonParser &json);
+  ///   \endcode
+  /// If neither is specialized, then this is equivalent to:
+  /// - \code
+  ///   return std::unique_ptr<T>(new T(from_json<T>(json)));
+  ///   \endcode
+  ///
+  template<typename T, typename...Args>
+  std::unique_ptr<T> jsonParser::make(Args &&... args) const {
+    std::cout << "begin jsonParser::make" << std::endl;
+    return jsonMake<T>::make_from_json(*this, std::forward<Args>(args)...);
+  }
+
+  /// Get data from json
+  ///
+  /// This is equivalent to:
+  /// \code
+  /// make_from_json(ptr, *this, std::forward<Args>(args)...);
+  /// \endcode
+  ///
+  template<typename T, typename...Args>
+  void jsonParser::make(std::unique_ptr<T> &ptr, Args &&... args) const {
+    std::cout << "begin jsonParser::make(ptr)" << std::endl;
+    make_from_json(ptr, *this, std::forward<Args>(args)...);
+  }
+
+  /// Get data from json if key exists
+  ///
+  /// If 'key' exists, this is equivalent to:
+  /// \code
+  /// find(key)->make(ptr, std::forward<Args>(args)...);
+  /// \endcode
+  ///
+  template<typename T, typename...Args>
+  bool jsonParser::make_if(std::unique_ptr<T> &ptr, const std::string &key, Args &&... args) const {
+    auto it = find(key);
+    if(it != cend()) {
+      it->make(ptr, std::forward<Args>(args)...);
+      return true;
+    }
+    return false;
+  }
+
+  /// Get data from json if key exists, else return empty ptr
+  ///
+  /// If 'key' exists, this is equivalent to:
+  /// \code
+  /// find(key)->make(std::forward<Args>(args)...);
+  /// \endcode
+  ///
+  template<typename T, typename...Args>
+  std::unique_ptr<T> jsonParser::make_optional(const std::string &key, Args &&... args) const {
+    auto it = find(key);
+    if(it != cend()) {
+      return it->make(std::forward<Args>(args)...);
+    }
+    return std::unique_ptr<T>();
+  }
+
+  /// Get data from json if 'this' contains 'key', else return 'default_value'
+  ///
+  /// If 'key' exists, this is equivalent to:
+  /// \code
+  /// find(key)->make(std::forward<Args>(args)...);
+  /// \endcode
+  ///
+  template<typename T, typename...Args>
+  std::unique_ptr<T> jsonParser::make_if_else(const std::string &key, std::unique_ptr<T> default_value, Args &&... args) const {
+    auto it = find(key);
+    if(it != cend()) {
+      return it->make(std::forward<Args>(args)...);
+    }
+    return std::move(default_value);
+  }
+
+  /// Get data from json if key exists, else assign default_value
+  ///
+  /// If 'key' exists, this is equivalent to:
+  /// \code
+  /// find(key)->make(ptr, std::forward<Args>(args)...);
+  /// \endcode
+  ///
+  template<typename T, typename...Args>
+  bool jsonParser::make_else(std::unique_ptr<T> &ptr, const std::string &key, std::unique_ptr<T> default_value, Args &&... args) const {
+    auto it = find(key);
+    if(it != cend()) {
+      it->make(ptr, std::forward<Args>(args)...);
+      return true;
+    }
+
+    ptr = std::move(default_value);
+    return false;
+  }
+
 
   /// Puts data of any type T for which 'jsonParser& to_json( const T &value, jsonParser &json)' is defined (same as operator=)
   template <typename T>

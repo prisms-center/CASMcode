@@ -59,6 +59,10 @@ namespace CASM {
       this->kwargs["orbit_printer_opt"] = m_orbit_printer_opt_parser = std::make_shared<OrbitPrinterOptionsParser>(
                                                                          _primclex, input, _enum_opt, relpath("orbit_printer_opt"), false);
 
+      std::cout << "DiffTransEnumParser:" << std::endl;
+      std::cout << "coord_type(): " << to_string(coord_type()) << std::endl;
+      std::cout << "orbit_printer_opt().coord_type: " << to_string(orbit_printer_opt().coord_type) << std::endl;
+      std::cout << "orbit_printer_opt().sym_info_opt.coord_type: " << to_string(orbit_printer_opt().sym_info_opt.coord_type) << std::endl;
       // check values for optional dry_run, coordinate_mode
       warn_unnecessary(expected());
     }

@@ -565,9 +565,9 @@ BOOST_AUTO_TEST_CASE(EnumTest1) {
   proj.check_init();
   proj.check_composition();
 
-  auto &log = null_log();
+  auto &log = default_log();
   log.set_verbosity(Log::verbose);
-  PrimClex primclex(proj.dir, null_log());
+  PrimClex primclex(proj.dir, log);
 
   log.custom("Prim");
   jsonParser tjson;
@@ -611,12 +611,13 @@ BOOST_AUTO_TEST_CASE(EnumTest1) {
 
   jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
   diff_trans_json["dry_run"] = true;
-  diff_trans_json["coordinate_mode"] = std::string("FRAC");
+  diff_trans_json["coordinate_mode"] = std::string("CART");
   diff_trans_json["orbit_printer_opt"]["print_invariant_grp"] = true;
+  std::cout << "\ndiff_trans_json:\n" << diff_trans_json << std::endl;
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
-  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
+  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 123);
   BOOST_CHECK_EQUAL(success, 0);
 }
 
