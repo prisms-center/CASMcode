@@ -35,6 +35,10 @@ Path to CASM project. Default=current working directory.
 run_help = """
 Run calculation for all selected configurations.
 """
+method_help = """
+Choose what method to use to calculate training data options are vasp or quantumespresso (default="").
+Overrides the calculator tag in relax.json. If calculator tag in relax.json is empty then VASP will be used.
+"""
 
 submit_help = """
 Submit calculation for all selected configurations.

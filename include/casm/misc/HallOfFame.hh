@@ -29,7 +29,7 @@ namespace CASM {
     public:
 
       Compare(ObjectCompare _obj_compare, double _score_tol) :
-        m_obj_compare(_obj_compare), m_score_compare(_score_tol) {}
+        m_score_compare(_score_tol), m_obj_compare(_obj_compare) {}
 
       bool operator()(const PairType &A, const PairType &B) const {
 

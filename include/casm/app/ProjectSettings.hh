@@ -267,6 +267,9 @@ namespace CASM {
     /// \brief Output as JSON
     jsonParser &to_json(jsonParser &json) const;
 
+    /// \brief Print summary of compiler settings, as for 'casm settings -l'
+    void print_compiler_settings_summary(Log &log) const;
+
     /// \brief Print summary of ProjectSettings, as for 'casm settings -l'
     void print_summary(Log &log) const;
 

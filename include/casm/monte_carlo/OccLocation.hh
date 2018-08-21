@@ -18,7 +18,7 @@ namespace CASM {
   namespace Monte {
 
     class Conversions;
-    class OccCandidate;
+    struct OccCandidate;
     class OccSwap;
     class OccCandidateList;
 

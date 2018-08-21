@@ -111,7 +111,6 @@ namespace CASM {
 
     fs::path settings_path;
     std::string verbosity_str;
-    Index condition_index;
 
     // Set command line options using boost program_options
     Completer::MonteOption monte_opt;
@@ -137,7 +136,6 @@ namespace CASM {
 
       settings_path = monte_opt.settings_path();
       verbosity_str = monte_opt.verbosity_str();
-      condition_index = monte_opt.condition_index();
 
       if(vm.count("verbosity")) {
         auto res = Log::verbosity_level(verbosity_str);
@@ -176,10 +174,6 @@ namespace CASM {
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     Log &log = args.log();
     Log &err_log = args.err_log();
-
-
-    const DirectoryStructure &dir = primclex.dir();
-    ProjectSettings &set = primclex.settings();
 
     //Get path to settings json file
     settings_path = fs::absolute(settings_path);
@@ -443,4 +437,3 @@ namespace CASM {
     }
   }
 }
-

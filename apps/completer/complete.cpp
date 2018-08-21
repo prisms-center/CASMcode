@@ -77,8 +77,6 @@ namespace CASM {
 int main(int argc, char *argv[]) {
 
 
-  CASM::PrimClex *_primclex = nullptr;
-
   Completer::Engine casm_engine = Completer::build_casm_engine();
 
 

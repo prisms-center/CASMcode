@@ -30,6 +30,8 @@ namespace test {
       desc(_desc),
       m_dirs(dir) {}
 
+    virtual ~Proj() {}
+
     fs::path dir;
     BasicStructure<Site> prim;
     std::string title;

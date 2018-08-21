@@ -16,6 +16,8 @@ namespace CASM {
    * @{
    */
 
+  template<typename DataObject>
+  struct QueryTraits;
   class Log;
 
   /// return path to current or parent directory containing ".casm" directory

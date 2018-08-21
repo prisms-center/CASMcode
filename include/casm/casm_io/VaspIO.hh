@@ -107,8 +107,8 @@ namespace CASM {
           m_scale(1.0),
           m_coord_mode(FRAC),
           m_atom_names(true),
-          m_append_atom_names(true),
           m_sel_dynamics(false),
+          m_append_atom_names(true),
           m_ignore {"VA", "Va", "va"} {}
 
         /// \brief Construct PrintPOSCAR object

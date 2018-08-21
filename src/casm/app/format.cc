@@ -555,116 +555,116 @@ LCHARG = .FALSE.\n";
     }
 
     if(vm.count("qe")) {
-      args.log() << "\n### quantum espresso ##################\n\n";
+      args.log << "\n### quantum espresso ##################\n\n";
 
-      args.log() << "LOCATION WHEN GENERATED:\n\n";
+      args.log << "LOCATION WHEN GENERATED:\n\n";
 
-      args.log() << "INPUT SETTINGS:\n";
-      args.log() << "$CALC_SETTINGS/relax.json\n";
-      args.log() << "$CALC_SETTINGS/$CUSTOM_INFILE_NAME\n";
-      args.log() << "$CALC_SETTINGS/SPECIES\n";
+      args.log << "INPUT SETTINGS:\n";
+      args.log << "$CALC_SETTINGS/relax.json\n";
+      args.log << "$CALC_SETTINGS/$CUSTOM_INFILE_NAME\n";
+      args.log << "$CALC_SETTINGS/SPECIES\n";
 
-      args.log() << "For global settings:\n";
-      args.log() << "  CALC_SETTINGS = $ROOT/training_data/settings/$CURR_CALCTYPE\n";
-      args.log() << "For supercell specific settings:\n";
-      args.log() << "  CALC_SETTINGS = $ROOT/training_data/$SCELNAME/settings/$CURR_CALCTYPE\n";
-      args.log() << "For configuration specific settings:\n";
-      args.log() << "  CALC_SETTINGS = $ROOT/training_data/$SCELNAME/$CONFIGID/settings/$CURR_CALCTYPE\n\n";
+      args.log << "For global settings:\n";
+      args.log << "  CALC_SETTINGS = $ROOT/training_data/settings/$CURR_CALCTYPE\n";
+      args.log << "For supercell specific settings:\n";
+      args.log << "  CALC_SETTINGS = $ROOT/training_data/$SCELNAME/settings/$CURR_CALCTYPE\n";
+      args.log << "For configuration specific settings:\n";
+      args.log << "  CALC_SETTINGS = $ROOT/training_data/$SCELNAME/$CONFIGID/settings/$CURR_CALCTYPE\n\n";
 
-      args.log() << "RESULTS:\n";
-      args.log() << "$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/(quantum espresso results)\n";
-      args.log() << "$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json (read)\n";
+      args.log << "RESULTS:\n";
+      args.log << "$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/(quantum espresso results)\n";
+      args.log << "$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json (read)\n";
 
-      args.log() << "\n\n";
+      args.log << "\n\n";
 
-      args.log() << "DESCRIPTION:\n";
-      args.log() << "CASM comes with wrappers for using Quantum Espresso to calculate the properties \n" <<
-                 "of configurations, but is designed so that any type of calculation  \n" <<
-                 "software or method could be used if an appropriate set of wrapper   \n" <<
-                 "scripts are available. By convention, input settings for software   \n" <<
-                 "used to calculate the properties of a particular configuration      \n" <<
-                 "should be checked for in the following directories:                 \n" <<
-                 "  1) $ROOT/training_data/$SCELNAME/$CONFIGID/settings/$CURR_CALCTYPE\n" <<
-                 "  2) $ROOT/training_data/$SCELNAME/settings/$CURR_CALCTYPE          \n" <<
-                 "  3) $ROOT/training_data/settings/$CURR_CALCTYPE                    \n\n" <<
+      args.log << "DESCRIPTION:\n";
+      args.log << "CASM comes with wrappers for using Quantum Espresso to calculate the properties \n" <<
+               "of configurations, but is designed so that any type of calculation  \n" <<
+               "software or method could be used if an appropriate set of wrapper   \n" <<
+               "scripts are available. By convention, input settings for software   \n" <<
+               "used to calculate the properties of a particular configuration      \n" <<
+               "should be checked for in the following directories:                 \n" <<
+               "  1) $ROOT/training_data/$SCELNAME/$CONFIGID/settings/$CURR_CALCTYPE\n" <<
+               "  2) $ROOT/training_data/$SCELNAME/settings/$CURR_CALCTYPE          \n" <<
+               "  3) $ROOT/training_data/settings/$CURR_CALCTYPE                    \n\n" <<
 
-                 "The Quantum Espresso wrappers included with CASM check for input settings files \n" <<
-                 "in the above directories, using the most local settings for a       \n" <<
-                 "particular configuration. In most cases, the global settings files  \n" <<
-                 "are stored in $ROOT/training_data/settings/$CURR_CALCTYPE and used  \n" <<
-                 "for all configurations. Settings files are searched for on a file-by-file\n" <<
-                 "basis, so to set supercell or configuration specific settings it is \n" <<
-                 "sufficient to only include the particular files necessary in the    \n" <<
-                 "supercell or configuration level settings folder.                   \n\n" <<
+               "The Quantum Espresso wrappers included with CASM check for input settings files \n" <<
+               "in the above directories, using the most local settings for a       \n" <<
+               "particular configuration. In most cases, the global settings files  \n" <<
+               "are stored in $ROOT/training_data/settings/$CURR_CALCTYPE and used  \n" <<
+               "for all configurations. Settings files are searched for on a file-by-file\n" <<
+               "basis, so to set supercell or configuration specific settings it is \n" <<
+               "sufficient to only include the particular files necessary in the    \n" <<
+               "supercell or configuration level settings folder.                   \n\n" <<
 
-                 "PBS job submission using the Quantum Espresso wrappers depends on using the pbs \n" <<
-                 "python module available here: https://github.com/prisms-center/pbs  \n\n" <<
+               "PBS job submission using the Quantum Espresso wrappers depends on using the pbs \n" <<
+               "python module available here: https://github.com/prisms-center/pbs  \n\n" <<
 
-                 "Included with CASM, the 'qe.relax' script can be executed by the  \n" <<
-                 "'casm run' command to submit a batch of Quantum Espresso jobs that for selected \n" <<
-                 "configurations. For each selected configuration, Quantum Espresso is re-run\n" <<
-                 "using the output of the previous calculation until full convergence \n" <<
-                 "is achieved. The convergence criteria is: if the cell shape and     \n" <<
-                 "volume remain constant (calculation != vc-relax) then a single calculation  \n" <<
-                 "is performed; else the calculation is converged if at least 2 jobs  \n" <<
-                 "are complete, and: 1) the last job completed with <= 3 ionic steps  \n" <<
-                 " or, if \"nrg_convergence\" is set in the 'relax.json' file, 2) the \n" <<
-                 "last two calculations had final energy differ by less than the value of \n" <<
-                 " \"nrg_convergence\". Once converged, a final constant volume       \n" <<
-                 "calculation is performed with the following setting: (calculation = 'relax')\n" <<
+               "Included with CASM, the 'qe.relax' script can be executed by the  \n" <<
+               "'casm run' command to submit a batch of Quantum Espresso jobs that for selected \n" <<
+               "configurations. For each selected configuration, Quantum Espresso is re-run\n" <<
+               "using the output of the previous calculation until full convergence \n" <<
+               "is achieved. The convergence criteria is: if the cell shape and     \n" <<
+               "volume remain constant (calculation != vc-relax) then a single calculation  \n" <<
+               "is performed; else the calculation is converged if at least 2 jobs  \n" <<
+               "are complete, and: 1) the last job completed with <= 3 ionic steps  \n" <<
+               " or, if \"nrg_convergence\" is set in the 'relax.json' file, 2) the \n" <<
+               "last two calculations had final energy differ by less than the value of \n" <<
+               " \"nrg_convergence\". Once converged, a final constant volume       \n" <<
+               "calculation is performed with the following setting: (calculation = 'relax')\n" <<
 
-                 "relax.json:                                                         \n" <<
-                 "  This JSON file contains a single JSON object which contains       \n" <<
-                 "  parameters used to control PBS job submission settings.           \n" <<
-                 "  Required keys are:                                                \n" <<
-                 "    \"queue\": queue to submit job in                               \n" <<
-                 "    \"ppn\": processors (cores) per node to request                 \n" <<
-                 "    \"atom_per_proc\": max number of atoms per processor (core)     \n" <<
-                 "    \"walltime\": walltime to request (ex. \"48:00:00\")            \n\n" <<
-                 "    \"software\": needs to be quantumespresso for quantum espresso to be used\n\n" <<
+               "relax.json:                                                         \n" <<
+               "  This JSON file contains a single JSON object which contains       \n" <<
+               "  parameters used to control PBS job submission settings.           \n" <<
+               "  Required keys are:                                                \n" <<
+               "    \"queue\": queue to submit job in                               \n" <<
+               "    \"ppn\": processors (cores) per node to request                 \n" <<
+               "    \"atom_per_proc\": max number of atoms per processor (core)     \n" <<
+               "    \"walltime\": walltime to request (ex. \"48:00:00\")            \n\n" <<
+               "    \"software\": needs to be quantumespresso for quantum espresso to be used\n\n" <<
 
-                 " Optional keys are:                                                 \n" <<
-                 "    \"account\": account to submit job under (default None)         \n" <<
-                 "    \"pmem\": string for requested memory (default None)            \n" <<
-                 "    \"priority\": requested job priority (default \"0\")            \n" <<
-                 "    \"message\": when to send messages about jobs (ex. \"abe\",     \n" <<
-                 "               default \"a\")                                       \n" <<
-                 "    \"email\": where to send messages (ex. \"me@fake.com\", default \n" <<
-                 "             None)                                                  \n" <<
-                 "    \"qos\": quality of service, 'qos' option (ex. \"fluxoe\")      \n" <<
-                 "    \"qe_cmd\": quantum espresso execution command (default is \"vasp\" if    \n" <<
-                 "                ncpus=1, else \"mpirun -np {NCPUS} vasp\"           \n" <<
-                 "    \"infile\": quantum espresso input file name (default is \"std.in\"\n" <<
-                 "    \"outfile\": quantum espresso output file name (default is \"std.out\"\n" <<
-                 "    \"ncpus\": number of cpus (cores) to run on (default $PBS_NP)   \n" <<
-                 "    \"run_limit\": number of vasp runs until \"not_converging\"     \n" <<
-                 "                 (default 10)                                       \n" <<
-                 "    \"nrg_convergence\": converged if last two runs complete and    \n" <<
-                 "                       differ in energy by less than this amount    \n" <<
-                 "                       (default None)                               \n" <<
-                 "    \"move\": files to move at the end of a run (ex. \"\",    \n" <<
-                 "            \".wfc\"], default [])                     \n" <<
-                 "    \"copy\": files to copy from run to run  default [$infilename]) \n" <<
-                 "    \"remove\": files to remove at the end of a run                \n" <<
-                 "               default [\".wfc\", \".igk\", \".save\"]             \n" <<
-                 "    \"compress\": files to compress at the end of a run (ex.        \n" <<
-                 "                [$outfilename], default [])          \n" <<
-                 "    \"backup\": files to compress to backups at the end of a run,   \n" <<
-                 "              used in conjunction with move (ex. [\".wfc\"])     \n" <<
-                 "    \"extra_input_files\": extra input files to be copied from the  \n" <<
-                 "                         settings directory, e.g., an OCCUPATIONS     \n" <<
-                 "                         file.                                      \n" <<
-                 "    \"initial\": location of $infile with tags for the initial run,   \n" <<
-                 "               if desired                                            \n" <<
-                 "    \"final\": location of $infile with tags for the final run, if  \n" <<
-                 "             desired                                                \n" <<
-                 "    \"err_types\": list of errors to check for. Not Implemented yet  \n" <<
-                 "\n";
+               " Optional keys are:                                                 \n" <<
+               "    \"account\": account to submit job under (default None)         \n" <<
+               "    \"pmem\": string for requested memory (default None)            \n" <<
+               "    \"priority\": requested job priority (default \"0\")            \n" <<
+               "    \"message\": when to send messages about jobs (ex. \"abe\",     \n" <<
+               "               default \"a\")                                       \n" <<
+               "    \"email\": where to send messages (ex. \"me@fake.com\", default \n" <<
+               "             None)                                                  \n" <<
+               "    \"qos\": quality of service, 'qos' option (ex. \"fluxoe\")      \n" <<
+               "    \"qe_cmd\": quantum espresso execution command (default is \"pw.x < {INFILE} > {OUTFILE}\" if    \n" <<
+               "                ncpus=1, else \"mpirun -np {NCPUS} pw.x < {INFILE} > {OUTFILE}\"           \n" <<
+               "    \"infile\": quantum espresso input file name (default is \"std.in\"\n" <<
+               "    \"outfile\": quantum espresso output file name (default is \"std.out\"\n" <<
+               "    \"ncpus\": number of cpus (cores) to run on (default $PBS_NP)   \n" <<
+               "    \"run_limit\": number of vasp runs until \"not_converging\"     \n" <<
+               "                 (default 10)                                       \n" <<
+               "    \"nrg_convergence\": converged if last two runs complete and    \n" <<
+               "                       differ in energy by less than this amount    \n" <<
+               "                       (default None)                               \n" <<
+               "    \"move\": files to move at the end of a run (ex. \"\",    \n" <<
+               "            \".wfc\"], default [])                     \n" <<
+               "    \"copy\": files to copy from run to run  default [$infilename]) \n" <<
+               "    \"remove\": files to remove at the end of a run                \n" <<
+               "               default [\".wfc\", \".igk\", \".save\"]             \n" <<
+               "    \"compress\": files to compress at the end of a run (ex.        \n" <<
+               "                [$outfilename], default [])          \n" <<
+               "    \"backup\": files to compress to backups at the end of a run,   \n" <<
+               "              used in conjunction with move (ex. [\".wfc\"])     \n" <<
+               "    \"extra_input_files\": extra input files to be copied from the  \n" <<
+               "                         settings directory, e.g., an OCCUPATIONS     \n" <<
+               "                         file.                                      \n" <<
+               "    \"initial\": location of $infile with tags for the initial run,   \n" <<
+               "               if desired                                            \n" <<
+               "    \"final\": location of $infile with tags for the final run, if  \n" <<
+               "             desired                                                \n" <<
+               "    \"err_types\": list of errors to check for. Not Implemented yet  \n" <<
+               "\n";
 
-      args.log() << "EXAMPLE: relax.json \n";
-      args.log() << "-------\n";
-      args.log() <<
-                 "{\n\
+      args.log << "EXAMPLE: relax.json \n";
+      args.log << "-------\n";
+      args.log <<
+               "{\n\
   \"account\":\"prismsprojectdebug_flux\",\n\
   \"queue\":\"flux\",\n\
   \"priority\":\"-200\",\n\

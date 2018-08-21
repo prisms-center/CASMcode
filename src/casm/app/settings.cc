@@ -11,7 +11,7 @@
 
 namespace CASM {
 
-  class ClexDescription;
+  struct ClexDescription;
   bool clex_exists(const DirectoryStructure &dir, const ClexDescription &desc);
 
   namespace {
@@ -262,7 +262,6 @@ namespace CASM {
 
     std::string single_input;
     std::vector<std::string> multi_input;
-    COORD_TYPE coordtype;
     po::variables_map vm;
 
 

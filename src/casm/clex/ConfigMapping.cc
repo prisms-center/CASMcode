@@ -71,7 +71,6 @@ namespace CASM {
       //We only bother checking pre-existing supercells of min_vol <= volume <=max_vol;
       SupercellEnumerator<Lattice> enumerator(prim_lat, sym_group, ScelEnumProps(min_vol, max_vol + 1));
 
-      Index l = 0;
       for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
 
         Lattice tlat = canonical_equivalent_lattice(*it, sym_group, _tol);
@@ -817,8 +816,6 @@ namespace CASM {
       primclex().prim().point_group(),
       ScelEnumProps(prim_vol, prim_vol + 1));
 
-    //Save all the lattices we enumerate in their canonical form
-    Index l = 0;
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       Lattice canon_lat = *it;
       if(!is_canonical_lattice(canon_lat, primclex().prim().point_group(), m_tol)) {
@@ -918,7 +915,6 @@ namespace CASM {
       //if(cost_matrix.rows()!=scel.num_sites() || cost_matrix.cols()!=scel.num_sites())
       cost_matrix = Eigen::MatrixXd::Constant(scel.num_sites(), scel.num_sites(), inf);
       Index inf_counter;
-      double dist;
       // loop through all the sites of the structure
       Index j = 0;
       for(; j < rstruc.basis().size(); j++) {
@@ -985,7 +981,6 @@ namespace CASM {
       //if(cost_matrix.rows()!=scel.num_sites() || cost_matrix.cols()!=scel.num_sites())
       cost_matrix = Eigen::MatrixXd::Constant(scel.num_sites(), scel.num_sites(), inf);
       Index inf_counter;
-      double dist;
       // loop through all the sites of the structure
       Index j;
       for(j = 0; j < rstruc.basis().size(); j++) {

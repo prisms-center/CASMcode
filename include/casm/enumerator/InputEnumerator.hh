@@ -301,13 +301,11 @@ namespace CASM {
     }
 
     jsonParser source(step_type step) const {
-      //Please use -Werror=return-type in your compiler flags
       return ptr->source(step);
     }
 
     /// Derived enumerators must implement name
     std::string name() const {
-      //Please use -Werror=return-type in your compiler flags
       return ptr->name();
     }
 

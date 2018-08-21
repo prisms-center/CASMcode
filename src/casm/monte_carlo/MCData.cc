@@ -38,7 +38,7 @@ namespace CASM {
 
       size_type start1, start2, N;
       double sum1, sum2;
-      double eps = (eps == 0.0) ? 1e-8 : std::abs(observations(0)) * 1e-8;
+      double eps = (observations(0) == 0.0) ? 1e-8 : std::abs(observations(0)) * 1e-8;
 
       N = observations.size();
       bool is_even = ((N % 2) == 0);

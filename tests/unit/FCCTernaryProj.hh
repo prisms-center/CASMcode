@@ -71,7 +71,7 @@ namespace test {
 [ 2.000000000000, 0.000000000000, 0.000000000000 ],
 [ 3.000000000000, 0.000000000000, 0.000000000000 ]
 ],
-"include_subclusters" : true  
+"include_subclusters" : true
 },
 {
 "coordinate_mode" : "Direct",
@@ -109,7 +109,7 @@ namespace test {
 [ 2.000000000000, 0.000000000000, 0.000000000000 ],
 [ 3.000000000000, 0.000000000000, 0.000000000000 ],
 ],
-"include_subclusters" : true  
+"include_subclusters" : true
 },
 {
 "coordinate_mode" : "Direct",

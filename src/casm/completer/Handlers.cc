@@ -303,15 +303,15 @@ namespace CASM {
     //*****************************************************************************************************//
 
     OptionHandlerBase::OptionHandlerBase(const std::string &init_option_tag):
-      m_gzip_flag(false),
       m_tag(init_option_tag),
-      m_desc(std::string("'casm ") + init_option_tag + std::string("' usage")) {
+      m_desc(std::string("'casm ") + init_option_tag + std::string("' usage")),
+      m_gzip_flag(false) {
     }
 
     OptionHandlerBase::OptionHandlerBase(const std::string &init_option_tag, const std::string &init_descriptor):
-      m_gzip_flag(false),
       m_tag(init_option_tag),
-      m_desc(init_descriptor) {
+      m_desc(init_descriptor),
+      m_gzip_flag(false) {
     }
 
     const std::string &OptionHandlerBase::tag() const {
@@ -680,4 +680,3 @@ namespace CASM {
 }
 
 #endif
-

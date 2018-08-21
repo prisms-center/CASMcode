@@ -57,7 +57,7 @@ namespace CASM {
     /// do not depend on the lattice of 'RHS'
     BasicStructure(const BasicStructure &RHS);
 
-    ~BasicStructure();
+    virtual ~BasicStructure() {}
 
     //  ****Inspectors/Accessors****
 

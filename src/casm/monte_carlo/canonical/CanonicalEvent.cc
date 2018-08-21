@@ -9,8 +9,8 @@ namespace CASM {
     /// \param Ncorr The total number of correlations that could be calculated (use Clexulator::corr_size)
     ///
     CanonicalEvent::CanonicalEvent(size_type Nspecies, size_type Ncorr) :
-      m_dN(Eigen::VectorXl::Zero(Nspecies)),
-      m_dCorr(Eigen::VectorXd(Ncorr)) { }
+      m_dCorr(Eigen::VectorXd(Ncorr)),
+      m_dN(Eigen::VectorXl::Zero(Nspecies)) { }
 
 
     /// \brief Set the change in total (formation) energy associated with this event

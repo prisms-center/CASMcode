@@ -150,7 +150,7 @@ void triangle_count_test() {
   BOOST_CHECK_EQUAL(totals, -7 + 7 + 6 + 5 + 4 + 3 + 2 + 1);
 
   int dims = 5;
-  int det = 30;
+  // int det = 30;
 
   Eigen::VectorXi mid_diagonal(Eigen::VectorXi::Ones(dims));
   mid_diagonal(0) = 5;
@@ -545,7 +545,7 @@ void trans_enum_test() {
   Lattice testlat(Lattice::fcc());
   SymGroup pg;
   testlat.generate_point_group(pg);
-  int dims = 3;
+  // int dims = 3;
   Eigen::Matrix3i transmat;
 
   transmat << -1, 1, 1,
@@ -578,7 +578,7 @@ void restricted_test() {
     Lattice testlat = all_test_lats[t];
     SymGroup pg;
     testlat.generate_point_group(pg);
-    int dims = 1;
+    // int dims = 1;
 
     ScelEnumProps enum_props(1, 15 + 1, "a");
     SupercellEnumerator<Lattice> enumerator(testlat, pg, enum_props);

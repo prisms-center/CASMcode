@@ -24,8 +24,8 @@ namespace CASM {
       m_formation_energy_clex(primclex, settings.formation_energy(primclex)),
       m_convert(_supercell()),
       m_cand(m_convert),
-      m_occ_loc(m_convert, m_cand),
       m_all_correlations(settings.all_correlations()),
+      m_occ_loc(m_convert, m_cand),
       m_event(primclex.composition_axes().components().size(), _clexulator().corr_size()) {
 
       const auto &desc = m_formation_energy_clex.desc();
@@ -627,4 +627,3 @@ namespace CASM {
 
   }
 }
-

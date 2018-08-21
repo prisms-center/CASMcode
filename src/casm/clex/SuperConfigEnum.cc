@@ -24,54 +24,54 @@ namespace CASM {
 
     return "SuperConfigEnum: \n\n"
 
-    "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
-    "    Indicate supercells to enumerate super-configurations in using ScelEnum\n"
-    "    input format, but the \"name\" option is not allowed. See 'ScelEnum'     \n"
-    "    description for details. \n\n"
+           "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
+           "    Indicate supercells to enumerate super-configurations in using ScelEnum\n"
+           "    input format, but the \"name\" option is not allowed. See 'ScelEnum'     \n"
+           "    description for details. \n\n"
 
-    "  subconfigs: string or JSON array\n"
-    "    Indicate supercells to enumerate all occupational configurations in. May \n"
-    "    be a JSON array of configuration names, or string specifying a           \n"
-    "    configuration selection file anme. By default, all existing supercells   \n"
-    "    are used. See 'ScelEnum' description for details. \n\n"
+           "  subconfigs: string or JSON array\n"
+           "    Indicate supercells to enumerate all occupational configurations in. May \n"
+           "    be a JSON array of configuration names, or string specifying a           \n"
+           "    configuration selection file anme. By default, all existing supercells   \n"
+           "    are used. See 'ScelEnum' description for details. \n\n"
 
-    "  primitive_only: bool (default=true)\n"
-    "    If true, only the primitive form of a configuration is saved in the      \n"
-    "    configuration list. Otherwise, both primitive and non-primitive          \n"
-    "    configurations are saved.    \n\n"
+           "  primitive_only: bool (default=true)\n"
+           "    If true, only the primitive form of a configuration is saved in the      \n"
+           "    configuration list. Otherwise, both primitive and non-primitive          \n"
+           "    configurations are saved.    \n\n"
 
-    "  filter: string (optional, default=None)\n"
-    "    A query command to use to filter which configurations are kept.          \n\n"
+           "  filter: string (optional, default=None)\n"
+           "    A query command to use to filter which configurations are kept.          \n\n"
 
-    "  dry_run: bool (optional, default=false)\n"
-    "    Perform dry run.\n\n"
+           "  dry_run: bool (optional, default=false)\n"
+           "    Perform dry run.\n\n"
 
-    "  Examples:\n"
-    "    To enumerate super-configurations of listed sub-configurations:\n"
-    "     casm enum --method SuperConfigEnum -i \n"
-    "     '{ \n"
-    "        \"supercells\": { \n"
-    "          \"max\": 4, \n"
-    "          \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
-    "        },\n"
-    "        \"subconfigs\": [\n"
-    "          \"SCEL1_1_1_1_0_0_0/0\",\n"
-    "          \"SCEL2_1_2_1_0_0_0/0\",\n"
-    "          \"SCEL2_1_2_1_0_0_0/1\"\n"
-    "        ]\n"
-    "      }' \n"
-    "\n"
-    "    To enumerate super-configurations of listed sub-configurations from a \n"
-    "    selection file:\n"
-    "     casm enum --method SuperConfigEnum -i \n"
-    "     '{ \n"
-    "        \"supercells\": { \n"
-    "          \"max\": 4, \n"
-    "          \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
-    "        }, \n"
-    "        \"subconfigs\": \"selection_filename\"\n"
-    "      }' \n"
-    "\n";
+           "  Examples:\n"
+           "    To enumerate super-configurations of listed sub-configurations:\n"
+           "     casm enum --method SuperConfigEnum -i \n"
+           "     '{ \n"
+           "        \"supercells\": { \n"
+           "          \"max\": 4, \n"
+           "          \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
+           "        },\n"
+           "        \"subconfigs\": [\n"
+           "          \"SCEL1_1_1_1_0_0_0/0\",\n"
+           "          \"SCEL2_1_2_1_0_0_0/0\",\n"
+           "          \"SCEL2_1_2_1_0_0_0/1\"\n"
+           "        ]\n"
+           "      }' \n"
+           "\n"
+           "    To enumerate super-configurations of listed sub-configurations from a \n"
+           "    selection file:\n"
+           "     casm enum --method SuperConfigEnum -i \n"
+           "     '{ \n"
+           "        \"supercells\": { \n"
+           "          \"max\": 4, \n"
+           "          \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
+           "        }, \n"
+           "        \"subconfigs\": \"selection_filename\"\n"
+           "      }' \n"
+           "\n";
   }
 
   /// sub-routine for EnumInterface<SuperConfigEnum>::run,
@@ -145,7 +145,6 @@ namespace CASM {
       auto &pconfig = _pair.first;
       FillSupercell f(unit_cell, pconfig, primclex.crystallography_tol());
       ConfigEnumEquivalents e(f(pconfig));
-      Index eq_count = 0;
       for(auto it = e.begin(); it != e.end(); ++it) {
         subconfig.push_back(*it);
         primclex.log() << "  Config: " << it->name() << "\n" << *it << "\n";

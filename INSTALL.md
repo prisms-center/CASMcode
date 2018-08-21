@@ -1,50 +1,59 @@
 
-CASM C++ library and `casm` CLI program
-=======================================
+CASM C++ library and `ccasm` CLI program
+========================================
 
-*Note: This only gives installation instructions for the `casm` command line program and c/c++ libraries. To install the CASM Python packages and programs see ``python/casm/README.md``.*
- 
+
+For Developers
+--------------
+
+We recommend developing in the CASM conda development environment. This can be created from the ``CASMcode`` directory by doing:
+
+```
+# Location of CASMcode repository
+export CASM_BUILD_DIR=$(pwd)
+
+# Location of existing conda installation, or location to newly install conda
+export CASM_CONDA_DIR=${_CONDA_ROOT:-"$HOME/.local/conda"}
+
+# Conda environment name
+export CASM_ENV_NAME="casm"
+
+# Set location  for CASM test projects to be downloaded from Materials Commons
+#  - This is optional, but required for some tests to run
+#  - Contact the CASM developers for access and the project ID. You will need
+#    to create an account on Materials Commons before we can give you access.
+# export CASM_TEST_PROJECTS_DIR="$HOME/.local/CASM_test_projects"
+# export CASM_TEST_PROJECTS_ID="<... id here ...>"
+# export MC_API_KEY="<... your API key ...>"
+
+bash build_scripts/conda-devel.sh
+```
+
+This will download and install conda if it doesn't currently exist, and create a conda environment with the boost libraries required for CASM installed.  On OSX, it will use the system-installed clang compiler, while on linux it will install and use GCC.
+
+
 
 Dependencies
 ------------
 
-### C++11 
+### C++11
 
-CASM must be compiled with a compiler that supports the C++11 standard. Testing is done with gcc-4.8.5 and Apple LLVM version 7.3.0 (clang-703.0.31).
+CASM must be compiled with a compiler that supports the C++11 standard. Testing is done with gcc-7 and Xcode-9.4.
 
-*Note: On Mac OS X it may be necessary to have the Xcode command line tools installed. To install, run ``xcode-select --install`` from the Terminal.*
+*Note: On Mac OS X it is necessary to have the Xcode command line tools installed. To install, run ``xcode-select --install`` from the Terminal.*
 
 ### Boost
 
-CASM uses several Boost libraries, which are often available installed on many computing clusters. you can install Boost yourself via a package management tool, or by downloading from the Boost website: [http://www.boost.org](http://www.boost.org). Most CASM testing has been performed with Boost version 1.54 or later. Known bugs in version 1.53 and earlier will cause failures.
+The CASM conda development environment includes the subset of the boost library currently used by CASM. Contact the CASM developers if a new feature requires additional boost libraries.
 
 *Important: Boost should be compiled using the same compiler that you will use to compile CASM.*
-
-**Mac OS X**
-Using Homebrew:
-
-``
-brew install boost
-``
-
-**Linux Ubuntu**
-
-Install Boost with:
-
-``
-sudo apt-get install libboost-all-dev
-``
-
-**From the Boost website**
-
-Boost can be downloaded and installed from source following instructions found at the Boost website: [http://www.boost.org/users/download/](http://www.boost.org/users/download/). 
 
 
 ### Included with CASM
 
 CASM is distributed with the following dependencies:
 
-- **Eigen, v3.1.3**: [http://eigen.tuxfamily.org](http://eigen.tuxfamily.org) 
+- **Eigen, v3.1.3**: [http://eigen.tuxfamily.org](http://eigen.tuxfamily.org)
 
 - **JSON Spirit, v4.06**: [http://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented](http://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented)
 
@@ -55,70 +64,79 @@ CASM is distributed with the following dependencies:
 - **gzstream, v1.5**: [http://www.cs.unc.edu/Research/compgeom/gzstream/](http://www.cs.unc.edu/Research/compgeom/gzstream/)
 
 
-## Installation from source
+Build CASM from source
+----------------------
 
-#### Getting CASM
-
-There are two options for downloading CASM:
-
-1. Fork and clone the repository
-    - Use this option if you think you may contribute bug fixes or new features
-    - The CASM repository is located at: [https://github.com/prisms-center/CASMcode](https://github.com/prisms-center/CASMcode).  
-    - For help see: [https://help.github.com/articles/fork-a-repo/](https://help.github.com/articles/fork-a-repo/).
-
-2. Download as archive
-    - Use this option if you do not plan on contributing bug fixes or new features
-    - CASM can be downloaded as a .zip or .tar.gz archive from: [https://github.com/prisms-center/CASMcode/releases](https://github.com/prisms-center/CASMcode/releases)
-
-
-#### Configure, Build, and install
-
-If installing from an archive distribution a ``configure`` script will already be present. If installing from the git repository, first generate the ``configure`` script using:
-
-    ./bootstrap.sh
-
-On many systems, all that is required is:
-
-    ./configure && make && make install
-
-Some systems may require special options for configuration. Help can be obtained from ``./configure --help``. In particular, you many need to use:
-
-- ``CXXFLAGS="-O3 -DNDEBUG -DBOOST_NO_CXX11_SCOPED_ENUMS -Wno-deprecated-register -Wno-deprecated-declarations"``
-  - ``-O3`` for maximum optimization
-  - ``-DNDEBUG`` to disable debugging mode
-  - ``-DBOOST_NO_CXX11_SCOPED_ENUMS`` if boost was compiled without c++11
-  - ``-Wno-deprecated-register -Wno-deprecated-declarations`` to disable some compiler warnings
-- ``--prefix=PREFIX`` to set the installation location
-- ``--with-boost=PATH`` to find boost in a non-standard location
-- ``--with-boost-libdir=PATH`` to find boost libraries in a non-standard location
-- ``--with-bash-completion-dir=PATH`` to specify where to install the CASM ``bash-completion`` script
-
-
-
-This will compile and install:
-
-- ``casm`` the primary CASM program
-- CASM headers files
-- ``libcasm`` a shared library containing much of the implementation
-- ``libccasm`` a shared library providing a C interface to ``libcasm`` used by the ``casm`` Python package
-- (optional) ``casm-complete`` a program that implements bash-completion and an associated bash-completion script
-
-#### Checking installation ####
-
-If ``casm`` is installed correctly, execute ``casm`` from any directory and you will see the ``casm`` help menu:
+With the CASM conda development environment activated, from the "CASMcode" directory, do:
 
 ```
--- casm usage -- 
-
-casm [--version] <command> [options] [args]
-
-available commands:
-  bset
-  composition
-  enum
-  ...
+bash build.sh
 ```
- 
-#### For developers: Testing new features ####
 
-See ``tests/README.md``
+Behind the scenes, this will:
+
+1. Run a Python script `make_Makemodule.py` that updates the autoconf and automake files to reflect any new files added to the CASM `include`,  `src`, and `tests` directories (assuming they follow standard naming conventions). See documentation in the script for details.
+2. Run autoreconf to generate the `configure` script and execute it.
+3. Execute `make`.
+
+On subsequent runs, steps (1) and (2) will be skipped if `configure` exists. To take into account the addition or deletion or files, or to re-configure, do: `rm configure` and re-run.
+
+Options:
+
+- Set `CASM_NCPU=4` to set the `-j` option and compile in parallel
+- Set `CASM_CXXFLAGS` for compiler options. The default is:
+  - `-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations`
+- See other options in:
+  - For OSX: `build_scripts/travis-variables-osx`
+  - For Linux: `build_scripts/travis-variables-linux`
+
+To clean up build products:
+
+```
+make clean
+bash clean.sh
+```
+
+Run all tests:
+--------------
+
+```
+bash build_test.sh
+```
+
+Behind the scenes, this will:
+
+1. Do everything that `build.sh` does (build the c++ libraries and programs).
+2. Execute `make check` to run c++ tests
+3. Run Python tests
+
+Options (beyond those for `build.sh`):
+
+- Set ``CASM_SKIP_CPP_TESTS`` to non-zero length to skip c++ tests.
+- Do ``unset CASM_SKIP_CPP_TESTS`` to re-enable c++ tests.
+- Set ``CASM_SKIP_PYTHON_TESTS`` to non-zero length to skip Python tests.
+- Do ``unset CASM_SKIP_PYTHON_TESTS`` to re-enable Python tests.
+
+See also ``tests/README.md`` for information on writing C++ tests and running select tests.
+See also ``python/casm/README.md`` for information on Python tests.
+
+To clean up test products:
+
+```
+bash checkclean.sh
+```
+
+
+Install from source:
+--------------------
+
+```
+bash build_install.sh
+```
+
+Uninstall from source:
+--------------------
+
+```
+bash uninstall.sh
+```

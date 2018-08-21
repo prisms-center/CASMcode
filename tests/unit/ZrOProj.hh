@@ -71,7 +71,7 @@ namespace test {
 [ 2, 0, 0, 0 ],
 [ 2, 3, 0, 0 ]
 ],
-"include_subclusters" : false  
+"include_subclusters" : false
 }
 ]
 })";

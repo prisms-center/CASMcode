@@ -44,7 +44,7 @@ namespace CASM {
 
     fs::path selection;
     po::variables_map vm;
-    bool force;
+    //bool force;
     std::vector<std::string> confignames;
 
 

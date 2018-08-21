@@ -21,7 +21,7 @@ BUILD_DIR=/tmp                  # where to clone and build
 # your own if you have one
 CASM_BASH_COMPLETION_DIR=$CASM_PREFIX/.casm_bash_completion.d
 
-# script to activate user bash_completion scripts, 
+# script to activate user bash_completion scripts,
 # after installation, set this environment variable and to activate do:
 #   source $CASM_BASH_COMPLETION
 CASM_BASH_COMPLETION=$CASM_PREFIX/.casm_bash_completion

@@ -100,6 +100,10 @@ namespace CASM {
     // set 'command'
     command = (argc() > 1) ? std::string(argv()[1]) : "";
 
+    if(command == "--version") {
+      command = "version";
+    }
+
     // check if 'help' command
     std::vector<std::string> help_commands {
       "help",
@@ -121,7 +125,6 @@ namespace CASM {
   CommandMap &command_map() {
     static CommandMap command_map {
       {"version", version_command},
-      {"--version", version_command},
       {"status", status_command},
       {"format", format_command},
       {"init", init_command},
