@@ -16,27 +16,27 @@ def casm_scripts_setup(self):
     """Implements common setup for casm.scripts tests
       - check for 'skip' or 'skip_MyTestCase' files
       - check for 'CASM_TEST_PROJECTS_DIR' and set 'self.has_projects'
-    
+
     Notes:
         Uses test_casm.test_project.casm_project_setup
     """
-    
+
     # Use same setup as casm.project tests
     casm_project_setup(self)
-    
-    
+
+
 class CasmScriptsTestCase(unittest.TestCase):
     """test_casm.test_scripts base unittest class
-    
+
     Attributes:
-        has_projects (bool): True if 'CASM_TEST_PROJECTS_DIR' exists. Some tests 
-            require a test project, but others do not.
+        has_projects (bool): True if 'CASM_TEST_PROJECTS_DIR' exists and is non-zero length. Some
+            tests require a test project, but others do not.
         test_projects_dir (str): Value of 'CASM_TEST_PROJECTS_DIR'; the location
             of test projects.
         ZrO_dir (str): Location of a ZrO test project that contains VASP calculations.
-        
+
     """
-    
+
     @classmethod
     def setUpClass(cls):
         """On inherited classes, run our `setUp` method"""
@@ -48,7 +48,7 @@ class CasmScriptsTestCase(unittest.TestCase):
             cls.setUp = setUpOverride
 
     def setUp(self):
-        """Common Setup: 
+        """Common Setup:
           - check for 'skip' or 'skip_MyTestCase' files
           - check for 'CASM_TEST_PROJECTS_DIR' and set 'self.has_projects'
         """

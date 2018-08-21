@@ -29,7 +29,7 @@ def casm_project_setup(self):
         warnings.warn("\n'casm' executable not detected: will test behaviour that does not require libcasm")
 
     # Check for 'CASM_TEST_PROJECTS_DIR' environment variable
-    self.has_projects = 'CASM_TEST_PROJECTS_DIR' in os.environ
+    self.has_projects = 'CASM_TEST_PROJECTS_DIR' in os.environ and len(os.environ['CASM_TEST_PROJECTS_DIR']) > 0
     if not self.has_projects:
         warnings.warn("\n'CASM_TEST_PROJECTS_DIR' environment variable not found: will test behaviour that does not require a test project")
     else:
@@ -40,8 +40,8 @@ class CasmProjectTestCase(unittest.TestCase):
     """test_casm.test_project base unittest class
 
     Attributes:
-        has_projects (bool): True if 'CASM_TEST_PROJECTS_DIR' exists. Some tests
-            require a test project, but others do not.
+        has_projects (bool): True if 'CASM_TEST_PROJECTS_DIR' exists and is non-zero length. Some
+            tests require a test project, but others do not.
         test_projects_dir (str): Value of 'CASM_TEST_PROJECTS_DIR'; the location
             of test projects.
         ZrO_dir (str): Location of a ZrO test project that contains VASP calculations.
