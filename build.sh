@@ -13,7 +13,7 @@ export CASM_PREFIX=$CONDA_PREFIX
 
 ### variables - Control how CASM is built  ###
 
-check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations"
+check_var "CASM_CXXFLAGS" "Compiler flags" ""
 check_var "CASM_NCPU" "Compiler -j option" 2
 
 # set OS-dependent variable defaults

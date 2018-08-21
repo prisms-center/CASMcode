@@ -274,7 +274,7 @@ def main():
         write_option(f, name, 'LDFLAGS', ['-avoid-version', '$(BOOST_LDFLAGS)'])
 
         # always keep version uptodate
-        f.write('src/casm/version/autoversion.o: .FORCE\n\n')
+        f.write('./src/casm/version/autoversion.lo: .FORCE\n\n')
 
     # src/ccasm/Makemodule.am
     dir = join('src', 'ccasm')

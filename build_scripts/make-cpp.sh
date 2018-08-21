@@ -41,6 +41,7 @@ else
   echo "'configure' already exists; continuing... (delete it to re-configure)"
 fi
 
+bash version.sh
 if grep dirty build-aux/casm_version.txt; then
 
   echo "version: $(git describe --abbrev=6 --dirty --always --tags)"

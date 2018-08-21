@@ -14,12 +14,12 @@ export CASM_PREFIX=$CONDA_PREFIX
 ### variables - Control how CASM is built and what is tested ###
 
 # For C++ and Python
-check_var "CASM_TEST_PROJECTS_DIR" "Location of CASM_test_projects" "$HOME/.local/CASM_test_projects"
+check_var "CASM_TEST_PROJECTS_DIR" "Location of CASM_test_projects" ""
 check_var "CASM_SKIP_MAKE" "Set to non-zero length to skip initialize make" ""
 
 # For C++ tests
 check_var "CASM_SKIP_CPP_TESTS" "Set to non-zero length to skip ++ tests" ""
-check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations"
+check_var "CASM_CXXFLAGS" "Compiler flags" ""
 check_var "CASM_NCPU" "Compiler -j option" 2
 check_var "CASM_TESTS" "Particular test categories to run (default="", runs all tests)" ""
 check_var "CASM_TEST_FLAGS" "Customize the options given to the test programs" "--log_level=test_suite --catch_system_errors=no"

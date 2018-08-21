@@ -13,7 +13,7 @@ export CASM_PREFIX=$CONDA_PREFIX
 
 ### variables - Control how CASM is built  ###
 
-check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations"
+check_var "CASM_CXXFLAGS" "Compiler flags" ""
 check_var "CASM_NCPU" "Compiler -j option" 2
 
 # set OS-dependent variable defaults
@@ -26,4 +26,9 @@ check_var "CASM_NCPU" "Compiler -j option" 2
 bash $CASM_BUILD_DIR/build_scripts/make-cpp.sh
 
 make install
+if [[ "$CASM_OS_NAME" == "osx" ]]; then
+  echo "install_name_tool -add_rpath $CASM_PREFIX/lib $CASM_PREFIX/bin/ccasm"
+  install_name_tool -add_rpath "$CASM_PREFIX/lib" "$CASM_PREFIX/bin/ccasm" \
+    || { echo "  already set"; }
+fi
 pip install $CASM_BUILD_DIR/python/casm
