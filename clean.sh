@@ -5,7 +5,7 @@ set -v
 set -e
 
 # autotools generated things
-find . -name .deps -exec rm -rf {} \;
+find . -name .deps -prune -exec rm -rf {} \;
 find . -name *.os -exec rm -f {} \;
 find . -name *.dirstamp -exec rm -f {} \;
 rm -rf autom4te.cache libtool Makefile Makefile.in aclocal.m4 config.h config.h.in config.log config.status configure stamp-h1
@@ -13,7 +13,7 @@ rm -f build-aux/casm_version.txt build-aux/compile build-aux/config.guess build-
 
 # casm-python generated things
 rm -rf ./python/casm/doc/source/python ./python/casm/doc/build
-find . -name __pycache__ -exec rm -rf {} \;
+find . -name __pycache__ -prune -exec rm -rf {} \;
 
 # doxygen genrated things
 rm -rf doc/html
