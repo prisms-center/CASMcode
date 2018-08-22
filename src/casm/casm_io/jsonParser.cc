@@ -610,4 +610,215 @@ namespace CASM {
   jsonParser jsonParser::parse(const fs::path &path) {
     return jsonParser(path);
   }
+
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst>::jsonParserIterator() {}
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst>::jsonParserIterator(const jsonParserIterator &iter)
+    : parser(iter.parser), type(iter.type), obj_iter(iter.obj_iter), array_iter(iter.array_iter), val_iter(iter.val_iter) {
+  }
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst> &jsonParserIterator<IsConst>::operator=(jsonParserIterator iter) {
+    swap(*this, iter);
+    return *this;
+  }
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst>::jsonParserIterator(
+    typename jsonParserIterator<IsConst>::pointer j,
+    const typename jsonParserIterator<IsConst>::object_iterator &iter)
+    : parser(j), type(json_spirit::obj_type), obj_iter(iter) {
+  }
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst>::jsonParserIterator(
+    typename jsonParserIterator<IsConst>::pointer j,
+    const typename jsonParserIterator<IsConst>::array_iterator &iter)
+    : parser(j), type(json_spirit::array_type), array_iter(iter) {
+  }
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst>::jsonParserIterator(
+    typename jsonParserIterator<IsConst>::pointer j,
+    const int &iter)
+    : parser(j), type(json_spirit::null_type), val_iter(iter) {
+  }
+
+  template<bool IsConst>
+  typename jsonParserIterator<IsConst>::reference jsonParserIterator<IsConst>::operator*() const {
+    if(type == json_spirit::obj_type)
+      return (reference) obj_iter->second;
+    else if(type == json_spirit::array_type)
+      return (reference) * array_iter;
+    else
+      return *parser;
+  }
+
+  template<bool IsConst>
+  typename jsonParserIterator<IsConst>::pointer jsonParserIterator<IsConst>::operator->() const {
+    if(type == json_spirit::obj_type)
+      return (pointer) &obj_iter->second;
+    else if(type == json_spirit::array_type)
+      return (pointer) & (*array_iter);
+    else
+      return parser;
+  }
+
+  template<bool IsConst>
+  bool jsonParserIterator<IsConst>::operator==(const jsonParserIterator &iter) const {
+    if(parser != iter.parser) {
+      return false;
+    }
+
+    bool this_is_end = this->is_end();
+    bool that_is_end = iter.is_end();
+
+    if(this_is_end && that_is_end) {
+      return true;
+    }
+    else if(this_is_end != that_is_end) {
+      return false;
+    }
+    else {
+      if(type == json_spirit::obj_type) {
+        return obj_iter == iter.obj_iter;
+      }
+      else if(type == json_spirit::array_type) {
+        return array_iter == iter.array_iter;
+      }
+      else if(type == json_spirit::null_type) {
+        return val_iter == iter.val_iter;
+      }
+    }
+
+    return false;
+  }
+
+  template<bool IsConst>
+  bool jsonParserIterator<IsConst>::is_end() const {
+    if(type == json_spirit::obj_type && obj_iter == parser->get_obj().end()) {
+      return true;
+    }
+    else if(type == json_spirit::array_type && array_iter == parser->get_array().end()) {
+      return true;
+    }
+    else if(type == json_spirit::null_type && val_iter == 1) {
+      return true;
+    }
+    return false;
+  }
+
+  template<bool IsConst>
+  bool jsonParserIterator<IsConst>::operator!=(const jsonParserIterator &iter) const {
+    return !(*this == iter);
+  }
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst> &jsonParserIterator<IsConst>::operator++() {
+    if(type == json_spirit::obj_type) {
+      ++obj_iter;
+      return *this;
+    }
+    else if(type == json_spirit::array_type) {
+      ++array_iter;
+      return *this;
+    }
+    else {
+      ++val_iter;
+      return *this;
+    }
+  }
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst> jsonParserIterator<IsConst>::operator++(int) {
+
+    jsonParserIterator cp(*this);
+
+    if(type == json_spirit::obj_type) {
+      ++obj_iter;
+      return cp;
+    }
+    else if(type == json_spirit::array_type) {
+      ++array_iter;
+      return cp;
+    }
+    else {
+      ++val_iter;
+      return cp;
+    }
+  }
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst> &jsonParserIterator<IsConst>::operator--() {
+    if(type == json_spirit::obj_type) {
+      --obj_iter;
+      return *this;
+    }
+    else if(type == json_spirit::array_type) {
+      --array_iter;
+      return *this;
+    }
+    else {
+      --val_iter;
+      return *this;
+    }
+  }
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst> jsonParserIterator<IsConst>::operator--(int) {
+
+    jsonParserIterator<IsConst> cp(*this);
+
+    if(type == json_spirit::obj_type) {
+      --obj_iter;
+      return cp;
+    }
+    else if(type == json_spirit::array_type) {
+      --array_iter;
+      return cp;
+    }
+    else {
+      --val_iter;
+      return cp;
+    }
+  }
+
+  template<bool IsConst>
+  jsonParserIterator<IsConst>::operator jsonParser::const_iterator() const {
+    if(type == json_spirit::obj_type)
+      return jsonParser::const_iterator(parser, obj_iter);
+    else if(type == json_spirit::array_type)
+      return jsonParser::const_iterator(parser, array_iter);
+    else
+      return jsonParser::const_iterator(parser, val_iter);
+  }
+
+  /// When iterating over a JSON object, returns the 'name' of the 'name':value pair the iterator is pointing at
+  template<bool IsConst>
+  std::string jsonParserIterator<IsConst>::name() const {
+    if(type == json_spirit::obj_type)
+      return obj_iter->first;
+    else
+      throw std::runtime_error("Calling 'name' on non-object jsonParserIterator");
+  }
+
+  template<bool IsConst>
+  void swap(jsonParserIterator<IsConst> &a, jsonParserIterator<IsConst> &b) {
+    using std::swap;
+
+    std::swap(a.parser, b.parser);
+    swap(a.type, b.type);
+    swap(a.obj_iter, b.obj_iter);
+    swap(a.array_iter, b.array_iter);
+    swap(a.val_iter, b.val_iter);
+  }
+
+  template class jsonParserIterator<true>;
+  template class jsonParserIterator<false>;
+  template void swap<true>(jsonParserIterator<true> &, jsonParserIterator<true> &);
+  template void swap<false>(jsonParserIterator<false> &, jsonParserIterator<false> &);
+
 }

@@ -604,157 +604,45 @@ namespace CASM {
     typedef value_type *pointer;
 
 
-    jsonParserIterator() {}
+    jsonParserIterator();
 
-    jsonParserIterator(const jsonParserIterator &iter)
-      : parser(iter.parser), type(iter.type), obj_iter(iter.obj_iter), array_iter(iter.array_iter), val_iter(iter.val_iter) {
-    }
+    jsonParserIterator(const jsonParserIterator &iter);
 
-    jsonParserIterator &operator=(jsonParserIterator iter) {
-      swap(*this, iter);
-      return *this;
-    }
+    jsonParserIterator &operator=(jsonParserIterator iter);
 
-    jsonParserIterator(pointer j, const object_iterator &iter)
-      : parser(j), type(json_spirit::obj_type), obj_iter(iter) {
-    }
+    jsonParserIterator(pointer j, const object_iterator &iter);
 
-    jsonParserIterator(pointer j, const array_iterator &iter)
-      : parser(j), type(json_spirit::array_type), array_iter(iter) {
-    }
+    jsonParserIterator(pointer j, const array_iterator &iter);
 
-    jsonParserIterator(pointer j, const int &iter)
-      : parser(j), type(json_spirit::null_type), val_iter(iter) {
-    }
+    jsonParserIterator(pointer j, const int &iter);
 
-    reference operator*() const {
-      if(type == json_spirit::obj_type)
-        return (reference) obj_iter->second;
-      else if(type == json_spirit::array_type)
-        return (reference) * array_iter;
-      else
-        return *parser;
-    }
+    reference operator*() const;
 
-    pointer operator->() const {
-      if(type == json_spirit::obj_type)
-        return (pointer) &obj_iter->second;
-      else if(type == json_spirit::array_type)
-        return (pointer) & (*array_iter);
-      else
-        return parser;
-    }
+    pointer operator->() const;
 
 
-    bool operator==(const jsonParserIterator &iter) const {
-      if(parser != iter.parser)
-        return false;
+    bool operator==(const jsonParserIterator &iter) const;
 
-      if(type == json_spirit::obj_type)
-        return obj_iter == iter.obj_iter;
-      else if(type == json_spirit::array_type)
-        return array_iter == iter.array_iter;
-      else if(type == json_spirit::null_type)
-        return val_iter == iter.val_iter;
-      return false;
-    }
+    bool is_end() const;
 
-    bool operator!=(const jsonParserIterator &iter) const {
-      return !(*this == iter);
-    }
+    bool operator!=(const jsonParserIterator &iter) const;
 
-    jsonParserIterator &operator++() {
-      if(type == json_spirit::obj_type) {
-        ++obj_iter;
-        return *this;
-      }
-      else if(type == json_spirit::array_type) {
-        ++array_iter;
-        return *this;
-      }
-      else {
-        ++val_iter;
-        return *this;
-      }
-    }
+    jsonParserIterator &operator++();
 
-    jsonParserIterator operator++(int) {
+    jsonParserIterator operator++(int);
 
-      jsonParserIterator cp(*this);
+    jsonParserIterator &operator--();
 
-      if(type == json_spirit::obj_type) {
-        ++obj_iter;
-        return cp;
-      }
-      else if(type == json_spirit::array_type) {
-        ++array_iter;
-        return cp;
-      }
-      else {
-        ++val_iter;
-        return cp;
-      }
-    }
+    jsonParserIterator operator--(int);
 
-    jsonParserIterator &operator--() {
-      if(type == json_spirit::obj_type) {
-        --obj_iter;
-        return *this;
-      }
-      else if(type == json_spirit::array_type) {
-        --array_iter;
-        return *this;
-      }
-      else {
-        --val_iter;
-        return *this;
-      }
-    }
-
-    jsonParserIterator operator--(int) {
-
-      jsonParserIterator cp(*this);
-
-      if(type == json_spirit::obj_type) {
-        --obj_iter;
-        return cp;
-      }
-      else if(type == json_spirit::array_type) {
-        --array_iter;
-        return cp;
-      }
-      else {
-        --val_iter;
-        return cp;
-      }
-    }
-
-    operator jsonParser::const_iterator() const {
-      if(type == json_spirit::obj_type)
-        return jsonParser::const_iterator(parser, obj_iter);
-      else if(type == json_spirit::array_type)
-        return jsonParser::const_iterator(parser, array_iter);
-      else
-        return jsonParser::const_iterator(parser, val_iter);
-    }
+    operator jsonParser::const_iterator() const;
 
     /// When iterating over a JSON object, returns the 'name' of the 'name':value pair the iterator is pointing at
-    std::string name() const {
-      if(type == json_spirit::obj_type)
-        return obj_iter->first;
-      else
-        throw std::runtime_error("Calling 'name' on non-object jsonParserIterator");
-    }
+    std::string name() const;
 
-    friend void swap(jsonParserIterator &a, jsonParserIterator &b) {
-      using std::swap;
-
-      std::swap(a.parser, b.parser);
-      swap(a.type, b.type);
-      swap(a.obj_iter, b.obj_iter);
-      swap(a.array_iter, b.array_iter);
-      swap(a.val_iter, b.val_iter);
-    }
+    template<bool _IsConst> friend void swap(
+      jsonParserIterator<_IsConst> &a,
+      jsonParserIterator<_IsConst> &b);
 
 
   private:

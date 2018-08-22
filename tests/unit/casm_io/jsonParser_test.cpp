@@ -86,8 +86,16 @@ BOOST_AUTO_TEST_CASE(ConstAt) {
 template<typename T>
 void test_find_at(T &json) {
 
-  BOOST_CHECK_EQUAL(json.end() == json.find_at(fs::path()), true);
-  BOOST_CHECK_EQUAL(json.end() == json.find_at(""), true);
+  BOOST_CHECK_EQUAL(&json == &*json.find_at(fs::path()), true);
+  BOOST_CHECK_EQUAL(&json == &*json.find_at(""), true);
+
+  {
+    auto it = json.find_at(fs::path());
+    BOOST_CHECK_EQUAL(json.end() == it, false);
+    it++;
+    BOOST_CHECK_EQUAL(json.end() == it, true);
+  }
+
 
   BOOST_CHECK_EQUAL(json.find_at("int")->template get<int>(), 34);
   BOOST_CHECK_EQUAL(json.find_at("mistake") == json.end(), true);
