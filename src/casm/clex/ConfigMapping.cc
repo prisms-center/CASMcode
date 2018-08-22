@@ -470,10 +470,7 @@ namespace CASM {
 
     // We know struc.lattice() is a supercell of the prim, now we have to
     // reorient 'struc' to match canonical lattice vectors
-    mapped_lat = canonical_equivalent_lattice(
-                   Lattice(primclex().prim().lattice().lat_column_mat() * trans_mat, m_tol),
-                   primclex().prim().point_group(),
-                   m_tol);
+    mapped_lat = Lattice(primclex().prim().lattice().lat_column_mat() * trans_mat, m_tol).canonical_form(primclex().prim().point_group());
     Supercell scel(&primclex(), mapped_lat);
 
     // note: trans_mat gets recycled here
@@ -818,8 +815,8 @@ namespace CASM {
 
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       Lattice canon_lat = *it;
-      if(!is_canonical_lattice(canon_lat, primclex().prim().point_group(), m_tol)) {
-        canon_lat = canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol);
+      if(!canon_lat.is_canonical(primclex().prim().point_group())) {
+        canon_lat = canon_lat.canonical_form(primclex().prim().point_group());
       }
       lat_vec.push_back(canon_lat);
     }
@@ -869,8 +866,8 @@ namespace CASM {
         continue;
       }
       Lattice canon_lat = *it;
-      if(!is_canonical_lattice(canon_lat, primclex().prim().point_group(), m_tol)) {
-        canon_lat = canonical_equivalent_lattice(*it, primclex().prim().point_group(), m_tol);
+      if(!canon_lat.is_canonical(primclex().prim().point_group())) {
+        canon_lat = canon_lat.canonical_form(primclex().prim().point_group());
       }
       lat_vec.push_back(canon_lat);
     }

@@ -285,25 +285,6 @@ namespace CASM {
     return _canonical_equivalent_lattice(in_lat, point_grp, compare_tol).first;
   }
 
-  bool is_canonical_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
-    if(!is_niggli(in_lat, compare_tol)) {
-      return false;
-    }
-    else {
-      for(auto &op : point_grp) {
-        if(!is_niggli(copy_apply(op, in_lat), compare_tol)) {
-          throw std::runtime_error("SymOp made niggli cell non niggli");
-        }
-        if(standard_orientation_compare(in_lat.lat_column_mat(),
-                                        copy_apply(op, in_lat).lat_column_mat(),
-                                        compare_tol)) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
   /// Return canonical equivalent lattice, and 'to_canonical' SymOp
   ///
   /// The 'to_canonical' SymOp, to_canonical_op, satisfies:
