@@ -22,6 +22,5 @@ echo 'make check -j $CASM_NCPU CASM_BOOST_PREFIX=$CASM_BOOST_PREFIX TESTS="$CASM
 
 # works
 make check -j $CASM_NCPU CASM_BOOST_PREFIX="$CASM_BOOST_PREFIX" ${CASM_TESTS:+TESTS="$CASM_TESTS"} TEST_FLAGS="$CASM_TEST_FLAGS" \
-  || bash ./build_scripts/check-rpath.sh \
   || do_if_failed "cat $CASM_BUILD_DIR/test-suite.log" \
   || { echo "'make check -j $CASM_NCPU CASM_BOOST_PREFIX=$CASM_BOOST_PREFIX' failed"; exit 1; }
