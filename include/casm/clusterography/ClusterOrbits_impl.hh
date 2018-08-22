@@ -635,11 +635,8 @@ namespace CASM {
       std::ostream &status) {
 
       typedef typename OrbitType::Element cluster_type;
-      typedef OrbitType orbit_type;
 
-      const auto &sym_compare = specs.sym_compare();
       const auto &filter = specs.filter();
-      const auto &g = specs.generating_group();
 
       // print status messages
       std::string clean(100, ' ');

@@ -5,6 +5,7 @@
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/app/DirectoryStructure.hh"
 #include "casm/app/casm_functions.hh"
 
 using namespace CASM;
@@ -110,8 +111,8 @@ extern "C" {
     fs::path _root(root);
 
     CommandArgs command_args(s, _primclex, _root, logging);
-    if(command_args.parse_result) {
-      return command_args.parse_result;
+    if(command_args.parse_result()) {
+      return command_args.parse_result();
     }
 
     return casm_api(command_args);
@@ -126,9 +127,9 @@ extern "C" {
     std::string s("casm ");
     s += std::string(args);
 
-    CommandArgs command_args(s, _primclex, _primclex->get_path(), *_primclex);
-    if(command_args.parse_result) {
-      return command_args.parse_result;
+    CommandArgs command_args(s, _primclex, _primclex->dir().root_dir(), *_primclex);
+    if(command_args.parse_result()) {
+      return command_args.parse_result();
     }
 
     return casm_api(command_args);

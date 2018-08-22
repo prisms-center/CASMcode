@@ -4,7 +4,6 @@
 /// What is being tested:
 #include "casm/misc/cloneable_ptr.hh"
 
-using namespace CASM;
 
 class ATest {
 
@@ -60,8 +59,8 @@ public:
     BTest(-1) {}
 
   BTest(int _val, bool _cloned = false) :
-    m_value(_val),
-    m_cloned(_cloned) {};
+    m_cloned(_cloned),
+    m_value(_val) {};
 
   BTest(const BTest &other) :
     m_value(other.m_value) {};
@@ -276,7 +275,3 @@ BOOST_AUTO_TEST_CASE(CloneFunctionTest) {
 
 
 BOOST_AUTO_TEST_SUITE_END()
-
-
-
-

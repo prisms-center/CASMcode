@@ -84,7 +84,7 @@ namespace CASM {
       root = args.root;
     }
     if(!find_casmroot(root).empty()) {
-      args.log << "Already in a casm project." << std::endl;
+      args.log() << "Already in a casm project." << std::endl;
       return ERR_OTHER_PROJ;
     }
 

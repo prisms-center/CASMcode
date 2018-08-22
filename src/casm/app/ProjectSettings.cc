@@ -821,3 +821,18 @@ namespace CASM {
   }
 
 }
+
+// explicit instantiations
+
+#define INST_ProjectSettings_all(r, data, type) \
+template QueryHandler<type> &ProjectSettings::query_handler<type>(); \
+template const QueryHandler<type> &ProjectSettings::query_handler<type>() const;
+
+#define INST_ProjectSettings_config(r, data, type) \
+template std::vector<std::string> &ProjectSettings::properties<type>(); \
+template const std::vector<std::string> &ProjectSettings::properties<type>() const;
+
+namespace CASM {
+  BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_all, _, CASM_DB_TYPES)
+  BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_config, _, CASM_DB_CONFIG_TYPES)
+}
