@@ -9,6 +9,7 @@ from glob import glob
 from os.path import join
 from six import iteritems
 from shutil import copyfile
+from sys import platform
 
 # Notes:
 #
@@ -62,6 +63,12 @@ boost_libs = ["$(BOOST_SYSTEM_LIB)",
 boost_test_libs = ["$(BOOST_UNIT_TEST_FRAMEWORK_LIB)"]
 
 lib_casm_testing = ["libcasmtesting.a"]
+
+### Flags ###
+
+rpath_ldflags = None
+if platform == "darwin" and 'CASM_BOOST_PREFIX' in os.environ:
+    rpath_ldflags = ['-Wl,-rpath,' + os.environ['CASM_BOOST_PREFIX'] + '/lib']
 
 ### Functions ###
 
@@ -166,6 +173,10 @@ def testdir(f, group, extradist_ext=['*.hh', '*.cc', '*.json', '*.txt'], verbose
 
     # CXXFLAGS
     write_option(f, 'casm_unit_' + group, 'CXXFLAGS', ['$(AM_CXXFLAGS)', '-I$(top_srcdir)/tests/unit/'])
+
+    # LDFLAGS
+    if rpath_ldflags is not None:
+        write_option(f, 'casm_unit_' + group, 'LDFLAGS', rpath_ldflags)
 
     # SOURCES
     files = sorted(glob(join(loc, '*_test.cpp')))
@@ -295,6 +306,8 @@ def main():
         append(f, 'man1_MANS', ['man/ccasm.1'])
         write_option(f, 'ccasm', 'SOURCES', ['apps/ccasm/ccasm.cpp'])
         write_option(f, 'ccasm', 'LDADD', lib_casm + boost_libs)
+        if rpath_ldflags is not None:
+            write_option(f, 'ccasm', 'LDFLAGS', rpath_ldflags)
 
 
     # apps/completer/Makemodule.am
@@ -308,6 +321,8 @@ def main():
         append_option(f, 'bin', 'PROGRAMS', ['casm-complete'])
         write_option(f, 'casm_complete', 'SOURCES', ['apps/completer/complete.cpp'])
         write_option(f, 'casm_complete', 'LDADD', lib_casm + boost_libs)
+        if rpath_ldflags is not None:
+            write_option(f, 'casm_complete', 'LDFLAGS', rpath_ldflags)
         f.write('endif\n')
 
     # tests/unit/Makemodule.am
