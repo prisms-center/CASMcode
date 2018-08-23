@@ -512,7 +512,6 @@ namespace CASM {
     char term(0);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
     Eigen::IOFormat format(opt.prec, opt.prec + 1);
-    int r;
 
     // print rotation or screw integer, and include trailing space
     auto print_r = [&](bool overline) {
@@ -539,10 +538,6 @@ namespace CASM {
 
     auto print_coord = [&](const Coordinate & coord) {
       coord.print(stream, opt.coord_type, term, format);
-    };
-
-    auto print_axis = [&](const Coordinate & coord) {
-      coord.print_axis(stream, opt.coord_type, term, format);
     };
 
     switch(info.op_type) {

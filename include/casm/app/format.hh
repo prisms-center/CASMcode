@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  class CommandArgs;
+  struct CommandArgs;
 
   int format_command(const CommandArgs &args);
 

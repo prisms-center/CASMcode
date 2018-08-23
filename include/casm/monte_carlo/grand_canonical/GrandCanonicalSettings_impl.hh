@@ -433,9 +433,9 @@ namespace CASM {
         std::stringstream ss;
         ss << "Error constructing Monte Carlo samplers from query: '" << prop_name << "'";
         Log &err_log = primclex.err_log();
-        primclex.err_log() << ss.str();
-        primclex.err_log() << "headers: " << col << std::endl;
-        primclex.err_log() << "  Some queries may not be available for sampling at this time." << std::endl;
+        err_log << ss.str();
+        err_log << "headers: " << col << std::endl;
+        err_log << "  Some queries may not be available for sampling at this time." << std::endl;
         throw std::runtime_error(ss.str());
       }
 

@@ -21,7 +21,7 @@ namespace CASM {
 
   namespace Kinetics {
 
-    namespace {
+    namespace debug {
       std::ostream &operator<<(std::ostream &sout, const std::map<AtomSpecies, Index> &count) {
         for(const auto &t : count) {
           sout << "  " << t.first.name() << ": " << t.second << std::endl;
@@ -332,6 +332,7 @@ namespace CASM {
           return trans.uccoord == traj.to.uccoord && trans.to_mol() == traj.to.mol();
         };
         auto to_match_count = std::count_if(species_traj().begin(), species_traj().end(), is_to_match);
+        (void) to_match_count;
         if(from_match_count != trans.to_mol().size()) {
           return false;
         }

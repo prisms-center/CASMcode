@@ -1134,7 +1134,7 @@ namespace CASM {
           non_canon_config_name = tokens[3] + '/' + tokens[4] + '.' + tokens[5] + '.' + tokens[6] + '.' + tokens[7];
         }
         // parse, if not canonical equivalent lattice
-        else if(tokens[2] == "super") {
+        else { // if(tokens[2] == "super")
           scelname = tokens[0] + '.' + tokens[1];
           fg_op_index = boost::lexical_cast<Index>(tokens[3]);
           non_canon_config_name = tokens[4] + '/' + tokens[5] + '.' + tokens[6] + '.' + tokens[7] + '.' + tokens[8];
@@ -1693,5 +1693,3 @@ namespace CASM {
     return tmp;
   }
 }
-
-

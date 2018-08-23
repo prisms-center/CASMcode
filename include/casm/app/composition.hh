@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  class CommandArgs;
+  struct CommandArgs;
 
   int composition_command(const CommandArgs &args);
 

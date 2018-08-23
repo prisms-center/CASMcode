@@ -151,7 +151,7 @@ namespace CASM {
         int length = std::distance(enumerator.m_config_enum_interpol->begin(), enumerator.m_config_enum_interpol->end()) - 2;
         for(i = 0; i < length + 2; ++i) {
           // file_path = $project_dir/training_data/diff_trans/$diff_trans_name/$scelname/$configid/$image_number/POSCAR
-          int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
+          //int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
           auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
           file_path += "/N_images_" + std::to_string(length) + "/poscars/0" + std::to_string(i) + "/POSCAR";
           fs::create_directories(file_path.parent_path());

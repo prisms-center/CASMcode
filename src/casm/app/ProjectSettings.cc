@@ -60,7 +60,7 @@ namespace CASM {
     };
 
     struct AddAliasesToJSON {
-      AddAliasesToJSON(const ProjectSettings &_set, jsonParser &_json) : set(_set), json(_json) {}
+      AddAliasesToJSON(const ProjectSettings &_set, jsonParser &_json) : json(_json), set(_set) {}
 
       template<typename T> void eval() {
         json[traits<T>::name] = set.query_handler<T>().aliases();

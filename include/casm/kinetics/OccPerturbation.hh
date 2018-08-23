@@ -61,8 +61,8 @@ namespace CASM {
     OccPerturbation(const PrimType &_prim,
                     InputIterator _begin,
                     InputIterator _end) :
-      m_prim_ptr(&_prim),
-      m_element(_begin, _end) {}
+      m_element(_begin, _end),
+      m_prim_ptr(&_prim) {}
 
     /// \brief primtive structure of project
     const PrimType &prim() const;

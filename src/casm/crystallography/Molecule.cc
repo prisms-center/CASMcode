@@ -79,7 +79,7 @@ namespace CASM {
   void from_json(AtomPosition &apos, const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
     std::string _name;
     Eigen::Vector3d _pos(0., 0., 0.);
-    AtomPosition::sd_type _SD_flag({false, false, false});
+    AtomPosition::sd_type _SD_flag {{false, false, false}};
     if(json.is_obj()) {
       _name = json["species"].get<std::string>();
       if(json.contains("coordinate"))
@@ -100,7 +100,7 @@ namespace CASM {
   AtomPosition jsonConstructor<AtomPosition>::from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
     std::string _name;
     Eigen::Vector3d _pos(0., 0., 0.);
-    AtomPosition::sd_type _SD_flag({false, false, false});
+    AtomPosition::sd_type _SD_flag {{false, false, false}};
     if(json.is_obj()) {
       _name = json["species"].get<std::string>();
       if(json.contains("coordinate"))

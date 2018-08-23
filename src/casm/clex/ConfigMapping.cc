@@ -854,7 +854,6 @@ namespace CASM {
       ScelEnumProps(prim_vol, prim_vol + 1));
 
     //Save all the lattices we enumerate in their canonical form
-    Index l = 0;
     //std::cout << "size of enumerator" << std::distance(enumerator.begin(),enumerator.end());
     //std::cout << " size of equivalent set " << ref_hermites.size() << std::endl;
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {

@@ -56,11 +56,11 @@ namespace CASM {
                                   double _singular_value_tol,
                                   double _bottom_facet_tol) :
       BaseValueFormatter<ValueType, Configuration>(_name, _desc),
-      m_selection(_default_selection),
-      m_composition_type(_default_composition_type),
       m_calculator_map(_calculator_map),
       m_singular_value_tol(_singular_value_tol),
       m_bottom_facet_tol(_bottom_facet_tol),
+      m_selection(_default_selection),
+      m_composition_type(_default_composition_type),
       m_initialized(false) {}
 
     /// \brief Calculates the convex hull
@@ -332,4 +332,3 @@ namespace CASM {
     template class BaseHull<double>;
   }
 }
-

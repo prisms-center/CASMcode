@@ -46,15 +46,15 @@ namespace CASM {
     std::vector<Index> m_perm_array;
 
   public:
-    Permutation(Index N):
+    explicit Permutation(Index N):
       m_perm_array(N) {
       std::iota(m_perm_array.begin(), m_perm_array.end(), 0);
     };
 
     template<typename Iterator>
     Permutation(Iterator begin, Iterator end): m_perm_array(begin, end) {};
-    Permutation(const std::vector<Index> &init_perm): m_perm_array(init_perm) {};
-    Permutation(std::vector<Index> &&init_perm): m_perm_array(std::move(init_perm)) {};
+    explicit Permutation(const std::vector<Index> &init_perm): m_perm_array(init_perm) {};
+    explicit Permutation(std::vector<Index> &&init_perm): m_perm_array(std::move(init_perm)) {};
 
     Index size() const {
       return m_perm_array.size();

@@ -18,7 +18,7 @@ namespace CASM {
 
   namespace Kinetics {
 
-    namespace {
+    namespace debug {
 
       Log &operator<<(Log &out, const IntegralCluster &clust) {
         SitesPrinter printer;
@@ -228,24 +228,24 @@ namespace CASM {
 
       log.begin<Log::verbose>("Calculate cluster orbits");
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-      auto end = make_prim_periodic_orbits(
-                   primclex.prim(),
-                   parser.cspecs().self, // TODO
-                   alloy_sites_filter,
-                   primclex.crystallography_tol(),
-                   std::back_inserter(orbits),
-                   primclex.log());
+      make_prim_periodic_orbits(
+        primclex.prim(),
+        parser.cspecs().self, // TODO
+        alloy_sites_filter,
+        primclex.crystallography_tol(),
+        std::back_inserter(orbits),
+        primclex.log());
       print_clust(orbits.begin(), orbits.end(), log, orbit_printer_opt);
       log << std::endl;
 
       log.begin<Log::verbose>("Calculate diff_trans orbits");
       std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
-      auto end2 = make_prim_periodic_diff_trans_orbits(
-                    orbits.begin(),
-                    orbits.end(),
-                    primclex.crystallography_tol(),
-                    std::back_inserter(diff_trans_orbits),
-                    &primclex);
+      make_prim_periodic_diff_trans_orbits(
+        orbits.begin(),
+        orbits.end(),
+        primclex.crystallography_tol(),
+        std::back_inserter(diff_trans_orbits),
+        &primclex);
       print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), log, orbit_printer_opt);
       log << std::endl;
 

@@ -6,7 +6,7 @@
 
 namespace CASM {
 
-  template class ScelIsCanonical<OccPerturbation>;
+  template struct ScelIsCanonical<OccPerturbation>;
   template bool CanonicalForm<ElementWiseSymApply<Kinetics::DoFTransformation<GenericCoordCluster<CRTPBase<CASM::OccPerturbation> > > > >::
   is_canonical<std::vector<PermuteIterator>::iterator>(
     Supercell const &,

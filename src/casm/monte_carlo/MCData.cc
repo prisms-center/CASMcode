@@ -165,7 +165,6 @@ namespace CASM {
     std::tuple<bool, double, double> MCDataConvergence::_calc_rho(const Eigen::VectorXd &observations) {
 
       size_type N = observations.size();
-      double obs_mean_sqr = m_mean * m_mean;
       double CoVar0 = m_squared_norm / N - m_mean * m_mean;
 
       // if there is essentially no variation, return rho(l==1)

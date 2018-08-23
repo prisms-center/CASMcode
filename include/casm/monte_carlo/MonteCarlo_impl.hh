@@ -24,8 +24,8 @@ namespace CASM {
       m_config(m_scel),
       m_configdof(m_config.configdof()),
       m_write_trajectory(settings.write_trajectory()),
-      m_debug(m_settings.debug()),
-      m_log(_log) {
+      m_log(_log),
+      m_debug(m_settings.debug()) {
 
       settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
 

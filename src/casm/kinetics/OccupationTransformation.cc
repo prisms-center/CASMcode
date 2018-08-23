@@ -18,9 +18,9 @@ namespace CASM {
       const UnitCellCoord &_uccoord,
       Index _from_value,
       Index _to_value) :
-      uccoord(_uccoord),
       from_value(_from_value),
-      to_value(_to_value) {}
+      to_value(_to_value),
+      uccoord(_uccoord) {}
 
     const Structure &OccupationTransformation::prim() const {
       return uccoord.unit();
@@ -183,4 +183,3 @@ namespace CASM {
   }
 
 }
-

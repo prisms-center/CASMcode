@@ -169,9 +169,7 @@ namespace CASM {
           Coordinate center_of_mass(lattice());
           for(Index b = 0; b < basis().size(); b++) {
             //for each basis site loop through all trans_basis to find the closest one
-            double smallest = 1000000;
             Coordinate tshift(lattice());
-            double dist = trans_basis[mappings[b]].min_dist(basis()[b] - t_tau, tshift);
             //in tshift is stored trans_basis - basis
             tshift.cart() *= (1.0 / basis().size());
             center_of_mass += tshift;

@@ -26,6 +26,7 @@ namespace CASM {
   bool OrbitBranchSpecsParser::is_integer(jsonParser::const_iterator it) const {
     try {
       int branch = branch_to_int(it);
+      (void) branch;
       return true;
     }
     catch(std::exception &e) {

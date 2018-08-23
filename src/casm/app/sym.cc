@@ -78,6 +78,7 @@ namespace CASM {
 
     }
 
+    coordtype = sym_opt.coordtype_enum();
     COORD_MODE C(coordtype);
 
     const fs::path &root = args.root;
@@ -217,5 +218,3 @@ namespace CASM {
   };
 
 }
-
-

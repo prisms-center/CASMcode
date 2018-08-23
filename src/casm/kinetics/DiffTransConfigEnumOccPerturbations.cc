@@ -33,10 +33,10 @@ namespace CASM {
       const jsonParser &local_cspecs) :
       m_background_config(background_config),
       m_diff_trans_orbit(diff_trans_orbit),
-      m_local_cspecs(local_cspecs),
-      m_scel_sym_compare(_supercell()),
       m_include_unperturbed(true),
       m_skip_subclusters(true),
+      m_local_cspecs(local_cspecs),
+      m_scel_sym_compare(_supercell()),
       m_curr(OccPerturbation(_prim())) {
 
       this->_initialize();

@@ -26,9 +26,9 @@ namespace CASM {
     SupercellCheckBase<Base>::SupercellCheckBase(std::string name, std::string desc) :
       Base(name, desc),
       m_refcell(nullptr),
+      m_last_result(notstd::make_cloneable<result_type>()),
       m_last_scel(nullptr),
-      m_last_unit(nullptr),
-      m_last_result(notstd::make_cloneable<result_type>()) {}
+      m_last_unit(nullptr) {}
 
     /// \brief Expects arguments of the form 'is_supercell_of(scelname)'
     template<typename Base>

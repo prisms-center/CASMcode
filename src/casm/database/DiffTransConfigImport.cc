@@ -367,9 +367,9 @@ namespace CASM {
       used["mapping"] = mapper.used();
 
       // 'data' subsettings
-      bool import_data = true;
-      bool import_additional_files = false;
-      bool overwrite = false;
+      // bool import_data = true;
+      // bool import_additional_files = false;
+      // bool overwrite = false;
 
       // -- print used settings --
       Log &log = primclex.log();
