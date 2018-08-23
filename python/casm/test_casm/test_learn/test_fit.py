@@ -20,17 +20,17 @@ from test_casm.test_scripts import CasmScriptsTestCase
 
 class TestCasmLearnFit(CasmScriptsTestCase):
     """Test casm.learn.fit"""
-  
+
     def setUp(self):
         pass
-    
+
     def test_checkhull(self):
         """Test casm-learn --exRFE"""
         if self.has_projects:
-            
+
             # ZrO test project construction
             proj = project.Project(self.ZrO_dir, verbose=False)
-            
+
             # files and directories
             tmp_dir = join(proj.path, '.casm', 'tmp')
             fit_dir = join(proj.path, 'fit')
@@ -39,10 +39,10 @@ class TestCasmLearnFit(CasmScriptsTestCase):
             default_bspecs = join(default_bset, 'bspecs.json')
             test_bset = join(self.ZrO_dir, 'basis_sets', 'bset.test')
             test_bspecs = join(test_bset, 'bspecs.json')
-            test_clex = join(self.ZrO_dir, 'cluster_expansions', 'clex.formation_energy', 
+            test_clex = join(self.ZrO_dir, 'cluster_expansions', 'clex.formation_energy',
                             'calctype.default', 'ref.default', 'bset.test')
             test_eci = join(test_clex, 'eci.test', 'eci.json')
-            
+
             # setup
             def _clean():
                 if os.path.exists(tmp_dir):
@@ -53,10 +53,10 @@ class TestCasmLearnFit(CasmScriptsTestCase):
                     shutil.rmtree(test_bset)
                 if os.path.exists(test_clex):
                     shutil.rmtree(test_clex)
-            
+
             _clean()
             os.mkdir(fit_dir)
-            
+
             # test 'casm-learn --exREF'
             testargs = ["casm-learn", "--exRFE"]
             with contexts.captured_output(wd=fit_dir) as (sout, serr):
@@ -65,31 +65,31 @@ class TestCasmLearnFit(CasmScriptsTestCase):
             input = json.loads(sout.getvalue())
             self.assertEqual(input['feature_selection']['method'], 'RFE')
             self.assertEqual(input['estimator']['method'], 'LinearRegression')
-            
+
             # set random_state for CV score
             input['problem_specs']['cv']['kwargs']['random_state'] = 0
-            
+
             # have 'checkhull' only checking training configs
             input['checkhull'] = {
                 'selection':'train',
                 'write_results': True}
-            
+
             # save 'fit_RFE.json'
             with open(fit_RFE, 'wb') as f:
                 f.write(six.u(json.dumps(input, indent=2)).encode('utf-8'))
-            
+
             # create 'test' bset and eci
-            proj.command('settings --new-bset test')
-            proj.command('settings --new-eci test')
+            proj.capture('settings --new-bset test')
+            proj.capture('settings --new-eci test')
             shutil.copyfile(default_bspecs, test_bspecs)
-            stdout, stderr, returncode = proj.command('bset -u')
+            stdout, stderr, returncode = proj.capture('bset -u')
             #print("OK 1")
-            
+
             # create 'train' selection
             with contexts.captured_output(wd=fit_dir) as (sout, serr):
-                proj.command("select --set 'and(is_calculated,lt(comp(a),0.695))' -o train")
+                proj.capture("select --set 'and(is_calculated,lt(comp(a),0.695))' -o train")
             #print("OK 2")
-            
+
             # fit
             testargs = 'casm-learn -s fit_RFE.json --quiet'.split()
             #print testargs
@@ -99,7 +99,7 @@ class TestCasmLearnFit(CasmScriptsTestCase):
             self.assertTrue(os.path.exists(join(fit_dir, 'fit_RFE_halloffame.pkl')))
             self.assertTrue(os.path.exists(join(fit_dir, 'fit_RFE_specs.pkl')))
             #print("OK 3")
-            
+
             # view hall of fame
             testargs = 'casm-learn -s fit_RFE.json --hall --quiet'.split()
             #print testargs
@@ -117,11 +117,11 @@ class TestCasmLearnFit(CasmScriptsTestCase):
             self.assertEqual(res['Estimator'], 'LinearRegression')
             self.assertEqual(res['FeatureSelection'], 'RFE')
             #print("OK 4")
-            
+
             # check data in pickle file
             hall = learn.open_halloffame(join(fit_dir, 'fit_RFE_halloffame.pkl'))
             self.assertEqual(len(hall), 1)
-            
+
             # open input file and set default values
             input = learn.open_input(fit_RFE)
             #testargs = 'casm-learn -s fit_RFE.json --checkhull --indiv 0 --quiet'.split()
@@ -131,8 +131,7 @@ class TestCasmLearnFit(CasmScriptsTestCase):
             self.assertTrue(os.path.exists(join(fit_dir, 'checkhull_fit_RFE_0_dft_gs')))
             self.assertTrue(os.path.exists(join(fit_dir, 'checkhull_fit_RFE_0_clex_gs')))
             #print("OK 5")
-            
+
             # clean up
             #proj.command('settings --set-bset default')
             #_clean()
-            

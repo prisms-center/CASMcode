@@ -12,7 +12,7 @@ import numpy as np
 import six
 
 from casm.project import syminfo
-from casm.api import API
+from casm.api import API, casm_command, casm_capture
 
 def project_path(dir=None):
     """
@@ -456,21 +456,18 @@ class Project(object):
       prim: casm.project.Prim instance
         Represents the primitive crystal structure
 
-      composition_axes: casm.project.CompositionAxes
-        Currently selected composition axes
+      composition_axes: casm.project.CompositionAxes or None
+        Currently selected composition axes, or None
 
       all_composition_axes: dict(str:casm.project.CompositionAxes)
         Dict containing name:CompositionAxes pairs, including both standard and
         custom composition axes
 
-      casm_exe: str
-        The casm CLI executable to use when necessary
-
       verbose: bool
         How much to print to stdout
 
     """
-    def __init__(self, path=None, casm_exe=None, verbose=True):
+    def __init__(self, path=None, verbose=True):
       """
       Construct a CASM Project representation.
 
@@ -480,10 +477,6 @@ class Project(object):
         path: str, optional, default=None
           Path to project root directory. Default=None uses project containing
           current working directory
-
-        casm_exe: str, optional, default=None
-          CASM executable to use for command line interface. Default
-          uses $CASM if it exists in the environment, else "casm".
 
         verbose: bool, optional, default=True
           How much to print to stdout
@@ -503,16 +496,8 @@ class Project(object):
         else:
           raise Exception("No CASM project found using " + path)
 
-      # set executable name
-      if casm_exe is None:
-        if "CASM" in os.environ:
-          casm_exe = os.environ["CASM"]
-        else:
-          casm_exe = "casm"
-
       self.path = project_path(path)
       self.__refresh()
-      self.casm_exe = casm_exe
       self.verbose = verbose
 
       self.all_composition_axes = {}
@@ -525,7 +510,9 @@ class Project(object):
               if "custom_axes" in data:
                   for key, val in six.iteritems(data["custom_axes"]):
                       self.all_composition_axes[key] = CompositionAxes(key, val)
-              self.composition_axes = self.all_composition_axes[data["current_axes"]]
+              self.composition_axes = None
+              if "current_axes" in data:
+                  self.composition_axes = self.all_composition_axes[data["current_axes"]]
 
 
     def __del__(self):
@@ -607,27 +594,36 @@ class Project(object):
 
     def command(self, args):
       """
-      Execute a command via the c api.
+      Execute a command via the c api, writing output to stdout/stderr.
 
       Args:
-        args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
+        args: A string containing the command to be executed. Ex: "select --set-on -o
+            /abspath/to/my_selection"
 
       Returns:
-        (stdout, stderr, returncode): The result of running the command via the command line iterface
-      """
-      return self._command_via_capi(args)
+        returncode: The returncode of the command via the
+            CASM C API.
 
-
-    def _command_via_capi(self, args):
       """
-      Execute a command via the c api.
+      # this also ensures self._api is not None
+      data = self.data()
+      returncode = self._api.capi_call(args, self.data())
+      self.__refresh()
+      return returncode
+
+    def capture(self, args, combine_output=False):
+      """
+      Execute a command via the c api and store stdout/stderr result as str.
 
       Args:
-        args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
+        args: A string containing the command to be executed. Ex: "select --set-on -o
+        /abspath/to/my_selection"
 
-      Returns:
+      Returns
+      -------
         (stdout, stderr, returncode): The result of running the command via the
-            command line iterface. 'stdout' and 'stderr' are in text type ('unicode'/'str').
+            command line iterface. 'stdout' and 'stderr' are in text type ('unicode'/'str'). If
+            'combine_output' is True, then returns (combined_output, returncode).
 
       """
       # this also ensures self._api is not None
@@ -635,22 +631,63 @@ class Project(object):
 
       # construct stringstream objects to capture stdout, debug, stderr
       ss = self._api.ostringstream_new()
-      ss_debug = self._api.ostringstream_new()
-      ss_err = self._api.ostringstream_new()
+      if combine_output:
+          ss_debug = ss
+          ss_err = ss
+      else:
+          ss_debug = self._api.ostringstream_new()
+          ss_err = self._api.ostringstream_new()
 
-      res = self._api(args, self.data(), self.path, ss, ss_debug, ss_err)
+      self._api.primclex_set_logging(self.data(), ss, ss_debug, ss_err)
+      returncode = self._api.capi_call(args, self.data())
 
       # copy strings and delete stringstreams
       stdout = self._api.ostringstream_to_str(ss)
       self._api.ostringstream_delete(ss)
 
-      self._api.ostringstream_delete(ss_debug)
+      if combine_output:
+          res = (stdout.decode('utf-8'), returncode)
+      else:
+          stderr = self._api.ostringstream_to_str(ss_err)
+          self._api.ostringstream_delete(ss_err)
 
-      stderr = self._api.ostringstream_to_str(ss_err)
-      self._api.ostringstream_delete(ss_err)
+          res = (stdout.decode('utf-8'), stderr.decode('utf-8'), returncode)
+
+      # reset logging to write to stdout/stderr
+      self._api.primclex_set_logging(self.data(), self._api.stdout(), self._api.stdout(), self._api.stderr())
 
       self.__refresh()
-      return (stdout.decode('utf-8'), stderr.decode('utf-8'), res)
+      return res
+
+    @classmethod
+    def init(cls, root, verbose=True):
+        """ Calls `casm init` to create a new CASM project in the given directory
+
+        Arguments
+        ---------
+
+          root: str (optional, default=os.getcwd())
+            A string giving the path to the root directory of the new CASM project. A `prim.json` file must be present in the directory.
+
+          verbose: bool (optional, default=True)
+            Passed to casm.project.Project constructor. How much to print to stdout.
+
+        Returns
+        -------
+          proj: A casm.project.Project instance for the new CASM project.
+
+        Raises
+        ------
+          An exception is raised if a new project could not be initialized. This could be due to an already existing project, bad or missing input file, or other cause.
+
+        """
+        output, returncode = casm_capture("init", root=root, combine_output=True)
+        if returncode != 0:
+            print(output)
+            raise Exception("Could not initialize the project")
+        output, returncode = casm_capture("composition ", root=root, combine_output=True)
+
+        return Project(root, verbose=verbose)
 
 
 class Prim(object):
@@ -754,7 +791,7 @@ class Prim(object):
             return {'a':a, 'b':b, 'c':c, 'alpha':alpha, 'beta':beta, 'gamma':gamma}
         self.lattice_parameters = _lattice_parameters(self.lattice_matrix)
 
-        (stdout, stderr, returncode) = proj.command("sym")
+        (stdout, stderr, returncode) = proj.capture("sym")
 
         # lattice symmetry
         self.lattice_symmetry_s = syminfo.lattice_symmetry(stdout)

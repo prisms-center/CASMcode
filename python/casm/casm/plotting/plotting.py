@@ -148,7 +148,7 @@ def view_on_tap(sel, attrname, old, new):
     index = sel.src.selected['1d']['indices'][0]
     configname = sel.src.data['configname'][index]
     args = "view " + configname
-    sel.proj.command(args=args)
+    sel.proj.capture(args=args)
 
 
 class PlottingData(object):

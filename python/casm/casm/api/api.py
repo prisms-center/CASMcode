@@ -125,11 +125,17 @@ class API(object):
       self.lib_ccasm.casm_primclex_refresh.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool]
       self.lib_ccasm.casm_primclex_refresh.restype = None
 
+      self.lib_ccasm.casm_primclex_set_logging.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+      self.lib_ccasm.casm_primclex_set_logging.restype = None
+
       self.lib_ccasm.casm_command_list.argtypes = [ctypes.c_void_p]
       self.lib_ccasm.casm_command_list.restype = None
 
       self.lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
       self.lib_ccasm.casm_capi.restype = ctypes.c_int
+
+      self.lib_ccasm.casm_capi_call.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
+      self.lib_ccasm.casm_capi_call.restype = ctypes.c_int
 
   __api = None
 
@@ -308,6 +314,12 @@ class API(object):
     API.__api.lib_ccasm.casm_primclex_delete(ptr)
     return
 
+  def primclex_set_logging(self, primclex, log, debug_log, err_log):
+    """
+    Set the PrimClex Logging
+    """
+    API.__api.lib_ccasm.casm_primclex_set_logging(primclex, log, debug_log, err_log)
+
   def command_list(self):
     """
     Get list of recognized casm commands implemented at the libcasm level
@@ -324,7 +336,7 @@ class API(object):
     self.ostringstream_delete(ptr)
     return s
 
-  def __call__(self, args, primclex, root, log, debug_log, err_log):
+  def capi(self, args, primclex, root, log, debug_log, err_log):
     """
     Make an API call
 
@@ -352,17 +364,6 @@ class API(object):
 
       err_log: CASM::Log pointer
         A pointer to a CASM::Log to write error output
-
-
-    Notes
-    -------
-
-    CASM::Log pointers can be obtained from:
-      1) API.stdout()
-      2) API.stderr()
-      3) API.nullstream()
-      4) API.ostringstream()
-
 
     Returns
     -------
@@ -400,9 +401,9 @@ class API(object):
     """
     return API.__api.lib_ccasm.casm_capi(six.b(args), primclex, six.b(root), log, debug_log, err_log)
 
-def casm_capi(args, primclex=None, root=None):
+  def capi_call(self, args, primclex):
     """
-    Execute a command via the c api, printing to stdout, stderr.
+    Make an API call, using existing PrimClex's path and logging
 
     Arguments
     ---------
@@ -413,33 +414,169 @@ def casm_capi(args, primclex=None, root=None):
           Ex: "select --set-on -o /abspath/to/my_selection"
           Ex: "query -k 'configname selected' -v -o STDOUT"
 
-      primclex: CASM::PrimClex pointer (optional, default=API.primclex_null())
+      primclex: CASM::PrimClex pointer
         A pointer to a CASM::PrimClex, as obtained from API.primclex_new()
+
+    Returns
+    -------
+      returncode: int
+
+        Possible values:
+
+          0: No error
+
+          1: ERR_INVALID_ARG
+            Command line input is not valid
+
+          2: ERR_UNKNOWN
+            Misc. or Unknown error
+
+          3: ERR_NO_PROJ
+            No CASM project can be found in expected location
+
+          4: ERR_INVALID_INPUT_FILE
+            An expected input file is invalid
+
+          5: ERR_MISSING_INPUT_FILE
+            An expected input file can not be found
+
+          6: ERR_EXISTING_FILE
+            A file might be overwritten
+
+          7: ERR_MISSING_DEPENDS
+            Requested command can not be performed because some dependency needs
+            to be done first (i.e. no basis set, so can't use clexulator)
+
+          8: ERR_OTHER_PROJ
+            Unknown attempting to overwrite another CASM project
+
+    """
+    return API.__api.lib_ccasm.casm_capi_call(six.b(args), primclex)
+
+
+def command_list():
+    """
+    Get list of recognized casm commands implemented at the libcasm level
+
+    Returns
+    -------
+      s: str
+        JSON array containing the list of recognized casm commands
+
+    """
+    _api = API()
+    return _api.command_list()
+
+def casm_command(args, root=None, combine_output=False):
+    """
+    Execute a command via the c api, writing output to stdout/stderr. If required by the specific
+    command, a temporary PrimClex instance will be constrcuted. Use the Project.command or Project.capture to avoid re-initializations.
+
+    Arguments
+    ---------
+
+      args: str
+        A string containing the arguments for the casm command to be executed.
+
+          Ex: "select --set-on -o /abspath/to/my_selection"
+          Ex: "query -k 'configname selected' -v -o STDOUT"
 
       root: str (optional, default=os.getcwd())
         A string giving the path to a root directory of a CASM project, typically
         casm.project.Project.path
 
-    Returns:
-      returncode: The result of running the command via the command line iterface.
+      combine_output: bool (optional, default=False)
+        If True, print stdout and stderr to same str and only ret
 
+    Returns
+    -------
+      returncode: The result of running the command via the
+          command line iterface. 'stdout' and 'stderr' are in text type ('unicode'/'str'). If
+          'combine_output' is True, then returns (combined_output, returncode).
     """
     _api = API()
 
-    # this also ensures self._api is not None
-    if primclex is None:
-        _primclex = _api.primclex_null()
-    else:
-        _primclex = primclex
-
+    # set default root
     if root is None:
         root = os.getcwd()
 
     # construct stringstream objects to capture stdout, debug, stderr
     ss = _api.stdout()
-    ss_debug = _api.stdout()
-    ss_err = _api.stderr()
+    ss_debug = ss
+    if combine_output:
+        ss_err = ss
+    else:
+        ss_err = _api.stderr()
 
-    res = self._api(args, _primclex, root, ss, ss_debug, ss_err)
+    returncode = _api.capi(args, _api.primclex_null(), root, ss, ss_debug, ss_err)
+
+    return returncode
+
+def casm_capture(args, root=None, combine_output=False):
+    """
+    Execute a command via the c api and store stdout/stderr result as str. If required by the
+    specific command, a temporary PrimClex instance will be constrcuted. Use the Project.command or
+    Project.capture to avoid re-initializations.
+
+    Arguments
+    ---------
+
+      args: str
+        A string containing the arguments for the casm command to be executed.
+
+          Ex: "select --set-on -o /abspath/to/my_selection"
+          Ex: "query -k 'configname selected' -v -o STDOUT"
+
+      root: str (optional, default=os.getcwd())
+        A string giving the path to a root directory of a CASM project, typically
+        casm.project.Project.path
+
+      combine_output: bool (optional, default=False)
+        If True, print stdout and stderr to same str and only ret
+
+    Notes
+    -------
+      Prefer not to use this function if you have an existing casm.project.Project instance that
+      the command will operate on. Instead use Project.command() which will execute the command and
+      then update the Project instance's ProjectSettings and DirectoryStructure to reflect any
+      changes that have occurred.
+
+    Returns
+    -------
+      (stdout, stderr, returncode): The result of running the command via the
+          command line iterface. 'stdout' and 'stderr' are in text type ('unicode'/'str'). If
+          'combine_output' is True, then returns (combined_output, returncode).
+
+    """
+    _api = API()
+
+    # set default root
+    if root is None:
+        root = os.getcwd()
+
+    # construct stringstream objects to capture stdout, debug, stderr
+    ss = _api.ostringstream_new()
+    if combine_output:
+        ss_debug = ss
+        ss_err = ss
+    else:
+        ss_debug = ss
+        ss_err = _api.ostringstream_new()
+
+    print("_api.capi begin")
+    returncode = _api.capi(args, _api.primclex_null(), root, ss, ss_debug, ss_err)
+    print("_api.capi done")
+
+    # copy strings and delete stringstreams
+    stdout = _api.ostringstream_to_str(ss)
+    _api.ostringstream_delete(ss)
+
+    if combine_output:
+        res = (stdout.decode('utf-8'), returncode)
+    else:
+        stderr = self._api.ostringstream_to_str(ss_err)
+        _api.ostringstream_delete(ss_err)
+
+        res = (stdout.decode('utf-8'), stderr.decode('utf-8'), returncode)
 
     return res

@@ -16,7 +16,7 @@ import sys
 import casm.scripts.casm_calc
 import casm.scripts.casm_learn
 import casm.scripts.casm_plot
-from casm.api import API
+from casm.api import command_list, casm_command
 
 def _exec(argv=None):
     subprocess.Popen(argv)
@@ -31,13 +31,11 @@ def _shell(argv=None):
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
-    try:
-        libcasm_commands = json.loads(API().command_list())
+
+    libcasm_commands = json.loads(command_list())
+    if '--version' in libcasm_commands:
         libcasm_commands.remove('--version')
-        found_libcasm = True
-    except:
-        libcasm_commands = []
-        found_libcasm = False
+    found_libcasm = True
 
     python_commands = {
         'calc': casm.scripts.casm_calc.main,
@@ -48,9 +46,9 @@ def main(argv=None):
 
     commands = sorted(libcasm_commands + list(python_commands.keys()))
 
-    if not found_libcasm:
-        print("Could not find libcasm. Please check your installation.")
-        return
+    # if not found_libcasm:
+    #     print("Could not find libcasm. Please check your installation.")
+    #     return 1
 
     parser = argparse.ArgumentParser(description = 'CASM: First-principles based statistical mechanics')
     parser.add_argument('command', help="CASM command to execute", type=str, default="", nargs="?", metavar="<command>")
@@ -76,13 +74,8 @@ def main(argv=None):
     elif args.command in python_commands:
         python_commands[args.command](argv[1:])
     elif args.command in libcasm_commands:
-        _api = API()
-        primclex = _api.primclex_null()
-        log = _api.stdout()
-        debug_log = log
-        err_log = log
         args.args = ["\'" + x + "\'" for x in args.args]
-        res = _api(' '.join([args.command] + args.args), primclex, args.path, log, debug_log, err_log)
+        res = casm_command(' '.join([args.command] + args.args), root=args.path)
     else:
         parser.print_help()
 

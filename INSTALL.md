@@ -90,6 +90,12 @@ Options:
   - For OSX: `build_scripts/travis-variables-osx`
   - For Linux: `build_scripts/travis-variables-linux`
 
+To clean up build products:
+
+```
+make clean
+bash clean.sh
+```
 
 Run all tests:
 --------------
@@ -114,10 +120,23 @@ Options (beyond those for `build.sh`):
 See also ``tests/README.md`` for information on writing C++ tests and running select tests.
 See also ``python/casm/README.md`` for information on Python tests.
 
+To clean up test products:
+
+```
+bash checkclean.sh
+```
+
 
 Install from source:
 --------------------
 
 ```
 bash build_install.sh
+```
+
+Uninstall from source:
+--------------------
+
+```
+bash uninstall.sh
 ```

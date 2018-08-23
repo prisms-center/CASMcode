@@ -24,7 +24,7 @@ jobs:
     # stage 1:
     #  Run tests
 
-    # # test on linux
+    # test on linux
     - stage: test_it
       os: linux
       dist: trusty
@@ -40,7 +40,7 @@ jobs:
         - echo "test_it on $TRAVIS_OS_NAME"
         - bash $TRAVIS_BUILD_DIR/build_scripts/travis-script.sh
 
-    # # test on osx
+    # test on osx
     - stage: test_it
       os: osx
       compiler: clang
