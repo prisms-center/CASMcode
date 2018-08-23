@@ -15,7 +15,7 @@ check_var "CASM_NCPU" "Compiler -j option" 2
 # workaround because Mac SIP does not allow propagating DYLD_LIBRARY_PATH
 shopt -s extglob
 shopt -s nullglob
-files=(.libs/@(casm|ccasm)* )
+files=(.libs/*(lib)@(casm|ccasm)!(*.la|*.lai) )
 
 unset SET_RPATH
 for X in "${files[@]}"; do
@@ -33,7 +33,7 @@ if [ -n "$SET_RPATH" ]; then
   echo ""
 
   # set rpath manually to find boost libraries
-  for X in .libs/@(casm|ccasm)*; do
+  for X in "${files[@]}"; do
     echo "install_name_tool -add_rpath $CASM_BOOST_PREFIX/lib $X"
     install_name_tool -add_rpath "$CASM_BOOST_PREFIX/lib" "$X" \
       || { echo "  already set"; }
