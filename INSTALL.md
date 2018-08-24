@@ -9,9 +9,6 @@ For Developers
 We recommend developing in the CASM conda development environment. This can be created from the ``CASMcode`` directory by doing:
 
 ```
-# Location of CASMcode repository
-export CASM_BUILD_DIR=$(pwd)
-
 # Location of existing conda installation, or location to newly install conda
 export CASM_CONDA_DIR=${_CONDA_ROOT:-"$HOME/.local/conda"}
 
