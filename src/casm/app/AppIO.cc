@@ -489,13 +489,14 @@ namespace CASM {
     if(!out.print()) {
       return;
     }
-    std::cout << "\nopt.coord_type: " << to_string(this->opt.coord_type) << std::endl;
+
     COORD_TYPE _mode = this->opt.coord_type;
     if(_mode == COORD_DEFAULT) {
       _mode = COORD_MODE::CHECK();
     }
     COORD_MODE printer_mode(_mode);
     if(_mode != INTEGRAL) {
+
       // calculate nice widths
       int prec = this->opt.prec;
       int width = prec;
