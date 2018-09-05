@@ -7,6 +7,7 @@
 
 #include "casm/CASM_global_enum.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/basis_set/DoFSet.hh"
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,6 +18,8 @@ namespace CASM {
   class UnitCellCoord;
   class SiteCluster;
   class MasterSymGroup;
+
+  //  class DoFSet;
 
   /** \defgroup Structure
    *  \ingroup Crystallography
@@ -39,7 +42,16 @@ namespace CASM {
     /// Lattice vectors that specifies periodicity of the crystal
     Array<CoordType> m_basis;
 
-    //public: // PUBLIC DATA MEMBERS -- (long-term, at least lattice should be made private and only updated via Structure::set_lattice)
+    /// continuous global degrees of freedom
+    std::map <std::string, DoFSet> m_dof_map;
+
+
+    /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
+    bool _is_lattice_pg_op(SymOp const &_op) const;
+
+    /// \brief Returns true if structure has attributes affected by time reversal
+    // private for now, expose if necessary
+    bool _time_reversal_active() const;
 
 
   private: // PRIVATE METHODS
@@ -82,6 +94,13 @@ namespace CASM {
     const std::string &title() const {
       return m_title;
     }
+
+    DoFSet const &global_dof(std::string const &dof_type) const;
+
+    std::vector<std::string> local_dof_types() const;
+
+    std::vector<std::string> global_dof_types() const;
+
 
     /// Return the UnitCellCoord corresponding to test_site (i.e., finds the basis index and
     /// the lattice translation)
@@ -142,7 +161,7 @@ namespace CASM {
 
     void generate_factor_group(SymGroup &factor_group) const;
     void generate_factor_group_slow(SymGroup &factor_group) const;
-    void _generate_factor_group_slow(SymGroup &factor_group, SymGroup &starter_group) const;
+    void _generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_point_group) const;
     void fg_converge(double small_tol, double large_tol, double increment);
     void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 

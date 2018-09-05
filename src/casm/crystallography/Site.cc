@@ -6,6 +6,7 @@
 
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {
@@ -66,10 +67,16 @@ namespace CASM {
 
   //****************************************************
 
+  Index Site::dof_size() const {
+    return m_dof_map.size();
+  }
+
+  //****************************************************
+
   DoFSet const &Site::dof(std::string const &_dof_type) const {
     auto it = m_dof_map.find(_dof_type);
     if(it != m_dof_map.end())
-      return *(it->second);
+      return (it->second);
     else
       throw std::runtime_error(std::string("In Structure::dof(), this structure does not contain any global DoF's of type ") + _dof_type);
   }
@@ -88,6 +95,16 @@ namespace CASM {
     for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
       result.push_back(it->first);
     return result;
+  }
+
+  //****************************************************
+
+  bool Site::time_reversal_active() const {
+    for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
+      if(DoF::traits(it->first).time_reversal_active())
+        return true;
+
+    return false;
   }
 
   //****************************************************
@@ -116,8 +133,20 @@ namespace CASM {
 
   const Molecule &Site::occ() const {
     return site_occupant().occ();
-  };
+  }
 
+  //****************************************************
+  Site &Site::_apply_sym_attributes(const SymOp &op) {
+    for(Index i = 0; i < site_occupant().size(); i++)
+      (*m_site_occupant)[i].apply_sym(op);
+
+    auto it = m_dof_map.begin();
+    for(; it != m_dof_map.end(); ++it)
+      it->second = copy_apply(op, it->second);
+
+    m_type_ID = -1;
+    return *this;
+  }
   //****************************************************
   /**
    *
@@ -126,10 +155,7 @@ namespace CASM {
 
   Site &Site::apply_sym(const SymOp &op) {
     Coordinate::apply_sym(op);
-    for(Index i = 0; i < site_occupant().size(); i++) {
-      (*m_site_occupant)[i].apply_sym(op);
-    }
-
+    _apply_sym_attributes(op);
     return *this;
   }
 
@@ -141,9 +167,7 @@ namespace CASM {
 
   Site &Site::apply_sym_no_trans(const SymOp &op) {
     Coordinate::apply_sym_no_trans(op);
-    for(Index i = 0; i < site_occupant().size(); i++) {
-      (*m_site_occupant)[i].apply_sym(op);
-    }
+    _apply_sym_attributes(op);
 
     return *this;
   }
@@ -286,8 +310,7 @@ namespace CASM {
     Coordinate::set_basis_ind(new_ind);
     m_site_occupant->set_ID(new_ind);
     for(auto const &dof : m_dof_map)
-      dof.second->set_ID(new_ind);
-
+      dof.second.set_ID(new_ind);
   }
 
   //****************************************************
@@ -551,10 +574,21 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  bool Site::_compare_type_no_ID(const Site &test_site) const {
+  bool Site::_compare_type_no_ID(const Site &_other) const {
     //compare domain but not value
-    // TODO: Add ContinuousDoF comparisons
-    return label() == test_site.label() && site_occupant().compare(test_site.site_occupant(), false);
+    if(!(label() == _other.label() && site_occupant().compare(_other.site_occupant(), false)))
+      return false;
+
+    if(m_dof_map.size() != _other.m_dof_map.size())
+      return false;
+
+    auto it1 = m_dof_map.begin(), it2 = _other.m_dof_map.begin();
+    for(; it1 != m_dof_map.end(); ++it1, ++it2)
+      if(!DoFIsEquivalent(it1->second)(it2->second))
+        return false;
+
+
+    return true;
   }
 
   //*******************************************************************************************

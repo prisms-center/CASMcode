@@ -86,6 +86,11 @@ namespace CASM {
         return type_name();
       }
 
+      /// \brief return standard coordinate axes for continuous variable space
+      virtual std::vector<ContinuousDoF> standard_vars() const {
+        return std::vector<ContinuousDoF>();
+      }
+
       /// \brief returns true if time-reversal changes the DoF value
       virtual bool time_reversal_active() const {
         return false;
@@ -105,15 +110,6 @@ namespace CASM {
       virtual bool obscures_occupant_chirality() const {
         return false;
       }
-
-      /// \brief implements json parsing of a specialized DoF.
-      // In future, we may need to add another inheritance layer to handle DiscreteDoF types
-      virtual void from_json(ContinuousDoF &_dof, jsonParser const &json) const;
-
-
-      /// \brief implements json parsing of a specialized DoF.
-      // In future, we may need to add another inheritance layer to handle DiscreteDoF types
-      virtual void to_json(ContinuousDoF const &_dof, jsonParser &json) const;
 
       /// \brief implements json parsing of a specialized DoFSet.
       virtual void from_json(DoFSet &_dof, jsonParser const &json) const;
@@ -714,104 +710,6 @@ namespace CASM {
 
   jsonParser &to_json(ContinuousDoF const &dof, jsonParser &json);
 
-  template<>
-  struct jsonConstructor<ContinuousDoF> {
-
-    /// \brief Allows ContinuousDoF to be constructed properly from json input
-    static ContinuousDoF from_json(const jsonParser &json, DoF::BasicTraits const &_traits);
-  };
-
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  class DoFSet {
-  public:
-    using BasicTraits = DoF_impl::BasicTraits;
-
-    using TypeFunc =  std::function<notstd::cloneable_ptr<BasicTraits>()>;
-
-    using Container = std::vector<ContinuousDoF>;
-
-    using const_iterator = std::vector<ContinuousDoF>::const_iterator;
-
-    DoFSet(TypeFunc const &_type) :
-      m_type_name(_type()->type_name()) {}
-
-    Index size() const {
-      return m_components.size();
-    }
-
-    std::string const &type_name() const {
-      return m_type_name;
-    }
-
-    void set_ID(Index _ID) {
-      for(auto &c : m_components)
-        c.set_ID(_ID);
-    }
-
-    ContinuousDoF const &operator[](Index i) const {
-      return m_components[i];
-    }
-
-    const_iterator begin() const {
-      return m_components.cbegin();
-    }
-
-    const_iterator end() const {
-      return m_components.cend();
-    }
-
-    const_iterator cbegin() const {
-      return m_components.cbegin();
-    }
-
-    const_iterator cend() const {
-      return m_components.cend();
-    }
-
-    bool is_excluded_occ(std::string const &_occ_name) const {
-      return m_excluded_occs.count(_occ_name);
-    }
-
-    /// \brief Matrix that relates DoFSet variables to a conventional coordiante system
-
-    /// columns of coordinate_space() matrix are directions in conventional coordinate system
-    /// so that  conventional_coord = DoFSet.coordinate_space()*DoFSet.values()
-    /// coordinate_space() matrix has dimensions (N x size()), where N >= size()
-    Eigen::MatrixXd const &coordinate_space() const {
-      return m_coordinate_space;
-    }
-
-    SymGroupRepID const &sym_rep_ID() const {
-      return m_col_rep_ID;
-    }
-
-    /// \brief Return values of DoFs as a vector
-    Eigen::VectorXd values() const;
-
-    /// \brief Equivalent to coordinate_space()*values()
-    Eigen::VectorXd conventional_values() const {
-      return coordinate_space() * values();
-    }
-
-    bool identical(DoFSet const &rhs) const;
-
-    bool update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
-
-    void from_json(jsonParser const &json);
-
-    jsonParser &to_json(jsonParser &json) const;
-
-
-  private:
-    std::string m_type_name;
-    mutable SymGroupRepID m_row_rep_ID;
-    mutable SymGroupRepID m_col_rep_ID;
-    std::vector<ContinuousDoF> m_components;
-    std::set<std::string> m_excluded_occs;
-    Eigen::MatrixXd m_coordinate_space;
-  };
 
   //********************************************************************
 
@@ -826,20 +724,6 @@ namespace CASM {
 
     json.get_else(m_current_state, "value", int(-1));
 
-  }
-
-  //********************************************************************
-
-  inline
-  bool operator==(DoFSet const &A, DoFSet const &B) {
-    return A.identical(B);
-  }
-
-  //********************************************************************
-
-  inline
-  bool operator!=(DoFSet const &A, DoFSet const &B) {
-    return !A.identical(B);
   }
 
   //********************************************************************

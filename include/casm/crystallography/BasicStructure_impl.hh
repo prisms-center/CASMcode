@@ -6,9 +6,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroupRep.hh"
@@ -54,6 +56,42 @@ namespace CASM {
     return *this;
   }
 
+  //************************************************************
+
+  template<typename CoordType>
+  DoFSet const &BasicStructure<CoordType>::global_dof(std::string const &_dof_type) const {
+    auto it = m_dof_map.find(_dof_type);
+    if(it != m_dof_map.end())
+      return (it->second);
+    else
+      throw std::runtime_error(std::string("In BasicStructure::dof(), this structure does not contain any global DoF's of type " + _dof_type));
+
+  }
+
+  //************************************************************
+
+  template<typename CoordType>
+  std::vector<std::string> BasicStructure<CoordType>::local_dof_types() const {
+    std::set<std::string> tresult;
+
+    for(CoordType const &site : basis()) {
+      auto sitetypes = site.dof_types();
+      tresult.insert(sitetypes.begin(), sitetypes.end());
+    }
+    return std::vector<std::string>(tresult.begin(), tresult.end());
+  }
+
+  //************************************************************
+
+  template<typename CoordType>
+  std::vector<std::string> BasicStructure<CoordType>::global_dof_types() const {
+    std::vector<std::string> result;
+    for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
+      result.push_back(it->first);
+    return result;
+  }
+
+
 
   //***********************************************************
 
@@ -98,18 +136,19 @@ namespace CASM {
     return;
   }
 
+
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup &starter_group) const {
+  void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_group) const {
     Array<CoordType> trans_basis;
     Index pg, b0, b1, b2;
     Coordinate t_tau(lattice());
     Index num_suc_maps;
 
-    SymGroup point_group = starter_group;
-
-
+    SymGroup const &point_group = super_group;
+    Index time_max = Index(_time_reversal_active());
+    SymOp test_op;
     if(factor_group.size() != 0) {
       std::cerr << "WARNING in BasicStructure<CoordType>::generate_factor_group_slow" << std::endl;
       std::cerr << "The factor group passed isn't empty and it's about to be rewritten!" << std::endl;
@@ -118,81 +157,91 @@ namespace CASM {
     factor_group.set_lattice(lattice());
     //Loop over all point group ops of the lattice
     for(pg = 0; pg < point_group.size(); pg++) {
-      trans_basis.clear();
-      //First, generate the symmetrically transformed basis sites
-      //Loop over all sites in basis
-      for(b0 = 0; b0 < basis().size(); b0++) {
-        trans_basis.push_back(point_group[pg]*m_basis[b0]);
-      }
+      test_op = point_group[pg];
+      for(Index tr = 0; tr < time_max; tr++) {
+        if(tr)
+          test_op = test_op * SymOp::time_reversal_op();
 
-      //Using the symmetrically transformed basis, find all possible translations
-      //that MIGHT map the symmetrically transformed basis onto the original basis
-      for(b0 = 0; b0 < trans_basis.size(); b0++) {
-
-        if(!m_basis[0].compare_type(trans_basis[b0]))
+        if(!_is_lattice_pg_op(test_op))
           continue;
 
-        t_tau = m_basis[0] - trans_basis[b0];
+        trans_basis.clear();
+        //First, generate the symmetrically transformed basis sites
+        //Loop over all sites in basis
+        for(b0 = 0; b0 < basis().size(); b0++) {
+          trans_basis.push_back(test_op * m_basis[b0]);
+        }
 
-        t_tau.within();
-        num_suc_maps = 0; //Keeps track of number of old->new basis site mappings that are found
+        //Using the symmetrically transformed basis, find all possible translations
+        //that MIGHT map the symmetrically transformed basis onto the original basis
+        for(b0 = 0; b0 < trans_basis.size(); b0++) {
 
-        double tdist = 0.0;
-        double max_error = 0.0;
-        std::vector<Index> mappings(basis().size(), basis().size());
-        for(b1 = 0; b1 < basis().size(); b1++) { //Loop over original basis sites
-          for(b2 = 0; b2 < trans_basis.size(); b2++) { //Loop over symmetrically transformed basis sites
+          if(!m_basis[0].compare_type(trans_basis[b0]))
+            continue;
 
-            //see if translation successfully maps the two sites uniquely
-            if(basis()[b1].compare(trans_basis[b2], t_tau)) {// maybe nuke this with Hungarian
-              tdist = basis()[b1].min_dist(Coordinate(trans_basis[b2]) + t_tau);
-              if(tdist > max_error) {
-                max_error = tdist;
+          t_tau = m_basis[0] - trans_basis[b0];
+
+          t_tau.within();
+          num_suc_maps = 0; //Keeps track of number of old->new basis site mappings that are found
+
+          double tdist = 0.0;
+          double max_error = 0.0;
+          std::vector<Index> mappings(basis().size(), basis().size());
+          for(b1 = 0; b1 < basis().size(); b1++) { //Loop over original basis sites
+            for(b2 = 0; b2 < trans_basis.size(); b2++) { //Loop over symmetrically transformed basis sites
+
+              //see if translation successfully maps the two sites uniquely
+
+              if(basis()[b1].compare(trans_basis[b2], t_tau)) {// maybe nuke this with Hungarian
+                tdist = basis()[b1].min_dist(Coordinate(trans_basis[b2]) + t_tau);
+                if(tdist > max_error) {
+                  max_error = tdist;
+                }
+                mappings[b1] = b2;
+                num_suc_maps++;
+                break;
               }
-              mappings[b1] = b2;
-              num_suc_maps++;
+            }
+
+            //break out of outer loop if inner loop finds no successful map
+            if(b2 == trans_basis.size()) {
               break;
             }
           }
+          std::set<Index> unique_mappings;
+          for(auto &e : mappings)
+            unique_mappings.insert(e);
+          if(num_suc_maps == basis().size() && unique_mappings.size() == mappings.size()) {
+            //If all atoms in the basis are mapped successfully, try to add the corresponding
+            //symmetry operation to the factor_group
+            Coordinate center_of_mass(lattice());
+            for(Index b = 0; b < basis().size(); b++) {
+              //for each basis site loop through all trans_basis to find the closest one
+              double smallest = 1000000;
+              Coordinate tshift(lattice());
+              double dist = trans_basis[mappings[b]].min_dist(basis()[b] - t_tau, tshift);
+              //in tshift is stored trans_basis - basis
+              tshift.cart() *= (1.0 / basis().size());
+              center_of_mass += tshift;
+            }
 
-          //break out of outer loop if inner loop finds no successful map
-          if(b2 == trans_basis.size()) {
-            break;
-          }
-        }
-        std::set<Index> unique_mappings;
-        for(auto &e : mappings)
-          unique_mappings.insert(e);
-        if(num_suc_maps == basis().size() && unique_mappings.size() == mappings.size()) {
-          //If all atoms in the basis are mapped successfully, try to add the corresponding
-          //symmetry operation to the factor_group
-          Coordinate center_of_mass(lattice());
-          for(Index b = 0; b < basis().size(); b++) {
-            //for each basis site loop through all trans_basis to find the closest one
-            double smallest = 1000000;
-            Coordinate tshift(lattice());
-            double dist = trans_basis[mappings[b]].min_dist(basis()[b] - t_tau, tshift);
-            //in tshift is stored trans_basis - basis
-            tshift.cart() *= (1.0 / basis().size());
-            center_of_mass += tshift;
-          }
+            /*
+              test_op operates on all of basis and save = trans_basis
+              //t_shift is the vector from basis to op_basis magnitude of tshift=min_dist
+              average all t_shifts and add/subtract to t_tau
 
-          /*
-          point_group[pg] operates on all of basis and save = trans_basis
-          //t_shift is the vector from basis to op_basis magnitude of tshift=min_dist
-          average all t_shifts and add/subtract to t_tau
+              if t_shift is b-> ob then subtract
+              if t_shift is ob -> b then add
+              matrix * basis + tau = operbasis
+            */
+            t_tau -= center_of_mass;/**/
 
-          if t_shift is b-> ob then subtract
-          if t_shift is ob -> b then add
-          matrix * basis + tau = operbasis
-          */
-          t_tau -= center_of_mass;/**/
+            SymOp tSym(SymOp::translation(t_tau.cart())*test_op);
+            tSym.set_map_error(max_error);
 
-          SymOp tSym(SymOp::translation(t_tau.cart())*point_group[pg]);
-          tSym.set_map_error(max_error);
-
-          if(!factor_group.contains(tSym)) {
-            factor_group.push_back(tSym);
+            if(!factor_group.contains(tSym)) {
+              factor_group.push_back(tSym);
+            }
           }
         }
       }
@@ -916,6 +965,36 @@ namespace CASM {
     return tsuper;
   }
 
+  //***********************************************************
+
+  /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
+  template<typename CoordType>
+  bool BasicStructure<CoordType>::_is_lattice_pg_op(SymOp const &_op) const {
+    if(!LatticeIsEquivalent(lattice())(_op))
+      return false;
+    for(auto const &dof : m_dof_map)
+      if(!DoFIsEquivalent(dof.second)(_op))
+        return false;
+
+    return true;
+
+  }
+
+  //****************************************************
+
+  /// \brief Returns true if structure has attributes affected by time reversal
+  // private for now, expose if necessary
+  template<typename CoordType>
+  bool BasicStructure<CoordType>::_time_reversal_active() const {
+    for(auto const &dof : m_dof_map)
+      if(DoF::traits(dof.first).time_reversal_active())
+        return true;
+    for(CoordType const &site : basis())
+      if(site.time_reversal_active())
+        return true;
+    return false;
+  }
+
   //****************************************************
 
   template<typename CoordType>
@@ -931,6 +1010,9 @@ namespace CASM {
     // Array<CoordType> basis;
     json["basis"] = basis();
 
+    // std::map<std::string, DoFSet> dof_map;
+    json["dof"] = m_dof_map;
+
     return json;
   }
 
@@ -945,6 +1027,16 @@ namespace CASM {
 
     // Lattice lattice;
     CASM::from_json(m_lattice, json["lattice"], lattice().tol());
+
+    // Global DoFs
+    if(json.contains("dof")) {
+      auto it = json["dof"].begin(), end_it = json["dof"].end();
+      for(; it != end_it; ++it) {
+        if(m_dof_map.count(it.name()))
+          throw std::runtime_error("Error parsing global field \"dof\" from JSON. DoF type " + it.name() + " cannot be repeated.");
+        CASM::from_json(m_dof_map[it.name()], *it, it.name());
+      }
+    }
 
     // Array<CoordType> basis;
     m_basis.clear();

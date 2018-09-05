@@ -16,7 +16,7 @@ namespace CASM {
 
   class SiteCluster;
 
-  class DoFSet;
+
 
   //  template<typename ClustType>
   //  class GenericOrbitree;
@@ -34,22 +34,12 @@ namespace CASM {
     /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
     /// assuming that the crystal is periodic
     mutable MasterSymGroup m_factor_group;
+
     /// This holds the representation id of the permutation representation
     mutable SymGroupRepID basis_perm_rep_ID;
+
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
-
-    /// continuous global degrees of freedom
-    std::map <std::string, notstd::cloneable_ptr<DoFSet> > m_dof_map;
-
-
-  public: //PUBLIC DATA MEMBERS (Public for now)
-
-    /// *** Inherited from BasicStructure<Site>
-    //std::string title;     // user-specified name of this structure
-    //Lattice lattice;     // Lattice vectors that specifies periodicity of the crystal
-    //Array<Site> basis;   // List of basis sites of the crystal.  Each site may host a molecule or a species
-
 
 
   private: //PRIVATE METHODS
@@ -86,12 +76,6 @@ namespace CASM {
     std::vector<std::string> struc_molecule_name() const;
     Eigen::VectorXi num_each_species() const;
     Eigen::VectorXi num_each_molecule() const;
-
-    DoFSet const &dof(std::string const &dof_type) const;
-
-    std::vector<std::string> local_dof_types() const;
-
-    std::vector<std::string> global_dof_types() const;
 
     // ****Mutators****
 

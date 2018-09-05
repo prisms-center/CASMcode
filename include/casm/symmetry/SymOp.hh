@@ -33,7 +33,12 @@ namespace CASM {
 
     /// static method to create operation that describes pure translation
     static SymOp translation(const Eigen::Ref<const vector_type> &_tau) {
-      return SymOp(matrix_type::Identity(), _tau, TOL, 0, nullptr);
+      return SymOp(matrix_type::Identity(), _tau, false, TOL, 0, nullptr);
+    }
+
+    /// static method to create time_reversal operation
+    static SymOp time_reversal_op() {
+      return SymOp(matrix_type::Identity(), vector_type::Zero(), true, TOL, -1, nullptr);
     }
 
     ///Create new SymOp from Matrix3 and tau translation
@@ -41,7 +46,7 @@ namespace CASM {
     SymOp(const Eigen::Ref<const matrix_type> &_mat = matrix_type::Identity(),
           const Eigen::Ref<const vector_type> &_tau = vector_type::Zero(),
           double _map_error = TOL) :
-      SymOp(_mat, _tau, _map_error, -1, nullptr) {
+      SymOp(_mat, _tau, false, _map_error, -1, nullptr) {
     }
 
     /// Create new SymOp from Matrix3 and no translation,
@@ -64,6 +69,12 @@ namespace CASM {
       return m_tau;
     }
 
+    /// Const access of the time-reversal flag (true if operation reverses time)
+    inline
+    bool time_reversal() const {
+      return m_time_reversal;
+    }
+
     /// Const access of the sym op's cartesian shift from its MasterSymGroup
     inline
     const vector_type &integral_tau() const {
@@ -77,7 +88,7 @@ namespace CASM {
     ///\brief returns true if matrix part of operation is identity
     inline
     bool is_identity() const {
-      return matrix().isIdentity(TOL);
+      return matrix().isIdentity(TOL) && !time_reversal();
     }
 
     /// set master_group and op_index for the SymOp
@@ -142,12 +153,14 @@ namespace CASM {
     /// by default, assume no translation
     SymOp(const Eigen::Ref<const matrix_type> &_mat,
           const Eigen::Ref<const vector_type> &_tau,
+          bool _time_reversal,
           double _map_error,
           Index _op_index,
           MasterSymGroup const *_master_ptr) :
       SymOpRepresentation(_master_ptr, SymGroupRepID(), _op_index),
       m_mat(_mat),
       m_tau(_tau),
+      m_time_reversal(_time_reversal),
       m_map_error(_map_error) {
       _set_integral_tau();
     }
@@ -176,6 +189,11 @@ namespace CASM {
     ///translation vector that is applied to
     ///a point after matrix transformation
     vector_type m_tau;
+
+    /// time-reversal bit
+    /// true if operation includes time-reversal,
+    /// false otherwise
+    bool m_time_reversal;
 
     ///translation vector that maps this op's correspondent in its Master Group
     /// to this

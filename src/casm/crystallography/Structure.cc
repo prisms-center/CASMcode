@@ -242,38 +242,6 @@ namespace CASM {
 
   //************************************************************
 
-  DoFSet const &Structure::dof(std::string const &_dof_type) const {
-    auto it = m_dof_map.find(_dof_type);
-    if(it != m_dof_map.end())
-      return *(it->second);
-    else
-      throw std::runtime_error(std::string("In Structure::dof(), this structure does not contain any global DoF's of type " + _dof_type));
-
-  }
-
-  //************************************************************
-
-  std::vector<std::string> Structure::local_dof_types() const {
-    std::set<std::string> tresult;
-
-    for(Site const &site : basis()) {
-      auto sitetypes = site.dof_types();
-      tresult.insert(sitetypes.begin(), sitetypes.end());
-    }
-    return std::vector<std::string>(tresult.begin(), tresult.end());
-  }
-
-  //************************************************************
-
-  std::vector<std::string> Structure::global_dof_types() const {
-    std::vector<std::string> result;
-    for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
-      result.push_back(it->first);
-    return result;
-  }
-
-  //************************************************************
-
   void Structure::fg_converge(double small_tol, double large_tol, double increment) {
     BasicStructure<Site>::fg_converge(m_factor_group, small_tol, large_tol, increment);
     return;

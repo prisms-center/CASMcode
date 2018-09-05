@@ -187,12 +187,18 @@ casminclude_HEADERS = \
   include/casm/system/RuntimeLibrary.hh\
   include/casm/basis_set/BasisSet.hh\
   include/casm/basis_set/DoF.hh\
+  include/casm/basis_set/DoFSet.hh\
+  include/casm/basis_set/DoFIsEquivalent.hh\
   include/casm/basis_set/DoFDecl.hh\
   include/casm/basis_set/Variable.hh\
   include/casm/basis_set/FunctionVisitor.hh\
   include/casm/basis_set/OccupantFunction.hh\
   include/casm/basis_set/PolynomialFunction.hh\
   include/casm/basis_set/DoFTraits.hh\
+  include/casm/basis_set/OccupationDoFTraits.hh\
+  include/casm/basis_set/DisplacementDoFTraits.hh\
+  include/casm/basis_set/MagSpinDisplacementDoFTraits.hh\
+  include/casm/basis_set/StrainDoFTraits.hh\
   include/casm/basis_set/BasisFunction.hh\
   include/casm/basis_set/chebychev.m\
   include/casm/version/version.hh\

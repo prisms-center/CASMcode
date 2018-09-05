@@ -43,7 +43,11 @@ namespace CASM {
 
   SymOp SymOp::operator*(const SymOp &RHS) const {
     SymOp t_op(matrix() * RHS.matrix(),
-               tau() + matrix() * RHS.tau());
+               tau() + matrix() * RHS.tau(),
+               time_reversal() != RHS.time_reversal(),
+               sqrt(map_error()*map_error() + RHS.map_error()*RHS.map_error()),
+               -1,
+               nullptr);
 
     if(m_master_group && (m_master_group == RHS.m_master_group)) {
       t_op.set_index(master_group(), master_group().ind_prod(index(), RHS.index()));
@@ -86,7 +90,11 @@ namespace CASM {
   // inverse matrix operaton on translation and subtract
   SymOp SymOp::inverse() const {
     SymOp t_op(matrix().transpose(),
-               -(matrix().transpose() * tau()));
+               -(matrix().transpose() * tau()),
+               time_reversal(),
+               map_error(),
+               -1,
+               nullptr);
     if(m_master_group) {
       t_op.set_index(master_group(), master_group().ind_inverse(index()));
     }
@@ -101,7 +109,7 @@ namespace CASM {
   //*******************************************************************************************
 
   SymOp SymOp::no_trans() const {
-    return SymOp(matrix(), vector_type::Zero(), map_error(), index(), m_master_group);
+    return SymOp(matrix(), vector_type::Zero(), time_reversal(), map_error(), index(), m_master_group);
   }
 
   //*******************************************************************************************
@@ -109,7 +117,8 @@ namespace CASM {
   bool SymOp::operator==(const SymOp &RHS) const {
     return
       almost_equal(matrix(), RHS.matrix()) &&
-      almost_equal(tau(), RHS.tau());
+      almost_equal(tau(), RHS.tau()) &&
+      time_reversal(), RHS.time_reversal();
   };
 
   //*******************************************************************************************

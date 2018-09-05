@@ -1,0 +1,133 @@
+#ifndef CASM_DoFSet
+#define CASM_DoFSet
+
+#include <vector>
+#include "casm/basis_set/DoF.hh"
+
+namespace CASM{
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  class DoFSet {
+  public:
+    using BasicTraits = DoF_impl::BasicTraits;
+
+    using TypeFunc =  std::function<notstd::cloneable_ptr<BasicTraits>()>;
+
+    using Container = std::vector<ContinuousDoF>;
+
+    using const_iterator = std::vector<ContinuousDoF>::const_iterator;
+
+    DoFSet(BasicTraits const &_type) :
+      m_type_name(_type.type_name()) {}
+
+    Index size() const {
+      return m_components.size();
+    }
+
+    std::string const &type_name() const {
+      return m_type_name;
+    }
+
+    void set_ID(Index _ID) {
+      for(auto &c : m_components)
+        c.set_ID(_ID);
+    }
+
+    ContinuousDoF const &operator[](Index i) const {
+      return m_components[i];
+    }
+
+    const_iterator begin() const {
+      return m_components.cbegin();
+    }
+
+    const_iterator end() const {
+      return m_components.cend();
+    }
+
+    const_iterator cbegin() const {
+      return m_components.cbegin();
+    }
+
+    const_iterator cend() const {
+      return m_components.cend();
+    }
+
+    bool is_excluded_occ(std::string const &_occ_name) const {
+      return m_excluded_occs.count(_occ_name);
+    }
+
+    /// \brief Matrix that relates DoFSet variables to a conventional coordiante system
+
+    /// columns of coordinate_space() matrix are directions in conventional coordinate system
+    /// so that  conventional_coord = DoFSet.coordinate_space()*DoFSet.values()
+    /// coordinate_space() matrix has dimensions (N x size()), where N >= size()
+    Eigen::MatrixXd const &basis() const {
+      return m_basis;
+    }
+
+    SymGroupRepID const &sym_rep_ID() const {
+      return m_col_rep_ID;
+    }
+
+    bool identical(DoFSet const &rhs) const;
+
+    /// \brief Equivalent to m_basis=trans_mat*m_basis. Invalidates SymGroupRepID
+    void transform_basis(Eigen::Ref<const Eigen::MatrixXd> const &trans_mat);
+
+    bool update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
+
+    void from_json(jsonParser const &json);
+
+    jsonParser &to_json(jsonParser &json) const;
+
+
+  private:
+    std::string m_type_name;
+    std::vector<ContinuousDoF> m_components;
+    Eigen::MatrixXd m_basis;
+    std::set<std::string> m_excluded_occs;
+
+    mutable SymGroupRepID m_row_rep_ID;
+    mutable SymGroupRepID m_col_rep_ID;
+  };
+
+  //********************************************************************
+
+  inline
+  bool operator==(DoFSet const &A, DoFSet const &B) {
+    return A.identical(B);
+  }
+
+  //********************************************************************
+
+  inline
+  bool operator!=(DoFSet const &A, DoFSet const &B) {
+    return !A.identical(B);
+  }
+
+  //********************************************************************
+
+  /// \brief Apply SymOp to a DoFSet
+  DoFSet &apply(const SymOp &op, DoFSet & _dof);
+
+  //********************************************************************
+
+  /// \brief Copy and apply SymOp to a DoFSet
+  DoFSet copy_apply(const SymOp &op, const DoFSet &_dof);
+
+  //********************************************************************
+
+  void from_json(DoFSet &_dof, const jsonParser &json, std::string const &type_name);
+
+  //********************************************************************
+  inline
+  jsonParser& to_json(DoFSet const& _dof, jsonParser &json){
+    return _dof.to_json(json);
+  }
+
+
+
+}
+
+#endif

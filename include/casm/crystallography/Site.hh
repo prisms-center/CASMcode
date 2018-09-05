@@ -39,9 +39,13 @@ namespace CASM {
 
     DoFSet const &dof(std::string const &_dof_type) const;
 
+    Index dof_size() const;
+
     bool has_dof(std::string const &_dof_type) const;
 
     std::vector<std::string> dof_types() const;
+
+    bool time_reversal_active() const;
 
     /// Checks if current occupant is a vacancy
     bool is_vacant() const;
@@ -106,6 +110,8 @@ namespace CASM {
       return m_type_prototypes;
     }
 
+    Site &_apply_sym_attributes(const SymOp &op);
+
     mutable Index m_type_ID;
 
     /// Integer label used to differentiate sites of otherwise identical type
@@ -117,7 +123,7 @@ namespace CASM {
     notstd::cloneable_ptr<MoleculeOccupant> m_site_occupant;
 
     /// additional continuous degrees of freedom
-    std::map <std::string, notstd::cloneable_ptr<DoFSet> > m_dof_map;
+    std::map <std::string, DoFSet > m_dof_map;
 
     //============
 

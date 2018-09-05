@@ -119,8 +119,14 @@ libcasm_la_SOURCES = \
   src/casm/basis_set/BasisSet.cc\
   src/casm/basis_set/Variable.cc\
   src/casm/basis_set/DoF.cc\
+  src/casm/basis_set/DoFSet.cc\
+  src/casm/basis_set/DoFIsEquivalent.cc\
   src/casm/basis_set/BasisFunction.cc\
   src/casm/basis_set/DoFTraits.cc\
+  src/casm/basis_set/OccupationDoFTraits.cc\
+  src/casm/basis_set/DisplacementDoFTraits.cc\
+  src/casm/basis_set/MagSpinDoFTraits.cc\
+  src/casm/basis_set/StrainDoFTraits.cc\
   src/casm/version/version.cc\
   src/casm/monte_carlo/MonteCarlo.cc\
   src/casm/monte_carlo/MonteIO.cc\

@@ -3572,13 +3572,15 @@ namespace CASM {
     COORD_TYPE print_mode = CART;
 
     // compare on vector of '-det', '-trace', 'angle', 'axis', 'tau'
-    typedef Eigen::Matrix<double, 9, 1> key_type;
+    typedef Eigen::Matrix<double, 10, 1> key_type;
     auto make_key = [](const SymOp & op, const Lattice & lat) {
 
       key_type vec;
       int offset = 0;
 
       SymInfo info(op, lat);
+      vec[offset] = double(op.time_reversal());
+      offset++;
 
       vec[offset] = -op.matrix().determinant();
       offset++;
