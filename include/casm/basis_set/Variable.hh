@@ -5,6 +5,7 @@
 #include <sstream>
 #include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/basis_set/BasisFunction.hh"
+#include "casm/basis_set/DoFSet.hh"
 
 
 namespace CASM {

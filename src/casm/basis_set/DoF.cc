@@ -2,14 +2,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
-  namespace DoF_impl {
-    /// \brief implements json parsing of a specialized DoF.
-    // In future, we may need to add another inheritance layer to handle DiscreteDoF types
-    void BasicTraits::to_json(ContinuousDoF const &_dof, jsonParser &json) const {
-      return;
-    }
-
-  }
 
   DoF::TraitsMap &DoF::_traits_map() {
     static TraitsMap _static_traits_map([](const TraitsMap::value_type & value)->std::string {

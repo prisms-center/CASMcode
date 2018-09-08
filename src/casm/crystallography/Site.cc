@@ -309,7 +309,7 @@ namespace CASM {
   void Site::set_basis_ind(Index new_ind) {
     Coordinate::set_basis_ind(new_ind);
     m_site_occupant->set_ID(new_ind);
-    for(auto const &dof : m_dof_map)
+    for(auto &dof : m_dof_map)
       dof.second.set_ID(new_ind);
   }
 

@@ -16,24 +16,24 @@ namespace CASM {
     }
   }
 
-    //********************************************************************
+  //********************************************************************
 
   bool DoFSet::identical(DoFSet const &rhs)const {
     if(!std::equal(begin(), end(), rhs.begin(), compare_no_value)) {
       return false;
     }
 
-    return almost_equal(m_coordinate_space, rhs.m_coordinate_space);
+    return almost_equal(m_basis, rhs.m_basis);
   }
 
   //********************************************************************
-  
-  void DoFSet::transform_basis(Eigen::Ref<const Eigen::MatrixXd> const &trans_mat){
-    m_basis=trans_mat*m_basis;
-    m_row_rep_ID=SymGroupRepID();
-    m_col_rep_ID=SymGroupRepID();
+
+  void DoFSet::transform_basis(Eigen::Ref<const Eigen::MatrixXd> const &trans_mat) {
+    m_basis = trans_mat * m_basis;
+    m_row_rep_ID = SymGroupRepID();
+    m_col_rep_ID = SymGroupRepID();
   }
-  
+
   //********************************************************************
 
   bool DoFSet::update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
@@ -59,55 +59,62 @@ namespace CASM {
   void DoFSet::from_json(jsonParser const &json) {
     /*
       if(json.contains("coordinate_space"))
-      m_coordinate_space=json["coordinate_space"].get<Eigen::MatrixXd>();
+      m_basis=json["coordinate_space"].get<Eigen::MatrixXd>();
     */
     std::vector<ContinuousDoF> tdof;
-    bool is_error=false;
+    bool is_error = false;
 
-    auto const& traits=DoFType::traits(type_name());
-    
+    auto const &traits_ref = DoFType::traits(type_name());
+
     json.get_if(m_excluded_occs, "excluded_occupants");
     auto it = json.find("basis");
-    if(it!=json.end()){
-      if(it->is_array()){
-        m_basis.resize(traits.dim(),it->size());
-        int col=0;
-        for(auto const &el : *it){
-          if(is_error || el.size()!=(traits.dim()+1) || !el[0].is_string()){
-            is_error=true;
+    if(it != json.end()) {
+      if(it->is_array()) {
+        m_basis.resize(traits_ref.dim(), it->size());
+        int col = 0;
+        for(auto const &el : *it) {
+          if(is_error || el.size() != (traits_ref.dim() + 1) || !el[0].is_string()) {
+            is_error = true;
             break;
           }
-          
-          tdof.push_back(DoF::traits(type_name()),
-                         el[0].get<std::string>(), //var_name
-                         -1, // ID
-                         -std::numeric_limits<double>::infinity(),
-                         std::numeric_limits<double>::infinity());
-          for(Index row=0; i<traits.dim()+1; i++){
-            if(!el[row].is_number()){
-              is_error=true;
+
+          tdof.push_back(ContinuousDoF(traits_ref,
+                                       el[0].get<std::string>(), //var_name
+                                       -1, // ID
+                                       -std::numeric_limits<double>::infinity(),
+                                       std::numeric_limits<double>::infinity()));
+          for(Index row = 0; row < traits_ref.dim() + 1; row++) {
+            if(!el[row].is_number()) {
+              is_error = true;
               break;
             }
-            m_basis(row,col)=el[row].get<double>();
-            
+            m_basis(row, col) = el[row].get<double>();
+
           }
         }
       }
       else
-        is_error=true;
-      
-      if(is_error){
+        is_error = true;
+
+      if(is_error) {
         std::stringstream ss;
-        ss(json);
-        throw std::runtime_error("Parsing malformed JSON DoF object " + ss.str() + " each element of object \"basis\" must be an array containing " + to_string(traits->dim()+1) + " elements.\n The first element of each sub-array must be a string, and the remaining elements must be numbers. ");
+        ss << json;
+        throw std::runtime_error("Parsing malformed JSON DoF object " + ss.str() + " each element of object \"basis\" must be an array containing " + std::to_string(traits_ref.dim() + 1) + " elements.\n The first element of each sub-array must be a string, and the remaining elements must be numbers. ");
       }
 
     }
-    else{
-      m_basis.setIdentity(traits.dim(), traits.dim());
-      tdof=traits.standard_vars();
+    else {
+      m_basis.setIdentity(traits_ref.dim(), traits_ref.dim());
+      for(std::string var_name : traits_ref.standard_var_names()) {
+        tdof.push_back(ContinuousDoF(traits_ref,
+                                     var_name,
+                                     -1, // ID
+                                     -std::numeric_limits<double>::infinity(),
+                                     std::numeric_limits<double>::infinity()));
+
+      }
     }
-    DoF::traits(type_name()).from_json(*this, json);
+    traits_ref.from_json(*this, json);
 
   }
 
@@ -115,7 +122,7 @@ namespace CASM {
 
   jsonParser &DoFSet::to_json(jsonParser &json) const {
     /*
-    if(!m_coordinate_space.isIdentity(1e-5))
+    if(!m_basis.isIdentity(1e-5))
       json["coordinate_space"]=coordinate_space();
     */
     if(!m_excluded_occs.empty())
@@ -128,7 +135,7 @@ namespace CASM {
   //********************************************************************
 
   /// \brief Apply SymOp to a DoFSet
-  DoFSet &apply(const SymOp &op, DoFSet & _dof){
+  DoFSet &apply(const SymOp &op, DoFSet &_dof) {
     _dof.transform_basis(DoFType::traits(_dof.type_name()).symop_to_matrix(op));
     return _dof;
   }
@@ -136,14 +143,16 @@ namespace CASM {
   //********************************************************************
 
   /// \brief Copy and apply SymOp to a DoFSet
-  DoFSet copy_apply(const SymOp &op, const DoFSet &_dof){
-    DoFSet(_dof).apply(op);
+  DoFSet copy_apply(const SymOp &op, const DoFSet &_dof) {
+    DoFSet result(_dof);
+    return apply(op, result);
   }
 
   //********************************************************************
-  
-  void from_json(DoFSet &_dof, const jsonParser &json, std::string const &type_name){
-    _dof=DoFSet(DoF::traits(type_name));
-    _dof.from_json(json);
+
+  DoFSet jsonConstructor<DoFSet>::from_json(const jsonParser &json, DoF::BasicTraits const &_type) {
+    DoFSet value(_type);
+    value.from_json(json);
+    return value;
   }
 }

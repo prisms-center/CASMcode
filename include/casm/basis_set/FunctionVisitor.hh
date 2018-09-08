@@ -5,7 +5,7 @@
 #include <sstream>
 #include <map>
 #include "casm/CASM_global_definitions.hh"
-#include "casm/container/Array.hh"
+#include <vector>
 
 namespace CASM {
   class BasisSet;
@@ -14,6 +14,9 @@ namespace CASM {
   class Variable;
   class PolynomialFunction;
   class OccupantFunction;
+
+  template<typename T>
+  class Array;
 
   /// Defines visitor pattern for abstract Function objects.
   /// FunctionVisitor has virtual methods for each type of derived Function object,
@@ -61,7 +64,7 @@ namespace CASM {
 
 
   class OccFuncLabeler : public FunctionVisitor {
-    Array<std::string> m_sub_strings;
+    std::vector<std::string> m_sub_strings;
     mutable std::stringstream m_ss;
   public:
     OccFuncLabeler(const std::string &_template);
@@ -129,7 +132,7 @@ namespace CASM {
 
 
   class VariableLabeler : public FunctionVisitor {
-    Array<std::string> m_sub_strings;
+    std::vector<std::string> m_sub_strings;
     mutable std::stringstream m_ss;
   public:
     VariableLabeler(const std::string &_template);
@@ -159,7 +162,7 @@ namespace CASM {
     }
 
     std::string m_bset_name;
-    Array<std::string> m_sub_strings;
+    std::vector<std::string> m_sub_strings;
     mutable std::stringstream m_ss;
   };
 

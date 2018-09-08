@@ -2,14 +2,15 @@
 #define CASM_OccupationDoFTraits
 
 #include "casm/basis_set/DoFTraits.hh"
-namespace CASM{
-
+namespace CASM {
+  namespace DoF_impl {
     class OccupationDoFTraits : public Traits {
     public:
       OccupationDoFTraits():
         Traits("occ",
-               DISCRETE,
-               LOCAL) {
+      {},
+      DISCRETE,
+      LOCAL) {
       }
 
       /// \brief Output @param _in to JSON
@@ -17,11 +18,17 @@ namespace CASM{
         throw std::runtime_error("OccupationDoFTraits::to_json not implemented!");
       }
 
-      /// \brief Generate a symmetry representation for this DoF
+      /*/// \brief Generate a symmetry representation for this DoF
       SymGroupRepID generate_symrep(MasterSymGroup const &_group,
                                     Structure const &_prim,
                                     Index _nb) const override {
         throw std::runtime_error("OccupationDoFTraits::generate_symrep not implemented!");
+        }*/
+
+      /// \brief Generate a symmetry representation for the supporting vector space
+      Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override {
+        throw std::runtime_error("OccupationDoFTraits::generate_symrep not implemented!");
+
       }
 
       std::string site_basis_description(BasisSet site_bset, Site site) const override;
@@ -85,13 +92,13 @@ namespace CASM{
       BasicTraits *_clone() const override;
     };
 
-  namespace DoFType {
+    namespace DoFType {
 
-    inline
-    notstd::cloneable_ptr<typename DoF_impl::BasicTraits> occupation() {
-      return DoF_impl::OccupationDoFTraits().clone();
+      inline
+      notstd::cloneable_ptr<typename DoF_impl::BasicTraits> occupation() {
+        return DoF_impl::OccupationDoFTraits().clone();
+      }
     }
   }
-
 }
 #endif

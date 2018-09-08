@@ -1034,7 +1034,14 @@ namespace CASM {
       for(; it != end_it; ++it) {
         if(m_dof_map.count(it.name()))
           throw std::runtime_error("Error parsing global field \"dof\" from JSON. DoF type " + it.name() + " cannot be repeated.");
-        CASM::from_json(m_dof_map[it.name()], *it, it.name());
+
+        try {
+          m_dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(DoF::traits(it.name()))));
+        }
+        catch(std::exception &e) {
+          throw std::runtime_error("Error parsing global field \"dof\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
+        }
+
       }
     }
 

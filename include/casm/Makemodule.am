@@ -197,7 +197,7 @@ casminclude_HEADERS = \
   include/casm/basis_set/DoFTraits.hh\
   include/casm/basis_set/OccupationDoFTraits.hh\
   include/casm/basis_set/DisplacementDoFTraits.hh\
-  include/casm/basis_set/MagSpinDisplacementDoFTraits.hh\
+  include/casm/basis_set/MagSpinDoFTraits.hh\
   include/casm/basis_set/StrainDoFTraits.hh\
   include/casm/basis_set/BasisFunction.hh\
   include/casm/basis_set/chebychev.m\

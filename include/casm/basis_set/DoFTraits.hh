@@ -33,9 +33,11 @@ namespace CASM {
     class Traits : public BasicTraits {
     public:
       Traits(std::string const &_type_name,
+             std::vector<std::string> const &_std_var_names,
              DOF_DOMAIN _domain,
              DOF_MODE _mode) :
         BasicTraits(_type_name,
+                    _std_var_names,
                     _domain,
                     _mode) {
 
@@ -50,19 +52,21 @@ namespace CASM {
                                                          jsonParser const &_bspecs) const = 0;
 
       /// \brief Populate @param _in from JSON
-      virtual void from_json(DoFSet &_in, jsonParser const &_json) const = 0;
+      virtual void from_json(DoFSet &_in, jsonParser const &_json) const { }
 
       /// \brief Output @param _in to JSON
-      virtual void to_json(DoFSet const &_out, jsonParser &_json) const = 0;
+      virtual void to_json(DoFSet const &_out, jsonParser &_json) const { };
 
       /// \brief Generate a symmetry representation for the supporting vector space
       virtual Eigen::MatrixXd symop_to_matrix(SymOp const &op) const = 0;
 
+      /*
       /// \brief Generate a symmetry representation for this DoF
       virtual SymGroupRepID generate_symrep(MasterSymGroup const &_group,
                                             Structure const &_prim,
                                             Index _nb) const = 0;
 
+      */
 
       virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const = 0;
 

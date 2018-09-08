@@ -39,9 +39,11 @@ namespace CASM {
     class BasicTraits {
     public:
       BasicTraits(std::string const &_type_name,
+                  std::vector<std::string> const &_std_var_names,
                   DOF_DOMAIN _domain,
                   DOF_MODE _mode) :
         m_type_name(_type_name),
+        m_standard_var_names(_std_var_names),
         m_domain(_domain),
         m_mode(_mode) {
       }
@@ -62,6 +64,11 @@ namespace CASM {
       /// \brief returns true if DoF is discrete
       bool discrete() const {
         return m_domain == DISCRETE;
+      }
+
+      /// \brief conventional dimensionality of this DoF, returns -1 if always variable
+      Index dim() const {
+        return standard_var_names().size();
       }
 
       /// \brief equality comparison of type_name
@@ -87,8 +94,8 @@ namespace CASM {
       }
 
       /// \brief return standard coordinate axes for continuous variable space
-      virtual std::vector<ContinuousDoF> standard_vars() const {
-        return std::vector<ContinuousDoF>();
+      std::vector<std::string> const &standard_var_names() const {
+        return m_standard_var_names;
       }
 
       /// \brief returns true if time-reversal changes the DoF value
@@ -126,6 +133,7 @@ namespace CASM {
       virtual BasicTraits *_clone() const = 0;
 
       std::string m_type_name;
+      std::vector<std::string> m_standard_var_names;
       DOF_DOMAIN m_domain;
       DOF_MODE m_mode;
     };

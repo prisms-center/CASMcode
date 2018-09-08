@@ -23,6 +23,7 @@ namespace CASM {
         result.back().push_back(_template[i]);
     }
     //std::cout << "substring expression: " << result << '\n';
+    return result;
   }
 
   bool FunctionVisitor::visit(Variable const &host, BasisSet const *bset_ptr)const {

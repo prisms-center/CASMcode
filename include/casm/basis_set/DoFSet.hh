@@ -4,8 +4,11 @@
 #include <vector>
 #include "casm/basis_set/DoF.hh"
 
-namespace CASM{
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+namespace CASM {
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  template<typename T> struct jsonConstructor;
+
+  class SymOp;
 
   class DoFSet {
   public:
@@ -109,7 +112,7 @@ namespace CASM{
   //********************************************************************
 
   /// \brief Apply SymOp to a DoFSet
-  DoFSet &apply(const SymOp &op, DoFSet & _dof);
+  DoFSet &apply(const SymOp &op, DoFSet &_dof);
 
   //********************************************************************
 
@@ -117,12 +120,14 @@ namespace CASM{
   DoFSet copy_apply(const SymOp &op, const DoFSet &_dof);
 
   //********************************************************************
-
-  void from_json(DoFSet &_dof, const jsonParser &json, std::string const &type_name);
+  template<>
+  struct jsonConstructor<DoFSet> {
+    static DoFSet from_json(const jsonParser &json, DoF::BasicTraits const &_type);
+  };
 
   //********************************************************************
   inline
-  jsonParser& to_json(DoFSet const& _dof, jsonParser &json){
+  jsonParser &to_json(DoFSet const &_dof, jsonParser &json) {
     return _dof.to_json(json);
   }
 
