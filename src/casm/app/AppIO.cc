@@ -44,44 +44,34 @@ namespace CASM {
 
       Eigen::Vector3d vec;
 
+      // Global DoFs
+      {
+        std::map<std::string, DoFSet> _dof_map;
+        if(json.contains("dof")) {
+          auto it = json["dof"].begin(), end_it = json["dof"].end();
+          for(; it != end_it; ++it) {
+            if(_dof_map.count(it.name()))
+              throw std::runtime_error("Error parsing global field \"dof\" from JSON. DoF type " + it.name() + " cannot be repeated.");
+
+            try {
+              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(DoF::traits(it.name()))));
+            }
+            catch(std::exception &e) {
+              throw std::runtime_error("Error parsing global field \"dof\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
+            }
+
+          }
+          prim.set_global_dofs(_dof_map);
+        }
+      }
+
       // read basis coordinate mode
       COORD_TYPE mode;
       from_json(mode, json["coordinate_mode"]);
 
       // read basis sites
-      for(int i = 0; i < json["basis"].size(); i++) {
-
-        // read coordinate
-        Eigen::Vector3d coord(json["basis"][i]["coordinate"][0].get<double>(),
-                              json["basis"][i]["coordinate"][1].get<double>(),
-                              json["basis"][i]["coordinate"][2].get<double>());
-
-        Site site(prim.lattice());
-        if(mode == FRAC) {
-          site.frac() = coord;
-        }
-        else if(mode == CART) {
-          site.cart() = coord;
-        }
-
-        // read atom occupant names
-        Array<std::string> occ_name;
-        from_json(occ_name, json["basis"][i]["occupant_dof"]);
-
-        // fill site.site_occupant
-        std::vector<Molecule> tocc;
-        tocc.reserve(occ_name.size());
-        std::transform(occ_name.begin(),
-                       occ_name.end(),
-                       std::back_inserter(tocc),
-                       static_cast<Molecule(*)(std::string const &)>(Molecule::make_atom));
-
-        site.set_allowed_species(tocc);
-        site.set_occ_value(0);
-
-        // add site to prim
-        prim.push_back(site);
-
+      for(jsonParser const &bjson : json["basis"]) {
+        prim.push_back(bjson.get<Site>(prim.lattice(), mode));
       }
 
       return prim;

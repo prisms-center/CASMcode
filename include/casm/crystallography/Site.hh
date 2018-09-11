@@ -73,11 +73,13 @@ namespace CASM {
     bool contains(const std::string &name) const;
     bool contains(const std::string &name, int &index) const;
 
-    void set_allowed_species(std::vector<Molecule> const &_occ_domain);
+    void set_allowed_occupants(std::vector<Molecule> const &_occ_domain);
 
     void set_occ_value(int new_val);
 
     void set_occ(const Molecule &new_occ);
+
+    void set_local_dofs(std::vector<DoFSet> const &new_dofs);
 
 
     std::vector<std::string> allowed_occupants() const;
@@ -101,9 +103,6 @@ namespace CASM {
 
     Site &operator+=(const Coordinate &translation);
     Site &operator-=(const Coordinate &translation);
-
-    jsonParser &to_json(jsonParser &json) const;
-    void from_json(const jsonParser &json);
 
   private:
     static std::vector<Site> &_type_prototypes() {
@@ -134,8 +133,14 @@ namespace CASM {
 
   };
 
-  jsonParser &to_json(const Site &value, jsonParser &json);
-  void from_json(Site &value, const jsonParser &json);
+  template<>
+  struct jsonConstructor<Site> {
+
+    static Site from_json(const jsonParser &json, Lattice const &_home, COORD_TYPE coordtype);
+  };
+
+  jsonParser &to_json(const Site &value, jsonParser &json, COORD_TYPE coordtype);
+  void from_json(Site &value, const jsonParser &json, Lattice const &_home, COORD_TYPE coordtype);
 
   std::ostream &operator<< (std::ostream &stream, const Site &site);
 

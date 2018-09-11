@@ -13,21 +13,21 @@ namespace CASM {
 
   // --- Array<T> ------------------------------
 
-  template<typename T>
-  jsonParser &to_json(const Array<T> &value, jsonParser &json) {
+  template<typename T, typename...Args>
+  jsonParser &to_json(const Array<T> &value, jsonParser &json, Args &&... args) {
     json.put_array();
     for(Index i = 0; i < value.size(); i++)
-      json.push_back(value[i]);
+      json.push_back(value[i], args...);
     return json;
   }
 
   /// This requires that 'T::T()' exists, if not, you must do this by hand
-  template<typename T>
-  void from_json(Array<T> &value, const jsonParser &json) {
+  template<typename T, typename...Args>
+  void from_json(Array<T> &value, const jsonParser &json, Args &&... args) {
     try {
       value.resize(json.size());
       for(int i = 0; i < json.size(); i++)
-        from_json(value[i], json[i]);
+        from_json(value[i], json[i], args...);
     }
     catch(...) {
       /// re-throw exceptions

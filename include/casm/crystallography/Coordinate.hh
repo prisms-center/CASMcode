@@ -246,9 +246,6 @@ namespace CASM {
     ///Transform coordinate by symmetry operation (without translation)
     Coordinate &apply_sym_no_trans(const SymOp &op); //AAB
 
-    jsonParser &to_json(jsonParser &json) const;
-    void from_json(const jsonParser &json);
-
   private:
 
     void _update_cart() {
@@ -300,11 +297,6 @@ namespace CASM {
   Coordinate Coordinate::origin(const Lattice &_home) {
     return Coordinate(_home);
   }
-
-  jsonParser &to_json(const Coordinate &value, jsonParser &json);
-
-  // Lattice must be set already
-  void from_json(Coordinate &value, const jsonParser &json);
 
   Coordinate operator*(const SymOp &LHS, const Coordinate &RHS); //AAB
 

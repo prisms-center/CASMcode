@@ -142,6 +142,11 @@ namespace CASM {
     /// Set the title of the structure
     void set_title(std::string const &_title);
 
+    /// Manually set the global DoFs
+    void set_global_dofs(std::map <std::string, DoFSet> const &_dof_map) {
+      m_dof_map = _dof_map;
+    }
+
     /// Manually set the basis sites
     void set_basis(Array<CoordType> const &_basis, COORD_TYPE mode = CART);
 

@@ -1007,8 +1007,10 @@ namespace CASM {
     // Lattice lattice;
     json["lattice"] = lattice();
 
+    json["coordinate_mode"] = FRAC;
+
     // Array<CoordType> basis;
-    json["basis"] = basis();
+    CASM::to_json(basis(), json["basis"], FRAC);
 
     // std::map<std::string, DoFSet> dof_map;
     json["dof"] = m_dof_map;
@@ -1045,12 +1047,14 @@ namespace CASM {
       }
     }
 
+    // read basis coordinate mode
+    COORD_TYPE mode;
+    CASM::from_json(mode, json["coordinate_mode"]);
+
     // Array<CoordType> basis;
     m_basis.clear();
-    CoordType coordtype(lattice());
     for(int i = 0; i < json["basis"].size(); i++) {
-      CASM::from_json(coordtype, json["basis"][i]);
-      push_back(coordtype);
+      push_back(json["basis"][i].get<CoordType>(lattice(), mode));
     }
 
   }

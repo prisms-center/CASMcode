@@ -277,7 +277,7 @@ namespace CASM {
 
   //****************************************************
 
-  void Site::set_allowed_species(std::vector<Molecule> const &_occ_domain) {
+  void Site::set_allowed_occupants(std::vector<Molecule> const &_occ_domain) {
     m_site_occupant->set_domain(_occ_domain);
     m_type_ID = -1;
   }
@@ -293,6 +293,15 @@ namespace CASM {
   void Site::set_occ(const Molecule &new_occ) {
     m_site_occupant->set_current_state(new_occ);
   }
+
+  //****************************************************
+
+  void Site::set_local_dofs(std::vector<DoFSet> const &_new_dofs) {
+    m_dof_map.clear();
+    for(DoFSet const &_dof : _new_dofs)
+      m_dof_map.emplace(std::make_pair(_dof.type_name(), _dof));
+  }
+
 
   //****************************************************
 
@@ -515,61 +524,92 @@ namespace CASM {
 
   //****************************************************
 
-  jsonParser &Site::to_json(jsonParser &json) const {
-    json.put_obj();
-
-    // class Site : public Coordinate
-    const Coordinate &coord = *this;
-    json["coordinate"].put(coord);
-
-    // MoleculeOccupant site_occupant;
-    Eigen::Matrix3d c2f = Eigen::Matrix3d::Identity();
-    // change this to use FormatFlag
-    if(COORD_MODE::IS_FRAC())
-      c2f = home().inv_lat_column_mat();
-    CASM::to_json(site_occupant(), json["site_occupant"], c2f);
-
-    // Index m_label
-    if(valid_index(label()))
-      json["label"] = label();
-
-
-    return json;
+  Site jsonConstructor<Site>::from_json(const jsonParser &json, Lattice const &_home, COORD_TYPE coordtype) {
+    Site result(_home);
+    CASM::from_json(result, json, _home, coordtype);
+    return result;
   }
 
   //****************************************************
 
-  void Site::from_json(const jsonParser &json) {
+  jsonParser &to_json(const Site &site, jsonParser &json, COORD_TYPE coordtype) {
+    json.put_obj();
 
     // class Site : public Coordinate
-    Coordinate &coord = *this;
-    //std::cout<<"Trying to read in the Site"<<std::endl;
-    //std::cout<<"Reading in the Coordinate"<<std::endl;
-    CASM::from_json(coord, json["coordinate"]);
-
-    //std::cout<<"Reading in site_occupant"<<std::endl;
-    // MoleculeOccupant site_occupant;
-    if(COORD_MODE::IS_FRAC())
-      CASM::from_json(*m_site_occupant, json["site_occupant"], home().inv_lat_column_mat());
+    if(coordtype == FRAC)
+      to_json_array(site.frac(), json["coordinate"]);
     else
-      CASM::from_json(*m_site_occupant, json["site_occupant"], Eigen::Matrix3d::Identity());
+      to_json_array(site.cart(), json["coordinate"]);
 
-    // Index m_label -- must be greater than zero
-    m_label = -1;
-    if(json.contains("label")) {
-      CASM::from_json(m_label, json["label"]);
-      if(!valid_index(m_label))
-        throw std::runtime_error("JSON specification of site has {\"label\" : " + std::to_string(m_label) + "}, but \"label\" must be greater than 0.\n");
-    }
-    m_type_ID = -1;
-  };
+    // MoleculeOccupant site_occupant;
+    Eigen::Matrix3d c2f = Eigen::Matrix3d::Identity();
+    // change this to use FormatFlag
+    if(coordtype == FRAC)
+      c2f = site.home().inv_lat_column_mat();
+    CASM::to_json(site.site_occupant(), json["site_occupant"], c2f);
 
-  jsonParser &to_json(const Site &site, jsonParser &json) {
-    return site.to_json(json);
+
+    // Index m_label
+    if(valid_index(site.label()))
+      json["label"] = site.label();
+
+
+    return json;
+
   }
 
-  void from_json(Site &site, const jsonParser &json) {
-    site.from_json(json);
+  //****************************************************
+
+  void from_json(Site &site, const jsonParser &json, Lattice const &_home, COORD_TYPE coordtype) {
+    site.set_lattice(_home, coordtype);
+    if(coordtype == FRAC)
+      site.frac() = json["coordinate"].get<Eigen::Vector3d>();
+    else
+      site.cart() = json["coordinate"].get<Eigen::Vector3d>();
+
+    // MoleculeOccupant -- allowed occupants at site
+    MoleculeOccupant t_occ(DoF::traits("occ"));
+    if(coordtype == FRAC)
+      CASM::from_json(t_occ, json["site_occupant"], _home.inv_lat_column_mat());
+    else
+      CASM::from_json(t_occ, json["site_occupant"], Eigen::Matrix3d::Identity());
+    if(t_occ.size())
+      site.set_allowed_occupants(t_occ.domain());
+    else
+      site.set_allowed_occupants({Molecule::make_unknown()});
+
+    // Index m_label -- must be greater than zero
+    Index _label = -1;
+    if(json.contains("label")) {
+      CASM::from_json(_label, json["label"]);
+      if(!valid_index(_label))
+        throw std::runtime_error("JSON specification of site has {\"label\" : " + std::to_string(_label) + "}, but \"label\" must be greater than 0.\n");
+    }
+    site.set_label(_label);
+
+    // Local continuous dofs
+    std::vector<DoFSet> _dof_vec;
+    if(json.contains("dof")) {
+      std::map<std::string, DoFSet> _dof_map;
+      auto it = json["dof"].begin(), end_it = json["dof"].end();
+      for(; it != end_it; ++it) {
+        if(_dof_map.count(it.name()))
+          throw std::runtime_error("Error parsing global field \"dof\" from JSON. DoF type " + it.name() + " cannot be repeated.");
+
+        try {
+          _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(DoF::traits(it.name()))));
+        }
+        catch(std::exception &e) {
+          throw std::runtime_error("Error parsing global field \"dof\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
+        }
+
+      }
+      for(auto const &_dof : _dof_map)
+        _dof_vec.push_back(_dof.second);
+    }
+    site.set_local_dofs(_dof_vec);
+
+
   }
 
   //*******************************************************************************************

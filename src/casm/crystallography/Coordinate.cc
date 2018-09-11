@@ -3,7 +3,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymOp.hh"
-#include "casm/casm_io/json_io/container.hh"
 #include "casm/container/LinearAlgebra.hh"
 
 namespace CASM {
@@ -382,52 +381,6 @@ namespace CASM {
             && std::abs(m_frac_coord[2] - round(m_frac_coord[2])) < tol);
   }
 
-
-  //********************************************************************
-  // Read/write coordinate to json
-  //********************************************************************
-
-  jsonParser &Coordinate::to_json(jsonParser &json) const {
-    json.put_obj();
-
-    // mutable Vector3< double > coord[2];
-    to_json_array(m_frac_coord, json["FRAC"]);
-    to_json_array(m_frac_coord, json["CART"]);
-
-    // mutable int basis_ind;
-    json["basis_ind"] = basis_ind();
-
-    return json;
-  }
-
-  //********************************************************************
-
-  void Coordinate::from_json(const jsonParser &json) {
-    // mutable Vector3< double > coord[2];
-    m_frac_coord[0] = json["FRAC"][0].get<double>();
-    m_frac_coord[1] = json["FRAC"][1].get<double>();
-    m_frac_coord[2] = json["FRAC"][2].get<double>();
-
-    m_cart_coord[0] = json["CART"][0].get<double>();
-    m_cart_coord[1] = json["CART"][1].get<double>();
-    m_cart_coord[2] = json["CART"][2].get<double>();
-
-
-    // mutable int basis_ind;
-    CASM::from_json(m_basis_ind, json["basis_ind"]);
-  }
-
-  //********************************************************************
-
-  jsonParser &to_json(const Coordinate &coord, jsonParser &json) {
-    return coord.to_json(json);
-  }
-
-  //********************************************************************
-
-  void from_json(Coordinate &coord, const jsonParser &json) {
-    coord.from_json(json);
-  }
 
   //********************************************************************
   // Applies symmetry to a coordinate.

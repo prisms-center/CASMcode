@@ -168,6 +168,11 @@ namespace CASM {
       return make_atom(atom_name, AtomPosition::sd_type{false, false, false});
     }
 
+    /// \brief Return an atomic Molecule with specified name
+    static Molecule make_unknown() {
+      return make_atom("UNKNOWN");
+    }
+
     /// \brief Return a vacancy Molecule
     static Molecule make_vacancy();
 
