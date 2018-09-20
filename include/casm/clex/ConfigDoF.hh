@@ -4,7 +4,7 @@
 #include <vector>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_Eigen.hh"
-
+#include "casm/clex/ConfigDoFValues.hh"
 namespace CASM {
 
 
@@ -28,25 +28,15 @@ namespace CASM {
 
   public:
 
-    // typedefs to provide flexibility if we eventually change to a Eigen::Matrix<3,Eigen::Dynamic>
-    typedef Eigen::MatrixXd displacement_matrix_t;
-
     // Can treat as a Eigen::VectorXd
-    typedef displacement_matrix_t::ColXpr displacement_t;
-    typedef displacement_matrix_t::ConstColXpr const_displacement_t;
-
-    /// fixes alignment of m_deformation
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    //typedef displacement_matrix_t::ColXpr displacement_t;
+    //typedef displacement_matrix_t::ConstColXpr const_displacement_t;
 
     /// Initialize with number of sites -- defaults to zero
     ConfigDoF(Index N = 0, double _tol = TOL);
 
     ///Initialize with explicit occupation
     ConfigDoF(const std::vector<int> &_occupation, double _tol = TOL);
-
-    ///Initialize with explicit properties
-    ConfigDoF(const std::vector<int> &_occupation, const Eigen::MatrixXd &_displacement, const Eigen::Matrix3d &_deformation, double _tol = TOL);
-
 
     Index size() const {
       return m_N;
@@ -88,64 +78,13 @@ namespace CASM {
     void clear_occupation();
 
 
-    // -- Displacement ------------------
+    bool has_global_dof(DoFKey const &_key);
+    void reset_global_dof(DoFKey const &_key);
+    void set_global_dof(DoFKey const &_key, Eigen::Ref<const Eigen::VectorXd> const &_val);
 
-    displacement_t disp(Index i) {
-      return m_displacement.col(i);
-    };
-
-    const_displacement_t disp(Index i) const {
-      return m_displacement.col(i);
-    };
-
-    /// set_displacement ensures that ConfigDoF::size() is compatible with
-    /// _displacement.cols() (i.e., number of sites)
-    /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _displacement.cols()
-    void set_displacement(const displacement_matrix_t &_displacement);
-
-    displacement_matrix_t &displacement() {
-      return m_displacement;
-    };
-
-    const displacement_matrix_t &displacement() const {
-      return m_displacement;
-    };
-
-    bool has_displacement() const {
-      return size() != 0 && displacement().cols() == size();
-    }
-
-    void clear_displacement();
-
-
-    // -- Deformation ------------------
-
-    /// set_deformation sets ConfigDoF::has_deformation() to true
-    void set_deformation(const Eigen::Matrix3d &_deformation);
-
-    Eigen::Matrix3d &deformation() {
-      return m_deformation;
-    }
-
-    const Eigen::Matrix3d &deformation() const {
-      return m_deformation;
-    }
-
-    const double &F(Index i, Index j) const {
-      return m_deformation(i, j);
-    }
-
-    double &F(Index i, Index j) {
-      assert(has_deformation() && "Non-const method ConfigDoF::F() should only be called after ConfigDoF::set_deformation()!!!");
-      return m_deformation(i, j);
-    }
-
-    bool has_deformation() const {
-      return m_has_deformation;
-    }
-
-    void clear_deformation();
-
+    bool has_local_dof(DoFKey const &_key);
+    void reset_local_dof(DoFKey const &_key);
+    void set_local_dof(DoFKey const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val);
 
     ConfigDoF &apply_sym(const PermuteIterator &it);
 
@@ -178,15 +117,9 @@ namespace CASM {
     ///
     std::vector<int> m_occupation;
 
-    /// A VectorXd for each site in the Configuration to describe displacements condensed in matrix form  -- This a 3xN matrix whose columns are the displacement of
-    /// each of the N sites of the configuration
-    displacement_matrix_t m_displacement;
+    std::vector<GlobalContinuousConfigDoFValues> m_global_vals;
 
-    ///Describes possible strains that may have been applied to the Configuration -- This is the matrix that relates the reference lattice vectors
-    ///to the deformed lattice vectors via L_deformed = m_deformation * L_reference -- (L is a 3x3 matrix whose columns are the lattice vectors)
-    Eigen::Matrix3d m_deformation;
-
-    bool m_has_deformation;
+    std::vector<LocalContinuousConfigDoFValues> m_local_vals;
 
     /// Tolerance used for transformation to canonical form -- used also for comparisons, since
     /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form

@@ -59,6 +59,42 @@ namespace CASM {
 
   };
 
+  /// Data structure holding a potential mapping, which consists of deformation, occupation array, and displacement field
+  struct MappedConfig {
+    // typedefs to provide flexibility if we eventually change to a Eigen::Matrix<3,Eigen::Dynamic>
+    typedef Eigen::MatrixXd DisplacementMatrix;
+
+    // Can treat as a Eigen::VectorXd
+    typedef DisplacementMatrix::ColXpr Displacement;
+    typedef DisplacementMatrix::ConstColXpr ConstDisplacement;
+
+    MappedConfig() {
+      deformation.setIdentity();
+    }
+
+    MappedConfig(Index Nsites) :
+      deformation(Eigen::Matrix3d::Identity()),
+      occupation(Nsites, 0),
+      displacement(Eigen::MatrixXd::Zero(3, Nsites)) {}
+
+    void clear() {
+      throw std::runtime_error("MappedConfig::clear() not implemented");
+    }
+
+    ConfigDoF to_configdof() const;
+
+    Displacement disp(Index i) {
+      return displacement.col(i);
+    }
+
+    ConstDisplacement disp(Index i) const {
+      return displacement.col(i);
+    }
+
+    Eigen::Matrix3d deformation;
+    std::vector<int> occupation;
+    Eigen::MatrixXd displacement;
+  };
 
   /// A class for mapping an arbitrary crystal structure as a configuration of a crystal template
   /// as described by a PrimClex.  ConfigMapper manages options for the mapping algorithm and mapping cost function
@@ -183,17 +219,17 @@ namespace CASM {
     ConfigMapperResult import_structure(const BasicStructure<Site> &_struc) const;
 
 
-    ///\brief Low-level routine to map a structure onto a ConfigDof
-    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\brief Low-level routine to map a structure onto a MappedConfig
+    ///\param mapped_config[out] MappedConfig that is result of mapping procedure
     ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
     bool struc_to_configdof(const BasicStructure<Site> &_struc,
-                            ConfigDoF &mapped_configdof,
+                            MappedConfig &mapped_config,
                             Lattice &mapped_lat) const;
 
   private:
 
     ///\brief Low-level routine to map a structure onto a ConfigDof
-    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\param mapped_config[out] MappedConfig that is result of mapping procedure
     ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
     ///\param best_assignment[out]
     ///\parblock
@@ -202,7 +238,7 @@ namespace CASM {
     ///\endparblock
     ///\param best_cost[in] optional parameter. Method will return false of no mapping is found better than 'best_cost'
     bool struc_to_configdof(const BasicStructure<Site> &_struc,
-                            ConfigDoF &mapped_configdof,
+                            MappedConfig &mapped_config,
                             Lattice &mapped_lat,
                             std::vector<Index> &best_assignment,
                             Eigen::Matrix3d &cart_op,
@@ -210,7 +246,7 @@ namespace CASM {
 
 
     ///\brief Low-level routine to map a structure onto a ConfigDof if it is known to be ideal
-    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\param mapped_config[out] MappedConfig that is result of mapping procedure
     ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
     ///\param best_assignment[out]
     ///\parblock
@@ -218,14 +254,14 @@ namespace CASM {
     ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
     ///\endparblock
     bool ideal_struc_to_configdof(const BasicStructure<Site> &struc,
-                                  ConfigDoF &mapped_config_dof,
+                                  MappedConfig &mapped_config,
                                   Lattice &mapped_lat,
                                   std::vector<Index> &best_assignment,
                                   Eigen::Matrix3d &cart_op) const;
 
 
     ///\brief Low-level routine to map a structure onto a ConfigDof. Does not assume structure is ideal
-    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\param mapped_config[out] MappedConfig that is result of mapping procedure
     ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
     ///\param best_assignment[out]
     ///\parblock
@@ -234,7 +270,7 @@ namespace CASM {
     ///\endparblock
     ///\param best_cost[in] optional parameter. Method will return false of no mapping is found better than 'best_cost'
     bool deformed_struc_to_configdof(const BasicStructure<Site> &_struc,
-                                     ConfigDoF &mapped_config_dof,
+                                     MappedConfig &mapped_config,
                                      Lattice &mapped_lat,
                                      std::vector<Index> &best_assignment,
                                      Eigen::Matrix3d &cart_op,
@@ -244,7 +280,7 @@ namespace CASM {
     ///       Will only identify mappings better than best_cost, and best_cost is updated to reflect cost of best mapping identified
     ///\param imposed_lat[in] Supercell Lattice onto which struc will be mapped
     ///\param best_cost Imposes an upper bound on cost of any mapping considered, and is updated to reflect best mapping encountered
-    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\param mapped_config[out] MappedConfig that is result of mapping procedure
     ///\param best_assignment[out]
     ///\parblock
     ///                   populated by the permutation of sites in the imported structure
@@ -253,7 +289,7 @@ namespace CASM {
     bool deformed_struc_to_configdof_of_lattice(const BasicStructure<Site> &struc,
                                                 const Lattice &imposed_lat,
                                                 double &best_cost,
-                                                ConfigDoF &mapped_configdof,
+                                                MappedConfig &mapped_config,
                                                 Lattice &mapped_lat,
                                                 std::vector<Index> &best_assignment,
                                                 Eigen::Matrix3d &cart_op) const;
@@ -305,7 +341,7 @@ namespace CASM {
 
     bool struc_to_configdof(const Supercell &scel,
                             BasicStructure<Site> rstruc,
-                            ConfigDoF &config_dof,
+                            MappedConfig &mapped_config,
                             std::vector<Index> &best_assignment,
                             const bool translate_flag,
                             const double _tol);
@@ -314,23 +350,23 @@ namespace CASM {
     bool preconditioned_struc_to_configdof(const Supercell &scel,
                                            const BasicStructure<Site> &rstruc,
                                            const Eigen::Matrix3d &deformation,
-                                           ConfigDoF &config_dof,
+                                           MappedConfig &mapped_config,
                                            std::vector<Index> &best_assignment,
                                            const bool translate_flag,
                                            const double _tol);
 
     bool struc_to_configdof(const Configuration &config,
                             BasicStructure<Site> rstruc,
-                            ConfigDoF &config_dof,
+                            MappedConfig &mapped_config,
                             std::vector<Index> &best_assignment,
                             const bool translate_flag,
                             const double _tol);
 
-    /// Same as struc_to_configdof, except 'rstruc' is de-rotated and de-strained. Any deformation is instead specified by 'deformation'
+    /// Same as struc_to_mapped_config, except 'rstruc' is de-rotated and de-strained. Any deformation is instead specified by 'deformation'
     bool preconditioned_struc_to_configdof(const Configuration &config,
                                            const BasicStructure<Site> &rstruc,
                                            const Eigen::Matrix3d &deformation,
-                                           ConfigDoF &config_dof,
+                                           MappedConfig &mapped_config,
                                            std::vector<Index> &best_assignment,
                                            const bool translate_flag,
                                            const double _tol);
@@ -339,13 +375,13 @@ namespace CASM {
   }
 
   namespace ConfigMapping {
-    /// \brief Calculate the strain cost function of a ConfigDoF using LatticeMap::calc_strain_cost()
+    /// \brief Calculate the strain cost function of a MappedConfig using LatticeMap::calc_strain_cost()
     /// \param Nsites number of atoms in the relaxed structure, for proper normalization
-    double strain_cost(const Lattice &relaxed_lat, const ConfigDoF &_dof, Index Nsites);
+    double strain_cost(const Lattice &relaxed_lat, const MappedConfig &mapped_config, Index Nsites);
 
-    /// \brief Calculate the basis cost function of a ConfigDoF as the mean-square displacement of its atoms
+    /// \brief Calculate the basis cost function of a MappedConfig as the mean-square displacement of its atoms
     /// \param Nsites number of atoms in the relaxed structure, for proper normalization
-    double basis_cost(const ConfigDoF &_dof, Index Nsites);
+    double basis_cost(const MappedConfig &mapped_config, Index Nsites);
 
 
     Lattice find_nearest_super_lattice(const Lattice &prim_lat,

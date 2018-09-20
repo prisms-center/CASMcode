@@ -4,10 +4,10 @@
 #include "casm/basis_set/DoFTraits.hh"
 namespace CASM {
   namespace DoF_impl {
-    class MagSpinDoFTraits : public Traits {
+    class MagSpinDoFTraits : public DoFType::Traits {
     public:
       MagSpinDoFTraits():
-        Traits("magspin", {
+        DoFType::Traits("magspin", {
         "sx", "sy", "sz"
       },
       CONTINUOUS,
@@ -83,7 +83,7 @@ namespace CASM {
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                  jsonParser const &_bspecs) const override;
     protected:
-      BasicTraits *_clone() const override;
+      DoFType::BasicTraits *_clone() const override;
     };
 
     namespace DoFType {

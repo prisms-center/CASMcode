@@ -4,13 +4,13 @@
 #include "casm/basis_set/DoFTraits.hh"
 namespace CASM {
   namespace DoF_impl {
-    class StrainDoFTraits : public Traits {
+    class StrainDoFTraits : public DoFType::Traits {
     public:
       StrainDoFTraits(std::string _metric) :
-        Traits(_metric + "strain",
-               std::vector<std::string>(6, "e"),
-               CONTINUOUS,
-               GLOBAL),
+        DoFType::Traits(_metric + "strain",
+                        std::vector<std::string>(6, "e"),
+                        CONTINUOUS,
+                        GLOBAL),
         m_metric(_metric) {
       }
 
@@ -82,7 +82,7 @@ namespace CASM {
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                  jsonParser const &_bspecs) const override;
     protected:
-      BasicTraits *_clone() const override {
+      DoFType::BasicTraits *_clone() const override {
         new StrainDoFTraits(*this);
       }
 

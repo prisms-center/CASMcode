@@ -34,9 +34,22 @@ namespace CASM {
     }
 
     static const std::string enumerator_name;
+
     static std::string interface_help();
+
     static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
+    static int run(PrimClex const &_primclex,
+                   Configuration const &_config,
+                   Eigen::Ref<const Eigen::MatrixXd> const &_axes,
+                   Eigen::Ref<const Eigen::VectorXd> const &min_val,
+                   Eigen::Ref<const Eigen::VectorXd> const &max_val,
+                   Eigen::Ref<const Eigen::VectorXd> const &inc_val,
+                   bool sym_axes,
+                   bool trim_corners,
+                   bool analysis,
+                   std::vector<std::string> const &_filter_expr,
+                   bool dry_run);
   private:
 
     /// Implements increment over all strain states

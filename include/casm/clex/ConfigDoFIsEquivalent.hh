@@ -223,7 +223,7 @@ namespace CASM {
       }
     };
 
-
+    /*
     /// Compare displacement DoF
     class Displacement : public FloatIsEquivalent {
 
@@ -529,7 +529,7 @@ namespace CASM {
       mutable Index m_fg_index_B;
       mutable Eigen::MatrixXd m_def_tensor_B;
     };
-
+    */
   }// end namespace DoF
 
 

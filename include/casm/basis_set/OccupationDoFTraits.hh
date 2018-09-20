@@ -4,10 +4,10 @@
 #include "casm/basis_set/DoFTraits.hh"
 namespace CASM {
   namespace DoF_impl {
-    class OccupationDoFTraits : public Traits {
+    class OccupationDoFTraits : public DoFType::Traits {
     public:
       OccupationDoFTraits():
-        Traits("occ",
+        DoFType::Traits("occ",
       {},
       DISCRETE,
       LOCAL) {
@@ -89,7 +89,7 @@ namespace CASM {
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                  jsonParser const &_bspecs) const override;
     protected:
-      BasicTraits *_clone() const override;
+      DoFType::BasicTraits *_clone() const override;
     };
 
     namespace DoFType {

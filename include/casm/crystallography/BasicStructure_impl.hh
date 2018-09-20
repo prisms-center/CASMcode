@@ -80,6 +80,18 @@ namespace CASM {
     }
     return std::vector<std::string>(tresult.begin(), tresult.end());
   }
+  //************************************************************
+
+  template<typename CoordType>
+  Index BasicStructure<CoordType>::local_dof_dim(std::string const &_name) const {
+    Index result = 0;
+    for(CoordType const &site : basis()) {
+      if(site.has_dof(_name))
+        result = max(result, site.dof(_name).size());
+    }
+    return result;
+
+  }
 
   //************************************************************
 
@@ -1073,6 +1085,28 @@ namespace CASM {
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json) {
     basic.from_json(json);
   }
+
+  //***********************************************************
+
+  template<typename CoordType>
+  std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc) {
+    return symop_site_map(_op, _struc, _struc.lattice().tol());
+  }
+
+  //***********************************************************
+
+  template<typename CoordType>
+  std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol) {
+    std::vector<UnitCellCoord> result;
+    // Determine how basis sites transform from the origin unit cell
+    for(int b = 0; b < _struc.basis().size(); b++) {
+      result.push_back(UnitCellCoord(_struc, CASM::copy_apply(_op, _struc.basis()[b]), _tol));
+    }
+    return result;
+  }
+
+  //***********************************************************
+
 
 }
 

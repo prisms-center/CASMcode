@@ -36,18 +36,18 @@ namespace CASM {
       Configuration from_config = configs.first;
       Configuration to_config = configs.second;
       DiffusionTransformation diff_trans  = diff_trans_config.diff_trans();
-      if(!from_config.has_displacement()) {
-        from_config.init_displacement();
-      }
-      if(!from_config.has_deformation()) {
-        from_config.init_deformation();
-      }
-      if(!to_config.has_displacement()) {
-        to_config.init_displacement();
-      }
-      if(!to_config.has_deformation()) {
-        to_config.init_deformation();
-      }
+      //if(!from_config.has_displacement()) {
+      //from_config.init_displacement();
+      //}
+      //if(!from_config.has_deformation()) {
+      //from_config.init_deformation();
+      //}
+      //if(!to_config.has_displacement()) {
+      //to_config.init_displacement();
+      //}
+      //if(!to_config.has_deformation()) {
+      //to_config.init_deformation();
+      //}
       Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
       m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
                                                                             to_config_mutated,
@@ -142,14 +142,14 @@ namespace CASM {
 
         result.set_occ(k, traj.from.occ);
 
-        Eigen::Vector3d displacement = config.disp(l);
+        //Eigen::Vector3d displacement = config.disp(l);
 
         const Eigen::Vector3d from_pos = traj.from.uccoord.coordinate().const_cart();
         const Eigen::Vector3d to_pos = traj.to.uccoord.coordinate().const_cart();
         Eigen::Vector3d ideal_pos_inc = to_pos - from_pos;
-        Eigen::Vector3d final_disp = displacement + ideal_pos_inc;
+        //Eigen::Vector3d final_disp = displacement + ideal_pos_inc;
 
-        result.set_disp(k, final_disp);
+        //result.set_disp(k, final_disp);
 
       }
       return result;
@@ -157,8 +157,8 @@ namespace CASM {
 
     const Configuration *DiffTransConfigInterpolation::at_step(step_type n) {
       Configuration result = (*m_config_enum_interpol)[n];
-      m_current.set_displacement(result.displacement());
-      m_current.set_deformation(result.deformation());
+      //m_current.set_displacement(result.displacement());
+      //m_current.set_deformation(result.deformation());
       return &m_current;
     }
 
@@ -181,9 +181,9 @@ namespace CASM {
     void apply_deformation(const PrimClex primclex, std::string output_configname, std::string output_path,
                            std::string input_configname, std::string calctype) {
       Configuration input_config = copy_apply_properties(make_configuration(primclex, input_configname), calctype);
-      Eigen::Matrix3d deformation = input_config.deformation();
+      //Eigen::Matrix3d deformation = input_config.deformation();
       Configuration final_config = make_configuration(primclex, output_configname);
-      final_config.set_deformation(deformation);
+      //final_config.set_deformation(deformation);
       fs::ofstream file(output_path);
       final_config.write_pos(file);
       return;

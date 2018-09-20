@@ -43,7 +43,8 @@ namespace CASM {
     Configuration m_initial;
     Configuration m_final;
 
-    typename value_type::displacement_matrix_t m_displacement_inc;
+    Eigen::MatrixXd m_displacement_inc;
+
     Eigen::Matrix3d m_deformation_inc;
 
   };

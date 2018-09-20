@@ -259,10 +259,10 @@ namespace CASM {
     };
     m_has_occ = std::any_of(m_sub_config.begin(), m_sub_config.end(), has_occ);
 
-    auto has_disp = [](const Configuration & c) {
-      return c.has_displacement();
-    };
-    m_has_disp = std::any_of(m_sub_config.begin(), m_sub_config.end(), has_disp);
+    //auto has_disp = [](const Configuration & c) {
+    //return c.has_displacement();
+    //};
+    //m_has_disp = std::any_of(m_sub_config.begin(), m_sub_config.end(), has_disp);
 
     _initialize(&(*m_current));
     _fill(counter(), *m_current);
@@ -317,9 +317,9 @@ namespace CASM {
       m_current->init_occupation();
     }
 
-    if(m_has_disp) {
-      m_current->init_displacement();
-    }
+    //if(m_has_disp) {
+    //m_current->init_displacement();
+    //}
 
     ConfigDoF &to = config.configdof();
     for(Index i = 0; i < prim_grid().size(); ++i) {
@@ -331,9 +331,9 @@ namespace CASM {
           to.occ(m_index_map[i][j]) = from.occ(j);
         }
 
-        if(from.has_displacement()) {
-          to.disp(m_index_map[i][j]) = from.disp(j);
-        }
+        //if(from.has_displacement()) {
+        //to.disp(m_index_map[i][j]) = from.disp(j);
+        //}
       }
     }
   }

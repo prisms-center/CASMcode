@@ -53,8 +53,7 @@ namespace CASM {
     typedef Index size_type;
 
     /// Construct SymBasisPermute
-    template<typename StrucType>
-    SymBasisPermute(const SymOp &op, const StrucType &struc, double tol);
+    SymBasisPermute(SymOp const &_op, Lattice const &_lat,  std::vector<UnitCellCoord> const &_ucc_permute);
 
     /// Return pointer to a copy of this SymBasisPermute
     SymOpRepresentation *copy() const override {

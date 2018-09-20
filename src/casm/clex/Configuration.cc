@@ -122,56 +122,6 @@ namespace CASM {
     m_configdof.clear_occupation();
   }
 
-  //*********************************************************************************
-  void Configuration::init_displacement() {
-    _modify_dof();
-    set_displacement(displacement_matrix_t::Zero(3, this->size()));
-  }
-
-  //*********************************************************************************
-  void Configuration::set_displacement(const displacement_matrix_t &new_displacement) {
-    _modify_dof();
-    if(new_displacement.cols() != this->size()) {
-      default_err_log().error("Configuration::set_displacement size error");
-      default_err_log() << "new_displacement.cols(): " << new_displacement.cols() << std::endl;
-      default_err_log() << "Configuration size(): " << this->size() << std::endl;
-      throw std::runtime_error("Error: Configuration::set_displacement with matrix of the wrong size");
-    }
-    m_configdof.set_displacement(new_displacement);
-  }
-
-  //*********************************************************************************
-  void Configuration::set_disp(Index site_l, const Eigen::VectorXd &_disp) {
-    _modify_dof();
-    m_configdof.disp(site_l) = _disp;
-  }
-
-  //*********************************************************************************
-  void Configuration::clear_displacement() {
-    _modify_dof();
-    m_configdof.clear_displacement();
-  }
-
-  //*********************************************************************************
-  void Configuration::init_deformation() {
-    _modify_dof();
-    set_deformation(Eigen::Matrix3d::Identity());
-  }
-
-  //*********************************************************************************
-
-  void Configuration::set_deformation(const Eigen::Matrix3d &new_deformation) {
-    _modify_dof();
-    m_configdof.set_deformation(new_deformation);
-  }
-
-  //*********************************************************************************
-
-  void Configuration::clear_deformation() {
-    _modify_dof();
-    m_configdof.clear_deformation();
-  }
-
   //*******************************************************************************
 
   /// \brief Check if this is a primitive Configuration
@@ -936,18 +886,18 @@ namespace CASM {
     Configuration sub_config {sub_scel};
 
     // copy global dof
-    if(super_config.has_deformation()) {
+    /*if(super_config.has_deformation()) {
       sub_config.configdof().set_deformation(super_config.deformation());
-    }
+      }*/
 
     // initialize site dof
     if(super_config.has_occupation()) {
       sub_config.configdof().set_occupation(std::vector<int>(sub_config.size(), 0));
     }
-    if(super_config.has_displacement()) {
-      sub_config.configdof().set_displacement(
-        ConfigDoF::displacement_matrix_t::Zero(3, sub_config.size()));
-    }
+    //if(super_config.has_displacement()) {
+    //sub_config.configdof().set_displacement(
+    //  ConfigDoF::displacement_matrix_t::Zero(3, sub_config.size()));
+    //  }
 
     // copy site dof
     for(Index i = 0; i < sub_config.size(); i++) {
@@ -966,9 +916,9 @@ namespace CASM {
       }
 
       // displacement
-      if(super_config.has_displacement()) {
-        sub_config.configdof().disp(i) = super_config.disp(site_index);
-      }
+      //if(super_config.has_displacement()) {
+      //sub_config.configdof().disp(i) = super_config.disp(site_index);
+      //}
 
     }
 
@@ -1119,8 +1069,8 @@ namespace CASM {
   /// \param config must have a canonical name
   Configuration &apply_properties(Configuration &config, std::string calctype) {
     jsonParser calc_props = config.calc_properties(calctype);
-    config.init_deformation();
-    config.init_displacement();
+    //config.init_deformation();
+    //config.init_displacement();
 
     if(calc_props.contains("relaxation_displacement")) {
       Eigen::MatrixXd disp;
@@ -1403,24 +1353,22 @@ namespace CASM {
     }
 
     // ------- global dof ----------
-    if(motif.has_deformation()) {
-      result->set_deformation(m_op->matrix()*motif.deformation()*m_op->matrix().transpose());
-    }
+    //if(motif.has_deformation()) {
+    //result->set_deformation(m_op->matrix()*motif.deformation()*m_op->matrix().transpose());
+    //}
 
     // ------- site dof ----------
     std::vector<int> tscel_occ;
-    ConfigDoF::displacement_matrix_t tscel_disp, motif_new_disp;
+    //ConfigDoF::displacement_matrix_t tscel_disp, motif_new_disp;
 
     // apply fg op
     if(motif.has_occupation()) {
       result->set_occupation(std::vector<int>(m_scel->num_sites(), 0));
     }
-    if(motif.has_displacement()) {
-      result->init_displacement();
-
-      motif_new_disp = m_op->matrix() * motif.displacement();
-
-    }
+    //if(motif.has_displacement()) {
+    //result->init_displacement();
+    //motif_new_disp = m_op->matrix() * motif.displacement();
+    //}
 
     // copy transformed dof, as many times as necessary to fill the supercell
     for(Index s = 0; s < m_index_table.size(); ++s) {
@@ -1430,9 +1378,9 @@ namespace CASM {
         if(motif.has_occupation()) {
           result->configdof().occ(scel_s) = motif.occ(s);
         }
-        if(motif.has_displacement()) {
-          result->configdof().disp(scel_s) = motif_new_disp.col(s);
-        }
+        //if(motif.has_displacement()) {
+        //result->configdof().disp(scel_s) = motif_new_disp.col(s);
+        //}
       }
     }
     return *result;
@@ -1503,18 +1451,18 @@ namespace CASM {
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c) {
     sout << c.name() << "\n";
-    if(c.has_deformation()) {
-      sout << "Deformation:\n" << c.deformation() << std::endl;
-    }
+    //if(c.has_deformation()) {
+    //sout << "Deformation:\n" << c.deformation() << std::endl;
+    //}
 
     for(Index i = 0; i < c.size(); ++i) {
       sout << "Linear index: " << i << "  UnitCellCoord: " << c.uccoord(i) << std::endl;
       if(c.has_occupation()) {
         sout << "  Occupation: " << c.occ(i) << "  (" << c.mol(i).name() << ")\n";
       }
-      if(c.has_displacement()) {
-        sout << "  Displacement: " << c.disp(i).transpose() << "\n";
-      }
+      //if(c.has_displacement()) {
+      //sout << "  Displacement: " << c.disp(i).transpose() << "\n";
+      //}
     }
 
     return sout;

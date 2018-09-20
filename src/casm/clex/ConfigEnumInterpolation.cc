@@ -49,8 +49,9 @@ namespace CASM {
     // interpolated configurations must be compatible in the following ways:
     if(m_initial.size() != m_final.size()
        || m_initial.occupation() != m_final.occupation()
-       || m_initial.has_displacement() != m_final.has_displacement()
-       || m_initial.has_deformation() != m_final.has_deformation()) {
+       //|| m_initial.has_displacement() != m_final.has_displacement()
+       //|| m_initial.has_deformation() != m_final.has_deformation()
+      ) {
 
       std::string s = "Error: " + this->name() + " attempting to"
                       "interpolate between incompatible Configurations";
@@ -58,13 +59,13 @@ namespace CASM {
       throw std::runtime_error(s);
     }
 
-    if(m_initial.has_displacement()) {
-      m_displacement_inc = (m_final.displacement() - m_initial.displacement()) / ((double) size() - 1);
-    }
+    //if(m_initial.has_displacement()) {
+    //m_displacement_inc = (m_final.displacement() - m_initial.displacement()) / ((double) size() - 1);
+    //}
 
-    if(m_initial.has_deformation()) {
-      m_deformation_inc = (m_final.deformation() - m_initial.deformation()) / ((double) size() - 1);
-    }
+    //if(m_initial.has_deformation()) {
+    //m_deformation_inc = (m_final.deformation() - m_initial.deformation()) / ((double) size() - 1);
+    //}
 
     this->_initialize(&m_current);
     m_current.set_source(this->source(step()));
@@ -72,11 +73,11 @@ namespace CASM {
 
   /// Set m_current to correct value at specified step and return a reference to it
   const Configuration *ConfigEnumInterpolation::at_step(step_type n) {
-    if(m_current.has_displacement())
-      m_current.set_displacement(m_initial.displacement() + ((double) n)*m_displacement_inc);
+    //if(m_current.has_displacement())
+    //m_current.set_displacement(m_initial.displacement() + ((double) n)*m_displacement_inc);
 
-    if(m_current.has_deformation())
-      m_current.set_deformation(m_initial.deformation() + ((double) n)*m_deformation_inc);
+    //if(m_current.has_deformation())
+    //m_current.set_deformation(m_initial.deformation() + ((double) n)*m_deformation_inc);
 
     m_current.set_source(this->source(step()));
     return &m_current;

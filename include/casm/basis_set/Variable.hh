@@ -70,8 +70,8 @@ namespace CASM {
       return m_dof_set;
     }
 
-    SymGroupRepID sym_rep_ID() const {
-      return dof_set().sym_rep_ID();
+    SymGroupRepID symrep_ID() const {
+      return dof_set().symrep_ID();
     }
 
     const Eigen::VectorXd &coeffs() const {

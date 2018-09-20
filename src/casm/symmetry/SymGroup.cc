@@ -353,7 +353,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  SymGroupRepID MasterSymGroup::add_empty_representation() const {
+  SymGroupRepID MasterSymGroup::allocate_representation() const {
     SymGroupRepID new_ID(group_index(), m_rep_array.size());
     m_rep_array.push_back(new SymGroupRep(*this, new_ID));
     return new_ID;
@@ -3099,14 +3099,14 @@ namespace CASM {
   }
   //*******************************************************************************************
 
-  SymGroupRepID SymGroup::add_empty_representation() const {
+  SymGroupRepID SymGroup::allocate_representation() const {
     if(!size() || !at(0).has_valid_master()) {
-      default_err_log() << "CRITICAL ERROR: In SymGroup::add_empty_representation(), SymGroup is improperly initialized.\n"
+      default_err_log() << "CRITICAL ERROR: In SymGroup::allocate_representation(), SymGroup is improperly initialized.\n"
                         << "                Exiting...\n";
       exit(1);
     }
 
-    return at(0).master_group().add_empty_representation();
+    return at(0).master_group().allocate_representation();
   }
 
   //*******************************************************************************************

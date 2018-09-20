@@ -4,15 +4,17 @@
 #include <vector>
 #include "casm/basis_set/DoF.hh"
 
+
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   template<typename T> struct jsonConstructor;
 
   class SymOp;
+  class SymGroup;
 
   class DoFSet {
   public:
-    using BasicTraits = DoF_impl::BasicTraits;
+    using BasicTraits = DoFType::BasicTraits;
 
     using TypeFunc =  std::function<notstd::cloneable_ptr<BasicTraits>()>;
 
@@ -30,6 +32,8 @@ namespace CASM {
     std::string const &type_name() const {
       return m_type_name;
     }
+
+    DoFType::Traits const &traits() const;
 
     void set_ID(Index _ID) {
       for(auto &c : m_components)
@@ -69,9 +73,11 @@ namespace CASM {
       return m_basis;
     }
 
-    SymGroupRepID const &sym_rep_ID() const {
-      return m_col_rep_ID;
+    SymGroupRepID const &symrep_ID() const {
+      return m_rep_ID;
     }
+
+    void allocate_symrep(SymGroup const &_group) const;
 
     bool identical(DoFSet const &rhs) const;
 
@@ -91,8 +97,7 @@ namespace CASM {
     Eigen::MatrixXd m_basis;
     std::set<std::string> m_excluded_occs;
 
-    mutable SymGroupRepID m_row_rep_ID;
-    mutable SymGroupRepID m_col_rep_ID;
+    mutable SymGroupRepID m_rep_ID;
   };
 
   //********************************************************************

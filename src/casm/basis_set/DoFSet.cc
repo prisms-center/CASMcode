@@ -18,6 +18,20 @@ namespace CASM {
 
   //********************************************************************
 
+  DoFType::Traits const &traits() const {
+    return DoFType::traits(type_name());
+  }
+
+  //********************************************************************
+  void DoFSet::allocate_symrep(SymGroup const &_group) const {
+    if(!m_rep_ID.empty())
+      throw std::runtime_error("In DoFSet::allocate_symrep(), representation has already been allocated for this symrep.");
+
+    m_rep_ID = _group.allocate_representation();
+
+  }
+  //********************************************************************
+
   bool DoFSet::identical(DoFSet const &rhs)const {
     if(!std::equal(begin(), end(), rhs.begin(), compare_no_value)) {
       return false;

@@ -4,10 +4,10 @@
 #include "casm/basis_set/DoFTraits.hh"
 namespace CASM {
   namespace DoF_impl {
-    class DisplacementDoFTraits : public Traits {
+    class DisplacementDoFTraits : public DoFType::Traits {
     public:
       DisplacementDoFTraits():
-        Traits("disp", {
+        DoFType::Traits("disp", {
         "x", "y", "z"
       },
       CONTINUOUS,
@@ -28,7 +28,7 @@ namespace CASM {
       SymGroupRepID generate_symrep(MasterSymGroup const &_group,
                                     Structure const &_prim,
                                     Index _nb) const override {
-        SymGroupRepID resultID=_group.add_empty_representation();
+        SymGroupRepID resultID=_group.allocate_representation();
         SymGroupRepHandle bprep(_group,_prim.basis_permutation_symrep_ID());
         for(Index i=0; i<_group.size(); i++){
           Index new_b=bprep[i].get_ucc_permutation(_nb);
@@ -95,7 +95,7 @@ namespace CASM {
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                  jsonParser const &_bspecs) const override;
     protected:
-      BasicTraits *_clone() const override;
+      DoFType::BasicTraits *_clone() const override;
     };
 
     namespace DoFType {

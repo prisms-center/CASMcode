@@ -27,7 +27,9 @@ namespace CASM {
   class DoFSet;
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  namespace DoF_impl {
+  namespace DoFType {
+    class Traits;
+
     enum DOF_DOMAIN {DISCRETE, CONTINUOUS};
     enum DOF_MODE {LOCAL, GLOBAL};
 
@@ -146,7 +148,9 @@ namespace CASM {
     }
     //};
 
+  }
 
+  namespace DoF_impl {
     /// \brief A class to manage dynamic evaluation of BasisFunctions
 
     /// A RemoteHandle can be initialized with either a double or integer reference and then passed to a
@@ -238,7 +242,7 @@ namespace CASM {
   /// Optionally, the ID can be 'locked' which prevents it from being changed
   class DoF {
   public:
-    using BasicTraits = DoF_impl::BasicTraits;
+    using BasicTraits = DoFType::BasicTraits;
     using RemoteHandle = DoF_impl::RemoteHandle;
 
     /// DoFs are initialized using a TypeFunc

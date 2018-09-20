@@ -10,23 +10,16 @@ namespace CASM {
   // ---- SymBasisPermute Definitions --------------------
 
   /// Construct SymBasisPermute
-  template<typename StrucType>
-  SymBasisPermute::SymBasisPermute(const SymOp &op, const StrucType &struc, double tol) {
-    SymOp::matrix_type frac_op(cart2frac(op.matrix(), struc.lattice()));
-    if(!is_integer(frac_op, tol)) {
+  SymBasisPermute::SymBasisPermute(SymOp const &_op, Lattice const &_lat,  std::vector<UnitCellCoord> const &_ucc_permute) :
+    m_point_mat(lround(cart2frac(_op.matrix(), _lat))),
+    m_ucc_permute(_ucc_permute) {
+
+    if(!is_integer(cart2frac(_op.matrix(), _lat), _lat.tol())) {
       throw std::runtime_error(
         std::string("Error in 'SymBasisPermute(const SymOp& op, const StrucType& struc, double tol)'\n") +
         "  Could not get integer point transformation matrix.");
     }
-
-    m_point_mat = lround(frac_op);
-
-    // Determine how basis sites transform from the origin unit cell
-    for(int b = 0; b < struc.basis().size(); b++) {
-      m_ucc_permute.push_back(UnitCellCoord(struc, CASM::copy_apply(op, struc.basis()[b]), tol));
-    }
   }
 
-  template SymBasisPermute::SymBasisPermute(const SymOp &op, const Structure &struc, double tol);
 }
 

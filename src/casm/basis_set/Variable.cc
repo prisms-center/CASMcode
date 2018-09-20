@@ -189,7 +189,7 @@ namespace CASM {
     m_formula.clear();
     refresh_ID();
     Eigen::MatrixXd const *tmat;
-    tmat = op.get_matrix_rep(sym_rep_ID());
+    tmat = op.get_matrix_rep(symrep_ID());
     if(tmat) {
       m_coeffs = (*tmat) * m_coeffs;
     }

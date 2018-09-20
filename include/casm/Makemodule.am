@@ -149,6 +149,7 @@ casminclude_HEADERS = \
   include/casm/symmetry/PermuteIterator.hh\
   include/casm/symmetry/SymInfo.hh\
   include/casm/symmetry/SymGroupRep.hh\
+  include/casm/symmetry/SymRepTools.hh\
   include/casm/symmetry/OrbitGeneration.hh\
   include/casm/symmetry/ScelSubOrbits.hh\
   include/casm/symmetry/OrbitDecl.hh\
@@ -247,6 +248,7 @@ casminclude_HEADERS = \
   include/casm/clex/ClexBasis.hh\
   include/casm/clex/FilteredConfigIterator.hh\
   include/casm/clex/ConfigDoF.hh\
+  include/casm/clex/ConfigDoFValues.hh\
   include/casm/clex/ConfigDoFCompare.hh\
   include/casm/clex/HasPrimClex.hh\
   include/casm/clex/ScelEnum_impl.hh\

@@ -199,12 +199,12 @@ namespace CASM {
       ///
       Coordinate get_coord(const Configuration &config, Index i, const Lattice &deformed_lat) {
         Coordinate ref_coord = config.supercell().coord(i);
-        if(config.has_displacement()) {
-          ref_coord.cart() += config.disp(i);
-        }
-        if(config.has_deformation()) {
-          ref_coord.cart() = config.deformation() * ref_coord.const_cart();
-        }
+        //if(config.has_displacement()) {
+        //ref_coord.cart() += config.disp(i);
+        //}
+        //if(config.has_deformation()) {
+        //ref_coord.cart() = config.deformation() * ref_coord.const_cart();
+        //}
         Coordinate deformed_coord(ref_coord.const_cart(), deformed_lat, CART);
         deformed_coord.within();
         return deformed_coord;

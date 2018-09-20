@@ -108,8 +108,8 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("add", "Add two or more numbers",
     [](const std::vector<double> &vec)->double {
       return std::accumulate(vec.cbegin(),
-      vec.cend(),
-      0.0);
+                             vec.cend(),
+                             0.0);
     });
 
   }
@@ -138,8 +138,8 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("mult", "Multiply two or more numbers",
     [](const std::vector<double> &vec)->double {
       return std::accumulate(vec.cbegin(),
-      vec.cend(),
-      1.0,
+                             vec.cend(),
+                             1.0,
       [](double a, double b)->double{
         return a *b;
       });
@@ -162,6 +162,43 @@ namespace CASM {
 
   }
 
+  /// \brief Makes a DataFormatterOperator that returns the root-mean-square value of 0 or more elements
+  ///
+  /// \ingroup DataFormatterOperator
+  ///
+  template<typename DataObject>
+  DataFormatterOperator<double, double, DataObject> format_operator_rms() {
+    return DataFormatterOperator<double, double, DataObject>("rms", "Root mean square of 0 or more numerical values",
+    [](const std::vector<double> &vec)->double {
+      return sqrt(std::accumulate(vec.cbegin(),
+                                  vec.cend(),
+                                  0.0,
+      [](double a, double b)->double{
+        return a + b *b;
+      }));
+    });
+  }
+
+  /// \brief Makes a DataFormatterOperator that returns the root-mean-square value of 0 or more elements
+  ///
+  /// \ingroup DataFormatterOperator
+  ///
+  template<typename DataObject>
+  DataFormatterOperator<double, double, DataObject> format_operator_pnorm() {
+    return DataFormatterOperator<double, double, DataObject>("pnorm", "Vector p-norm of zero or more elements Ex: 'pnorm(p, elem1, elem2)' evaluates (elem1^p+elem2^p)^(1/p)",
+    [](const std::vector<double> &vec)->double {
+      if(vec.empty())
+        throw std::runtime_error("pnorm query operator must receive at least one value!");
+      double p = vec[0];
+      return pow(std::accumulate(++vec.cbegin(),
+                                 vec.cend(),
+                                 0.0,
+      [p](double a, double b)->double{
+        return a + pow(b, p);
+      }), (1 / p));
+    });
+  }
+
   /// \brief Makes a DataFormatterOperator that returns the maximum of two or more numbers
   ///
   /// \ingroup DataFormatterOperator
@@ -171,7 +208,7 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("max", "Max value of two or more numbers",
     [](const std::vector<double> &vec)->double {
       return (*std::max_element(vec.cbegin(),
-      vec.cend()));
+                                vec.cend()));
     });
   }
 
@@ -184,7 +221,7 @@ namespace CASM {
     return DataFormatterOperator<double, double, DataObject>("min", "Min value of two or more numbers",
     [](const std::vector<double> &vec)->double {
       return (*std::min_element(vec.cbegin(),
-      vec.cend()));
+                                vec.cend()));
     });
   }
 
@@ -318,8 +355,8 @@ namespace CASM {
     return DataFormatterOperator<bool, bool, DataObject>("and", "Boolean AND for sequence of boolean values",
     [](const std::vector<bool> &vec)->bool {
       return std::accumulate(vec.cbegin(),
-      vec.cend(),
-      true,
+                             vec.cend(),
+                             true,
       [](bool a, bool b)->bool{
         return a && b;
       });
@@ -336,8 +373,8 @@ namespace CASM {
     return DataFormatterOperator<bool, bool, DataObject>("or", "Boolean OR for sequence of boolean values",
     [](const std::vector<bool> &vec)->bool {
       return std::accumulate(vec.cbegin(),
-      vec.cend(),
-      false,
+                             vec.cend(),
+                             false,
       [](bool a, bool b)->bool{
         return a || b;
       });

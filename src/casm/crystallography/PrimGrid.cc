@@ -227,7 +227,7 @@ namespace CASM {
 
   SymGroupRepID PrimGrid::make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_ID)const {
 
-    SymGroupRepID perm_rep_ID = group.add_empty_representation();
+    SymGroupRepID perm_rep_ID = group.allocate_representation();
     PrimGrid::matrix_type mat_mnp;
     UnitCell mnp_shift;
     Index old_l, new_l;

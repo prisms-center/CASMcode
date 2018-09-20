@@ -15,19 +15,16 @@ namespace CASM {
   class PrimNeighborList;
   class Structure;
 
-  namespace DoF_impl {
-    class Traits;
-  }
 
   namespace DoFType {
-    DoF_impl::Traits const &traits(std::string const &dof_key);
+    class Traits;
 
-    DoF_impl::BasicTraits const &basic_traits(std::string const &dof_key);
+    Traits const &traits(std::string const &dof_key);
 
-    notstd::cloneable_ptr<typename DoF_impl::BasicTraits> occupation();
-  }
+    BasicTraits const &basic_traits(std::string const &dof_key);
 
-  namespace DoF_impl {
+    notstd::cloneable_ptr<BasicTraits> occupation();
+
     /// \brief Collection of all the traits specific to a DoF type
 
     class Traits : public BasicTraits {
@@ -130,19 +127,19 @@ namespace CASM {
 
     /// This will eventually be managed by ProjectSettings
     TraitsDictionary const &traits_dict();
-  }
 
 
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  namespace DoFType {
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
     inline
-    DoF_impl::Traits const &traits(std::string const &dof_key) {
-      return static_cast<DoF_impl::Traits const &>(DoF::traits(dof_key));
+    Traits const &traits(std::string const &dof_key) {
+      return static_cast<Traits const &>(DoF::traits(dof_key));
     }
 
     inline
-    DoF_impl::BasicTraits const &basic_traits(std::string const &dof_key) {
+    BasicTraits const &basic_traits(std::string const &dof_key) {
       return DoF::traits(dof_key);
     }
 

@@ -55,10 +55,6 @@ namespace CASM {
   class Configuration : public ConfigurationBase {
 
   public:
-    typedef ConfigDoF::displacement_matrix_t displacement_matrix_t;
-    typedef ConfigDoF::displacement_t displacement_t;
-    typedef ConfigDoF::const_displacement_t const_displacement_t;
-
     //********* CONSTRUCTORS *********
 
     Configuration() {};
@@ -214,112 +210,6 @@ namespace CASM {
     ///
     /// - This will invalidate the Configuration's id
     void clear_occupation();
-
-
-    // ----- Displacement ------------
-
-    /// \brief Set all occupant displacements to (0.,0.,0.)
-    ///
-    /// - This will invalidate the Configuration's id
-    void init_displacement();
-
-    /// \brief Set occupant displacements
-    ///
-    /// A displacement_t vector for each site in the Configuration to describe
-    /// displacements condensed in matrix form. This a 3xN matrix whose columns
-    /// are the displacement of each of the N sites of the configuration.
-    /// - Displacements are applied before strain.
-    /// - This will invalidate the Configuration's id
-    ///
-    /// \throws If \code _disp.cols() != this->size() \endcode
-    ///
-    void set_displacement(const displacement_matrix_t &_disp);
-
-    /// \brief Occupant displacements
-    ///
-    /// A displacement_t vector for each site in the Configuration to describe
-    /// displacements condensed in matrix form. This a 3xN matrix whose columns
-    /// are the displacement of each of the N sites of the configuration.
-    /// - Displacements are applied before strain.
-    ///
-    const displacement_matrix_t &displacement() const {
-      return configdof().displacement();
-    }
-
-    /// \brief Set occupant displacements
-    ///
-    /// - A displacement_t vector to describe displacement of the occupant on site l.
-    /// - Displacements are applied before strain.
-    /// - This will invalidate the Configuration's id
-    ///
-    void set_disp(Index site_l, const Eigen::VectorXd &_disp);
-
-    /// \brief Occupant displacement
-    ///
-    /// - A displacement_t vector describes displacement of the occupant on site l.
-    /// - Displacements are applied before strain.
-    ///
-    const_displacement_t disp(Index site_l) const {
-      return configdof().disp(site_l);
-    }
-
-    /// \brief True if Configuration has displacement DoF
-    bool has_displacement() const {
-      return configdof().has_displacement();
-    }
-
-    /// \brief Clear displacement
-    ///
-    /// - This will invalidate the Configuration's id
-    void clear_displacement();
-
-
-    // ----- Deformation ------------
-
-    /// \brief Set applied strain to Eigen::Matrix3d::Zero()
-    ///
-    /// - This will invalidate the Configuration's id
-    void init_deformation();
-
-    /// \brief Set applied strain
-    ///
-    /// Set strain applied applied to the Configuration.
-    /// This is the matrix that relates the reference lattice vectors to the
-    /// deformed lattice vectors via
-    /// \code
-    /// L_deformed = m_deformation * L_reference
-    /// \endcode
-    /// where L is a 3x3 matrix whose columns are the lattice vectors.
-    /// - Strain is applied after displacement.
-    /// - This will invalidate the Configuration's id
-    ///
-    void set_deformation(const Eigen::Matrix3d &_deformation);
-
-    /// \brief Applied strain
-    ///
-    /// Describes possible strains that may have been applied to the Configuration.
-    /// This is the matrix that relates the reference lattice vectors to the
-    /// deformed lattice vectors via
-    /// \code
-    /// L_deformed = m_deformation * L_reference
-    /// \endcode
-    /// where L is a 3x3 matrix whose columns are the lattice vectors.
-    ///
-    /// - Strain is applied after displacement.
-    ///
-    const Eigen::Matrix3d &deformation() const {
-      return configdof().deformation();
-    }
-
-    /// \brief True if Configuration has strain DoF
-    bool has_deformation() const {
-      return configdof().has_deformation();
-    }
-
-    /// \brief Clear applied strain
-    ///
-    /// - This will invalidate the Configuration's id
-    void clear_deformation();
 
 
     // ******** Comparisons, Symmetry, Crystallography  ******

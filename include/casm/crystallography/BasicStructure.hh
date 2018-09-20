@@ -98,6 +98,8 @@ namespace CASM {
 
     std::vector<std::string> local_dof_types() const;
 
+    Index local_dof_dim(std::string const &_name) const;
+
     std::vector<std::string> global_dof_types() const;
 
 
@@ -220,6 +222,12 @@ namespace CASM {
 
   template<typename CoordType>
   BasicStructure<CoordType> operator+(const BasicStructure<CoordType> &LHS, const Coordinate &RHS);
+
+  template<typename CoordType>
+  std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
+  std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol);
 
   template<typename CoordType>
   jsonParser &to_json(const BasicStructure<CoordType> &basic, jsonParser &json);

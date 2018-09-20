@@ -10,8 +10,10 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/basis_set/DoF.hh"
+#include "casm/basis_set/DoFTraits.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
+#include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/casm_io/Log.hh"
 
 
@@ -73,7 +75,7 @@ namespace CASM {
 
     SD_flag = RHS.SD_flag;
 
-    basis_perm_rep_ID = RHS.basis_perm_rep_ID; //this *should* work
+    m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
 
     m_factor_group = RHS.m_factor_group;
     m_factor_group.set_lattice(lattice());
@@ -118,10 +120,10 @@ namespace CASM {
   //***********************************************************
 
   SymGroupRepID Structure::basis_permutation_symrep_ID() const {
-    if(basis_perm_rep_ID.empty())
-      generate_basis_permutation_representation();
+    if(m_basis_perm_rep_ID.empty())
+      _generate_basis_symreps();
 
-    return basis_perm_rep_ID;
+    return m_basis_perm_rep_ID;
   }
 
   //************************************************************
@@ -580,45 +582,87 @@ namespace CASM {
     return;
   }
 
-
-  //***********************************************************
-
   //This function gets the permutation representation of the
   // factor group operations of the structure. It first applies
   // the factor group operation to the structure, and then tries
   // to map the new position of the basis atom to the various positions
   // before symmetry was applied. It only checks the positions after
   // it brings the basis within the crystal.
-
-  SymGroupRepID Structure::generate_basis_permutation_representation(bool verbose) const {
-
-    if(factor_group().size() <= 0 || !basis().size()) {
-      default_err_log() << "ERROR in BasicStructure::generate_basis_permutation_representation" << std::endl;
-      default_err_log() << "You have NOT generated the factor group, or something is very wrong with your structure. I'm quitting!" << std::endl;;
+  void Structure::_generate_basis_symreps(bool verbose) const {
+    std::string clr(100, ' ');
+    if(factor_group().size() <= 0) {
+      default_err_log() << "ERROR in generate_basis_permutation_representation" << std::endl;
+      default_err_log() << "Factor group is empty." << std::endl;;
       exit(1);
     }
 
-    SymGroupRep basis_permute_group(m_factor_group);
+    std::vector<UnitCellCoord> sitemap;
 
-    std::string clr(100, ' ');
+    m_basis_perm_rep_ID = m_factor_group.allocate_representation();
 
-    for(Index ng = 0; ng < m_factor_group.size(); ng++) {
+    std::map<std::string, Index> local_dof_dims;
+    for(std::string const &dof : local_dof_types()) {
+      local_dof_dims[dof] = local_dof_dim(dof);
+      for(Site const &site : basis()) {
+        if(site.has_dof(dof))
+          site.dof(dof).allocate_symrep(m_factor_group);
+      }
+    }
+
+    // The sitemap specifies that op*basis(b) -> sitemap[b] (which is a UnitCellCoord)
+    // The new dofs of site specified by UCC sitemap[b] will be transformations of the dofs
+    // that previously resided at basis(b). As such, for dofs, we use the inverse permutation and
+    //   basis()[b].symrep(doftype.name()) = basis()[b].dof(doftype.name()).basis().transpose()
+    //                                       * doftype.symop_to_matrix(op)
+    //                                       * basis()[sitemap[b].sublat()].dof(doftype.name().basis())
+    Eigen::MatrixXd trep, trepblock;
+    for(SymOp const &op : m_factor_group) {
       if(verbose) {
-        if(ng % 100 == 0)
-          std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << ng << "/" << m_factor_group.size() << std::flush;
+        if(op.index() % 100 == 0)
+          std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << op.index() << "/" << m_factor_group.size() << std::flush;
       }
 
-      basis_permute_group.set_rep(ng, SymBasisPermute(m_factor_group[ng], *this, lattice().tol()));
-    }
-    // Adds the representation into the master sym group of this structure and returns the rep id
-    basis_perm_rep_ID = m_factor_group.add_representation(basis_permute_group);
+      sitemap = symop_site_map(op, *this);
+      op.set_rep(m_basis_perm_rep_ID, SymBasisPermute(op, lattice(), sitemap));
 
-    //default_err_log() << "Added basis permutation rep id " << rep_id << '\n';
+      for(auto const &dof_dim : local_dof_dims) {
+        for(Index b = 0; b < basis().size(); ++b) {
+          if(!basis()[b].has_dof(dof_dim.first))
+            continue;
+          DoFSet const &dofref_to = basis()[sitemap[b].sublat()].dof(dof_dim.first);
+          DoFSet const &dofref_from = basis()[b].dof(dof_dim.first);
+          trep.setZero(dof_dim.second, dof_dim.second);
+          trep.topLeftCorner(dofref_to.size(), dofref_to.size()) = dofref_from.basis().transpose()
+                                                                   * dofref_from.traits().symop_to_matrix(op)
+                                                                   * dofref_to.basis();
+          op.set_rep(dofref_to.symrep_ID(), SymMatrixXd(trep));
+        }
+      }
+    }
 
     if(verbose) std::cout << '\r' << clr.c_str() << '\r' << std::flush;
-    return basis_perm_rep_ID;
+    return;
   }
 
+  //***********************************************************
+
+  void Structure::_generate_global_symreps(bool verbose) const {
+    if(factor_group().size() <= 0) {
+      default_err_log() << "ERROR in generate_global_dof_representations" << std::endl;
+      default_err_log() << "Factor group is empty." << std::endl;
+      exit(1);
+    }
+
+    for(auto const &dof : m_dof_map) {
+      dof.second.allocate_symrep(m_factor_group);
+      for(SymOp const &op : m_factor_group) {
+        op.set_rep(dof.second.symrep_ID(), SymMatrixXd(dof.second.basis().transpose()
+                                                       *dof.second.traits().symop_to_matrix(op)
+                                                       *dof.second.basis()));
+      }
+
+    }
+  }
   //***********************************************************
 
   //Sets the occupants in the basis sites to those specified by occ_index

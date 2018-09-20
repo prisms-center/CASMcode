@@ -121,7 +121,7 @@ namespace CASM {
     SymGroupRep const &get_irrep(Index i) const;
 
     /// Add a new empty representation
-    SymGroupRepID add_empty_representation() const;
+    SymGroupRepID allocate_representation() const;
 
 
     /// Gets all the space group operations in unit cell and stores them in space_group
@@ -322,7 +322,7 @@ namespace CASM {
     SymGroupRepID add_representation(const SymGroupRep &new_rep) const;
 
     /// Add a new empty representation
-    SymGroupRepID add_empty_representation() const;
+    SymGroupRepID allocate_representation() const;
 
     SymGroupRepID reg_rep_ID() const;
     SymGroupRepID coord_rep_ID() const;

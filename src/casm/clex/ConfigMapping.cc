@@ -3,7 +3,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ParamComposition.hh"
@@ -17,16 +16,20 @@
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
+  ConfigDoF MappedConfig::to_configdof() const {
+    throw std::runtime_error("MappedConfig::to_configdof() not yet implemented");
+  }
+
   namespace ConfigMapping {
-    double strain_cost(const Lattice &relaxed_lat, const ConfigDoF &_dof, const Index Nsites) {
-      return LatticeMap::calc_strain_cost(_dof.deformation(), relaxed_lat.vol() / double(max(Nsites, Index(1))));
+    double strain_cost(const Lattice &relaxed_lat, const MappedConfig &_dof, const Index Nsites) {
+      return LatticeMap::calc_strain_cost(_dof.deformation, relaxed_lat.vol() / double(max(Nsites, Index(1))));
     }
 
     //*******************************************************************************************
 
-    double basis_cost(const ConfigDoF &_dof, Index Nsites) {
+    double basis_cost(const MappedConfig &_dof, Index Nsites) {
       // mean square displacement distance in deformed coordinate system
-      return (_dof.deformation() * _dof.displacement() * _dof.displacement().transpose() * _dof.deformation().transpose()).trace() / double(max(Nsites, Index(1)));
+      return (_dof.deformation * _dof.displacement * _dof.displacement.transpose() * _dof.deformation.transpose()).trace() / double(max(Nsites, Index(1)));
     }
 
     //*******************************************************************************************
@@ -140,7 +143,7 @@ namespace CASM {
     result.relaxation_properties.put_obj();
 
     //Indices for Configuration index and permutation operation index
-    ConfigDoF best_configdof, suggested_configdof;
+    MappedConfig best_configdof, suggested_configdof;
     Lattice mapped_lat;
     double bc(1e20), sc(1e20), best_cost = 1e20, robust_cost = 1e20;
     bool valid_mapping;
@@ -175,7 +178,7 @@ namespace CASM {
         result.relaxation_properties["suggested_mapping"]["basis_deformation"] = bc;
         result.relaxation_properties["suggested_mapping"]["lattice_deformation"] = sc;
         result.relaxation_properties["suggested_mapping"]["volume_relaxation"] =
-          suggested_configdof.deformation().determinant();
+          suggested_configdof.deformation.determinant();
 
         best_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
 
@@ -209,7 +212,7 @@ namespace CASM {
       robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
       result.relaxation_properties["best_mapping"]["basis_deformation"] = bc;
       result.relaxation_properties["best_mapping"]["lattice_deformation"] = sc;
-      result.relaxation_properties["best_mapping"]["volume_relaxation"] = best_configdof.deformation().determinant();
+      result.relaxation_properties["best_mapping"]["volume_relaxation"] = best_configdof.deformation.determinant();
 
     }
     // if no valid mapping was found, "suggested" (the mapping to hint config) is also "best"
@@ -226,8 +229,8 @@ namespace CASM {
     // -------------
     // construct the 'relaxed' configuration from the mapping results
     // and get the 'it_canon'
-    ConfigDoF relaxed_occ;
-    relaxed_occ.set_occupation(best_configdof.occupation());
+    MappedConfig relaxed_occ;
+    relaxed_occ.occupation = best_configdof.occupation;
 
     PermuteIterator it_canon;
     bool is_new_config(true);
@@ -235,7 +238,7 @@ namespace CASM {
     if(hint_ptr != nullptr) {
       const Supercell &scel(hint_ptr->supercell());
       if(mapped_lat.is_equivalent(scel.lattice())) {
-        if(m_strict_flag && relaxed_occ.occupation() == (hint_ptr->configdof()).occupation()) {
+        if(m_strict_flag && relaxed_occ.occupation == (hint_ptr->configdof()).occupation()) {
           // mapped config is "hint" config
           is_new_config = false;
           result.config = notstd::make_unique<Configuration>(*hint_ptr);
@@ -248,7 +251,7 @@ namespace CASM {
           PermuteIterator ideal_rev_it_canon = hint_ptr->from_canonical();
           it_canon = ideal_rev_it_canon * relaxed_it_canon;
 
-          if(relaxed_occ.occupation() == copy_apply(it_canon.inverse(), *hint_ptr).occupation()) {
+          if(relaxed_occ.occupation == copy_apply(it_canon.inverse(), *hint_ptr).occupation()) {
             // mapped config is "hint" config
             is_new_config = false;
             result.config = notstd::make_unique<Configuration>(*hint_ptr);
@@ -278,9 +281,9 @@ namespace CASM {
     // - best_assignement (excluding vacancies)
 
     // transform deformation tensor to match canonical form and apply operation to cart_op
-    ConfigDoF trans_configdof = copy_apply(it_canon, best_configdof);
-    result.relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation();
-    result.relaxation_properties["best_mapping"]["relaxation_displacement"] = trans_configdof.displacement().transpose();
+    MappedConfig trans_configdof = copy_apply(it_canon, best_configdof);
+    result.relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation;
+    result.relaxation_properties["best_mapping"]["relaxation_displacement"] = trans_configdof.displacement.transpose();
 
     result.cart_op = it_canon.sym_op().matrix() * result.cart_op;
 
@@ -296,8 +299,8 @@ namespace CASM {
       return i < num_atoms;
     });
 
-    result.structure.set_lattice(Lattice(result.cart_op.transpose()*best_configdof.deformation()*mapped_lat.lat_column_mat()), CART);
-    result.structure.set_lattice(Lattice(best_configdof.deformation()*mapped_lat.lat_column_mat()), FRAC);
+    result.structure.set_lattice(Lattice(result.cart_op.transpose()*best_configdof.deformation * mapped_lat.lat_column_mat()), CART);
+    result.structure.set_lattice(Lattice(best_configdof.deformation * mapped_lat.lat_column_mat()), FRAC);
     result.success = true;
 
     return result;
@@ -318,7 +321,7 @@ namespace CASM {
     //Indices for Configuration index and permutation operation index
     PermuteIterator it_canon;
 
-    ConfigDoF best_configdof;
+    MappedConfig best_configdof;
     Lattice mapped_lat;
 
     // -------------
@@ -344,17 +347,18 @@ namespace CASM {
     result.relaxation_properties["best_mapping"]["lattice_deformation"] =
       ConfigMapping::strain_cost(result.structure.lattice(), best_configdof, result.structure.basis().size());
     result.relaxation_properties["best_mapping"]["volume_change"] =
-      best_configdof.deformation().determinant();
+      best_configdof.deformation.determinant();
 
     // store mapped Configuration
     std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), mapped_lat);
-    Configuration import_config(shared_scel, jsonParser(), best_configdof);
+
+    Configuration import_config(shared_scel, jsonParser(), best_configdof.to_configdof());
     it_canon = import_config.to_canonical();
     result.config = notstd::make_unique<Configuration>(copy_apply(it_canon, import_config));
 
     // store relaxation_properties
     result.relaxation_properties["best_mapping"]["relaxation_deformation"] =
-      it_canon.sym_op().matrix() * best_configdof.deformation() * it_canon.sym_op().matrix().transpose();
+      it_canon.sym_op().matrix() * best_configdof.deformation * it_canon.sym_op().matrix().transpose();
 
     // store cart op
     result.cart_op = it_canon.sym_op().matrix() * result.cart_op;
@@ -377,7 +381,7 @@ namespace CASM {
 
   //*******************************************************************************************
   bool ConfigMapper::struc_to_configdof(const BasicStructure<Site> &struc,
-                                        ConfigDoF &mapped_configdof,
+                                        MappedConfig &mapped_configdof,
                                         Lattice &mapped_lat) const {
     std::vector<Index> t_assign;
     Eigen::Matrix3d t_op;
@@ -385,7 +389,7 @@ namespace CASM {
   }
   //*******************************************************************************************
   bool ConfigMapper::struc_to_configdof(const BasicStructure<Site> &struc,
-                                        ConfigDoF &mapped_configdof,
+                                        MappedConfig &mapped_configdof,
                                         Lattice &mapped_lat,
                                         std::vector<Index> &best_assignment,
                                         Eigen::Matrix3d &cart_op,
@@ -427,7 +431,7 @@ namespace CASM {
    */
   //*******************************************************************************************
   bool ConfigMapper::ideal_struc_to_configdof(const BasicStructure<Site> &struc,
-                                              ConfigDoF &mapped_configdof,
+                                              MappedConfig &mapped_configdof,
                                               Lattice &mapped_lat,
                                               std::vector<Index> &best_assignment,
                                               Eigen::Matrix3d &cart_op) const {
@@ -491,7 +495,7 @@ namespace CASM {
    */
   //*******************************************************************************************
   bool ConfigMapper::deformed_struc_to_configdof(const BasicStructure<Site> &struc,
-                                                 ConfigDoF &mapped_configdof,
+                                                 MappedConfig &mapped_configdof,
                                                  Lattice &mapped_lat,
                                                  std::vector<Index> &best_assignment,
                                                  Eigen::Matrix3d &cart_op,
@@ -553,7 +557,7 @@ namespace CASM {
     Eigen::Matrix3d ttrans_mat, tF, rotF;
 
     double strain_cost(1e10), basis_cost(1e10), tot_cost;//, best_strain_cost, best_basis_cost;
-    ConfigDoF tdof;
+    MappedConfig tdof;
     BasicStructure<Site> tstruc(struc);
     Lattice tlat;
 
@@ -635,12 +639,12 @@ namespace CASM {
   bool ConfigMapper::deformed_struc_to_configdof_of_lattice(const BasicStructure<Site> &struc,
                                                             const Lattice &imposed_lat,
                                                             double &best_cost,
-                                                            ConfigDoF &mapped_configdof,
+                                                            MappedConfig &mapped_configdof,
                                                             Lattice &mapped_lat,
                                                             std::vector<Index> &best_assignment,
                                                             Eigen::Matrix3d &cart_op) const {
     double strain_cost, basis_cost, tot_cost;
-    ConfigDoF tdof;
+    MappedConfig tdof;
     BasicStructure<Site> tstruc(struc);
     Eigen::Matrix3d tF, rotF;
     std::vector<Index> assignment;
@@ -923,7 +927,7 @@ namespace CASM {
     //
     bool struc_to_configdof(const Supercell &scel,
                             BasicStructure<Site> rstruc,
-                            ConfigDoF &config_dof,
+                            MappedConfig &config_dof,
                             std::vector<Index> &best_assignments,
                             const bool translate_flag,
                             const double _tol) {
@@ -942,7 +946,7 @@ namespace CASM {
     //
     bool struc_to_configdof(const Configuration &config,
                             BasicStructure<Site> rstruc,
-                            ConfigDoF &config_dof,
+                            MappedConfig &config_dof,
                             std::vector<Index> &best_assignments,
                             const bool translate_flag,
                             const double _tol) {
@@ -963,14 +967,14 @@ namespace CASM {
     bool preconditioned_struc_to_configdof(const Supercell &scel,
                                            const BasicStructure<Site> &rstruc,
                                            const Eigen::Matrix3d &deformation,
-                                           ConfigDoF &config_dof,
+                                           MappedConfig &config_dof,
                                            std::vector<Index> &best_assignments,
                                            const bool translate_flag,
                                            const double _tol) {
       // clear config_dof and set its deformation
       config_dof.clear();
 
-      config_dof.set_deformation(deformation);
+      config_dof.deformation = deformation;
       Eigen::Matrix3d metric(deformation.transpose()*deformation);
       //Initialize everything
 
@@ -1046,7 +1050,7 @@ namespace CASM {
       Eigen::Vector3d zero_vector(0.0, 0.0, 0.0);
 
       // initialize displacement matrix with all zeros
-      config_dof.set_displacement(ConfigDoF::displacement_matrix_t::Zero(3, scel.num_sites()));
+      config_dof.displacement.setZero(3, scel.num_sites());
 
       Eigen::Vector3d avg_disp(0, 0, 0);
 
@@ -1130,7 +1134,7 @@ namespace CASM {
     bool preconditioned_struc_to_configdof(const Configuration &config,
                                            const BasicStructure<Site> &rstruc,
                                            const Eigen::Matrix3d &deformation,
-                                           ConfigDoF &config_dof,
+                                           MappedConfig &config_dof,
                                            std::vector<Index> &best_assignments,
                                            const bool translate_flag,
                                            const double _tol) {
@@ -1140,7 +1144,7 @@ namespace CASM {
       // clear config_dof and set its deformation
       config_dof.clear();
 
-      config_dof.set_deformation(deformation);
+      config_dof.deformation = deformation;
       Eigen::Matrix3d metric(deformation.transpose()*deformation);
       //Initialize everything
 
@@ -1213,7 +1217,7 @@ namespace CASM {
       Eigen::Vector3d zero_vector(0.0, 0.0, 0.0);
 
       // initialize displacement matrix with all zeros
-      config_dof.set_displacement(ConfigDoF::displacement_matrix_t::Zero(3, scel.num_sites()));
+      config_dof.displacement.setZero(3, scel.num_sites());
 
       Eigen::Vector3d avg_disp(0, 0, 0);
 

@@ -36,7 +36,7 @@ namespace CASM {
     mutable MasterSymGroup m_factor_group;
 
     /// This holds the representation id of the permutation representation
-    mutable SymGroupRepID basis_perm_rep_ID;
+    mutable SymGroupRepID m_basis_perm_rep_ID;
 
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
@@ -45,6 +45,13 @@ namespace CASM {
   private: //PRIVATE METHODS
 
     void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const;
+
+    /// Obtain the basis permutation symrep and site dof symreps of factor_group
+    /// sets internal m_basis_perm_rep_ID
+    void _generate_basis_symreps(bool verbose = false) const;
+
+    /// Obtain global dof symreps of factor_group
+    void _generate_global_symreps(bool verbose = false) const;
 
 
   public: //PUBLIC METHODS
@@ -112,9 +119,6 @@ namespace CASM {
     /// generate factor groups for a range of tol values, prints results to screen (for now)
     void fg_converge(double large_tol);
     void fg_converge(double small_tol, double large_tol, double increment);
-
-    /// Obtain the basis permutation representation of factor_group, returns its rep_id, and sets internal basis_perm_rep_ID
-    SymGroupRepID generate_basis_permutation_representation(bool verbose = false) const;
 
     void symmetrize(const SymGroup &relaxed_factors);
     void symmetrize(const double &tolerace);

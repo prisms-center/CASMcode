@@ -26,17 +26,17 @@ namespace CASM {
     ConfigIsEquivalent(const Configuration &_config, double _tol) :
       m_config(&_config) {
 
-      if(config().has_deformation()) {
-        m_global_eq.push_back(make_dof_is_equivalent<DoFIsEquivalent::Strain>(_config, _tol));
-      }
+      //if(config().has_deformation()) {
+      //m_global_eq.push_back(make_dof_is_equivalent<DoFIsEquivalent::Strain>(_config, _tol));
+      //}
 
       if(config().has_occupation()) {
         m_site_eq.push_back(make_dof_is_equivalent<DoFIsEquivalent::Occupation>(_config));
       }
 
-      if(config().has_displacement()) {
-        m_site_eq.push_back(make_dof_is_equivalent<DoFIsEquivalent::Displacement>(_config, _tol));
-      }
+      //if(config().has_displacement()) {
+      //m_site_eq.push_back(make_dof_is_equivalent<DoFIsEquivalent::Displacement>(_config, _tol));
+      //}
     }
 
     ConfigIsEquivalent(const Configuration &_config) :

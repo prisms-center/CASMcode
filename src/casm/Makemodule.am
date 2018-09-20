@@ -95,6 +95,7 @@ libcasm_la_SOURCES = \
   src/casm/crystallography/LatticeIsEquivalent.cc\
   src/casm/crystallography/Molecule.cc\
   src/casm/symmetry/SymGroupRep.cc\
+  src/casm/symmetry/SymRepTools.cc\
   src/casm/symmetry/PermuteIterator.cc\
   src/casm/symmetry/SymGroup.cc\
   src/casm/symmetry/SymInfo.cc\
@@ -160,6 +161,7 @@ libcasm_la_SOURCES = \
   src/casm/clex/SupercellTraits.cc\
   src/casm/clex/ClexBasis.cc\
   src/casm/clex/ConfigDoF.cc\
+  src/casm/clex/ConfigDoFValues.cc\
   src/casm/clex/Clex.cc\
   src/casm/clex/ScelEnumEquivalents.cc\
   src/casm/clex/Supercell_functions.cc\

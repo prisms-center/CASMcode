@@ -1043,7 +1043,7 @@ namespace CASM {
   void BasisSet::get_symmetry_representation(const SymGroup &head_group) const {
     if(!head_group.size() || !head_group[0].has_valid_master()) return;
 
-    m_basis_symrep_ID = head_group.add_empty_representation();
+    m_basis_symrep_ID = head_group.allocate_representation();
     Function *tfunct(nullptr);
     Eigen::MatrixXd tRep(size(), size());
 

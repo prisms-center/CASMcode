@@ -272,7 +272,7 @@ namespace CASM {
       return;
     }
 
-    m_canonization_rep_ID = equivalence_map()[0][0].master_group().add_empty_representation();
+    m_canonization_rep_ID = equivalence_map()[0][0].master_group().allocate_representation();
 
     for(Index j = 0; j < equivalence_map()[0].size(); j++) {
       std::unique_ptr<SymOpRepresentation> new_rep = m_sym_compare.canonical_transform(copy_apply(equivalence_map()[0][j], prototype()))->inverse();

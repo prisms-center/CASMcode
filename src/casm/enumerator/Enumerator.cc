@@ -24,6 +24,7 @@ namespace CASM {
     emap->insert(
       EnumInterface<ScelEnum>(),
       EnumInterface<ConfigEnumAllOccupations>(),
+      EnumInterface<ConfigEnumStrain>(),
       EnumInterface<SuperConfigEnum>(),
       EnumInterface<Kinetics::DiffusionTransformationEnum>(),
       EnumInterface<Kinetics::DiffTransConfigEnumOccPerturbations>(),

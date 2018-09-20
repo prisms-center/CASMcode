@@ -13,7 +13,7 @@ namespace CASM {
   namespace DoF_impl {
     /*
     SymGroupRepID DisplacementDoFTraits::generate_symrep(MasterSymGroup const &_group) const {
-      SymGroupRepID id = _group.add_empty_representation();
+      SymGroupRepID id = _group.allocate_representation();
       for(SymOp const &op : _group)
         op.set_rep(id, SymMatrixXd(op.matrix()));
       return id;
