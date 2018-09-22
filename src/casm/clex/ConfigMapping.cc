@@ -64,7 +64,6 @@ namespace CASM {
       //We only bother checking pre-existing supercells of min_vol <= volume <=max_vol;
       SupercellEnumerator<Lattice> enumerator(prim_lat, sym_group, ScelEnumProps(min_vol, max_vol + 1));
 
-      Index l = 0;
       //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
       for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
         //std::cout << "Enumeration step " << l++ << " best cost is " << best_cost << "\n";
@@ -164,7 +163,7 @@ namespace CASM {
     ConfigDoF tconfigdof, suggested_configdof;
     Lattice mapped_lat;
     bool is_new_config(true);
-    double bc(1e20), sc(1e20), hint_cost = 1e20, robust_cost = 1e20;
+    double bc(1e20), sc(1e20), hint_cost = 1e20;
 
     relaxation_properties.put_obj();
     //std::vector<Index> best_assignment;
@@ -197,7 +196,7 @@ namespace CASM {
 
       bc = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
       sc = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
-      robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
+      // robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
       relaxation_properties["best_mapping"]["basis_deformation"] = bc;
       relaxation_properties["best_mapping"]["lattice_deformation"] = sc;
       relaxation_properties["best_mapping"]["volume_relaxation"] = tconfigdof.deformation().determinant();
@@ -755,7 +754,6 @@ namespace CASM {
       primclex().get_prim().point_group(),
       ScelEnumProps(prim_vol, prim_vol + 1));
 
-    Index l = 0;
     //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       //std::cout << "Enumeration step " << l++ << " best cost is " << best_cost << "\n";
@@ -793,7 +791,6 @@ namespace CASM {
       //if(cost_matrix.rows()!=scel.num_sites() || cost_matrix.cols()!=scel.num_sites())
       cost_matrix = Eigen::MatrixXd::Constant(scel.num_sites(), scel.num_sites(), inf);
       Index inf_counter;
-      double dist;
       // loop through all the sites of the structure
       Index j = 0;
       for(; j < rstruc.basis.size(); j++) {
@@ -860,7 +857,6 @@ namespace CASM {
       //if(cost_matrix.rows()!=scel.num_sites() || cost_matrix.cols()!=scel.num_sites())
       cost_matrix = Eigen::MatrixXd::Constant(scel.num_sites(), scel.num_sites(), inf);
       Index inf_counter;
-      double dist;
       // loop through all the sites of the structure
       Index j;
       for(j = 0; j < rstruc.basis.size(); j++) {

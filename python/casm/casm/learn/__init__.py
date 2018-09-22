@@ -1,4 +1,6 @@
 """CASM machine learning tools"""
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 ## This part needs to be in global scope for parallization #####################  
 from deap import creator
@@ -67,7 +69,7 @@ def create_halloffame(maxsize, rel_tol=1e-6):
 ################################################################################  
 
 
-from fit import example_input_Lasso, example_input_LassoCV, example_input_RFE, \
+from casm.learn.fit import example_input_Lasso, example_input_LassoCV, example_input_RFE, \
  example_input_GeneticAlgorithm, example_input_IndividualBestFirst, \
  example_input_PopulationBestFirst, example_input_DirectSelection, \
  open_input, set_input_defaults, \
@@ -76,8 +78,8 @@ from fit import example_input_Lasso, example_input_LassoCV, example_input_RFE, \
  to_json, open_halloffame, save_halloffame, \
  checkspecs, checkhull
 
-from feature_selection import fit_and_select
-from direct_selection import direct_fit
+from casm.learn.feature_selection import fit_and_select
+from casm.learn.direct_selection import direct_fit
 
 __all__ = __all__ = [
   'create_halloffame',

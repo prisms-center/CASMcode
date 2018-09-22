@@ -1,6 +1,9 @@
-import os, shutil, re, subprocess, json
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import os, shutil, six, re, subprocess, json
 import warnings
-import vasp.io
+import casm.vasp.io
 
 class VaspWrapperError(Exception):
     def __init__(self,msg):
@@ -59,11 +62,10 @@ def read_settings(filename):
         "name" : USED IN vasp.converge ONLY. Name used in the .../config/calctype.calc/NAME/property_i directory scheme, where, if not specified, "prop"_converge is used as NAME
     """
     try:
-        file = open(filename)
-        settings = json.load(file)
-        file.close()
+        with open(filename, 'rb') as file:
+            settings = json.loads(file.read().decode('utf-8'))
     except (IOError, ValueError) as e:
-        print "Error reading settings file:", filename
+        print("Error reading settings file:", filename)
         raise e
 
     required = ["queue", "ppn", "atom_per_proc", "walltime"]
@@ -83,20 +85,20 @@ def read_settings(filename):
             if key.lower() in ["extra_input_files", "remove", "compress", "backup"]:
                 settings[key] = []
             elif key.lower() in ["move"]:
-                settings[key] = vasp.io.DEFAULT_VASP_MOVE_LIST
+                settings[key] = casm.vasp.io.DEFAULT_VASP_MOVE_LIST
             elif key.lower() in ["copy"]:
-                settings[key] = vasp.io.DEFAULT_VASP_COPY_LIST
+                settings[key] = casm.vasp.io.DEFAULT_VASP_COPY_LIST
             # elif key.lower() in ["remove"]:
-            #     settings[key] = vasp.io.DEFAULT_VASP_REMOVE_LIST
+            #     settings[key] = casm.vasp.io.DEFAULT_VASP_REMOVE_LIST
             else:
                 settings[key] = None
 
     if type(settings["remove"]) == list:
         if 'default' in settings["remove"]:
-            settings["remove"] += vasp.io.DEFAULT_VASP_REMOVE_LIST
+            settings["remove"] += casm.vasp.io.DEFAULT_VASP_REMOVE_LIST
     elif type(settings["remove"]) == str:
         if settings["remove"].lower() == 'default':
-            settings["remove"] = vasp.io.DEFAULT_VASP_REMOVE_LIST
+            settings["remove"] = casm.vasp.io.DEFAULT_VASP_REMOVE_LIST
         else:
             settings["remove"] = [settings["remove"]]
     if settings["priority"] == None:
@@ -117,9 +119,8 @@ def read_settings(filename):
 
 def write_settings(settings, filename):
     """ Write 'settings' as json file, 'filename' """
-    file = open(filename,'w')
-    json.dump( settings, file, indent=4)
-    file.close()
+    with open(filename,'wb') as file:
+        file.write(six.u(json.dump( settings, file, indent=4)).encode('utf-8'))
 
 
 def vasp_input_file_names(dir, configname, clex):
@@ -202,8 +203,8 @@ def read_properties(filename):
     required = ["atom_type", "atoms_per_type", "coord_mode", "relaxed_basis", "relaxed_energy", "relaxed_forces", "relaxed_lattice"]
     optional = ["relaxed_magmom", "relaxed_mag_basis"]
 
-    with open(filename, 'r') as myfile:
-        properties = json.load(myfile)
+    with open(filename, 'rb') as myfile:
+        properties = json.loads(myfile.read().decode('utf-8'))
 
     for key in required:
         if not key in properties:

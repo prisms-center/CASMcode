@@ -1,0 +1,21 @@
+{
+  "vasp" : {
+    "run" : [
+      {
+        "comment" : "Test vasp.run() case 1",
+        "input_data" : "ZrO/SCEL1_1_1_1_0_0_0/2",
+        "potcars": ["PAW_PBE/Zr_sv","PAW_PBE/O_s"],
+        "settings": {}
+      }
+    ],
+    "Relax" : {
+      "run": [
+        {
+          "comment" : "Test vasp.Relax.run() case 1",
+          "input_data" : "ZrO/SCEL1_1_1_1_0_0_0/2",
+          "settings": {}
+        }
+      ]
+    }
+  }
+}

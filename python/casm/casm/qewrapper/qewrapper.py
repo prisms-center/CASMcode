@@ -1,6 +1,9 @@
-import os, shutil, re, subprocess, json
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import os, shutil, six, re, subprocess, json
 import warnings
-import quantumespresso.qeio
+import casm.quantumespresso.qeio as qeio
 
 class QEWrapperError(Exception):
     def __init__(self,msg):
@@ -52,11 +55,10 @@ def read_settings(filename):
         "err_types" : list of errors to check for. Allowed entries are "IbzkptError" and "SubSpaceMatrixError". Default: ["SubSpaceMatrixError"] <---- STILL NEED TO IMPLEMENT
     """
     try:
-        file = open(filename)
-        settings = json.load(file)
-        file.close()
+        with open(filename, 'rb') as file:
+            settings = json.loads(file.read().decode('utf-8'))
     except (IOError, ValueError) as e:
-        print "Error reading settings file:", filename
+        print("Error reading settings file:", filename)
         raise e
 
     required = ["queue", "ppn", "atom_per_proc", "walltime"]
@@ -79,10 +81,10 @@ def read_settings(filename):
 
     if type(settings["remove"]) == list:
         if 'default' in settings["remove"]:
-            settings["remove"] += quantumespresso.qeio.DEFAULT_QE_REMOVE_LIST
+            settings["remove"] += qeio.DEFAULT_QE_REMOVE_LIST
     elif type(settings["remove"]) == str:
         if settings["remove"].lower() == 'default':
-            settings["remove"] = quantumespresso.qeio.DEFAULT_QE_REMOVE_LIST
+            settings["remove"] = qeio.DEFAULT_QE_REMOVE_LIST
         else:
             settings["remove"] = [settings["remove"]]
     if settings["priority"] == None:
@@ -101,9 +103,8 @@ def read_settings(filename):
 
 def write_settings(settings, filename):
     """ Write 'settings' as json file, 'filename' """
-    file = open(filename,'w')
-    json.dump( settings, file, indent=4)
-    file.close()
+    with open(filename, 'wb') as file:
+        file.write(six.u(json.dumps( settings, file, indent=4)).encode('utf-8'))
 
       
 def qe_input_file_names(dirstruc, configname, clex, infilename):

@@ -1,9 +1,25 @@
-import os, math, sys, json, re, warnings
-import pbs
-import quantumespresso
-import casm
-import casm.project
-import qewrapper
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import json
+import math
+import os
+import re
+import six
+import sys
+import warnings
+
+try:
+  from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
+except ImportError:
+  # use of the pbs module is deprecated after CASM v0.2.1
+  from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
+  from pbs import PBSError as JobsError
+
+from casm import quantumespresso, wrapper
+from casm.misc import noindent
+from casm.project import DirectoryStructure, ProjectSettings
+from casm.qewrapper import QEWrapperError, qe_input_file_names, read_settings, write_settings
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a Quantum Espresso relaxation.
@@ -26,9 +42,9 @@ class Relax(object):
             self.configdir (.../config)
             self.calcdir   (.../config/calctype.name)
 
-            self.settings = dictionary of settings for pbs and the relaxation, see qewrapper.read_settings
+            self.settings = dictionary of settings for job submission and the relaxation, see qewrapper.read_settings
 
-            self.auto = True if using pbs module's JobDB to manage pbs jobs
+            self.auto = True if using prisms_jobs module's JobDB to manage jobs
             self.sort = True if sorting atoms in POSCAR by type
     """
     def __init__(self, configdir=None, auto = True, sort = True):
@@ -37,36 +53,36 @@ class Relax(object):
 
         Args:
             configdir: path to configuration
-            auto: True if using pbs module's JobDB to manage pbs jobs
+            auto: True if using prisms_jobs module's JobDB to manage jobs
 
         """
         if configdir == None:
             configdir = os.getcwd()
 
-        print "Working on directory "+str(configdir)
+        print("Working on directory "+str(configdir))
 
         # get the configname from the configdir path
         _res = os.path.split(configdir)
         self.configname = os.path.split(_res[0])[1] + "/" + _res[1]
-        print "  Configuration:", self.configname
+        print("  Configuration:", self.configname)
 
-        print "Reading CASM settings"
-        self.casm_settings = casm.project.ProjectSettings()
+        print("Reading CASM settings")
+        self.casm_settings = ProjectSettings()
         if self.casm_settings == None:
-            raise qewrapper.QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+            raise QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
-        self.casm_directories=casm.project.DirectoryStructure()
+        self.casm_directories=DirectoryStructure()
 
-        print "Constructing a CASM QEWrapper Relax object"
+        print("Constructing a CASM QEWrapper Relax object")
         sys.stdout.flush()
 
-        print "  Setting up directories"
+        print("  Setting up directories")
         sys.stdout.flush()
 
         # store path to .../config, if not existing raise
         self.configdir = os.path.abspath(configdir)
         if not os.path.isdir(self.configdir):
-            raise quantumespresso.QuantumEspressoError("Error in casm.quantumespresso.relax: Did not find directory: " + self.configdir)
+            raise quantumespresso.QuantumEspressoError("Error in casm.qewrapper.Relax: Did not find directory: " + self.configdir)
             sys.stdout.flush()
 
         # store path to .../config/calctype.name, and create if not existing
@@ -78,18 +94,18 @@ class Relax(object):
 
 
         # read the settings json file
-        print "  Reading relax.json settings file"
+        print("  Reading relax.json settings file")
         sys.stdout.flush()
         setfile = self.casm_directories.settings_path_crawl("relax.json",self.configname,self.casm_settings.default_clex)
 
         if setfile == None:
-            raise qewrapper.QEWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
+            raise QEWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
 
         else:
-            print "Using "+str(setfile)+" as settings..."
+            print("Using "+str(setfile)+" as settings...")
 
-        self.settings = qewrapper.read_settings(setfile)
+        self.settings = read_settings(setfile)
 
         # add required keys to settings if not present
         if not "ncore" in self.settings:
@@ -107,16 +123,16 @@ class Relax(object):
         if not "strict_kpoints" in self.settings:
             self.settings["strict_kpoints"]=False
         if not "infilename" in self.settings:
-            print "WARNING: No input file specified in relax.json using default infilename of std.in"
+            print("WARNING: No input file specified in relax.json using default infilename of std.in")
             self.settings["infilename"]="std.in"
         if not "outfilename" in self.settings:
-            print "WARNING: No output file specified in relax.json using default outfilename of std.out"
+            print("WARNING: No output file specified in relax.json using default outfilename of std.out")
             self.settings["outfilename"]="std.out"
 
 
         self.auto = auto
         self.sort = sort
-        print "Quantum Espresso Relax object constructed\n"
+        print("Quantum Espresso Relax object constructed\n")
         sys.stdout.flush()
 
 
@@ -133,7 +149,7 @@ class Relax(object):
         """
         # Find required input files in CASM project directory tree
         infilename=self.settings["infilename"]
-        qefiles=casm.qewrapper.qe_input_file_names(self.casm_directories,self.configname,self.casm_settings.default_clex,infilename)
+        qefiles=qe_input_file_names(self.casm_directories,self.configname,self.casm_settings.default_clex,infilename)
         infilename,super_poscarfile,speciesfile=qefiles
 
 
@@ -162,10 +178,10 @@ class Relax(object):
         """Submit a PBS job for this Quantum Espresso relaxation"""
 
         # first, check if the job has already been submitted and is not completed
-        db = pbs.JobDB()
-        print "rundir", self.calcdir
+        db = JobDB()
+        print("rundir", self.calcdir)
         id = db.select_regex_id("rundir", self.calcdir)
-        print "id:", id
+        print("id:", id)
         sys.stdout.flush()
         if id != []:
             db.update()
@@ -174,7 +190,7 @@ class Relax(object):
                 # taskstatus = ["Incomplete","Complete","Continued","Check","Error:.*","Aborted"]
                 # jobstatus = ["C","Q","R","E","W","H","M"]
                 if job["jobstatus"] != "C":
-                    print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
+                    print("JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting.")
                     sys.stdout.flush()
                     return
                 #elif job["taskstatus"] in ["Complete", "Check"] or re.match( "Error:.*", job["taskstatus"]):
@@ -196,7 +212,7 @@ class Relax(object):
         (status, task) = relaxation.status()
 
         if status == "complete":
-            print "Status:", status, "  Not submitting."
+            print("Status:", status, "  Not submitting.")
             sys.stdout.flush()
 
             # ensure job marked as complete in db
@@ -205,9 +221,9 @@ class Relax(object):
                   job = db.select_job(j)
                   if job["taskstatus"] == "Incomplete":
                       try:
-                          pbs.complete_job(jobid=j)
-                      except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
-                          print str(e)
+                          complete_job(jobid=j)
+                      except (JobsError, JobDBError, EligibilityError) as e:
+                          print(str(e))
                           sys.stdout.flush()
 
             # ensure results report written
@@ -217,17 +233,17 @@ class Relax(object):
             return
 
         elif status == "not_converging":
-            print "Status:", status, "  Not submitting."
+            print("Status:", status, "  Not submitting.")
             sys.stdout.flush()
             return
 
         elif status != "incomplete":
-            raise qewrapper.QEWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise QEWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
             return
 
 
-        print "Preparing to submit a Quantum Espresso relaxation PBS job"
+        print("Preparing to submit a Quantum Espresso relaxation PBS job")
         sys.stdout.flush()
 
         # cd to configdir, submit jobs from configdir, then cd back to currdir
@@ -235,15 +251,15 @@ class Relax(object):
         os.chdir(self.calcdir)
 
         # determine the number of atoms in the configuration
-        print "  Counting atoms in the POSCAR"
+        print("  Counting atoms in the POSCAR")
         sys.stdout.flush()
         pos = quantumespresso.qeio.Poscar(os.path.join(self.configdir,"POS"))
         N = len(pos.basis)
 
-        print "  Constructing a PBS job"
+        print("  Constructing a PBS job")
         sys.stdout.flush()
-        # construct a pbs.Job
-        job = pbs.Job(name=casm.jobname(self.configdir),\
+        # construct a Job
+        job = Job(name=wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -257,7 +273,7 @@ class Relax(object):
                       command="python -c \"import casm.qewrapper; casm.qewrapper.Relax('" + self.configdir + "').run()\"",\
                       auto=self.auto)
 
-        print "  Submitting"
+        print("  Submitting")
         sys.stdout.flush()
         # submit the job
         job.submit()
@@ -266,7 +282,7 @@ class Relax(object):
         # return to current directory
         os.chdir(currdir)
 
-        print "CASM QEWrapper relaxation PBS job submission complete\n"
+        print("CASM QEWrapper relaxation PBS job submission complete\n")
         sys.stdout.flush()
 
 
@@ -318,15 +334,15 @@ class Relax(object):
 
 
         if status == "complete":
-            print "Status:", status
+            print("Status:", status)
             sys.stdout.flush()
 
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
-                    print str(e)
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
+                    print(str(e))
                     sys.stdout.flush()
 
             # write results to properties.calc.json
@@ -334,9 +350,9 @@ class Relax(object):
             return
 
         elif status == "not_converging":
-            print "Status:", status
+            print("Status:", status)
             self.report_status("failed","run_limit")
-            print "Returning"
+            print("Returning")
             sys.stdout.flush()
             return
 
@@ -350,7 +366,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise qewrapper.QEWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise QEWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
 
@@ -361,12 +377,12 @@ class Relax(object):
             # mark error
             if self.auto:
                 try:
-                    pbs.error_job("Not converging")
-                except (pbs.PBSError, pbs.JobDBError) as e:
-                    print str(e)
+                    error_job("Not converging")
+                except (JobsError, JobDBError) as e:
+                    print(str(e))
                     sys.stdout.flush()
 
-            print "Not Converging!"
+            print("Not Converging!")
             sys.stdout.flush()
             self.report_status("failed","run_limit")
 
@@ -377,10 +393,10 @@ class Relax(object):
             except:
                 pass
             settingsfile = os.path.join(self.casm_directories.configuration_calc_settings_dir(self.casm_settings.default_clex), "relax.json")
-            qewrapper.write_settings(self.settings, settingsfile)
+            write_settings(self.settings, settingsfile)
 
-            print "Writing:", settingsfile
-            print "Edit the 'run_limit' property if you wish to continue."
+            print("Writing:", settingsfile)
+            print("Edit the 'run_limit' property if you wish to continue.")
             sys.stdout.flush()
             return
 
@@ -389,9 +405,9 @@ class Relax(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
-                    print str(e)
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
+                    print(str(e))
                     sys.stdout.flush()
 
             # write results to properties.calc.json
@@ -399,7 +415,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise qewrapper.QEWrapperError("Quantum Espresso relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
+            raise QEWrapperError("Quantum Espresso relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
     def report_status(self, status, failure_type=None):
@@ -422,9 +438,9 @@ class Relax(object):
             output["failure_type"] = failure_type
 
         outputfile = os.path.join(self.calcdir, "status.json")
-        with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
-        print "Wrote " + outputfile
+        with open(outputfile, 'wb') as file:
+            file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
+        print("Wrote " + outputfile)
         sys.stdout.flush()
 
     def finalize(self):
@@ -436,9 +452,9 @@ class Relax(object):
             speciesfile = self.casm_directories.settings_path_crawl("SPECIES",self.configname,self.casm_settings.default_clex)
             output = self.properties(qedir, outfilename)
             outputfile = os.path.join(self.calcdir, "properties.calc.json")
-            with open(outputfile, 'w') as file:
-                file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
-            print "Wrote " + outputfile
+            with open(outputfile, 'wb') as file:
+                file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
+            print("Wrote " + outputfile)
             sys.stdout.flush()
             self.report_status('complete')
 
@@ -451,9 +467,9 @@ class Relax(object):
         try:
           qrun = quantumespresso.qeio.QErun( os.path.join(self.calcdir, relaxation.rundir[-i-1], outfilename))
           if not qrun.elec_conv:
-            print('The last relaxation run (' +
+            print(('The last relaxation run (' +
                 os.path.basename(relaxation.rundir[-i-1]) +
-                ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+                ') failed to achieve electronic convergence; properties.calc.json will not be written.\n'))
             self.report_status('failed','electronic_convergence')
             return False
           break
@@ -484,13 +500,13 @@ class Relax(object):
         else:
             output["coord_mode"] = "cartesian" + qrun.coord_mode
 
-        output["relaxed_forces"] = [casm.NoIndent(v) for v in (map(lambda y: map(lambda x: x*13.605698066/0.52918,y), qrun.forces ))] #convert Ry/bohr to eV/angst
+        output["relaxed_forces"] = [noindent.NoIndent(v) for v in (map(lambda y: map(lambda x: x*13.605698066/0.52918,y), qrun.forces ))] #convert Ry/bohr to eV/angst
 
-        output["relaxed_lattice"] = [casm.NoIndent(v) for v in (map(lambda y: map(lambda x: x* 0.52918,y),qrun.lattice) )] #convert bohr to angst
+        output["relaxed_lattice"] = [noindent.NoIndent(v) for v in (map(lambda y: map(lambda x: x* 0.52918,y),qrun.lattice) )] #convert bohr to angst
 
-        output["relaxed_basis"] = [casm.NoIndent(v) for v in qrun.basis]
+        output["relaxed_basis"] = [noindent.NoIndent(v) for v in qrun.basis]
 
         output["relaxed_energy"] = qrun.total_energy * 13.605698066 #convert Ry to eV
 
-	return output
+        return output
 

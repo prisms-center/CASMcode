@@ -43,7 +43,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
     json["max"] = 4;
 
     ScelEnum e(primclex, json);
-    for(const auto &scel : e) {}
+    for(const auto &scel : e) {
+      (void) scel;
+    }
     BOOST_CHECK_EQUAL(primclex.get_supercell_list().size(), 14);
   }
 

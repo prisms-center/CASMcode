@@ -66,7 +66,7 @@ namespace CASM {
       double m_dEf;
 
       /// \brief Change in (extensive) potential energy, dEpot = dEf - sum_i(Nunit * param_chem_pot_i * dcomp_x_i)
-      double m_dEpot;
+      // double m_dEpot; == m_dEf
 
       /// \brief Change in number of each species in supercell due to this event.
       ///        Zeros, size of primclex.get_param_comp().get_components()

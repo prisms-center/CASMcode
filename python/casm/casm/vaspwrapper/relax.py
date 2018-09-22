@@ -1,9 +1,26 @@
-import os, math, sys, json, re, warnings
-import pbs
-import vasp
-import casm
-import casm.project
-import vaspwrapper
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
+import json
+import math
+import os
+import re
+import six
+import sys
+import warnings
+
+try:
+  from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
+except ImportError:
+  # use of the pbs module is deprecated after CASM v0.2.1
+  from pbs import Job, JobDB, error_job, complete_job, JobDBError, EligibilityError
+  from pbs import PBSError as JobsError
+
+from casm import vasp, wrapper
+from casm.misc import noindent
+from casm.project import DirectoryStructure, ProjectSettings
+from casm.vaspwrapper import VaspWrapperError, read_settings, write_settings, \
+  vasp_input_file_names
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
@@ -32,7 +49,7 @@ class Relax(object):
         CASM project directory hierarchy
 
       settings: dict
-        Settings for pbs and the relaxation, see vaspwrapper.read_settings
+        Settings for job submission and the relaxation, see vaspwrapper.read_settings
 
       configdir: str
         Directory where configuration results are stored. The result of:
@@ -42,7 +59,7 @@ class Relax(object):
         The name of the configuration to be calculated
 
       auto: boolean
-        True if using pbs module's JobDB to manage pbs jobs
+        True if using prisms_jobs module's JobDB to manage jobs
 
       sort: boolean
         True if sorting atoms in POSCAR by type
@@ -64,35 +81,35 @@ class Relax(object):
               directory
 
             auto: boolean, optional, default=True,
-              Use True to use the pbs module's JobDB to manage pbs jobs
+              Use True to use the prisms_jobs module's JobDB to manage jobs
 
             sort: boolean, optional, default=True,
               Use True to sort atoms in POSCAR by type
 
         """
-        print "Construct a casm.vaspwrapper.Relax instance:"
+        print("Construct a casm.vaspwrapper.Relax instance:")
 
         if configdir is None:
             configdir = os.getcwd()
-        print "  Input directory:", configdir
+        print("  Input directory:", configdir)
 
         # get the configname from the configdir path
         _res = os.path.split(configdir)
         self.configname = os.path.split(_res[0])[1] + "/" + _res[1]
-        print "  Configuration:", self.configname
+        print("  Configuration:", self.configname)
 
-        print "  Reading CASM settings"
-        self.casm_directories=casm.project.DirectoryStructure(configdir)
-        self.casm_settings = casm.project.ProjectSettings(configdir)
+        print("  Reading CASM settings")
+        self.casm_directories = DirectoryStructure(configdir)
+        self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings is None:
-            raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+            raise VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
         if os.path.abspath(configdir) != self.configdir:
-            print ""
-            print "input configdir:", configdir
-            print "determined configname:", self.configname
-            print "expected configdir given configname:", self.configdir
-            raise vaspwrapper.VaspWrapperError("Mismatch between configname and configdir")
+            print("")
+            print("input configdir:", configdir)
+            print("determined configname:", self.configname)
+            print("expected configdir given configname:", self.configdir)
+            raise VaspWrapperError("Mismatch between configname and configdir")
 
         # fixed to default_clex for now
         self.clex = self.casm_settings.default_clex
@@ -103,20 +120,20 @@ class Relax(object):
             os.mkdir(self.calcdir)
         except:
             pass
-        print "  Calculations directory:", self.calcdir
+        print("  Calculations directory:", self.calcdir)
 
         # read the settings json file
-        print "  Reading relax.json settings file"
+        print("  Reading relax.json settings file")
         sys.stdout.flush()
         setfile = self.casm_directories.settings_path_crawl("relax.json", self.configname, self.clex)
 
         if setfile is None:
-            raise vaspwrapper.VaspWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
+            raise VaspWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
 
         else:
-            print "  Read settings from:", setfile
-        self.settings = vaspwrapper.read_settings(setfile)
+            print("  Read settings from:", setfile)
+        self.settings = read_settings(setfile)
 
         # set default settings if not present
         if not "ncore" in self.settings:
@@ -138,7 +155,7 @@ class Relax(object):
 
         self.auto = auto
         self.sort = sort
-        print "  DONE\n"
+        print("  DONE\n")
         sys.stdout.flush()
 
 
@@ -161,7 +178,7 @@ class Relax(object):
 
         """
         # Find required input files in CASM project directory tree
-        vaspfiles=casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname, self.clex)
+        vaspfiles=vasp_input_file_names(self.casm_directories, self.configname, self.clex)
         incarfile,prim_kpointsfile,prim_poscarfile,super_poscarfile,speciesfile=vaspfiles
 
         # Find optional input files
@@ -184,15 +201,15 @@ class Relax(object):
 
 
     def submit(self):
-        """Submit a PBS job for this VASP relaxation"""
+        """Submit a job for this VASP relaxation"""
 
-        print "Submitting..."
-        print "Configuration:", self.configname
+        print("Submitting...")
+        print("Configuration:", self.configname)
         # first, check if the job has already been submitted and is not completed
-        db = pbs.JobDB()
-        print "Calculation directory:", self.calcdir
+        db = JobDB()
+        print("Calculation directory:", self.calcdir)
         id = db.select_regex_id("rundir", self.calcdir)
-        print "JobID:", id
+        print("JobID:", id)
         sys.stdout.flush()
         if id != []:
             for j in id:
@@ -200,7 +217,7 @@ class Relax(object):
                 # taskstatus = ["Incomplete","Complete","Continued","Check","Error:.*","Aborted"]
                 # jobstatus = ["C","Q","R","E","W","H","M"]
                 if job["jobstatus"] != "C":
-                    print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
+                    print("JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting.")
                     sys.stdout.flush()
                     return
                 #elif job["taskstatus"] in ["Complete", "Check"] or re.match( "Error:.*", job["taskstatus"]):
@@ -218,7 +235,7 @@ class Relax(object):
         (status, task) = relaxation.status()
 
         if status == "complete":
-            print "Status:", status, "  Not submitting."
+            print("Status:", status, "  Not submitting.")
             sys.stdout.flush()
 
             # ensure job marked as complete in db
@@ -227,9 +244,9 @@ class Relax(object):
                   job = db.select_job(j)
                   if job["taskstatus"] == "Incomplete":
                       try:
-                          pbs.complete_job(jobid=j)
-                      except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
-                          print str(e)
+                          complete_job(jobid=j)
+                      except (JobsError, JobDBError, EligibilityError) as e:
+                          print(str(e))
                           sys.stdout.flush()
 
             # ensure results report written
@@ -239,17 +256,17 @@ class Relax(object):
             return
 
         elif status == "not_converging":
-            print "Status:", status, "  Not submitting."
+            print("Status:", status, "  Not submitting.")
             sys.stdout.flush()
             return
 
         elif status != "incomplete":
-            raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
             return
 
 
-        print "Preparing to submit a VASP relaxation PBS job"
+        print("Preparing to submit a VASP relaxation job")
         sys.stdout.flush()
 
         # cd to configdir, submit jobs from configdir, then cd back to currdir
@@ -257,7 +274,7 @@ class Relax(object):
         os.chdir(self.calcdir)
 
         # determine the number of atoms in the configuration
-        print "Counting atoms in the POSCAR"
+        print("Counting atoms in the POSCAR")
         sys.stdout.flush()
         pos = vasp.io.Poscar(os.path.join(self.configdir,"POS"))
         N = len(pos.basis)
@@ -267,8 +284,8 @@ class Relax(object):
         if self.settings["preamble"] is not None:
         # Append any instructions given in the 'preamble' file, if given
             preamble = self.casm_directories.settings_path_crawl(self.settings["preamble"], self.configname, self.clex)
-            with open(preamble) as my_preamble:
-                cmd += "".join(my_preamble)
+            with open(preamble, 'rb') as my_preamble:
+                cmd += "".join(my_preamble.read().decode('utf-8'))
         # Or just execute a single prerun line, if given
         if self.settings["prerun"] is not None:
           cmd += self.settings["prerun"] + "\n"
@@ -276,10 +293,10 @@ class Relax(object):
         if self.settings["postrun"] is not None:
           cmd += self.settings["postrun"] + "\n"
 
-        print "Constructing a PBS job"
+        print("Constructing a job")
         sys.stdout.flush()
-        # construct a pbs.Job
-        job = pbs.Job(name=casm.jobname(self.configdir),\
+        # construct a Job
+        job = Job(name=wrapper.jobname(self.configname),\
                       account=self.settings["account"],\
                       nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
                       ppn=int(self.settings["ppn"]),\
@@ -293,7 +310,7 @@ class Relax(object):
                       command=cmd,\
                       auto=self.auto)
 
-        print "Submitting"
+        print("Submitting")
         sys.stdout.flush()
         # submit the job
         job.submit()
@@ -302,7 +319,7 @@ class Relax(object):
         # return to current directory
         os.chdir(currdir)
 
-        print "CASM VASPWrapper relaxation PBS job submission complete\n"
+        print("CASM VASPWrapper relaxation job submission complete\n")
         sys.stdout.flush()
 
 
@@ -360,15 +377,15 @@ class Relax(object):
 
 
         if status == "complete":
-            print "Status:", status
+            print("Status:", status)
             sys.stdout.flush()
 
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
-                    print str(e)
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
+                    print(str(e))
                     sys.stdout.flush()
 
             # write results to properties.calc.json
@@ -376,9 +393,9 @@ class Relax(object):
             return
 
         elif status == "not_converging":
-            print "Status:", status
+            print("Status:", status)
             self.report_status("failed","run_limit")
-            print "Returning"
+            print("Returning")
             sys.stdout.flush()
             return
 
@@ -392,7 +409,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            raise VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
 
@@ -403,12 +420,12 @@ class Relax(object):
             # mark error
             if self.auto:
                 try:
-                    pbs.error_job("Not converging")
-                except (pbs.PBSError, pbs.JobDBError) as e:
-                    print str(e)
+                    error_job("Not converging")
+                except (JobsError, JobDBError) as e:
+                    print(str(e))
                     sys.stdout.flush()
 
-            print "Not Converging!"
+            print("Not Converging!")
             sys.stdout.flush()
             self.report_status("failed","run_limit")
 
@@ -422,10 +439,10 @@ class Relax(object):
             except:
                 pass
             settingsfile = os.path.join(config_set_dir, "relax.json")
-            vaspwrapper.write_settings(self.settings, settingsfile)
+            write_settings(self.settings, settingsfile)
 
-            print "Writing:", settingsfile
-            print "Edit the 'run_limit' property if you wish to continue."
+            print("Writing:", settingsfile)
+            print("Edit the 'run_limit' property if you wish to continue.")
             sys.stdout.flush()
             return
 
@@ -434,9 +451,9 @@ class Relax(object):
             # mark job as complete in db
             if self.auto:
                 try:
-                    pbs.complete_job()
-                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
-                    print str(e)
+                    complete_job()
+                except (JobsError, JobDBError, EligibilityError) as e:
+                    print(str(e))
                     sys.stdout.flush()
 
             # write results to properties.calc.json
@@ -444,7 +461,7 @@ class Relax(object):
 
         else:
             self.report_status("failed","unknown")
-            raise vaspwrapper.VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
+            raise VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
     def report_status(self, status, failure_type=None):
@@ -467,9 +484,9 @@ class Relax(object):
             output["failure_type"] = failure_type
 
         outputfile = os.path.join(self.calcdir, "status.json")
-        with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
-        print "Wrote " + outputfile
+        with open(outputfile, 'wb') as file:
+            file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
+        print("Wrote " + outputfile)
         sys.stdout.flush()
 
     def finalize(self):
@@ -480,9 +497,9 @@ class Relax(object):
         speciesfile = self.casm_directories.settings_path_crawl("SPECIES", self.configname, self.clex)
         output = self.properties(vaspdir, super_poscarfile, speciesfile)
         outputfile = os.path.join(self.calcdir, "properties.calc.json")
-        with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
-        print "Wrote " + outputfile
+        with open(outputfile, 'wb') as file:
+            file.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)).encode('utf-8'))
+        print("Wrote " + outputfile)
         sys.stdout.flush()
         self.report_status('complete')
 
@@ -495,9 +512,9 @@ class Relax(object):
         try:
           vrun = vasp.io.Vasprun( os.path.join(self.calcdir, relaxation.rundir[-i-1], "vasprun.xml"))
           if len(vrun.all_e_0[-1]) >= vrun.nelm:
-            print('The last relaxation run (' +
+            print(('The last relaxation run (' +
                 os.path.basename(relaxation.rundir[-i-1]) +
-                ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+                ') failed to achieve electronic convergence; properties.calc.json will not be written.\n'))
             self.report_status('failed','electronic_convergence')
             return False
           break
@@ -549,13 +566,13 @@ class Relax(object):
         # as lists
         output["relaxed_forces"] = [ None for i in range(len(vrun.forces))]
         for i, v in enumerate(vrun.forces):
-            output["relaxed_forces"][unsort_dict[i] ] = casm.NoIndent(vrun.forces[i])
+            output["relaxed_forces"][unsort_dict[i] ] = noindent.NoIndent(vrun.forces[i])
 
-        output["relaxed_lattice"] = [casm.NoIndent(v) for v in vrun.lattice]
+        output["relaxed_lattice"] = [noindent.NoIndent(v) for v in vrun.lattice]
 
         output["relaxed_basis"] = [ None for i in range(len(vrun.basis))]
         for i, v in enumerate(vrun.basis):
-            output["relaxed_basis"][unsort_dict[i] ] = casm.NoIndent(vrun.basis[i])
+            output["relaxed_basis"][unsort_dict[i] ] = noindent.NoIndent(vrun.basis[i])
 
         output["relaxed_energy"] = vrun.total_energy
 
@@ -566,12 +583,12 @@ class Relax(object):
             if ocar.lorbit in [1, 2, 11, 12]:
                 output["relaxed_mag_basis"] = [ None for i in range(len(vrun.basis))]
                 for i, v in enumerate(vrun.basis):
-                    output["relaxed_mag_basis"][unsort_dict[i]] = casm.NoIndent(ocar.mag[i])
+                    output["relaxed_mag_basis"][unsort_dict[i]] = noindent.NoIndent(ocar.mag[i])
         # if output["relaxed_magmom"] is None:
         #     output.pop("relaxed_magmom", None)
         # if output["relaxed_mag_basis"][0] is None:
         #     output.pop("relaxed_mag_basis", None)
 
-	return output
+        return output
 
 

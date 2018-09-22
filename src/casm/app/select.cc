@@ -174,7 +174,7 @@ namespace CASM {
     std::vector<fs::path> selection;
 
     fs::path out_path;
-    COORD_TYPE coordtype;
+    //COORD_TYPE coordtype;
     po::variables_map vm;
 
     /// Set command line options using boost program_options
@@ -488,5 +488,3 @@ namespace CASM {
   };
 
 }
-
-

@@ -548,8 +548,8 @@ namespace CASM {
     m_lat(unit),
     m_begin_volume(enum_props.begin_volume()),
     m_end_volume(enum_props.end_volume()),
-    m_dims(enum_props.dims()),
-    m_gen_mat(enum_props.generating_matrix()) {
+    m_gen_mat(enum_props.generating_matrix()),
+    m_dims(enum_props.dims()) {
 
     if(m_gen_mat.determinant() < 1) {
       throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
@@ -568,10 +568,9 @@ namespace CASM {
     m_point_group(point_grp),
     m_begin_volume(enum_props.begin_volume()),
     m_end_volume(enum_props.end_volume()),
-    m_dims(enum_props.dims()),
-    m_gen_mat(enum_props.generating_matrix())
+    m_gen_mat(enum_props.generating_matrix()),
+    m_dims(enum_props.dims()) {
 
-  {
     if(m_gen_mat.determinant() < 1) {
       throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
     }

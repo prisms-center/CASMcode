@@ -1,3 +1,6 @@
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
+
 import numpy as np
 import random
 
@@ -24,7 +27,7 @@ def eci(individual, coef):
       for basis functions with non-zero coefficients: [(index, coef), ...]
   
   """
-  return zip(indices(individual), list(coef))
+  return list(zip(indices(individual), list(coef)))
   
   
 def indices(individual):
@@ -46,7 +49,7 @@ def indices(individual):
       List of indices of True values.
   
   """
-  return [i for i in xrange(len(individual)) if individual[i] ]
+  return [i for i in range(len(individual)) if individual[i] ]
 
 
 def wHullDist(hull_dist, A=1.0, B=1.0, kT=1.0, **kwargs):

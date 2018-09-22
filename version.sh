@@ -1,6 +1,6 @@
 #!/bin/bash
 
-stringfile=buid-aux/casm_version.txt
+stringfile=build-aux/casm_version.txt
 echo "Updating version string in $stringfile"
 mkdir -p build-aux
 #Be sure to not include a newline!

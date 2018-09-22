@@ -126,7 +126,7 @@ namespace CASM {
     PrimClex primclex(prim, null_log());
 
     // enumerate size 5 supercells
-    bool verbose = false;
+    // bool verbose = false;
     ScelEnumProps enum_props(5, 6);
     primclex.generate_supercells(enum_props);
 
@@ -145,7 +145,7 @@ namespace CASM {
     // this should generate the canonical equivalent lattice and add it, but
     // since we already enumerated supercells the supercell list size should
     // not increase
-    Index scel_index = primclex.add_supercell(test_lat);
+    primclex.add_supercell(test_lat);
     BOOST_CHECK_EQUAL(primclex.get_supercell_list().size(), scel_list_size);
   }
 

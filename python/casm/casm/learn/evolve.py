@@ -1,15 +1,23 @@
-import os, time, pickle, copy, random
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
-import casm.learn
-import numpy as np
-from sklearn.base import BaseEstimator
-from sklearn.feature_selection.base import SelectorMixin
+import copy
+from operator import attrgetter
+import os
+import pickle
+import random
+import time
+
 import deap
 import deap.tools
-import deap.algorithms
-from operator import attrgetter
 from deap.tools import HallOfFame
+import deap.algorithms
+import numpy as np
+import six
+from sklearn.base import BaseEstimator
+from sklearn.feature_selection.base import SelectorMixin
 
+import casm.learn
 
 def initNRandomOn(container, n_features, n_features_init):
   """ 
@@ -213,7 +221,7 @@ def initialize_population(n_population, toolbox, filename=None, verbose=True):
   
   if filename is not None and os.path.exists(filename):
     if verbose:
-      print "Loading initial population:", filename
+      print("Loading initial population:", filename)
     with open(filename, 'rb') as f:
       pop = pickle.load(f)
     if isinstance(pop, HallOfFame):
@@ -221,7 +229,7 @@ def initialize_population(n_population, toolbox, filename=None, verbose=True):
       pop = [indiv for indiv in pop]
   else:
     if verbose:
-      print "Constructing initial population"
+      print("Constructing initial population")
     pop = toolbox.population(n_population)
   
   return pop
@@ -229,30 +237,30 @@ def initialize_population(n_population, toolbox, filename=None, verbose=True):
 
 def save_population(pop, filename, verbose=False):
   if verbose:
-    print "\nPickling population to:", filename
+    print("\nPickling population to:", filename)
   with open(filename, 'wb') as f:
-    pickle.dump(pop, f)
+      pickle.dump(pop, f, protocol=2)
 
 
 def initialize_halloffame(filename=None, n_halloffame=25, verbose=False):
   hall = casm.learn.create_halloffame(n_halloffame)
   if verbose:
-    print "# Hall of Fame size:", n_halloffame, "\n"
+    print("# Hall of Fame size:", n_halloffame, "\n")
   
   if os.path.exists(filename):
     with open(filename, 'rb') as f:
       existing_hall = pickle.load(f)
     if verbose:
-      print "Loading Hall of Fame:", filename
+      print("Loading Hall of Fame:", filename)
     hall.update(existing_hall)
   return hall
 
 
 def save_halloffame(hall, filename, verbose=False):
   if verbose:
-    print "\nPickling Hall of Fame to:", filename
+    print("\nPickling Hall of Fame to:", filename)
   with open(filename, 'wb') as f:
-    pickle.dump(hall, f)
+      pickle.dump(hall, f, protocol=2)
 
 
 def evaluate_all(pop, toolbox):
@@ -404,7 +412,7 @@ def default_stats(funcs=None):
   if funcs is None:
     funcs = {"avg":np.mean, "std":np.std, "min":np.min, "max":np.max}
   stats = deap.tools.Statistics(key=lambda ind: ind.fitness.values)
-  for key, val in funcs.iteritems():
+  for key, val in six.iteritems(funcs):
     stats.register(key, val)
   return stats
     
@@ -455,7 +463,7 @@ class Log(object):
     record = self.stats.compile(pop) if self.stats else {}
     self.logbook.record(gen=gen, nevals=nevals, **record)
     if verbose:
-      print self.logbook.stream
+      print(self.logbook.stream)
 
 
 def single_flip_children(parent):
@@ -478,7 +486,7 @@ def single_flip_children(parent):
    
   """
   offspring = []
-  for index in xrange(len(parent)):
+  for index in range(len(parent)):
     child = copy.deepcopy(parent)
     del child.fitness.values
     child[index] = not child[index]
@@ -797,7 +805,7 @@ class EvolutionaryFeatureSelection(BaseEstimator, SelectorMixin):
             in_args = [f(self) for f in alg_args]
             
             in_kwargs = dict()
-            for key, f in alg_kwargs.iteritems():
+            for key, f in six.iteritems(alg_kwargs):
               in_kwargs[key] = f(self)
             
             self.pop, self.logbook = algorithm(*in_args, **in_kwargs)
@@ -824,33 +832,33 @@ class EvolutionaryFeatureSelection(BaseEstimator, SelectorMixin):
     for rep in range(self.evolve_params.n_repetition):
       
       if self.verbose:
-        print "Begin", rep+1, "of", self.evolve_params.n_repetition, "repetitions"
+        print("Begin", rep+1, "of", self.evolve_params.n_repetition, "repetitions")
       
       if self.verbose:
-        print "Begin", self.evolve_params.n_generation, "generations"
+        print("Begin", self.evolve_params.n_generation, "generations")
         t = time.clock()
       
       in_args = [f(self) for f in self.alg_args]
       in_kwargs = dict()
-      for key, f in self.alg_kwargs.iteritems():
+      for key, f in six.iteritems(self.alg_kwargs):
         in_kwargs[key] = f(self)
       
       self.pop, self.logbook = self.algorithm(*in_args, **in_kwargs)
       self.pop_end = copy.deepcopy(self.pop)
       
       if self.verbose:
-        print "Runtime:", time.clock() - t, "(s)\n"
+        print("Runtime:", time.clock() - t, "(s)\n")
       
       ## Print end population
       if self.verbose:
-        print "\nFinal population:"
+        print("\nFinal population:")
         casm.learn.print_population(self.pop_end)
       
       save_population(self.pop, filename=self.evolve_params.pop_end_filename, verbose=self.verbose)
       
       ## Print hall of fame
       if self.verbose:
-        print "\nHall of Fame:"
+        print("\nHall of Fame:")
         casm.learn.print_population(self.halloffame)
 
       save_halloffame(self.halloffame, filename=self.evolve_params.halloffame_filename, verbose=self.verbose)
@@ -907,7 +915,7 @@ class GeneticAlgorithm(EvolutionaryFeatureSelection):
     
     scoring: string
       A string or a scorer callable object / function with signature 
-      scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+      scorer(estimator, X, y). The parameter for sklearn.model_selection.cross_val_score,
       default = None, uses estimator.score().
     
     cv: cross-validation generator or an iterable
@@ -971,11 +979,11 @@ class GeneticAlgorithm(EvolutionaryFeatureSelection):
       
       scoring: string, callable or None, optional, default=None
         A string or a scorer callable object / function with signature 
-        scorer(estimator, X, y). The parameter is passed to sklearn.cross_validation.cross_val_score,
+        scorer(estimator, X, y). The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses estimator.score().
       
       cv: cross-validation generator or an iterable, optional, default=None
-        Provides train/test splits. The parameter is passed to sklearn.cross_validation.cross_val_score,
+        Provides train/test splits. The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses KFold cross-validation with k=3.
       
       penalty: float, optional, default=0.0
@@ -1073,7 +1081,7 @@ class GeneticAlgorithm(EvolutionaryFeatureSelection):
     self.toolbox.register("individual", initNRandomOn, 
       casm.learn.creator.Individual, X.shape[1], self.evolve_params.n_features_init)
     self.toolbox.register("population", deap.tools.initRepeat, list, self.toolbox.individual)
-    self.toolbox.register("evaluate", casm.learn.cross_validation.cross_val_score, 
+    self.toolbox.register("evaluate", casm.learn.model_selection.cross_val_score, 
       self.estimator, X, y=y, scoring=self.scoring, cv=self.cv, penalty=self.penalty)
     
     return self._run() 
@@ -1101,7 +1109,7 @@ class IndividualBestFirst(EvolutionaryFeatureSelection):
     
     scoring: string
       A string or a scorer callable object / function with signature 
-      scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+      scorer(estimator, X, y). The parameter for sklearn.model_selection.cross_val_score,
       default = None, uses estimator.score().
     
     cv: cross-validation generator or an iterable
@@ -1148,11 +1156,11 @@ class IndividualBestFirst(EvolutionaryFeatureSelection):
       
       scoring: string, callable or None, optional, default=None
         A string or a scorer callable object / function with signature 
-        scorer(estimator, X, y). The parameter is passed to sklearn.cross_validation.cross_val_score,
+        scorer(estimator, X, y). The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses estimator.score().
       
       cv: cross-validation generator or an iterable, optional, default=None
-        Provides train/test splits. The parameter is passed to sklearn.cross_validation.cross_val_score,
+        Provides train/test splits. The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses KFold cross-validation with k=3.
       
       penalty: float, optional, default=0.0
@@ -1232,7 +1240,7 @@ class IndividualBestFirst(EvolutionaryFeatureSelection):
     self.toolbox.register("individual", initNRandomOn, 
       casm.learn.creator.Individual, X.shape[1], self.evolve_params.n_features_init)
     self.toolbox.register("population", deap.tools.initRepeat, list, self.toolbox.individual)
-    self.toolbox.register("evaluate", casm.learn.cross_validation.cross_val_score, 
+    self.toolbox.register("evaluate", casm.learn.model_selection.cross_val_score, 
       self.estimator, X, y=y, scoring=self.scoring, cv=self.cv, penalty=self.penalty)
     
     return self._run()
@@ -1263,7 +1271,7 @@ class PopulationBestFirst(EvolutionaryFeatureSelection):
     
     scoring: string
       A string or a scorer callable object / function with signature 
-      scorer(estimator, X, y). The parameter for sklearn.cross_validation.cross_val_score,
+      scorer(estimator, X, y). The parameter for sklearn.model_selection.cross_val_score,
       default = None, uses estimator.score().
     
     cv: cross-validation generator or an iterable
@@ -1310,11 +1318,11 @@ class PopulationBestFirst(EvolutionaryFeatureSelection):
       
       scoring: string, callable or None, optional, default=None
         A string or a scorer callable object / function with signature 
-        scorer(estimator, X, y). The parameter is passed to sklearn.cross_validation.cross_val_score,
+        scorer(estimator, X, y). The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses estimator.score().
       
       cv: cross-validation generator or an iterable, optional, default=None
-        Provides train/test splits. The parameter is passed to sklearn.cross_validation.cross_val_score,
+        Provides train/test splits. The parameter is passed to sklearn.model_selection.cross_val_score,
         has a default=None which uses KFold cross-validation with k=3.
       
       penalty: float, optional, default=0.0
@@ -1393,7 +1401,7 @@ class PopulationBestFirst(EvolutionaryFeatureSelection):
     self.toolbox.register("individual", initNRandomOn, 
       casm.learn.creator.Individual, X.shape[1], self.evolve_params.n_features_init)
     self.toolbox.register("population", deap.tools.initRepeat, list, self.toolbox.individual)
-    self.toolbox.register("evaluate", casm.learn.cross_validation.cross_val_score, 
+    self.toolbox.register("evaluate", casm.learn.model_selection.cross_val_score, 
       self.estimator, X, y=y, scoring=self.scoring, cv=self.cv, penalty=self.penalty)
     
     return self._run()

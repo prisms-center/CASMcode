@@ -1,6 +1,10 @@
-numpy
-pandas
-scikit-learn
-scoop
-deap
 bokeh
+deap
+mock
+pandas
+prisms-jobs
+scikit-learn
+scipy
+sh
+six
+tornado

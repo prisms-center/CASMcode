@@ -1,0 +1,40 @@
+# set variables in build_scripts/build_variables.sh
+
+package:
+  name: casm-cpp
+  version: {{ CASM_CONDA_VERSION }}
+
+source:
+  git_url: {{ CASM_REPO }}
+  git_rev: {{ CASM_BRANCH }}
+
+build:
+  number: {{ CASM_BUILD_NUMBER }}
+  string: {{ CASM_XCODE_BUILD_STR }}
+  script_env:
+    - CASM_NCPU
+  features:
+    - xcode
+
+requirements:
+  build:
+    - python {{ CASM_PYTHON_VERSION }}*
+    - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_XCODE_BUILD_STR }}
+    - m4 >=1.4.18
+    - autoconf
+    - automake
+    - make
+    - libtool
+    - pkg-config
+    - wget
+    - bzip2
+    - six
+
+  run:
+    - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_XCODE_BUILD_STR }}
+
+about:
+  home: {{ CASM_URL }}
+  license: LGPLv2
+  license_file: LICENSE
+  summary: CASM library and c++ based command line tools

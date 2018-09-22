@@ -38,7 +38,7 @@ namespace CASM {
 
     size_type start1, start2, N;
     double sum1, sum2;
-    double eps = (eps == 0.0) ? 1e-8 : std::abs(observations(0)) * 1e-8;
+    double eps = (observations(0) == 0.0) ? 1e-8 : std::abs(observations(0)) * 1e-8;
 
     N = observations.size();
     bool is_even = ((N % 2) == 0);
@@ -165,7 +165,6 @@ namespace CASM {
   std::tuple<bool, double, double> MCDataConvergence::_calc_rho(const Eigen::VectorXd &observations) {
 
     size_type N = observations.size();
-    double obs_mean_sqr = m_mean * m_mean;
     double CoVar0 = m_squared_norm / N - m_mean * m_mean;
 
     // if there is essentially no variation, return rho(l==1)

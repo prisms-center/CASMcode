@@ -1,0 +1,26 @@
+# set variables in build_scripts/build_variables.sh
+
+package:
+  name: casm
+  version: {{ CASM_CONDA_VERSION }}
+
+build:
+  number: {{ CASM_BUILD_NUMBER }}
+  string: {{ CASM_DEVTOOLSET_BUILD_STR }}
+  features:
+    - devtoolset
+   
+requirements:
+  build:
+    - python {{ CASM_PYTHON_VERSION }}*
+  
+  run:
+    - python {{ CASM_PYTHON_VERSION }}*
+    - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_DEVTOOLSET_BUILD_STR }}
+    - casm-cpp {{ CASM_CONDA_VERSION }} {{ CASM_DEVTOOLSET_BUILD_STR }}
+    - casm-python {{ CASM_CONDA_VERSION }} {{ CASM_BUILD_NUMBER }}
+  
+about:
+  home: {{ CASM_URL }}
+  license: LGPLv2
+  summary: CASM metapackage to install all components

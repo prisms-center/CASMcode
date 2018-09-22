@@ -57,9 +57,10 @@ BOOST_AUTO_TEST_CASE(Test1) {
   {
     SuperConfigEnum e(target_scel, sub_configs.begin(), sub_configs.end());
     std::map<Configuration, Array<int> > cmap;
-    Index count = 0;
+
     for(const auto &tconfig : e) {
       auto res = cmap.insert(std::make_pair(tconfig.primitive().in_canonical_supercell(), e.counter()));
+      (void) res;
     }
 
     //for(const auto &val : cmap) {

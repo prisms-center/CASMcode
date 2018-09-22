@@ -13,8 +13,8 @@ namespace CASM {
   /// - read_path is expected to be within a CASM project directory
   ///
   MonteSettings::MonteSettings(const PrimClex &_primclex, const fs::path &read_path):
-    m_primclex(&_primclex),
-    jsonParser(read_path) {
+    jsonParser(read_path),
+    m_primclex(&_primclex) {
 
     m_root = find_casmroot(fs::absolute(read_path));
     m_output_directory = fs::absolute(read_path).parent_path();
@@ -435,7 +435,6 @@ namespace CASM {
   /// \brief Figure out how often to take samples
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::sample_period() const {
 
-    size_type value = 1;
     std::string level1 = "data";
     std::string level2 = "sample_period";
     std::string help = "(int, default=1)\n"
@@ -622,6 +621,3 @@ namespace CASM {
 
 
 }
-
-
-

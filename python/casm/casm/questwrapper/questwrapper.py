@@ -1,8 +1,11 @@
 """ Wrapper for handling seqquest/casm integration """
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+from builtins import *
 
 import json
+import six
 
-import seqquest.seqquest_io
+from casm.seqquest import seqquest_io
 
 class QuestWrapperError(Exception):
     """ Errors related to QuestWrapper """
@@ -50,11 +53,10 @@ def read_settings(filename):
         "postrun" : bash commands to run after vasp.Relax.run completes (default None)
     """
     try:
-        stream = open(filename)
-        settings = json.load(stream)
-        stream.close()
+        with open(filename, 'rb') as stream:
+            settings = json.loads(stream.read().decode('utf-8'))
     except (IOError, ValueError) as e:
-        print "Error reading settings file:", filename
+        print("Error reading settings file:", filename)
         raise e
 
     required = ["queue", "ppn", "atom_per_proc", "walltime"]
@@ -74,9 +76,9 @@ def read_settings(filename):
             if key.lower() in ["extra_input_files", "remove", "compress", "backup"]:
                 settings[key] = []
             elif key.lower() in ["move"]:
-                settings[key] = seqquest.seqquest_io.DEFAULT_QUEST_MOVE_LIST
+                settings[key] = seqquest_io.DEFAULT_QUEST_MOVE_LIST
             elif key.lower() in ["copy"]:
-                settings[key] = seqquest.seqquest_io.DEFAULT_QUEST_COPY_LIST
+                settings[key] = seqquest_io.DEFAULT_QUEST_COPY_LIST
             # elif key.lower() in ["remove"]:
             #     settings[key] = vasp.io.DEFAULT_VASP_REMOVE_LIST
             else:
@@ -84,10 +86,10 @@ def read_settings(filename):
 
     if isinstance(settings["remove"], list):
         if 'default' in settings["remove"]:
-            settings["remove"] += seqquest.seqquest_io.DEFAULT_QUEST_REMOVE_LIST
+            settings["remove"] += seqquest_io.DEFAULT_QUEST_REMOVE_LIST
     elif isinstance(settings["remove"], str):
         if settings["remove"].lower() == 'default':
-            settings["remove"] = seqquest.seqquest_io.DEFAULT_QUEST_REMOVE_LIST
+            settings["remove"] = seqquest_io.DEFAULT_QUEST_REMOVE_LIST
         else:
             settings["remove"] = [settings["remove"]]
     if settings["priority"] is None:
@@ -108,17 +110,16 @@ def read_settings(filename):
 
 def write_settings(settings, filename):
     """ Write 'settings' as json file, 'filename' """
-    stream = open(filename, 'w')
-    json.dump(settings, stream, indent=4)
-    stream.close()
+    with open(filename, 'wb') as stream:
+        stream.write(six.u(json.dumps(settings, stream, indent=4)).encode('utf-8'))
 
 def read_properties(filename):
     """ Read a properties.calc.json"""
     required = ["atom_type", "atoms_per_type", "coord_mode", "relaxed_basis", "relaxed_energy", "relaxed_forces", "relaxed_lattice"]
     optional = ["relaxed_magmom", "relaxed_mag_basis"]
 
-    with open(filename, 'r') as myfile:
-        properties = json.load(myfile)
+    with open(filename, 'rb') as myfile:
+        properties = json.load(myfile.read().decode('utf-8'))
 
     for key in required:
         if not key in properties:

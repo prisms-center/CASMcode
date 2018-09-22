@@ -23,12 +23,11 @@ namespace CASM {
       if(fs::exists(m_filename_base + ".cc")) {
 
         // Compile it
+        log().compiling<Log::standard>(m_filename_base + ".cc");
+        log().begin_lap();
+        log() << compile_msg << std::endl;
         try {
-          log().compiling<Log::standard>(m_filename_base + ".cc");
-          log().begin_lap();
-          log() << compile_msg << std::endl;
           _compile();
-          log() << "compile time: " << log().lap_time() << " (s)\n" << std::endl;
         }
         catch(std::exception &e) {
           log() << "Error compiling clexulator. To fix: \n";
@@ -36,9 +35,9 @@ namespace CASM {
           log() << "  - Check compiler options with 'casm settings -l'\n";
           log() << "    - Update compiler options with 'casm settings --set-compile-options '...options...'\n";
           log() << "    - Make sure the casm headers can be found by including '-I/path/to/casm'\n";
-          log() << "  - The default compiler is 'g++'. Override by setting the environment variable CXX\n" << std::endl;
-          throw e;
+          throw;
         }
+        log() << "compile time: " << log().lap_time() << " (s)\n" << std::endl;
       }
       else {
         throw std::runtime_error(
@@ -154,17 +153,17 @@ namespace CASM {
       };
     }
 
-    std::vector<std::string> _casm_env() {
-      return std::vector<std::string> {
-        "CASM_PREFIX"
-      };
-    }
-
-    std::vector<std::string> _boost_env() {
-      return std::vector<std::string> {
-        "CASM_BOOST_PREFIX"
-      };
-    }
+    // std::vector<std::string> _casm_env() {
+    //   return std::vector<std::string> {
+    //     "CASM_PREFIX"
+    //   };
+    // }
+    //
+    // std::vector<std::string> _boost_env() {
+    //   return std::vector<std::string> {
+    //     "CASM_BOOST_PREFIX"
+    //   };
+    // }
 
     /// \brief Some function of environment variables
     std::pair<std::string, std::string> _use_env(std::vector<std::string> var, std::string _default = "") {
@@ -176,6 +175,73 @@ namespace CASM {
       }
       return std::make_pair(_default, "default");
     }
+
+    fs::path find_executable(std::string name) {
+      char *_env = std::getenv("PATH");
+      std::vector<std::string> splt;
+      boost::split(splt, _env, boost::is_any_of(":"), boost::token_compress_on);
+
+      for(const auto &p : splt) {
+        fs::path test {fs::path(p) / name};
+        if(fs::exists(test)) {
+          return test;
+        }
+      }
+      return fs::path();
+    }
+
+    fs::path find_include(std::string executable_name, std::string include_name) {
+      fs::path loc = find_executable(executable_name);
+      if(loc.empty()) {
+        return loc;
+      }
+      fs::path maybe_includedir = loc.parent_path().parent_path() / "include";
+      if(fs::exists(maybe_includedir / include_name)) {
+        return maybe_includedir / include_name;
+      }
+      return fs::path();
+    }
+
+    fs::path find_includedir(std::string executable_name, std::string include_name) {
+      return find_include(executable_name, include_name).parent_path();
+    }
+
+    fs::path find_lib(std::string executable_name, std::string lib_name) {
+      fs::path loc = find_executable(executable_name);
+      if(loc.empty()) {
+        return loc;
+      }
+      fs::path maybe_prefix = loc.parent_path().parent_path();
+
+      auto check_dir = [&](fs::path test_libdir) {
+        std::vector<std::string> check {"dylib", "so"};
+        for(const auto &s : check) {
+          auto res = test_libdir / (lib_name + "." + s);
+          if(fs::exists(res)) {
+            return res;
+          }
+        }
+        return fs::path();
+      };
+
+      auto check_names = [&](fs::path test_prefix) {
+        std::vector<fs::path> check {"lib", "lib64", "lib/x86_64-linux-gnu"};
+        for(const auto &s : check) {
+          auto res = check_dir(test_prefix / s);
+          if(!res.empty()) {
+            return res;
+          }
+        }
+        return fs::path();
+      };
+
+      return check_names(maybe_prefix);
+    }
+
+    fs::path find_libdir(std::string executable_name, std::string lib_name) {
+      return find_lib(executable_name, lib_name).parent_path();
+    }
+
   }
 
   /// \brief Return default compiler and specifying variable
@@ -220,8 +286,14 @@ namespace CASM {
       return std::make_pair(fs::path(_env) / "include", "CASM_PREFIX");
     }
 
+    // relpath from ccasm
+    fs::path _default = find_includedir("ccasm", "casm");
+    if(!_default.empty()) {
+      return std::make_pair(_default, "relpath");
+    }
+
     // else
-    return std::make_pair(fs::path("/usr/local/include"), "default");
+    return std::make_pair(fs::path("/not/found"), "notfound");
   }
 
   /// \brief Return lib path option for CASM
@@ -243,8 +315,14 @@ namespace CASM {
       return std::make_pair(fs::path(_env) / "lib", "CASM_PREFIX");
     }
 
+    // relpath from ccasm
+    fs::path _default = find_libdir("ccasm", "libcasm");
+    if(!_default.empty()) {
+      return std::make_pair(_default, "relpath");
+    }
+
     // else
-    return std::make_pair(fs::path("/usr/local/lib"), "default");
+    return std::make_pair(fs::path("/not/found"), "notfound");
   }
 
   /// \brief Return include path option for boost
@@ -266,8 +344,14 @@ namespace CASM {
       return std::make_pair(fs::path(_env) / "include", "CASM_BOOST_PREFIX");
     }
 
+    // relpath from ccasm
+    fs::path _default = find_includedir("ccasm", "boost");
+    if(!_default.empty()) {
+      return std::make_pair(_default, "relpath");
+    }
+
     // else
-    return std::make_pair(fs::path("/usr/local/include"), "default");
+    return std::make_pair(fs::path("/not/found"), "notfound");
   }
 
   /// \brief Return lib path option for boost
@@ -289,8 +373,14 @@ namespace CASM {
       return std::make_pair(fs::path(_env) / "lib", "CASM_BOOST_PREFIX");
     }
 
+    // relpath from ccasm
+    fs::path _default = find_libdir("ccasm", "libboost_system");
+    if(!_default.empty()) {
+      return std::make_pair(_default, "relpath");
+    }
+
     // else
-    return std::make_pair(fs::path("/usr/local/lib"), "default");
+    return std::make_pair(fs::path("/not/found"), "notfound");
   }
 
   std::string include_path(const fs::path &dir) {

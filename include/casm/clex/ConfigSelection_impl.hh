@@ -83,7 +83,6 @@ namespace CASM {
                 << "                Exiting..." << std::endl;
       exit(1);
     }
-    bool tselect;
     std::map<std::string, bool> prop_map;
     std::string tname;
     bool tselected;
@@ -177,4 +176,3 @@ namespace CASM {
     }
   */
 }
-

@@ -1,4 +1,0 @@
-libcasm_la_SOURCES += ./src/casm/version/autoversion.cc
-
-#Always make the version to stay updated
-./src/casm/version/autoversion.o: .FORCE

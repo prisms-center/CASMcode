@@ -1,10 +1,3 @@
-"""A package of wrappers for running input codes to casm"""
-from casm import API, project_path, jobname
-from noindent import NoIndent, NoIndentEncoder
-__all__ = [
-  'API',
-  'project_path',
-  'jobname',
-  'NoIndent',
-  'NoIndentEncoder'
-]
+"""CASM Python interface, tools, and wrappers"""
+
+__version__ = '0.3.dev0'

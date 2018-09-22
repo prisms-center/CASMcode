@@ -156,7 +156,6 @@ namespace CASM {
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     const DirectoryStructure &dir = primclex.dir();
-    const ClexDescription &clex_desc = primclex.settings().default_clex();
     fs::path comp_axes = dir.composition_axes();
 
     CompositionAxes opt;
@@ -276,4 +275,3 @@ namespace CASM {
   }
 
 }
-
