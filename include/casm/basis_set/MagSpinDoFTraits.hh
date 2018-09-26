@@ -10,8 +10,8 @@ namespace CASM {
         DoFType::Traits("magspin", {
         "sx", "sy", "sz"
       },
-      CONTINUOUS,
-      LOCAL) {
+      DoFType::CONTINUOUS,
+      DoFType::LOCAL) {
       }
 
       bool time_reversal_active() const override {
@@ -85,14 +85,15 @@ namespace CASM {
     protected:
       DoFType::BasicTraits *_clone() const override;
     };
+  }
 
-    namespace DoFType {
+  namespace DoFType {
 
-      inline
-      notstd::cloneable_ptr<typename DoF_impl::BasicTraits> magspin() {
-        return DoF_impl::MagSpinDoFTraits().clone();
-      }
+    inline
+    notstd::cloneable_ptr<BasicTraits> magspin() {
+      return DoF_impl::MagSpinDoFTraits().clone();
     }
   }
+
 }
 #endif

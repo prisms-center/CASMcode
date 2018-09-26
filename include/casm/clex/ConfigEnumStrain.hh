@@ -13,6 +13,10 @@ extern "C" {
 
 namespace CASM {
 
+  namespace SymRepTools {
+    class SubWedge;
+  }
+
   /// Enumerate strained Configurations
   ///
   /// \ingroup ConfigEnumGroup
@@ -23,11 +27,14 @@ namespace CASM {
 
   public:
 
-    ConfigEnumStrain(const Supercell &scel,
-                     const Configuration &_init,
-                     const std::vector<Index> &subspace_partitions,
-                     const std::vector<double> &magnitudes,
-                     std::string _mode);
+    ConfigEnumStrain(const Configuration &_init,
+                     const std::vector<SymRepTools::SubWedge> &_wedges,
+                     Eigen::VectorXd min_val,
+                     Eigen::VectorXd max_val,
+                     Eigen::VectorXd inc_val,
+                     bool auto_range,
+                     bool trim_corners);
+
 
     std::string name() const override {
       return enumerator_name;
@@ -37,7 +44,9 @@ namespace CASM {
 
     static std::string interface_help();
 
-    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+    static int run(PrimClex const &primclex,
+                   jsonParser const &kwargs,
+                   Completer::EnumOption const &enum_opt);
 
     static int run(PrimClex const &_primclex,
                    Configuration const &_config,
@@ -46,6 +55,7 @@ namespace CASM {
                    Eigen::Ref<const Eigen::VectorXd> const &max_val,
                    Eigen::Ref<const Eigen::VectorXd> const &inc_val,
                    bool sym_axes,
+                   bool auto_range,
                    bool trim_corners,
                    bool analysis,
                    std::vector<std::string> const &_filter_expr,
@@ -57,13 +67,16 @@ namespace CASM {
 
 
     // -- Unique -------------------
+    bool m_trim_corners;
 
     Configuration m_current;
 
     // counts over strain grid
     EigenCounter<Eigen::VectorXd> m_counter;
+
     // counts over transformation matrices
     Index m_equiv_ind;
+
     StrainConverter m_strain_calc;
     //set of non-equivalent transformation matrices matrices that, along with m_counter define irreducible space
     std::vector<Eigen::MatrixXd> m_trans_mats;

@@ -140,18 +140,17 @@ namespace CASM {
       DOF_MODE m_mode;
     };
 
-
-    //struct TraitsConverter {
-    inline
-    notstd::cloneable_ptr<BasicTraits> traits2cloneable_ptr(const BasicTraits &value) {
-      return notstd::cloneable_ptr<BasicTraits>(value.clone().release());
-    }
-    //};
-
   }
 
   namespace DoF_impl {
     /// \brief A class to manage dynamic evaluation of BasisFunctions
+    //struct TraitsConverter {
+    inline
+    notstd::cloneable_ptr<DoFType::BasicTraits> traits2cloneable_ptr(const DoFType::BasicTraits &value) {
+      return notstd::cloneable_ptr<DoFType::BasicTraits>(value.clone().release());
+    }
+    //};
+
 
     /// A RemoteHandle can be initialized with either a double or integer reference and then passed to a
     /// DoF (or to a BasisFunction, which contains DoFs), in order for the DoF to access the remote value
@@ -348,7 +347,7 @@ namespace CASM {
       DoF(),
       m_current_state(0),
       m_remote_state(nullptr),
-      m_sym_rep_ID(SymGroupRepID::identity(0)) {}
+      m_symrep_ID(SymGroupRepID::identity(0)) {}
 
 
     DiscreteDoF(BasicTraits const &_traits,
@@ -359,19 +358,19 @@ namespace CASM {
       DoF(_traits, _var_name, _dof_ID),
       m_current_state(_current_state),
       m_remote_state(nullptr),
-      m_sym_rep_ID(_id) {
+      m_symrep_ID(_id) {
 
     }
 
     virtual
     ~DiscreteDoF() {}
 
-    SymGroupRepID sym_rep_ID()const {
-      return m_sym_rep_ID;
+    SymGroupRepID symrep_ID()const {
+      return m_symrep_ID;
     }
 
-    void set_sym_rep_ID(SymGroupRepID _id) const {
-      m_sym_rep_ID = _id;
+    void set_symrep_ID(SymGroupRepID _id) const {
+      m_symrep_ID = _id;
     }
 
     bool is_specified() const {
@@ -440,7 +439,7 @@ namespace CASM {
     mutable int const *m_remote_state;
 
     /// ID for the permutation representation for occupants
-    mutable SymGroupRepID m_sym_rep_ID;
+    mutable SymGroupRepID m_symrep_ID;
 
   private:
     virtual DiscreteDoF *_clone() const = 0;
@@ -564,7 +563,7 @@ namespace CASM {
         m_current_state = 0;
       else
         m_current_state = -1;
-      set_sym_rep_ID(SymGroupRepID::identity(new_dom.size()));
+      set_symrep_ID(SymGroupRepID::identity(new_dom.size()));
     }
 
     const std::vector<T> &domain() const {

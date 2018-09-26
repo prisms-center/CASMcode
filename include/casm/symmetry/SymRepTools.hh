@@ -6,9 +6,37 @@
 
 namespace CASM {
   namespace SymRepTools {
-    using Wedge = std::pair<std::vector<Index>, Eigen::MatrixXd>;
+    struct IrrepWedge {
+      IrrepWedge() {}
+      IrrepWedge(Eigen::Ref<const Eigen::MatrixXd> const &_axes,
+                 std::vector<Index> _mult) :
+        axes(_axes),
+        mult(_mult) {}
+      Eigen::MatrixXd axes;
+      std::vector<Index> mult;
+    };
 
-    std::vector<Wedge> irrep_wedges(SymGroup const &_group, SymGroupRepID id);
+    class SubWedge {
+    public:
+      SubWedge(std::vector<IrrepWedge> const &_iwedges) :
+        m_iwedges(_iwedges),
+        m_trans_mat(_subwedge_to_trans_mat(m_iwedges)) {
+
+      }
+
+      std::vector<IrrepWedge> const &irrep_wedges() const;
+      Eigen::MatrixXd const &trans_mat() const;
+
+    private:
+      std::vector<IrrepWedge> m_iwedges;
+      Eigen::MatrixXd m_trans_mat;
+
+      static Eigen::MatrixXd _subwedge_to_trans_mat(std::vector<IrrepWedge> const &_iwedges);
+    };
+
+
+    std::vector<IrrepWedge> irreducible_wedges(const SymGroup &head_group, SymGroupRepID id);
+    std::vector<SubWedge> symrep_subwedges(SymGroup const &_group, SymGroupRepID id);
   }
 }
 #endif

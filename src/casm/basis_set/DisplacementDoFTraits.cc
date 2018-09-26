@@ -19,7 +19,7 @@ namespace CASM {
       return id;
       }*/
 
-    BasicTraits *DisplacementDoFTraits::_clone() const {
+    DoFType::BasicTraits *DisplacementDoFTraits::_clone() const {
       return new DisplacementDoFTraits(*this);
     }
 

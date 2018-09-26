@@ -444,35 +444,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  std::vector<Eigen::MatrixXd> SymGroupRep::irreducible_wedges(const SymGroup &head_group, std::vector<Index> &multiplicities)const {
-    Index dim = get_MatrixXd(head_group[0])->cols();
-
-    multivector<Eigen::VectorXd>::X<3> sdirs = calc_special_total_directions(head_group);
-    std::vector<Eigen::MatrixXd> wedges(sdirs.size());
-    double best_proj, tproj;
-    multiplicities.clear();
-
-    for(Index s = 0; s < sdirs.size(); s++) {
-      wedges[s] = Eigen::MatrixXd::Zero(dim, sdirs[s].size());
-      wedges[s].col(0) = sdirs[s][0][0];
-      multiplicities.push_back(sdirs[s][0].size());
-      for(Index i = 1; i < sdirs[s].size(); i++) {
-        Index j_best = 0;
-        best_proj = (wedges[s].transpose() * sdirs[s][i][0]).sum();
-        for(Index j = 1; j < sdirs[s][i].size(); j++) {
-          tproj = (wedges[s].transpose() * sdirs[s][i][j]).sum();
-          if(tproj > best_proj) {
-            best_proj = tproj;
-            j_best = j;
-          }
-        }
-        multiplicities.push_back(sdirs[s][i].size());
-        wedges[s].col(i) = sdirs[s][i][j_best];
-      }
-    }
-    return wedges;
-  }
-  //*******************************************************************************************
   ReturnArray<Array< Eigen::VectorXd> > SymGroupRep::_calc_special_irrep_directions(const SymGroup &head_group)const {
     if(!size() || !(get_MatrixXd(head_group[0]))) {
       default_err_log() << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions() called on imcompatible SymGroupRep.\n Exiting...\n";

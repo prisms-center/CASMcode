@@ -114,7 +114,6 @@ namespace CASM {
       return m_rep_ID;
     }
 
-    std::vector<Eigen::MatrixXd> irreducible_wedges(const SymGroup &head_group, std::vector<Index> &multiplicities)const;
     multivector<Eigen::VectorXd>::X<3> calc_special_total_directions(const SymGroup &subgroup)const;
     ReturnArray<Array< Eigen::MatrixXd> > calc_special_subspaces(const SymGroup &subgroup)const;
 

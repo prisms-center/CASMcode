@@ -74,7 +74,7 @@ namespace CASM {
     }
 
     SymGroupRepID const &symrep_ID() const {
-      return m_rep_ID;
+      return m_symrep_ID;
     }
 
     void allocate_symrep(SymGroup const &_group) const;
@@ -97,7 +97,7 @@ namespace CASM {
     Eigen::MatrixXd m_basis;
     std::set<std::string> m_excluded_occs;
 
-    mutable SymGroupRepID m_rep_ID;
+    mutable SymGroupRepID m_symrep_ID;
   };
 
   //********************************************************************

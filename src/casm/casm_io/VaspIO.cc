@@ -185,12 +185,12 @@ namespace CASM {
       ///
       Lattice get_lattice(const Configuration &config) {
         const Lattice &ref_lat = config.supercell().lattice();
-        if(config.has_deformation()) {
-          return Lattice(config.deformation() * ref_lat.lat_column_mat());
-        }
-        else {
-          return ref_lat;
-        }
+        //if(config.has_deformation()) {
+        //return Lattice(config.deformation() * ref_lat.lat_column_mat());
+        //}
+        //else {
+        return ref_lat;
+        //}
       }
 
       /// \brief returns a coordinate including displacements and  deformation if present

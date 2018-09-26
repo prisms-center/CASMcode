@@ -9,8 +9,8 @@ namespace CASM {
       StrainDoFTraits(std::string _metric) :
         DoFType::Traits(_metric + "strain",
                         std::vector<std::string>(6, "e"),
-                        CONTINUOUS,
-                        GLOBAL),
+                        DoFType::CONTINUOUS,
+                        DoFType::GLOBAL),
         m_metric(_metric) {
       }
 
@@ -83,26 +83,27 @@ namespace CASM {
                                                  jsonParser const &_bspecs) const override;
     protected:
       DoFType::BasicTraits *_clone() const override {
-        new StrainDoFTraits(*this);
+        return new StrainDoFTraits(*this);
       }
 
       std::string const m_metric;
     };
+  }
 
-    namespace DoFType {
-      inline
-      notstd::cloneable_ptr<typename DoF_impl::BasicTraits> GLstrain() {
-        return DoF_impl::StrainDoFTraits("GL").clone();
-      }
-      inline
-      notstd::cloneable_ptr<typename DoF_impl::BasicTraits> EAstrain() {
-        return DoF_impl::StrainDoFTraits("EA").clone();
-      }
-      inline
-      notstd::cloneable_ptr<typename DoF_impl::BasicTraits> Hstrain() {
-        return DoF_impl::StrainDoFTraits("H").clone();
-      }
+  namespace DoFType {
+    inline
+    notstd::cloneable_ptr<BasicTraits> GLstrain() {
+      return DoF_impl::StrainDoFTraits("GL").clone();
     }
+    inline
+    notstd::cloneable_ptr<BasicTraits> EAstrain() {
+      return DoF_impl::StrainDoFTraits("EA").clone();
+    }
+    inline
+    notstd::cloneable_ptr<BasicTraits> Hstrain() {
+      return DoF_impl::StrainDoFTraits("H").clone();
+    }
+
   }
 }
 #endif

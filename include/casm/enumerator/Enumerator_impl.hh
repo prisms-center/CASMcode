@@ -34,6 +34,38 @@ namespace CASM {
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
     bool dry_run) {
+    for(; begin != end; ++begin) {
+      if(0 != insert_unique_canon_configs(method,
+                                          primclex,
+                                          *begin,
+                                          f,
+                                          filter_expr,
+                                          dry_run)) {
+        return ERR_INVALID_ARG;
+      }
+    }
+    return 0;
+  }
+
+  /// \brief Standardizes insertion from enumerators that construct unique
+  /// primitive canonical configurations
+  ///
+  /// \param method Enumerator name, printed to screen
+  /// \param primclex PrimClex to add Configurations to
+  /// \param begin,end Iterators over canonical Supercell
+  /// \param f A function that signature `std::unique_ptr<EnumMethod> f(Supercell&)`
+  ///        that returns a std::unique_ptr owning a Configuration enumerator
+  /// \param filter_expr An vector of Configuration filtering expressions. No filtering if empty.
+  ///
+  /// \returns 0 if success, ERR_INVALID_ARG if filter_expr cannot be parsed
+  template<typename ConfigEnumConstructor>
+  int insert_unique_canon_configs(
+    std::string method,
+    const PrimClex &primclex,
+    Supercell  const &scel,
+    ConfigEnumConstructor f,
+    std::vector<std::string> filter_expr,
+    bool dry_run) {
 
     Log &log = primclex.log();
     auto &db_config = primclex.db<Configuration>();
@@ -48,34 +80,32 @@ namespace CASM {
 
     log.begin(method);
 
-    for(auto scel_it = begin; scel_it != end; ++scel_it) {
-      const Supercell &scel = *scel_it;
-      auto enumerator_ptr = f(scel);
-      auto &enumerator = *enumerator_ptr;
-      log << dry_run_msg << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
 
-      Index num_before = distance(scel.name());
-      if(!filter_expr.empty()) {
-        try {
-          primclex.db<Configuration>().insert(
-            filter_begin(
-              enumerator.begin(),
-              enumerator.end(),
-              filter_expr,
-              primclex.settings().query_handler<Configuration>().dict()),
-            filter_end(enumerator.end()));
-        }
-        catch(std::exception &e) {
-          primclex.err_log() << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
-          return ERR_INVALID_ARG;
-        }
-      }
-      else {
-        primclex.db<Configuration>().insert(enumerator.begin(), enumerator.end());
-      }
+    auto enumerator_ptr = f(scel);
+    auto &enumerator = *enumerator_ptr;
+    log << dry_run_msg << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
 
-      log << (distance(scel.name()) - num_before) << " configs." << std::endl;
+    Index num_before = distance(scel.name());
+    if(!filter_expr.empty()) {
+      try {
+        primclex.db<Configuration>().insert(
+          filter_begin(
+            enumerator.begin(),
+            enumerator.end(),
+            filter_expr,
+            primclex.settings().query_handler<Configuration>().dict()),
+          filter_end(enumerator.end()));
+      }
+      catch(std::exception &e) {
+        primclex.err_log() << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
+        return ERR_INVALID_ARG;
+      }
     }
+    else {
+      primclex.db<Configuration>().insert(enumerator.begin(), enumerator.end());
+    }
+
+    log << (distance(scel.name()) - num_before) << " configs." << std::endl;
     log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
     Index Nfinal = db_config.size();
@@ -119,6 +149,41 @@ namespace CASM {
     std::vector<std::string> filter_expr,
     bool primitive_only,
     bool dry_run) {
+    for(; begin != end; ++begin) {
+      if(0 != insert_configs(method,
+                             primclex,
+                             *begin,
+                             f,
+                             filter_expr,
+                             primitive_only,
+                             dry_run)) {
+        return ERR_INVALID_ARG;
+      }
+    }
+    return 0;
+  }
+  /// \brief Standardizes insertion from enumerators that construct configurations
+  ///
+  /// \param method Enumerator name, printed to screen
+  /// \param primclex PrimClex to add Configurations to
+  /// \param begin,end Iterators over Supercell
+  /// \param f A function that signature `std::unique_ptr<EnumMethod> f(Supercell&)`
+  ///        that returns a std::unique_ptr owning a Configuration enumerator
+  /// \param filter_expr An vector of Configuration filtering expressions. No filtering if empty.
+  /// \param primitive_only If true, only insert primitive Configurations; else
+  ///        both primitive and non-primitive.
+  ///
+  /// \returns 0 if success, ERR_INVALID_ARG if filter_expr cannot be parsed
+  ///
+  template<typename ConfigEnumConstructor>
+  int insert_configs(
+    std::string method,
+    const PrimClex &primclex,
+    Supercell const &scel,
+    ConfigEnumConstructor f,
+    std::vector<std::string> filter_expr,
+    bool primitive_only,
+    bool dry_run) {
 
     Log &log = primclex.log();
     auto &db_config = primclex.db<Configuration>();
@@ -133,40 +198,38 @@ namespace CASM {
 
     log.begin(method);
 
-    for(auto scel_it = begin; scel_it != end; ++scel_it) {
-      const Supercell &scel = *scel_it;
-      log << dry_run_msg << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
+    log << dry_run_msg << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
 
-      auto enumerator_ptr = f(scel);
-      auto &enumerator = *enumerator_ptr;
-      Index num_before = distance(scel.name());
-      if(!filter_expr.empty()) {
-        try {
-          auto it = filter_begin(
-                      enumerator.begin(),
-                      enumerator.end(),
-                      filter_expr,
-                      primclex.settings().query_handler<Configuration>().dict());
-          auto end = filter_end(enumerator.end());
-          for(; it != end; ++it) {
-            it->insert(primitive_only);
-          }
-        }
-        catch(std::exception &e) {
-          primclex.err_log() << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
-          return ERR_INVALID_ARG;
-        }
-      }
-      else {
-        auto it = enumerator.begin();
-        auto end = enumerator.end();
+    auto enumerator_ptr = f(scel);
+    auto &enumerator = *enumerator_ptr;
+    Index num_before = distance(scel.name());
+    if(!filter_expr.empty()) {
+      try {
+        auto it = filter_begin(
+                    enumerator.begin(),
+                    enumerator.end(),
+                    filter_expr,
+                    primclex.settings().query_handler<Configuration>().dict());
+        auto end = filter_end(enumerator.end());
         for(; it != end; ++it) {
           it->insert(primitive_only);
         }
       }
-
-      log << (distance(scel.name()) - num_before) << " configs." << std::endl;
+      catch(std::exception &e) {
+        primclex.err_log() << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
+        return ERR_INVALID_ARG;
+      }
     }
+    else {
+      auto it = enumerator.begin();
+      auto end = enumerator.end();
+      for(; it != end; ++it) {
+        it->insert(primitive_only);
+      }
+    }
+
+    log << (distance(scel.name()) - num_before) << " configs." << std::endl;
+
     log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
     Index Nfinal = db_config.size();

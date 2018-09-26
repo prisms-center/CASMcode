@@ -15,8 +15,6 @@ namespace CASM {
   ConfigDoF::ConfigDoF(Index _N, double _tol) :
     m_N(_N),
     m_occupation(m_N),
-    m_deformation(Eigen::Matrix3d::Identity()),
-    m_has_deformation(false),
     m_tol(_tol) {
   }
 
@@ -25,8 +23,6 @@ namespace CASM {
   ConfigDoF::ConfigDoF(const std::vector<int> &_occ, double _tol):
     m_N(_occ.size()),
     m_occupation(_occ),
-    m_deformation(Eigen::Matrix3d::Identity()),
-    m_has_deformation(false),
     m_tol(_tol) {
   }
 
@@ -46,8 +42,8 @@ namespace CASM {
 
   void ConfigDoF::swap(ConfigDoF &RHS) {
     occupation().swap(RHS.occupation());
-    swap(m_local_vals, RHS.m_local_vals);
-    swap(m_global_vals, RHS.m_global_vals);
+    std::swap(m_local_vals, RHS.m_local_vals);
+    std::swap(m_global_vals, RHS.m_global_vals);
     std::swap(m_N, RHS.m_N);
     std::swap(m_tol, RHS.m_tol);
   }
@@ -100,7 +96,7 @@ namespace CASM {
       json["occupation"] = occupation();
     for(auto const &dof : m_local_vals)
       json[dof.type_name()] = dof;
-    if(auto const &dof : global_vals)
+    for(auto const &dof : m_global_vals)
       json[dof.type_name()] = dof;
 
     return json;

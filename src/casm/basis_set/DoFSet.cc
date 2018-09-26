@@ -1,9 +1,10 @@
 #include "casm/basis_set/DoFSet.hh"
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/symmetry/SymGroup.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
-  namespace DoF_impl {
+  namespace DoFType {
 
     /// \brief implements json parsing of a specialized DoFSet.
     void BasicTraits::from_json(DoFSet &_dof, jsonParser const &json) const {
@@ -18,16 +19,16 @@ namespace CASM {
 
   //********************************************************************
 
-  DoFType::Traits const &traits() const {
+  DoFType::Traits const &DoFSet::traits() const {
     return DoFType::traits(type_name());
   }
 
   //********************************************************************
   void DoFSet::allocate_symrep(SymGroup const &_group) const {
-    if(!m_rep_ID.empty())
+    if(!m_symrep_ID.empty())
       throw std::runtime_error("In DoFSet::allocate_symrep(), representation has already been allocated for this symrep.");
 
-    m_rep_ID = _group.allocate_representation();
+    m_symrep_ID = _group.allocate_representation();
 
   }
   //********************************************************************
@@ -44,8 +45,7 @@ namespace CASM {
 
   void DoFSet::transform_basis(Eigen::Ref<const Eigen::MatrixXd> const &trans_mat) {
     m_basis = trans_mat * m_basis;
-    m_row_rep_ID = SymGroupRepID();
-    m_col_rep_ID = SymGroupRepID();
+    m_symrep_ID = SymGroupRepID();
   }
 
   //********************************************************************

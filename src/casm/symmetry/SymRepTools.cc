@@ -7,74 +7,132 @@
 namespace CASM {
   namespace SymRepTools {
 
-    std::pair<std::vector<Index>, std::vector<Eigen::MatrixXd> > symrep_subwedges(SymGroup const &_group, SymGroupRepID id) {
-      auto eigen_compare = [](const Eigen::MatrixXd & a, const Eigen::MatrixXd & b)->bool {
-        // required because Eigen::almost_equal takes 3 args (function pointers don't know about default args)
-        return Eigen::almost_equal(a, b);
+    Eigen::MatrixXd SubWedge::_subwedge_to_trans_mat(std::vector<IrrepWedge> const &_iwedges) {
+
+      if(_iwedges.empty())
+        return Eigen::MatrixXd();
+      Eigen::MatrixXd result(_iwedges[0].axes.rows(), _iwedges[0].axes.rows());
+      Index i = 0;
+      for(Index w = 0; w < _iwedges.size(); ++w) {
+        result.block(0, i, _iwedges[w].axes.rows(), _iwedges[w].axes.cols()) = _iwedges[w].axes;
+        i += _iwedges[w].axes.cols();
+      }
+      if(i < result.cols())
+        result.conservativeResize(Eigen::NoChange, i);
+      return result;
+    }
+
+    std::vector<IrrepWedge> irreducible_wedges(const SymGroup &head_group, SymGroupRepID id) {
+      SymGroupRep const &srep(head_group.master_group().representation(id));
+      Index dim = srep.get_MatrixXd(head_group[0])->cols();
+
+      //Handle for strain symrep
+      SymGroupRep::RemoteHandle trep(head_group, id);
+
+      multivector<Eigen::VectorXd>::X<3> sdirs = srep.calc_special_total_directions(head_group);
+      std::vector<IrrepWedge> result(sdirs.size());
+      double best_proj, tproj;
+
+      for(Index s = 0; s < sdirs.size(); s++) {
+        result[s].axes = Eigen::MatrixXd::Zero(dim, sdirs[s].size());
+        result[s].axes.col(0) = sdirs[s][0][0];
+        result[s].mult.push_back(sdirs[s][0].size());
+        for(Index i = 1; i < sdirs[s].size(); i++) {
+          Index j_best = 0;
+          best_proj = (result[s].axes.transpose() * sdirs[s][i][0]).sum();
+          for(Index j = 1; j < sdirs[s][i].size(); j++) {
+            tproj = (result[s].axes.transpose() * sdirs[s][i][j]).sum();
+            if(tproj > best_proj) {
+              best_proj = tproj;
+              j_best = j;
+            }
+          }
+
+          result[s].axes.col(i) = sdirs[s][i][j_best];
+        }
+      }
+      return result;
+    }
+
+
+
+
+    //*******************************************************************************************
+
+    std::vector<SubWedge > symrep_subwedges(SymGroup const &head_group, SymGroupRepID id) {
+      auto irrep_wedge_compare = [](const IrrepWedge & a, const IrrepWedge & b)->bool {
+        return Eigen::almost_equal(a.axes, b.axes);
       };
 
-      SymGroupRep const &srep(_group.master_group().representation(id));
+      auto tot_wedge_compare = [irrep_wedge_compare](const std::vector<IrrepWedge> &a, const std::vector<IrrepWedge> &b)->bool {
+        for(auto ita = a.begin(), itb = b.begin(); ita != a.end(); ++ita, ++itb)
+          if(!irrep_wedge_compare(*ita, *itb))
+            return false;
+        return true;
+      };
+
+      std::vector<SubWedge> result;
+      SymGroupRep const &srep(head_group.master_group().representation(id));
       if(!srep[0]->get_MatrixXd())
         throw std::runtime_error("In symrep_subwedges, SymGroupRep does not describe matrix representation");
       Index dim = srep[0]->get_MatrixXd()->cols();
 
-      std::vector<Eigen::MatrixXd> result_wedges;
-      //Eigen::MatrixXd axes=m_strain_calc.sop_transf_mat();
-      std::vector<Index> result_dims;
-      std::vector<Eigen::MatrixXd> wedges = srep.irreducible_wedges(_group, result_dims);
+      std::vector<IrrepWedge> init_wedges = irreducible_wedges(head_group, id);
 
       //Handle for strain symrep
-      SymGroupRep::RemoteHandle trep(_group, id);
-      //wedge_orbits[w] is orbit of wedges[w]
-      multivector<Eigen::MatrixXd>::X<2> wedge_orbits(wedges.size());
-      //max_equiv[w] is wedge_orbits[w].size()-1
-      std::vector<Index> max_equiv(wedges.size());
-      for(Index w = 0; w < wedges.size(); w++) {
+      SymGroupRep::RemoteHandle trep(head_group, id);
+      //irrep_wedge_orbits[w] is orbit of wedges[w]
+      multivector<IrrepWedge>::X<2> irrep_wedge_orbits;
+      irrep_wedge_orbits.reserve(init_wedges.size());
+      //max_equiv[w] is irrep_wedge_orbits[w].size()-1
+      std::vector<Index> max_equiv;
+      max_equiv.reserve(init_wedges.size());
+
+      for(IrrepWedge const &wedge : init_wedges) {
+        irrep_wedge_orbits.push_back({wedge});
         //don't bother with symmetry if we aren't perturbing the current wedge
         //if(absmags[w] < TOL) {
-        //wedge_orbits[w].push_back(0.0 * wedges[w]);
+        //irrep_wedge_orbits[w].push_back(0.0 * wedges[w]);
         //continue;
         //}
 
         //Start getting orbit of wedges[w]
         for(Index p = 0; p < trep.size(); p++) {
-          Eigen::MatrixXd twedge((*(trep[p]->get_MatrixXd()))*wedges[w]);
-          if(contains(wedge_orbits[w], twedge, eigen_compare))
+          IrrepWedge test_wedge((*(trep[p]->get_MatrixXd()))*wedge.axes,
+                                wedge.mult);
+
+          if(contains(irrep_wedge_orbits.back(), test_wedge, irrep_wedge_compare))
             continue;
-          wedge_orbits[w].push_back(twedge);
+          irrep_wedge_orbits.back().push_back(test_wedge);
         }
-        //Finish getting orbit of wedge[w]
-        max_equiv[w] = wedge_orbits[w].size() - 1;
+
+        max_equiv.push_back(irrep_wedge_orbits.back().size() - 1);
       }
 
       //Counter over combinations of equivalent wedges
-      Counter<std::vector<Index> > wcount(std::vector<Index>(wedges.size(), 0), max_equiv, std::vector<Index>(wedges.size(), 1));
-      multivector<Eigen::MatrixXd>::X<2> trans_mat_orbits;
+      Counter<std::vector<Index> > wcount(std::vector<Index>(irrep_wedge_orbits.size(), 0), max_equiv, std::vector<Index>(irrep_wedge_orbits.size(), 1));
+      multivector<IrrepWedge>::X<3> tot_wedge_orbits;
       for(; wcount; ++wcount) {
-        Eigen::MatrixXd ttrans(dim, dim);
-        Index l = 0;
-        for(Index i = 0; i < wedges.size(); i++) {
-          for(Index j = 0; j < wedges[i].cols(); j++)
-            ttrans.col(l++) = wedge_orbits[i][wcount[i]].col(j);
-        }
+        std::vector<IrrepWedge> twedge;
+        for(Index i = 0; i < irrep_wedge_orbits.size(); i++)
+          twedge.push_back(irrep_wedge_orbits[i][wcount[i]]);
 
-        if(contains_if(trans_mat_orbits,
-        [&ttrans, eigen_compare](const std::vector<Eigen::MatrixXd> &_orbit)->bool {
-        return contains(_orbit, ttrans, eigen_compare);
-        })
-          ) continue;
-        trans_mat_orbits.push_back(std::vector<Eigen::MatrixXd>(1, ttrans));
-        result_wedges.push_back(ttrans);
+
+        if(contains(tot_wedge_orbits.back(),
+                    twedge,
+                    tot_wedge_compare))
+          continue;
+        tot_wedge_orbits.push_back({twedge});
+        result.push_back({twedge});
         for(Index p = 0; p < trep.size(); p++) {
-          Eigen::MatrixXd symtrans((*(trep[p]->get_MatrixXd()))*ttrans);
-          if(!contains(trans_mat_orbits.back(), symtrans, eigen_compare))
-            trans_mat_orbits.back().push_back(symtrans);
+          for(Index i = 0; i < twedge.size(); i++)
+            twedge[i].axes = (*(trep[p]->get_MatrixXd())) * result.back().irrep_wedges()[i].axes;
+          if(!contains(tot_wedge_orbits.back(), twedge, tot_wedge_compare))
+            tot_wedge_orbits.back().push_back(twedge);
         }
       }
 
-
-
-
+      return result;
     }
 
   }

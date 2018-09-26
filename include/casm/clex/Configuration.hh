@@ -256,7 +256,7 @@ namespace CASM {
     int multiplicity() const;
 
     /// \brief Returns the point group that leaves the Configuration unchanged
-    SymGroup point_group() const;
+    std::vector<PermuteIterator> point_group() const;
 
     /// \brief Returns the point group that leaves the Configuration unchanged
     std::string point_group_name() const;

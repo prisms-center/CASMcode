@@ -401,6 +401,7 @@ namespace CASM {
   class ScelEnum;
   class ScelEnumProps;
   class Lattice;
+  class Supercell;
   template<typename T>
   class SupercellEnumerator;
 
@@ -454,6 +455,17 @@ namespace CASM {
 
   /// \brief Standardizes insertion from enumerators that construct unique
   /// primitive canonical configurations
+  template<typename ConfigEnumConstructor>
+  int insert_unique_canon_configs(
+    std::string method,
+    const PrimClex &primclex,
+    Supercell const &scel,
+    ConfigEnumConstructor f,
+    std::vector<std::string> filter_expr,
+    bool dry_run);
+
+  /// \brief Standardizes insertion from enumerators that construct unique
+  /// primitive canonical configurations
   template<typename ScelIterator, typename ConfigEnumConstructor>
   int insert_unique_canon_configs(
     std::string method,
@@ -462,6 +474,17 @@ namespace CASM {
     ScelIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
+    bool dry_run);
+
+  /// \brief Standardizes insertion from enumerators that construct configurations
+  template<typename ConfigEnumConstructor>
+  int insert_configs(
+    std::string method,
+    const PrimClex &primclex,
+    Supercell const &scel,
+    ConfigEnumConstructor f,
+    std::vector<std::string> filter_expr,
+    bool primitive_only,
     bool dry_run);
 
   /// \brief Standardizes insertion from enumerators that construct configurations

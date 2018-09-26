@@ -300,7 +300,7 @@ namespace CASM {
   //*******************************************************************************************
   void BasisSet::set_variable_basis(DoFSet const &_dof_set) {
     m_argument.clear();
-    m_basis_symrep_ID = _dof_set.sym_rep_ID();
+    m_basis_symrep_ID = _dof_set.symrep_ID();
     std::vector<Index> tdof_IDs;
     for(Index i = 0; i < _dof_set.size(); i++) {
       if(!_dof_set[i].is_locked() && !CASM::contains(tdof_IDs, _dof_set[i].ID()))
@@ -664,18 +664,18 @@ namespace CASM {
           sign_change = float_sgn(B(j, i));
         }
       }
-      OccupantFunction tOF(allowed_occs, double(sign_change)*B.col(i), size(), basis_ind, allowed_occs.sym_rep_ID());
+      OccupantFunction tOF(allowed_occs, double(sign_change)*B.col(i), size(), basis_ind, allowed_occs.symrep_ID());
 
       push_back(tOF.copy());
     }
 
-    // ** step 4: Calculate BasisSet symmetry representation, based on allowed_occs.sym_rep_ID() && B matrix
+    // ** step 4: Calculate BasisSet symmetry representation, based on allowed_occs.symrep_ID() && B matrix
     // Q*B.T=B.T*S, where we know S (how to transform a column vector), and we want Q (how to transform row vector)
     // so Q=B.T*S*inv(B.T)
-    if(allowed_occs.sym_rep_ID().is_identity())
+    if(allowed_occs.symrep_ID().is_identity())
       m_basis_symrep_ID = SymGroupRepID::identity(N - 1);
     else
-      m_basis_symrep_ID = symgroup.master_group().add_transformed_rep(allowed_occs.sym_rep_ID(), Eigen::MatrixXd(B.transpose()));
+      m_basis_symrep_ID = symgroup.master_group().add_transformed_rep(allowed_occs.symrep_ID(), Eigen::MatrixXd(B.transpose()));
 
   }
 

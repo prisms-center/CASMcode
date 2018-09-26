@@ -9,8 +9,8 @@ namespace CASM {
       OccupationDoFTraits():
         DoFType::Traits("occ",
       {},
-      DISCRETE,
-      LOCAL) {
+      DoFType::DISCRETE,
+      DoFType::LOCAL) {
       }
 
       /// \brief Output @param _in to JSON
@@ -91,14 +91,14 @@ namespace CASM {
     protected:
       DoFType::BasicTraits *_clone() const override;
     };
+  }
 
-    namespace DoFType {
-
-      inline
-      notstd::cloneable_ptr<typename DoF_impl::BasicTraits> occupation() {
-        return DoF_impl::OccupationDoFTraits().clone();
-      }
+  namespace DoFType {
+    inline
+    notstd::cloneable_ptr<BasicTraits> occupation() {
+      return DoF_impl::OccupationDoFTraits().clone();
     }
   }
+
 }
 #endif

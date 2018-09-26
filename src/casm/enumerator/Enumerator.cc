@@ -2,6 +2,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/ConfigEnumStrain.hh"
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"

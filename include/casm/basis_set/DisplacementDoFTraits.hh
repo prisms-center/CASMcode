@@ -10,8 +10,8 @@ namespace CASM {
         DoFType::Traits("disp", {
         "x", "y", "z"
       },
-      CONTINUOUS,
-      LOCAL) {
+      DoFType::CONTINUOUS,
+      DoFType::LOCAL) {
       }
 
 
@@ -97,14 +97,15 @@ namespace CASM {
     protected:
       DoFType::BasicTraits *_clone() const override;
     };
+  }
 
-    namespace DoFType {
+  namespace DoFType {
 
-      inline
-      notstd::cloneable_ptr<typename DoF_impl::BasicTraits> displacement() {
-        return DoF_impl::DisplacementDoFTraits().clone();
-      }
+    inline
+    notstd::cloneable_ptr<BasicTraits> displacement() {
+      return DoF_impl::DisplacementDoFTraits().clone();
     }
   }
+
 }
 #endif

@@ -18,7 +18,14 @@
 namespace CASM {
   ConfigDoF MappedConfig::to_configdof() const {
     throw std::runtime_error("MappedConfig::to_configdof() not yet implemented");
+    return ConfigDoF();
   }
+
+  MappedConfig &MappedConfig::apply_sym(PermuteIterator const &it) {
+    throw std::runtime_error("MappedConfig::apply_sym() is not implemented!");
+    return *this;
+  }
+
 
   namespace ConfigMapping {
     double strain_cost(const Lattice &relaxed_lat, const MappedConfig &_dof, const Index Nsites) {
@@ -222,7 +229,7 @@ namespace CASM {
         result.fail_msg = "Structure is incompatible with PRIM.";
       }
 
-      swap(best_configdof, suggested_configdof);
+      std::swap(best_configdof, suggested_configdof);
       result.relaxation_properties["best_mapping"] = result.relaxation_properties["suggested_mapping"];
     }
 
@@ -247,7 +254,7 @@ namespace CASM {
         }
         else {
 
-          PermuteIterator relaxed_it_canon = Configuration(scel, jsonParser(), relaxed_occ).to_canonical();
+          PermuteIterator relaxed_it_canon = Configuration(scel, jsonParser(), relaxed_occ.to_configdof()).to_canonical();
           PermuteIterator ideal_rev_it_canon = hint_ptr->from_canonical();
           it_canon = ideal_rev_it_canon * relaxed_it_canon;
 
@@ -263,7 +270,7 @@ namespace CASM {
 
     if(is_new_config) {
       std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), mapped_lat);
-      result.config = notstd::make_unique<Configuration>(shared_scel, jsonParser(), relaxed_occ);
+      result.config = notstd::make_unique<Configuration>(shared_scel, jsonParser(), relaxed_occ.to_configdof());
 
       if(m_strict_flag) {
         it_canon = shared_scel->permute_begin();
@@ -604,7 +611,7 @@ namespace CASM {
 
         cart_op = rotF * tF.inverse();
 
-        swap(mapped_configdof, tdof);
+        std::swap(mapped_configdof, tdof);
 
         mapped_lat = tlat;
       }
@@ -632,7 +639,7 @@ namespace CASM {
     }
 
     // If mapped_configdof is empty, it means that nothing better than best_cost was found
-    return mapped_configdof.size() > 0;
+    return mapped_configdof.occupation.size() > 0;
   }
 
   //*******************************************************************************************
@@ -688,7 +695,7 @@ namespace CASM {
         swap(best_assignment, assignment);
         cart_op = rotF * tF.inverse();
         //best_trans = Matrix3<double>::identity();
-        swap(mapped_configdof, tdof);
+        std::swap(mapped_configdof, tdof);
         mapped_lat = imposed_lat;
       }
     } // Done checking simplest mapping
@@ -735,7 +742,7 @@ namespace CASM {
         //best_basis_cost = basis_cost;
         cart_op = rotF * tF.inverse();
         //best_trans = strainmap.matrixN();
-        swap(mapped_configdof, tdof);
+        std::swap(mapped_configdof, tdof);
         mapped_lat = imposed_lat;
       }
       // This finds first decomposition:
@@ -1090,7 +1097,7 @@ namespace CASM {
       // Make the assignment bitstring
       //
       // Loop through all supercell sites
-      config_dof.set_occupation(std::vector<int>(scel.num_sites()));
+      config_dof.occupation = std::vector<int>(scel.num_sites());
       std::string rel_basis_atom;
       for(Index i = 0; i < best_assignments.size(); i++) {
         // subtract off average displacement
@@ -1113,7 +1120,7 @@ namespace CASM {
         }
 
         // set occupant and check for errors
-        if(!scel.prim().basis()[scel.sublat(i)].contains(rel_basis_atom, config_dof.occ(i))) {
+        if(!scel.prim().basis()[scel.sublat(i)].contains(rel_basis_atom, config_dof.occupation[i])) {
 
           return false;
         }
@@ -1258,7 +1265,7 @@ namespace CASM {
       // Make the assignment bitstring
       //
       // Loop through all supercell sites
-      config_dof.set_occupation(std::vector<int>(scel.num_sites()));
+      config_dof.occupation = std::vector<int>(scel.num_sites());
       std::string rel_basis_atom;
       for(Index i = 0; i < best_assignments.size(); i++) {
         // subtract off average displacement (non-vacant sites only)
@@ -1273,7 +1280,7 @@ namespace CASM {
               config_dof.disp(i)[j] = 0;
           }
         }
-        config_dof.occ(i) = config.occ(i);
+        config_dof.occupation[i] = config.occ(i);
       }
 
       return true;

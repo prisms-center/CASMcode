@@ -239,6 +239,9 @@ namespace CASM {
 
   /** @} */
 
+  template<typename CoordType>
+  DoFSet const *get_strain_dof(BasicStructure<CoordType> const &_struc);
+
 }
 
 #endif

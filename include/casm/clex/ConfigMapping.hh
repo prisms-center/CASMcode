@@ -12,6 +12,7 @@ namespace CASM {
   class Supercell;
   class Lattice;
   class SymGroup;
+  class PermuteIterator;
   class PrimClex;
   class Configuration;
   class ConfigDoF;
@@ -81,8 +82,6 @@ namespace CASM {
       throw std::runtime_error("MappedConfig::clear() not implemented");
     }
 
-    ConfigDoF to_configdof() const;
-
     Displacement disp(Index i) {
       return displacement.col(i);
     }
@@ -90,6 +89,11 @@ namespace CASM {
     ConstDisplacement disp(Index i) const {
       return displacement.col(i);
     }
+
+    ConfigDoF to_configdof() const;
+
+    MappedConfig &apply_sym(PermuteIterator const &it);
+
 
     Eigen::Matrix3d deformation;
     std::vector<int> occupation;

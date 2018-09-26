@@ -150,7 +150,8 @@ namespace CASM {
 
     //****************************************************************************************
     Eigen::VectorXd DoFStrain::evaluate(const Configuration &_config) const {
-      return m_straincalc.unrolled_strain_metric(_config.deformation());
+      throw std::runtime_error("DoFStrain::evaluate() is not implemented!");
+      //return m_straincalc.unrolled_strain_metric(_config.deformation());
     }
 
   }

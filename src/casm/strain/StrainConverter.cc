@@ -1,5 +1,6 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
+#include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/strain/StrainConverter.hh"
 
@@ -260,22 +261,22 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  std::vector<Eigen::MatrixXd> StrainConverter::irreducible_sop_wedges(const SymGroup &pg, std::vector<Index> &multiplicities) {
+  std::vector<SymRepTools::IrrepWedge> StrainConverter::irreducible_sop_wedges(const SymGroup &pg) {
     if(m_symrep_ID.empty()) {
       set_symmetrized_sop(pg);
     }
 
     const SymGroupRep &srep(pg.master_group().representation(m_symrep_ID));
 
-    return srep.irreducible_wedges(pg, multiplicities);
+    return SymRepTools::irreducible_wedges(pg, m_symrep_ID);
   }
 
   //*******************************************************************************************
 
-  std::vector<Eigen::MatrixXd> StrainConverter::irreducible_wedges(const SymGroup &pg, std::vector<Index> &multiplicities) {
-    std::vector<Eigen::MatrixXd> wedges = irreducible_sop_wedges(pg, multiplicities);
+  std::vector<SymRepTools::IrrepWedge> StrainConverter::irreducible_wedges(const SymGroup &pg) {
+    std::vector<SymRepTools::IrrepWedge> wedges = irreducible_sop_wedges(pg);
     for(auto &w : wedges) {
-      w = m_sop_transf_mat * w; // Eigen handles aliasing
+      w.axes = m_sop_transf_mat * w.axes; // Eigen handles aliasing
     }
     return wedges;
   }

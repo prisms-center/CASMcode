@@ -194,7 +194,7 @@ namespace CASM {
       m_coeffs = (*tmat) * m_coeffs;
     }
     else {
-      std::cerr << "WARNING: Attempting to reference invalid symmetry matrix (From rep_ID " << sym_rep_ID() << ") in Variable::apply_sym!  Continuing...\n";
+      std::cerr << "WARNING: Attempting to reference invalid symmetry matrix (From rep_ID " << symrep_ID() << ") in Variable::apply_sym!  Continuing...\n";
     }
     return this;
   }

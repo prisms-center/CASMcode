@@ -119,7 +119,7 @@ namespace CASM {
       std::vector<double> result_vec;
 
       BasicStructure<Site> relaxed_struc;
-      ConfigDoF mapped_configdof;
+      MappedConfig mapped_config;
       Lattice mapped_lat;
 
       auto lambda = [&](const std::vector<double> &result_vec) {
@@ -132,7 +132,7 @@ namespace CASM {
 
       from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(_calc_properties_path(_config)));
 
-      if(!m_configmapper->struc_to_configdof(relaxed_struc, mapped_configdof, mapped_lat)) {
+      if(!m_configmapper->struc_to_configdof(relaxed_struc, mapped_config, mapped_lat)) {
         for(Index i = 0; i < m_prop_names.size(); i++) {
           result_vec.push_back(1e9);
         }
@@ -141,13 +141,13 @@ namespace CASM {
       }
       for(Index i = 0; i < m_prop_names.size(); i++) {
         if(m_prop_names[i] == "basis_score")
-          result_vec.push_back(ConfigMapping::basis_cost(mapped_configdof, relaxed_struc.basis().size()));
+          result_vec.push_back(ConfigMapping::basis_cost(mapped_config, relaxed_struc.basis().size()));
         else if(m_prop_names[i] == "lattice_score")
-          result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_configdof, relaxed_struc.basis().size()));
+          result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_config, relaxed_struc.basis().size()));
         else if(m_prop_names[i] == "total_score") {
-          double sc = ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_configdof, relaxed_struc.basis().size());
+          double sc = ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_config, relaxed_struc.basis().size());
 
-          double bc = ConfigMapping::basis_cost(mapped_configdof, relaxed_struc.basis().size());
+          double bc = ConfigMapping::basis_cost(mapped_config, relaxed_struc.basis().size());
 
           double w = m_configmapper->lattice_weight();
           result_vec.push_back(w * sc + (1.0 - w)*bc);

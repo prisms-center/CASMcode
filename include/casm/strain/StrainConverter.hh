@@ -20,6 +20,9 @@
 
 namespace CASM {
   class SymGroup;
+  namespace SymRepTools {
+    class IrrepWedge;
+  }
 
   typedef Eigen::VectorXd VectorXd;
   typedef Eigen::MatrixXd MatrixXd;
@@ -137,9 +140,9 @@ namespace CASM {
       return m_symrep_ID;
     }
 
-    std::vector<Eigen::MatrixXd> irreducible_sop_wedges(const SymGroup &pg, std::vector<Index> &multiplicities);
+    std::vector<SymRepTools::IrrepWedge> irreducible_sop_wedges(const SymGroup &pg);
 
-    std::vector<Eigen::MatrixXd> irreducible_wedges(const SymGroup &pg, std::vector<Index> &multiplicities);
+    std::vector<SymRepTools::IrrepWedge> irreducible_wedges(const SymGroup &pg);
 
     void set_symmetrized_sop(const SymGroup &pg);
 
