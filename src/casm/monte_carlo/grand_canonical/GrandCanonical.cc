@@ -41,16 +41,16 @@ namespace CASM {
 
       _log().construct("Grand Canonical Monte Carlo");
       _log() << "project: " << this->primclex().dir().root_dir() << "\n";
-                             _log() << "formation_energy cluster expansion: " << desc.name << "\n";
-                                                                               _log() << std::setw(16) << "property: " << desc.property << "\n";
-                                                                                   _log() << std::setw(16) << "calctype: " << desc.calctype << "\n";
-                                                                                       _log() << std::setw(16) << "ref: " << desc.ref << "\n";
-                                                                                           _log() << std::setw(16) << "bset: " << desc.bset << "\n";
-                                                                                               _log() << std::setw(16) << "eci: " << desc.eci << "\n";
-                                                                                                   _log() << "supercell: \n" << supercell().transf_mat() << "\n";
-                                                                                                       _log() << "use_deltas: " << std::boolalpha << m_use_deltas << "\n";
-                                                                                                           _log() << "\nSampling: \n";
-                                                                                                           _log() << std::setw(24) << "quantity" << std::setw(24) << "requested_precision" << "\n";
+      _log() << "formation_energy cluster expansion: " << desc.name << "\n";
+      _log() << std::setw(16) << "property: " << desc.property << "\n";
+      _log() << std::setw(16) << "calctype: " << desc.calctype << "\n";
+      _log() << std::setw(16) << "ref: " << desc.ref << "\n";
+      _log() << std::setw(16) << "bset: " << desc.bset << "\n";
+      _log() << std::setw(16) << "eci: " << desc.eci << "\n";
+      _log() << "supercell: \n" << supercell().transf_mat() << "\n";
+      _log() << "use_deltas: " << std::boolalpha << m_use_deltas << "\n";
+      _log() << "\nSampling: \n";
+      _log() << std::setw(24) << "quantity" << std::setw(24) << "requested_precision" << "\n";
       for(auto it = samplers().begin(); it != samplers().end(); ++it) {
         _log() << std::setw(24) << it->first;
         if(it->second->must_converge()) {
@@ -60,12 +60,12 @@ namespace CASM {
           _log() << std::setw(24) << "none" << std::endl;
         }
       }
-              _log() << "\nautomatic convergence mode?: " << std::boolalpha << must_converge() << std::endl;
-                                                                             _log() << std::endl;
+      _log() << "\nautomatic convergence mode?: " << std::boolalpha << must_converge() << std::endl;
+      _log() << std::endl;
 
     }
 
-                                                                           /// \brief Return number of steps per pass. Equals number of sites with variable occupation.
+    /// \brief Return number of steps per pass. Equals number of sites with variable occupation.
     Index GrandCanonical::steps_per_pass() const {
       return m_site_swaps.variable_sites().size();
     }
@@ -82,48 +82,48 @@ namespace CASM {
       _log().set("Conditions");
       _log() << new_conditions << std::endl << std::endl;
 
-                                m_condition = new_conditions;
+      m_condition = new_conditions;
 
-                                clear_samples();
-                                _update_properties();
+      clear_samples();
+      _update_properties();
 
-                                return;
+      return;
     }
 
-                              /// \brief Set configdof and clear previously collected data
+    /// \brief Set configdof and clear previously collected data
     void GrandCanonical::set_configdof(const ConfigDoF &configdof, const std::string &msg) {
       _log().set("DoF");
       if(!msg.empty()) {
         _log() << msg << "\n";
       }
-              _log() << std::endl;
+      _log() << std::endl;
 
-              reset(configdof);
-              _update_properties();
+      reset(configdof);
+      _update_properties();
     }
 
-            /// \brief Set configdof and conditions and clear previously collected data
-            ///
-            /// \returns Specified ConfigDoF and configname (or configdof path)
-            ///
-            std::pair<ConfigDoF, std::string> GrandCanonical::set_state(
-              const GrandCanonicalConditions &new_conditions,
-    const GrandCanonicalSettings &settings) {
+    /// \brief Set configdof and conditions and clear previously collected data
+    ///
+    /// \returns Specified ConfigDoF and configname (or configdof path)
+    ///
+    std::pair<ConfigDoF, std::string> GrandCanonical::set_state(
+      const GrandCanonicalConditions &new_conditions,
+      const GrandCanonicalSettings &settings) {
 
       _log().set("Conditions");
       _log() << new_conditions << std::endl;
 
-              m_condition = new_conditions;
+      m_condition = new_conditions;
 
-              ConfigDoF configdof;
-              std::string configname;
+      ConfigDoF configdof = _default_motif();
+      std::string configname;
 
       if(settings.is_motif_configname()) {
 
         configname = settings.motif_configname();
 
         if(configname == "default") {
-          configdof = _default_motif();
+          //configdof = _default_motif();
         }
         else if(configname == "auto") {
           std::tie(configdof, configname) = _auto_motif(new_conditions);
@@ -139,9 +139,9 @@ namespace CASM {
       else if(settings.is_motif_configdof()) {
         _log().set("DoF");
         _log() << "motif configdof: " << settings.motif_configdof_path() << "\n";
-                                       _log() << "using configdof: " << settings.motif_configdof_path() << "\n" << std::endl;
-                                                                      configdof = settings.motif_configdof();
-                                                                      configname = settings.motif_configdof_path().string();
+        _log() << "using configdof: " << settings.motif_configdof_path() << "\n" << std::endl;
+        configdof = settings.motif_configdof();
+        configname = settings.motif_configdof_path().string();
       }
       else {
         throw std::runtime_error("Error: Must specify motif \"configname\" or \"configdof\"");
@@ -160,26 +160,26 @@ namespace CASM {
       _log().set("Conditions");
       _log() << new_conditions << std::endl << std::endl;
 
-                                m_condition = new_conditions;
+      m_condition = new_conditions;
 
-                                _log().set("DoF");
+      _log().set("DoF");
       if(!msg.empty()) {
         _log() << msg << "\n";
       }
-              _log() << std::endl;
+      _log() << std::endl;
 
-              reset(configdof);
-              _update_properties();
+      reset(configdof);
+      _update_properties();
 
-              return;
+      return;
     }
 
 
-            /// \brief Propose a new event, calculate delta properties, and return reference to it
-            ///
-            /// Randomly picks a site that's allowed more than one occupant, and randomly picks what occupant it
-            /// changes to. Then calculates delta properties associated with that change.
-            ///
+    /// \brief Propose a new event, calculate delta properties, and return reference to it
+    ///
+    /// Randomly picks a site that's allowed more than one occupant, and randomly picks what occupant it
+    /// changes to. Then calculates delta properties associated with that change.
+    ///
     const GrandCanonical::EventType &GrandCanonical::propose() {
 
       // Randomly pick a site that's allowed more than one occupant
@@ -201,16 +201,16 @@ namespace CASM {
         _log().custom("Propose event");
 
         _log()  << "  Mutating site (linear index): " << mutating_site << "\n"
-                                                                        << "  Mutating site (b, i, j, k): " << supercell().uccoord(mutating_site) << "\n"
-                                                                            << "  Current occupant: " << current_occupant << " (" << site_occ[current_occupant].name() << ")\n"
-                                                                                << "  Proposed occupant: " << new_occupant << " (" << site_occ[new_occupant].name() << ")\n\n"
+                << "  Mutating site (b, i, j, k): " << supercell().uccoord(mutating_site) << "\n"
+                << "  Current occupant: " << current_occupant << " (" << site_occ[current_occupant].name() << ")\n"
+                << "  Proposed occupant: " << new_occupant << " (" << site_occ[new_occupant].name() << ")\n\n"
 
-                                                                                    << "  beta: " << m_condition.beta() << "\n"
-                                                                                        << "  T: " << m_condition.temperature() << std::endl;
+                << "  beta: " << m_condition.beta() << "\n"
+                << "  T: " << m_condition.temperature() << std::endl;
       }
 
-                                                                                          // Update delta properties in m_event
-                                                                                          _update_deltas(m_event, mutating_site, sublat, current_occupant, new_occupant);
+      // Update delta properties in m_event
+      _update_deltas(m_event, mutating_site, sublat, current_occupant, new_occupant);
 
       if(debug()) {
 
@@ -223,22 +223,22 @@ namespace CASM {
         Index new_species = m_site_swaps.sublat_to_mol()[sublat][new_occupant];
 
         _log() << "  components: " << jsonParser(primclex().composition_axes().components()) << "\n"
-                                    << "  d(N): " << m_event.dN().transpose() << "\n"
-                                                                               << "    dx_dn: \n" << Mpinv << "\n"
-                                                                                   << "    param_chem_pot.transpose() * dx_dn: \n" << param_chem_pot.transpose()*Mpinv << "\n"
-                                                                                       << "    param_chem_pot.transpose() * dx_dn * dN: " << param_chem_pot.transpose()*Mpinv *m_event.dN().cast<double>() << "\n"
-                                                                                           << "  d(Nunit * param_chem_pot * x): " << exchange_chem_pot(new_species, curr_species) << "\n"
-                                                                                               << "  d(Ef): " << m_event.dEf() << "\n"
-                                                                                                   << "  d(Epot): " << m_event.dEf() - exchange_chem_pot(new_species, curr_species) << "\n"
-                                                                                                       << std::endl;
+               << "  d(N): " << m_event.dN().transpose() << "\n"
+               << "    dx_dn: \n" << Mpinv << "\n"
+               << "    param_chem_pot.transpose() * dx_dn: \n" << param_chem_pot.transpose()*Mpinv << "\n"
+               << "    param_chem_pot.transpose() * dx_dn * dN: " << param_chem_pot.transpose()*Mpinv *m_event.dN().cast<double>() << "\n"
+               << "  d(Nunit * param_chem_pot * x): " << exchange_chem_pot(new_species, curr_species) << "\n"
+               << "  d(Ef): " << m_event.dEf() << "\n"
+               << "  d(Epot): " << m_event.dEf() - exchange_chem_pot(new_species, curr_species) << "\n"
+               << std::endl;
 
 
       }
 
-                                                                                                     return m_event;
+      return m_event;
     }
 
-                                                                                                   /// \brief Based on a random number, decide if the change in energy from the proposed event is low enough to be accepted.
+    /// \brief Based on a random number, decide if the change in energy from the proposed event is low enough to be accepted.
     bool GrandCanonical::check(const GrandCanonicalEvent &event) {
 
       if(event.dEpot() < 0.0) {
@@ -247,7 +247,7 @@ namespace CASM {
           _log().custom("Check event");
           _log() << "Probability to accept: 1.0\n" << std::endl;
         }
-                return true;
+        return true;
       }
 
       double rand = _mtrand().rand53();
@@ -256,18 +256,18 @@ namespace CASM {
       if(debug()) {
         _log().custom("Check event");
         _log() << "Probability to accept: " << prob << "\n"
-                                                     << "Random number: " << rand << "\n" << std::endl;
+               << "Random number: " << rand << "\n" << std::endl;
       }
 
-                                                                                 return rand < prob;
+      return rand < prob;
     }
 
-                                                                               /// \brief Accept proposed event. Change configuration accordingly and update energies etc.
-                                                                               ///
-                                                                               /// Once you've found an event that passes the random number test, you want to accept it. This routine will
-                                                                               /// apply all the changes in the event to *this (change occupation of one atom) and update the formation energy,
-                                                                               /// generalized enthalpy, number of species and correlations values.
-                                                                               ///
+    /// \brief Accept proposed event. Change configuration accordingly and update energies etc.
+    ///
+    /// Once you've found an event that passes the random number test, you want to accept it. This routine will
+    /// apply all the changes in the event to *this (change occupation of one atom) and update the formation energy,
+    /// generalized enthalpy, number of species and correlations values.
+    ///
     void GrandCanonical::accept(const EventType &event) {
 
       if(debug()) {
@@ -362,12 +362,12 @@ namespace CASM {
             Log &err_log = default_err_log();
             err_log.error<Log::standard>("Calculating low temperature expansion");
             err_log << "  Defect lowered the potential energy. Your motif configuration "
-                     << "is not the 0K ground state.\n" << std::endl;
-                      throw std::runtime_error("Error calculating low temperature expansion. Not in the ground state.");
+                    << "is not the 0K ground state.\n" << std::endl;
+            throw std::runtime_error("Error calculating low temperature expansion. Not in the ground state.");
           }
 
 
-                    auto it = hist.find(dpot_nrg);
+          auto it = hist.find(dpot_nrg);
           if(it == hist.end()) {
             hist[dpot_nrg] = 1;
           }
@@ -379,18 +379,18 @@ namespace CASM {
 
       _log().results("Ground state and point defect potential energy details");
       _log() << "T: " << m_condition.temperature() << std::endl;
-                       _log() << "kT: " << 1.0 / m_condition.beta() << std::endl;
-                                         _log() << "Beta: " << m_condition.beta() << std::endl << std::endl;
+      _log() << "kT: " << 1.0 / m_condition.beta() << std::endl;
+      _log() << "Beta: " << m_condition.beta() << std::endl << std::endl;
 
-                                                                                   _log() << std::setw(16) << "N/unitcell" << " "
-                                                                                       << std::setw(16) << "dPE" << " "
-                                                                                           << std::setw(24) << "N*exp(-dPE/kT)" << " "
-                                                                                               << std::setw(16) << "dphi" << " "
-                                                                                                   << std::setw(16) << "phi" << std::endl;
+      _log() << std::setw(16) << "N/unitcell" << " "
+             << std::setw(16) << "dPE" << " "
+             << std::setw(24) << "N*exp(-dPE/kT)" << " "
+             << std::setw(16) << "dphi" << " "
+             << std::setw(16) << "phi" << std::endl;
 
-                                                                                                       double tsum = 0.0;
-                                                                                                       double phi = 0.0;
-                                                                                                       double phi_prev;
+      double tsum = 0.0;
+      double phi = 0.0;
+      double phi_prev;
       for(auto it = hist.rbegin(); it != hist.rend(); ++it) {
         phi_prev = phi;
         tsum += it->second * exp(-(it->first) * m_condition.beta());
@@ -402,20 +402,20 @@ namespace CASM {
         else {
           _log() << std::setw(16) << std::setprecision(8) << (1.0 * it->second) / supercell().volume() << " ";
         }
-                                                         _log() << std::setw(16) << std::setprecision(8) << it->first << " "
-                                                                                  << std::setw(24) << std::setprecision(8) << it->second *exp(-it->first * m_condition.beta()) << " "
-                                                                                      << std::setw(16) << std::setprecision(8) << phi - phi_prev << " "
-                                                                                          << std::setw(16) << std::setprecision(8) << potential_energy() - phi << std::endl;
+        _log() << std::setw(16) << std::setprecision(8) << it->first << " "
+               << std::setw(24) << std::setprecision(8) << it->second *exp(-it->first * m_condition.beta()) << " "
+               << std::setw(16) << std::setprecision(8) << phi - phi_prev << " "
+               << std::setw(16) << std::setprecision(8) << potential_energy() - phi << std::endl;
 
       }
 
-                                                                                            _log() << "phi_LTE(1): " << std::setprecision(12) << potential_energy() - phi << std::endl << std::endl;
+      _log() << "phi_LTE(1): " << std::setprecision(12) << potential_energy() - phi << std::endl << std::endl;
 
-                                                                                                return potential_energy() - phi;
+      return potential_energy() - phi;
 
     }
 
-                                                                                              /// \brief Write results to files
+    /// \brief Write results to files
     void GrandCanonical::write_results(Index cond_index) const {
       CASM::Monte::write_results(settings(), *this, _log());
       write_conditions_json(settings(), *this, cond_index, _log());
@@ -558,9 +558,9 @@ namespace CASM {
 
       _log().calculate(title);
       _log() << std::setw(12) << "i"
-                               << std::setw(16) << "ECI"
-                                                 << std::setw(16) << colheader
-                                                                   << std::endl;
+             << std::setw(16) << "ECI"
+             << std::setw(16) << colheader
+             << std::endl;
 
       for(int i = 0; i < corr.size(); ++i) {
 
@@ -575,25 +575,25 @@ namespace CASM {
         }
 
         _log() << std::setw(12) << i
-                                 << std::setw(16) << std::setprecision(8) << eci;
+               << std::setw(16) << std::setprecision(8) << eci;
         if(calculated) {
           _log() << std::setw(16) << std::setprecision(8) << corr[i];
         }
         else {
           _log() << std::setw(16) << "unknown";
         }
-                _log() << std::endl;
+        _log() << std::endl;
 
       }
-              _log() << std::endl;
+      _log() << std::endl;
     }
 
-            /// \brief Update delta properties in 'event'
-            void GrandCanonical::_update_deltas(GrandCanonicalEvent &event,
-                                                Index mutating_site,
-                                                int sublat,
-                                                int current_occupant,
-    int new_occupant) const {
+    /// \brief Update delta properties in 'event'
+    void GrandCanonical::_update_deltas(GrandCanonicalEvent &event,
+                                        Index mutating_site,
+                                        int sublat,
+                                        int current_occupant,
+                                        int new_occupant) const {
 
       // ---- set OccMod --------------
 
@@ -653,44 +653,44 @@ namespace CASM {
 
         _log().custom("Calculate properties");
         _log() << "Semi-grand canonical ensemble: \n"
-                << "  Thermodynamic potential (per unitcell), phi = -kT*ln(Z)/N \n"
-                 << "  Partition function, Z = sum_i exp(-N*potential_energy_i/kT) \n"
-                  << "  composition, comp_n = origin + M * comp_x \n"
-                   << "  parametric chemical potential, param_chem_pot = M.transpose() * chem_pot \n"
-                    << "  potential_energy (per unitcell) = formation_energy - param_chem_pot*comp_x \n\n"
+               << "  Thermodynamic potential (per unitcell), phi = -kT*ln(Z)/N \n"
+               << "  Partition function, Z = sum_i exp(-N*potential_energy_i/kT) \n"
+               << "  composition, comp_n = origin + M * comp_x \n"
+               << "  parametric chemical potential, param_chem_pot = M.transpose() * chem_pot \n"
+               << "  potential_energy (per unitcell) = formation_energy - param_chem_pot*comp_x \n\n"
 
-                     << "components: " << jsonParser(primclex().composition_axes().components()) << "\n"
-                                        << "M:\n" << M << "\n"
-                                                        << "origin: " << origin.transpose() << "\n"
-                                                                       << "comp_n: " << comp_n().transpose() << "\n"
-                                                                                      << "comp_x: " << comp_x.transpose() << "\n"
-                                                                                          << "param_chem_pot: " << param_chem_pot.transpose() << "\n"
-                                                                                              << "  param_chem_pot*comp_x: " << param_chem_pot.dot(comp_x)  << "\n"
-                                                                                                  << "formation_energy: " << formation_energy() << "\n"
-                                                                                                      << "  formation_energy - param_chem_pot*comp_x: " << formation_energy() - param_chem_pot.dot(comp_x) << "\n"
-                                                                                                          << "potential_energy: " << potential_energy() << "\n" << std::endl;
+               << "components: " << jsonParser(primclex().composition_axes().components()) << "\n"
+               << "M:\n" << M << "\n"
+               << "origin: " << origin.transpose() << "\n"
+               << "comp_n: " << comp_n().transpose() << "\n"
+               << "comp_x: " << comp_x.transpose() << "\n"
+               << "param_chem_pot: " << param_chem_pot.transpose() << "\n"
+               << "  param_chem_pot*comp_x: " << param_chem_pot.dot(comp_x)  << "\n"
+               << "formation_energy: " << formation_energy() << "\n"
+               << "  formation_energy - param_chem_pot*comp_x: " << formation_energy() - param_chem_pot.dot(comp_x) << "\n"
+               << "potential_energy: " << potential_energy() << "\n" << std::endl;
       }
 
     }
 
-                                                                                                          /// \brief Generate supercell filling ConfigDoF from default configuration
+    /// \brief Generate supercell filling ConfigDoF from default configuration
     ConfigDoF GrandCanonical::_default_motif() const {
       _log().set("DoF");
       _log() << "motif configname: default\n";
       _log() << "using configuration with default occupation...\n" << std::endl;
-              return Configuration(_supercell(), jsonParser(), std::vector<int>(_supercell().num_sites(), 0)).configdof();
+      return Configuration(_supercell(), jsonParser(), std::vector<int>(_supercell().num_sites(), 0)).configdof();
     }
 
-            /// \brief Generate minimum potential energy ConfigDoF
-            ///
-            /// Raises exception if it doesn't tile the supercell
+    /// \brief Generate minimum potential energy ConfigDoF
+    ///
+    /// Raises exception if it doesn't tile the supercell
     std::pair<ConfigDoF, std::string> GrandCanonical::_auto_motif(const GrandCanonicalConditions &cond) const {
 
       _log().set("DoF");
       _log() << "motif configname: auto\n";
       _log() << "searching for minimum potential energy motif..." << std::endl;
 
-              double tol = 1e-6;
+      double tol = 1e-6;
       auto compare = [&](double A, double B) {
         return A < B - tol;
       };
@@ -698,8 +698,8 @@ namespace CASM {
       _log() << "using conditions: \n";
       _log() << cond << std::endl;
 
-              std::multimap<double, std::string, decltype(compare)> configmap(compare);
-              const auto &db = primclex().db<Configuration>();
+      std::multimap<double, std::string, decltype(compare)> configmap(compare);
+      const auto &db = primclex().db<Configuration>();
       for(const auto &tconfig : db) {
         configmap.insert(std::make_pair(_eci() * correlations(tconfig, _clexulator()) - cond.param_chem_pot().dot(CASM::comp(tconfig)), tconfig.name()));
       }
@@ -710,30 +710,30 @@ namespace CASM {
 
       if(std::distance(eq_range.first, eq_range.second) > 1) {
         _log() << "Warning: Found degenerate ground states with potential energy: "
-                << std::setprecision(8) << min_potential_energy << std::endl;
+               << std::setprecision(8) << min_potential_energy << std::endl;
         for(auto it = eq_range.first; it != eq_range.second; ++it) {
           _log() << "  " << db.find(it->second)->name() << std::endl;
         }
-                        _log() << "using: " << min_config.name() << "\n" << std::endl;
+        _log() << "using: " << min_config.name() << "\n" << std::endl;
       }
       else {
         _log() << "using: " << min_config.name() << " with potential energy: "
-                                                  << std::setprecision(8) << min_potential_energy << "\n" << std::endl;
+               << std::setprecision(8) << min_potential_energy << "\n" << std::endl;
       }
 
-                                                                         return std::make_pair(
-                                                                           min_config.fill_supercell(_supercell(), primclex().prim().factor_group()).configdof(),
-                                                                           min_config.name());
+      return std::make_pair(
+               min_config.fill_supercell(_supercell(), primclex().prim().factor_group()).configdof(),
+               min_config.name());
     }
 
-                                                                       /// \brief Generate minimum potential energy ConfigDoF for this supercell
+    /// \brief Generate minimum potential energy ConfigDoF for this supercell
     std::pair<ConfigDoF, std::string> GrandCanonical::_restricted_auto_motif(const GrandCanonicalConditions &cond) const {
 
       _log().set("DoF");
       _log() << "motif configname: restricted_auto\n";
       _log() << "searching for minimum potential energy motif..." << std::endl;
 
-              double tol = 1e-6;
+      double tol = 1e-6;
       auto compare = [&](double A, double B) {
         return A < B - tol;
       };
@@ -741,8 +741,8 @@ namespace CASM {
       _log() << "using conditions: \n";
       _log() << cond << std::endl;
 
-              std::multimap<double, std::string, decltype(compare)> configmap(compare);
-              const auto &db = primclex().db<Configuration>();
+      std::multimap<double, std::string, decltype(compare)> configmap(compare);
+      const auto &db = primclex().db<Configuration>();
       for(const auto &tconfig : db) {
         configmap.insert(std::make_pair(_eci() * correlations(tconfig, _clexulator()) - cond.param_chem_pot().dot(CASM::comp(tconfig)), tconfig.name()));
       }
@@ -781,40 +781,40 @@ namespace CASM {
       if(!allowed.size()) {
         _log() << "Found no enumerated configurations that will fill the supercell\n";
         _log() << "using configuration with default occupation..." << std::endl;
-                return std::make_pair(
-                  Configuration(_supercell(), jsonParser(), std::vector<int>(_supercell().num_sites(), 0)).configdof(),
-                  "default");
+        return std::make_pair(
+                 Configuration(_supercell(), jsonParser(), std::vector<int>(_supercell().num_sites(), 0)).configdof(),
+                 "default");
       }
 
-              if(allowed.size() > 1) {
+      if(allowed.size() > 1) {
         _log() << "Warning: Found degenerate allowed configurations with potential energy: "
-                << std::setprecision(8) << allowed[0]->first << std::endl;
+               << std::setprecision(8) << allowed[0]->first << std::endl;
         for(auto it = allowed.begin(); it != allowed.end(); ++it) {
           _log() << "  " << (*it)->second << std::endl;
         }
-                        _log() << "using: " << allowed[0]->second << "\n" << std::endl;
+        _log() << "using: " << allowed[0]->second << "\n" << std::endl;
       }
       else {
         _log() << "using: " << allowed[0]->second << " with potential energy: "
-                                                   << std::setprecision(8) << allowed[0]->first << "\n" << std::endl;
+               << std::setprecision(8) << allowed[0]->first << "\n" << std::endl;
       }
 
-                                                                          Configuration min_config = *db.find(allowed[0]->second);
-                                                                          return std::make_pair(
-                                                                            min_config.fill_supercell(_supercell(), g).configdof(),
-                                                                            min_config.name());
+      Configuration min_config = *db.find(allowed[0]->second);
+      return std::make_pair(
+               min_config.fill_supercell(_supercell(), g).configdof(),
+               min_config.name());
     }
 
-                                                                        /// \brief Generate supercell filling ConfigDoF from configuration
+    /// \brief Generate supercell filling ConfigDoF from configuration
     ConfigDoF GrandCanonical::_configname_motif(const std::string &configname) const {
 
       _log().set("DoF");
       _log() << "motif configname: " << configname << "\n";
-                                      _log() << "using configation: " << configname << "\n" << std::endl;
+      _log() << "using configation: " << configname << "\n" << std::endl;
 
-                                                                                     Configuration config = *primclex().db<Configuration>().find(configname);
-                                                                                     const SymGroup &g = primclex().prim().factor_group();
-                                                                                     return config.fill_supercell(_supercell(), g).configdof();
+      Configuration config = *primclex().db<Configuration>().find(configname);
+      const SymGroup &g = primclex().prim().factor_group();
+      return config.fill_supercell(_supercell(), g).configdof();
     }
 
   }

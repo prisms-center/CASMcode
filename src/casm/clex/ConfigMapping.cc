@@ -18,7 +18,7 @@
 namespace CASM {
   ConfigDoF MappedConfig::to_configdof() const {
     throw std::runtime_error("MappedConfig::to_configdof() not yet implemented");
-    return ConfigDoF();
+    return ConfigDoF(0);
   }
 
   MappedConfig &MappedConfig::apply_sym(PermuteIterator const &it) {

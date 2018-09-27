@@ -3,6 +3,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
@@ -193,7 +194,7 @@ namespace CASM {
                                                  _filter_expr,
                                                  dry_run);
 
-
+    return returncode;
 
   }
 

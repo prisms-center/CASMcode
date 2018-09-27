@@ -7,11 +7,7 @@
 #include "casm/clex/ConfigDoFValues.hh"
 namespace CASM {
 
-
   class PermuteIterator;
-  class PrimClex;
-  class Supercell;
-  class Clexulator;
   class jsonParser;
 
   /// \brief A container class for the different degrees of freedom a Configuration
@@ -27,19 +23,21 @@ namespace CASM {
   class ConfigDoF {
 
   public:
+    using GlobalValueType = GlobalContinuousConfigDoFValues;
+    using LocalValueType = LocalContinuousConfigDoFValues;
 
     // Can treat as a Eigen::VectorXd
     //typedef displacement_matrix_t::ColXpr displacement_t;
     //typedef displacement_matrix_t::ConstColXpr const_displacement_t;
 
     /// Initialize with number of sites -- defaults to zero
-    ConfigDoF(Index N = 0, double _tol = TOL);
+    ConfigDoF(Index N, double _tol = TOL);
 
     ///Initialize with explicit occupation
     ConfigDoF(const std::vector<int> &_occupation, double _tol = TOL);
 
     Index size() const {
-      return m_N;
+      return m_occupation.size();
     }
 
     double tol() const {
@@ -63,10 +61,6 @@ namespace CASM {
     /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _occupation.size()
     void set_occupation(const std::vector<int> &_occupation);
 
-    std::vector<int> &occupation() {
-      return m_occupation;
-    };
-
     const std::vector<int> &occupation() const {
       return m_occupation;
     };
@@ -75,8 +69,7 @@ namespace CASM {
       return size() != 0 && occupation().size() == size();
     }
 
-    void clear_occupation();
-
+    void resize(Index _N);
 
     bool has_global_dof(DoFKey const &_key);
     void reset_global_dof(DoFKey const &_key);
@@ -117,9 +110,9 @@ namespace CASM {
     ///
     std::vector<int> m_occupation;
 
-    std::vector<GlobalContinuousConfigDoFValues> m_global_vals;
+    std::map<std::string, GlobalContinuousConfigDoFValues> m_global_dofs;
 
-    std::vector<LocalContinuousConfigDoFValues> m_local_vals;
+    std::map<std::string, LocalContinuousConfigDoFValues> m_local_dofs;
 
     /// Tolerance used for transformation to canonical form -- used also for comparisons, since
     /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form
@@ -128,20 +121,17 @@ namespace CASM {
 
   };
 
+  template<>
+  struct jsonConstructor<ConfigDoF> {
+
+    static ConfigDoF from_json(const jsonParser &json);
+  };
+
   jsonParser &to_json(const ConfigDoF &value, jsonParser &json);
 
   void from_json(ConfigDoF &value, const jsonParser &json);
 
   void swap(ConfigDoF &A, ConfigDoF &B);
-
-  /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
-  Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator);
-
-  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
-  Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel);
-
-  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
-  Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);
 
   inline
   void reset_properties(ConfigDoF &_dof) {

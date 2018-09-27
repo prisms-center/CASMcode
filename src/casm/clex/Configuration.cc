@@ -62,12 +62,11 @@ namespace CASM {
   Configuration::Configuration(
     const Supercell &_supercell,
     const std::string &_id,
-    const jsonParser &_data) {
+    const jsonParser &_data) :
+    m_configdof(_supercell.num_sites()) {
     if(_id == "none") {
       if(_data.contains("dof")) {
-        ConfigDoF dof;
-        CASM::from_json(dof, _data["dof"]);
-        *this = Configuration(_supercell, _data, dof);
+        *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>());
         return;
       }
       *this = Configuration(_supercell, _data);
@@ -115,13 +114,13 @@ namespace CASM {
     _modify_dof();
     m_configdof.occ(site_l) = val;
   }
-
+  /*
   //*********************************************************************************
   void Configuration::clear_occupation() {
     _modify_dof();
     m_configdof.clear_occupation();
   }
-
+  */
   //*******************************************************************************
 
   /// \brief Check if this is a primitive Configuration
@@ -390,10 +389,9 @@ namespace CASM {
 
   /// \brief Get operations that transform canonical primitive to this
   RefToCanonicalPrim::RefToCanonicalPrim(const Configuration &_config) :
-    config(_config) {
-
+    config(_config),
     // Find primitive canonical config:
-    this->prim_canon_config = config.primitive().in_canonical_supercell();
+    prim_canon_config(config.primitive().in_canonical_supercell()) {
 
     // Find the transformation of prim_canon_config and gives config:
     //
@@ -1462,6 +1460,59 @@ namespace CASM {
 
     return sout;
   }
+
+  /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
+  Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator) {
+
+    //Size of the supercell will be used for normalizing correlations to a per primitive cell value
+    int scel_vol = scel.volume();
+
+    Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
+
+    //Inform Clexulator of the bitstring
+
+    //Holds contribution to global correlations from a particular neighborhood
+    Eigen::VectorXd tcorr = correlations;
+    //std::vector<double> corr(clexulator.corr_size(), 0.0);
+
+    for(int v = 0; v < scel_vol; v++) {
+      //Fill up contributions
+      clexulator.calc_global_corr_contribution(configdof,
+                                               scel.nlist().sites(v).data(),
+                                               end_ptr(scel.nlist().sites(v)),
+                                               tcorr.data(),
+                                               end_ptr(tcorr));
+
+      correlations += tcorr;
+    }
+
+    correlations /= (double) scel_vol;
+
+    return correlations;
+  }
+
+  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::struc_molecule()
+  Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
+
+    // [basis_site][site_occupant_index]
+    auto convert = make_index_converter(scel.prim(), scel.prim().struc_molecule());
+
+    // create an array to count the number of each molecule
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.prim().struc_molecule().size());
+
+    // count the number of each molecule
+    for(Index i = 0; i < configdof.size(); i++) {
+      num_each_molecule(convert[ scel.sublat(i) ][ configdof.occ(i)])++;
+    }
+
+    return num_each_molecule;
+  }
+
+  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::struc_molecule()
+  Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
+    return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
+  }
+
 
 }
 

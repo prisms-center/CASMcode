@@ -56,6 +56,11 @@ namespace CASM {
     typedef typename ValueType::SegmentReturnType SublatReference;
     typedef typename ValueType::SegmentReturnType ConstSublatReference;
 
+    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Eigen::Ref< const ValueType > const &_vals) :
+      ConfigDoFValues(_traits),
+      m_vals(_vals) {
+
+    }
 
   private:
     ValueType m_vals;
@@ -79,6 +84,11 @@ namespace CASM {
     typedef typename ValueType::SegmentReturnType SublatReference;
     typedef typename ValueType::SegmentReturnType ConstSublatReference;
 
+    GlobalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Eigen::Ref< const ValueType > const &_vals) :
+      ConfigDoFValues(_traits),
+      m_vals(_vals) {
+
+    }
 
   private:
     ValueType m_vals;

@@ -57,17 +57,17 @@ namespace CASM {
   public:
     //********* CONSTRUCTORS *********
 
-    Configuration() {};
+    //Configuration() {};
 
     /// Construct a default Configuration
     explicit Configuration(const Supercell &_supercell,
                            const jsonParser &source = jsonParser(),
-                           const ConfigDoF &_dof = ConfigDoF());
+                           const ConfigDoF &_dof = ConfigDoF(0));
 
     /// Construct a default Configuration that owns its Supercell
     explicit Configuration(const std::shared_ptr<Supercell> &_supercell,
                            const jsonParser &source = jsonParser(),
-                           const ConfigDoF &_dof = ConfigDoF());
+                           const ConfigDoF &_dof = ConfigDoF(0));
 
 
     /// Construct a Configuration from JSON data
@@ -209,7 +209,7 @@ namespace CASM {
     /// \brief Clear occupation
     ///
     /// - This will invalidate the Configuration's id
-    void clear_occupation();
+    //void clear_occupation();
 
 
     // ******** Comparisons, Symmetry, Crystallography  ******
@@ -568,6 +568,15 @@ namespace CASM {
   };
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c);
+
+  /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
+  Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator);
+
+  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
+  Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel);
+
+  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
+  Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);
 
   /** @} */
 

@@ -389,8 +389,7 @@ namespace CASM {
       fs::create_directories(dir.trajectory_dir(cond_index));
 
       // read initial_state.json
-      ConfigDoF config_dof;
-      from_json(config_dof, jsonParser(dir.initial_state_json(cond_index)));
+      ConfigDoF config_dof = jsonParser(dir.initial_state_json(cond_index)).get<ConfigDoF>();
 
       if(!fs::exists(dir.initial_state_json(cond_index))) {
         throw std::runtime_error(
@@ -416,8 +415,7 @@ namespace CASM {
       fs::create_directories(dir.trajectory_dir(cond_index));
 
       // read final_state.json
-      ConfigDoF config_dof;
-      from_json(config_dof, jsonParser(dir.final_state_json(cond_index)));
+      ConfigDoF config_dof = jsonParser(dir.final_state_json(cond_index)).get<ConfigDoF>();
 
       if(!fs::exists(dir.final_state_json(cond_index))) {
         throw std::runtime_error(
@@ -469,10 +467,8 @@ namespace CASM {
         for(auto it = json["Step"].cbegin(); it != json["Step"].cend(); ++it) {
           step.push_back(it->get<size_type>());
         }
-        ConfigDoF config_dof;
         for(auto it = json["DoF"].cbegin(); it != json["DoF"].cend(); ++it) {
-          from_json(config_dof, *it);
-          trajectory.push_back(config_dof);
+          trajectory.push_back(it->get<ConfigDoF>());
         }
 
       }
