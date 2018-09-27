@@ -7,7 +7,7 @@ export CASM_BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pw
 . $CASM_BUILD_DIR/build_scripts/install-functions.sh
 detect_os
 check_var "CONDA_PREFIX" "Must have the conda environment activated"
-export CASM_PREFIX=$CONDA_PREFIX
+check_var "CASM_PREFIX" "CASM install location" "$CONDA_PREFIX"
 
 ### end initialization ###
 
