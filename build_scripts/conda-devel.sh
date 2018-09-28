@@ -1,5 +1,9 @@
 # Setup a conda development environment for CASM
 set -e
+BUILD_SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+export CASM_BUILD_DIR=$(dirname $BUILD_SCRIPTS_DIR)
+. $CASM_BUILD_DIR/build_scripts/install-functions.sh
+
 detect_os
 check_var "CASM_BUILD_DIR" "CASMcode repository location"
 check_var "CASM_CONDA_DIR" "Location to install conda and conda environments" "$HOME/.local/conda"
