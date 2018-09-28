@@ -1,12 +1,13 @@
 # variables necessary for travis, linux
 
 check_var "CASM_PREFIX" "Specify the install location"
-check_var "CASM_BOOST_PREFIX" "Specify the where boost libraries are installed" "$CASM_PREFIX"
+check_var "CASM_BOOST_PREFIX" "Specify where boost libraries are installed" "$CASM_PREFIX"
+check_var "CASM_ZLIB_PREFIX" "Specify where zlib is installed" "$CASM_PREFIX"
 check_var "CASM_BASH_COMPLETION" "Specify where bash-completion is installed" "/usr/share/bash-completion/bash_completion"
 check_var "CASM_BASH_COMPLETION_DIR" "Specify where to install the casm bash-completion script" "$CASM_PREFIX/.bash_completion.d"
 
 CASM_CONFIGFLAGS="--prefix=$CASM_PREFIX "
-CASM_CONFIGFLAGS+="--with-zlib=$CASM_PREFIX "
+CASM_CONFIGFLAGS+="--with-zlib=$CASM_ZLIB_PREFIX "
 CASM_CONFIGFLAGS+="--with-boost-libdir=$CASM_BOOST_PREFIX/lib "
 CASM_CONFIGFLAGS+="--with-bash-completion-dir=$CASM_BASH_COMPLETION_DIR "
 export CASM_CONFIGFLAGS
