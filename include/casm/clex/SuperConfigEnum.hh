@@ -162,8 +162,8 @@ namespace CASM {
     SuperConfigEnum(_target_scel,
                     _begin,
                     _end,
-                    _target_scel.permute_begin(),
-                    _target_scel.permute_end()) {}
+                    _target_scel.sym_info().permute_begin(),
+                    _target_scel.sym_info().permute_end()) {}
 
   /// \brief Constructor
   ///

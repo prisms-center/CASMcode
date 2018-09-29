@@ -250,7 +250,7 @@ namespace CASM {
           is_new_config = false;
           result.config = notstd::make_unique<Configuration>(*hint_ptr);
 
-          it_canon = hint_ptr->supercell().permute_begin();
+          it_canon = hint_ptr->supercell().sym_info().permute_begin();
         }
         else {
 
@@ -273,7 +273,7 @@ namespace CASM {
       result.config = notstd::make_unique<Configuration>(shared_scel, jsonParser(), relaxed_occ.to_configdof());
 
       if(m_strict_flag) {
-        it_canon = shared_scel->permute_begin();
+        it_canon = shared_scel->sym_info().permute_begin();
       }
       else {
         it_canon = result.config->to_canonical();

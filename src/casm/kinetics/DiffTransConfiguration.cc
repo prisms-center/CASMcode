@@ -301,7 +301,7 @@ namespace CASM {
         cache_insert("from_config_from_canonical", result);
         return result;
       }
-      return cache()["from_config_from_canonical"].get<PermuteIterator>(supercell());
+      return cache()["from_config_from_canonical"].get<PermuteIterator>(supercell().sym_info());
     }
 
     /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
@@ -311,7 +311,7 @@ namespace CASM {
         cache_insert("to_config_from_canonical", result);
         return result;
       }
-      return cache()["to_config_from_canonical"].get<PermuteIterator>(supercell());
+      return cache()["to_config_from_canonical"].get<PermuteIterator>(supercell().sym_info());
     }
 
     void DiffTransConfiguration::write_pos() const {

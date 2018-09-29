@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "casm/symmetry/SymGroupRep.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/container/Permutation.hh"
 #include "casm/misc/Comparisons.hh"
 
@@ -36,11 +37,13 @@ namespace CASM {
     public std::iterator <std::bidirectional_iterator_tag, PermuteIterator>,
     public Comparisons<CRTPBase<PermuteIterator>> {
 
+    SupercellSymInfo const *m_sym_info;
+
     /// permutation representation of factor group acting on sites of the supercell
-    SymGroupRep::RemoteHandle m_fg_permute_rep;
+    //SymGroupRep::RemoteHandle m_fg_permute_rep;
 
     /// m_prim_grid holds permutation representation of lattice translations acting on sites of the supercell
-    PrimGrid const *m_prim_grid;
+    //PrimGrid const *m_prim_grid;
 
     /// m_trans_permute points to the Array<Permutation> of translation permutations inside of m_prim_grid (to provide faster access)
     std::vector<Permutation> const *m_trans_permute;
@@ -54,8 +57,7 @@ namespace CASM {
 
     PermuteIterator(const PermuteIterator &iter);
 
-    PermuteIterator(SymGroupRep::RemoteHandle _fg_permute_rep,
-                    const PrimGrid &_prim_grid,
+    PermuteIterator(SupercellSymInfo const &_sym_info,
                     Index _factor_group_index,
                     Index _translation_index);
 
@@ -72,9 +74,13 @@ namespace CASM {
     /// Returns the combination of factor_group permutation and translation permutation
     Permutation combined_permute() const;
 
+    SupercellSymInfo const &sym_info() const;
+
+    SymGroup const &factor_group() const;
+
     /// Apply the combined factor_group permutation and translation permutation being pointed at
-    template<typename T>
-    ReturnArray<T> permute(const Array<T> &before_array) const;
+    //template<typename T>
+    //ReturnArray<T> permute(const Array<T> &before_array) const;
 
     /// Return the index into m_factor_group_permute of the factor group op being pointed at
     Index factor_group_index() const;
@@ -97,8 +103,8 @@ namespace CASM {
     Index permute_ind(Index i) const;
 
     /// Return after_array[i], given i and before_array
-    template<typename T>
-    const T &permute_by_bit(Index i, const Array<T> &before_array) const;
+    //template<typename T>
+    //const T &permute_by_bit(Index i, const Array<T> &before_array) const;
 
     bool operator<(const PermuteIterator &iter) const;
 
@@ -152,12 +158,13 @@ namespace CASM {
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
 
 
-  class Supercell;
+  class SupercellSymInfo;
+
   template<typename T> struct jsonConstructor;
 
   template<>
   struct jsonConstructor<PermuteIterator> {
-    static PermuteIterator from_json(const jsonParser &json, const Supercell &scel);
+    static PermuteIterator from_json(const jsonParser &json, const SupercellSymInfo &scel_info);
   };
 
   /** @} */

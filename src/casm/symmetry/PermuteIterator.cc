@@ -10,27 +10,24 @@ namespace CASM {
   PermuteIterator::PermuteIterator() {}
 
   PermuteIterator::PermuteIterator(const PermuteIterator &iter) :
-    m_fg_permute_rep(iter.m_fg_permute_rep),
-    m_prim_grid(iter.m_prim_grid),
-    m_trans_permute(&(m_prim_grid->translation_permutations())),
+    m_sym_info(iter.m_sym_info),
+    m_trans_permute(&(m_sym_info->prim_grid().translation_permutations())),
     m_factor_group_index(iter.m_factor_group_index),
     m_translation_index(iter.m_translation_index) {
 
   }
 
-  PermuteIterator::PermuteIterator(SymGroupRep::RemoteHandle _fg_permute_rep,
-                                   const PrimGrid &_prim_grid,
+  PermuteIterator::PermuteIterator(SupercellSymInfo const &_sym_info,
                                    Index _factor_group_index,
                                    Index _translation_index) :
-    m_fg_permute_rep(_fg_permute_rep),
-    m_prim_grid(&_prim_grid),
-    m_trans_permute(&(m_prim_grid->translation_permutations())),
+    m_sym_info(&_sym_info),
+    m_trans_permute(&(m_sym_info->prim_grid().translation_permutations())),
     m_factor_group_index(_factor_group_index),
     m_translation_index(_translation_index) {
   }
 
   const PrimGrid &PermuteIterator::prim_grid() const {
-    return *m_prim_grid;
+    return sym_info().prim_grid();
   }
 
   PermuteIterator &PermuteIterator::operator=(PermuteIterator iter) {
@@ -54,7 +51,7 @@ namespace CASM {
   }
 
   /// Apply the combined factor_group permutation and translation permutation being pointed at
-  template<typename T>
+  /*template<typename T>
   ReturnArray<T> PermuteIterator::permute(const Array<T> &before_array) const {
     assert(before_array.size() == factor_group_permute().size() && "WARNING: You're trying to permute an Array with an incompatible permutation!");
 
@@ -65,6 +62,16 @@ namespace CASM {
       after_array.push_back(permute_by_bit(i, before_array));
     }
     return after_array;
+    }*/
+
+  /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
+  SupercellSymInfo const &PermuteIterator::sym_info() const {
+    return *m_sym_info;
+  }
+
+  /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
+  SymGroup const &PermuteIterator::factor_group() const {
+    return sym_info().factor_group();
   }
 
   /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
@@ -79,7 +86,7 @@ namespace CASM {
 
   /// Return the factor group permutation being pointed at
   const Permutation &PermuteIterator::factor_group_permute() const {
-    return *(m_fg_permute_rep[m_factor_group_index]->get_permutation());
+    return *(sym_info().site_permutation_symrep()[m_factor_group_index]->get_permutation());
   }
 
   /// Return the translation permutation being pointed at
@@ -88,18 +95,13 @@ namespace CASM {
   }
 
   SymOp PermuteIterator::sym_op()const {
-    return prim_grid().sym_op(m_translation_index) * m_fg_permute_rep.sym_op(m_factor_group_index);
+    return prim_grid().sym_op(m_translation_index) * sym_info().site_permutation_symrep().sym_op(m_factor_group_index);
   }
 
   Index PermuteIterator::permute_ind(Index i) const {
     return factor_group_permute()[ translation_permute()[i] ];
   }
 
-  /// Return after_array[i], given i and before_array
-  template<typename T>
-  const T &PermuteIterator::permute_by_bit(Index i, const Array<T> &before_array) const {
-    return before_array[ factor_group_permute()[ translation_permute()[i] ] ];
-  }
 
   bool PermuteIterator::operator<(const PermuteIterator &iter) const {
     if(this->factor_group_index() == iter.factor_group_index()) {
@@ -109,8 +111,7 @@ namespace CASM {
   }
 
   bool PermuteIterator::eq_impl(const PermuteIterator &iter) const {
-    if(m_fg_permute_rep == iter.m_fg_permute_rep &&
-       m_prim_grid == iter.m_prim_grid &&
+    if(m_sym_info == iter.m_sym_info &&
        m_factor_group_index == iter.m_factor_group_index &&
        m_translation_index == iter.m_translation_index)
       return true;
@@ -162,14 +163,14 @@ namespace CASM {
   PermuteIterator PermuteIterator::inverse() const {
     PermuteIterator it(*this);
     // Finding the inverse factor_group operation is straightforward
-    it.m_factor_group_index = m_fg_permute_rep.ind_inverse(factor_group_index());
+    it.m_factor_group_index = factor_group().ind_inverse(factor_group_index());
 
     // Easiest way to get the new translation is just to compare the tau of the
     // inverse of the 'total' sym_op (described by *this), to the inverse of the
-    // untranslated symop (described by m_fg_permute_rep.sym_op(it.m_factor_group_index))
+    // untranslated symop (described by m_fg_site_permutation_symrep.sym_op(it.m_factor_group_index))
     // Result is the portion of the inverse sym_op that needs to be described by a prim_grid translation
     it.m_translation_index =
-      prim_grid().find_cart(sym_op().inverse().tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
+      prim_grid().find_cart(sym_op().inverse().tau() - factor_group()[it.factor_group_index()].tau());
 
     return it;
   }
@@ -177,14 +178,14 @@ namespace CASM {
   PermuteIterator PermuteIterator::operator*(const PermuteIterator &RHS) const {
     PermuteIterator it(*this);
     // Finding the inverse factor_group operation is straightforward
-    it.m_factor_group_index = m_fg_permute_rep.ind_prod(factor_group_index(), RHS.factor_group_index());
+    it.m_factor_group_index = factor_group().ind_prod(factor_group_index(), RHS.factor_group_index());
 
     // Easiest way to get the new translation is just to compare the tau of the
     // 'total' sym_op (described by (*this).sym_op()*RHS.sym_op()), to the
-    // untranslated symop product (described by m_fg_permute_rep.sym_op(it.factor_group_index()))
+    // untranslated symop product (described by m_fg_site_permutation_symrep.sym_op(it.factor_group_index()))
     // Result is the portion of the product sym_op that needs to be described by a prim_grid translation
     it.m_translation_index =
-      prim_grid().find_cart((sym_op() * RHS.sym_op()).tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
+      prim_grid().find_cart((sym_op() * RHS.sym_op()).tau() - factor_group()[it.factor_group_index()].tau());
 
     return it;
   }
@@ -223,8 +224,7 @@ namespace CASM {
     std::vector<PermuteIterator>::iterator end);
 
   void swap(PermuteIterator &a, PermuteIterator &b) {
-    std::swap(a.m_fg_permute_rep, b.m_fg_permute_rep);
-    std::swap(a.m_prim_grid, b.m_prim_grid);
+    std::swap(a.m_sym_info, b.m_sym_info);
     std::swap(a.m_trans_permute, b.m_trans_permute);
     std::swap(a.m_factor_group_index, b.m_factor_group_index);
     std::swap(a.m_translation_index, b.m_translation_index);
@@ -239,8 +239,8 @@ namespace CASM {
 
   PermuteIterator jsonConstructor<PermuteIterator>::from_json(
     const jsonParser &json,
-    const Supercell &scel) {
-    return scel.permute_it(json["factgrp"].get<Index>(), json["trans"].get<Index>());
+    const SupercellSymInfo &scel_info) {
+    return scel_info.permute_it(json["factgrp"].get<Index>(), json["trans"].get<Index>());
   }
 
 }

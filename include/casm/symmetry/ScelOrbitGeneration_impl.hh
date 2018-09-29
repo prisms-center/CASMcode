@@ -24,13 +24,13 @@ namespace CASM {
 
   /// \brief Applies symmetry to return an equivalent Element in a canonical form
   ///
-  /// - Use [supercell().permute_begin(), supercell().permute_end()) to canonicalize
+  /// - Use [supercell().sym_info().permute_begin(), supercell().sym_info().permute_end()) to canonicalize
   template<typename _ElementType>
   typename ScelCanonicalGenerator<_ElementType>::Element
   ScelCanonicalGenerator<_ElementType>::operator()(const Element &e) const {
     Element result = m_sym_compare.prepare(e);
-    auto it = supercell().permute_begin();
-    auto end = supercell().permute_end();
+    auto it = supercell().sym_info().permute_begin();
+    auto end = supercell().sym_info().permute_end();
     m_to_canonical = it;
     while(it != end) {
       auto test = m_sym_compare.prepare(copy_apply(it, e));
@@ -100,7 +100,7 @@ namespace CASM {
   /// \brief Applies symmetry to check if any Element is greater than e
   template<typename _ElementType>
   bool ScelIsCanonical<_ElementType>::operator()(const Element &e) const {
-    return (*this)(e, supercell().permute_begin(), supercell().permute_end());
+    return (*this)(e, supercell().sym_info().permute_begin(), supercell().sym_info().permute_end());
   }
 
   /// \brief Applies symmetry to check if any Element is greater than e

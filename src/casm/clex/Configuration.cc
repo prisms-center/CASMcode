@@ -114,9 +114,9 @@ namespace CASM {
     _modify_dof();
     m_configdof.occ(site_l) = val;
   }
-  /*
+
   //*********************************************************************************
-  void Configuration::clear_occupation() {
+  /*  void Configuration::clear_occupation() {
     _modify_dof();
     m_configdof.clear_occupation();
   }
@@ -126,7 +126,7 @@ namespace CASM {
   /// \brief Check if this is a primitive Configuration
   bool Configuration::is_primitive() const {
     if(!cache().contains("is_primitive")) {
-      bool result = (find_translation() == supercell().translate_end());
+      bool result = (find_translation() == supercell().sym_info().translate_end());
       cache_insert("is_primitive", result);
       return result;
     }
@@ -138,12 +138,12 @@ namespace CASM {
   /// \brief Returns a PermuteIterator corresponding to the first non-zero pure
   /// translation that maps the Configuration onto itself.
   ///
-  /// - If primitive, returns this->supercell().translate_end()
+  /// - If primitive, returns this->supercell().sym_info().translate_end()
   PermuteIterator Configuration::find_translation() const {
     ConfigIsEquivalent f(*this, crystallography_tol());
     const Supercell &scel = supercell();
-    auto begin = scel.translate_begin();
-    auto end = scel.translate_end();
+    auto begin = scel.sym_info().translate_begin();
+    auto end = scel.sym_info().translate_end();
     if(++begin == end) {
       return end;
     }
@@ -165,7 +165,7 @@ namespace CASM {
     while(true) {
 
       PermuteIterator result = tconfig.find_translation();
-      if(result == tconfig.supercell().translate_end()) {
+      if(result == tconfig.supercell().sym_info().translate_end()) {
         break;
       }
 
@@ -411,8 +411,8 @@ namespace CASM {
 
     // given op2, find op1
     auto f = config.equal_to();
-    auto begin = prim_canon_config.supercell().permute_begin();
-    auto end = prim_canon_config.supercell().permute_end();
+    auto begin = prim_canon_config.supercell().sym_info().permute_begin();
+    auto end = prim_canon_config.supercell().sym_info().permute_end();
     for(auto op1 = begin; op1 != end; ++op1) {
       auto test = copy_apply(op1, this->prim_canon_config);
       if(f(test.fill_supercell(config.supercell(), *res.first))) {
@@ -941,7 +941,7 @@ namespace CASM {
       Index fg_index = boost::lexical_cast<Index>(tokens[2]);
       Index trans_index = boost::lexical_cast<Index>(tokens[3]);
 
-      return apply(canon_config.supercell().permute_it(fg_index, trans_index), canon_config);
+      return apply(canon_config.supercell().sym_info().permute_it(fg_index, trans_index), canon_config);
     }
 
     /// \brief Make general super Configuration from name string

@@ -29,8 +29,8 @@ namespace CASM {
     const Configuration &config) :
     ConfigEnumEquivalents(
       config,
-      config.supercell().permute_begin(),
-      config.supercell().permute_end()) {
+      config.supercell().sym_info().permute_begin(),
+      config.supercell().sym_info().permute_end()) {
   }
 
   ConfigEnumEquivalents::ConfigEnumEquivalents(

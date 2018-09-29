@@ -91,14 +91,14 @@ namespace CASM {
   template<typename _Base>
   bool CanonicalForm<_Base>::is_canonical(const Supercell &scel) const {
 
-    return is_canonical(scel, scel.permute_begin(), scel.permute_end());
+    return is_canonical(scel, scel.sym_info().permute_begin(), scel.sym_info().permute_end());
   }
 
   template<typename _Base>
   typename CanonicalForm<_Base>::MostDerived CanonicalForm<_Base>::canonical_form(
     const Supercell &scel) const {
 
-    return canonical_form(scel, scel.permute_begin(), scel.permute_end());
+    return canonical_form(scel, scel.sym_info().permute_begin(), scel.sym_info().permute_end());
   }
 
   /// True if this and B have same canonical form
@@ -107,24 +107,24 @@ namespace CASM {
     const MostDerived &B,
     const Supercell &scel) const {
 
-    return is_sym_equivalent(scel, scel.permute_begin(), scel.permute_end());
+    return is_sym_equivalent(scel, scel.sym_info().permute_begin(), scel.sym_info().permute_end());
   }
 
   template<typename _Base>
   SymOp CanonicalForm<_Base>::to_canonical(const Supercell &scel) const {
 
-    return to_canonical(scel, scel.permute_begin(), scel.permute_end());
+    return to_canonical(scel, scel.sym_info().permute_begin(), scel.sym_info().permute_end());
   }
 
   template<typename _Base>
   SymOp CanonicalForm<_Base>::from_canonical(const Supercell &scel) const {
 
-    return from_canonical(scel, scel.permute_begin(), scel.permute_end());
+    return from_canonical(scel, scel.sym_info().permute_begin(), scel.sym_info().permute_end());
   }
 
   template<typename _Base>
   std::vector<PermuteIterator> CanonicalForm<_Base>::invariant_subgroup(const Supercell &scel) const {
-    return invariant_subgroup(scel, scel.permute_begin(), scel.permute_end());
+    return invariant_subgroup(scel, scel.sym_info().permute_begin(), scel.sym_info().permute_end());
   }
 
 
@@ -234,35 +234,35 @@ namespace CASM {
   template<typename Base>
   bool ConfigCanonicalForm<Base>::is_canonical() const {
     return is_canonical(
-             derived().supercell().permute_begin(),
-             derived().supercell().permute_end());
+             derived().supercell().sym_info().permute_begin(),
+             derived().supercell().sym_info().permute_end());
   }
 
   template<typename Base>
   typename ConfigCanonicalForm<Base>::MostDerived
   ConfigCanonicalForm<Base>::canonical_form() const {
     return canonical_form(
-             derived().supercell().permute_begin(),
-             derived().supercell().permute_end());
+             derived().supercell().sym_info().permute_begin(),
+             derived().supercell().sym_info().permute_end());
   }
 
   template<typename Base>
   PermuteIterator ConfigCanonicalForm<Base>::to_canonical() const {
     return to_canonical(
-             derived().supercell().permute_begin(),
-             derived().supercell().permute_end());
+             derived().supercell().sym_info().permute_begin(),
+             derived().supercell().sym_info().permute_end());
   }
 
   template<typename Base>
   PermuteIterator ConfigCanonicalForm<Base>::from_canonical() const {
     return from_canonical(
-             derived().supercell().permute_begin(),
-             derived().supercell().permute_end());
+             derived().supercell().sym_info().permute_begin(),
+             derived().supercell().sym_info().permute_end());
   }
 
   template<typename Base>
   std::vector<PermuteIterator> ConfigCanonicalForm<Base>::invariant_subgroup() const {
-    return invariant_subgroup(derived().supercell().permute_begin(), derived().supercell().permute_end());
+    return invariant_subgroup(derived().supercell().sym_info().permute_begin(), derived().supercell().sym_info().permute_end());
   }
 
   template<typename Base>

@@ -147,6 +147,7 @@ casminclude_HEADERS = \
   include/casm/symmetry/SymPermutation.hh\
   include/casm/symmetry/SymGroup.hh\
   include/casm/symmetry/PermuteIterator.hh\
+  include/casm/symmetry/SupercellSymInfo.hh\
   include/casm/symmetry/SymInfo.hh\
   include/casm/symmetry/SymGroupRep.hh\
   include/casm/symmetry/SymRepTools.hh\

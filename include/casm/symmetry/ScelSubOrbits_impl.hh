@@ -28,8 +28,8 @@ namespace CASM {
 
     // find "max" permute in each coset of the subgroup [begin, end),
     //   excluding those cosets that cause duplicate generating elements
-    auto test_it = scel.permute_begin();
-    auto test_end = scel.permute_end();
+    auto test_it = scel.sym_info().permute_begin();
+    auto test_end = scel.sym_info().permute_end();
     for(; test_it != test_end; ++test_it) {
       auto lambda = [&](const PermuteIterator & permute_it) {
         for(const auto &el_it : scel_inv_group) {

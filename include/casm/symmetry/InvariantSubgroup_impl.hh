@@ -75,8 +75,8 @@ namespace CASM {
     return make_invariant_subgroup(
              element,
              scel,
-             scel.permute_begin(),
-             scel.permute_end());
+             scel.sym_info().permute_begin(),
+             scel.sym_info().permute_end());
   }
 
   /// \brief Construct the subgroup of permutations that leaves an element unchanged
@@ -106,7 +106,7 @@ namespace CASM {
       auto test = sym_compare.prepare(copy_apply(it.sym_op(), e));
       if(sym_compare.equal(test, e)) {
         coord.cart() = sym_compare.spatial_transform().integral_tau();
-        auto trans_it = scel.permute_it(0, make_unitcell(coord));
+        auto trans_it = scel.sym_info().permute_it(0, make_unitcell(coord));
         result.push_back(trans_it * it);
       }
       ++it;
@@ -141,7 +141,7 @@ namespace CASM {
       auto test = sym_compare.prepare(copy_apply(it->sym_op(), e));
       if(sym_compare.equal(test, e)) {
         coord.cart() = sym_compare.spatial_transform().integral_tau();
-        auto trans_it = scel.permute_it(0, make_unitcell(coord));
+        auto trans_it = scel.sym_info().permute_it(0, make_unitcell(coord));
         result.push_back(trans_it * (*it));
       }
       ++it;

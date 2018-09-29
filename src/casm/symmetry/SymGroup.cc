@@ -413,7 +413,7 @@ namespace CASM {
         m_rep_array[i]->permute(perm_array);
         for(Index j = 0; j < m_rep_array[i]->size(); j++) {
           if(m_rep_array[i]->at(j)) {
-            (m_rep_array[i]->at(j))->set_identifiers(*this, m_rep_array[i]->get_ID(), perm_array[j]);
+            (m_rep_array[i]->at(j))->set_identifiers(*this, m_rep_array[i]->symrep_ID(), perm_array[j]);
           }
         }
       }

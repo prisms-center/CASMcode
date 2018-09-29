@@ -110,7 +110,7 @@ namespace CASM {
     // will throw if valid master exists.
     void push_back_copy(const SymOpRepresentation &_pushed);
 
-    SymGroupRepID get_ID() const {
+    SymGroupRepID symrep_ID() const {
       return m_rep_ID;
     }
 
@@ -224,9 +224,17 @@ namespace CASM {
       return m_subgroup_op_inds.size();
     }
 
+    SymGroupRepID symrep_ID() const {
+      return rep_ptr()->symrep_ID();
+    }
+
     /// Matrix dimension of representation
     Index dim() const {
       return (m_group_rep->get_MatrixXd(m_subgroup_op_inds[0]))->cols();
+    }
+
+    bool empty() const {
+      return m_group_rep == nullptr;
     }
 
     SymGroupRep const *rep_ptr() const {

@@ -7,6 +7,7 @@
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/clex/SupercellTraits.hh"
 #include "casm/clex/HasPrimClex.hh"
 #include "casm/clex/HasCanonicalForm.hh"
@@ -49,7 +50,7 @@ namespace CASM {
 
   public:
 
-    typedef PermuteIterator permute_const_iterator;
+    using permute_const_iterator = SupercellSymInfo::permute_const_iterator;
 
     // **** Constructors ****
 
@@ -103,19 +104,9 @@ namespace CASM {
 
     Index num_sites() const;
 
-    // the permutation_symrep is the SymGroupRep of prim().factor_group() that describes how
-    // operations of m_factor_group permute sites of the Supercell.
-    // NOTE: The permutation representation is for (*this).prim().factor_group(), which may contain
-    //       more operations than m_factor_group, so the Permutation SymGroupRep may have 'gaps' at the
-    //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
-    //       SymGroupRep::get_representation(m_factor_group[i]) or SymGroupRep::get_permutation(m_factor_group[i]),
-    //       so that you don't encounter the gaps (i.e., the representation can be indexed using the
-    //       SymOps of m_factor_group
-    SymGroupRepID permutation_symrep_ID() const;
-
     SymGroupRep const &permutation_symrep() const;
 
-    const Eigen::Matrix3i &transf_mat() const;
+    Eigen::Matrix3i transf_mat() const;
 
     /// \brief The super lattice
     const Lattice &lattice() const;
@@ -123,31 +114,32 @@ namespace CASM {
     /// \brief Returns the SuperNeighborList
     const SuperNeighborList &nlist() const;
 
-    // Populates m_factor_group (if necessary) and returns it.
+    // Factor group of this supercell
     const SymGroup &factor_group() const;
 
+    // SymInfo object of this supercell
+    const SupercellSymInfo &sym_info() const;
+
     // Returns the permutation representation of the i'th element of m_factor_group
-    const Permutation &factor_group_permute(Index i) const;
+    //const Permutation &factor_group_permute(Index i) const;
 
     // Returns the i'th element of m_trans_permute
-    // Populates m_trans_permute if needed
-    const Permutation &translation_permute(Index i) const;
+    //const Permutation &translation_permute(Index i) const;
 
     // Const access of m_trans_permute
-    // Populates m_trans_permute if needed
-    const std::vector<Permutation> &translation_permute() const;
+    //const std::vector<Permutation> &translation_permute() const;
 
     /// \brief Begin iterator over pure translational permutations
-    permute_const_iterator translate_begin() const;
+    //permute_const_iterator translate_begin() const;
 
     /// \brief End iterator over pure translational permutations
-    permute_const_iterator translate_end() const;
+    //permute_const_iterator translate_end() const;
 
     // begin and end iterators for iterating over translation and factor group permutations
-    permute_const_iterator permute_begin() const;
-    permute_const_iterator permute_end() const;
-    permute_const_iterator permute_it(Index fg_index, Index trans_index) const;
-    permute_const_iterator permute_it(Index fg_index, UnitCell trans) const;
+    //permute_const_iterator permute_begin() const;
+    //permute_const_iterator permute_end() const;
+    //permute_const_iterator permute_it(Index fg_index, Index trans_index) const;
+    //permute_const_iterator permute_it(Index fg_index, UnitCell trans) const;
 
 
     bool operator<(const Supercell &B) const;
@@ -187,8 +179,10 @@ namespace CASM {
     // lattice of supercell in real space
     Lattice m_lattice;
 
+    SupercellSymInfo m_sym_info;
+
     // superlattice arithmetic
-    PrimGrid m_prim_grid;
+    //PrimGrid m_prim_grid;
 
     // m_perm_symrep_ID is the ID of the SymGroupRep of prim().factor_group() that describes how
     // operations of m_factor_group permute sites of the Supercell.
@@ -197,7 +191,7 @@ namespace CASM {
     //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
     //       the the Supercel::factor_group_permute(int) method, so that you don't encounter the gaps
     //       OR, see note for Supercell::permutation_symrep() below.
-    mutable SymGroupRepID m_perm_symrep_ID;
+    //mutable SymGroupRepID m_perm_symrep_ID;
 
     // m_factor_group is factor group of the super cell, found by identifying the subgroup of
     // (*this).prim().factor_group() that leaves the supercell lattice vectors unchanged
@@ -210,7 +204,7 @@ namespace CASM {
     //       m_displacement(init_config.displacement()),
     //       m_strain(init_config.supercell().strain
     //       (*this).superstruc().factor_group() is the group formed by the cosets of Tsuper in the supercell space group
-    mutable SymGroup m_factor_group;
+    //mutable SymGroup m_factor_group;
 
     /// SuperNeighborList, mutable for lazy construction
     mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;
@@ -219,12 +213,12 @@ namespace CASM {
     /// to enable checking if SuperNeighborList should be re-constructed
     mutable Index m_nlist_size_at_construction;
 
-    Eigen::Matrix3i m_transf_mat;
-
   };
 
   /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
   const Supercell &make_supercell(const PrimClex &primclex, std::string name);
+
+  SupercellSymInfo make_supercell_sym_info(Structure const &_prim, Lattice const &_slat);
 
   /// \brief Construct non-canonical supercell from name. Uses equivalent niggli lattice.
   std::shared_ptr<Supercell> make_shared_supercell(const PrimClex &primclex, std::string name);

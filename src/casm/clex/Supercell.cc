@@ -38,24 +38,23 @@ namespace CASM {
   Supercell::Supercell(const Supercell &RHS) :
     m_primclex(&RHS.primclex()),
     m_lattice(RHS.m_lattice),
-    m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()),
-    m_nlist(RHS.m_nlist),
-    m_transf_mat(RHS.m_transf_mat) {
+    m_sym_info(make_supercell_sym_info(prim(), m_lattice)),
+    m_nlist(RHS.m_nlist) {
+
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     m_primclex(_prim),
     m_lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), _prim->crystallography_tol()),
-    m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()),
-    m_transf_mat(transf_mat_init) {
-    //    fill_reciprocal_supercell();
+    m_sym_info(make_supercell_sym_info(prim(), m_lattice)) {
+
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
     m_primclex(_prim),
     m_lattice(superlattice.lat_column_mat(), _prim->crystallography_tol()),
-    m_prim_grid(prim().lattice(), m_lattice, prim().basis().size()),
-    m_transf_mat(CASM::transf_mat(*_prim, m_lattice)) {
+    m_sym_info(make_supercell_sym_info(prim(), m_lattice)) {
+
   }
 
   Supercell::~Supercell() {}
@@ -90,23 +89,23 @@ namespace CASM {
     Coordinate tcoord(coord);
     tcoord.within();
     return linear_index(UnitCellCoord(prim(), coord, tol));
-  };
+  }
 
   /// \brief Return the linear index corresponding to integral coordinates
   ///
   /// Linear indices are grouped by sublattice, then ordered as determined by
   /// PrimGrid. This function is equivalent to:
   /// \code
-  /// bijk[0] * volume() + m_prim_grid.find(bijk.unitcell());
+  /// bijk[0] * volume() + prim_grid().find(bijk.unitcell());
   /// \endcode
   Index Supercell::linear_index(const UnitCellCoord &bijk) const {
-    return bijk[0] * volume() + m_prim_grid.find(bijk.unitcell());
+    return bijk[0] * volume() + prim_grid().find(bijk.unitcell());
   }
 
   /// \brief Return the coordinate corresponding to linear index in the supercell
   ///
   Coordinate Supercell::coord(Index linear_index) const {
-    Coordinate tcoord(m_prim_grid.coord(linear_index % volume(), SCEL));
+    Coordinate tcoord(prim_grid().coord(linear_index % volume(), SCEL));
     tcoord.cart() += prim().basis()[linear_index / volume()].cart();
     return tcoord;
     // return uccoord(linear_index).coordinate();
@@ -117,11 +116,11 @@ namespace CASM {
   /// Linear indices are grouped by sublattice, then ordered as determined by
   /// PrimGrid. This function is equivalent to:
   /// \code
-  /// UnitCellCoord(prim(), sublat(linear_index), m_prim_grid.unitcell(linear_index % volume()))
+  /// UnitCellCoord(prim(), sublat(linear_index), prim_grid().unitcell(linear_index % volume()))
   /// \endcode
   UnitCellCoord Supercell::uccoord(Index linear_index) const {
-    return UnitCellCoord(prim(), sublat(linear_index), m_prim_grid.unitcell(linear_index % volume()));
-  };
+    return UnitCellCoord(prim(), sublat(linear_index), prim_grid().unitcell(linear_index % volume()));
+  }
 
   std::vector<int> Supercell::max_allowed_occupation() const {
     std::vector<int> max_allowed;
@@ -208,7 +207,7 @@ namespace CASM {
 
     return config;
 
-  };
+  }
 
   ///  Returns a Structure equivalent to the Supercell
   ///  - basis sites are ordered to agree with Supercell::config_index_to_bijk
@@ -256,15 +255,14 @@ namespace CASM {
     return superstruc;
 
   }
-
   const PrimGrid &Supercell::prim_grid() const {
-    return m_prim_grid;
+    return sym_info().prim_grid();
   }
 
   ///Return number of primitive cells that fit inside of *this
   Index Supercell::volume() const {
-    return m_prim_grid.size();
-  };
+    return prim_grid().size();
+  }
 
   Index Supercell::basis_size() const {
     return prim().basis().size();
@@ -272,34 +270,15 @@ namespace CASM {
 
   Index Supercell::num_sites() const {
     return volume() * basis_size();
-  };
-
-  // the permutation_symrep is the SymGroupRep of prim().factor_group() that describes how
-  // operations of m_factor_group permute sites of the Supercell.
-  // NOTE: The permutation representation is for (*this).prim().factor_group(), which may contain
-  //       more operations than m_factor_group, so the Permutation SymGroupRep may have 'gaps' at the
-  //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
-  //       SymGroupRep::get_representation(m_factor_group[i]) or SymGroupRep::get_permutation(m_factor_group[i]),
-  //       so that you don't encounter the gaps (i.e., the representation can be indexed using the
-  //       SymOps of m_factor_group
-  SymGroupRepID Supercell::permutation_symrep_ID() const {
-    if(m_perm_symrep_ID.empty()) {
-      _generate_permutations();
-    }
-    return m_perm_symrep_ID;
   }
 
-  SymGroupRep const &Supercell::permutation_symrep() const {
-    return prim().factor_group().representation(permutation_symrep_ID());
+  Eigen::Matrix3i Supercell::transf_mat() const {
+    return CASM::transf_mat(primclex(), m_lattice);
   }
-
-  const Eigen::Matrix3i &Supercell::transf_mat() const {
-    return m_transf_mat;
-  };
 
   const Lattice &Supercell::lattice() const {
     return m_lattice;
-  };
+  }
 
   /// \brief Returns the SuperNeighborList
   const SuperNeighborList &Supercell::nlist() const {
@@ -313,44 +292,48 @@ namespace CASM {
     if(!m_nlist) {
       m_nlist_size_at_construction = primclex().nlist().size();
       m_nlist = notstd::make_cloneable<SuperNeighborList>(
-                  m_prim_grid,
+                  prim_grid(),
                   primclex().nlist()
                 );
     }
     return *m_nlist;
-  };
-
-  const SymGroup &Supercell::factor_group() const {
-    if(!m_factor_group.size()) {
-      _generate_factor_group();
-    }
-    return m_factor_group;
   }
+
+  // Factor group of this supercell
+  const SymGroup &Supercell::factor_group() const {
+    return sym_info().factor_group();
+  }
+
+  // SymInfo object of this supercell
+  const SupercellSymInfo &Supercell::sym_info() const {
+    return m_sym_info;
+  }
+
 
   // permutation_symrep() populates permutation symrep if needed
-  const Permutation &Supercell::factor_group_permute(Index i) const {
-    return *(permutation_symrep().get_permutation(factor_group()[i]));
-  }
+  // const Permutation &Supercell::factor_group_permute(Index i) const {
+  //return *(permutation_symrep().get_permutation(factor_group()[i]));
+  //}
 
   // PrimGrid populates translation permutations if needed
-  const Permutation &Supercell::translation_permute(Index i) const {
-    return m_prim_grid.translation_permutation(i);
-  }
+  //const Permutation &Supercell::translation_permute(Index i) const {
+  //return prim_grid().translation_permutation(i);
+  //}
 
   // PrimGrid populates translation permutations if needed
-  const std::vector<Permutation> &Supercell::translation_permute() const {
-    return m_prim_grid.translation_permutations();
-  }
+  //const std::vector<Permutation> &Supercell::translation_permute() const {
+  //return prim_grid().translation_permutations();
+  //}
 
   /// \brief Begin iterator over translation permutations
-  Supercell::permute_const_iterator Supercell::translate_begin() const {
-    return permute_begin();
-  }
+  //Supercell::permute_const_iterator Supercell::translate_begin() const {
+  //return permute_begin();
+  //}
 
   /// \brief End iterator over translation permutations
-  Supercell::permute_const_iterator Supercell::translate_end() const {
-    return permute_begin().begin_next_fg_op();
-  }
+  //Supercell::permute_const_iterator Supercell::translate_end() const {
+  //return permute_begin().begin_next_fg_op();
+  //}
 
   /// Example usage case:
   ///  Supercell my_supercell;
@@ -358,23 +341,23 @@ namespace CASM {
   ///  ConfigDoF my_dof=my_config.configdof();
   ///  my_dof.is_canonical(my_supercell.permute_begin(),my_supercell.permute_end());
   ///
-  Supercell::permute_const_iterator Supercell::permute_begin() const {
-    return permute_it(0, 0); // starting indices
-  }
+  //Supercell::permute_const_iterator Supercell::permute_begin() const {
+  //return permute_it(0, 0); // starting indices
+  //}
 
-  Supercell::permute_const_iterator Supercell::permute_end() const {
-    return permute_it(factor_group().size(), 0); // one past final indices
-  }
+  //Supercell::permute_const_iterator Supercell::permute_end() const {
+  //return permute_it(factor_group().size(), 0); // one past final indices
+  //}
 
-  Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, Index trans_index) const {
-    return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
-                                  m_prim_grid,
-                                  fg_index, trans_index);
-  }
+  //Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, Index trans_index) const {
+  //return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
+  //                              prim_grid(),
+  //                              fg_index, trans_index);
+  // }
 
-  Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, UnitCell trans) const {
-    return permute_it(fg_index, prim_grid().find(trans));
-  }
+  //Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, UnitCell trans) const {
+  //return permute_it(fg_index, prim_grid().find(trans));
+  //}
 
   bool Supercell::operator<(const Supercell &B) const {
     if(&primclex() != &B.primclex()) {
@@ -407,7 +390,7 @@ namespace CASM {
   bool Supercell::is_supercell_of(const Structure &structure) const {
     Eigen::Matrix3d mat;
     return is_supercell_of(structure, mat);
-  };
+  }
 
   ///  Check if a Structure fits in this Supercell
   ///  - Checks that 'structure'.lattice is supercell of 'lattice'
@@ -418,7 +401,7 @@ namespace CASM {
     SymGroup point_group;
     tstruct.lattice().generate_point_group(point_group);
     return m_lattice.is_supercell_of(tstruct.lattice(), point_group, mat);
-  };
+  }
 
   ///  Returns an std::vector<int> consistent with
   ///    Configuration::occupation that is all vacancies.
@@ -448,36 +431,7 @@ namespace CASM {
     return transf_mat() == B.transf_mat();
   }
 
-  void Supercell::_generate_factor_group()const {
-    m_factor_group = m_lattice.invariant_subgroup(prim().factor_group());
-  }
 
-  void Supercell::_generate_permutations()const {
-    if(!m_perm_symrep_ID.empty()) {
-      default_err_log() << "WARNING: In Supercell::generate_permutations(), but permutations data already exists.\n"
-                        << "         It will be overwritten.\n";
-    }
-    m_perm_symrep_ID = m_prim_grid.make_permutation_representation(factor_group(), prim().basis_permutation_symrep_ID());
-    //m_trans_permute = m_prim_grid.make_translation_permutations(basis_size()); <--moved to PrimGrid
-
-    /*
-      default_err_log() << "For SCEL " << " -- " << name() << " Translation Permutations are:\n";
-      for(int i = 0; i < m_trans_permute.size(); i++)
-      default_err_log() << i << ":   " << m_trans_permute[i].perm_array() << "\n";
-
-      default_err_log() << "For SCEL " << " -- " << name() << " factor_group Permutations are:\n";
-      for(int i = 0; i < m_factor_group.size(); i++){
-    default_err_log() << "Operation " << i << ":\n";
-    m_factor_group[i].print(default_err_log(),FRAC);
-    default_err_log() << '\n';
-    default_err_log() << i << ":   " << m_factor_group[i].get_permutation_rep(m_perm_symrep_ID)->perm_array() << '\n';
-
-    }
-    std:: cerr << "End permutations for SCEL " << name() << '\n';
-    */
-
-    return;
-  }
 
   std::ostream &Supercell::write_pos(std::ostream &sout) const {
     sout << lattice().lat_column_mat() << std::endl;
@@ -606,6 +560,41 @@ namespace CASM {
     // construct Supercell
     return std::make_shared<Supercell>(&primclex, niggli_lat);
   }
+
+  SupercellSymInfo make_supercell_sym_info(Structure const &_prim, Lattice const &_slat) {
+    std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
+    for(auto const &key : _prim.global_dof_types())
+      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof(key).symrep_ID()));
+
+    std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
+    for(auto const &key : _prim.local_dof_types()) {
+      std::vector<SymGroupRepID> treps(_prim.basis().size());
+      for(Index b = 0; b < _prim.basis().size(); ++b) {
+        if(_prim.basis()[b].has_dof(key))
+          treps[b] = _prim.basis()[b].dof(key).symrep_ID();
+        local_dof_symrep_IDs.emplace(std::make_pair(key, std::move(treps)));
+      }
+    }
+
+
+    std::vector<SymGroupRepID> occ_symrep_IDs;
+    occ_symrep_IDs.resize(_prim.basis().size());
+    for(Index b = 0; b < _prim.basis().size(); ++b) {
+      occ_symrep_IDs[b] = _prim.basis()[b].site_occupant().symrep_ID();
+    }
+
+    return SupercellSymInfo(_prim.lattice(),
+                            _slat,
+                            _prim.basis().size(),
+                            _prim.factor_group(),
+                            _prim.basis_permutation_symrep_ID(),
+                            global_dof_symrep_IDs,
+                            occ_symrep_IDs,
+                            local_dof_symrep_IDs);
+
+
+  }
+
 
 
   Supercell &apply(const SymOp &op, Supercell &scel) {
