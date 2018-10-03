@@ -142,8 +142,8 @@ namespace CASM {
 
   void SymGroupRep::print_permutation(std::ostream &stream) const {
     for(Index i = 0; i < this->size(); i++) {
-      if(at(i)->get_permutation())
-        stream << *(at(i)->get_permutation()) << '\n';
+      if(at(i)->permutation())
+        stream << *(at(i)->permutation()) << '\n';
       else
         stream << "nullptr\n";
     }
@@ -157,8 +157,8 @@ namespace CASM {
   void SymGroupRep::print_MatrixXd(std::ostream &stream) const {
     for(Index i = 0; i < size(); i++) {
       stream << "SymRep Matrix " << i + 1 << " of " << size() << ":\n";
-      if(at(i)->get_MatrixXd())
-        stream << *(at(i)->get_MatrixXd()) << '\n';
+      if(at(i)->MatrixXd())
+        stream << *(at(i)->MatrixXd()) << '\n';
       else
         stream << "nullptr\n";
       stream << "\n";
@@ -172,8 +172,8 @@ namespace CASM {
   void SymGroupRep::print_MatrixXd(std::ostream &stream, const SymGroup &head_group) const {
     for(Index i = 0; i < head_group.size(); i++) {
       stream << "SymRep Matrix " << i + 1 << " of " << head_group.size() << ":\n";
-      if(at(head_group[i].index())->get_MatrixXd())
-        stream << *(at(head_group[i].index())->get_MatrixXd()) << '\n';
+      if(at(head_group[i].index())->MatrixXd())
+        stream << *(at(head_group[i].index())->MatrixXd()) << '\n';
       else
         stream << "nullptr\n";
       stream << "\n";
@@ -183,26 +183,26 @@ namespace CASM {
 
   //*******************************************************************************************
   Eigen::MatrixXd SymGroupRep::block_shape_matrix() const {
-    if(!size() || !get_MatrixXd(0))
+    if(!size() || !MatrixXd(0))
       return Eigen::MatrixXd();
 
-    Eigen::MatrixXd block_shape(get_MatrixXd(0)->cwiseProduct(*get_MatrixXd(0)));
+    Eigen::MatrixXd block_shape(MatrixXd(0)->cwiseProduct(*MatrixXd(0)));
 
     for(Index i = 1; i < size(); i++) {
-      block_shape += get_MatrixXd(i)->cwiseProduct(*get_MatrixXd(i));
+      block_shape += MatrixXd(i)->cwiseProduct(*MatrixXd(i));
 
     }
     return block_shape;
   }
   //*******************************************************************************************
   Eigen::MatrixXd SymGroupRep::block_shape_matrix(const SymGroup &head_group) const {
-    if(!size() || !head_group.size() || !get_MatrixXd(head_group[0].index()))
+    if(!size() || !head_group.size() || !MatrixXd(head_group[0].index()))
       return Eigen::MatrixXd();
 
-    Eigen::MatrixXd block_shape(get_MatrixXd(head_group[0].index())->cwiseProduct(*get_MatrixXd(head_group[0].index())));
+    Eigen::MatrixXd block_shape(MatrixXd(head_group[0].index())->cwiseProduct(*MatrixXd(head_group[0].index())));
 
     for(Index i = 1; i < head_group.size(); i++) {
-      block_shape += get_MatrixXd(head_group[i].index())->cwiseProduct(*get_MatrixXd(head_group[i].index()));
+      block_shape += MatrixXd(head_group[i].index())->cwiseProduct(*MatrixXd(head_group[i].index()));
     }
 
     return block_shape;
@@ -255,26 +255,26 @@ namespace CASM {
   }
   //*******************************************************************************************
 
-  Eigen::MatrixXd const *SymGroupRep::get_MatrixXd(Index i) const {
-    return at(i)->get_MatrixXd();
+  Eigen::MatrixXd const *SymGroupRep::MatrixXd(Index i) const {
+    return at(i)->MatrixXd();
   }
 
   //*******************************************************************************************
 
-  Eigen::MatrixXd const *SymGroupRep::get_MatrixXd(const SymOpRepresentation &op) const {
-    return at(op.index())->get_MatrixXd();
+  Eigen::MatrixXd const *SymGroupRep::MatrixXd(const SymOpRepresentation &op) const {
+    return at(op.index())->MatrixXd();
   }
 
   //*******************************************************************************************
 
-  Permutation const *SymGroupRep::get_permutation(Index i) const {
-    return at(i)->get_permutation();
+  Permutation const *SymGroupRep::permutation(Index i) const {
+    return at(i)->permutation();
   }
 
   //*******************************************************************************************
 
-  Permutation const *SymGroupRep::get_permutation(const SymOpRepresentation &op) const {
-    return at(op.index())->get_permutation();
+  Permutation const *SymGroupRep::permutation(const SymOpRepresentation &op) const {
+    return at(op.index())->permutation();
   }
 
 
@@ -286,7 +286,7 @@ namespace CASM {
     SymGroupRep new_rep(master_group());
     if(!size())
       return new_rep;
-    if(at(0) && !(at(0)->get_MatrixXd())) {
+    if(at(0) && !(at(0)->MatrixXd())) {
       default_err_log() << "CRITICAL ERROR: Trying to perform matrix transformation on a non-matrix SymRep. Exiting...\n";
       assert(0);
       exit(1);
@@ -298,7 +298,7 @@ namespace CASM {
       if(!at(i))
         continue;
 
-      new_rep.set_rep(i, SymMatrixXd(trans_mat * (*(at(i)->get_MatrixXd())) * rightmat));
+      new_rep.set_rep(i, SymMatrixXd(trans_mat * (*(at(i)->MatrixXd())) * rightmat));
     }
     return new_rep;
   }
@@ -328,7 +328,7 @@ namespace CASM {
     Array<Index> sub_ranks(ssubs.size());
 
 
-    Index dim(get_MatrixXd(head_group[0].index())->rows());
+    Index dim(MatrixXd(head_group[0].index())->rows());
     Eigen::MatrixXd trans_mat(Eigen::MatrixXd::Zero(dim, dim)), tmat;
     Eigen::FullPivHouseholderQR<Eigen::MatrixXd> QR;
     QR.setThreshold(TOL);
@@ -445,7 +445,7 @@ namespace CASM {
 
   //*******************************************************************************************
   ReturnArray<Array< Eigen::VectorXd> > SymGroupRep::_calc_special_irrep_directions(const SymGroup &head_group)const {
-    if(!size() || !(get_MatrixXd(head_group[0]))) {
+    if(!size() || !(MatrixXd(head_group[0]))) {
       default_err_log() << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions() called on imcompatible SymGroupRep.\n Exiting...\n";
       exit(1);
     }
@@ -457,14 +457,14 @@ namespace CASM {
     Eigen::VectorXd tdir;
 
     const Array<Array<Array<Index> > > &isubs(head_group.subgroups());
-    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> QR(*(get_MatrixXd(head_group[0])));
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> QR(*(MatrixXd(head_group[0])));
 
-    Index dim = get_MatrixXd(head_group[0])->cols();
+    Index dim = MatrixXd(head_group[0])->cols();
 
     QR.setThreshold(10 * TOL);
 
     // i loops over subgroup "orbits". There are 0 to 'dim' special directions associated with each orbit.
-    Eigen::MatrixXd Reynolds(*(at(0)->get_MatrixXd()));
+    Eigen::MatrixXd Reynolds(*(at(0)->MatrixXd()));
     for(i = 0; i < isubs.size(); i++) {
       if(isubs[i].size() == 0 || isubs[i][0].size() == 0) {
         default_err_log() << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions(), attempting to use a zero-size subgroup.\n Exiting...\n";
@@ -475,7 +475,7 @@ namespace CASM {
       // j loops over elements of "prototype" subgroup to get the Reynold's operator for the vector
       // space on which the representation is defined
       for(j = 0; j < isubs[i][s].size(); j++) {
-        Reynolds += *get_MatrixXd(head_group[isubs[i][s][j]]);
+        Reynolds += *MatrixXd(head_group[isubs[i][s][j]]);
       }
 
       Reynolds /= double(isubs[i][s].size());
@@ -510,7 +510,7 @@ namespace CASM {
         //Get equivalents
         sdirs.push_back(Array<Eigen::VectorXd>());
         for(j = 0; j < head_group.size(); j++) {
-          tdir = (*get_MatrixXd(head_group[j])) * matrixQ.col(0);
+          tdir = (*MatrixXd(head_group[j])) * matrixQ.col(0);
           if(!sdirs.back().almost_contains(tdir))
             sdirs.back().push_back(tdir);
         }
@@ -526,7 +526,7 @@ namespace CASM {
         //Get equivalents
         sdirs.push_back(Array<Eigen::VectorXd>());
         for(j = 0; j < head_group.size(); j++) {
-          tdir = -(*get_MatrixXd(head_group[j])) * matrixQ.col(0);
+          tdir = -(*MatrixXd(head_group[j])) * matrixQ.col(0);
           if(!sdirs.back().almost_contains(tdir))
             sdirs.back().push_back(tdir);
         }
@@ -542,7 +542,7 @@ namespace CASM {
   // subspaces.  The subspaces are arranged in orbits of subspaces that are equivalent by symmetry
 
   ReturnArray<Array< Eigen::MatrixXd> > SymGroupRep::calc_special_subspaces(const SymGroup &head_group)const {
-    if(!size() || !at(0)->get_MatrixXd()) {
+    if(!size() || !at(0)->MatrixXd()) {
       default_err_log() << "CRITICAL ERROR: In SymGroupRep::calc_special_subspaces() called on imcompatible SymGroupRep.\n Exiting...\n";
       exit(1);
     }
@@ -556,11 +556,11 @@ namespace CASM {
     // Operation indices of subgroups
     const Array<Array<Array<Index> > > &sg_op_inds(head_group.subgroups());
 
-    Eigen::FullPivHouseholderQR<Eigen::MatrixXd> QR(*(at(0)->get_MatrixXd()));
+    Eigen::FullPivHouseholderQR<Eigen::MatrixXd> QR(*(at(0)->MatrixXd()));
 
     QR.setThreshold(TOL);
 
-    Eigen::MatrixXd Reynolds(*(at(0)->get_MatrixXd()));
+    Eigen::MatrixXd Reynolds(*(at(0)->MatrixXd()));
 
     // 'i' loops over subgroup "orbits". There are 0 to 'dim' special directions associated with each orbit.
     for(i = 0; i < sg_op_inds.size(); i++) {
@@ -573,7 +573,7 @@ namespace CASM {
       // j loops over elements of "prototype" subgroup to get the Reynold's operator for the vector
       // space on which the representation is defined
       for(j = 0; j < sg_op_inds[i][0].size(); j++) {
-        Reynolds += *(at(head_group[sg_op_inds[i][0][j]].index())->get_MatrixXd());
+        Reynolds += *(at(head_group[sg_op_inds[i][0][j]].index())->MatrixXd());
       }
 
       Reynolds /= double(sg_op_inds[i][0].size());
@@ -610,7 +610,7 @@ namespace CASM {
       //tsub is new -- get equivalents
       ssubs.push_back(Array<Eigen::MatrixXd>());
       for(j = 0; j < head_group.size(); j++) {
-        ttrans = (*(at(head_group[j].index())->get_MatrixXd())) * tsub;
+        ttrans = (*(at(head_group[j].index())->MatrixXd())) * tsub;
         for(k = 0; k < ssubs.back().size(); k++) {
           double tdet = (ttrans.transpose() * ssubs.back()[k]).determinant();
           if(almost_equal(std::abs(tdet), 1.0))
@@ -689,7 +689,7 @@ namespace CASM {
     if(verbose) {
       std::cout << "Decomposing representation:\n ";
       for(Index i = 0; i < head_group.size(); i++) {
-        std::cout << *(get_MatrixXd(head_group[i])) << "\n\n";
+        std::cout << *(MatrixXd(head_group[i])) << "\n\n";
       }
     }
 
@@ -762,8 +762,8 @@ namespace CASM {
 
   void SymGroupRep::calc_new_irreps(const SymGroup &head_group, int max_iter) const {
 
-    if(!size() || !at(0)->get_MatrixXd()) {
-      default_err_log() << "WARNING:  In SymGroupRep::calc_new_irreps, size of representation is " << size() << " and MatrixXd address is " << at(0)->get_MatrixXd() << std::endl
+    if(!size() || !at(0)->MatrixXd()) {
+      default_err_log() << "WARNING:  In SymGroupRep::calc_new_irreps, size of representation is " << size() << " and MatrixXd address is " << at(0)->MatrixXd() << std::endl
                         << "          No valid irreps will be returned.\n";
       return;
     }
@@ -781,7 +781,7 @@ namespace CASM {
       default_err_log() << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps(), there is no MasterSymGroup available!\n"
                         << "                Exiting...\n";
     }
-    int dim((at(0)->get_MatrixXd())->rows());
+    int dim((at(0)->MatrixXd())->rows());
 
     Array<Index> i_decomp(num_each_real_irrep(head_group));
     int Nirrep(i_decomp.sum());
@@ -808,7 +808,7 @@ namespace CASM {
         tmat(j, i) = 1;
         //apply reynolds operator
         for(Index ns = 0; ns < head_group.size(); ns++) {
-          tcommute += (*(get_MatrixXd(head_group[ns]))) * tmat * (*(get_MatrixXd(head_group[ns]))).transpose();
+          tcommute += (*(MatrixXd(head_group[ns]))) * tmat * (*(MatrixXd(head_group[ns]))).transpose();
         }
         //Do Gram-Shmidt while building 'commuters'
         for(Index nc = 0; nc < commuters.size(); nc++) {
@@ -880,7 +880,7 @@ namespace CASM {
     Eigen::MatrixXd block_shape(Eigen::MatrixXd::Zero(dim, dim));
     for(Index i = 0; i < head_group.size(); i++) {
       //std::cout << "Operation " << i << " of " << head_group.size() << ":\n";
-      tmat = trans_mat * (*(at(head_group[i].index())->get_MatrixXd())) * trans_mat.transpose();
+      tmat = trans_mat * (*(at(head_group[i].index())->MatrixXd())) * trans_mat.transpose();
       //std::cout << tmat << "\n";
       block_shape.array() += tmat.array() * tmat.array();
     }
@@ -1013,7 +1013,7 @@ namespace CASM {
     //get_irrep_IDs() harvests any new irreps that appear in this representation
     Array<SymGroupRepID> irrep_IDs(get_irrep_IDs(head_group));
 
-    int rep_dim = get_MatrixXd(head_group[0])->rows();
+    int rep_dim = MatrixXd(head_group[0])->rows();
 
     // We will fill the columns of trans_mat and then return its transpose at the end
     Eigen::MatrixXd tproj(Eigen::MatrixXd::Zero(rep_dim, rep_dim)),
@@ -1040,7 +1040,7 @@ namespace CASM {
       int irrep_dim = c_mult * round(char_table[i][0].real());
 
       // make sure t_irrep is valid and has the correct dimension.
-      assert(irrep_dim == (t_irrep.get_MatrixXd(head_group[0])->rows()));
+      assert(irrep_dim == (t_irrep.MatrixXd(head_group[0])->rows()));
 
       //get the (0,0) projection operator -> projects out vectors that transform as the first basis vector of irrep 'i'
       tproj.setZero();
@@ -1048,7 +1048,7 @@ namespace CASM {
       for(Index j = 0; j < head_group.size(); j++) {
         //std::cout << "OP " << j << ":\n";
 
-        tproj += (*(t_irrep.get_MatrixXd(head_group[j])))(0, 0) * (*get_MatrixXd(head_group[j]));
+        tproj += (*(t_irrep.MatrixXd(head_group[j])))(0, 0) * (*MatrixXd(head_group[j]));
       }
       tproj *= double(irrep_dim) / double(head_group.size());
 
@@ -1103,8 +1103,8 @@ namespace CASM {
 
         tproj.setZero();
         for(Index k = 0; k < head_group.size(); k++) {
-          //tproj += (*(t_irrep->get_MatrixXd(head_group[k])))(0,j) * (*get_MatrixXd(head_group[k])); // <-- this is wrong, not totally sure why
-          tproj += (*(t_irrep.get_MatrixXd(head_group[k])))(j, 0) * (*get_MatrixXd(head_group[k]));
+          //tproj += (*(t_irrep->MatrixXd(head_group[k])))(0,j) * (*MatrixXd(head_group[k])); // <-- this is wrong, not totally sure why
+          tproj += (*(t_irrep.MatrixXd(head_group[k])))(j, 0) * (*MatrixXd(head_group[k]));
         }
         tproj *= double(irrep_dim) / double(head_group.size());
 
@@ -1132,13 +1132,13 @@ namespace CASM {
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
   Eigen::MatrixXd SymGroupRep::get_irrep_trans_mat_blind(const SymGroup &head_group) const {
 
-    if(!size() || !head_group.size() || !get_MatrixXd(head_group[0].index())) {
-      default_err_log() << "WARNING:  In SymGroupRep::calc_new_irreps, size of representation is " << size() << " and MatrixXd address is " << get_MatrixXd(head_group[0].index()) << std::endl
+    if(!size() || !head_group.size() || !MatrixXd(head_group[0].index())) {
+      default_err_log() << "WARNING:  In SymGroupRep::calc_new_irreps, size of representation is " << size() << " and MatrixXd address is " << MatrixXd(head_group[0].index()) << std::endl
                         << "          No valid irreps will be returned.\n";
       return Eigen::MatrixXd();
     }
 
-    int dim(get_MatrixXd(head_group[0].index())->rows());
+    int dim(MatrixXd(head_group[0].index())->rows());
     Array<Eigen::MatrixXcd> commuters;
     std::cout.precision(8);
     std::cout.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
@@ -1178,8 +1178,8 @@ namespace CASM {
 
           //apply reynolds operator
           for(Index ns = 0; ns < head_group.size(); ns++) {
-            tcommute += (*(get_MatrixXd(head_group[ns].index()))) * tmat * (*(get_MatrixXd(head_group[ns].index()))).transpose();
-            //tcommute += phase[nph]*(get_MatrixXd(ns)->col(i)) * (get_MatrixXd(ns)->row(j))+std::conj(phase[nph])*(get_MatrixXd(ns)->col(j)) * (get_MatrixXd(ns)->row(i));
+            tcommute += (*(MatrixXd(head_group[ns].index()))) * tmat * (*(MatrixXd(head_group[ns].index()))).transpose();
+            //tcommute += phase[nph]*(MatrixXd(ns)->col(i)) * (MatrixXd(ns)->row(j))+std::conj(phase[nph])*(MatrixXd(ns)->col(j)) * (MatrixXd(ns)->row(i));
           }
 
           //Do Gram-Shmidt while building 'commuters'
@@ -1220,7 +1220,7 @@ namespace CASM {
           Eigen::MatrixXd block_shape(Eigen::MatrixXd::Zero(kernel.cols(), kernel.cols()));
           //std::cout << "Transformed representation is:\n";
           for(Index i = 0; i < head_group.size(); i++) {
-            trans_rep[head_group[i].index()] = tmat.adjoint() * (*get_MatrixXd(head_group[i].index())) * tmat;
+            trans_rep[head_group[i].index()] = tmat.adjoint() * (*MatrixXd(head_group[i].index())) * tmat;
             block_shape += (trans_rep[head_group[i].index()].cwiseProduct(trans_rep[head_group[i].index()].conjugate())).real();
             //std::cout << trans_rep[i] << "\n\n";
           }
@@ -1285,7 +1285,7 @@ namespace CASM {
     Eigen::MatrixXd block_shape(Eigen::MatrixXd::Zero(dim, dim));
     //std::cout << "Transformed representation is:\n";
     for(Index i = 0; i < head_group.size(); i++) {
-      block_shape += (trans_mat.transpose() * (*get_MatrixXd(head_group[i].index())) * trans_mat).cwiseAbs2();
+      block_shape += (trans_mat.transpose() * (*MatrixXd(head_group[i].index())) * trans_mat).cwiseAbs2();
     }
     std::cout << "BLOCK MATRIX IS:\n"
               << block_shape << "\n\n";
@@ -1301,7 +1301,7 @@ namespace CASM {
     const Array<Array<Index> > &conj_class(master_group().get_conjugacy_classes());
     const Array<Array<std::complex<double> > > &char_table(master_group().character_table());
 
-    Eigen::MatrixXd tmat((*(at(0)->get_MatrixXd())).rows(), (*(at(0)->get_MatrixXd())).cols());
+    Eigen::MatrixXd tmat((*(at(0)->MatrixXd())).rows(), (*(at(0)->MatrixXd())).cols());
     tmat.setZero();
     Array<Eigen::MatrixXd> tarray(conj_class.size());
 
@@ -1309,7 +1309,7 @@ namespace CASM {
       double dimension = char_table[i][0].real();
       for(Index j = 0; j < master_group().size(); j++) {
         double character =  char_table[i][master_group().class_of_op(j)].real();
-        Eigen::MatrixXd rep_mat = *(at(j)->get_MatrixXd());
+        Eigen::MatrixXd rep_mat = *(at(j)->MatrixXd());
         tmat += (character * rep_mat);
       }
       tarray[i] = ((dimension) / (master_group().size())) * tmat;
@@ -1353,7 +1353,7 @@ namespace CASM {
 
     Array<Index> tperm(subsets.size());
     for(Index np = 0; np < permute_rep.size(); ++np) {
-      Permutation const *perm_ptr(permute_rep.get_permutation(np));
+      Permutation const *perm_ptr(permute_rep.permutation(np));
       if(perm_ptr == NULL) {
         // This check may not make sense. Some representations may not have all operations.  If it's causing problems, comment it out
         default_err_log() << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,Array<Index>::X2), permute_rep is missing at least one permutation!\n"
@@ -1393,7 +1393,7 @@ namespace CASM {
       new_rep = SymGroupRep(permute_rep.master_group());
 
     Array<Index> rep_dims(sum_reps.size(), 0);
-    if(permute_rep.get_permutation(0) == NULL) {
+    if(permute_rep.permutation(0) == NULL) {
       default_err_log() << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,Array<SymGroupRep const*>), permute_rep does not contain permutations!\n"
                         << "                Exiting...\n";
       assert(0);
@@ -1406,13 +1406,13 @@ namespace CASM {
       }
       if((permute_rep.has_valid_master() != sum_reps[i]->has_valid_master())
          || (permute_rep.has_valid_master() && &(permute_rep.master_group()) != &(sum_reps[i]->master_group()))
-         || sum_reps[i]->get_MatrixXd(0) == NULL) {
+         || sum_reps[i]->MatrixXd(0) == NULL) {
         default_err_log() << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,Array<SymGroupRep const*>), found incompatible SymGroupReps!\n"
                           << "                Exiting...\n";
         assert(0);
         exit(1);
       }
-      rep_dims[i] = (*sum_reps[i])[0]->get_MatrixXd()->cols();
+      rep_dims[i] = (*sum_reps[i])[0]->MatrixXd()->cols();
     }
 
     Array<Index> sum_inds(cum_sum(rep_dims));
@@ -1421,11 +1421,11 @@ namespace CASM {
     Permutation const *perm_ptr;
     for(Index g = 0; g < permute_rep.size(); g++) {
       sum_mat.setZero();
-      perm_ptr = permute_rep.get_permutation(g);
+      perm_ptr = permute_rep.permutation(g);
       for(Index r = 0; r < perm_ptr->size(); r++) {
         if(rep_dims[r] == 0) continue;
         Index new_r = (*perm_ptr)[r];
-        rep_mat_ptr = sum_reps[new_r]->get_MatrixXd(g);
+        rep_mat_ptr = sum_reps[new_r]->MatrixXd(g);
         sum_mat.block(sum_inds[r], sum_inds[new_r], rep_dims[new_r], rep_dims[new_r]) = *rep_mat_ptr;
       }
       new_rep.set_rep(g, SymMatrixXd(sum_mat));
@@ -1447,11 +1447,11 @@ namespace CASM {
     Eigen::MatrixXd tmat;
     for(Index i = 0; i < LHS.size(); i++) {
       //std::cout << "rep1 matrix:\n";
-      //std::cout << *(rep1->get_MatrixXd(i)) << '\n';
+      //std::cout << *(rep1->MatrixXd(i)) << '\n';
       //std::cout << "rep2 matrix:\n";
-      //std::cout << *(rep2->get_MatrixXd(i)) << '\n';
-      assert(LHS.get_MatrixXd(i) && RHS.get_MatrixXd(i));
-      kroneckerProduct(*(LHS.get_MatrixXd(i)), *(RHS.get_MatrixXd(i)), tmat);
+      //std::cout << *(rep2->MatrixXd(i)) << '\n';
+      assert(LHS.MatrixXd(i) && RHS.MatrixXd(i));
+      kroneckerProduct(*(LHS.MatrixXd(i)), *(RHS.MatrixXd(i)), tmat);
       //std::cout << "Total matrix:\n" << tmat << '\n';
       new_rep.set_rep(i, SymMatrixXd(tmat));
     }

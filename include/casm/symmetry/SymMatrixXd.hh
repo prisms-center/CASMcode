@@ -29,7 +29,7 @@ namespace CASM {
       return new SymMatrixXd(*this);
     }
 
-    Eigen::MatrixXd const *get_MatrixXd() const override {
+    Eigen::MatrixXd const *MatrixXd() const override {
       return &mat;
     }
 

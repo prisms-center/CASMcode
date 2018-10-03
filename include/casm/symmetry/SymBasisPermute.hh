@@ -76,7 +76,7 @@ namespace CASM {
     }
 
     /// Get this from a SymOp
-    SymBasisPermute const *get_ucc_permutation() const override {
+    SymBasisPermute const *ucc_permutation() const override {
       return this;
     };
 

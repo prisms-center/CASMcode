@@ -21,20 +21,20 @@ namespace CASM {
   //*******************************************************************************************
   Eigen::MatrixXd const *SymOpRepresentation::get_matrix_rep(SymGroupRepID _rep_ID) const {
     assert(has_valid_master() && !_rep_ID.empty());
-    return (master_group().representation(_rep_ID)[index()])->get_MatrixXd();
+    return (master_group().representation(_rep_ID)[index()])->MatrixXd();
   }
 
   //*******************************************************************************************
 
   SymBasisPermute const *SymOpRepresentation::get_basis_permute_rep(SymGroupRepID _rep_ID) const {
     assert(has_valid_master() && !_rep_ID.empty());
-    return (master_group().representation(_rep_ID)[index()])->get_ucc_permutation();
+    return (master_group().representation(_rep_ID)[index()])->ucc_permutation();
   }
   //*******************************************************************************************
 
   Permutation const *SymOpRepresentation::get_permutation_rep(SymGroupRepID _rep_ID) const {
     assert(has_valid_master() && !_rep_ID.empty());
-    return (master_group().representation(_rep_ID)[index()])->get_permutation();
+    return (master_group().representation(_rep_ID)[index()])->permutation();
   }
 
   //*******************************************************************************************

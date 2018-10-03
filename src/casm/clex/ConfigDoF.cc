@@ -94,7 +94,7 @@ namespace CASM {
   }
 
   //*******************************************************************************
-  void ConfigDoF::from_json(const jsonParser &json) {
+  void ConfigDoF::from_json(const jsonParser &json, Index NB) {
     if(!json.contains("occupation")) {
       throw std::runtime_error("JSON serialization of ConfigDoF must contain field \"occupation\"\n");
     }
@@ -103,23 +103,23 @@ namespace CASM {
     if(json.contains("local_dofs")) {
       auto end_it = json["local_dofs"].end();
       for(auto it = json["local_dofs"].begin(); it != end_it; ++it)
-        m_local_dofs.emplace(it.name(), LocalValueType(DoF::traits(it.name()), it->get<Eigen::MatrixXd>()));
+        m_local_dofs.emplace(it.name(), LocalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, it->get<Eigen::MatrixXd>()));
     }
 
     if(json.contains("global_dofs")) {
       auto end_it = json["global_dofs"].end();
       for(auto it = json["global_dofs"].begin(); it != end_it; ++it)
-        m_global_dofs.emplace(it.name(), GlobalValueType(DoF::traits(it.name()), it->get<Eigen::VectorXd>()));
+        m_global_dofs.emplace(it.name(), GlobalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, it->get<Eigen::VectorXd>()));
     }
 
   }
 
   //*******************************************************************************
 
-  ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json) {
+  ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json, Index NB) {
 
     ConfigDoF result(0);
-    result.from_json(json);
+    result.from_json(json, NB);
 
     return result;
   }
@@ -132,8 +132,8 @@ namespace CASM {
 
   //*******************************************************************************
 
-  void from_json(ConfigDoF &value, const jsonParser &json) {
-    value.from_json(json);
+  void from_json(ConfigDoF &value, const jsonParser &json, Index NB) {
+    value.from_json(json, NB);
   }
 
   //*******************************************************************************

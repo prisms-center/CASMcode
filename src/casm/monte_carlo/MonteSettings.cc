@@ -89,7 +89,7 @@ namespace CASM {
       std::string help = "string\n"
                          "  Path to file containing DoF, such as an \"final_state.json\" file.";
       fs::path configdof_path = _get_setting<fs::path>("driver", "motif", "configdof", help);
-      return jsonParser(configdof_path).get<ConfigDoF>();
+      return jsonParser(configdof_path).get<ConfigDoF>(primclex().n_basis());
     }
 
     /// \brief Path to ConfigDoF file to use as starting motif

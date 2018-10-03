@@ -42,15 +42,15 @@ namespace CASM {
       return NAN;
     }
 
-    virtual Permutation  const *get_permutation() const {
+    virtual Permutation  const *permutation() const {
       return nullptr;
     }
 
-    virtual Eigen::MatrixXd const *get_MatrixXd() const {
+    virtual Eigen::MatrixXd const *MatrixXd() const {
       return nullptr;
     }
 
-    virtual SymBasisPermute const *get_ucc_permutation() const {
+    virtual SymBasisPermute const *ucc_permutation() const {
       return nullptr;
     }
 

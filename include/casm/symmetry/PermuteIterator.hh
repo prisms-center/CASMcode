@@ -94,6 +94,16 @@ namespace CASM {
     /// Return the translation permutation being pointed at
     const Permutation &translation_permute() const;
 
+    /// Returns representation of current operation corresponding to species transformation on sublattice b
+    SymOpRepresentation const &occ_rep(Index b) const;
+
+    /// Returns representation of current operation
+    /// corresponding to local DoF specified by _key on sublattice b
+    SymOpRepresentation const &local_dof_rep(DoFKey const &_key, Index b) const;
+
+    /// Returns representation of current operation corresponding to global DoF specified by _key
+    SymOpRepresentation const &global_dof_rep(DoFKey const &_key) const;
+
     /// gets the SymOp for the current operation, defined by translation_op[trans_index]*factor_group_op[fg_index]
     /// i.e, equivalent to application of the factor group operation, FOLLOWED BY application of the translation operation
     SymOp sym_op()const;

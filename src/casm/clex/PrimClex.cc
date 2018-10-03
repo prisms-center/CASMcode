@@ -259,6 +259,10 @@ namespace CASM {
     return m_data->prim;
   }
 
+  Index PrimClex::n_basis() const {
+    return prim().basis().size();
+  }
+
   PrimNeighborList &PrimClex::nlist() const {
 
     // lazy neighbor list generation

@@ -24,7 +24,7 @@ namespace CASM {
 
     std::vector<IrrepWedge> irreducible_wedges(const SymGroup &head_group, SymGroupRepID id) {
       SymGroupRep const &srep(head_group.master_group().representation(id));
-      Index dim = srep.get_MatrixXd(head_group[0])->cols();
+      Index dim = srep.MatrixXd(head_group[0])->cols();
 
       //Handle for strain symrep
       SymGroupRep::RemoteHandle trep(head_group, id);
@@ -73,9 +73,9 @@ namespace CASM {
 
       std::vector<SubWedge> result;
       SymGroupRep const &srep(head_group.master_group().representation(id));
-      if(!srep[0]->get_MatrixXd())
+      if(!srep[0]->MatrixXd())
         throw std::runtime_error("In symrep_subwedges, SymGroupRep does not describe matrix representation");
-      Index dim = srep[0]->get_MatrixXd()->cols();
+      Index dim = srep[0]->MatrixXd()->cols();
 
       std::vector<IrrepWedge> init_wedges = irreducible_wedges(head_group, id);
 
@@ -98,7 +98,7 @@ namespace CASM {
 
         //Start getting orbit of wedges[w]
         for(Index p = 0; p < trep.size(); p++) {
-          IrrepWedge test_wedge((*(trep[p]->get_MatrixXd()))*wedge.axes,
+          IrrepWedge test_wedge((*(trep[p]->MatrixXd()))*wedge.axes,
                                 wedge.mult);
 
           if(contains(irrep_wedge_orbits.back(), test_wedge, irrep_wedge_compare))
@@ -126,7 +126,7 @@ namespace CASM {
         result.push_back({twedge});
         for(Index p = 0; p < trep.size(); p++) {
           for(Index i = 0; i < twedge.size(); i++)
-            twedge[i].axes = (*(trep[p]->get_MatrixXd())) * result.back().irrep_wedges()[i].axes;
+            twedge[i].axes = (*(trep[p]->MatrixXd())) * result.back().irrep_wedges()[i].axes;
           if(!contains(tot_wedge_orbits.back(), twedge, tot_wedge_compare))
             tot_wedge_orbits.back().push_back(twedge);
         }

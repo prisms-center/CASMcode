@@ -71,11 +71,33 @@ namespace CASM {
 
     void resize(Index _N);
 
-    bool has_global_dof(DoFKey const &_key);
+    std::map<DoFKey, GlobalValueType> const &global_dofs() const {
+      return m_global_dofs;
+    }
+
+    GlobalValueType const &global_dof(DoFKey const &_key) const {
+      return global_dofs().at(_key);
+    }
+
+    bool has_global_dof(DoFKey const &_key) const {
+      return global_dofs().count(_key);
+    }
+
     void reset_global_dof(DoFKey const &_key);
     void set_global_dof(DoFKey const &_key, Eigen::Ref<const Eigen::VectorXd> const &_val);
 
-    bool has_local_dof(DoFKey const &_key);
+    std::map<DoFKey, LocalValueType> const &local_dofs() const {
+      return m_local_dofs;
+    }
+
+    LocalValueType const &local_dof(DoFKey const &_key) const {
+      return local_dofs().at(_key);
+    }
+
+    bool has_local_dof(DoFKey const &_key) const {
+      return local_dofs().count(_key);
+    }
+
     void reset_local_dof(DoFKey const &_key);
     void set_local_dof(DoFKey const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val);
 
@@ -85,7 +107,7 @@ namespace CASM {
 
     //**** I/O ****
     jsonParser &to_json(jsonParser &json) const;
-    void from_json(const jsonParser &json);
+    void from_json(const jsonParser &json, Index NB);
 
 
   private:
@@ -124,12 +146,12 @@ namespace CASM {
   template<>
   struct jsonConstructor<ConfigDoF> {
 
-    static ConfigDoF from_json(const jsonParser &json);
+    static ConfigDoF from_json(const jsonParser &json, Index NB);
   };
 
   jsonParser &to_json(const ConfigDoF &value, jsonParser &json);
 
-  void from_json(ConfigDoF &value, const jsonParser &json);
+  void from_json(ConfigDoF &value, const jsonParser &json, Index NB);
 
   void swap(ConfigDoF &A, ConfigDoF &B);
 

@@ -114,7 +114,7 @@ namespace CASM {
 
           // read end state of previous condition
           ConfigDoF configdof = m_mc.configdof();
-          from_json(configdof, jsonParser(m_dir.final_state_json(start_i - 1)));
+          from_json(configdof, jsonParser(m_dir.final_state_json(start_i - 1)), m_mc.primclex().n_basis());
 
           m_mc.set_configdof(configdof, std::string("Using: ") + m_dir.final_state_json(start_i - 1).string());
         }

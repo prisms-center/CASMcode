@@ -73,7 +73,7 @@ namespace CASM {
 
   // permutation_symrep() populates permutation symrep if needed
   const Permutation &SupercellSymInfo::factor_group_permute(Index i) const {
-    return *(site_permutation_symrep()[i]->get_permutation());
+    return *(site_permutation_symrep()[i]->permutation());
   }
 
   // PrimGrid populates translation permutations if needed

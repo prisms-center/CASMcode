@@ -24,9 +24,9 @@ namespace CASM {
     ///
     /// Example:
     /// \code
-    /// ConfigDoFCompare strain_compare = make_dof_compare<DoFIsEquivalent::Strain>(my_configdof or my_config);
-    /// ConfigDoFCompare occ_compare = make_dof_compare<DoFIsEquivalent::Occupation>(my_configdof or my_config);
-    /// ConfigDoFCompare disp_compare = make_dof_compare<DoFIsEquivalent::Displacement>(my_configdof or my_config);
+    /// ConfigDoFCompare strain_compare = make_dof_compare<ConfigDoFIsEquivalent::Strain>(my_configdof or my_config);
+    /// ConfigDoFCompare occ_compare = make_dof_compare<ConfigDoFIsEquivalent::Occupation>(my_configdof or my_config);
+    /// ConfigDoFCompare disp_compare = make_dof_compare<ConfigDoFIsEquivalent::Displacement>(my_configdof or my_config);
     /// \endcode
     template<typename ConfigDoFIsEquivalentType>
     ConfigDoFCompare(std::unique_ptr<ConfigDoFIsEquivalentType> f) :
@@ -95,7 +95,7 @@ namespace CASM {
     }
 
   private:
-    notstd::cloneable_ptr<DoFIsEquivalent::ConfigDoFIsEquivalentBase> m_f;
+    notstd::cloneable_ptr<ConfigDoFIsEquivalent::Base> m_f;
 
   };
 

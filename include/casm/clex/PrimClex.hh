@@ -107,6 +107,9 @@ namespace CASM {
     /// const Access to primitive Structure
     const Structure &prim() const;
 
+    /// const Access to number of basis atoms
+    Index n_basis() const;
+
     ///Access to the primitive neighbor list
     PrimNeighborList &nlist() const;
 

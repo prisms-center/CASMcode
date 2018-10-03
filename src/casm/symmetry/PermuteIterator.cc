@@ -86,7 +86,7 @@ namespace CASM {
 
   /// Return the factor group permutation being pointed at
   const Permutation &PermuteIterator::factor_group_permute() const {
-    return *(sym_info().site_permutation_symrep()[m_factor_group_index]->get_permutation());
+    return *(sym_info().site_permutation_symrep()[m_factor_group_index]->permutation());
   }
 
   /// Return the translation permutation being pointed at
@@ -94,12 +94,28 @@ namespace CASM {
     return m_trans_permute->at(m_translation_index);
   }
 
+  /// Returns representation of current operation corresponding to species transformation on sublattice b
+  SymOpRepresentation const &PermuteIterator::occ_rep(Index b) const {
+    return *sym_info().occ_symreps()[b][factor_group_index()];
+  }
+
+  /// Returns representation of current operation
+  /// corresponding to local DoF specified by _key on sublattice b
+  SymOpRepresentation const &PermuteIterator::local_dof_rep(DoFKey const &_key, Index b) const {
+    return *sym_info().local_dof_symreps(_key)[b][factor_group_index()];
+  }
+
+  /// Returns representation of current operation corresponding to global DoF specified by _key
+  SymOpRepresentation const &PermuteIterator::global_dof_rep(DoFKey const &_key) const {
+    return *sym_info().global_dof_symrep(_key)[factor_group_index()];
+  }
+
   SymOp PermuteIterator::sym_op()const {
     return prim_grid().sym_op(m_translation_index) * sym_info().site_permutation_symrep().sym_op(m_factor_group_index);
   }
 
   Index PermuteIterator::permute_ind(Index i) const {
-    return factor_group_permute()[ translation_permute()[i] ];
+    return factor_group_permute()[translation_permute()[i]];
   }
 
 

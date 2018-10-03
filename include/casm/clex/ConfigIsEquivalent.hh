@@ -20,23 +20,21 @@ namespace CASM {
   class ConfigIsEquivalent {
 
   public:
-
-    typedef std::vector<ConfigDoFIsEquivalent> eq_container;
+    using EquivPtr = notstd::cloneable_ptr<ConfigDoFIsEquivalent::Base>;
 
     ConfigIsEquivalent(const Configuration &_config, double _tol) :
       m_config(&_config) {
 
-      //if(config().has_deformation()) {
-      //m_global_eq.push_back(make_dof_is_equivalent<DoFIsEquivalent::Strain>(_config, _tol));
-      //}
+      for(auto const &dof : config().configdof().global_dofs())
+        m_global_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Global>(_config, dof.first, _tol));
 
-      if(config().has_occupation()) {
-        m_site_eq.push_back(make_dof_is_equivalent<DoFIsEquivalent::Occupation>(_config));
+      if(config().configdof().has_occupation()) {
+        m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Occupation>(_config.configdof()));
       }
 
-      //if(config().has_displacement()) {
-      //m_site_eq.push_back(make_dof_is_equivalent<DoFIsEquivalent::Displacement>(_config, _tol));
-      //}
+      for(auto const &dof : config().configdof().local_dofs())
+        m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Local>(_config, dof.first, _tol));
+
     }
 
     ConfigIsEquivalent(const Configuration &_config) :
@@ -46,21 +44,14 @@ namespace CASM {
       return *m_config;
     }
 
-    eq_container &global_eq() {
-      return m_global_eq;
+    std::vector<EquivPtr> const &local_equivs() const {
+      return m_local_equivs;
     }
 
-    const eq_container &global_eq() const {
-      return m_global_eq;
+    std::vector<EquivPtr> const &global_equivs() const {
+      return m_global_equivs;
     }
 
-    eq_container &site_eq() {
-      return m_site_eq;
-    }
-
-    const eq_container &site_eq() const {
-      return m_site_eq;
-    }
 
     /// \brief Returns less than comparison
     ///
@@ -82,18 +73,18 @@ namespace CASM {
         return false;
       }
 
-      for(const auto &g : global_eq()) {
+      for(const auto &eq : global_equivs()) {
         // check if config == other, for this global DoF type
-        if(!g(other.configdof())) {
-          m_less = g.is_less();
+        if(!(*eq)(other.configdof())) {
+          m_less = eq->is_less();
           return false;
         }
       }
 
-      for(const auto &s : site_eq()) {
-        // check if config == other, for this site DoF type
-        if(!s(other.configdof())) {
-          m_less = s.is_less();
+      for(const auto &eq : local_equivs()) {
+        // check if config == other, for this local DoF type
+        if(!(*eq)(other.configdof())) {
+          m_less = eq->is_less();
           return false;
         }
       }
@@ -103,18 +94,18 @@ namespace CASM {
 
     /// \brief Check if config == A*config, store config < A*config
     bool operator()(const PermuteIterator &A) const {
-      for(const auto &g : global_eq()) {
+      for(const auto &eq : global_equivs()) {
         // check if config == A*config, for this global DoF type
-        if(!g(A)) {
-          m_less = g.is_less();
+        if(!(*eq)(A)) {
+          m_less = eq->is_less();
           return false;
         }
       }
 
-      for(const auto &s : site_eq()) {
-        // check if config == A*config, for this site DoF type
-        if(!s(A)) {
-          m_less = s.is_less();
+      for(const auto &eq : local_equivs()) {
+        // check if config == A*config, for this local DoF type
+        if(!(*eq)(A)) {
+          m_less = eq->is_less();
           return false;
         }
       }
@@ -126,19 +117,19 @@ namespace CASM {
     bool operator()(const PermuteIterator &A, const PermuteIterator &B) const {
 
       if(A.factor_group_index() != B.factor_group_index()) {
-        for(const auto &g : global_eq()) {
+        for(const auto &eq : global_equivs()) {
           // check if config == other, for this global DoF type
-          if(!g(A, B)) {
-            m_less = g.is_less();
+          if(!(*eq)(A, B)) {
+            m_less = eq->is_less();
             return false;
           }
         }
       }
 
-      for(const auto &s : site_eq()) {
-        // check if config == other, for this site DoF type
-        if(!s(A, B)) {
-          m_less = s.is_less();
+      for(const auto &eq : local_equivs()) {
+        // check if config == other, for this local DoF type
+        if(!(*eq)(A, B)) {
+          m_less = eq->is_less();
           return false;
         }
       }
@@ -149,18 +140,18 @@ namespace CASM {
     /// \brief Check if config == A*other, store config < A*other
     bool operator()(const PermuteIterator &A, const Configuration &other) const {
 
-      for(const auto &g : global_eq()) {
+      for(const auto &eq : global_equivs()) {
         // check if config == other, for this global DoF type
-        if(!g(A, other)) {
-          m_less = g.is_less();
+        if(!(*eq)(A, other.configdof())) {
+          m_less = eq->is_less();
           return false;
         }
       }
 
-      for(const auto &s : site_eq()) {
-        // check if config == other, for this site DoF type
-        if(!s(A, other)) {
-          m_less = s.is_less();
+      for(const auto &eq : local_equivs()) {
+        // check if config == other, for this local DoF type
+        if(!(*eq)(A, other.configdof())) {
+          m_less = eq->is_less();
           return false;
         }
       }
@@ -171,18 +162,18 @@ namespace CASM {
     /// \brief Check if A*config == B*other, store A*config < B*other
     bool operator()(const PermuteIterator &A, const PermuteIterator &B, const Configuration &other) const {
 
-      for(const auto &g : global_eq()) {
+      for(const auto &eq : global_equivs()) {
         // check if config == other, for this global DoF type
-        if(!g(A, B, other)) {
-          m_less = g.is_less();
+        if(!(*eq)(A, B, other.configdof())) {
+          m_less = eq->is_less();
           return false;
         }
       }
 
-      for(const auto &s : site_eq()) {
-        // check if config == other, for this site DoF type
-        if(!s(A, B, other)) {
-          m_less = s.is_less();
+      for(const auto &eq : local_equivs()) {
+        // check if config == other, for this local DoF type
+        if(!(*eq)(A, B, other.configdof())) {
+          m_less = eq->is_less();
           return false;
         }
       }
@@ -193,8 +184,8 @@ namespace CASM {
   private:
 
     const Configuration *m_config;
-    eq_container m_global_eq;
-    eq_container m_site_eq;
+    std::vector<EquivPtr> m_global_equivs;
+    std::vector<EquivPtr> m_local_equivs;
     mutable bool m_less;
   };
 

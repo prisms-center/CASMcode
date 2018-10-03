@@ -101,10 +101,10 @@ namespace CASM {
     Index num_blocks() const;
     Index num_blocks(const SymGroup &subgroup) const;
 
-    Eigen::MatrixXd const *get_MatrixXd(Index i) const;
-    Eigen::MatrixXd const *get_MatrixXd(const SymOpRepresentation &) const;
-    Permutation const *get_permutation(Index i) const;
-    Permutation const *get_permutation(const SymOpRepresentation &) const;
+    Eigen::MatrixXd const *MatrixXd(Index i) const;
+    Eigen::MatrixXd const *MatrixXd(const SymOpRepresentation &) const;
+    Permutation const *permutation(Index i) const;
+    Permutation const *permutation(const SymOpRepresentation &) const;
 
     // adds a copy of '_pushed' temporary workaround for 'masterless' SymGroupReps; to be deprecated
     // will throw if valid master exists.
@@ -230,7 +230,7 @@ namespace CASM {
 
     /// Matrix dimension of representation
     Index dim() const {
-      return (m_group_rep->get_MatrixXd(m_subgroup_op_inds[0]))->cols();
+      return (m_group_rep->MatrixXd(m_subgroup_op_inds[0]))->cols();
     }
 
     bool empty() const {

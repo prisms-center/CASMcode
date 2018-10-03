@@ -7,15 +7,30 @@ namespace CASM {
 
   class ConfigDoFValues {
   public:
-    ConfigDoFValues(DoFType::BasicTraits const &_traits);
+    ConfigDoFValues() : m_n_basis(0), m_n_vol(0)
+    {}
+    ConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol) :
+      m_type(_traits.type_name()),
+      m_n_basis(_n_basis),
+      m_n_vol(_n_vol) {
+    }
 
     std::string const &type_name() const {
       return m_type;
     }
 
+    Index n_vol() const {
+      return m_n_vol;
+    }
+
+    Index n_basis() const {
+      return m_n_basis;
+    }
 
   private:
-    std::string m_type;
+    DoFKey m_type;
+    Index m_n_basis;
+    Index m_n_vol;
   };
 
   class LocalDiscreteConfigDoFValues : public ConfigDoFValues {
@@ -31,8 +46,31 @@ namespace CASM {
 
     typedef ValueType SublatValueType;
     typedef typename ValueType::SegmentReturnType SublatReference;
-    typedef typename ValueType::SegmentReturnType ConstSublatReference;
+    typedef typename ValueType::ConstSegmentReturnType ConstSublatReference;
 
+    LocalDiscreteConfigDoFValues() {}
+
+    LocalDiscreteConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol, Eigen::Ref< const ValueType > const &_vals) :
+      ConfigDoFValues(_traits, _n_basis, _n_vol),
+      m_vals(_vals) {
+
+    }
+
+    Reference values() {
+      return m_vals;
+    }
+
+    ConstReference values() const {
+      return m_vals;
+    }
+
+    SublatReference sublat(Index b) {
+      return m_vals.segment((b - 1) * n_vol(), n_vol());
+    }
+
+    ConstSublatReference sublat(Index b) const {
+      return m_vals.segment((b - 1) * n_vol(), n_vol());
+    }
 
   private:
     ValueType m_vals;
@@ -53,13 +91,31 @@ namespace CASM {
     typedef const int &ConstSiteReference;
 
     typedef ValueType SublatValueType;
-    typedef typename ValueType::SegmentReturnType SublatReference;
-    typedef typename ValueType::SegmentReturnType ConstSublatReference;
+    typedef typename Eigen::Block<ValueType> SublatReference;
+    typedef const typename Eigen::Block<const ValueType> ConstSublatReference;
 
-    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Eigen::Ref< const ValueType > const &_vals) :
-      ConfigDoFValues(_traits),
+    LocalContinuousConfigDoFValues() {}
+
+    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol,  Eigen::Ref< const ValueType > const &_vals) :
+      ConfigDoFValues(_traits, _n_basis, _n_vol),
       m_vals(_vals) {
 
+    }
+
+    Reference values() {
+      return m_vals;
+    }
+
+    ConstReference values() const {
+      return m_vals;
+    }
+
+    SublatReference sublat(Index b) {
+      return m_vals.block(0, (b - 1) * n_vol(), m_vals.rows(), n_vol());
+    }
+
+    ConstSublatReference sublat(Index b) const {
+      return m_vals.block(0, (b - 1) * n_vol(), m_vals.rows(), n_vol());
     }
 
   private:
@@ -80,14 +136,20 @@ namespace CASM {
     typedef int &SiteReference;
     typedef const int &ConstSiteReference;
 
-    typedef ValueType SublatValueType;
-    typedef typename ValueType::SegmentReturnType SublatReference;
-    typedef typename ValueType::SegmentReturnType ConstSublatReference;
+    GlobalContinuousConfigDoFValues() {}
 
-    GlobalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Eigen::Ref< const ValueType > const &_vals) :
-      ConfigDoFValues(_traits),
+    GlobalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol, Eigen::Ref< const ValueType > const &_vals) :
+      ConfigDoFValues(_traits, _n_basis, _n_vol),
       m_vals(_vals) {
 
+    }
+
+    Reference values() {
+      return m_vals;
+    }
+
+    ConstReference values() const {
+      return m_vals;
     }
 
   private:

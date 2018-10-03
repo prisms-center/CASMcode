@@ -47,12 +47,12 @@ namespace CASM {
     }
 
     /// Access the permutation array 'm_permute'
-    Permutation const *get_permutation() const override {
+    Permutation const *permutation() const override {
       return &m_permute;
     }
 
     /// Access the permutation matrix
-    Eigen::MatrixXd const *get_MatrixXd() const override {
+    Eigen::MatrixXd const *MatrixXd() const override {
       if(!m_has_mat)
         _calc_mat();
       return &m_mat;

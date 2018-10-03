@@ -196,11 +196,11 @@ namespace CASM {
     Eigen::MatrixXd tmat;
     for(Index i = 0; i < size(); i++) {
       //std::cout << "rep1 matrix:\n";
-      //std::cout << *(rep1->get_MatrixXd(i)) << '\n';
+      //std::cout << *(rep1->MatrixXd(i)) << '\n';
       //std::cout << "rep2 matrix:\n";
-      //std::cout << *(rep2->get_MatrixXd(i)) << '\n';
+      //std::cout << *(rep2->MatrixXd(i)) << '\n';
 
-      kroneckerProduct(*(rep1->get_MatrixXd(i)), *(rep2->get_MatrixXd(i)), tmat);
+      kroneckerProduct(*(rep1->MatrixXd(i)), *(rep2->MatrixXd(i)), tmat);
       //std::cout << "Total matrix:\n" << tmat << '\n';
       new_rep->set_rep(i, SymMatrixXd(tmat));
     }
@@ -222,10 +222,10 @@ namespace CASM {
     for(Index i = 0; i < treps.size(); i++) {
       if(treps[i]->size() != size())
         return SymGroupRepID();
-      if(!(treps[i]->get_MatrixXd(0)))
+      if(!(treps[i]->MatrixXd(0)))
         return SymGroupRepID();
 
-      dim += (treps[i]->get_MatrixXd(0))->cols();
+      dim += (treps[i]->MatrixXd(0))->cols();
     }
 
     Eigen::MatrixXd tmat(Eigen::MatrixXd::Zero(dim, dim));
@@ -233,8 +233,8 @@ namespace CASM {
     for(Index i = 0; i < size(); i++) {
       corner = 0;
       for(Index j = 0; j < treps.size(); j++) {
-        tmat.block(corner, corner, (treps[j]->get_MatrixXd(i))->cols(), (treps[j]->get_MatrixXd(i))->cols()) = *(treps[j]->get_MatrixXd(i));
-        corner += (treps[j]->get_MatrixXd(i))->cols();
+        tmat.block(corner, corner, (treps[j]->MatrixXd(i))->cols(), (treps[j]->MatrixXd(i))->cols()) = *(treps[j]->MatrixXd(i));
+        corner += (treps[j]->MatrixXd(i))->cols();
       }
       new_rep->set_rep(i, SymMatrixXd(tmat));
     }
@@ -336,7 +336,7 @@ namespace CASM {
     }
 
     for(Index i = 0 ; i < new_rep->size() ; i++) {
-      std::cout << "Rota Rep final mats " << i << "\n" << *(new_rep->get_MatrixXd(i)) << std::endl;
+      std::cout << "Rota Rep final mats " << i << "\n" << *(new_rep->MatrixXd(i)) << std::endl;
     }
 
     return _add_representation(new_rep);

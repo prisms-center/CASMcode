@@ -66,7 +66,7 @@ namespace CASM {
     m_configdof(_supercell.num_sites()) {
     if(_id == "none") {
       if(_data.contains("dof")) {
-        *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>());
+        *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>(primclex().n_basis()));
         return;
       }
       *this = Configuration(_supercell, _data);
@@ -768,7 +768,7 @@ namespace CASM {
     if(source_it != json.end()) {
       set_source(*source_it);
     }
-    CASM::from_json(m_configdof, json["dof"]);
+    CASM::from_json(m_configdof, json["dof"], primclex().n_basis());
     CASM::from_json(cache(), json["cache"]);
 
     // read properties from 'json' input only: does not attempt to read in new
