@@ -6,6 +6,7 @@
 
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/basis_set/OccupationDoFTraits.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/basis_set/DoF.hh"
 
@@ -16,11 +17,7 @@ namespace CASM {
     Coordinate(init_home),
     m_label(-1),
     m_type_ID(-1),
-    m_site_occupant(
-      notstd::make_cloneable<MoleculeOccupant>(
-        DoFType::occupation,
-        "s", // variable name
-        std::vector<Molecule>())) {
+    m_site_occupant(MoleculeOccupant(DoFType::occupation(), "s" /*variable name*/, std::vector<Molecule>()).clone()) {
     //site_occupant.set_value(0);
   }
 
@@ -30,11 +27,7 @@ namespace CASM {
     Coordinate(init_pos),
     m_label(-1),
     m_type_ID(-1),
-    m_site_occupant(
-      notstd::make_cloneable<MoleculeOccupant>(
-        DoFType::occupation,
-        "s", // variable name
-        std::vector<Molecule>())) {
+    m_site_occupant(MoleculeOccupant(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>()).clone()) {
 
     std::vector<Molecule> tocc;
     tocc.push_back(Molecule::make_atom(occ_name));
@@ -49,11 +42,7 @@ namespace CASM {
     Coordinate(init_pos),
     m_label(-1),
     m_type_ID(-1),
-    m_site_occupant(
-      notstd::make_cloneable<MoleculeOccupant>(
-        DoFType::occupation,
-        "s", // variable name
-        std::vector<Molecule>(site_occ))) {
+    m_site_occupant(MoleculeOccupant(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>(site_occ)).clone()) {
 
   }
 

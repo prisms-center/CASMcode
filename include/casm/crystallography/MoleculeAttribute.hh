@@ -65,7 +65,7 @@ namespace CASM {
 
     MoleculeAttribute(std::string const &_name) :
       m_name(_name) {
-      _load_traits();
+      //_load_traits();
     }
 
     MoleculeAttribute(std::string const &_name,
@@ -74,7 +74,7 @@ namespace CASM {
       m_name(_name),
       m_value(_value),
       m_rep_ID(_rep_ID) {
-      _load_traits();
+      //_load_traits();
     }
 
     std::string const &name() const {
@@ -99,16 +99,9 @@ namespace CASM {
     }
 
   private:
-    /// This will eventually be managed by ProjectSettings
-    static MoleculeAttribute_impl::TraitsDictionary &_traits_dict();
-
     BasicTraits &_traits() const {
-      if(!m_traits_ptr)
-        _load_traits();
       return *m_traits_ptr;
     }
-
-    void _load_traits() const;
 
     void _generate_symrep(MasterSymGroup const &_group);
 
@@ -117,6 +110,9 @@ namespace CASM {
     SymGroupRepID m_rep_ID;
     mutable notstd::cloneable_ptr<BasicTraits> m_traits_ptr;
   };
+
+  template<>
+  ParsingDictionary<MoleculeAttribute::BasicTraits>  make_parsing_dictionary<MoleculeAttribute::BasicTraits>();
 
   inline
   jsonParser &to_json(MoleculeAttribute const &_attr, jsonParser &json) {

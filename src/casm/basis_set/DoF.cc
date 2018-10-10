@@ -3,6 +3,12 @@
 
 namespace CASM {
 
+  void DoF::register_traits(BasicTraits const &_type) {
+    _traits_map().insert(_type);
+  }
+
+  //********************************************************************
+
   DoF::TraitsMap &DoF::_traits_map() {
     static TraitsMap _static_traits_map([](const TraitsMap::value_type & value)->std::string {
       return value.type_name();

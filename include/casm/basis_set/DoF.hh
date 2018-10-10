@@ -58,6 +58,11 @@ namespace CASM {
         return m_type_name;
       }
 
+      /// \brief const access of type_name
+      std::string const &name() const {
+        return m_type_name;
+      }
+
       /// \brief returns true if DoF is global
       bool global()const {
         return m_mode == GLOBAL;
@@ -249,6 +254,8 @@ namespace CASM {
     typedef std::function<notstd::cloneable_ptr<BasicTraits>()> TypeFunc;
 
     static BasicTraits const &traits(std::string const &_type_name);
+
+    static void register_traits(BasicTraits const &_type);
 
     DoF() :
       m_type_name("EMPTY"),
@@ -468,31 +475,6 @@ namespace CASM {
                   SymGroupRepID::identity(_domain.size())),
       m_domain(_domain) { }
 
-    OccupantDoF(TypeFunc _func,
-                std::string const &_var_name,
-                std::vector<T> const &_domain,
-                int _current_state = 0) :
-      OccupantDoF(*_func(),
-                  _var_name,
-                  _domain,
-                  _current_state) {}
-
-    OccupantDoF(BasicTraits const &_traits,
-                std::vector<T> const &_domain,
-                int _current_state = 0) :
-      DiscreteDoF(_traits,
-                  "s",
-                  -1,
-                  _current_state,
-                  SymGroupRepID::identity(_domain.size())),
-      m_domain(_domain) { }
-
-    OccupantDoF(TypeFunc _func,
-                std::vector<T> const &_domain,
-                int _current_state = 0) :
-      OccupantDoF(*_func(),
-                  _domain,
-                  _current_state) {}
 
     /*
     OccupantDoF(TypeFunc _func,

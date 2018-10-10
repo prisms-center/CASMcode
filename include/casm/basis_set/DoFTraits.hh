@@ -2,6 +2,7 @@
 #define CASM_DoFTraits
 
 #include "casm/basis_set/DoF.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 
@@ -14,7 +15,9 @@ namespace CASM {
   class MasterSymGroup;
   class PrimNeighborList;
   class Structure;
-
+  //namespace DoF_impl{
+  //class OccupationDoFTraits;
+  //}
 
   namespace DoFType {
     class Traits;
@@ -23,7 +26,7 @@ namespace CASM {
 
     BasicTraits const &basic_traits(std::string const &dof_key);
 
-    notstd::cloneable_ptr<BasicTraits> occupation();
+    //DoF_impl::OccupationDoFTraits occupation();
 
     /// \brief Collection of all the traits specific to a DoF type
 
@@ -126,8 +129,7 @@ namespace CASM {
     using TraitsDictionary = ParsingDictionary<BasicTraits>;
 
     /// This will eventually be managed by ProjectSettings
-    TraitsDictionary const &traits_dict();
-
+    //TraitsDictionary const &traits_dict();
 
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -144,6 +146,10 @@ namespace CASM {
     }
 
   }
+
+  template<>
+  DoFType::TraitsDictionary make_parsing_dictionary<DoF::BasicTraits>();
+
 
 }
 #endif

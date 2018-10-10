@@ -1,6 +1,7 @@
 #ifndef CASM_ParsingDictionary
 #define CASM_ParsingDictionary
 
+#include "casm/misc/unique_cloneable_map.hh"
 namespace CASM {
   namespace ParsingDictionary_impl {
 
@@ -31,6 +32,7 @@ namespace CASM {
     using Base::find;
     using Base::begin;
     using Base::end;
+    using Base::insert;
 
     ParsingDictionary() :
       Base([](const value_type & value)->std::string {
@@ -38,7 +40,9 @@ namespace CASM {
     },
     ParsingDictionary_impl::DictionaryConverter<value_type>()) {}
 
-    using Base::insert;
+    std::unique_ptr<ParsingDictionary<value_type> > clone() const {
+      return notstd::make_unique<ParsingDictionary<value_type> >(*this);
+    }
 
     /// \brief Equivalent to find, but set 'home' and throws error with
     /// suggestion if @param _name not found
@@ -50,11 +54,14 @@ namespace CASM {
     }
 
     void print_help(std::ostream &_stream,
+                    std::function<bool(T const &)> filter,
                     int width = 60,
                     int separation = 8) const;
 
   };
 
+  template <typename T>
+  ParsingDictionary<T> make_parsing_dictionary();
 
   /// \brief Equivalent to find, but throw error with suggestion if _name not found
   template<typename T>
@@ -78,11 +85,44 @@ namespace CASM {
         }
       }
 
-      throw std::runtime_error("CRITICAL ERROR: Invalid " + T::class_desc() + " \"" + _name + "\" specified.\n"
+      throw std::runtime_error("Invalid " + T::class_desc() + " \"" + _name + "\" specified.\n"
                                + "                Did you mean \"" + res->name() + "\"?\n");
 
     }
 
   }
+
+
+  template<typename T>
+  void ParsingDictionary<T>::print_help(std::ostream &_stream,
+                                        std::function<bool(T const &)> filter,
+                                        int width,
+                                        int separation) const {
+    const_iterator it_begin(this->cbegin()), it_end(this->cend());
+    std::string::size_type len(0);
+    for(auto it = it_begin; it != it_end; ++it) {
+      if(filter(*it))
+        len = max(len, it->name().size());
+    }
+    for(auto it = it_begin; it != it_end; ++it) {
+      if(!filter(*it))
+        continue;
+      _stream << std::string(5, ' ') << it->name() << std::string(len - it->name().size() + separation, ' ');
+      std::string::size_type wcount(0);
+      std::string::const_iterator str_end(it->description().cend());
+      for(std::string::const_iterator str_it = it->description().cbegin(); str_it != str_end; ++str_it) {
+        if(wcount >= width && isspace(*str_it)) {
+          _stream << std::endl << std::string(5 + len + separation, ' ');
+          wcount = 0;
+        }
+        else {
+          _stream << *str_it;
+          wcount++;
+        }
+      }
+      _stream << std::endl << std::endl;
+    }
+  }
+
 }
 #endif

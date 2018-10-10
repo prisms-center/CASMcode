@@ -295,6 +295,11 @@ namespace CASM {
 
 
 
+    namespace DoFType {
+      DoF_impl::DisplacementDoFTraits displacement() {
+        return DoF_impl::DisplacementDoFTraits();
+      }
+    }
 
 
   }

@@ -9,6 +9,12 @@
 #include "casm/clex/NeighborList.hh"
 
 namespace CASM {
+  namespace DoFType {
+    DoF_impl::OccupationDoFTraits occupation() {
+      return DoF_impl::OccupationDoFTraits();
+    }
+  }
+
   namespace DoF_impl {
     namespace OccupationDoFTraits_impl {
       typedef std::map<std::string, double> SiteProb;

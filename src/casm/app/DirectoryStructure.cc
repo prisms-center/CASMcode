@@ -182,6 +182,16 @@ namespace CASM {
     return m_root / m_casm_dir / "query" / traits<DataObject>::name;
   }
 
+  /// \brief Return DoF plugin dir
+  fs::path DirectoryStructure::dof_plugins() const {
+    return m_root / m_casm_dir / "dof";
+  }
+
+  /// \brief Return Molecule Traits plugin dir
+  fs::path DirectoryStructure::molecule_traits_plugins() const {
+    return m_root / m_casm_dir / "molecule_traits";
+  }
+
   template<typename DataObject>
   fs::path DirectoryStructure::master_selection() const {
     return query_plugins<DataObject>() / "master_selection";

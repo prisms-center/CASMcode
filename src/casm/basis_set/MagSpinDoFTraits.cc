@@ -14,7 +14,13 @@ namespace CASM {
     Eigen::MatrixXd MagSpinDoFTraits::symop_to_matrix(SymOp const &op) const {
       return op.matrix().determinant() * op.matrix();
     }
-
-
   }
+
+  namespace DoFType {
+
+    DoF_impl::MagSpinDoFTraits magspin() {
+      return DoF_impl::MagSpinDoFTraits();
+    }
+  }
+
 }

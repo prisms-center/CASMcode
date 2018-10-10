@@ -6,12 +6,10 @@ namespace CASM {
   namespace MoleculeAttribute_impl {
   }
 
-  //*******************************************************************
-
-  MoleculeAttribute_impl::TraitsDictionary &MoleculeAttribute::_traits_dict() {
-    static MoleculeAttribute_impl::TraitsDictionary _static_dict;
-
-    return _static_dict;
+  template<>
+  ParsingDictionary<MoleculeAttribute::BasicTraits>  make_parsing_dictionary<MoleculeAttribute::BasicTraits>() {
+    ParsingDictionary<MoleculeAttribute::BasicTraits> dict;
+    return dict;
   }
 
   //*******************************************************************
@@ -35,9 +33,4 @@ namespace CASM {
     m_rep_ID = _traits().generate_symrep(_group);
   }
 
-  //*******************************************************************
-
-  void MoleculeAttribute::_load_traits() const {
-    m_traits_ptr = _traits_dict().lookup(name());
-  }
 }

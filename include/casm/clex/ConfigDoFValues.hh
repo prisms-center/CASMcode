@@ -86,9 +86,9 @@ namespace CASM {
     typedef Eigen::MatrixXd &Reference;
     typedef const Eigen::MatrixXd &ConstReference;
 
-    typedef typename ValueType::Scalar SiteValueType;
-    typedef int &SiteReference;
-    typedef const int &ConstSiteReference;
+    typedef Eigen::VectorXd SiteValueType;
+    typedef typename ValueType::ColXpr SiteReference;
+    typedef const typename ValueType::ConstColXpr ConstSiteReference;
 
     typedef ValueType SublatValueType;
     typedef typename Eigen::Block<ValueType> SublatReference;
@@ -108,6 +108,14 @@ namespace CASM {
 
     ConstReference values() const {
       return m_vals;
+    }
+
+    SiteReference site_value(Index l) {
+      return m_vals.col(l);
+    }
+
+    ConstSiteReference site_value(Index l) const {
+      return m_vals.col(l);
     }
 
     SublatReference sublat(Index b) {

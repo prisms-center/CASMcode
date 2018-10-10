@@ -6,7 +6,8 @@
 #include "casm/app/AppIO.hh"
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/QueryHandler.hh"
-#include "casm/basis_set/DoF.hh"
+#include "casm/app/HamiltonianModules.hh"
+//#include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/misc/algorithm.hh"
@@ -458,6 +459,22 @@ namespace CASM {
   template<typename DataObject>
   const QueryHandler<DataObject> &ProjectSettings::query_handler() const {
     return const_cast<ProjectSettings &>(*this).query_handler<DataObject>();
+  }
+
+  // ** Hamiltonian Modules **
+
+  HamiltonianModules &ProjectSettings::hamiltonian_modules() {
+    if(!m_hamiltonian_modules) {
+      notstd::make_cloneable<HamiltonianModules>(*this);
+    }
+    return *m_hamiltonian_modules;
+  }
+
+  HamiltonianModules const &ProjectSettings::hamiltonian_modules()const {
+    if(!m_hamiltonian_modules) {
+      notstd::make_cloneable<HamiltonianModules>(*this);
+    }
+    return *m_hamiltonian_modules;
   }
 
   // ** Clexulator names **

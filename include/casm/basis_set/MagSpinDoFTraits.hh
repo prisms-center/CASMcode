@@ -25,37 +25,55 @@ namespace CASM {
 
       Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override;
 
-      std::string site_basis_description(BasisSet site_bset, Site site) const override;
+      std::string site_basis_description(BasisSet site_bset, Site site) const override {
+        return "";
+      }
 
-      std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const override;
+      std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const override {
+        return std::vector<std::unique_ptr<FunctionVisitor> >();
+      }
 
-      std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const override;
+      std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const override {
+        return std::vector<std::unique_ptr<FunctionVisitor> >();
+      }
 
-      std::vector<std::pair<std::string, Index> > param_pack_allocation(std::vector<BasisSet> const &_bases) const override;
+      std::vector<std::pair<std::string, Index> > param_pack_allocation(std::vector<BasisSet> const &_bases) const override {
+        return std::vector<std::pair<std::string, Index> >();
+      }
 
       std::string clexulator_constructor_string(Structure const &_prim,
                                                 std::vector<BasisSet> const &site_bases,
-                                                std::string const &indent) const override;
+                                                std::string const &indent) const override {
+        return "";
+      }
 
       std::string clexulator_point_prepare_string(Structure const &_prim,
                                                   std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                   PrimNeighborList &_nlist,
                                                   std::vector<BasisSet> const &site_bases,
-                                                  std::string const &indent) const override;
+                                                  std::string const &indent) const override {
+        return "";
+      }
 
       std::string clexulator_global_prepare_string(Structure const &_prim,
                                                    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                    PrimNeighborList &_nlist,
                                                    std::vector<BasisSet> const &site_bases,
-                                                   std::string const &indent) const override;
+                                                   std::string const &indent) const override {
+        return "";
+      }
 
       std::string clexulator_member_declarations_string(Structure const &_prim,
                                                         std::vector<BasisSet> const &site_bases,
-                                                        std::string const &indent) const override;
+                                                        std::string const &indent) const override {
+        return "";
+      }
 
       std::string clexulator_private_method_declarations_string(Structure const &_prim,
                                                                 std::vector<BasisSet> const &site_bases,
-                                                                std::string const &indent) const override;
+                                                                std::string const &indent) const override {
+        return "";
+      }
 
       std::string clexulator_public_method_declarations_string(Structure const &_prim,
                                                                std::vector<BasisSet> const &site_bases,
@@ -81,18 +99,18 @@ namespace CASM {
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
       std::vector<BasisSet> construct_site_bases(Structure const &_prim,
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
-                                                 jsonParser const &_bspecs) const override;
+                                                 jsonParser const &_bspecs) const override {
+        return std::vector<BasisSet>();
+      }
     protected:
-      DoFType::BasicTraits *_clone() const override;
+      DoFType::BasicTraits *_clone() const override {
+        return new MagSpinDoFTraits(*this);
+      }
     };
   }
 
   namespace DoFType {
-
-    inline
-    notstd::cloneable_ptr<BasicTraits> magspin() {
-      return DoF_impl::MagSpinDoFTraits().clone();
-    }
+    DoF_impl::MagSpinDoFTraits magspin();
   }
 
 }

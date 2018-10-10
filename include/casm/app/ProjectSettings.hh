@@ -11,6 +11,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/app/HamiltonianModules.hh"
 
 namespace CASM {
 
@@ -18,6 +19,7 @@ namespace CASM {
   class jsonParser;
   class EnumeratorHandler;
   template<typename T> class QueryHandler;
+  class HamiltonianModules;
 
   /** \defgroup Project
    *
@@ -160,6 +162,12 @@ namespace CASM {
     const QueryHandler<DataObject> &query_handler() const;
 
 
+    // ** Hamiltonian Modules **
+
+    HamiltonianModules &hamiltonian_modules();
+
+    HamiltonianModules const &hamiltonian_modules()const;
+
     // ** Clexulator names **
 
     std::string global_clexulator_name() const;
@@ -292,6 +300,8 @@ namespace CASM {
 
     // Datatype name : QueryHandler<DataType> map (type erased)
     std::map<std::string, notstd::cloneable_ptr<notstd::Cloneable> > m_query_handler;
+
+    mutable notstd::cloneable_ptr<HamiltonianModules> m_hamiltonian_modules;
 
     // CASM project current settings
 

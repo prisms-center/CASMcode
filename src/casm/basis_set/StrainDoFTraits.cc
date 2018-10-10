@@ -26,4 +26,19 @@ namespace CASM {
     }
 
   }
+
+  namespace DoFType {
+    DoF_impl::StrainDoFTraits GLstrain() {
+      return DoF_impl::StrainDoFTraits("GL");
+    }
+
+    DoF_impl::StrainDoFTraits EAstrain() {
+      return DoF_impl::StrainDoFTraits("EA");
+    }
+
+    DoF_impl::StrainDoFTraits Hstrain() {
+      return DoF_impl::StrainDoFTraits("H");
+    }
+
+  }
 }

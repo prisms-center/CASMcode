@@ -94,10 +94,7 @@ namespace CASM {
   }
 
   namespace DoFType {
-    inline
-    notstd::cloneable_ptr<BasicTraits> occupation() {
-      return DoF_impl::OccupationDoFTraits().clone();
-    }
+    DoF_impl::OccupationDoFTraits occupation();
   }
 
 }

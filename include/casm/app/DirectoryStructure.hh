@@ -96,6 +96,12 @@ namespace CASM {
     template<typename DataObject>
     fs::path query_plugins() const;
 
+    /// \brief Return DoF plugin dir
+    fs::path dof_plugins() const;
+
+    /// \brief Return Molecule Traits plugin dir
+    fs::path molecule_traits_plugins() const;
+
     template<typename DataObject>
     fs::path master_selection() const;
 

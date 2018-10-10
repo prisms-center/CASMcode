@@ -1,5 +1,5 @@
-#ifndef CASM_OccupationDoFTraits
-#define CASM_OccupationDoFTraits
+#ifndef CASM_DisplacementDoFTraits
+#define CASM_DisplacementDoFTraits
 
 #include "casm/basis_set/DoFTraits.hh"
 namespace CASM {
@@ -100,11 +100,7 @@ namespace CASM {
   }
 
   namespace DoFType {
-
-    inline
-    notstd::cloneable_ptr<BasicTraits> displacement() {
-      return DoF_impl::DisplacementDoFTraits().clone();
-    }
+    DoF_impl::DisplacementDoFTraits displacement();
   }
 
 }

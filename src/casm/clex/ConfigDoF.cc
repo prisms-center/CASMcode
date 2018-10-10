@@ -55,28 +55,34 @@ namespace CASM {
   }
 
   //*******************************************************************************
-  /*
+
   // Calculate transformed ConfigDoF from PermuteIterator via
   //   *this = permute_iterator * (*this)
   ConfigDoF &ConfigDoF::apply_sym(const PermuteIterator &it) {
     Eigen::Matrix3d fg_cart_op = it.sym_op().matrix();
-    //if(has_deformation()) {
-      //set_deformation(fg_cart_op * deformation() * fg_cart_op.transpose());
-      //}
+    for(auto &dof : m_global_dofs) {
+      dof.second.values() = *(it.global_dof_rep(dof.first).MatrixXd()) * dof.second.values();
+    }
+
     Permutation tperm(it.combined_permute());
     if(occupation().size()) {
       set_occupation(tperm * occupation());
     }
-    //if(displacement().cols()) {
-      //Eigen::MatrixXd new_disp = fg_cart_op * displacement();
-      //set_displacement(Eigen::MatrixXd(3, size()));
-      //for(Index i = 0; i < size(); i++)
-        //disp(i) = new_disp.col(tperm[i]);
-        }
+
+    for(auto &dof : m_local_dofs) {
+      LocalContinuousConfigDoFValues tmp = dof.second;
+
+      for(Index b = 0; b < tmp.n_basis(); ++b)
+        tmp.sublat(b) = *(it.local_dof_rep(dof.first, b).MatrixXd()) * dof.second.sublat(b);
+      for(Index l = 0; l < size(); ++l) {
+        dof.second.site_value(l) = tmp.site_value(tperm[l]);
+      }
+
+    }
 
     return *this;
   }
-  */
+
   //*******************************************************************************
 
   jsonParser &ConfigDoF::to_json(jsonParser &json) const {
