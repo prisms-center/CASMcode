@@ -9,6 +9,7 @@ namespace CASM {
   }
 
   bool DoFIsEquivalent::operator()(SymOp const &_op) const {
+
     return _vector_equiv(DoFType::traits(m_dof.type_name()).symop_to_matrix(_op) * m_dof.basis());
 
   }
@@ -29,10 +30,26 @@ namespace CASM {
   }
 
   bool DoFIsEquivalent::_vector_equiv(Eigen::Ref<const Eigen::MatrixXd> const &_basis) const {
-    if((_basis.transpose()*m_dof.basis()).colPivHouseholderQr().rank() != m_dof.size())
+    if(m_dof.basis().cols() != _basis.cols())
       return false;
+    if(m_dof.basis().rows() == m_dof.basis().cols()) {
+      m_U = _basis.colPivHouseholderQr().solve(m_dof.basis());
+      return true;
+    }
 
+    //Find rank of augmented matrix. If it is the same as rank of DoF Basis, then
+    //the two matrices are similar (and, thus, equivalent)
+    Eigen::MatrixXd aug(m_dof.basis().rows(), 2 * m_dof.basis().cols());
+    aug << m_dof.basis(), _basis;
+    //std::cout << "Basis before: \n" << m_dof.basis() << "\n\n"
+    //        << "Basis after: \n" << _basis << "\n\n"
+    //        << "DoF size: " << m_dof.size() << "\n\n"
+    //        << "Augmented rank: " << aug.colPivHouseholderQr().rank() << "\n\n";
+
+    if(aug.colPivHouseholderQr().rank() != m_dof.size())
+      return false;
     m_U = _basis.colPivHouseholderQr().solve(m_dof.basis());
+
     return true;
   }
 

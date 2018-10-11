@@ -106,7 +106,7 @@ namespace CASM {
     void _add_end_member(Eigen::VectorXd _end_member, EndMembers... _others);
 
     /// \brief Check that origin and end member vectors have same size as the number of components
-    void _check_size(const Eigen::VectorXd &vec) const;
+    void _check_size(const Eigen::MatrixXd &vec) const;
 
     /// \brief Calculate conversion matrices m_to_n and m_to_x
     void _calc_conversion_matrices();
@@ -216,7 +216,7 @@ namespace CASM {
 
     _check_size(_origin);
 
-    _check_size(_end_members.col(0));
+    _check_size(_end_members);
 
     _calc_conversion_matrices();
 

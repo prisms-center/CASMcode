@@ -154,9 +154,9 @@ namespace CASM {
   /// Clears any previous contents
   template<typename T, typename... Args>
   void from_json(std::vector<T> &vec, const jsonParser &json, Args &&... args) {
+    vec.clear();
     vec.reserve(json.size());
-    int i = 0;
-    for(auto it = json.begin(); it != json.end(); ++it, ++i) {
+    for(auto it = json.begin(); it != json.end(); ++it) {
       vec.push_back(jsonConstructor<T>::from_json(*it, std::forward<Args>(args)...));
     }
   }

@@ -430,8 +430,8 @@ namespace CASM {
   }
 
   /// \brief Check that origin and end member vectors have same size as the number of components
-  void CompositionConverter::_check_size(const Eigen::VectorXd &vec) const {
-    if(m_components.size() != vec.size()) {
+  void CompositionConverter::_check_size(const Eigen::MatrixXd &mat) const {
+    if(m_components.size() != mat.rows()) {
       throw std::runtime_error(
         std::string("Error in CompositionConverter: origin or end member vector size does not match components size."));
     }

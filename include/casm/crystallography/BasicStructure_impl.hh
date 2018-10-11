@@ -10,6 +10,7 @@
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/Molecule.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
@@ -34,7 +35,11 @@ namespace CASM {
 
   template<typename CoordType>
   BasicStructure<CoordType>::BasicStructure(const BasicStructure &RHS) :
-    m_lattice(RHS.lattice()), m_title(RHS.title()), m_basis(RHS.basis()) {
+    m_lattice(RHS.lattice()),
+    m_SD_flag(RHS.m_SD_flag),
+    m_title(RHS.title()),
+    m_basis(RHS.basis()),
+    m_dof_map(RHS.m_dof_map) {
     for(Index i = 0; i < basis().size(); i++) {
       m_basis[i].set_lattice(lattice(), CART);
     }
@@ -50,8 +55,13 @@ namespace CASM {
   template<typename CoordType>
   BasicStructure<CoordType> &BasicStructure<CoordType>::operator=(const BasicStructure<CoordType> &RHS) {
     m_lattice = RHS.lattice();
+    m_SD_flag = RHS.m_SD_flag;
     m_title = RHS.title();
     set_basis(RHS.basis());
+    m_dof_map = RHS.m_dof_map;
+
+    for(Index i = 0; i < basis().size(); i++)
+      m_basis[i].set_lattice(lattice(), CART);
 
     return *this;
   }
@@ -170,7 +180,7 @@ namespace CASM {
     //Loop over all point group ops of the lattice
     for(pg = 0; pg < point_group.size(); pg++) {
       test_op = point_group[pg];
-      for(Index tr = 0; tr < time_max; tr++) {
+      for(Index tr = 0; tr <= time_max; tr++) {
         if(tr)
           test_op = test_op * SymOp::time_reversal_op();
 
@@ -272,6 +282,7 @@ namespace CASM {
   void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
     SymGroup point_group;
     lattice().generate_point_group(point_group);
+    //std::cout << "About to generate factor group. Point group size: " << point_group.size() << "\n";
     _generate_factor_group_slow(factor_group, point_group);
     return;
   }
@@ -721,7 +732,7 @@ namespace CASM {
 
     CoordType tsite(lattice());
 
-    SD_flag = false;
+    m_SD_flag = false;
     getline(stream, m_title);
     if(title().back() == '\r')
       throw std::runtime_error(std::string("Structure file is formatted for DOS. Please convert to Unix format. (This can be done with the dos2unix command.)"));
@@ -784,7 +795,7 @@ namespace CASM {
     }
 
     if(ch == 'S' || ch == 's') {
-      SD_flag = true;
+      m_SD_flag = true;
       stream.ignore(1000, '\n');
       while(ch == ' ' || ch == '\t') {
         stream.get(ch);
@@ -798,10 +809,10 @@ namespace CASM {
     else if(ch == 'C' || ch == 'c') {
       input_mode.set(CART);
     }
-    else if(!SD_flag) {
+    else if(!m_SD_flag) {
       throw std::runtime_error(std::string("Error in line 7 of structure input file. Line 7 of structure input file should specify Direct, Cartesian, or Selective Dynamics."));
     }
-    else if(SD_flag) {
+    else if(m_SD_flag) {
       throw std::runtime_error(std::string("Error in line 8 of structure input file. Line 8 of structure input file should specify Direct or Cartesian when Selective Dynamics is on."));
     }
 
@@ -822,7 +833,7 @@ namespace CASM {
           sum_elem += num_elem[j];
         }
 
-        tsite.read(stream, elem_array[j], SD_flag);
+        tsite.read(stream, elem_array[j], m_SD_flag);
         push_back(tsite);
       }
     }
@@ -830,7 +841,7 @@ namespace CASM {
       //read the site info
       m_basis.reserve(num_sites);
       for(i = 0; i < num_sites; i++) {
-        tsite.read(stream, SD_flag);
+        tsite.read(stream, m_SD_flag);
         if((stream.rdstate() & std::ifstream::failbit) != 0) {
           std::cerr << "Error reading site " << i + 1 << " from structure input file." << std::endl;
           exit(1);
@@ -982,12 +993,19 @@ namespace CASM {
   /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
   template<typename CoordType>
   bool BasicStructure<CoordType>::_is_lattice_pg_op(SymOp const &_op) const {
-    if(!LatticeIsEquivalent(lattice())(_op))
+    //std::cout << "CHECKING OP: \n" << _op.matrix() << std::endl;
+    if(!LatticeIsEquivalent(lattice())(_op)) {
+      //std::cout << "FAILED LATTICE CHECK\n"<< std::endl;
       return false;
-    for(auto const &dof : m_dof_map)
-      if(!DoFIsEquivalent(dof.second)(_op))
-        return false;
 
+    }
+    for(auto const &dof : m_dof_map) {
+      if(!DoFIsEquivalent(dof.second)(_op)) {
+        //std::cout << "FAILED DOF CHECK\n" << std::endl;
+        return false;
+      }
+    }
+    //std::cout << "PASSED\n"<< std::endl;
     return true;
 
   }
@@ -1114,6 +1132,131 @@ namespace CASM {
         return &(_struc.global_dof(dofname));
     return nullptr;
   }
+
+  //************************************************************
+
+  /// Returns an Array of each *possible* Specie in this Structure
+  template<typename CoordType>
+  std::vector<AtomSpecies> struc_species(BasicStructure<CoordType> const &_struc) {
+
+    std::vector<Molecule> tstruc_molecule = struc_molecule(_struc);
+    std::vector<AtomSpecies> tstruc_species;
+
+    Index i, j;
+
+    //For each molecule type
+    for(i = 0; i < tstruc_molecule.size(); i++) {
+      // For each atomposition in the molecule
+      for(j = 0; j < tstruc_molecule[i].size(); j++) {
+        if(!contains(tstruc_species, tstruc_molecule[i].atom(j).species())) {
+          tstruc_species.push_back(tstruc_molecule[i].atom(j).species());
+        }
+      }
+    }
+
+    return tstruc_species;
+  }
+
+  //************************************************************
+
+  /// Returns an Array of each *possible* Molecule in this Structure
+  template<typename CoordType>
+  std::vector<Molecule> struc_molecule(BasicStructure<CoordType> const &_struc) {
+
+    std::vector<Molecule> tstruc_molecule;
+    Index i, j;
+
+    //loop over all Sites in basis
+    for(i = 0; i < _struc.basis().size(); i++) {
+      //loop over all Molecules in Site
+      for(j = 0; j < _struc.basis()[i].site_occupant().size(); j++) {
+        //Collect unique Molecules
+        if(!contains(tstruc_molecule, _struc.basis()[i].site_occupant()[j])) {
+          tstruc_molecule.push_back(_struc.basis()[i].site_occupant()[j]);
+        }
+      }
+    }//end loop over all Sites
+
+    return tstruc_molecule;
+  }
+
+  //************************************************************
+  /// Returns an Array of each *possible* AtomSpecie in this Structure
+  template<typename CoordType>
+  std::vector<std::string> struc_species_name(BasicStructure<CoordType> const &_struc) {
+
+    // get AtomSpecie allowed in struc
+    std::vector<AtomSpecies> struc_spec = struc_species(_struc);
+
+    // store AtomSpecie names in vector
+    std::vector<std::string> struc_spec_name;
+    for(int i = 0; i < struc_spec.size(); i++) {
+      struc_spec_name.push_back(struc_spec[i].name());
+    }
+
+    return struc_spec_name;
+  }
+
+  //************************************************************
+  /// Returns an Array of each *possible* Molecule in this Structure
+  template<typename CoordType>
+  std::vector<std::string> struc_molecule_name(BasicStructure<CoordType> const &_struc) {
+
+    // get Molecule allowed in struc
+    std::vector<Molecule> struc_mol = struc_molecule(_struc);
+
+    // store Molecule names in vector
+    std::vector<std::string> struc_mol_name;
+    for(int i = 0; i < struc_mol.size(); i++) {
+      struc_mol_name.push_back(struc_mol[i].name());
+    }
+
+    return struc_mol_name;
+  }
+
+  //************************************************************
+
+  /// Returns a list of how many of each species exist in this Structure
+  ///   The Specie types are ordered according to struc_species()
+  template<typename CoordType>
+  Eigen::VectorXi num_each_species(BasicStructure<CoordType> const &_struc) {
+
+    std::vector<AtomSpecies> tstruc_species = struc_species(_struc);
+    Eigen::VectorXi tnum_each_species = Eigen::VectorXi::Zero(tstruc_species.size());
+
+    Index i, j;
+    // For each site
+    for(i = 0; i < _struc.basis().size(); i++) {
+      // For each atomposition in the molecule on the site
+      for(j = 0; j < _struc.basis()[i].occ().size(); j++) {
+        // Count the present species
+        tnum_each_species(find_index(tstruc_species, _struc.basis()[i].occ().atom(j).species()))++;
+      }
+    }
+
+    return tnum_each_species;
+  }
+
+  //************************************************************
+
+  /// Returns a list of how many of each molecule exist in this Structure
+  ///   The molecule types are ordered according to struc_molecule()
+  template<typename CoordType>
+  Eigen::VectorXi num_each_molecule(BasicStructure<CoordType> const &_struc) {
+
+    std::vector<Molecule> tstruc_molecule = struc_molecule(_struc);
+    Eigen::VectorXi tnum_each_molecule = Eigen::VectorXi(tstruc_molecule.size());
+
+    Index i;
+    // For each site
+    for(i = 0; i < _struc.basis().size(); i++) {
+      // Count the molecule
+      tnum_each_molecule(find_index(tstruc_molecule, _struc.basis()[i].occ()))++;
+    }
+
+    return tnum_each_molecule;
+  }
+
 
 }
 

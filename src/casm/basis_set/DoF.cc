@@ -5,6 +5,11 @@ namespace CASM {
 
   void DoF::register_traits(BasicTraits const &_type) {
     _traits_map().insert(_type);
+    //std::cout << "Adding DoFType " << _type.name() << "\nMap now holds:\n";
+    //for(auto  const & d : _traits_map()){
+    //std::cout << "  " << d.name() << "\n";
+    //}
+    //std::cout << "\n";
   }
 
   //********************************************************************

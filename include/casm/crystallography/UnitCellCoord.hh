@@ -12,7 +12,8 @@ namespace CASM {
   class jsonParser;
   class Coordinate;
   class Site;
-  class Structure;
+  template <typename CoordType>
+  class BasicStructure;
   class SymOp;
   class Lattice;
 
@@ -101,7 +102,7 @@ namespace CASM {
   public:
 
     /// \brief SymBasisPermute rep should be obtainable from UnitType
-    typedef Structure UnitType;
+    typedef BasicStructure<Site> UnitType;
 
     explicit UnitCellCoord(const UnitType &unit);
 
@@ -187,7 +188,7 @@ namespace CASM {
   struct jsonConstructor<UnitCellCoord> {
 
     /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
-    static UnitCellCoord from_json(const jsonParser &json, const Structure &unit);
+    static UnitCellCoord from_json(const jsonParser &json, const BasicStructure<Site> &unit);
   };
 
   /// \brief Read from json [b, i, j, k]

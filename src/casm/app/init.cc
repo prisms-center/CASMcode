@@ -6,6 +6,7 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/app/HamiltonianModules.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/AppIO.hh"
@@ -35,6 +36,7 @@ namespace CASM {
 
     std::string name;
     po::variables_map vm;
+    HamiltonianModules modules;
 
     /// Set command line options using boost program_options
     Completer::InitOption init_opt;
@@ -91,7 +93,6 @@ namespace CASM {
     DirectoryStructure dir(root);
     Structure prim;
 
-
     // if prim.json does not exist, try to read PRIM and create prim.json
     if(!fs::is_regular_file(dir.prim())) {
 
@@ -146,7 +147,7 @@ namespace CASM {
 
       prim_json = jsonParser(dir.prim());
 
-      prim = Structure(read_prim(prim_json, TOL));
+      prim = Structure(read_prim(prim_json, modules, TOL));
     }
     catch(std::runtime_error &e) {
       args.err_log() << e.what() << std::endl;

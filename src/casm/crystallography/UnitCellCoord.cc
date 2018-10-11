@@ -1,6 +1,6 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Site.hh"
-#include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/symmetry/SymOp.hh"
@@ -99,7 +99,7 @@ namespace CASM {
   }
 
   /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
-  UnitCellCoord jsonConstructor<UnitCellCoord>::from_json(const jsonParser &json, const Structure &unit) {
+  UnitCellCoord jsonConstructor<UnitCellCoord>::from_json(const jsonParser &json, const BasicStructure<Site> &unit) {
     UnitCellCoord coord(unit);
     CASM::from_json(coord, json);
     return coord;

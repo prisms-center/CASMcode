@@ -26,12 +26,20 @@ namespace CASM {
   struct PrimClex::PrimClexData {
 
     PrimClexData(const Structure &_prim) :
-      prim(_prim) {}
+      prim(_prim) {
+      //Guarantee presence of symmetry info;
+      prim.factor_group();
+    }
 
     PrimClexData(const fs::path &_root) :
       dir(_root),
       settings(_root),
-      prim(read_prim(dir.prim(), settings.crystallography_tol())) {}
+      prim(read_prim(dir.prim(), settings.hamiltonian_modules(), settings.crystallography_tol())) {
+
+      //Guarantee presence of symmetry info;
+      prim.factor_group();
+
+    }
 
     ~PrimClexData() {}
 

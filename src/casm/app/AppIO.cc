@@ -1,4 +1,5 @@
 #include "casm/app/AppIO_impl.hh"
+#include "casm/app/HamiltonianModules.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clusterography/ClusterSymCompare.hh"
@@ -11,11 +12,11 @@ namespace CASM {
 
   // --------- PrimIO Definitions --------------------------------------------------
 
-  BasicStructure<Site> read_prim(fs::path filename, double xtal_tol) {
+  BasicStructure<Site> read_prim(fs::path filename, HamiltonianModules const &_modules, double xtal_tol) {
 
     try {
       jsonParser json(filename);
-      return read_prim(json, xtal_tol);
+      return read_prim(json, _modules, xtal_tol);
     }
     catch(...) {
       std::cerr << "Error reading prim from " << filename << std::endl;
@@ -25,7 +26,7 @@ namespace CASM {
   }
 
   /// \brief Read prim.json
-  BasicStructure<Site> read_prim(const jsonParser &json, double xtal_tol) {
+  BasicStructure<Site> read_prim(const jsonParser &json, HamiltonianModules const &_modules, double xtal_tol) {
 
     try {
 
@@ -71,7 +72,27 @@ namespace CASM {
 
       // read basis sites
       for(jsonParser const &bjson : json["basis"]) {
-        prim.push_back(bjson.get<Site>(prim.lattice(), mode));
+        Site tsite = bjson.get<Site>(prim.lattice(), mode);
+
+        std::vector<Molecule> t_occ;
+        std::string occ_key;
+        if(bjson.contains("occupants"))
+          occ_key = "occupants";
+        else if(bjson.contains("occupant_dof"))
+          occ_key = "occupant_dof";
+
+        if(!occ_key.empty()) {
+          for(std::string const &occ : bjson[occ_key].get<std::vector<std::string> >()) {
+            //std::cout << "CREATING OCCUPANT " << occ << "\n";
+            //REPLACE THIS LINE FOR GENERALIZED OCCUPANTS
+            t_occ.push_back(Molecule::make_atom(occ));
+          }
+        }
+        //std::cout << "t_occ.size() = " << t_occ.size() << "\n";
+        if(t_occ.empty())
+          t_occ = {Molecule::make_unknown()};
+        tsite.set_allowed_occupants(t_occ);
+        prim.push_back(tsite);
       }
 
       return prim;

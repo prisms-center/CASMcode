@@ -17,7 +17,8 @@ namespace CASM {
   class UnitCellCoord;
   class SiteCluster;
   class MasterSymGroup;
-
+  class Molecule;
+  class AtomSpecies;
   //  class DoFSet;
 
   /** \defgroup Structure
@@ -33,7 +34,7 @@ namespace CASM {
     Lattice m_lattice;
 
     ///Specifies whether selectice dynamics is on or of for DFT calculations
-    bool SD_flag;
+    bool m_SD_flag;
 
     /// User-specified name of this Structure
     std::string m_title;
@@ -165,6 +166,11 @@ namespace CASM {
     ///apply a symmetry operation to the current structure (may change lattice vectors and order of basis atoms)
     //BasicStructure &apply_sym(const SymOp &op);  //Anna do this
 
+    virtual SymGroupRepID basis_permutation_symrep_ID()const {
+      return SymGroupRepID();
+    }
+
+
     void generate_factor_group(SymGroup &factor_group) const;
     void generate_factor_group_slow(SymGroup &factor_group) const;
     void _generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_point_group) const;
@@ -232,6 +238,40 @@ namespace CASM {
   template<typename CoordType>
   jsonParser &to_json(const BasicStructure<CoordType> &basic, jsonParser &json);
 
+
+  //************************************************************
+
+  /// Returns an Array of each *possible* Specie in this Structure
+  template<typename CoordType>
+  std::vector<AtomSpecies> struc_species(BasicStructure<CoordType> const &_struc);
+
+  //************************************************************
+
+  /// Returns an Array of each *possible* Molecule in this Structure
+  template<typename CoordType>
+  std::vector<Molecule> struc_molecule(BasicStructure<CoordType> const &_struc);
+  //************************************************************
+  /// Returns an Array of each *possible* AtomSpecie in this Structure
+  template<typename CoordType>
+  std::vector<std::string> struc_species_name(BasicStructure<CoordType> const &_struc);
+  //************************************************************
+  /// Returns an Array of each *possible* Molecule in this Structure
+  template<typename CoordType>
+  std::vector<std::string> struc_molecule_name(BasicStructure<CoordType> const &_struc);
+
+  //************************************************************
+
+  /// Returns a list of how many of each species exist in this Structure
+  ///   The Specie types are ordered according to struc_species()
+  template<typename CoordType>
+  Eigen::VectorXi num_each_species(BasicStructure<CoordType> const &_struc);
+
+  //************************************************************
+
+  /// Returns a list of how many of each molecule exist in this Structure
+  ///   The molecule types are ordered according to struc_molecule()
+  template<typename CoordType>
+  Eigen::VectorXi num_each_molecule(BasicStructure<CoordType> const &_struc);
 
   // Assumes constructor CoordType::CoordType(Lattice) exists
   template<typename CoordType>

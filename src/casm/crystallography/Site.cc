@@ -557,15 +557,15 @@ namespace CASM {
       site.cart() = json["coordinate"].get<Eigen::Vector3d>();
 
     // MoleculeOccupant -- allowed occupants at site
-    MoleculeOccupant t_occ(DoF::traits("occ"));
-    if(coordtype == FRAC)
-      CASM::from_json(t_occ, json["site_occupant"], _home.inv_lat_column_mat());
-    else
-      CASM::from_json(t_occ, json["site_occupant"], Eigen::Matrix3d::Identity());
-    if(t_occ.size())
-      site.set_allowed_occupants(t_occ.domain());
-    else
-      site.set_allowed_occupants({Molecule::make_unknown()});
+    //MoleculeOccupant t_occ(DoF::traits("occ"));
+    //if(coordtype == FRAC)
+    //CASM::from_json(t_occ, json["site_occupant"], _home.inv_lat_column_mat());
+    //else
+    //CASM::from_json(t_occ, json["site_occupant"], Eigen::Matrix3d::Identity());
+    //if(t_occ.size())
+    //site.set_allowed_occupants(t_occ.domain());
+    //else
+    //site.set_allowed_occupants({Molecule::make_unknown()});
 
     // Index m_label -- must be greater than zero
     Index _label = -1;

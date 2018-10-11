@@ -103,7 +103,7 @@ namespace CASM {
     }
 
     // generate default nlist settings
-    Structure prim(read_prim(m_dir.prim(), TOL));
+    Structure prim(read_prim(m_dir.prim(), hamiltonian_modules(), TOL));
     m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, TOL);
     m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
   }
@@ -206,7 +206,7 @@ namespace CASM {
         bool and_commit = false;
         if(!settings.contains("nlist_weight_matrix") || !settings.contains("nlist_sublat_indices")) {
           _reset_clexulators();
-          prim = Structure(read_prim(m_dir.prim(), crystallography_tol()));
+          prim = Structure(read_prim(m_dir.prim(), hamiltonian_modules(), crystallography_tol()));
           and_commit = true;
         }
 
@@ -465,14 +465,14 @@ namespace CASM {
 
   HamiltonianModules &ProjectSettings::hamiltonian_modules() {
     if(!m_hamiltonian_modules) {
-      notstd::make_cloneable<HamiltonianModules>(*this);
+      notstd::make_cloneable<HamiltonianModules>(this);
     }
     return *m_hamiltonian_modules;
   }
 
   HamiltonianModules const &ProjectSettings::hamiltonian_modules()const {
     if(!m_hamiltonian_modules) {
-      notstd::make_cloneable<HamiltonianModules>(*this);
+      notstd::make_cloneable<HamiltonianModules>(this);
     }
     return *m_hamiltonian_modules;
   }

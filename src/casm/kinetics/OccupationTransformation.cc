@@ -22,7 +22,7 @@ namespace CASM {
       from_value(_from_value),
       to_value(_to_value) {}
 
-    const Structure &OccupationTransformation::prim() const {
+    const UnitCellCoord::UnitType &OccupationTransformation::prim() const {
       return uccoord.unit();
     }
 
@@ -76,10 +76,10 @@ namespace CASM {
     }
   }
 
-  std::map<AtomSpecies, Index> empty_species_count(const Structure &prim) {
-    auto struc_species = prim.struc_species();
+  std::map<AtomSpecies, Index> empty_species_count(const UnitCellCoord::UnitType &prim) {
+    auto species = struc_species(prim);
     std::map<AtomSpecies, Index> _species_count;
-    for(const AtomSpecies &s : struc_species) {
+    for(const AtomSpecies &s : species) {
       _species_count[s] = 0;
     }
     return _species_count;
@@ -140,7 +140,7 @@ namespace CASM {
     return json;
   }
 
-  Kinetics::OccupationTransformation jsonConstructor<Kinetics::OccupationTransformation>::from_json(const jsonParser &json, const Structure &prim) {
+  Kinetics::OccupationTransformation jsonConstructor<Kinetics::OccupationTransformation>::from_json(const jsonParser &json, const UnitCellCoord::UnitType &prim) {
     return Kinetics::OccupationTransformation(
              jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
              json["from_value"].get<Index>(),

@@ -293,14 +293,14 @@ namespace CASM {
       return result;
     }
 
-
-
-    namespace DoFType {
-      DoF_impl::DisplacementDoFTraits displacement() {
-        return DoF_impl::DisplacementDoFTraits();
-      }
-    }
-
-
   }
+
+  namespace DoFType {
+    DoF_impl::DisplacementDoFTraits displacement() {
+      return DoF_impl::DisplacementDoFTraits();
+    }
+  }
+
+
+
 }

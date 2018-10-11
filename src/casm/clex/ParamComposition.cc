@@ -515,11 +515,11 @@ namespace CASM {
     //holds the temporary transformation matrix that is going to be
     //used to initialize the new composition object
     Eigen::MatrixXd tmat;
-    if(tspanning[0].size() != m_components.size()) {
-      std::cerr << "ERROR in ParamComposition::calc_composition_object the spanning vectors are not as long as the number of ";
-      std::cerr << "components in this system. I'm confused and recommend you quit and try again. However, not going to force quit\n";
-    }
-    tmat.resize(m_components.size(), m_components.size());
+    //if(!tspanning.empty() && tspanning[0].size() != m_components.size()) {
+    //std::cerr << "ERROR in ParamComposition::calc_composition_object the spanning vectors are not as long as the number of ";
+    //std::cerr << "components in this system. I'm confused and recommend you quit and try again. However, not going to force quit\n";
+    //}
+    tmat.setIdentity(m_components.size(), m_components.size());
     //copy the spanning vectors into tmat
     for(Index i = 0; i < tspanning.size(); i++) {
       tmat.col(i) = tspanning[i];

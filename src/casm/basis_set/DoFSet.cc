@@ -27,7 +27,7 @@ namespace CASM {
   void DoFSet::allocate_symrep(SymGroup const &_group) const {
     if(!m_symrep_ID.empty())
       throw std::runtime_error("In DoFSet::allocate_symrep(), representation has already been allocated for this symrep.");
-
+    //std::cout << "Allocating symrep...\n"
     m_symrep_ID = _group.allocate_representation();
 
   }
@@ -75,7 +75,12 @@ namespace CASM {
       if(json.contains("coordinate_space"))
       m_basis=json["coordinate_space"].get<Eigen::MatrixXd>();
     */
-    std::vector<ContinuousDoF> tdof;
+    //std::vector<ContinuousDoF> tdof;
+
+    m_components.clear();
+    m_excluded_occs.clear();
+    m_symrep_ID = SymGroupRepID();
+
     bool is_error = false;
 
     auto const &traits_ref = DoFType::traits(type_name());
@@ -88,23 +93,28 @@ namespace CASM {
         int col = 0;
         for(auto const &el : *it) {
           if(is_error || el.size() != (traits_ref.dim() + 1) || !el[0].is_string()) {
+            std::cout << "ERROR 1\n" << std::endl;
             is_error = true;
             break;
           }
 
-          tdof.push_back(ContinuousDoF(traits_ref,
-                                       el[0].get<std::string>(), //var_name
-                                       -1, // ID
-                                       -std::numeric_limits<double>::infinity(),
-                                       std::numeric_limits<double>::infinity()));
-          for(Index row = 0; row < traits_ref.dim() + 1; row++) {
-            if(!el[row].is_number()) {
+          m_components.push_back(ContinuousDoF(traits_ref,
+                                               el[0].get<std::string>(), //var_name
+                                               -1, // ID
+                                               -std::numeric_limits<double>::infinity(),
+                                               std::numeric_limits<double>::infinity()));
+          if(traits_ref.global())
+            m_components.back().lock_ID();
+          for(Index row = 1; row < traits_ref.dim() + 1; row++) {
+            if(!el[row].is_number() && !el[row].is_int()) {
+              std::cout << "ERROR 2\n" << row << ": \n" << el[row] << std::endl;
               is_error = true;
               break;
             }
-            m_basis(row, col) = el[row].get<double>();
+            m_basis(row - 1, col) = el[row].get<double>();
 
           }
+          ++col;
         }
       }
       else
@@ -120,11 +130,14 @@ namespace CASM {
     else {
       m_basis.setIdentity(traits_ref.dim(), traits_ref.dim());
       for(std::string var_name : traits_ref.standard_var_names()) {
-        tdof.push_back(ContinuousDoF(traits_ref,
-                                     var_name,
-                                     -1, // ID
-                                     -std::numeric_limits<double>::infinity(),
-                                     std::numeric_limits<double>::infinity()));
+        //std::cout << "Adding var_name " << var_name << "\n";
+        m_components.push_back(ContinuousDoF(traits_ref,
+                                             var_name,
+                                             -1, // ID
+                                             -std::numeric_limits<double>::infinity(),
+                                             std::numeric_limits<double>::infinity()));
+        if(traits_ref.global())
+          m_components.back().lock_ID();
 
       }
     }

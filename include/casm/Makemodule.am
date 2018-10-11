@@ -90,6 +90,7 @@ casminclude_HEADERS = \
   include/casm/app/APICommand.hh\
   include/casm/app/QueryHandler.hh\
   include/casm/app/HamiltonianModules.hh\
+  include/casm/app/HamiltonianModules_impl.hh\
   include/casm/app/monte.hh\
   include/casm/app/AppIO_impl.hh\
   include/casm/strain/StrainConverter.hh\

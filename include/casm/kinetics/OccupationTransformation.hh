@@ -32,7 +32,7 @@ namespace CASM {
       Index to_value;
       UnitCellCoord uccoord;
 
-      const Structure &prim() const;
+      const UnitCellCoord::UnitType &prim() const;
 
       const Molecule &from_mol() const;
 
@@ -63,7 +63,7 @@ namespace CASM {
 
   }
 
-  std::map<AtomSpecies, Index> empty_species_count(const Structure &prim);
+  std::map<AtomSpecies, Index> empty_species_count(const UnitCellCoord::UnitType &prim);
 
   template<typename OccTransfIt>
   std::map<AtomSpecies, Index> from_species_count(OccTransfIt begin, OccTransfIt end);
@@ -78,7 +78,7 @@ namespace CASM {
   template<>
   struct jsonConstructor<Kinetics::OccupationTransformation> {
 
-    static Kinetics::OccupationTransformation from_json(const jsonParser &json, const Structure &prim);
+    static Kinetics::OccupationTransformation from_json(const jsonParser &json, const UnitCellCoord::UnitType &prim);
   };
 
   void from_json(Kinetics::OccupationTransformation &fill_value, const jsonParser &read_json);

@@ -1,4 +1,5 @@
 #include "casm/app/HamiltonianModules.hh"
+#include "casm/app/HamiltonianModules_impl.hh"
 #include "casm/misc/ParsingDictionary.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/DoF.hh"
@@ -6,21 +7,23 @@
 
 namespace CASM {
 
-  HamiltonianModules::HamiltonianModules(const ProjectSettings &_set) :
+  HamiltonianModules::HamiltonianModules(ProjectSettings const *_set) :
     m_dof_dict(make_parsing_dictionary<DoFDictionary::value_type>().clone()),
     m_mol_attribute_dict(make_parsing_dictionary<MolAttributeDictionary::value_type>().clone()) {
-
+    //std::cout << "Inside HamiltonianModules Constructor\n";
     // add DoF plugins
-    load_dof_plugins(
-      _set,
-      std::inserter(*m_dof_dict, m_dof_dict->end()),
-      std::inserter(m_dof_lib, m_dof_lib.end()));
+    if(_set) {
+      load_dof_plugins(
+        *_set,
+        std::inserter(*m_dof_dict, m_dof_dict->end()),
+        std::inserter(m_dof_lib, m_dof_lib.end()));
 
-    // add attribute plugins
-    load_mol_attribute_plugins(
-      _set,
-      std::inserter(*m_mol_attribute_dict, m_mol_attribute_dict->end()),
-      std::inserter(m_mol_attribute_lib, m_mol_attribute_lib.end()));
+      // add attribute plugins
+      load_mol_attribute_plugins(
+        *_set,
+        std::inserter(*m_mol_attribute_dict, m_mol_attribute_dict->end()),
+        std::inserter(m_mol_attribute_lib, m_mol_attribute_lib.end()));
+    }
 
 
   }

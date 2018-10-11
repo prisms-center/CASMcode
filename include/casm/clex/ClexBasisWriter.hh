@@ -205,6 +205,7 @@ namespace CASM {
     std::set<UnitCellCoord>  equiv_ucc(UCCIterType begin,
                                        UCCIterType end,
                                        UnitCellCoord const &_pivot,
+                                       Structure const &_prim,
                                        IntegralClusterSymCompareType const &_sym_compare);
   }
 }

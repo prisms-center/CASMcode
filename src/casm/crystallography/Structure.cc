@@ -9,6 +9,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/misc/algorithm.hh"
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/symmetry/SymGroupRep.hh"
@@ -73,8 +74,6 @@ namespace CASM {
 
     BasicStructure<Site>::copy_attributes_from(RHS);
 
-    SD_flag = RHS.SD_flag;
-
     m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
 
     m_factor_group = RHS.m_factor_group;
@@ -96,6 +95,8 @@ namespace CASM {
     m_factor_group.clear();
     m_factor_group.set_lattice(lattice());
     BasicStructure<Site>::generate_factor_group(m_factor_group);
+    _generate_basis_symreps();
+    _generate_global_symreps();
     return;
   }
 
@@ -127,121 +128,30 @@ namespace CASM {
   }
 
   //************************************************************
-
-  /// Returns an Array of each *possible* Specie in this Structure
   std::vector<AtomSpecies> Structure::struc_species() const {
-
-    std::vector<Molecule> tstruc_molecule = struc_molecule();
-    std::vector<AtomSpecies> tstruc_species;
-
-    Index i, j;
-
-    //For each molecule type
-    for(i = 0; i < tstruc_molecule.size(); i++) {
-      // For each atomposition in the molecule
-      for(j = 0; j < tstruc_molecule[i].size(); j++) {
-        if(!contains(tstruc_species, tstruc_molecule[i].atom(j).species())) {
-          tstruc_species.push_back(tstruc_molecule[i].atom(j).species());
-        }
-      }
-    }
-
-    return tstruc_species;
+    return CASM::struc_species(*this);
   }
-
   //************************************************************
-
-  /// Returns an Array of each *possible* Molecule in this Structure
   std::vector<Molecule> Structure::struc_molecule() const {
-
-    std::vector<Molecule> tstruc_molecule;
-    Index i, j;
-
-    //loop over all Sites in basis
-    for(i = 0; i < basis().size(); i++) {
-      //loop over all Molecules in Site
-      for(j = 0; j < basis()[i].site_occupant().size(); j++) {
-        //Collect unique Molecules
-        if(!contains(tstruc_molecule, basis()[i].site_occupant()[j])) {
-          tstruc_molecule.push_back(basis()[i].site_occupant()[j]);
-        }
-      }
-    }//end loop over all Sites
-
-    return tstruc_molecule;
+    return CASM::struc_molecule(*this);
   }
-
-  /// Returns an Array of each *possible* AtomSpecie in this Structure
+  //************************************************************
   std::vector<std::string> Structure::struc_species_name() const {
-
-    // get AtomSpecie allowed in struc
-    std::vector<AtomSpecies> struc_spec = struc_species();
-
-    // store AtomSpecie names in vector
-    std::vector<std::string> struc_spec_name;
-    for(int i = 0; i < struc_spec.size(); i++) {
-      struc_spec_name.push_back(struc_spec[i].name());
-    }
-
-    return struc_spec_name;
+    return CASM::struc_species_name(*this);
   }
 
-  /// Returns an Array of each *possible* Molecule in this Structure
+  //************************************************************
   std::vector<std::string> Structure::struc_molecule_name() const {
-
-    // get Molecule allowed in struc
-    std::vector<Molecule> struc_mol = struc_molecule();
-
-    // store Molecule names in vector
-    std::vector<std::string> struc_mol_name;
-    for(int i = 0; i < struc_mol.size(); i++) {
-      struc_mol_name.push_back(struc_mol[i].name());
-    }
-
-    return struc_mol_name;
+    return CASM::struc_molecule_name(*this);
   }
-
   //************************************************************
-
-  /// Returns a list of how many of each species exist in this Structure
-  ///   The Specie types are ordered according to struc_species()
   Eigen::VectorXi Structure::num_each_species() const {
-
-    std::vector<AtomSpecies> tstruc_species = struc_species();
-    Eigen::VectorXi tnum_each_species = Eigen::VectorXi::Zero(tstruc_species.size());
-
-    Index i, j;
-    // For each site
-    for(i = 0; i < basis().size(); i++) {
-      // For each atomposition in the molecule on the site
-      for(j = 0; j < basis()[i].occ().size(); j++) {
-        // Count the present species
-        tnum_each_species(find_index(tstruc_species, basis()[i].occ().atom(j).species()))++;
-      }
-    }
-
-    return tnum_each_species;
+    return CASM::num_each_species(*this);
   }
-
   //************************************************************
-
-  /// Returns a list of how many of each molecule exist in this Structure
-  ///   The molecule types are ordered according to struc_molecule()
   Eigen::VectorXi Structure::num_each_molecule() const {
-
-    std::vector<Molecule> tstruc_molecule = struc_molecule();
-    Eigen::VectorXi tnum_each_molecule = Eigen::VectorXi(tstruc_molecule.size());
-
-    Index i;
-    // For each site
-    for(i = 0; i < basis().size(); i++) {
-      // Count the molecule
-      tnum_each_molecule(find_index(tstruc_molecule, basis()[i].occ()))++;
-    }
-
-    return tnum_each_molecule;
+    return CASM::num_each_molecule(*this);
   }
-
   //************************************************************
 
   void Structure::fg_converge(double small_tol, double large_tol, double increment) {
@@ -288,7 +198,7 @@ namespace CASM {
     SymGroup latvec_pg;
     m_lattice.generate_point_group(latvec_pg);
 
-    SD_flag = prim.SD_flag;
+    m_SD_flag = prim.m_SD_flag;
     PrimGrid prim_grid(prim.lattice(), lattice());
 
     m_basis.clear();
@@ -652,7 +562,7 @@ namespace CASM {
       default_err_log() << "Factor group is empty." << std::endl;
       exit(1);
     }
-
+    std::cout << "INSIDE _generate_global_symreps\n";
     for(auto const &dof : m_dof_map) {
       dof.second.allocate_symrep(m_factor_group);
       for(SymOp const &op : m_factor_group) {
@@ -708,9 +618,6 @@ namespace CASM {
     // mutable MasterSymGroup m_factor_group;
     json["factor_group"] = m_factor_group;
 
-    // bool SD_flag;
-    json["SD_flag"] = SD_flag;
-
     return json;
   }
 
@@ -727,9 +634,6 @@ namespace CASM {
     // mutable MasterSymGroup m_factor_group;
     m_factor_group.clear();
     m_factor_group.from_json(json["factor_group"]);
-
-    // bool SD_flag;
-    CASM::from_json(SD_flag, json["SD_flag"]);
 
     update();
   }

@@ -8,6 +8,7 @@ namespace CASM {
 
   template<>
   DoFType::TraitsDictionary make_parsing_dictionary<DoF::BasicTraits>() {
+    //std::cout << "Making Parsing dictionary... \n";
     DoF::register_traits(DoFType::occupation());
     DoF::register_traits(DoFType::displacement());
     DoF::register_traits(DoFType::magspin());

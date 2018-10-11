@@ -523,6 +523,7 @@ namespace CASM {
       std::set<UnitCellCoord> equiv_ucc = ClexBasisWriter_impl::equiv_ucc(trans_set.begin(),
                                                                           trans_set.end(),
                                                                           nbor,
+                                                                          _clust_orbit.prototype().prim(),
                                                                           _clust_orbit.sym_compare());
 
 
@@ -665,8 +666,9 @@ namespace CASM {
       if(!ucc_ptr)
         return result;
 
-      SymGroup identity_group((ucc_ptr->unit()).factor_group().begin(), ((ucc_ptr->unit()).factor_group().begin()) + 1);
-      orbit_type empty_orbit(cluster_type(ucc_ptr->unit()), identity_group, begin->sym_compare());
+      Structure const &prim(begin->prototype().prim());
+      SymGroup identity_group(prim.factor_group().begin(), (prim.factor_group().begin()) + 1);
+      orbit_type empty_orbit(cluster_type(prim), identity_group, begin->sym_compare());
 
 
       // Loop over each site in each cluster of each orbit
@@ -700,6 +702,7 @@ namespace CASM {
     std::set<UnitCellCoord> equiv_ucc(UCCIterType begin,
                                       UCCIterType end,
                                       UnitCellCoord const &pivot,
+                                      Structure const &prim,
                                       IntegralClusterSymCompareType const &sym_compare) {
       std::set<UnitCellCoord>  result;
 
@@ -711,8 +714,8 @@ namespace CASM {
         return result;
 
 
-      SymGroup identity_group((begin->unit()).factor_group().begin(), ((begin->unit()).factor_group().begin()) + 1);
-      orbit_type empty_orbit(cluster_type(begin->unit()), identity_group, sym_compare);
+      SymGroup identity_group(prim.factor_group().begin(), (prim.factor_group().begin()) + 1);
+      orbit_type empty_orbit(cluster_type(prim), identity_group, sym_compare);
 
       cluster_type pclust(empty_orbit.prototype());
       pclust.elements().push_back(pivot);

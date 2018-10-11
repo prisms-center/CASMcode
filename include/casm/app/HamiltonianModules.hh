@@ -28,7 +28,7 @@ namespace CASM {
     using DoFDictionary = ParsingDictionary<DoFType::BasicTraits>;
     using MolAttributeDictionary = ParsingDictionary<MoleculeAttribute_impl::BasicTraits>;
 
-    HamiltonianModules(const ProjectSettings &set);
+    HamiltonianModules(ProjectSettings const *set = nullptr);
 
     ~HamiltonianModules();
 

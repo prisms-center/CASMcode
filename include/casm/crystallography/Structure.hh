@@ -38,10 +38,6 @@ namespace CASM {
     /// This holds the representation id of the permutation representation
     mutable SymGroupRepID m_basis_perm_rep_ID;
 
-    ///Specifies whether selectice dynamics is on or of for DFT calculations
-    bool SD_flag;
-
-
   private: //PRIVATE METHODS
 
     void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const;
@@ -75,7 +71,7 @@ namespace CASM {
     const SymGroup &point_group() const;
     //const SymGroup &point_group();
     SymGroupRep const *basis_permutation_symrep()const;
-    SymGroupRepID basis_permutation_symrep_ID()const;
+    SymGroupRepID basis_permutation_symrep_ID()const override;
 
     std::vector<AtomSpecies> struc_species() const;
     std::vector<Molecule> struc_molecule() const;
@@ -96,7 +92,7 @@ namespace CASM {
     void copy_attributes_from(const Structure &RHS);
 
     /// clears symmetry, site internals, and other attributes
-    void reset();
+    void reset() override;
 
     ///change the lattice and update site coordinates.  Argument 'mode' specifies which mode is preserved
     /// e.g.: struc.set_lattice(new_lat, CART) calculates all Cartesian coordinates,

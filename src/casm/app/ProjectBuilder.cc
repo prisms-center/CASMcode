@@ -118,7 +118,7 @@ namespace CASM {
       // Read prim
       Structure prim;
       fs::ifstream primfile(dir.prim());
-      prim = Structure(read_prim(jsonParser(primfile), m_crystallography_tol));
+      prim = Structure(read_prim(jsonParser(primfile), set.hamiltonian_modules(), m_crystallography_tol));
       primfile.close();
 
 

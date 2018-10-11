@@ -135,8 +135,8 @@ namespace CASM {
     if(!ucc_ptr)
       return result;
 
-    SymGroup identity_group((ucc_ptr->unit()).factor_group().begin(), ((ucc_ptr->unit()).factor_group().begin()) + 1);
-    OrbitType empty_orbit(typename OrbitType::Element(ucc_ptr->unit()), identity_group, orbit.sym_compare());
+    SymGroup identity_group(orbit.prototype().prim().factor_group().begin(), (orbit.prototype().prim().factor_group().begin()) + 1);
+    OrbitType empty_orbit(typename OrbitType::Element(orbit.prototype().prim()), identity_group, orbit.sym_compare());
     typename OrbitType::Element test(empty_orbit.prototype());
     test.elements().push_back(*ucc_ptr);
 
