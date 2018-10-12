@@ -13,6 +13,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/NeighborList.hh"
@@ -563,11 +564,11 @@ namespace CASM {
 
   SupercellSymInfo make_supercell_sym_info(Structure const &_prim, Lattice const &_slat) {
     std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
-    for(auto const &key : _prim.global_dof_types())
+    for(auto const &key : global_dof_types(_prim))
       global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof(key).symrep_ID()));
 
     std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
-    for(auto const &key : _prim.local_dof_types()) {
+    for(auto const &key : local_dof_types(_prim)) {
       std::vector<SymGroupRepID> treps(_prim.basis().size());
       for(Index b = 0; b < _prim.basis().size(); ++b) {
         if(_prim.basis()[b].has_dof(key))

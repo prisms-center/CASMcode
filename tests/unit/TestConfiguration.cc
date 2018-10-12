@@ -20,7 +20,9 @@ namespace test {
     const Lattice &lat,
     const std::vector<int> &_occupation) :
     TestSupercell(primclex, lat),
-    config(this->scel, jsonParser(), ConfigDoF(_occupation, primclex.crystallography_tol())) {}
+    config(Configuration::zeros(this->scel)) {
+    config.set_occupation(_occupation);
+  }
 
   namespace {
     Configuration make_superconfig(const Configuration &unit, const Eigen::Matrix3i &T, double tol) {

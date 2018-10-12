@@ -159,7 +159,7 @@ namespace CASM {
                                        std::back_inserter(asym_unit),
                                        nullstream);
 
-    for(DoFKey const &dof_type : prim().local_dof_types())
+    for(DoFKey const &dof_type : local_dof_types(prim()))
       m_site_bases[dof_type] = DoFType::traits(dof_type).construct_site_bases(prim(), asym_unit, bspecs());
   }
 

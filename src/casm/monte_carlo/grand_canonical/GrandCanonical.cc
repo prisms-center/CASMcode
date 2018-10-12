@@ -678,7 +678,7 @@ namespace CASM {
       _log().set("DoF");
       _log() << "motif configname: default\n";
       _log() << "using configuration with default occupation...\n" << std::endl;
-      return Configuration(_supercell(), jsonParser(), std::vector<int>(_supercell().num_sites(), 0)).configdof();
+      return Configuration::zeros(_supercell()).configdof();
     }
 
     /// \brief Generate minimum potential energy ConfigDoF
@@ -782,7 +782,7 @@ namespace CASM {
         _log() << "Found no enumerated configurations that will fill the supercell\n";
         _log() << "using configuration with default occupation..." << std::endl;
         return std::make_pair(
-                 Configuration(_supercell(), jsonParser(), std::vector<int>(_supercell().num_sites(), 0)).configdof(),
+                 Configuration::zeros(_supercell()).configdof(),
                  "default");
       }
 

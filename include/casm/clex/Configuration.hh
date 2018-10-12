@@ -61,13 +61,22 @@ namespace CASM {
 
     /// Construct a default Configuration
     explicit Configuration(const Supercell &_supercell,
-                           const jsonParser &source = jsonParser(),
-                           const ConfigDoF &_dof = ConfigDoF(0));
+                           const jsonParser &source = jsonParser());
+
 
     /// Construct a default Configuration that owns its Supercell
     explicit Configuration(const std::shared_ptr<Supercell> &_supercell,
-                           const jsonParser &source = jsonParser(),
-                           const ConfigDoF &_dof = ConfigDoF(0));
+                           const jsonParser &source = jsonParser());
+
+    /// Construct a default Configuration
+    explicit Configuration(const Supercell &_supercell,
+                           const jsonParser &source,
+                           const ConfigDoF &_dof);
+
+    /// Construct a default Configuration that owns its Supercell
+    explicit Configuration(const std::shared_ptr<Supercell> &_supercell,
+                           const jsonParser &source,
+                           const ConfigDoF &_dof);
 
 
     /// Construct a Configuration from JSON data
@@ -79,6 +88,12 @@ namespace CASM {
     Configuration(const PrimClex &_primclex,
                   const std::string &_configname,
                   const jsonParser &_data);
+
+    /// Build a Configuration sized to _scel with all fields initialized and set to zero
+    static Configuration zeros(Supercell const &_scel);
+
+    /// Build a Configuration sized to _scel with all fields initialized and set to zero
+    static Configuration zeros(Supercell const &_scel, double _tol);
 
     // ******** Supercell **********************
 

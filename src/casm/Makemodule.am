@@ -163,6 +163,7 @@ libcasm_la_SOURCES = \
   src/casm/clex/ConfigMapping.cc\
   src/casm/clex/SupercellTraits.cc\
   src/casm/clex/ClexBasis.cc\
+  src/casm/clex/ConfigDoFValues.cc\
   src/casm/clex/ConfigDoF.cc\
   src/casm/clex/Clex.cc\
   src/casm/clex/ScelEnumEquivalents.cc\

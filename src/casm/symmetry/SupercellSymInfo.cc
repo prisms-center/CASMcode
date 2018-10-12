@@ -47,7 +47,7 @@ namespace CASM {
   //       so that you don't encounter the gaps (i.e., the representation can be indexed using the
   //       SymOps of m_factor_group
   SymGroupRep::RemoteHandle const &SupercellSymInfo::site_permutation_symrep() const {
-    if(m_site_perm_symrep.symrep_ID().empty()) {
+    if(m_site_perm_symrep.empty()) {
       m_site_perm_symrep = SymGroupRep::RemoteHandle(factor_group(), prim_grid().make_permutation_representation(factor_group(), basis_permutation_symrep().symrep_ID()));
       /*
       default_err_log() << "For SCEL " << " -- " << name() << " Translation Permutations are:\n";

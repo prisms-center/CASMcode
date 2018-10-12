@@ -30,11 +30,13 @@ namespace CASM {
     //typedef displacement_matrix_t::ColXpr displacement_t;
     //typedef displacement_matrix_t::ConstColXpr const_displacement_t;
 
-    /// Initialize with number of sites -- defaults to zero
-    ConfigDoF(Index N, double _tol = TOL);
+    /// Initialize with number of sites, and dimensionality of global and local DoFs
+    /// ContainerType is an iterable container of value_type std::pair<DoFKey,integral>
+    template<typename ContainerType>
+    ConfigDoF(Index _N_sublat, Index _N_vol, ContainerType const &global_dof_dims, ContainerType const &local_dof_dims, double _tol);
 
     ///Initialize with explicit occupation
-    ConfigDoF(const std::vector<int> &_occupation, double _tol = TOL);
+    //ConfigDoF(const std::vector<int> &_occupation, double _tol = TOL);
 
     Index size() const {
       return m_occupation.size();
@@ -69,7 +71,7 @@ namespace CASM {
       return size() != 0 && occupation().size() == size();
     }
 
-    void resize(Index _N);
+    //void resize(Index _N);
 
     std::map<DoFKey, GlobalValueType> const &global_dofs() const {
       return m_global_dofs;
@@ -83,7 +85,8 @@ namespace CASM {
       return global_dofs().count(_key);
     }
 
-    void reset_global_dof(DoFKey const &_key);
+    //void reset_global_dof(DoFKey const &_key);
+
     void set_global_dof(DoFKey const &_key, Eigen::Ref<const Eigen::VectorXd> const &_val);
 
     std::map<DoFKey, LocalValueType> const &local_dofs() const {
@@ -98,7 +101,8 @@ namespace CASM {
       return local_dofs().count(_key);
     }
 
-    void reset_local_dof(DoFKey const &_key);
+    //void reset_local_dof(DoFKey const &_key);
+
     void set_local_dof(DoFKey const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val);
 
     ConfigDoF &apply_sym(const PermuteIterator &it);
@@ -160,6 +164,25 @@ namespace CASM {
     return;
   }
 
+  /// Initialize with number of sites, and dimensionality of global and local DoFs
+  /// ContainerType is an iterable container of value_type std::pair<DoFKey,integral>
+  template<typename ContainerType>
+  ConfigDoF::ConfigDoF(Index _N_sublat, Index _N_vol, ContainerType const &global_dof_dims, ContainerType const &local_dof_dims, double _tol) :
+    m_occupation(_N_sublat * _N_vol, 0),
+    m_tol(_tol) {
+    for(auto const &dof : global_dof_dims) {
+      DoF::BasicTraits const &ttraits = DoF::traits(dof.first);
+      if(!ttraits.global())
+        throw std::runtime_error("Attempting to initialize ConfigDoF global value using local DoF " + dof.first);
+      m_global_dofs[dof.first] = GlobalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::VectorXd::Zero(dof.second));
+    }
+    for(auto const &dof : local_dof_dims) {
+      DoF::BasicTraits const &ttraits = DoF::traits(dof.first);
+      if(ttraits.global())
+        throw std::runtime_error("Attempting to initialize ConfigDoF local value using global DoF " + dof.first);
+      m_local_dofs[dof.first] = LocalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::MatrixXd::Zero(dof.second, _N_sublat));
+    }
+  }
 }
 
 #endif

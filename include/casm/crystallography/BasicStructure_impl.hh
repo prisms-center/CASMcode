@@ -18,6 +18,8 @@
 #include "casm/crystallography/Niggli.hh"
 #include "casm/casm_io/json_io/container.hh"
 
+#ifndef CASM_BasicStructure_impl
+#define CASM_BasicStructure_impl
 namespace CASM {
   template<typename CoordType>
   BasicStructure<CoordType>::BasicStructure(const fs::path &filepath) : m_lattice() {
@@ -76,41 +78,6 @@ namespace CASM {
     else
       throw std::runtime_error(std::string("In BasicStructure::dof(), this structure does not contain any global DoF's of type " + _dof_type));
 
-  }
-
-  //************************************************************
-
-  template<typename CoordType>
-  std::vector<std::string> BasicStructure<CoordType>::local_dof_types() const {
-    std::set<std::string> tresult;
-
-    for(CoordType const &site : basis()) {
-      auto sitetypes = site.dof_types();
-      tresult.insert(sitetypes.begin(), sitetypes.end());
-    }
-    return std::vector<std::string>(tresult.begin(), tresult.end());
-  }
-  //************************************************************
-
-  template<typename CoordType>
-  Index BasicStructure<CoordType>::local_dof_dim(std::string const &_name) const {
-    Index result = 0;
-    for(CoordType const &site : basis()) {
-      if(site.has_dof(_name))
-        result = max(result, site.dof(_name).size());
-    }
-    return result;
-
-  }
-
-  //************************************************************
-
-  template<typename CoordType>
-  std::vector<std::string> BasicStructure<CoordType>::global_dof_types() const {
-    std::vector<std::string> result;
-    for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
-      result.push_back(it->first);
-    return result;
   }
 
 
@@ -1127,7 +1094,7 @@ namespace CASM {
 
   template<typename CoordType>
   DoFSet const *get_strain_dof(BasicStructure<CoordType> const &_struc) {
-    for(std::string const &dofname : _struc.global_dof_types())
+    for(std::string const &dofname : global_dof_types(_struc))
       if(dofname.substr(0, 6) == "strain")
         return &(_struc.global_dof(dofname));
     return nullptr;
@@ -1257,6 +1224,63 @@ namespace CASM {
     return tnum_each_molecule;
   }
 
+  //************************************************************
+
+  template<typename CoordType>
+  std::vector<DoFKey> local_dof_types(BasicStructure<CoordType> const &_struc) {
+    std::set<std::string> tresult;
+
+    for(CoordType const &site : _struc.basis()) {
+      auto sitetypes = site.dof_types();
+      tresult.insert(sitetypes.begin(), sitetypes.end());
+    }
+    return std::vector<std::string>(tresult.begin(), tresult.end());
+  }
+
+
+  //************************************************************
+  template<typename CoordType>
+  std::vector<DoFKey> global_dof_types(BasicStructure<CoordType> const &_struc) {
+    std::vector<std::string> result;
+    for(auto it = _struc.global_dofs().begin(); it != _struc.global_dofs().end(); ++it)
+      result.push_back(it->first);
+    return result;
+  }
+
+
+  //************************************************************
+
+  template<typename CoordType>
+  std::map<DoFKey, Index> local_dof_dims(BasicStructure<CoordType> const &_struc) {
+    std::map<DoFKey, Index> result;
+    for(DoFKey const &type : local_dof_types(_struc))
+      result[type] = local_dof_dim(type, _struc);
+
+    return result;
+  }
+
+
+  //************************************************************
+  template<typename CoordType>
+  std::map<DoFKey, Index> global_dof_dims(BasicStructure<CoordType> const &_struc) {
+    std::map<DoFKey, Index> result;
+    for(auto const &type : _struc.global_dofs())
+      result[type.first] = type.second.size();
+    return result;
+  }
+
+  //************************************************************
+
+  template<typename CoordType>
+  Index local_dof_dim(DoFKey const &_name, BasicStructure<CoordType> const &_struc) {
+    Index result = 0;
+    for(CoordType const &site : _struc.basis()) {
+      if(site.has_dof(_name))
+        result = max(result, site.dof(_name).size());
+    }
+    return result;
+  }
 
 }
 
+#endif

@@ -9,6 +9,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/CompositionConverter.hh"
@@ -38,12 +39,33 @@ namespace CASM {
   /// Construct a default Configuration
   Configuration::Configuration(
     const Supercell &_supercell,
+    const jsonParser &src) :
+    m_supercell(&_supercell),
+    m_configdof(Configuration::zeros(_supercell).configdof()) {
+
+    set_source(src);
+  }
+
+  /// Construct a default Configuration
+  Configuration::Configuration(
+    const Supercell &_supercell,
     const jsonParser &src,
     const ConfigDoF &_configdof) :
     m_supercell(&_supercell),
     m_configdof(_configdof) {
 
     set_source(src);
+  }
+
+  /// Construct a default Configuration that owns its Supercell
+  Configuration::Configuration(
+    const std::shared_ptr<Supercell> &_supercell_ptr,
+    const jsonParser &source) :
+    m_supercell(_supercell_ptr.get()),
+    m_supercell_ptr(_supercell_ptr),
+    m_configdof(Configuration::zeros(*_supercell_ptr).configdof()) {
+
+    set_source(source);
   }
 
   /// Construct a default Configuration that owns its Supercell
@@ -63,7 +85,7 @@ namespace CASM {
     const Supercell &_supercell,
     const std::string &_id,
     const jsonParser &_data) :
-    m_configdof(_supercell.num_sites()) {
+    m_configdof(Configuration::zeros(_supercell).configdof()) {
     if(_id == "none") {
       if(_data.contains("dof")) {
         *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>(primclex().n_basis()));
@@ -83,6 +105,24 @@ namespace CASM {
     Configuration(*_primclex.db<Supercell>().find(Configuration::split_name(_configname).first),
                   Configuration::split_name(_configname).second,
                   _data) {}
+
+  //*********************************************************************************
+
+  Configuration Configuration::zeros(Supercell const &_scel) {
+    return Configuration::zeros(_scel, _scel.primclex().crystallography_tol());
+  }
+  //*********************************************************************************
+
+  Configuration Configuration::zeros(Supercell const &_scel, double _tol) {
+    ConfigDoF tdof(_scel.basis_size(),
+                   _scel.volume(),
+                   global_dof_dims(_scel.prim()),
+                   local_dof_dims(_scel.prim()),
+                   _tol);
+
+
+    return Configuration(_scel, jsonParser(), tdof);
+  }
 
   //*********************************************************************************
   void Configuration::clear() {

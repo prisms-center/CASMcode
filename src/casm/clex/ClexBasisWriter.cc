@@ -7,7 +7,7 @@ namespace CASM {
 
   ClexBasisWriter::ClexBasisWriter(Structure const &_prim, ParamPackMixIn const *parampack_mix_in /*= nullptr*/) {
     //throw std::runtime_error("Error: print_clexulator is being re-implemented");
-    auto doftypes = _prim.local_dof_types();
+    auto doftypes = local_dof_types(_prim);
     for(auto const &doftype : doftypes) {
       auto cv = DoFType::traits(doftype).clust_function_visitors();
       auto sv = DoFType::traits(doftype).site_function_visitors();
@@ -17,7 +17,7 @@ namespace CASM {
         m_site_visitors.push_back(std::move(e));
     }
 
-    doftypes = _prim.global_dof_types();
+    doftypes = global_dof_types(_prim);
     for(auto const &doftype : doftypes) {
       auto cv = DoFType::traits(doftype).clust_function_visitors();
       auto sv = DoFType::traits(doftype).site_function_visitors();

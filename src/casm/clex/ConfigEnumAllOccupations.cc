@@ -72,7 +72,9 @@ namespace CASM {
       _scel.max_allowed_occupation(),
       std::vector<int>(_scel.num_sites(), 1)) {
 
-    m_current = notstd::make_cloneable<Configuration>(_scel, this->source(0), m_counter());
+    m_current = notstd::make_cloneable<Configuration>(Configuration::zeros(_scel));
+    m_current->set_source(this->source(0));
+    m_current->set_occupation(m_counter());
     reset_properties(*m_current);
     this->_initialize(&(*m_current));
 

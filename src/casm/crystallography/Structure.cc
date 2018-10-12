@@ -510,9 +510,7 @@ namespace CASM {
 
     m_basis_perm_rep_ID = m_factor_group.allocate_representation();
 
-    std::map<std::string, Index> local_dof_dims;
-    for(std::string const &dof : local_dof_types()) {
-      local_dof_dims[dof] = local_dof_dim(dof);
+    for(std::string const &dof : local_dof_types(*this)) {
       for(Site const &site : basis()) {
         if(site.has_dof(dof))
           site.dof(dof).allocate_symrep(m_factor_group);
@@ -535,7 +533,7 @@ namespace CASM {
       sitemap = symop_site_map(op, *this);
       op.set_rep(m_basis_perm_rep_ID, SymBasisPermute(op, lattice(), sitemap));
 
-      for(auto const &dof_dim : local_dof_dims) {
+      for(auto const &dof_dim : local_dof_dims(*this)) {
         for(Index b = 0; b < basis().size(); ++b) {
           if(!basis()[b].has_dof(dof_dim.first))
             continue;

@@ -43,7 +43,7 @@ namespace CASM {
     Array<CoordType> m_basis;
 
     /// continuous global degrees of freedom
-    std::map <std::string, DoFSet> m_dof_map;
+    std::map <DoFKey, DoFSet> m_dof_map;
 
 
     /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
@@ -97,11 +97,9 @@ namespace CASM {
 
     DoFSet const &global_dof(std::string const &dof_type) const;
 
-    std::vector<std::string> local_dof_types() const;
-
-    Index local_dof_dim(std::string const &_name) const;
-
-    std::vector<std::string> global_dof_types() const;
+    std::map<DoFKey, DoFSet> const &global_dofs() const {
+      return m_dof_map;
+    }
 
 
     /// Return the UnitCellCoord corresponding to test_site (i.e., finds the basis index and
@@ -146,7 +144,7 @@ namespace CASM {
     void set_title(std::string const &_title);
 
     /// Manually set the global DoFs
-    void set_global_dofs(std::map <std::string, DoFSet> const &_dof_map) {
+    void set_global_dofs(std::map <DoFKey, DoFSet> const &_dof_map) {
       m_dof_map = _dof_map;
     }
 
@@ -277,11 +275,25 @@ namespace CASM {
   template<typename CoordType>
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
 
-  /** @} */
-
   template<typename CoordType>
   DoFSet const *get_strain_dof(BasicStructure<CoordType> const &_struc);
 
+  template<typename CoordType>
+  std::vector<DoFKey> local_dof_types(BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
+  std::vector<DoFKey> global_dof_types(BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
+  std::map<DoFKey, Index> local_dof_dims(BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
+  std::map<DoFKey, Index> global_dof_dims(BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
+  Index local_dof_dim(DoFKey const &_name, BasicStructure<CoordType> const &_struc);
+
+  /** @} */
 }
 
 #endif

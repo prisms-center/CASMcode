@@ -488,7 +488,7 @@ namespace CASM {
         sin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
         size_type _pass, _step;
-        ConfigDoF config_dof(superstruc.basis().size());
+        ConfigDoF config_dof(Configuration(mc.supercell()).configdof());
 
         while(sin) {
           sin >> _pass >> _step;

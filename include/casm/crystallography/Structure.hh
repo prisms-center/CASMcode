@@ -6,6 +6,7 @@
 #include <cmath>
 
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/symmetry/SymGroup.hh"
