@@ -537,12 +537,20 @@ namespace CASM {
         for(Index b = 0; b < basis().size(); ++b) {
           if(!basis()[b].has_dof(dof_dim.first))
             continue;
+
+          // copy_aply(symop,dofref_to) = dofref_from * U
           DoFSet const &dofref_to = basis()[sitemap[b].sublat()].dof(dof_dim.first);
           DoFSet const &dofref_from = basis()[b].dof(dof_dim.first);
-          trep.setZero(dof_dim.second, dof_dim.second);
-          trep.topLeftCorner(dofref_to.size(), dofref_to.size()) = dofref_from.basis().transpose()
-                                                                   * dofref_from.traits().symop_to_matrix(op)
-                                                                   * dofref_to.basis();
+          DoFIsEquivalent eq(dofref_to);
+          if(!eq(op)) {
+            throw std::runtime_error("While generating symmetry representation for local DoF \""
+                                     + dof_dim.first
+                                     + "\", a symmetry operation was identified that invalidates the degree of freedom. "
+                                     + "Degrees of freedom must be fully specified before performing symmetry analyses.");
+          }
+
+          trep.setIdentity(dof_dim.second, dof_dim.second);
+          trep.topLeftCorner(dofref_to.size(), dofref_to.size()) = eq.U();
           op.set_rep(dofref_to.symrep_ID(), SymMatrixXd(trep));
         }
       }
@@ -564,9 +572,14 @@ namespace CASM {
     for(auto const &dof : m_dof_map) {
       dof.second.allocate_symrep(m_factor_group);
       for(SymOp const &op : m_factor_group) {
-        op.set_rep(dof.second.symrep_ID(), SymMatrixXd(dof.second.basis().transpose()
-                                                       *dof.second.traits().symop_to_matrix(op)
-                                                       *dof.second.basis()));
+        DoFIsEquivalent eq(dof.second);
+        if(!eq(op)) {
+          throw std::runtime_error("While generating symmetry representation for global DoF \""
+                                   + dof.first
+                                   + "\", a symmetry operation was identified that invalidates the degree of freedom. "
+                                   + "Degrees of freedom must be fully specified before performing symmetry analyses.");
+        }
+        op.set_rep(dof.second.symrep_ID(), SymMatrixXd(eq.U()));
       }
 
     }

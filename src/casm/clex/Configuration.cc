@@ -353,10 +353,8 @@ namespace CASM {
     std::vector<PermuteIterator> config_factor_group = factor_group();
     std::vector<PermuteIterator> result;
     for(int i = 0; i < config_factor_group.size(); i++) {
-      if(i > 0) {
-        if(config_factor_group[i].factor_group_index() != config_factor_group[i - 1].factor_group_index())
-          result.push_back(config_factor_group[i]);
-      }
+      if(i == 0 || config_factor_group[i].factor_group_index() != config_factor_group[i - 1].factor_group_index())
+        result.push_back(config_factor_group[i]);
     }
 
     return result;

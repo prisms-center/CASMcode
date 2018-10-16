@@ -24,8 +24,13 @@ namespace CASM {
 
       }
 
-      std::vector<IrrepWedge> const &irrep_wedges() const;
-      Eigen::MatrixXd const &trans_mat() const;
+      std::vector<IrrepWedge> const &irrep_wedges() const {
+        return m_iwedges;
+      }
+
+      Eigen::MatrixXd const &trans_mat() const {
+        return m_trans_mat;
+      }
 
     private:
       std::vector<IrrepWedge> m_iwedges;

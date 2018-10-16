@@ -94,9 +94,12 @@ namespace CASM {
 
     /// \brief Check if config == A*config, store config < A*config
     bool operator()(const PermuteIterator &A) const {
+      std::cout << "A.factor_group_index() " << A.factor_group_index() << "; translation_index() " << A.translation_index() << std::endl;
+
       for(const auto &eq : global_equivs()) {
         // check if config == A*config, for this global DoF type
         if(!(*eq)(A)) {
+          std::cout << "FAIL 1" << std::endl;
           m_less = eq->is_less();
           return false;
         }
@@ -105,11 +108,12 @@ namespace CASM {
       for(const auto &eq : local_equivs()) {
         // check if config == A*config, for this local DoF type
         if(!(*eq)(A)) {
+          std::cout << "FAIL 2" << std::endl;
           m_less = eq->is_less();
           return false;
         }
       }
-
+      std::cout << "PASS!!!" << std::endl;
       return true;
     }
 

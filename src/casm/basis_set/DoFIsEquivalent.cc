@@ -33,7 +33,11 @@ namespace CASM {
     if(m_dof.basis().cols() != _basis.cols())
       return false;
     if(m_dof.basis().rows() == m_dof.basis().cols()) {
+
       m_U = _basis.colPivHouseholderQr().solve(m_dof.basis());
+      if(!(m_U.transpose()*m_U).isIdentity(1e-5)) {
+        throw std::runtime_error("m_U is not orthonormal\n");
+      }
       return true;
     }
 

@@ -41,7 +41,7 @@ namespace CASM {
       "  config: string (required) \n"
       "    Name of configuration used as strain reference\n"
       "    Must be single configuration. Strains are enumerated as perturbations to\n"
-      "    specified configuration. Ex: \"config\" : \"SCEL2_2_1_1_0_0_0\"\n\n"
+      "    specified configuration. Ex: \"config\" : \"SCEL2_2_1_1_0_0_0/3\"\n\n"
 
       "  min: array of doubles (optional, default = [0,...,0]) \n"
       "    Minimum, starting value of grid counter\n"
@@ -51,7 +51,7 @@ namespace CASM {
       "  max: array of doubles (required) \n"
       "    Maximum, final value of grid counter\n"
       "    Dimension must be either 6, or equal to number of rows of \"axes\"\n"
-      "    Ex: \"min\" : [0.1, 0.1, 0.1, 0.01, 0.01, 0.01]\n\n"
+      "    Ex: \"max\" : [0.1, 0.1, 0.1, 0.01, 0.01, 0.01]\n\n"
 
       "  increment: array of doubles (required) \n"
       "    Amount by which to increment counter elements\n"
@@ -107,9 +107,9 @@ namespace CASM {
     Eigen::VectorXd min_val, max_val, inc_val;
 
     bool auto_range = false;
-
+    std::cout << "_kwargs: \n" << _kwargs << std::endl;
     if(!analysis) {
-      if(!(_kwargs.contains("min") && _kwargs.contains("max") && _kwargs.contains("increment")))
+      if(!(_kwargs.contains("max") && _kwargs.contains("increment")))
         throw std::runtime_error("JSON options for enumeration method 'ConfigEnumStrain' must specify BOTH \"max\", and \"increment\"");
       from_json(max_val, _kwargs["max"]);
       from_json(inc_val, _kwargs["increment"]);
@@ -162,18 +162,28 @@ namespace CASM {
     std::vector<SymRepTools::SubWedge> wedges;
     std::vector<int> dims;
     SymGroup pg = make_sym_group(_config.point_group());
+    DoFKey strain_dof_key;
+    std::vector<DoFKey> tdof_types = global_dof_types(_primclex.prim());
+    Index istrain = find_index_if(tdof_types,
+    [](DoFKey const & other) {
+      return other.find("strain") != std::string::npos;
+    });
+    if(istrain == tdof_types.size())
+      throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
+    strain_dof_key = tdof_types[istrain];
     if(!analysis && ! sym_axes)
       wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(_axes, std::vector<Index>(_axes.cols(), 1))}));
-    else {
-      DoFSet const *dof_ptr = get_strain_dof(_primclex.prim());
-      if(!dof_ptr)
-        throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
-      wedges = SymRepTools::symrep_subwedges(pg, dof_ptr->symrep_ID());
-    }
+    else
+      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof(strain_dof_key).symrep_ID());
 
     if(analysis) {
-      Log &log = _primclex.log();
       //PRINT INFO TO LOG:
+      Log &log = _primclex.log();
+      Index l = 1;
+      for(SymRepTools::SubWedge const &wedge : wedges) {
+        log << "Sub-wedge #" << l++ << ": \n" << wedge.trans_mat() << "\n\n";
+      }
+
 
       return 0;
     }
@@ -183,16 +193,18 @@ namespace CASM {
                                                    min_val,
                                                    max_val,
                                                    inc_val,
+                                                   strain_dof_key,
                                                    auto_range,
                                                    trim_corners);
     };
 
-    int returncode = insert_unique_canon_configs(enumerator_name,
-                                                 _primclex,
-                                                 _config.supercell(),
-                                                 constructor,
-                                                 _filter_expr,
-                                                 dry_run);
+    int returncode = insert_configs(enumerator_name,
+                                    _primclex,
+                                    _config.supercell(),
+                                    constructor,
+                                    _filter_expr,
+                                    false,
+                                    dry_run);
 
     return returncode;
 
@@ -203,27 +215,30 @@ namespace CASM {
                                      Eigen::VectorXd min_val,
                                      Eigen::VectorXd max_val,
                                      Eigen::VectorXd inc_val,
+                                     DoFKey const &_strain_key,
                                      bool auto_range,
                                      bool trim_corners) :
+    m_strain_key(_strain_key),
     m_trim_corners(trim_corners),
     m_current(_init),
     m_equiv_ind(0),
+    m_wedges(_wedges),
     //m_perm_begin(_scel.permute_begin()),
     //m_perm_end(_scel.permute_end()),
     m_shape_factor(Eigen::MatrixXd::Identity(min_val.size(), min_val.size())) {
 
     //Condition range arrays and build shape_factor matrix
     Index nc = 0;
-    if(_wedges.size() == 0)
+    if(m_wedges.size() == 0)
       return;
-    Index nsub = _wedges[0].irrep_wedges().size();
+    Index nsub = m_wedges[0].irrep_wedges().size();
     for(Index s = 0; s < nsub; s++) {
       double abs_mag = 0.;
-      for(Index i = 0; i < _wedges[0].irrep_wedges()[s].axes.cols(); i++)
+      for(Index i = 0; i < m_wedges[0].irrep_wedges()[s].axes.cols(); i++)
         abs_mag = max(abs_mag, max(abs(max_val(nc)), abs(min_val(nc))));
 
-      for(Index i = 0; i < _wedges[0].irrep_wedges()[s].axes.cols(); i++, nc++) {
-        if(_wedges[0].irrep_wedges()[s].mult[i] == 1 && auto_range) {
+      for(Index i = 0; i < m_wedges[0].irrep_wedges()[s].axes.cols(); i++, nc++) {
+        if(m_wedges[0].irrep_wedges()[s].mult[i] == 1 && auto_range) {
           min_val(nc) = -max_val(nc);
         }
 
@@ -246,7 +261,7 @@ namespace CASM {
     m_counter = EigenCounter<Eigen::VectorXd>(min_val, max_val, inc_val);
 
     m_counter.reset();
-    while(m_counter.valid() && (trim_corners && double(m_counter().transpose()*m_trans_mats[m_equiv_ind].transpose()*m_shape_factor * m_trans_mats[m_equiv_ind]*m_counter()) > 1.0 + TOL)) {
+    while(m_counter.valid() && (trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
       ++m_counter;
     }
 
@@ -264,28 +279,28 @@ namespace CASM {
     //bool is_valid_config(false);
     //std::cout << "Incrementing...\n";
 
-    while(++m_counter && (m_trim_corners && double(m_counter().transpose()*m_trans_mats[m_equiv_ind].transpose()*m_shape_factor * m_trans_mats[m_equiv_ind]*m_counter()) > 1.0 + TOL)) {
+    while(++m_counter && (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
       //just burning throught the count
     }
 
     // move to next part of wedge if necessary
-    if(!m_counter.valid() && m_equiv_ind + 1 < m_trans_mats.size()) {
+    if(!m_counter.valid() && m_equiv_ind + 1 < m_wedges.size()) {
       m_counter.reset();
       ++m_equiv_ind;
       //std::cout << "INCREMENTING m_equiv_ind to " << m_equiv_ind << "\n";
     }
 
     while(m_counter &&
-          (m_trim_corners && double(m_counter().transpose()*m_trans_mats[m_equiv_ind].transpose()*m_shape_factor * m_trans_mats[m_equiv_ind]*m_counter()) > 1.0 + TOL)) {
+          (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
       //just burning throught the count
       ++m_counter;
     }
 
     if(m_counter.valid()) {
       throw std::runtime_error("UPDATE STRAIN INSERTION");
-      //m_current.set_deformation(m_strain_calc.unrolled_strain_metric_to_F(m_trans_mats[m_equiv_ind] * m_counter()));
+      m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
       std::cout << "Counter is " << m_counter().transpose() << "\n\n";
-      //std::cout << "strain vector is \n" << m_trans_mats[m_equiv_ind]*m_counter() << "\n\n";
+      //std::cout << "strain vector is \n" << m_wedges[m_equiv_ind].trans_mat()*m_counter() << "\n\n";
       //std::cout << "DEFORMATION IS\n" << m_current.deformation() << "\n\n";
       //is_valid_config = current().is_canonical(_perm_begin(), _perm_end());
       //std::cout << "counter() is: " << m_counter() << ";  is_valid_config: " << is_valid_config

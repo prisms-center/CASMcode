@@ -276,9 +276,6 @@ namespace CASM {
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
 
   template<typename CoordType>
-  DoFSet const *get_strain_dof(BasicStructure<CoordType> const &_struc);
-
-  template<typename CoordType>
   std::vector<DoFKey> local_dof_types(BasicStructure<CoordType> const &_struc);
 
   template<typename CoordType>

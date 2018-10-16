@@ -77,7 +77,12 @@ namespace CASM {
         throw std::runtime_error("In symrep_subwedges, SymGroupRep does not describe matrix representation");
       Index dim = srep[0]->MatrixXd()->cols();
 
+      for(SymOp const &op : head_group) {
+        std::cout << "OP " << op.index() << ":\n" << *(srep[op.index()]->MatrixXd()) << "\n\n";
+      }
+
       std::vector<IrrepWedge> init_wedges = irreducible_wedges(head_group, id);
+
 
       //Handle for strain symrep
       SymGroupRep::RemoteHandle trep(head_group, id);
@@ -118,9 +123,9 @@ namespace CASM {
           twedge.push_back(irrep_wedge_orbits[i][wcount[i]]);
 
 
-        if(contains(tot_wedge_orbits.back(),
-                    twedge,
-                    tot_wedge_compare))
+        if(!tot_wedge_orbits.empty() && contains(tot_wedge_orbits.back(),
+                                                 twedge,
+                                                 tot_wedge_compare))
           continue;
         tot_wedge_orbits.push_back({twedge});
         result.push_back({twedge});

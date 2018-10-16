@@ -1090,16 +1090,6 @@ namespace CASM {
     return result;
   }
 
-  //***********************************************************
-
-  template<typename CoordType>
-  DoFSet const *get_strain_dof(BasicStructure<CoordType> const &_struc) {
-    for(std::string const &dofname : global_dof_types(_struc))
-      if(dofname.substr(0, 6) == "strain")
-        return &(_struc.global_dof(dofname));
-    return nullptr;
-  }
-
   //************************************************************
 
   /// Returns an Array of each *possible* Specie in this Structure

@@ -27,10 +27,10 @@ namespace CASM {
     /// returns true if m_dof and _other have matching labels, and m_dof.basis() = _other.basis()*U
     bool operator()(DoFSet const &_other) const;
 
-    /// returns true and copy_apply(_op,m_dof.basis()) = m_dof.basis()*U
+    /// returns true if copy_apply(_op,m_dof.basis()) = m_dof.basis()*U
     bool operator()(SymOp const &_op) const;
 
-    /// returns true and copy_apply(_op,m_dof.basis()) = _other.basis()*U
+    /// returns true if copy_apply(_op,m_dof.basis()) = _other.basis()*U
     bool operator()(SymOp const &_op, DoFSet const &_other) const;
 
     /// return transformation matrix U calculated during last successful comparison

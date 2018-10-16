@@ -107,7 +107,6 @@ namespace CASM {
   //*******************************************************************************
 
   jsonParser &ConfigDoF::to_json(jsonParser &json) const {
-    std::cout << "IN ConfigDoF::to_json()\n";
     json = jsonParser::object();
     if(occupation().size())
       json["occupation"] = occupation();
@@ -115,7 +114,6 @@ namespace CASM {
       json["local_dofs"] = m_local_dofs;
     }
     if(!m_global_dofs.empty()) {
-      std::cout << "WRITING GLOBAL DOFS" << std::endl;
       json["global_dofs"] = m_global_dofs;
     }
 
@@ -132,13 +130,13 @@ namespace CASM {
     if(json.contains("local_dofs")) {
       auto end_it = json["local_dofs"].end();
       for(auto it = json["local_dofs"].begin(); it != end_it; ++it)
-        m_local_dofs.emplace(it.name(), LocalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, it->get<Eigen::MatrixXd>()));
+        m_local_dofs.emplace(it.name(), LocalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, (*it)["values"].get<Eigen::MatrixXd>()));
     }
 
     if(json.contains("global_dofs")) {
       auto end_it = json["global_dofs"].end();
       for(auto it = json["global_dofs"].begin(); it != end_it; ++it)
-        m_global_dofs.emplace(it.name(), GlobalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, it->get<Eigen::VectorXd>()));
+        m_global_dofs.emplace(it.name(), GlobalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, (*it)["values"].get<Eigen::VectorXd>()));
     }
 
   }

@@ -292,7 +292,8 @@ namespace CASM {
       exit(1);
     }
     Eigen::MatrixXd rightmat;
-    rightmat = Eigen::JacobiSVD<Eigen::MatrixXd>(trans_mat.transpose()).solve(Eigen::MatrixXd::Identity(trans_mat.rows(), trans_mat.rows()));
+    rightmat = trans_mat.transpose().jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV)
+               .solve(Eigen::MatrixXd::Identity(trans_mat.cols(), trans_mat.cols())).transpose();
 
     for(Index i = 0; i < size(); i++) {
       if(!at(i))

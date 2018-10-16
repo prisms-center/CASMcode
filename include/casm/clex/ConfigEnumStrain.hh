@@ -32,6 +32,7 @@ namespace CASM {
                      Eigen::VectorXd min_val,
                      Eigen::VectorXd max_val,
                      Eigen::VectorXd inc_val,
+                     DoFKey const &_strain_key,
                      bool auto_range,
                      bool trim_corners);
 
@@ -67,6 +68,8 @@ namespace CASM {
 
 
     // -- Unique -------------------
+    DoFKey m_strain_key;
+
     bool m_trim_corners;
 
     Configuration m_current;
@@ -77,9 +80,10 @@ namespace CASM {
     // counts over transformation matrices
     Index m_equiv_ind;
 
-    StrainConverter m_strain_calc;
+    std::vector<SymRepTools::SubWedge> m_wedges;
+
     //set of non-equivalent transformation matrices matrices that, along with m_counter define irreducible space
-    std::vector<Eigen::MatrixXd> m_trans_mats;
+    //std::vector<Eigen::MatrixXd> m_trans_mats;
     PermuteIterator m_perm_begin, m_perm_end;
     Eigen::MatrixXd m_shape_factor;
 
