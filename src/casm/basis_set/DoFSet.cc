@@ -25,10 +25,10 @@ namespace CASM {
 
   //********************************************************************
   void DoFSet::allocate_symrep(SymGroup const &_group) const {
-    if(!m_symrep_ID.empty())
+    if(!m_info.symrep_ID().empty())
       throw std::runtime_error("In DoFSet::allocate_symrep(), representation has already been allocated for this symrep.");
     //std::cout << "Allocating symrep...\n"
-    m_symrep_ID = _group.allocate_representation();
+    m_info.set_symrep_ID(_group.allocate_representation());
 
   }
   //********************************************************************
@@ -38,14 +38,14 @@ namespace CASM {
       return false;
     }
 
-    return almost_equal(m_basis, rhs.m_basis);
+    return almost_equal(basis(), rhs.basis());
   }
 
   //********************************************************************
 
   void DoFSet::transform_basis(Eigen::Ref<const Eigen::MatrixXd> const &trans_mat) {
-    m_basis = trans_mat * m_basis;
-    m_symrep_ID = SymGroupRepID();
+    m_info.set_basis(trans_mat * basis());
+    m_info.set_symrep_ID(SymGroupRepID());
   }
 
   //********************************************************************
@@ -73,13 +73,13 @@ namespace CASM {
   void DoFSet::from_json(jsonParser const &json) {
     /*
       if(json.contains("coordinate_space"))
-      m_basis=json["coordinate_space"].get<Eigen::MatrixXd>();
+      m_info.basis=json["coordinate_space"].get<Eigen::MatrixXd>();
     */
     //std::vector<ContinuousDoF> tdof;
 
     m_components.clear();
     m_excluded_occs.clear();
-    m_symrep_ID = SymGroupRepID();
+    m_info.set_symrep_ID(SymGroupRepID());
 
     bool is_error = false;
 
@@ -89,7 +89,7 @@ namespace CASM {
     auto it = json.find("basis");
     if(it != json.end()) {
       if(it->is_array()) {
-        m_basis.resize(traits_ref.dim(), it->size());
+        Eigen::MatrixXd tbasis(traits_ref.dim(), it->size());
         int col = 0;
         for(auto const &el : *it) {
           if(is_error || el.size() != (traits_ref.dim() + 1) || !el[0].is_string()) {
@@ -111,11 +111,12 @@ namespace CASM {
               is_error = true;
               break;
             }
-            m_basis(row - 1, col) = el[row].get<double>();
+            tbasis(row - 1, col) = el[row].get<double>();
 
           }
           ++col;
         }
+        m_info.set_basis(tbasis);
       }
       else
         is_error = true;
@@ -128,7 +129,7 @@ namespace CASM {
 
     }
     else {
-      m_basis.setIdentity(traits_ref.dim(), traits_ref.dim());
+      m_info.set_basis(Eigen::MatrixXd::Identity(traits_ref.dim(), traits_ref.dim()));
       for(std::string var_name : traits_ref.standard_var_names()) {
         //std::cout << "Adding var_name " << var_name << "\n";
         m_components.push_back(ContinuousDoF(traits_ref,
@@ -149,7 +150,7 @@ namespace CASM {
 
   jsonParser &DoFSet::to_json(jsonParser &json) const {
     /*
-    if(!m_basis.isIdentity(1e-5))
+    if(!m_info.basis.isIdentity(1e-5))
       json["coordinate_space"]=coordinate_space();
     */
     if(!m_excluded_occs.empty())

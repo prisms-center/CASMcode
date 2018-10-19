@@ -1,4 +1,5 @@
 #include "casm/clex/ConfigDoF.hh"
+#include "casm/clex/ConfigDoFValues.hh"
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/json_io/container.hh"
@@ -72,6 +73,7 @@ namespace CASM {
       throw std::runtime_error("Attempting to assign global ConfigDoF values of type " + _key + " but no such value type has been allocated.\n");
     }
     assert(_val.rows() == it->second.values().rows());
+    //std::cout << "SETTING " << _key << " to " << _val << "\n";
     it->second.values() = _val;
 
   }
@@ -79,14 +81,14 @@ namespace CASM {
 
   // Calculate transformed ConfigDoF from PermuteIterator via
   //   *this = permute_iterator * (*this)
-  ConfigDoF &ConfigDoF::apply_sym(const PermuteIterator &it) {
-    Eigen::Matrix3d fg_cart_op = it.sym_op().matrix();
+  ConfigDoF &ConfigDoF::apply_sym(PermuteIterator const &it) {
     for(auto &dof : m_global_dofs) {
       dof.second.values() = *(it.global_dof_rep(dof.first).MatrixXd()) * dof.second.values();
     }
 
     Permutation tperm(it.combined_permute());
     if(occupation().size()) {
+      //ALSO DO SPECIES PERMUTATION
       set_occupation(tperm * occupation());
     }
 
@@ -99,6 +101,33 @@ namespace CASM {
         dof.second.site_value(l) = tmp.site_value(tperm[l]);
       }
 
+    }
+
+    return *this;
+  }
+
+  //*******************************************************************************
+
+  // Calculate transformed ConfigDoF from PermuteIterator, using only the effect of symmetry on the value at each site
+  ConfigDoF &ConfigDoF::apply_sym_no_permute(SymOp const &_op) {
+    for(auto &dof : m_global_dofs) {
+      dof.second.values() = *(_op.representation(dof.second.info().symrep_ID()).MatrixXd()) * dof.second.values();
+    }
+
+    //DO SPECIES PERMUTE HERE
+    //Permutation tperm(it.combined_permute());
+    //if(occupation().size()) {
+    //set_occupation(tperm * occupation());
+    //}
+
+    for(auto &dof : m_local_dofs) {
+      LocalContinuousConfigDoFValues tmp = dof.second;
+
+      for(Index b = 0; b < tmp.n_basis(); ++b)
+        dof.second.sublat(b) = *(_op.representation(dof.second.info()[b].symrep_ID()).MatrixXd()) * dof.second.sublat(b);
+      //for(Index l = 0; l < size(); ++l) {
+      //dof.second.site_value(l) = tmp.site_value(tperm[l]);
+      //}
     }
 
     return *this;
@@ -121,7 +150,7 @@ namespace CASM {
   }
 
   //*******************************************************************************
-  void ConfigDoF::from_json(const jsonParser &json, Index NB) {
+  void ConfigDoF::from_json(const jsonParser &json) { //, Index NB) {
     if(!json.contains("occupation")) {
       throw std::runtime_error("JSON serialization of ConfigDoF must contain field \"occupation\"\n");
     }
@@ -130,23 +159,25 @@ namespace CASM {
     if(json.contains("local_dofs")) {
       auto end_it = json["local_dofs"].end();
       for(auto it = json["local_dofs"].begin(); it != end_it; ++it)
-        m_local_dofs.emplace(it.name(), LocalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, (*it)["values"].get<Eigen::MatrixXd>()));
+        CASM::from_json(m_local_dofs[it.name()], *it);
+      //.emplace(it.name(), LocalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, (*it)["values"].get<Eigen::MatrixXd>()));
     }
 
     if(json.contains("global_dofs")) {
       auto end_it = json["global_dofs"].end();
       for(auto it = json["global_dofs"].begin(); it != end_it; ++it)
-        m_global_dofs.emplace(it.name(), GlobalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, (*it)["values"].get<Eigen::VectorXd>()));
+        CASM::from_json(m_global_dofs[it.name()], *it);
+      //m_global_dofs.emplace(it.name(), GlobalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, (*it)["values"].get<Eigen::VectorXd>()));
     }
 
   }
 
   //*******************************************************************************
 
-  ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json, Index NB) {
+  ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json, Index NB, std::map<DoFKey, DoFSetInfo> const &global_info, std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info, double _tol) {
 
-    ConfigDoF result(0, 0, std::map<DoFKey, Index>(), std::map<DoFKey, Index>(), 0.);
-    result.from_json(json, NB);
+    ConfigDoF result(NB, 0, global_info, local_info, _tol);
+    result.from_json(json);//, NB);
 
     return result;
   }
@@ -159,8 +190,8 @@ namespace CASM {
 
   //*******************************************************************************
 
-  void from_json(ConfigDoF &value, const jsonParser &json, Index NB) {
-    value.from_json(json, NB);
+  void from_json(ConfigDoF &value, const jsonParser &json) { //, Index NB) {
+    value.from_json(json);
   }
 
   //*******************************************************************************

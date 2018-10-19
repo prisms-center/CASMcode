@@ -568,7 +568,7 @@ namespace CASM {
       default_err_log() << "Factor group is empty." << std::endl;
       exit(1);
     }
-    std::cout << "INSIDE _generate_global_symreps\n";
+    //std::cout << "INSIDE _generate_global_symreps\n";
     for(auto const &dof : m_dof_map) {
       dof.second.allocate_symrep(m_factor_group);
       for(SymOp const &op : m_factor_group) {

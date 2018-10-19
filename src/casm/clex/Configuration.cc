@@ -88,7 +88,10 @@ namespace CASM {
     m_configdof(Configuration::zeros(_supercell).configdof()) {
     if(_id == "none") {
       if(_data.contains("dof")) {
-        *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>(primclex().n_basis()));
+        *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>(primclex().n_basis(),
+                                                                             global_dof_info(primclex().prim()),
+                                                                             local_dof_info(primclex().prim()),
+                                                                             primclex().crystallography_tol()));
         return;
       }
       *this = Configuration(_supercell, _data);
@@ -116,8 +119,8 @@ namespace CASM {
   Configuration Configuration::zeros(Supercell const &_scel, double _tol) {
     ConfigDoF tdof(_scel.basis_size(),
                    _scel.volume(),
-                   global_dof_dims(_scel.prim()),
-                   local_dof_dims(_scel.prim()),
+                   global_dof_info(_scel.prim()),
+                   local_dof_info(_scel.prim()),
                    _tol);
 
 
@@ -806,7 +809,7 @@ namespace CASM {
     if(source_it != json.end()) {
       set_source(*source_it);
     }
-    CASM::from_json(m_configdof, json["dof"], primclex().n_basis());
+    CASM::from_json(m_configdof, json["dof"]);//, primclex().n_basis());
     CASM::from_json(cache(), json["cache"]);
 
     // read properties from 'json' input only: does not attempt to read in new
@@ -912,22 +915,11 @@ namespace CASM {
                                            " PrimClex of sub-Supercell and super-configuration are not the same"));
     }
 
-
     Configuration sub_config {sub_scel};
-
     // copy global dof
-    /*if(super_config.has_deformation()) {
-      sub_config.configdof().set_deformation(super_config.deformation());
-      }*/
-
-    // initialize site dof
-    if(super_config.has_occupation()) {
-      sub_config.configdof().set_occupation(std::vector<int>(sub_config.size(), 0));
+    for(auto const &dof : super_config.configdof().global_dofs()) {
+      sub_config.configdof().set_global_dof(dof.first, dof.second.values());
     }
-    //if(super_config.has_displacement()) {
-    //sub_config.configdof().set_displacement(
-    //  ConfigDoF::displacement_matrix_t::Zero(3, sub_config.size()));
-    //  }
 
     // copy site dof
     for(Index i = 0; i < sub_config.size(); i++) {
@@ -945,12 +937,23 @@ namespace CASM {
         sub_config.configdof().occ(i) = super_config.occ(site_index);
       }
 
-      // displacement
-      //if(super_config.has_displacement()) {
-      //sub_config.configdof().disp(i) = super_config.disp(site_index);
-      //}
-
     }
+
+    for(auto const &dof : super_config.configdof().local_dofs()) {
+      LocalContinuousConfigDoFValues &res_ref(sub_config.configdof().local_dof(dof.first));
+      for(Index i = 0; i < sub_config.size(); i++) {
+
+        // unitcell of site i in sub_config
+        UnitCellCoord unitcellcoord = sub_config.uccoord(i);
+
+        // equivalent site in superconfig
+        Index scel_site_index = super_config.supercell().linear_index(unitcellcoord + origin);
+
+        // copy dof from superconfig to this:
+        res_ref.site_value(i) = dof.second.site_value(scel_site_index);
+      }
+    }
+
 
     return sub_config;
   }
@@ -1383,35 +1386,30 @@ namespace CASM {
       result = notstd::make_unique<Configuration>(*m_scel);
     }
 
-    // ------- global dof ----------
-    //if(motif.has_deformation()) {
-    //result->set_deformation(m_op->matrix()*motif.deformation()*m_op->matrix().transpose());
-    //}
-
-    // ------- site dof ----------
-    std::vector<int> tscel_occ;
-    //ConfigDoF::displacement_matrix_t tscel_disp, motif_new_disp;
-
-    // apply fg op
-    if(motif.has_occupation()) {
-      result->set_occupation(std::vector<int>(m_scel->num_sites(), 0));
-    }
-    //if(motif.has_displacement()) {
-    //result->init_displacement();
-    //motif_new_disp = m_op->matrix() * motif.displacement();
-    //}
+    ConfigDoF trans_motif(motif.configdof());
+    trans_motif.apply_sym_no_permute(*m_op);
 
     // copy transformed dof, as many times as necessary to fill the supercell
+    for(auto const &dof : trans_motif.global_dofs())
+      result->configdof().set_global_dof(dof.first, dof.second.values());
+
     for(Index s = 0; s < m_index_table.size(); ++s) {
       for(Index i = 0; i < m_index_table[s].size(); ++i) {
         Index scel_s = m_index_table[s][i];
 
-        if(motif.has_occupation()) {
-          result->configdof().occ(scel_s) = motif.occ(s);
+        if(trans_motif.has_occupation()) {
+          result->configdof().occ(scel_s) = trans_motif.occ(s);
         }
-        //if(motif.has_displacement()) {
-        //result->configdof().disp(scel_s) = motif_new_disp.col(s);
-        //}
+      }
+    }
+
+    for(auto const &dof : trans_motif.local_dofs()) {
+      LocalContinuousConfigDoFValues &res_ref(result->configdof().local_dof(dof.first));
+      for(Index s = 0; s < m_index_table.size(); ++s) {
+        for(Index i = 0; i < m_index_table[s].size(); ++i) {
+          Index scel_s = m_index_table[s][i];
+          res_ref.site_value(scel_s) = dof.second.site_value(s);
+        }
       }
     }
     return *result;

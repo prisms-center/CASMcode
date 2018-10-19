@@ -1232,11 +1232,41 @@ namespace CASM {
   template<typename CoordType>
   std::vector<DoFKey> global_dof_types(BasicStructure<CoordType> const &_struc) {
     std::vector<std::string> result;
-    for(auto it = _struc.global_dofs().begin(); it != _struc.global_dofs().end(); ++it)
-      result.push_back(it->first);
+    for(auto const &dof :  _struc.global_dofs())
+      result.push_back(dof.first);
     return result;
   }
 
+
+  //************************************************************
+
+  template<typename CoordType>
+  std::map<DoFKey, DoFSetInfo> global_dof_info(BasicStructure<CoordType> const &_struc) {
+    std::map<DoFKey, DoFSetInfo> result;
+    for(auto const &dof :  _struc.global_dofs())
+      result.emplace(dof.first, dof.second.info());
+
+    return result;
+  }
+
+  //************************************************************
+
+  template<typename CoordType>
+  std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure<CoordType> const &_struc) {
+    std::map<DoFKey, std::vector<DoFSetInfo> > result;
+
+    for(DoFKey const &type : local_dof_types(_struc)) {
+      std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::traits(type).dim(), 0)));
+
+      for(Index b = 0; b < _struc.basis().size(); ++b) {
+        if(_struc.basis()[b].has_dof(type)) {
+          tresult[b] = _struc.basis()[b].dof(type).info();
+        }
+      }
+      result.emplace(type, std::move(tresult));
+    }
+    return result;
+  }
 
   //************************************************************
 

@@ -19,6 +19,12 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+  SymOpRepresentation const &SymOpRepresentation::representation(SymGroupRepID _rep_ID) const {
+    assert(has_valid_master() && !_rep_ID.empty());
+    return *(master_group().representation(_rep_ID)[index()]);
+  }
+
+  //*******************************************************************************************
   Eigen::MatrixXd const *SymOpRepresentation::get_matrix_rep(SymGroupRepID _rep_ID) const {
     assert(has_valid_master() && !_rep_ID.empty());
     return (master_group().representation(_rep_ID)[index()])->MatrixXd();

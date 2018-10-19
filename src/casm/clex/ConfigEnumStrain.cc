@@ -179,11 +179,19 @@ namespace CASM {
     if(analysis) {
       //PRINT INFO TO LOG:
       Log &log = _primclex.log();
+      log << "Result of symmetry analysis\n"
+          << "  Strains will be enumerated within the " << wedges.size() << " symmetrically distinct sub-wedges\n";
       Index l = 1;
+      Eigen::IOFormat tformat(4, 0, 8, " ", "\n", "    ", "", "", "");
       for(SymRepTools::SubWedge const &wedge : wedges) {
-        log << "Sub-wedge #" << l++ << ": \n" << wedge.trans_mat() << "\n\n";
-      }
+        log << "  Sub-wedge #" << l++ << ": \n";
+        for(auto const &irr : wedge.irrep_wedges()) {
+          log <<  irr.axes.transpose().format(tformat) << "\n   --------------\n";
 
+        }
+        log << "\n";
+      }
+      log << "End of analysis report.\n";
 
       return 0;
     }
@@ -255,13 +263,14 @@ namespace CASM {
       }
     }
 
-
+    std::cout << "shape_factor is: \n" << m_shape_factor << "\n";
     //m_shape_factor = m_strain_calc.sop_transf_mat().transpose() * m_shape_factor * m_strain_calc.sop_transf_mat();
     //Find first valid config
     m_counter = EigenCounter<Eigen::VectorXd>(min_val, max_val, inc_val);
 
     m_counter.reset();
     while(m_counter.valid() && (trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
+      std::cout << "TOO BIG: " << m_counter().transpose() << "\n";
       ++m_counter;
     }
 
@@ -281,6 +290,7 @@ namespace CASM {
 
     while(++m_counter && (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
       //just burning throught the count
+      std::cout << "TOO BIG: " << m_counter().transpose() << "\n";
     }
 
     // move to next part of wedge if necessary
@@ -293,13 +303,15 @@ namespace CASM {
     while(m_counter &&
           (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
       //just burning throught the count
+      std::cout << "TOO BIG: " << m_counter().transpose() << "\n";
       ++m_counter;
     }
 
     if(m_counter.valid()) {
-      throw std::runtime_error("UPDATE STRAIN INSERTION");
+      //throw std::runtime_error("UPDATE STRAIN INSERTION");
       m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
       std::cout << "Counter is " << m_counter().transpose() << "\n\n";
+      std::cout << "Strain vector is " << (m_wedges[m_equiv_ind].trans_mat() * m_counter()).transpose() << "\n";
       //std::cout << "strain vector is \n" << m_wedges[m_equiv_ind].trans_mat()*m_counter() << "\n\n";
       //std::cout << "DEFORMATION IS\n" << m_current.deformation() << "\n\n";
       //is_valid_config = current().is_canonical(_perm_begin(), _perm_end());
@@ -311,7 +323,9 @@ namespace CASM {
       //std::cout << "REACHED END OF THE LINE!\n";
       _invalidate();
     }
+
     m_current.set_source(this->source(step()));
+    //std::cout << "At end, current value is : " << m_current.configdof().global_dof(m_strain_key).values().transpose() << "\n";
     //std::cout << "--FINISHED SEARCH " << _step()<< "--\n";
     return;
   }

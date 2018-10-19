@@ -56,6 +56,8 @@ namespace CASM {
 
     std::unique_ptr<SymOpRepresentation> inverse() const;
 
+    SymOpRepresentation const &representation(SymGroupRepID _rep_ID) const;
+
     /// get pointer to matrix representation corresponding to rep_ID
     Eigen::MatrixXd const *get_matrix_rep(SymGroupRepID _rep_ID) const;
 

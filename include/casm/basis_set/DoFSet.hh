@@ -23,7 +23,8 @@ namespace CASM {
     using const_iterator = std::vector<ContinuousDoF>::const_iterator;
 
     DoFSet(BasicTraits const &_type) :
-      m_type_name(_type.type_name()) {}
+      m_type_name(_type.type_name()),
+      m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(_type.dim(), 0)) {}
 
     Index size() const {
       return m_components.size();
@@ -38,6 +39,10 @@ namespace CASM {
     void set_ID(Index _ID) {
       for(auto &c : m_components)
         c.set_ID(_ID);
+    }
+
+    DoFSetInfo const &info() const {
+      return m_info;
     }
 
     ContinuousDoF const &operator[](Index i) const {
@@ -70,11 +75,11 @@ namespace CASM {
     /// so that  conventional_coord = DoFSet.coordinate_space()*DoFSet.values()
     /// coordinate_space() matrix has dimensions (N x size()), where N >= size()
     Eigen::MatrixXd const &basis() const {
-      return m_basis;
+      return m_info.basis();
     }
 
     SymGroupRepID const &symrep_ID() const {
-      return m_symrep_ID;
+      return m_info.symrep_ID();
     }
 
     void allocate_symrep(SymGroup const &_group) const;
@@ -94,10 +99,10 @@ namespace CASM {
   private:
     std::string m_type_name;
     std::vector<ContinuousDoF> m_components;
-    Eigen::MatrixXd m_basis;
+    mutable DoFSetInfo m_info;
+
     std::set<std::string> m_excluded_occs;
 
-    mutable SymGroupRepID m_symrep_ID;
   };
 
   //********************************************************************

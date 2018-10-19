@@ -27,6 +27,47 @@ namespace CASM {
   class DoFSet;
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  struct DoFSetInfo {
+    DoFSetInfo(SymGroupRepID _id, Eigen::Ref<const Eigen::MatrixXd> const &_basis) :
+      m_symrep_ID(_id),
+      m_basis(_basis) {
+      if(basis().cols() > 0 && basis().rows() > 0)
+        m_inv_basis = basis().transpose().colPivHouseholderQr().solve(Eigen::MatrixXd::Identity(dim(), dim())).transpose();
+    }
+
+    SymGroupRepID const &symrep_ID() const {
+      return m_symrep_ID;
+    }
+
+    void set_symrep_ID(SymGroupRepID _id) {
+      m_symrep_ID = _id;
+    }
+
+    Eigen::MatrixXd const &basis() const {
+      return m_basis;
+    }
+
+    Eigen::MatrixXd set_basis(Eigen::Ref<const Eigen::MatrixXd> const &_basis) {
+      m_basis = _basis;
+      if(basis().cols() > 0 && basis().rows() > 0)
+        m_inv_basis = basis().transpose().colPivHouseholderQr().solve(Eigen::MatrixXd::Identity(dim(), dim())).transpose();
+      return m_basis;
+    }
+
+    Eigen::MatrixXd const  &inv_basis() const {
+      return m_inv_basis;
+    }
+
+    Index dim() const {
+      return basis().cols();
+    }
+
+  private:
+    SymGroupRepID m_symrep_ID;
+    Eigen::MatrixXd m_basis;
+    Eigen::MatrixXd m_inv_basis;
+  };
+
   namespace DoFType {
     class Traits;
 

@@ -68,8 +68,10 @@ namespace CASM {
         for(auto ita = a.begin(), itb = b.begin(); ita != a.end(); ++ita, ++itb)
           if(!irrep_wedge_compare(*ita, *itb))
             return false;
+        //std::cout << "Equal: \n" << SubWedge(a).trans_mat() << ",\n" << SubWedge(b).trans_mat() << "\n\n";
         return true;
       };
+
 
       std::vector<SubWedge> result;
       SymGroupRep const &srep(head_group.master_group().representation(id));
@@ -77,11 +79,14 @@ namespace CASM {
         throw std::runtime_error("In symrep_subwedges, SymGroupRep does not describe matrix representation");
       Index dim = srep[0]->MatrixXd()->cols();
 
-      for(SymOp const &op : head_group) {
-        std::cout << "OP " << op.index() << ":\n" << *(srep[op.index()]->MatrixXd()) << "\n\n";
-      }
+      //for(SymOp const &op : head_group) {
+      //std::cout << "OP " << op.index() << ":\n" << *(srep[op.index()]->MatrixXd()) << "\n\n";
+      //}
 
       std::vector<IrrepWedge> init_wedges = irreducible_wedges(head_group, id);
+      //for(Index i=0; i<init_wedges.size(); ++i){
+      //std::cout << "IrrepWedge #" << i+1 << ":\n" << init_wedges[i].axes.transpose() << "\n\n";
+      //}
 
 
       //Handle for strain symrep
@@ -95,11 +100,6 @@ namespace CASM {
 
       for(IrrepWedge const &wedge : init_wedges) {
         irrep_wedge_orbits.push_back({wedge});
-        //don't bother with symmetry if we aren't perturbing the current wedge
-        //if(absmags[w] < TOL) {
-        //irrep_wedge_orbits[w].push_back(0.0 * wedges[w]);
-        //continue;
-        //}
 
         //Start getting orbit of wedges[w]
         for(Index p = 0; p < trep.size(); p++) {
@@ -112,28 +112,38 @@ namespace CASM {
         }
 
         max_equiv.push_back(irrep_wedge_orbits.back().size() - 1);
+        max_equiv[0] = 0;
       }
 
+
+
       //Counter over combinations of equivalent wedges
-      Counter<std::vector<Index> > wcount(std::vector<Index>(irrep_wedge_orbits.size(), 0), max_equiv, std::vector<Index>(irrep_wedge_orbits.size(), 1));
+
+      Counter<std::vector<Index> > wcount(std::vector<Index>(init_wedges.size(), 0), max_equiv, std::vector<Index>(init_wedges.size(), 1));
       multivector<IrrepWedge>::X<3> tot_wedge_orbits;
       for(; wcount; ++wcount) {
-        std::vector<IrrepWedge> twedge;
-        for(Index i = 0; i < irrep_wedge_orbits.size(); i++)
-          twedge.push_back(irrep_wedge_orbits[i][wcount[i]]);
+        std::vector<IrrepWedge> twedge = init_wedges;
+        for(Index i = 1; i < init_wedges.size(); i++)
+          twedge[i].axes = irrep_wedge_orbits[i][wcount[i]].axes;
 
 
-        if(!tot_wedge_orbits.empty() && contains(tot_wedge_orbits.back(),
-                                                 twedge,
-                                                 tot_wedge_compare))
-          continue;
+        if(contains_if(tot_wedge_orbits,
+        [tot_wedge_compare, &twedge](const multivector<IrrepWedge>::X<2> &wedge_orbit)->bool {
+        return contains(wedge_orbit,
+                        twedge,
+                        tot_wedge_compare);
+        }))
+        continue;
+
         tot_wedge_orbits.push_back({twedge});
         result.push_back({twedge});
         for(Index p = 0; p < trep.size(); p++) {
           for(Index i = 0; i < twedge.size(); i++)
             twedge[i].axes = (*(trep[p]->MatrixXd())) * result.back().irrep_wedges()[i].axes;
-          if(!contains(tot_wedge_orbits.back(), twedge, tot_wedge_compare))
+          if(!contains(tot_wedge_orbits.back(), twedge, tot_wedge_compare)) {
+            //std::cout << "Adding subwedge!\n";
             tot_wedge_orbits.back().push_back(twedge);
+          }
         }
       }
 

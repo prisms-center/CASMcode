@@ -389,7 +389,10 @@ namespace CASM {
       fs::create_directories(dir.trajectory_dir(cond_index));
 
       // read initial_state.json
-      ConfigDoF config_dof = jsonParser(dir.initial_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size());
+      ConfigDoF config_dof = jsonParser(dir.initial_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size(),
+                             global_dof_info(mc.primclex().prim()),
+                             local_dof_info(mc.primclex().prim()),
+                             mc.primclex().crystallography_tol());
 
       if(!fs::exists(dir.initial_state_json(cond_index))) {
         throw std::runtime_error(
@@ -415,7 +418,11 @@ namespace CASM {
       fs::create_directories(dir.trajectory_dir(cond_index));
 
       // read final_state.json
-      ConfigDoF config_dof = jsonParser(dir.final_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size());
+      ConfigDoF config_dof = jsonParser(dir.final_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size(),
+                             global_dof_info(mc.primclex().prim()),
+                             local_dof_info(mc.primclex().prim()),
+                             mc.primclex().crystallography_tol());
+
 
       if(!fs::exists(dir.final_state_json(cond_index))) {
         throw std::runtime_error(
@@ -468,7 +475,10 @@ namespace CASM {
           step.push_back(it->get<size_type>());
         }
         for(auto it = json["DoF"].cbegin(); it != json["DoF"].cend(); ++it) {
-          trajectory.push_back(it->get<ConfigDoF>(primstruc.basis().size()));
+          trajectory.push_back(it->get<ConfigDoF>(primstruc.basis().size(),
+                                                  global_dof_info(primstruc),
+                                                  local_dof_info(primstruc),
+                                                  primstruc.lattice().tol()));
         }
 
       }

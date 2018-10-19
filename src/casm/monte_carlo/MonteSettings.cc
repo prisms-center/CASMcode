@@ -4,6 +4,7 @@
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteCarloEnum.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/misc/HallOfFame.hh"
@@ -89,7 +90,10 @@ namespace CASM {
       std::string help = "string\n"
                          "  Path to file containing DoF, such as an \"final_state.json\" file.";
       fs::path configdof_path = _get_setting<fs::path>("driver", "motif", "configdof", help);
-      return jsonParser(configdof_path).get<ConfigDoF>(primclex().n_basis());
+      return jsonParser(configdof_path).get<ConfigDoF>(primclex().n_basis(),
+                                                       global_dof_info(primclex().prim()),
+                                                       local_dof_info(primclex().prim()),
+                                                       primclex().crystallography_tol());
     }
 
     /// \brief Path to ConfigDoF file to use as starting motif

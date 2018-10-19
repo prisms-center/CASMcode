@@ -288,6 +288,12 @@ namespace CASM {
   std::map<DoFKey, Index> global_dof_dims(BasicStructure<CoordType> const &_struc);
 
   template<typename CoordType>
+  std::map<DoFKey, DoFSetInfo> global_dof_info(BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
+  std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
   Index local_dof_dim(DoFKey const &_name, BasicStructure<CoordType> const &_struc);
 
   /** @} */

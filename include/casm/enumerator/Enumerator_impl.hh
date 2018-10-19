@@ -221,9 +221,11 @@ namespace CASM {
       }
     }
     else {
+      //std::cout << "BEFORE ITER\n";
       auto it = enumerator.begin();
       auto end = enumerator.end();
       for(; it != end; ++it) {
+        //std::cout << "ITER: " << it->configdof().global_dof("GLstrain").values().transpose() << "\n";
         it->insert(primitive_only);
       }
     }

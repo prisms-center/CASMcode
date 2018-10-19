@@ -27,7 +27,16 @@ namespace CASM {
       return m_n_basis;
     }
 
+    void resize_vol(Index _n_vol) {
+      m_n_vol = _n_vol;
+      _resize();
+    }
+
+  protected:
+    virtual void _resize() = 0;
+
   private:
+
     DoFKey m_type;
     Index m_n_basis;
     Index m_n_vol;
@@ -72,6 +81,11 @@ namespace CASM {
       return m_vals.segment((b - 1) * n_vol(), n_vol());
     }
 
+  protected:
+    void _resize() override {
+      m_vals.resize(n_vol()*n_basis());
+    }
+
   private:
     ValueType m_vals;
   };
@@ -96,10 +110,15 @@ namespace CASM {
 
     LocalContinuousConfigDoFValues() {}
 
-    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol,  Eigen::Ref< const ValueType > const &_vals) :
+    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol,  Eigen::Ref< const ValueType > const &_vals, std::vector<DoFSetInfo> const &_info) :
       ConfigDoFValues(_traits, _n_basis, _n_vol),
-      m_vals(_vals) {
+      m_vals(_vals),
+      m_info(_info) {
 
+    }
+
+    Index dim() const {
+      return m_vals.rows();
     }
 
     Reference values() {
@@ -126,8 +145,19 @@ namespace CASM {
       return m_vals.block(0, (b - 1) * n_vol(), m_vals.rows(), n_vol());
     }
 
+    std::vector<DoFSetInfo> const &info() const {
+      return m_info;
+    }
+
+
+  protected:
+    void _resize() override {
+      m_vals.resize(m_vals.rows(), n_vol()*n_basis());
+    }
+
   private:
     ValueType m_vals;
+    std::vector<DoFSetInfo> m_info;
   };
 
   jsonParser &to_json(LocalContinuousConfigDoFValues const &_values, jsonParser &_json);
@@ -144,12 +174,22 @@ namespace CASM {
     typedef int &SiteReference;
     typedef const int &ConstSiteReference;
 
-    GlobalContinuousConfigDoFValues() {}
+    GlobalContinuousConfigDoFValues() :
+      m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(0, 0)) {}
 
-    GlobalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol, Eigen::Ref< const ValueType > const &_vals) :
+    GlobalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits,
+                                    Index _n_basis,
+                                    Index _n_vol,
+                                    Eigen::Ref< const ValueType > const &_vals,
+                                    DoFSetInfo const &_info) :
       ConfigDoFValues(_traits, _n_basis, _n_vol),
-      m_vals(_vals) {
+      m_vals(_vals),
+      m_info(_info) {
 
+    }
+
+    Index dim() const {
+      return m_vals.rows();
     }
 
     Reference values() {
@@ -160,8 +200,16 @@ namespace CASM {
       return m_vals;
     }
 
+    DoFSetInfo const &info() const {
+      return m_info;
+    }
+
+  protected:
+    void _resize() override { }
+
   private:
     ValueType m_vals;
+    DoFSetInfo m_info;
   };
 
   jsonParser &to_json(GlobalContinuousConfigDoFValues const &_values, jsonParser &_json);

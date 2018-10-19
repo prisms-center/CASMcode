@@ -31,9 +31,10 @@ namespace CASM {
     //typedef displacement_matrix_t::ConstColXpr const_displacement_t;
 
     /// Initialize with number of sites, and dimensionality of global and local DoFs
-    /// ContainerType is an iterable container of value_type std::pair<DoFKey,integral>
-    template<typename ContainerType>
-    ConfigDoF(Index _N_sublat, Index _N_vol, ContainerType const &global_dof_dims, ContainerType const &local_dof_dims, double _tol);
+    /// GlobalContainerType is an iterable container of value_type std::pair<DoFKey,ContinuousDoFInfo>
+    /// LocalContainerType is an iterable container of value_type std::pair<DoFKey,std::vector<ContinuousDoFInfo>  >
+    template<typename GlobalContainerType, typename LocalContainerType>
+    ConfigDoF(Index _N_sublat, Index _N_vol, GlobalContainerType const &global_dof_dims, LocalContainerType const &local_dof_dims, double _tol);
 
     ///Initialize with explicit occupation
     //ConfigDoF(const std::vector<int> &_occupation, double _tol = TOL);
@@ -81,6 +82,13 @@ namespace CASM {
       return global_dofs().at(_key);
     }
 
+    GlobalValueType &global_dof(DoFKey const &_key) {
+      auto it = m_global_dofs.find(_key);
+      if(it == m_global_dofs.end())
+        throw std::runtime_error("Attempting to access unitialized ConfigDoF value for '" + _key + "'");
+      return it->second;
+    }
+
     bool has_global_dof(DoFKey const &_key) const {
       return global_dofs().count(_key);
     }
@@ -97,6 +105,15 @@ namespace CASM {
       return local_dofs().at(_key);
     }
 
+    LocalValueType &local_dof(DoFKey const &_key) {
+      auto it = m_local_dofs.find(_key);
+      if(it == m_local_dofs.end())
+        throw std::runtime_error("Attempting to access unitialized ConfigDoF value for '" + _key + "'");
+      return it->second;
+    }
+
+
+
     bool has_local_dof(DoFKey const &_key) const {
       return local_dofs().count(_key);
     }
@@ -105,13 +122,18 @@ namespace CASM {
 
     void set_local_dof(DoFKey const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val);
 
-    ConfigDoF &apply_sym(const PermuteIterator &it);
+    ConfigDoF &apply_sym(PermuteIterator const &it);
+
+    /// \brief Calculate transformed ConfigDoF from PermuteIterator,
+    /// using only the effect of symmetry on the value at each site
+    /// sites are not permuted as a result
+    ConfigDoF &apply_sym_no_permute(SymOp const &_op);
 
     void swap(ConfigDoF &RHS);
 
     //**** I/O ****
     jsonParser &to_json(jsonParser &json) const;
-    void from_json(const jsonParser &json, Index NB);
+    void from_json(const jsonParser &json);//, Index NB);
 
 
   private:
@@ -150,12 +172,13 @@ namespace CASM {
   template<>
   struct jsonConstructor<ConfigDoF> {
 
-    static ConfigDoF from_json(const jsonParser &json, Index NB);
+    static ConfigDoF from_json(const jsonParser &json, Index NB, std::map<DoFKey, DoFSetInfo> const &global_info, std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info, double _tol);
+    //from_json(const jsonParser &json, Index NB);
   };
 
   jsonParser &to_json(const ConfigDoF &value, jsonParser &json);
 
-  void from_json(ConfigDoF &value, const jsonParser &json, Index NB);
+  void from_json(ConfigDoF &value, const jsonParser &json);//, Index NB);
 
   void swap(ConfigDoF &A, ConfigDoF &B);
 
@@ -165,22 +188,35 @@ namespace CASM {
   }
 
   /// Initialize with number of sites, and dimensionality of global and local DoFs
-  /// ContainerType is an iterable container of value_type std::pair<DoFKey,integral>
-  template<typename ContainerType>
-  ConfigDoF::ConfigDoF(Index _N_sublat, Index _N_vol, ContainerType const &global_dof_dims, ContainerType const &local_dof_dims, double _tol) :
+  /// GlobalContainerType is an iterable container of value_type std::pair<DoFKey,ContinuousDoFInfo>
+  /// LocalContainerType is an iterable container of value_type std::pair<DoFKey,std::vector<ContinuousDoFInfo>  >
+  template<typename GlobalContainerType, typename LocalContainerType>
+  ConfigDoF::ConfigDoF(Index _N_sublat, Index _N_vol, GlobalContainerType const &global_dof_info, LocalContainerType const &local_dof_info, double _tol) :
     m_occupation(_N_sublat * _N_vol, 0),
     m_tol(_tol) {
-    for(auto const &dof : global_dof_dims) {
+    for(auto const &dof : global_dof_info) {
       DoF::BasicTraits const &ttraits = DoF::traits(dof.first);
+
       if(!ttraits.global())
         throw std::runtime_error("Attempting to initialize ConfigDoF global value using local DoF " + dof.first);
-      m_global_dofs[dof.first] = GlobalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::VectorXd::Zero(dof.second));
+      m_global_dofs[dof.first] = GlobalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::VectorXd::Zero(dof.second.dim()), dof.second);
     }
-    for(auto const &dof : local_dof_dims) {
+    for(auto const &dof : local_dof_info) {
       DoF::BasicTraits const &ttraits = DoF::traits(dof.first);
+      if(_N_sublat == 0)
+        continue;
       if(ttraits.global())
         throw std::runtime_error("Attempting to initialize ConfigDoF local value using global DoF " + dof.first);
-      m_local_dofs[dof.first] = LocalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::MatrixXd::Zero(dof.second, _N_sublat));
+      if(_N_sublat != dof.second.size()) {
+        throw std::runtime_error("Attempting to initialize ConfigDoF local value '"
+                                 + dof.first
+                                 + "' with improperly initialized parameter 'local_dof_info'.");
+      }
+      Index dim = 0;
+      for(auto const &info : dof.second)
+        dim = max(dim, info.dim());
+
+      m_local_dofs[dof.first] = LocalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::MatrixXd::Zero(dim, _N_sublat * _N_vol), dof.second);
     }
   }
 }

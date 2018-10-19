@@ -145,6 +145,7 @@ namespace CASM {
             return false;
           }
         }
+        //std::cout << "Equal!\n";
         return true;
       }
 
@@ -184,14 +185,18 @@ namespace CASM {
     protected:
       template<typename T>
       bool _check(const T &A, const T &B) const {
+        //std::cout << "A: " << A << "; B: " << B <<";  ";
         if(A < B - tol()) {
           m_less = true;
+          //std::cout << "Greater!\n";
           return false;
         }
         if(A > B + tol()) {
+          //std::cout << "Less!\n";
           m_less = false;
           return false;
         }
+        //std::cout << "Equal!\n";
         return true;
       }
 
@@ -411,6 +416,7 @@ namespace CASM {
           other_ptr = &(other.global_dof(key()));
         }
         else {
+          //std::cout << "Junk initialization\n";
           tmp.values().setZero(_values().values().rows(), _values().values().cols());
         }
 

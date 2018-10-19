@@ -35,8 +35,8 @@ namespace CASM {
     if(m_dof.basis().rows() == m_dof.basis().cols()) {
 
       m_U = _basis.colPivHouseholderQr().solve(m_dof.basis());
-      if(!(m_U.transpose()*m_U).isIdentity(1e-5)) {
-        throw std::runtime_error("m_U is not orthonormal\n");
+      if(!(m_U.transpose()*m_U).eval().isIdentity(1e-5)) {
+        throw std::runtime_error("Cannot find orthogonal symmetry representation for DoF \"" + m_dof.type_name() + "\". Please review inputs.\n");
       }
       return true;
     }
