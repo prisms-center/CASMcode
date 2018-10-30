@@ -7,6 +7,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_enum.hh"
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/clusterography/ClusterDecl.hh"
@@ -258,9 +259,9 @@ namespace CASM {
 
     ClexBasis const &clex_basis;
 
-    ProtoFuncsPrinter(ClexBasis const &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
-      SitesPrinter(_indent_space, _delim, _mode),
-      clex_basis(_clex_basis) {}
+    std::vector<SubExpressionLabeler> labelers;
+
+    ProtoFuncsPrinter(ClexBasis const &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC);
 
     /// \brief Print to JSON
     ///

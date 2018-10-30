@@ -523,6 +523,20 @@ namespace CASM {
     }
   }
 
+  ProtoFuncsPrinter::ProtoFuncsPrinter(ClexBasis const &_clex_basis, int _indent_space, char _delim, COORD_TYPE _mode) :
+    SitesPrinter(_indent_space, _delim, _mode),
+    clex_basis(_clex_basis) {
+    for(auto const &dofset : clex_basis.site_bases()) {
+      for(BasisSet const &bset : dofset.second) {
+        if(dofset.first != "occ"
+           && bset.size()
+           && bset[0]->type_name() != "Variable") {
+          labelers.push_back(SubExpressionLabeler(bset.name(), "\\phi^{(" + dofset.first + ")}_%n_%l"));
+        }
+      }
+    }
+  }
+
   void print_site_basis_funcs(Structure const &prim,
                               ClexBasis const &clex_basis,
                               std::ostream &out,
@@ -559,9 +573,9 @@ namespace CASM {
           out << "\n";
           if(dofset.second[b].size() == 0)
             out << "        [No site basis functions]\n\n";
+          if(dofset.first == "occ") {
+            for(Index f = 0; f < dofset.second[b].size(); f++) {
 
-          for(Index f = 0; f < dofset.second[b].size(); f++) {
-            if(dofset.first == "occ") {
               BasisSet tbasis(dofset.second[b]);
 
               int s;
@@ -580,9 +594,18 @@ namespace CASM {
                   out << ",   ";
               }
             }
-            else {
-              out << "        \\phi_" << b << '_' << f << " = " << dofset.second[b][f]->tex_formula() << "\n";
-
+          }
+          else {
+            //std::string formula;
+            //bool relabel=false;
+            for(Index f = 0; f < dofset.second[b].size(); f++) {
+              if(dofset.second[b][f]) {
+                out << "        ";
+                if(dofset.second[b][f]->type_name() != "Variable") {
+                  out << "\\phi^{" << (dofset.first) << "}_" << b << '_' << f << " = ";
+                }
+                out << dofset.second[b][f]->tex_formula() << "\n";
+              }
             }
           }
         }
@@ -631,16 +654,16 @@ namespace CASM {
           sitef[b]["asym_unit"] = no;
 
           if(dofset.second[b].size() == 0) {
-            sitef[b]["basis"].put_null();
+            sitef[b][dofset.first]["basis"].put_null();
             continue;
           }
 
 
           for(Index f = 0; f < dofset.second[b].size(); f++) {
             std::stringstream fname;
-            fname << "\\phi_" << b << '_' << f;
 
             if(dofset.first == "occ") {
+              fname << "\\phi_" << b << '_' << f;
               BasisSet tbasis(dofset.second[b]);
               int s;
               std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].site_occupant().ID()));
@@ -648,11 +671,18 @@ namespace CASM {
               tbasis.register_remotes(remote);
 
               for(s = 0; s < prim.basis()[b].site_occupant().size(); s++) {
-                sitef[b]["basis"][fname.str()][prim.basis()[b].site_occupant()[s].name()] = tbasis[f]->remote_eval();
+                sitef[b][dofset.first]["basis"][fname.str()][prim.basis()[b].site_occupant()[s].name()] = tbasis[f]->remote_eval();
               }
             }
             else {
-              sitef[b]["basis"][fname.str()] = dofset.second[b][f]->tex_formula();
+              if(dofset.second[b][f]) {
+                if(dofset.second[b][f]->type_name() != "Variable") {
+                  fname << "\\phi^{" << (dofset.first) << "}_" << b << '_' << f;
+                }
+                else
+                  fname << "var_" << b << '_' << f;
+              }
+              sitef[b][dofset.first]["basis"][fname.str()] = dofset.second[b][f]->tex_formula();
             }
           }
         }

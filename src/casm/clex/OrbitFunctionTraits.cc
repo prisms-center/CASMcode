@@ -16,7 +16,9 @@ namespace CASM {
 
     Array<BasisSet const *> arg_bases_array(_arg_bases.begin(), _arg_bases.end());
 
-    for(Index i = min_poly_order; i <= max_poly_order; i++) {
+    //std::cout << "min_poly_order is: \n" << min_poly_order;
+    //for(Index i = min_poly_order; i <= max_poly_order; i++) {
+    for(Index i = 0; i <= max_poly_order; i++) {
       BasisSet tres(name());
       tres.construct_invariant_polynomials(arg_bases_array, _generating_group, i, 1);
       res.append(tres);

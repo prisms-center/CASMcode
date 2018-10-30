@@ -118,8 +118,12 @@ namespace CASM {
         ttex << irrational_to_tex_string(m_eval_table[var_ind[i]] / var_scale, 2 * m_eval_table.size());
       }
 
-      //tformula << "p_" << m_var[var_ind[i]].name;
-      //tformula << "p_" << m_var[var_ind[i]].name;
+      tformula << "p_" << var_ind[i];
+      ttex << "p_" << var_ind[i];
+      if(valid_index(m_var->ID())) {
+        tformula << "_" << m_var->ID();
+        ttex << "_" << m_var->ID();
+      }
     }
     if(var_ind.size() > 1) {
       ttex << ')';

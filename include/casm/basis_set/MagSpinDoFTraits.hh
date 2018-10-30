@@ -1,7 +1,10 @@
 #ifndef CASM_MagSpinDoFTraits
 #define CASM_MagSpinDoFTraits
-
 #include "casm/basis_set/DoFTraits.hh"
+
+#include "casm/basis_set/BasisSet.hh"
+#include "casm/crystallography/Site.hh"
+
 namespace CASM {
   namespace DoF_impl {
     class MagSpinDoFTraits : public DoFType::Traits {
@@ -15,6 +18,7 @@ namespace CASM {
       }
 
       bool time_reversal_active() const override {
+        //std::cout << "IS TIME-REVERSAL ACTIVE\n";
         return true;
       }
 
@@ -99,9 +103,7 @@ namespace CASM {
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
       std::vector<BasisSet> construct_site_bases(Structure const &_prim,
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
-                                                 jsonParser const &_bspecs) const override {
-        return std::vector<BasisSet>();
-      }
+                                                 jsonParser const &_bspecs) const override;
     protected:
       DoFType::BasicTraits *_clone() const override {
         return new MagSpinDoFTraits(*this);

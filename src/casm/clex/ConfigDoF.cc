@@ -138,7 +138,7 @@ namespace CASM {
   jsonParser &ConfigDoF::to_json(jsonParser &json) const {
     json = jsonParser::object();
     if(occupation().size())
-      json["occupation"] = occupation();
+      json["occ"] = occupation();
     if(!m_local_dofs.empty()) {
       json["local_dofs"] = m_local_dofs;
     }
@@ -151,10 +151,17 @@ namespace CASM {
 
   //*******************************************************************************
   void ConfigDoF::from_json(const jsonParser &json) { //, Index NB) {
-    if(!json.contains("occupation")) {
-      throw std::runtime_error("JSON serialization of ConfigDoF must contain field \"occupation\"\n");
+    if(json.contains("occupation")) {
+      //For Backwards compatibility
+      CASM::from_json(m_occupation, json["occupation"]);
     }
-    CASM::from_json(m_occupation, json["occupation"]);
+    else if(json.contains("occ")) {
+      CASM::from_json(m_occupation, json["occ"]);
+    }
+    else {
+      throw std::runtime_error("JSON serialization of ConfigDoF must contain field \"occ\"\n");
+    }
+
 
     if(json.contains("local_dofs")) {
       auto end_it = json["local_dofs"].end();

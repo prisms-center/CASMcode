@@ -319,11 +319,11 @@ namespace CASM {
   std::vector<PermuteIterator> ConfigCanonicalForm<Base>::invariant_subgroup(
     PermuteIteratorIt begin,
     PermuteIteratorIt end) const {
-    std::cout << "INSIDE invariant_subgroup()" << std::endl;
+    //std::cout << "INSIDE invariant_subgroup()" << std::endl;
     std::vector<PermuteIterator> sub_grp;
-    std::cout << "begin: " << begin->factor_group_index() << std::endl;
+    //std::cout << "begin: " << begin->factor_group_index() << std::endl;
     std::copy_if(begin, end, std::back_inserter(sub_grp), derived().equal_to());
-    std::cout << "Complete!\n";
+    //std::cout << "Complete!\n";
     return sub_grp;
   }
 

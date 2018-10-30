@@ -668,6 +668,7 @@ namespace CASM {
     if(this == &other)
       return;
 
+    std::swap(m_depth, other.m_depth);
     for(Index i = 0; i < size(); i++) {
       if(at(i)) {
         at(i)->up_node = &other;

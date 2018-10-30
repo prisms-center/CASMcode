@@ -366,6 +366,35 @@ namespace CASM {
 
   //*******************************************************************************************
 
+  std::set<Index> PolynomialFunction::dof_IDs() const {
+
+    PolyTrie<double>::const_iterator it(m_coeffs.begin()), it_end(m_coeffs.end());
+
+    if(it == it_end)
+      return {};
+    std::vector<Index> check(m_coeffs.depth(), false);
+    for(; it != it_end; ++it) {
+      if(almost_zero(*it))
+        continue;
+
+      for(Index i = 0; i < it.key().size(); i++)
+        check[i] = check[i] || it.key()[i];
+    }
+
+    std::set<Index> result;
+    Index last = -1;
+    for(Index i = 0; i < check.size(); i++) {
+      if(check[i] && last != m_arg2sub[i]) {
+        last = m_arg2sub[i];
+        std::vector<Index> tres = argument_bases()[last]->dof_IDs();
+        result.insert(tres.begin(), tres.end());
+      }
+    }
+    return result;
+  }
+
+  //*******************************************************************************************
+
   void PolynomialFunction::fill_dispatch_table() {
     Function::inner_prod_table[sclass_ID()][sclass_ID()] = new BasicPolyPolyScalarProd();
     Function::operation_table[sclass_ID()][sclass_ID()] = new PolyPolyOperation();
@@ -397,6 +426,43 @@ namespace CASM {
     m_tex_formula.clear();
     refresh_ID();
     m_coeffs *= scale_factor;
+  }
+
+  //*******************************************************************************************
+
+  void PolynomialFunction::_set_arguments(const ArgumentContainer &new_arg, std::vector<Index> const &compatibility_map) {
+    if(new_arg.size() < compatibility_map.size() || compatibility_map.size() != argument_bases().size())
+      throw std::runtime_error("In PolynomialFunction::_set_arguments called with incompatible argument size");
+    if(new_arg.empty())
+      return;
+
+    std::vector<Index> ind_perm(num_args());
+    std::vector<Index> new_offset;
+    std::vector<Index> old_offset(1, 0);
+
+    Index new_depth = 0;
+    for(Index i = 0; i < new_arg.size(); i++) {
+      new_offset.push_back(new_depth);
+      new_depth += new_arg[i]->size();
+    }
+
+    Index old_a = 0;
+    for(Index i = 0; i < m_argument.size(); i++) {
+      Index new_a = new_offset[compatibility_map[i]];
+      for(Index j = 0; j < m_argument[i]->size(); j++) {
+        ind_perm[old_a++] = new_a++;
+      }
+    }
+
+    PolyTrie<double> new_coeffs(new_depth);
+    Array<Index> new_inds(new_depth, 0);
+    PolyTrie<double>::const_iterator it(m_coeffs.begin()), it_end(m_coeffs.end());
+    for(; it != it_end; ++it) {
+      for(Index i = 0; i < ind_perm.size(); ++i)
+        new_inds[ind_perm[i]] = it.key()[i];
+      new_coeffs(new_inds) = *it;
+    }
+    m_coeffs.swap(new_coeffs);
   }
 
   //*******************************************************************************************
@@ -481,15 +547,15 @@ namespace CASM {
       linear_offset += m_argument[ns]->size();
     }
     /*
-    for(int ns=0; ns<exp_counter.size(); ns++){
+      for(int ns=0; ns<exp_counter.size(); ns++){
       for(int na1=0; na1<exp_counter[ns].size(); na1++){
-    for(int na2=0; na2<exp_counter[ns][na1].size(); na2++){
-    std::cout << "exp_counter[" << ns << "][" << na1 << "][" << na2 << "] = " << exp_counter[ns][na1][na2] << '\n';
-    std::cout << "nz_terms[" << ns << "][" << na1 << "][" << na2 << "] = " << nz_terms[ns][na1][na2] << '\n';
-    std::cout << "nz_coeffs[" << ns << "][" << na1 << "][" << na2 << "] = " << nz_coeffs[ns][na1][na2] << '\n';
-    }
+      for(int na2=0; na2<exp_counter[ns][na1].size(); na2++){
+      //std::cout << "exp_counter[" << ns << "][" << na1 << "][" << na2 << "] = " << exp_counter[ns][na1][na2] << '\n';
+      //std::cout << "nz_terms[" << ns << "][" << na1 << "][" << na2 << "] = " << nz_terms[ns][na1][na2] << '\n';
+      //std::cout << "nz_coeffs[" << ns << "][" << na1 << "][" << na2 << "] = " << nz_coeffs[ns][na1][na2] << '\n';
       }
-    }
+      }
+      }
     */
     Array<Index> out_ind(ind.size(), 0);
     double out_coeff;
@@ -513,11 +579,11 @@ namespace CASM {
       }
       /*
         if(ind != out_ind || !almost_equal(prefactor, out_coeff)) {
-      std::cout << "Monomial term: " << ind << " : " << prefactor << "\n";
-      std::cout << "Transforms to: " << out_ind << " : " << out_coeff << " <--";
-      if(ind != out_ind || !almost_zero(prefactor + out_coeff))
-      std::cout << "******";
-      std::cout << "\n";
+        //std::cout << "Monomial term: " << ind << " : " << prefactor << "\n";
+        //std::cout << "Transforms to: " << out_ind << " : " << out_coeff << " <--";
+        if(ind != out_ind || !almost_zero(prefactor + out_coeff))
+        //std::cout << "******";
+        //std::cout << "\n";
         }*/
 
       //this is where the coefficient gets transforemd
@@ -627,15 +693,15 @@ namespace CASM {
       linear_offset += m_argument[ns]->size();
     }
     /*
-    for(Index ns=0; ns<exp_counter.size(); ns++){
+      for(Index ns=0; ns<exp_counter.size(); ns++){
       for(Index na1=0; na1<exp_counter[ns].size(); na1++){
-    for(Index na2=0; na2<exp_counter[ns][na1].size(); na2++){
-    std::cout << "exp_counter[" << ns << "][" << na1 << "][" << na2 << "] = " << exp_counter[ns][na1][na2] << '\n';
-    std::cout << "nz_terms[" << ns << "][" << na1 << "][" << na2 << "] = " << nz_terms[ns][na1][na2] << '\n';
-    std::cout << "nz_coeffs[" << ns << "][" << na1 << "][" << na2 << "] = " << nz_coeffs[ns][na1][na2] << '\n';
-    }
+      for(Index na2=0; na2<exp_counter[ns][na1].size(); na2++){
+      //std::cout << "exp_counter[" << ns << "][" << na1 << "][" << na2 << "] = " << exp_counter[ns][na1][na2] << '\n';
+      //std::cout << "nz_terms[" << ns << "][" << na1 << "][" << na2 << "] = " << nz_terms[ns][na1][na2] << '\n';
+      //std::cout << "nz_coeffs[" << ns << "][" << na1 << "][" << na2 << "] = " << nz_coeffs[ns][na1][na2] << '\n';
       }
-    }
+      }
+      }
     */
     Array<Index> out_ind(ind.size(), 0);
     double out_coeff;

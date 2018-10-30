@@ -1,7 +1,10 @@
 #ifndef CASM_StrainDoFTraits
 #define CASM_StrainDoFTraits
-
 #include "casm/basis_set/DoFTraits.hh"
+
+#include "casm/basis_set/BasisSet.hh"
+#include "casm/crystallography/Site.hh"
+
 namespace CASM {
   namespace DoF_impl {
     class StrainDoFTraits : public DoFType::Traits {
@@ -98,9 +101,7 @@ namespace CASM {
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
       std::vector<BasisSet> construct_site_bases(Structure const &_prim,
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
-                                                 jsonParser const &_bspecs) const override {
-        return std::vector<BasisSet>();
-      }
+                                                 jsonParser const &_bspecs) const override;
     protected:
       DoFType::BasicTraits *_clone() const override {
         return new StrainDoFTraits(*this);

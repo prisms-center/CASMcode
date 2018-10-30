@@ -18,6 +18,10 @@ namespace CASM {
   template<typename T>
   class Array;
 
+  namespace FunctionLabel_impl {
+    std::pair<bool, std::string> make_label(Function const &host, BasisSet const *bset_ptr);
+  }
+
   /// Defines visitor pattern for abstract Function objects.
   /// FunctionVisitor has virtual methods for each type of derived Function object,
   /// which by default do nothing. Classes that derive from FunctionVisitor implement
@@ -65,7 +69,6 @@ namespace CASM {
 
   class OccFuncLabeler : public FunctionVisitor {
     std::vector<std::string> m_sub_strings;
-    mutable std::stringstream m_ss;
   public:
     OccFuncLabeler(const std::string &_template);
 
@@ -133,7 +136,6 @@ namespace CASM {
 
   class VariableLabeler : public FunctionVisitor {
     std::vector<std::string> m_sub_strings;
-    mutable std::stringstream m_ss;
   public:
     VariableLabeler(const std::string &_template);
 
@@ -150,6 +152,8 @@ namespace CASM {
   public:
     SubExpressionLabeler(const std::string &_bset_name, const std::string &_template);
 
+    SubExpressionLabeler(SubExpressionLabeler const &) = default;
+
     std::string type_name() const {
       return "SubExpressionLabeler";
     }
@@ -163,8 +167,8 @@ namespace CASM {
 
     std::string m_bset_name;
     std::vector<std::string> m_sub_strings;
-    mutable std::stringstream m_ss;
   };
+
 
 }
 #endif

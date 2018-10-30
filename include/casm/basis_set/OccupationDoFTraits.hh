@@ -1,7 +1,8 @@
 #ifndef CASM_OccupationDoFTraits
 #define CASM_OccupationDoFTraits
-
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/basis_set/BasisSet.hh"
+
 namespace CASM {
   namespace DoF_impl {
     class OccupationDoFTraits : public DoFType::Traits {

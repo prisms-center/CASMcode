@@ -5,6 +5,7 @@
 #include "casm/basis_set/PolynomialFunction.hh"
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/casm_io/stream_io/container.hh"
 namespace CASM {
   std::vector<std::string> parse_label_template(std::string const &_template) {
     // parse _template into the Array m_sub_strings
@@ -78,33 +79,32 @@ namespace CASM {
 
 
   bool OccFuncLabeler::visit(OccupantFunction &host, BasisSet const *bset_ptr)const {
-    m_ss.str(std::string());
-    m_ss.clear();
+    std::stringstream ss;
 
     for(Index i = 0; i < m_sub_strings.size(); i++) {
       if(m_sub_strings[i] == "%n") {
         if(valid_index(host.dof().ID()))
-          m_ss << host.dof().ID();
+          ss << host.dof().ID();
         else
-          m_ss << '?';
+          ss << '?';
       }
       else if(m_sub_strings[i] == "%f") {
         if(valid_index(host.occ_func_ind()))
-          m_ss << host.occ_func_ind();
+          ss << host.occ_func_ind();
         else
-          m_ss << '?';
+          ss << '?';
       }
       else if(m_sub_strings[i] == "%b") {
         if(valid_index(host.basis_ind()))
-          m_ss << host.basis_ind();
+          ss << host.basis_ind();
         else
-          m_ss << '?';
+          ss << '?';
       }
       else
-        m_ss << m_sub_strings[i];
+        ss << m_sub_strings[i];
     }
     //std::cout << "Paying a visit. Formula before: " << host.formula() << "\n";
-    host.set_formula(m_ss.str());
+    host.set_formula(ss.str());
     //std::cout << "                Formula after:  " << host.formula() << "\n";
     return true;
   }
@@ -228,44 +228,62 @@ namespace CASM {
     m_sub_strings = parse_label_template(_template);
   }
 
-
   //*******************************************************************************************
 
   bool SubExpressionLabeler::_generic_visit(Function &host, BasisSet const *bset_ptr) const {
+
+    //if(host.type_name()=="PolynomialFunction"){
+    //std::cout << "Visiting function, with bset_name: '" << bset_ptr->name() << "' and directive " << m_bset_name << ", " << m_sub_strings << "\n";
+    //}
 
     if(bset_ptr == nullptr || (bset_ptr->name()).find(m_bset_name) != 0) {
       //std::cout << "_generic_visit(): bset_ptr is " << bset_ptr << "\n";
       return false;
     }
-
-    m_ss.str(std::string());
-    m_ss.clear();
+    std::stringstream ss;
 
     for(Index i = 0; i < m_sub_strings.size(); i++) {
-      if(m_sub_strings[i] == "%n") {
+      if(m_sub_strings[i] == "%N") {
         if(bset_ptr->dof_IDs().size() == 0) {
-          m_ss << '?';
+          ss << '?';
         }
         else {
           for(Index i = 0; i < bset_ptr->dof_IDs().size(); i++) {
-            m_ss << (bset_ptr->dof_IDs())[i];
+            ss << (bset_ptr->dof_IDs())[i];
             if(i + 1 < bset_ptr->dof_IDs().size())
-              m_ss << '_';
+              ss << '_';
+          }
+        }
+      }
+      if(m_sub_strings[i] == "%n") {
+        auto IDs = host.dof_IDs();
+        if(IDs.empty()) {
+          ss << '?';
+        }
+        else {
+          Index i = 0;
+          for(Index id : IDs) {
+            ss << id;
+            if(++i < IDs.size())
+              ss << '_';
           }
         }
       }
       else if(m_sub_strings[i] == "%f") {
         Index f = bset_ptr->find(&host);
         if(f < bset_ptr->size())
-          m_ss << f;
+          ss << f;
         else
-          m_ss << '?';
+          ss << '?';
+      }
+      else if(m_sub_strings[i][0] == '%') {
+        ss << host.identifier(m_sub_strings[i][1]);
       }
       else
-        m_ss << m_sub_strings[i];
+        ss << m_sub_strings[i];
     }
     //std::cout << "Paying a visit. Formula before: " << host.formula() << "\n";
-    host.set_formula(m_ss.str());
+    host.set_formula(ss.str());
     //std::cout << "                Formula after:  " << host.formula() << "\n";
     return true;
 

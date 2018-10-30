@@ -56,6 +56,8 @@ namespace CASM {
     jsonParser &orbitf = json["cluster_functions"];
     orbitf = jsonParser::array();
 
+
+
     // basis function info
     Index func_index = 0;
     for(Index i = 0; i < orbit_index; i++)
@@ -63,6 +65,10 @@ namespace CASM {
 
     BasisSet tbasis(clex_basis.clust_basis(orbit_index, 0));
     tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+    for(auto const &labeler : labelers) {
+      tbasis.accept(labeler);
+    }
+
     for(Index nf = 0; nf < tbasis.size(); ++nf) {
       orbitf.push_back(json_pair("\\Phi_" + std::to_string(func_index + nf), tbasis[nf]->tex_formula()));
     }
@@ -244,7 +250,6 @@ namespace CASM {
   ///
   template<typename ClusterOrbitIterator, typename Printer>
   jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end, jsonParser &json, Printer printer) {
-    json = jsonParser::object();
     Index Norbits = std::distance(begin, end);
     json["orbits"] = jsonParser::array(Norbits, jsonParser::object());
     Index orbit_index = 0;

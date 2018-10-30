@@ -34,33 +34,35 @@ namespace CASM {
 
 
     static void fill_dispatch_table();
-    SparseTensor<double> const *get_coeffs()const;
+    SparseTensor<double> const *get_coeffs()const override;
 
     const PolyTrie<double> &poly_coeffs()const {
       return m_coeffs;
     };
 
-    std::string type_name()const {
+    std::string type_name()const override {
       return "PolynomialFunction";
     };
 
-    Function *copy()const;
+    Function *copy()const override;
     //PolynomialFunction *copy(const PolyTrie<double> &new_coeffs)const;
 
     Function *copy(const PolyTrie<double> &new_coeffs)const;
 
-    bool depends_on(const Function *test_func) const;
-    bool is_zero() const;
-    void small_to_zero(double tol = TOL);
-    Index num_terms() const;
+    bool depends_on(const Function *test_func) const override;
+    bool is_zero() const override;
+    void small_to_zero(double tol = TOL) override;
+    Index num_terms() const override;
 
-    double leading_coefficient() const;
-    double leading_coefficient(Index &index) const;
-    double get_coefficient(Index i) const;
+    double leading_coefficient() const override;
+    double leading_coefficient(Index &index) const override;
+    double get_coefficient(Index i) const override;
 
-    void make_formula() const;
+    void make_formula() const override;
     void make_formula(double prefactor) const;
-    int class_ID() const {
+
+    std::set<Index> dof_IDs() const override;
+    int class_ID() const override {
       return DerivedID<PolynomialFunction, Function>::get_class_ID();
     };
     static int sclass_ID() {
@@ -69,7 +71,7 @@ namespace CASM {
 
     Function *transform_monomial_and_add_new(double prefactor, const Array<Index> &ind, const SymOp &op, const std::vector<bool> &transform_flags);
     Function *transform_monomial_and_add(double prefactor, const Array<Index> &ind, const SymOp &op);
-    void scale(double scale_factor);
+    void scale(double scale_factor) override;
 
     double frobenius_scalar_prod(const PolynomialFunction &RHS)const;
     double box_integral_scalar_prod(const PolynomialFunction &RHS, double edge_length)const;
@@ -81,13 +83,13 @@ namespace CASM {
     Function *plus_equals(const PolynomialFunction *RHS);
     Function *minus_equals(const PolynomialFunction *RHS);
 
-    double remote_eval() const;
-    double remote_deval(const DoF::RemoteHandle &dvar) const;
+    double remote_eval() const override;
+    double remote_deval(const DoF::RemoteHandle &dvar) const override;
 
-    double cache_eval() const;
-    double cache_deval(const DoF::RemoteHandle &dvar) const;
+    double cache_eval() const override;
+    double cache_deval(const DoF::RemoteHandle &dvar) const override;
 
-    Function *apply_sym_coeffs(const SymOp &op, int dependency_layer);
+    Function *apply_sym_coeffs(const SymOp &op, int dependency_layer) override;
 
     Function *poly_quotient(const Variable *RHS) const;
     Function *poly_remainder(const Variable *RHS) const;
@@ -122,12 +124,14 @@ namespace CASM {
 
     PolyTrie<double> m_coeffs;
 
-    Function *_apply_sym(const SymOp &op);
+    void _set_arguments(const ArgumentContainer &new_arg, std::vector<Index> const &compatibility_map) override;
+
+    Function *_apply_sym(const SymOp &op) override;
     Function *_apply_sym(const SymOp &op, const std::vector<bool> &transform_flags);
 
-    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) override;
 
-    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL)const;
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL)const override;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

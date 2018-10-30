@@ -73,6 +73,10 @@ namespace CASM {
 
     int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) override;
 
+
+    std::set<Index> dof_IDs() const override {
+      return std::set<Index>({dof().ID()});
+    }
     bool compare(const OccupantFunction *RHS) const;
 
     static void fill_dispatch_table();

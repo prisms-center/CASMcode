@@ -118,7 +118,7 @@ namespace CASM {
     return
       almost_equal(matrix(), RHS.matrix()) &&
       almost_equal(tau(), RHS.tau()) &&
-      time_reversal(), RHS.time_reversal();
+      time_reversal() == RHS.time_reversal();
   };
 
   //*******************************************************************************************
@@ -126,6 +126,12 @@ namespace CASM {
   SymOp &SymOp::apply_sym(const SymOp &op) {
     (*this) = op * (*this) * (op.inverse());
     return *this;
+  }
+
+  //*******************************************************************************************
+
+  void SymOp::print_short(std::ostream &stream, const Eigen::Ref<const SymOp::matrix_type> &c2f_mat) const {
+    print(stream, c2f_mat);
   }
 
   //*******************************************************************************************
@@ -153,6 +159,7 @@ namespace CASM {
       stream << std::setw(22) << ttau(i) << "\n";
     }
 
+    stream << "Time Reversal: " << (time_reversal() ? -1 : 1) << "\n";
     stream.precision(tprec);
     stream.flags(tflags);
     return;

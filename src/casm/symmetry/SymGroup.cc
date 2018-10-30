@@ -260,7 +260,7 @@ namespace CASM {
       // rp = rotation parameter
       Eigen::Matrix3d coord_rep_mat = at(i).matrix();
       if(!almost_equal(coord_rep_mat.determinant(), 1.)) {
-        std::cout << "IN IF" << std::endl;
+        //std::cout << "IN IF" << std::endl;
         coord_rep_mat *= coord_rep_mat.determinant();
         //continue;
       }
@@ -329,14 +329,13 @@ namespace CASM {
       left_q(3, 2) =  opq.x();
       left_q(3, 3) =  opq.w();
 
-
-      std::cout << right_q << std::endl;
+      //std::cout << right_q << std::endl;
 
       new_rep->set_rep(i, SymMatrixXd(left_q));
     }
 
     for(Index i = 0 ; i < new_rep->size() ; i++) {
-      std::cout << "Rota Rep final mats " << i << "\n" << *(new_rep->MatrixXd(i)) << std::endl;
+      //std::cout << "Rota Rep final mats " << i << "\n" << *(new_rep->MatrixXd(i)) << std::endl;
     }
 
     return _add_representation(new_rep);
@@ -1040,7 +1039,7 @@ namespace CASM {
       for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
         all_unique = true;
         if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
+          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
           all_unique = false;
         }
       }
@@ -1062,7 +1061,7 @@ namespace CASM {
       }
     }
 
-    //    std::cout << "Repeats in ..." << repeats << "\n";
+    //    //std::cout << "Repeats in ..." << repeats << "\n";
     //std::cout << "STEP 2: Name according to sigma_v or C2p symmetry...\n";
     //Check for symmetry wrt vertical mirror plane or C2' axis...
     //I don't know how to do this for non-1D representations =(
@@ -1180,13 +1179,13 @@ namespace CASM {
       for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
         all_unique = true;
         if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
+          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
           all_unique = false;
         }
       }
     }
-    //    std::cout << irrep_names << std::endl;
-    //    std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
+    //    //std::cout << irrep_names << std::endl;
+    //    //std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
 
     if(!all_unique) {
       repeats.clear();
@@ -1201,7 +1200,7 @@ namespace CASM {
         }
       }
     }
-    //    std::cout << "Repeats in ..." << repeats << "\n";
+    //    //std::cout << "Repeats in ..." << repeats << "\n";
     //std::cout << "STEP 3: Name according to inversion symmetry...\n";
     for(Index i = 0; i < irrep_names.size(); i++) {
       if((inversion == true) && (!all_unique) && (repeats.contains(int(m_character_table[0][i].real())))) {
@@ -1225,12 +1224,12 @@ namespace CASM {
       for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
         all_unique = true;
         if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
+          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
           all_unique = false;
         }
       }
     }
-    //    std::cout << irrep_names << std::endl;
+    //    //std::cout << irrep_names << std::endl;
     //std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
 
     if(!all_unique) {
@@ -1247,9 +1246,9 @@ namespace CASM {
       }
     }
 
-    //    std::cout << "Repeats in ..." << repeats << "\n";
+    //    //std::cout << "Repeats in ..." << repeats << "\n";
 
-    //    std::cout << "STEP 4: Name according to sigma_h symmetry...\n";
+    //    //std::cout << "STEP 4: Name according to sigma_h symmetry...\n";
     for(Index i = 0; i < irrep_names.size(); i++) {
       if((sigma_h == true) && (!all_unique) && (repeats.contains(int(m_character_table[0][i].real())))) {
         for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_h; j++) {
@@ -1267,7 +1266,7 @@ namespace CASM {
       }
     }//Close loop over representations
 
-    //    std::cout << "At the very end, check if everything is unique...\n";
+    //    //std::cout << "At the very end, check if everything is unique...\n";
 
     all_unique = true;
     for(Index j = 0; j < irrep_names.size() && all_unique; j++) {
@@ -2141,10 +2140,10 @@ namespace CASM {
 
     Array<std::complex<double> > centralizers(nc, 0);
 
-    // std::cout << "----------------------------------------------------------------------------\n";
+    // //std::cout << "----------------------------------------------------------------------------\n";
     for(Index i = 0; i < conjugacy_classes.size(); i++) {
       centralizers[i] = centralizer_table[i].size();
-      //   std::cout << centralizer_table[i].size() << "\t";
+      //   //std::cout << centralizer_table[i].size() << "\t";
     }
     //std::cout << std::endl;
 
@@ -2916,26 +2915,26 @@ namespace CASM {
       }
       sgroup._generate_character_table();
       sg_names.push_back(sgroup.name);
-      std::cout << sgroup.name << "-" << i << " has equivalencies:\n";
+      //std::cout << sgroup.name << "-" << i << " has equivalencies:\n";
       for(Index j = 0; j < m_subgroups[i].size(); j++) {
-        std::cout << "  " << m_subgroups[i][j] << "\n";
+        //std::cout << "  " << m_subgroups[i][j] << "\n";
       }
-      std::cout << "\n";
+      //std::cout << "\n";
     }
 
     Array< Array< Index > > sg_tree(m_subgroups.size(), Array<Index>());
     for(Index i = 0; i < m_subgroups.size(); i++) {
-      std::cout << "Subgroup " << sg_names[i] << "-" << i << " is also a subgroup of ";
+      //std::cout << "Subgroup " << sg_names[i] << "-" << i << " is also a subgroup of ";
       for(Index j = 0; j < m_subgroups.size(); j++) {
         for(Index jj = 0; jj < m_subgroups[j].size(); jj++) {
           if(m_subgroups[i][0].all_in(m_subgroups[j][jj])) {
             sg_tree[i].push_back(j);
-            std::cout << sg_names[j] << "-" << j << "-" << jj << "  ";
+            //std::cout << sg_names[j] << "-" << j << "-" << jj << "  ";
             break;
           }
         }
       }
-      std::cout << "\n";
+      //std::cout << "\n";
     }
 
     //attempt to maximize coincidence a
@@ -2970,7 +2969,7 @@ namespace CASM {
       unique_sgroups.back().sort();
       unique_sgroups.back()._generate_character_table();
 
-      std::cout << "Added group " << unique_sgroups.back().name  << " having bit-string " << m_subgroups[i][0] << std::endl;
+      //std::cout << "Added group " << unique_sgroups.back().name  << " having bit-string " << m_subgroups[i][0] << std::endl;
     }
 
     return unique_sgroups;
@@ -3370,7 +3369,7 @@ namespace CASM {
           if(!contains_periodic(tOp, tol)) {
             push_back(within_cell(tOp, lattice(), periodicity()));
             new_ops = true;
-            //	  std::cout << "Pushing back a SymOp due to multiplication fail.\n";
+            //	  //std::cout << "Pushing back a SymOp due to multiplication fail.\n";
           }
         }
 
@@ -3710,21 +3709,21 @@ namespace CASM {
       repchar[i] += at(conjugacy_classes[i][0]).matrix().trace();
     }
 
-    //    std::cout << "The reducible characters are:\n";
+    //    //std::cout << "The reducible characters are:\n";
 
-    //    std::cout << repchar << "\n\n";
+    //    //std::cout << repchar << "\n\n";
 
     for(Index i = 0; i < m_character_table.size(); i++) { // Loop over irreducible representations
       std::complex<double> temp = std::complex<double>(0, 0);
       for(Index j = 0; j < m_character_table.size(); j++) { // Loop over conjugacy classes
         temp += (m_character_table[i][j] * std::complex<double>(conjugacy_classes[j].size(), 0) * std::complex<double>(repchar[j], 0));
       }
-      //      std::cout << temp << "\t";
+      //      //std::cout << temp << "\t";
 
       tdec[i] = round(temp.real() / size());
     }
 
-    //    std::cout << "\n\nThe irreducible projection is:\n";
+    //    //std::cout << "\n\nThe irreducible projection is:\n";
     //std::cout << tdec << "\n\n";
 
     return tdec;
@@ -3934,636 +3933,6 @@ namespace CASM {
   }
   //*******************************************************************************************
 
-  SymGroup molecular_point_group(std::map<int, std::vector<Eigen::Vector3d> > coord_map) {
-    //std::cout << " in mol_pg" << std::endl;
-    SymGroup mol_pg(LOCAL);
-
-    if(coord_map.empty()) {
-      default_err_log() << "SymGroup molecular_point_group found an empty coord_map\n"
-                        << "Exiting ... " << std::endl;
-      exit(88);
-    }
-
-
-    // num different species
-    int map_size = coord_map.size();
-    // num total coordinates
-    int num_elements = 0;
-    for(auto const &map_entry : coord_map) {
-      num_elements += map_entry.second.size();
-    }
-
-    //
-    //
-    // Building a 3xN matrix with coordinates as column vectors
-    Eigen::MatrixXd coord_matrix(3, num_elements);
-    Index col_counter = 0;
-    Eigen::Vector3d center(0., 0., 0.);
-    Eigen::Vector3d mol_center(0., 0., 0.);
-    for(auto  map_entry : coord_map) {
-      for(Index i = 0; i < map_entry.second.size() ; i++) {
-        //Eigen::Vector3d tmp_coord = map_entry.second.at(i);
-        coord_matrix.col(col_counter) = map_entry.second.at(i);
-        mol_center += map_entry.second.at(i);
-        col_counter++;
-      }
-    }
-    mol_center /= num_elements;
-    std::cout << " found center at: " << mol_center << std::endl;
-
-    // Cannot have a size() == 1 std::vector < (0.,0.,0.) >
-    // since this will break algorithm
-    Eigen::Vector3d origin(0., 0., 0.);
-    for(auto it = coord_map.begin(); it != coord_map.end();) {
-      if(it->second.size() == 1 && it->second.at(0) == origin) {
-        it = coord_map.erase(it);
-        map_size -= 1;
-        num_elements -= 1;
-      }
-      else
-        ++it;
-    }
-
-
-    col_counter = 0;
-    // centerize this thing
-    if(center != mol_center) {
-      for(auto  &map_entry : coord_map) {
-        //std::vector<Coordinate> new_coord_vec;
-        for(Index i = 0; i < map_entry.second.size() ; i++) {
-          //Coordinate tmp_coord(map_entry.second.at(i));
-          coord_map[map_entry.first].at(i) -= mol_center;
-          //new_coord_vec.push_back(tmp_coord);
-          //map_entry.second.at(i) = tmp_coord;
-          col_counter++;
-        }
-        //map_entry.second.swap(new_coord_vec);
-      }
-    }
-
-
-    // update coord_matrix to centerized coordinates
-    // don't like running through all of these loops here
-    // but a quick fix eludes me
-    col_counter = 0;
-    for(auto  &map_entry : coord_map) {
-      for(Index i = 0; i < map_entry.second.size() ; i++) {
-        //Eigen::Vector3d tmp_coord = map_entry.second.at(i)(CART);
-        coord_matrix.col(col_counter) = map_entry.second.at(i);
-        col_counter++;
-      }
-    }
-
-
-    // the algorithm:
-    //  - first look for linear molecules, these will have either C_{\inf}v or D_{\inf}h groups
-    //  - we have some easy cases like C1 which has no sym ops.
-    //      - C1 can be recognized immiediately if all species are distinct
-    //      - also check for inversion, we will return only E and i representations;
-    //          if a cluster expansion is desired on linear molecule orientation,
-    //          it is up to the user to specify spin-cluster expansion (SCE)
-    //          rather than quaternion-cluster expansion (QCE).
-    //  - to find all sym ops we will consider clusters of 3 unique atoms (if possible)
-    //  -
-    //
-    bool is_linear = false;
-    bool is_planar = false;
-
-    // if we've gotten this far, we already have Identity
-    mol_pg.push_back(SymOp());
-
-    // Check the rank.
-    if(coord_matrix.colPivHouseholderQr().rank() == 1) {
-      // points are on a line.
-      is_linear = true;
-    }
-    else if(coord_matrix.colPivHouseholderQr().rank() == 2) {
-      // points are coplanar
-      std::cout << " rank == 2 " << std::endl;
-      is_planar = true;
-    }
-
-
-    bool is_unique = false;
-    // Is each atom unique? If so, probably C1 unless linear
-    if(coord_map.count(map_size - 1) == 0) {
-      is_unique = true;
-    }
-
-    if(is_unique) {
-      // this is C1 or C_\inf
-      // proceed no further
-      return mol_pg;
-    }
-
-    // now begin mapping
-    // Need to pick 3 atoms, then compute their allowed permutations and inverses
-    // Perform matrix multiplications and check for Unitary transformations
-
-    // Holder for SymMatrices
-    std::vector<Eigen::Matrix3d> sym_ops;
-    // We need to roll through the key-buckets
-    // Need to take care when choosing clusters,
-    //      limiting cases are: all one bucket (Buckyball)
-    //                      or, all unique but one size=2 bucket.
-    // Therefore, going to take as many coords from each bucket as possible.
-    Eigen::Matrix3d init_triplet;
-
-    // ijk will exhaust the combinations among buckets
-    // still need to do permutations between buckets
-    //  *and* within buckets - lots of 'for-loops' :/
-    //  next_permutation to the rescue :D
-    Index i, j, k; // for combinations
-    Eigen::Vector3d tmp_coord;
-
-
-    // deal with planar molecules
-    // by finding the normal vector
-    if(is_planar && !is_linear) {
-      std::cout << " In is_planar" << std::endl;
-      Eigen::Vector3d disp1;
-      disp1 = (coord_map.at(0).at(0) - coord_map.at(0).at(1));
-      Eigen::Vector3d disp2;
-      disp2 = (coord_map.at(0).at(2) - coord_map.at(0).at(1));
-      Eigen::Vector3d normal_vector;
-      normal_vector = (disp1.cross(disp2));
-
-      // add a bucket with +/- normal vector
-      std::vector<Eigen::Vector3d> norm_vecs {normal_vector, -normal_vector};
-      std::cout << "Norm vecs 1 " << norm_vecs.at(0) << std::endl;
-      std::cout << "Norm vecs 2 " << norm_vecs.at(1) << std::endl;
-      coord_map[map_size] = norm_vecs;
-      map_size += 1;
-      // can probably just use same algorithms
-    }
-
-    Eigen::Matrix3d S;
-    Eigen::Matrix3d init_cluster;
-    Eigen::Matrix3d inv_init;
-
-
-
-    // NOTE:::::this is only going to work for >= 3 unique atoms
-    // ok for now might honestly just make 3 ifs
-    std::vector<std::vector<Eigen::Vector3d> > curr_buckets(3);
-
-
-    if(map_size >= 3) {
-
-      for(i = 0; i < map_size - 2; i++) {
-        for(j = i + 1; j < map_size - 1; j++) {
-          for(k = j + 1; k < map_size; k++) {
-
-
-            // Let's get only unique elements from the sym_ops
-            // going to try the sort and unique idea
-            std::sort(sym_ops.begin(), sym_ops.end(), [](const Eigen::Matrix3d & a, const Eigen::Matrix3d & b) {
-              for(Index i = 0; i < 3; ++i) {
-                for(Index j = 0; j < 3; ++j) {
-                  if(almost_equal(a(i, j), b(i, j))) continue;
-                  if(a(i, j) < b(i, j)) return true;
-                  if(a(i, j) > b(i, j)) return false;
-                }
-              }
-              return false;
-            });
-            sym_ops.erase(unique(sym_ops.begin(), sym_ops.end(), [](const Eigen::Matrix3d & a, const  Eigen::Matrix3d & b) {
-              return a.isApprox(b, 0.00001);
-            }), sym_ops.end());
-
-            curr_buckets[0] = coord_map.at(i);
-            curr_buckets[1] = coord_map.at(j);
-            curr_buckets[2] = coord_map.at(k);
-
-            for(Index ii = 0; ii < curr_buckets.at(0).size(); ii++) {
-              for(Index jj = 0; jj < curr_buckets.at(1).size(); jj++) {
-                for(Index kk = 0; kk < curr_buckets.at(2).size(); kk++) {
-
-                  tmp_coord = curr_buckets.at(0)[ii];
-                  init_cluster.col(0) = tmp_coord;
-                  tmp_coord = curr_buckets.at(1)[jj];
-                  init_cluster.col(1) = tmp_coord;
-                  tmp_coord = curr_buckets.at(2)[kk];
-                  init_cluster.col(2) = tmp_coord;
-                  // we have our starting cluster: a0b0c0
-                  // compare against all a(ii)b(jj)c(kk)
-
-                  std::cout << "my init_cluster:\n" << init_cluster << std::endl;
-                  // Check if this is full rank!
-                  if(init_cluster.colPivHouseholderQr().rank() == 3) {
-                    inv_init = init_cluster.inverse();
-                    //std::map<int, std::vector<Eigen::Vector3d> > tmp_map;
-                    //tmp_map[0] = curr_buckets.at(0);
-                    //tmp_map[1] = curr_buckets.at(1);
-                    //tmp_map[2] = curr_buckets.at(2);
-
-
-                    for(Index iii = 0; iii < curr_buckets.at(0).size(); iii++) {
-                      for(Index jjj = 0; jjj < curr_buckets.at(1).size(); jjj++) {
-                        for(Index kkk = 0; kkk < curr_buckets.at(2).size(); kkk++) {
-                          Eigen::Matrix3d test_cluster;
-
-                          tmp_coord = curr_buckets.at(0)[iii];
-                          test_cluster.col(0) = tmp_coord;
-                          tmp_coord = curr_buckets.at(1)[jjj];
-                          test_cluster.col(1) = tmp_coord;
-                          tmp_coord = curr_buckets.at(2)[kkk];
-                          test_cluster.col(2) = tmp_coord;
-
-                          // Finally, calc S in test_cluster = S * init_cluster
-                          // and if S'S = I.
-
-                          S = test_cluster * inv_init;
-
-                          std::cout << "my S:\n" << S << std::endl;
-                          if(S.isUnitary(1e-6) && !(S.isIdentity(1e-8))) {
-                            std::cout << "keeper:\n" << S << std::endl;
-                            // we've got a keeper
-                            //S = S * -1;
-                            //S = S * -1;
-                            sym_ops.push_back(S);
-                            //if(sym_ops.size() > 120) exit(88);
-
-
-                          }
-
-
-                        } // end iii-for
-                      } // end jjj-for
-                    } // end kkk-for
-                  } // end if rank=3
-                } // end ii-for
-              } // end jj-for
-            } // end kk-for
-          } // end k-for
-        } // end j-for
-      } // end i-for
-    } // end if
-
-
-    //std::cout << "map_size() " << map_size << std::endl;
-    // things are a little weird when we have to use the same bucket for
-    // two of the columns. I am doing the easiest approach.
-    if(map_size <= 2 && num_elements > 2) {
-
-      // this makes coord_map[0].size == 1
-      if(map_size > 1 && coord_map.at(0).size() != 1) {
-        std::vector<Eigen::Vector3d> &single_atom = coord_map[1];
-        std::vector<Eigen::Vector3d> &multi_atom = coord_map[0];
-        std::swap(single_atom, multi_atom);
-      }
-      // 'ordered-ordered' list
-
-
-      // There are only 4 combinations to test
-      // (011), (111), (001), (000)
-      // and permutations (101),(110)
-      // as well as (010)(100)
-      // this is an ugly control flow
-      // but unclear how to clean it up
-
-      for(Index comb = 0; comb < 4; comb++) {
-
-        std::cout << "in for" << std::endl;
-
-        // (000) on first run
-        // if at(0) big enough
-        if(comb == 0 && coord_map.at(0).size() > 2) {
-          std::cout << "in comb 0" << std::endl;
-          curr_buckets[0] = coord_map.at(0);
-          curr_buckets[1] = coord_map.at(0);
-          curr_buckets[2] = coord_map.at(0);
-        }
-        else if(comb == 0) {
-          continue;
-        }
-        // (111) on second run
-        // if at(1) big enough
-        if(map_size > 1 && comb == 1 && coord_map.at(1).size() > 2) {
-          std::cout << "in comb 1" << std::endl;
-          curr_buckets[0] = coord_map.at(1);
-          curr_buckets[1] = coord_map.at(1);
-          curr_buckets[2] = coord_map.at(1);
-        }
-        else if(comb == 1) continue;
-
-        // (001) on third run
-        // if at(0) big enough
-        if(map_size > 1 && comb == 2 && coord_map.at(0).size() > 1) {
-          std::cout << "in comb 2" << std::endl;
-          curr_buckets[0] = coord_map.at(0);
-          curr_buckets[1] = coord_map.at(0);
-          curr_buckets[2] = coord_map.at(1);
-        }
-        else if(comb == 2) continue;
-
-
-        // (110) on third run
-        // if at(0) big enough
-        if(map_size > 1 && comb == 3 && coord_map.at(1).size() > 1) {
-          std::cout << "in comb 3" << std::endl;
-          curr_buckets[0] = coord_map.at(1);
-          curr_buckets[1] = coord_map.at(1);
-          curr_buckets[2] = coord_map.at(0);
-        }
-        else if(comb == 3) continue;
-
-
-        // we are guaranteed to have at least three elements
-        //
-        //
-
-
-        for(Index ii = 0; ii < curr_buckets.at(0).size(); ++ii) {
-
-
-
-          // Due to how slow this is, putting it here
-          // to avoid repeating it so many times.
-          //
-          // Let's get only unique elements from the sym_ops
-          // going to try the sort and unique idea
-          std::sort(sym_ops.begin(), sym_ops.end(), [](const Eigen::Matrix3d & a, const Eigen::Matrix3d & b) {
-            for(Index i = 0; i < 3; ++i) {
-              for(Index j = 0; j < 3; ++j) {
-                if(almost_equal(a(i, j), b(i, j))) continue;
-                if(a(i, j) < b(i, j)) return true;
-                if(a(i, j) > b(i, j)) return false;
-              }
-            }
-            return false;
-          });
-          sym_ops.erase(unique(sym_ops.begin(), sym_ops.end(), [](const Eigen::Matrix3d & a, const  Eigen::Matrix3d & b) {
-            return a.isApprox(b, 0.00001);
-          }), sym_ops.end());
-
-
-          for(Index jj = 0; jj < curr_buckets.at(1).size(); ++jj) {
-
-            for(Index kk = 0; kk < curr_buckets.at(2).size(); ++kk) {
-
-              tmp_coord = curr_buckets.at(0)[ii];
-              init_cluster.col(0) = tmp_coord;
-              tmp_coord = curr_buckets.at(1)[jj];
-              init_cluster.col(1) = tmp_coord;
-              tmp_coord = curr_buckets.at(2)[kk];
-              init_cluster.col(2) = tmp_coord;
-
-              // we have our starting cluster: a0b0c0
-              // compare against all a(ii)b(jj)c(kk)
-
-              //std::cout << "my init_cluster:\n" << init_cluster << std::endl;
-
-              // Check if this is full rank!
-              if(init_cluster.colPivHouseholderQr().rank() == 3) {
-                inv_init = init_cluster.inverse();
-                //std::map<int, std::vector<Eigen::Vector3d> > tmp_map;
-                //tmp_map[0] = curr_buckets.at(0);
-                //tmp_map[1] = curr_buckets.at(1);
-                //tmp_map[2] = curr_buckets.at(2);
-
-                for(Index iii = 0; iii < curr_buckets.at(0).size(); ++iii) {
-                  for(Index jjj = 0; jjj < curr_buckets.at(1).size(); ++jjj) {
-                    for(Index kkk = 0; kkk < curr_buckets.at(2).size(); ++kkk) {
-                      Eigen::Matrix3d test_cluster;
-
-                      tmp_coord = curr_buckets.at(0)[iii];
-                      test_cluster.col(0) = tmp_coord;
-                      tmp_coord = curr_buckets.at(1)[jjj];
-                      test_cluster.col(1) = tmp_coord;
-                      tmp_coord = curr_buckets.at(2)[kkk];
-                      test_cluster.col(2) = tmp_coord;
-
-                      // Finally, calc S in test_cluster = S * init_cluster
-                      // and if S'S = I.
-
-                      S = test_cluster * inv_init;
-
-                      if(S.isUnitary(1e-6) && !(S.isIdentity(1e-8))) {
-                        //std::cout << "my S:\n" << S << std::endl;
-                        // we've got a keeper
-                        sym_ops.push_back(S);
-                        //if(sym_ops.size() > 5000000) {
-                        //    std::cout << " I HAD TO EXIT " << std::endl;
-                        //    goto comehere;
-                        //}
-                      }
-
-
-                    } // end iii-for
-                  } // end jjj-for
-                } // end kkk-for
-              } // end if rank=3
-            } // end ii-for
-          } // end jj-for
-        } // end kk-for
-
-      } // end combination-for
-    } // end if-only two kind of atoms
-
-
-    //// this is for something like (000) or (111)
-    //// we are guaranteed to have at least three elements
-    //for (i = 0;i < curr_buckets.at(0).size() - 2; i++){
-    //    for(j = i + 1; j < curr_buckets.at(1).size() - 1; j++){
-    //        for(k = j + 1; k < curr_buckets.at(2).size(); k++){
-
-    //            // (r1,r2,r3) cluster initial
-    //            Eigen::Matrix3d init_cluster;
-    //            // (AtomXi, AtomXj, AtomXk) to be permuted
-    //            std::vector<Eigen::Vector3d> permute_list(3);
-
-    //            tmp_coord = curr_buckets.at(0)[i];
-    //            permute_list.at(0) = curr_buckets.at(0)[i];
-    //            init_cluster.col(0) = tmp_coord;
-    //            tmp_coord = curr_buckets.at(1)[j];
-    //            permute_list.at(1) = curr_buckets.at(1)[j];
-    //            init_cluster.col(1) = tmp_coord;
-    //            tmp_coord = curr_buckets.at(2)[k];
-    //            permute_list.at(2) = curr_buckets.at(2)[k];
-    //            init_cluster.col(2) = tmp_coord;
-
-    //            //std::cout << "have init_cluster\n" << init_cluster << std::endl;
-
-    //            if(init_cluster.colPivHouseholderQr().rank() == 3){
-    //                // i'd like to do permutations now of the cluster
-
-    //                // need to sort the permute_list lexicographically
-    //                // in order for next_permutation to work
-    //                std::sort(permute_list.begin(),permute_list.end(),[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-    //                       for(Index i =0; i < 3; i++){
-    //                        for(Index j = 0; j < 3; j++){
-    //                            if(a(i,j) < b(i,j)) return true;
-    //                            if(a(i,j) > b(i,j)) return false;
-    //                            }}  return false;});
-    //                std::cout << "NEW PERMUTATION\n\n" << std::endl;
-    //                do{
-    //                    Eigen::Matrix3d curr_cluster;
-    //                    curr_cluster.col(0) = permute_list.at(0);
-    //                    curr_cluster.col(1) = permute_list.at(1);
-    //                    curr_cluster.col(2) = permute_list.at(2);
-    //                    std::cout << "curr_cluster\n" << curr_cluster << std::endl;
-
-
-    //                    Eigen::Matrix3d cluster_inv;
-    //                    cluster_inv = curr_cluster.inverse();
-    //
-    //                    for (Index ii = 0;ii < curr_buckets.at(0).size() - 2; ii++){
-    //                        for(Index jj = ii + 1; jj < curr_buckets.at(1).size() - 1; jj++){
-    //                            for(Index kk = jj + 1; kk < curr_buckets.at(2).size(); kk++){
-    //
-    //                                Eigen::Matrix3d test_cluster;
-    //
-    //                                tmp_coord = curr_buckets.at(0)[ii];
-    //                                test_cluster.col(0) = tmp_coord;
-    //                                tmp_coord = curr_buckets.at(1)[jj];
-    //                                test_cluster.col(1) = tmp_coord;
-    //                                tmp_coord = curr_buckets.at(2)[kk];
-    //                                test_cluster.col(2) = tmp_coord;
-
-    //                                // Finally, calc S in test_cluster = S * init_cluster
-    //                                // and if S'S = I.
-    //
-    //                                Eigen::Matrix3d S;
-
-
-    //                                S = test_cluster * cluster_inv;
-    //                                //std::cout << "test_cluster * cluster_inv = S\n" << test_cluster << "\n" << cluster_inv << "\n" << S << std::endl;
-    //                                if(S.isUnitary(TOL) && !(S.isIdentity(TOL))){
-    //                                    // we've got a keeper
-    //
-    //                                    //std::cout << "Keeper! \n" << S << std::endl;
-    //                                    sym_ops.push_back(S);
-    //                                }
-
-
-    //                                } // end kk-for
-    //                            } // end jj-for
-    //                        } // end ii-for
-    //
-    //                } while(std::next_permutation(permute_list.begin(),permute_list.end(),[](const Eigen::Vector3d &a,const Eigen::Vector3d &b){
-    //                            for(Index t = 0; t < a.size(); t++){
-    //                            if(a[t]<b[t]) return true;
-    //                                if(a[t]>b[t])return false;
-    //                                } return false;}));
-    //            }
-
-    //            } // end k-for
-    //        } // end j-for
-    //    } // end i-for
-
-
-
-    // if only two atoms of same identity
-    // only really have to test inversion
-    // which will happen at end.
-    if(num_elements == 2) {
-      Eigen::Matrix3d inv_mat;
-      inv_mat << -1., 0., 0.,
-              0., -1., 0.,
-              0., 0., -1.0;
-      sym_ops.push_back(inv_mat);
-    }
-
-
-    // Let's get only unique elements from the sym_ops
-    // going to try the sort and unique idea
-    std::sort(sym_ops.begin(), sym_ops.end(), [](const Eigen::Matrix3d & a, const Eigen::Matrix3d & b) {
-      for(Index i = 0; i < 3; ++i) {
-        for(Index j = 0; j < 3; ++j) {
-          if(almost_equal(a(i, j), b(i, j))) continue;
-          if(a(i, j) < b(i, j)) return true;
-          if(a(i, j) > b(i, j)) return false;
-        }
-      }
-      return false;
-    });
-    //for(Index s = 0; s < sym_ops.size() ; s++){
-    //    std::cout << "S: \n" << sym_ops.at(s) << std::endl;
-    //}
-    //std::cout << "Size pre erase: " << sym_ops.size() << std::endl;
-    //int pre = sym_ops.size();
-    sym_ops.erase(unique(sym_ops.begin(), sym_ops.end(), [](const Eigen::Matrix3d & a, const  Eigen::Matrix3d & b) {
-      return a.isApprox(b, 0.00001);
-    }), sym_ops.end());
-    //int post = sym_ops.size();
-    //std::cout << "Size post: " << sym_ops.size() << std::endl;
-
-
-
-
-
-    // Now test these isometries.
-    // Apply isometry to every coordinate
-    // then check if the transformed coordinate
-    // exists within the original map.
-    // If they all do, add to final_list if
-    // if isn't already there.
-    std::vector<bool> sym_bools(sym_ops.size(), true);
-    std::cout << " PRE TEST Sym_ops size() " << sym_ops.size() << std::endl;
-    // so = symmetry operation in sym_ops
-    for(Index so = 0; so < sym_ops.size(); so++) {
-      // each map_entry holds all coordinates
-      // for each species type
-
-      for(auto map_entry : coord_map) {
-        std::vector<Eigen::Vector3d> sym_species_vec;
-        // get all of the transformed coords
-        for(Index v = 0; v < map_entry.second.size(); v++) {
-          // transform the coordinate
-          sym_species_vec.push_back(sym_ops[so] * map_entry.second.at(v));
-        } // end v-for
-        std::vector<bool> sym_species_bools(sym_species_vec.size(), false);
-
-        // now check if all of these coords were in the original std::vector
-        // ov = original vector
-        // this was wrong
-        for(Index ov = 0 ; ov < map_entry.second.size(); ov++) {
-          //for(Index sv = 0; sv < sym_species_vec.size(); sv++){
-          //bool ya;
-          tmp_coord = map_entry.second.at(ov);
-          auto found = std::find_if(sym_species_vec.begin(), sym_species_vec.end(), [&tmp_coord](Eigen::Vector3d a) {
-            return a.isApprox(tmp_coord, 1e-5);
-          }
-                                   );
-          if(found != sym_species_vec.end()) {
-            //std::cout << " Found coord" << std::endl;
-          }
-          else {
-            //std::cout << "Didn't find a coordinate in sym_species_vec" << std::endl;
-            sym_bools[so] = false;
-          }
-          //} // end sv-for
-        } // end ov-for
-        sym_species_vec.clear(); // clear this
-
-      } // end map_entry-for
-    } // end so-for
-
-
-    int vec_counter = 0;
-    std::vector<Eigen::Matrix3d> final_ops;
-    for(auto ind : sym_bools) {
-      //std::cout << "sym bools: " << ind << std::endl;
-      if(ind) {
-        final_ops.push_back(sym_ops.at(vec_counter));
-      } // end if
-      vec_counter++;
-    } // end vec-for
-
-
-    for(Index mat = 0; mat < final_ops.size(); mat++) {
-      mol_pg.push_back(SymOp(final_ops.at(mat)));
-    }
-
-    // we are done, return sym_ops
-
-
-    return mol_pg;
-  }
-
-  //*******************************************************************************************
-
   jsonParser &MasterSymGroup::to_json(jsonParser &json) const {
 
     // class MasterSymGroup : public SymGroup
@@ -4645,7 +4014,8 @@ namespace CASM {
                         PERIODICITY_TYPE periodicity,
                         double _tol) {
 
-    if(!almost_equal(a.matrix(), b.matrix(), _tol))
+
+    if(a.time_reversal() != b.time_reversal() || !almost_equal(a.matrix(), b.matrix(), _tol))
       return false;
     //std::cout << "Operations:\n"
     //<< a.matrix() << "\n and \n"
@@ -4669,7 +4039,7 @@ namespace CASM {
 
     Coordinate trans(a.tau(), lat, CART);
     trans.within();
-    return SymOp(a.matrix(), trans.cart(), a.map_error());
+    return SymOp(a.matrix(), trans.cart(), a.time_reversal(), a.map_error());
   }
 
 

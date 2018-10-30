@@ -122,8 +122,6 @@ namespace CASM {
     if(vm.count("update")) {
 
       // initialize project info
-      Structure prim = primclex.prim();
-
       if(!fs::is_regular_file(dir.bspecs(bset))) {
         args.err_log().error("'bspecs.json' file not found");
         args.err_log() << "expected basis set specifications file at: " << dir.bspecs(bset) << "\n" << std::endl;
@@ -199,7 +197,7 @@ namespace CASM {
             std::back_inserter(local_orbits),
             args.log());
 
-          clex_basis_ptr.reset(new ClexBasis(prim, local_bspecs_json));
+          clex_basis_ptr.reset(new ClexBasis(primclex.prim(), local_bspecs_json));
           clex_basis_ptr->generate(local_orbits.begin(), local_orbits.end(), local_bspecs_json);
 
         }
@@ -208,14 +206,14 @@ namespace CASM {
           args.log() << std::endl;
 
           make_prim_periodic_orbits(
-            prim,
+            primclex.prim(),
             bspecs_json,
             alloy_sites_filter,
             set.crystallography_tol(),
             std::back_inserter(orbits),
             args.log());
 
-          clex_basis_ptr.reset(new ClexBasis(prim, bspecs_json));
+          clex_basis_ptr.reset(new ClexBasis(primclex.prim(), bspecs_json));
           clex_basis_ptr->generate(orbits.begin(), orbits.end(), bspecs_json);
         }
 
@@ -278,7 +276,7 @@ namespace CASM {
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), bset));
 
-        ClexBasisWriter clexwriter(prim);
+        ClexBasisWriter clexwriter(primclex.prim());
         clexwriter.print_clexulator(set.global_clexulator_name(),
                                     *clex_basis_ptr,
                                     local_orbits,
@@ -307,7 +305,7 @@ namespace CASM {
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), bset));
 
-        ClexBasisWriter clexwriter(prim);
+        ClexBasisWriter clexwriter(primclex.prim());
         clexwriter.print_clexulator(set.global_clexulator_name(),
                                     *clex_basis_ptr,
                                     orbits,

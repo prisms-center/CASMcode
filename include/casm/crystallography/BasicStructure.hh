@@ -276,7 +276,10 @@ namespace CASM {
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
 
   template<typename CoordType>
-  std::vector<DoFKey> local_dof_types(BasicStructure<CoordType> const &_struc);
+  std::vector<DoFKey> all_local_dof_types(BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
+  std::vector<DoFKey> continuous_local_dof_types(BasicStructure<CoordType> const &_struc);
 
   template<typename CoordType>
   std::vector<DoFKey> global_dof_types(BasicStructure<CoordType> const &_struc);

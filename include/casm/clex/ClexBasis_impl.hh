@@ -18,6 +18,8 @@ namespace CASM {
                            Index _max_poly_order /*= -1*/) {
     std::vector<DoFKey> dof_keys;
     _bspecs.get_if(dof_keys, "dofs");
+    if(!valid_index(_max_poly_order))
+      _bspecs.get_if(_max_poly_order, "max_poly_order");
     std::vector<DoFKey> global_keys;
     std::vector<DoFKey> local_keys;
 
@@ -25,9 +27,11 @@ namespace CASM {
     for(DoFKey const &key : dof_keys) {
       if(m_global_bases.find(key) != m_global_bases.end()) {
         global_keys.push_back(key);
+        //std::cout << "ADDING GLOBAL DOF " << key << "\n";
       }
       else if(m_site_bases.find(key) != m_site_bases.end()) {
         local_keys.push_back(key);
+        //std::cout << "ADDING LOCAL DOF " << key << "\n";
       }
       else {
         assert(0);
@@ -44,7 +48,7 @@ namespace CASM {
       bset_it->push_back(_construct_prototype_basis(*_orbit_begin,
                                                     local_keys,
                                                     global_keys,
-                                                    -1/* polynomial_order */));
+                                                    _max_poly_order));//-1/* polynomial_order */));
 
       for(Index j = 1; j < _orbit_begin->size(); j++)
         bset_it->push_back((*(_orbit_begin->equivalence_map(j).first)) * (*bset_it)[0]);
@@ -93,8 +97,8 @@ namespace CASM {
     //std::cout<<"valid_index evaluates to:"<<valid_index(max_poly_order)<<std::endl;
 
     // Default polynomial order is cluster size
-    if(!valid_index(max_poly_order))
-      max_poly_order = _orbit.prototype().size();
+    //if(!valid_index(max_poly_order))
+    max_poly_order = max(max_poly_order, Index(_orbit.prototype().size()));
 
     //std::cout<<"Max_poly_order "<<max_poly_order<<std::endl;
 
@@ -121,19 +125,16 @@ namespace CASM {
         throw std::runtime_error("Unable to construct basis sets. No known local DoF: " + key + "\n");
 
       std::vector<BasisSet> const &arg_vec(find_it->second);
+      //std::cout << "skdsa Working on DoF " << key << " size() : " << find_it->second.size() << "\n";
       std::vector<BasisSet> tlocal;
       tlocal.reserve(_orbit.prototype().size());
-      std::vector<BasisSet const *> site_args(_orbit.prototype().size(), nullptr);
       //Loop over sites
       for(Index i = 0; i < _orbit.prototype().size(); i++) {
-        if(arg_vec[_orbit.prototype()[i].sublat()].size()) {
-          tlocal.push_back(arg_vec[_orbit.prototype()[i].sublat()]);
-          tlocal.back().set_dof_IDs(std::vector<Index>(1, i));
-          site_args[i] = &tlocal.back();
-        }
+        tlocal.push_back(arg_vec[_orbit.prototype()[i].sublat()]);
+        tlocal.back().set_dof_IDs(std::vector<Index>(1, i));
       }
 
-      all_local.push_back(ClexBasis_impl::construct_proto_dof_basis(_orbit, site_args));
+      all_local.push_back(ClexBasis_impl::construct_proto_dof_basis(_orbit, BasisSet::ArgList(tlocal)));
 
       if(all_local.back().size())
         arg_subsets.push_back(&(all_local.back()));
@@ -145,22 +146,14 @@ namespace CASM {
 
   namespace ClexBasis_impl {
     template<typename OrbitType>
-    BasisSet construct_proto_dof_basis(OrbitType const &_orbit, std::vector<BasisSet const *> const &site_dof_sets) {
-      //throw std::runtime_error("ClexBasis_impl::construct_clust_dof_basis() needs to be re-implemented!\n");
-      BasisSet result;
+    BasisSet construct_proto_dof_basis(OrbitType const &_orbit, BasisSet::ArgList const &site_dof_sets) {
 
       auto const &clust(_orbit.prototype());
       SymGroup clust_group(_orbit.equivalence_map(0).first, _orbit.equivalence_map(0).second);
 
-      if(clust.size() > 0) {
-        result.set_dof_IDs(sequence(Index(0), Index(clust.size() - 1)));
-      }
       std::vector<SymGroupRep const *> subspace_reps;
-
       for(BasisSet const *site_bset_ptr : site_dof_sets) {
         if(site_bset_ptr) {
-
-          result.append(*site_bset_ptr);
           subspace_reps.push_back(SymGroupRep::RemoteHandle(clust_group,
                                                             site_bset_ptr->basis_symrep_ID()).rep_ptr());
         }
@@ -170,6 +163,8 @@ namespace CASM {
         }
       }
       SymGroupRep const *permute_rep = SymGroupRep::RemoteHandle(clust_group, _orbit.canonization_rep_ID()).rep_ptr();
+
+      BasisSet result = direct_sum(site_dof_sets);
       result.set_basis_symrep_ID(permuted_direct_sum_rep(*(permute_rep),
                                                          subspace_reps).add_copy_to_master());
 

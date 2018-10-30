@@ -148,7 +148,7 @@ namespace CASM {
 
     template<typename OrbitType>
     BasisSet construct_proto_dof_basis(OrbitType const &_orbit,
-                                       std::vector<BasisSet const *> const &site_dof_sets);
+                                       BasisSet::ArgList const &site_dof_sets);
 
     //template<typename UCCIterType, typename IntegralClusterSymCompareType>
     //std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,

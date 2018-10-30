@@ -104,6 +104,19 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+  void Function::set_arguments(const ArgumentContainer &new_arg, std::vector<Index> const &compatibility_map) {
+    _set_arguments(new_arg, compatibility_map);
+
+    m_arg2sub.clear();
+    m_arg2fun.clear();
+    for(Index i = 0; i < new_arg.size(); i++) {
+      for(Index j = 0; j < new_arg[i]->size(); j++) {
+        m_arg2sub.push_back(i);
+        m_arg2fun.push_back(j);
+      }
+    }
+  }
+  //*******************************************************************************************
 
   ReturnArray<SymGroupRepID> Function::_sub_sym_reps() const {
     Array<SymGroupRepID> t_result(m_argument.size());
@@ -236,6 +249,20 @@ namespace CASM {
     }
     */
     return  _update_dof_IDs(before_IDs, after_IDs);
+  }
+
+  //*******************************************************************************************
+  void Function::set_identifier(char _key, std::string const &_value) {
+    m_identifiers[_key] = _value;
+
+  }
+
+  //*******************************************************************************************
+  std::string Function::identifier(char _key) const {
+    auto it = m_identifiers.find(_key);
+    if(it == m_identifiers.end())
+      return "?";
+    return it->second;
   }
 
   //*******************************************************************************************

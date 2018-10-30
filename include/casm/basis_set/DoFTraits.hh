@@ -5,16 +5,17 @@
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include "casm/clusterography/ClusterDecl.hh"
+#include "casm/misc/ParsingDictionary.hh"
 
-// remove these once implementation of derived classes gets moved out of this file
-#include "casm/crystallography/Site.hh"
-#include "casm/basis_set/BasisSet.hh"
 
 namespace CASM {
   class jsonParser;
   class MasterSymGroup;
   class PrimNeighborList;
   class Structure;
+  class BasisSet;
+  class Site;
+  class SymOp;
   //namespace DoF_impl{
   //class OccupationDoFTraits;
   //}

@@ -75,7 +75,8 @@ namespace CASM {
     BasicStructure<Site>::copy_attributes_from(RHS);
 
     m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
-
+    std::cout << "COPYING ATTRIBUTES!!\n";
+    //assert(0);
     m_factor_group = RHS.m_factor_group;
     m_factor_group.set_lattice(lattice());
   }
@@ -229,10 +230,9 @@ namespace CASM {
       }
       else {
         for(Index j = 0; j < prim_grid.size(); j++) {
-          Coordinate t_tau(prim.factor_group()[i].tau() + prim_grid.coord(j, SCEL).const_cart(), lattice(), CART);
-          t_tau.within();
-          m_factor_group.push_back(SymOp(prim.factor_group()[i].matrix(),
-                                         t_tau.cart()));
+          m_factor_group.push_back(within_cell(SymOp::translation(prim_grid.coord(j, SCEL).const_cart())*prim.factor_group()[i],
+                                               lattice(),
+                                               PERIODIC));
         }
       }
     }
@@ -510,7 +510,7 @@ namespace CASM {
 
     m_basis_perm_rep_ID = m_factor_group.allocate_representation();
 
-    for(std::string const &dof : local_dof_types(*this)) {
+    for(std::string const &dof : continuous_local_dof_types(*this)) {
       for(Site const &site : basis()) {
         if(site.has_dof(dof))
           site.dof(dof).allocate_symrep(m_factor_group);

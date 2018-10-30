@@ -41,20 +41,21 @@ namespace CASM {
       return SymOp(matrix_type::Identity(), vector_type::Zero(), true, TOL, -1, nullptr);
     }
 
-    ///Create new SymOp from Matrix3 and tau translation
-    /// by default, assume no translation
-    SymOp(const Eigen::Ref<const matrix_type> &_mat = matrix_type::Identity(),
-          const Eigen::Ref<const vector_type> &_tau = vector_type::Zero(),
-          double _map_error = TOL) :
-      SymOp(_mat, _tau, false, _map_error, -1, nullptr) {
+    /// static method to create point operation (no translation)
+    static SymOp point_op(const Eigen::Ref<const matrix_type> &_mat, double _map_error = TOL) {
+      return SymOp(_mat, vector_type::Zero(), false, _map_error, -1, nullptr);
     }
 
-    /// Create new SymOp from Matrix3 and no translation,
-    /// but include mapping error
-    SymOp(const Eigen::Ref<const matrix_type> &_mat,
-          double _map_error) :
-      SymOp(_mat, vector_type::Zero(), _map_error) {
+    SymOp() :
+      SymOp(matrix_type::Identity(), vector_type::Zero(), false, TOL) {}
 
+    ///Create new SymOp from Matrix3 and tau translation
+    /// by default, assume no translation
+    SymOp(const Eigen::Ref<const matrix_type> &_mat,
+          const Eigen::Ref<const vector_type> &_tau,
+          bool _time_reversal,
+          double _map_error) :
+      SymOp(_mat, _tau, _time_reversal, _map_error, -1, nullptr) {
     }
 
     /// Const access of entire cartesian symmetry matrix
@@ -141,7 +142,7 @@ namespace CASM {
     }
 
     SymOp unregistered_copy() const {
-      return SymOp(matrix(), tau(), map_error());
+      return SymOp(matrix(), tau(), time_reversal(), map_error());
     }
 
     jsonParser &to_json(jsonParser &json) const override;

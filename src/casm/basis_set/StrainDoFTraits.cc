@@ -25,8 +25,25 @@ namespace CASM {
       return result;
     }
 
-  }
 
+
+    /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
+    std::vector<BasisSet> StrainDoFTraits::construct_site_bases(Structure const &_prim,
+                                                                std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
+                                                                jsonParser const &_bspecs) const {
+
+
+      //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
+      if(_prim.global_dofs().find(type_name()) == _prim.global_dofs().end())
+        return std::vector<BasisSet>();
+
+      std::vector<BasisSet> result(1);
+      result[0].set_variable_basis(_prim.global_dof(type_name()));
+
+      return result;
+    }
+
+  }
   namespace DoFType {
     DoF_impl::StrainDoFTraits GLstrain() {
       return DoF_impl::StrainDoFTraits("GL");

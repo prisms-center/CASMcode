@@ -85,7 +85,7 @@ namespace CASM {
   }
 
   SymOp IsPointGroupOp::sym_op() const {
-    return SymOp(cart_op(), map_error());
+    return SymOp::point_op(cart_op(), map_error());
   }
 
   ///Find the effect of applying symmetry to the lattice vectors

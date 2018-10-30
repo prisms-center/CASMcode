@@ -36,16 +36,13 @@ namespace CASM {
 
       //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
 
-      for(Index i = 0; i < _asym_unit.size(); i++) {
-        Site const &_site = _asym_unit[i].prototype()[0].sublat_site();
+      for(Index b = 0; b < _prim.basis().size(); b++) {
 
-        if(!_site.has_dof(type_name()))
+        if(!_prim.basis()[b].has_dof(type_name()))
           continue;
 
-        Index b_ind = _asym_unit[i].prototype()[0].sublat();
-
-        result[b_ind].set_variable_basis(_site.dof(type_name()));
-
+        result[b].set_variable_basis(_prim.basis()[b].dof(type_name()));
+        //std::cout << "+:+:+:+Created variable set for site " << b << ", size " << result[b].size() << "\n";
       }
       return result;
     }

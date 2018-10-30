@@ -2,6 +2,9 @@
 #define CASM_DisplacementDoFTraits
 
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/basis_set/BasisSet.hh"
+#include "casm/crystallography/Site.hh"
+
 namespace CASM {
   namespace DoF_impl {
     class DisplacementDoFTraits : public DoFType::Traits {

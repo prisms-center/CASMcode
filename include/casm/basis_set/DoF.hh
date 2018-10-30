@@ -313,6 +313,10 @@ namespace CASM {
     virtual
     ~DoF() {}
 
+    BasicTraits const &traits() const {
+      return traits(type_name());
+    }
+
     /// \brief Const access of DoF type name
     std::string type_name() const {
       return m_type_name;

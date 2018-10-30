@@ -45,9 +45,7 @@ namespace CASM {
   protected:
     typedef std::vector<std::shared_ptr<BasisSet> > ArgumentContainer;
   public:
-    //Function(std::string &init_formula) : func_ID(ID_count++), m_formula(init_formula), m_tex_formula(init_formula) {}
-    Function(const Function &RHS) : func_ID(RHS.func_ID), m_argument(RHS.m_argument), m_arg2sub(RHS.m_arg2sub), m_arg2fun(RHS.m_arg2fun),
-      m_formula(RHS.m_formula), m_tex_formula(RHS.m_tex_formula) { }
+    Function(const Function &RHS) = default;
     Function(const ArgumentContainer &_args);
 
     Function() : func_ID(ID_count++) {}
@@ -64,19 +62,15 @@ namespace CASM {
       return m_arg2sub.size();
     }
 
+    void set_identifier(char _key, std::string const &_value);
+
+    std::string identifier(char _key) const;
 
     std::string formula() const;
     std::string tex_formula() const;
 
     void print(std::ostream &stream) const;
     void print_tex(std::ostream &stream) const;
-
-    void set_label_format(const std::string &format) {
-      m_label_format = format;
-    }
-    const std::string &label_format()const {
-      return m_label_format;
-    }
 
     void set_formula(const std::string &new_formula) {
       m_formula = new_formula;
@@ -135,6 +129,7 @@ namespace CASM {
 
     bool update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
 
+    virtual std::set<Index> dof_IDs() const = 0;
 
     virtual Function *apply_sym_coeffs(const SymOp &op, int dependency_layer = 1) {
       if(_dependency_layer() == dependency_layer)
@@ -167,9 +162,15 @@ namespace CASM {
     Function *plus_in_place(Function const *RHS);
 
 
+    ///\brief change arguments of this function
     void set_arguments(const ArgumentContainer &new_arg) {
       m_argument = new_arg;
     }
+
+
+    ///\brief change arguments, allowing for new_arg to be larger than current argument list [or permuted (not yet implemented)]
+    /// @param compatibility_map specifies which elements of @param new_arg are compatible with urrent argument list (e.g., [2, 3])
+    void set_arguments(const ArgumentContainer &new_arg, std::vector<Index> const &compatibility_map);
 
 
     const ArgumentContainer &argument_bases() const {
@@ -218,7 +219,7 @@ namespace CASM {
     /// that concatenates multiple values in ascending order.
     /// Example: For a polynomial function that combines DoFs from the sites {8, 2, 4} of the neighborlist,
     ///          %n will evaluate to the substring expression "2_4_8"
-    std::string m_label_format;
+    //std::string m_label_format;
 
 
     //    double scale_val;
@@ -233,6 +234,10 @@ namespace CASM {
     mutable std::string m_formula, m_tex_formula;
 
     ReturnArray<SymGroupRepID> _sub_sym_reps() const;
+
+    virtual void _set_arguments(const ArgumentContainer &new_arg, std::vector<Index> const &compatibility_map) {
+      set_arguments(new_arg);
+    }
 
     Function const *_argument(Index i) const;
 
@@ -264,6 +269,8 @@ namespace CASM {
   private:
     friend class HierarchyID<Function>;
     static Index ID_count;
+
+    std::map<char, std::string> m_identifiers;
   };
 
   jsonParser &to_json(const Function *func, jsonParser &json);

@@ -93,7 +93,7 @@ namespace CASM {
         int col = 0;
         for(auto const &el : *it) {
           if(is_error || el.size() != (traits_ref.dim() + 1) || !el[0].is_string()) {
-            std::cout << "ERROR 1\n" << std::endl;
+            //std::cout << "ERROR 1\n" << std::endl;
             is_error = true;
             break;
           }
@@ -107,7 +107,7 @@ namespace CASM {
             m_components.back().lock_ID();
           for(Index row = 1; row < traits_ref.dim() + 1; row++) {
             if(!el[row].is_number() && !el[row].is_int()) {
-              std::cout << "ERROR 2\n" << row << ": \n" << el[row] << std::endl;
+              //std::cout << "ERROR 2\n" << row << ": \n" << el[row] << std::endl;
               is_error = true;
               break;
             }

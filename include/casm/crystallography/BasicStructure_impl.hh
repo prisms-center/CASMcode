@@ -12,6 +12,7 @@
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"
+#include "casm/basis_set/OccupationDoFTraits.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroupRep.hh"
@@ -24,8 +25,8 @@ namespace CASM {
   template<typename CoordType>
   BasicStructure<CoordType>::BasicStructure(const fs::path &filepath) : m_lattice() {
     if(!fs::exists(filepath)) {
-      std::cout << "Error in BasicStructure<CoordType>::BasicStructure<CoordType>(const fs::path &filepath)." << std::endl;
-      std::cout << "  File does not exist at: " << filepath << std::endl;
+      std::cerr << "Error in BasicStructure<CoordType>::BasicStructure<CoordType>(const fs::path &filepath)." << std::endl;
+      std::cerr << "  File does not exist at: " << filepath << std::endl;
       exit(1);
     }
     fs::ifstream infile(filepath);
@@ -130,6 +131,7 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_group) const {
+    //std::cout << "BASIC STRUCTURE FACTOR GROUP\n";
     Array<CoordType> trans_basis;
     Index pg, b0, b1, b2;
     Coordinate t_tau(lattice());
@@ -148,11 +150,13 @@ namespace CASM {
     for(pg = 0; pg < point_group.size(); pg++) {
       test_op = point_group[pg];
       for(Index tr = 0; tr <= time_max; tr++) {
-        if(tr)
+        if(tr) {
           test_op = test_op * SymOp::time_reversal_op();
+        }
 
-        if(!_is_lattice_pg_op(test_op))
+        if(!_is_lattice_pg_op(test_op)) {
           continue;
+        }
 
         trans_basis.clear();
         //First, generate the symmetrically transformed basis sites
@@ -165,8 +169,9 @@ namespace CASM {
         //that MIGHT map the symmetrically transformed basis onto the original basis
         for(b0 = 0; b0 < trans_basis.size(); b0++) {
 
-          if(!m_basis[0].compare_type(trans_basis[b0]))
+          if(!m_basis[0].compare_type(trans_basis[b0])) {
             continue;
+          }
 
           t_tau = m_basis[0] - trans_basis[b0];
 
@@ -1217,12 +1222,28 @@ namespace CASM {
   //************************************************************
 
   template<typename CoordType>
-  std::vector<DoFKey> local_dof_types(BasicStructure<CoordType> const &_struc) {
+  std::vector<DoFKey> continuous_local_dof_types(BasicStructure<CoordType> const &_struc) {
     std::set<std::string> tresult;
 
     for(CoordType const &site : _struc.basis()) {
       auto sitetypes = site.dof_types();
       tresult.insert(sitetypes.begin(), sitetypes.end());
+    }
+    return std::vector<std::string>(tresult.begin(), tresult.end());
+  }
+
+  //************************************************************
+
+  template<typename CoordType>
+  std::vector<DoFKey> all_local_dof_types(BasicStructure<CoordType> const &_struc) {
+    std::set<std::string> tresult;
+
+    for(CoordType const &site : _struc.basis()) {
+      auto sitetypes = site.dof_types();
+      tresult.insert(sitetypes.begin(), sitetypes.end());
+      if(site.site_occupant().size() > 1) {
+        tresult.insert(DoFType::occupation().name());
+      }
     }
     return std::vector<std::string>(tresult.begin(), tresult.end());
   }
@@ -1255,7 +1276,7 @@ namespace CASM {
   std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure<CoordType> const &_struc) {
     std::map<DoFKey, std::vector<DoFSetInfo> > result;
 
-    for(DoFKey const &type : local_dof_types(_struc)) {
+    for(DoFKey const &type : continuous_local_dof_types(_struc)) {
       std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::traits(type).dim(), 0)));
 
       for(Index b = 0; b < _struc.basis().size(); ++b) {
@@ -1273,7 +1294,7 @@ namespace CASM {
   template<typename CoordType>
   std::map<DoFKey, Index> local_dof_dims(BasicStructure<CoordType> const &_struc) {
     std::map<DoFKey, Index> result;
-    for(DoFKey const &type : local_dof_types(_struc))
+    for(DoFKey const &type : continuous_local_dof_types(_struc))
       result[type] = local_dof_dim(type, _struc);
 
     return result;

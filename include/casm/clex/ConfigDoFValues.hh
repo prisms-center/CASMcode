@@ -74,11 +74,11 @@ namespace CASM {
     }
 
     SublatReference sublat(Index b) {
-      return m_vals.segment((b - 1) * n_vol(), n_vol());
+      return m_vals.segment(b * n_vol(), n_vol());
     }
 
     ConstSublatReference sublat(Index b) const {
-      return m_vals.segment((b - 1) * n_vol(), n_vol());
+      return m_vals.segment(b * n_vol(), n_vol());
     }
 
   protected:
@@ -138,11 +138,11 @@ namespace CASM {
     }
 
     SublatReference sublat(Index b) {
-      return m_vals.block(0, (b - 1) * n_vol(), m_vals.rows(), n_vol());
+      return m_vals.block(0, b * n_vol(), m_vals.rows(), n_vol());
     }
 
     ConstSublatReference sublat(Index b) const {
-      return m_vals.block(0, (b - 1) * n_vol(), m_vals.rows(), n_vol());
+      return m_vals.block(0, b * n_vol(), m_vals.rows(), n_vol());
     }
 
     std::vector<DoFSetInfo> const &info() const {

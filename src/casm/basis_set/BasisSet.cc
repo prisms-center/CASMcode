@@ -1,6 +1,7 @@
 #include "casm/basis_set/BasisSet.hh"
 
 #include <algorithm>
+#include <functional>
 
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -24,7 +25,30 @@
 #include "casm/basis_set/FunctionVisitor.hh"
 
 namespace CASM {
+  namespace BasisSet_impl {
 
+    void ArgList::add(std::vector<BasisSet> const &BB) {
+      for(auto const &B : BB)
+        push_back(&B);
+    }
+
+    void ArgList::add(std::vector<BasisSet const *> const &BB) {
+      for(auto B : BB)
+        push_back(B);
+    }
+
+    void ArgList::add(Array<BasisSet> const &BB) {
+      for(auto const &B : BB)
+        push_back(&B);
+    }
+
+    void ArgList::add(Array<BasisSet const *> const &BB) {
+      for(auto B : BB)
+        push_back(B);
+    }
+
+
+  }
   //*******************************************************************************************
 
   BasisSet::BasisSet(const BasisSet &init_basis) :
@@ -116,7 +140,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  void BasisSet::append(const BasisSet &RHS) {
+  void BasisSet::append(const BasisSet &RHS, std::function<Function*(Function *)> const &transform) {
 
     //Before appending functions, copy over  DoF IDs and subbasis info
     if(dof_IDs().size()) {
@@ -164,7 +188,7 @@ namespace CASM {
       if(!RHS[i])
         push_back(nullptr);
       else {
-        push_back(RHS[i]->copy());
+        push_back(transform(RHS[i]->copy()));
       }
     }
     _refresh_ID();
@@ -299,14 +323,22 @@ namespace CASM {
   }
   //*******************************************************************************************
   void BasisSet::set_variable_basis(DoFSet const &_dof_set) {
+    set_name(_dof_set.type_name());
     m_argument.clear();
     m_basis_symrep_ID = _dof_set.symrep_ID();
-    std::vector<Index> tdof_IDs;
+    //std::vector<Index> tdof_IDs;
     for(Index i = 0; i < _dof_set.size(); i++) {
-      if(!_dof_set[i].is_locked() && !CASM::contains(tdof_IDs, _dof_set[i].ID()))
-        tdof_IDs.push_back(_dof_set[i].ID());
+      if(!_dof_set[i].is_locked()) {
+        Index t_ind = CASM::find_index(m_dof_IDs, _dof_set[i].ID());
+        if(t_ind == m_dof_IDs.size()) {
+          m_dof_IDs.push_back(_dof_set[i].ID());
+          m_dof_subbases.push_back(Array<Index>());
+        }
+        m_dof_subbases[t_ind].push_back(i);
+      }
+
     }
-    set_dof_IDs(tdof_IDs);
+    //set_dof_IDs(tdof_IDs);
     for(Index i = 0; i < _dof_set.size(); i++) {
       push_back(new Variable(_dof_set, i));
     }
@@ -318,16 +350,19 @@ namespace CASM {
   }
   //*******************************************************************************************
   // Pass before_IDs by value to avoid aliasing issues when called from BasisSet::set_dof_IDs()
-  void BasisSet::_update_dof_IDs(std::vector<Index> before_IDs, const std::vector<Index> &after_IDs) {
+  bool BasisSet::_update_dof_IDs(std::vector<Index> before_IDs, const std::vector<Index> &after_IDs) {
+    bool changed = false;
+
     //std::cout << "BasisSet " << this << " --> m_dof_IDs is " << m_dof_IDs << "; before_IDs: " << before_IDs << "; after_ID: " << after_IDs << "\n" << std::endl;
     if(before_IDs.size() != after_IDs.size() && size() > 0) {
       throw std::runtime_error("In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.");
     }
-
+    //std::cout << "***_update_dof_IDs on basisset: " << name()<< "\n";
     //update m_dof_IDs after the other stuff, for easier debugging
     if(m_dof_IDs.size() == 0) {
       m_dof_IDs = after_IDs;
       m_dof_subbases.resize(after_IDs.size());
+      changed = true;
     }
     else {
       Index m;
@@ -341,15 +376,26 @@ namespace CASM {
     }
 
     for(Index i = 0; i < m_argument.size(); i++)
-      m_argument[i]->_update_dof_IDs(before_IDs, after_IDs);
+      changed = m_argument[i]->_update_dof_IDs(before_IDs, after_IDs) || changed;
+
+    //std::cout << "Working on basisset: " << name() << " changed is " << changed << "\n"
+    //        << "before_IDs: " << before_IDs << "; after_IDs: " << after_IDs << "\n";
+
+    for(Index i = 0; i < size(); i++) {
+      //std::cout << "Looping " << i+1 << " of " << size() << "; value: " << at(i) << "; changed: " << changed <<"\n";
+      if(changed && at(i)) {
+        //std::cout << "clearing formula " << i << "\n";
+        at(i)->clear_formula();
+      }
+    }
 
     for(Index i = 0; i < size(); i++) {
       if(at(i))
-        at(i)->update_dof_IDs(before_IDs, after_IDs);
+        changed =  at(i)->update_dof_IDs(before_IDs, after_IDs) || changed;
     }
 
 
-    return;
+    return changed;
   }
 
   //*******************************************************************************************
@@ -401,7 +447,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  void BasisSet::construct_polynomials_by_order(const Array<BasisSet const * > &tsubs, Index order) {
+  void BasisSet::construct_polynomials_by_order(BasisSet::ArgList const &tsubs, Index order) {
 
 
     _set_arguments(tsubs);
@@ -428,18 +474,27 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  void BasisSet::construct_invariant_polynomials(const Array<BasisSet const *> &tsubs, const SymGroup &head_group, Index order, Index min_dof_order) {
-
+  void BasisSet::construct_invariant_polynomials(BasisSet::ArgList const &tsubs, const SymGroup &head_group, Index order, Index min_dof_order) {
+    //std::cout << "Constructing invariant polynomials of order " << order << "\n";
     _set_arguments(tsubs);
     //std::cout << "Constructing invariant polynomials from DoFs:\n";
     for(Index i = 0; i < tsubs.size(); ++i) {
       if((tsubs[i]->basis_symrep_ID()).empty()) {
         tsubs[i]->get_symmetry_representation(head_group);
       }
-      //std::cout << tsubs[i]->name() << "  ";
+      //std::cout << i+1 << ") " <<  tsubs[i]->name() << " : ";
+      //for(Index j=0; j<tsubs[i]->size(); ++j){
+      //std::cout << (*tsubs[i])[j]->tex_formula() << "\n";
+      //}
+
+      //std::cout << "DoF_IDs: " << tsubs[i]->dof_IDs() << "\n";
+      //std::cout << "subbases: ";
+      //for(auto const &subbasis : tsubs[i]->dof_sub_bases())
+      //std::cout << " + " << subbasis << "\n";
     }
 
-    if(tsubs.size() == 0 && min_poly_order() < 1) {
+    //Base case, zero-order function with no arguments -> unit function
+    if(tsubs.size() == 0 && order == 0 && min_poly_order() < 1) {
       PolyTrie<double> ttrie(0);
       ttrie(Array<Index>(0)) = 1.0;
       push_back(new PolynomialFunction(m_argument, ttrie));
@@ -458,16 +513,17 @@ namespace CASM {
     for(Index i = 0; i < dof_IDs().size() && min_dof_order >= 0; i++) {
       SubBasis big_sub_basis;
       Index offset = 0;
-      for(Index j = 0; j < tsubs.size(); j++) {
-        //std::cout << "dof_IDs of tsub " << j << " are " << tsubs[j]->dof_IDs() << "\n";
+      for(Index j = 0; j < tsubs.size(); offset += tsubs[j]->size(), j++) {
+        //std::cout << "tsub " << j << ": size " << tsubs[j]->size() << ", dof_IDs " << tsubs[j]->dof_IDs() << "\n";
         Index ID_ind = find_index(tsubs[j]->dof_IDs(), dof_IDs()[i]);
         if(ID_ind == (tsubs[j]->dof_IDs()).size())
           continue;
         const SubBasis &sub_basis(tsubs[j]->dof_sub_basis(ID_ind));
+        //std::cout << "sub_basis[" << j << "](" << ID_ind << "): " << sub_basis << "\n";
         for(Index b = 0; b < sub_basis.size(); b++) {
           big_sub_basis.push_back(sub_basis[b] + offset);
         }
-        offset += tsubs[j]->size();
+
       }
       //std::cout << "Adding min constraint: " << big_sub_basis << ":  " << min_dof_order << "\n";
       add_min_poly_constraint(big_sub_basis, min_dof_order);
@@ -491,23 +547,37 @@ namespace CASM {
     }
 
     for(; order_count.valid(); ++order_count) {
-      for(Index i = 0; i < exp_count.size(); i++)
+      //std::cout << "New order_count: ";
+      for(Index i = 0; i < exp_count.size(); i++) {
         exp_count[i].set_sum_constraint(order_count[i]);
+        //std::cout << order_count[i] << "  ";
+      }
+      exp_count.reset();
+      //std::cout << "\n";
+
       for(; exp_count.valid(); ++exp_count) {
         bool valid_expon = true;
-        for(Index i = 0; i < exp_count.size() && valid_expon; i++)
+        for(Index i = 0; i < exp_count.size() && valid_expon; i++) {
+          //std::cout << "exp_count[" << i << "] : " <<  exp_count[i]() << " -- valid? ";
           valid_expon = tsubs[i]->satisfies_exponent_constraints(exp_count[i]());
+          //std::cout << valid_expon << "\n";
+
+        }
 
         if(!valid_expon)
           continue;
 
         Index ne = 0;
         ExpCount::const_value_iterator it(exp_count.value_begin()), it_end(exp_count.value_end());
+        //std::cout << "exp: ";
         for(; it != it_end; ++it) {
           curr_exp[ne++] = *it;
+          //std::cout << *it << " ";
         }
-        if(!satisfies_exponent_constraints(curr_exp))
+        if(!satisfies_exponent_constraints(curr_exp)) {
+          //std::cout << "failure to add " << curr_exp << "\n\n";
           continue;
+        }
         //else:
         //std::cout << "Adding exponent " << curr_exp << "\n\n";
 
@@ -550,7 +620,7 @@ namespace CASM {
                                                           const SymGroup &symgroup) {
 
     m_argument.clear();
-
+    set_name(allowed_occs.type_name());
     m_max_poly_order = 1;
     Index N = allowed_occs.size();
     if(N <= 1) {
@@ -741,6 +811,92 @@ namespace CASM {
 
 
   //*******************************************************************************************
+
+
+  void BasisSet::construct_harmonic_polynomials(BasisSet::ArgList const &tsubs,
+                                                Index order,
+                                                Index min_order,
+                                                bool even_only) {
+
+
+    _set_arguments(tsubs);
+    //std::cout <<"IN HARMONIC POLYNOMIALS:\n";
+
+    //std::cout << "dof_IDs(): " << dof_IDs() << "\n";
+    //std::cout << "tsubs->dof_IDs(): " << tsubs[0]->dof_IDs() << "\n";
+    //std::cout << "subbases:\n";
+    //for(auto const& sub : m_dof_subbases){
+    //std::cout << " + "<< sub << "\n";
+    //}
+    PolynomialFunction tpoly(m_argument);
+    Array<Index> expon(tpoly.num_args(), 0);
+    BasisSet even_basis, odd_basis;
+    PolyTrie<double> rtrie(expon.size());
+    for(Index i = 0; i < expon.size(); i++) {
+      expon[i] = 2;
+      rtrie(expon) = 1;
+      expon[i] = 0;
+    }
+    PolynomialFunction Rsqrd(m_argument, rtrie);
+
+    //PolynomialFunction Rsqrd(/*initialize to R^2 = (a^2+b^2+c^2+...) */)
+    //initialize even basis with s-orbital
+    even_basis.construct_polynomials_by_order(tsubs, 0);
+
+
+    //initialize odd basis with p-orbitals
+    odd_basis.construct_polynomials_by_order(tsubs, 1);
+    //std::cout << " construct_polys by order went OK" << std::endl;
+
+    // add even_basis to (*this)
+    if(min_order <= 0) append(even_basis);
+
+    // add odd_basis to (*this)
+    if(!even_only && min_order <= 1) append(odd_basis);
+
+    for(Index i = 2; i <= order; i++) {
+      //Get a reference to either the odd or even basis
+      if(even_only && i % 2 != 0) continue;
+      //      if(!even && i%2==0) continue;
+
+      BasisSet &orthog_basis(i % 2 == 0 ? even_basis : odd_basis);
+
+      // Multiply orthog_basis by R^2
+      for(Index j = 0; j < orthog_basis.size(); j++) {
+        // In lieu of PolynomialFunction::multiply_by() :
+        Function *tfunc = orthog_basis._at(j);
+        //Function const *temp;
+        //temp = tfunc->multiply(&Rsqrd);
+        orthog_basis._at(j) = (tfunc->multiply(&Rsqrd));
+        //*(orthog_basis._at(j)) = *temp;
+        orthog_basis._at(j)->set_arguments(orthog_basis.m_argument);
+        // Function const *tfunc=orthog_basis[j];
+        // orthog_basis._at(j)= tfunc->multiply(&Rsqrd);
+        // deleting tfunc doesn't work. is this a problem?
+        delete tfunc;
+      }
+      BasisSet curr_order_basis;
+      curr_order_basis.construct_polynomials_by_order(tsubs, i);
+      curr_order_basis.make_orthogonal_to(orthog_basis);
+      curr_order_basis.Gram_Schmidt();
+
+      orthog_basis.append(curr_order_basis);
+      // add basis for current order to (*this)
+      if(min_order <= i)
+        append(curr_order_basis);
+    }
+    // and fill the sub_bases
+    for(Index i = 0; i < m_dof_subbases.size(); ++i) {
+      m_dof_subbases[i] = SubBasis::sequence(0, size() - 1);
+    }
+
+    // add polynomial constraint to prevent multiplication of harmonic functions with each other.
+    if(size() > 0)
+      _max_poly_constraints().push_back(PolyConstraint(Array<Index>::sequence(0, size() - 1), 1));
+
+  }
+
+  //*******************************************************************************************
   void BasisSet::calc_invariant_functions(const SymGroup &head_group) {
     Function *tfunc, *trans_func;
     for(Index nf = 0; nf < size(); nf++) {
@@ -899,19 +1055,20 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  void BasisSet::_set_arguments(const Array<BasisSet const *> &new_args) {
+  void BasisSet::_set_arguments(BasisSet::ArgList const &new_args) {
     if(m_argument.size()) {
       throw std::runtime_error("In BasisSet::_set_arguments(), cannot reset arguments of already-initialized BasisSet.");
     }
     m_argument.reserve(new_args.size());
-
-
+    Index t_ind;
     for(Index i = 0; i < new_args.size(); i++) {
-      if(dof_IDs().empty())
-        set_dof_IDs(new_args[i]->dof_IDs());
-      else if(!contains_all(dof_IDs(), new_args[i]->dof_IDs()))
-        throw std::runtime_error("Called BasisSet::_set_arguments() on a BasisSet whose DoF_IDs are not a superset of the DoF_IDs of new arguments.");
-
+      for(Index ID : new_args[i]->dof_IDs()) {
+        t_ind = CASM::find_index(dof_IDs(), ID);
+        if(t_ind == dof_IDs().size()) {
+          m_dof_IDs.push_back(ID);
+          m_dof_subbases.push_back(Array<Index>());
+        }
+      }
       m_argument.push_back(new_args[i]->shared_copy());
     }
 
@@ -1126,7 +1283,47 @@ namespace CASM {
     return ortho_flag;
   }
 
+  BasisSet direct_sum(BasisSet::ArgList const &tsubs) {
+    if(tsubs.empty())
+      return BasisSet();
+    multivector<Index>::X<2> compat_maps;
+    compat_maps.reserve(tsubs.size());
+    BasisSet::ArgList tot_args;
+    std::set<Index> dof_ids;
+    std::string new_name = tsubs.size() ? tsubs[0]->name() : "";
 
+    for(auto const &sub : tsubs) {
+      if(sub->name() != new_name)
+        new_name += ("+" + sub->name());
+      dof_ids.insert(sub->dof_IDs().begin(), sub->dof_IDs().end());
+      compat_maps.push_back({});
+      for(auto const &arg : sub->arguments()) {
+        Index i = 0;
+        for(; i < tot_args.size(); ++i) {
+          if(tot_args[i]->compare(*arg))
+            break;
+        }
+        if(i == tot_args.size())
+          tot_args.add(*arg);
+        compat_maps.back().push_back(i);
+      }
+    }
+
+    std::vector<Index> dof_ids_vec(dof_ids.begin(), dof_ids.end());
+    BasisSet result(new_name, tot_args);
+    result.set_dof_IDs(dof_ids_vec);
+    for(Index i = 0; i < tsubs.size(); ++i) {
+      Index l = 0;
+      result.append(*(tsubs[i]),
+      [&](Function * f)->Function* {
+        f->set_arguments(result.arguments(), compat_maps[i]);
+        if(f->identifier('l') == "?")
+          f->set_identifier('l', std::to_string(l++));
+        return f;
+      });
+    }
+    return result;
+  }
   //*******************************************************************************************
   //** jsonParser stuff - BasisSet
   //*******************************************************************************************

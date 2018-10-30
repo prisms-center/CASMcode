@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "casm/casm_io/stream_io/container.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 #include "casm/container/PolyTrie.hh"
@@ -125,9 +126,16 @@ namespace CASM {
 
     std::stringstream tformula, ttex;
     Array<int> var_ind;
+    bool global_special = false;
     for(Index i = 0; i < dof_set().size(); i++) {
       if(!almost_zero(m_coeffs[i])) {
         var_ind.push_back(i);
+      }
+      if(!global_special && dof_set()[i].is_locked()) {
+        if(!valid_index(dof_set()[i].ID())
+           || dof_set()[i].var_name() != dof_set()[0].var_name()) {
+          global_special = true;
+        }
       }
     }
 
@@ -172,8 +180,15 @@ namespace CASM {
         ttex << irrational_to_tex_string(m_coeffs[var_ind[i]] / var_scale, 10 * m_coeffs.size() * m_coeffs.size()) << ' ';
       }
 
-      tformula << dof_set()[var_ind[i]].var_name() << '[' << dof_set()[var_ind[i]].ID() << ']';
-      ttex << dof_set()[var_ind[i]].var_name() << '_' << dof_set()[var_ind[i]].ID();
+      if(global_special) {
+        tformula << dof_set()[var_ind[i]].type_name() << '[' << i << ']';
+        ttex << dof_set()[var_ind[i]].var_name();// << '_' << dof_set()[var_ind[i]].ID();
+      }
+      else {
+        tformula << dof_set()[var_ind[i]].var_name() << '[' << dof_set()[var_ind[i]].ID() << ']';
+        ttex << dof_set()[var_ind[i]].var_name() << '_' << dof_set()[var_ind[i]].ID();
+      }
+
     }
     if(var_ind.size() > 1) {
       tformula << ")";
@@ -198,7 +213,15 @@ namespace CASM {
     }
     return this;
   }
-
+  //*******************************************************************************************
+  std::set<Index> Variable::dof_IDs() const {
+    std::set<Index> result;
+    for(Index i = 0; i < m_dof_set.size(); i++) {
+      if(!m_dof_set[i].traits().global() &&  !almost_zero(m_coeffs[i]))
+        result.insert(m_dof_set[i].ID());
+    }
+    return result;
+  }
   //*******************************************************************************************
   int Variable::register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) {
     int t_tot(0);
@@ -223,8 +246,10 @@ namespace CASM {
   bool Variable::_update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
 
     bool is_updated = m_dof_set.update_IDs(before_IDs, after_IDs);
-
+    //std::cout << "_update_dof_IDs from " << before_IDs << " to " << after_IDs << " on variable: " << formula() << "\n"
+    //<< "is_updated: " << is_updated<<"\n";
     if(is_updated) {
+      //std::cout << "clearing formulae...\n";
       m_formula.clear();
       m_tex_formula.clear();
     }

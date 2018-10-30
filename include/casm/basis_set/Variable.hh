@@ -50,21 +50,21 @@ namespace CASM {
 
     static void fill_dispatch_table();
 
-    std::string type_name() const {
+    std::string type_name() const override {
       return "Variable";
     }
 
-    Function *copy()const {
+    Function *copy()const override {
       return new Variable(*this);
     }
 
-    bool is_zero() const;
-    void small_to_zero(double tol = TOL);
-    Index num_terms() const;
+    bool is_zero() const override;
+    void small_to_zero(double tol = TOL) override;
+    Index num_terms() const override;
 
-    double leading_coefficient() const;
-    double leading_coefficient(Index &index) const;
-    double get_coefficient(Index i) const;
+    double leading_coefficient() const override;
+    double leading_coefficient(Index &index) const override;
+    double get_coefficient(Index i) const override;
 
     const DoFSet &dof_set() const {
       return m_dof_set;
@@ -78,14 +78,15 @@ namespace CASM {
       return m_coeffs;
     }
 
-    void make_formula()const;
-    void make_formula(double prefactor)const;
+    void make_formula()const override;
 
-    int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles);
+    std::set<Index> dof_IDs() const override;
+
+    int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) override;
 
     bool compare(const Variable *RHS) const;
 
-    int class_ID() const {
+    int class_ID() const override {
       return DerivedID<Variable, Function>::get_class_ID();
     }
     static int sclass_ID() {
@@ -93,31 +94,31 @@ namespace CASM {
     }
 
     double dot(Function const *RHS) const;
-    void scale(double scale_factor);
+    void scale(double scale_factor) override;
 
-    double remote_eval() const;
+    double remote_eval() const override;
 
-    double remote_deval(const DoF::RemoteHandle &dvar) const;
+    double remote_deval(const DoF::RemoteHandle &dvar) const override;
 
-    double cache_eval() const {
+    double cache_eval() const override {
       return remote_eval();
     }
 
-    double cache_deval(const DoF::RemoteHandle &dvar) const {
+    double cache_deval(const DoF::RemoteHandle &dvar) const override {
       return remote_deval(dvar);
     }
 
     Function *minus_equals(const Variable *RHS);
     Function *plus_equals(const Variable *RHS);
 
-    jsonParser &to_json(jsonParser &json) const;
+    jsonParser &to_json(jsonParser &json) const override;
     void from_json(const jsonParser &json);
   protected:
-    Function *_apply_sym(const SymOp &op);
-    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
-    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) const;
+    Function *_apply_sym(const SymOp &op) override;
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) override;
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) const override;
 
-    bool _update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
+    bool _update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) override;
 
   };
 

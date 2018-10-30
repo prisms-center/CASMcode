@@ -163,7 +163,7 @@ namespace CASM {
         stream << "nullptr\n";
       stream << "\n";
     }
-    std::cout << "\n";
+    stream << "\n";
     return;
   }
 
@@ -313,11 +313,11 @@ namespace CASM {
     Array<Array< Eigen::MatrixXd> > ssubs;
     ssubs = calc_special_subspaces(head_group);
     /*for(Index i = 0; i < ssubs.size(); i++) {
-      std::cout << "In SymGroupRep::coord_symmetrized_copy -- subspace orbit " << i << " of " << ssubs.size() << " (dimensionality " << ssubs[i][0].cols() << "):\n";
+      //std::cout << "In SymGroupRep::coord_symmetrized_copy -- subspace orbit " << i << " of " << ssubs.size() << " (dimensionality " << ssubs[i][0].cols() << "):\n";
       for(Index j = 0; j < ssubs[i].size(); j++) {
-    std::cout << ssubs[i][j].transpose() << "\n";
+    //std::cout << ssubs[i][j].transpose() << "\n";
       }
-      std::cout << "\n";
+      //std::cout << "\n";
     }
     */
 
@@ -1164,7 +1164,7 @@ namespace CASM {
     // Build 'commuters', which span space of real matrices that commute with SymOpReps
     // 'kernel' is the kernel of trans_mat, and as the loop progresses, 'kernel' shrinks and the rank for trans_mat increases
     Array<Index> irrep_dims;
-    std::cout << "~~~~~~~Dimension is " << dim << "\n";
+    //std::cout << "~~~~~~~Dimension is " << dim << "\n";
     for(Index kci = 0; kci < kernel.cols(); kci++) {
       bool found_new_irreps(false);
       for(Index kcj = kci; kcj < kernel.cols(); kcj++) {
@@ -1240,8 +1240,8 @@ namespace CASM {
             }
 
             if(almost_equal(tnorm, double(head_group.size()))) { // this representation is irreducible
-              std::cout << "THE REPRESENTATION IS IRREDUCIBLE!!\n";
-              std::cout << "It's characters are: " << char_array << "\n\n";
+              //std::cout << "THE REPRESENTATION IS IRREDUCIBLE!!\n";
+              //std::cout << "It's characters are: " << char_array << "\n\n";
               Eigen::MatrixXd ttrans_mat(dim, 2 * subspace_dims[ns]);
               //std::cout << "Vectors in this subspace are:\n" << tmat.block(0, last_i, dim, subspace_dims[ns]) << "\n\n";
               ttrans_mat.leftCols(subspace_dims[ns]) = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).real();
@@ -1288,9 +1288,9 @@ namespace CASM {
     for(Index i = 0; i < head_group.size(); i++) {
       block_shape += (trans_mat.transpose() * (*MatrixXd(head_group[i].index())) * trans_mat).cwiseAbs2();
     }
-    std::cout << "BLOCK MATRIX IS:\n"
-              << block_shape << "\n\n";
-    std::cout << "IRREP DIMENSIONS ARE: " << irrep_dims << "\n\n";
+    //std::cout << "BLOCK MATRIX IS:\n"
+    //<< block_shape << "\n\n";
+    //std::cout << "IRREP DIMENSIONS ARE: " << irrep_dims << "\n\n";
     return trans_mat.transpose();
 
   }

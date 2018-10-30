@@ -79,8 +79,8 @@ namespace CASM {
 
   std::vector<std::string> Site::dof_types() const {
     std::vector<std::string> result;
-    if(site_occupant().size() > 1)
-      result.push_back(site_occupant().type_name());
+    //if(site_occupant().size() > 1)
+    //result.push_back(site_occupant().type_name());
     for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
       result.push_back(it->first);
     return result;
