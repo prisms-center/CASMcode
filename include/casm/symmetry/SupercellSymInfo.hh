@@ -101,5 +101,24 @@ namespace CASM {
     mutable SymGroupRep::RemoteHandle m_site_perm_symrep;
 
   };
+
+  template<typename IterType>
+  std::vector<PermuteIterator> scel_subset_group(IterType begin, IterType end, SupercellSymInfo const &_syminfo);
+
+  template<typename IterType>
+  std::pair<MasterSymGroup, SymGroupRepID> collective_dof_symrep(IterType begin,
+                                                                 IterType end,
+                                                                 SupercellSymInfo const &_syminfo,
+                                                                 DoFKey const &_key,
+                                                                 std::vector<PermuteIterator> const &_group);
+
+  template<typename IterType>
+  Eigen::MatrixXd collective_dof_normal_coords(IterType begin,
+                                               IterType end,
+                                               SupercellSymInfo const &_syminfo,
+                                               DoFKey const &_key,
+                                               std::vector<PermuteIterator> const &_group);
+
 }
+
 #endif

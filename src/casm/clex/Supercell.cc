@@ -72,7 +72,7 @@ namespace CASM {
   /// linear_index / volume();
   /// \endcode
   Index Supercell::sublat(Index linear_index) const {
-    return linear_index / volume();
+    return prim_grid().sublat(linear_index);
   }
 
   /// \brief Given a Coordinate and tolerance, return linear index into Configuration
@@ -107,7 +107,7 @@ namespace CASM {
   ///
   Coordinate Supercell::coord(Index linear_index) const {
     Coordinate tcoord(prim_grid().coord(linear_index % volume(), SCEL));
-    tcoord.cart() += prim().basis()[linear_index / volume()].cart();
+    tcoord.cart() += prim().basis()[sublat(linear_index)].cart();
     return tcoord;
     // return uccoord(linear_index).coordinate();
   }

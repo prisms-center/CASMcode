@@ -1,5 +1,6 @@
 #include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/PermuteIterator.hh"
+#include "casm/symmetry/SupercellSymInfo_impl.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 

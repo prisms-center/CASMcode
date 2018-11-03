@@ -181,6 +181,7 @@ libcasm_la_SOURCES = \
   src/casm/clex/Supercell.cc\
   src/casm/clex/ConfigEnumAllOccupations.cc\
   src/casm/clex/ConfigEnumStrain.cc\
+  src/casm/clex/ConfigEnumNormalCoords.cc\
   src/casm/clex/ScelEnum.cc\
   src/casm/clex/SupercellIO.cc\
   src/casm/clex/ECIContainer.cc\

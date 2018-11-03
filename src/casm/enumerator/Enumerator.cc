@@ -3,6 +3,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
+#include "casm/clex/ConfigEnumNormalCoords.hh"
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
@@ -26,6 +27,7 @@ namespace CASM {
       EnumInterface<ScelEnum>(),
       EnumInterface<ConfigEnumAllOccupations>(),
       EnumInterface<ConfigEnumStrain>(),
+      EnumInterface<ConfigEnumNormalCoords>(),
       EnumInterface<SuperConfigEnum>(),
       EnumInterface<Kinetics::DiffusionTransformationEnum>(),
       EnumInterface<Kinetics::DiffTransConfigEnumOccPerturbations>(),

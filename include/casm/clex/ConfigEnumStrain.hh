@@ -58,7 +58,6 @@ namespace CASM {
                    bool sym_axes,
                    bool auto_range,
                    bool trim_corners,
-                   bool analysis,
                    std::vector<std::string> const &_filter_expr,
                    bool dry_run);
   private:

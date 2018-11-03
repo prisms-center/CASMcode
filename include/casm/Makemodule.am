@@ -150,6 +150,7 @@ casminclude_HEADERS = \
   include/casm/symmetry/SymGroup.hh\
   include/casm/symmetry/PermuteIterator.hh\
   include/casm/symmetry/SupercellSymInfo.hh\
+  include/casm/symmetry/SupercellSymInfo_impl.hh\
   include/casm/symmetry/SymInfo.hh\
   include/casm/symmetry/SymGroupRep.hh\
   include/casm/symmetry/SymRepTools.hh\
@@ -290,6 +291,7 @@ casminclude_HEADERS = \
   include/casm/clex/ClexBasisWriter_impl.hh\
   include/casm/clex/ConfigEnumAllOccupations.hh\
   include/casm/clex/ConfigEnumStrain.hh\
+  include/casm/clex/ConfigEnumNormalCoords.hh\
   include/casm/clex/HasPrimClex_impl.hh\
   include/casm/clex/Norm.hh\
   include/casm/clex/ConfigIOStrain.hh\

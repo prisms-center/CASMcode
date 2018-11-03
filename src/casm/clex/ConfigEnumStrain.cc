@@ -7,7 +7,6 @@
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
-#include "casm/clex/PrimClex.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
@@ -36,7 +35,7 @@ namespace CASM {
 
   std::string ConfigEnumStrain::interface_help() {
     return
-      "ConfigEnumAllStrain: \n\n"
+      "ConfigEnumStrain: \n\n"
 
       "  config: string (required) \n"
       "    Name of configuration used as strain reference\n"
@@ -58,7 +57,7 @@ namespace CASM {
       "    Dimension must be either 6, or equal to number of rows of \"axes\"\n"
       "    Ex: \"increment\" : [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]\n\n"
 
-      "  axes: matrix of doubles (optional, default=6x6 identity matrix) \n"
+      "  axes: matrix of doubles (optional, default=identity matrix) \n"
       "    Coordinate axes of strain grid. Rows of matrix specify linear combinations of\n"
       "    strain basis specified in prim.json. May be rank deficient.\n"
       "    Ex: \"axes\" : [[1,0,0,0,0,0],\n"
@@ -74,24 +73,19 @@ namespace CASM {
       "    If true, any grid points outside the largest ellipsoid inscribed within the extrema\n"
       "    of the grid will be discarded\n\n"
 
-      "  config: Name of configuration to which strain enumerations will be applied\n"
-      "    Must be single configuration. Ex: \"config\" : \"SCEL2_2_1_1_0_0_0\"\n\n"
-
       "  filter: string (optional, default=None)\n"
       "    A query command to use to filter which Configurations are kept.          \n\n"
 
       "  dry_run: bool (optional, default=false)\n"
-      "    Perform dry run.\n\n"
-
-      "  analysis: bool (optional, default=false)\n"
-      "    Print symmetry analysis info for chosen configuration.\n\n"
+      "    Perform dry run and print symmetry analysis info for chosen configuration.\n\n"
 
       "  Examples:\n"
       "    To enumerate all strain perturbations of a particular configuration:\n"
       "      casm enum --method ConfigEnumStrain -i \n"
       "      '{ \n"
-      "        \"config\": \"SCEL4_1_4_1_0_0_0/3\",\n"
-      "        \"analysis\": true,\n"
+      "        \"config\" : \"SCEL4_1_4_1_0_0_0/3\",\n"
+      "        \"increment\" : [0.01, 0.01, 0.01, 0., 0., 0.],"
+      "        \"max\" : [0.05, 0.05, 0,05, 0., 0., 0.]"
       "        } \n"
       "      }' \n\n";
   }
@@ -102,25 +96,25 @@ namespace CASM {
     const Completer::EnumOption &enum_opt) {
     bool trim_corners = _kwargs.get_if_else<bool>("trim_corners", true);
     bool sym_axes = _kwargs.get_if_else<bool>("sym_axes", false);
-    bool analysis = _kwargs.get_if_else<bool>("analysis", false);
+    //bool analysis = _kwargs.get_if_else<bool>("analysis", false);
     Eigen::MatrixXd axes;
     Eigen::VectorXd min_val, max_val, inc_val;
 
     bool auto_range = false;
-    std::cout << "_kwargs: \n" << _kwargs << std::endl;
-    if(!analysis) {
-      if(!(_kwargs.contains("max") && _kwargs.contains("increment")))
-        throw std::runtime_error("JSON options for enumeration method 'ConfigEnumStrain' must specify BOTH \"max\", and \"increment\"");
-      from_json(max_val, _kwargs["max"]);
-      from_json(inc_val, _kwargs["increment"]);
-      if(_kwargs.contains("min")) {
-        from_json(min_val, _kwargs["min"]);
-      }
-      else {
-        auto_range = sym_axes;
-        min_val = 0 * max_val;
-      }
+
+    //if(!analysis) {
+    if(!(_kwargs.contains("max") && _kwargs.contains("increment")))
+      throw std::runtime_error("JSON options for enumeration method 'ConfigEnumStrain' must specify BOTH \"max\", and \"increment\"");
+    from_json(max_val, _kwargs["max"]);
+    from_json(inc_val, _kwargs["increment"]);
+    if(_kwargs.contains("min")) {
+      from_json(min_val, _kwargs["min"]);
     }
+    else {
+      auto_range = sym_axes;
+      min_val = 0 * max_val;
+    }
+    //}
 
     if(!_kwargs.contains("config") || !_kwargs["config"].is_string())
       throw std::runtime_error("JSON options for enumeration method 'ConfigEnumStrain' must include exactly one starting configuration, specified by field \"config\"");
@@ -141,7 +135,7 @@ namespace CASM {
                sym_axes,
                auto_range,
                trim_corners,
-               analysis,
+               //analysis,
                filter_expr,
                CASM::dry_run(_kwargs, enum_opt));
   }
@@ -155,7 +149,7 @@ namespace CASM {
                             bool sym_axes,
                             bool auto_range,
                             bool trim_corners,
-                            bool analysis,
+                            //bool analysis,
                             std::vector<std::string> const &_filter_expr,
                             bool dry_run) {
 
@@ -171,30 +165,36 @@ namespace CASM {
     if(istrain == tdof_types.size())
       throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
     strain_dof_key = tdof_types[istrain];
-    if(!analysis && ! sym_axes)
+    if(!sym_axes)
       wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(_axes, std::vector<Index>(_axes.cols(), 1))}));
     else
       wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof(strain_dof_key).symrep_ID());
 
-    if(analysis) {
-      //PRINT INFO TO LOG:
-      Log &log = _primclex.log();
-      log << "Result of symmetry analysis\n"
-          << "  Strains will be enumerated within the " << wedges.size() << " symmetrically distinct sub-wedges\n";
-      Index l = 1;
-      Eigen::IOFormat tformat(4, 0, 8, " ", "\n", "    ", "", "", "");
-      for(SymRepTools::SubWedge const &wedge : wedges) {
-        log << "  Sub-wedge #" << l++ << ": \n";
-        for(auto const &irr : wedge.irrep_wedges()) {
-          log <<  irr.axes.transpose().format(tformat) << "\n   --------------\n";
-
-        }
-        log << "\n";
-      }
-      log << "End of analysis report.\n";
-
-      return 0;
+    //if(analysis) {
+    //PRINT INFO TO LOG:
+    Log &log = _primclex.log();
+    log << "Strain enumeration summary:\n";
+    if(sym_axes) {
+      log << "  Strains will be enumerated within the " << wedges.size() << " symmetrically distinct sub-wedges\n";
     }
+    else {
+      log << "  Strains will be enumerated using the user-specified grid\n";
+    }
+    Index l = 1;
+    Eigen::IOFormat tformat(4, 0, 8, " ", "\n", "    ", "", "", "");
+    for(SymRepTools::SubWedge const &wedge : wedges) {
+      if(sym_axes)
+        log << "  Sub-wedge #" << l++ << ": \n";
+      for(auto const &irr : wedge.irrep_wedges()) {
+        log <<  irr.axes.transpose().format(tformat) << "\n   --------------\n";
+
+      }
+      log << "\n";
+    }
+    log << "End of summary.\n\n";
+
+    //return 0;
+    //}
     auto constructor = [&](const Supercell & scel) {
       return notstd::make_unique<ConfigEnumStrain>(_config,
                                                    wedges,

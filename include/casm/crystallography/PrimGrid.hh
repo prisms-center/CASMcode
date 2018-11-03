@@ -129,6 +129,10 @@ namespace CASM {
       return m_S[i];
     };
 
+    Index sublat(Index linear_index) const {
+      return linear_index / m_N_vol;
+    }
+
     // find linear index that is translational equivalent to Coordinate or UnitCell
     Index find(const Coordinate &_coord) const;
     Index find(const UnitCell &_unitcell) const;
