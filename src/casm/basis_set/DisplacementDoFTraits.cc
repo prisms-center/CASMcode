@@ -48,7 +48,7 @@ namespace CASM {
     }
 
     //************************************************************
-    std::string DisplacementDoFTraits::clexulator_point_prepare_string(Structure const &_prim,
+    /*std::string DisplacementDoFTraits::clexulator_point_prepare_string(Structure const &_prim,
                                                                        std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                                        PrimNeighborList &_nlist,
                                                                        std::vector<BasisSet> const &site_bases,
@@ -83,10 +83,10 @@ namespace CASM {
       }
       ss << indent << "}\n";
       return ss.str();
-    }
+      }*/
 
     //************************************************************
-
+    /*
     std::string DisplacementDoFTraits::clexulator_global_prepare_string(Structure const &_prim,
                                                                         std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                                         PrimNeighborList &_nlist,
@@ -120,9 +120,9 @@ namespace CASM {
       }
 
       return ss.str();
-    }
+      }*/
     //************************************************************
-
+    /*
     std::string DisplacementDoFTraits::clexulator_member_declarations_string(Structure const &_prim,
                                                                              std::vector<BasisSet> const &_site_bases,
                                                                              std::string const &indent) const {
@@ -154,10 +154,10 @@ namespace CASM {
 
       }
       return stream.str();
-    }
+      }*/
 
     //************************************************************
-
+    /*
     std::string DisplacementDoFTraits::clexulator_private_method_declarations_string(Structure const &_prim,
         std::vector<BasisSet> const &_site_bases,
         const std::string &indent) const {
@@ -197,10 +197,10 @@ namespace CASM {
 
       }
       return stream.str();
-    }
+      }*/
 
     //************************************************************
-
+    /*
     std::vector<std::pair<std::string, Index> > DisplacementDoFTraits::param_pack_allocation(std::vector<BasisSet> const &_bases) const {
       std::vector<std::pair<std::string, Index> > result;
       Index NB = 0;
@@ -212,14 +212,14 @@ namespace CASM {
 
       return result;
 
-    }
+      }*/
     //************************************************************
-
+    /*
     std::string DisplacementDoFTraits::clexulator_constructor_string(Structure const &_prim,
                                                                      std::vector<BasisSet> const &_site_bases,
                                                                      const std::string &indent) const {
       std::stringstream stream;
-      /*
+
       stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
       stream.precision(10);
 
@@ -251,9 +251,9 @@ namespace CASM {
             }
           }
         }
-        }*/
+        }
       return stream.str();
-    }
+    }*/
 
     std::string DisplacementDoFTraits::site_basis_description(BasisSet site_bset, Site site) const {
       std::stringstream ss;
@@ -277,18 +277,18 @@ namespace CASM {
       return ss.str();
     }
 
-
+    /*
     std::vector<std::unique_ptr<FunctionVisitor> > DisplacementDoFTraits::site_function_visitors() const {
-      std::vector<std::unique_ptr<FunctionVisitor> > result;
-      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name() + "_%s(%n)")));
-      return result;
-    }
+        std::vector<std::unique_ptr<FunctionVisitor> > result;
+        result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name() + "_%s(%n)")));
+        return result;
+      }
 
-    std::vector<std::unique_ptr<FunctionVisitor> > DisplacementDoFTraits::clust_function_visitors() const {
-      std::vector<std::unique_ptr<FunctionVisitor> > result;
-      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name() + "_%s(%n)")));
-      return result;
-    }
+      std::vector<std::unique_ptr<FunctionVisitor> > DisplacementDoFTraits::clust_function_visitors() const {
+        std::vector<std::unique_ptr<FunctionVisitor> > result;
+        result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name() + "_%s(%n)")));
+        return result;
+        }*/
 
   }
 

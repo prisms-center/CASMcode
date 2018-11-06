@@ -45,7 +45,6 @@ namespace CASM {
     for(PermuteIterator const &perm : _group) {
       result.first.push_back(perm.sym_op());
     }
-    result.first.sort();
 
     result.second = result.first.allocate_representation();
     Index subdim = 0;
@@ -54,11 +53,11 @@ namespace CASM {
     for(auto const &rep : subreps)
       subdim = max(subdim, rep.dim());
 
-    std::cout << "subdim is " << subdim << "\n";
+    //std::cout << "subdim is " << subdim << "\n";
 
     Index Nsite = std::distance(begin, end);
 
-    std::cout << "Nsite is " << Nsite << "\n";
+    //std::cout << "Nsite is " << Nsite << "\n";
 
     Eigen::MatrixXd trep(subdim * Nsite, subdim * Nsite);
     Index g = 0;
@@ -71,7 +70,9 @@ namespace CASM {
       }
       std::cout << "trep " << g << " is \n" << trep << "\n\n";
       result.first[g++].set_rep(result.second, SymMatrixXd(trep));
+      //std::cout << "cartesian symop is: \n" << perm.sym_op().matrix() << "\n";
     }
+    result.first.sort();
     return result;
   }
   //***********************************************************

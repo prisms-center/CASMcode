@@ -801,6 +801,7 @@ namespace CASM {
       using OptionHandlerBase::settings_path;
       using OptionHandlerBase::input_str;
       using OptionHandlerBase::supercell_strs;
+      using OptionHandlerBase::config_strs;
       using OptionHandlerBase::dry_run;
       using OptionHandlerBase::verbosity_str;
       using OptionHandlerBase::coordtype_enum;

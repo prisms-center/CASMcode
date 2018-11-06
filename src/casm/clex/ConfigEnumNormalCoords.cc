@@ -37,10 +37,16 @@ namespace CASM {
     return
       "ConfigEnumNormalCoords: \n\n"
 
-      "  configs: Array of strings (optional) \n"
-      "    Name of configuration used as reference states\n"
-      "    Must be single configuration. Strains are enumerated as perturbations to\n"
-      "    specified configuration. Ex: \"configs\" : [\"SCEL1_1_1_1_0_0_0/1\",\"SCEL2_2_1_1_0_0_0/3\"]\n\n"
+      "  confignames: Array of strings (optional) \n"
+      "    Names of configurations to be used as reference states. Normal coordinates are enum-\n"
+      "    erated after zeroing the DoF values at selected sites of the specified configurations\n"
+      "    and calculating the resulting symmetry of the selected sites.\n"
+      "    Ex: \"confignames\" : [\"SCEL1_1_1_1_0_0_0/1\",\"SCEL2_2_1_1_0_0_0/3\"]\n\n"
+
+      "  scelnames: Array of strings (optional) \n"
+      "    Names of supercells used as reference states. Normal coordinates are enumerated starting\n"
+      "    from the fully zeroed configuration of the specified supercells.\n"
+      "    Ex: \"scelnames\" : [\"SCEL1_1_1_1_0_0_0\",\"SCEL2_2_1_1_0_0_0\"]\n\n"
 
       "  dof: string (required) \n"
       "    Name of site degree of freecom  for which normal coordinates are to be generated.\n"
@@ -91,10 +97,10 @@ namespace CASM {
       }
       from_json(dof, _kwargs["dof"]);
       DoF::traits(dof);
-      if(_kwargs.contains("configs")) {
-        if(!_kwargs["configs"].is_array())
-          throw std::runtime_error("Field \"configs\" must specify array of string values.");
-        confignames = _kwargs["configs"].get<std::vector<std::string> >();
+      if(_kwargs.contains("confignames")) {
+        if(!_kwargs["confignames"].is_array())
+          throw std::runtime_error("Field \"confignames\" must specify array of string values.");
+        confignames = _kwargs["confignames"].get<std::vector<std::string> >();
       }
 
       if(_kwargs.contains("sublats"))
@@ -125,6 +131,10 @@ namespace CASM {
         return result;
     }
 
+    for(std::string const &configname : enum_opt.config_strs())
+      confignames.push_back(configname);
+
+    std::cout << "confignames is: " << confignames << "\n";
     for(std::string const &configname : confignames) {
       auto it = primclex.const_db<Configuration>().find(configname);
       if(it == primclex.const_db<Configuration>().end())
@@ -185,6 +195,13 @@ namespace CASM {
         pg.push_back(perm_it);
     }
 
+
+    // if pert_sites is emptywe will fill it now to contain all the sites.
+    if(pert_sites.size() == 0) {
+      for(Index s = 0; s < config.size(); s++) {
+        pert_sites.insert(s);
+      }
+    }
     Eigen::MatrixXd norm_coords = collective_dof_normal_coords(pert_sites.begin(),
                                                                pert_sites.end(),
                                                                config.supercell().sym_info(),
@@ -192,13 +209,6 @@ namespace CASM {
                                                                pg).transpose();
 
     std::cout << "norm_coords are \n" << norm_coords << "\n";
-    // normal-coordinate determination is faster if pert_sites is empty.
-    // we will fill it now if that was the case
-    if(pert_sites.size() == 0) {
-      for(Index s = 0; s < config.size(); s++) {
-        pert_sites.insert(s);
-      }
-    }
 
     auto constructor = [&](const Supercell & scel) {
       return notstd::make_unique<ConfigEnumNormalCoords>(config,
