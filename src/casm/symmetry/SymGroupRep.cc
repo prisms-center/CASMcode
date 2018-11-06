@@ -457,7 +457,7 @@ namespace CASM {
 
     Eigen::VectorXd tdir;
 
-    const Array<Array<Array<Index> > > &isubs(head_group.subgroups());
+    auto const &isubs(head_group.subgroups());
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> QR(*(MatrixXd(head_group[0])));
 
     Index dim = MatrixXd(head_group[0])->cols();
@@ -467,19 +467,19 @@ namespace CASM {
     // i loops over subgroup "orbits". There are 0 to 'dim' special directions associated with each orbit.
     Eigen::MatrixXd Reynolds(*(at(0)->MatrixXd()));
     for(i = 0; i < isubs.size(); i++) {
-      if(isubs[i].size() == 0 || isubs[i][0].size() == 0) {
+      if(isubs[i].size() == 0 || isubs[i].begin()->size() == 0) {
         default_err_log() << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions(), attempting to use a zero-size subgroup.\n Exiting...\n";
         exit(1);
       }
-      Index s = 0;
+
       Reynolds.setZero();
       // j loops over elements of "prototype" subgroup to get the Reynold's operator for the vector
       // space on which the representation is defined
-      for(j = 0; j < isubs[i][s].size(); j++) {
-        Reynolds += *MatrixXd(head_group[isubs[i][s][j]]);
+      for(Index op : * (isubs[i].begin())) {
+        Reynolds += *MatrixXd(head_group[op]);
       }
 
-      Reynolds /= double(isubs[i][s].size());
+      Reynolds /= double(isubs[i].begin()->size());
 
       //Need this because Eigen computes nonzero rank for matrix filled with small numbers close to zero.
       //QR.setThreshold() doesn't help
@@ -555,7 +555,7 @@ namespace CASM {
     Eigen::MatrixXd tsub, ttrans;
 
     // Operation indices of subgroups
-    const Array<Array<Array<Index> > > &sg_op_inds(head_group.subgroups());
+    auto const &sg_op_inds(head_group.subgroups());
 
     Eigen::FullPivHouseholderQR<Eigen::MatrixXd> QR(*(at(0)->MatrixXd()));
 
@@ -565,7 +565,7 @@ namespace CASM {
 
     // 'i' loops over subgroup "orbits". There are 0 to 'dim' special directions associated with each orbit.
     for(i = 0; i < sg_op_inds.size(); i++) {
-      if(sg_op_inds[i].size() == 0 || sg_op_inds[i][0].size() == 0) {
+      if(sg_op_inds[i].size() == 0 || sg_op_inds[i].begin()->size() == 0) {
         default_err_log() << "CRITICAL ERROR: In SymGroupRep::calc_special_subspaces(), attempting to use a zero-size subgroup.\n Exiting...\n";
         exit(1);
       }
@@ -573,11 +573,11 @@ namespace CASM {
       Reynolds.setZero();
       // j loops over elements of "prototype" subgroup to get the Reynold's operator for the vector
       // space on which the representation is defined
-      for(j = 0; j < sg_op_inds[i][0].size(); j++) {
-        Reynolds += *(at(head_group[sg_op_inds[i][0][j]].index())->MatrixXd());
+      for(Index op : * (sg_op_inds[i].begin())) {
+        Reynolds += *(at(head_group[op].index())->MatrixXd());
       }
 
-      Reynolds /= double(sg_op_inds[i][0].size());
+      Reynolds /= double(sg_op_inds[i].begin()->size());
 
       // Column space of Reynold's matrix is invariant under the subgroup
       QR.compute(Reynolds);
@@ -1156,7 +1156,24 @@ namespace CASM {
     colqr.setThreshold(0.001);
     int Nfound(0);
     Eigen::MatrixXcd tmat(Eigen::MatrixXcd::Zero(dim, dim)), tcommute(Eigen::MatrixXcd::Zero(dim, dim));
-    Eigen::MatrixXd trans_mat(Eigen::MatrixXd::Zero(dim, dim)), kernel(Eigen::MatrixXd::Random(dim, dim).householderQr().householderQ());
+    Eigen::MatrixXd trans_mat(Eigen::MatrixXd::Zero(dim, dim));
+
+    // Initialize kernel as a random orthogonal matrix
+    Eigen::MatrixXd kernel(Eigen::MatrixXd::Random(dim, dim).householderQr().householderQ());
+
+    //std::cout << "rep_check:";
+    //for(Index ns = 0; ns < head_group.size(); ns++) {
+    //for(Index ns2 = ns; ns2 < head_group.size(); ns2++) {
+    //  auto prod=(*(MatrixXd(head_group[ns].index())))*(*(MatrixXd(head_group[ns2].index())));
+    //  Index iprod=head_group[ns].ind_prod(head_group[ns2]);
+    //  double norm = (prod-*(MatrixXd(iprod))).norm();
+    //  if(!almost_zero(norm)){
+    //    std::cout << "ns: " << ns << "  ns2: " << ns2 << " iprod: " << iprod << " NO MATCH\n";
+    //    std::cout << "prod: \n" << prod << "\n\n";
+    //    std::cout << "mat(iprod): \n" << *(MatrixXd(iprod)) << "\n\n";
+    //  }
+    //}
+    //}
 
 
 
@@ -1178,22 +1195,27 @@ namespace CASM {
                  + std::conj(phase[nph]) * kernel.col(kcj) * kernel.col(kci).transpose(); // adjoint of outer product
 
           //apply reynolds operator
+          //std::cout << "Counting indices: ";
           for(Index ns = 0; ns < head_group.size(); ns++) {
+            //std::cout << head_group[ns].index() << "  ";
             tcommute += (*(MatrixXd(head_group[ns].index()))) * tmat * (*(MatrixXd(head_group[ns].index()))).transpose();
             //tcommute += phase[nph]*(MatrixXd(ns)->col(i)) * (MatrixXd(ns)->row(j))+std::conj(phase[nph])*(MatrixXd(ns)->col(j)) * (MatrixXd(ns)->row(i));
           }
 
           //Do Gram-Shmidt while building 'commuters'
+
           for(Index nc = 0; nc < commuters.size(); nc++) {
-            double tproj((commuters[nc].array().conjugate()*tcommute.array()).sum().real()); //Frobenius product
+            cplx tproj((commuters[nc].array().conjugate()*tcommute.array()).sum()); //Frobenius product
             tcommute -= tproj * commuters[nc];
           }
-          double tnorm(tcommute.norm());
+
+          double tnorm((tcommute.array().conjugate()*tcommute.array()).sum().real());
           if(tnorm > TOL) {
             commuters.push_back(tcommute / tnorm);
             //std::cout << commuters.back() << "\n\n";
           }
           else continue;  // Attempt to construct the next commuter...
+
 
           //Finished building commuter now we can try to harvest irreps from it
 
@@ -1225,7 +1247,7 @@ namespace CASM {
             block_shape += (trans_rep[head_group[i].index()].cwiseProduct(trans_rep[head_group[i].index()].conjugate())).real();
             //std::cout << trans_rep[i] << "\n\n";
           }
-
+          //std::cout << "Mini block shape:\n" << block_shape << "\n";
           Index last_i = 0;
           for(Index ns = 0; ns < subspace_dims.size(); ns++) {
             double tnorm(0);
@@ -1265,6 +1287,7 @@ namespace CASM {
                 trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * (t_rep._symmetrized_irrep_trans_mat(head_group)).transpose();
                 Nfound += rnk;
                 found_new_irreps = true;
+                //std::cout << "trans_mat is now: \n" << trans_mat << "\n\n";
               }
             }
             last_i += subspace_dims[ns];
@@ -1288,8 +1311,8 @@ namespace CASM {
     for(Index i = 0; i < head_group.size(); i++) {
       block_shape += (trans_mat.transpose() * (*MatrixXd(head_group[i].index())) * trans_mat).cwiseAbs2();
     }
-    //std::cout << "BLOCK MATRIX IS:\n"
-    //<< block_shape << "\n\n";
+    std::cout << "BLOCK MATRIX IS:\n"
+              << block_shape << "\n\n";
     //std::cout << "IRREP DIMENSIONS ARE: " << irrep_dims << "\n\n";
     return trans_mat.transpose();
 

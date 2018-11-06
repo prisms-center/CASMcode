@@ -49,7 +49,6 @@ namespace CASM {
     }
 
     jsonParser scel_input;
-    scel_input["existing_only"] = true;
     kwargs.get_if(scel_input, "supercells");
 
     // check supercell shortcuts
@@ -67,9 +66,20 @@ namespace CASM {
       scel_input["existing_only"] = true;
     }
 
+
+
+    std::vector<std::string> scelnames;
+    kwargs.get_if(scelnames, "scelnames");
     if(enum_opt.vm().count("scelnames")) {
-      scel_input["name"] = enum_opt.supercell_strs();
+      for(std::string const &scelname : enum_opt.supercell_strs())
+        scelnames.push_back(scelname);
     }
+    if(scelnames.size())
+      scel_input["name"] = scelnames;
+
+    if(scel_input.begin() == scel_input.end())
+      scel_input["name"].put_array();
+    scel_input["existing_only"] = true;
 
     return scel_input;
   }

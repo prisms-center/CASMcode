@@ -550,7 +550,7 @@ namespace CASM {
           }
 
           trep.setIdentity(dof_dim.second, dof_dim.second);
-          trep.topLeftCorner(dofref_to.size(), dofref_to.size()) = eq.U();
+          trep.topLeftCorner(dofref_to.size(), dofref_to.size()) = eq.U().transpose();
           op.set_rep(dofref_to.symrep_ID(), SymMatrixXd(trep));
         }
       }
@@ -579,7 +579,7 @@ namespace CASM {
                                    + "\", a symmetry operation was identified that invalidates the degree of freedom. "
                                    + "Degrees of freedom must be fully specified before performing symmetry analyses.");
         }
-        op.set_rep(dof.second.symrep_ID(), SymMatrixXd(eq.U()));
+        op.set_rep(dof.second.symrep_ID(), SymMatrixXd(eq.U().transpose()));
       }
 
     }

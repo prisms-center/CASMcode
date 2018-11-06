@@ -406,13 +406,13 @@ namespace CASM {
       }
     }
     if(broken_check && m_rep_array.size()) {
-      default_err_log() << "WARNING: Order of symmetry operations has been altered by MasterSymGroup::sort_by_class(). Attempting to repair "
-                        << m_rep_array.size() << " symmetry representations.\n";
+      //default_err_log() << "WARNING: Order of symmetry operations has been altered by MasterSymGroup::sort_by_class(). Attempting to repair "
+      //                << m_rep_array.size() << " symmetry representations.\n";
       for(Index i = 0; i < m_rep_array.size(); i++) {
         m_rep_array[i]->permute(perm_array);
         for(Index j = 0; j < m_rep_array[i]->size(); j++) {
           if(m_rep_array[i]->at(j)) {
-            (m_rep_array[i]->at(j))->set_identifiers(*this, m_rep_array[i]->symrep_ID(), perm_array[j]);
+            (m_rep_array[i]->at(j))->set_identifiers(*this, m_rep_array[i]->symrep_ID(), j);//perm_array[j]);
           }
         }
       }
@@ -2765,55 +2765,49 @@ namespace CASM {
 
 
   //*******************************************************************************************
-  Array<Index>::X3 SymGroup::_small_subgroups() const {
-    Array<Index>::X3 small_sgroups;
+  std::vector< std::set<std::set<Index> > > SymGroup::_small_subgroups() const {
+    std::vector< std::set<std::set<Index> > > result;
+
     int tempind = 0;
     Index i, j, k, l;
     if(get_alt_multi_table().size() != size()) {
-      return small_sgroups;
+      return result;
     }
     // identity is a small subgroup
-    small_sgroups.resize(1, Array<Index>::X2(1, Array<Index>(1, 0)));
+    result.push_back({{0}});
 
     for(i = 1; i < multi_table.size(); i++) {
-      Array<Index> tgroup;
-      tgroup.push_back(0);
-      j = i;
+      std::set<Index> tgroup({0, i});
+      j = ind_prod(i, i);
       while(j != 0) {
-        if(!tgroup.contains(j)) {
-          tgroup.push_back(j);
-        }
-        if(!tgroup.contains(alt_multi_table[j][0])) {
-          tgroup.push_back(alt_multi_table[j][0]);
-        }
-        j = multi_table[i][j];
+        j = ind_prod(i, j);
+        tgroup.insert(j);
       }
 
-      for(j = 0; j < small_sgroups.size(); j++) {
-        for(k = 0; k < small_sgroups[j].size(); k++) {
-          if(small_sgroups[j][k].size() == tgroup.size() && tgroup.all_in(small_sgroups[j][k]))
-            break;
-        }
-        if(k < small_sgroups[j].size())
+      bool add = true;
+      for(auto const &orbit : result) {
+        if(orbit.begin()->size() == tgroup.size()
+           && orbit.count(tgroup) > 0) {
+          add = false;
           break;
+        }
       }
-      if(j < small_sgroups.size())
+      if(!add)
         continue;
 
       // use equiv_map to find the equivalent subgroups
-      Array<Array<Index> > equiv_map(left_cosets(tgroup));
-      small_sgroups.push_back(Array<Index>::X2());
-      //push_back tgroup first
-      small_sgroups.back().push_back(tgroup);
-      for(k = 1; k < equiv_map.size(); k++) {
-        small_sgroups.back().push_back(small_sgroups.back()[0]);
-        for(l = 0; l < small_sgroups.back()[0].size(); l++) {
-          tempind = ind_prod(small_sgroups.back()[0][l], ind_inverse(equiv_map[k][0]));
-          small_sgroups.back()[k][l] = ind_prod(equiv_map[k][0], tempind);
+      result.push_back({});
+
+      for(auto const &coset : left_cosets(tgroup.begin(), tgroup.end())) {
+        std::set<Index> tequiv;
+        for(Index op : tgroup) {
+          tempind = ind_prod(op, ind_inverse(coset[0]));
+          tequiv.insert(ind_prod(coset[0], tempind));
         }
+        result.back().insert(std::move(tequiv));
       }
     }
-    return small_sgroups;
+    return result;
   }
 
   //*******************************************************************************************
@@ -2826,62 +2820,52 @@ namespace CASM {
    */
 
   void SymGroup::_generate_subgroups() const {
-    Array<Index>::X3 small_subgroups = _small_subgroups();
-
-    Index i, j, k, l, m, jj, iii, jjj;
-
-    m_subgroups = small_subgroups;
-
-
+    auto small = _small_subgroups();
+    m_subgroups = small;
+    Index i, k, ii, jj, tempind;
     for(i = 0; i < m_subgroups.size(); i++) {
       //std::cout << "i is " << i << " and m_subgroups.size() is " << m_subgroups.size() << std::endl;
-      for(j = 0; j < small_subgroups.size(); j++) {
-        //for(ii=0; ii<m_subgroups[i].size(); ii++){
-        for(jj = 0; jj < small_subgroups[j].size(); jj++) {
-          Array<Index> tgroup1(m_subgroups[i][0]);
+      for(auto const &orbit : small) {
+        for(auto const &equiv : orbit) {
+          std::set<Index> tgroup = *(m_subgroups[i].begin());
+          Index init_size = tgroup.size();
+          tgroup.insert(equiv.begin(), equiv.end());
+          if(tgroup.size() == init_size)
+            continue;
 
-          // append unique elements from small_subgroups[j][jj]
-          for(jjj = 0; jjj < small_subgroups[j][jj].size(); jjj++) {
-            if(!tgroup1.contains(small_subgroups[j][jj][jjj])) {
-              tgroup1.push_back(small_subgroups[j][jj][jjj]);
-            }
-          }
 
           // find group closure
-          for(iii = 0; iii < tgroup1.size(); iii++) {
-            for(jjj = 0; jjj < tgroup1.size(); jjj++) {
-              if(!tgroup1.contains(multi_table[tgroup1[iii]][tgroup1[jjj]])) {
-                tgroup1.push_back(multi_table[tgroup1[iii]][tgroup1[jjj]]);
+          std::vector<Index> vgroup(tgroup.begin(), tgroup.end());
+          for(ii = 0; ii < vgroup.size(); ii++) {
+            for(jj = 0; jj < vgroup.size(); jj++) {
+              Index prod = ind_prod(vgroup[ii], vgroup[jj]);
+              if(tgroup.insert(prod).second) {
+                vgroup.push_back(prod);
               }
             }
           }
 
           for(k = 0; k < m_subgroups.size(); k++) {
-            if(m_subgroups[k][0].size() == tgroup1.size()
-               && which_unique_combination(tgroup1, m_subgroups[k]) != m_subgroups[k].size()) {
+            if(m_subgroups[k].begin()->size() == tgroup.size()
+               && m_subgroups[k].count(tgroup) > 0)
               break;
-            }
           }
           //std::cout << " k is " << k << " and m_subgroups.size() is " << m_subgroups.size() << std::endl;
           if(k < m_subgroups.size())
             continue;
           // add the new group
-          //std::cout << "tgroup1 " << tgroup1 << " is unique, so we add it " << std::endl;
-          //std::cout << "tgroup2 " << tgroup2 << " yields all_in = " << tgroup1.all_in(tgroup2) << std::endl;
-          Array<Index> tconj(tgroup1);
-          m_subgroups.push_back(Array< Array<Index> >());
-          for(l = 0; l < alt_multi_table.size(); l++) {
-            for(m = 0; m < tgroup1.size(); m++) {
-              iii = alt_multi_table[l][tgroup1[m]];
-              tconj[m] = multi_table[iii][l];
-            }
-            if(which_unique_combination(tconj, m_subgroups.back()) == m_subgroups.back().size()) {
-              tconj.sort();
-              m_subgroups.back().push_back(tconj);
-            }
 
+          // use equiv_map to find the equivalent subgroups
+          m_subgroups.push_back({});
+
+          for(auto const &coset : left_cosets(tgroup.begin(), tgroup.end())) {
+            std::set<Index> tequiv;
+            for(Index op : tgroup) {
+              tempind = ind_prod(op, ind_inverse(coset[0]));
+              tequiv.insert(ind_prod(coset[0], tempind));
+            }
+            m_subgroups.back().insert(std::move(tequiv));
           }
-
         }
       }
     }
@@ -2889,11 +2873,11 @@ namespace CASM {
     // Sort subgroups by number of elements and multiplicity
     for(Index i = 0; i < m_subgroups.size(); i++) {
       for(Index j = i + 1; j < m_subgroups.size(); j++) {
-        if(m_subgroups[i][0].size() < m_subgroups[j][0].size())
-          m_subgroups.swap_elem(i, j);
-        if(m_subgroups[i][0].size() == m_subgroups[j][0].size()
-           && m_subgroups[i].size() < m_subgroups[j].size())
-          m_subgroups.swap_elem(i, j);
+        if(m_subgroups[i].begin()->size() < m_subgroups[j].begin()->size())
+          std::swap(m_subgroups[i], m_subgroups[j]);
+        else if(m_subgroups[i].begin()->size() == m_subgroups[j].begin()->size()
+                && m_subgroups[i].size() < m_subgroups[j].size())
+          std::swap(m_subgroups[i], m_subgroups[j]);
       }
     }
     return;
@@ -2910,8 +2894,8 @@ namespace CASM {
     for(Index i = 0; i < m_subgroups.size(); i++) {
       SymGroup sgroup;
       sgroup.m_lat_ptr = m_lat_ptr;
-      for(Index j = 0; j < m_subgroups[i][0].size(); j++) {
-        sgroup.push_back(at(m_subgroups[i][0][j]));
+      for(Index op : * (m_subgroups[i].begin())) {
+        sgroup.push_back(at(op));
       }
       sgroup._generate_character_table();
       sg_names.push_back(sgroup.name);
@@ -2926,8 +2910,15 @@ namespace CASM {
     for(Index i = 0; i < m_subgroups.size(); i++) {
       //std::cout << "Subgroup " << sg_names[i] << "-" << i << " is also a subgroup of ";
       for(Index j = 0; j < m_subgroups.size(); j++) {
-        for(Index jj = 0; jj < m_subgroups[j].size(); jj++) {
-          if(m_subgroups[i][0].all_in(m_subgroups[j][jj])) {
+        for(auto const &equiv : m_subgroups[j]) {
+          bool add = true;
+          for(auto const &op : equiv) {
+            if(m_subgroups[i].begin()->count(op) < 1) {
+              add = false;
+              break;
+            }
+          }
+          if(add) {
             sg_tree[i].push_back(j);
             //std::cout << sg_names[j] << "-" << j << "-" << jj << "  ";
             break;
@@ -2937,34 +2928,35 @@ namespace CASM {
       //std::cout << "\n";
     }
 
+    /* // commented out for now because datatype of m_subgroups has changed
     //attempt to maximize coincidence a
     int max_co, t_co;
     for(int i = int(m_subgroups.size()) - 1; i >= 0; i--) {
-      if(chosen_flag[i]) continue;
-      //chosen_flag[i]=true;
-      for(int j = 0; j < i; j++) {
-        if(sg_names[j] == sg_names[i]) {
-          chosen_flag[j] = true;
-          continue;
-        }
-        max_co = 0;
-        for(Index jj = 0; jj < m_subgroups[j].size(); jj++) {
-          t_co = m_subgroups[i][0].coincidence(m_subgroups[j][jj]);
-          if(t_co > max_co) {
-            max_co = t_co;
-            m_subgroups[j].swap_elem(jj, 0);
-          }
-        }
-      }
+    if(chosen_flag[i]) continue;
+    //chosen_flag[i]=true;
+    for(int j = 0; j < i; j++) {
+    if(sg_names[j] == sg_names[i]) {
+    chosen_flag[j] = true;
+    continue;
     }
-
+    max_co = 0;
+    for(Index jj = 0; jj < m_subgroups[j].size(); jj++) {
+    t_co = m_subgroups[i][0].coincidence(m_subgroups[j][jj]);
+    if(t_co > max_co) {
+    max_co = t_co;
+    m_subgroups[j].swap_elem(jj, 0);
+    }
+    }
+    }
+    }
+    */
     std::vector<SymGroup> unique_sgroups;
 
     for(Index i = 0; i < m_subgroups.size(); i++) {
       if(chosen_flag[i]) continue;
       unique_sgroups.push_back(SymGroup());
-      for(Index ii = 0; ii < m_subgroups[i][0].size(); ii++) {
-        unique_sgroups.back().push_back(at(m_subgroups[i][0][ii]));
+      for(Index op :  * (m_subgroups[i].begin())) {
+        unique_sgroups.back().push_back(at(op));
       }
       unique_sgroups.back().sort();
       unique_sgroups.back()._generate_character_table();
@@ -3121,40 +3113,10 @@ namespace CASM {
   //*******************************************************************************************
   // The set of left cosets is identical to the equivalence_map formed by partitioning (*this) w.r.t. 'subgroup'
   ReturnArray<Array<Index> > SymGroup::left_cosets(const Array<SymOp> &subgroup, double tol) const {
-    return left_cosets(find_all_periodic(subgroup, tol));
+    Array<Index> sg_inds = find_all_periodic(subgroup, tol);
+    return left_cosets(sg_inds.begin(), sg_inds.end());
   }
 
-
-  //*******************************************************************************************
-  // The set of left cosets is identical to the equivalence_map formed by partitioning (*this) w.r.t. 'subgroup'
-  // This version is overloaded to take only the indices of the operations that form the subgroup
-  ReturnArray<Array<Index> > SymGroup::left_cosets(const Array<Index> &subgroup_inds) const {
-    assert(size() % subgroup_inds.size() == 0 && "In SymGroup::left_cosets(), left cosets must be generated by a subgroup of *this SymGroup.");
-
-    Array<Index>::X2 tcosets;
-    tcosets.reserve(size() / subgroup_inds.size());
-    tcosets.push_back(subgroup_inds);
-    if(tcosets.back().size() == 0) {
-      default_err_log() << "CRITICAL ERROR: In SymGroup::left_cosets(), could not find subgroup within *this group.\n"
-                        << "                Exiting...\n";
-      assert(0);
-      exit(1);
-    }
-    Index j;
-    for(Index i = 0; i < size(); i++) {
-      for(j = 0; j < tcosets.size(); j++) {
-        if(tcosets[j].contains(i))
-          break;
-      }
-      if(j < tcosets.size()) continue;
-      tcosets.push_back(Array<Index>(subgroup_inds.size()));
-      for(j = 0; j < subgroup_inds.size(); j++) {
-        tcosets.back()[j] = ind_prod(i, subgroup_inds[j]);
-        //std::cout << "PROD " << i << ", " << j << " = " << tcosets.back()[j] << "\n";
-      }
-    }
-    return tcosets;
-  }
 
 
   //*******************************************************************************************
@@ -3232,7 +3194,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  const Array<Index>::X3 &SymGroup::subgroups() const {
+  const std::vector<std::set<std::set<Index> > > &SymGroup::subgroups() const {
     if(!m_subgroups.size())
       _generate_subgroups();
     return m_subgroups;
