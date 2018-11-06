@@ -539,7 +539,7 @@ namespace CASM {
 
   void print_site_basis_funcs(Structure const &prim,
                               ClexBasis const &clex_basis,
-                              std::ostream &out,
+                              Log &out,
                               Index indent_space,
                               COORD_TYPE mode) {
     std::string indent(indent_space, ' ');
