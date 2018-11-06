@@ -69,37 +69,37 @@ namespace CASM {
 
       */
 
-      virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const = 0;
+      virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const;
 
-      virtual std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const = 0;
+      virtual std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const;
 
       virtual std::string site_basis_description(BasisSet site_bset, Site site) const = 0;
 
-      virtual std::vector<std::pair<std::string, Index> > param_pack_allocation(std::vector<BasisSet> const &_bases) const = 0;
+      virtual std::vector<std::pair<std::string, Index> > param_pack_allocation(std::vector<BasisSet> const &_bases) const;
 
       virtual std::string clexulator_constructor_string(Structure const &_prim,
                                                         std::vector<BasisSet> const &site_bases,
-                                                        std::string const &indent) const = 0;
+                                                        std::string const &indent) const;
 
       virtual std::string clexulator_point_prepare_string(Structure const &_prim,
                                                           std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                           PrimNeighborList &_nlist,
                                                           std::vector<BasisSet> const &site_bases,
-                                                          std::string const &indent) const = 0;
+                                                          std::string const &indent) const;
 
       virtual std::string clexulator_global_prepare_string(Structure const &_prim,
                                                            std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                            PrimNeighborList &_nlist,
                                                            std::vector<BasisSet> const &site_bases,
-                                                           std::string const &indent) const = 0;
+                                                           std::string const &indent) const;
 
       virtual std::string clexulator_member_declarations_string(Structure const &_prim,
                                                                 std::vector<BasisSet> const &site_bases,
-                                                                std::string const &indent) const = 0;
+                                                                std::string const &indent) const;
 
       virtual std::string clexulator_private_method_declarations_string(Structure const &_prim,
                                                                         std::vector<BasisSet> const &site_bases,
-                                                                        std::string const &indent) const = 0;
+                                                                        std::string const &indent) const;
 
       virtual std::string clexulator_public_method_declarations_string(Structure const &_prim,
                                                                        std::vector<BasisSet> const &site_bases,
@@ -107,7 +107,7 @@ namespace CASM {
 
       virtual std::string clexulator_private_method_implementations_string(Structure const &_prim,
                                                                            std::vector<BasisSet> const &site_bases,
-                                                                           std::string const &indent) const = 0;
+                                                                           std::string const &indent) const;
 
       virtual std::string clexulator_public_method_implementations_string(Structure const &_prim,
                                                                           std::vector<BasisSet> const &site_bases,

@@ -38,9 +38,15 @@ namespace CASM {
       "ConfigEnumNormalCoords: \n\n"
 
       "  confignames: Array of strings (optional) \n"
-      "    Name of configuration used as reference states\n"
-      "    Must be single configuration. Strains are enumerated as perturbations to\n"
-      "    specified configuration. Ex: \"confignames\" : [\"SCEL1_1_1_1_0_0_0/1\",\"SCEL2_2_1_1_0_0_0/3\"]\n\n"
+      "    Names of configurations to be used as reference states. Normal coordinates are enum-\n"
+      "    erated after zeroing the DoF values at selected sites of the specified configurations\n"
+      "    and calculating the resulting symmetry of the selected sites.\n"
+      "    Ex: \"confignames\" : [\"SCEL1_1_1_1_0_0_0/1\",\"SCEL2_2_1_1_0_0_0/3\"]\n\n"
+
+      "  scelnames: Array of strings (optional) \n"
+      "    Names of supercells used as reference states. Normal coordinates are enumerated starting\n"
+      "    from the fully zeroed configuration of the specified supercells.\n"
+      "    Ex: \"scelnames\" : [\"SCEL1_1_1_1_0_0_0\",\"SCEL2_2_1_1_0_0_0\"]\n\n"
 
       "  dof: string (required) \n"
       "    Name of site degree of freecom  for which normal coordinates are to be generated.\n"

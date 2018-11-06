@@ -5,6 +5,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/clex/ScelEnum.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/misc/CASM_math.hh"
@@ -37,10 +38,16 @@ namespace CASM {
     return
       "ConfigEnumStrain: \n\n"
 
-      "  config: string (required) \n"
-      "    Name of configuration used as strain reference\n"
-      "    Must be single configuration. Strains are enumerated as perturbations to\n"
-      "    specified configuration. Ex: \"config\" : \"SCEL2_2_1_1_0_0_0/3\"\n\n"
+      "  confignames: Array of strings (optional) \n"
+      "    Names of configurations used as strain references. Strains are enumerated\n"
+      "    as perturbations to specified configurations. \n"
+      "    Ex: \"confignames\" : [\"SCEL2_2_1_1_0_0_0/3\", \"SCEL4_2_2_1_0_0_0/10\"]\n\n"
+
+      "  scelnames: Array of strings (optional) \n"
+      "    Names of supercells  used as strain references. Strains are enumerated\n"
+      "    as perturbations of the fully zeroed configuration of the specified"
+      "    supercells.\n"
+      "    Ex: \"scelnames\" : [\"SCEL2_2_1_1_0_0_0\",\"SCEL4_2_3_1_0_0_0\"]\n\n"
 
       "  min: array of doubles (optional, default = [0,...,0]) \n"
       "    Minimum, starting value of grid counter\n"
@@ -99,45 +106,82 @@ namespace CASM {
     //bool analysis = _kwargs.get_if_else<bool>("analysis", false);
     Eigen::MatrixXd axes;
     Eigen::VectorXd min_val, max_val, inc_val;
+    std::vector<std::string> confignames;
 
     bool auto_range = false;
 
-    //if(!analysis) {
-    if(!(_kwargs.contains("max") && _kwargs.contains("increment")))
-      throw std::runtime_error("JSON options for enumeration method 'ConfigEnumStrain' must specify BOTH \"max\", and \"increment\"");
-    from_json(max_val, _kwargs["max"]);
-    from_json(inc_val, _kwargs["increment"]);
-    if(_kwargs.contains("min")) {
-      from_json(min_val, _kwargs["min"]);
-    }
-    else {
-      auto_range = sym_axes;
-      min_val = 0 * max_val;
-    }
-    //}
+    try {
+      if(!(_kwargs.contains("max") && _kwargs.contains("increment")))
+        throw std::runtime_error("JSON options for enumeration method 'ConfigEnumStrain' must specify BOTH \"max\", and \"increment\"");
+      from_json(max_val, _kwargs["max"]);
+      from_json(inc_val, _kwargs["increment"]);
+      if(_kwargs.contains("min")) {
+        from_json(min_val, _kwargs["min"]);
+      }
+      else {
+        auto_range = sym_axes;
+        min_val = 0 * max_val;
+      }
 
-    if(!_kwargs.contains("config") || !_kwargs["config"].is_string())
-      throw std::runtime_error("JSON options for enumeration method 'ConfigEnumStrain' must include exactly one starting configuration, specified by field \"config\"");
+
+      if(_kwargs.contains("confignames")) {
+        if(!_kwargs["confignames"].is_array())
+          throw std::runtime_error("Field \"confignames\" must specify array of string values.");
+        confignames = _kwargs["confignames"].get<std::vector<std::string> >();
+      }
+    }
+    catch(std::exception &e) {
+      throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigStrain:") + e.what());
+    }
+
+    std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
 
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
-    std::string configname = _kwargs["config"].get<std::string>();
-    auto it = primclex.const_db<Configuration>().find(configname);
-    if(it == primclex.const_db<Configuration>().end())
-      throw std::runtime_error("In ConfigEnumStrain::run(), specified configuration " + configname + " does not exist in database.\n");
 
-    return run(primclex,
-               *it,
-               axes,
-               min_val,
-               max_val,
-               inc_val,
-               sym_axes,
-               auto_range,
-               trim_corners,
-               //analysis,
-               filter_expr,
-               CASM::dry_run(_kwargs, enum_opt));
+    for(Supercell const &scel : *scel_enum) {
+      Index result = run(primclex,
+                         Configuration::zeros(scel),
+                         axes,
+                         min_val,
+                         max_val,
+                         inc_val,
+                         sym_axes,
+                         auto_range,
+                         trim_corners,
+                         //analysis,
+                         filter_expr,
+                         CASM::dry_run(_kwargs, enum_opt));
+      if(result)
+        return result;
+    }
+
+    for(std::string const &configname : enum_opt.config_strs())
+      confignames.push_back(configname);
+
+    std::cout << "confignames is: " << confignames << "\n";
+    for(std::string const &configname : confignames) {
+      auto it = primclex.const_db<Configuration>().find(configname);
+      if(it == primclex.const_db<Configuration>().end())
+        throw std::runtime_error("Specified configuration " + configname + " does not exist in database.\n");
+
+      Index result = run(primclex,
+                         *it,
+                         axes,
+                         min_val,
+                         max_val,
+                         inc_val,
+                         sym_axes,
+                         auto_range,
+                         trim_corners,
+                         //analysis,
+                         filter_expr,
+                         CASM::dry_run(_kwargs, enum_opt));
+      if(result)
+        return result;
+    }
+    return 0;
+
   }
 
   int ConfigEnumStrain::run(PrimClex const &_primclex,

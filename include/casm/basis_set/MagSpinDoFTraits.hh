@@ -33,63 +33,10 @@ namespace CASM {
         return "";
       }
 
-      std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const override {
-        return std::vector<std::unique_ptr<FunctionVisitor> >();
-      }
-
-      std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const override {
-        return std::vector<std::unique_ptr<FunctionVisitor> >();
-      }
-
-      std::vector<std::pair<std::string, Index> > param_pack_allocation(std::vector<BasisSet> const &_bases) const override {
-        return std::vector<std::pair<std::string, Index> >();
-      }
-
-      std::string clexulator_constructor_string(Structure const &_prim,
-                                                std::vector<BasisSet> const &site_bases,
-                                                std::string const &indent) const override {
-        return "";
-      }
-
-      std::string clexulator_point_prepare_string(Structure const &_prim,
-                                                  std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
-                                                  PrimNeighborList &_nlist,
-                                                  std::vector<BasisSet> const &site_bases,
-                                                  std::string const &indent) const override {
-        return "";
-      }
-
-      std::string clexulator_global_prepare_string(Structure const &_prim,
-                                                   std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
-                                                   PrimNeighborList &_nlist,
-                                                   std::vector<BasisSet> const &site_bases,
-                                                   std::string const &indent) const override {
-        return "";
-      }
-
-      std::string clexulator_member_declarations_string(Structure const &_prim,
-                                                        std::vector<BasisSet> const &site_bases,
-                                                        std::string const &indent) const override {
-        return "";
-      }
-
-      std::string clexulator_private_method_declarations_string(Structure const &_prim,
-                                                                std::vector<BasisSet> const &site_bases,
-                                                                std::string const &indent) const override {
-        return "";
-      }
-
       std::string clexulator_public_method_declarations_string(Structure const &_prim,
                                                                std::vector<BasisSet> const &site_bases,
                                                                std::string const &indent) const override {
         //todo
-        return std::string();
-      }
-
-      std::string clexulator_private_method_implementations_string(Structure const &_prim,
-                                                                   std::vector<BasisSet> const &site_bases,
-                                                                   std::string const &indent) const override {
-        // todo
         return std::string();
       }
 
