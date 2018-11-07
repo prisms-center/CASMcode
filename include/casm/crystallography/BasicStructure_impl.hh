@@ -130,7 +130,7 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_group) const {
+  void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_group, bool time_reversal_enabled) const {
     //std::cout << "BASIC STRUCTURE FACTOR GROUP\n";
     Array<CoordType> trans_basis;
     Index pg, b0, b1, b2;
@@ -138,7 +138,7 @@ namespace CASM {
     Index num_suc_maps;
 
     SymGroup const &point_group = super_group;
-    Index time_max = Index(_time_reversal_active());
+    Index time_max = Index(_time_reversal_active() && time_reversal_enabled);
     SymOp test_op;
     if(factor_group.size() != 0) {
       std::cerr << "WARNING in BasicStructure<CoordType>::generate_factor_group_slow" << std::endl;
@@ -410,8 +410,11 @@ namespace CASM {
   bool BasicStructure<CoordType>::is_primitive() const {
     SymGroup valid_translations, identity_group;
     identity_group.push_back(SymOp());
-    _generate_factor_group_slow(valid_translations, identity_group);
-    return (valid_translations.size() == 1);
+    _generate_factor_group_slow(valid_translations, identity_group, false);
+    if(valid_translations.size() == 1)
+      return true;
+
+    return false;
   }
 
 
@@ -426,7 +429,7 @@ namespace CASM {
   bool BasicStructure<CoordType>::is_primitive(BasicStructure<CoordType> &new_prim) const {
     SymGroup valid_translations, identity_group;
     identity_group.push_back(SymOp());
-    _generate_factor_group_slow(valid_translations, identity_group);
+    _generate_factor_group_slow(valid_translations, identity_group, false);
 
 
     Eigen::Vector3d prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);

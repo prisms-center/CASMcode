@@ -2778,7 +2778,7 @@ namespace CASM {
 
     for(i = 1; i < multi_table.size(); i++) {
       std::set<Index> tgroup({0, i});
-      j = ind_prod(i, i);
+      j = i;//ind_prod(i, i);
       while(j != 0) {
         j = ind_prod(i, j);
         tgroup.insert(j);
@@ -2797,7 +2797,11 @@ namespace CASM {
 
       // use equiv_map to find the equivalent subgroups
       result.push_back({});
-
+      //std::cout << "tgroup.size(): " << tgroup.size() << "\n";
+      //std::cout << "tgroup : ";
+      //for(i : tgroup)
+      //std::cout << i << "  ";
+      //std::cout << "\n";
       for(auto const &coset : left_cosets(tgroup.begin(), tgroup.end())) {
         std::set<Index> tequiv;
         for(Index op : tgroup) {
