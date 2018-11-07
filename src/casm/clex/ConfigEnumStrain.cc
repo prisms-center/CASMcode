@@ -287,7 +287,7 @@ namespace CASM {
     for(Index s = 0; s < nsub; s++) {
       double abs_mag = 0.;
       for(Index i = 0; i < m_wedges[0].irrep_wedges()[s].axes.cols(); i++)
-        abs_mag = max(abs_mag, max(abs(max_val(nc)), abs(min_val(nc))));
+        abs_mag = max<double>(abs_mag, max(abs(max_val(nc)), abs(min_val(nc))));
 
       for(Index i = 0; i < m_wedges[0].irrep_wedges()[s].axes.cols(); i++, nc++) {
         if(m_wedges[0].irrep_wedges()[s].mult[i] == 1 && auto_range) {
