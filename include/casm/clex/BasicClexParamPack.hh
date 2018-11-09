@@ -51,7 +51,15 @@ namespace CASM {
     }
 
     size_type size(Key const &_key) const {
-      return m_data[_key.index()].size();
+      return m_data[_key.index()].cols();
+    }
+
+    size_type dim(ClexParamKey const &_key) const override {
+      return dim(*static_cast<Key const *>(_key.ptr()));
+    }
+
+    size_type dim(Key const &_key) const {
+      return m_data[_key.index()].rows();
     }
 
     std::string eval_mode(ClexParamKey const &_key) const override {
@@ -62,11 +70,11 @@ namespace CASM {
       return m_eval[_key.index()];
     }
 
-    std::vector<double> const &read(ClexParamKey const &_key) const override {
+    Eigen::MatrixXd const &read(ClexParamKey const &_key) const override {
       return read(*static_cast<Key const *>(_key.ptr()));
     }
 
-    std::vector<double> const &read(Key const &_key) const {
+    Eigen::MatrixXd const &read(Key const &_key) const {
       return m_data[_key.index()];
     }
 
@@ -78,6 +86,14 @@ namespace CASM {
       return m_data[_key.index()][_ind];
     }
 
+    double const &read(ClexParamKey const &_key, size_type _i, size_type _j) const override {
+      return read(*static_cast<Key const *>(_key.ptr()), _i, _j);
+    }
+
+    double const &read(Key const &_key, size_type _i, size_type _j) const {
+      return m_data[_key.index()](_i, _j);
+    }
+
     void set_eval_mode(ClexParamKey const &_key, std::string const &_mode) override {
       set_eval_mode(*static_cast<Key const *>(_key.ptr()), from_string<EvalMode>(_mode));
     }
@@ -86,30 +102,38 @@ namespace CASM {
       m_eval[_key.index()] = _mode;
     }
 
-    void write(ClexParamKey const &_key, std::vector<double> const &_val) override {
+    void write(ClexParamKey const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val) override {
       write(*static_cast<Key const *>(_key.ptr()), _val);
     }
 
-    void write(Key const &_key, std::vector<double> const &_val) {
+    void write(Key const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val) {
       m_data[_key.index()] = _val;
     }
 
-    void write(ClexParamKey const &_key, size_type _ind, double _val) override {
-      write(*static_cast<Key const *>(_key.ptr()), _ind, _val);
+    void write(ClexParamKey const &_key, size_type _i, double _val) override {
+      write(*static_cast<Key const *>(_key.ptr()), _i, _val);
     }
 
-    void write(Key const &_key, size_type _ind, double _val) {
-      m_data[_key.index()][_ind] = _val;
+    void write(Key const &_key, size_type _i, double _val) {
+      m_data[_key.index()][_i] = _val;
     }
 
-    Key allocate(std::string const &_keyname, Index _size) {
+    void write(ClexParamKey const &_key, size_type _i, size_type _j, double _val) override {
+      write(*static_cast<Key const *>(_key.ptr()), _i, _j, _val);
+    }
+
+    void write(Key const &_key, size_type _i, size_type _j, double _val) {
+      m_data[_key.index()](_i, _j) = _val;
+    }
+
+    Key allocate(std::string const &_keyname, Index _cols, Index _rows) {
       auto it = keys().find(_keyname);
       if(it != keys().end())
         throw std::runtime_error("Naming collision in BasicClexParamPack::allocate(), ClexParamPack already managing parameter allocation corresponding to name " + _keyname + ".");
 
       Key protokey(_keyname, m_data.size());
 
-      m_data.push_back(std::vector<double>(_size));
+      m_data.push_back(Eigen::MatrixXd::Zero(_rows, _cols));
 
       m_eval.push_back(EvalMode::DEFAULT);
 
@@ -119,7 +143,7 @@ namespace CASM {
 
 
   private:
-    std::vector<std::vector<double> > m_data;
+    std::vector<Eigen::MatrixXd> m_data;
     std::vector<EvalMode> m_eval;
   };
 

@@ -13,7 +13,8 @@ namespace CASM {
         DoFType::Traits(_metric + "strain",
                         std::vector<std::string>({"e_1", "e_2", "e_3", "e_4", "e_5", "e_6"}),
       DoFType::CONTINUOUS,
-      DoFType::GLOBAL),
+      DoFType::GLOBAL,
+      false),
       m_metric(_metric) {
       }
 
@@ -39,8 +40,9 @@ namespace CASM {
         return std::vector<std::unique_ptr<FunctionVisitor> >();
       }
 
-      std::vector<std::pair<std::string, Index> > param_pack_allocation(std::vector<BasisSet> const &_bases) const override {
-        return std::vector<std::pair<std::string, Index> >();
+      std::vector<std::tuple<std::string, Index, Index> > param_pack_allocation(Structure const &_prim,
+                                                                                std::vector<BasisSet> const &_bases) const override {
+        return std::vector<std::tuple<std::string, Index, Index> >();
       }
 
       std::string clexulator_constructor_string(Structure const &_prim,
@@ -84,16 +86,16 @@ namespace CASM {
         return std::string();
       }
 
-      std::string clexulator_private_method_implementations_string(Structure const &_prim,
-                                                                   std::vector<BasisSet> const &site_bases,
-                                                                   std::string const &indent) const override {
+      std::string clexulator_private_method_definitions_string(Structure const &_prim,
+                                                               std::vector<BasisSet> const &site_bases,
+                                                               std::string const &indent) const override {
         // todo
         return std::string();
       }
 
-      std::string clexulator_public_method_implementations_string(Structure const &_prim,
-                                                                  std::vector<BasisSet> const &site_bases,
-                                                                  std::string const &indent) const override {
+      std::string clexulator_public_method_definitions_string(Structure const &_prim,
+                                                              std::vector<BasisSet> const &site_bases,
+                                                              std::string const &indent) const override {
         // todo
         return std::string();
       }

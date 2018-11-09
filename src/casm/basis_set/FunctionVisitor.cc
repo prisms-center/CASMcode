@@ -187,6 +187,10 @@ namespace CASM {
             tformula << '?';
           }
         }
+        else if(m_sub_strings[j] == "%t") {
+          ttex << type_name();
+          tformula << type_name();
+        }
         else if(m_sub_strings[j] == "%p") {
           std::string prefix = dof_set.type_name();
           if(prefix.empty())

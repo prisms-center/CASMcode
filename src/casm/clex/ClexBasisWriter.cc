@@ -76,22 +76,22 @@ namespace CASM {
         ss << DoFType::traits(dof.first).clexulator_member_declarations_string(clex.prim(), dof.second, indent);
 
       for(auto const &dof : clex.site_bases()) {
-        std::vector<std::pair<std::string, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(dof.second);
+        std::vector<std::tuple<std::string, Index, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
         if(allo.empty())
           continue;
         ss << indent << "//ClexParamPack allocation for DoF " << dof.first << "\n";
         for(const auto &el : allo)
-          ss << indent << "ParamPack::Key m_" << el.first << "_param_key;\n";
+          ss << indent << "ParamPack::Key m_" << std::get<0>(el) << "_param_key;\n";
         ss << "\n";
       }
 
       for(auto const &dof : clex.global_bases()) {
-        std::vector<std::pair<std::string, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(dof.second);
+        std::vector<std::tuple<std::string, Index, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
         if(allo.empty())
           continue;
         ss << indent << "//ClexParamPack allocation for DoF " << dof.first << "\n";
         for(const auto &el : allo)
-          ss << indent << "ParamPack::Key m_" << el.first << "_param_key;\n";
+          ss << indent << "ParamPack::Key m_" << std::get<0>(el) << "_param_key;\n";
         ss << "\n";
       }
 

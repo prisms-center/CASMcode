@@ -308,14 +308,15 @@ namespace CASM {
 
     //************************************************************
 
-    std::vector<std::pair<std::string, Index> > OccupationDoFTraits::param_pack_allocation(std::vector<BasisSet> const &_bases) const {
-      std::vector<std::pair<std::string, Index> > result;
+    std::vector<std::tuple<std::string, Index, Index> > OccupationDoFTraits::param_pack_allocation(Structure const &_prim,
+        std::vector<BasisSet> const &_bases) const {
+      std::vector<std::tuple<std::string, Index, Index> > result;
       Index NB = 0;
       for(BasisSet const &basis : _bases) {
         NB = max(basis.size(), NB);
       }
-      for(Index i = 0; i < NB; i++)
-        result.push_back(make_pair(std::string("occ_func_") + std::to_string(i), Index(-1)));
+      if(NB)
+        result.push_back(std::make_tuple(std::string("occ_func"), Index(-1), NB));
 
       return result;
 

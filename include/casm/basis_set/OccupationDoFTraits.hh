@@ -11,7 +11,8 @@ namespace CASM {
         DoFType::Traits("occ",
       {},
       DoFType::DISCRETE,
-      DoFType::LOCAL) {
+      DoFType::LOCAL,
+      true) {
       }
 
       /// \brief Output @param _in to JSON
@@ -38,7 +39,8 @@ namespace CASM {
 
       std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const override;
 
-      std::vector<std::pair<std::string, Index> > param_pack_allocation(std::vector<BasisSet> const &_bases) const override;
+      std::vector<std::tuple<std::string, Index, Index> > param_pack_allocation(Structure const &_prim,
+                                                                                std::vector<BasisSet> const &_bases) const override;
 
       std::string clexulator_constructor_string(Structure const &_prim,
                                                 std::vector<BasisSet> const &site_bases,
@@ -71,16 +73,16 @@ namespace CASM {
         return std::string();
       }
 
-      std::string clexulator_private_method_implementations_string(Structure const &_prim,
-                                                                   std::vector<BasisSet> const &site_bases,
-                                                                   std::string const &indent) const override {
+      std::string clexulator_private_method_definitions_string(Structure const &_prim,
+                                                               std::vector<BasisSet> const &site_bases,
+                                                               std::string const &indent) const override {
         // todo
         return std::string();
       }
 
-      std::string clexulator_public_method_implementations_string(Structure const &_prim,
-                                                                  std::vector<BasisSet> const &site_bases,
-                                                                  std::string const &indent) const override {
+      std::string clexulator_public_method_definitions_string(Structure const &_prim,
+                                                              std::vector<BasisSet> const &site_bases,
+                                                              std::string const &indent) const override {
         // todo
         return std::string();
       }

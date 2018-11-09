@@ -14,7 +14,8 @@ namespace CASM {
         "x", "y", "z"
       },
       DoFType::CONTINUOUS,
-      DoFType::LOCAL) {
+      DoFType::LOCAL,
+      false) {
       }
 
 
@@ -79,16 +80,16 @@ namespace CASM {
         return std::string();
       }
 
-      /*std::string clexulator_private_method_implementations_string(Structure const &_prim,
+      /*std::string clexulator_private_method_definitions_string(Structure const &_prim,
                                                                    std::vector<BasisSet> const &site_bases,
                                                                    std::string const &indent) const override {
         // todo
         return std::string();
         }*/
 
-      std::string clexulator_public_method_implementations_string(Structure const &_prim,
-                                                                  std::vector<BasisSet> const &site_bases,
-                                                                  std::string const &indent) const override {
+      std::string clexulator_public_method_definitions_string(Structure const &_prim,
+                                                              std::vector<BasisSet> const &site_bases,
+                                                              std::string const &indent) const override {
         // todo
         return std::string();
       }

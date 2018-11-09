@@ -36,11 +36,13 @@ namespace CASM {
       Traits(std::string const &_type_name,
              std::vector<std::string> const &_std_var_names,
              DOF_DOMAIN _domain,
-             DOF_MODE _mode) :
+             DOF_MODE _mode,
+             bool _requires_site_basis) :
         BasicTraits(_type_name,
                     _std_var_names,
                     _domain,
-                    _mode) {
+                    _mode,
+                    _requires_site_basis) {
 
       }
 
@@ -75,7 +77,8 @@ namespace CASM {
 
       virtual std::string site_basis_description(BasisSet site_bset, Site site) const = 0;
 
-      virtual std::vector<std::pair<std::string, Index> > param_pack_allocation(std::vector<BasisSet> const &_bases) const;
+      virtual std::vector<std::tuple<std::string, Index, Index> > param_pack_allocation(Structure const &_prim,
+          std::vector<BasisSet> const &_bases) const;
 
       virtual std::string clexulator_constructor_string(Structure const &_prim,
                                                         std::vector<BasisSet> const &site_bases,
@@ -105,13 +108,13 @@ namespace CASM {
                                                                        std::vector<BasisSet> const &site_bases,
                                                                        std::string const &indent) const = 0;
 
-      virtual std::string clexulator_private_method_implementations_string(Structure const &_prim,
-                                                                           std::vector<BasisSet> const &site_bases,
-                                                                           std::string const &indent) const;
+      virtual std::string clexulator_private_method_definitions_string(Structure const &_prim,
+                                                                       std::vector<BasisSet> const &site_bases,
+                                                                       std::string const &indent) const;
 
-      virtual std::string clexulator_public_method_implementations_string(Structure const &_prim,
-                                                                          std::vector<BasisSet> const &site_bases,
-                                                                          std::string const &indent) const = 0;
+      virtual std::string clexulator_public_method_definitions_string(Structure const &_prim,
+                                                                      std::vector<BasisSet> const &site_bases,
+                                                                      std::string const &indent) const = 0;
 
       /// \brief non-virtual method to obtain copy through Traits pointer
       std::unique_ptr<Traits> clone() const {

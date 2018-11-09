@@ -25,8 +25,8 @@ namespace CASM {
       for(Index b = 0; b < NB; ++b) {
         if(!dofID.second[b].empty())
           treps[b] = SymGroupRep::RemoteHandle(factor_group(), dofID.second[b]);
-        m_local_dof_symreps.emplace(std::make_pair(dofID.first, std::move(treps)));
       }
+      m_local_dof_symreps.emplace(std::make_pair(dofID.first, std::move(treps)));
     }
 
     m_occ_symreps.resize(NB);

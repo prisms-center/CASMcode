@@ -86,13 +86,15 @@ namespace CASM {
 
     virtual std::string eval_mode(ClexParamKey const &_key) const = 0;
 
-    virtual std::vector<double> const &read(ClexParamKey  const &_key) const = 0;
-    virtual double const &read(ClexParamKey  const &_key, size_type _ind) const = 0;
+    virtual Eigen::MatrixXd const &read(ClexParamKey  const &_key) const = 0
+                                                                           virtual double const & read(ClexParamKey  const &_key, size_type _i) const = 0;
+    virtual double const &read(ClexParamKey  const &_key, size_type _i, size_type _j) const = 0;
 
     virtual void set_eval_mode(ClexParamKey const &_key, std::string const &_mode) = 0;
 
-    virtual void write(ClexParamKey const &_key, std::vector<double> const &_val) = 0;
-    virtual void write(ClexParamKey const &_key, size_type _ind, double val) = 0;
+    virtual void write(ClexParamKey const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val) = 0;
+    virtual void write(ClexParamKey const &_key, size_type _i, double val) = 0;
+    virtual void write(ClexParamKey const &_key, size_type _i, size_type _j, double val) = 0;
 
   protected:
     std::map<std::string, ClexParamKey> m_keys;

@@ -84,11 +84,13 @@ namespace CASM {
       BasicTraits(std::string const &_type_name,
                   std::vector<std::string> const &_std_var_names,
                   DOF_DOMAIN _domain,
-                  DOF_MODE _mode) :
+                  DOF_MODE _mode,
+                  bool _requires_site_basis) :
         m_type_name(_type_name),
         m_standard_var_names(_std_var_names),
         m_domain(_domain),
-        m_mode(_mode) {
+        m_mode(_mode),
+        m_requires_site_basis(_requires_site_basis) {
       }
 
       /// \brief Allow destruction through base pointer
@@ -107,6 +109,11 @@ namespace CASM {
       /// \brief returns true if DoF is global
       bool global()const {
         return m_mode == GLOBAL;
+      }
+
+      /// \brief returns true if DoF must utilize site basis set
+      bool requires_site_basis()const {
+        return m_requires_site_basis;
       }
 
       /// \brief returns true if DoF is discrete
@@ -184,6 +191,7 @@ namespace CASM {
       std::vector<std::string> m_standard_var_names;
       DOF_DOMAIN m_domain;
       DOF_MODE m_mode;
+      bool m_requires_site_basis;
     };
 
   }

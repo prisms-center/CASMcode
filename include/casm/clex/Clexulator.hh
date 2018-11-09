@@ -342,6 +342,10 @@ namespace CASM {
       /// \brief The weight matrix used for ordering the neighbor list
       PrimNeighborList::Matrix3Type m_weight_matrix;
 
+      mutable std::vector<ConfigDoF::LocalValueType const *> m_local_dof_ptrs;
+
+      mutable std::vector<ConfigDoF::GlobalValueType const *> m_global_dof_ptrs;
+
     private:
       /// \brief Pointer to ConfigDoF for which evaluation is occuring
       mutable ConfigDoF const *m_config_ptr;
