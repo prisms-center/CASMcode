@@ -44,7 +44,8 @@ namespace CASM {
     static const EvalMode DYNAM;
 
 
-    typedef BasicClexParamKey Key;
+    using Key = BasicClexParamKey;
+    using DoubleReference = Eigen::MatrixXd::CoeffReturnType;
 
     size_type size(ClexParamKey const &_key) const override {
       return size(*static_cast<Key const *>(_key.ptr()));
@@ -83,7 +84,7 @@ namespace CASM {
     }
 
     double const &read(Key const &_key, size_type _ind) const {
-      return m_data[_key.index()][_ind];
+      return m_data[_key.index()](_ind, 0);
     }
 
     double const &read(ClexParamKey const &_key, size_type _i, size_type _j) const override {
@@ -115,7 +116,7 @@ namespace CASM {
     }
 
     void write(Key const &_key, size_type _i, double _val) {
-      m_data[_key.index()][_i] = _val;
+      m_data[_key.index()](_i, 0) = _val;
     }
 
     void write(ClexParamKey const &_key, size_type _i, size_type _j, double _val) override {
@@ -126,7 +127,7 @@ namespace CASM {
       m_data[_key.index()](_i, _j) = _val;
     }
 
-    Key allocate(std::string const &_keyname, Index _cols, Index _rows) {
+    Key allocate(std::string const &_keyname, Index _rows, Index _cols) {
       auto it = keys().find(_keyname);
       if(it != keys().end())
         throw std::runtime_error("Naming collision in BasicClexParamPack::allocate(), ClexParamPack already managing parameter allocation corresponding to name " + _keyname + ".");

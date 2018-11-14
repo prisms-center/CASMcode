@@ -68,16 +68,17 @@ include $(srcdir)/tests/unit/Makemodule.am
 .FORCE:
 
 test:
-	echo $(srcdir)
-	echo $(top_srcdir)
-	echo $(AM_LDFLAGS)
-	echo $(AM_CXXFLAGS)
-	echo $(AM_CPPFLAGS)
-	echo $(casm_LDFLAGS)
-	echo $(BOOST_LDFLAGS)
-	echo $(BOOST_CXXFLAGS)
-	echo $(BOOST_CPPFLAGS)
-	echo $(TXT_VERSION)
+	echo "srcdir: $(srcdir)"
+	echo "top_srcdir: $(top_srcdir)"
+	echo "AM_LDFLAGS: $(AM_LDFLAGS)"
+	echo "AM_CXXFLAGS: $(AM_CXXFLAGS)"
+	echo "AM_CPPFLAGS: $(AM_CPPFLAGS)"
+	echo "casm_LDFLAGS: $(casm_LDFLAGS)"
+	echo "BOOST_LDFLAGS: $(BOOST_LDFLAGS)"
+	echo "BOOST_CXXFLAGS: $(BOOST_CXXFLAGS)"
+	echo "BOOST_CPPFLAGS: $(BOOST_CPPFLAGS)"
+	echo "includedir: $(includedir)"
+	echo "TXT_VERSION: $(TXT_VERSION)"
 
 #============================================================#
 #Recurse into these places (must be direct children, don't be fancy)

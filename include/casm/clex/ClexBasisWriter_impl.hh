@@ -192,6 +192,7 @@ namespace CASM {
         << "#include <cstddef>\n"
         << "#include \"casm/clex/Clexulator.hh\"\n"
         << "#include \"casm/clex/BasicClexParamPack.hh\"\n"
+        << "#include \"casm/CASM_global_Eigen.hh\"\n"
         << "\n\n\n"
 
         << "/****** PROJECT SPECIFICATIONS ******\n\n"
@@ -786,6 +787,7 @@ namespace CASM {
         ss << DoFType::traits(dof.first).clexulator_constructor_string(clex.prim(), dof.second, indent + "  ");
 
         ss << indent << "  m_local_dof_ptrs.push_back(nullptr);\n\n";
+        ss << indent << "  m_global_dof_ptrs.push_back(nullptr);\n\n";
 
         std::vector<std::tuple<std::string, Index, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
         if(allo.empty())
@@ -796,7 +798,7 @@ namespace CASM {
           Index dim = std::get<2>(el);
           if(!valid_index(psize))
             psize = N_hood;
-          ss << indent << "  m_" << std::get<0>(el) << "_param_key = m_params.allocate(\"" << std::get<0>(el) << "\", " << psize << ", " << dim << ");\n";
+          ss << indent << "  m_" << std::get<0>(el) << "_param_key = m_params.allocate(\"" << std::get<0>(el) << "\", " << dim << ", " << psize << ");\n";
         }
         ss << "\n";
       }
@@ -804,7 +806,7 @@ namespace CASM {
 
       for(auto const &dof : clex.global_bases()) {
         ss << DoFType::traits(dof.first).clexulator_constructor_string(clex.prim(), dof.second, indent + "  ");
-
+        ss << indent << "  m_local_dof_ptrs.push_back(nullptr);\n\n";
         ss << indent << "  m_global_dof_ptrs.push_back(nullptr);\n\n";
 
         std::vector<std::tuple<std::string, Index, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
@@ -816,7 +818,7 @@ namespace CASM {
           Index dim = std::get<2>(el);
           if(!valid_index(psize))
             throw std::runtime_error("Global DoF " + dof.first + " requested invalid ClexParamPack allocation\n");
-          ss << indent << "  m_" << std::get<0>(el) << "_param_key = m_params.allocate(\"" << std::get<0>(el) << "\", " << psize << ", " << dim << ");\n";
+          ss << indent << "  m_" << std::get<0>(el) << "_param_key = m_params.allocate(\"" << std::get<0>(el) << "\", " << dim << ", " << psize << ");\n";
         }
         ss << "\n";
       }

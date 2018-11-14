@@ -112,7 +112,8 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  VariableLabeler::VariableLabeler(const std::string &_template) {
+  VariableLabeler::VariableLabeler(std::string const &_type_name, const std::string &_template) :
+    m_type_name(_type_name) {
     m_sub_strings = parse_label_template(_template);
   }
 
@@ -120,6 +121,8 @@ namespace CASM {
 
 
   bool VariableLabeler::visit(Variable &host, BasisSet const *bset_ptr)const {
+    if(host.dof_set().type_name() != m_type_name)
+      return false;
 
     std::stringstream tformula, ttex;
     Array<int> var_ind;
@@ -151,7 +154,7 @@ namespace CASM {
 
     double coeff;
     for(Index i = 0; i < var_ind.size(); i++) {
-      const ContinuousDoF &dof_set(host.dof_set()[var_ind[i]]);
+      const ContinuousDoF &dof(host.dof_set()[var_ind[i]]);
       coeff = host.coeffs()[var_ind[i]];
 
       if(i > 0 && coeff > 0) {
@@ -177,33 +180,33 @@ namespace CASM {
 
       for(Index j = 0; j < m_sub_strings.size(); j++) {
         if(m_sub_strings[j] == "%n") {
-          if(valid_index(dof_set.ID())) {
-            ttex << dof_set.ID();
-            tformula << dof_set.ID();
+          if(valid_index(dof.ID())) {
+            ttex << dof.ID();
+            tformula << dof.ID();
           }
           else {
-            //std::cout << "type_name is " << dof_set.type_name() << ", ID is " << dof_set.ID() << "\n";
+            //std::cout << "type_name is " << dof.type_name() << ", ID is " << dof.ID() << "\n";
             ttex << '?';
             tformula << '?';
           }
         }
-        else if(m_sub_strings[j] == "%t") {
-          ttex << type_name();
-          tformula << type_name();
-        }
         else if(m_sub_strings[j] == "%p") {
-          std::string prefix = dof_set.type_name();
+          std::string prefix = dof.type_name();
           if(prefix.empty())
             prefix = "?";
           ttex << prefix;
           tformula << prefix;
         }
         else if(m_sub_strings[j] == "%s") {
-          std::string suffix = dof_set.var_name();
+          std::string suffix = dof.var_name();
           if(suffix.empty())
             suffix = "?";
           ttex << suffix;
           tformula << suffix;
+        }
+        else if(m_sub_strings[j] == "%f") {
+          ttex << var_ind[i];
+          tformula << var_ind[i];
         }
         else {
           ttex << m_sub_strings[j];

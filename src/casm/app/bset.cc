@@ -12,6 +12,7 @@
 #include "casm/clusterography/IntegralCluster_impl.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/Clexulator.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/ClexBasisWriter.hh"
 #include "casm/clex/NeighborList.hh"
@@ -319,7 +320,7 @@ namespace CASM {
       }
 
       // compile clexulator
-      //primclex.clexulator(set.default_clex());
+      primclex.clexulator(set.default_clex());
     }
     else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 

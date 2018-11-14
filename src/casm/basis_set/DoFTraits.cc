@@ -29,13 +29,13 @@ namespace CASM {
         std::stringstream ssvar, ssfunc;
         ss << indent << "case " << _nlist.neighbor_index(nbor.first) << ":\n";
         //Index n = nbor.first;
-        std::cout << "neighborhood of nbor.first: " << nbor.first << ": \n";
+        //std::cout << "neighborhood of nbor.first: " << nbor.first << ": \n";
 
         //Put neighborhood in a sensible order:
         std::map<Index, std::set<Index> > sublat_nhood;
         for(auto const &ucc : nbor.second) {
           sublat_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
-          std::cout << "ucc : " << ucc << "; n: " << _nlist.neighbor_index(ucc)  << "\n";
+          //std::cout << "ucc : " << ucc << "; n: " << _nlist.neighbor_index(ucc)  << "\n";
         }
 
         for(auto const &sublat : sublat_nhood) {
@@ -45,16 +45,16 @@ namespace CASM {
             if(!_prim.basis()[b].has_dof(type_name()))
               continue;
 
-            for(Index a = 0; _prim.basis()[b].dof(type_name()).size(); ++a) {
-              ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << n
-                    << ", " << a << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
+            for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
+              ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a << ", " << n
+                    << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
             }
 
 
             if(requires_site_basis()) {
               for(Index f = 0; f < site_bases[b].size(); f++) {
-                ssfunc << indent << "    m_params.write(m_" << type_name() << "_func_param_key, " << n
-                       << ", " << f << ", eval_" << type_name() << "_func_" << b << "_" << f << "(" << n << "));\n";
+                ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n
+                       << ", eval_" << site_basis_name() << '_' << b << '_' << f << "(" << n << "));\n";
               }
             }
           }
@@ -67,7 +67,7 @@ namespace CASM {
 
         if(requires_site_basis()) {
           ss <<
-             indent << "  if(m_params.eval_mode(m_" << type_name() << "_func_param_key) == ParamPack::DEFAULT) {\n" <<
+             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
              ssfunc.str() <<
              indent << "  }\n";
         }
@@ -100,16 +100,16 @@ namespace CASM {
           if(!_prim.basis()[b].has_dof(type_name()))
             continue;
 
-          for(Index a = 0; _prim.basis()[b].dof(type_name()).size(); ++a) {
-            ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << n
-                  << ", " << a << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
+          for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
+            ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a << ", " << n
+                  << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
           }
 
 
           if(requires_site_basis()) {
             for(Index f = 0; f < site_bases[b].size(); f++) {
-              ssfunc << indent << "    m_params.write(m_" << type_name() << "_func_param_key, " << n
-                     << ", " << f << ", eval_" << type_name() << "_func_" << b << "_" << f << "(" << n << "));\n";
+              ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << n << ", " << n
+                     << ", eval_" << site_basis_name() << "_" << b << "_" << f << "(" << n << "));\n";
             }
           }
         }
@@ -120,7 +120,7 @@ namespace CASM {
          indent << "}\n";
       if(requires_site_basis()) {
         ss <<
-           indent << "if(m_params.eval_mode(m_" << type_name() << "_func_param_key) == ParamPack::DEFAULT) {\n" <<
+           indent << "if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
            ssfunc.str() <<
            indent << "}\n";
       }
@@ -153,7 +153,7 @@ namespace CASM {
                  indent << "//   - basis site " << nb << ":\n";
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
             stream <<
-                   indent << "double " << "m_" << type_name() << "_func_" << nb << '_' << f << '[' << _prim.basis()[nb].site_occupant().size() << "];\n";
+            indent << "double " << "m_" << site_basis_name() << "_" << nb << '_' << f << '[' << _prim.basis()[nb].site_occupant().size() << "];\n";
           }
           stream << '\n';
         }
@@ -174,7 +174,22 @@ namespace CASM {
     std::string Traits::clexulator_private_method_declarations_string(Structure const &_prim,
                                                                       std::vector<BasisSet> const &_site_bases,
                                                                       const std::string &indent) const {
+      std::cout << "PRIVATE METHOD DECLARATIONS FOR DOF " << type_name() << "\n";
       std::stringstream stream;
+      if(global()) {
+        std::cout << "**GLOBAL PRIVATE METHOD DECLARATIONS FOR DOF " << type_name() << "\n";
+        stream <<
+               indent << "double eval_" << type_name() << "_var(const int &ind) const {\n" <<
+               indent << "  return m_global_dof_ptrs[m_" << type_name() << "_var_param_key.index()]->values()[ind];\n" <<
+               indent << "}\n\n";
+
+        stream << indent << "double const &" << type_name() << "_var(const int &ind) const {\n" <<
+               indent << "  return " << "m_params.read(m_" << type_name() << "_var_param_key, ind);\n" <<
+               indent << "}\n";
+
+        return stream.str();
+      }
+
       std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
       make_prim_periodic_asymmetric_unit(_prim,
@@ -184,6 +199,8 @@ namespace CASM {
                                          nullstream);
 
 
+      Index max_nf = 0;
+      Index max_na = 0;
       for(Index no = 0; no < asym_unit.size(); no++) {
         Index nb = asym_unit[no][0][0].sublat();
         if(_site_bases[nb].size() == 0)
@@ -196,31 +213,44 @@ namespace CASM {
             continue;
           stream <<
                  indent << "// " << type_name() << " evaluators and accessors for basis site " << nb << ":\n";
-          for(Index a = 0; _prim.basis()[nb].dof(type_name()).size(); ++a) {
-            stream <<
-                   indent << "double const &eval_" << type_name() << "_var_" << nb << '_' << a << "(const int &nlist_ind) const {\n" <<
-                   indent << "  return m_local_dof_ptrs[m_" << type_name() << "_var_param_key.index()].site_value(_l(nlist_ind))[" << a << "];\n" <<
-                   indent << "}\n\n" <<
+          max_na = max(max_na, _prim.basis()[nb].dof(type_name()).size());
+          for(Index a = 0; a < _prim.basis()[nb].dof(type_name()).size(); ++a) {
 
-                   indent << "double const &" << type_name() << "_var_" << nb << '_' << a << "(const int &nlist_ind) const {\n" <<
-                   indent << "  return " << "m_params.read(m_" << type_name() << "_var_param_key, nlist_ind, " << a << ");\n" <<
-                   indent << "}\n";
+            stream <<
+                   indent << "double eval_" << type_name() << "_var_" << nb << '_' << a << "(const int &nlist_ind) const {\n" <<
+                   indent << "  return m_local_dof_ptrs[m_" << type_name() << "_var_param_key.index()]->site_value(_l(nlist_ind))[" << a << "];\n" <<
+                   indent << "}\n\n";
+
           }
 
           if(requires_site_basis()) {
-            for(Index f = 0; f < _site_bases[nb].size(); f++) {
-              stream <<
-                     indent << "double const &eval_" << type_name() << "_func_" << nb << '_' << f << "(const int &nlist_ind) const;// {\n" <<
-                     //indent << "  return " << "m_" << type_name() << "_func_" << nb << '_' << f << "[_configdof().occ(_l(nlist_ind))];\n" <<
-                     //indent << "}\n\n" <<
 
-                     indent << "double const &" << type_name() << "_func_" << nb << '_' << f << "(const int &nlist_ind) const {\n" <<
-                     indent << "  return " << "m_params.read(m_" << type_name() << "_func_param_key, nlist_ind, " << f << ");\n" <<
-                     indent << "}\n";
+            max_nf = max(max_nf, _site_bases[nb].size());
+            auto visitors = site_function_visitors();
+            BasisSet site_basis = _site_bases[nb];
+            for(auto const &vis : visitors)
+              site_basis.accept(VariableLabeler(type_name(), "%p_var_%f(nlist_ind)"));
+
+            for(Index f = 0; f < site_basis.size(); f++) {
+              stream <<
+                     indent << "double eval_" << site_basis_name() << "_" << nb << '_' << f << "(const int &nlist_ind) const {\n" <<
+                     indent << "  return " << site_basis[f]->formula() << ";\n" <<
+                     indent << "}\n\n";
             }
             stream << '\n';
           }
         }
+
+      }
+      for(Index a = 0; a < max_na; ++a) {
+        stream << indent << "double const &" << type_name() << "_var_" << a << "(const int &nlist_ind) const {\n" <<
+               indent << "  return " << "m_params.read(m_" << type_name() << "_var_param_key, " << a << ", nlist_ind);\n" <<
+               indent << "}\n";
+      }
+      for(Index f = 0; f < max_nf; ++f) {
+        stream << indent << "double const &" << site_basis_name() << "_" << f << "(const int &nlist_ind) const {\n" <<
+               indent << "  return " << "m_params.read(m_" << site_basis_name() << "_param_key, " << f << ", nlist_ind);\n" <<
+               indent << "}\n";
 
       }
       return stream.str();
@@ -231,6 +261,12 @@ namespace CASM {
     std::vector<std::tuple<std::string, Index, Index> > Traits::param_pack_allocation(Structure const &_prim,
         std::vector<BasisSet> const &_bases) const {
       std::vector<std::tuple<std::string, Index, Index> > result;
+
+      if(global() && _bases.size()) {
+        result.push_back(std::make_tuple(std::string(type_name() + "_var"), _bases[0].size(), Index(1)));
+        return result;
+      }
+
       Index NB = 0, NV = 0;
       bool basis_allocation = false;
       for(BasisSet const &basis : _bases) {
@@ -249,7 +285,7 @@ namespace CASM {
       result.push_back(std::make_tuple(std::string(type_name() + "_var"), Index(-1), Index(NV)));
 
       if(basis_allocation)
-        result.push_back(std::make_tuple(std::string(type_name() + "_func"), Index(-1), Index(NB)));
+        result.push_back(std::make_tuple(site_basis_name(), Index(-1), Index(NB)));
 
       return result;
 
@@ -283,7 +319,7 @@ namespace CASM {
 
               if(s == 0)
                 stream << indent;
-              stream << "m_" << type_name() << "_func_" << nb << '_' << f << '[' << s << "] = "
+                stream << "m_" << site_basis_name() << "_" << nb << '_' << f << '[' << s << "] = "
                      << t_eval.value();
               if(s + 1 == _prim.basis()[nb].site_occupant().size())
                 stream << ";\n\n";
@@ -299,13 +335,21 @@ namespace CASM {
 
     std::vector<std::unique_ptr<FunctionVisitor> > Traits::site_function_visitors() const {
       std::vector<std::unique_ptr<FunctionVisitor> > result;
-      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler("%t_%s(%n)")));
+      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f(%n)")));
       return result;
     }
 
     std::vector<std::unique_ptr<FunctionVisitor> > Traits::clust_function_visitors() const {
       std::vector<std::unique_ptr<FunctionVisitor> > result;
-      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler("%t_%s(%n)")));
+      if(global()) {
+        result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var(%f)")));
+      }
+      else {
+        if(requires_site_basis())
+          result.push_back(std::unique_ptr<FunctionVisitor>(new SubExpressionLabeler(site_basis_name(), site_basis_name() + "_%l(%n)")));
+        else
+          result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f(%n)")));
+      }
       return result;
     }
   }

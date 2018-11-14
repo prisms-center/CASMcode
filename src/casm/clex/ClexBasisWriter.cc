@@ -142,10 +142,18 @@ namespace CASM {
          indent << "void _point_prepare(int nlist_ind) const override;\n\n";
 
 
+      {
+        auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
+        for(; it != end_it; ++it) {
+          ss << DoFType::traits(it->first).clexulator_private_method_declarations_string(clex.prim(), it->second, indent);
+        }
+      }
 
-      auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
-      for(; it != end_it; ++it) {
-        ss << DoFType::traits(it->first).clexulator_private_method_declarations_string(clex.prim(), it->second, indent);
+      {
+        auto it(clex.global_bases().begin()), end_it(clex.global_bases().end());
+        for(; it != end_it; ++it) {
+          ss << DoFType::traits(it->first).clexulator_private_method_declarations_string(clex.prim(), it->second, indent);
+        }
       }
 
       ss <<
@@ -179,9 +187,17 @@ namespace CASM {
          indent << "  return m_params;\n" <<
          indent << "}\n\n";
 
-      auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
-      for(; it != end_it; ++it) {
-        ss << DoFType::traits(it->first).clexulator_public_method_declarations_string(clex.prim(), it->second, indent);
+      {
+        auto it(clex.site_bases().begin()), end_it(clex.site_bases().end());
+        for(; it != end_it; ++it) {
+          ss << DoFType::traits(it->first).clexulator_public_method_declarations_string(clex.prim(), it->second, indent);
+        }
+      }
+      {
+        auto it(clex.global_bases().begin()), end_it(clex.global_bases().end());
+        for(; it != end_it; ++it) {
+          ss << DoFType::traits(it->first).clexulator_public_method_declarations_string(clex.prim(), it->second, indent);
+        }
       }
       return ss.str();
     }

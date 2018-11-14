@@ -84,10 +84,14 @@ namespace CASM {
 
     virtual size_type size(ClexParamKey  const &_key) const = 0;
 
+    virtual size_type dim(ClexParamKey const &_key) const = 0;
+
     virtual std::string eval_mode(ClexParamKey const &_key) const = 0;
 
-    virtual Eigen::MatrixXd const &read(ClexParamKey  const &_key) const = 0
-                                                                           virtual double const & read(ClexParamKey  const &_key, size_type _i) const = 0;
+    virtual Eigen::MatrixXd const &read(ClexParamKey  const &_key) const = 0;
+
+    virtual double const &read(ClexParamKey  const &_key, size_type _i) const = 0;
+
     virtual double const &read(ClexParamKey  const &_key, size_type _i, size_type _j) const = 0;
 
     virtual void set_eval_mode(ClexParamKey const &_key, std::string const &_mode) = 0;

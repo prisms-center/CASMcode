@@ -135,15 +135,17 @@ namespace CASM {
 
 
   class VariableLabeler : public FunctionVisitor {
-    std::vector<std::string> m_sub_strings;
   public:
-    VariableLabeler(const std::string &_template);
+    VariableLabeler(std::string const &m_type_name, std::string const &_template);
 
     std::string type_name() const {
       return "VariableLabeler";
     }
 
     bool visit(Variable &host, BasisSet const *bset_ptr)const;
+  private:
+    std::string m_type_name;
+    std::vector<std::string> m_sub_strings;
   };
 
 

@@ -106,6 +106,11 @@ namespace CASM {
         return m_type_name;
       }
 
+      /// \brief const access of type_name
+      virtual std::string site_basis_name() const {
+        return m_type_name + "_site_func";
+      }
+
       /// \brief returns true if DoF is global
       bool global()const {
         return m_mode == GLOBAL;

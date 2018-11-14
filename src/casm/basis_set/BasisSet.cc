@@ -1293,7 +1293,7 @@ namespace CASM {
     std::string new_name = tsubs.size() ? tsubs[0]->name() : "";
 
     for(auto const &sub : tsubs) {
-      if(sub->name() != new_name)
+      if((sub->name()).find(new_name) == std::string::npos)
         new_name += ("+" + sub->name());
       dof_ids.insert(sub->dof_IDs().begin(), sub->dof_IDs().end());
       compat_maps.push_back({});

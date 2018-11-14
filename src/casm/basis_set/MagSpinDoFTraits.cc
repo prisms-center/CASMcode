@@ -36,7 +36,7 @@ namespace CASM {
         result[b].construct_harmonic_polynomials(tsubs, 2, 1, false);
         result[b].get_symmetry_representation(_prim.factor_group());
 
-        result[b].set_name(type_name() + "site_func");
+        result[b].set_name(type_name() + "_site_func");
         //std::cout << "+:+:+:+Created variable set for site " << b << ", size " << result[b].size() << "\n";
       }
       return result;

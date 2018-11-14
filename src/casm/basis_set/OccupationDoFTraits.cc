@@ -164,27 +164,21 @@ namespace CASM {
       std::stringstream ss;
       ss << indent << "switch(nlist_ind) {\n";
       for(auto const &nbor : _nhood) {
-        std::vector<std::string> paramtypes;
         ss << indent << "case " << _nlist.neighbor_index(nbor.first) << ":\n";
+        std::stringstream ssfunc;
         //Index n = nbor.first;
         for(UnitCellCoord const &ucc : nbor.second) {
           Index b = ucc.sublat();
           Index n = _nlist.neighbor_index(ucc);
-          while(paramtypes.size() < site_bases[b].size())
-            paramtypes.push_back("");
-
           for(Index f = 0; f < site_bases[b].size(); f++) {
-            std::stringstream ss2;
-            ss2 << indent << "    m_params.write(m_occ_func_" << f << "_param_key, " << n  << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
-            paramtypes[f] += ss2.str();
+            ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n  << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
           }
         }
-        for(Index f = 0; f < paramtypes.size(); f++) {
+        if(ssfunc.str().size()) {
           ss <<
-             indent << "  if(m_params.eval_mode(m_occ_func_" << f << "_param_key) == ParamPack::DEFAULT) {\n" <<
-             paramtypes[f] <<
+             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
+             ssfunc.str() <<
              indent << "  }\n";
-
         }
         ss << indent << "break;\n";
       }
@@ -199,30 +193,24 @@ namespace CASM {
                                                                       PrimNeighborList &_nlist,
                                                                       std::vector<BasisSet> const &site_bases,
                                                                       std::string const &indent) const {
-      std::stringstream ss;
+      std::stringstream ss, ssfunc;
 
       std::set<UnitCellCoord> tot_nhood;
       for(auto const &nbor : _nhood)
         tot_nhood.insert(nbor.second.begin(), nbor.second.end());
 
-      std::vector<std::string> paramtypes;
       for(auto const &ucc : tot_nhood) {
         Index n = _nlist.neighbor_index(ucc);
         Index b = ucc.sublat();
 
-        while(paramtypes.size() < site_bases[b].size())
-          paramtypes.push_back("");
-
         for(Index f = 0; f < site_bases[b].size(); f++) {
-          std::stringstream ss2;
-          ss2 << indent << "  m_params.write(m_occ_func_" << f << "_param_key, " << n  << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
-          paramtypes[f] += ss2.str();
+          ssfunc << indent << "  m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
         }
       }
-      for(Index f = 0; f < paramtypes.size(); f++) {
+      if(ssfunc.str().size()) {
         ss <<
-           indent << "if(m_params.eval_mode(m_occ_func_" << f << "_param_key) == ParamPack::DEFAULT) {\n" <<
-           paramtypes[f] <<
+           indent << "if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
+           ssfunc.str() <<
            indent << "}\n";
       }
 
@@ -296,7 +284,7 @@ namespace CASM {
                    indent << "}\n\n" <<
 
                    indent << "double const &occ_func_" << nb << '_' << f << "(const int &nlist_ind) const {\n" <<
-                   indent << "  return " << "m_params.read(m_occ_func_" << f << "_param_key, nlist_ind);\n" <<
+                   indent << "  return " << "m_params.read(m_" << site_basis_name() << "_param_key, " << f << ", nlist_ind);\n" <<
                    indent << "}\n";
           }
           stream << '\n';
@@ -316,7 +304,7 @@ namespace CASM {
         NB = max(basis.size(), NB);
       }
       if(NB)
-        result.push_back(std::make_tuple(std::string("occ_func"), Index(-1), NB));
+        result.push_back(std::make_tuple(site_basis_name(), Index(-1), NB));
 
       return result;
 
