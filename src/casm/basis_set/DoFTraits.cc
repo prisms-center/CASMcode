@@ -24,56 +24,77 @@ namespace CASM {
                                                         std::string const &indent) const {
 
       std::stringstream ss;
-      ss << indent << "switch(nlist_ind) {\n";
-      for(auto const &nbor : _nhood) {
-        std::stringstream ssvar, ssfunc;
-        ss << indent << "case " << _nlist.neighbor_index(nbor.first) << ":\n";
-        //Index n = nbor.first;
-        //std::cout << "neighborhood of nbor.first: " << nbor.first << ": \n";
-
-        //Put neighborhood in a sensible order:
-        std::map<Index, std::set<Index> > sublat_nhood;
-        for(auto const &ucc : nbor.second) {
-          sublat_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
-          //std::cout << "ucc : " << ucc << "; n: " << _nlist.neighbor_index(ucc)  << "\n";
-        }
-
-        for(auto const &sublat : sublat_nhood) {
-          Index b = sublat.first;
-          for(Index n : sublat.second) {
-
-            if(!_prim.basis()[b].has_dof(type_name()))
-              continue;
-
-            for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
-              ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a << ", " << n
-                    << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
-            }
-
-
-            if(requires_site_basis()) {
-              for(Index f = 0; f < site_bases[b].size(); f++) {
-                ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n
-                       << ", eval_" << site_basis_name() << '_' << b << '_' << f << "(" << n << "));\n";
-              }
-            }
-          }
-        }
-
+      if(global()) {
         ss <<
-           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n" <<
-           ssvar.str() <<
-           indent << "  }\n";
+           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n";
+        for(Index a = 0; a < _prim.global_dof(type_name()).size(); ++a) {
+          ss << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a
+             << ", eval_" << type_name() << "_var(" << a << "));\n";
+        }
+        ss << indent << "  }\n";
 
         if(requires_site_basis()) {
           ss <<
-             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
-             ssfunc.str() <<
-             indent << "  }\n";
+             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n";
+          for(Index f = 0; f < site_bases[0].size(); f++) {
+            ss << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f
+               << ", eval_" << site_basis_name() << "(" << f << "));\n";
+          }
+          ss << indent << "  }\n";
         }
-        ss << indent << "break;\n";
       }
-      ss << indent << "}\n";
+      else {
+        ss << indent << "switch(nlist_ind) {\n";
+        for(auto const &nbor : _nhood) {
+          std::stringstream ssvar, ssfunc;
+          ss << indent << "case " << _nlist.neighbor_index(nbor.first) << ":\n";
+          //Index n = nbor.first;
+          //std::cout << "neighborhood of nbor.first: " << nbor.first << ": \n";
+
+          //Put neighborhood in a sensible order:
+          std::map<Index, std::set<Index> > sublat_nhood;
+          for(auto const &ucc : nbor.second) {
+            sublat_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
+            //std::cout << "ucc : " << ucc << "; n: " << _nlist.neighbor_index(ucc)  << "\n";
+          }
+
+          for(auto const &sublat : sublat_nhood) {
+            Index b = sublat.first;
+            for(Index n : sublat.second) {
+
+              if(!_prim.basis()[b].has_dof(type_name()))
+                continue;
+
+              for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
+                ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a << ", " << n
+                      << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
+              }
+
+
+              if(requires_site_basis()) {
+                for(Index f = 0; f < site_bases[b].size(); f++) {
+                  ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n
+                         << ", eval_" << site_basis_name() << '_' << b << '_' << f << "(" << n << "));\n";
+                }
+              }
+            }
+          }
+
+          ss <<
+             indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n" <<
+             ssvar.str() <<
+             indent << "  }\n";
+
+          if(requires_site_basis()) {
+            ss <<
+               indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
+               ssfunc.str() <<
+               indent << "  }\n";
+          }
+          ss << indent << "  break;\n";
+        }
+        ss << indent << "}\n";
+      }
       return ss.str();
     }
 
@@ -86,45 +107,65 @@ namespace CASM {
                                                          std::string const &indent) const {
       std::stringstream ss;
 
-      std::map<Index, std::set<Index> > tot_nhood;
-      for(auto const &nbor : _nhood)
-        for(auto const &ucc : nbor.second)
-          tot_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
+      if(global()) {
+        ss <<
+           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n";
+        for(Index a = 0; a < _prim.global_dof(type_name()).size(); ++a) {
+          ss << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a
+             << ", eval_" << type_name() << "_var(" << a << "));\n";
+        }
+        ss << indent << "  }\n";
 
-      std::stringstream ssvar, ssfunc;
-
-      for(auto const &nbor : tot_nhood) {
-        Index b = nbor.first;
-        for(Index n : nbor.second) {
-
-          if(!_prim.basis()[b].has_dof(type_name()))
-            continue;
-
-          for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
-            ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a << ", " << n
-                  << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
+        if(requires_site_basis()) {
+          ss <<
+             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n";
+          for(Index f = 0; f < site_bases[0].size(); f++) {
+            ss << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f
+               << ", eval_" << site_basis_name() << "(" << f << "));\n";
           }
+          ss << indent << "  }\n";
+        }
+      }
+      else {
 
+        std::map<Index, std::set<Index> > tot_nhood;
+        for(auto const &nbor : _nhood)
+          for(auto const &ucc : nbor.second)
+            tot_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
 
-          if(requires_site_basis()) {
-            for(Index f = 0; f < site_bases[b].size(); f++) {
-              ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << n << ", " << n
-                     << ", eval_" << site_basis_name() << "_" << b << "_" << f << "(" << n << "));\n";
+        std::stringstream ssvar, ssfunc;
+
+        for(auto const &nbor : tot_nhood) {
+          Index b = nbor.first;
+          for(Index n : nbor.second) {
+
+            if(!_prim.basis()[b].has_dof(type_name()))
+              continue;
+
+            for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
+              ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a << ", " << n
+                    << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
+            }
+
+            if(requires_site_basis()) {
+              for(Index f = 0; f < site_bases[b].size(); f++) {
+                ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n
+                       << ", eval_" << site_basis_name() << "_" << b << "_" << f << "(" << n << "));\n";
+              }
             }
           }
         }
-      }
-      ss <<
-         indent << "if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n" <<
-         ssvar.str() <<
-         indent << "}\n";
-      if(requires_site_basis()) {
         ss <<
-           indent << "if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
-           ssfunc.str() <<
+           indent << "if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n" <<
+           ssvar.str() <<
            indent << "}\n";
+        if(requires_site_basis()) {
+          ss <<
+             indent << "if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
+             ssfunc.str() <<
+             indent << "}\n";
+        }
       }
-
       return ss.str();
     }
     //************************************************************
@@ -174,10 +215,10 @@ namespace CASM {
     std::string Traits::clexulator_private_method_declarations_string(Structure const &_prim,
                                                                       std::vector<BasisSet> const &_site_bases,
                                                                       const std::string &indent) const {
-      std::cout << "PRIVATE METHOD DECLARATIONS FOR DOF " << type_name() << "\n";
+      //std::cout << "PRIVATE METHOD DECLARATIONS FOR DOF " << type_name() << "\n";
       std::stringstream stream;
       if(global()) {
-        std::cout << "**GLOBAL PRIVATE METHOD DECLARATIONS FOR DOF " << type_name() << "\n";
+        //std::cout << "**GLOBAL PRIVATE METHOD DECLARATIONS FOR DOF " << type_name() << "\n";
         stream <<
                indent << "double eval_" << type_name() << "_var(const int &ind) const {\n" <<
                indent << "  return m_global_dof_ptrs[m_" << type_name() << "_var_param_key.index()]->values()[ind];\n" <<

@@ -786,8 +786,6 @@ namespace CASM {
       for(auto const &dof : clex.site_bases()) {
         ss << DoFType::traits(dof.first).clexulator_constructor_string(clex.prim(), dof.second, indent + "  ");
 
-        ss << indent << "  m_local_dof_ptrs.push_back(nullptr);\n\n";
-        ss << indent << "  m_global_dof_ptrs.push_back(nullptr);\n\n";
 
         std::vector<std::tuple<std::string, Index, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
         if(allo.empty())
@@ -800,26 +798,33 @@ namespace CASM {
             psize = N_hood;
           ss << indent << "  m_" << std::get<0>(el) << "_param_key = m_params.allocate(\"" << std::get<0>(el) << "\", " << dim << ", " << psize << ");\n";
         }
+
+        if(dof.first != "occ")
+          ss << indent << "  _register_local_dof(\"" << dof.first << "\", m_" << dof.first << "_var_param_key.index());\n\n";
+
+
         ss << "\n";
       }
 
 
       for(auto const &dof : clex.global_bases()) {
         ss << DoFType::traits(dof.first).clexulator_constructor_string(clex.prim(), dof.second, indent + "  ");
-        ss << indent << "  m_local_dof_ptrs.push_back(nullptr);\n\n";
-        ss << indent << "  m_global_dof_ptrs.push_back(nullptr);\n\n";
 
         std::vector<std::tuple<std::string, Index, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
         if(allo.empty())
           continue;
 
         for(const auto &el : allo) {
-          Index psize = std::get<1>(el);
-          Index dim = std::get<2>(el);
+          Index dim = std::get<1>(el);
+          Index psize = std::get<2>(el);
           if(!valid_index(psize))
             throw std::runtime_error("Global DoF " + dof.first + " requested invalid ClexParamPack allocation\n");
           ss << indent << "  m_" << std::get<0>(el) << "_param_key = m_params.allocate(\"" << std::get<0>(el) << "\", " << dim << ", " << psize << ");\n";
         }
+
+
+        ss << indent << "  _register_global_dof(\"" << dof.first << "\", m_" << dof.first << "_var_param_key.index());\n\n";
+
         ss << "\n";
       }
 
@@ -898,8 +903,11 @@ namespace CASM {
 
         Index proto_index = lno;
 
-        if(ucnbors.empty())
+        if(ucnbors.empty()) {
+          for(Index nf = 0; nf < clex.bset_orbit(no)[0].size(); ++nf)
+            ++lno;
           continue;
+        }
 
         ss << indent << "  m_orbit_neighborhood[" << lno << "] = std::set<UnitCell> {\n";
 
@@ -955,6 +963,13 @@ namespace CASM {
                                                                                  doftype.second,
                                                                                  indent + "  ");
       }
+      for(auto const &doftype : clex.global_bases()) {
+        result += DoFType::traits(doftype.first).clexulator_point_prepare_string(clex.prim(),
+                                                                                 _nhood,
+                                                                                 _nlist,
+                                                                                 doftype.second,
+                                                                                 indent + "  ");
+      }
 
       for(auto const &func_trait : _orbit_func_traits) {
         result += func_trait->clexulator_point_prepare_string(clex.prim(),
@@ -984,7 +999,7 @@ namespace CASM {
                                                                                   _nhood,
                                                                                   _nlist,
                                                                                   doftype.second,
-                                                                                  indent + "  ");
+                                                                                  indent + "");
       }
 
       // Use known clexbasis dependencies to construct point_prepare routine
@@ -993,14 +1008,14 @@ namespace CASM {
                                                                                   _nhood,
                                                                                   _nlist,
                                                                                   doftype.second,
-                                                                                  indent + "  ");
+                                                                                  indent + "");
       }
 
       for(auto const &func_trait : _orbit_func_traits) {
         result += func_trait->clexulator_global_prepare_string(clex.prim(),
                                                                _nhood,
                                                                _nlist,
-                                                               indent + "  ");
+                                                               indent + "");
       }
 
       result += (indent + "}\n");

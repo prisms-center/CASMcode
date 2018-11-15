@@ -19,6 +19,9 @@ namespace CASM {
       ClexParamPack_impl::BaseKey(_name),
       m_index(_ind) {}
 
+    ~BasicClexParamKey() {
+    }
+
     size_type index() const {
       return m_index;
     }

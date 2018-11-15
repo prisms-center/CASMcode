@@ -3,6 +3,7 @@
 namespace CASM {
 
   Log::Log(std::ostream &_ostream, int _verbosity, bool _show_clock, int _indent_space) :
+    m_verbosity(0),
     m_indent_space(_indent_space),
     m_indent_level(0) {
     reset(_ostream, _verbosity, _show_clock);

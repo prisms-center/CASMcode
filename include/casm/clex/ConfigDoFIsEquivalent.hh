@@ -24,6 +24,8 @@ namespace CASM {
 
     public:
 
+      virtual ~Base() {}
+
       /// \brief Returns less than comparison
       ///
       /// - Only valid after call operator returns false

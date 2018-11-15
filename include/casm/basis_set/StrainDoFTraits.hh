@@ -38,21 +38,6 @@ namespace CASM {
         return "";
       }
 
-      std::string clexulator_point_prepare_string(Structure const &_prim,
-                                                  std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
-                                                  PrimNeighborList &_nlist,
-                                                  std::vector<BasisSet> const &site_bases,
-                                                  std::string const &indent) const override {
-        return "";
-      }
-
-      std::string clexulator_global_prepare_string(Structure const &_prim,
-                                                   std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
-                                                   PrimNeighborList &_nlist,
-                                                   std::vector<BasisSet> const &site_bases,
-                                                   std::string const &indent) const override {
-        return "";
-      }
 
       std::string clexulator_member_declarations_string(Structure const &_prim,
                                                         std::vector<BasisSet> const &site_bases,

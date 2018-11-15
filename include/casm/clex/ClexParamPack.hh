@@ -44,10 +44,14 @@ namespace CASM {
   /// \brief Key for indexing clexulator parameters
   class ClexParamKey {
   public:
-    ClexParamKey() {}
+    ClexParamKey() {
+    }
 
     ClexParamKey(ClexParamPack_impl::BaseKey const &_key) :
       m_key_ptr(_key.clone()) {
+    }
+
+    ~ClexParamKey() {
 
     }
 
@@ -70,6 +74,9 @@ namespace CASM {
   public:
 
     typedef unsigned int size_type;
+
+    virtual ~ClexParamPack() {
+    }
 
     std::map<std::string, ClexParamKey> const &keys() const {
       return m_keys;
