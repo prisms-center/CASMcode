@@ -378,7 +378,7 @@ namespace CASM {
       col_covered.fill(uncovered);
 
       //initialized by step 4
-      double min;
+      double min = 0;
 
       // Vector to track the first_prime_zero found in step 4 and used in step 5.
       Eigen::VectorXi first_prime_zero(2);

@@ -40,21 +40,24 @@ namespace CASM {
     m_primclex(&RHS.primclex()),
     m_lattice(RHS.m_lattice),
     m_sym_info(make_supercell_sym_info(prim(), m_lattice)),
-    m_nlist(RHS.m_nlist) {
+    //m_nlist(RHS.m_nlist),
+    m_nlist_size_at_construction(-1) {
 
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     m_primclex(_prim),
     m_lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), _prim->crystallography_tol()),
-    m_sym_info(make_supercell_sym_info(prim(), m_lattice)) {
+    m_sym_info(make_supercell_sym_info(prim(), m_lattice)),
+    m_nlist_size_at_construction(-1) {
 
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
     m_primclex(_prim),
     m_lattice(superlattice.lat_column_mat(), _prim->crystallography_tol()),
-    m_sym_info(make_supercell_sym_info(prim(), m_lattice)) {
+    m_sym_info(make_supercell_sym_info(prim(), m_lattice)),
+    m_nlist_size_at_construction(-1) {
 
   }
 

@@ -364,7 +364,7 @@ namespace CASM {
     std::string calctype = clex_desc.calctype;
     std::string ref = clex_desc.ref;
     fs::path chem_ref_path = primclex.dir().chemical_reference(calctype, ref);
-    int result_code;
+    int result_code = 0;
 
     if(vm.count("display")) {
       if(!primclex.has_chemical_reference()) {

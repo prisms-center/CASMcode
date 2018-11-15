@@ -18,6 +18,8 @@ namespace notstd {
 
   class Cloneable {
   public:
+    virtual ~Cloneable() {}
+
     std::unique_ptr<Cloneable> clone() const {
       return std::unique_ptr<Cloneable>(this->_clone());
     }

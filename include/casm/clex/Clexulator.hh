@@ -27,7 +27,8 @@ namespace CASM {
 
       Base(size_type _nlist_size, size_type _corr_size) :
         m_nlist_size(_nlist_size),
-        m_corr_size(_corr_size) {}
+        m_corr_size(_corr_size),
+        m_config_ptr(nullptr) {}
 
       virtual ~Base() {}
 

@@ -2203,7 +2203,7 @@ namespace CASM {
        */
 
       double angle = 360;
-      int generator;
+      int generator = 0;
 
       for(Index i = 0; i < size(); i++) {
         if((info[i].angle < angle) && (info[i].angle > TOL)) {

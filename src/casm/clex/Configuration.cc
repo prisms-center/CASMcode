@@ -1004,7 +1004,7 @@ namespace CASM {
       boost::split(tokens, name, boost::is_any_of("./"), boost::token_compress_on);
 
       std::string scelname, non_canon_config_name;
-      Index fg_op_index;
+      Index fg_op_index = 0;
 
       if(tokens[1] != "super" && tokens[2] != "super") {
         primclex.err_log().error("In make_configuration");

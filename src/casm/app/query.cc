@@ -295,22 +295,27 @@ namespace CASM {
 
   template<typename DataObject>
   int QueryCommandImpl<DataObject>::_query() const {
+    // WARNING: Valgrind has found some initialization/read errors in this block, but unable to diagnose exact problem
 
     // set output_stream: where the query results are written
     std::unique_ptr<std::ostream> uniq_fout;
     std::ostream &output_stream = make_ostream_if(_count("output"), log(), uniq_fout, _output_path(), _write_gz());
     output_stream << FormatFlag(output_stream).print_header(!_count("no-header"));
-
     // set status_stream: where query settings and PrimClex initialization messages are sent
-    Log &status_log = (_output_path().string() == "STDOUT") ? err_log() : log();
+    Log *status_log_ptr = (_output_path().string() == "STDOUT") ? &err_log() : &log();
+    if(!status_log_ptr)
+      throw std::runtime_error("Unable to resolve default status log.");
+
+    Log &status_log(*status_log_ptr);
+
     if(_output_path().string() == "STDOUT") {
       log().set_verbosity(0);
     }
 
     // Print info
-    status_log << "Print:" << std::endl;
+    status_log << "Print:" << std::endl; // ***This line, from Valgrind: conditional depends on unitialized value
     for(int p = 0; p < _columns_vec().size(); p++) {
-      status_log << "   - " << _columns_vec()[p] << std::endl;
+      status_log << "   - " << _columns_vec()[p] << std::endl; // **This line, from Valgrind: invalid read
     }
     if(_count("output")) {
       if(_output_path().string() == "STDOUT") {
@@ -321,7 +326,6 @@ namespace CASM {
       }
     }
     status_log << std::endl;
-
     // construct formatter
     DataFormatter<DataObject> formatter = _dict().parse(_all_columns());
 
@@ -340,9 +344,7 @@ namespace CASM {
     if(!uniq_fout) {
       status_log << "\n   -Output printed to terminal, since no output file specified-\n";
     }
-
     status_log << "  DONE." << std::endl << std::endl;
-
     return 0;
   }
 

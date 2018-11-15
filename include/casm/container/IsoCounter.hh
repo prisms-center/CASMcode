@@ -147,7 +147,7 @@ namespace CASM {
         return (*this);
       size_type i(0), j(0);
       bool continue_flag = valid();
-      value_type next_i, next_j;
+      value_type next_i = 0, next_j = 0;
       for(i = 0; i + 1 < size(); i++) {
         next_i = current(i) - increment();
         if(compare(_upper(i), next_i) || compare(next_i, _lower(i)))

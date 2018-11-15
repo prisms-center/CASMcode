@@ -832,7 +832,7 @@ namespace CASM {
     double torthoscore = 0;
 
     tnormal = normal;
-    double new_vol;
+    double new_vol = 0;
 
     do {
       normal = tnormal * factor;

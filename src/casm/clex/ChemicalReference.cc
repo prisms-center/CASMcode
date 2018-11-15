@@ -398,7 +398,7 @@ namespace CASM {
       auto begin = primclex.db<Configuration>().begin();
       auto end = primclex.db<Configuration>().end();
       auto res = end;
-      double close_dist;
+      double close_dist(1e10);
       for(auto it = begin; it != end; ++it) {
         if(!it->calc_properties().contains("relaxed_energy")) {
           continue;

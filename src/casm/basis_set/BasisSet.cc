@@ -1140,8 +1140,8 @@ namespace CASM {
   bool BasisSet::Gaussian_Elim() {
     bool is_unchanged(true);
     Index i(0), j(0);
-    Index j_min, i_min, i_temp;
-    double tcoeff, min_coeff;
+    Index j_min(0), i_min(0), i_temp;
+    double tcoeff, min_coeff(1e10);
     Function *tfunc;
     while(i < size()) {
       j_min = Index(-1);

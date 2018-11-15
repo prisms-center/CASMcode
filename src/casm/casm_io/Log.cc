@@ -51,7 +51,8 @@ namespace CASM {
     m_verbosity = _verbosity;
     m_print = true;
     m_show_clock = _show_clock;
-    m_start_time = boost::chrono::steady_clock::now();
+    restart_clock();
+    begin_lap();
     m_stream = &_ostream;
   }
 
