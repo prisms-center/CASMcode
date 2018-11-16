@@ -632,8 +632,8 @@ LCHARG = .FALSE.\n";
                  "    \"email\": where to send messages (ex. \"me@fake.com\", default \n" <<
                  "             None)                                                  \n" <<
                  "    \"qos\": quality of service, 'qos' option (ex. \"fluxoe\")      \n" <<
-                 "    \"qe_cmd\": quantum espresso execution command (default is \"vasp\" if    \n" <<
-                 "                ncpus=1, else \"mpirun -np {NCPUS} vasp\"           \n" <<
+                 "    \"qe_cmd\": quantum espresso execution command (default is \"pw.x < {INFILE} > {OUTFILE}\" if    \n" <<
+                 "                ncpus=1, else \"mpirun -np {NCPUS} pw.x < {INFILE} > {OUTFILE}\"           \n" <<
                  "    \"infile\": quantum espresso input file name (default is \"std.in\"\n" <<
                  "    \"outfile\": quantum espresso output file name (default is \"std.out\"\n" <<
                  "    \"ncpus\": number of cpus (cores) to run on (default $PBS_NP)   \n" <<

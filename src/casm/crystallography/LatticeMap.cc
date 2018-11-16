@@ -83,7 +83,8 @@ namespace CASM {
 
     DMatType init_F(m_F);
     // tcost initial value shouldn't matter unles m_inv_count is invalid
-    double tcost = 1e10;
+    double tcost = max_cost;
+
     for(++m_inv_count; m_inv_count.valid(); ++m_inv_count) {
       //continue if determinant is not 1, because it doesn't preserve volume
       if(!almost_equal(std::abs(m_inv_count().determinant()), 1))
@@ -138,6 +139,3 @@ namespace CASM {
 
 
 }
-
-
-

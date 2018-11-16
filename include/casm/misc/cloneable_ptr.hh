@@ -5,7 +5,63 @@
 #include <iostream>
 #include <utility>
 
-#include "casm/misc/CASM_TMP.hh"
+#include "casm/misc/type_traits.hh"
+
+/// Include in a class/struct definition that inherits from Cloneable
+/// to make it also cloneable
+#define ABSTRACT_CLONEABLE(T) \
+public: \
+  virtual ~T() {}\
+  \
+  std::unique_ptr<T> clone() const {\
+    return std::unique_ptr<T>(this->_clone());\
+  }\
+  std::unique_ptr<T> move() {\
+    return std::unique_ptr<T>(this->_move());\
+  }\
+private:\
+  virtual T *_clone() const = 0;\
+  virtual T *_move() = 0;\
+public:\
+
+/// Include in a class/struct definition that inherits from Cloneable
+/// to make it also cloneable
+#define ABSTRACT_CLONEABLE_DERIVED(T) \
+public: \
+  virtual ~T() {}\
+  \
+  std::unique_ptr<T> clone() const {\
+    return std::unique_ptr<T>(this->_clone());\
+  }\
+  std::unique_ptr<T> move() {\
+    return std::unique_ptr<T>(this->_move());\
+  }\
+private:\
+  virtual T *_clone() const override = 0;\
+  virtual T *_move() override = 0;\
+public:\
+
+/// Include in a class/struct definition that inherits from Cloneable
+/// to make it also cloneable
+#define CLONEABLE(T) \
+public: \
+  virtual ~T() {}\
+  \
+  std::unique_ptr<T> clone() const {\
+    return std::unique_ptr<T>(this->_clone());\
+  }\
+  std::unique_ptr<T> move() {\
+    return std::unique_ptr<T>(this->_move());\
+  }\
+private:\
+  virtual T *_clone() const override {\
+    return new T(*this);\
+  }\
+  virtual T *_move() override {\
+    return new T(std::move(*this));\
+  }\
+public:\
+
 
 /// \brief Non-std smart pointer classes and functions
 namespace notstd {
@@ -16,6 +72,7 @@ namespace notstd {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
   }
 
+  /// \brief Base class for cloning
   class Cloneable {
   public:
     virtual ~Cloneable() {}
@@ -23,8 +80,12 @@ namespace notstd {
     std::unique_ptr<Cloneable> clone() const {
       return std::unique_ptr<Cloneable>(this->_clone());
     }
+    std::unique_ptr<Cloneable> move() {
+      return std::unique_ptr<Cloneable>(this->_move());
+    }
   private:
     virtual Cloneable *_clone() const = 0;
+    virtual Cloneable *_move() = 0;
   };
 
   template<typename Type>
@@ -43,7 +104,7 @@ namespace notstd {
 
   /// \brief Specialized case inherits from std::true_type if T does have clone method
   template <typename T>
-struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_type {
+struct has_clone<T, void_t<decltype(&T::clone)> > : std::true_type {
   };
 
   template < typename T, typename std::enable_if < !has_clone<T>::value, void >::type * = nullptr >
@@ -51,6 +112,25 @@ struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_ty
 
   template<typename T, typename std::enable_if<has_clone<T>::value, void>::type * = nullptr>
   std::unique_ptr<T> clone(const T &obj);
+
+
+  /// \brief Base type inherits from std::false_type if T does not have move method
+  template <typename T, typename = void>
+  struct has_move : std::false_type {
+  };
+
+  /// \brief Specialized case inherits from std::true_type if T does have move method
+  template <typename T>
+struct has_move<T, void_t<decltype(&T::move)> > : std::true_type {
+  };
+
+  /// \brief Construct std::unique_ptr<T> from rvalue reference
+  template < typename T, typename std::enable_if < !has_move<T>::value, void >::type * = nullptr >
+  std::unique_ptr<T> clone_move(T && obj);
+
+  /// \brief Construct std::unique_ptr<T> from rvalue reference
+  template<typename T, typename std::enable_if<has_move<T>::value, void>::type * = nullptr>
+  std::unique_ptr<T> clone_move(T && obj);
 
 
   /// \brief A 'cloneable_ptr' can be used in place of 'unique_ptr'
@@ -153,8 +233,187 @@ struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_ty
 
   template<typename Type>
   bool operator!=(const cloneable_ptr<Type> &A, const cloneable_ptr<Type> &B);
-}
 
-#include "casm/misc/cloneable_ptr_impl.hh"
+
+  // --- Immplementation ---
+
+  template < typename T, typename std::enable_if < !has_clone<T>::value, void >::type * >
+  std::unique_ptr<T> clone(const T &obj) {
+    return std::unique_ptr<T>(new T(obj));
+  }
+
+  template<typename T, typename std::enable_if<has_clone<T>::value, void>::type * >
+  std::unique_ptr<T> clone(const T &obj) {
+    return obj.clone();
+  }
+
+  /// \brief Construct std::unique_ptr<T> from rvalue reference
+  ///
+  /// - If obj.move() is valid, use that;
+  /// - else if obj.clone() is valid use that;
+  /// - else copy-construct (fails if T is abstract)
+  template < typename T, typename std::enable_if < !has_move<T>::value, void >::type * >
+  std::unique_ptr<T> clone_move(T &&obj) {
+    return clone(std::move(obj));
+  }
+
+  /// \brief Construct std::unique_ptr<T> from rvalue reference
+  ///
+  /// - If obj.move() is valid, use that;
+  /// - else if obj.clone() is valid use that;
+  /// - else copy-construct (fails if T is abstract)
+  template<typename T, typename std::enable_if<has_move<T>::value, void>::type * >
+  std::unique_ptr<T> clone_move(T &&obj) {
+    return obj.move();
+  }
+
+
+  /// \brief Construct by taking ownership of ptr
+  template<typename Type>
+  cloneable_ptr<Type>::cloneable_ptr(pointer ptr) :
+    m_unique(ptr) {}
+
+  /// \brief Construct by cloning other
+  template<typename Type>
+  cloneable_ptr<Type>::cloneable_ptr(const cloneable_ptr &other) :
+    m_unique() {
+    if(other) {
+      m_unique = std::move(clone(*other));
+    }
+  }
+
+  /// \brief Construct by cloning other
+  template<typename Type>
+  template<typename U>
+  cloneable_ptr<Type>::cloneable_ptr(const cloneable_ptr<U> &other) :
+    m_unique() {
+    if(other) {
+      m_unique = std::move(clone(*other));
+    }
+  }
+
+  /// \brief Construct by moving other
+  template<typename Type>
+  cloneable_ptr<Type>::cloneable_ptr(cloneable_ptr &&other) :
+    m_unique(std::move(other.unique())) {}
+
+  /// \brief Construct by moving other
+  template<typename Type>
+  template<typename U>
+  cloneable_ptr<Type>::cloneable_ptr(cloneable_ptr<U> &&other) :
+    m_unique(std::move(other.unique())) {}
+
+
+  /// \brief Construct by cloning other
+  template<typename Type>
+  template<typename U>
+  cloneable_ptr<Type>::cloneable_ptr(const std::unique_ptr<U> &other) :
+    m_unique() {
+    if(other) {
+      m_unique = std::move(clone(*other));
+    }
+  }
+
+  /// \brief Construct by moving
+  template<typename Type>
+  template<typename U>
+  cloneable_ptr<Type>::cloneable_ptr(std::unique_ptr<U> &&other) :
+    m_unique(std::move(other)) {}
+
+  template<typename Type>
+  cloneable_ptr<Type>::~cloneable_ptr() {}
+
+  /// \brief Assignment via copy-swap
+  template<typename Type>
+  cloneable_ptr<Type> &cloneable_ptr<Type>::operator=(cloneable_ptr other) {
+    swap(*this, other);
+    return *this;
+  }
+
+  /// \brief Assignment via move
+  template<typename Type>
+  template<typename U>
+  cloneable_ptr<Type> &cloneable_ptr<Type>::operator=(cloneable_ptr<U> &&other) {
+    unique() = std::move(other.unique());
+    return *this;
+  }
+
+
+  /// \brief Assignment via clone
+  template<typename Type>
+  template<typename U>
+  cloneable_ptr<Type> &cloneable_ptr<Type>::operator=(const std::unique_ptr<U> &other) {
+    if(other) {
+      unique() = clone(*other);
+    }
+    else {
+      unique().reset();
+    }
+    return *this;
+  }
+
+  /// \brief Assignment via move
+  template<typename Type>
+  template<typename U>
+  cloneable_ptr<Type> &cloneable_ptr<Type>::operator=(std::unique_ptr<U> &&other) {
+    unique() = std::move(other);
+    return *this;
+  }
+
+
+  template<typename Type>
+  typename cloneable_ptr<Type>::reference cloneable_ptr<Type>::operator*() const {
+    return *m_unique;
+  }
+
+  template<typename Type>
+  typename cloneable_ptr<Type>::pointer cloneable_ptr<Type>::operator->() const {
+    return &(this->operator*());
+  }
+
+  /// \brief Reset contained unique_ptr
+  template<typename Type>
+  void cloneable_ptr<Type>::reset() {
+    return m_unique.reset();
+  }
+
+  /// \brief Access contained unique_ptr
+  template<typename Type>
+  std::unique_ptr<Type> &cloneable_ptr<Type>::unique() {
+    return m_unique;
+  }
+
+  /// \brief const Access contained unique_ptr
+  template<typename Type>
+  const std::unique_ptr<Type> &cloneable_ptr<Type>::unique() const {
+    return m_unique;
+  }
+
+  /// \brief Checks whether *this owns an object
+  template<typename Type>
+  cloneable_ptr<Type>::operator bool() const {
+    return static_cast<bool>(m_unique);
+  }
+
+  template<typename Type>
+  void swap(cloneable_ptr<Type> &A, cloneable_ptr<Type> &B) {
+    A.unique().swap(B.unique());
+  }
+
+  template<typename Type>
+  bool operator<(const cloneable_ptr<Type> &A, const cloneable_ptr<Type> &B) {
+    return A.unique() < B.unique();
+  }
+
+  template<typename Type>
+  bool operator==(const cloneable_ptr<Type> &A, const cloneable_ptr<Type> &B) {
+    return A.unique() == B.unique();
+  }
+
+  template<typename Type>
+  bool operator!=(const cloneable_ptr<Type> &A, const cloneable_ptr<Type> &B) {
+    return A.unique() != B.unique();
+  }
+}
 
 #endif

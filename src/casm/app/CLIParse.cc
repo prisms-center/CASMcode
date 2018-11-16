@@ -7,10 +7,10 @@ namespace CASM {
   /// Non-owning
   CLIParse::CLIParse(int _argc, char **_argv, const Logging &_logging) :
     Logging(_logging),
-    m_free_p(false),
     m_argc(_argc),
     m_argv(_argv),
-    m_parse_result(0) {
+    m_parse_result(0),
+    m_free_p(false) {
   }
 
   /// Owning

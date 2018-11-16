@@ -27,8 +27,8 @@ namespace CASM {
     /// \brief Construt with the cluster to find subclusters of
     explicit SubClusterGenerator(const ClusterType &clust) :
       m_cluster(notstd::make_unique<ClusterType>(clust)),
-      m_current(notstd::make_unique<ClusterType>(clust)),
       m_current_valid(false),
+      m_current(notstd::make_unique<ClusterType>(clust)),
       m_site_counter(std::vector<int>(m_cluster->size(), 0),
                      std::vector<int>(m_cluster->size(), 1),
                      std::vector<int>(m_cluster->size(), 1)) {}

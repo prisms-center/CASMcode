@@ -16,6 +16,8 @@ namespace CASM {
    * @{
    */
 
+  template<typename DataObject>
+  struct QueryTraits;
   class Log;
 
   /// return path to current or parent directory containing ".casm" directory
@@ -217,6 +219,9 @@ namespace CASM {
     /// \brief Returns path to eci.json
     fs::path eci(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const;
 
+    // -- Reports -------------------------
+    /// \brief Returns path to reports directory
+    fs::path reports_dir() const;
 
     // -- other maybe temporary --------------------------
 
@@ -263,6 +268,7 @@ namespace CASM {
     std::string m_set_dir;
     std::string m_sym_dir;
     std::string m_clex_dir;
+    std::string m_reports_dir;
 
   };
 

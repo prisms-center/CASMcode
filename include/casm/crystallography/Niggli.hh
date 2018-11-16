@@ -112,6 +112,8 @@ namespace CASM {
     ///Transpose of initialization lattice dotted with itself
     const Eigen::Matrix3d m_metrical_matrix;
 
+    ///Scaling factor for niggli comparisons
+    const double m_scale_factor;
   };
 
 
@@ -130,7 +132,7 @@ namespace CASM {
   ///Check whether the given lattice (represented as a matrix) is in niggli TYPE ?? reduced form (does not check for orientation)
   bool is_niggli(const Eigen::Matrix3d &test_lat_mat, double compare_tol);
 
-  ///Check whether the given lattice is primitive (does not check for orientation)
+  ///Check whether the given lattice is niggli (does not check for orientation)
   bool is_niggli(const Lattice &test_lat, double compare_tol);
 
   /// \brief Generate a vector whose lexicographical value determines how well it's oriented in space

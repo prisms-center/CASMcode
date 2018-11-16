@@ -5,7 +5,8 @@
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/Selected.hh"
-
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include  "casm/clusterography/ClusterOrbits.hh"
 namespace CASM {
 
   template class BaseDatumFormatter<Kinetics::DiffTransConfiguration>;
@@ -108,6 +109,56 @@ namespace CASM {
         return col;
       }
 
+
+      // --- LocalComp implementations -----------
+
+      const std::string LocalComp::Name = "local_comp";
+
+      const std::string LocalComp::Desc =
+        "Number of each species within radius, including vacancies. ";
+
+      /// \brief Returns the number of each species per unit cell
+      std::string LocalComp::evaluate(const DiffTransConfiguration &dtconfig) const {
+        std::vector<UnitCellCoord> candidate_sites;
+        neighborhood<Site>(dtconfig.diff_trans(), m_radius, all_sites_filter, std::back_inserter(candidate_sites), dtconfig.primclex().crystallography_tol());
+        std::map<std::string, int> species_map;
+        for(auto &site : candidate_sites) {
+          Index l = dtconfig.from_config().linear_index(site);
+          Index occ_idx = dtconfig.from_config().occ(l);
+          std::string occ_name = dtconfig.from_config().prim().basis()[ dtconfig.from_config().sublat(l) ].site_occupant()[occ_idx].name();
+          if(species_map.find(occ_name) == species_map.end()) {
+            species_map.emplace(occ_name, 1);
+          }
+          else {
+            species_map[occ_name]++;
+          }
+        }
+        std::string ret_string;
+        for(auto it = species_map.begin(); it != species_map.end(); ++it) {
+          if(ret_string != "") {
+            ret_string = ret_string + "_";
+          }
+          ret_string = ret_string + it->first + "_" + std::to_string(it->second) ;
+        }
+        return ret_string;
+      }
+
+      bool LocalComp::parse_args(const std::string &args) {
+        try {
+          double rad = std::stod(args);
+          if(rad >= 0) {
+            m_radius = rad;
+          }
+          else {
+            throw std::runtime_error(std::string("Format tag: 'local_comp(") + args + ") is invalid.\n");
+            return false;
+          }
+        }
+        catch(const std::invalid_argument &e) {
+          throw std::runtime_error("Argument could not be converted to double. Received: " + args);
+        }
+        return true;
+      }
 
       // --- CompN implementations -----------
 
@@ -334,12 +385,63 @@ namespace CASM {
         });
       }
 
+      GenericDiffTransConfigFormatter<Index> suborbit_ind() {
+        return GenericDiffTransConfigFormatter<Index>("suborbit_ind",
+                                                      "suborbit index of $orbitname within $bg_configname tiled into $scelname, distinguishes unique types of hops given a decorated background",
+        [](const DiffTransConfiguration & dtconfig)->Index {
+          return dtconfig.suborbit_ind();
+        });
+      }
+
       GenericDiffTransConfigFormatter<std::string> bg_configname() {
         return GenericDiffTransConfigFormatter<std::string>("bg_configname",
                                                             "canonical Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#', that represents the background configuration this was generated from",
         [](const DiffTransConfiguration & dtconfig)->std::string {
           return dtconfig.bg_configname();
         });
+      }
+      GenericDiffTransConfigFormatter<std::string> calc_status() {
+        return GenericDiffTransConfigFormatter<std::string>("calc_status",
+                                                            "Status of calculation.",
+                                                            [](const DiffTransConfiguration & config)->std::string{return CASM::calc_status<DiffTransConfiguration>(config);},
+                                                            [](const DiffTransConfiguration & config)->bool{return CASM::has_calc_status<DiffTransConfiguration>(config);});
+      }
+
+      GenericDiffTransConfigFormatter<std::string> failure_type() {
+        return GenericDiffTransConfigFormatter<std::string>("failure_type",
+                                                            "Reason for calculation failure.",
+                                                            [](const DiffTransConfiguration & config)->std::string{return CASM::failure_type<DiffTransConfiguration>(config);},
+                                                            [](const DiffTransConfiguration & config)->bool{return CASM::has_failure_type<DiffTransConfiguration>(config);});
+      }
+
+
+      GenericDiffTransConfigFormatter<double> min_perturb_radius() {
+        return GenericDiffTransConfigFormatter<double>("min_perturb_radius",
+                                                       "gives the distance from the diffusion hop of the closest perturbed site from the hop. A value of 0 indicates no perturbation",
+                                                       CASM::Kinetics::min_perturb_rad);
+      }
+      GenericDiffTransConfigFormatter<double> max_perturb_radius() {
+        return GenericDiffTransConfigFormatter<double>("max_perturb_radius",
+                                                       "gives the distance from the diffusion hop of the furthest perturbed site from the hop. A value of 0 indicates no perturbation",
+                                                       CASM::Kinetics::max_perturb_rad);
+      }
+
+
+      GenericDiffTransConfigFormatter<double> kra_barrier() {
+        return GenericDiffTransConfigFormatter<double>("kra",
+                                                       "kinetically resolved activation barrier, this is the distance from the average energy of the two endpoints to the highest point on the diffusion energy landscape",
+                                                       CASM::Kinetics::kra,
+                                                       CASM::Kinetics::has_kra);
+      }
+      GenericDiffTransConfigFormatter<bool> is_calculated() {
+        return GenericDiffTransConfigFormatter<bool>("is_calculated",
+                                                     "True (1) if all current properties have been been calculated for the diff_trans_config",
+                                                     [](const DiffTransConfiguration & config)->bool{return CASM::is_calculated(config);});
+      }
+      GenericDiffTransConfigFormatter<bool> is_canonical() {
+        return GenericDiffTransConfigFormatter<bool>("is_canonical",
+                                                     "True (1) if the diff_trans_config cannot be transformed by symmetry to a diff_trans_config with higher lexicographic order",
+                                                     [](const DiffTransConfiguration & config)->bool{return config.is_canonical();});
       }
     }
   }
@@ -352,11 +454,16 @@ namespace CASM {
 
     dict.insert(
       name<Kinetics::DiffTransConfiguration>(),
+      alias_or_name<Kinetics::DiffTransConfiguration>(),
+      alias<Kinetics::DiffTransConfiguration>(),
       from_configname(),
       to_configname(),
       bg_configname(),
       scelname(),
-      orbitname()
+      orbitname(),
+      calc_status(),
+      failure_type(),
+      LocalComp()
     );
     return dict;
   }
@@ -367,7 +474,9 @@ namespace CASM {
     using namespace Kinetics::DiffTransConfigIO;
     BooleanAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
     dict.insert(
-      DB::Selected<Kinetics::DiffTransConfiguration>()
+      DB::Selected<Kinetics::DiffTransConfiguration>(),
+      is_calculated(),
+      is_canonical()
     );
     return dict;
   }
@@ -377,6 +486,9 @@ namespace CASM {
 
     using namespace Kinetics::DiffTransConfigIO;
     IntegerAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
+    dict.insert(
+      suborbit_ind()
+    );
     return dict;
   }
 
@@ -386,7 +498,10 @@ namespace CASM {
     using namespace Kinetics::DiffTransConfigIO;
     ScalarAttributeDictionary<Kinetics::DiffTransConfiguration> dict;
     dict.insert(
-      LocalClex()
+      LocalClex(),
+      kra_barrier(),
+      max_perturb_radius(),
+      min_perturb_radius()
     );
     return dict;
   }

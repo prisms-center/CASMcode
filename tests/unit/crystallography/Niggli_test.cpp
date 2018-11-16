@@ -129,7 +129,7 @@ namespace CASM {
     PrimClex primclex(proj.dir, null_log());
 
     // enumerate size 5 supercells
-    bool verbose = false;
+    // bool verbose = false;
     ScelEnumProps enum_props(5, 6);
     ScelEnumByProps scel_enum(primclex, enum_props);
     for(const auto &scel : scel_enum) {}

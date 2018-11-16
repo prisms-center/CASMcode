@@ -2,6 +2,7 @@
 #define CASM_Eigen_math
 
 #include <vector>
+#include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/CASM_math.hh"
 
@@ -59,6 +60,7 @@ namespace Eigen {
   scale_to_int(const Eigen::MatrixBase<Derived> &val, double _tol = CASM::TOL) {
 
     using CASM::Index;
+    using CASM::almost_zero;
 
     typedef Eigen::Matrix<int, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> int_mat_type;
     typedef Eigen::Matrix<double, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> dub_mat_type;
@@ -67,17 +69,16 @@ namespace Eigen {
 
     dub_mat_type dubs(val);
 
-    Index min_i(-1), min_j(-1);
+    Index min_i(-1);
     double min_coeff = 2; //all values are <=1;
     for(Index i = 0; i < dubs.rows(); i++) {
       for(Index j = 0; j < dubs.cols(); j++) {
-        if(CASM::almost_zero(dubs(i, j))) {
+        if(almost_zero(dubs(i, j))) {
           dubs(i, j) = 0.0;
         }
         else if(std::abs(dubs(i, j)) < std::abs(min_coeff)) {
           min_coeff = dubs(i, j);
           min_i = i;
-          min_j = j;
         }
       }
     }
@@ -107,6 +108,7 @@ namespace Eigen {
       tdubs = double(factor) * dubs;
       for(i = 0; i < dubs.rows(); i++) {
         for(j = 0; j < dubs.cols(); j++) {
+
           if(!CASM::almost_zero(round(tdubs(i, j)) - tdubs(i, j), _tol))
             break;
         }

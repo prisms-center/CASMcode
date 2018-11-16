@@ -26,6 +26,7 @@ namespace CASM {
   bool OrbitBranchSpecsParser::is_integer(jsonParser::const_iterator it) const {
     try {
       int branch = branch_to_int(it);
+      (void) branch;
       return true;
     }
     catch(std::exception &e) {
@@ -226,15 +227,22 @@ namespace CASM {
     bool _required) :
     InputParser(_input, _path, _required) {
 
-    auto _relpath = Relpath(_path);
+    if(exists()) {
+      this->kwargs["orbit_branch_specs"] =
+        std::make_shared<PrimPeriodicOrbitBranchSpecsParser>(
+          input, relpath("orbit_branch_specs"), false);
+      this->kwargs["orbit_specs"] =
+        std::make_shared<PrimPeriodicOrbitSpecsParser>(
+          _primclex, _generating_grp, _sym_compare, input, relpath("orbit_specs"), false);
 
-    this->kwargs["orbit_branch_specs"] =
-      std::make_shared<PrimPeriodicOrbitBranchSpecsParser>(
-        input, _relpath("orbit_branch_specs"), false);
-    this->kwargs["orbit_specs"] =
-      std::make_shared<PrimPeriodicOrbitSpecsParser>(
-        _primclex, _generating_grp, _sym_compare, input, _relpath("orbit_specs"), false);
-    warn_unnecessary({"orbit_branch_specs", "orbit_specs"});
+      // require one of {"orbit_branch_specs", "orbit_specs"}
+      if(!this->kwargs["orbit_branch_specs"]->exists() && !this->kwargs["orbit_specs"]->exists()) {
+        error.insert(std::string("Error: ") + "One of \"orbit_branch_specs\" or \"orbit_specs\" is required.");
+      }
+
+      // warn about unnecessary properties
+      warn_unnecessary({"orbit_branch_specs", "orbit_specs"});
+    }
   }
 
   int PrimPeriodicClustersByMaxLength::max_branch() const {
@@ -400,4 +408,3 @@ namespace CASM {
     }
   }
 }
-

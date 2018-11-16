@@ -8,9 +8,9 @@ from casm.vasp import io
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
 
-        The relaxation is initialized in a directory containing VASP input files, called 'relaxdir'.
+        The relaxation is initialized in a directory containing VASP input files, called 'calcdir'.
         It then creates the following directory structure:
-        .../relaxdir/
+        .../calcdir/
             run.0/
             run.1/
             ...
@@ -22,18 +22,19 @@ class Relax(object):
         'run.final' is a final constant volume run {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}.
 
         Contains:
-            self.relaxdir  (.../relax)
+            self.calcdir  (.../relax)
             self.rundir    (list of .../relax/run.i)
             self.finaldir (.../relax/run.final)
+            self.subdir (adds to path of run.i for subdirectory runs)
     """
-    def __init__(self, relaxdir=None, settings=None):
+    def __init__(self, calcdir=None, settings=None):
         """
         Construct a VASP relaxation job object.
 
         Args:
             relaxdir:  path to vasp relaxation directory
             settings:   dictionary-like object containing settings, or if None, it reads
-                        the json file: .../relaxdir/relax.json
+                        the json file: .../calcdir/relax.json
 
                 possible settings keys are:
                     used by casm.vasp.run() function:
@@ -49,22 +50,31 @@ class Relax(object):
 
         print("Constructing a VASP Relax object")
         sys.stdout.flush()
+        self.subdir = ""
+        # store path to .../calcdir, and create if not existing
+        if calcdir is None:
+            calcdir = os.getcwd()
+        self.calcdir = os.path.abspath(calcdir)
 
+<<<<<<< HEAD:python/casm/casm/vasp/relax.py
         # store path to .../relaxdir, and create if not existing
         if relaxdir is None:
             relaxdir = os.getcwd()
         self.relaxdir = os.path.abspath(relaxdir)
 
         print("  Relax directory:", self.relaxdir)
+=======
+        print "  Relax directory:", self.calcdir
+>>>>>>> skk74/0.3a1_clexulator+database:python/vasp/vasp/relax.py
         sys.stdout.flush()
 
-        # find existing .../relaxdir/run.run_index directories, store paths in self.rundir list
+        # find existing .../calcdir/run.run_index directories, store paths in self.rundir list
         self.rundir = []
         self.errdir = []
         self.update_rundir()
         self.update_errdir()
 
-        self.finaldir = os.path.join(self.relaxdir, "run.final")
+        self.finaldir = os.path.join(self.calcdir, "run.final")
 
         if settings is None:
             self.settings = dict()
@@ -104,6 +114,8 @@ class Relax(object):
             self.settings["final"] = None
         if not "err_types" in self.settings:
             self.settings["err_types"] = ['SubSpaceMatrixError']
+        if "subdir" in self.settings:
+            self.subdir=self.settings["subdir"]
 
         print("VASP Relax object constructed\n")
         sys.stdout.flush()
@@ -111,7 +123,7 @@ class Relax(object):
 
     def add_rundir(self):
         """Make a new run.i directory"""
-        os.mkdir(os.path.join(self.relaxdir, "run." + str(len(self.rundir))))
+        os.makedirs(os.path.join(self.calcdir, "run." + str(len(self.rundir)),self.subdir))
         self.update_rundir()
         self.update_errdir()
 
@@ -120,8 +132,8 @@ class Relax(object):
         """Find all .../config/vasp/relax/run.i directories, store paths in self.rundir list"""
         self.rundir = []
         run_index = len(self.rundir)
-        while os.path.isdir( os.path.join(self.relaxdir, "run." + str(run_index))):
-                self.rundir.append( os.path.join(self.relaxdir, "run." + str(run_index)) )
+        while os.path.isdir( os.path.join(self.calcdir, "run." + str(run_index),self.subdir)):
+                self.rundir.append( os.path.join(self.calcdir, "run." + str(run_index),self.subdir) )
                 run_index += 1
 
 
@@ -148,18 +160,28 @@ class Relax(object):
 
         print("Moving files into initial run directory:", initdir)
         initdir = os.path.abspath(initdir)
+<<<<<<< HEAD:python/casm/casm/vasp/relax.py
         for p in os.listdir(self.relaxdir):
             if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.relaxdir, p) != initdir):
                 os.rename(os.path.join(self.relaxdir,p), os.path.join(initdir,p))
         print("")
+=======
+        for p in os.listdir(self.calcdir):
+            if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.calcdir, p) != initdir):
+                os.rename(os.path.join(self.calcdir,p), os.path.join(initdir,p))
+        print ""
+>>>>>>> skk74/0.3a1_clexulator+database:python/vasp/vasp/relax.py
         sys.stdout.flush()
-
+        if "subdir" in settings:
+            if settings["subdir"]=="01":
+                new_values = {"IMAGES":None,"SPRING":None}
+                io.set_incar_tag(new_values,initdir)
         # Keep a backup copy of the base INCAR
-        shutil.copyfile(os.path.join(initdir,"INCAR"),os.path.join(self.relaxdir,"INCAR.base"))
+        shutil.copyfile(os.path.join(initdir,"INCAR"),os.path.join(self.calcdir,"INCAR.base"))
 
         # If an initial incar is called for, copy it in and set the appropriate flag
-        if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["initial"]))):
-            new_values = io.Incar(os.path.join(self.relaxdir,self.settings["initial"])).tags
+        if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.calcdir,self.settings["initial"]))):
+            new_values = io.Incar(os.path.join(self.calcdir,self.settings["initial"])).tags
             io.set_incar_tag(new_values, initdir)
             print("  Set INCAR tags:", new_values, "\n")
             sys.stdout.flush()
@@ -233,16 +255,21 @@ class Relax(object):
 
             elif task == "relax":
                 self.add_rundir()
+<<<<<<< HEAD:python/casm/casm/vasp/relax.py
                 casm.vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
                 shutil.copyfile(os.path.join(self.relaxdir,"INCAR.base"),os.path.join(self.rundir[-1],"INCAR"))
+=======
+                vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
+                shutil.copyfile(os.path.join(self.calcdir,"INCAR.base"),os.path.join(self.rundir[-1],"INCAR"))
+>>>>>>> skk74/0.3a1_clexulator+database:python/vasp/vasp/relax.py
 
             elif task == "constant":
                 self.add_rundir()
                 casm.vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
                 # set INCAR to ISIF = 2, ISMEAR = -5, NSW = 0, IBRION = -1
-                if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["final"]))):
-                    new_values = io.Incar(os.path.join(self.relaxdir, self.settings["final"])).tags
+                if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.calcdir,self.settings["final"]))):
+                    new_values = io.Incar(os.path.join(self.calcdir, self.settings["final"])).tags
                 else:
                     new_values = {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}
 
@@ -289,8 +316,13 @@ class Relax(object):
                                         "ngx" : init_outcar.ngx*2,
                                         "ngy" : init_outcar.ngy*2,
                                         "ngz" : init_outcar.ngz*2}
+<<<<<<< HEAD:python/casm/casm/vasp/relax.py
                                     print(ng_tags)
                                     io.set_incar_tag(ng_tags, self.relaxdir, "INCAR.base")
+=======
+                                    print ng_tags
+                                    io.set_incar_tag(ng_tags, self.calcdir, "INCAR.base")
+>>>>>>> skk74/0.3a1_clexulator+database:python/vasp/vasp/relax.py
                     break
 
                 # else, attempt to fix first error

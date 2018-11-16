@@ -1,7 +1,7 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
-import os, shutil, re, subprocess, json
+import os, shutil, six, re, subprocess, json
 import warnings
 import casm.vasp.io
 
@@ -24,10 +24,10 @@ def read_settings(filename):
     The required keys are:
         "queue": queue to submit job in
         "ppn": processors (cores) per node to request
-        "atom_per_proc": max number of atoms per processor (core)
         "walltime": walltime to request (ex. "48:00:00")
 
     The optional keys are:
+        "atom_per_proc": max number of atoms per processor (core)
         "account": account to submit job under (default None)
         "pmem": string for requested memory (default None)
         "priority": requested job priority (default "0")
@@ -62,31 +62,35 @@ def read_settings(filename):
         "name" : USED IN vasp.converge ONLY. Name used in the .../config/calctype.calc/NAME/property_i directory scheme, where, if not specified, "prop"_converge is used as NAME
     """
     try:
-        file = open(filename)
-        settings = json.load(file)
-        file.close()
+        with open(filename, 'rb') as file:
+            settings = json.loads(file.read().decode('utf-8'))
     except (IOError, ValueError) as e:
         print("Error reading settings file:", filename)
         raise e
 
     required = ["queue", "ppn", "walltime"]
 
-    either_or = [["atom_per_proc","nodes_per_image"]]
+    select_one = [["nodes", "atom_per_proc", "nodes_per_image"]]
 
     optional = ["account","pmem","priority","message","email","qos","npar","ncore",
                 "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence",
                 "encut", "kpoints","extra_input_files", "move", "copy", "remove",
                 "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
                 "preamble", "prerun", "postrun", "prop", "prop_start", "prop_stop",
-                "prop_step", "tol", "tol_amount", "name", "fine_ngx","calculator",
-                "CI_neb", "n_images"]
+                "prop_step", "tol", "tol_amount", "name", "fine_ngx", "CI_neb", "n_images",
+                "software", "method", "endstate_calctype", "initial_deformation"]
+
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")
 
-    for key_list in either_or:
-        if not [key in settings for key in key_list].count(True) == 1:
-            raise VaspWrapperError("Declare one and only of the following options: '" + "' or '".join(key_list) + "' in file: '" + filename + "'")
+    if len(select_one):
+        for key_list in select_one:
+            if not [key in settings for key in key_list].count(True) == 1:
+                raise VaspWrapperError("Declare one and only of the following options: '" + "' or '".join(key_list) + "' in file: '" + filename + "'")
+            for key in key_list:
+                if not key in settings:
+                    settings[key] = None
 
     for key in optional:
         if not key in settings:
@@ -118,7 +122,7 @@ def read_settings(filename):
     if settings["fine_ngx"] == None:
         settings["fine_ngx"] = False
     for k in settings.keys():
-        if k not in required + optional + [key for key_list in either_or for key in key_list]:
+        if k not in required + optional + [key for key_list in select_one for key in key_list]:
             raise VaspWrapperError("unknown key '" + k + "' found in: '" + filename + "'")
 
     return settings
@@ -126,9 +130,8 @@ def read_settings(filename):
 
 def write_settings(settings, filename):
     """ Write 'settings' as json file, 'filename' """
-    file = open(filename,'w')
-    json.dump( settings, file, indent=4)
-    file.close()
+    with open(filename,'wb') as file:
+        file.write(six.u(json.dump( settings, file, indent=4)).encode('utf-8'))
 
 
 def vasp_input_file_names(dir, configname, clex, calc_subdir="", is_neb=False):
@@ -211,8 +214,8 @@ def read_properties(filename):
     required = ["atom_type", "atoms_per_type", "coord_mode", "relaxed_basis", "relaxed_energy", "relaxed_forces", "relaxed_lattice"]
     optional = ["relaxed_magmom", "relaxed_mag_basis"]
 
-    with open(filename, 'r') as myfile:
-        properties = json.load(myfile)
+    with open(filename, 'rb') as myfile:
+        properties = json.loads(myfile.read().decode('utf-8'))
 
     for key in required:
         if not key in properties:

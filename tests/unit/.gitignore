@@ -1,1 +1,4 @@
 current_test_results.json
+run_test_*
+*.trs
+test_projects

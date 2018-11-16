@@ -29,6 +29,7 @@ namespace CASM {
       EnumInterface<ConfigEnumStrain>(),
       EnumInterface<ConfigEnumNormalCoords>(),
       EnumInterface<SuperConfigEnum>(),
+      //      EnumInterface<ConfigEnumStrain>(),
       EnumInterface<Kinetics::DiffusionTransformationEnum>(),
       EnumInterface<Kinetics::DiffTransConfigEnumOccPerturbations>(),
       EnumInterface<Kinetics::DiffTransConfigInterpolation>(),

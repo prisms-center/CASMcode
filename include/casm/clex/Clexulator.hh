@@ -433,11 +433,17 @@ namespace CASM {
                std::string so_options) {
 
       // Construct the RuntimeLibrary that will store the loaded clexulator library
-      m_lib = std::make_shared<RuntimeLibrary>(
-                (dirpath / name).string(),
-                compile_options,
-                so_options,
-                "compile time depends on how many basis functions are included");
+      try {
+        m_lib = std::make_shared<RuntimeLibrary>(
+                  (dirpath / name).string(),
+                  compile_options,
+                  so_options,
+                  "compile time depends on how many basis functions are included");
+      }
+      catch(std::exception &e) {
+        logging.log() << "Clexulator construction failed: could not construct runtime library." << std::endl;
+        throw;
+      }
 
       // Get the Clexulator factory function
       std::function<Clexulator_impl::Base* (void)> factory;
@@ -768,4 +774,3 @@ namespace CASM {
 }
 
 #endif
-

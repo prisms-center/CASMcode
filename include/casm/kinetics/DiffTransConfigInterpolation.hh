@@ -31,7 +31,7 @@ namespace CASM {
     public:
 
       /// \brief Construct with a Diffusion configuration , n_images and calctype
-      DiffTransConfigInterpolation(const DiffTransConfiguration &_diff_trans_config, const int n_images, std::string calctype = "");
+      DiffTransConfigInterpolation(const DiffTransConfiguration &_diff_trans_config, const int n_images, std::string calctype = "", bool override_mirrors = false);
 
       /// \brief Construct with  from and to configurations and n_images
       DiffTransConfigInterpolation(const DiffusionTransformation &diff_trans, const Configuration from_config, const Configuration to_config,

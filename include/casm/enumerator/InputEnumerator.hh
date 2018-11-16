@@ -31,8 +31,6 @@ namespace CASM {
     InputEnumIteratorBase(InputEnumeratorBase<ValueType, IsConst> &enumerator, bool is_end) :
       ValEnumIterator<ValueType, IsConst>(enumerator), m_constructed_as_end(is_end) {}
 
-    virtual ~InputEnumIteratorBase() {}
-
 
     using EnumIteratorBase::source;
     using EnumIteratorBase::name;
@@ -303,12 +301,12 @@ namespace CASM {
     }
 
     jsonParser source(step_type step) const {
-      ptr->source(step);
+      return ptr->source(step);
     }
 
     /// Derived enumerators must implement name
     std::string name() const {
-      ptr->name();
+      return ptr->name();
     }
 
     /// Access the current ObjectType by reference

@@ -4,8 +4,50 @@
 #include <iostream>
 #include <vector>
 #include <boost/chrono.hpp>
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
+
+  class Log;
+  struct LogText;
+  struct LogParagraph;
+  struct LogVerbatim;
+
+  enum class JustificationType {
+    Left, Right, Center, Full
+  };
+
+  struct LogText : public notstd::Cloneable {
+
+    ABSTRACT_CLONEABLE(LogText)
+
+    explicit LogText(std::string _text) : text(_text) {}
+
+    std::string text;
+
+    virtual void print(Log &log) const = 0;
+  };
+
+  struct LogParagraph : public LogText {
+
+    CLONEABLE(LogParagraph)
+
+    explicit LogParagraph(std::string _text) : LogText(_text) {}
+
+    virtual void print(Log &log) const override;
+  };
+
+  struct LogVerbatim : public LogText {
+
+    CLONEABLE(LogVerbatim)
+
+    explicit LogVerbatim(std::string _text, bool _indent_first_line = true) :
+      LogText(_text), indent_first_line(_indent_first_line) {}
+
+    bool indent_first_line;
+
+    virtual void print(Log &log) const override;
+  };
 
   class Log {
 
@@ -27,6 +69,11 @@ namespace CASM {
     /// - 10: print all standard output
     /// - 100: print all possible output
     Log(std::ostream &_ostream = std::cout, int _verbosity = standard, bool _show_clock = false, int _indent_space = 2);
+
+    // --- List of section types ---
+    // Each adds a header, ends the previous section, and begins a new section
+    // Each section is associated with a verbosity level which must be met or
+    //   exceded in order for the section to be printed to the stream
 
     template<int _required_verbosity = standard>
     void calculate(const std::string &what) {
@@ -98,7 +145,7 @@ namespace CASM {
       static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
       m_print = (m_verbosity >= _required_verbosity);
       if(_print()) {
-        *m_stream << "-- " << what << " -- ";
+        *m_stream << indent_str() << "-- " << what << " -- ";
         _add_time();
         *m_stream << std::endl;
       }
@@ -109,6 +156,50 @@ namespace CASM {
       _add<_required_verbosity>(type, what);
     }
 
+    /// \brief Begin a section, without header
+    template<int _required_verbosity = standard>
+    void begin_section() {
+      m_required_verbosity.push_back(_required_verbosity);
+      m_print = (m_verbosity >= m_required_verbosity.back());
+    }
+
+    /// \brief Create a subsection
+    ///
+    /// - Note creates a subsection, but remembers the previous section, so that
+    ///   when 'end_section' is called the previous section's verbosity level
+    ///   becomes active again.
+    ///
+    /// Example:
+    /// \code
+    /// log.begin("Section A");
+    /// log << stuff << std::endl;
+    /// log << std::endl;
+    ///
+    /// log.increase_indent();
+    /// log.subsection().begin("Section A.1");
+    /// log << indent_str() << subsection_stuff << std::endl;
+    /// log << std::endl;
+    /// log.end_section();
+    /// log.decrease_indent();
+    ///
+    /// log << "continue in section A" << std::endl;
+    /// log << std::endl;
+    /// \endcode
+    ///
+    Log &subsection() {
+      begin_section<none>();
+      return *this;
+    }
+
+    /// \brief End a section
+    void end_section() {
+      if(m_required_verbosity.size()) {
+        m_required_verbosity.pop_back();
+      }
+    }
+
+    // --- Timing ---
+    // Enables timing by section
 
     void restart_clock();
 
@@ -124,6 +215,8 @@ namespace CASM {
     double lap_time() const;
 
 
+    // --- Verbosity ---
+
     int verbosity() const;
 
     void set_verbosity(int _verbosity);
@@ -136,8 +229,41 @@ namespace CASM {
     }
 
 
-    void reset(std::ostream &_ostream = std::cout, int _verbosity = standard, bool _show_clock = false);
+    void reset(std::ostream &_ostream = std::cout);
 
+
+    // --- Paragraph printing ---
+
+    void set_width(int width) {
+      m_paragraph_width = width;
+    }
+
+    int width() const {
+      return m_paragraph_width;
+    }
+
+    void set_justification(JustificationType justification) {
+      m_justification = justification;
+    }
+
+    JustificationType justification() {
+      return m_justification;
+    }
+
+
+    Log &paragraph(std::string text);
+
+    Log &verbatim(std::string text, bool indent_first_line = true);
+
+
+    // --- List printing
+
+    /// \brief Print a list
+    template<typename OutputIterator>
+    Log &verbatim_list(OutputIterator begin, OutputIterator end, std::string sep = "- ");
+
+
+    // --- Stream operations ---
 
     template<typename T>
     friend Log &operator<<(Log &log, const T &msg_details);
@@ -150,21 +276,22 @@ namespace CASM {
       return *m_stream;
     }
 
+    bool print() const;
+
     explicit operator bool () {
       return m_print;
     }
 
-    static std::string invalid_verbosity_msg(std::string s);
 
-    /// \brief Read verbosity level from a string
-    static std::pair<bool, int> verbosity_level(std::string s);
+    // --- Indentation ---
+    // Indentation is not coupled to sectioning
 
     int indent_space() const {
       return m_indent_space;
     }
 
     std::string indent_str() const {
-      return std::string(m_indent_space * m_indent_level, ' ');
+      return std::string(m_indent_space * m_indent_level + m_indent_spaces, ' ');
     }
 
     void increase_indent() {
@@ -175,12 +302,35 @@ namespace CASM {
       if(m_indent_level > 0) {
         m_indent_level--;
       }
-      if(m_required_verbosity.size()) {
-        m_required_verbosity.pop_back();
-      }
     }
 
-    bool print() const;
+    void increase_indent_spaces(int n) {
+      m_indent_spaces += n;
+    }
+
+    void decrease_indent_spaces(int n) {
+      m_indent_spaces -= n;
+    }
+
+    Log &indent() {
+      *m_stream << indent_str();
+      return *this;
+    }
+
+    /// Same as verbatim, but uses stringstream to convert to string first
+    template<typename T>
+    Log &indent(const T &t) {
+      std::stringstream ss;
+      ss << t;
+      return verbatim(ss.str());
+    }
+
+
+
+    static std::string invalid_verbosity_msg(std::string s);
+
+    /// \brief Read verbosity level from a string
+    static std::pair<bool, int> verbosity_level(std::string s);
 
 
   private:
@@ -188,17 +338,21 @@ namespace CASM {
     template<int _required_verbosity = standard>
     void _add(const std::string &type, const std::string &what) {
       static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
-      if(m_required_verbosity.size()) {
-        m_required_verbosity.pop_back();
-      }
-      m_required_verbosity.push_back(_required_verbosity);
-      m_print = (m_verbosity >= m_required_verbosity.back());
+      end_section();
+      begin_section<_required_verbosity>();
       if(_print()) {
         *m_stream << indent_str() << "-- " << type << ": " << what << " -- ";
         _add_time();
         *m_stream << std::endl;
       }
     }
+
+    void _print_justified_line(std::vector<std::string> &line, int curr_width);
+    void _print_left_justified_line(std::vector<std::string> &line, int curr_width);
+    void _print_right_justified_line(std::vector<std::string> &line, int curr_width);
+    void _print_center_justified_line(std::vector<std::string> &line, int curr_width);
+    void _print_full_justified_line(std::vector<std::string> &line, int curr_width);
+
 
     void _add_time();
 
@@ -214,8 +368,14 @@ namespace CASM {
 
     bool m_show_clock;
 
+    /// indent_str = m_indent_space*m_indent_level + m_indent_spaces
     int m_indent_space;
     int m_indent_level;
+    int m_indent_spaces;
+
+    // for paragraph writing
+    int m_paragraph_width;
+    JustificationType m_justification;
 
     boost::chrono::steady_clock::time_point m_start_time;
 
@@ -224,6 +384,37 @@ namespace CASM {
     std::ostream *m_stream;
 
   };
+
+  /// \brief Print a list
+  ///
+  /// - Prints each element in vector to a stringstream, then uses Log::verbatim
+  ///   to print into the list.
+  /// - Indentation is set to the length of the "sep" string
+  ///
+  /// Example, with initial indent of 2 spaces, and sep="-- ":
+  /// \code
+  /// A list:
+  ///   -- first value
+  ///   -- some value
+  ///      that prints
+  ///      on multiple lines
+  ///   -- last value
+  /// \endcode
+  template<typename OutputIterator>
+  Log &Log::verbatim_list(OutputIterator begin, OutputIterator end, std::string sep) {
+
+    int n_indent_spaces = sep.size();
+
+    bool indent_first_line = false;
+    for(auto it = begin; it != end; ++it) {
+      indent() << sep;
+      std::stringstream ss;
+      ss << *it;
+      increase_indent_spaces(n_indent_spaces);
+      verbatim(ss.str(), indent_first_line);
+      decrease_indent_spaces(n_indent_spaces);
+    }
+  }
 
   template<typename T>
   Log &operator<<(Log &log, const T &msg_details) {

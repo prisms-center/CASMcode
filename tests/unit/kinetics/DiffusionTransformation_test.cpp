@@ -14,6 +14,7 @@
 #include "casm/app/enum.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/casm_io/jsonFile.hh"
+#include "casm/casm_io/stream_io/container.hh"
 
 using namespace CASM;
 using namespace test;
@@ -383,7 +384,7 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, default_log());
+  PrimClex primclex(proj.dir, null_log());
 
   {
     DiffTransEnumParserPtr parser(primclex, std::string(R"({
@@ -402,10 +403,53 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
     BOOST_CHECK_EQUAL(almost_equal(parser->cspecs().orbit_branch_specs().max_length(3), 3.), true);
     BOOST_CHECK_EQUAL(parser->cspecs().orbit_specs().custom_generators.elements.size(), 0);
     BOOST_CHECK_EQUAL(parser->dry_run(), false);
-    BOOST_CHECK_EQUAL(parser->coord_mode(), FRAC);
-    BOOST_CHECK_EQUAL(parser->orbit_print_mode(), ORBIT_PRINT_MODE::PROTO);
+    BOOST_CHECK_EQUAL(parser->coord_type(), FRAC);
+    BOOST_CHECK_EQUAL(parser->orbit_printer_opt().orbit_print_mode, ORBIT_PRINT_MODE::PROTO);
     BOOST_CHECK_EQUAL(parser->required_species().size(), 0);
     BOOST_CHECK_EQUAL(parser->excluded_species().size(), 0);
+
+    primclex.log() << parser->report() << std::endl;
+  }
+
+  // missing cspecs
+  {
+    DiffTransEnumParserPtr parser(primclex, std::string(R"({
+        "require": ["C"],
+        "exclude": ["A", "B"],
+        "dry_run": true
+      })"));
+    BOOST_CHECK_EQUAL(parser->valid(), false);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 1);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->cspecs().exists(), false);
+    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+    BOOST_CHECK_EQUAL(parser->coord_type(), FRAC);
+    BOOST_CHECK_EQUAL(parser->orbit_printer_opt().orbit_print_mode, ORBIT_PRINT_MODE::PROTO);
+    BOOST_CHECK_EQUAL(parser->required_species().size(), 1);
+    BOOST_CHECK_EQUAL(parser->excluded_species().size(), 2);
+
+    primclex.log() << parser->report() << std::endl;
+  }
+
+  // missing cspecs data
+  {
+    DiffTransEnumParserPtr parser(primclex, std::string(R"({
+        "cspecs" : {},
+        "require": ["C"],
+        "exclude": ["A", "B"],
+        "dry_run": true
+      })"));
+    BOOST_CHECK_EQUAL(parser->valid(), false);
+    BOOST_CHECK_EQUAL(parser->all_errors().size(), 1);
+    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
+    BOOST_CHECK_EQUAL(parser->cspecs().exists(), true);
+    BOOST_CHECK_EQUAL(parser->cspecs().orbit_branch_specs().exists(), false);
+    BOOST_CHECK_EQUAL(parser->cspecs().orbit_specs().exists(), false);
+    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+    BOOST_CHECK_EQUAL(parser->coord_type(), FRAC);
+    BOOST_CHECK_EQUAL(parser->orbit_printer_opt().orbit_print_mode, ORBIT_PRINT_MODE::PROTO);
+    BOOST_CHECK_EQUAL(parser->required_species().size(), 1);
+    BOOST_CHECK_EQUAL(parser->excluded_species().size(), 2);
 
     primclex.log() << parser->report() << std::endl;
   }
@@ -521,16 +565,60 @@ BOOST_AUTO_TEST_CASE(EnumTest1) {
   proj.check_init();
   proj.check_composition();
 
-  default_log().set_verbosity(Log::verbose);
-  PrimClex primclex(proj.dir, default_log());
+  auto &log = default_log();
+  log.set_verbosity(Log::verbose);
+  PrimClex primclex(proj.dir, log);
+
+  log.custom("Prim");
+  jsonParser tjson;
+  write_prim(primclex.prim(), tjson, FRAC);
+  log << tjson << std::endl << std::endl;
+  write_prim(primclex.prim(), tjson, CART);
+  log << tjson << std::endl;
+
+  SymInfoOptions opt;
+
+  opt.coord_type = FRAC;
+  log.custom("Prim factor group (FRAC)");
+  description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
+
+  opt.coord_type = CART;
+  log.custom("Prim factor group (CART)");
+  description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
+
+  opt.prec = 5;
+  opt.coord_type = FRAC;
+  log.custom("Prim factor group (brief FRAC)");
+  brief_description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
+
+  opt.coord_type = CART;
+  log.custom("Prim factor group (brief CART)");
+  brief_description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
+
+  log.custom(Kinetics::DiffusionTransformationEnum::enumerator_name + " interface help");
+  log << Kinetics::DiffusionTransformationEnum::interface_help() << std::endl;
+
+  log.custom("OrbitPrinterOptionsParser standard help");
+  log << OrbitPrinterOptionsParser::standard_help() << std::endl;
+
+  log.custom("SymInfoOptionsParser interface help");
+  log << SymInfoOptionsParser::standard_help() << std::endl;
+
 
   jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
-  diff_trans_json["coordinate_mode"] = std::string("FRAC");
+  diff_trans_json["dry_run"] = true;
+  diff_trans_json["coordinate_mode"] = std::string("CART");
+  diff_trans_json["orbit_printer_opt"]["print_invariant_grp"] = true;
+  std::cout << "\ndiff_trans_json:\n" << diff_trans_json << std::endl;
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
-  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
-  BOOST_CHECK_EQUAL(success, 1);
+  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 123);
+  BOOST_CHECK_EQUAL(success, 0);
 }
 
 BOOST_AUTO_TEST_CASE(EnumTest2) {
@@ -539,11 +627,48 @@ BOOST_AUTO_TEST_CASE(EnumTest2) {
   proj.check_init();
   proj.check_composition();
 
-  default_log().set_verbosity(Log::verbose);
-  PrimClex primclex(proj.dir, default_log());
+  auto &log = null_log();
+  log.set_verbosity(Log::verbose);
+  PrimClex primclex(proj.dir, log);
+
+  log.custom("Prim");
+  jsonParser tjson;
+  write_prim(primclex.prim(), tjson, FRAC);
+  log << tjson << std::endl << std::endl;
+  write_prim(primclex.prim(), tjson, CART);
+  log << tjson << std::endl;
+
+  SymInfoOptions opt;
+
+  opt.coord_type = FRAC;
+  log.custom("Prim factor group (FRAC)");
+  description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
+
+  opt.coord_type = CART;
+  log.custom("Prim factor group (CART)");
+  description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
+
+  opt.prec = 5;
+  opt.coord_type = FRAC;
+  log.custom("Prim factor group (brief FRAC)");
+  brief_description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
+
+  opt.coord_type = CART;
+  log.custom("Prim factor group (brief CART)");
+  brief_description(log, primclex.prim().factor_group(), primclex.prim().lattice(), opt);
+  log << std::endl;
+
 
   jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_err_0.json"};
-  diff_trans_json["coordinate_mode"] = std::string("CART");
+  diff_trans_json["coordinate_mode"] = std::string("FRAC");
+  diff_trans_json["orbit_printer_opt"]["orbit_print_mode"] = std::string("FULL");
+  diff_trans_json["orbit_printer_opt"]["print_invariant_grp"] = true;
+  diff_trans_json["orbit_printer_opt"]["print_equivalence_map"] = true;
+  diff_trans_json["orbit_printer_opt"]["sym_info_opt"]["prec"] = 3;
+  diff_trans_json["orbit_printer_opt"]["sym_info_opt"]["print_matrix_tau"] = true;
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);

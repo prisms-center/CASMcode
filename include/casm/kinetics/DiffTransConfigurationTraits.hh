@@ -3,6 +3,7 @@
 
 #include <string>
 
+//Traits Classes are used for conventional naming schemes i.e. how to refer to objects through selection/queries
 namespace CASM {
   template<typename T> struct traits;
   template<typename ConfigType, typename IsEqualImpl> class GenericConfigCompare;

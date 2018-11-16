@@ -377,6 +377,8 @@ class Poscar:
         file.readline()
         file.readline()
         line=file.readline().strip().split()
+        while len(line)==0:
+            line=file.readline().strip().split()
         if not (re.match("CELL_PARAMETERS.*",line[0])):
             file.seek(0)
             line = file.readline().strip()

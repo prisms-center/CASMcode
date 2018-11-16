@@ -17,7 +17,7 @@ namespace CASM {
   class Site;
   class Supercell;
 
-  template<typename OrbitType> class OrbitGenerators;
+  template<typename OrbitType> struct OrbitGenerators;
 
   /** \defgroup IntegralCluster
 

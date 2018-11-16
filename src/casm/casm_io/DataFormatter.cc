@@ -23,7 +23,6 @@ namespace CASM {
                                   std::vector<std::string> &tag_names,
                                   std::vector<std::string> &sub_exprs) {
     std::string::const_iterator it(input_expr.cbegin()), it_end(input_expr.cend()), t_it1, t_it2;
-    bool is_literal = true;
     while(it != it_end) {
       while(it != it_end && (isspace(*it) || boost::is_any_of(",#")(*it)))
         ++it;

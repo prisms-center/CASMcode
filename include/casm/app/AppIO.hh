@@ -11,6 +11,7 @@
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/clusterography/ClusterDecl.hh"
+#include "casm/symmetry/SymInfo.hh"
 
 namespace CASM {
 
@@ -125,19 +126,53 @@ namespace CASM {
   ENUM_IO_DECL(ORBIT_PRINT_MODE)
   ENUM_TRAITS(ORBIT_PRINT_MODE)
 
+  struct OrbitPrinterOptions {
+    int indent_space = 6;
+    char delim = '\n';
+    int prec = 7;
+    COORD_TYPE coord_type = FRAC;
+    ORBIT_PRINT_MODE orbit_print_mode = ORBIT_PRINT_MODE::PROTO;
+    SymInfoOptions sym_info_opt;
+    bool print_coordinates = true;
+    bool print_equivalence_map = false;
+    bool print_invariant_grp = false;
+  };
+
+  jsonParser &to_json(const OrbitPrinterOptions &opt, jsonParser &json);
+
+  /// \brief Read from JSON
+  void from_json(OrbitPrinterOptions &opt, const jsonParser &json);
+
+  template<>
+  struct jsonConstructor<OrbitPrinterOptions> {
+    static OrbitPrinterOptions from_json(const jsonParser &json);
+  };
+
+
   struct PrinterBase {
 
-    const int indent_space;
-    mutable int indent_level;
-    const char delim;
-    COORD_TYPE mode;
+    OrbitPrinterOptions opt;
 
 
-    PrinterBase(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC);
+    PrinterBase(const OrbitPrinterOptions &_opt = OrbitPrinterOptions());
 
-    std::string indent() const;
+    void coord_type(Log &out);
 
-    void coord_mode(Log &out) const;
+    void increase_indent(Log &out) const {
+      out.increase_indent_spaces(opt.indent_space);
+    }
+    void decrease_indent(Log &out) const {
+      out.decrease_indent_spaces(opt.indent_space);
+    }
+
+    template<typename OrbitType>
+    void print_equivalence_map(const OrbitType &orbit, Index equiv_index, Log &out) const;
+
+    template<typename OrbitType>
+    void print_equivalence_map(const OrbitType &orbit, Log &out) const;
+
+    template<typename OrbitType, typename Element>
+    void print_invariant_group(const OrbitType &orbit, const Element &element, Log &out) const;
 
   };
 
@@ -146,11 +181,11 @@ namespace CASM {
 
     typedef _Element Element;
 
-    Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
-      PrinterBase(_indent_space, _delim, _mode) {}
+    Printer(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
+      PrinterBase(_opt) {}
 
     void print(const Element &element, Log &out) const {
-      COORD_MODE printer_mode(mode);
+      COORD_MODE printer_mode(opt.coord_type);
       out << element;
     }
   };
@@ -161,11 +196,10 @@ namespace CASM {
     typedef IntegralCluster Element;
     static const std::string element_name;
 
-    Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
-      PrinterBase(_indent_space, _delim, _mode) {}
+    Printer(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
+      PrinterBase(_opt) {}
 
     void print(const Element &element, Log &out) const;
-
   };
 
   typedef Printer<IntegralCluster> SitesPrinter;
@@ -177,34 +211,18 @@ namespace CASM {
   template<typename _Element>
   struct OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO> : public Printer<_Element> {
 
-    using Printer<_Element>::indent_level;
-    using Printer<_Element>::indent;
     using Printer<_Element>::element_name;
     using Printer<_Element>::print;
 
-    OrbitPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
-      Printer<_Element>(_indent_space, _delim, _mode) {}
+    OrbitPrinter(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
+      Printer<_Element>(_opt) {}
 
 
     template<typename OrbitType>
-    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const {
-      out << out.indent_str() << indent() << "Prototype" << " of " << orbit.size()
-          << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
-      indent_level++;
-      print(orbit.prototype(), out);
-      indent_level--;
-    }
+    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const;
 
-    /// \brief Print to JSON
-    ///
-    /// Note: for 'read_clust' to work, "prototype" must be written
     template<typename OrbitType>
-    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const {
-      json.put_obj();
-      json["prototype"] = orbit.prototype();
-      json["linear_orbit_index"] = orbit_index;
-      return json;
-    }
+    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const;
   };
 
   template<typename _Element>
@@ -216,37 +234,18 @@ namespace CASM {
   template<typename _Element>
   struct OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL> : public Printer<_Element> {
 
-    using Printer<_Element>::indent_level;
-    using Printer<_Element>::indent;
     using Printer<_Element>::element_name;
     using Printer<_Element>::print;
 
-    OrbitPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
-      Printer<_Element>(_indent_space, _delim, _mode) {}
+    OrbitPrinter(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
+      Printer<_Element>(_opt) {}
 
 
     template<typename OrbitType>
-    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const {
-      for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
-        out << out.indent_str() << indent() << equiv_index << " of " << orbit.size()
-            << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
-        indent_level++;
-        print(orbit[equiv_index], out);
-        indent_level--;
-      }
-    }
+    void operator()(const OrbitType &orbit, Log &out, Index orbit_index, Index Norbits) const;
 
-    /// \brief Print to JSON
-    ///
-    /// Note: for 'read_clust' to work, "prototype" must be written
     template<typename OrbitType>
-    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const {
-      json.put_obj();
-      json["prototype"] = orbit.prototype();
-      json["elements"].put_array(orbit.begin(), orbit.end());
-      json["linear_orbit_index"] = orbit_index;
-      return json;
-    }
+    jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const;
   };
 
   template<typename _Element>
@@ -261,7 +260,7 @@ namespace CASM {
 
     std::vector<SubExpressionLabeler> labelers;
 
-    ProtoFuncsPrinter(ClexBasis const &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC);
+    ProtoFuncsPrinter(ClexBasis const &_clex_basis, OrbitPrinterOptions const &_opt = OrbitPrinterOptions());
 
     /// \brief Print to JSON
     ///
@@ -290,10 +289,16 @@ namespace CASM {
     ClusterOrbitIterator begin,
     ClusterOrbitIterator end,
     Log &out,
-    ORBIT_PRINT_MODE _orbit_print_mode,
-    COORD_TYPE _coord_mode,
-    int _indent_space = 6,
-    char _delim = '\n');
+    const OrbitPrinterOptions &opt = OrbitPrinterOptions());
+
+  // /// \brief Print site basis functions, as for 'casm bset --functions'
+  // template<typename ClusterOrbitIterator>
+  // void print_site_basis_funcs(
+  //   ClusterOrbitIterator begin,
+  //   ClusterOrbitIterator end,
+  //   const ClexBasis &clex_basis,
+  //   Log &out,
+  //   COORD_TYPE mode);
 
   /// \brief Print site basis functions, as for 'casm bset --functions'
   void print_site_basis_funcs(

@@ -1,6 +1,7 @@
 #include "casm/container/Permutation.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/stream_io/container.hh"
 
 namespace CASM {
 
@@ -126,7 +127,7 @@ namespace CASM {
 
     // Equivalent to Permutation(trans_perm*(*this)*trans_perm.inverse());
     // There's probably a faster element-wise implementation, but it would be confusing
-    return Permutation(std::move(trans_perm.permute(permute(trans_perm.inverse().m_perm_array))));
+    return Permutation(trans_perm.permute(permute(trans_perm.inverse().m_perm_array)));
   }
 
   //**************************************************************
@@ -192,4 +193,3 @@ namespace CASM {
     }
   }
 }
-

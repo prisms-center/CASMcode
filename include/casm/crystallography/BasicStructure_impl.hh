@@ -201,6 +201,7 @@ namespace CASM {
             if(b2 == trans_basis.size()) {
               break;
             }
+
           }
           std::set<Index> unique_mappings;
           for(auto &e : mappings)
@@ -211,9 +212,7 @@ namespace CASM {
             Coordinate center_of_mass(lattice());
             for(Index b = 0; b < basis().size(); b++) {
               //for each basis site loop through all trans_basis to find the closest one
-              double smallest = 1000000;
               Coordinate tshift(lattice());
-              double dist = trans_basis[mappings[b]].min_dist(basis()[b] - t_tau, tshift);
               //in tshift is stored trans_basis - basis
               tshift.cart() *= (1.0 / basis().size());
               center_of_mass += tshift;
@@ -843,16 +842,22 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::print_xyz(std::ostream &stream) const {
+  void BasicStructure<CoordType>::print_xyz(std::ostream &stream, bool frac) const {
     stream << basis().size() << '\n';
     stream << title() << '\n';
     stream.precision(7);
     stream.width(11);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-
+    stream << "      a       b       c" << '\n';
+    stream << lattice().lat_column_mat() << '\n';
     for(Index i = 0; i < basis().size(); i++) {
-      stream << std::setw(2) << m_basis[i].occ_name() << " ";
-      stream << std::setw(12) << m_basis[i].cart() << '\n';
+      stream << std::setw(2) << basis()[i].occ_name() << " ";
+      if(frac) {
+        stream << std::setw(12) << basis()[i].frac().transpose() << '\n';
+      }
+      else {
+        stream << std::setw(12) << basis()[i].cart() << '\n';
+      }
     }
 
   }

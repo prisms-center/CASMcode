@@ -9,6 +9,8 @@
 
 namespace CASM {
 
+  class Log;
+
   /** \defgroup Symmetry
    *  \brief Relates to symmetry operations and groups
    */
@@ -214,6 +216,9 @@ namespace CASM {
 
   //std::istream& operator>> (std::istream &stream, SymOp &op){op.read(stream); return stream;};
   //std::ostream& operator<< (std::ostream &stream, SymOp &op){op.print(stream); return stream;};
+
+  /// \brief Print formatted SymOp matrix and tau
+  void print_matrix_tau_col(Log &log, const SymOp &op, Index prec);
 
   /** @}*/
 

@@ -10,6 +10,7 @@
 #include "casm/container/multivector.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include "casm/symmetry/SymOp.hh"
+#include "casm/symmetry/SymGroup.hh"
 #include "casm/database/Named.hh"
 #include "casm/clex/HasPrimClex.hh"
 
@@ -27,6 +28,14 @@ namespace CASM {
   /// Element and orbit comparison is done via a SymCompareType functor, which
   /// includes any necessary tolerance for floating point comparison. See `SymCompare`
   /// for how to implement the necessary methods.
+  ///
+  /// The following relationships will be valid:
+  ///    element(i) = copy_apply(equivalence_map()[i][j], prototype()), for all j < equivalence_map()[i].size()
+  ///    equivalence_map()[i][j] = t * g;
+  ///      where g is a generating group element,
+  ///      and t is the "spatial_transform" defined by the SymCompareType for equivalent elements such that:
+  ///    sym_compare.representation_prepare(element(i)) ==
+  ///      copy_apply(t, sym_compare.representation_prepare(copy_apply(g, prototype)))
   ///
   /// \ingroup Clusterography
   ///
@@ -73,16 +82,22 @@ namespace CASM {
     }
 
     /// \brief Return Element at index, without bounds checking
+    ///
+    /// - May not be prepared
     const Element &operator[](size_type index) const {
       return element(index);
     }
 
     /// \brief Equivalent to operator[](size_type index) const
+    ///
+    /// - May not be prepared
     const Element &element(size_type index) const {
       return m_element[index];
     }
 
     /// \brief const Access vector of Element
+    ///
+    /// - May not be prepared
     const std::vector<Element> &elements() const {
       return m_element;
     }
@@ -128,6 +143,11 @@ namespace CASM {
       return this->find(e) != end();
     }
 
+    /// \brief Return the generating SymGroup
+    const SymGroup &generating_group() const {
+      return m_generating_group;
+    }
+
     /// \brief Return the SymCompare functor reference
     ///
     /// - implements symmetry properties of this orbit
@@ -153,11 +173,15 @@ namespace CASM {
                     SymOpIterator begin,
                     SymOpIterator end);
 
-    /// \brief All symmetrically equivalent elements (excluding translations)
+    /// \brief All symmetrically equivalent elements (excluding those that SymCompare equivalent)
+    ///
     std::vector<Element> m_element;
 
     /// \brief element(i) compares equivalent to prototype().copy_apply(m_equivalence_map[i][j]) for all j
     multivector<SymOp>::X<2> m_equivalence_map;
+
+    /// \brief Group used to generate the orbit
+    SymGroup m_generating_group;
 
     /// \brief ID of symmetry representation that describes the effect of each SymOp with respect to the canonical equivalent
     mutable SymGroupRepID m_canonization_rep_ID;

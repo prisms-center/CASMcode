@@ -48,6 +48,10 @@ namespace CASM {
     _init();
   }
 
+  std::string ScelEnumByName::name() const {
+    return ScelEnumByName::enumerator_name;
+  }
+
   /// Random access implementation
   const Supercell *ScelEnumByName::at_step(step_type n) {
     return m_scelptr[n];
@@ -77,7 +81,6 @@ namespace CASM {
   ScelEnumByProps::ScelEnumByProps(const PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only) :
     m_primclex(&primclex),
     m_existing_only(existing_only) {
-
     m_lattice_enum.reset(new SupercellEnumerator<Lattice>(
                            m_primclex->prim().lattice(),
                            m_primclex->prim().factor_group(),
@@ -122,6 +125,10 @@ namespace CASM {
   ScelEnumByProps::ScelEnumByProps(const PrimClex &primclex, const jsonParser &input) :
     ScelEnumByProps(primclex, make_scel_enum_props(primclex, input), _get_else(input, "existing_only", false)) {}
 
+  std::string ScelEnumByProps::name() const {
+    return ScelEnumByProps::enumerator_name;
+  }
+
   /// Implements increment over supercells
   void ScelEnumByProps::increment() {
     ++m_lat_it;
@@ -132,6 +139,7 @@ namespace CASM {
 
     if(m_lat_it != m_lat_end) {
       Supercell scel(m_primclex, *m_lat_it);
+      assert(scel.is_canonical());
       this->_set_current_ptr(&*scel.insert().first);
       this->_increment_step();
     }
@@ -147,6 +155,10 @@ namespace CASM {
       return m_primclex->db<Supercell>().find(name) != m_primclex->db<Supercell>().end();
     }
     return true;
+  }
+
+  std::string ScelEnum::name() const {
+    return ScelEnum::enumerator_name;
   }
 
   /// \relates ::ScelEnumT

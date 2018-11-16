@@ -54,7 +54,8 @@ namespace CASM {
   /// \brief Equivalent to std::distance(begin, std::find_if_not(begin, end, q))
   template<typename Iterator, typename UnaryPredicate>
   Index find_index_if_not(Iterator begin, Iterator end, UnaryPredicate q) {
-    std::distance(begin, std::find_if_not(begin, end, q));
+    //Please use -Werror=return-type in your compiler flags
+    return std::distance(begin, std::find_if_not(begin, end, q));
   }
 
 

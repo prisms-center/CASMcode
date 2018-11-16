@@ -34,8 +34,8 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     
     # read basis.json
     filename = dir.basis(clex)
-    with open(filename, 'r') as f:
-        j = json.load(f)
+    with open(filename, 'rb') as f:
+        j = json.loads(f.read().decode('utf-8'))
     #print(json.dumps(j, indent=2))
     
     # edit to add fitting settings

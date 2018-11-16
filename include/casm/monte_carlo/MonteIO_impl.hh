@@ -26,7 +26,6 @@ namespace CASM {
     /// \brief Print Beta for any class MonteType with valid 'double MonteType::conditions().beta()'
     template<typename MonteType>
     GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloBetaFormatter() {
-      typedef const MonteType *ConstMonteTypePtr;
       auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
         ConstMonteCarloPtr ptr = mc;
         return static_cast<const MonteType *>(ptr)->conditions().beta();
@@ -37,7 +36,6 @@ namespace CASM {
     /// \brief Print param_chem_pot(x) for any class MonteType with valid 'double MonteType::conditions().param_chem_pot()(index)'
     template<typename MonteType>
     GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloParamChemPotFormatter(const MonteType &mc, int index) {
-      typedef const MonteType *ConstMonteTypePtr;
       auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
         ConstMonteCarloPtr ptr = mc;
         return static_cast<const MonteType *>(ptr)->conditions().param_chem_pot()(index);
@@ -49,7 +47,6 @@ namespace CASM {
     /// \brief Print chem_pot(N) for any class MonteType with valid 'double MonteType::conditions().chem_pot(index)'
     template<typename MonteType>
     GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloChemPotFormatter(const MonteType &mc, int index) {
-      typedef const MonteType *ConstMonteTypePtr;
       auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
         ConstMonteCarloPtr ptr = mc;
         return static_cast<const MonteType *>(ptr)->conditions().chem_pot(index);
@@ -61,7 +58,6 @@ namespace CASM {
     /// \brief Print comp(x) for any class MonteType with valid 'double MonteType::conditions().param_composition()(index)'
     template<typename MonteType>
     GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloCompFormatter(const MonteType &mc, int index) {
-      typedef const MonteType *ConstMonteTypePtr;
       auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
         ConstMonteCarloPtr ptr = mc;
         return static_cast<const MonteType *>(ptr)->conditions().param_composition()(index);
@@ -73,7 +69,6 @@ namespace CASM {
     /// \brief Print comp(x) for any class MonteType with valid 'double MonteType::conditions().mol_composition()(index)'
     template<typename MonteType>
     GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloCompNFormatter(const MonteType &mc, int index) {
-      typedef const MonteType *ConstMonteTypePtr;
       auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
         ConstMonteCarloPtr ptr = mc;
         return static_cast<const MonteType *>(ptr)->conditions().mol_composition()(index);
@@ -85,7 +80,6 @@ namespace CASM {
     /// \brief Print site_frac(x) for any class MonteType with valid 'Eigen::VectorXd MonteType::comp_n'
     template<typename MonteType>
     GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloSiteFracFormatter(const MonteType &mc, int index) {
-      typedef const MonteType *ConstMonteTypePtr;
       auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
         const MonteType *mc_ptr = static_cast<const MonteType *>(mc);
         Eigen::VectorXd comp_n = mc_ptr->comp_n();
@@ -99,7 +93,6 @@ namespace CASM {
     /// \brief Print atom_frac(X) for any class MonteType with valid 'Eigen::VectorXd MonteType::comp_n'
     template<typename MonteType>
     GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloAtomFracFormatter(const MonteType &mc, int index) {
-      typedef const MonteType *ConstMonteTypePtr;
       auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
         const MonteType *mc_ptr = static_cast<const MonteType *>(mc);
         Eigen::VectorXd comp_n = mc_ptr->comp_n();

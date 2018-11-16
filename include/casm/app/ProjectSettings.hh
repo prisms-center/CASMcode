@@ -181,6 +181,9 @@ namespace CASM {
     /// \brief Create new symmetry directory
     bool new_symmetry_dir() const;
 
+    /// \brief Create new reports directory
+    bool new_reports_dir() const;
+
     /// \brief Add a basis set directory
     bool new_bset_dir(std::string bset) const;
 
@@ -271,6 +274,9 @@ namespace CASM {
 
     /// \brief Output as JSON
     jsonParser &to_json(jsonParser &json) const;
+
+    /// \brief Print summary of compiler settings, as for 'casm settings -l'
+    void print_compiler_settings_summary(Log &log) const;
 
     /// \brief Print summary of ProjectSettings, as for 'casm settings -l'
     void print_summary(Log &log) const;

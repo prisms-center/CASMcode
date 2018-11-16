@@ -10,7 +10,6 @@ namespace CASM {
     {COORD_TYPE::FRAC, {"FRAC", "Direct", "direct", "Fractional", "fractional"} },
     {COORD_TYPE::CART, {"CART", "Cartesian", "cartesian"} },
     {COORD_TYPE::INTEGRAL, {"INTEGRAL", "Integral", "integral"} }
-    //,{COORD_TYPE::COORD_DEFAULT, {"DEFAULT", "Default", "default", ""} }
   };
 
   ENUM_IO_DEF(COORD_TYPE)
@@ -21,9 +20,7 @@ namespace CASM {
   /// Excludes PERIODICITY_DEFAULT, which isn't used for IO
   const std::multimap<PERIODICITY_TYPE, std::vector<std::string> > traits<PERIODICITY_TYPE>::strval = {
     {PERIODICITY_TYPE::PERIODIC, {"PERIODIC"} },
-    {PERIODICITY_TYPE::LOCAL, {"LOCAL"} },
-    {PERIODICITY_TYPE::APERIODIC, {"APERIODIC"} }
-    //,{PERIODICITY_TYPE::PERIODICITY_DEFAULT, {"DEFAULT", ""} }
+    {PERIODICITY_TYPE::APERIODIC, {"APERIODIC", "LOCAL"} }
   };
 
   ENUM_IO_DEF(PERIODICITY_TYPE)

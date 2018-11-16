@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  class CommandArgs;
+  struct CommandArgs;
 
   int files_command(const CommandArgs &args);
 

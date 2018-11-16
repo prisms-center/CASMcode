@@ -39,4 +39,5 @@ namespace CASM {
       throw e;
     }
   };
+
 }

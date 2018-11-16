@@ -293,7 +293,7 @@ namespace CASM {
       InputEnumeratorBase<ValueType, IsConst>(),
       m_size(size) {}
 
-    ~RandomAccessEnumeratorBase() {}
+    virtual ~RandomAccessEnumeratorBase() {}
 
 
     using InputEnumeratorBase<ValueType, IsConst>::step;
@@ -458,12 +458,12 @@ namespace CASM {
     }
 
     jsonParser source(step_type step) const {
-      ptr->source(step);
+      return ptr->source(step);
     }
 
     /// Derived enumerators must implement name
     std::string name() const {
-      ptr->name();
+      return ptr->name();
     }
 
     std::unique_ptr<RandomAccessEnumeratorBase<ValueType, IsConst> > ptr;

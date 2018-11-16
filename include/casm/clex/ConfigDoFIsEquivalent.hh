@@ -406,7 +406,6 @@ namespace CASM {
         m_fg_index_B(true),
         m_new_dof_B(*m_values_ptr) {}
 
-
       Global(Configuration const &_config, DoFKey const &_key, double _tol) :
         Global(_config.configdof(), _key, _tol) {}
 

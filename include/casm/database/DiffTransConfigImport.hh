@@ -35,16 +35,12 @@ namespace CASM {
       /// Construct with PrimClex and by moving a ConfigMapper
       StructureMap<Kinetics::DiffTransConfiguration>(
         const PrimClex &_primclex,
-        std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper,
-        bool primitive_only,
-        std::vector<std::string> dof);
+        std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper);
 
       /// Construct with PrimClex and settings (see Import / Update desc)
       StructureMap<Kinetics::DiffTransConfiguration>(
         const PrimClex &_primclex,
-        const jsonParser &kwargs,
-        bool primitive_only,
-        std::vector<std::string> dof);
+        const jsonParser &kwargs);
 
       typedef std::back_insert_iterator<std::vector<ConfigIO::Result> > map_result_inserter;
 
@@ -75,10 +71,8 @@ namespace CASM {
       /// \brief Read BasicStructure<Site> to be imported
       BasicStructure<Site> _make_structure(const fs::path &p) const;
 
-      std::unique_ptr<Kinetics::DiffTransConfigMapper> m_configmapper;
+      std::unique_ptr<Kinetics::DiffTransConfigMapper> m_difftransconfigmapper;
       jsonParser m_used;
-      bool m_primitive_only;
-      std::vector<std::string> m_dof;
     };
 
     /// DiffTransConfiguration-specialized Import

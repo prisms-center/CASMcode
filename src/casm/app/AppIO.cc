@@ -452,19 +452,45 @@ namespace CASM {
 
   ENUM_IO_DEF(ORBIT_PRINT_MODE)
 
-
-  PrinterBase::PrinterBase(int _indent_space, char _delim, COORD_TYPE _mode) :
-    indent_space(_indent_space),
-    indent_level(0),
-    delim(_delim),
-    mode(_mode) {}
-
-  std::string PrinterBase::indent() const {
-    return std::string(indent_space * indent_level, ' ');
+  jsonParser &to_json(const OrbitPrinterOptions &opt, jsonParser &json) {
+    json.put_obj();
+    json["indent_space"] = opt.indent_space;
+    // just keep default delim
+    json["prec"] = opt.prec;
+    json[traits<COORD_TYPE>::name] = opt.coord_type;
+    json[traits<ORBIT_PRINT_MODE>::name] = opt.orbit_print_mode;
+    json["print_coordinates"] = opt.print_coordinates;
+    json["print_equivalence_map"] = opt.print_equivalence_map;
+    json["print_invariant_grp"] = opt.print_invariant_grp;
+    json["sym_info_opt"] = opt.sym_info_opt;
+    return json;
   }
 
-  void PrinterBase::coord_mode(Log &out) const {
-    out << out.indent_str() << "COORD_MODE = " << mode << std::endl << std::endl;
+  /// \brief Read from JSON
+  void from_json(OrbitPrinterOptions &opt, const jsonParser &json) {
+    json.get_if(opt.indent_space, "indent_space");
+    // just keep default delim
+    json.get_if(opt.prec, "prec");
+    json.get_if(opt.coord_type, traits<COORD_TYPE>::name);
+    json.get_if(opt.orbit_print_mode, traits<ORBIT_PRINT_MODE>::name);
+    json.get_if(opt.print_coordinates, "print_coordinates");
+    json.get_if(opt.print_equivalence_map, "print_equivalence_map");
+    json.get_if(opt.print_invariant_grp, "print_invariant_grp");
+    json.get_if(opt.sym_info_opt, "sym_info_opt");
+  }
+
+  OrbitPrinterOptions jsonConstructor<OrbitPrinterOptions>::from_json(const jsonParser &json) {
+    OrbitPrinterOptions res;
+    CASM::from_json(res, json);
+    return res;
+  }
+
+
+  PrinterBase::PrinterBase(const OrbitPrinterOptions &_opt) :
+    opt(_opt) {}
+
+  void PrinterBase::coord_type(Log &out) {
+    out << out.indent_str() << "COORD_MODE = " << opt.coord_type << std::endl << std::endl;
   }
 
 
@@ -474,14 +500,16 @@ namespace CASM {
     if(!out.print()) {
       return;
     }
-    COORD_TYPE _mode = mode;
+
+    COORD_TYPE _mode = this->opt.coord_type;
     if(_mode == COORD_DEFAULT) {
       _mode = COORD_MODE::CHECK();
     }
     COORD_MODE printer_mode(_mode);
     if(_mode != INTEGRAL) {
+
       // calculate nice widths
-      int prec = 7;
+      int prec = this->opt.prec;
       int width = prec;
       Eigen::Vector3d vec;
       out.ostream().precision(prec);
@@ -495,9 +523,9 @@ namespace CASM {
       // calculate nice widths
       Eigen::IOFormat format(prec, width + 1);
       for(const auto &coord : clust) {
-        out << out.indent_str() << indent();
+        out << out.indent_str();
         coord.site().print(out, format);
-        if(delim) out << delim;
+        if(this->opt.delim) out << this->opt.delim;
         out << std::flush;
       }
     }
@@ -513,18 +541,17 @@ namespace CASM {
       // print
       Eigen::IOFormat format(prec, width);
       for(const auto &coord : clust) {
-        out << out.indent_str() << indent();
-        out << coord << " ";
+        out << out.indent_str() << coord << " ";
         coord.site().site_occupant().print(out);
         out << std::flush;
-        if(delim) out << delim;
+        if(this->opt.delim) out << this->opt.delim;
         out << std::flush;
       }
     }
   }
 
-  ProtoFuncsPrinter::ProtoFuncsPrinter(ClexBasis const &_clex_basis, int _indent_space, char _delim, COORD_TYPE _mode) :
-    SitesPrinter(_indent_space, _delim, _mode),
+  ProtoFuncsPrinter::ProtoFuncsPrinter(ClexBasis const &_clex_basis, OrbitPrinterOptions const &_opt) :
+    SitesPrinter(_opt),
     clex_basis(_clex_basis) {
     for(auto const &dofset : clex_basis.site_bases()) {
       for(BasisSet const &bset : dofset.second) {
@@ -701,6 +728,7 @@ namespace CASM {
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,FullSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoFuncsPrinter) \
+  template void print_clust<ITERATOR>(ITERATOR begin, ITERATOR end, Log &out, const OrbitPrinterOptions &opt); \
   template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(\
     INSERTER result,\
     const jsonParser &json,\
@@ -734,4 +762,3 @@ namespace CASM {
 
   DIFFTRANS_VECTOR_INST(PrimPeriodicDiffTransOrbit)
 }
-

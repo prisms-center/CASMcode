@@ -68,6 +68,7 @@ namespace CASM {
 
       try {
         const Configuration &config = *primclex.db<Configuration>().find(configname);
+        (void) config;
       }
       catch(...) {
         primclex.err_log() << "Error using 'casm ref --set --configname': \n"
@@ -108,6 +109,7 @@ namespace CASM {
 
       try {
         const Supercell &scel = *primclex.db<Supercell>().find(scelname);
+        (void) scel;
       }
       catch(...) {
         primclex.err_log() << "Error using 'casm ref --set --scelname': \n"
@@ -497,4 +499,3 @@ namespace CASM {
   }
 
 }
-

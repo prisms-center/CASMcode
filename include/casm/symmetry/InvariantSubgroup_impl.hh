@@ -38,10 +38,15 @@ namespace CASM {
         result.push_back(sym_compare.spatial_transform()*op);
       }
     }
+    if(result[0].index() != 0) {
+      throw std::runtime_error("Error in make_invariant_subgroup (0): First element is not identity.");
+    }
     return result;
   }
 
   /// \brief Construct the subgroup that leaves an element of the orbit unchanged
+  ///
+  /// Does not include translations as determined from 'sym_compare'
   ///
   /// The equivalence map is:
   ///   element(i) compares equivalent to prototype().copy_apply(equivalence_map[i][j]) for all j
@@ -51,12 +56,16 @@ namespace CASM {
   ///
   template<typename OrbitType>
   SymGroup make_invariant_subgroup(const OrbitType &orbit, Index element_index) {
+
     SymGroup result;
     const auto &map = orbit.equivalence_map();
     result.set_lattice(
       map[0][0].master_group().lattice());
     for(Index i = 0; i < orbit.equivalence_map()[0].size(); ++i) {
       result.push_back(map[element_index][0]*map[0][i]*map[element_index][0].inverse());
+    }
+    if(result[0].index() != 0) {
+      throw std::runtime_error("Error in make_invariant_subgroup (1): First element is not identity.");
     }
     return result;
   }
@@ -111,6 +120,9 @@ namespace CASM {
       }
       ++it;
     }
+    if(result[0].sym_op().index() != 0) {
+      throw std::runtime_error("Error in make_invariant_subgroup (2): First element is not identity.");
+    }
     return result;
   }
 
@@ -146,6 +158,9 @@ namespace CASM {
       }
       ++it;
     }
+    if(result[0].sym_op().index() != 0) {
+      throw std::runtime_error("Error in make_invariant_subgroup (3): First element is not identity.");
+    }
     return result;
   }
 
@@ -176,6 +191,9 @@ namespace CASM {
 
     std::vector<PermuteIterator> subgroup;
     std::copy_if(begin, end, std::back_inserter(subgroup), find_fg_op);
+    if(subgroup[0].sym_op().index() != 0) {
+      throw std::runtime_error("Error in make_invariant_subgroup (4): First element is not identity.");
+    }
     return subgroup;
   }
 

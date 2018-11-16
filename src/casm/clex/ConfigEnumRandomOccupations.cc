@@ -111,8 +111,8 @@ namespace CASM {
     Index _n_config,
     MTRand &_mtrand):
     m_n_config(_n_config),
-    m_max_allowed(_scel.max_allowed_occupation()),
-    m_mtrand(&_mtrand) {
+    m_mtrand(&_mtrand),
+    m_max_allowed(_scel.max_allowed_occupation()) {
 
     if(m_n_config < 0) {
       throw std::runtime_error("Error in ConfigEnumRandomOccupations: n_config < 0");
@@ -155,4 +155,3 @@ namespace CASM {
   }
 
 }
-

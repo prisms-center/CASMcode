@@ -30,6 +30,8 @@ namespace test {
       desc(_desc),
       m_dirs(dir) {}
 
+    virtual ~Proj() {}
+
     fs::path dir;
     BasicStructure<Site> prim;
     std::string title;
@@ -99,7 +101,7 @@ namespace test {
   template<typename Iterator>
   void Proj::_check_composition_axes(Iterator begin, Iterator end) {
 
-    m_p.popen(cd_and() + "casm composition --select 0");
+    m_p.popen(cd_and() + "ccasm composition --select 0");
 
     for(auto it = begin; it != end; ++it) {
       BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)) == true, m_p.gets());

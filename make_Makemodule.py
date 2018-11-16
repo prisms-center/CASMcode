@@ -2,10 +2,14 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
+import filecmp
 import os
 import re
 from glob import glob
 from os.path import join
+from six import iteritems
+from shutil import copyfile
+from sys import platform
 
 # Notes:
 #
@@ -15,7 +19,7 @@ from os.path import join
 # libraries necessary for them to be built and run.
 #
 # Typical usage is something like (configure options may vary):
-# ./make_Makemodule.py
+# python make_Makemodule.py
 # ./bootstrap.sh
 # ./configure CXXFLAGS="-O3 -DNDEBUG -Wno-deprecated-register"
 # make -j 4
@@ -23,8 +27,8 @@ from os.path import join
 #
 # include/ and src/:
 # - Files to be included in the libraries, under src/, and in the installed
-#   headers, under include/, include all files except those matching the 
-#   'default_exclude' regex pattern below.  Excluded files include those with 
+#   headers, under include/, include all files except those matching the
+#   'default_exclude' regex pattern below.  Excluded files include those with
 #   the following extensions: .am, .hide, .old, .orig, .lo, .Plo, .o
 #
 # Testing:
@@ -60,6 +64,12 @@ boost_test_libs = ["$(BOOST_UNIT_TEST_FRAMEWORK_LIB)"]
 
 lib_casm_testing = ["libcasmtesting.a"]
 
+### Flags ###
+
+rpath_ldflags = None
+if platform == "darwin" and 'CASM_BOOST_PREFIX' in os.environ:
+    rpath_ldflags = ['-Wl,-rpath,' + os.environ['CASM_BOOST_PREFIX'] + '/lib']
+
 ### Functions ###
 
 def rm_existing():
@@ -79,7 +89,7 @@ def find_files(loc, include=default_include, exclude=default_exclude, verbose=Fa
             else:
                 if verbose:
                     print("skipping:", join(root,f), f, bool(re.match(exclude, f)))
-    return res
+    return sorted(res)
 
 def write_files(f, files):
     """Write a list of files to a Makemodule.am file"""
@@ -119,9 +129,37 @@ def has_tests(dir):
     """Check if '*_test.cpp' files exist in dir"""
     return len(glob(join(dir, '*_test.cpp'))) > 0
 
+def includedir(f, includedir, include=default_include, exclude=default_exclude):
+    """Write contents of Makemodule.am for copying header files
+
+    - Write Makemodule.am file to copy all files/dir from include directories
+
+    f: file object
+    includedir: join('include', 'casm') or join('include', 'ccasm')
+    """
+    files = find_files(includedir, include=include, exclude=exclude)
+
+    # create dictionary of '<direcoryname>:[filepaths of files in directory]'
+    data = {}
+    for file in files:
+        dir = os.path.split(file)[0]
+        if dir not in data:
+            data[dir] = []
+        data[dir].append(file)
+    for (dir,filelist) in iteritems(data):
+        # ex: dir=include/casm/app
+        # ex: subpath_parts = ['casm','app']
+        subpath_parts = dir.split(os.sep)[1:]
+        # ex: subpath = 'casm/app'
+        subpath = os.path.join(*subpath_parts)
+        # ex: subpathname = 'casm_app_include'
+        subpathname = '_'.join(subpath_parts + ['include'])
+        f.write(subpathname + 'dir=$(includedir)/' + subpath + '\n\n')
+        write_option(f, subpathname, 'HEADERS', filelist)
+
 def testdir(f, group, extradist_ext=['*.hh', '*.cc', '*.json', '*.txt'], verbose=True):
     """Include portion of Makemodule.am for unit tests
-    
+
     - Scans a tests/unit/<group> directory for <testname>_test.cpp unit test files,
     and if found, generates Makemodule.am entries for the test
     - Includes any 'extradist' files found.
@@ -129,38 +167,43 @@ def testdir(f, group, extradist_ext=['*.hh', '*.cc', '*.json', '*.txt'], verbose
     if verbose:
         print("Test group:", group)
     loc = join(unittest_dir, group)
-    
+
     # check_PROGRAMS
     append_option(f, 'check', 'PROGRAMS', ['casm_unit_' + group])
-    
+
     # CXXFLAGS
     write_option(f, 'casm_unit_' + group, 'CXXFLAGS', ['$(AM_CXXFLAGS)', '-I$(top_srcdir)/tests/unit/'])
-    
+
+    # LDFLAGS
+    if rpath_ldflags is not None:
+        write_option(f, 'casm_unit_' + group, 'LDFLAGS', rpath_ldflags)
+
     # SOURCES
-    files = glob(join(loc, '*_test.cpp'))
+    files = sorted(glob(join(loc, '*_test.cpp')))
     if verbose:
         print("Test sources:")
         for file in files:
             print('  ' + file)
     write_option(f, 'casm_unit_' + group, 'SOURCES', ['tests/unit/unit_test.cpp'] + files)
-    
+
     # LDADD
-    write_option(f, 'casm_unit_' + group, 'LDADD', lib_casm + boost_libs + boost_test_libs + lib_casm_testing)
-    
+    write_option(f, 'casm_unit_' + group, 'LDADD', lib_casm + lib_casm_testing + boost_libs + boost_test_libs)
+
     # EXTRA_DIST
     extradist_files = []
     for ext in extradist_ext:
         extradist_files += glob(join(loc, ext))
+    extradist_files.sort()
     if len(extradist_files):
         if verbose:
             print("Extra-dist files:")
             for file in extradist_files:
                 print('  ' + file)
         append(f, 'EXTRA_DIST', extradist_files)
-    
+
     if verbose:
         print('')
-    
+
     # TESTS
     append(f, 'TESTS', [join('tests', 'unit', group, 'run_test_' + group)])
 
@@ -178,16 +221,18 @@ def run_test_in(group):
 
 def replace_lines(filename, lines_to_insert):
     """Replace lines in a file
-    
+
     All lines in between '# BEGIN MAKEMODULE' and '# END MAKEMODULE' are replaced
     with 'lines_to_insert'.
-    
+
     Args:
         filename (str): filename
         lines_to_insert (List[str]): list of lines to insert (should include '\n')
     """
+    tmpfile = filename + ".tmp"
+    copyfile(filename, tmpfile)
     lines_to_write = []
-    with open(filename, 'r') as f:
+    with open(tmpfile, 'r') as f:
         line = f.readline()
         while len(line):
             if line.rstrip() == '# BEGIN MAKEMODULE':
@@ -197,15 +242,20 @@ def replace_lines(filename, lines_to_insert):
                     line = f.readline()
             lines_to_write.append(line)
             line = f.readline()
-    with open(filename, 'w') as f:
+    with open(tmpfile, 'w') as f:
         for line in lines_to_write:
             f.write(line)
+    if filecmp.cmp(filename, tmpfile):
+        os.remove(tmpfile)
+    else:
+        os.remove(filename)
+        os.rename(tmpfile, filename)
 
 def main():
 
     # remove old Makemodule.am
     rm_existing()
-    
+
     makemodules = []
 
     # include/casm/Makemodule.am
@@ -213,17 +263,15 @@ def main():
     print('Working on', dir)
     makemodules.append(join('include', 'casm', 'Makemodule.am'))
     with open(makemodules[-1], 'w') as f:
-        f.write('casmincludedir=$(includedir)/casm\n\n')
-        write_option(f, 'casminclude', 'HEADERS', find_files(dir))
-    
+        includedir(f, dir)
+
     # include/ccasm/Makemodule.am
     dir = join('include', 'ccasm')
     print('Working on', dir)
     makemodules.append(join('include', 'ccasm', 'Makemodule.am'))
     with open(makemodules[-1], 'w') as f:
-        f.write('ccasmincludedir=$(includedir)/ccasm\n\n')
-        write_option(f, 'ccasminclude', 'HEADERS', find_files(dir))
-    
+        includedir(f, dir)
+
     # src/casm/Makemodule.am
     dir = join('src', 'casm')
     print('Working on', dir)
@@ -231,13 +279,14 @@ def main():
     with open(makemodules[-1], 'w') as f:
         name = 'libcasm_la'
         append(f, 'lib_LTLIBRARIES', ['libcasm.la'])
-        write_option(f, name, 'SOURCES', find_files(dir, include='.*\.(c|cc|cpp|C)'))
+        src_exclude = '(' + default_exclude + ')|(.*test_g(un)?zip.C)'
+        write_option(f, name, 'SOURCES', find_files(dir, include='.*\.(c|cc|cpp|C)', exclude=src_exclude))
         write_option(f, name, 'LIBADD', boost_libs)
         write_option(f, name, 'LDFLAGS', ['-avoid-version', '$(BOOST_LDFLAGS)'])
-        
+
         # always keep version uptodate
-        f.write('src/casm/version/version.o: .FORCE\n\n')
-    
+        f.write('./src/casm/version/autoversion.lo: .FORCE\n\n')
+
     # src/ccasm/Makemodule.am
     dir = join('src', 'ccasm')
     print('Working on', dir)
@@ -247,18 +296,20 @@ def main():
         append(f, 'lib_LTLIBRARIES', ['libccasm.la'])
         write_option(f, name, 'SOURCES', find_files(dir, include='.*\.(c|cc|cpp|C)'))
         write_option(f, name, 'LDFLAGS', ['-avoid-version'])
-    
-    # apps/casm/Makemodule.am
-    dir = join('apps', 'casm')
+
+    # apps/ccasm/Makemodule.am
+    dir = join('apps', 'ccasm')
     print('Working on', dir)
-    makemodules.append(join('apps', 'casm', 'Makemodule.am'))
+    makemodules.append(join('apps', 'ccasm', 'Makemodule.am'))
     with open(makemodules[-1], 'w') as f:
-        append(f, 'bin_PROGRAMS', ['casm'])
-        append(f, 'man1_MANS', ['man/casm.1'])
-        write_option(f, 'casm', 'SOURCES', ['apps/casm/casm.cpp'])
-        write_option(f, 'casm', 'LDADD', lib_casm + boost_libs)
-        
-    
+        append(f, 'bin_PROGRAMS', ['ccasm'])
+        append(f, 'man1_MANS', ['man/ccasm.1'])
+        write_option(f, 'ccasm', 'SOURCES', ['apps/ccasm/ccasm.cpp'])
+        write_option(f, 'ccasm', 'LDADD', lib_casm + boost_libs)
+        if rpath_ldflags is not None:
+            write_option(f, 'ccasm', 'LDFLAGS', rpath_ldflags)
+
+
     # apps/completer/Makemodule.am
     dir = join('apps', 'completer')
     print('Working on', dir)
@@ -270,28 +321,31 @@ def main():
         append_option(f, 'bin', 'PROGRAMS', ['casm-complete'])
         write_option(f, 'casm_complete', 'SOURCES', ['apps/completer/complete.cpp'])
         write_option(f, 'casm_complete', 'LDADD', lib_casm + boost_libs)
+        if rpath_ldflags is not None:
+            write_option(f, 'casm_complete', 'LDFLAGS', rpath_ldflags)
         f.write('endif\n')
-    
+
     # tests/unit/Makemodule.am
     dir = join('tests', 'unit')
     print('Working on', dir)
     makemodules.append(join(unittest_dir, 'Makemodule.am'))
     testnames = []
     with open(makemodules[-1], 'w') as f:
-        
+
         # PROGRAMS (complete tests)
-        append_option(f, 'check', 'PROGRAMS', ['casm'])
-        
+        append_option(f, 'check', 'PROGRAMS', ['ccasm'])
+
         # LIBRARIES
         append(f, 'noinst_LIBRARIES', ['libcasmtesting.a'])
-        
+
         # SOURCES
         libcasmtesting_files = []
         libcasmtesting_files += glob(join(unittest_dir,'*.cpp'))
         libcasmtesting_files += glob(join(unittest_dir,'*.cc'))
         libcasmtesting_files += glob(join(unittest_dir,'*.hh'))
+        libcasmtesting_files.sort()
         write_option(f, 'libcasmtesting_a', 'SOURCES', libcasmtesting_files)
-        
+
         # find tests
         #   find directories in 'tests/unit' that have '<testname>_test.cpp' files
         #   find 'EXTRA_DIST' files = (in test directories with *.hh *.cc *.json *.txt)
@@ -300,15 +354,18 @@ def main():
             if os.path.isdir(test_dir) and has_tests(test_dir):
                 print(test_dir + " has tests!")
                 testnames.append(file_or_dir)
-                testdir(f, file_or_dir)
-                run_test_in(file_or_dir)
             else:
                 pass
                 #print(test_dir + " does not have tests!")
-     
+        testnames.sort()
+        for name in testnames:
+            testdir(f, name)
+            run_test_in(name)
+    makemodules.sort()
+
     # Update 'Makefile.am' to include all Makemodule.am
     replace_lines('Makefile.am', ['include $(srcdir)/'+val+'\n' for val in makemodules])
-    
+
     # Update 'configure.ac' to include all 'run_test_<name>'
     lines_to_insert = []
     for name in testnames:
@@ -319,4 +376,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

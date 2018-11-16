@@ -121,8 +121,8 @@ namespace CASM {
 
     template<typename Iterator>
     CoordCluster(const PrimType &prim, Iterator begin, Iterator end) :
-      m_prim_ptr(&prim),
-      m_element(begin, end) {}
+      m_element(begin, end),
+      m_prim_ptr(&prim) {}
 
     const PrimType &prim() const {
       return *m_prim_ptr;

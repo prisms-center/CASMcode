@@ -41,6 +41,9 @@ namespace CASM {
 
     void push_back_source(const jsonParser &source);
 
+    std::map<std::string, jsonParser> calc_properties_map() const {
+      return m_calc_properties_map;
+    }
   protected:
 
     /// Call in MostDerived any time DoF may be modified
@@ -58,37 +61,37 @@ namespace CASM {
   /// \brief Return true if all required properties have been been calculated for
   /// the configuration
   template<typename ConfigType>
-  bool is_calculated(const ConfigType &config);
+  bool is_calculated(const ConfigType &config, std::string calctype = "");
 
   template<typename ConfigType>
   void reset_properties(ConfigType &config);
 
   /// \brief Status of calculation
   template<typename ConfigType>
-  std::string calc_status(const ConfigType &_config);
+  std::string calc_status(const ConfigType &_config, std::string calctype = "");
 
   // \brief Reason for calculation failure.
   template<typename ConfigType>
-  std::string failure_type(const ConfigType &config);
+  std::string failure_type(const ConfigType &config, std::string calctype = "");
 
   template<typename ConfigType>
-  bool has_calc_status(const ConfigType &config);
+  bool has_calc_status(const ConfigType &config, std::string calctype = "");
 
   template<typename ConfigType>
-  bool has_failure_type(const ConfigType &config);
+  bool has_failure_type(const ConfigType &config, std::string calctype = "");
 
   template<typename ConfigType>
-  fs::path calc_properties_path(const ConfigType &config);
+  fs::path calc_properties_path(const ConfigType &config, std::string calctype = "");
 
   template<typename ConfigType>
-  fs::path pos_path(const ConfigType &config);
+  fs::path pos_path(const ConfigType &config, std::string calctype = "");
 
   template<typename ConfigType>
-  fs::path calc_status_path(const ConfigType &config);
+  fs::path calc_status_path(const ConfigType &config, std::string calctype = "");
 
   /// \brief Read properties.calc.json from training_data
   template<typename ConfigType>
-  std::tuple<jsonParser, bool, bool> read_calc_properties(const ConfigType &config);
+  std::tuple<jsonParser, bool, bool> read_calc_properties(const ConfigType &config, std::string calctype = "");
 
   /// \brief Read properties.calc.json from file
   template<typename ConfigType>
@@ -100,11 +103,11 @@ namespace CASM {
     const jsonParser &calc_properties,
     const std::vector<std::string> &required_properties);
 
-  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname);
+  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname, std::string calctype = "");
 
   fs::path pos_path(const PrimClex &primclex, const std::string &configname);
 
-  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname);
+  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname, std::string calctype = "");
 
 }
 

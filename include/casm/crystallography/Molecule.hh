@@ -71,18 +71,18 @@ namespace CASM {
                  double _pos2,
                  double _pos3,
                  AtomSpeciesConvertible _species,
-                 sd_type const &_sd_flag = sd_type{false, false, false}) :
+    sd_type const &_sd_flag = sd_type{{false, false, false}}) :
       m_species(_species),
       m_position(_pos1, _pos2, _pos3),
       m_sd_flag(_sd_flag) { }
 
-    /// \brief Construct with vector position and AtomSpecie
+    /// \brief Construct with vector position and AtomSpecies
     template<typename AtomSpeciesConvertible>
     AtomPosition(Eigen::Ref<const Eigen::Vector3d> const &_pos,
                  AtomSpeciesConvertible _species,
-                 sd_type const &_sd_flag = sd_type{false, false, false}) :
-      m_position(_pos),
+    sd_type const &_sd_flag = sd_type{{false, false, false}}) :
       m_species(_species),
+      m_position(_pos),
       m_sd_flag(_sd_flag) { }
 
     /// Const access of species name
@@ -165,7 +165,7 @@ namespace CASM {
 
     /// \brief Return an atomic Molecule with specified name
     static Molecule make_atom(std::string const &atom_name) {
-      return make_atom(atom_name, AtomPosition::sd_type{false, false, false});
+      return make_atom(atom_name, AtomPosition::sd_type{{false, false, false}});
     }
 
     /// \brief Return an atomic Molecule with specified name

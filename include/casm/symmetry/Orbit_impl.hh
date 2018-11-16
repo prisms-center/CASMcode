@@ -66,13 +66,6 @@ namespace CASM {
           for(Index b = 0; b < tmp_eq_map.size(); ++b) {
             map.emplace(a, b, tmp_eq_map, g);
           }
-          //col.resize(map.begin()->values.size());
-          //for(const auto &row : map) {
-          //Index c = 0;
-          //for(const auto &val : row.values) {
-          //  col[c++].push_back(val);
-          //}
-          //}
         }
         catch(const std::exception &e) {
           default_err_log() << "Error in GenericOrbit constructor: \n"
@@ -83,7 +76,6 @@ namespace CASM {
 
       Index a; // 'a' in tmp_eq_map[a]
       std::set<EqMapRow> map;  // equivalence_map for b, relative to a
-      //std::vector<std::vector<Index>> col; // equivalence_map as columns
 
       bool operator<(const RelEqMap &other) const {
         return this->map < other.map;
@@ -106,6 +98,7 @@ namespace CASM {
   GenericOrbit<_Element, _SymCompareType>::GenericOrbit(Element generating_element,
                                                         const SymGroup &generating_group,
                                                         const _SymCompareType &sym_compare) :
+    m_generating_group(generating_group),
     m_sym_compare(sym_compare) {
 
     // element(i) compares equivalent to prototype().copy_apply(equivalence_map[i][j]) for all j
@@ -183,11 +176,9 @@ namespace CASM {
       for(Index a = 1; a < tmp_equivalence_map.size(); ++a) {
         Orbit_impl::RelEqMap test(a, tmp_equivalence_map, g);
 
-        //std::cout << "\n\nBEST:\n" << best << "\n" << tmp_element[best_a] << "TEST:\n" << test <<  "\n" << tmp_element[a] << "\n";
         if(test < best) {
           best_a = a;
           best = std::move(test);
-          //std::cout << "++ TEST IS BETTER THAN BEST\n";
         }
 
       }
@@ -204,7 +195,6 @@ namespace CASM {
 
       //Loop over equivalents 'i'
       for(const auto &row : best.map) {
-
 
         //Index of group element that maps proto to equiv 'i'
         Index proto2i = *(row.values.begin());
@@ -231,6 +221,10 @@ namespace CASM {
       default_err_log() << "Error in GenericOrbit constructor: \n"
                         << "  Failed copying sorted elements and equivalence map." << std::endl;
       throw e;
+    }
+
+    if(m_equivalence_map[0][0].index() != 0) {
+      throw std::runtime_error("Error in GenericOrbit constructor: First equivalence map element is not identity.");
     }
   }
 

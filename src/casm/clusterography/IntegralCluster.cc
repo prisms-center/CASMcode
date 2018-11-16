@@ -54,7 +54,9 @@ namespace CASM {
 
   /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
   std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust) {
-    SitesPrinter printer {6, '\n', INTEGRAL};
+    OrbitPrinterOptions opt;
+    opt.coord_type = INTEGRAL;
+    SitesPrinter printer {opt};
     Log log(sout);
     printer.print(clust, log);
     return sout;

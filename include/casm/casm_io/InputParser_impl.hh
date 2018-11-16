@@ -62,6 +62,7 @@ namespace CASM {
     else {
       auto it = self.find_at(option);
       if(it == self.end()) {
+        std::cout << "not found" << std::endl;
         return std::unique_ptr<RequiredType>();
       }
       else {
@@ -89,6 +90,9 @@ namespace CASM {
   /// check that if self.find_at(option) exists, it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   RequiredType KwargsParser::optional_at_else(fs::path option, const RequiredType &_default, Args &&...args) {
+    if(!exists()) {
+      return _default;
+    }
     auto res = optional_at<RequiredType>(option, std::forward<Args>(args)...);
     return res ? *res : _default;
   }

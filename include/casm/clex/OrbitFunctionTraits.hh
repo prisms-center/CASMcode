@@ -6,7 +6,6 @@
 #include <map>
 #include <set>
 #include <memory>
-
 #include "casm/CASM_global_definitions.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 #include "casm/basis_set/DoFDecl.hh"

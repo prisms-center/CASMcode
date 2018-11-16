@@ -24,8 +24,8 @@ namespace CASM {
       m_formation_energy_clex(primclex, settings.formation_energy(primclex)),
       m_convert(_supercell()),
       m_cand(m_convert),
-      m_occ_loc(m_convert, m_cand),
       m_all_correlations(settings.all_correlations()),
+      m_occ_loc(m_convert, m_cand),
       m_event(primclex.composition_axes().components().size(), _clexulator().corr_size()) {
 
       const auto &desc = m_formation_energy_clex.desc();
@@ -87,7 +87,6 @@ namespace CASM {
       reset(_enforce_conditions(configdof()));
       _update_properties();
 
-
       return;
     }
 
@@ -117,6 +116,7 @@ namespace CASM {
       m_condition = new_conditions;
 
       ConfigDoF configdof = _default_motif();
+
       std::string configname;
 
       if(settings.is_motif_configname()) {
@@ -492,6 +492,7 @@ namespace CASM {
       _log().set("DoF");
       _log() << "motif configname: default\n";
       _log() << "using configuration with default occupation...\n" << std::endl;
+
       return Configuration::zeros(_supercell()).configdof();
     }
 
@@ -628,4 +629,3 @@ namespace CASM {
 
   }
 }
-

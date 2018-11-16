@@ -145,7 +145,6 @@ namespace CASM {
       auto &pconfig = _pair.first;
       FillSupercell f(unit_cell, pconfig, primclex.crystallography_tol());
       ConfigEnumEquivalents e(f(pconfig));
-      Index eq_count = 0;
       for(auto it = e.begin(); it != e.end(); ++it) {
         subconfig.push_back(*it);
         primclex.log() << "  Config: " << it->name() << "\n" << *it << "\n";

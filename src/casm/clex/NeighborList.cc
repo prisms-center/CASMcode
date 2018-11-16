@@ -84,7 +84,7 @@ namespace CASM {
     for(; counter.valid(); ++counter) {
       dist = _dist(counter.current());
       if(prev_range < dist && dist <= m_range) {
-        auto result = m_neighborhood.insert(counter.current());
+        m_neighborhood.insert(counter.current());
       }
     }
   }
@@ -219,8 +219,8 @@ namespace CASM {
   SuperNeighborList::SuperNeighborList(const PrimGrid &prim_grid,
                                        const PrimNeighborList &prim_nlist) :
     m_prim_grid_size(prim_grid.size()),
-    m_unitcell(prim_grid.size()),
-    m_site(prim_grid.size()) {
+    m_site(prim_grid.size()),
+    m_unitcell(prim_grid.size()) {
 
     // use the PrimNeighborList to generate the UnitCell and Site indices for
     //   the neighbors of each UnitCell in the supercell
@@ -277,4 +277,3 @@ namespace CASM {
   }
 
 }
-

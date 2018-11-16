@@ -82,17 +82,17 @@ BOOST_AUTO_TEST_CASE(Test0) {
   }
 
   //test Constructor/field accessors
-  Kinetics::DiffTransConfiguration dtc(config, trans);
-  BOOST_CHECK_EQUAL(dtc.from_config(), config);
+  Kinetics::DiffTransConfiguration dtc(make_attachable(trans, config), trans);
+  BOOST_CHECK_EQUAL(dtc.from_config(), make_attachable(trans, config));
   BOOST_CHECK_EQUAL(dtc.diff_trans(), trans);
   Configuration tmp {config};
-
+  tmp = make_attachable(trans, tmp);
   tmp = dtc.diff_trans().apply_to(tmp);
   BOOST_CHECK_EQUAL(dtc.to_config(), tmp);
 
   //check comparison
-  Kinetics::DiffTransConfiguration dtc2(config2, trans2);
-  Kinetics::DiffTransConfiguration dtc3(config2, trans);
+  Kinetics::DiffTransConfiguration dtc2(make_attachable(trans2, config2), trans2);
+  Kinetics::DiffTransConfiguration dtc3(make_attachable(trans, config2), trans);
 
   //config > config2 but trans < trans2
   //comparing transformation takes priority
@@ -105,16 +105,16 @@ BOOST_AUTO_TEST_CASE(Test0) {
   BOOST_CHECK_EQUAL(copy_apply(it, dtc) == dtc, 1);
 
   it = it.begin_next_fg_op();
-  Configuration new_config = copy_apply(it, config);
+  Configuration new_config = copy_apply(it, make_attachable(trans, config));
   Kinetics::ScelPeriodicDiffTransSymCompare symcompare(config.supercell().prim_grid(),
                                                        config.supercell().crystallography_tol());
   Kinetics::DiffusionTransformation new_trans =
     symcompare.prepare(copy_apply(it.sym_op(), trans));
 
-  Kinetics::DiffTransConfiguration newdtc(new_config, new_trans);
   //std::cout << newdtc << std::endl;
 
-  BOOST_CHECK_EQUAL(copy_apply(it, dtc) == newdtc, 1);
+  BOOST_CHECK_EQUAL(copy_apply(it, dtc).from_config() == new_config, 1);
+  BOOST_CHECK_EQUAL(copy_apply(it, dtc).diff_trans() == new_trans, 1);
 
   //check sorting
   BOOST_CHECK_EQUAL(dtc.is_sorted(), dtc.from_config() < dtc.to_config());

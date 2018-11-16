@@ -20,7 +20,7 @@ import six
 #     f.write(six.u(json.dumps(data, indent=2)).encode('utf-8'))
 #
 # with open('test.json', 'rb') as f:
-#     data = json.load(f)
+#     data = json.loads(f.read().decode('utf-8'))
 #     print(data)
 
 # For pickle files:

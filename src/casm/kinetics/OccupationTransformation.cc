@@ -18,12 +18,24 @@ namespace CASM {
       const UnitCellCoord &_uccoord,
       Index _from_value,
       Index _to_value) :
-      uccoord(_uccoord),
       from_value(_from_value),
-      to_value(_to_value) {}
+      to_value(_to_value),
+      uccoord(_uccoord) {}
 
     const UnitCellCoord::UnitType &OccupationTransformation::prim() const {
       return uccoord.unit();
+    }
+
+    const UnitCellCoord OccupationTransformation::coord() const {
+      return uccoord;
+    }
+
+    const Index OccupationTransformation::from_occ() const {
+      return from_value;
+    }
+
+    const Index OccupationTransformation::to_occ() const {
+      return to_value;
     }
 
     const Molecule &OccupationTransformation::from_mol() const {
@@ -158,17 +170,16 @@ namespace CASM {
     if(!out.print()) {
       return;
     }
-    COORD_MODE printer_mode(mode);
+    COORD_MODE printer_mode(this->opt.coord_type);
 
-    out << out.indent_str() << indent() << indent() << indent();
+    out << out.indent_str();
     out << trans.uccoord << " : ";
     out << trans.from_value << " (" << trans.from_mol().name() << ")";
     out << "  ->  ";
     out << trans.to_value << " (" << trans.to_mol().name() << ")";
-    if(delim)
-      out << delim;
+    if(this->opt.delim)
+      out << this->opt.delim;
     out << std::flush;
   }
 
 }
-

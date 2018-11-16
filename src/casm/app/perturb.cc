@@ -38,7 +38,6 @@ namespace CASM {
     /*
 
     double tol = CASM::TOL;
-    bool is_trans = false;
     fs::path cspecs_path, abs_cspecs_path;
     fs::path selection;
     COORD_TYPE coordtype = CASM::FRAC;
@@ -46,7 +45,7 @@ namespace CASM {
     std::vector<Index> subgrids;
     std::vector<double> mags;
     std::string strain_mode;
-    Index poly_order;
+    //Index poly_order;
 
     /// Set command line options using boost program_options
     Completer::PerturbOption perturb_opt;
@@ -242,4 +241,3 @@ namespace CASM {
     */
   };
 }
-

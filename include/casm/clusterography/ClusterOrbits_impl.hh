@@ -24,13 +24,13 @@
 
 namespace CASM {
 
-  namespace {
+  namespace ClusterOrbits_impl {
 
     /// Read max_length vector from 'bspecs' JSON
     ///
     /// \returns std::vector<double> giving 'max_length' for clusters in branch 0, 1, etc.
     ///
-    std::vector<double> max_length_from_bspecs(const jsonParser &bspecs) {
+    inline std::vector<double> max_length_from_bspecs(const jsonParser &bspecs) {
 
       std::vector<double> max_length;
 
@@ -57,7 +57,7 @@ namespace CASM {
     ///
     /// \returns std::vector<double> giving 'cutoff_radius' for clusters in branch 0, 1, etc.
     ///
-    std::vector<double> cutoff_radius_from_bspecs(const jsonParser &bspecs) {
+    inline std::vector<double> cutoff_radius_from_bspecs(const jsonParser &bspecs) {
 
       std::vector<double> cutoff_radius;
 
@@ -635,11 +635,8 @@ namespace CASM {
       std::ostream &status) {
 
       typedef typename OrbitType::Element cluster_type;
-      typedef OrbitType orbit_type;
 
-      const auto &sym_compare = specs.sym_compare();
       const auto &filter = specs.filter();
-      const auto &g = specs.generating_group();
 
       // print status messages
       std::string clean(100, ' ');
@@ -1043,7 +1040,7 @@ namespace CASM {
     typedef typename orbit_type::Element cluster_type;
 
     // read max_length from bspecs
-    std::vector<double> max_length = max_length_from_bspecs(bspecs);
+    std::vector<double> max_length = ClusterOrbits_impl::max_length_from_bspecs(bspecs);
 
     // collect custom orbit generating clusters in 'generators'
     PrimPeriodicSymCompare<IntegralCluster> sym_compare(xtal_tol);
@@ -1208,9 +1205,9 @@ namespace CASM {
     std::vector<double> cutoff_radius;
     try {
       // read max_length from bspecs
-      max_length = max_length_from_bspecs(bspecs);
+      max_length = ClusterOrbits_impl::max_length_from_bspecs(bspecs);
       // read cutoff_radius from bspecs
-      cutoff_radius = cutoff_radius_from_bspecs(bspecs);
+      cutoff_radius = ClusterOrbits_impl::cutoff_radius_from_bspecs(bspecs);
     }
     catch(std::exception &e) {
       default_err_log().error("In make_local_orbits (from bspecs)");

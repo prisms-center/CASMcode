@@ -21,7 +21,11 @@ namespace CASM {
     input(_input),
     path(_path),
     self(_self(_input, _path)),
-    required(_required) {}
+    required(_required) {
+    if(required && !exists()) {
+      error.insert(std::string("Error: ") + "Required property '" + _path.string() + "' not found.");
+    }
+  }
 
   void KwargsParser::print_warnings(Log &log, std::string header) const {
     bool top = false;
@@ -108,7 +112,7 @@ namespace CASM {
   }
 
   bool KwargsParser::exists() const {
-    return input.find_at(path) != input.end();
+    return input.find_at(path) != input.end() || path.empty();
   }
 
 
@@ -116,6 +120,12 @@ namespace CASM {
     return
       "  dry_run: bool (optional, default=false)\n"
       "    Perform dry run.\n\n";
+  }
+
+  std::string InputParser::indent_space_help() {
+    return
+      "  indent_space: string (optional, default=6)\n"
+      "    Number of spaces to indent for pretty-printing.\n\n";
   }
 
   std::string InputParser::coordinate_mode_help() {
@@ -128,6 +138,13 @@ namespace CASM {
     return
       "  orbit_print_mode: string (optional, default=\"PROTO\")\n"
       "    Mode (FULL, PROTO) to select printing full orbits or just orbit prototypes.\n\n";
+  }
+
+  std::string InputParser::prec_help(std::string what, int default_prec) {
+    std::stringstream ss;
+    ss <<  "  prec: int (optional, default=" << default_prec << ")\n"
+       <<  "    Precision for printing " << what << "\n\n";
+    return ss.str();
   }
 
   std::string InputParser::verbosity_help() {

@@ -150,7 +150,7 @@ void triangle_count_test() {
   BOOST_CHECK_EQUAL(totals, -7 + 7 + 6 + 5 + 4 + 3 + 2 + 1);
 
   int dims = 5;
-  int det = 30;
+  // int det = 30;
 
   Eigen::VectorXi mid_diagonal(Eigen::VectorXi::Ones(dims));
   mid_diagonal(0) = 5;
@@ -466,7 +466,6 @@ jsonParser generate_all_test_cases() {
   all_mat_tests.push_back(mat_test_case("PRIM1.txt", 2, 9));
   all_mat_tests.push_back(mat_test_case("PRIM2.txt", 4, 7));
   all_mat_tests.push_back(mat_test_case("PRIM4.txt", 1, 8));
-
   all_test_cases["mat_test_cases"] = all_mat_tests;
 
   //********************************************************************//
@@ -546,7 +545,7 @@ void trans_enum_test() {
   Lattice testlat(Lattice::fcc());
   SymGroup pg;
   testlat.generate_point_group(pg);
-  int dims = 3;
+  // int dims = 3;
   Eigen::Matrix3i transmat;
 
   transmat << -1, 1, 1,
@@ -567,6 +566,7 @@ void trans_enum_test() {
   return;
 }
 
+
 void restricted_test() {
   std::vector<Lattice> all_test_lats;
   all_test_lats.push_back(Lattice::fcc());
@@ -578,7 +578,7 @@ void restricted_test() {
     Lattice testlat = all_test_lats[t];
     SymGroup pg;
     testlat.generate_point_group(pg);
-    int dims = 1;
+    // int dims = 1;
 
     ScelEnumProps enum_props(1, 15 + 1, "a");
     SupercellEnumerator<Lattice> enumerator(testlat, pg, enum_props);

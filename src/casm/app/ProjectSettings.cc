@@ -61,7 +61,7 @@ namespace CASM {
     };
 
     struct AddAliasesToJSON {
-      AddAliasesToJSON(const ProjectSettings &_set, jsonParser &_json) : set(_set), json(_json) {}
+      AddAliasesToJSON(const ProjectSettings &_set, jsonParser &_json) : json(_json), set(_set) {}
 
       template<typename T> void eval() {
         json[traits<T>::name] = set.query_handler<T>().aliases();
@@ -496,6 +496,10 @@ namespace CASM {
     return fs::create_directory(m_dir.symmetry_dir());
   }
 
+  /// \brief Create new reports directory
+  bool ProjectSettings::new_reports_dir() const {
+    return fs::create_directory(m_dir.reports_dir());
+  }
   /// \brief Add a basis set directory
   bool ProjectSettings::new_bset_dir(std::string bset) const {
     return fs::create_directories(m_dir.bset_dir(bset));
@@ -738,6 +742,34 @@ namespace CASM {
     }
   }
 
+  void ProjectSettings::print_compiler_settings_summary(Log &log) const {
+    log.custom<Log::standard>("Compiler settings");
+    log << _wdefaultval("cxx", cxx())
+        << _wdefaultval("cxxflags", cxxflags())
+        << _wdefaultval("soflags", soflags())
+        << _wdefaultval("casm_includedir", casm_includedir())
+        << _wdefaultval("casm_libdir", casm_libdir())
+        << _wdefaultval("boost_includedir", boost_includedir())
+        << _wdefaultval("boost_libdir", boost_libdir()) << std::endl;
+
+    if(!m_depr_compile_options.empty()) {
+      log << "Note: using deprecated 'compile_options' value from .casm/project_settings.json \n"
+          "explicitly instead of individual compiler settings (cxx, cxxflags, casm_includedir,\n"
+          "boost_includedir).\n"
+          "Delete 'compile_options' from .casm/project_settings.json manually \n"
+          "to use begin using the individually set settings.\n";
+    }
+    log << "compile command: '" << compile_options() << "'\n\n";
+
+    if(!m_depr_so_options.empty()) {
+      log << "Note: using deprecated 'so_options' value from .casm/project_settings.json \n"
+          "explicitly instead of individual compiler settings (cxx, cxxflags, boost_libdir).\n"
+          "Delete 'so_options' from .casm/project_settings.json manually \n"
+          "to use begin using the individually set settings.\n";
+    }
+    log << "so command: '" << so_options() << "'\n\n";
+  }
+
   /// \brief Print summary of ProjectSettings, as for 'casm settings -l'
   void ProjectSettings::print_summary(Log &log) const {
 
@@ -793,31 +825,7 @@ namespace CASM {
         "settings are not explicitly specified (i.e. the basis set to evaluate \n"
         "for 'casm query -k corr')\n\n";
 
-    log.custom<Log::standard>("Compiler settings");
-    log << _wdefaultval("cxx", cxx())
-        << _wdefaultval("cxxflags", cxxflags())
-        << _wdefaultval("soflags", soflags())
-        << _wdefaultval("casm_includedir", casm_includedir())
-        << _wdefaultval("casm_libdir", casm_libdir())
-        << _wdefaultval("boost_includedir", boost_includedir())
-        << _wdefaultval("boost_libdir", boost_libdir()) << std::endl;
-
-    if(!m_depr_compile_options.empty()) {
-      log << "Note: using deprecated 'compile_options' value from .casm/project_settings.json \n"
-          "explicitly instead of individual compiler settings (cxx, cxxflags, casm_includedir,\n"
-          "boost_includedir).\n"
-          "Delete 'compile_options' from .casm/project_settings.json manually \n"
-          "to use begin using the individually set settings.\n";
-    }
-    log << "compile command: '" << compile_options() << "'\n\n";
-
-    if(!m_depr_so_options.empty()) {
-      log << "Note: using deprecated 'so_options' value from .casm/project_settings.json \n"
-          "explicitly instead of individual compiler settings (cxx, cxxflags, boost_libdir).\n"
-          "Delete 'so_options' from .casm/project_settings.json manually \n"
-          "to use begin using the individually set settings.\n";
-    }
-    log << "so command: '" << so_options() << "'\n\n";
+    print_compiler_settings_summary(log);
 
     log.custom<Log::standard>("'casm view'");
     log << "command: '" << view_command() << "'\n\n";
@@ -845,6 +853,3 @@ namespace CASM {
   BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_all, _, CASM_DB_TYPES)
   BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_config, _, CASM_DB_CONFIG_TYPES)
 }
-
-
-

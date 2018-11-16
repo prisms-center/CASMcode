@@ -115,7 +115,9 @@ namespace CASM {
 
       m_condition = new_conditions;
 
+
       ConfigDoF configdof = _default_motif();
+
       std::string configname;
 
       if(settings.is_motif_configname()) {
@@ -218,7 +220,7 @@ namespace CASM {
         auto exchange_chem_pot = m_condition.exchange_chem_pot();
         auto param_chem_pot = m_condition.param_chem_pot();
         auto Mpinv = primclex().composition_axes().dparam_dmol();
-        auto V = supercell().volume();
+        //auto V = supercell().volume();
         Index curr_species = m_site_swaps.sublat_to_mol()[sublat][current_occupant];
         Index new_species = m_site_swaps.sublat_to_mol()[sublat][new_occupant];
 
@@ -339,8 +341,6 @@ namespace CASM {
 
       // no defect case
       hist[0.0] = 1;
-
-      double sum_exp = 0.0;
 
       //Loop over sites that can change occupants
       for(Index exch_ind = 0; exch_ind < site_exch.variable_sites().size(); exch_ind++) {
@@ -678,6 +678,7 @@ namespace CASM {
       _log().set("DoF");
       _log() << "motif configname: default\n";
       _log() << "using configuration with default occupation...\n" << std::endl;
+
       return Configuration::zeros(_supercell()).configdof();
     }
 
@@ -819,4 +820,3 @@ namespace CASM {
 
   }
 }
-

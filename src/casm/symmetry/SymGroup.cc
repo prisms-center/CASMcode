@@ -1317,7 +1317,6 @@ namespace CASM {
     Array<Eigen::Vector3d > highsym_axes;
     Array<int> mult;
     double angle = 360;
-    Eigen::Vector3d xprodvec;
     double dprod;
     std::string symtype;
     Index to_name = conjugacy_classes.size();
@@ -1373,12 +1372,14 @@ namespace CASM {
     }
 
     Eigen::Vector3d hs_axis;
+    bool hs_axis_set = false;
     double hangle = 360;
 
     for(Index i = 0; i < size(); i++) {
       if((info[i].angle < hangle) && (info[i].angle > TOL)) {
         hangle = info[i].angle;
         hs_axis = info[i].axis.cart();
+        hs_axis_set = true;
       }
     }
 
@@ -1402,6 +1403,9 @@ namespace CASM {
 
     if(name == "D3d") {
       for(int i = int(mult.size()) - 1; i >= 0; i--) {
+        if(!hs_axis_set) {
+          throw std::runtime_error("Error in _generate_class_names: using hs_axis unitialized");
+        }
         if(!almost_zero(highsym_axes[i] - hs_axis)) {
           highsym_axes.remove(i);
           mult.remove(i);
@@ -1421,15 +1425,16 @@ namespace CASM {
       std::ostringstream s;
       if(!class_names[ind].size()) { //Check to see if this has already been named
         bool normal = false;
-        for(Index j = 0; j < highsym_axes.size() && !normal; j++) {
+        for(Index j = 0; j < highsym_axes.size(); j++) {
           dprod = highsym_axes[j].dot(info[i].axis.const_cart());
-          xprodvec = highsym_axes[j].cross(info[i].axis.const_cart());
+          Eigen::Vector3d xprodvec = highsym_axes[j].cross(info[i].axis.const_cart());
           if(almost_zero(xprodvec.norm())) {
             normal = true;
+            break;
           }
         }
 
-        if(almost_zero(xprodvec.norm())) { //Check if the cross product with principal axis is zero
+        if(normal) { //Check if the cross product with principal axis is zero
           if((info[i].angle < 200) && (info[i].angle > 1)) { //Only bother with angles that 360 is divisible by
             if((info[i].op_type == symmetry_type::rotation_op) || (info[i].op_type == symmetry_type::screw_op)) {
               angle = info[i].angle;
@@ -2203,13 +2208,19 @@ namespace CASM {
        */
 
       double angle = 360;
+
       int generator = 0;
+      bool generator_found = false;
 
       for(Index i = 0; i < size(); i++) {
         if((info[i].angle < angle) && (info[i].angle > TOL)) {
           angle = info[i].angle;
           generator = i;
+          generator_found = true;
         }
+      }
+      if(!generator_found) {
+        throw std::runtime_error("Error in _generate_character_table: generator not found");
       }
 
       /** We need to keep in mind that the angle returned by get_rotation_angle() is
@@ -3534,7 +3545,7 @@ namespace CASM {
     // floating point comparison tolerance
     double tol = TOL;
 
-    COORD_TYPE print_mode = CART;
+    //COORD_TYPE print_mode = CART;
 
     // compare on vector of '-det', '-trace', 'angle', 'axis', 'tau'
     typedef Eigen::Matrix<double, 10, 1> key_type;
@@ -4010,4 +4021,3 @@ namespace CASM {
 
 
 }
-

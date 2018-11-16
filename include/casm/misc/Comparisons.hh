@@ -3,7 +3,7 @@
 
 #include "casm/misc/CRTPBase.hh"
 
-namespace CASM {
+namespace notstd {
 
   /// \brief Implements other comparisons in terms of '<'
   ///
@@ -60,6 +60,11 @@ namespace CASM {
 
   };
 
+}
+
+namespace CASM {
+  template<typename Base>
+  using Comparisons = notstd::Comparisons<Base>;
 }
 
 #endif

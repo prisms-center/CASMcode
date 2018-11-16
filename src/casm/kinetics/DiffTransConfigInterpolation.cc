@@ -10,6 +10,7 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
+#include "casm/casm_io/jsonParser.hh"
 
 
 // extern "C" {
@@ -28,13 +29,32 @@ namespace CASM {
     /// \param n_images number of images excluding end points
     DiffTransConfigInterpolation::DiffTransConfigInterpolation(
       const DiffTransConfiguration &_diff_trans_config,
-      const int n_images, std::string calctype):
+      const int n_images, std::string calctype,
+      bool override_mirrors):
       RandomAccessEnumeratorBase<Configuration>(n_images + 2),
       m_current(_diff_trans_config.sorted().from_config()) {
       auto diff_trans_config = _diff_trans_config.sorted();
+      if(diff_trans_config.from_configname() == diff_trans_config.to_configname() && n_images > 1) {
+        std::cout << diff_trans_config.name() << " has symmetrically equivalent endpoints. \n"
+                  << " A full NEB calculation is not required to determine barrier height." << std::endl
+                  << " We suggest interpolating a single image and calculating each of the two structures individually." << std::endl;
+
+      }
       auto configs = get_relaxed_endpoints(diff_trans_config, calctype);
       Configuration from_config = configs.first;
+
       Configuration to_config = configs.second;
+      if(!override_mirrors && diff_trans_config.from_configname() == diff_trans_config.to_configname()) {
+        std::cout << "I am going to interpolate 1 image with the same deformed \n" <<
+                  "lattice as endpoints but ideally interpolated coordinates" << std::endl;
+        //from_config.clear_displacement();
+        //to_config.clear_displacement();
+
+      }
+      m_current = from_config;
+      if(from_config.supercell().lattice().lat_column_mat() != to_config.supercell().lattice().lat_column_mat()) {
+        throw std::runtime_error("Attempting to interpolate between configs with different lattices.\n You will have a bad time.");
+      }
       DiffusionTransformation diff_trans  = diff_trans_config.diff_trans();
       //if(!from_config.has_displacement()) {
       //from_config.init_displacement();
@@ -49,9 +69,16 @@ namespace CASM {
       //to_config.init_deformation();
       //}
       Configuration to_config_mutated = prepare_to_config(to_config, diff_trans);
-      m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
-                                                                            to_config_mutated,
-                                                                            n_images + 2); // +2 for end states
+      if(!override_mirrors && diff_trans_config.from_configname() == diff_trans_config.to_configname()) {
+        m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
+                                                                              to_config_mutated,
+                                                                              3); // +2 for end states
+      }
+      else {
+        m_config_enum_interpol = notstd::make_unique<ConfigEnumInterpolation>(from_config,
+                                                                              to_config_mutated,
+                                                                              n_images + 2); // +2 for end states
+      }
       this->_initialize(&m_current);
       m_current.set_source(this->source(step()));
     }
@@ -112,22 +139,70 @@ namespace CASM {
       DB::Selection<DiffTransConfiguration> dtc_sel = make_selection<DiffTransConfiguration>(
                                                         primclex, kwargs, "names", "selection", enumerator_name, OnError::THROW);
       int n_images = kwargs["n_images"].get<int>(); // set defaults with get_else
+      std::string endpt_calctype = kwargs["endstate_calctype"].get<std::string>();
       std::string calctype = kwargs["calctype"].get<std::string>();
+      bool override_mirrors;
+      kwargs.get_else(override_mirrors, "override_mirrors", false);
       Index i;
       for(const auto &config : dtc_sel.selected()) {
         // Create a interpolation object
-        DiffTransConfigInterpolation enumerator(config, n_images, calctype);
-        i = 0;
-        for(const auto &img_config : enumerator) {
+        DiffTransConfigInterpolation enumerator(config, n_images, endpt_calctype, override_mirrors);
+
+        int length = std::distance(enumerator.m_config_enum_interpol->begin(), enumerator.m_config_enum_interpol->end()) - 2;
+        for(i = 0; i < length + 2; ++i) {
           // file_path = $project_dir/training_data/diff_trans/$diff_trans_name/$scelname/$configid/$image_number/POSCAR
-          int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
-          std::string calctype = kwargs[config.name()]["calctype"].get<std::string>();
+          //int n_images = kwargs[config.name()]["n_images"].get<int>(); // set defaults with get_else
           auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
-          file_path += "N_images_" + std::to_string(n_images) + "/0" + std::to_string(i) + "/POSCAR";
+          file_path += "/N_images_" + std::to_string(length) + "/poscars/0" + std::to_string(i) + "/POSCAR";
+          fs::create_directories(file_path.parent_path());
           fs::ofstream file(file_path);
-          img_config.write_pos(file);
-          i++;
+          enumerator.at_step(i)->write_pos(file);
         }
+        jsonParser endpts_json;
+        fs::ofstream endpts(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(length)) / "endpoint_props.json");
+        std::vector<std::string> tokens;
+        std::string name = config.from_config().name();
+        boost::split(tokens, name, boost::is_any_of("."), boost::token_compress_on);
+        std::string canon_config_name = tokens[0];
+        //lol
+        canon_config_name = config.from_config().canonical_form().name();
+
+        if(canon_config_name.find("none") == std::string::npos) {
+          if(tokens.size() == 4) {
+            Configuration canon_config = *primclex.db<Configuration>().find(config.from_config().canonical_form().name());
+            canon_config.calc_properties(endpt_calctype);
+            endpts_json["0"] = apply(config.from_config_from_canonical(), canon_config).print_properties(endpt_calctype);
+          }
+          else {
+            endpts_json["0"] = make_configuration(primclex, config.from_config().name()).print_properties(endpt_calctype);
+          }
+        }
+        else {
+          std::cout << "Found 'none' in your from configname" << std::endl;
+        }
+
+        std::vector<std::string> tokens2;
+        std::string name2 = config.to_config().name();
+        boost::split(tokens2, name2, boost::is_any_of("."), boost::token_compress_on);
+        std::string canon_config_name2 = tokens2[0];
+        //lol
+        canon_config_name2 = config.to_config().canonical_form().name();
+
+        if(canon_config_name2.find("none") == std::string::npos) {
+          if(tokens2.size() == 4) {
+            Configuration canon_config = *primclex.db<Configuration>().find(config.to_config().canonical_form().name());
+            canon_config.calc_properties(endpt_calctype);
+            endpts_json[std::to_string(i - 1)] = apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype);
+          }
+          else {
+            endpts_json[std::to_string(i - 1)] = make_configuration(primclex, config.to_config().name()).print_properties(endpt_calctype);
+          }
+        }
+        else {
+          std::cout << "Found 'none' in your to configname" << std::endl;
+        }
+        endpts_json.print(endpts);
+        endpts.close();
       }
       // setup error methods
       return 0;
@@ -170,9 +245,17 @@ namespace CASM {
         Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
         ret_frm = copy_apply(dfc.from_config_from_canonical(), rlx_frm);
       }
+      else {
+        dfc.primclex().log() << ">>>>>>!!!!!WARNING: FROM (INITIAL) CONFIGURATION NOT PRESENT IN CONFIG LIST!!!!!" << std::endl
+                             << "I suggest enumerating and calculating it before interpolating!!!!!<<<<<<" << std::endl << std::endl;
+      }
       if(dfc.to_configname().find("none") == std::string::npos) {
         Configuration rlx_to = copy_apply_properties(make_configuration(dfc.primclex(), dfc.to_configname()), calctype);
         ret_to = copy_apply(dfc.to_config_from_canonical(), rlx_to);
+      }
+      else {
+        dfc.primclex().log() << ">>>>>>!!!!!WARNING: TO (FINAL) CONFIGURATION NOT PRESENT IN CONFIG LIST!!!!!" << std::endl
+                             << "I suggest enumerating and calculating it before interpolating!!!!!<<<<<<" << std::endl << std::endl;
       }
       return std::make_pair(ret_frm, ret_to);
     }

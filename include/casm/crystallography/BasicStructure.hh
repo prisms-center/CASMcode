@@ -69,7 +69,7 @@ namespace CASM {
     /// do not depend on the lattice of 'RHS'
     BasicStructure(const BasicStructure &RHS);
 
-    ~BasicStructure();
+    virtual ~BasicStructure();
 
     //  ****Inspectors/Accessors****
 
@@ -91,6 +91,13 @@ namespace CASM {
       return m_basis;
     }
 
+    const CoordType &basis(Index i) const {
+      return m_basis[i];
+    }
+
+    Array<CoordType> &set_basis() {
+      return m_basis;
+    }
     const std::string &title() const {
       return m_title;
     }
@@ -205,7 +212,7 @@ namespace CASM {
     virtual void read(std::istream &stream);  //John do this
 
     /// Output other formats
-    void print_xyz(std::ostream &stream) const;
+    void print_xyz(std::ostream &stream, bool frac = false) const;
     //void print_cif(std::ostream &stream) const;
 
     jsonParser &to_json(jsonParser &json) const;

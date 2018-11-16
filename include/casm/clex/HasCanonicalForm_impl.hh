@@ -198,7 +198,8 @@ namespace CASM {
     PermuteIteratorIt begin,
     PermuteIteratorIt end) const {
 
-    to_canonical(scel, begin, end).inverse();
+    //Please use -Werror=return-type in your compiler flags
+    return to_canonical(scel, begin, end).inverse();
   }
 
   template<typename _Base>

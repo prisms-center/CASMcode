@@ -270,7 +270,6 @@ namespace CASM {
     /// \brief Print single spin flip LTE
     GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter(const double &phi_LTE1) {
       auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
-        ConstMonteCarloPtr ptr = mc;
         return phi_LTE1;
       };
       return GenericDatumFormatter<double, ConstMonteCarloPtr>("phi_LTE", "phi_LTE", evaluator);
@@ -328,4 +327,3 @@ namespace CASM {
 
   }
 }
-

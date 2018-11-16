@@ -68,6 +68,7 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsTest) {
     ScelEnumProps enum_props(j["min_vol"].get<int>(), j["max_vol"].get<int>() + 1);
     ScelEnumByProps scel_enum(primclex, enum_props);
     for(const auto &scel : scel_enum) {
+      (void) scel;
     }
 
     // run checks:

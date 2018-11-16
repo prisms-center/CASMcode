@@ -12,7 +12,9 @@ import casm.learn
 from casm.project import Project, Selection, write_eci
   
 
-def main():
+def main(argv = None):
+  if argv is None:
+    argv = sys.argv[1:]
   parser = argparse.ArgumentParser(description = 'Fit cluster expansion coefficients (ECI)')
   parser.add_argument('--desc', help='Print extended usage description', action="store_true")
   parser.add_argument('-s', '--settings', nargs=1, help='Settings input filename', type=str)
@@ -32,7 +34,7 @@ def main():
   parser.add_argument('--checkhull', help='Check convex hull properties using the provided selection', action="store_true", default=False)
   parser.add_argument('--checkspecs', help='Output data and cv files containing the current problem specs', action="store_true", default=False)
   parser.add_argument('-q','--quiet', help='Quiet output', action="store_true", default=False)
-  args = parser.parse_args()
+  args = parser.parse_args(argv)
   
   args.verbose = not args.quiet
   

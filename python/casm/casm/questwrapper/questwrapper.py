@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function, unicode_liter
 from builtins import *
 
 import json
+import six
 
 from casm.seqquest import seqquest_io
 
@@ -52,9 +53,8 @@ def read_settings(filename):
         "postrun" : bash commands to run after vasp.Relax.run completes (default None)
     """
     try:
-        stream = open(filename)
-        settings = json.load(stream)
-        stream.close()
+        with open(filename, 'rb') as stream:
+            settings = json.loads(stream.read().decode('utf-8'))
     except (IOError, ValueError) as e:
         print("Error reading settings file:", filename)
         raise e
@@ -110,17 +110,16 @@ def read_settings(filename):
 
 def write_settings(settings, filename):
     """ Write 'settings' as json file, 'filename' """
-    stream = open(filename, 'w')
-    json.dump(settings, stream, indent=4)
-    stream.close()
+    with open(filename, 'wb') as stream:
+        stream.write(six.u(json.dumps(settings, stream, indent=4)).encode('utf-8'))
 
 def read_properties(filename):
     """ Read a properties.calc.json"""
     required = ["atom_type", "atoms_per_type", "coord_mode", "relaxed_basis", "relaxed_energy", "relaxed_forces", "relaxed_lattice"]
     optional = ["relaxed_magmom", "relaxed_mag_basis"]
 
-    with open(filename, 'r') as myfile:
-        properties = json.load(myfile)
+    with open(filename, 'rb') as myfile:
+        properties = json.load(myfile.read().decode('utf-8'))
 
     for key in required:
         if not key in properties:

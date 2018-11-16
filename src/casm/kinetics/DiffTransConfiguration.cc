@@ -39,10 +39,22 @@ namespace CASM {
       m_config_A(_from_config),
       m_config_B(_from_config),
       m_sym_compare(_from_config.supercell()),
-      m_diff_trans(m_sym_compare.prepare(_diff_trans)) {
-
+      m_diff_trans(_diff_trans) {
+      m_from_config_is_A = true;
+      if(_diff_trans != m_sym_compare.prepare(_diff_trans)) {
+        throw std::runtime_error("Error in DiffTransConfiguration constructor diff trans not prepared");
+      }
+      if(!is_valid(_diff_trans, _from_config)) {
+        throw std::runtime_error("Error in DiffTransConfiguration constructor repeated linear indices");
+      }
+      if(!has_valid_from_occ(_diff_trans, _from_config)) {
+        throw std::runtime_error("Error in DiffTransConfiguration constructor diff_trans and from_config inconsistent");
+      }
       m_diff_trans.apply_to(m_config_B);
       _sort();
+      if(m_config_A == m_config_B) {
+        throw std::runtime_error("Error in DiffTransConfiguration constructor both endpoints are exactly the same config!");
+      }
     }
 
     /// Construct a DiffTransConfiguration from JSON data
@@ -145,11 +157,38 @@ namespace CASM {
 
     /// \brief Apply symmetry, does not sort
     DiffTransConfiguration &DiffTransConfiguration::apply_sym(const PermuteIterator &it) {
+
+      if(!has_valid_from_occ(m_diff_trans, from_config())) {
+        throw std::runtime_error("Application of symmetry to an already invalid DTC");
+      }
       m_diff_trans = m_sym_compare.prepare(m_diff_trans.apply_sym(it));
       m_config_A.apply_sym(it);
-      m_config_B = m_config_A;
-      m_diff_trans.apply_to(m_config_B);
-      _sort();
+      m_config_B.apply_sym(it);
+      if(m_from_config_is_A) {
+        if(!has_valid_from_occ(m_diff_trans, m_config_A)) {
+          m_diff_trans.reverse();
+        }
+        if(!has_valid_from_occ(m_diff_trans, m_config_A)) {
+          throw std::runtime_error("Application of symmetry to DTC makes hop incompatible with from even with reverse");
+        }
+        _sort();
+      }
+      else {
+        if(!has_valid_from_occ(m_diff_trans, m_config_B)) {
+          m_diff_trans.reverse();
+        }
+        if(!has_valid_from_occ(m_diff_trans, m_config_B)) {
+          throw std::runtime_error("Application of symmetry to DTC makes hop incompatible with from even with reverse");
+        }
+        _sort();
+      }
+
+      if(!has_valid_from_occ(m_diff_trans, from_config())) {
+        throw std::runtime_error("Application of symmetry resulted in invalidation");
+      }
+      if(is_dud()) {
+        throw std::runtime_error("Application of symmetry resulted in dud");
+      }
       return *this;
     }
 
@@ -161,18 +200,30 @@ namespace CASM {
       m_orbit_name = orbit_name;
     }
 
+    void DiffTransConfiguration::set_suborbit_ind(const int &suborbit_ind) {
+      m_suborbit_ind = suborbit_ind;
+    }
+
     void DiffTransConfiguration::set_bg_configname(const std::string &configname) {
       m_bg_configname = configname;
     }
 
     /// Writes the DiffTransConfiguration to JSON
     jsonParser &DiffTransConfiguration::to_json(jsonParser &json) const {
+      if(!has_valid_from_occ()) {
+        throw std::runtime_error("Attempting to write a diff trans config to json with invalid from occ");
+      }
+      if(is_dud()) {
+        throw std::runtime_error("Attempting to write a diff trans config to json that is a dud");
+      }
+
       json.put_obj();
       json["from_configname"] = from_config().name();
       from_config().to_json(json["from_config_data"]);
       CASM::to_json(diff_trans(), json["diff_trans"]);
       json["orbit_name"] = orbit_name();
       json["bg_configname"] = bg_configname();
+      json["suborbit_ind"] = suborbit_ind();
       json["cache"].put_obj();
       if(cache_updated()) {
         json["cache"] = cache();
@@ -182,7 +233,6 @@ namespace CASM {
 
     /// Reads the DiffTransConfiguration from JSON
     void DiffTransConfiguration::from_json(const jsonParser &json, const Supercell &_scel) {
-
       // get cache
       CASM::from_json(cache(), json["cache"]);
 
@@ -195,12 +245,27 @@ namespace CASM {
 
       // get diff trans
       m_sym_compare = ScelPeriodicDiffTransSymCompare(_scel);
-      m_diff_trans = m_sym_compare.prepare(
-                       jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim()));
+      m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim());
+
+      //Makes sure we have a from config and to config, though we don't
+      //know which is which yet
       m_diff_trans.apply_to(m_config_B);
+
+      //Figure out wheter A or B is the from config
+      if(!this->has_valid_from_occ()) {
+        m_from_config_is_A = !m_from_config_is_A;
+      }
+
       set_orbit_name(json["orbit_name"].get<std::string>());
+      set_suborbit_ind(json["suborbit_ind"].get<int>());
       set_bg_configname(json["bg_configname"].get<std::string>());
 
+      if(!has_valid_from_occ()) {
+        throw std::runtime_error("The reading of a diff trans config from json resulted in invalid from occ");
+      }
+      if(is_dud()) {
+        throw std::runtime_error("The reading of a diff trans config from json resulted in dud");
+      }
 
       _sort();
     }
@@ -252,23 +317,11 @@ namespace CASM {
     /// Check that DiffTrans does not include a single supercell site twice due
     /// to small supercell size
     bool DiffTransConfiguration::is_valid() const {
-      std::set<Index> unique_indices;
-      for(auto &traj : diff_trans().species_traj()) {
-        Index l = from_config().supercell().linear_index(traj.from.uccoord);
-        unique_indices.insert(l);
-      }
-      return (diff_trans().species_traj().size() == unique_indices.size());
+      return is_valid(diff_trans(), from_config());
     }
 
     bool DiffTransConfiguration::has_valid_from_occ() const {
-      for(auto traj : diff_trans().species_traj()) {
-        Index l = from_config().supercell().linear_index(traj.from.uccoord);
-        //std::cout << "comparing " << from_config().occ(l) << " to " << traj.from.occ << " on site " << l << std::endl;
-        if(from_config().occ(l) != traj.from.occ) {
-          return false;
-        }
-      }
-      return true;
+      return has_valid_from_occ(diff_trans(), from_config());
     }
 
 
@@ -314,6 +367,13 @@ namespace CASM {
       return cache()["to_config_from_canonical"].get<PermuteIterator>(supercell().sym_info());
     }
 
+
+    DiffTransConfigInsertResult DiffTransConfiguration::insert() const {
+      DiffTransConfigInsertResult res;
+      std::tie(res.canonical_it, res.insert_canonical) = primclex().db<DiffTransConfiguration>().insert(this->canonical_form());
+      return res;
+    }
+
     void DiffTransConfiguration::write_pos() const {
       const auto &dir = primclex().dir();
       try {
@@ -331,10 +391,12 @@ namespace CASM {
     std::ostream &DiffTransConfiguration::write_pos(std::ostream &sout) const {
       sout << "Initial POS:" << std::endl;
       VaspIO::PrintPOSCAR from(sorted().from_config());
+      from.sort();
       from.print(sout);
       sout << std::endl;
       sout << "Final POS:" << std::endl;
       VaspIO::PrintPOSCAR to(sorted().to_config());
+      to.sort();
       to.print(sout);
       return sout;
     }
@@ -347,15 +409,42 @@ namespace CASM {
     }
 
     void DiffTransConfiguration::_sort() {
-
       if(m_config_B < m_config_A) {
+        if(m_from_config_is_A) {
+          m_diff_trans.reverse();
+        }
         m_from_config_is_A = false;
-        m_diff_trans.reverse();
       }
       else {
+        if(!m_from_config_is_A) {
+          m_diff_trans.reverse();
+        }
         m_from_config_is_A = true;
       }
     }
+
+    /// Check that DiffTrans does not include a single supercell site twice due
+    /// to small supercell size
+    bool DiffTransConfiguration::is_valid(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
+      std::set<Index> unique_indices;
+      for(auto &traj : diff_trans.species_traj()) {
+        Index l = bg_config.supercell().linear_index(traj.from.uccoord);
+        unique_indices.insert(l);
+      }
+      return (diff_trans.species_traj().size() == unique_indices.size());
+    }
+
+    bool DiffTransConfiguration::has_valid_from_occ(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
+      for(auto traj : diff_trans.species_traj()) {
+        Index l = bg_config.supercell().linear_index(traj.from.uccoord);
+        if(bg_config.occ(l) != traj.from.occ) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+
 
     /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
     Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
@@ -392,6 +481,50 @@ namespace CASM {
       return correlations;
     }
 
+    /// \brief Indicates whether there is a valid kra for DiffTransConfiguration
+    bool has_kra(const DiffTransConfiguration &dtc) {
+      return dtc.calc_properties().contains("kra");
+    }
+
+    /// \brief Returns kra for DiffTransConfiguration
+    double kra(const DiffTransConfiguration &dtc) {
+      return dtc.calc_properties()["kra"].get<double>();
+    }
+
+    /// \brief Returns the distance to furthest perturbation from diffusion hop
+    double max_perturb_rad(const DiffTransConfiguration &dtc) {
+      Configuration bg = make_configuration(dtc.primclex(), dtc.bg_configname());
+      Configuration jumbo_bg = bg.fill_supercell(dtc.from_config().supercell());
+      Configuration shift_jumbo = closest_setting(dtc.from_config(), jumbo_bg);
+      DiffTransConfiguration tmp(make_attachable(dtc.diff_trans(), shift_jumbo), dtc.diff_trans());
+      auto clust = config_diff(tmp.from_config(), dtc.from_config());
+      double max_dist = 0;
+      for(auto &site : clust) {
+        if(dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell())	> max_dist) {
+          max_dist = dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell());
+        }
+      }
+      return max_dist;
+    }
+
+    /// \brief Returns the distance to closest perturbation from diffusion hop
+    double min_perturb_rad(const DiffTransConfiguration &dtc) {
+      Configuration bg = make_configuration(dtc.primclex(), dtc.bg_configname());
+      Configuration jumbo_bg = bg.fill_supercell(dtc.from_config().supercell());
+      Configuration shift_jumbo = closest_setting(dtc.from_config(), jumbo_bg);
+      DiffTransConfiguration tmp(make_attachable(dtc.diff_trans(), shift_jumbo), dtc.diff_trans());
+      auto clust = config_diff(tmp.from_config(), dtc.from_config());
+      double min_dist = 100;
+      for(auto &site : clust) {
+        if(dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell()) < min_dist && dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell()) > dtc.primclex().crystallography_tol()) {
+          min_dist = dist_to_path_pbc(dtc.diff_trans(), site, jumbo_bg.supercell());
+        }
+      }
+      if(clust.size() == 0) {
+        min_dist = 0;
+      }
+      return min_dist;
+    }
   }
 
   Kinetics::DiffTransConfiguration jsonConstructor<Kinetics::DiffTransConfiguration>::from_json(

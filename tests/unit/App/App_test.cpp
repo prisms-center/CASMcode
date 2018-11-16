@@ -43,18 +43,18 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
   };
 
   // check help doesn't need to be in a project
-  p.popen("casm init -h");
+  p.popen("ccasm init -h");
   BOOST_CHECK_MESSAGE(p.exit_code() == 0, p.gets());
 
   for(auto it = command.begin(); it != command.end(); ++it) {
-    p.popen("casm " + it->type + " " + it->no_proj_command);
+    p.popen("ccasm " + it->type + " " + it->no_proj_command);
     BOOST_CHECK_MESSAGE(p.exit_code() == 3, p.gets());
 
-    p.popen("casm " + it->type + " " + it->help_command);
+    p.popen("ccasm " + it->type + " " + it->help_command);
     BOOST_CHECK_MESSAGE(p.exit_code() == 0, p.gets());
   }
 
-  // checks of 'casm X' commands for several projects
+  // checks of 'ccasm X' commands for several projects
   std::vector<std::unique_ptr<test::Proj> > proj;
   proj.push_back(notstd::make_unique<test::FCCTernaryProj>());
   proj.push_back(notstd::make_unique<test::ZrOProj>());
@@ -63,31 +63,43 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
     log.custom<Log::standard>("Test project: " + (*proj_it)->title);
     log << "root: " << (*proj_it)->dir << std::endl;
 
-    log << "testing 'casm init'" << std::endl;
+    log << "testing 'ccasm init'" << std::endl;
     (*proj_it)->check_init();
 
-    log << "testing 'casm sym'" << std::endl;
+    log << "testing 'ccasm sym'" << std::endl;
     (*proj_it)->check_symmetry();
 
-    log << "testing 'casm composition'" << std::endl;
+    log << "testing 'ccasm composition'" << std::endl;
     (*proj_it)->check_composition();
 
-    log << "skipping 'casm bset'" << std::endl;
-    //(*proj_it)->check_bset();
+    log << "testing 'ccasm bset'" << std::endl;
+    (*proj_it)->check_bset();
 
-    log << "testing 'casm enum'" << std::endl;
+    log << "testing 'ccasm enum'" << std::endl;
     (*proj_it)->check_enum();
 
-    log << "testing 'casm select'" << std::endl;
+    log << "testing 'ccasm select'" << std::endl;
     (*proj_it)->check_select();
 
-    log << "testing 'casm query'" << std::endl;
+    log << "testing 'ccasm query'" << std::endl;
     (*proj_it)->check_query();
 
+    log << "done" << std::endl;
     log << std::endl;
 
   }
 
+  log << "delete test projects" << std::endl;
+
+  log << "delete proj[0]:" << std::endl;
+  proj[0].reset();
+  log << "  done" << std::endl;
+
+  log << "delete proj[1]:" << std::endl;
+  proj[1].reset();
+  log << "  done" << std::endl;
+
+  log << "leaving test cast ProjectCommands" << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

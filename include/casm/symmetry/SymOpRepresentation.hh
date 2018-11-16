@@ -4,7 +4,6 @@
 #include <iostream>
 #include <cmath>
 #include <memory>
-
 #include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/container/Array.hh"

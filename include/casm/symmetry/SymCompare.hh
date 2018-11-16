@@ -40,7 +40,7 @@ namespace CASM {
     typedef ScelPeriodicSymCompare<Element> MostDerived;
   };
 
-  /// \brief Traits class for ScelPeriodicSymCompare
+  /// \brief Traits class for WithinScelPeriodicSymCompare
   template<typename _Element>
   struct traits<WithinScelSymCompare<_Element>> {
     typedef _Element Element;
@@ -90,8 +90,11 @@ namespace CASM {
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
-    /// - For instance, translate a cluster so comparison may be
-    ///   performed more efficiently.
+    /// - For instance, translate a cluster so comparison may be performed more efficiently.
+    /// - The transformation that is applied is stored and available as `spatial_transform`
+    /// - The `spatial_transform` is also included in the symmetry operations stored in the
+    ///   Orbit equivalence_map (i.e. equivalence_map_element = spatial_transform * generating_group_op)
+    /// - Returns pair such that pair.first = apply_sym(pair.second, obj)
     ///
     Element spatial_prepare(Element obj) const {
       return derived().spatial_prepare_impl(obj);
@@ -109,11 +112,7 @@ namespace CASM {
     /// \brief Prepare an element for comparison via representation_prepare(), followed by spatial_prepare()
     ///
     Element prepare(Element obj) const {
-      return spatial_prepare(
-               representation_prepare(
-                 obj
-               )
-             );
+      return spatial_prepare(representation_prepare(obj));
     }
 
     /// \brief Orders 'prepared' elements
