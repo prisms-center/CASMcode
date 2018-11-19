@@ -68,7 +68,7 @@ namespace CASM {
   /// \brief Enumerate over Supercell
   ///
   /// - Specify Supercell using ScelEnumProps (min/max volume, dirs, unit_cell)
-  /// - Enumerated Supercell are canonical, included in PrimClex
+  /// - Enumerated Supercell are not canonical
   /// - References are invalidated after incrementing an iterator
   ///
   class ScelEnumByProps : public InputEnumeratorBase<Supercell> {
@@ -112,7 +112,7 @@ namespace CASM {
   /// \brief Enumerate over Supercell
   ///
   /// - Provides a unified Interface for ScelEnumByName and ScelEnumByProps
-  /// - Enumerated Supercell are canonical, included in PrimClex
+  /// - Enumerated Supercell are not
   /// - If ScelEnumByProps, references are invalidated after incrementing an
   ///   iterator
   ///

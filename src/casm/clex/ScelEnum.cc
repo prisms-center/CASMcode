@@ -83,7 +83,7 @@ namespace CASM {
     m_existing_only(existing_only) {
     m_lattice_enum.reset(new SupercellEnumerator<Lattice>(
                            m_primclex->prim().lattice(),
-                           m_primclex->prim().factor_group(),
+                           m_primclex->prim().point_group(),
                            enum_props
                          ));
 
@@ -139,7 +139,7 @@ namespace CASM {
 
     if(m_lat_it != m_lat_end) {
       Supercell scel(m_primclex, *m_lat_it);
-      assert(scel.is_canonical());
+
       this->_set_current_ptr(&*scel.insert().first);
       this->_increment_step();
     }

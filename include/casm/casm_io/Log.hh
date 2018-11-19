@@ -145,9 +145,9 @@ namespace CASM {
       static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
       m_print = (m_verbosity >= _required_verbosity);
       if(_print()) {
-        *m_stream << indent_str() << "-- " << what << " -- ";
+        ostream() << indent_str() << "-- " << what << " -- ";
         _add_time();
-        *m_stream << std::endl;
+        ostream() << std::endl;
       }
     }
 
@@ -273,7 +273,7 @@ namespace CASM {
     operator std::ostream &();
 
     std::ostream &ostream() {
-      return *m_stream;
+      return *m_ostream;
     }
 
     bool print() const;
@@ -313,7 +313,7 @@ namespace CASM {
     }
 
     Log &indent() {
-      *m_stream << indent_str();
+      ostream() << indent_str();
       return *this;
     }
 
@@ -341,9 +341,9 @@ namespace CASM {
       end_section();
       begin_section<_required_verbosity>();
       if(_print()) {
-        *m_stream << indent_str() << "-- " << type << ": " << what << " -- ";
+        ostream() << indent_str() << "-- " << type << ": " << what << " -- ";
         _add_time();
-        *m_stream << std::endl;
+        ostream() << std::endl;
       }
     }
 
@@ -357,6 +357,8 @@ namespace CASM {
     void _add_time();
 
     bool _print() const;
+
+    std::ios_base::Init m_ostream_init;
 
     std::vector<int> m_required_verbosity;
 
@@ -381,7 +383,7 @@ namespace CASM {
 
     boost::chrono::steady_clock::time_point m_lap_start_time;
 
-    std::ostream *m_stream;
+    std::ostream *m_ostream;
 
   };
 
@@ -479,7 +481,8 @@ namespace CASM {
     Logging(Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log()) :
       m_log(&log),
       m_debug_log(&debug_log),
-      m_err_log(&err_log) {}
+      m_err_log(&err_log) {
+    }
 
     Log &log() const {
       return *m_log;

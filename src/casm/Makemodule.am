@@ -253,7 +253,8 @@ libcasm_la_SOURCES = \
   src/casm/symmetry/SymRepTools.cc~\
   src/casm/symmetry/bak.SymGroup.cc.bak\
   src/casm/system/Popen.cc\
-  src/casm/system/RuntimeLibrary.cc
+  src/casm/system/RuntimeLibrary.cc\
+  src/casm/version/autoversion.cc
 
 libcasm_la_LIBADD = \
   $(BOOST_SYSTEM_LIB)\

@@ -22,10 +22,10 @@ namespace CASM {
     m_indent_level(0),
     m_indent_spaces(0),
     m_paragraph_width(100),
-    m_justification(JustificationType::Left) {
-    reset(_ostream);
-    restart_clock();
-    begin_lap();
+    m_justification(JustificationType::Left),
+    m_ostream(&_ostream) {
+
+
   }
 
   void Log::restart_clock() {
@@ -67,7 +67,7 @@ namespace CASM {
 
 
   void Log::reset(std::ostream &_ostream) {
-    m_stream = &_ostream;
+    m_ostream = &_ostream;
   }
 
   /// \brief Choose c random unique numbers in [0,n)
@@ -224,7 +224,7 @@ namespace CASM {
   }
 
   Log::operator std::ostream &() {
-    return *m_stream;
+    return ostream();
   }
 
   std::string Log::invalid_verbosity_msg(std::string s) {
@@ -283,7 +283,7 @@ namespace CASM {
 
   void Log::_add_time() {
     if(m_show_clock) {
-      std::cout << "Time: " << time_s() << " (s)";
+      ostream() << "Time: " << time_s() << " (s)";
     }
   }
 

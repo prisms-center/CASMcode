@@ -106,7 +106,8 @@ namespace CASM {
                 fs::path _root = fs::path(),
                 Log &_log = default_log(),
                 Log &_err_log = default_err_log()) :
-      CommandArgs(_argc, _argv, _primclex, _root, Logging(_log, _log, _err_log)) {}
+      CommandArgs(_argc, _argv, _primclex, _root, Logging(_log, _log, _err_log)) {
+    }
 
 
     /// \brief CommandArgs constructor
