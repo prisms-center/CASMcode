@@ -11,7 +11,7 @@ using namespace CASM;
 #define TXT_VERSION "unknown"
 #endif
 
-const std::string &CASM::version() {
-  static const std::string &ver = TXT_VERSION;
-  return ver;
-};
+//const std::string &CASM::version() {
+//  static const std::string &ver = TXT_VERSION;
+//  return ver;
+//};
