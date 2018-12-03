@@ -67,11 +67,11 @@ class Relax(object):
         print("  Configuration:", self.configname)
 
         print("Reading CASM settings")
-        self.casm_settings = ProjectSettings()
+        self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings == None:
             raise QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
-        self.casm_directories=DirectoryStructure()
+        self.casm_directories=DirectoryStructure(configdir)
 
         print("Constructing a CASM QEWrapper Relax object")
         sys.stdout.flush()
