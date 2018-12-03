@@ -93,6 +93,7 @@ class ProjectSettings(object):
 
         """
         if project_path(path) is None:
+          path=os.getcwd()
           if path is None:
             raise Exception("No CASM project found using " + os.getcwd())
           else:
