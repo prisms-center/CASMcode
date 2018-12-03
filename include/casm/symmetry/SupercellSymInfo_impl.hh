@@ -83,14 +83,23 @@ namespace CASM {
                                                SupercellSymInfo const &_syminfo,
                                                DoFKey const &_key,
                                                std::vector<PermuteIterator> const &_group) {
+    return collective_dof_normal_coords_and_irrep_dims(begin, end, _syminfo, _key, _group).first;
+
+  }
+
+  template<typename IterType>
+  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
+                                              IterType end,
+                                              SupercellSymInfo const &_syminfo,
+                                              DoFKey const &_key,
+  std::vector<PermuteIterator> const &_group) {
     //std::vector<PermuteIterator> perms = scel_subset_group(begin,end,_syminfo);
     std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group);
 
     SymGroupRep::RemoteHandle rep(rep_info.first, rep_info.second);
-    return rep->get_irrep_trans_mat_blind(rep_info.first);
+    return rep->_get_irrep_trans_mat_blind(rep_info.first);
 
   }
-
 }
 
 #endif

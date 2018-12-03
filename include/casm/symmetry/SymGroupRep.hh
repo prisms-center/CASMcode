@@ -148,6 +148,7 @@ namespace CASM {
     Eigen::MatrixXd get_irrep_trans_mat(const SymGroup &head_group, std::vector<std::vector<Index> > &subspaces) const;
 
     Eigen::MatrixXd get_irrep_trans_mat_blind(const SymGroup &head_group) const;
+    std::pair<Eigen::MatrixXd, std::vector<Index>> _get_irrep_trans_mat_blind(const SymGroup &head_group) const;
     ReturnArray<Eigen::MatrixXd> get_projection_operators() const;
 
     jsonParser &to_json(jsonParser &json) const;

@@ -1131,6 +1131,196 @@ namespace CASM {
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
+  std::pair<Eigen::MatrixXd, std::vector<Index>> SymGroupRep::_get_irrep_trans_mat_blind(const SymGroup &head_group) const {
+
+    std::vector<Index> irrep_dims;
+    if(!size() || !head_group.size() || !MatrixXd(head_group[0].index())) {
+      default_err_log() << "WARNING:  In SymGroupRep::calc_new_irreps, size of representation is " << size() << " and MatrixXd address is " << MatrixXd(head_group[0].index()) << std::endl
+                        << "          No valid irreps will be returned.\n";
+      return std::make_pair(Eigen::MatrixXd(), irrep_dims);
+    }
+
+    int dim(MatrixXd(head_group[0].index())->rows());
+    Array<Eigen::MatrixXcd> commuters;
+    std::cout.precision(8);
+    std::cout.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+    // Identity always commutes, and by putting it first we prevent some accidental degeneracies
+    commuters.push_back(Eigen::MatrixXcd::Identity(dim, dim) / sqrt(double(dim)));
+    typedef std::complex<double> cplx;
+    Array<cplx> phase;
+    phase.push_back(cplx(1.0, 0.0)); // 1+0i
+    phase.push_back(cplx(0.0, 1.0)); // 0+1i
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> esolve;
+    Eigen::HouseholderQR<Eigen::MatrixXd> qr;
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> colqr;
+    colqr.setThreshold(0.001);
+    int Nfound(0);
+    Eigen::MatrixXcd tmat(Eigen::MatrixXcd::Zero(dim, dim)), tcommute(Eigen::MatrixXcd::Zero(dim, dim));
+    Eigen::MatrixXd trans_mat(Eigen::MatrixXd::Zero(dim, dim));
+
+    // Initialize kernel as a random orthogonal matrix
+    Eigen::MatrixXd kernel(Eigen::MatrixXd::Random(dim, dim).householderQr().householderQ());
+
+    //std::cout << "rep_check:";
+    //for(Index ns = 0; ns < head_group.size(); ns++) {
+    //for(Index ns2 = ns; ns2 < head_group.size(); ns2++) {
+    //  auto prod=(*(MatrixXd(head_group[ns].index())))*(*(MatrixXd(head_group[ns2].index())));
+    //  Index iprod=head_group[ns].ind_prod(head_group[ns2]);
+    //  double norm = (prod-*(MatrixXd(iprod))).norm();
+    //  if(!almost_zero(norm)){
+    //    std::cout << "ns: " << ns << "  ns2: " << ns2 << " iprod: " << iprod << " NO MATCH\n";
+    //    std::cout << "prod: \n" << prod << "\n\n";
+    //    std::cout << "mat(iprod): \n" << *(MatrixXd(iprod)) << "\n\n";
+    //  }
+    //}
+    //}
+
+
+
+    //std::cout << "Commuter are:\n";
+    // Build 'commuters', which span space of real matrices that commute with SymOpReps
+    // 'kernel' is the kernel of trans_mat, and as the loop progresses, 'kernel' shrinks and the rank for trans_mat increases
+    //std::vector<Index> irrep_dims;
+    //std::cout << "~~~~~~~Dimension is " << dim << "\n";
+    for(Index kci = 0; kci < kernel.cols(); kci++) {
+      bool found_new_irreps(false);
+      for(Index kcj = kci; kcj < kernel.cols(); kcj++) {
+        for(Index nph = 0; nph < 2; nph++) {
+          if(kci == kcj && nph > 0) continue;
+          tcommute.setZero();
+
+          // form commuters by taking outer product of i'th column of the kernel with the j'th column
+          // commuters are constructed to be self-adjoint, which assures eigenvalues are real
+          tmat = phase[nph] * kernel.col(kci) * kernel.col(kcj).transpose() // outer product
+                 + std::conj(phase[nph]) * kernel.col(kcj) * kernel.col(kci).transpose(); // adjoint of outer product
+
+          //apply reynolds operator
+          //std::cout << "Counting indices: ";
+          for(Index ns = 0; ns < head_group.size(); ns++) {
+            //std::cout << head_group[ns].index() << "  ";
+            tcommute += (*(MatrixXd(head_group[ns].index()))) * tmat * (*(MatrixXd(head_group[ns].index()))).transpose();
+            //tcommute += phase[nph]*(MatrixXd(ns)->col(i)) * (MatrixXd(ns)->row(j))+std::conj(phase[nph])*(MatrixXd(ns)->col(j)) * (MatrixXd(ns)->row(i));
+          }
+
+          //Do Gram-Shmidt while building 'commuters'
+
+          for(Index nc = 0; nc < commuters.size(); nc++) {
+            cplx tproj((commuters[nc].array().conjugate()*tcommute.array()).sum()); //Frobenius product
+            tcommute -= tproj * commuters[nc];
+          }
+
+          double tnorm((tcommute.array().conjugate()*tcommute.array()).sum().real());
+          if(tnorm > TOL) {
+            commuters.push_back(tcommute / tnorm);
+            //std::cout << commuters.back() << "\n\n";
+          }
+          else continue;  // Attempt to construct the next commuter...
+
+
+          //Finished building commuter now we can try to harvest irreps from it
+
+          // construct trans_mat from the non-degenerate irreps obtained from the commuter
+
+          Index nc = commuters.size() - 1;
+
+          // magnify the range of eigenvalues to be (I think) independent of matrix dimension by multiplying by dim^{3/2}
+          esolve.compute(double(dim)*sqrt(double(dim))*kernel.transpose()*commuters[nc]*kernel);
+          //std::cout << "KERNEL IS:\n" << kernel << "\n\n";
+          //std::cout << esolve.eigenvalues().size() << " EIGENVALUES of commuter " << nc << " are \n" << esolve.eigenvalues().transpose() << "\n";
+          Array<Index> subspace_dims = partition_distinct_values(esolve.eigenvalues());
+          //std::cout << "Eigenvectors are:\n" << esolve.eigenvectors().real() << "\n\n" << esolve.eigenvectors().imag() << "\n\n";
+          //std::cout << "QR Eigenvectors are:\n"
+          //<< Eigen::MatrixXcd(esolve.eigenvectors().householderQr().householderQ()).real() << "\n\n"
+          //<< Eigen::MatrixXcd(esolve.eigenvectors().householderQr().householderQ()).imag() << "\n\n";
+
+          tmat = kernel * (esolve.eigenvectors().householderQr().householderQ());
+          //std::cout << "Considering vectors:\n" << tmat.real() << "\n\n" << tmat.imag() << "\n\n";
+          //std::cout << "orthonormality check 1:\n" << (tmat.adjoint()*tmat).real() << "\n\n" << (tmat.adjoint()*tmat).imag() << "\n\n";
+          //std::cout << "orthonormality check 2:\n" << (tmat * tmat.adjoint()).real() << "\n\n" << (tmat * tmat.adjoint()).imag() << "\n\n";
+
+          // make transformed copy of the representation
+          Array<Eigen::MatrixXcd> trans_rep(head_group.size());
+          Eigen::MatrixXd block_shape(Eigen::MatrixXd::Zero(kernel.cols(), kernel.cols()));
+          //std::cout << "Transformed representation is:\n";
+          for(Index i = 0; i < head_group.size(); i++) {
+            trans_rep[head_group[i].index()] = tmat.adjoint() * (*MatrixXd(head_group[i].index())) * tmat;
+            block_shape += (trans_rep[head_group[i].index()].cwiseProduct(trans_rep[head_group[i].index()].conjugate())).real();
+            //std::cout << trans_rep[i] << "\n\n";
+          }
+          //std::cout << "Mini block shape:\n" << block_shape << "\n";
+          Index last_i = 0;
+          for(Index ns = 0; ns < subspace_dims.size(); ns++) {
+            double tnorm(0);
+            Array<std::complex<double> > char_array;
+
+            for(Index ng = 0; ng < trans_rep.size(); ng++) {
+              cplx tchar(0, 0);
+              for(Index i = last_i; i < last_i + subspace_dims[ns]; i++)
+                tchar += trans_rep[ng](i, i);
+              char_array.push_back(tchar);
+              tnorm += std::norm(tchar);
+            }
+
+            if(almost_equal(tnorm, double(head_group.size()))) { // this representation is irreducible
+              //std::cout << "THE REPRESENTATION IS IRREDUCIBLE!!\n";
+              //std::cout << "It's characters are: " << char_array << "\n\n";
+              Eigen::MatrixXd ttrans_mat(dim, 2 * subspace_dims[ns]);
+              //std::cout << "Vectors in this subspace are:\n" << tmat.block(0, last_i, dim, subspace_dims[ns]) << "\n\n";
+              ttrans_mat.leftCols(subspace_dims[ns]) = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).real();
+              ttrans_mat.rightCols(subspace_dims[ns]) = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).imag();
+              //std::cout << "Separated into components:\n" << ttrans_mat << "\n\n";
+              //Only append to trans_mat if the new columns extend the space (i.e., are orthogonal)
+
+              if(almost_zero((ttrans_mat.transpose()*trans_mat).norm(), 0.001)) {
+                qr.compute(ttrans_mat);
+                //it seems stupid to use two different decompositions that do almost the same thing, but
+                // HouseholderQR is not rank-revealing, and colPivHouseholder mixes up the columns of the Q matrix.
+                colqr.compute(ttrans_mat);
+                Index rnk = colqr.rank();
+                irrep_dims.push_back(subspace_dims[ns]);
+                if(rnk == 2 * subspace_dims[ns])
+                  irrep_dims.push_back(subspace_dims[ns]);
+                ttrans_mat = Eigen::MatrixXd(qr.householderQ()).leftCols(rnk);
+                SymGroupRep t_rep(coord_transformed_copy(ttrans_mat.transpose()));
+                //std::cout << "***Adding columns!\n" << Eigen::MatrixXd(qr.householderQ()).leftCols(rnk) << "\n\n";
+                //trans_mat.block(0, Nfound, dim, rnk) = Eigen::MatrixXd(qr.householderQ()).leftCols(rnk);
+                trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * (t_rep._symmetrized_irrep_trans_mat(head_group)).transpose();
+                Nfound += rnk;
+                found_new_irreps = true;
+                //std::cout << "trans_mat is now: \n" << trans_mat << "\n\n";
+              }
+            }
+            last_i += subspace_dims[ns];
+          }
+          if(found_new_irreps) {
+            qr.compute(trans_mat);
+            kernel = Eigen::MatrixXd(qr.householderQ()).rightCols(dim - Nfound);
+            break;
+          }
+        }
+        if(found_new_irreps) {
+          kci = 0;
+          break;
+        }
+      }
+    }
+
+    // make transformed copy of the representation
+    Eigen::MatrixXd block_shape(Eigen::MatrixXd::Zero(dim, dim));
+    //std::cout << "Transformed representation is:\n";
+    for(Index i = 0; i < head_group.size(); i++) {
+      block_shape += (trans_mat.transpose() * (*MatrixXd(head_group[i].index())) * trans_mat).cwiseAbs2();
+    }
+    std::cout << "BLOCK MATRIX IS:\n"
+              << block_shape << "\n\n";
+    //std::cout << "IRREP DIMENSIONS ARE: " << irrep_dims << "\n\n";
+    return std::make_pair(trans_mat.transpose(), irrep_dims);
+
+  }
+  // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
+  // The ROWS of trans_mat are the new basis vectors in terms of the old such that
+  // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
   Eigen::MatrixXd SymGroupRep::get_irrep_trans_mat_blind(const SymGroup &head_group) const {
 
     if(!size() || !head_group.size() || !MatrixXd(head_group[0].index())) {

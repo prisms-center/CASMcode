@@ -72,8 +72,10 @@ namespace CASM {
 
   void Structure::copy_attributes_from(const Structure &RHS) {
 
+    std::cout << "inside struc copy attributes" << std::endl;
     BasicStructure<Site>::copy_attributes_from(RHS);
 
+    std::cout << "basic struc copy success" << std::endl;
     m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
     std::cout << "COPYING ATTRIBUTES!!\n";
     //assert(0);
@@ -95,8 +97,11 @@ namespace CASM {
   void Structure::generate_factor_group() const {
     m_factor_group.clear();
     m_factor_group.set_lattice(lattice());
+    std::cout << "Calling basic struc fg" << std::endl;
     BasicStructure<Site>::generate_factor_group(m_factor_group);
+    std::cout << "Calling basis symreps" << std::endl;
     _generate_basis_symreps();
+    std::cout << "Calling global symreps" << std::endl;
     _generate_global_symreps();
     return;
   }
