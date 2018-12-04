@@ -306,6 +306,9 @@ namespace CASM {
 
   void Site::set_basis_ind(Index new_ind) {
     Coordinate::set_basis_ind(new_ind);
+    if(m_site_occupant.unique().get() == nullptr) {
+      std::cout << "YOURE GOING TO HATE THIS" << std::endl;
+    }
     m_site_occupant->set_ID(new_ind);
     for(auto &dof : m_dof_map)
       dof.second.set_ID(new_ind);

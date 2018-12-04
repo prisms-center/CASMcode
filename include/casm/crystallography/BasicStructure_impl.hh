@@ -30,7 +30,6 @@ namespace CASM {
       exit(1);
     }
     fs::ifstream infile(filepath);
-    std::cout << "BUT WHY ARE YOU HERE" << std::endl;
     read(infile);
   }
 
@@ -43,7 +42,6 @@ namespace CASM {
     m_title(RHS.title()),
     m_basis(RHS.basis()),
     m_dof_map(RHS.m_dof_map) {
-    std::cout << "attempting to copy construct" << std::endl;
     for(Index i = 0; i < basis().size(); i++) {
       m_basis[i].set_lattice(lattice(), CART);
     }
@@ -132,7 +130,6 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_group, bool time_reversal_enabled) const {
-    //std::cout << "BASIC STRUCTURE FACTOR GROUP\n";
     Array<CoordType> trans_basis;
     Index pg, b0, b1, b2;
     Coordinate t_tau(lattice());
@@ -254,9 +251,7 @@ namespace CASM {
   void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
     SymGroup point_group;
 
-    std::cout << "About to lattice pg " << std::endl;
     lattice().generate_point_group(point_group);
-    std::cout << "About to generate factor group. Point group size: " << point_group.size() << std::endl;
     _generate_factor_group_slow(factor_group, point_group);
     return;
   }
@@ -265,16 +260,11 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::generate_factor_group(SymGroup &factor_group) const {
-    std::cout << "in basic struc gen factor group" << std::endl;
-    BasicStructure<CoordType> tprim;
-    std::cout << "gonna clear" << std::endl;
+    BasicStructure<CoordType> tprim(lattice());
     factor_group.clear();
-    std::cout << "gonna setlat" << std::endl;
     factor_group.set_lattice(lattice());
     // CASE 1: Structure is primitive
-    std::cout << "am i primitive?" << std::endl;
     if(is_primitive(tprim)) {
-      std::cout << "slowtime" << std::endl;
       generate_factor_group_slow(factor_group);
       return;
     }
@@ -282,7 +272,6 @@ namespace CASM {
 
     // CASE 2: Structure is not primitive
 
-    std::cout << "not primitive" << std::endl;
     PrimGrid prim_grid(tprim.lattice(), lattice());
     SymGroup prim_fg;
     tprim.generate_factor_group_slow(prim_fg);
@@ -435,14 +424,8 @@ namespace CASM {
 
   template<typename CoordType>
   bool BasicStructure<CoordType>::is_primitive(BasicStructure<CoordType> &new_prim) const {
-    std::cout << "Inside is primitive" << std::endl;
     SymGroup valid_translations, identity_group;
     identity_group.push_back(SymOp());
-    std::cout << "generate_factor_group_slow with valid trans" << std::endl;
-    _generate_factor_group_slow(valid_translations, identity_group, false);
-
-
-    std::cout << "more things" << std::endl;
     Eigen::Vector3d prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);
     Array<Eigen::Vector3d > shift;
     double tvol, min_vol;
@@ -458,37 +441,22 @@ namespace CASM {
 
 
 
-    std::cout << "more thiiiiiings" << std::endl;
     if(prim_flag) {
-      std::cout << "copy" << std::endl;
-      std::cout << "DEBUGGING: this->lattice().lat_column_mat()" << this->lattice().lat_column_mat() << std::endl;
-      std::cout << "DEBUGGING: this->title()" << this->title() << std::endl;
-      std::cout << "DEBUGGING: this->basis()[0] " << this->basis()[0]  << std::endl;
-      for(auto &item : this->basis()[0].dof_types()) {
-        std::cout << item << std::endl;
-      }
-      Site a_different_site(this->basis()[0]);
-      std::cout << "DEBUGGING: this->m_SD_flag" << this->m_SD_flag << std::endl;
-      std::cout << "DEBUGGING: this->m_dof_map.size()" << this->m_dof_map.size() << std::endl;
-      new_prim = (*this);
-      std::cout << "outtahere" << std::endl;
+      new_prim = *this;
       return true;
     }
 
 
-    std::cout << "where am I failing?" << std::endl;
     shift.push_back(lattice()[0]);
     shift.push_back(lattice()[1]);
     shift.push_back(lattice()[2]);
 
     //We want to minimize the volume of the primitivized cell, but to make it not a weird shape
     //that leads to noise we also minimize the dot products like reduced cell would
-    std::cout << "minimize vol" << std::endl;
     min_vol = std::abs(lattice().vol());
     for(Index sh = 0; sh < shift.size(); sh++) {
       for(Index sh1 = sh + 1; sh1 < shift.size(); sh1++) {
         for(Index sh2 = sh1 + 1; sh2 < shift.size(); sh2++) {
-          std::cout << "trip prod" << std::endl;
           tvol = std::abs(triple_prod(shift[sh], shift[sh1], shift[sh2]));
           if(tvol < min_vol && tvol > prim_vol_tol) {
             min_vol = tvol;
@@ -502,7 +470,6 @@ namespace CASM {
     }
 
 
-    std::cout << "here now" << std::endl;
     Lattice new_lat(prim_vec0, prim_vec1, prim_vec2);
     Lattice reduced_new_lat = niggli(new_lat, lattice().tol());
     //The lattice so far is OK, but it's noisy enough to matter for large
@@ -521,7 +488,6 @@ namespace CASM {
         transmat(i, j) = floor(transmat(i, j) + 0.5);
       }
     }
-    std::cout << "omgwow" << std::endl;
     invtransmat = transmat.inverse();
     reduced_new_lat_mat = lattice().lat_column_mat();
     //When constructing this, why are we using *this as the primitive cell? Seems like I should only specify the vectors
@@ -725,7 +691,6 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::read(std::istream &stream) {
-    std::cout << "Inside poscar read" << std::endl;
     int i, t_int;
     char ch;
     Array<double> num_elem;

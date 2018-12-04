@@ -38,8 +38,6 @@ libcasm_la_SOURCES = \
   src/casm/app/sym.cc\
   src/casm/app/update.cc\
   src/casm/app/view.cc\
-  src/casm/basis_set/.DoF.cc.swp\
-  src/casm/basis_set/.DoFTraits.cc.swp\
   src/casm/basis_set/BasisFunction.cc\
   src/casm/basis_set/BasisSet.cc\
   src/casm/basis_set/DisplacementDoFTraits.cc\
@@ -63,7 +61,6 @@ libcasm_la_SOURCES = \
   src/casm/casm_io/jsonParser.cc\
   src/casm/casm_io/json_io/SpeciesSetParser.cc\
   src/casm/casm_io/json_io/clex.cc\
-  src/casm/clex/.PrimClex.cc.swp\
   src/casm/clex/Calculable.cc\
   src/casm/clex/ChemicalReference.cc\
   src/casm/clex/Clex.cc\
@@ -112,7 +109,6 @@ libcasm_la_SOURCES = \
   src/casm/container/LinearAlgebra.cc\
   src/casm/container/Permutation.cc\
   src/casm/crystallography/.Niggli.cc.swp\
-  src/casm/crystallography/.Structure.cc.swp\
   src/casm/crystallography/BasicStructure.cc\
   src/casm/crystallography/Coordinate.cc\
   src/casm/crystallography/CoordinateSystems.cc\

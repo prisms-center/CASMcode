@@ -638,17 +638,17 @@ namespace CASM {
         m_curr.perturb.elements().emplace_back(proto[i], m_from_value(i), m_occ_counter()[i]);
       }
 
-      /*auto begin = m_base_it->generating_g.begin();
+      auto begin = m_base_it->generating_g.begin();
       auto end = m_base_it->generating_g.end();
       // return perturbation and check if canonical wrt local orbit sub group
       if(m_curr.is_not_subcluster) {
         m_curr.is_canonical = m_curr.perturb.is_canonical(_supercell(), begin, end);
       }
-      }
+    }
 
-      /// Applies current perturbation to m_base_config and stores result in m_current
-      void DiffTransConfigEnumOccPerturbations::_set_current(const OccPerturbation &perturb) {
-      */
+    /// Applies current perturbation to m_base_config and stores result in m_current
+    void DiffTransConfigEnumOccPerturbations::_set_current(const OccPerturbation &perturb) {
+
 
       // generate perturbed from_config
       Configuration perturbed_from_config {m_base_it->config};
@@ -656,10 +656,10 @@ namespace CASM {
       // here we use the group of operations that leaves the diff_trans invariant,
       // and not necessarily the from_config, to find the canonical perturbed from_config
 
-      auto to_canonical = perturbed_from_config.to_canonical(
+      /*auto to_canonical = perturbed_from_config.to_canonical(
                             m_base_it->diff_trans_g.begin(),
                             m_base_it->diff_trans_g.end());
-      /*PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
+      */PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
       Configuration greatest = perturbed_from_config;
       for(auto it = m_base_it->diff_trans_g.begin(); it != m_base_it->diff_trans_g.end(); ++it) {
         DiffTransConfiguration tmp(make_attachable(m_base_it->diff_trans, copy_apply(*it, perturbed_from_config)), m_base_it->diff_trans);
@@ -667,7 +667,7 @@ namespace CASM {
           greatest = copy_apply(*it, perturbed_from_config);
           to_canonical = *it;
         }
-      }*/
+      }
 
       /// construct canonical DiffTransConfiguration as m_current
       m_current = notstd::make_cloneable<DiffTransConfiguration>(

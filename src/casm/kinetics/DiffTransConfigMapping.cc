@@ -24,6 +24,7 @@
 #include "casm/symmetry/Orbit.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/symmetry/OrbitGeneration_impl.hh"
 #include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
 namespace CASM {
