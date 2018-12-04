@@ -7,13 +7,17 @@
 
 namespace CASM {
 
+
   namespace ClexParamPack_impl {
     /// \brief BaseKey class that hides implementation-specific access attributes
     class BaseKey {
     public:
-      BaseKey(std::string const &_name) : m_name(_name) {}
+      BaseKey(std::string const &_name, bool _standalone) :
+        m_name(_name),
+        m_standalone(_standalone) {
+      }
 
-      virtual ~BaseKey() {};
+      virtual ~BaseKey() {}
 
       std::string const &name() const {
         return m_name;
@@ -24,7 +28,9 @@ namespace CASM {
         return std::unique_ptr<BaseKey>(_clone());
       }
 
-
+      bool standalone() const {
+        return m_standalone;
+      }
     protected:
 
       /// \brief Clone the ClexParamKey
@@ -32,8 +38,63 @@ namespace CASM {
 
     private:
       std::string m_name;
+      bool m_standalone;
     };
   }
+
+  class ParamPackMixIn {
+  public:
+
+    static ParamPackMixIn basic_mix_in() {
+      return ParamPackMixIn("BasicClexParamPack", {{"ParamPack::DEFAULT", "double"}});
+    }
+
+    static ParamPackMixIn diff_mix_in() {
+      return ParamPackMixIn("DiffClexParamPack", {{"ParamPack::DEFAULT", "double"}, {"ParamPack::DEFAULT", "ParamPack::DiffScalar"}});
+    }
+
+    ParamPackMixIn(std::string const &_name, std::map<std::string, std::string> const &_specializations) :
+      m_name(_name),
+      m_scalar_specializations(_specializations) {}
+
+    virtual ~ParamPackMixIn() {}
+
+    /// \brief typename of the corresponding ClexParamPack
+    std::string const &name() const {
+      return m_name;
+    }
+
+    /// \brief Dictionary of pairs ("EvalMode", "ScalarType")
+    ///  These correspond to the underlying scalar type to be used for each
+    ///  Evaluation mode
+    std::map<std::string, std::string> const &scalar_specializations()const {
+      return m_scalar_specializations;
+    }
+
+    /// \brief returns string with include directives for Clexulator.
+    virtual std::string cpp_includes_string() const {
+      return "#include \"casm/clex/" + name() + ".hh\"\n";
+    }
+
+    virtual std::string cpp_definitions_string(std::string const &_indent) const {
+      return "";
+    }
+
+    std::unique_ptr<ParamPackMixIn> clone() const {
+      return std::unique_ptr<ParamPackMixIn>(_clone());
+    }
+
+  private:
+    ParamPackMixIn *_clone() const {
+      return new ParamPackMixIn(*this);
+    }
+
+    std::string m_name;
+    std::map<std::string, std::string> m_scalar_specializations;
+  };
+
+
+
 
   class ClexParamPack;
 

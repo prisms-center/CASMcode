@@ -28,7 +28,7 @@ namespace CASM {
         ss <<
            indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n";
         for(Index a = 0; a < _prim.global_dof(type_name()).size(); ++a) {
-          ss << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a
+          ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a
              << ", eval_" << type_name() << "_var(" << a << "));\n";
         }
         ss << indent << "  }\n";
@@ -37,7 +37,7 @@ namespace CASM {
           ss <<
              indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n";
           for(Index f = 0; f < site_bases[0].size(); f++) {
-            ss << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f
+            ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f
                << ", eval_" << site_basis_name() << "(" << f << "));\n";
           }
           ss << indent << "  }\n";
@@ -66,14 +66,14 @@ namespace CASM {
                 continue;
 
               for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
-                ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a << ", " << n
+                ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a << ", " << n
                       << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
               }
 
 
               if(requires_site_basis()) {
                 for(Index f = 0; f < site_bases[b].size(); f++) {
-                  ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n
+                  ssfunc << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f << ", " << n
                          << ", eval_" << site_basis_name() << '_' << b << '_' << f << "(" << n << "));\n";
                 }
               }
@@ -111,7 +111,7 @@ namespace CASM {
         ss <<
            indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n";
         for(Index a = 0; a < _prim.global_dof(type_name()).size(); ++a) {
-          ss << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a
+          ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a
              << ", eval_" << type_name() << "_var(" << a << "));\n";
         }
         ss << indent << "  }\n";
@@ -120,7 +120,7 @@ namespace CASM {
           ss <<
              indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n";
           for(Index f = 0; f < site_bases[0].size(); f++) {
-            ss << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f
+            ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f
                << ", eval_" << site_basis_name() << "(" << f << "));\n";
           }
           ss << indent << "  }\n";
@@ -143,13 +143,13 @@ namespace CASM {
               continue;
 
             for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
-              ssvar << indent << "    m_params.write(m_" << type_name() << "_var_param_key, " << a << ", " << n
+              ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a << ", " << n
                     << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
             }
 
             if(requires_site_basis()) {
               for(Index f = 0; f < site_bases[b].size(); f++) {
-                ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n
+                ssfunc << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f << ", " << n
                        << ", eval_" << site_basis_name() << "_" << b << "_" << f << "(" << n << "));\n";
               }
             }
@@ -224,8 +224,10 @@ namespace CASM {
                indent << "  return m_global_dof_ptrs[m_" << type_name() << "_var_param_key.index()]->values()[ind];\n" <<
                indent << "}\n\n";
 
-        stream << indent << "double const &" << type_name() << "_var(const int &ind) const {\n" <<
-               indent << "  return " << "m_params.read(m_" << type_name() << "_var_param_key, ind);\n" <<
+        stream <<
+               indent << "template<typename Scalar>\n" <<
+               indent << "Scalar const &" << type_name() << "_var(const int &ind) const {\n" <<
+               indent << "  return " << "m_params.val<Scalar>(m_" << type_name() << "_var_param_key, ind);\n" <<
                indent << "}\n";
 
         return stream.str();
@@ -270,7 +272,7 @@ namespace CASM {
             auto visitors = site_function_visitors();
             BasisSet site_basis = _site_bases[nb];
             for(auto const &vis : visitors)
-              site_basis.accept(VariableLabeler(type_name(), "%p_var_%f(nlist_ind)"));
+              site_basis.accept(VariableLabeler(type_name(), "%p_var_%f<Scalar>(nlist_ind)"));
 
             for(Index f = 0; f < site_basis.size(); f++) {
               stream <<
@@ -284,13 +286,17 @@ namespace CASM {
 
       }
       for(Index a = 0; a < max_na; ++a) {
-        stream << indent << "double const &" << type_name() << "_var_" << a << "(const int &nlist_ind) const {\n" <<
-               indent << "  return " << "m_params.read(m_" << type_name() << "_var_param_key, " << a << ", nlist_ind);\n" <<
+        stream <<
+               indent << "template<typename Scalar>\n" <<
+               indent << "Scalar const &" << type_name() << "_var_" << a << "(const int &nlist_ind) const {\n" <<
+               indent << "  return " << "m_params.val<Scalar>(m_" << type_name() << "_var_param_key, " << a << ", nlist_ind);\n" <<
                indent << "}\n";
       }
       for(Index f = 0; f < max_nf; ++f) {
-        stream << indent << "double const &" << site_basis_name() << "_" << f << "(const int &nlist_ind) const {\n" <<
-               indent << "  return " << "m_params.read(m_" << site_basis_name() << "_param_key, " << f << ", nlist_ind);\n" <<
+        stream <<
+               indent << "template<typename Scalar>\n" <<
+               indent << "Scalar const &" << site_basis_name() << "_" << f << "(const int &nlist_ind) const {\n" <<
+               indent << "  return " << "m_params.val<Scalar>(m_" << site_basis_name() << "_param_key, " << f << ", nlist_ind);\n" <<
                indent << "}\n";
 
       }
@@ -299,12 +305,13 @@ namespace CASM {
 
     //************************************************************
 
-    std::vector<std::tuple<std::string, Index, Index> > Traits::param_pack_allocation(Structure const &_prim,
-        std::vector<BasisSet> const &_bases) const {
-      std::vector<std::tuple<std::string, Index, Index> > result;
+    std::vector<ParamAllocation > Traits::param_pack_allocation(Structure const &_prim,
+                                                                std::vector<BasisSet> const &_bases) const {
+
+      std::vector<ParamAllocation> result;
 
       if(global() && _bases.size()) {
-        result.push_back(std::make_tuple(std::string(type_name() + "_var"), _bases[0].size(), Index(1)));
+        result.push_back(ParamAllocation(std::string(type_name() + "_var"), _bases[0].size(), Index(1), true));
         return result;
       }
 
@@ -323,10 +330,10 @@ namespace CASM {
         NV = max(NV, site.dof(type_name()).size());
 
       //for(Index i = 0; i < NB; i++)
-      result.push_back(std::make_tuple(std::string(type_name() + "_var"), Index(-1), Index(NV)));
+      result.push_back(ParamAllocation(std::string(type_name() + "_var"), Index(NV), Index(-1), true));
 
       if(basis_allocation)
-        result.push_back(std::make_tuple(site_basis_name(), Index(-1), Index(NB)));
+        result.push_back(ParamAllocation(site_basis_name(), Index(NB), Index(-1), false));
 
       return result;
 
@@ -376,20 +383,20 @@ namespace CASM {
 
     std::vector<std::unique_ptr<FunctionVisitor> > Traits::site_function_visitors() const {
       std::vector<std::unique_ptr<FunctionVisitor> > result;
-      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f(%n)")));
+      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f<Scalar>(%n)")));
       return result;
     }
 
     std::vector<std::unique_ptr<FunctionVisitor> > Traits::clust_function_visitors() const {
       std::vector<std::unique_ptr<FunctionVisitor> > result;
       if(global()) {
-        result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var(%f)")));
+        result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var<Scalar>(%f)")));
       }
       else {
         if(requires_site_basis())
-          result.push_back(std::unique_ptr<FunctionVisitor>(new SubExpressionLabeler(site_basis_name(), site_basis_name() + "_%l(%n)")));
+          result.push_back(std::unique_ptr<FunctionVisitor>(new SubExpressionLabeler(site_basis_name(), site_basis_name() + "_%l<Scalar>(%n)")));
         else
-          result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f(%n)")));
+          result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f<Scalar>(%n)")));
       }
       return result;
     }

@@ -39,8 +39,8 @@ namespace CASM {
 
       std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const override;
 
-      std::vector<std::tuple<std::string, Index, Index> > param_pack_allocation(Structure const &_prim,
-                                                                                std::vector<BasisSet> const &_bases) const override;
+      std::vector<DoFType::ParamAllocation> param_pack_allocation(Structure const &_prim,
+                                                                  std::vector<BasisSet> const &_bases) const override;
 
       std::string clexulator_constructor_string(Structure const &_prim,
                                                 std::vector<BasisSet> const &site_bases,

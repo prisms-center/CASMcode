@@ -54,23 +54,17 @@ casm_basis_set_include_HEADERS = \
   include/casm/basis_set/BasisFunction.hh\
   include/casm/basis_set/BasisSet.hh\
   include/casm/basis_set/DisplacementDoFTraits.hh\
-  include/casm/basis_set/DisplacementDoFTraits.hh~\
   include/casm/basis_set/DoF.hh\
   include/casm/basis_set/DoFDecl.hh\
   include/casm/basis_set/DoFIsEquivalent.hh\
   include/casm/basis_set/DoFSet.hh\
-  include/casm/basis_set/DoFSet.hh~\
   include/casm/basis_set/DoFTraits.hh\
-  include/casm/basis_set/DofIsEquivalent.hh~\
   include/casm/basis_set/FunctionVisitor.hh\
   include/casm/basis_set/MagSpinDoFTraits.hh\
-  include/casm/basis_set/MagSpinDoFTraits.hh~\
   include/casm/basis_set/OccupantFunction.hh\
   include/casm/basis_set/OccupationDoFTraits.hh\
-  include/casm/basis_set/OccupationDoFTraits.hh~\
   include/casm/basis_set/PolynomialFunction.hh\
   include/casm/basis_set/StrainDoFTraits.hh\
-  include/casm/basis_set/StrainDoFTraits.hh~\
   include/casm/basis_set/Variable.hh\
   include/casm/basis_set/chebychev.m
 
@@ -119,6 +113,7 @@ casm_clex_include_HEADERS = \
   include/casm/clex/Clex.hh\
   include/casm/clex/ClexBasis.hh\
   include/casm/clex/ClexBasisWriter.hh\
+  include/casm/clex/ClexBasisWriter.hh_edit\
   include/casm/clex/ClexBasisWriter_impl.hh\
   include/casm/clex/ClexBasis_impl.hh\
   include/casm/clex/ClexParamPack.hh\
@@ -151,6 +146,8 @@ casm_clex_include_HEADERS = \
   include/casm/clex/Configuration.hh\
   include/casm/clex/ConfigurationTraits.hh\
   include/casm/clex/Configuration_impl.hh\
+  include/casm/clex/DiffClexParamPack.hh\
+  include/casm/clex/DiffClexParamPack.hh~\
   include/casm/clex/DoFManager.bak.hh\
   include/casm/clex/ECIContainer.hh\
   include/casm/clex/FilteredConfigIterator.hh\
@@ -784,6 +781,18 @@ casm_external_MersenneTwister_includedir=$(includedir)/casm/external/MersenneTwi
 
 casm_external_MersenneTwister_include_HEADERS = \
   include/casm/external/MersenneTwister/MersenneTwister.h
+
+casm_external_fadbad_includedir=$(includedir)/casm/external/fadbad
+
+casm_external_fadbad_include_HEADERS = \
+  include/casm/external/fadbad/COPYRIGHT\
+  include/casm/external/fadbad/README\
+  include/casm/external/fadbad/badiff.h\
+  include/casm/external/fadbad/badiff.h~\
+  include/casm/external/fadbad/fadbad.h\
+  include/casm/external/fadbad/fadiff.h\
+  include/casm/external/fadbad/fadiff.h~\
+  include/casm/external/fadbad/tadiff.h
 
 casm_external_gzstream_includedir=$(includedir)/casm/external/gzstream
 

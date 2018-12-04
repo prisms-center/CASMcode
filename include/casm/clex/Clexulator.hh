@@ -107,7 +107,6 @@ namespace CASM {
                                          double *_corr_end) const {
         _set_configdof(_input_configdof);
         _set_nlist(_n_list_begin);
-        _global_prepare();
         _calc_global_corr_contribution(_corr_begin);
       }
 
@@ -137,7 +136,6 @@ namespace CASM {
                                                     size_type const *_corr_ind_end) const {
         _set_configdof(_input_configdof);
         _set_nlist(_n_list_begin);
-        _global_prepare();
         _calc_restricted_global_corr_contribution(_corr_begin, _corr_ind_begin, _corr_ind_end);
       }
 
@@ -161,7 +159,6 @@ namespace CASM {
                            double *_corr_end) const {
         _set_configdof(_input_configdof);
         _set_nlist(_n_list_begin);
-        _point_prepare(neighbor_ind);
         _calc_point_corr(neighbor_ind, _corr_begin);
       }
 
@@ -194,7 +191,6 @@ namespace CASM {
                                       size_type const *_corr_ind_end) const {
         _set_configdof(_input_configdof);
         _set_nlist(_n_list_begin);
-        _point_prepare(neighbor_ind);
         _calc_restricted_point_corr(neighbor_ind, _corr_begin, _corr_ind_begin, _corr_ind_end);
       }
 
@@ -222,7 +218,6 @@ namespace CASM {
                                  double *_corr_end) const {
         _set_configdof(_input_configdof);
         _set_nlist(_n_list_begin);
-        _point_prepare(neighbor_ind);
         _calc_delta_point_corr(neighbor_ind, occ_i, occ_f, _corr_begin);
       }
       /// \brief Calculate the change in select point correlations due to changing an occupant
@@ -260,7 +255,6 @@ namespace CASM {
                                             size_type const *_corr_ind_end) const {
         _set_configdof(_input_configdof);
         _set_nlist(_n_list_begin);
-        _point_prepare(neighbor_ind);
         _calc_restricted_delta_point_corr(neighbor_ind, occ_i, occ_f, _corr_begin, _corr_ind_begin, _corr_ind_end);
       }
 
@@ -320,10 +314,6 @@ namespace CASM {
                                                      double *_corr_begin,
                                                      size_type const *_corr_ind_begin,
                                                      size_type const *_corr_ind_end) const = 0;
-
-      virtual void _global_prepare() const = 0;
-
-      virtual void _point_prepare(int neighbor_ind) const = 0;
 
       void _register_local_dof(std::string const &_type_name, Index _ind) {
         Index new_size = max(Index(_ind), Index(m_local_dof_ptrs.size())) + 1;

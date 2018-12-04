@@ -15,8 +15,8 @@ namespace CASM {
     typedef ClexParamPack::size_type size_type;
 
 
-    BasicClexParamKey(std::string const &_name = "", size_type _ind = -1) :
-      ClexParamPack_impl::BaseKey(_name),
+    BasicClexParamKey(std::string const &_name = "", bool _standalone = false, size_type _ind = -1) :
+      ClexParamPack_impl::BaseKey(_name, _standalone),
       m_index(_ind) {}
 
     ~BasicClexParamKey() {
@@ -130,12 +130,12 @@ namespace CASM {
       m_data[_key.index()](_i, _j) = _val;
     }
 
-    Key allocate(std::string const &_keyname, Index _rows, Index _cols) {
+    Key allocate(std::string const &_keyname, Index _rows, Index _cols, bool _independent) {
       auto it = keys().find(_keyname);
       if(it != keys().end())
         throw std::runtime_error("Naming collision in BasicClexParamPack::allocate(), ClexParamPack already managing parameter allocation corresponding to name " + _keyname + ".");
 
-      Key protokey(_keyname, m_data.size());
+      Key protokey(_keyname, true, m_data.size());
 
       m_data.push_back(Eigen::MatrixXd::Zero(_rows, _cols));
 

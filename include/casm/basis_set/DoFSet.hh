@@ -22,6 +22,23 @@ namespace CASM {
 
     using const_iterator = std::vector<ContinuousDoF>::const_iterator;
 
+    static DoFSet make_default(BasicTraits const &_type) {
+      DoFSet result(_type);
+      result.m_info.set_basis(Eigen::MatrixXd::Identity(_type.dim(), _type.dim()));
+      for(std::string var_name : _type.standard_var_names()) {
+        //std::cout << "Adding var_name " << var_name << "\n";
+        result.m_components.push_back(ContinuousDoF(_type,
+                                                    var_name,
+                                                    -1, // ID
+                                                    -std::numeric_limits<double>::infinity(),
+                                                    std::numeric_limits<double>::infinity()));
+        if(_type.global())
+          result.m_components.back().lock_ID();
+
+      }
+      return result;
+    }
+
     DoFSet(BasicTraits const &_type) :
       m_type_name(_type.type_name()),
       m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(_type.dim(), 0)) {}

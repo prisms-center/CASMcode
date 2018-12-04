@@ -296,15 +296,15 @@ namespace CASM {
 
     //************************************************************
 
-    std::vector<std::tuple<std::string, Index, Index> > OccupationDoFTraits::param_pack_allocation(Structure const &_prim,
+    std::vector<DoFType::ParamAllocation> OccupationDoFTraits::param_pack_allocation(Structure const &_prim,
         std::vector<BasisSet> const &_bases) const {
-      std::vector<std::tuple<std::string, Index, Index> > result;
+      std::vector<DoFType::ParamAllocation> result;
       Index NB = 0;
       for(BasisSet const &basis : _bases) {
         NB = max(basis.size(), NB);
       }
       if(NB)
-        result.push_back(std::make_tuple(site_basis_name(), Index(-1), NB));
+        result.push_back(DoFType::ParamAllocation(site_basis_name(), NB, Index(-1), true));
 
       return result;
 

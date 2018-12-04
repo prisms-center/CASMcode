@@ -11,6 +11,9 @@
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
 
+//These are where ParamPackMixIns are defined -- only usage
+#include "casm/clex/ClexParamPack.hh"
+
 namespace CASM {
   //*******************************************************************************************
   /// \brief Print clexulator
@@ -39,12 +42,12 @@ namespace CASM {
 
     std::string indent(2, ' ');
 
-    std::stringstream parampack_stream;
+    std::stringstream param_pack_stream;
     print_param_pack(class_name,
                      clex,
                      _tree,
                      _nlist,
-                     parampack_stream,
+                     param_pack_stream,
                      indent);
 
 
@@ -53,7 +56,12 @@ namespace CASM {
       uclass_name.push_back(std::toupper(class_name[i]));
 
 
-    std::string private_declarations = ClexBasisWriter_impl::clexulator_member_declarations(class_name, clex, _orbit_func_traits(), nhood, indent + "  ");
+    std::string private_declarations = ClexBasisWriter_impl::clexulator_member_declarations(class_name,
+                                       clex,
+                                       *m_param_pack_mix_in,
+                                       _orbit_func_traits(),
+                                       nhood,
+                                       indent + "  ");
 
     private_declarations += ClexBasisWriter_impl::clexulator_private_method_declarations(class_name, clex, indent + "  ");
 
@@ -161,12 +169,13 @@ namespace CASM {
                                          _tree,
                                          nhood,
                                          _nlist,
+                                         *m_param_pack_mix_in,
                                          orbit_method_names,
                                          flower_method_names,
                                          dflower_method_names,
                                          indent);
 
-    std::string interface_declaration = ClexBasisWriter_impl::clexulator_interface_declaration(class_name, clex, indent);
+    std::string interface_declaration = ClexBasisWriter_impl::clexulator_interface_declaration(class_name, clex, *m_param_pack_mix_in, indent);
 
     std::string prepare_methods_definition = ClexBasisWriter_impl::clexulator_point_prepare_definition(class_name,
                                              clex,
@@ -193,6 +202,7 @@ namespace CASM {
         << "#include \"casm/clex/Clexulator.hh\"\n"
         << "#include \"casm/clex/BasicClexParamPack.hh\"\n"
         << "#include \"casm/CASM_global_Eigen.hh\"\n"
+        << (m_param_pack_mix_in -> cpp_includes_string()) << "\n"
         << "\n\n\n"
 
         << "/****** PROJECT SPECIFICATIONS ******\n\n"
@@ -212,7 +222,7 @@ namespace CASM {
 
         << "  /****** GENERATED CLEXPARAMPACK DEFINITION ******/\n\n"
 
-        << parampack_stream.str() << "\n\n"
+        << param_pack_stream.str() << "\n\n"
 
         << "  /****** GENERATED CLEXULATOR DEFINITION ******/\n\n"
 
@@ -258,11 +268,9 @@ namespace CASM {
                                          std::ostream &stream,
                                          std::string const &_indent) const {
 
-    std::string ppclass_name = "ParamPack";
-
-
     stream <<
-           _indent << "typedef BasicClexParamPack " << ppclass_name << ";\n";
+           (m_param_pack_mix_in -> cpp_definitions_string(_indent)) << '\n' <<
+           _indent << "typedef " << (m_param_pack_mix_in->name()) << " ParamPack;\n";
 
 
   }
@@ -292,10 +300,12 @@ namespace CASM {
 
         method_name = method_namer(0, nf);
         bfunc_def_stream <<
-                         indent << "  double " << method_name << "() const;\n";
+                         indent << "  template<typename Scalar>\n" <<
+                         indent << "  Scalar " << method_name << "() const;\n";
 
         bfunc_imp_stream <<
-                         indent << "double " << class_name << "::" << method_name << "() const {\n" <<
+                         indent << "template<typename Scalar>\n" <<
+                         indent << "Scalar " << class_name << "::" << method_name << "() const {\n" <<
                          indent << "  return " << formulae[nf] << ";\n" <<
                          indent << "}\n";
       }
@@ -307,6 +317,7 @@ namespace CASM {
     }
 
     //*******************************************************************************************
+
     template<typename OrbitType>
     std::tuple<std::string, std::string> clexulator_flower_function_strings(std::string const &class_name,
                                                                             ClexBasis::BSetOrbit const &_bset_orbit,
@@ -341,10 +352,12 @@ namespace CASM {
 
           method_name = method_namer(nbor_ind, nf);
           bfunc_def_stream <<
-                           indent << "  double " << method_name << "() const;\n";
+                           indent << "  template<typename Scalar>\n" <<
+                           indent << "  Scalar " << method_name << "() const;\n";
 
           bfunc_imp_stream <<
-                           indent << "double " << class_name << "::" << method_name << "() const {\n" <<
+                           indent << "template<typename Scalar>\n" <<
+                           indent << "Scalar " << class_name << "::" << method_name << "() const {\n" <<
                            indent << "  return " << formulae[nf] << ";\n" <<
                            indent << "}\n";
 
@@ -432,10 +445,12 @@ namespace CASM {
           method_name = method_namer(nbor_ind, nf);
 
           bfunc_def_stream <<
-                           indent << "  double " << method_name << "(int occ_i, int occ_f) const;\n";
+                           indent << "  template<typename Scalar>\n" <<
+                           indent << "  Scalar " << method_name << "(int occ_i, int occ_f) const;\n";
 
           bfunc_imp_stream <<
-                           indent << "double " << class_name << "::" << method_name << "(int occ_i, int occ_f) const {\n" <<
+                           indent << "  template<typename Scalar>\n" <<
+                           indent << "Scalar " << class_name << "::" << method_name << "(int occ_i, int occ_f) const {\n" <<
                            indent << "  return " << formulae[nf] << ";\n" <<
                            indent << "}\n";
         }
@@ -755,6 +770,7 @@ namespace CASM {
                                                   std::vector<OrbitType > const &_tree,
                                                   std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                   PrimNeighborList &_nlist,
+                                                  ParamPackMixIn const &_param_pack_mix_in,
                                                   std::vector<std::string> const &orbit_method_names,
                                                   std::vector< std::vector<std::string> > const &flower_method_names,
                                                   std::vector< std::vector<std::string> > const &dflower_method_names,
@@ -787,16 +803,15 @@ namespace CASM {
         ss << DoFType::traits(dof.first).clexulator_constructor_string(clex.prim(), dof.second, indent + "  ");
 
 
-        std::vector<std::tuple<std::string, Index, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
+        std::vector<DoFType::ParamAllocation> allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
         if(allo.empty())
           continue;
 
         for(const auto &el : allo) {
-          Index psize = std::get<1>(el);
-          Index dim = std::get<2>(el);
-          if(!valid_index(psize))
-            psize = N_hood;
-          ss << indent << "  m_" << std::get<0>(el) << "_param_key = m_params.allocate(\"" << std::get<0>(el) << "\", " << dim << ", " << psize << ");\n";
+          Index num_param = el.num_param;
+          if(!valid_index(num_param))
+            num_param = N_hood;
+          ss << indent << "  m_" << el.param_name << "_param_key = m_params.allocate(\"" << el.param_name << "\", " << el.param_dim << ", " << num_param << ");\n";
         }
 
         if(dof.first != "occ")
@@ -810,16 +825,15 @@ namespace CASM {
       for(auto const &dof : clex.global_bases()) {
         ss << DoFType::traits(dof.first).clexulator_constructor_string(clex.prim(), dof.second, indent + "  ");
 
-        std::vector<std::tuple<std::string, Index, Index> > allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
+        std::vector<DoFType::ParamAllocation> allo = DoFType::traits(dof.first).param_pack_allocation(clex.prim(), dof.second);
         if(allo.empty())
           continue;
 
         for(const auto &el : allo) {
-          Index dim = std::get<1>(el);
-          Index psize = std::get<2>(el);
-          if(!valid_index(psize))
+          Index num_param = el.num_param;
+          if(!valid_index(num_param))
             throw std::runtime_error("Global DoF " + dof.first + " requested invalid ClexParamPack allocation\n");
-          ss << indent << "  m_" << std::get<0>(el) << "_param_key = m_params.allocate(\"" << std::get<0>(el) << "\", " << dim << ", " << psize << ");\n";
+          ss << indent << "  m_" << el.param_name << "_param_key = m_params.allocate(\"" << el.param_name << "\", " << el.param_dim << ", " << num_param << ");\n";
         }
 
 
@@ -829,30 +843,30 @@ namespace CASM {
       }
 
 
-
-
-      for(Index nf = 0; nf < orbit_method_names.size(); nf++) {
-        ss <<
-           indent << "  m_orbit_func_table[" << nf << "] = &" << class_name << "::" << orbit_method_names[nf] << ";\n";
-      }
-      ss << "\n\n";
-
-      for(Index nb = 0; nb < flower_method_names.size(); nb++) {
-        for(Index nf = 0; nf < flower_method_names[nb].size(); nf++) {
+      Index ispec = 0;
+      for(auto const &specialization : _param_pack_mix_in.scalar_specializations()) {
+        for(Index nf = 0; nf < orbit_method_names.size(); nf++) {
           ss <<
-             indent << "  m_flower_func_table[" << nb << "][" << nf << "] = &" << class_name << "::" << flower_method_names[nb][nf] << ";\n";
+             indent << "  m_orbit_func_table_" << ispec << "[" << nf << "] = &" << class_name << "::" << orbit_method_names[nf] << "<" << specialization.second << ">;\n";
         }
         ss << "\n\n";
-      }
 
-      for(Index nb = 0; nb < dflower_method_names.size(); nb++) {
-        for(Index nf = 0; nf < dflower_method_names[nb].size(); nf++) {
-          ss <<
-             indent << "  m_delta_func_table[" << nb << "][" << nf << "] = &" << class_name << "::" << dflower_method_names[nb][nf] << ";\n";
+        for(Index nb = 0; nb < flower_method_names.size(); nb++) {
+          for(Index nf = 0; nf < flower_method_names[nb].size(); nf++) {
+            ss <<
+               indent << "  m_flower_func_table_" << ispec << "[" << nb << "][" << nf << "] = &" << class_name << "::" << flower_method_names[nb][nf] << "<" << specialization.second << ">;\n";
+          }
+          ss << "\n\n";
         }
-        ss << "\n\n";
-      }
 
+        for(Index nb = 0; nb < dflower_method_names.size(); nb++) {
+          for(Index nf = 0; nf < dflower_method_names[nb].size(); nf++) {
+            ss <<
+               indent << "  m_delta_func_table_" << ispec << "[" << nb << "][" << nf << "] = &" << class_name << "::" << dflower_method_names[nb][nf] << "<" << specialization.second << ">;\n";
+          }
+          ss << "\n\n";
+        }
+      }
 
 
       // Write weight matrix used for the neighbor list
@@ -953,7 +967,8 @@ namespace CASM {
                                                     PrimNeighborList &_nlist,
                                                     std::string const &indent) {
 
-      std::string result(indent + "void " + class_name + "::_point_prepare(int nlist_ind) const {\n");
+      std::string result(indent + "template<typename Scalar>\n" +
+                         indent + "void " + class_name + "::_point_prepare(int nlist_ind) const {\n");
 
       // Use known clexbasis dependencies to construct point_prepare routine
       for(auto const &doftype : clex.site_bases()) {
@@ -989,7 +1004,8 @@ namespace CASM {
                                                      std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                      PrimNeighborList &_nlist,
                                                      std::string const &indent) {
-      std::string result(indent + "void " + class_name + "::_global_prepare() const {\n");
+      std::string result(indent + "template<typename Scalar>\n" +
+                         indent + "void " + class_name + "::_global_prepare() const {\n");
 
 
 
