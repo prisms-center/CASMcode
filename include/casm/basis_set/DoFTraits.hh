@@ -72,7 +72,7 @@ namespace CASM {
 
       */
 
-      virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const;
+      virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors(std::string const &nlist_specifier = "%n") const;
 
       virtual std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const;
 

@@ -290,13 +290,25 @@ namespace CASM {
       std::map<std::string, Index> m_global_dof_registry;
     protected:
 
+      virtual void _calc_global_corr_contribution() const = 0;
+
       virtual void _calc_global_corr_contribution(double *_corr_begin) const = 0;
+
+      virtual void _calc_restricted_global_corr_contribution(size_type const *_corr_ind_begin,
+                                                             size_type const *_corr_ind_end) const = 0;
+
       virtual void _calc_restricted_global_corr_contribution(double *_corr_begin,
                                                              size_type const *_corr_ind_begin,
                                                              size_type const *_corr_ind_end) const = 0;
 
+      virtual void _calc_point_corr(int neighbor_ind) const = 0;
+
       virtual void _calc_point_corr(int neighbor_ind,
                                     double *_corr_begin) const = 0;
+
+      virtual void _calc_restricted_point_corr(int neighbor_ind,
+                                               size_type const *_corr_ind_begin,
+                                               size_type const *_corr_ind_end) const = 0;
 
       virtual void _calc_restricted_point_corr(int neighbor_ind,
                                                double *_corr_begin,
@@ -305,8 +317,18 @@ namespace CASM {
 
       virtual void _calc_delta_point_corr(int neighbor_ind,
                                           int occ_i,
+                                          int occ_f) const = 0;
+
+      virtual void _calc_delta_point_corr(int neighbor_ind,
+                                          int occ_i,
                                           int occ_f,
                                           double *_corr_begin) const = 0;
+
+      virtual void _calc_restricted_delta_point_corr(int neighbor_ind,
+                                                     int occ_i,
+                                                     int occ_f,
+                                                     size_type const *_corr_ind_begin,
+                                                     size_type const *_corr_ind_end) const = 0;
 
       virtual void _calc_restricted_delta_point_corr(int neighbor_ind,
                                                      int occ_i,

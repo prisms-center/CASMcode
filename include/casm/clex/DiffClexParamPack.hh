@@ -33,9 +33,13 @@ namespace CASM {
   public:
     typedef ClexParamPack::size_type size_type;
 
-    DiffClexParamKey(std::string const &_name = "", bool _standalone = false, size_type _ind = -1) :
+    DiffClexParamKey(std::string const &_name, bool _standalone, size_type _ind) :
       ClexParamPack_impl::BaseKey(_name, _standalone),
       m_index(_ind) {}
+
+    DiffClexParamKey() :
+      DiffClexParamKey("", -1, false) {}
+
 
     virtual ~DiffClexParamKey() {};
 
@@ -284,7 +288,7 @@ namespace CASM {
     typedef ClexParamPack::size_type size_type;
 
     DiffClexParamValKey(std::string const &_name = "", size_type _ind = -1) :
-      DiffClexParamKey(_name, _ind, true) {}
+      DiffClexParamKey(_name, true, _ind) {}
 
     Eigen::MatrixXd const &eval(DiffScalarContainer const &_data, DiffClexParamPack::EvalMode mode) const override {
       if(mode == DiffClexParamPack::DIFF) {
@@ -302,8 +306,6 @@ namespace CASM {
     ClexParamPack_impl::BaseKey *_clone() const override {
       return new DiffClexParamValKey(*this);
     }
-
-    size_type m_index;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

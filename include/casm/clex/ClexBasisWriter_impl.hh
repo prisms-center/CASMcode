@@ -811,7 +811,8 @@ namespace CASM {
           Index num_param = el.num_param;
           if(!valid_index(num_param))
             num_param = N_hood;
-          ss << indent << "  m_" << el.param_name << "_param_key = m_params.allocate(\"" << el.param_name << "\", " << el.param_dim << ", " << num_param << ");\n";
+          ss << indent << "  m_" << el.param_name << "_param_key = m_params.allocate(\""
+             << el.param_name << "\", " << el.param_dim << ", " << num_param << ", " << (el.independent ? "true" : "false") << ");\n";
         }
 
         if(dof.first != "occ")
@@ -833,7 +834,8 @@ namespace CASM {
           Index num_param = el.num_param;
           if(!valid_index(num_param))
             throw std::runtime_error("Global DoF " + dof.first + " requested invalid ClexParamPack allocation\n");
-          ss << indent << "  m_" << el.param_name << "_param_key = m_params.allocate(\"" << el.param_name << "\", " << el.param_dim << ", " << num_param << ");\n";
+          ss << indent << "  m_" << el.param_name << "_param_key = m_params.allocate(\""
+             << el.param_name << "\", " << el.param_dim << ", " << num_param << ", " << (el.independent ? "true" : "false") << ");\n";
         }
 
 
@@ -842,6 +844,7 @@ namespace CASM {
         ss << "\n";
       }
 
+      ss << indent << "  m_corr_param_key = m_params.allocate(\"corr\", corr_size(), 1, false);\n\n";
 
       Index ispec = 0;
       for(auto const &specialization : _param_pack_mix_in.scalar_specializations()) {
@@ -866,6 +869,7 @@ namespace CASM {
           }
           ss << "\n\n";
         }
+        ++ispec;
       }
 
 

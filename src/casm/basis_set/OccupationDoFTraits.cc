@@ -374,9 +374,9 @@ namespace CASM {
     }
 
 
-    std::vector<std::unique_ptr<FunctionVisitor> > OccupationDoFTraits::site_function_visitors() const {
+    std::vector<std::unique_ptr<FunctionVisitor> > OccupationDoFTraits::site_function_visitors(std::string const &nlist_specifier) const {
       std::vector<std::unique_ptr<FunctionVisitor> > result;
-      result.push_back(std::unique_ptr<FunctionVisitor>(new OccFuncLabeler("occ_func_%b_%f(%n)")));
+      result.push_back(std::unique_ptr<FunctionVisitor>(new OccFuncLabeler("occ_func_%b_%f(" + nlist_specifier + ")")));
       return result;
     }
 

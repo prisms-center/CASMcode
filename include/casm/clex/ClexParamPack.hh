@@ -50,7 +50,7 @@ namespace CASM {
     }
 
     static ParamPackMixIn diff_mix_in() {
-      return ParamPackMixIn("DiffClexParamPack", {{"ParamPack::DEFAULT", "double"}, {"ParamPack::DEFAULT", "ParamPack::DiffScalar"}});
+      return ParamPackMixIn("DiffClexParamPack", {{"ParamPack::DEFAULT", "double"}, {"ParamPack::DIFF", "ParamPack::DiffScalar"}});
     }
 
     ParamPackMixIn(std::string const &_name, std::map<std::string, std::string> const &_specializations) :

@@ -27,7 +27,6 @@ namespace CASM {
   void ClexBasisWriter::_initialize(Structure const &_prim, ParamPackMixIn const &_param_pack_mix_in) {
     m_param_pack_mix_in = _param_pack_mix_in.clone();
 
-    //throw std::runtime_error("Error: print_clexulator is being re-implemented");
     auto doftypes = all_local_dof_types(_prim);
     for(auto const &doftype : doftypes) {
       auto cv = DoFType::traits(doftype).clust_function_visitors();
@@ -95,6 +94,8 @@ namespace CASM {
 
            indent << "// array of pointers to member functions for calculating DELTA flower functions of scalar type " << specialization.second << "\n" <<
            indent << "DeltaBasisFuncPtr_" << ispec << " m_delta_func_table_" << ispec << "[" << N_branch << "][" << N_corr << "];\n\n";
+
+        ++ispec;
       }
 
       for(auto const &dof : clex.site_bases())
@@ -236,8 +237,8 @@ namespace CASM {
          indent << "  return Scalar(0.0);\n" <<
          indent << "}\n\n" <<
 
-         indent << "Scalar zero_func(int, int) const {\n" <<
          indent << "template <typename Scalar>\n" <<
+         indent << "Scalar zero_func(int, int) const {\n" <<
          indent << "  return Scalar(0.0);\n" <<
          indent << "}\n\n";
 
@@ -298,7 +299,7 @@ namespace CASM {
          indent << "void " << class_name << "::_calc_global_corr_contribution(double *corr_begin) const {\n" <<
          indent << "  _calc_global_corr_contribution();\n" <<
          indent << "  for(size_type i = 0; i < corr_size(); i++) {\n" <<
-         indent << "    *(corr_begin + i) = m_params.val<double>(m_corr_param_key, i);\n" <<
+         indent << "    *(corr_begin + i) = ParamPack::Val<double>::get(m_params, m_corr_param_key, i);\n" <<
          indent << "  }\n" <<
          indent << "}\n\n" <<
 
@@ -321,9 +322,10 @@ namespace CASM {
            indent << "  {\n" <<
            indent << "    _global_prepare<" << specialization.second << ">();\n" <<
            indent << "    for(size_type i = 0; i < corr_size(); i++) {\n" <<
-           indent << "      m_params.set_val<" << specialization.second << ">(m_corr_param_key, i, (this->*m_orbit_func_table_" << ispec << "[i])());\n" <<
+           indent << "      ParamPack::Val<" << specialization.second << ">::set(m_params, m_corr_param_key, i, (this->*m_orbit_func_table_" << ispec << "[i])());\n" <<
            indent << "    }\n" <<
            indent << "  }\n";
+        ++ispec;
       }
       ss <<
          indent << "  m_params.post_eval();\n" <<
@@ -335,7 +337,7 @@ namespace CASM {
          indent << "void " << class_name << "::_calc_restricted_global_corr_contribution(double *corr_begin, size_type const *ind_list_begin, size_type const *ind_list_end) const {\n" <<
          indent << "  _calc_restricted_global_corr_contribution(ind_list_begin, ind_list_end);\n" <<
          indent << "  for(; ind_list_begin < ind_list_end; ind_list_begin++) {\n" <<
-         indent << "    *(corr_begin + *ind_list_begin) = m_params.val<double>(m_corr_param_key, *ind_list_begin);\n" <<
+         indent << "    *(corr_begin + *ind_list_begin) = ParamPack::Val<double>::get(m_params, m_corr_param_key, *ind_list_begin);\n" <<
          indent << "  }\n" <<
          indent << "}\n\n" <<
 
@@ -357,9 +359,10 @@ namespace CASM {
            indent << "  {\n" <<
            indent << "    _global_prepare<" << specialization.second << ">();\n" <<
            indent << "    for(; ind_list_begin < ind_list_end; ind_list_begin++) {\n" <<
-           indent << "      m_params.set_val<" << specialization.second << ">(m_corr_param_key, *ind_list_begin, (this->*m_orbit_func_table_" << ispec << "[*ind_list_begin])());\n" <<
+           indent << "      ParamPack::Val<" << specialization.second << ">::set(m_params, m_corr_param_key, *ind_list_begin, (this->*m_orbit_func_table_" << ispec << "[*ind_list_begin])());\n" <<
            indent << "    }\n" <<
            indent << "  }\n";
+        ++ispec;
       }
       ss <<
          indent << "  m_params.post_eval();\n" <<
@@ -371,7 +374,7 @@ namespace CASM {
          indent << "void " << class_name << "::_calc_point_corr(int nlist_ind, double *corr_begin) const {\n" <<
          indent << "  _calc_point_corr(nlist_ind);\n" <<
          indent << "  for(size_type i = 0; i < corr_size(); i++) {\n" <<
-         indent << "    *(corr_begin + i) = m_params.val<double>(m_corr_param_key, i);\n" <<
+         indent << "    *(corr_begin + i) = ParamPack::Val<double>::get(m_params, m_corr_param_key, i);\n" <<
          indent << "  }\n" <<
          indent << "}\n\n" <<
 
@@ -393,9 +396,10 @@ namespace CASM {
            indent << "  {\n" <<
            indent << "    _point_prepare<" << specialization.second << ">(nlist_ind);\n" <<
            indent << "    for(size_type i = 0; i < corr_size(); i++) {\n" <<
-           indent << "      m_params.set_val<" << specialization.second << ">(m_corr_param_key, i, (this->*m_flower_func_table_" << ispec << "[nlist_ind][i])());\n" <<
+           indent << "      ParamPack::Val<" << specialization.second << ">::set(m_params, m_corr_param_key, i, (this->*m_flower_func_table_" << ispec << "[nlist_ind][i])());\n" <<
            indent << "    }\n" <<
            indent << "  }\n";
+        ++ispec;
       }
       ss <<
          indent << "  m_params.post_eval();\n" <<
@@ -407,7 +411,7 @@ namespace CASM {
          indent << "void " << class_name << "::_calc_restricted_point_corr(int nlist_ind, double *corr_begin, size_type const *ind_list_begin, size_type const *ind_list_end) const {\n" <<
          indent << "  _calc_restricted_point_corr(nlist_ind, ind_list_begin, ind_list_end);\n" <<
          indent << "  for(; ind_list_begin < ind_list_end; ind_list_begin++) {\n" <<
-         indent << "    *(corr_begin + *ind_list_begin) = m_params.val<double>(m_corr_param_key, *ind_list_begin);\n" <<
+         indent << "    *(corr_begin + *ind_list_begin) = ParamPack::Val<double>::get(m_params, m_corr_param_key, *ind_list_begin);\n" <<
          indent << "  }\n" <<
          indent << "}\n\n" <<
 
@@ -429,9 +433,10 @@ namespace CASM {
            indent << "  {\n" <<
            indent << "    _point_prepare<" << specialization.second << ">(nlist_ind);\n" <<
            indent << "    for(; ind_list_begin < ind_list_end; ind_list_begin++) {\n" <<
-           indent << "      m_params.set_val<" << specialization.second << ">(m_corr_param_key, *ind_list_begin, (this->*m_flower_func_table_" << ispec << "[nlist_ind][*ind_list_begin])());\n" <<
+           indent << "      ParamPack::Val<" << specialization.second << ">::set(m_params, m_corr_param_key, *ind_list_begin, (this->*m_flower_func_table_" << ispec << "[nlist_ind][*ind_list_begin])());\n" <<
            indent << "    }\n" <<
            indent << "  }\n";
+        ++ispec;
       }
       ss <<
          indent << "  m_params.post_eval();\n" <<
@@ -443,7 +448,7 @@ namespace CASM {
          indent << "void " << class_name << "::_calc_delta_point_corr(int nlist_ind, int occ_i, int occ_f, double *corr_begin) const {\n" <<
          indent << "  _calc_delta_point_corr(nlist_ind, occ_i, occ_f);\n" <<
          indent << "  for(size_type i = 0; i < corr_size(); i++) {\n" <<
-         indent << "    *(corr_begin + i) = m_params.val<double>(m_corr_param_key, i);\n" <<
+         indent << "    *(corr_begin + i) = ParamPack::Val<double>::get(m_params, m_corr_param_key, i);\n" <<
          indent << "  }\n" <<
          indent << "}\n\n" <<
 
@@ -465,9 +470,10 @@ namespace CASM {
            indent << "  {\n" <<
            indent << "    _point_prepare<" << specialization.second << ">(nlist_ind);\n" <<
            indent << "   for(size_type i = 0; i < corr_size(); i++) {\n" <<
-           indent << "      m_params.set_val<" << specialization.second << ">(m_corr_param_key, i, (this->*m_delta_func_table_" << ispec << "[nlist_ind][i])(occ_i, occ_f));\n" <<
+           indent << "      ParamPack::Val<" << specialization.second << ">::set(m_params, m_corr_param_key, i, (this->*m_delta_func_table_" << ispec << "[nlist_ind][i])(occ_i, occ_f));\n" <<
            indent << "    }\n" <<
            indent << "  }\n";
+        ++ispec;
       }
       ss <<
          indent << "  m_params.post_eval();\n" <<
@@ -479,7 +485,7 @@ namespace CASM {
          indent << "void " << class_name << "::_calc_restricted_delta_point_corr(int nlist_ind, int occ_i, int occ_f, double *corr_begin, size_type const *ind_list_begin, size_type const *ind_list_end) const {\n" <<
          indent << "  _calc_restricted_delta_point_corr(nlist_ind, occ_i, occ_f, ind_list_begin, ind_list_end);\n" <<
          indent << "  for(; ind_list_begin < ind_list_end; ind_list_begin++) {\n" <<
-         indent << "    *(corr_begin + *ind_list_begin) = m_params.val<double>(m_corr_param_key, *ind_list_begin);\n" <<
+         indent << "    *(corr_begin + *ind_list_begin) = ParamPack::Val<double>::get(m_params, m_corr_param_key, *ind_list_begin);\n" <<
          indent << "  }\n" <<
          indent << "}\n\n" <<
 
@@ -501,9 +507,10 @@ namespace CASM {
            indent << "  {\n" <<
            indent << "    _point_prepare<" << specialization.second << ">(nlist_ind);\n" <<
            indent << "    for(; ind_list_begin < ind_list_end; ind_list_begin++) {\n" <<
-           indent << "      m_params.set_val<" << specialization.second << ">(m_corr_param_key, *ind_list_begin, (this->*m_delta_func_table_" << ispec << "[nlist_ind][*ind_list_begin])(occ_i, occ_f));\n" <<
+           indent << "      ParamPack::Val<" << specialization.second << ">::set(m_params, m_corr_param_key, *ind_list_begin, (this->*m_delta_func_table_" << ispec << "[nlist_ind][*ind_list_begin])(occ_i, occ_f));\n" <<
            indent << "    }\n" <<
            indent << "  }\n";
+        ++ispec;
       }
       ss <<
          indent << "  m_params.post_eval();\n" <<

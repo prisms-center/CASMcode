@@ -37,8 +37,9 @@ namespace CASM {
           ss <<
              indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n";
           for(Index f = 0; f < site_bases[0].size(); f++) {
-            ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f
-               << ", eval_" << site_basis_name() << "(" << f << "));\n";
+            ss <<
+               indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f
+               << ", eval_" << site_basis_name() << "_" << f << "<Scalar>());\n";
           }
           ss << indent << "  }\n";
         }
@@ -74,7 +75,7 @@ namespace CASM {
               if(requires_site_basis()) {
                 for(Index f = 0; f < site_bases[b].size(); f++) {
                   ssfunc << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f << ", " << n
-                         << ", eval_" << site_basis_name() << '_' << b << '_' << f << "(" << n << "));\n";
+                         << ", eval_" << site_basis_name() << '_' << b << '_' << f << "<Scalar>(" << n << "));\n";
                 }
               }
             }
@@ -121,7 +122,7 @@ namespace CASM {
              indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n";
           for(Index f = 0; f < site_bases[0].size(); f++) {
             ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f
-               << ", eval_" << site_basis_name() << "(" << f << "));\n";
+               << ", eval_" << site_basis_name() << "_" << f << "<Scalar>());\n";
           }
           ss << indent << "  }\n";
         }
@@ -150,7 +151,7 @@ namespace CASM {
             if(requires_site_basis()) {
               for(Index f = 0; f < site_bases[b].size(); f++) {
                 ssfunc << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f << ", " << n
-                       << ", eval_" << site_basis_name() << "_" << b << "_" << f << "(" << n << "));\n";
+                       << ", eval_" << site_basis_name() << "_" << b << "_" << f << "<Scalar>(" << n << "));\n";
               }
             }
           }
@@ -227,9 +228,23 @@ namespace CASM {
         stream <<
                indent << "template<typename Scalar>\n" <<
                indent << "Scalar const &" << type_name() << "_var(const int &ind) const {\n" <<
-               indent << "  return " << "m_params.val<Scalar>(m_" << type_name() << "_var_param_key, ind);\n" <<
+               indent << "  return " << "ParamPack::Val<Scalar>::get(m_params, m_" << type_name() << "_var_param_key, ind);\n" <<
                indent << "}\n";
 
+        if(requires_site_basis()) {
+          auto visitors = site_function_visitors("nlist_ind");
+          BasisSet site_basis = _site_bases[0];
+          for(auto const &vis : visitors)
+            site_basis.accept(*vis);
+
+          for(Index f = 0; f < site_basis.size(); f++) {
+            stream <<
+                   indent << "template<typename Scalar>\n" <<
+                   indent << "Scalar eval_" << site_basis_name() << '_' << f << "() const {\n" <<
+                   indent << "  return " << site_basis[f]->formula() << ";\n" <<
+                   indent << "}\n\n";
+          }
+        }
         return stream.str();
       }
 
@@ -269,14 +284,15 @@ namespace CASM {
           if(requires_site_basis()) {
 
             max_nf = max(max_nf, _site_bases[nb].size());
-            auto visitors = site_function_visitors();
+            auto visitors = site_function_visitors("nlist_ind");
             BasisSet site_basis = _site_bases[nb];
             for(auto const &vis : visitors)
-              site_basis.accept(VariableLabeler(type_name(), "%p_var_%f<Scalar>(nlist_ind)"));
+              site_basis.accept(*vis);
 
             for(Index f = 0; f < site_basis.size(); f++) {
               stream <<
-                     indent << "double eval_" << site_basis_name() << "_" << nb << '_' << f << "(const int &nlist_ind) const {\n" <<
+                     indent << "template<typename Scalar>\n" <<
+                     indent << "Scalar eval_" << site_basis_name() << "_" << nb << '_' << f << "(const int &nlist_ind) const {\n" <<
                      indent << "  return " << site_basis[f]->formula() << ";\n" <<
                      indent << "}\n\n";
             }
@@ -289,14 +305,14 @@ namespace CASM {
         stream <<
                indent << "template<typename Scalar>\n" <<
                indent << "Scalar const &" << type_name() << "_var_" << a << "(const int &nlist_ind) const {\n" <<
-               indent << "  return " << "m_params.val<Scalar>(m_" << type_name() << "_var_param_key, " << a << ", nlist_ind);\n" <<
+               indent << "  return " << "ParamPack::Val<Scalar>::get(m_params, m_" << type_name() << "_var_param_key, " << a << ", nlist_ind);\n" <<
                indent << "}\n";
       }
       for(Index f = 0; f < max_nf; ++f) {
         stream <<
                indent << "template<typename Scalar>\n" <<
                indent << "Scalar const &" << site_basis_name() << "_" << f << "(const int &nlist_ind) const {\n" <<
-               indent << "  return " << "m_params.val<Scalar>(m_" << site_basis_name() << "_param_key, " << f << ", nlist_ind);\n" <<
+               indent << "  return " << "ParamPack::Val<Scalar>::get(m_params, m_" << site_basis_name() << "_param_key, " << f << ", nlist_ind);\n" <<
                indent << "}\n";
 
       }
@@ -381,9 +397,9 @@ namespace CASM {
     }
 
 
-    std::vector<std::unique_ptr<FunctionVisitor> > Traits::site_function_visitors() const {
+    std::vector<std::unique_ptr<FunctionVisitor> > Traits::site_function_visitors(std::string const &nlist_specifier) const {
       std::vector<std::unique_ptr<FunctionVisitor> > result;
-      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f<Scalar>(%n)")));
+      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f<Scalar>(" + nlist_specifier + ")")));
       return result;
     }
 
