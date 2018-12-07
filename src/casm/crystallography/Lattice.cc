@@ -1,6 +1,6 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Lattice_impl.hh"
-
+#include "casm/misc/algorithm.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/container/LinearAlgebra.hh"
@@ -187,7 +187,7 @@ namespace CASM {
     }
 
     double shortest = *std::min_element(prim_vec_lengths.begin(), prim_vec_lengths.end());
-    int short_ind = std::distance(prim_vec_lengths.begin(), std::find(prim_vec_lengths.begin(), prim_vec_lengths.end(), shortest));
+    int short_ind = find_index(prim_vec_lengths, shortest);
 
     double scale = (prim_kpoints[short_ind] / shortest);
 

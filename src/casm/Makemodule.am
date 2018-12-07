@@ -52,7 +52,6 @@ libcasm_la_SOURCES = \
   src/casm/basis_set/PolynomialFunction.cc\
   src/casm/basis_set/StrainDoFTraits.cc\
   src/casm/basis_set/Variable.cc\
-  src/casm/casm_io/.Log.cc.swp\
   src/casm/casm_io/DataFormatter.cc\
   src/casm/casm_io/DataStream.cc\
   src/casm/casm_io/FormatFlag.cc\
@@ -111,7 +110,9 @@ libcasm_la_SOURCES = \
   src/casm/completer/Handlers.cc\
   src/casm/container/LinearAlgebra.cc\
   src/casm/container/Permutation.cc\
+  src/casm/crystallography/.Lattice.cc.swp\
   src/casm/crystallography/.Niggli.cc.swp\
+  src/casm/crystallography/.Site.cc.swp\
   src/casm/crystallography/BasicStructure.cc\
   src/casm/crystallography/Coordinate.cc\
   src/casm/crystallography/CoordinateSystems.cc\
@@ -233,7 +234,7 @@ libcasm_la_SOURCES = \
   src/casm/stage/.basis.cc.swp\
   src/casm/stage/.events.cc.swp\
   src/casm/strain/StrainConverter.cc\
-  src/casm/symmetry/.SymGroup.cc.swp\
+  src/casm/symmetry/.SymGroup.cc.swo\
   src/casm/symmetry/.SymGroupRep.cc.swp\
   src/casm/symmetry/ConfigSubOrbits.cc\
   src/casm/symmetry/InvariantSubgroup.cc\

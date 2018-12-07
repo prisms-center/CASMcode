@@ -8,7 +8,7 @@
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/container/multivector.hh"
-
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
   class SymGroupRep;
@@ -254,11 +254,11 @@ namespace CASM {
     }
 
     Index ind_inverse(Index i) const {
-      return std::distance(m_subgroup_op_inds.begin(), std::find(m_subgroup_op_inds.begin(), m_subgroup_op_inds.end(), (m_group_rep->master_group()).ind_inverse(m_subgroup_op_inds[i])));
+      return find_index(m_subgroup_op_inds, (m_group_rep->master_group()).ind_inverse(m_subgroup_op_inds[i]));
     }
 
     Index ind_prod(Index i, Index j) const {
-      return std::distance(m_subgroup_op_inds.begin(), std::find(m_subgroup_op_inds.begin(), m_subgroup_op_inds.end(), (m_group_rep->master_group()).ind_prod(m_subgroup_op_inds[i], m_subgroup_op_inds[j])));
+      return find_index(m_subgroup_op_inds, (m_group_rep->master_group()).ind_prod(m_subgroup_op_inds[i], m_subgroup_op_inds[j]));
     }
 
     bool operator==(const SymGroupRepHandle &RHS) const {

@@ -7,7 +7,7 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-
+#include "casm/misc/algorithm.hh"
 #include "casm/container/Permutation.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
@@ -499,16 +499,14 @@ namespace CASM {
       //std::cout << "QR matrixR:\n" << Eigen::MatrixXd(QR.matrixQR().template triangularView<Eigen::Upper>()) << "\n";
       //std::cout << "QR matrixQ:\n" << matrixQ << "\n";
 
-      auto almost_contains = [](std::vector<Eigen::VectorXd> vec, Eigen::VectorXd check) {
-        return std::find_if(vec.begin(), vec.end(), [&](Eigen::VectorXd test) {
-          return std::fabs((test - check).sum()) < TOL;
-        }) != vec.end();
-      };
 
+      auto vector_almost_equal = [&](const Eigen::VectorXd & val1, const Eigen::VectorXd & val2) {
+        return almost_equal(val1, val2);
+      };
 
       // See if QR.matrixQ().col(0) has been found
       for(j = 0; j < sdirs.size(); j++) {
-        if(almost_contains(sdirs[j], matrixQ.col(0))) {
+        if(contains(sdirs[j], Eigen::VectorXd(matrixQ.col(0)), vector_almost_equal)) {
           break;
         }
       }
@@ -518,13 +516,13 @@ namespace CASM {
         sdirs.push_back(std::vector<Eigen::VectorXd>());
         for(j = 0; j < head_group.size(); j++) {
           tdir = (*MatrixXd(head_group[j])) * matrixQ.col(0);
-          if(!almost_contains(sdirs.back(), tdir))
+          if(!contains(sdirs.back(), tdir, vector_almost_equal))
             sdirs.back().push_back(tdir);
         }
       }
 
       for(j = 0; j < sdirs.size(); j++) {
-        if(almost_contains(sdirs[j], -matrixQ.col(0))) {
+        if(contains(sdirs[j], Eigen::VectorXd(-matrixQ.col(0)), vector_almost_equal)) {
           break;
         }
       }
@@ -534,7 +532,7 @@ namespace CASM {
         sdirs.push_back(std::vector<Eigen::VectorXd>());
         for(j = 0; j < head_group.size(); j++) {
           tdir = -(*MatrixXd(head_group[j])) * matrixQ.col(0);
-          if(!almost_contains(sdirs.back(), tdir))
+          if(!contains(sdirs.back(), tdir, vector_almost_equal))
             sdirs.back().push_back(tdir);
         }
       }
@@ -798,7 +796,7 @@ namespace CASM {
     }
     if(Nirrep == 1) {
       //std::cout << "There is only 1 irrep, so I'm returning a symmetrized copy of *this\n";
-      head_group.set_irrep_ID(std::distance(i_decomp.begin(), std::find(i_decomp.begin(), i_decomp.end(), 1)), master_ptr->add_representation(coord_transformed_copy(_symmetrized_irrep_trans_mat(head_group))));
+      head_group.set_irrep_ID(find_index(i_decomp, 1), master_ptr->add_representation(coord_transformed_copy(_symmetrized_irrep_trans_mat(head_group))));
       return;
     }
 
@@ -911,7 +909,7 @@ namespace CASM {
         assert(0);
         exit(1);
       }
-      Index i_irrep = std::distance(tdecomp.begin(), std::find(tdecomp.begin(), tdecomp.end(), 1));
+      Index i_irrep = find_index(tdecomp, 1);
       if(!head_group.get_irrep_ID(i_irrep).empty()) {
         i1 = i2;
         continue;
@@ -944,7 +942,7 @@ namespace CASM {
       assert(0);
       exit(1);
     }
-    Index i_irrep = std::distance(tdecomp.begin(), std::find(tdecomp.begin(), tdecomp.end(), 1));
+    Index i_irrep = find_index(tdecomp, 1);
     if(!head_group.get_irrep_ID(i_irrep).empty()) {
       return;
     }
@@ -1406,9 +1404,7 @@ namespace CASM {
         }
         Index ns2;
         for(ns2 = 0; ns2 < subsets.size(); ++ns2) {
-          if(std::all_of(perm_sub.begin(), perm_sub.end(), [&](const Index & test) {
-          return std::find(subsets[ns2].begin(), subsets[ns2].end(), test) != subsets[ns2].end();
-          })) {
+          if(contains_all(subsets[ns2], perm_sub)) {
             tperm[ns] = ns2;
             break;
           }

@@ -2,6 +2,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/external/Eigen/CASM_AddOns"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
@@ -920,7 +921,7 @@ namespace CASM {
       if(keep_repeated) {
         shiftless.push_back(tsymop);
       }
-      else if(std::find(shiftless.begin(), shiftless.end(), tsymop) == shiftless.end()) {
+      else if(!contains(shiftless, tsymop)) {
         shiftless.push_back(tsymop);
       }
     }
@@ -1055,7 +1056,7 @@ namespace CASM {
         for(Index k = 0; k < irrep_names.size(); k++) {
           if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0) && (m_character_table[j][0].real() == m_character_table[k][0].real())) {
             int dim = int(m_character_table[k][0].real());
-            if(std::find(repeats.begin(), repeats.end(), dim) == repeats.end()) {
+            if(!contains(repeats, dim)) {
               repeats.push_back(dim);
             }
           }
@@ -1071,7 +1072,7 @@ namespace CASM {
 
     for(Index i = 0; i < irrep_names.size(); i++) {
       int C2ind = 0;
-      if((sigma_v == true) && (!all_unique) && (std::find(repeats.begin(), repeats.end(), int(m_character_table[0][i].real())) != repeats.end()) && (irrep_names[i] != "E") && (!cubic)) {
+      if((sigma_v == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real()))) && (irrep_names[i] != "E") && (!cubic)) {
         sym_wrt_v = true;
         for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_v; j++) {
           if(class_names[j].find("v") != std::string::npos) {
@@ -1091,7 +1092,7 @@ namespace CASM {
         }
       }
 
-      else if((sigma_v != true) && (C2p == true) && (!all_unique) && std::find(repeats.begin(), repeats.end(), int(m_character_table[0][i].real())) != repeats.end() && (irrep_names[i] != "E") && (!cubic)) {
+      else if((sigma_v != true) && (C2p == true) && (!all_unique) && contains(repeats, int(m_character_table[0][i].real())) && (irrep_names[i] != "E") && (!cubic)) {
         for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_C2p; j++) {
           if(class_names[j].find("C2") != std::string::npos) {
             if((class_names[j].find("'") != std::string::npos) || (class_names[j].find("''") == std::string::npos)) {
@@ -1195,7 +1196,7 @@ namespace CASM {
         for(Index k = 0; k < irrep_names.size(); k++) {
           if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0) && (m_character_table[j][0].real() == m_character_table[k][0].real())) {
             int dim = int(m_character_table[k][0].real());
-            if(std::find(repeats.begin(), repeats.end(), dim) == repeats.end()) {
+            if(!contains(repeats, dim)) {
               repeats.push_back(dim);
             }
           }
@@ -1205,7 +1206,7 @@ namespace CASM {
     //    //std::cout << "Repeats in ..." << repeats << "\n";
     //std::cout << "STEP 3: Name according to inversion symmetry...\n";
     for(Index i = 0; i < irrep_names.size(); i++) {
-      if((inversion == true) && (!all_unique) && (std::find(repeats.begin(), repeats.end(), int(m_character_table[0][i].real())) != repeats.end())) {
+      if((inversion == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real())))) {
         sym_wrt_inv = true;
         for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_inv; j++) {
           if((class_names[j].find("i") != std::string::npos) && (m_character_table[i][j].real() < 0)) {
@@ -1239,7 +1240,7 @@ namespace CASM {
         for(Index k = 0; k < irrep_names.size(); k++) {
           if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0) && (m_character_table[j][0].real() == m_character_table[k][0].real())) {
             int dim = int(m_character_table[k][0].real());
-            if(std::find(repeats.begin(), repeats.end(), dim) == repeats.end()) {
+            if(!contains(repeats, dim)) {
               repeats.push_back(dim);
             }
           }
@@ -1251,7 +1252,7 @@ namespace CASM {
 
     //    //std::cout << "STEP 4: Name according to sigma_h symmetry...\n";
     for(Index i = 0; i < irrep_names.size(); i++) {
-      if((sigma_h == true) && (!all_unique) && (std::find(repeats.begin(), repeats.end(), int(m_character_table[0][i].real())) != repeats.end())) {
+      if((sigma_h == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real())))) {
         for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_h; j++) {
           if((class_names[j].find("h") != std::string::npos) && (m_character_table[i][j].real() < 0)) {
             sym_wrt_h = false;
@@ -1363,8 +1364,8 @@ namespace CASM {
 
     for(Index i = 0; i < size(); i++) {
       if((info[i].op_type == symmetry_type::rotation_op) || (info[i].op_type == symmetry_type::screw_op)) {
-        if(std::find(highsym_axes.begin(), highsym_axes.end(), info[i].axis.const_cart()) != highsym_axes.end()) { //Otherwise, check if the axis has been found;
-          mult[std::distance(highsym_axes.begin(), std::find(highsym_axes.begin(), highsym_axes.end(), info[i].axis.const_cart()))]++;
+        if(contains(highsym_axes, info[i].axis.const_cart())) { //Otherwise, check if the axis has been found;
+          mult[ find_index(highsym_axes, info[i].axis.const_cart())]++;
         }
         else {
           highsym_axes.push_back(info[i].axis.cart());
@@ -1876,7 +1877,7 @@ namespace CASM {
       for(Index j = 0; j < conjugacy_classes[i].size() && all_commute; j++) {
         for(Index k = 0; k < multi_table.size(); k++) {
           int ind = conjugacy_classes[i][j];
-          if((multi_table[ind][k] == multi_table[k][ind]) && (std::find(centralizer_table[i].begin(), centralizer_table[i].end(), k) == centralizer_table[i].end())) {
+          if((multi_table[ind][k] == multi_table[k][ind]) && (!contains(centralizer_table[i], k))) {
             centralizer_table[i].push_back(k);
           }
           else {
@@ -3007,7 +3008,7 @@ namespace CASM {
     for(Index i = 0; i < size(); i++) {
       bool dup_class(false);
       for(Index j = 0; j < conjugacy_classes.size(); j++) {
-        if(std::find(conjugacy_classes[j].begin(), conjugacy_classes[j].end(), i) != conjugacy_classes[j].end()) {
+        if(contains(conjugacy_classes[j], i)) {
           dup_class = true;
           break;
         }
@@ -3023,7 +3024,7 @@ namespace CASM {
         k = ind_prod(j, ind_prod(i, ind_inverse(j)));
         //std::cout << k << " -- compare to explicit value " << multi_table[tk][j];
 
-        if(std::find(conjugacy_classes.back().begin(), conjugacy_classes.back().end(), k) == conjugacy_classes.back().end()) {
+        if(!contains(conjugacy_classes.back(), k)) {
           //std::cout << " so " << k << " goes in class " << conjugacy_classes.size()-1;
           conjugacy_classes.back().push_back(k);
         }
@@ -3226,12 +3227,12 @@ namespace CASM {
     for(i = 0; i < size(); i++) {
       for(j = 0; j < size(); j++) {
         multi_table[i][j] = find_periodic(at(i) * at(j));
-        if(multi_table[i][j] >= size() || std::distance(multi_table[i].begin(), std::find(multi_table[i].begin(), multi_table[i].end(), multi_table[i][j])) != j) {
+        if(multi_table[i][j] >= size() || find_index(multi_table[i], multi_table[i][j]) != j) {
           // this is a hack (sort of). If find_periodic doesn't work, we try find_no trans, which *should* work.
           // In other words, we are using 'inuition' to determine that user doesn't really care about the translational aspects.
           // If our intuition is wrong, there will will probably be an obvious failure later.
           multi_table[i][j] = find_no_trans(at(i) * at(j));
-          if(multi_table[i][j] >= size() || std::distance(multi_table[i].begin(), std::find(multi_table[i].begin(), multi_table[i].end(), multi_table[i][j])) != j) {
+          if(multi_table[i][j] >= size() || find_index(multi_table[i], multi_table[i][j]) != j) {
 
             //if(multi_table[i][j] >= size()) {
             //std::cout << "This SymGroup is not a group because the combination of at least two of its elements is not contained in the set.\n";
@@ -3268,7 +3269,7 @@ namespace CASM {
     }
     for(Index i = 0; i < multi_table.size(); i++) {
       if(multi_table[i][i] != 0) {
-        alt_multi_table[std::distance(multi_table[i].begin(), std::find(multi_table[i].begin(), multi_table[i].end(), 0))] = multi_table[i];
+        alt_multi_table[find_index(multi_table[i], 0)] = multi_table[i];
       }
       else {
         alt_multi_table[i] = multi_table[i];
@@ -3473,7 +3474,7 @@ namespace CASM {
 
         SymOp new_sym(SymOp::translation(trans.cart())*at(i));
 
-        if(std::find(space_group.begin(), space_group.end(), new_sym) == space_group.end()) {
+        if(!contains(space_group, new_sym)) {
           space_group.push_back(new_sym);
 
         }
