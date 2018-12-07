@@ -21,7 +21,13 @@ namespace CASM {
     DoF_impl::traits2cloneable_ptr);
     return _static_traits_map;
   }
-
+  const DoF::TraitsMap &DoF::traits_map() {
+    static TraitsMap _static_traits_map([](const TraitsMap::value_type & value)->std::string {
+      return value.type_name();
+    },
+    DoF_impl::traits2cloneable_ptr);
+    return _static_traits_map;
+  }
   //********************************************************************
 
   DoF::BasicTraits const &DoF::traits(std::string const &_type_name) {

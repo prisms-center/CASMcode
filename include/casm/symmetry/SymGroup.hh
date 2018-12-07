@@ -7,6 +7,7 @@
 
 #include "casm/CASM_global_enum.hh"
 #include "casm/symmetry/SymOp.hh"
+#include "casm/container/multivector.hh"
 
 namespace CASM {
 
@@ -31,7 +32,7 @@ namespace CASM {
   /// i.e., if SymOps 'A' and 'B' are in SymGroup, C=A*B is also in SymGroup
   ///       if 'A' is in SymGroup, then A.inverse() is in SymGroup
   ///       SymGroup always contains an identity operation
-  class SymGroup : public Array<SymOp> {
+  class SymGroup : public std::vector<SymOp> {
   public:
     typedef SymOp::vector_type vector_type;
     typedef SymOp::matrix_type matrix_type;
@@ -43,7 +44,7 @@ namespace CASM {
 
     }
 
-    SymGroup(const Array<SymOp> &from_array, PERIODICITY_TYPE init_type = PERIODIC);
+    SymGroup(const std::vector<SymOp> &from_array, PERIODICITY_TYPE init_type = PERIODIC);
 
     template<typename IterType>
     SymGroup(IterType begin,
@@ -66,7 +67,8 @@ namespace CASM {
       return at(0).master_group();
     }
 
-    ReturnArray<Index> op_indices() const;
+    std::vector<Index> op_indices() const;
+
 
     ///Check to see if a SymOp is contained in in SymGroup
     //maybe contains and find should account for group_periodicity
@@ -87,7 +89,7 @@ namespace CASM {
     /// of the SymOps in the group. Upon a successful matrix match, it will attempt to match the shift
     /// shift vector with min_dist.
     Index find_periodic(const SymOp &test_op, double tol = TOL) const;
-    ReturnArray<Index> find_all_periodic(const Array<SymOp> &subgroup, double tol = TOL) const;
+    std::vector<Index> find_all_periodic(const std::vector<SymOp> &subgroup, double tol = TOL) const;
 
     /// \brief Sort SymOp in the SymGroup
     virtual void sort();
@@ -123,7 +125,6 @@ namespace CASM {
     /// Add a new empty representation
     SymGroupRepID allocate_representation() const;
 
-
     /// Gets all the space group operations in unit cell and stores them in space_group
     /// assuming that this SymGroup contains the factor group
     void calc_space_group_in_cell(SymGroup &space_group, const Lattice &_cell) const;
@@ -153,17 +154,17 @@ namespace CASM {
     /// This returns the group's max_error
     double max_error();
 
-    ReturnArray<Array<Index> > left_cosets(const Array<SymOp> &subgroup, double tol = TOL) const;
+    std::vector<std::vector<Index> > left_cosets(const std::vector<SymOp> &subgroup, double tol = TOL) const;
 
     template<typename IterType>
-    ReturnArray<Array<Index> > left_cosets(IterType const &begin, IterType const &end) const;
+    std::vector<std::vector<Index> > left_cosets(IterType const &begin, IterType const &end) const;
 
-    const Array<Index>::X2 &get_multi_table() const;
-    const Array<Index>::X2 &get_alt_multi_table() const;
+    const std::vector<std::vector<Index>> &get_multi_table() const;
+    const std::vector<std::vector<Index>> &get_alt_multi_table() const;
     void invalidate_multi_tables() const;
-    const Array<Index>::X2 &get_conjugacy_classes() const;
-    const Array<std::complex<double> >::X2 &character_table() const;
-    const Array<bool> &get_complex_irrep_list() const;
+    const std::vector<std::vector<Index>> &get_conjugacy_classes() const;
+    const std::vector<std::vector<std::complex<double> >> &character_table() const;
+    const std::vector<bool> &get_complex_irrep_list() const;
     const std::string &get_name() const;
     const std::string &get_latex_name() const;
 
@@ -179,7 +180,7 @@ namespace CASM {
     const std::vector<std::set<std::set<Index> > > &subgroups() const;
 
     void print_character_table(std::ostream &stream);
-    ReturnArray<Index> get_irrep_decomposition() const;
+    std::vector<Index> get_irrep_decomposition() const;
     bool is_irreducible() const;
 
     std::vector<SymGroup> unique_subgroups() const;
@@ -222,31 +223,31 @@ namespace CASM {
     PERIODICITY_TYPE m_group_periodicity;
 
     /// multi_table[i][j] gives index of operation that is result of at(i)*at(j)
-    mutable Array<Array<Index> > multi_table;
+    mutable multivector<Index>::X<2> multi_table;
 
     /// alt_multi_table[i][j] gives index of operation that is result of at(i).inverse()*at(j)
-    mutable Array<Array<Index> > alt_multi_table;
+    mutable multivector<Index>::X<2> alt_multi_table;
 
     // information about conjugacy classes
     // conjugacy_classes[i][j] gives index of SymOp 'j' in class 'i'
-    mutable Array<Array<Index> > conjugacy_classes;
-    mutable Array<std::string> class_names;
-    mutable Array<Index> index2conjugacy_class;
+    mutable std::vector<std::vector<Index> > conjugacy_classes;
+    mutable std::vector<std::string> class_names;
+    mutable std::vector<Index> index2conjugacy_class;
 
     // Information about irreducible representations
     // m_character_table[i][j] is character of conjugacy class 'j' in irrep 'i'
-    mutable Array<Array<std::complex<double> > > m_character_table;
-    mutable Array<SymGroupRepID> irrep_IDs;
-    mutable Array<bool> complex_irrep;
-    mutable Array<std::string> irrep_names;
+    mutable multivector<std::complex<double>>::X<2> m_character_table;
+    mutable std::vector<SymGroupRepID> irrep_IDs;
+    mutable std::vector<bool> complex_irrep;
+    mutable std::vector<std::string> irrep_names;
 
     // subgroups are found by finding the closure for each possible union of small_subgroups
     // organized the same way as small_subgroups
     mutable std::vector<std::set<std::set<Index> > > m_subgroups;
 
 
-    mutable Array<Array<Index> > centralizer_table;
-    mutable Array<Array<Index> > elem_order_table;
+    mutable multivector<Index>::X<2> centralizer_table;
+    mutable multivector<Index>::X<2> elem_order_table;
 
     mutable std::string name;
     mutable std::string latex_name;
@@ -255,11 +256,11 @@ namespace CASM {
     mutable double m_max_error;
 
     ///Space group (added by Donghee );
-    mutable Array<Array<SymOp> > rotation_groups;
+    mutable std::vector<std::vector<SymOp> > rotation_groups;
     mutable std::string crystal_system;
     mutable bool centric; // if it is centric, special point is same in reciprocal space
-    mutable Array<int> group_number; // space group number (min and max)
-    mutable Array<std::string> group_name; // 0: International 1: Schonflies
+    mutable std::vector<int> group_number; // space group number (min and max)
+    mutable std::vector<std::string> group_name; // 0: International 1: Schonflies
 
 
   };
@@ -330,7 +331,7 @@ namespace CASM {
     SymGroupRepID coord_rep_ID() const;
     SymGroupRepID identity_rep_ID(Index dim) const;
     SymGroupRepID add_kronecker_rep(SymGroupRepID ID1, SymGroupRepID ID2) const;
-    SymGroupRepID add_direct_sum_rep(const Array<SymGroupRepID> &rep_IDs) const;
+    SymGroupRepID add_direct_sum_rep(const std::vector<SymGroupRepID> &rep_IDs) const;
     SymGroupRepID add_transformed_rep(SymGroupRepID orig_ID, const Eigen::MatrixXd &trans_mat) const;
     SymGroupRepID add_rotation_rep() const;
 
@@ -357,7 +358,7 @@ namespace CASM {
 
     /// Collection of alternate representations of this symmetry group
     /// Stored as pointers to avoid weird behavior with resizing
-    mutable Array<SymGroupRep *> m_rep_array;
+    mutable std::vector<SymGroupRep *> m_rep_array;
 
     /// ID of Cartesian representation
     mutable SymGroupRepID m_coord_rep_ID;
@@ -366,7 +367,7 @@ namespace CASM {
     mutable SymGroupRepID m_reg_rep_ID;
 
     /// identity representations: m_identity_rep_IDs[dim] refers to the Identity representation of dimention 'dim'
-    mutable Array<SymGroupRepID> m_identity_rep_IDs;
+    mutable std::vector<SymGroupRepID> m_identity_rep_IDs;
 
     /// Copy of *this with translations removed
     mutable SymGroup m_point_group;
@@ -391,7 +392,7 @@ namespace CASM {
   SymGroup::SymGroup(IterType begin,
                      IterType end,
                      PERIODICITY_TYPE init_type):
-    Array<SymOp>(begin, end),
+    std::vector<SymOp>(begin, end),
     m_lat_ptr(nullptr),
     m_group_periodicity(init_type),
     m_max_error(-1) {
@@ -405,7 +406,7 @@ namespace CASM {
   // The set of left cosets is identical to the equivalence_map formed by partitioning (*this) w.r.t. 'subgroup'
   // This version is overloaded to take only the indices of the operations that form the subgroup
   template<typename IterType>
-  ReturnArray<Array<Index> > SymGroup::left_cosets(IterType const &begin, IterType const &end) const {
+  std::vector<std::vector<Index> > SymGroup::left_cosets(IterType const &begin, IterType const &end) const {
     Index N = std::distance(begin, end);
     //std::cout << "N is " << N << " and size is " << size() << std::endl;
     assert((size() % N) == 0 && "In SymGroup::left_cosets(), left cosets must be generated by a subgroup of *this SymGroup.");
@@ -418,7 +419,7 @@ namespace CASM {
     }
     Index csize = size() / N;
     //std::cout << "csize is " << csize << "\n";
-    Array<Index>::X2 tcosets;
+    std::vector<std::vector<Index>> tcosets;
     tcosets.reserve(csize);
 
     std::vector<bool> check(size(), false);
@@ -426,7 +427,7 @@ namespace CASM {
     for(Index i = 0; i < size() && tcosets.size() < csize; i++) {
       if(check[i])
         continue;
-      tcosets.push_back(Array<Index>());
+      tcosets.push_back(std::vector<Index>());
       for(IterType it = begin; it != end; ++it) {
         prod = ind_prod(i, *it);
         tcosets.back().push_back(prod);

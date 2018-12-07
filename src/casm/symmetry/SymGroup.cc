@@ -1,10 +1,9 @@
 #include "casm/symmetry/SymGroup.hh"
-
 #include <boost/filesystem/fstream.hpp>
 #include "casm/external/Eigen/CASM_AddOns"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/misc/CASM_Array_math.hh"
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Coordinate.hh"
@@ -117,9 +116,10 @@ namespace CASM {
   //*******************************************************************************************
 
   SymGroupRepID MasterSymGroup::identity_rep_ID(Index dim) const {
-    if(m_identity_rep_IDs.size() < dim + 1)
-      m_identity_rep_IDs.append(Array<SymGroupRepID>(dim + 1 - m_identity_rep_IDs.size()));
-
+    if(m_identity_rep_IDs.size() < dim + 1) {
+      auto tail = std::vector<SymGroupRepID>(dim + 1 - m_identity_rep_IDs.size());
+      m_identity_rep_IDs.insert(m_identity_rep_IDs.end(), tail.begin(), tail.end());
+    }
     if(m_identity_rep_IDs[dim].empty()) {
       m_rep_array.push_back(new SymGroupRep(*this));
       for(Index i = 0; i < size(); i++) {
@@ -209,8 +209,8 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  SymGroupRepID MasterSymGroup::add_direct_sum_rep(const Array<SymGroupRepID> &rep_IDs) const {
-    Array<SymGroupRep const *> treps;
+  SymGroupRepID MasterSymGroup::add_direct_sum_rep(const std::vector<SymGroupRepID> &rep_IDs) const {
+    std::vector<SymGroupRep const *> treps;
     for(Index i = 0; i < rep_IDs.size(); i++) {
       treps.push_back(_representation_ptr(rep_IDs[i]));
       if(!treps.back())
@@ -397,7 +397,7 @@ namespace CASM {
     SymGroup::sort();
     m_point_group.clear();
     bool broken_check(false);
-    Array<Index> perm_array(size(), 0);
+    std::vector<Index> perm_array(size(), 0);
     for(Index i = 0; i < size(); i++) {
       perm_array[i] = at(i).index();
       if(at(i).index() != i) {
@@ -409,7 +409,11 @@ namespace CASM {
       //default_err_log() << "WARNING: Order of symmetry operations has been altered by MasterSymGroup::sort_by_class(). Attempting to repair "
       //                << m_rep_array.size() << " symmetry representations.\n";
       for(Index i = 0; i < m_rep_array.size(); i++) {
-        m_rep_array[i]->permute(perm_array);
+        std::vector<SymOpRepresentation *> new_rep;
+        std::transform(perm_array.begin(), perm_array.end(), std::back_inserter(new_rep), [&](Index & idx) {
+          return (*m_rep_array[i])[idx];
+        });
+        m_rep_array[i]->swap(new_rep);
         for(Index j = 0; j < m_rep_array[i]->size(); j++) {
           if(m_rep_array[i]->at(j)) {
             (m_rep_array[i]->at(j))->set_identifiers(*this, m_rep_array[i]->symrep_ID(), j);//perm_array[j]);
@@ -421,10 +425,9 @@ namespace CASM {
     return;
   }
 
-
   //*******************************************************************************************
 
-  SymGroup::SymGroup(const Array<SymOp> &from_array, PERIODICITY_TYPE init_type) :
+  SymGroup::SymGroup(const std::vector<SymOp> &from_array, PERIODICITY_TYPE init_type) :
     m_group_periodicity(init_type),
     m_max_error(-1) {
     for(Index i = 0; i < from_array.size(); i++)
@@ -441,7 +444,7 @@ namespace CASM {
   /*****************************************************************/
 
   void SymGroup::push_back(const SymOp &new_op) {
-    Array<SymOp>::push_back(new_op);
+    std::vector<SymOp>::push_back(new_op);
     if(back().map_error() > m_max_error)
       m_max_error = back().map_error();
     return;
@@ -473,8 +476,8 @@ namespace CASM {
   }
 
   //*****************************************************************
-  ReturnArray<Index> SymGroup::op_indices() const {
-    Array<Index> ind_array(size());
+  std::vector<Index> SymGroup::op_indices() const {
+    std::vector<Index> ind_array(size());
     for(Index i = 0; i < size(); i++) {
       if(!valid_index(at(i).index()) && at(i).has_valid_master()) {
         ind_array[i] = at(i).master_group().find_periodic(at(i));
@@ -490,7 +493,7 @@ namespace CASM {
   //*****************************************************************
 
   void SymGroup::clear() {
-    Array<SymOp>::clear();
+    std::vector<SymOp>::clear();
 
     clear_tables();
 
@@ -509,8 +512,8 @@ namespace CASM {
   // Donghee
   //*****************************************************************
   void SymGroup::get_rotation_groups() const {
-    Array<SymOp> E, TF, THF, FF, SF;
-    Array<SymOp> I, ITF, ITHF, IFF, ISF;
+    std::vector<SymOp> E, TF, THF, FF, SF;
+    std::vector<SymOp> I, ITF, ITHF, IFF, ISF;
     for(Index i = 0; i < size(); i++) {
       SymInfo info(at(i), lattice());
       if(info.op_type == symmetry_type::identity_op) {
@@ -918,7 +921,7 @@ namespace CASM {
       if(keep_repeated) {
         shiftless.push_back(tsymop);
       }
-      else if(!shiftless.contains(tsymop)) {
+      else if(!contains(shiftless, tsymop)) {
         shiftless.push_back(tsymop);
       }
     }
@@ -949,7 +952,7 @@ namespace CASM {
   void SymGroup::_generate_irrep_names() const { //AAB
     irrep_names.resize(conjugacy_classes.size());
 
-    Array<int> repeats;
+    std::vector<int> repeats;
 
     bool inversion = false;
     bool sigma_h = false;
@@ -1053,7 +1056,7 @@ namespace CASM {
         for(Index k = 0; k < irrep_names.size(); k++) {
           if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0) && (m_character_table[j][0].real() == m_character_table[k][0].real())) {
             int dim = int(m_character_table[k][0].real());
-            if(!(repeats.contains(dim))) {
+            if(!contains(repeats, dim)) {
               repeats.push_back(dim);
             }
           }
@@ -1069,7 +1072,7 @@ namespace CASM {
 
     for(Index i = 0; i < irrep_names.size(); i++) {
       int C2ind = 0;
-      if((sigma_v == true) && (!all_unique) && (repeats.contains(int(m_character_table[0][i].real()))) && (irrep_names[i] != "E") && (!cubic)) {
+      if((sigma_v == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real()))) && (irrep_names[i] != "E") && (!cubic)) {
         sym_wrt_v = true;
         for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_v; j++) {
           if(class_names[j].find("v") != std::string::npos) {
@@ -1089,7 +1092,7 @@ namespace CASM {
         }
       }
 
-      else if((sigma_v != true) && (C2p == true) && (!all_unique) && (repeats.contains(int(m_character_table[0][i].real()))) && (irrep_names[i] != "E") && (!cubic)) {
+      else if((sigma_v != true) && (C2p == true) && (!all_unique) && contains(repeats, int(m_character_table[0][i].real())) && (irrep_names[i] != "E") && (!cubic)) {
         for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_C2p; j++) {
           if(class_names[j].find("C2") != std::string::npos) {
             if((class_names[j].find("'") != std::string::npos) || (class_names[j].find("''") == std::string::npos)) {
@@ -1193,7 +1196,7 @@ namespace CASM {
         for(Index k = 0; k < irrep_names.size(); k++) {
           if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0) && (m_character_table[j][0].real() == m_character_table[k][0].real())) {
             int dim = int(m_character_table[k][0].real());
-            if(!(repeats.contains(dim))) {
+            if(!contains(repeats, dim)) {
               repeats.push_back(dim);
             }
           }
@@ -1203,14 +1206,13 @@ namespace CASM {
     //    //std::cout << "Repeats in ..." << repeats << "\n";
     //std::cout << "STEP 3: Name according to inversion symmetry...\n";
     for(Index i = 0; i < irrep_names.size(); i++) {
-      if((inversion == true) && (!all_unique) && (repeats.contains(int(m_character_table[0][i].real())))) {
+      if((inversion == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real())))) {
         sym_wrt_inv = true;
         for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_inv; j++) {
           if((class_names[j].find("i") != std::string::npos) && (m_character_table[i][j].real() < 0)) {
             sym_wrt_inv = false;
           }
         }
-
         if(sym_wrt_inv == true) {
           irrep_names[i].append("g");
         }
@@ -1238,7 +1240,7 @@ namespace CASM {
         for(Index k = 0; k < irrep_names.size(); k++) {
           if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0) && (m_character_table[j][0].real() == m_character_table[k][0].real())) {
             int dim = int(m_character_table[k][0].real());
-            if(!(repeats.contains(dim))) {
+            if(!contains(repeats, dim)) {
               repeats.push_back(dim);
             }
           }
@@ -1250,7 +1252,7 @@ namespace CASM {
 
     //    //std::cout << "STEP 4: Name according to sigma_h symmetry...\n";
     for(Index i = 0; i < irrep_names.size(); i++) {
-      if((sigma_h == true) && (!all_unique) && (repeats.contains(int(m_character_table[0][i].real())))) {
+      if((sigma_h == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real())))) {
         for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_h; j++) {
           if((class_names[j].find("h") != std::string::npos) && (m_character_table[i][j].real() < 0)) {
             sym_wrt_h = false;
@@ -1284,9 +1286,10 @@ namespace CASM {
     if(!all_unique) {
       default_err_log() << "WARNING: Failed to name all irreps uniquely...  \n";
     }
-
-    std::cout << irrep_names << std::endl;
-
+    for(auto &irrep_name : irrep_names) {
+      std::cout << irrep_name << "   ";
+    }
+    std::cout << std::endl;
     return;
   }
 
@@ -1314,8 +1317,8 @@ namespace CASM {
 
     class_names.resize(conjugacy_classes.size());
 
-    Array<Eigen::Vector3d > highsym_axes;
-    Array<int> mult;
+    std::vector<Eigen::Vector3d > highsym_axes;
+    std::vector<int> mult;
     double angle = 360;
     double dprod;
     std::string symtype;
@@ -1361,8 +1364,8 @@ namespace CASM {
 
     for(Index i = 0; i < size(); i++) {
       if((info[i].op_type == symmetry_type::rotation_op) || (info[i].op_type == symmetry_type::screw_op)) {
-        if(highsym_axes.contains(info[i].axis.cart())) { //Otherwise, check if the axis has been found;
-          mult[highsym_axes.find(info[i].axis.cart())]++;
+        if(contains(highsym_axes, info[i].axis.const_cart())) { //Otherwise, check if the axis has been found;
+          mult[ find_index(highsym_axes, info[i].axis.const_cart())]++;
         }
         else {
           highsym_axes.push_back(info[i].axis.cart());
@@ -1384,16 +1387,16 @@ namespace CASM {
     }
 
 
-    int order = mult.max();
+    int order = *std::max_element(mult.begin(), mult.end());
 
     for(int i = (int(mult.size()) - 1); i >= 0; i--) {
       if((cubic == false) && (mult[i] != order)) {
-        highsym_axes.remove(i);
-        mult.remove(i);
+        highsym_axes.erase(highsym_axes.begin() + i);
+        mult.erase(mult.begin() + i);
       }
       else if(mult[i] < (order - 1)) {
-        highsym_axes.remove(i);
-        mult.remove(i);
+        highsym_axes.erase(highsym_axes.begin() + i);
+        mult.erase(mult.begin() + i);
       }
     }
 
@@ -1407,8 +1410,8 @@ namespace CASM {
           throw std::runtime_error("Error in _generate_class_names: using hs_axis unitialized");
         }
         if(!almost_zero(highsym_axes[i] - hs_axis)) {
-          highsym_axes.remove(i);
-          mult.remove(i);
+          highsym_axes.erase(highsym_axes.begin() + i);
+          mult.erase(mult.begin() + i);
         }
       }
     }
@@ -1874,7 +1877,7 @@ namespace CASM {
       for(Index j = 0; j < conjugacy_classes[i].size() && all_commute; j++) {
         for(Index k = 0; k < multi_table.size(); k++) {
           int ind = conjugacy_classes[i][j];
-          if((multi_table[ind][k] == multi_table[k][ind]) && (!centralizer_table[i].contains(k))) {
+          if((multi_table[ind][k] == multi_table[k][ind]) && (!contains(centralizer_table[i], k))) {
             centralizer_table[i].push_back(k);
           }
           else {
@@ -1920,7 +1923,7 @@ namespace CASM {
     Index h = multi_table.size(); //This is the dimensionality of the group.
     Index nc = conjugacy_classes.size(); //This is the number of conjugacy classes, which is also the number of irreducible representations.
 
-    m_character_table.resize(nc, Array<std::complex<double> >(nc, -7));
+    m_character_table.resize(nc, std::vector<std::complex<double> >(nc, -7));
     complex_irrep.resize(nc, false);
     irrep_IDs.resize(nc);
 
@@ -1959,7 +1962,7 @@ namespace CASM {
     }
 
     // count over all possible 1d representations
-    Counter<CASM::Array<int> > count(Array<int>(nc, -1), Array<int>(nc, 1), Array<int>(nc, 2));
+    Counter<std::vector<int> > count(std::vector<int>(nc, -1), std::vector<int>(nc, 1), std::vector<int>(nc, 2));
     int sum = 0;
     order1 = 1;
     std::complex<double> ortho = 0;
@@ -1967,7 +1970,7 @@ namespace CASM {
     int try1 = 0, try2 = 0;
 
     int try1_ind = 0, try2_ind = 0;
-    Array<bool> check(nc, false);
+    std::vector<bool> check(nc, false);
 
 
     do {
@@ -2009,7 +2012,7 @@ namespace CASM {
             }
           }
 
-          Array<std::complex<double> > ortharray;
+          std::vector<std::complex<double> > ortharray;
 
           for(Index i = 0; i < nc; i++) {
             ortho = 0.0;
@@ -2143,7 +2146,7 @@ namespace CASM {
       _generate_centralizers();
     }
 
-    Array<std::complex<double> > centralizers(nc, 0);
+    std::vector<std::complex<double> > centralizers(nc, 0);
 
     // //std::cout << "----------------------------------------------------------------------------\n";
     for(Index i = 0; i < conjugacy_classes.size(); i++) {
@@ -2232,8 +2235,8 @@ namespace CASM {
 
       std::complex<double> iangle(cos(angle), sin(angle));
 
-      Array<std::complex<double> > tchar;
-      Array<std::complex<double> > tcharconj;
+      std::vector<std::complex<double> > tchar;
+      std::vector<std::complex<double> > tcharconj;
       tchar.resize(nc);
       tcharconj.resize(nc);
       tchar[0] = std::complex<double>(1, 0);
@@ -2475,7 +2478,7 @@ namespace CASM {
     }
 
     else if((d3 == 0) && (d2 > 0)) {
-      Array<std::complex<double> > centrcheck;
+      std::vector<std::complex<double> > centrcheck;
       centrcheck.resize(nc);
 
       for(Index i = 0; i < d1; i++) {
@@ -2540,7 +2543,7 @@ namespace CASM {
       }
 
       else if((d2 == 2) && !subgroup.size()) {
-        Array<std::complex<double> > remainder;
+        std::vector<std::complex<double> > remainder;
         int nr = 0;
         remainder.resize(nc);
         for(Index i = 1; i < nc; i++) {
@@ -2556,10 +2559,10 @@ namespace CASM {
           }
         }
 
-        Counter<CASM::Array<int> > signcount(Array<int>(nr, -1), Array<int>(nr, 1), Array<int> (nr, 2));
-        Array<std::complex<double> > trow;
+        Counter<std::vector<int> > signcount(std::vector<int>(nr, -1), std::vector<int>(nr, 1), std::vector<int> (nr, 2));
+        std::vector<std::complex<double> > trow;
         order2 = (nc - d2);
-        Array<std::complex<double> >::X2 tset;
+        std::vector<std::vector<std::complex<double> >> tset;
 
         do {
           trow.resize(nc);
@@ -2580,7 +2583,7 @@ namespace CASM {
             sum += trow[i].real() * conjugacy_classes[i].size();
           }
           double orthcheck;
-          Array<double> ortharray;
+          std::vector<double> ortharray;
           if(sum == 0) {
             ortharray.resize(0);
             for(Index i = 0; i < d1; i++) {
@@ -2904,8 +2907,8 @@ namespace CASM {
   std::vector<SymGroup> SymGroup::unique_subgroups() const {
     if(!m_subgroups.size()) _generate_subgroups();
 
-    Array<std::string> sg_names, sg_names_limited;
-    Array<bool> chosen_flag(m_subgroups.size(), false);
+    std::vector<std::string> sg_names, sg_names_limited;
+    std::vector<bool> chosen_flag(m_subgroups.size(), false);
     for(Index i = 0; i < m_subgroups.size(); i++) {
       SymGroup sgroup;
       sgroup.m_lat_ptr = m_lat_ptr;
@@ -2921,7 +2924,7 @@ namespace CASM {
       //std::cout << "\n";
     }
 
-    Array< Array< Index > > sg_tree(m_subgroups.size(), Array<Index>());
+    std::vector< std::vector< Index > > sg_tree(m_subgroups.size(), std::vector<Index>());
     for(Index i = 0; i < m_subgroups.size(); i++) {
       //std::cout << "Subgroup " << sg_names[i] << "-" << i << " is also a subgroup of ";
       for(Index j = 0; j < m_subgroups.size(); j++) {
@@ -3005,14 +3008,14 @@ namespace CASM {
     for(Index i = 0; i < size(); i++) {
       bool dup_class(false);
       for(Index j = 0; j < conjugacy_classes.size(); j++) {
-        if(conjugacy_classes[j].contains(i)) {
+        if(contains(conjugacy_classes[j], i)) {
           dup_class = true;
           break;
         }
       }
       if(dup_class) continue;
 
-      conjugacy_classes.push_back(Array<Index>());
+      conjugacy_classes.push_back(std::vector<Index>());
 
       for(Index j = 0; j < size(); j++) {
         //std::cout << "for j=" << j << ", i=" << i << ": j-inverse= " << ind_inverse(j) << ", i*j-inverse= " << ind_prod(i, ind_inverse(j));
@@ -3021,7 +3024,7 @@ namespace CASM {
         k = ind_prod(j, ind_prod(i, ind_inverse(j)));
         //std::cout << k << " -- compare to explicit value " << multi_table[tk][j];
 
-        if(!conjugacy_classes.back().contains(k)) {
+        if(!contains(conjugacy_classes.back(), k)) {
           //std::cout << " so " << k << " goes in class " << conjugacy_classes.size()-1;
           conjugacy_classes.back().push_back(k);
         }
@@ -3127,8 +3130,8 @@ namespace CASM {
 
   //*******************************************************************************************
   // The set of left cosets is identical to the equivalence_map formed by partitioning (*this) w.r.t. 'subgroup'
-  ReturnArray<Array<Index> > SymGroup::left_cosets(const Array<SymOp> &subgroup, double tol) const {
-    Array<Index> sg_inds = find_all_periodic(subgroup, tol);
+  std::vector<std::vector<Index> > SymGroup::left_cosets(const std::vector<SymOp> &subgroup, double tol) const {
+    std::vector<Index> sg_inds = find_all_periodic(subgroup, tol);
     return left_cosets(sg_inds.begin(), sg_inds.end());
   }
 
@@ -3136,7 +3139,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  const Array<Index>::X2 &SymGroup::get_multi_table() const {
+  const std::vector<std::vector<Index>> &SymGroup::get_multi_table() const {
     if(multi_table.size() != size()) {
       //std::cout << "CALCULATING MULTI_TABLE for " << this <<  ": table size is " << multi_table.size() << " and group size is " << size() << "!!\n";
       _generate_multi_table();
@@ -3146,7 +3149,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  const Array<Index>::X2 &SymGroup::get_alt_multi_table() const {
+  const std::vector<std::vector<Index>> &SymGroup::get_alt_multi_table() const {
     if(alt_multi_table.size() != size()) {
       //std::cout << "CALCULATING ALT_MULTI_TABLE " << this << ": table size is " << alt_multi_table.size() << " and group size is " << size() << "!!\n";
       _generate_alt_multi_table();
@@ -3156,21 +3159,21 @@ namespace CASM {
   //*******************************************************************************************
 
   void SymGroup::invalidate_multi_tables() const {
-    multi_table.resize(size(), Array<Index>(size(), -1));
-    alt_multi_table.resize(size(), Array<Index>(size(), -1));
+    multi_table.resize(size(), std::vector<Index>(size(), -1));
+    alt_multi_table.resize(size(), std::vector<Index>(size(), -1));
 
   }
 
   //*******************************************************************************************
 
-  const Array<Index>::X2 &SymGroup::get_conjugacy_classes() const {
+  const std::vector<std::vector<Index>> &SymGroup::get_conjugacy_classes() const {
     if(conjugacy_classes.size() != size())
       _generate_conjugacy_classes();
     return conjugacy_classes;
   }
   //*******************************************************************************************
 
-  const Array<bool > &SymGroup::get_complex_irrep_list() const {
+  const std::vector<bool > &SymGroup::get_complex_irrep_list() const {
     if(!m_character_table.size())
       _generate_character_table();
     return complex_irrep;
@@ -3178,7 +3181,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  const Array<std::complex<double> >::X2 &SymGroup::character_table() const {
+  const std::vector<std::vector<std::complex<double> >> &SymGroup::character_table() const {
     if(!m_character_table.size())
       _generate_character_table();
     return m_character_table;
@@ -3219,27 +3222,31 @@ namespace CASM {
 
   bool SymGroup::_generate_multi_table() const { //AAB
     Index i, j;
-    multi_table.resize(size(), Array<Index>(size(), -1));
+    multi_table.resize(size(), std::vector<Index>(size(), -1));
 
     for(i = 0; i < size(); i++) {
       for(j = 0; j < size(); j++) {
         multi_table[i][j] = find_periodic(at(i) * at(j));
-        if(multi_table[i][j] >= size() || multi_table[i].find(multi_table[i][j]) != j) {
+        if(multi_table[i][j] >= size() || find_index(multi_table[i], multi_table[i][j]) != j) {
           // this is a hack (sort of). If find_periodic doesn't work, we try find_no trans, which *should* work.
           // In other words, we are using 'inuition' to determine that user doesn't really care about the translational aspects.
           // If our intuition is wrong, there will will probably be an obvious failure later.
           multi_table[i][j] = find_no_trans(at(i) * at(j));
-          if(multi_table[i][j] >= size() || multi_table[i].find(multi_table[i][j]) != j) {
+          if(multi_table[i][j] >= size() || find_index(multi_table[i], multi_table[i][j]) != j) {
 
             //if(multi_table[i][j] >= size()) {
             //std::cout << "This SymGroup is not a group because the combination of at least two of its elements is not contained in the set.\n";
 
-            //Returning a table of all 1's seems to make the most sense. This will prevent weird recursion from happening.
+            //ing a table of all 1's seems to make the most sense. This will prevent weird recursion from happening.
             default_err_log() << "Failed to construc multiplication table!  Table in progress:\n";
-            for(Index m = 0; m < multi_table.size(); m++)
-              default_err_log() << multi_table[m] << "\n";
+            for(Index m = 0; m < multi_table.size(); m++) {
+              for(Index n = 0; n < multi_table[m].size(); n++) {
+                default_err_log() << multi_table[m][n] << "   ";
+              }
+              default_err_log() << "\n";
+            }
             default_err_log() << "\n";
-            multi_table.resize(size(), Array<Index>(size(), -1));
+            multi_table.resize(size(), std::vector<Index>(size(), -1));
             //multi_table.clear();
             return false;
           }
@@ -3257,12 +3264,12 @@ namespace CASM {
     alt_multi_table.resize(get_multi_table().size());
 
     if(multi_table.size() && !valid_index(multi_table[0][0])) {
-      alt_multi_table.resize(size(), Array<Index>(size(), -1));
+      alt_multi_table.resize(size(), std::vector<Index>(size(), -1));
       return;
     }
     for(Index i = 0; i < multi_table.size(); i++) {
       if(multi_table[i][i] != 0) {
-        alt_multi_table[multi_table[i].find(0)] = multi_table[i];
+        alt_multi_table[find_index(multi_table[i], 0)] = multi_table[i];
       }
       else {
         alt_multi_table[i] = multi_table[i];
@@ -3298,8 +3305,8 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  ReturnArray<Index> SymGroup::find_all_periodic(const Array<SymOp> &subgroup, double tol) const {
-    Array<Index> tarray;
+  std::vector<Index> SymGroup::find_all_periodic(const std::vector<SymOp> &subgroup, double tol) const {
+    std::vector<Index> tarray;
     for(Index i = 0; i < subgroup.size(); i++) {
       tarray.push_back(find_periodic(subgroup[i], tol));
       if(tarray.back() == size()) {
@@ -3365,11 +3372,7 @@ namespace CASM {
     return;
   }
 
-  //*******************************************************************************************
 
-  /*bool SymGroup::contains(const SymOp &test_op) const {
-    return Array<SymOp> :: contains(test_op);
-    }*/
 
   //*******************************************************************************************
 
@@ -3471,7 +3474,7 @@ namespace CASM {
 
         SymOp new_sym(SymOp::translation(trans.cart())*at(i));
 
-        if(!space_group.contains(new_sym)) {
+        if(!contains(space_group, new_sym)) {
           space_group.push_back(new_sym);
 
         }
@@ -3675,9 +3678,9 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  ReturnArray<Index> SymGroup::get_irrep_decomposition() const {
-    Array<Index> tdec;
-    Array<double> repchar;
+  std::vector<Index> SymGroup::get_irrep_decomposition() const {
+    std::vector<Index> tdec;
+    std::vector<double> repchar;
 
     tdec.resize(conjugacy_classes.size());
     repchar.resize(conjugacy_classes.size());
@@ -3711,7 +3714,7 @@ namespace CASM {
   jsonParser &SymGroup::to_json(jsonParser &json) const {
     json.put_obj();
 
-    json["symop"].put<Array<SymOp> >(*this);
+    json["symop"].put<std::vector<SymOp> >(*this);
 
     for(int i = 0; i < json["symop"].size(); ++i) {
       SymInfo info(at(i), lattice());
@@ -3722,22 +3725,22 @@ namespace CASM {
     // PERIODICITY_TYPE group_periodicity;
     json["group_periodicity"] = periodicity();
 
-    // mutable Array<Array<int> > multi_table;
+    // mutable std::vector<std::vector<int> > multi_table;
     json["multi_table"] = multi_table;
 
-    // mutable Array<Array<int> > alt_multi_table;
+    // mutable std::vector<std::vector<int> > alt_multi_table;
     json["alt_multi_table"] = alt_multi_table;
 
-    // mutable Array<Array<int> > conjugacy_classes;
+    // mutable std::vector<std::vector<int> > conjugacy_classes;
     json["conjugacy_classes"] = conjugacy_classes;
 
-    // mutable Array<std::string> class_names;
+    // mutable std::vector<std::string> class_names;
     json["class_names"] = class_names;
 
-    // mutable Array<int> index2conjugacy_class;
+    // mutable std::vector<int> index2conjugacy_class;
     json["index2conjugacy_class"] = index2conjugacy_class;
 
-    // mutable Array<Array<std::complex<double> > > m_character_table;
+    // mutable std::vector<std::vector<std::complex<double> > > m_character_table;
     json["character_table"] = m_character_table;
     for(int i = 0; i < json["character_table"].size(); i++) {
       json["character_table"][i].set_force_row();
@@ -3748,25 +3751,25 @@ namespace CASM {
       }
     }
 
-    // mutable Array<int> irrep_IDs;
+    // mutable std::vector<int> irrep_IDs;
     json["irrep_IDs"] = irrep_IDs;
 
-    // mutable Array<bool> complex_irrep;
+    // mutable std::vector<bool> complex_irrep;
     json["complex_irrep"] = complex_irrep;
 
-    // mutable Array<std::string> irrep_names;
+    // mutable std::vector<std::string> irrep_names;
     json["irrep_names"] = irrep_names;
 
     //json["unique_subgroups"] = unique_subgroups();
     json["unique_subgroups"] = std::string("TODO: fix SymGroup::unique_subgroups()");
 
-    // mutable Array<Array<Array<int> > > m_subgroups;
+    // mutable std::vector<std::vector<std::vector<int> > > m_subgroups;
     json["m_subgroups"] = m_subgroups;
 
-    // mutable Array<Array<int> > centralizer_table;
+    // mutable std::vector<std::vector<int> > centralizer_table;
     json["centralizer_table"] = centralizer_table;
 
-    // mutable Array<Array<int> > elem_order_table;
+    // mutable std::vector<std::vector<int> > elem_order_table;
     json["elem_order_table"] = elem_order_table;
 
     // mutable std::string name;
@@ -3781,7 +3784,7 @@ namespace CASM {
     // mutable double max_error;
     json["max_error"] = m_max_error;
 
-    // mutable Array<Array<SymOp> > rotation_groups;
+    // mutable std::vector<std::vector<SymOp> > rotation_groups;
     json["rotation_groups"] = rotation_groups;
 
     // mutable std::string crystal_system;
@@ -3790,10 +3793,10 @@ namespace CASM {
     // mutable bool centric;
     json["centric"] = centric;
 
-    // mutable Array<int> group_number; // space group number (min and max)
+    // mutable std::vector<int> group_number; // space group number (min and max)
     json["group_number"] = group_number;
 
-    // mutable Array<std::string> group_name; // 0: International 1: Schonflies
+    // mutable std::vector<std::string> group_name; // 0: International 1: Schonflies
     json["group_name"] = group_name;
 
     return json;
@@ -3804,7 +3807,7 @@ namespace CASM {
   void SymGroup::from_json(const jsonParser &json) {
     try {
 
-      // class SymGroup : public Array<SymOp>
+      // class SymGroup : public std::vector<SymOp>
       clear();
 
       for(int i = 0; i < json["symop"].size(); i++) {
@@ -3814,40 +3817,40 @@ namespace CASM {
       // PERIODICITY_TYPE group_periodicity;
       CASM::from_json(m_group_periodicity, json["group_periodicity"]);
 
-      // mutable Array<Array<int> > multi_table;
+      // mutable std::vector<std::vector<int> > multi_table;
       CASM::from_json(multi_table, json["multi_table"]);
 
-      // mutable Array<Array<int> > alt_multi_table;
+      // mutable std::vector<std::vector<int> > alt_multi_table;
       CASM::from_json(alt_multi_table, json["alt_multi_table"]);
 
-      // mutable Array<Array<int> > conjugacy_classes;
+      // mutable std::vector<std::vector<int> > conjugacy_classes;
       CASM::from_json(conjugacy_classes, json["conjugacy_classes"]);
 
-      // mutable Array<std::string> class_names;
+      // mutable std::vector<std::string> class_names;
       CASM::from_json(class_names, json["class_names"]);
 
-      // mutable Array<int> index2conjugacy_class;
+      // mutable std::vector<int> index2conjugacy_class;
       CASM::from_json(index2conjugacy_class, json["index2conjugacy_class"]);
 
-      // mutable Array<Array<std::complex<double> > > m_character_table;
+      // mutable std::vector<std::vector<std::complex<double> > > m_character_table;
       CASM::from_json(m_character_table, json["character_table"]);
 
-      // mutable Array<int> irrep_IDs;
+      // mutable std::vector<int> irrep_IDs;
       CASM::from_json(irrep_IDs, json["irrep_IDs"]);
 
-      // mutable Array<bool> complex_irrep;
+      // mutable std::vector<bool> complex_irrep;
       CASM::from_json(complex_irrep, json["complex_irrep"]);
 
-      // mutable Array<std::string> irrep_names;
+      // mutable std::vector<std::string> irrep_names;
       CASM::from_json(irrep_names, json["irrep_names"]);
 
-      // mutable Array<Array<Array<int> > > m_subgroups;
+      // mutable std::vector<std::vector<std::vector<int> > > m_subgroups;
       CASM::from_json(m_subgroups, json["m_subgroups"]);
 
-      // mutable Array<Array<int> > centralizer_table;
+      // mutable std::vector<std::vector<int> > centralizer_table;
       CASM::from_json(centralizer_table, json["centralizer_table"]);
 
-      // mutable Array<Array<int> > elem_order_table;
+      // mutable std::vector<std::vector<int> > elem_order_table;
       CASM::from_json(elem_order_table, json["elem_order_table"]);
 
       // mutable std::string name;
@@ -3862,10 +3865,10 @@ namespace CASM {
       // mutable double max_error;
       CASM::from_json(m_max_error, json["max_error"]);
 
-      // mutable Array<Array<SymOp> > rotation_groups;
+      // mutable std::vector<std::vector<SymOp> > rotation_groups;
       //CASM::from_json( rotation_groups, json["rotation_groups"]);
       rotation_groups.clear();
-      Array<SymOp> group;
+      std::vector<SymOp> group;
       for(int i = 0; i < json["rotation_groups"].size(); i++) {
         group.clear();
         for(int j = 0; i < json["rotation_groups"][i].size(); j++) {
@@ -3880,10 +3883,10 @@ namespace CASM {
       // mutable bool centric;
       CASM::from_json(centric, json["centric"]);
 
-      // mutable Array<int> group_number; // space group number (min and max)
+      // mutable std::vector<int> group_number; // space group number (min and max)
       CASM::from_json(group_number, json["group_number"]);
 
-      // mutable Array<std::string> group_name; // 0: International 1: Schonflies
+      // mutable std::vector<std::string> group_name; // 0: International 1: Schonflies
       CASM::from_json(group_name, json["group_name"]);
 
     }
@@ -3915,7 +3918,7 @@ namespace CASM {
     // class MasterSymGroup : public SymGroup
     SymGroup::to_json(json);
 
-    // mutable Array<SymGroupRep *> m_rep_array;
+    // mutable std::vector<SymGroupRep *> m_rep_array;
     json["m_rep_array"].put_array();
     for(Index i = 0; i < m_rep_array.size(); i++) {
       json["rep_array"].push_back(m_rep_array[i]);
@@ -3942,7 +3945,7 @@ namespace CASM {
       // class MasterSymGroup : public SymGroup
       SymGroup::from_json(json);
 
-      // mutable Array<SymGroupRep *> m_rep_array;
+      // mutable std::vector<SymGroupRep *> m_rep_array;
       // destruct exisiting
       for(Index i = 0; i < m_rep_array.size(); i++) {
         delete m_rep_array[i];

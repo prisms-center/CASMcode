@@ -1731,5 +1731,23 @@ namespace CASM {
     return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
   }
 
+  Structure make_deformed_struc(const Configuration &c) {
+    Structure tmp = c.supercell().superstructure(c);
+    if(c.configdof().has_local_dof("disp")) {
+      std::cout << "has disp going to apply" << std::endl;
+      Array<Site> new_basis;
+      for(int i = 0 ; i < tmp.basis().size(); i++) {
+        Eigen::Vector3d new_vec = tmp.basis()[i].const_cart() + c.configdof().local_dof("disp").values().col(i) ;
+        Site new_site(Coordinate(new_vec, tmp.lattice(), CART), tmp.basis()[i].occ_name());
+
+        new_basis.push_back(new_site);
+      }
+      tmp.set_basis(new_basis);
+    }
+    else {
+      std::cout << "no disp found" << std::endl;
+    }
+    return tmp;
+  }
 
 }

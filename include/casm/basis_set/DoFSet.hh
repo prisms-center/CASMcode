@@ -26,6 +26,8 @@ namespace CASM {
       m_type_name(_type.type_name()),
       m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(_type.dim(), 0)) {}
 
+    static DoFSet make_default(DoFSet::BasicTraits const &_type);
+
     Index size() const {
       return m_components.size();
     }

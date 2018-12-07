@@ -75,7 +75,6 @@ namespace CASM {
     BasicStructure<Site>::copy_attributes_from(RHS);
 
     m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
-    std::cout << "COPYING ATTRIBUTES!!\n";
     //assert(0);
     m_factor_group = RHS.m_factor_group;
     m_factor_group.set_lattice(lattice());

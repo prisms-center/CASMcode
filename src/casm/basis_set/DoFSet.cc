@@ -183,4 +183,22 @@ namespace CASM {
     value.from_json(json);
     return value;
   }
+
+  DoFSet DoFSet::make_default(DoFSet::BasicTraits const &_type) {
+    DoFSet result(_type);
+    result.m_info.set_basis(Eigen::MatrixXd::Identity(_type.dim(), _type.dim()));
+    for(std::string var_name : _type.standard_var_names()) {
+      //std::cout << "Adding var_name " << var_name << "\n";
+      result.m_components.push_back(ContinuousDoF(_type,
+                                                  var_name,
+                                                  -1, // ID
+                                                  -std::numeric_limits<double>::infinity(),
+                                                  std::numeric_limits<double>::infinity()));
+      if(_type.global())
+        result.m_components.back().lock_ID();
+
+    }
+    return result;
+  }
+
 }

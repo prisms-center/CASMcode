@@ -377,6 +377,8 @@ namespace CASM {
       return std::unique_ptr<DoF>(this->_clone());
     }
 
+    typedef notstd::unique_cloneable_map<std::string, BasicTraits> TraitsMap;
+    static const TraitsMap &traits_map();
   protected:
     void _set_type_name(std::string _type_name) {
       std::swap(m_type_name, _type_name);
@@ -389,7 +391,6 @@ namespace CASM {
 
     virtual DoF *_clone() const = 0;
 
-    typedef notstd::unique_cloneable_map<std::string, BasicTraits> TraitsMap;
     static TraitsMap &_traits_map();
 
     std::string m_type_name;

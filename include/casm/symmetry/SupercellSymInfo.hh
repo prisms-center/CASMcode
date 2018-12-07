@@ -118,6 +118,13 @@ namespace CASM {
                                                SupercellSymInfo const &_syminfo,
                                                DoFKey const &_key,
                                                std::vector<PermuteIterator> const &_group);
+  template<typename IterType>
+  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
+                                              IterType end,
+                                              SupercellSymInfo const &_syminfo,
+                                              DoFKey const &_key,
+                                              std::vector<PermuteIterator> const &_group);
+
 
 }
 
