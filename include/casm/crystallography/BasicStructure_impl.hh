@@ -230,7 +230,7 @@ namespace CASM {
             SymOp tSym(SymOp::translation(t_tau.cart())*test_op);
             tSym.set_map_error(max_error);
 
-            if(!factor_group.contains(tSym)) {
+            if(!factor_group.contains_periodic(tSym)) {
               factor_group.push_back(tSym);
             }
           }

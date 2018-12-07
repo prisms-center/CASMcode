@@ -23,7 +23,7 @@ namespace CASM {
   const std::string ScelEnumEquivalents::enumerator_name = "ScelEnumEquivalents";
 
   ScelEnumEquivalents::ScelEnumEquivalents(const Supercell &scel) :
-    EnumEquivalents<Supercell, Array<SymOp>::const_iterator, SymOp, SymRepIndexCompare>(
+    EnumEquivalents<Supercell, std::vector<SymOp>::const_iterator, SymOp, SymRepIndexCompare>(
       scel.canonical_form(),
       scel.prim().point_group().begin(),
       scel.prim().point_group().end(),

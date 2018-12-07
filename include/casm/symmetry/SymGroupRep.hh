@@ -5,10 +5,9 @@
 #include <string>
 #include <iomanip>
 
-#include "casm/container/Array.hh"
-#include "casm/container/multivector.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/container/multivector.hh"
 
 
 namespace CASM {
@@ -27,7 +26,7 @@ namespace CASM {
   /// There is a one-to-one correspondence of SymOps in some SymGroup with the SymOpRepresentations in SymGroupRep
   /// SymGroupRep does not know or care about the specifics of what the SymOpRepresentations describe
   /// or how they are implemented
-  class SymGroupRep : public Array<SymOpRepresentation *> {
+  class SymGroupRep : public std::vector<SymOpRepresentation *> {
   public:
     typedef SymGroupRepHandle RemoteHandle;
     enum NullInitializer {NO_HOME};
@@ -36,7 +35,7 @@ namespace CASM {
     /// You must promise that you know what you're doing
 
     SymGroupRep(SymGroupRep::NullInitializer init, Index _size) :
-      Array<SymOpRepresentation * >(_size, nullptr),
+      std::vector<SymOpRepresentation * >(_size, nullptr),
       m_master_group(nullptr) { }
 
     SymGroupRep(const SymGroup &_head, SymGroupRepID _rep_ID = SymGroupRepID()) :
@@ -115,13 +114,13 @@ namespace CASM {
     }
 
     multivector<Eigen::VectorXd>::X<3> calc_special_total_directions(const SymGroup &subgroup)const;
-    ReturnArray<Array< Eigen::MatrixXd> > calc_special_subspaces(const SymGroup &subgroup)const;
+    std::vector<std::vector< Eigen::MatrixXd> > calc_special_subspaces(const SymGroup &subgroup)const;
 
-    ReturnArray<Index> num_each_irrep() const;
-    ReturnArray<Index> num_each_irrep(const SymGroup &sub_group, bool verbose = false) const;
-    ReturnArray<Index> num_each_real_irrep(const SymGroup &subgroup, bool verbose = false) const;
+    std::vector<Index> num_each_irrep() const;
+    std::vector<Index> num_each_irrep(const SymGroup &sub_group, bool verbose = false) const;
+    std::vector<Index> num_each_real_irrep(const SymGroup &subgroup, bool verbose = false) const;
 
-    ReturnArray<SymGroupRepID> get_irrep_IDs(const SymGroup &subgroup) const;
+    std::vector<SymGroupRepID> get_irrep_IDs(const SymGroup &subgroup) const;
 
     bool is_irrep() const;
     bool is_irrep(const SymGroup &head_group) const;
@@ -149,7 +148,7 @@ namespace CASM {
 
     Eigen::MatrixXd get_irrep_trans_mat_blind(const SymGroup &head_group) const;
     std::pair<Eigen::MatrixXd, std::vector<Index>> _get_irrep_trans_mat_blind(const SymGroup &head_group) const;
-    ReturnArray<Eigen::MatrixXd> get_projection_operators() const;
+    std::vector<Eigen::MatrixXd> get_projection_operators() const;
 
     jsonParser &to_json(jsonParser &json) const;
 
@@ -168,8 +167,8 @@ namespace CASM {
       exit(1);
     }
 
-    using Array<SymOpRepresentation *>::push_back;
-    using Array<SymOpRepresentation *>::resize;
+    using std::vector<SymOpRepresentation *>::push_back;
+    using std::vector<SymOpRepresentation *>::resize;
 
     /// Pointer version of constructor is private for internal construction of master-less representations
     SymGroupRep(const MasterSymGroup *_home) :  m_master_group(_home) { }
@@ -177,7 +176,7 @@ namespace CASM {
     void calc_new_irreps(int max_iter = 1000) const;
     void calc_new_irreps(const SymGroup &sub_group, int max_iter = 1000) const;
 
-    ReturnArray<Array<Eigen::VectorXd> > _calc_special_irrep_directions(const SymGroup &subgroup)const;
+    std::vector<std::vector<Eigen::VectorXd> > _calc_special_irrep_directions(const SymGroup &subgroup)const;
 
     /// Find a new coordinate system oriented along high-symmetry directions in vector space 'V' as determined by
     /// the subset of SymOpRepresentations specified by 'subgroup'.
@@ -187,7 +186,7 @@ namespace CASM {
 
   };
 
-  SymGroupRep subset_permutation_rep(const SymGroupRep &permute_rep, const Array<Index>::X2 &subsets);
+  SymGroupRep subset_permutation_rep(const SymGroupRep &permute_rep, const std::vector<std::vector<Index>> &subsets);
   SymGroupRep permuted_direct_sum_rep(const SymGroupRep &permute_rep, const std::vector<SymGroupRep const *> &sum_reps);
   SymGroupRep kron_rep(const SymGroupRep &LHS, const SymGroupRep &RHS);
 
@@ -203,7 +202,7 @@ namespace CASM {
   /// The head group may be a subgroup of the MasterSymGroup where the SymGroupRep is stored.
   class SymGroupRepHandle { // <-- typedefed as SymGroupRep::RemoteHandle
     SymGroupRep const *m_group_rep;
-    Array<Index> m_subgroup_op_inds;
+    std::vector<Index> m_subgroup_op_inds;
   public:
     SymGroupRepHandle():
       m_group_rep(nullptr) {}
@@ -255,11 +254,11 @@ namespace CASM {
     }
 
     Index ind_inverse(Index i) const {
-      return m_subgroup_op_inds.find((m_group_rep->master_group()).ind_inverse(m_subgroup_op_inds[i]));
+      return std::distance(m_subgroup_op_inds.begin(), std::find(m_subgroup_op_inds.begin(), m_subgroup_op_inds.end(), (m_group_rep->master_group()).ind_inverse(m_subgroup_op_inds[i])));
     }
 
     Index ind_prod(Index i, Index j) const {
-      return m_subgroup_op_inds.find((m_group_rep->master_group()).ind_prod(m_subgroup_op_inds[i], m_subgroup_op_inds[j]));
+      return std::distance(m_subgroup_op_inds.begin(), std::find(m_subgroup_op_inds.begin(), m_subgroup_op_inds.end(), (m_group_rep->master_group()).ind_prod(m_subgroup_op_inds[i], m_subgroup_op_inds[j])));
     }
 
     bool operator==(const SymGroupRepHandle &RHS) const {

@@ -16,7 +16,7 @@ namespace CASM {
   class ScelEnumEquivalents :
     public EnumEquivalents <
     Supercell,
-    Array<SymOp>::const_iterator,
+    std::vector<SymOp>::const_iterator,
     SymOp,
     SymRepIndexCompare > {
 

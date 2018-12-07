@@ -6,7 +6,7 @@
 
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/Comparisons.hh"
-#include "casm/container/Array.hh"
+#include "casm/CASM_global_definitions.hh"
 #include "casm/crystallography/LatticeCanonicalForm.hh"
 
 namespace CASM {
@@ -121,7 +121,7 @@ namespace CASM {
 
     /// Calculates the kpoint mesh for a supercell lattice given the kpoint mesh
     /// for the primitive lattice
-    Array<int> calc_kpoints(Array<int> prim_kpoints, Lattice prim_lat);
+    std::vector<int> calc_kpoints(std::vector<int> prim_kpoints, Lattice prim_lat);
 
     /// \brief Return reciprocal lattice
     Lattice reciprocal() const;
@@ -140,7 +140,7 @@ namespace CASM {
     /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
     /// \param effective_pg is a group that should either be equivalent to the full point group of this lattice
     /// or be a subgroup of that full point group
-    void generate_supercells(Array<Lattice> &supercell, const SymGroup &effective_pg, const ScelEnumProps &enum_props) const;
+    void generate_supercells(std::vector<Lattice> &supercell, const SymGroup &effective_pg, const ScelEnumProps &enum_props) const;
 
     /// \brief make a supercell of this lattice.
     /// Equivalent to Lattice(lat_column_mat()*trans_mat)
@@ -176,7 +176,7 @@ namespace CASM {
     /// Make a grid of lattice sites such that min_radius <= distance <= max_radius from \param lat_point
     // ***This should live somewhere else
     template<typename CoordType, typename CoordType2>
-    Array<CoordType> gridstruc_build(double max_radius, double min_radius, Array<CoordType> basis, CoordType2 lat_point);
+    std::vector<CoordType> gridstruc_build(double max_radius, double min_radius, std::vector<CoordType> basis, CoordType2 lat_point);
 
     void read(std::istream &stream);
     void print(std::ostream &stream, int _prec = 8) const;
@@ -190,11 +190,11 @@ namespace CASM {
     //John G 121212
     ///Checks if lattice is a supercell of tile, acting on multiplication matrix. Check is performed applying operations from symlist
     bool is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat) const;
-    bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist, Eigen::Matrix3d &multimat) const;
+    bool is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symlist, Eigen::Matrix3d &multimat) const;
 
     ///Checks if lattice is a supercell of tile, applying operations from symlist
     bool is_supercell_of(const Lattice &tile) const;
-    bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist) const;
+    bool is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symlist) const;
 
     ///Return a lattice with diagonal matrix that fits around starting lattice
     Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
@@ -211,7 +211,7 @@ namespace CASM {
     ///Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
     Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
 
-    Array<double> pg_converge(double large_tol);
+    std::vector<double> pg_converge(double large_tol);
     void pg_converge(double small_tol, double large_tol, double increment);
 
     /// \brief Force this lattice to have symmetry of group \param relaxed_pg

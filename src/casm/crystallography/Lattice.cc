@@ -13,7 +13,7 @@ namespace CASM {
   namespace {
 
     typedef std::vector<Lattice>::iterator vec_lat_it;
-    typedef Array<SymOp>::const_iterator array_symop_cit;
+    typedef std::vector<SymOp>::const_iterator array_symop_cit;
   }
 
   template Lattice superdupercell<vec_lat_it, array_symop_cit>(
@@ -170,8 +170,8 @@ namespace CASM {
   }
   //********************************************************************
 
-  Array<int> Lattice::calc_kpoints(Array<int> prim_kpoints, Lattice prim_lat) {
-    Array<int> super_kpoints = prim_kpoints;
+  std::vector<int> Lattice::calc_kpoints(std::vector<int> prim_kpoints, Lattice prim_lat) {
+    std::vector<int> super_kpoints = prim_kpoints;
     //    Lattice prim_recip_lat = (lattice.primitive->reciprocal());
     Lattice prim_recip_lat = (prim_lat.reciprocal());
     Lattice recip_lat = (*this).reciprocal();
@@ -180,14 +180,14 @@ namespace CASM {
 
 
 
-    Array<double> prim_vec_lengths;
+    std::vector<double> prim_vec_lengths;
 
     for(int i = 0; i < 3; i++) {
       prim_vec_lengths.push_back(prim_recip_lat.length(i));
     }
 
-    double shortest = prim_vec_lengths.min();
-    int short_ind = prim_vec_lengths.find(shortest);
+    double shortest = *std::min_element(prim_vec_lengths.begin(), prim_vec_lengths.end());
+    int short_ind = std::distance(prim_vec_lengths.begin(), std::find(prim_vec_lengths.begin(), prim_vec_lengths.end(), shortest));
 
     double scale = (prim_kpoints[short_ind] / shortest);
 
@@ -263,8 +263,8 @@ namespace CASM {
 
   //********************************************************************
 
-  Array<double> Lattice::pg_converge(double large_tol) {
-    Array<double> tarray;
+  std::vector<double> Lattice::pg_converge(double large_tol) {
+    std::vector<double> tarray;
     SymGroup point_group;
     double orig_tol = tol();
     set_tol(large_tol);
@@ -285,10 +285,10 @@ namespace CASM {
   //********************************************************************
 
   void Lattice::pg_converge(double small_tol, double large_tol, double increment) {
-    Array<double> tols;
-    Array<bool> is_group, is_group_now;
-    Array<int> num_ops, num_enforced_ops;
-    Array<std::string> old_name, new_name;
+    std::vector<double> tols;
+    std::vector<bool> is_group, is_group_now;
+    std::vector<int> num_ops, num_enforced_ops;
+    std::vector<std::string> old_name, new_name;
 
     double orig_tol = tol();
     for(double i = small_tol; i <= large_tol; i += increment) {
@@ -328,7 +328,7 @@ namespace CASM {
   ///
   /// See PrimcClex::generate_supercells for information on dims and G.
   ///
-  void Lattice::generate_supercells(Array<Lattice> &supercell,
+  void Lattice::generate_supercells(std::vector<Lattice> &supercell,
                                     const SymGroup &effective_pg,
                                     const ScelEnumProps &enum_props) const {
 
@@ -518,7 +518,7 @@ namespace CASM {
   //Change bool to an array of SymOps you want to use, default point group
   //Overload to only use identity
   //Return N matrix
-  bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, Eigen::Matrix3d &multimat) const {
+  bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist, Eigen::Matrix3d &multimat) const {
     auto result = is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol());
     multimat = result.second.cast<double>();
     return result.first != symoplist.end();
@@ -543,7 +543,7 @@ namespace CASM {
 
   //********************************************************************
 
-  bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist) const {
+  bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist) const {
     return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol()).first != symoplist.end();
   }
 

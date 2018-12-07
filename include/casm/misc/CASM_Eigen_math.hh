@@ -176,6 +176,22 @@ namespace Eigen {
   bool is_bisymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
     return (is_symmetric(test_mat, test_tol) && is_persymmetric(test_mat, test_tol));
   }
+
+  template<typename Derived>
+  std::vector<CASM::Index> partition_distinct_values(const Eigen::MatrixBase<Derived> &value, double tol = CASM::TOL) {
+    std::vector<CASM::Index> subspace_dims;
+    CASM::Index last_i = 0;
+    for(CASM::Index i = 1; i < value.size(); i++) {
+      if(!CASM::almost_equal(value[last_i], value[i], tol)) {
+        subspace_dims.push_back(i - last_i);
+        last_i = i;
+      }
+    }
+    subspace_dims.push_back(value.size() - last_i);
+    return subspace_dims;
+
+  }
+
 }
 
 #endif

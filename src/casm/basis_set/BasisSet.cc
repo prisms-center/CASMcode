@@ -13,6 +13,7 @@
 #include "casm/container/Counter.hh"
 #include "casm/container/IsoCounter.hh"
 #include "casm/container/MultiCounter.hh"
+#include "casm/container/multivector.hh"
 
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
@@ -938,7 +939,8 @@ namespace CASM {
     SymGroupRep const &t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
 
     //Check that block-diagonalization matches number of irreps
-    return t_rep.num_blocks(head_group) == (t_rep.num_each_real_irrep(head_group)).sum();
+    auto vec = t_rep.num_each_real_irrep(head_group);
+    return t_rep.num_blocks(head_group) == std::accumulate(vec.begin(), vec.end(), 0);
 
   }
 
