@@ -131,7 +131,7 @@ namespace CASM {
     void map_superstruc_to_prim(Structure &prim); //Added by Ivy 06/29/2013
 
     /// Setting the current occupants of the structure to those specified by an array of integers
-    void set_occs(Array <int> occ_index);
+    void set_occs(std::vector <int> occ_index);
 
     /// Rearrange basis by grouping atoms by type
     void sort_basis();
@@ -148,7 +148,7 @@ namespace CASM {
     //void print_factor_group(std::ostream &stream) const;
 
     bool read_species(); //Ivy 11/27/12
-    void assign_species(Array<std::string> &names, Array<double> &masses, Array<double> &magmoms, Array<double> &Us, Array<double> &Js); //Added by Ivy
+    void assign_species(std::vector<std::string> &names, std::vector<double> &masses, std::vector<double> &magmoms, std::vector<double> &Us, std::vector<double> &Js); //Added by Ivy
 
     jsonParser &to_json(jsonParser &json) const;
     void from_json(const jsonParser &json);

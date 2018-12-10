@@ -1735,7 +1735,7 @@ namespace CASM {
     Structure tmp = c.supercell().superstructure(c);
     if(c.configdof().has_local_dof("disp")) {
       std::cout << "has disp going to apply" << std::endl;
-      Array<Site> new_basis;
+      std::vector<Site> new_basis;
       for(int i = 0 ; i < tmp.basis().size(); i++) {
         Eigen::Vector3d new_vec = tmp.basis()[i].const_cart() + c.configdof().local_dof("disp").values().col(i) ;
         Site new_site(Coordinate(new_vec, tmp.lattice(), CART), tmp.basis()[i].occ_name());
