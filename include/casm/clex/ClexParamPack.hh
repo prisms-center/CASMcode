@@ -12,15 +12,26 @@ namespace CASM {
     /// \brief BaseKey class that hides implementation-specific access attributes
     class BaseKey {
     public:
-      BaseKey(std::string const &_name, bool _standalone) :
+      BaseKey(std::string const &_name, bool _standalone,
+              std::vector<Index> const &_offset = {},
+              std::vector<Index> const &_stride = {}) :
         m_name(_name),
-        m_standalone(_standalone) {
+        m_standalone(_standalone),
+        m_offset(_offset),
+        m_stride(_stride),
+        m_identifiers(_offset.size(), 0) {
+
       }
 
       virtual ~BaseKey() {}
 
       std::string const &name() const {
         return m_name;
+      }
+
+      template<typename ...Args>
+      void set_identifiers(Args const &... args) {
+        _set_identifiers(0, args...);
       }
 
       /// \brief Clone the ClexParamKey
@@ -32,9 +43,31 @@ namespace CASM {
         return m_standalone;
       }
     protected:
+      Index _l(Index i) const {
+        return m_identifiers[i];
+      }
+
+      template<typename T, typename ...Args>
+      void _set_identifiers(Index i, T const &_val, Args const &... args) {
+        _set_identifiers(i, _val);
+        _set_identifiers(++i, args...);
+      }
+
+      void _set_identifiers(Index i, Index _ind) {
+        m_identifier[i] = m_offset[i] + _ind;
+      }
+
+      void _set_identifiers(Index i, std::pair<Index, Index> _inds) {
+        _set_identifiers(i, m_strid[i]*_inds.first + _inds.second);
+      }
 
       /// \brief Clone the ClexParamKey
       virtual BaseKey *_clone() const = 0;
+
+
+      std::vector<Index> m_offset;
+      std::vector<Index> m_stride;
+      std::vector<Index> m_identifiers;
 
     private:
       std::string m_name;
@@ -124,9 +157,18 @@ namespace CASM {
     ClexParamPack_impl::BaseKey const *ptr() const {
       return m_key_ptr.unique().get();
     }
+
+    template<typename ...Args>
+    ClexParamKey &operator()(Args const &... args) {
+      m_key_ptr->set_identifiers(args...);
+      return *this;
+    }
+
   private:
     /// \brief  ptr to BaseKey class that hides implementation-specific access attributes
     notstd::cloneable_ptr<ClexParamPack_impl::BaseKey> m_key_ptr;
+
+
   };
 
 

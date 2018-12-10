@@ -53,8 +53,7 @@ namespace CASM {
 
   template<typename DataObject>
   bool DataFormatter<DataObject>::validate(const DataObject &_obj) const {
-    if(!m_initialized)
-      _initialize(_obj);
+    initialize(_obj);
     for(Index i = 0; i < m_data_formatters.size(); i++)
       if(!m_data_formatters[i]->validate(_obj))
         return false;
@@ -66,8 +65,7 @@ namespace CASM {
 
   template<typename DataObject>
   void DataFormatter<DataObject>::inject(const DataObject &_obj, DataStream &_stream) const {
-    if(!m_initialized)
-      _initialize(_obj);
+    initialize(_obj);
 
     Index num_pass(1), tnum;
     for(Index i = 0; i < m_data_formatters.size(); i++) {
@@ -150,8 +148,7 @@ namespace CASM {
 
   template<typename DataObject>
   void DataFormatter<DataObject>::print(const DataObject &_obj, std::ostream &_stream) const {
-    if(!m_initialized)
-      _initialize(_obj);
+    initialize(_obj);
     _stream << std::setprecision(m_prec) << std::fixed;
     Index num_pass(1), tnum;
     for(Index i = 0; i < m_data_formatters.size(); i++) {
@@ -194,8 +191,7 @@ namespace CASM {
 
   template<typename DataObject>
   jsonParser &DataFormatter<DataObject>::to_json(const DataObject &_obj, jsonParser &json) const {
-    if(!m_initialized)
-      _initialize(_obj);
+    initialize(_obj);
     for(Index i = 0; i < m_data_formatters.size(); i++) {
       m_data_formatters[i]->to_json(_obj, json[m_data_formatters[i]->short_header(_obj)]);
     }
@@ -207,9 +203,7 @@ namespace CASM {
 
   template<typename DataObject>
   jsonParser &DataFormatter<DataObject>::to_json_arrays(const DataObject &_obj, jsonParser &json) const {
-    if(!m_initialized) {
-      _initialize(_obj);
-    }
+    initialize(_obj);
 
     jsonParser::iterator it;
     jsonParser::iterator end = json.end();
@@ -234,8 +228,9 @@ namespace CASM {
   template<typename DataObject>
   void DataFormatter<DataObject>::print_header(const DataObject &_template_obj, std::ostream &_stream) const {
     _stream << m_comment;
-    if(!m_initialized)
-      _initialize(_template_obj);
+
+    initialize(_template_obj);
+
     int header_size, twidth;
     for(Index i = 0; i < m_data_formatters.size(); i++) {
       std::stringstream t_ss;
@@ -272,11 +267,13 @@ namespace CASM {
   //******************************************************************************
 
   template<typename DataObject>
-  void DataFormatter<DataObject>::_initialize(const DataObject &_template_obj) const {
-    for(Index i = 0; i < m_data_formatters.size(); i++)
-      m_data_formatters[i]->init(_template_obj);
-    m_initialized = true;
-    return;
+  bool DataFormatter<DataObject>::initialize(const DataObject &_template_obj) const {
+    if(!m_initialized) {
+      m_initialized = true;
+      for(Index i = 0; i < m_data_formatters.size(); i++)
+        m_initialized =  m_data_formatters[i]->init(_template_obj) && m_initialized;
+    }
+    return m_initialized;
   }
 
   //******************************************************************************

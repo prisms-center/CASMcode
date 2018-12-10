@@ -380,6 +380,7 @@ namespace Eigen {
       for(int j = 0; j < value.cols(); j++) {
         _stream << value(i, j);
       }
+      _stream.newline();
     }
     return _stream;
   }

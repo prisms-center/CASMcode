@@ -315,27 +315,27 @@ namespace CASM {
   public:
     typedef ClexParamPack::size_type size_type;
 
-    DiffClexParamGradKey(std::string const &_name = "", size_type _if = -1, size_type _ix = -1) :
-      DiffClexParamKey(_name, false, _ix),
-      m_if(_if),
-      m_ifcompon(-1) {}
+    DiffClexParamGradKey(std::string const &_name = "",
+                         size_type _ix = -1,
+                         std::vector<Index> const &_offset = {},
+                         std::vector<Index> const &_stride = {}) :
+      DiffClexParamKey(_name, false, _ix, std::vector<Index> const & _offset, std::vector<Index> const & _stride) {}
+
 
     Eigen::MatrixXd const &eval(DiffScalarContainer const &_data, DiffClexParamPack::EvalMode mode) const override {
       if(mode != DiffClexParamPack::DIFF)
         throw std::runtime_error("Requested Gradient parameter " + name() + " for incompatible evaluation mode " + to_string(mode) + ".");
-      //Do stuff
-      throw std::runtime_error("DiffClexParamGradKey::eval() is not implemented!");
+      _data.grad(_l(0));
       return _data.m_cache;
+
     }
 
-  protected:
 
+  protected:
     ClexParamPack_impl::BaseKey *_clone() const override {
       return new DiffClexParamGradKey(*this);
     }
 
-    const size_type m_if;
-    mutable size_type m_ifcompon;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -346,18 +346,16 @@ namespace CASM {
     typedef ClexParamPack::size_type size_type;
 
 
-    DiffClexParamHessKey(std::string const &_name = "", size_type _if = -1, size_type _ix = -1, size_type _iy = -1) :
-      DiffClexParamKey(_name, false, _ix),
-      m_if(_if),
-      m_iy(_iy),
-      m_ifcompon(-1),
-      m_iycompon(-1) {}
+    DiffClexParamHessKey(std::string const &_name = "",
+                         size_type _ix = -1,
+                         std::vector<Index> const &_offset = {},
+                         std::vector<Index> const &_stride = {}) :
+      DiffClexParamKey(_name, false, _ix, std::vector<Index> const & _offset, std::vector<Index> const & _stride) {}
 
     Eigen::MatrixXd const &eval(DiffScalarContainer const &_data, DiffClexParamPack::EvalMode mode) const override {
       if(mode != DiffClexParamPack::DIFF)
         throw std::runtime_error("Requested Hessian parameter " + name() + " for incompatible evaluation mode " + to_string(mode) + ".");
-      //Do stuff
-      throw std::runtime_error("DiffClexParamGradKey::eval() is not implemented!");
+      _data.hess(_l(0), _l(1));
       return _data.m_cache;
     }
 
@@ -367,8 +365,6 @@ namespace CASM {
       return new DiffClexParamHessKey(*this);
     }
 
-    const size_type m_if, m_iy;
-    mutable size_type m_ifcompon, m_iycompon;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -500,20 +496,25 @@ namespace CASM {
       throw std::runtime_error("Naming collision in DiffClexParamPack::allocate(), ClexParamPack already managing parameter allocation corresponding to name " + _keyname + ".");
     Key protokey(_keyname, m_data.size());
     m_keys[_keyname] = protokey;
-
     if(_independent) {
       m_data.push_back(DiffScalarContainer(_keyname, _rows, _cols, m_N_independent, true));
       m_N_independent += _rows * _cols;
       Index i = protokey.index();
       for(Index f = 0; f < m_data.size(); ++f) {
         if(!m_data[f].m_independent) {
+
           std::string gradname = "diff/" + m_data[f].m_name + "/" + m_data[i].m_name;
-          m_keys[gradname] = DiffClexParamGradKey(gradname, f, i);
+          m_keys[gradname] = DiffClexParamGradKey(gradname, f, i,
+          {m_data[f].lbegin},
+          {m_data[f].m_cache.cols()});
 
           for(Index j = 0; j < m_data.size(); ++j) {
             if(m_data[j].m_independent) {
               std::string hessname = gradname + "/" + m_data[j].m_name;
-              m_keys[gradname] = DiffClexParamHessKey(gradname, f, i, j);
+              m_keys[hessname] = DiffClexParamHessKey(hessname, f, i,
+              {m_data[f].lbegin, m_data[j].lbegin},
+              {m_data[f].m_cache.cols()}, m_data[j].m_cache.cols());
+
             }
           }
         }
@@ -524,15 +525,20 @@ namespace CASM {
       m_N_dependent += _rows * _cols;
 
       Index f = protokey.index();
+
       for(Index i = 0; i < m_data.size(); ++i) {
         if(m_data[i].m_independent) {
           std::string gradname = "diff/" + m_data[f].m_name + "/" + m_data[i].m_name;
-          m_keys[gradname] = DiffClexParamGradKey(gradname, f, i);
+          m_keys[gradname] = DiffClexParamGradKey(gradname, f, i,
+          {m_data[f].lbegin},
+          {m_data[f].m_cache.cols()});
 
           for(Index j = 0; j < m_data.size(); ++j) {
             if(m_data[j].m_independent) {
               std::string hessname = gradname + "/" + m_data[j].m_name;
-              m_keys[gradname] = DiffClexParamHessKey(gradname, f, i, j);
+              m_keys[hessname] = DiffClexParamHessKey(hessname, f, i,
+              {m_data[f].lbegin, m_data[j].lbegin},
+              {m_data[f].m_cache.cols()}, m_data[j].m_cache.cols());
             }
           }
         }

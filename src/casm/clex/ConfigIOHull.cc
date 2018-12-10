@@ -70,7 +70,7 @@ namespace CASM {
     /// - Constructs the hull
     ///
     template<typename ValueType>
-    void BaseHull<ValueType>::init(const Configuration &_tmplt) const {
+    bool BaseHull<ValueType>::init(const Configuration &_tmplt) const {
 
       DB::Selection<Configuration> selection(
         _tmplt.primclex().db<Configuration>(),
@@ -90,6 +90,7 @@ namespace CASM {
                                       *res.second,
                                       m_singular_value_tol,
                                       m_bottom_facet_tol);
+      return true;
 
     }
 

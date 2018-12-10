@@ -273,6 +273,9 @@ namespace CASM {
     void set_header_prefix(const std::string &_prefix) {
       m_comment += _prefix;
     }
+
+    bool initialize(const DataObject &_tmplt) const;
+
   private:
     mutable bool m_initialized;
     //List of all the ConfigFormatter objects you want outputted
@@ -288,7 +291,6 @@ namespace CASM {
     //comment prefix -- default to "#"
     std::string m_comment;
 
-    void _initialize(const DataObject &_tmplt) const;
   };
 
   /// \brief Abstract base class from which all other DatumFormatter<DataObject> classes inherit
@@ -345,7 +347,10 @@ namespace CASM {
       return std::unique_ptr<BaseDatumFormatter<DataObject> >(this->_clone());
     }
 
-    virtual void init(const DataObject &_template_obj) const {
+    /// \brief Perform all initialization steps using _template_obj.
+    /// Returns true if initialization is successful and false if _template_obj has
+    /// insufficient data to complete initialization.
+    virtual bool init(const DataObject &_template_obj) const {
 
     };
 

@@ -41,7 +41,7 @@ namespace CASM {
     }
 
     /// \brief Adds index rules corresponding to the parsed args
-    void MolDependent::init(const Configuration &_tmplt) const {
+    bool MolDependent::init(const Configuration &_tmplt) const {
       auto struc_molecule = _tmplt.primclex().prim().struc_molecule();
 
       if(m_mol_names.size() == 0) {
@@ -64,6 +64,7 @@ namespace CASM {
                                      m_mol_names[n] + ")' does not correspond to a viable composition.\n");
         }
       }
+      return true;
     }
 
     /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
@@ -182,7 +183,7 @@ namespace CASM {
 
     const std::string Corr::Desc =
       "Correlation values (evaluated basis functions, normalized per primitive cell). "
-      "If no arguements, prints all correlations, using the basis set for the default "
+      "If no arguments, prints all correlations, using the basis set for the default "
       "cluster expansion as listed by 'casm settings -l'. "
       "If one argument, accepts either: "
       "1) a cluster expansion name, for example 'corr(formation_energy)', and "
@@ -199,7 +200,7 @@ namespace CASM {
     }
 
     /// \brief If not yet initialized, use the default clexulator from the PrimClex
-    void Corr::init(const Configuration &_tmplt) const {
+    bool Corr::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
         const PrimClex &primclex = _tmplt.primclex();
         ClexDescription desc = m_clex_name.empty() ?
@@ -208,12 +209,79 @@ namespace CASM {
       }
 
       VectorXdAttribute<Configuration>::init(_tmplt);
-
+      return true;
     }
 
     /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
     /// 'corr(clex_name,index_expression)'
     bool Corr::parse_args(const std::string &args) {
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+      if(!splt_vec.size()) {
+        return true;
+      }
+      else if(splt_vec.size() == 1) {
+        if((splt_vec[0].find_first_not_of("0123456789") == std::string::npos) ||
+           (splt_vec[0].find(':') != std::string::npos)) {
+          _parse_index_expression(splt_vec[0]);
+        }
+        else {
+          m_clex_name = splt_vec[0];
+        }
+      }
+      else if(splt_vec.size() == 2) {
+        m_clex_name = splt_vec[0];
+        _parse_index_expression(splt_vec[1]);
+      }
+      else {
+        std::stringstream ss;
+        ss << "Too many arguments for 'corr'.  Received: " << args << "\n";
+        throw std::runtime_error(ss.str());
+      }
+      return true;
+    }
+
+    // --- GradCorr implementations -----------
+
+    const std::string GradCorr::Name = "gradcorr";
+
+    const std::string GradCorr::Desc =
+      "Gradiant of correlation values (evaluated basis functions), with respect to a specified "
+      "degree of freedom (DoF). For each configuration, output is a (D*N x C) matrix, where 'D' "
+      "is DoF dimension, 'N' is either 1 (for global DoF) or number of sites in the configuration "
+      "(for site DoF), and 'C' is number of basis functions. Gradient components are ordered such "
+      "that components corresponding to particular site are listed in consecutive rows. Requires "
+      "at least one argument, specifying the DoF with repect to which gradient is taken [e.g., 'gradcorr(disp)']. "
+      "Basis functions are the basis set for the default cluster expansion, as listed by 'casm settings -l', "
+      "unless otherwise specified. Accepts up to three additional arguments:\n"
+      "1) a cluster expansion name, e.g. 'gradcorr(disp,formation_energy)' and/or\n"
+      "2) a pair of indices, or index ranges, e.g. 'gradcorr(disp,5,2)', 'gradcorr(disp,:,3:5)', 'gradcorr(disp,0:4,3)'";
+
+    /// \brief Returns the atom fraction
+    Eigen::MatrixXd GradCorr::evaluate(const Configuration &config) const {
+      gradcorrelations(config, m_clexulator, m_key);
+      return correlations(config, m_clexulator);
+    }
+
+    /// \brief If not yet initialized, use the default clexulator from the PrimClex
+    bool GradCorr::init(const Configuration &_tmplt) const {
+      if(!m_clexulator.initialized()) {
+        const PrimClex &primclex = _tmplt.primclex();
+        ClexDescription desc = m_clex_name.empty() ?
+                               primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
+        m_clexulator = primclex.clexulator(desc);
+      }
+
+      m_key = m_clexulator.param_pack().key("diff/corr/" + m_dof_name);
+
+      MatrixXdAttribute<Configuration>::init(_tmplt);
+      return true;
+    }
+
+    /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
+    /// 'corr(clex_name,index_expression)'
+    bool GradCorr::parse_args(const std::string &args) {
       std::vector<std::string> splt_vec;
       boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
 
@@ -274,7 +342,7 @@ namespace CASM {
     }
 
     /// \brief If not yet initialized, use the default cluster expansion from the PrimClex
-    void Clex::init(const Configuration &_tmplt) const {
+    bool Clex::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
         const PrimClex &primclex = _tmplt.primclex();
         ClexDescription desc = m_clex_name.empty() ?
@@ -289,6 +357,7 @@ namespace CASM {
           throw std::runtime_error("Error: bset and eci mismatch");
         }
       }
+      return true;
     }
 
     /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy,per_species)'
@@ -695,6 +764,19 @@ namespace CASM {
       SiteFrac(),
       StrucScore(),
       MagBase()
+    );
+
+    return dict;
+  }
+
+  template<>
+  MatrixXdAttributeDictionary<Configuration> make_matrixxd_dictionary<Configuration>() {
+
+    using namespace ConfigIO;
+    MatrixXdAttributeDictionary<Configuration> dict;
+
+    dict.insert(
+      GradCorr()
     );
 
     return dict;

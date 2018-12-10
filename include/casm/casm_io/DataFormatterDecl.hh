@@ -164,26 +164,26 @@ namespace CASM {
   VectorXiAttributeDictionary<DataObject> make_vectorxi_dictionary();
 
 
-  /// \brief Template alias for BaseValueFormatter returning Eigen::VectorXd
+  /// \brief Template alias for BaseValueFormatter returning Eigen::MatrixXd
   ///
   /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
-  using VectorXdAttribute = Base1DDatumFormatter<Eigen::VectorXd, DataObject>;
+  using MatrixXdAttribute = Base2DDatumFormatter<Eigen::MatrixXd, DataObject>;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   ///
   /// \ingroup DataFormatter
   ///
   template<typename DataObject>
-  using VectorXdAttributeDictionary = DataFormatterDictionary<DataObject, VectorXdAttribute<DataObject> >;
+  using MatrixXdAttributeDictionary = DataFormatterDictionary<DataObject, MatrixXdAttribute<DataObject> >;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   ///
   /// \ingroup DataFormatter
   ///
   template<typename DataObject>
-  VectorXdAttributeDictionary<DataObject> make_vectorxd_dictionary();
+  MatrixXdAttributeDictionary<DataObject> make_matrixxd_dictionary();
 
 }
 

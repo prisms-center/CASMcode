@@ -18,13 +18,50 @@ namespace CASM {
   template<typename _Container>
   struct ContainerTraits {};
 
+  /// \brief Eigen::MatrixXd container traits
+  template<>
+  template<typename _value_type, int a, int b, int c, int d, int e>
+  struct ContainerTraits<Eigen::Matrix<_value_type, a, b, c, d, e> > {
+    typedef Eigen::Matrix<_value_type, a, b, c, d, e> Container;
+    typedef Container::Index size_type;
+    typedef Container::Scalar value_type;
+    typedef Container::Scalar value_type2D;
+    typedef CASM_TMP::ParenthesesAccess<Container, value_type, size_type> Access;
+
+    /// \brief Return size of container
+    static size_type size(const Container &mat) {
+      return mat.size();
+    }
+
+    /// \brief Return size of container
+    static size_type rows(const Container &mat) {
+      return mat.rows();
+    }
+
+    /// \brief Return size of container
+    static size_type cols(const Container &mat) {
+      return mat.cols();
+    }
+  };
+  /*
   /// \brief Eigen::VectorXd container traits
   template<>
   struct ContainerTraits<Eigen::VectorXd> {
     typedef Eigen::VectorXd Container;
     typedef Eigen::VectorXd::Index size_type;
     typedef Eigen::VectorXd::Scalar value_type;
+    typedef Eigen::VectorXd::Scalar value_type2D;
     typedef CASM_TMP::ParenthesesAccess<Container, value_type, size_type> Access;
+
+    /// \brief Return size of container
+    static size_type size(const Eigen::VectorXd &vec) {
+      return vec.size();
+    }
+
+    /// \brief Return size of container
+    static size_type size(const Eigen::VectorXd &vec) {
+      return vec.size();
+    }
 
     /// \brief Return size of container
     static size_type size(const Eigen::VectorXd &vec) {
@@ -45,7 +82,7 @@ namespace CASM {
       return vec.size();
     }
   };
-
+  */
 }
 
 #endif

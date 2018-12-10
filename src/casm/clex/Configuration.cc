@@ -1252,6 +1252,12 @@ namespace CASM {
     return correlations(config.configdof(), config.supercell(), clexulator);
   }
 
+  /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
+  Eigen::MatrixXd gradcorrelations(const Configuration &config, Clexulator &clexulator, DoFKey &key) {
+    return gradcorrelations(config.configdof(), config.supercell(), clexulator, key);
+  }
+
+
   /// Returns parametric composition, as calculated using PrimClex::param_comp
   Eigen::VectorXd comp(const Configuration &config) {
     return config.param_composition();
@@ -1708,6 +1714,59 @@ namespace CASM {
 
     return correlations;
   }
+
+  /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
+  Eigen::MatrixXd gradcorrelations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator, DoFKey &key) {
+    //THIS ISN'T DONE YET
+
+    ClexParamKey paramkey = clexulator.param_pack().key("diff/corr/" + key);
+    Eigen::MatrixXd gcorr;
+    if(DoF::traits(key).global()) {
+      Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
+
+      gcorr = Eigen::VectorXd::Zero(gcorr_func.size(), clexulator.corr_size());
+      //Holds contribution to global correlations from a particular neighborhood
+
+      //std::vector<double> corr(clexulator.corr_size(), 0.0);
+      for(int v = 0; v < scel_vol; v++) {
+
+        //Fill up contributions
+        clexulator.calc_global_corr_contribution(configdof,
+                                                 scel.nlist().sites(v).data(),
+                                                 end_ptr(scel.nlist().sites(v)),
+                                                 end_ptr(tcorr));
+        for(Index c = 0; c < clexulator.corr_size(); ++c)
+          gcorr.col(c) += clexulator.param_pack().read(key(c));
+
+
+      }
+    }
+    else {
+
+      Eigen::MatrixXd gcorr_func = configdof.local_dof(key).values();
+
+      gcorr = Eigen::VectorXd::Zero(gcorr_func.size(), clexulator.corr_size());
+      //Holds contribution to global correlations from a particular neighborhood
+
+      for(int v = 0; v < scel_vol; v++) {
+        //Fill up contributions
+        clexulator.calc_global_corr_contribution(configdof,
+                                                 scel.nlist().sites(v).data(),
+                                                 end_ptr(scel.nlist().sites(v)),
+                                                 end_ptr(tcorr));
+        for(Index c = 0; c < clexulator.corr_size(); ++c) {
+          gcorr_func = clexulator.param_pack().read(key(c));
+          for(Index n : scel.nlist().sites(v).data()) {
+            //for(Index i=0; i<gcorr_func.cols(); ++i){
+            gcorr.col(c).segment(n * gcorr_func.rows(), gcorr_func.rows()) += gcorr_func.col(n);
+            //}
+          }
+        }
+      }
+    }
+    return gcorr;
+  }
+
 
   /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::struc_molecule()
   Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {

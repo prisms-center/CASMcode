@@ -33,7 +33,7 @@ namespace CASM {
         }
 
         /// \brief Adds index rules corresponding to the parsed args
-        void MolDependent::init(const DiffTransConfiguration &_tmplt) const {
+        bool MolDependent::init(const DiffTransConfiguration &_tmplt) const {
           auto struc_molecule = _tmplt.primclex().prim().struc_molecule();
 
           if(m_mol_names.size() == 0) {
@@ -56,6 +56,7 @@ namespace CASM {
                                          m_mol_names[n] + ")' does not correspond to a viable composition.\n");
             }
           }
+          return true;
         }
 
         /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
@@ -227,7 +228,7 @@ namespace CASM {
       }
 
       /// \brief If not yet initialized, use the default clexulator from the PrimClex
-      void LocalCorr::init(const DiffTransConfiguration &_tmplt) const {
+      bool LocalCorr::init(const DiffTransConfiguration &_tmplt) const {
         if(!m_clexulator.initialized()) {
           const PrimClex &primclex = _tmplt.primclex();
           //Need to get default clex for a given hop based on the orbit name of the diff_trans_config
@@ -241,7 +242,7 @@ namespace CASM {
         }
 
         VectorXdAttribute<DiffTransConfiguration>::init(_tmplt);
-
+        return true;
       }
 
       /// \brief Expects 'local_corr', 'local_corr(clex_name)', 'local_corr(index_expression)', or
@@ -311,7 +312,7 @@ namespace CASM {
       }
 
       /// \brief If not yet initialized, use the default cluster expansion from the PrimClex
-      void LocalClex::init(const DiffTransConfiguration &_tmplt) const {
+      bool LocalClex::init(const DiffTransConfiguration &_tmplt) const {
         if(!m_clexulator.initialized()) {
           const PrimClex &primclex = _tmplt.primclex();
           ClexDescription desc = m_clex_name.empty() ?
@@ -326,6 +327,7 @@ namespace CASM {
             throw std::runtime_error("Error: bset and eci mismatch");
           }
         }
+        return true;
       }
 
       /// \brief Expects 'clex', 'clex(formation_energy)'
