@@ -54,6 +54,12 @@ namespace CASM {
   template<typename Container, typename DataObject>
   class Generic1DDatumFormatter;
 
+  template<typename Container, typename DataObject>
+  class Base2DDatumFormatter;
+
+  template<typename Container, typename DataObject>
+  class Generic2DDatumFormatter;
+
   /// \brief Template alias for BaseValueFormatter returning std::string
   ///
   /// \ingroup DataFormatterTypes
@@ -163,6 +169,27 @@ namespace CASM {
   template<typename DataObject>
   VectorXiAttributeDictionary<DataObject> make_vectorxi_dictionary();
 
+
+  /// \brief Template alias for BaseValueFormatter returning Eigen::VectorXd
+  ///
+  /// \ingroup DataFormatterTypes
+  ///
+  template<typename DataObject>
+  using VectorXdAttribute = Base1DDatumFormatter<Eigen::VectorXd, DataObject>;
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
+  template<typename DataObject>
+  using VectorXdAttributeDictionary = DataFormatterDictionary<DataObject, VectorXdAttribute<DataObject> >;
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
+  template<typename DataObject>
+  VectorXdAttributeDictionary<DataObject> make_vectorxd_dictionary();
 
   /// \brief Template alias for BaseValueFormatter returning Eigen::MatrixXd
   ///

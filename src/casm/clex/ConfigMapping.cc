@@ -553,7 +553,7 @@ namespace CASM {
         ref_hermites.insert(H_transformed);
       }
     }
-    mapped_configdof.clear();
+    //mapped_configdof.clear();
     if(m_fixed_components.size() > 0) {
       std::string tcompon = m_fixed_components[0].first;
       int ncompon(0);
@@ -1097,7 +1097,7 @@ namespace CASM {
                                            const bool translate_flag,
                                            const double _tol) {
       // clear config_dof and set its deformation
-      config_dof.clear();
+      //config_dof.clear();
 
       config_dof.deformation = deformation;
       Eigen::Matrix3d metric(deformation.transpose()*deformation);
@@ -1267,7 +1267,7 @@ namespace CASM {
       const Supercell &scel(config.supercell());
 
       // clear config_dof and set its deformation
-      config_dof.clear();
+      //config_dof.clear();
 
       config_dof.deformation = deformation;
       Eigen::Matrix3d metric(deformation.transpose()*deformation);

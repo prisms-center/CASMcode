@@ -15,12 +15,12 @@ namespace CASM {
   //********************************************************************
 
   template<typename CoordType, typename CoordType2>
-  Array<CoordType> Lattice::gridstruc_build(double max_radius, double min_radius, Array<CoordType> basis, CoordType2 lat_point) {
+  std::vector<CoordType> Lattice::gridstruc_build(double max_radius, double min_radius, std::vector<CoordType> basis, CoordType2 lat_point) {
     Eigen::Vector3i dim;
     dim = enclose_sphere(max_radius);
     EigenCounter<Eigen::Vector3i > grid_count(-dim, dim, Eigen::Vector3i(1));
     double min_dist, dist;
-    Array<CoordType> gridstruc;
+    std::vector<CoordType> gridstruc;
     Eigen::Vector3i temp;
 
     do {

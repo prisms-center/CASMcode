@@ -1187,9 +1187,7 @@ namespace CASM {
   ///
   template<typename Container, typename DataObject>
   class Base2DDatumFormatter :
-    public BaseValueFormatter<Container, DataObject>,
-    public ContainerTraits<Container> {
-
+    public BaseValueFormatter<Container, DataObject> {
   public:
 
     /// \brief Access methods for Container
@@ -1200,7 +1198,7 @@ namespace CASM {
     /// \brief Constructor
     Base2DDatumFormatter(const std::string &_name, const std::string &_desc) :
       BaseValueFormatter<Container, DataObject>(_name, _desc),
-      m_current_ptr(null_ptr),
+      m_current_ptr(nullptr),
       m_known(false) {}
 
     /// \brief Destructor
@@ -1218,11 +1216,11 @@ namespace CASM {
     /// \brief Default initialization adds rules for each element
     virtual bool init(const DataObject &_template_obj) const override {
       if(_index_rules().size())
-        return;
+        return true;
       _prepare(_template_obj);
 
       if(m_known) {
-        Index cols = ContainerTraits<Container>::cols(val);
+        Index cols = ContainerTraits<Container>::cols(m_cache);
         for(Index j = 0; j < cols; j++) {
           _add_rule(0, std::make_pair(-1, j));
         }
@@ -1231,7 +1229,7 @@ namespace CASM {
     }
 
 
-    virtual Index void num_passes(const DataObject &_template_obj) const override {
+    virtual Index num_passes(const DataObject &_template_obj) const override {
       _prepare(_template_obj);
       Index result(0);
       if(!m_known)
@@ -1349,7 +1347,7 @@ namespace CASM {
         for(Index j = 0; j < cols; ++j) {
           row = _index_rules()[i][j].first;
           if(m_known)
-            _stream << "  " << Access::at(*row_ptr, _index_rules()[*iptr][j].second, m_val);
+            _stream << "  " << Access::at(*row_ptr, _index_rules()[i][j].second, m_cache);
           else
             _stream << "  unknown";
         }
@@ -1360,7 +1358,7 @@ namespace CASM {
 
     typedef multivector<std::pair<Index, Index> >::X<2> IndexContainer;
 
-    IndexContainer m_2D_index_rules
+    IndexContainer m_2D_index_rules;
 
 
     /// Derived DatumFormatters have some optional functionality for parsing index
@@ -1390,24 +1388,25 @@ namespace CASM {
       }
 
       if(m_current_ptr != &_data_obj) {
-        m_current_ptr = &_data_obj) {
-          m_known = this->validate(_data_obj);
-          if(m_known) {
-            m_cache = this->evaluate(_data_obj);
-          }
+        m_current_ptr = &_data_obj;
+        m_known = this->validate(_data_obj);
+        if(m_known) {
+          m_cache = this->evaluate(_data_obj);
         }
       }
-private:
-      mutable DataObject const *m_current_ptr;
-      mutable bool m_known;
-      mutable Container m_cache;
+    }
 
-      /// \brief Clone
-      virtual Base2DDatumFormatter *_clone() const override = 0;
+  private:
+    mutable DataObject const *m_current_ptr;
+    mutable bool m_known;
+    mutable Container m_cache;
 
-    };
+    /// \brief Clone
+    virtual Base2DDatumFormatter *_clone() const override = 0;
+
+  };
 
 
-  }
+}
 
 #endif

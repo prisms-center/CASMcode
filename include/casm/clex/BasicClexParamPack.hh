@@ -35,6 +35,7 @@ namespace CASM {
   };
 
   /// \brief Abstract base class for reading/writing clexulator parameters
+  /// Parameters are assume be naturally representable as 1D or 2D arrays
   class BasicClexParamPack : public ClexParamPack {
   public:
 

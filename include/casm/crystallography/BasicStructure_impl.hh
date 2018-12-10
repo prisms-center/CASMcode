@@ -30,7 +30,6 @@ namespace CASM {
       exit(1);
     }
     fs::ifstream infile(filepath);
-
     read(infile);
   }
 
@@ -131,7 +130,6 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_group, bool time_reversal_enabled) const {
-    //std::cout << "BASIC STRUCTURE FACTOR GROUP\n";
     Array<CoordType> trans_basis;
     Index pg, b0, b1, b2;
     Coordinate t_tau(lattice());
@@ -232,7 +230,7 @@ namespace CASM {
             SymOp tSym(SymOp::translation(t_tau.cart())*test_op);
             tSym.set_map_error(max_error);
 
-            if(!factor_group.contains(tSym)) {
+            if(!factor_group.contains_periodic(tSym)) {
               factor_group.push_back(tSym);
             }
           }
@@ -252,8 +250,8 @@ namespace CASM {
   template<typename CoordType>
   void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
     SymGroup point_group;
+
     lattice().generate_point_group(point_group);
-    //std::cout << "About to generate factor group. Point group size: " << point_group.size() << "\n";
     _generate_factor_group_slow(factor_group, point_group);
     return;
   }
@@ -262,7 +260,7 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::generate_factor_group(SymGroup &factor_group) const {
-    BasicStructure<CoordType> tprim;
+    BasicStructure<CoordType> tprim(lattice());
     factor_group.clear();
     factor_group.set_lattice(lattice());
     // CASE 1: Structure is primitive
@@ -428,9 +426,6 @@ namespace CASM {
   bool BasicStructure<CoordType>::is_primitive(BasicStructure<CoordType> &new_prim) const {
     SymGroup valid_translations, identity_group;
     identity_group.push_back(SymOp());
-    _generate_factor_group_slow(valid_translations, identity_group, false);
-
-
     Eigen::Vector3d prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);
     Array<Eigen::Vector3d > shift;
     double tvol, min_vol;
@@ -447,7 +442,7 @@ namespace CASM {
 
 
     if(prim_flag) {
-      new_prim = (*this);
+      new_prim = *this;
       return true;
     }
 

@@ -351,7 +351,7 @@ namespace CASM {
     /// Returns true if initialization is successful and false if _template_obj has
     /// insufficient data to complete initialization.
     virtual bool init(const DataObject &_template_obj) const {
-
+      return true;
     };
 
     ///\brief Returns true if _data_obj has valid values for requested data

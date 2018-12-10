@@ -19,13 +19,13 @@ namespace CASM {
   struct ContainerTraits {};
 
   /// \brief Eigen::MatrixXd container traits
-  template<>
+
   template<typename _value_type, int a, int b, int c, int d, int e>
   struct ContainerTraits<Eigen::Matrix<_value_type, a, b, c, d, e> > {
     typedef Eigen::Matrix<_value_type, a, b, c, d, e> Container;
-    typedef Container::Index size_type;
-    typedef Container::Scalar value_type;
-    typedef Container::Scalar value_type2D;
+    typedef typename Container::Index size_type;
+    typedef typename Container::Scalar value_type;
+    typedef typename Container::Scalar value_type2D;
     typedef CASM_TMP::ParenthesesAccess<Container, value_type, size_type> Access;
 
     /// \brief Return size of container

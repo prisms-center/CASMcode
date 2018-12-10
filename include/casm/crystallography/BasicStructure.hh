@@ -96,6 +96,7 @@ namespace CASM {
     }
 
     Array<CoordType> &set_basis() {
+      reset();
       return m_basis;
     }
     const std::string &title() const {
@@ -115,7 +116,7 @@ namespace CASM {
     //   UnitCellCoord unit_cell_coord(const CoordType2 &test_site, double tol = TOL)const;
 
     // ****Mutators****
-
+    ;
     //   - Basic assignment/bookkeeping
 
     /// Have to explicitly define the assignment operator so that sites in this structure

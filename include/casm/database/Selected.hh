@@ -48,7 +48,7 @@ namespace CASM {
 
       // --- Specialized implementation -----------
 
-      void init(const ObjType &_tmplt) const override;
+      bool init(const ObjType &_tmplt) const override;
 
       std::string short_header(const ObjType &_config) const override;
 
