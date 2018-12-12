@@ -417,7 +417,7 @@ namespace CASM {
       for(Index j = 0; j < basis().size() - 1; j++) {
 
         if(basis()[j].occ_name() > basis()[j + 1].occ_name()) {
-          m_basis.swap_elem(j, j + 1);
+          std::iter_swap(m_basis.begin() + j, m_basis.begin() + j + 1);
         }
       }
     }
@@ -438,10 +438,10 @@ namespace CASM {
     //First make a copy of your current basis
     //This copy will eventually become the new average basis.
     reset();
-    Array<Site> avg_basis = basis();
+    std::vector<Site> avg_basis = basis();
 
     //Loop through given symmetry group an fill a temporary "operated basis"
-    Array<Site> operbasis;
+    std::vector<Site> operbasis;
     for(Index rf = 0; rf < relaxed_factors.size(); rf++) {
       operbasis.clear();
       for(Index b = 0; b < basis().size(); b++) {
@@ -586,7 +586,7 @@ namespace CASM {
   //***********************************************************
 
   //Sets the occupants in the basis sites to those specified by occ_index
-  void Structure::set_occs(Array <int> occ_index) {
+  void Structure::set_occs(std::vector <int> occ_index) {
     if(occ_index.size() != basis().size()) {
       default_err_log() << "The size of the occ index and basis index do not match!\nEXITING\n";
       exit(1);
