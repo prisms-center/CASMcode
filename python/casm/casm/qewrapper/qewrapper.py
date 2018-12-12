@@ -4,6 +4,7 @@ from builtins import *
 import os, shutil, six, re, subprocess, json
 import warnings
 import casm.quantumespresso.qeio as qeio
+from casm import quantumespresso
 
 class QEWrapperError(Exception):
     def __init__(self,msg):
