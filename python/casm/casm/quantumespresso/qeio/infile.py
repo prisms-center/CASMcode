@@ -374,7 +374,6 @@ class AtomicSpecies:
         # parse card into self.species, self.masses, self.pseudos
         for line in line_segments:
                 line = line.strip().split()
-                line=filter(bool,line)
                 if len(line) == 3:
                     self.species = self.species + [line[0].strip()]
                     try:
