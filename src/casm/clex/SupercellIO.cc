@@ -48,8 +48,9 @@ namespace CASM {
 
     /// \brief Set pointer to ref supercell
     template<typename Base>
-    void SupercellCheckBase<Base>::init(const Supercell &_tmplt) const {
+    bool SupercellCheckBase<Base>::init(const Supercell &_tmplt) const {
       m_refcell = &*_tmplt.primclex().db<Supercell>().find(m_refcell_name);
+      return true;
     }
 
     /// \brief col_header returns: {'name(refcell_name)'}

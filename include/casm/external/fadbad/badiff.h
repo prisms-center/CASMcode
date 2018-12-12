@@ -306,6 +306,7 @@ public:
 	U& x() { return m_sv.val(); }
 	const U& deriv(const unsigned int i) const { return m_sv.deriv(i); }
 	U& d(const unsigned int i) { return m_sv.deriv(i); }
+  const U& d(const unsigned int i) const { return m_sv.deriv(i); }
 	U& diff(const unsigned int idx, const unsigned int size) { return m_sv.diff(idx,size); }
 	
 	BTypeName<U>& operator+=(const BTypeName<U>& val);

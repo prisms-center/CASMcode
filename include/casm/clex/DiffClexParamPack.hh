@@ -33,8 +33,12 @@ namespace CASM {
   public:
     typedef ClexParamPack::size_type size_type;
 
-    DiffClexParamKey(std::string const &_name, bool _standalone, size_type _ind) :
-      ClexParamPack_impl::BaseKey(_name, _standalone),
+    DiffClexParamKey(std::string const &_name,
+                     bool _standalone,
+                     size_type _ind,
+                     std::vector<Index> const &_offset = {},
+                     std::vector<Index> const &_stride = {}) :
+      ClexParamPack_impl::BaseKey(_name, _standalone, _offset, _stride),
       m_index(_ind) {}
 
     DiffClexParamKey() :
@@ -78,7 +82,7 @@ namespace CASM {
 
     // Gradient of dependent function index f wrt the independent variables contained in here
     // -> result(i,j) = Grad[F(f)](l(i,j)), where 'l' is linear index of each (i,j) entry in m_data.
-    Eigen::MatrixXd const &grad(Index f) {
+    Eigen::MatrixXd const &grad(Index f) const {
       for(Index i = 0; i < m_data.size(); ++i) {
         for(Index j = 0; j < m_data[i].size(); ++j) {
           m_cache(i, j) = m_data[i][j].d(f).val();
@@ -90,7 +94,7 @@ namespace CASM {
     // Hessian components of dependent function index f corresponding to independent variable
     // index 'a' and all independent variables contained in here
     // -> result(i,j) = H[F(f)](a,l), where 'l' is linear index of each (i,j) entry in m_data.
-    Eigen::MatrixXd const &hess(Index f, Index a) {
+    Eigen::MatrixXd const &hess(Index f, Index a) const {
       Index l = lbegin;
       for(Index i = 0; i < m_data.size(); ++i) {
         for(Index j = 0; j < m_data[i].size(); ++j, ++l) {
@@ -319,7 +323,7 @@ namespace CASM {
                          size_type _ix = -1,
                          std::vector<Index> const &_offset = {},
                          std::vector<Index> const &_stride = {}) :
-      DiffClexParamKey(_name, false, _ix, std::vector<Index> const & _offset, std::vector<Index> const & _stride) {}
+      DiffClexParamKey(_name, false, _ix, _offset, _stride) {}
 
 
     Eigen::MatrixXd const &eval(DiffScalarContainer const &_data, DiffClexParamPack::EvalMode mode) const override {
@@ -350,7 +354,7 @@ namespace CASM {
                          size_type _ix = -1,
                          std::vector<Index> const &_offset = {},
                          std::vector<Index> const &_stride = {}) :
-      DiffClexParamKey(_name, false, _ix, std::vector<Index> const & _offset, std::vector<Index> const & _stride) {}
+      DiffClexParamKey(_name, false, _ix, _offset, _stride) {}
 
     Eigen::MatrixXd const &eval(DiffScalarContainer const &_data, DiffClexParamPack::EvalMode mode) const override {
       if(mode != DiffClexParamPack::DIFF)
@@ -504,16 +508,16 @@ namespace CASM {
         if(!m_data[f].m_independent) {
 
           std::string gradname = "diff/" + m_data[f].m_name + "/" + m_data[i].m_name;
-          m_keys[gradname] = DiffClexParamGradKey(gradname, f, i,
+          m_keys[gradname] = DiffClexParamGradKey(gradname, i,
           {m_data[f].lbegin},
           {m_data[f].m_cache.cols()});
 
           for(Index j = 0; j < m_data.size(); ++j) {
             if(m_data[j].m_independent) {
               std::string hessname = gradname + "/" + m_data[j].m_name;
-              m_keys[hessname] = DiffClexParamHessKey(hessname, f, i,
+              m_keys[hessname] = DiffClexParamHessKey(hessname, i,
               {m_data[f].lbegin, m_data[j].lbegin},
-              {m_data[f].m_cache.cols()}, m_data[j].m_cache.cols());
+              {m_data[f].m_cache.cols(), m_data[j].m_cache.cols()});
 
             }
           }
@@ -529,16 +533,16 @@ namespace CASM {
       for(Index i = 0; i < m_data.size(); ++i) {
         if(m_data[i].m_independent) {
           std::string gradname = "diff/" + m_data[f].m_name + "/" + m_data[i].m_name;
-          m_keys[gradname] = DiffClexParamGradKey(gradname, f, i,
+          m_keys[gradname] = DiffClexParamGradKey(gradname, i,
           {m_data[f].lbegin},
           {m_data[f].m_cache.cols()});
 
           for(Index j = 0; j < m_data.size(); ++j) {
             if(m_data[j].m_independent) {
               std::string hessname = gradname + "/" + m_data[j].m_name;
-              m_keys[hessname] = DiffClexParamHessKey(hessname, f, i,
+              m_keys[hessname] = DiffClexParamHessKey(hessname, i,
               {m_data[f].lbegin, m_data[j].lbegin},
-              {m_data[f].m_cache.cols()}, m_data[j].m_cache.cols());
+              {m_data[f].m_cache.cols(), m_data[j].m_cache.cols()});
             }
           }
         }

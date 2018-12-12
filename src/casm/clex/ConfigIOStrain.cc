@@ -45,7 +45,7 @@ namespace CASM {
         m_metric_name = "GL";
       m_straincalc.set_mode(m_metric_name);
       if(_index_rules().size() > 0)
-        return;
+        return true;
 
       for(Index i = 0; i < 6; i++)
         _add_rule(std::vector<Index>({i}));
@@ -120,7 +120,7 @@ namespace CASM {
         m_metric_name = "GL";
       m_straincalc.set_mode(m_metric_name);
       if(_index_rules().size() > 0)
-        return;
+        return true;
 
       for(Index i = 0; i < 6; i++)
         _add_rule(std::vector<Index>({i}));

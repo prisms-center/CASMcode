@@ -12,37 +12,15 @@
 namespace CASM {
 
 
-  //****************************************************************************************
-  template<typename DataObject>
+
+  template <typename DataObject>
   void BaseDatumFormatter<DataObject>::_parse_index_expression(const std::string &_expr) {
-    //std::cout << "Parsing index expression: " << _expr << "\n";
-    typedef boost::tokenizer<boost::char_separator<char> >
-    tokenizer;
-    boost::char_separator<char> sep1(","), sep2(" \t", ":");
-    tokenizer tok1(_expr, sep1);
-    std::vector<std::string> split_expr(tok1.begin(), tok1.end());
-    std::vector<difference_type> ind_vec_begin(split_expr.size());
-    std::vector<difference_type> ind_vec_end(split_expr.size());
-    for(Index i = 0; i < split_expr.size(); i++) {
-      Index rev_i = split_expr.size() - (i + 1);
-      tokenizer tok2(split_expr[i], sep2);
-      std::vector<std::string> ind_expr(tok2.begin(), tok2.end());
-      if(ind_expr.size() == 1) {
-        if(ind_expr[0][0] == ':')
-          ind_vec_begin[rev_i] = -1;
-        else
-          ind_vec_begin[rev_i] = boost::lexical_cast<difference_type>(ind_expr[0]);
-        ind_vec_end[rev_i] = ind_vec_begin[rev_i];
-      }
-      else if(ind_expr.size() == 3) {
-        ind_vec_begin[rev_i] = boost::lexical_cast<difference_type>(ind_expr[0]);
-        ind_vec_end[rev_i] = boost::lexical_cast<difference_type>(ind_expr[2]);
-      }
-      else
-        throw std::runtime_error(std::string("In BaseDatumFormatter::_parse_index_expression(), invalid expression \"")
-                                 + _expr + "\" passed as indices for format keyword '" + name() + "'\n");
-    }
-    Counter<std::vector<difference_type> > ind_count(ind_vec_begin, ind_vec_end, std::vector<difference_type>(split_expr.size(), 1));
+    auto bounds = index_expression_to_bounds(_expr);
+    std::vector<difference_type> ind_begin(bounds.first.rbegin(), bounds.first.rend());
+    std::vector<difference_type> ind_end(bounds.second.rbegin(), bounds.second.rend());
+
+    Counter<std::vector<difference_type> > ind_count(ind_begin, ind_end, std::vector<difference_type>(ind_begin.size(), 1));
+
     for(; ind_count.valid(); ++ind_count) {
       m_index_rules.push_back(std::vector<difference_type>(ind_count().rbegin(), ind_count().rend()));
     }

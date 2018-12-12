@@ -5,6 +5,7 @@
 #include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/container/ContainerTraits.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/ClexParamPack.hh"
 #include "casm/clex/ECIContainer.hh"
 
 namespace CASM {
@@ -372,7 +373,7 @@ namespace CASM {
       mutable Clexulator m_clexulator;
       mutable std::string m_clex_name;
       mutable std::string m_dof_name;
-      mutable ClexParamKey m_key;
+      mutable DoFKey m_key;
 
     };
 

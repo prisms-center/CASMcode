@@ -1451,8 +1451,8 @@ namespace CASM {
       rep_dims[i] = (*sum_reps[i])[0]->MatrixXd()->cols();
     }
 
-    std::vector<Index> sum_inds;
-    std::partial_sum(rep_dims.begin(), rep_dims.end(), sum_inds.begin());
+    std::vector<Index> sum_inds(1, 0);
+    std::partial_sum(rep_dims.begin(), rep_dims.end(), std::back_inserter(sum_inds));
     auto tot = std::accumulate(rep_dims.begin(), rep_dims.end(), 0);
     Eigen::MatrixXd sum_mat(tot, tot);
     Eigen::MatrixXd const *rep_mat_ptr(NULL);

@@ -273,7 +273,7 @@ namespace CASM {
         m_clexulator = primclex.clexulator(desc);
       }
 
-      m_key = m_clexulator.param_pack().key("diff/corr/" + m_dof_name);
+      m_key = m_dof_name;
 
       MatrixXdAttribute<Configuration>::init(_tmplt);
       return true;
@@ -282,29 +282,31 @@ namespace CASM {
     /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
     /// 'corr(clex_name,index_expression)'
     bool GradCorr::parse_args(const std::string &args) {
-      std::vector<std::string> splt_vec;
-      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+      std::vector<std::string> split_vec;
+      boost::split(split_vec, args, boost::is_any_of(","), boost::token_compress_on);
 
-      if(!splt_vec.size()) {
-        return true;
+      if(!split_vec.size()) {
+        throw std::runtime_error("'gradcorr' query requires at least one argument, corresponding to the independent variable wrt which gradient is to be computed.");
+        return false;
       }
-      else if(splt_vec.size() == 1) {
-        if((splt_vec[0].find_first_not_of("0123456789") == std::string::npos) ||
-           (splt_vec[0].find(':') != std::string::npos)) {
-          _parse_index_expression(splt_vec[0]);
+      else if(split_vec.size() > 4) {
+        std::stringstream ss;
+        ss << "Too many arguments for 'gradcorr'.  Received: " << args << "\n";
+        throw std::runtime_error(ss.str());
+      }
+
+      boost::erase_all(split_vec[0], "'");
+      m_key = split_vec[0];
+
+      for(Index i = 1; i < split_vec.size(); ++i) {
+        if((split_vec[i].find_first_not_of("0123456789") == std::string::npos) ||
+           (split_vec[i].find(':') != std::string::npos)) {
+          _parse_index_expression(split_vec[i] + "," + split_vec[i + 1]);
+          ++i;
         }
         else {
-          m_clex_name = splt_vec[0];
+          m_clex_name = split_vec[i];
         }
-      }
-      else if(splt_vec.size() == 2) {
-        m_clex_name = splt_vec[0];
-        _parse_index_expression(splt_vec[1]);
-      }
-      else {
-        std::stringstream ss;
-        ss << "Too many arguments for 'corr'.  Received: " << args << "\n";
-        throw std::runtime_error(ss.str());
       }
       return true;
     }

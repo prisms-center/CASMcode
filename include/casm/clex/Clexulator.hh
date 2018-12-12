@@ -110,6 +110,27 @@ namespace CASM {
         _calc_global_corr_contribution(_corr_begin);
       }
 
+      /// \brief Calculate contribution to global correlations from one unit cell
+      ///
+      ///
+      /// Call using:
+      /// \code
+      /// UnitCellCoord bijk(0,i,j,k);           // i,j,k of unit cell to get contribution from
+      /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
+      /// myclexulator.calc_global_corr_contribution(my_configdof,
+      ///                                            my_supercell.get_nlist(l_index).begin(),
+      ///                                            my_supercell.get_nlist(l_index).end())
+      /// \endcode
+      ///
+      void calc_global_corr_contribution(ConfigDoF const &_input_configdof,
+                                         long int const *_n_list_begin,
+                                         long int const *_n_list_end) const {
+
+        _set_configdof(_input_configdof);
+        _set_nlist(_n_list_begin);
+        _calc_global_corr_contribution();
+      }
+
       /// \brief Calculate contribution to select global correlations from one unit cell
       ///
       /// \param _corr_begin Pointer to beginning of data structure where correlations are written
@@ -605,6 +626,27 @@ namespace CASM {
                                             _n_list_end,
                                             _corr_begin,
                                             _corr_end);
+    }
+
+    /// \brief Calculate contribution to global correlations from one unit cell
+    ///
+    /// \param _corr_begin Pointer to beginning of data structure where correlations are written
+    ///
+    /// Call using:
+    /// \code
+    /// UnitCellCoord bijk(0,i,j,k);           // i,j,k of unit cell to get contribution from
+    /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
+    /// myclexulator.calc_global_corr_contribution(my_configdof,
+    ///                                            my_supercell.get_nlist(l_index).begin(),
+    ///                                            my_supercell.get_nlist(l_index).end());
+    /// \endcode
+    ///
+    void calc_global_corr_contribution(ConfigDoF const &_input_configdof,
+                                       long int const *_n_list_begin,
+                                       long int const *_n_list_end) const {
+      m_clex->calc_global_corr_contribution(_input_configdof,
+                                            _n_list_begin,
+                                            _n_list_end);
     }
 
     /// \brief Calculate contribution to select global correlations from one unit cell

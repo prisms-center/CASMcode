@@ -87,7 +87,16 @@ public:
 		zero=Op<T>::myZero();
 		return zero;
 	}
-	T& d(const unsigned int i)
+  const T& d(const unsigned int i) const
+  {
+    USER_ASSERT(i<N,"Index "<<i<<" out of bounds [0,"<<N<<"]")
+      if (m_depend) return m_diff[i];
+		static T zero;
+		zero=Op<T>::myZero();
+		return zero;
+  }
+
+  T& d(const unsigned int i)
 	{
 		USER_ASSERT(i<N,"Index "<<i<<" out of bounds [0,"<<N<<"]")
 		if (m_depend) return m_diff[i];
@@ -185,7 +194,16 @@ public:
 		zero=Op<T>::myZero();
 		return zero;
 	}
-	T& d(const unsigned int i)
+
+  const T& d(const unsigned int i) const
+	{
+		if (i<m_size) return m_diff[i];
+		static T zero;
+		zero=Op<T>::myZero();
+		return zero;
+	}
+
+  T& d(const unsigned int i)
 	{
 		if (i<m_size) return m_diff[i];
 		static T zero;

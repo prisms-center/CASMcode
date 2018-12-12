@@ -12,7 +12,6 @@ libcasm_la_SOURCES = \
   src/casm/app/DirectoryStructure.cc\
   src/casm/app/EnumeratorHandler.cc\
   src/casm/app/HamiltonianModules.cc\
-  src/casm/app/HamiltonianModules.cc~\
   src/casm/app/ProjectBuilder.cc\
   src/casm/app/ProjectSettings.cc\
   src/casm/app/QueryHandler.cc\
@@ -40,23 +39,16 @@ libcasm_la_SOURCES = \
   src/casm/basis_set/BasisFunction.cc\
   src/casm/basis_set/BasisSet.cc\
   src/casm/basis_set/DisplacementDoFTraits.cc\
-  src/casm/basis_set/DisplacementDoFTraits.cc~\
   src/casm/basis_set/DoF.cc\
   src/casm/basis_set/DoFIsEquivalent.cc\
-  src/casm/basis_set/DoFIsEquivalent.cc~\
   src/casm/basis_set/DoFSet.cc\
-  src/casm/basis_set/DoFSet.cc~\
   src/casm/basis_set/DoFTraits.cc\
-  src/casm/basis_set/DoFTraits.cc~\
   src/casm/basis_set/FunctionVisitor.cc\
   src/casm/basis_set/MagSpinDoFTraits.cc\
-  src/casm/basis_set/MagSpinDoFTraits.cc~\
   src/casm/basis_set/OccupantFunction.cc\
   src/casm/basis_set/OccupationDoFTraits.cc\
-  src/casm/basis_set/OccupationDoFTraits.cc~\
   src/casm/basis_set/PolynomialFunction.cc\
   src/casm/basis_set/StrainDoFTraits.cc\
-  src/casm/basis_set/StrainDoFTraits.cc~\
   src/casm/basis_set/Variable.cc\
   src/casm/casm_io/DataFormatter.cc\
   src/casm/casm_io/DataStream.cc\
@@ -67,8 +59,6 @@ libcasm_la_SOURCES = \
   src/casm/casm_io/jsonParser.cc\
   src/casm/casm_io/json_io/SpeciesSetParser.cc\
   src/casm/casm_io/json_io/clex.cc\
-  src/casm/clex/#ConfigIONovelty.cc#\
-  src/casm/clex/.#ConfigIONovelty.cc\
   src/casm/clex/Calculable.cc\
   src/casm/clex/ChemicalReference.cc\
   src/casm/clex/Clex.cc\
@@ -79,12 +69,10 @@ libcasm_la_SOURCES = \
   src/casm/clex/ConfigCompare.cc\
   src/casm/clex/ConfigDoF.cc\
   src/casm/clex/ConfigDoFValues.cc\
-  src/casm/clex/ConfigDoFValues.cc~\
   src/casm/clex/ConfigEnumAllOccupations.cc\
   src/casm/clex/ConfigEnumEquivalents.cc\
   src/casm/clex/ConfigEnumInterpolation.cc\
   src/casm/clex/ConfigEnumNormalCoords.cc\
-  src/casm/clex/ConfigEnumNormalCoords.cc~\
   src/casm/clex/ConfigEnumOccPerturbations.cc\
   src/casm/clex/ConfigEnumRandomOccupations.cc\
   src/casm/clex/ConfigEnumStrain.cc\
@@ -240,10 +228,8 @@ libcasm_la_SOURCES = \
   src/casm/symmetry/Orbit.cc\
   src/casm/symmetry/PermuteIterator.cc\
   src/casm/symmetry/SupercellSymInfo.cc\
-  src/casm/symmetry/SupercellSymInfo.cc~\
   src/casm/symmetry/SymBasisPermute.cc\
   src/casm/symmetry/SymGroup.cc\
-  src/casm/symmetry/SymGroupRep-05-09-18.cc.bak\
   src/casm/symmetry/SymGroupRep.cc\
   src/casm/symmetry/SymGroupRepID.cc\
   src/casm/symmetry/SymInfo.cc\
@@ -252,8 +238,6 @@ libcasm_la_SOURCES = \
   src/casm/symmetry/SymOpRepresentation.cc\
   src/casm/symmetry/SymPermutation.cc\
   src/casm/symmetry/SymRepTools.cc\
-  src/casm/symmetry/SymRepTools.cc~\
-  src/casm/symmetry/bak.SymGroup.cc.bak\
   src/casm/system/Popen.cc\
   src/casm/system/RuntimeLibrary.cc\
   src/casm/version/autoversion.cc

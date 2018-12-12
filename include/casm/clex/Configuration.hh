@@ -613,7 +613,7 @@ namespace CASM {
   Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator);
 
   /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
-  Eigen::MatrixXd gradcorrelations(const Configuration &config, Clexulator &clexulator, DoFKey &key);
+  Eigen::MatrixXd gradcorrelations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator, DoFKey &key);
 
   /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
   Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel);

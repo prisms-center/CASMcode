@@ -14,6 +14,7 @@
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/ClexParamPack.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
@@ -1721,6 +1722,7 @@ namespace CASM {
 
     ClexParamKey paramkey = clexulator.param_pack().key("diff/corr/" + key);
     Eigen::MatrixXd gcorr;
+    Index scel_vol = scel.volume();
     if(DoF::traits(key).global()) {
       Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
 
@@ -1733,10 +1735,10 @@ namespace CASM {
         //Fill up contributions
         clexulator.calc_global_corr_contribution(configdof,
                                                  scel.nlist().sites(v).data(),
-                                                 end_ptr(scel.nlist().sites(v)),
-                                                 end_ptr(tcorr));
+                                                 end_ptr(scel.nlist().sites(v)));
+
         for(Index c = 0; c < clexulator.corr_size(); ++c)
-          gcorr.col(c) += clexulator.param_pack().read(key(c));
+          gcorr.col(c) += clexulator.param_pack().read(paramkey(c));
 
 
       }
@@ -1752,11 +1754,11 @@ namespace CASM {
         //Fill up contributions
         clexulator.calc_global_corr_contribution(configdof,
                                                  scel.nlist().sites(v).data(),
-                                                 end_ptr(scel.nlist().sites(v)),
-                                                 end_ptr(tcorr));
+                                                 end_ptr(scel.nlist().sites(v)));
+
         for(Index c = 0; c < clexulator.corr_size(); ++c) {
-          gcorr_func = clexulator.param_pack().read(key(c));
-          for(Index n : scel.nlist().sites(v).data()) {
+          gcorr_func = clexulator.param_pack().read(paramkey(c));
+          for(Index n : scel.nlist().sites(v)) {
             //for(Index i=0; i<gcorr_func.cols(); ++i){
             gcorr.col(c).segment(n * gcorr_func.rows(), gcorr_func.rows()) += gcorr_func.col(n);
             //}
