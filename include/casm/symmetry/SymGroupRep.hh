@@ -114,6 +114,8 @@ namespace CASM {
     }
 
     multivector<Eigen::VectorXd>::X<3> calc_special_total_directions(const SymGroup &subgroup)const;
+
+
     std::vector<std::vector< Eigen::MatrixXd> > calc_special_subspaces(const SymGroup &subgroup)const;
 
     std::vector<Index> num_each_irrep() const;
@@ -140,14 +142,32 @@ namespace CASM {
     /// The ROWS of trans_mat are the new basis vectors in terms of the old such that
     /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
     Eigen::MatrixXd get_irrep_trans_mat(const SymGroup &head_group) const;
+
     /// Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
     /// The ROWS of trans_mat are the new basis vectors in terms of the old such that
     /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
     /// Also populate 'subspaces' with lists of columns that form irreps
     Eigen::MatrixXd get_irrep_trans_mat(const SymGroup &head_group, std::vector<std::vector<Index> > &subspaces) const;
 
+    /// \brief Finds the transformation matrix that block-diagonalizes this representation of head_group into irrep blocks
+    /// It does not rely on the character table, but instead utilizes a brute-force method
+    /// This routine additionally orients the resulting basis vectors along high-symmetry directions of the
+    /// vector space on which they are defined.
+    /// \param head_group The group with respect to which irreps are determined, which may be a subset of all operations in this representation
+    /// \result Transformation matrix with the ROWS comprising the new basis vectors in terms of the old such that
+    /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
     Eigen::MatrixXd get_irrep_trans_mat_blind(const SymGroup &head_group) const;
+
+    /// \brief Finds the transformation matrix that block-diagonalizes this representation of head_group into irrep blocks
+    /// It does not rely on the character table, but instead utilizes a brute-force method
+    /// \param head_group The group with respect to which irreps are determined, which may be a subset of all operations in this representation
+    /// \result Pair, with first element being the transformation matrix with the ROWS comprising
+    /// the new basis vectors in terms of the old such that
+    /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
+    /// The second element is the dimension of irreducible subspaces, ordered identically to the rows of the transformation matrix
     std::pair<Eigen::MatrixXd, std::vector<Index>> _get_irrep_trans_mat_blind(const SymGroup &head_group) const;
+
+
     std::vector<Eigen::MatrixXd> get_projection_operators() const;
 
     jsonParser &to_json(jsonParser &json) const;

@@ -241,6 +241,7 @@ namespace CASM {
         // - Depends on Configuration sites being stored in blocks by sublattice and unitcell indices
         //   determined by the PrimGrid ordering
         for(auto b_it = prim_nlist.sublat_indices().begin(); b_it != prim_nlist.sublat_indices().end(); ++b_it) {
+          //std::cout << "unitcell_index : " << unitcell_index << "; sublat_index : " << *b_it << "\n";
           m_site[i].push_back((*b_it)*m_prim_grid_size + unitcell_index);
         }
 

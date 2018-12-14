@@ -260,8 +260,7 @@ namespace CASM {
 
     /// \brief Returns the atom fraction
     Eigen::MatrixXd GradCorr::evaluate(const Configuration &config) const {
-      gradcorrelations(config, m_clexulator, m_key);
-      return correlations(config, m_clexulator);
+      return gradcorrelations(config, m_clexulator, m_key);
     }
 
     /// \brief If not yet initialized, use the default clexulator from the PrimClex
@@ -273,8 +272,6 @@ namespace CASM {
         m_clexulator = primclex.clexulator(desc);
       }
 
-      m_key = m_dof_name;
-
       MatrixXdAttribute<Configuration>::init(_tmplt);
       return true;
     }
@@ -282,9 +279,10 @@ namespace CASM {
     /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
     /// 'corr(clex_name,index_expression)'
     bool GradCorr::parse_args(const std::string &args) {
+      //std::cout << "parsing args: " << args << "\n";
       std::vector<std::string> split_vec;
       boost::split(split_vec, args, boost::is_any_of(","), boost::token_compress_on);
-
+      //std::cout << "after split: " << split_vec << "\n";
       if(!split_vec.size()) {
         throw std::runtime_error("'gradcorr' query requires at least one argument, corresponding to the independent variable wrt which gradient is to be computed.");
         return false;
@@ -296,6 +294,7 @@ namespace CASM {
       }
 
       boost::erase_all(split_vec[0], "'");
+      //std::cout << "Now split_vec[0] is " << split_vec[0] << "\n";
       m_key = split_vec[0];
 
       for(Index i = 1; i < split_vec.size(); ++i) {

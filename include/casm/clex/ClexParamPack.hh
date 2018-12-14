@@ -245,8 +245,13 @@ namespace CASM {
     /// \brief Obtain key for managed data block by name
     ClexParamKey const &key(std::string const &_name) const {
       auto it = keys().find(_name);
-      if(it == keys().end())
-        throw std::runtime_error("In ClexParamPack::key(), ClexParamPack does not contain parameters corresponding to name " + _name + ".");
+      if(it == keys().end()) {
+        std::stringstream ss;
+        for(it = keys().begin(); it != keys().end(); ++it)
+          ss << "  "  << it->first << "\n";
+        std::cout << "No parameters corresponding to name " << _name + ". Options are:\n" << ss.str() << "\n";
+        throw std::runtime_error("In ClexParamPack::key(), ClexParamPack does not contain parameters corresponding to name " + _name + ". Options are:\n" + ss.str());
+      }
       return it->second;
     }
 

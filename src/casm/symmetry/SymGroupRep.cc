@@ -408,15 +408,15 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  /// Returns array of orbits of high-symmetry directions in the vector space on which this representation is defined.
-  ///     defining: result = calc_special_directions(my_group)
-  /// result[i][j] is a direction that is invariant to a subgroup of 'my_group'
-  /// result[i][k] is a direction that is equivalent to result[i][j]
-  /// For any result[i][j], -result[i][j] must also be a special direction, but the properties of the group determine whether
-  /// it is in result[i] or in some other orbit result[l].
-  /// If, for a result[i][j], -result[i][j] is not among the special directions, it means that result[i][j] is a 1d irrep
-  /// that is invariant to 'my_group' (the irreducible 'wedge' spans that entire axis).  For a 2d irrep, the irreducible
-  /// wedge must span <= one quadrant.  For a 3d irrep, it must span <= one octant
+  // Returns array of orbits of high-symmetry directions in the vector space on which this representation is defined.
+  //     defining: result = calc_special_directions(my_group)
+  // result[i][j] is a direction that is invariant to a subgroup of 'my_group'
+  // result[i][k] is a direction that is equivalent to result[i][j]
+  // For any result[i][j], -result[i][j] must also be a special direction, but the properties of the group determine whether
+  // it is in result[i] or in some other orbit result[l].
+  // If, for a result[i][j], -result[i][j] is not among the special directions, it means that result[i][j] is a 1d irrep
+  // that is invariant to 'my_group' (the irreducible 'wedge' spans that entire axis).  For a 2d irrep, the irreducible
+  // wedge must span <= one quadrant.  For a 3d irrep, it must span <= one octant
   multivector< Eigen::VectorXd>::X<3> SymGroupRep::calc_special_total_directions(const SymGroup &head_group)const {
     std::vector<SymGroupRepID> irrep_IDs = get_irrep_IDs(head_group);
 
@@ -1322,6 +1322,7 @@ namespace CASM {
     return std::make_pair(trans_mat.transpose(), irrep_dims);
 
   }
+
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
@@ -1516,7 +1517,7 @@ namespace CASM {
     resize(json["symop_representations"].size());
     //std::cout << "Reading in the symmetry operations" << std::endl;
     for(int i = 0; i < json["symop_representations"].size(); i++) {
-      /// This allocates a new object to 'at(i)'.
+      // This allocates a new object to 'at(i)'.
       CASM::from_json(at(i), json["symop_representations"][i]);
     }
 

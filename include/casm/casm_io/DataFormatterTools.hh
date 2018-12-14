@@ -1234,7 +1234,7 @@ namespace CASM {
           result = ContainerTraits<Container>::rows(m_cache);
       }
 
-      std::cout << "Requesting " << result << " passes.\n";
+      //std::cout << "Requesting " << result << " passes.\n";
       return result;
 
     }
@@ -1337,6 +1337,7 @@ namespace CASM {
           }
         }
       }
+
       if(i <= _index_rules().size()) {
         for(Index j = 0; j < cols; ++j) {
           row = _index_rules()[i][j].first;
@@ -1365,15 +1366,16 @@ namespace CASM {
     /// m_2D_index_rules will be populated with
     ///    {{{5,4},{5,5},{5,6},{5,7},{5,8}},
     ///     {{6,4},{6,5},{6,6},{6,7},{6,8}}
-    void _parse_index_expression(const std::string &_expr1) {
-      auto bounds = index_expression_to_bounds(_expr1);
+    void _parse_index_expression(const std::string &_expr) {
+      //std::cout << "Parsing index expression: " << _expr << "\n";
+      auto bounds = index_expression_to_bounds(_expr);
       std::vector<difference_type> ind_begin(bounds.first.rbegin(), bounds.first.rend());
       std::vector<difference_type> ind_end(bounds.second.rbegin(), bounds.second.rend());
       if(ind_begin.empty() && ind_end.empty())
         return;
 
       if(ind_begin.size() != 2 || ind_end.size() != 2) {
-        throw std::runtime_error("Attempted to initialize 2D DatumFormatter with incompatible index expression: " + _expr1);
+        throw std::runtime_error("Attempted to initialize 2D DatumFormatter with incompatible index expression: " + _expr);
       }
 
       Index r = 0;
@@ -1388,7 +1390,7 @@ namespace CASM {
       while(m_2D_index_rules.size() < row + 1)
         m_2D_index_rules.push_back({});
 
-      m_2D_index_rules[0].push_back(new_rule);
+      m_2D_index_rules[row].push_back(new_rule);
     }
 
     const IndexContainer &_index_rules() const {
@@ -1405,13 +1407,15 @@ namespace CASM {
       }
 
       if(m_known && _index_rules().empty()) {
+
+        //std::cout << "creating idices, cache size: " << ContainerTraits<Container>::rows(m_cache) << ", " << ContainerTraits<Container>::cols(m_cache) << "\n"
+        //        << "cache matrix:\n" << m_cache << "\n";
         Index cols = ContainerTraits<Container>::cols(m_cache);
         for(Index j = 0; j < cols; j++) {
           _add_rule(0, std::make_pair(-1, j));
         }
       }
 
-      std::cout << "End of _prepare(), _index_rules.size(): " << _index_rules().size() << "\n";
     }
 
   private:

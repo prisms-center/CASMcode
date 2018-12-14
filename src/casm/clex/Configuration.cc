@@ -1718,15 +1718,31 @@ namespace CASM {
 
   /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
   Eigen::MatrixXd gradcorrelations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator, DoFKey &key) {
-    //THIS ISN'T DONE YET
+    ClexParamKey paramkey;
+    ClexParamKey corr_key(clexulator.param_pack().key("corr"));
+    ClexParamKey dof_key;
+    if(key == "occ") {
+      paramkey = clexulator.param_pack().key("diff/corr/" + key + "_site_func");
+      dof_key = clexulator.param_pack().key("occ_site_func");
+    }
+    else {
+      paramkey = clexulator.param_pack().key("diff/corr/" + key + "_var");
+      dof_key = clexulator.param_pack().key(key + "_var");
+    }
 
-    ClexParamKey paramkey = clexulator.param_pack().key("diff/corr/" + key);
+    std::string em_corr, em_dof;
+    em_corr = clexulator.param_pack().eval_mode(corr_key);
+    em_dof = clexulator.param_pack().eval_mode(dof_key);
+
+    clexulator.param_pack().set_eval_mode(corr_key, "DIFF");
+    clexulator.param_pack().set_eval_mode(dof_key, "DIFF");
+
     Eigen::MatrixXd gcorr;
     Index scel_vol = scel.volume();
     if(DoF::traits(key).global()) {
       Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
 
-      gcorr = Eigen::VectorXd::Zero(gcorr_func.size(), clexulator.corr_size());
+      gcorr.setZero(gcorr_func.size(), clexulator.corr_size());
       //Holds contribution to global correlations from a particular neighborhood
 
       //std::vector<double> corr(clexulator.corr_size(), 0.0);
@@ -1747,7 +1763,7 @@ namespace CASM {
 
       Eigen::MatrixXd gcorr_func = configdof.local_dof(key).values();
 
-      gcorr = Eigen::VectorXd::Zero(gcorr_func.size(), clexulator.corr_size());
+      gcorr.setZero(gcorr_func.size(), clexulator.corr_size());
       //Holds contribution to global correlations from a particular neighborhood
 
       for(int v = 0; v < scel_vol; v++) {
@@ -1766,6 +1782,10 @@ namespace CASM {
         }
       }
     }
+    clexulator.param_pack().set_eval_mode(corr_key, em_corr);
+    clexulator.param_pack().set_eval_mode(dof_key, em_dof);
+
+
     return gcorr;
   }
 

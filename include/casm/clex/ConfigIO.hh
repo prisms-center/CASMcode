@@ -372,7 +372,6 @@ namespace CASM {
 
       mutable Clexulator m_clexulator;
       mutable std::string m_clex_name;
-      mutable std::string m_dof_name;
       mutable DoFKey m_key;
 
     };
