@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 
+#include "casm/casm_io/stream_io/container.hh"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/clex/ClexParamPack.hh"
 #include "casm/casm_io/EnumIO.hh"
@@ -21,34 +22,75 @@ namespace CASM {
     using DiffScalar = fadbad::B<fadbad::F<double> >;
 
   }
+
+  // DiffClexParamPack provides an interface for reading and writing an automaitic differentiation scalar type, which
+  // is implemented using the FADBAD++ library. By utilizing the autodiff scalar type as the input and output of
+  // algebraic expressions (as in the clexulator), first- and higher-order derivatives of the expressions can also
+  // be calculated simply and efficiently. DiffClexParamPack stores 'standalone' values, which comprise the independent
+  // variables utilized by the clexulator and the dependent function returnvalues, but it can also be queried for
+  // 'derived' values, which are obtained by performing additional operations on the standalone values. The standalone
+  // and derived values are both queried in an identical fashion, by passing a 'ClexParamKey' to the DiffClexParamPack
+  // corresponding to the quantity of interest.
   class DiffClexParamPack;
+
+  // Container struct for holding a particular standalone value
   class DiffScalarContainer;
+
+  // Abstract base class for all keys that interact with DiffClexParamPack
   class DiffClexParamKey;
+
+  // Key implementation for standalone values
   class DiffClexParamValKey;
+
+  // Key implementation for derived values corresponding to first derivatives
   class DiffClexParamGradKey;
+
+  // Key implementation for derived values corresponding to second derivatives
   class DiffClexParamHessKey;
 
 
+  /// \brief Abstract base class for all keys that interact with DiffClexParamPack
+  /// DiffClexParamPack values are assumed to be 1D, 2D, or to be naturally accessed via 2D slices
+  /// Standalone values are assumed to be 1D or 2D (for example, a 3xN displacement field)
+  /// Derived values typically have more dimensions (for example, the derivative of the Mx1 correlation
+  /// vector with respect to the displacement field has 3 indices, whild the second derivative wrt the
+  /// displacement field has 5 indices). Derivatives are always asociated with the first *independent*
+  /// standalone value in the key name. The key "diff/corr/disp_var" would be associated with "disp_var", which
+  /// is a 3xN Matrix, and thus the resulting derived value (which is the first derifative of correlations
+  /// with respect to displacements) will be sliced into 3xN slices. Each slice corresponds to a particular
+  /// entry in the Mx1 correlation vector (i.e., slice 'j' is the gradient of correlation value j with respect
+  /// to the entire set of displacement variables).  The 'j' index that specifies the particular slice is called a
+  /// 'secondary identifier', and it can be specified via ClexParamKey::set_identifiers().
   class DiffClexParamKey : public ClexParamPack_impl::BaseKey {
   public:
     typedef ClexParamPack::size_type size_type;
 
+    /// \brief DiffClexParamKey Constructor
+    /// \param _name The name of the associated value
+    /// \param _ind Index of the standalone value that is the primary identifier for the associated value
+    /// \param _offset Constant offset for any secondary identifiers for the value of interest
+    /// \param _stride
     DiffClexParamKey(std::string const &_name,
                      bool _standalone,
                      size_type _ind,
                      std::vector<Index> const &_offset = {},
                      std::vector<Index> const &_stride = {}) :
       ClexParamPack_impl::BaseKey(_name, _standalone, _offset, _stride),
-      m_index(_ind) {}
+      m_index(_ind) {
+      //std::cout << "Constructed key " << _name << " at index " << m_index << " with offset " << _offset << " and stride " << _stride << std::endl;
+    }
 
     DiffClexParamKey() :
       DiffClexParamKey("", -1, false) {}
 
-
+    /// \brief Destructor of abstract base class must be virtual
     virtual ~DiffClexParamKey() {};
 
+    /// \brief Operate on associated DiffScalarContainer to ensure the standalone or derived value associated with this key
+    /// is present in its cache matrix.
     virtual Eigen::MatrixXd const &eval(DiffScalarContainer const &_data, DiffClexParamPack_impl::EvalMode mode) const = 0;
 
+    /// \brief Access the primary identifier of this value (which determines the associated standalone value and/or the shape of the dataslice
     size_type index() const {
       return m_index;
     }
@@ -61,7 +103,7 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-
+  /// \brief container class for storing a standalone value as 2D arrays of both autodiff Scalars doubles
   struct DiffScalarContainer {
     using DiffScalar = DiffClexParamPack_impl::DiffScalar;
 
@@ -77,15 +119,19 @@ namespace CASM {
       m_independent(_independent),
       m_data(param_dim, std::vector<DiffScalar>(num_params)),
       m_cache(param_dim, num_params) {
+      //std::cout << "Allocated "<< (_independent? "in" : "") <<  "dependent Container '" << _name << "' size " << param_dim << "x" << num_params << " starting at " << _lbegin << std::endl;
 
     }
 
     // Gradient of dependent function index f wrt the independent variables contained in here
     // -> result(i,j) = Grad[F(f)](l(i,j)), where 'l' is linear index of each (i,j) entry in m_data.
+    // 'f' is secondary identifier denoting linear index of function F(f) among the set F of all dependent variables
     Eigen::MatrixXd const &grad(Index f) const {
+      //std::cout << "WORKING ON f = " << f << "\n";
       for(Index i = 0; i < m_data.size(); ++i) {
         for(Index j = 0; j < m_data[i].size(); ++j) {
           m_cache(i, j) = m_data[i][j].d(f).val();
+          //std::cout << "FOR (i,j) : (" << i << ", " << j << "), val=" << m_data[i][j].val().val() << "; grad=" << m_cache(i,j) << std::endl;
         }
       }
       return m_cache;
@@ -93,12 +139,14 @@ namespace CASM {
 
     // Hessian components of dependent function index f corresponding to independent variable
     // index 'a' and all independent variables contained in here
-    // -> result(i,j) = H[F(f)](a,l), where 'l' is linear index of each (i,j) entry in m_data.
+    // -> result(i,j) = H[F(f)](a,l(i,j)), where 'l' is linear index of each (i,j) entry in m_data.
+    // 'f' is secondary identifier denoting linear index of function F(f) among the set F of all dependent variables
+    // 'a' is secondary identifier denoting linear index of independent variable 'a' of all independent variables
     Eigen::MatrixXd const &hess(Index f, Index a) const {
-      Index l = lbegin;
+
       for(Index i = 0; i < m_data.size(); ++i) {
-        for(Index j = 0; j < m_data[i].size(); ++j, ++l) {
-          m_cache(i, j) = m_data[i][j].d(f).d(l);
+        for(Index j = 0; j < m_data[i].size(); ++j) {
+          m_cache(i, j) = m_data[i][j].d(f).d(a);
         }
       }
       return m_cache;
@@ -108,7 +156,7 @@ namespace CASM {
       Index l = lbegin;
       for(auto &dvec : m_data) {
         for(auto &datum : dvec) {
-          datum.val().diff(l, N);
+          datum.val().diff(l++, N);
         }
       }
     }
@@ -125,7 +173,7 @@ namespace CASM {
       Index l = lbegin;
       for(auto &dvec : m_data) {
         for(auto &datum : dvec) {
-          datum.diff(l, N);
+          datum.diff(l++, N);
         }
       }
     }
@@ -292,7 +340,9 @@ namespace CASM {
     typedef ClexParamPack::size_type size_type;
 
     DiffClexParamValKey(std::string const &_name = "", size_type _ind = -1) :
-      DiffClexParamKey(_name, true, _ind) {}
+      DiffClexParamKey(_name, true, _ind) {
+      //std::cout << "Constructing value key " << _name << "\n";
+    }
 
     Eigen::MatrixXd const &eval(DiffScalarContainer const &_data, DiffClexParamPack::EvalMode mode) const override {
       if(mode == DiffClexParamPack::DIFF) {
@@ -323,7 +373,9 @@ namespace CASM {
                          size_type _ix = -1,
                          std::vector<Index> const &_offset = {},
                          std::vector<Index> const &_stride = {}) :
-      DiffClexParamKey(_name, false, _ix, _offset, _stride) {}
+      DiffClexParamKey(_name, false, _ix, _offset, _stride) {
+      //std::cout << "Constructing grad key " << _name << ", ID " << _ix << "\n";
+    }
 
 
     Eigen::MatrixXd const &eval(DiffScalarContainer const &_data, DiffClexParamPack::EvalMode mode) const override {
@@ -354,7 +406,9 @@ namespace CASM {
                          size_type _ix = -1,
                          std::vector<Index> const &_offset = {},
                          std::vector<Index> const &_stride = {}) :
-      DiffClexParamKey(_name, false, _ix, _offset, _stride) {}
+      DiffClexParamKey(_name, false, _ix, _offset, _stride) {
+      //std::cout << "Constructing hess key " << _name << ", ID " << _ix << "\n";
+    }
 
     Eigen::MatrixXd const &eval(DiffScalarContainer const &_data, DiffClexParamPack::EvalMode mode) const override {
       if(mode != DiffClexParamPack::DIFF)

@@ -101,12 +101,12 @@ namespace CASM {
       /// \endcode
       ///
       void calc_global_corr_contribution(ConfigDoF const &_input_configdof,
-                                         long int const *_n_list_begin,
-                                         long int const *_n_list_end,
+                                         long int const *_nlist_begin,
+                                         long int const *_nlist_end,
                                          double *_corr_begin,
                                          double *_corr_end) const {
         _set_configdof(_input_configdof);
-        _set_nlist(_n_list_begin);
+        _set_nlist(_nlist_begin, _nlist_end);
         _calc_global_corr_contribution(_corr_begin);
       }
 
@@ -123,11 +123,11 @@ namespace CASM {
       /// \endcode
       ///
       void calc_global_corr_contribution(ConfigDoF const &_input_configdof,
-                                         long int const *_n_list_begin,
-                                         long int const *_n_list_end) const {
+                                         long int const *_nlist_begin,
+                                         long int const *_nlist_end) const {
 
         _set_configdof(_input_configdof);
-        _set_nlist(_n_list_begin);
+        _set_nlist(_nlist_begin, _nlist_end);
         _calc_global_corr_contribution();
       }
 
@@ -149,14 +149,14 @@ namespace CASM {
       /// \endcode
       ///
       void calc_restricted_global_corr_contribution(ConfigDoF const &_input_configdof,
-                                                    long int const *_n_list_begin,
-                                                    long int const *_n_list_end,
+                                                    long int const *_nlist_begin,
+                                                    long int const *_nlist_end,
                                                     double *_corr_begin,
                                                     double *_corr_end,
                                                     size_type const *_corr_ind_begin,
                                                     size_type const *_corr_ind_end) const {
         _set_configdof(_input_configdof);
-        _set_nlist(_n_list_begin);
+        _set_nlist(_nlist_begin, _nlist_end);
         _calc_restricted_global_corr_contribution(_corr_begin, _corr_ind_begin, _corr_ind_end);
       }
 
@@ -173,13 +173,13 @@ namespace CASM {
       /// \endcode
       ///
       void calc_point_corr(ConfigDoF const &_input_configdof,
-                           long int const *_n_list_begin,
-                           long int const *_n_list_end,
+                           long int const *_nlist_begin,
+                           long int const *_nlist_end,
                            int neighbor_ind,
                            double *_corr_begin,
                            double *_corr_end) const {
         _set_configdof(_input_configdof);
-        _set_nlist(_n_list_begin);
+        _set_nlist(_nlist_begin, _nlist_end);
         _calc_point_corr(neighbor_ind, _corr_begin);
       }
 
@@ -203,15 +203,15 @@ namespace CASM {
       /// \endcode
       ///
       void calc_restricted_point_corr(ConfigDoF const &_input_configdof,
-                                      long int const *_n_list_begin,
-                                      long int const *_n_list_end,
+                                      long int const *_nlist_begin,
+                                      long int const *_nlist_end,
                                       int neighbor_ind,
                                       double *_corr_begin,
                                       double *_corr_end,
                                       size_type const *_corr_ind_begin,
                                       size_type const *_corr_ind_end) const {
         _set_configdof(_input_configdof);
-        _set_nlist(_n_list_begin);
+        _set_nlist(_nlist_begin, _nlist_end);
         _calc_restricted_point_corr(neighbor_ind, _corr_begin, _corr_ind_begin, _corr_ind_end);
       }
 
@@ -230,15 +230,15 @@ namespace CASM {
       /// \endcode
       ///
       void calc_delta_point_corr(ConfigDoF const &_input_configdof,
-                                 long int const *_n_list_begin,
-                                 long int const *_n_list_end,
+                                 long int const *_nlist_begin,
+                                 long int const *_nlist_end,
                                  int neighbor_ind,
                                  int occ_i,
                                  int occ_f,
                                  double *_corr_begin,
                                  double *_corr_end) const {
         _set_configdof(_input_configdof);
-        _set_nlist(_n_list_begin);
+        _set_nlist(_nlist_begin, _nlist_end);
         _calc_delta_point_corr(neighbor_ind, occ_i, occ_f, _corr_begin);
       }
       /// \brief Calculate the change in select point correlations due to changing an occupant
@@ -265,8 +265,8 @@ namespace CASM {
       /// \endcode
       ///
       void calc_restricted_delta_point_corr(ConfigDoF const &_input_configdof,
-                                            long int const *_n_list_begin,
-                                            long int const *_n_list_end,
+                                            long int const *_nlist_begin,
+                                            long int const *_nlist_end,
                                             int neighbor_ind,
                                             int occ_i,
                                             int occ_f,
@@ -275,7 +275,7 @@ namespace CASM {
                                             size_type const *_corr_ind_begin,
                                             size_type const *_corr_ind_end) const {
         _set_configdof(_input_configdof);
-        _set_nlist(_n_list_begin);
+        _set_nlist(_nlist_begin, _nlist_end);
         _calc_restricted_delta_point_corr(neighbor_ind, occ_i, occ_f, _corr_begin, _corr_ind_begin, _corr_ind_end);
       }
 
@@ -390,8 +390,12 @@ namespace CASM {
       /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
       /// \endcode
       ///
-      void _set_nlist(const long int *_nlist_ptr) const {
-        m_nlist_ptr = _nlist_ptr;
+      void _set_nlist(const long int *_nlist_begin, const long int *_nlist_end) const {
+        m_nlist_ptr = _nlist_begin;
+        //std::cout << "setting _nlist: ";
+        //for(;_nlist_begin!=_nlist_end; ++_nlist_begin)
+        //std::cout << *_nlist_begin << "  ";
+        //std::cout << std::endl;
         return;
       }
 
@@ -617,13 +621,13 @@ namespace CASM {
     /// \endcode
     ///
     void calc_global_corr_contribution(ConfigDoF const &_input_configdof,
-                                       long int const *_n_list_begin,
-                                       long int const *_n_list_end,
+                                       long int const *_nlist_begin,
+                                       long int const *_nlist_end,
                                        double *_corr_begin,
                                        double *_corr_end) const {
       m_clex->calc_global_corr_contribution(_input_configdof,
-                                            _n_list_begin,
-                                            _n_list_end,
+                                            _nlist_begin,
+                                            _nlist_end,
                                             _corr_begin,
                                             _corr_end);
     }
@@ -642,11 +646,11 @@ namespace CASM {
     /// \endcode
     ///
     void calc_global_corr_contribution(ConfigDoF const &_input_configdof,
-                                       long int const *_n_list_begin,
-                                       long int const *_n_list_end) const {
+                                       long int const *_nlist_begin,
+                                       long int const *_nlist_end) const {
       m_clex->calc_global_corr_contribution(_input_configdof,
-                                            _n_list_begin,
-                                            _n_list_end);
+                                            _nlist_begin,
+                                            _nlist_end);
     }
 
     /// \brief Calculate contribution to select global correlations from one unit cell
@@ -667,15 +671,15 @@ namespace CASM {
     /// \endcode
     ///
     void calc_restricted_global_corr_contribution(ConfigDoF const &_input_configdof,
-                                                  long int const *_n_list_begin,
-                                                  long int const *_n_list_end,
+                                                  long int const *_nlist_begin,
+                                                  long int const *_nlist_end,
                                                   double *_corr_begin,
                                                   double *_corr_end,
                                                   size_type const *_corr_ind_begin,
                                                   size_type const *_corr_ind_end) const {
       m_clex->calc_restricted_global_corr_contribution(_input_configdof,
-                                                       _n_list_begin,
-                                                       _n_list_end,
+                                                       _nlist_begin,
+                                                       _nlist_end,
                                                        _corr_begin,
                                                        _corr_end,
                                                        _corr_ind_begin,
@@ -695,14 +699,14 @@ namespace CASM {
     /// \endcode
     ///
     void calc_point_corr(ConfigDoF const &_input_configdof,
-                         long int const *_n_list_begin,
-                         long int const *_n_list_end,
+                         long int const *_nlist_begin,
+                         long int const *_nlist_end,
                          int neighbor_ind,
                          double *_corr_begin,
                          double *_corr_end) const {
       m_clex->calc_point_corr(_input_configdof,
-                              _n_list_begin,
-                              _n_list_end,
+                              _nlist_begin,
+                              _nlist_end,
                               neighbor_ind,
                               _corr_begin,
                               _corr_end);
@@ -723,16 +727,16 @@ namespace CASM {
     /// \endcode
     ///
     void calc_restricted_point_corr(ConfigDoF const &_input_configdof,
-                                    long int const *_n_list_begin,
-                                    long int const *_n_list_end,
+                                    long int const *_nlist_begin,
+                                    long int const *_nlist_end,
                                     int neighbor_ind,
                                     double *_corr_begin,
                                     double *_corr_end,
                                     size_type const *_corr_ind_begin,
                                     size_type const *_corr_ind_end) const {
       m_clex->calc_restricted_point_corr(_input_configdof,
-                                         _n_list_begin,
-                                         _n_list_end,
+                                         _nlist_begin,
+                                         _nlist_end,
                                          neighbor_ind,
                                          _corr_begin,
                                          _corr_end,
@@ -755,16 +759,16 @@ namespace CASM {
     /// \endcode
     ///
     void calc_delta_point_corr(ConfigDoF const &_input_configdof,
-                               long int const *_n_list_begin,
-                               long int const *_n_list_end,
+                               long int const *_nlist_begin,
+                               long int const *_nlist_end,
                                int neighbor_ind,
                                int occ_i,
                                int occ_f,
                                double *_corr_begin,
                                double *_corr_end) const {
       m_clex->calc_delta_point_corr(_input_configdof,
-                                    _n_list_begin,
-                                    _n_list_end,
+                                    _nlist_begin,
+                                    _nlist_end,
                                     neighbor_ind,
                                     occ_i,
                                     occ_f,
@@ -797,8 +801,8 @@ namespace CASM {
     /// \endcode
     ///
     void calc_restricted_delta_point_corr(ConfigDoF const &_input_configdof,
-                                          long int const *_n_list_begin,
-                                          long int const *_n_list_end,
+                                          long int const *_nlist_begin,
+                                          long int const *_nlist_end,
                                           int neighbor_ind,
                                           int occ_i,
                                           int occ_f,
@@ -807,8 +811,8 @@ namespace CASM {
                                           size_type const *_corr_ind_begin,
                                           size_type const *_corr_ind_end) const {
       m_clex->calc_restricted_delta_point_corr(_input_configdof,
-                                               _n_list_begin,
-                                               _n_list_end,
+                                               _nlist_begin,
+                                               _nlist_end,
                                                neighbor_ind,
                                                occ_i,
                                                occ_f,

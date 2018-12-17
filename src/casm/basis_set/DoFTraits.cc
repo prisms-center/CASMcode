@@ -26,7 +26,7 @@ namespace CASM {
       std::stringstream ss;
       if(global()) {
         ss <<
-           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n";
+           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) != ParamPack::READ) {\n";
         for(Index a = 0; a < _prim.global_dof(type_name()).size(); ++a) {
           ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a
              << ", eval_" << type_name() << "_var(" << a << "));\n";
@@ -35,7 +35,7 @@ namespace CASM {
 
         if(requires_site_basis()) {
           ss <<
-             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n";
+             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) != ParamPack::READ) {\n";
           for(Index f = 0; f < site_bases[0].size(); f++) {
             ss <<
                indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f
@@ -82,13 +82,13 @@ namespace CASM {
           }
 
           ss <<
-             indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n" <<
+             indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) != ParamPack::READ) {\n" <<
              ssvar.str() <<
              indent << "  }\n";
 
           if(requires_site_basis()) {
             ss <<
-               indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
+               indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) != ParamPack::READ) {\n" <<
                ssfunc.str() <<
                indent << "  }\n";
           }
@@ -110,7 +110,7 @@ namespace CASM {
 
       if(global()) {
         ss <<
-           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n";
+           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) != ParamPack::READ) {\n";
         for(Index a = 0; a < _prim.global_dof(type_name()).size(); ++a) {
           ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a
              << ", eval_" << type_name() << "_var(" << a << "));\n";
@@ -119,7 +119,7 @@ namespace CASM {
 
         if(requires_site_basis()) {
           ss <<
-             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n";
+             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) != ParamPack::READ) {\n";
           for(Index f = 0; f < site_bases[0].size(); f++) {
             ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f
                << ", eval_" << site_basis_name() << "_" << f << "<Scalar>());\n";
@@ -157,14 +157,14 @@ namespace CASM {
           }
         }
         ss <<
-           indent << "if(m_params.eval_mode(m_" << type_name() << "_var_param_key) == ParamPack::DEFAULT) {\n" <<
+           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) != ParamPack::READ) {\n" <<
            ssvar.str() <<
-           indent << "}\n";
+           indent << "  }\n";
         if(requires_site_basis()) {
           ss <<
-             indent << "if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
+             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) != ParamPack::READ) {\n" <<
              ssfunc.str() <<
-             indent << "}\n";
+             indent << "  }\n";
         }
       }
       return ss.str();

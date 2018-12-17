@@ -1255,6 +1255,7 @@ namespace CASM {
 
   /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
   Eigen::MatrixXd gradcorrelations(const Configuration &config, Clexulator &clexulator, DoFKey &key) {
+    //std::cout <<  "Gradcorr of config " << config.name() << "...\n";
     return gradcorrelations(config.configdof(), config.supercell(), clexulator, key);
   }
 
@@ -1741,7 +1742,7 @@ namespace CASM {
     Index scel_vol = scel.volume();
     if(DoF::traits(key).global()) {
       Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
-
+      //std::cout << "global_dof is: \n" << gcorr_func << std::endl;
       gcorr.setZero(gcorr_func.size(), clexulator.corr_size());
       //Holds contribution to global correlations from a particular neighborhood
 
@@ -1761,11 +1762,11 @@ namespace CASM {
     }
     else {
 
-      Eigen::MatrixXd gcorr_func = configdof.local_dof(key).values();
-
-      gcorr.setZero(gcorr_func.size(), clexulator.corr_size());
+      Eigen::MatrixXd gcorr_func;
+      //std::cout << "local_dof is: \n" << gcorr_func << std::endl;
+      gcorr.setZero(configdof.local_dof(key).values().size(), clexulator.corr_size());
       //Holds contribution to global correlations from a particular neighborhood
-
+      Index l;
       for(int v = 0; v < scel_vol; v++) {
         //Fill up contributions
         clexulator.calc_global_corr_contribution(configdof,
@@ -1774,9 +1775,13 @@ namespace CASM {
 
         for(Index c = 0; c < clexulator.corr_size(); ++c) {
           gcorr_func = clexulator.param_pack().read(paramkey(c));
-          for(Index n : scel.nlist().sites(v)) {
+          //std::cout << "for c " << c << " gcorr_func is: \n" << gcorr_func << "\n\n";
+
+          for(Index n = 0; n < scel.nlist().sites(v).size(); ++n) {
+            l = scel.nlist().sites(v)[n];
             //for(Index i=0; i<gcorr_func.cols(); ++i){
-            gcorr.col(c).segment(n * gcorr_func.rows(), gcorr_func.rows()) += gcorr_func.col(n);
+            gcorr.block(l * gcorr_func.rows(), c, gcorr_func.rows(), 1) += gcorr_func.col(n);
+            //std::cout << "Block: (" << l * gcorr_func.rows() << ", " << c << ", " << gcorr_func.rows() << ", " << 1 << ") += " << gcorr_func.col(n).transpose() << "\n";
             //}
           }
         }
@@ -1815,7 +1820,7 @@ namespace CASM {
   Structure make_deformed_struc(const Configuration &c) {
     Structure tmp = c.supercell().superstructure(c);
     if(c.configdof().has_local_dof("disp")) {
-      std::cout << "has disp going to apply" << std::endl;
+      //std::cout << "has disp going to apply" << std::endl;
       Array<Site> new_basis;
       for(int i = 0 ; i < tmp.basis().size(); i++) {
         Eigen::Vector3d new_vec = tmp.basis()[i].const_cart() + c.configdof().local_dof("disp").values().col(i) ;
@@ -1826,7 +1831,7 @@ namespace CASM {
       tmp.set_basis(new_basis);
     }
     else {
-      std::cout << "no disp found" << std::endl;
+      //std::cout << "no disp found" << std::endl;
     }
     return tmp;
   }

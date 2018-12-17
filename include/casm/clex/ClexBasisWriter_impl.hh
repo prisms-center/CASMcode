@@ -921,6 +921,15 @@ namespace CASM {
 
         Index proto_index = lno;
 
+        // If a flower has no associated basis functions, it will be left out.
+        // Doing otherwise would result in a mismatch between indexing of m_orbit_neighborhood
+        // and every other basis function indexing convention
+        if(clex.bset_orbit(no).size() == 0 || clex.bset_orbit(no)[0].size() == 0) {
+          continue;
+        }
+
+
+
         if(ucnbors.empty()) {
           for(Index nf = 0; nf < clex.bset_orbit(no)[0].size(); ++nf)
             ++lno;
@@ -943,11 +952,8 @@ namespace CASM {
         }
         ss << indent << "  };\n";
         ++lno;
-        if(clex.bset_orbit(no).size() == 0)
-          continue;
-        for(Index nf = 1; nf < clex.bset_orbit(no)[0].size(); ++nf) {
+        for(Index nf = 1; nf < clex.bset_orbit(no)[0].size(); ++nf, ++lno) {
           ss << indent << "  m_orbit_neighborhood[" << lno << "] = m_orbit_neighborhood[" << proto_index << "];\n";
-          ++lno;
         }
         ss << "\n";
 
