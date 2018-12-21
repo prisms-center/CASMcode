@@ -57,7 +57,7 @@ namespace CASM {
   //**********************************************************
   void SymOpRepresentation::set_rep(SymGroupRepID _rep_ID, const SymOpRepresentation &op_rep) const {
     assert(has_valid_master() && !_rep_ID.empty());
-    return master_group().representation(_rep_ID).set_rep(index(), op_rep);
+    return master_group().set_rep(_rep_ID, op_rep, index());
   }
 
   //*******************************************************************************************

@@ -939,8 +939,8 @@ namespace CASM {
     SymGroupRep const &t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
 
     //Check that block-diagonalization matches number of irreps
-    auto vec = t_rep.num_each_real_irrep(head_group);
-    return t_rep.num_blocks(head_group) == std::accumulate(vec.begin(), vec.end(), 0);
+    auto vec = num_each_real_irrep(t_rep, head_group);
+    return num_blocks(t_rep, head_group) == std::accumulate(vec.begin(), vec.end(), 0);
 
   }
 
@@ -960,9 +960,9 @@ namespace CASM {
 
 
     SymGroupRep const &t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
-    trans_mat = t_rep.get_irrep_trans_mat(head_group);
+    trans_mat = get_irrep_trans_mat(t_rep, head_group);
     BasisSet normal_basis(transform_copy(trans_mat));
-    normal_basis.m_basis_symrep_ID = (t_rep.coord_transformed_copy(trans_mat)).add_copy_to_master();
+    normal_basis.m_basis_symrep_ID = t_rep.master_group().add_representation(coord_transformed_copy(t_rep, trans_mat));
     return normal_basis;
   }
 

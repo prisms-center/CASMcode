@@ -6,6 +6,9 @@
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
+  /** \ingroup Clexulator
+   * @{ */
+
   // ClexParamPack is an abstract data structure for storing and retrieving 2D and 1D Arrays of real values
   // The data stored in a ClexParamPack is used to perform calculations within a Clexulator.
   // Values stores within a ClexParamPack represent independent variables, intermediate computations, and
@@ -18,6 +21,10 @@ namespace CASM {
   // ClexParamPack. ClexParamKey holds a pointer to ClexParamPack_impl::BaseKey, which implements read and write
   // functionality. Keys are allocated and registered by ClexParamPack.
   class ClexParamKey;
+
+  // Struct for templated read/write access of parameter values
+  template<typename Scalar>
+  struct ValAccess {};
 
   namespace ClexParamPack_impl {
     /// \brief BaseKey is base class from which all ClexParamKey implementation classes inherit.
@@ -302,6 +309,13 @@ namespace CASM {
     /// \param _i {row index} and \param_j {column index}
     virtual void write(ClexParamKey const &_key, size_type _i, size_type _j, double val) = 0;
 
+    /// \brief May be specialized to perform preprocessing before function evaluation
+    void pre_eval() {}
+
+    /// \brief May be specialized to perform postprocessing after function evaluation
+    void post_eval() {}
+
+
   protected:
     std::map<std::string, ClexParamKey> m_keys;
   private:
@@ -309,6 +323,7 @@ namespace CASM {
     //std::vector<Eigen::MatrixXd> m_data;
   };
 
+  /** @} */
 }
 
 #endif

@@ -1369,21 +1369,25 @@ namespace CASM {
     void _parse_index_expression(const std::string &_expr) {
       //std::cout << "Parsing index expression: " << _expr << "\n";
       auto bounds = index_expression_to_bounds(_expr);
-      std::vector<difference_type> ind_begin(bounds.first.rbegin(), bounds.first.rend());
-      std::vector<difference_type> ind_end(bounds.second.rbegin(), bounds.second.rend());
-      if(ind_begin.empty() && ind_end.empty())
+      //std::vector<difference_type> ind_begin(bounds.first.rbegin(), bounds.first.rend());
+      //std::vector<difference_type> ind_end(bounds.second.rbegin(), bounds.second.rend());
+      if(bounds.first.empty() && bounds.second.empty())
         return;
 
-      if(ind_begin.size() != 2 || ind_end.size() != 2) {
+      if(bounds.first.size() != 2 || bounds.second.size() != 2) {
         throw std::runtime_error("Attempted to initialize 2D DatumFormatter with incompatible index expression: " + _expr);
       }
 
+      std::cout << "_index_rules().size(): " << _index_rules().size() << "\n";
       Index r = 0;
-      for(difference_type i = ind_begin[0]; i < ind_end[0]; ++i, ++r) {
-        for(difference_type j = ind_begin[1]; j < ind_end[1]; ++j) {
+      for(difference_type i = bounds.first[0]; i < bounds.second[0]; ++i, ++r) {
+        for(difference_type j = bounds.first[1]; j < bounds.second[1]; ++j) {
           _add_rule(r, std::make_pair(i, j));
+          std::cout << "(" << i << ", " << j << ")  ";
         }
+        std::cout << std::endl;
       }
+
     }
 
     void _add_rule(Index row, std::pair<Index, Index> const &new_rule) const {

@@ -12,6 +12,12 @@
 
 
 namespace CASM {
+  /** \defgroup Clexulator
+   *  \ingroup ClexClex
+   *  \brief Clexulator is a class for evaluating crystal basis functions and cluster expansions
+   *
+   *  @{
+   */
 
   class ClexParamPack;
   class ClexParamKey;
@@ -431,7 +437,7 @@ namespace CASM {
   /// the print_clexulator function. This source code may be compiled, linked,
   /// and used at runtime via Clexulator.
   ///
-  /// \ingroup ClexClex
+  /// \ingroup Clexulator
   ///
   class Clexulator {
 
@@ -829,6 +835,7 @@ namespace CASM {
     std::shared_ptr<RuntimeLibrary> m_lib;
   };
 
+  /**  @} */
 }
 
 #endif

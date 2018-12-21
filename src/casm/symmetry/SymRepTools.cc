@@ -29,7 +29,7 @@ namespace CASM {
       //Handle for strain symrep
       SymGroupRep::RemoteHandle trep(head_group, id);
 
-      multivector<Eigen::VectorXd>::X<3> sdirs = srep.calc_special_total_directions(head_group);
+      multivector<Eigen::VectorXd>::X<3> sdirs = special_total_directions(srep, head_group);
       std::vector<IrrepWedge> result(sdirs.size());
       double best_proj, tproj;
 
@@ -75,9 +75,9 @@ namespace CASM {
 
       std::vector<SubWedge> result;
       SymGroupRep const &srep(head_group.master_group().representation(id));
-      if(!srep[0]->MatrixXd())
+      if(!srep.MatrixXd(0))
         throw std::runtime_error("In symrep_subwedges, SymGroupRep does not describe matrix representation");
-      Index dim = srep[0]->MatrixXd()->cols();
+      Index dim = srep.MatrixXd(0)->cols();
 
       //for(SymOp const &op : head_group) {
       //std::cout << "OP " << op.index() << ":\n" << *(srep[op.index()]->MatrixXd()) << "\n\n";

@@ -1,4 +1,6 @@
 #include <vector>
+#include <iostream>
+#include <casm/casm_io/stream_io/container.hh>
 #include <string>
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>
@@ -35,6 +37,8 @@ namespace CASM {
         throw std::runtime_error(std::string("In index_expression_to_bounds(), invalid index expression \"")
                                  + _expr + "\"");
     }
+    //std::cout << "Lower bound: " << ind_vec_begin << "\n";
+    //std::cout << "upper bound: " << ind_vec_end << "\n";
     return std::make_pair(std::move(ind_vec_begin), std::move(ind_vec_end));
   }
   //****************************************************************************************

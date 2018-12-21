@@ -140,6 +140,12 @@ namespace CASM {
 
   //*******************************************************************************************
 
+  void MasterSymGroup::set_rep(SymGroupRepID rep_ID, SymOpRepresentation const &_op_rep, Index op_index) const {
+    _representation_ptr(rep_ID)->set_rep(op_index, _op_rep);
+  }
+
+  //*******************************************************************************************
+
   SymGroupRep const &MasterSymGroup::reg_rep() const {
     if(m_reg_rep_ID.empty())
       _add_reg_rep();
@@ -347,7 +353,7 @@ namespace CASM {
     SymGroupRep const *trep(_representation_ptr(orig_ID));
     if(!trep)
       return SymGroupRepID();
-    return add_representation(trep->coord_transformed_copy(trans_mat));
+    return add_representation(coord_transformed_copy(*trep, trans_mat));
   }
 
   //*******************************************************************************************

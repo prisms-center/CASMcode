@@ -1394,14 +1394,14 @@ namespace CASM {
     return relaxed_magmom(_config) / n_species(_config);
   }
 
-  /// \brief Returns the relaxed magnetic moment at each basis site
-  Eigen::VectorXd relaxed_mag_basis(const Configuration &_config) {
-    return _config.calc_properties()["relaxed_mag_basis"].get<Eigen::VectorXd>();
-  }
+  /// \brief relaxed forces of configuration, determined from DFT (eV/Angstr.), as a 3xN matrix
+  Eigen::MatrixXd relaxed_forces(const Configuration &_config) {
+    //Get RMS force:
+    const jsonParser &props = _config.calc_properties();
 
-  /// \brief Returns the relaxed magnetic moment for each molecule
-  Eigen::VectorXd relaxed_mag(const Configuration &_config) {
-    return _config.calc_properties()["relaxed_mag"].get<Eigen::VectorXd>();
+    Eigen::MatrixXd forces;
+    props["relaxed_forces"].get(forces);
+    return forces;
   }
 
   /// \brief Returns an IntegralCluster representing the perturbation between the configs

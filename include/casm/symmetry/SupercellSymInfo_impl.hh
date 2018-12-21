@@ -96,8 +96,8 @@ namespace CASM {
     //std::vector<PermuteIterator> perms = scel_subset_group(begin,end,_syminfo);
     std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group);
 
-    SymGroupRep::RemoteHandle rep(rep_info.first, rep_info.second);
-    return rep->_get_irrep_trans_mat_blind(rep_info.first);
+    //SymGroupRep::RemoteHandle rep(rep_info.first, rep_info.second);
+    return get_irrep_trans_mat_and_dims(rep_info.first.representation(rep_info.second), rep_info.first);
 
   }
 }

@@ -321,6 +321,8 @@ namespace CASM {
 
     SymGroupRep const &coord_rep() const;
 
+    void set_rep(SymGroupRepID _rep_ID, SymOpRepresentation const &_op_rep, Index op_index) const;
+
     /// Add a new representation by passing a reference.  SymGroup will store a copy
     SymGroupRepID add_representation(const SymGroupRep &new_rep) const;
 

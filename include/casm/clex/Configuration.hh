@@ -441,6 +441,15 @@ namespace CASM {
                                   const Configuration &super_config,
                                   const UnitCell &origin = UnitCell(0, 0, 0));
 
+  /// \brief Retrieves specified calculated property having type specified by ValueType
+  /// \param prop_name Name of property, corresponding to its key in properties.calc.json
+  template <typename ValueType>
+  ValueType get_calc_property(Configuration const &_config, std::string const &prop_name) {
+    ValueType result;
+    _config.calc_properties()[prop_name].get(result);
+    return result;
+  }
+
   /// \brief Make Configuration from name string
   Configuration make_configuration(const PrimClex &primclex, std::string name);
 
@@ -517,12 +526,11 @@ namespace CASM {
   /// \brief Returns the relaxed magnetic moment, normalized per species
   double relaxed_magmom_per_species(const Configuration &_config);
 
-  /// \brief Returns the relaxed magnetic moment of each basis site
-  Eigen::VectorXd relaxed_mag_basis(const Configuration &_config);
-  /* std::vector<double> relaxed_mag_basis(const Configuration &_config); */
+  /// \brief relaxed forces of configuration, determined from DFT (eV/Angstr.), as a 3xN matrix
+  Eigen::MatrixXd relaxed_forces(const Configuration &_config);
 
-  /// \brief Returns the relaxed magnetic moment for each molecule
-  Eigen::VectorXd relaxed_mag(const Configuration &_config);
+  /// \brief relaxed forces of configuration, determined from DFT (eV/Angstr.), as a 3xN matrix
+  Eigen::MatrixXd relaxed_forces(const Configuration &_config);
 
   /// \brief Returns an Integral Cluster representing the perturbed sites between the configs
   IntegralCluster config_diff(const Configuration &_config1, const Configuration &_config2);

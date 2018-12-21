@@ -10,6 +10,9 @@
 #include "casm/casm_io/EnumIO.hh"
 
 namespace CASM {
+  /** \ingroup Clexulator
+   * @{ */
+
   class BasicClexParamKey : public ClexParamPack_impl::BaseKey {
   public:
     typedef ClexParamPack::size_type size_type;
@@ -50,6 +53,13 @@ namespace CASM {
 
     using Key = BasicClexParamKey;
     using DoubleReference = Eigen::MatrixXd::CoeffReturnType;
+
+    template<typename Scalar>
+    using Val = ValAccess<Scalar>;
+
+    template<typename Scalar>
+    friend class ValAccess;
+
 
     size_type size(ClexParamKey const &_key) const override {
       return size(*static_cast<Key const *>(_key.ptr()));
@@ -154,6 +164,33 @@ namespace CASM {
 
 
   template<>
+  struct ValAccess<double> {
+    using size_type = BasicClexParamPack::size_type;
+
+    static double const &get(BasicClexParamPack const &_pack, BasicClexParamKey const &_key, size_type i) {
+      return _pack.m_data[_key.index()](i, 0);
+    }
+
+    static double const &get(BasicClexParamPack const &_pack, BasicClexParamKey const &_key, size_type i, size_type j) {
+      return _pack.m_data[_key.index()](i, j);
+    }
+
+    static void set(BasicClexParamPack &_pack, BasicClexParamKey const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val) {
+      _pack.m_data[_key.index()] = _val;
+    }
+
+    template<typename Scalar2>
+    static void set(BasicClexParamPack &_pack, BasicClexParamKey const &_key, size_type i, Scalar2 const &_val) {
+      _pack.m_data[_key.index()](i, 0) = _val;
+    }
+
+    template<typename Scalar2>
+    static  void set(BasicClexParamPack &_pack, BasicClexParamKey const &_key, size_type i, size_type j, Scalar2 const &_val) {
+      _pack.m_data[_key.index()](i, j) = _val;
+    }
+  };
+
+  template<>
   struct traits<BasicClexParamPack::EvalMode> {
 
     static const std::string name;
@@ -189,6 +226,6 @@ namespace CASM {
   const BasicClexParamPack::EvalMode BasicClexParamPack::READ = BasicClexParamPack::EvalMode::READ;
 
 
-
+  /** @} */
 }
 #endif

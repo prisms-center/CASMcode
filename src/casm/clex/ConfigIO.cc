@@ -160,23 +160,6 @@ namespace CASM {
       return species_frac(config);
     }
 
-    // --- MagBase implementations ---
-
-    const std::string MagBase::Name = "relaxed_mag";
-
-    const std::string MagBase::Desc =
-      "Relaxed magnetic moment on each basis site. " ;
-
-    /// \brief Returns true if the Configuration has relaxed_mag
-    bool MagBase::validate(const Configuration &config) const {
-      return config.calc_properties().contains("relaxed_mag");
-    }
-
-    /// \brief Returns the atom fraction
-    Eigen::VectorXd MagBase::evaluate(const Configuration &config) const {
-      return relaxed_mag(config);
-    }
-
     // --- Corr implementations -----------
 
     const std::string Corr::Name = "corr";
@@ -763,8 +746,7 @@ namespace CASM {
       RelaxationStrain(),
       DoFStrain(),
       SiteFrac(),
-      StrucScore(),
-      MagBase()
+      StrucScore()
     );
 
     return dict;
