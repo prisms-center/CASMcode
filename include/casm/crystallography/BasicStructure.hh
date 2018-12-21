@@ -40,7 +40,7 @@ namespace CASM {
     std::string m_title;
 
     /// Lattice vectors that specifies periodicity of the crystal
-    Array<CoordType> m_basis;
+    std::vector<CoordType> m_basis;
 
     /// continuous global degrees of freedom
     std::map <DoFKey, DoFSet> m_dof_map;
@@ -87,7 +87,7 @@ namespace CASM {
       return m_lattice;
     }
 
-    const Array<CoordType> &basis() const {
+    const std::vector<CoordType> &basis() const {
       return m_basis;
     }
 
@@ -95,7 +95,7 @@ namespace CASM {
       return m_basis[i];
     }
 
-    Array<CoordType> &set_basis() {
+    std::vector<CoordType> &set_basis() {
       reset();
       return m_basis;
     }
@@ -157,7 +157,7 @@ namespace CASM {
     }
 
     /// Manually set the basis sites
-    void set_basis(Array<CoordType> const &_basis, COORD_TYPE mode = CART);
+    void set_basis(std::vector<CoordType> const &_basis, COORD_TYPE mode = CART);
 
     /// Clear the basis atoms
     void clear_basis();

@@ -130,7 +130,7 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::_generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_group, bool time_reversal_enabled) const {
-    Array<CoordType> trans_basis;
+    std::vector<CoordType> trans_basis;
     Index pg, b0, b1, b2;
     Coordinate t_tau(lattice());
     Index num_suc_maps;
@@ -308,10 +308,10 @@ namespace CASM {
   template<typename CoordType>
   void BasicStructure<CoordType>::fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment) {
 
-    Array<double> tols;
-    Array<bool> is_group;
-    Array<int> num_ops, num_enforced_ops;
-    Array<std::string> name;
+    std::vector<double> tols;
+    std::vector<bool> is_group;
+    std::vector<int> num_ops, num_enforced_ops;
+    std::vector<std::string> name;
 
     double orig_tol = lattice().tol();
     for(double i = small_tol; i < large_tol; i += increment) {
@@ -427,7 +427,7 @@ namespace CASM {
     SymGroup valid_translations, identity_group;
     identity_group.push_back(SymOp());
     Eigen::Vector3d prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);
-    Array<Eigen::Vector3d > shift;
+    std::vector<Eigen::Vector3d > shift;
     double tvol, min_vol;
     bool prim_flag = true;
     double prim_vol_tol = std::abs(0.5 * lattice().vol() / double(basis().size())); //sets a hard lower bound for the minimum value of the volume of the primitive cell
@@ -572,7 +572,7 @@ namespace CASM {
 
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::set_basis(Array<CoordType> const &_basis, COORD_TYPE mode) {
+  void BasicStructure<CoordType>::set_basis(std::vector<CoordType> const &_basis, COORD_TYPE mode) {
     m_basis.clear();
     m_basis.reserve(_basis.size());
     for(CoordType const &site : _basis)
@@ -616,10 +616,10 @@ namespace CASM {
     //First make a copy of your current basis
     //This copy will eventually become the new average basis.
     //reset();
-    Array<CoordType> avg_basis = basis();
+    std::vector<CoordType> avg_basis = basis();
 
     //Loop through given symmetry group an fill a temporary "operated basis"
-    Array<CoordType> operbasis;
+    std::vector<CoordType> operbasis;
 
     //assume identity comes first, so we skip it
     for(Index rf = 0; rf < relaxed_factors.size(); rf++) {
@@ -693,8 +693,8 @@ namespace CASM {
   void BasicStructure<CoordType>::read(std::istream &stream) {
     int i, t_int;
     char ch;
-    Array<double> num_elem;
-    Array<std::string> elem_array;
+    std::vector<double> num_elem;
+    std::vector<std::string> elem_array;
     bool read_elem = false;
     std::string tstr;
     std::stringstream tstrstream;
@@ -1014,7 +1014,7 @@ namespace CASM {
 
     json["coordinate_mode"] = FRAC;
 
-    // Array<CoordType> basis;
+    // std::vector<CoordType> basis;
     CASM::to_json(basis(), json["basis"], FRAC);
 
     // std::map<std::string, DoFSet> dof_map;
@@ -1056,7 +1056,7 @@ namespace CASM {
     COORD_TYPE mode;
     CASM::from_json(mode, json["coordinate_mode"]);
 
-    // Array<CoordType> basis;
+    // std::vector<CoordType> basis;
     m_basis.clear();
     for(int i = 0; i < json["basis"].size(); i++) {
       push_back(json["basis"][i].get<CoordType>(lattice(), mode));
@@ -1100,7 +1100,7 @@ namespace CASM {
 
   //************************************************************
 
-  /// Returns an Array of each *possible* Specie in this Structure
+  /// Returns an std::vector of each *possible* Specie in this Structure
   template<typename CoordType>
   std::vector<AtomSpecies> struc_species(BasicStructure<CoordType> const &_struc) {
 
@@ -1124,7 +1124,7 @@ namespace CASM {
 
   //************************************************************
 
-  /// Returns an Array of each *possible* Molecule in this Structure
+  /// Returns an std::vector of each *possible* Molecule in this Structure
   template<typename CoordType>
   std::vector<Molecule> struc_molecule(BasicStructure<CoordType> const &_struc) {
 
@@ -1146,7 +1146,7 @@ namespace CASM {
   }
 
   //************************************************************
-  /// Returns an Array of each *possible* AtomSpecie in this Structure
+  /// Returns an std::vector of each *possible* AtomSpecie in this Structure
   template<typename CoordType>
   std::vector<std::string> struc_species_name(BasicStructure<CoordType> const &_struc) {
 
@@ -1163,7 +1163,7 @@ namespace CASM {
   }
 
   //************************************************************
-  /// Returns an Array of each *possible* Molecule in this Structure
+  /// Returns an std::vector of each *possible* Molecule in this Structure
   template<typename CoordType>
   std::vector<std::string> struc_molecule_name(BasicStructure<CoordType> const &_struc) {
 
