@@ -48,7 +48,7 @@ from sys import platform
 unittest_dir = join('tests', 'unit')
 
 default_include = '.*'
-default_exclude = '.*\.(dirstamp|gitignore|am|hide|old|orig|lo|Plo|o)'
+default_exclude = '((\..*)|(.*\.(dirstamp|gitignore|am|hide|old|orig|lo|Plo|o)))'
 
 ### Libraries ###
 
@@ -280,7 +280,7 @@ def main():
         name = 'libcasm_la'
         append(f, 'lib_LTLIBRARIES', ['libcasm.la'])
         src_exclude = '(' + default_exclude + ')|(.*test_g(un)?zip.C)'
-        write_option(f, name, 'SOURCES', find_files(dir, include='.*\.(c|cc|cpp|C)', exclude=src_exclude))
+        write_option(f, name, 'SOURCES', find_files(dir, include='.*\.(c|cc|cpp|C)$', exclude=src_exclude))
         write_option(f, name, 'LIBADD', boost_libs)
         write_option(f, name, 'LDFLAGS', ['-avoid-version', '$(BOOST_LDFLAGS)'])
 

@@ -27,7 +27,7 @@ namespace CASM {
       bool parse_args(const std::string &args) override;
 
       /// \brief Set pointer to ref supercell
-      void init(const Supercell &_tmplt) const override;
+      bool init(const Supercell &_tmplt) const override;
 
       /// \brief col_header returns: {'short_name(refcell_name)'}
       std::vector<std::string> col_header(const Supercell &_tmplt) const override;

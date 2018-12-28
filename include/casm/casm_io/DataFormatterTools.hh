@@ -552,8 +552,8 @@ namespace CASM {
       return std::unique_ptr<DatumFormatterAlias>(this->_clone());
     }
 
-    void init(const DataObject &_template_obj) const  override {
-      m_formatter->init(_template_obj);
+    bool init(const DataObject &_template_obj) const  override {
+      return m_formatter->init(_template_obj);
     }
 
     ///\brief Returns true if _data_obj has valid values for requested data
@@ -994,14 +994,18 @@ namespace CASM {
 
 
     /// \brief Default initialization adds rules for each element
-    virtual void init(const DataObject &_template_obj) const override {
+    virtual bool init(const DataObject &_template_obj) const override {
       if(_index_rules().size())
-        return;
+        return true;
+
+      if(!this->validate(_template_obj))
+        return false;
 
       Index size = ContainerTraits<Container>::size(this->evaluate(_template_obj));
       for(Index i = 0; i < size; i++) {
         _add_rule(std::vector<Index>({i}));
       }
+      return true;
     }
 
     /// \brief Default col_header uses 'name(index)' for each column
@@ -1069,9 +1073,9 @@ namespace CASM {
       auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
       for(; it != end_it; ++it) {
         if(known)
-          _stream << "    " << Access::at(val, (*it)[0]);
+          _stream << "  " << Access::at(val, (*it)[0]);
         else
-          _stream << "    unknown";
+          _stream << "  unknown";
 
       }
     }
@@ -1164,111 +1168,274 @@ namespace CASM {
       make_integer_dictionary<DataObject>(),
       make_scalar_dictionary<DataObject>(),
       make_vectorxi_dictionary<DataObject>(),
-      make_vectorxd_dictionary<DataObject>()
+      make_vectorxd_dictionary<DataObject>(),
+      make_matrixxd_dictionary<DataObject>()
     );
 
     return dict;
   }
 
-  /*
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    template<typename Container>
-    std::vector<Index> container_size_2D(const Container &cont) {
-      std::vector<Index> tsize(2, 0);
-      tsize[0] = cont.size();
-      if(tsize[0] > 0)
-        tsize[1] = cont[0].size();
-      return tsize;
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+  /// \brief A DatumFormatter that returns a value of specified 2d container
+  ///
+  /// Functionality is specified via template parameters at compile time
+  ///
+  /// \ingroup DataFormatter
+  ///
+  template<typename Container, typename DataObject>
+  class Base2DDatumFormatter :
+    public BaseValueFormatter<Container, DataObject> {
+  public:
+
+    using typename BaseDatumFormatter<DataObject>::difference_type;
+    /// \brief Access methods for Container
+    typedef typename ContainerTraits<Container>::Access Access;
+    typedef typename ContainerTraits<Container>::value_type2D ValueType;
+
+
+    /// \brief Constructor
+    Base2DDatumFormatter(const std::string &_name, const std::string &_desc) :
+      BaseValueFormatter<Container, DataObject>(_name, _desc),
+      m_current_ptr(nullptr),
+      m_known(false) {}
+
+    /// \brief Destructor
+    virtual ~Base2DDatumFormatter() {}
+
+    /// \brief Clone
+    std::unique_ptr<Base2DDatumFormatter> clone() const {
+      return std::unique_ptr<Base2DDatumFormatter>(this->_clone());
     }
 
-    /// \brief A DatumFormatter that returns a value of specified 2d container
-    ///
-    /// Functionality is specified via template parameters at compile time
-    ///
-    /// \ingroup DataFormatter
-    ///
-    template<typename _Container,
-             typename DataObject,
-             typename _value_type = typename _Container::value_type,
-             typename _size_type = typename _Container::value_type,
-             typename Access = CASM_TMP::BracketAccess<_Container, _value_type, _size_type> >
-    class Generic2DDatumFormatter : public BaseDatumFormatter<DataObject> {
-    public:
-      using BaseDatumFormatter<DataObject>::name;
-      using BaseDatumFormatter<DataObject>::_add_rule;
-      using BaseDatumFormatter<DataObject>::_index_rules;
-      using BaseDatumFormatter<DataObject>::_parse_index_expression;
-      using Container = _Container;
-      using Evaluator = std::function<Container(const DataObject &)>;
-      using Sizer = std::function<std::vector<Index>(const Container &)>;
-      using Validator = std::function<bool(const DataObject &)>;
 
-      Generic2DDatumFormatter(const std::string &_init_name,
-                              const std::string &_desc,
-                              Evaluator evaluator,
-                              Validator validator = always_true<DataObject>,
-                              Sizer sizer = container_size_2D<_Container>) :
-        BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_validate(validator), m_size(sizer) {}
+    // --- These methods specialize virtual BaseValueFormatter<Container, DataObject> methods ----
 
-      BaseDatumFormatter<DataObject> *clone() const override {
-        return new Generic2DDatumFormatter(*this);
+
+    /// \brief Default initialization adds rules for each element
+    virtual bool init(const DataObject &_template_obj) const override {
+      _prepare(_template_obj);
+      return m_known;
+    }
+
+
+    virtual Index num_passes(const DataObject &_template_obj) const override {
+      _prepare(_template_obj);
+      Index result(0);
+      if(!m_known)
+        result = 1;
+      else if(_index_rules().size() && _index_rules()[0].size()) {
+        if(valid_index(_index_rules()[0][0].first))
+          result = _index_rules().size();
+        else
+          result = ContainerTraits<Container>::rows(m_cache);
       }
 
-      void init(const DataObject &_template_obj) const override;
+      //std::cout << "Requesting " << result << " passes.\n";
+      return result;
 
-      std::string col_header(const DataObject &_template_obj) const override;
-      std::string short_header(const DataObject &_template_obj) const override;
+    }
 
-      bool validate(const DataObject &_data_obj) const override {
-        return m_validate(_data_obj);
+    /// \brief Default col_header uses 'name(index)' for each column
+    ///
+    /// Ex: "corr(i:j,0)" "corr(i:j,1)" "corr(i:j,5)" "corr(i:j,6)"
+    virtual std::vector<std::string> col_header(const DataObject &_template_obj) const override {
+      std::vector<std::string> _col;
+      init(_template_obj);
+      if(!_index_rules().size())
+        return _col;
+
+      Index s = max(8 - int(this->name().size()), 0);
+
+      for(Index j = 0; j < _index_rules()[0].size(); ++j) {
+        Index a(_index_rules()[0][j].first), b(_index_rules().back()[j].first);
+        std::stringstream t_ss;
+        t_ss << std::string(s, ' ') << this->name() << '(';
+
+        if(!valid_index(a)) {
+          t_ss << ":";
+        }
+        else if(a == b)
+          t_ss << a;
+        else
+          t_ss << a << ":" << b;
+        t_ss << ", " << _index_rules()[0][j].second << ')';
+        _col.push_back(t_ss.str());
       }
+      return _col;
+    }
 
-      bool parse_args(const std::string &args) override {
-        _parse_index_expression(args);
-        return true;
+    /// \brief Default implementation calls _parse_index_expression
+    virtual bool parse_args(const std::string &args) override {
+      _parse_index_expression(args);
+      return true;
+    }
+
+    /// \brief Default implementation injects each element
+    ///
+    /// - sets DataStream::failbit if validation fails
+    virtual void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index = 0) const override {
+
+      // add_rules to print all elements if not set yet
+      _prepare(_data_obj);
+
+      if(!m_known)
+        _stream << DataStream::failbit;
+
+      Index i = pass_index;
+      Index row = 0;
+      Index *row_ptr = &row;
+
+      Index rows = _index_rules().size();
+      Index cols = 0;
+      if(rows && _index_rules()[0].size()) {
+        cols = _index_rules()[0].size();
+        if(m_known) {
+          if(!valid_index(_index_rules()[0][0].first)) {
+            rows = ContainerTraits<Container>::rows(m_cache);
+            row_ptr = &pass_index;
+            i = 0;
+          }
+        }
       }
+      if(i <= _index_rules().size()) {
+        for(Index j = 0; j < cols; ++j) {
+          row = _index_rules()[i][j].first;
+          _stream << (m_known ? Access::at(m_cache, *row_ptr, _index_rules()[i][j].second) : ValueType());
+        }
+      }
+    }
 
-      void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index) const override {
-        Container val = m_evaluate(_data_obj);
-        auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
-        if(!validate(_data_obj))
-          _stream << DataStream::failbit;
-        for(; it != end_it; ++it) {
-          _stream << Access::at(val, (*it)[0], (*it)[1]);
+
+    /// \brief Default implementation prints each element in a column
+    ///
+    /// - Prints "unknown" if validation fails
+    virtual void print(const DataObject &_data_obj, std::ostream &_stream, Index pass_index = 0) const override {
+
+      // add_rules to print all elements if not set yet
+      _prepare(_data_obj);
+
+      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+      _stream.precision(8);
+
+      Index i = pass_index;
+      Index row = 0;
+      Index *row_ptr = &row;
+
+      Index rows = _index_rules().size();
+      Index cols = 0;
+      if(rows && _index_rules()[0].size()) {
+        cols = _index_rules()[0].size();
+        if(m_known) {
+          if(!valid_index(_index_rules()[0][0].first)) {
+            rows = ContainerTraits<Container>::rows(m_cache);
+            row_ptr = &pass_index;
+            i = 0;
+          }
         }
       }
 
-      void print(const DataObject &_data_obj, std::ostream &_stream, Index pass_index) const override {
-        _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-        _stream.precision(8);
-        bool known = validate(_data_obj);
-        Container val;
-        if(known)
-          val = m_evaluate(_data_obj);
-        auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
-        for(; it != end_it; ++it) {
-          if(known)
-            _stream << "    " << Access::at(val, (*it)[0], (*it)[1]);
+      if(i <= _index_rules().size()) {
+        for(Index j = 0; j < cols; ++j) {
+          row = _index_rules()[i][j].first;
+          if(m_known)
+            _stream << "  " << Access::at(m_cache, *row_ptr, _index_rules()[i][j].second);
           else
-            _stream << "    unknown";
+            _stream << "  unknown";
+        }
+      }
+    }
+
+  protected:
+
+    typedef multivector<std::pair<Index, Index> >::X<2> IndexContainer;
+
+    mutable IndexContainer m_2D_index_rules;
+
+
+    /// Derived DatumFormatters have some optional functionality for parsing index
+    /// expressions in order to make it easy to handle ranges such as:
+    /// \code
+    ///       formatter_name(3,4:8)
+    /// \endcode
+    /// in which case, DerivedDatumFormatter::parse_args() is called with the string "5:6,4:8"
+    /// by dispatching that string to BaseDatumFormatter::_parse_index_expression(),
+    /// m_2D_index_rules will be populated with
+    ///    {{{5,4},{5,5},{5,6},{5,7},{5,8}},
+    ///     {{6,4},{6,5},{6,6},{6,7},{6,8}}
+    void _parse_index_expression(const std::string &_expr) {
+      //std::cout << "Parsing index expression: " << _expr << "\n";
+      auto bounds = index_expression_to_bounds(_expr);
+      //std::vector<difference_type> ind_begin(bounds.first.rbegin(), bounds.first.rend());
+      //std::vector<difference_type> ind_end(bounds.second.rbegin(), bounds.second.rend());
+      if(bounds.first.empty() && bounds.second.empty())
+        return;
+
+      if(bounds.first.size() != 2 || bounds.second.size() != 2) {
+        throw std::runtime_error("Attempted to initialize 2D DatumFormatter with incompatible index expression: " + _expr);
+      }
+
+      std::cout << "_index_rules().size(): " << _index_rules().size() << "\n";
+      Index r = 0;
+      for(difference_type i = bounds.first[0]; i < bounds.second[0]; ++i, ++r) {
+        for(difference_type j = bounds.first[1]; j < bounds.second[1]; ++j) {
+          _add_rule(r, std::make_pair(i, j));
+          std::cout << "(" << i << ", " << j << ")  ";
+        }
+        std::cout << std::endl;
+      }
+
+    }
+
+    void _add_rule(Index row, std::pair<Index, Index> const &new_rule) const {
+      while(m_2D_index_rules.size() < row + 1)
+        m_2D_index_rules.push_back({});
+
+      m_2D_index_rules[row].push_back(new_rule);
+    }
+
+    const IndexContainer &_index_rules() const {
+      return m_2D_index_rules;
+    }
+
+    void _prepare(DataObject const &_data_obj) const {
+      if(m_current_ptr != &_data_obj) {
+        m_current_ptr = &_data_obj;
+        m_known = this->validate(_data_obj);
+        if(m_known) {
+          m_cache = this->evaluate(_data_obj);
         }
       }
 
-      jsonParser &to_json(const DataObject &_data_obj, jsonParser &json)const override {
-        if(validate(_data_obj))
-          json = m_evaluate(_data_obj);
-        return json;
+      if(m_known && _index_rules().empty()) {
+
+        //std::cout << "creating idices, cache size: " << ContainerTraits<Container>::rows(m_cache) << ", " << ContainerTraits<Container>::cols(m_cache) << "\n"
+        //        << "cache matrix:\n" << m_cache << "\n";
+        Index cols = ContainerTraits<Container>::cols(m_cache);
+        for(Index j = 0; j < cols; j++) {
+          _add_rule(0, std::make_pair(-1, j));
+        }
       }
 
-    private:
-      Evaluator m_evaluate;
-      Validator m_validate;
-      Sizer m_size;
-    };
+    }
 
-  */
+  private:
+    mutable DataObject const *m_current_ptr;
+    mutable bool m_known;
+    mutable Container m_cache;
+
+    /// \brief Clone
+    virtual Base2DDatumFormatter *_clone() const override = 0;
+
+  };
+
+  template<typename DataObject>
+  MatrixXdAttributeDictionary<DataObject> make_matrixxd_dictionary() {
+    return MatrixXdAttributeDictionary<DataObject>();
+  }
 
 }
 

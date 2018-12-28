@@ -13,7 +13,7 @@ namespace CASM {
   namespace DB {
 
     template<typename ObjType>
-    void Selected<ObjType>::init(const ObjType &_tmplt) const {
+    bool Selected<ObjType>::init(const ObjType &_tmplt) const {
       if(!m_selection) {
         if(m_selection_name.empty()) {
           m_selection_name = "MASTER";
@@ -28,6 +28,7 @@ namespace CASM {
           m_selection_name = "unknown";
         }
       }
+      return true;
     }
 
     template<typename ObjType>

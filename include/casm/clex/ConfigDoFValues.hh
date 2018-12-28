@@ -2,6 +2,7 @@
 #define CASM_ConfigDoFValues
 
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/basis_set/DoFSet.hh"
 namespace CASM {
   class jsonParser;
 

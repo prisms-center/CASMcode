@@ -35,12 +35,12 @@ namespace CASM {
 
       std::string site_basis_description(BasisSet site_bset, Site site) const override;
 
-      std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const override;
+      std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors(std::string const &nlist_specifier) const override;
 
       std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const override;
 
-      std::vector<std::tuple<std::string, Index, Index> > param_pack_allocation(Structure const &_prim,
-                                                                                std::vector<BasisSet> const &_bases) const override;
+      std::vector<DoFType::ParamAllocation> param_pack_allocation(Structure const &_prim,
+                                                                  std::vector<BasisSet> const &_bases) const override;
 
       std::string clexulator_constructor_string(Structure const &_prim,
                                                 std::vector<BasisSet> const &site_bases,

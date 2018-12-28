@@ -37,7 +37,7 @@ namespace CASM {
           bool parse_args(const std::string &args) override;
 
           /// \brief Adds index rules corresponding to the parsed args
-          void init(const DiffTransConfiguration &_tmplt) const override;
+          bool init(const DiffTransConfiguration &_tmplt) const override;
 
           /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
           std::vector<std::string> col_header(const DiffTransConfiguration &_tmplt) const override;
@@ -282,7 +282,7 @@ namespace CASM {
         // --- Specialized implementation -----------
 
         /// \brief If not yet initialized, use the global clexulator from the PrimClex
-        void init(const DiffTransConfiguration &_tmplt) const override;
+        bool init(const DiffTransConfiguration &_tmplt) const override;
 
         /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
         /// 'corr(clex_name,index_expression)'
@@ -339,7 +339,7 @@ namespace CASM {
         bool validate(const DiffTransConfiguration &dtconfig) const override;
 
         /// \brief If not yet initialized, use the global clexulator and eci from the PrimClex
-        void init(const DiffTransConfiguration &_tmplt) const override;
+        bool init(const DiffTransConfiguration &_tmplt) const override;
 
         /// \brief Expects 'local_clex', 'local_clex(kra)'
         bool parse_args(const std::string &args) override;

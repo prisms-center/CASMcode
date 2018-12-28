@@ -22,6 +22,7 @@ namespace CASM {
 
   namespace DoFType {
     class Traits;
+    struct ParamAllocation;
 
     Traits const &traits(std::string const &dof_key);
 
@@ -71,14 +72,14 @@ namespace CASM {
 
       */
 
-      virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors() const;
+      virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors(std::string const &nlist_specifier = "%n") const;
 
       virtual std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const;
 
       virtual std::string site_basis_description(BasisSet site_bset, Site site) const = 0;
 
-      virtual std::vector<std::tuple<std::string, Index, Index> > param_pack_allocation(Structure const &_prim,
-          std::vector<BasisSet> const &_bases) const;
+      virtual std::vector<ParamAllocation> param_pack_allocation(Structure const &_prim,
+                                                                 std::vector<BasisSet> const &_bases) const;
 
       virtual std::string clexulator_constructor_string(Structure const &_prim,
                                                         std::vector<BasisSet> const &site_bases,
@@ -123,7 +124,21 @@ namespace CASM {
     };
 
 
+    struct ParamAllocation {
+    public:
+      ParamAllocation(std::string const &_param_name, Index _param_dim, Index _num_param, bool _independent) :
+        param_name(_param_name),
+        param_dim(_param_dim),
+        num_param(_num_param),
+        independent(_independent) {}
 
+
+      const std::string param_name;
+      const Index param_dim;
+      const Index num_param;
+      const bool independent;
+
+    };
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

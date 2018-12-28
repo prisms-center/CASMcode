@@ -165,8 +165,8 @@ namespace CASM {
       SymGroupRep const *permute_rep = SymGroupRep::RemoteHandle(clust_group, _orbit.canonization_rep_ID()).rep_ptr();
 
       BasisSet result = direct_sum(site_dof_sets);
-      result.set_basis_symrep_ID(permuted_direct_sum_rep(*(permute_rep),
-                                                         subspace_reps).add_copy_to_master());
+      result.set_basis_symrep_ID(clust_group.master_group().add_representation(permuted_direct_sum_rep(*(permute_rep),
+                                                                               subspace_reps)));
 
       return result;
 

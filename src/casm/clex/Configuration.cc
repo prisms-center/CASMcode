@@ -14,6 +14,7 @@
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/ClexParamPack.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
@@ -1252,6 +1253,13 @@ namespace CASM {
     return correlations(config.configdof(), config.supercell(), clexulator);
   }
 
+  /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
+  Eigen::MatrixXd gradcorrelations(const Configuration &config, Clexulator &clexulator, DoFKey &key) {
+    //std::cout <<  "Gradcorr of config " << config.name() << "...\n";
+    return gradcorrelations(config.configdof(), config.supercell(), clexulator, key);
+  }
+
+
   /// Returns parametric composition, as calculated using PrimClex::param_comp
   Eigen::VectorXd comp(const Configuration &config) {
     return config.param_composition();
@@ -1386,14 +1394,14 @@ namespace CASM {
     return relaxed_magmom(_config) / n_species(_config);
   }
 
-  /// \brief Returns the relaxed magnetic moment at each basis site
-  Eigen::VectorXd relaxed_mag_basis(const Configuration &_config) {
-    return _config.calc_properties()["relaxed_mag_basis"].get<Eigen::VectorXd>();
-  }
+  /// \brief relaxed forces of configuration, determined from DFT (eV/Angstr.), as a 3xN matrix
+  Eigen::MatrixXd relaxed_forces(const Configuration &_config) {
+    //Get RMS force:
+    const jsonParser &props = _config.calc_properties();
 
-  /// \brief Returns the relaxed magnetic moment for each molecule
-  Eigen::VectorXd relaxed_mag(const Configuration &_config) {
-    return _config.calc_properties()["relaxed_mag"].get<Eigen::VectorXd>();
+    Eigen::MatrixXd forces;
+    props["relaxed_forces"].get(forces);
+    return forces;
   }
 
   /// \brief Returns an IntegralCluster representing the perturbation between the configs
@@ -1709,6 +1717,84 @@ namespace CASM {
     return correlations;
   }
 
+  /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
+  Eigen::MatrixXd gradcorrelations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator, DoFKey &key) {
+    ClexParamKey paramkey;
+    ClexParamKey corr_key(clexulator.param_pack().key("corr"));
+    ClexParamKey dof_key;
+    if(key == "occ") {
+      paramkey = clexulator.param_pack().key("diff/corr/" + key + "_site_func");
+      dof_key = clexulator.param_pack().key("occ_site_func");
+    }
+    else {
+      paramkey = clexulator.param_pack().key("diff/corr/" + key + "_var");
+      dof_key = clexulator.param_pack().key(key + "_var");
+    }
+
+    std::string em_corr, em_dof;
+    em_corr = clexulator.param_pack().eval_mode(corr_key);
+    em_dof = clexulator.param_pack().eval_mode(dof_key);
+
+    clexulator.param_pack().set_eval_mode(corr_key, "DIFF");
+    clexulator.param_pack().set_eval_mode(dof_key, "DIFF");
+
+    Eigen::MatrixXd gcorr;
+    Index scel_vol = scel.volume();
+    if(DoF::traits(key).global()) {
+      Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
+      //std::cout << "global_dof is: \n" << gcorr_func << std::endl;
+      gcorr.setZero(gcorr_func.size(), clexulator.corr_size());
+      //Holds contribution to global correlations from a particular neighborhood
+
+      //std::vector<double> corr(clexulator.corr_size(), 0.0);
+      for(int v = 0; v < scel_vol; v++) {
+
+        //Fill up contributions
+        clexulator.calc_global_corr_contribution(configdof,
+                                                 scel.nlist().sites(v).data(),
+                                                 end_ptr(scel.nlist().sites(v)));
+
+        for(Index c = 0; c < clexulator.corr_size(); ++c)
+          gcorr.col(c) += clexulator.param_pack().read(paramkey(c));
+
+
+      }
+    }
+    else {
+
+      Eigen::MatrixXd gcorr_func;
+      //std::cout << "local_dof is: \n" << gcorr_func << std::endl;
+      gcorr.setZero(configdof.local_dof(key).values().size(), clexulator.corr_size());
+      //Holds contribution to global correlations from a particular neighborhood
+      Index l;
+      for(int v = 0; v < scel_vol; v++) {
+        //Fill up contributions
+        clexulator.calc_global_corr_contribution(configdof,
+                                                 scel.nlist().sites(v).data(),
+                                                 end_ptr(scel.nlist().sites(v)));
+
+        for(Index c = 0; c < clexulator.corr_size(); ++c) {
+          gcorr_func = clexulator.param_pack().read(paramkey(c));
+          //std::cout << "for c " << c << " gcorr_func is: \n" << gcorr_func << "\n\n";
+
+          for(Index n = 0; n < scel.nlist().sites(v).size(); ++n) {
+            l = scel.nlist().sites(v)[n];
+            //for(Index i=0; i<gcorr_func.cols(); ++i){
+            gcorr.block(l * gcorr_func.rows(), c, gcorr_func.rows(), 1) += gcorr_func.col(n);
+            //std::cout << "Block: (" << l * gcorr_func.rows() << ", " << c << ", " << gcorr_func.rows() << ", " << 1 << ") += " << gcorr_func.col(n).transpose() << "\n";
+            //}
+          }
+        }
+      }
+    }
+    clexulator.param_pack().set_eval_mode(corr_key, em_corr);
+    clexulator.param_pack().set_eval_mode(dof_key, em_dof);
+
+
+    return gcorr;
+  }
+
+
   /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::struc_molecule()
   Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
 
@@ -1734,7 +1820,7 @@ namespace CASM {
   Structure make_deformed_struc(const Configuration &c) {
     Structure tmp = c.supercell().superstructure(c);
     if(c.configdof().has_local_dof("disp")) {
-      std::cout << "has disp going to apply" << std::endl;
+      //std::cout << "has disp going to apply" << std::endl;
       std::vector<Site> new_basis;
       for(int i = 0 ; i < tmp.basis().size(); i++) {
         Eigen::Vector3d new_vec = tmp.basis()[i].const_cart() + c.configdof().local_dof("disp").values().col(i) ;
@@ -1745,7 +1831,7 @@ namespace CASM {
       tmp.set_basis(new_basis);
     }
     else {
-      std::cout << "no disp found" << std::endl;
+      //std::cout << "no disp found" << std::endl;
     }
     return tmp;
   }

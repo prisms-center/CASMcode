@@ -166,21 +166,29 @@ namespace CASM {
       for(auto const &nbor : _nhood) {
         ss << indent << "case " << _nlist.neighbor_index(nbor.first) << ":\n";
         std::stringstream ssfunc;
-        //Index n = nbor.first;
-        for(UnitCellCoord const &ucc : nbor.second) {
-          Index b = ucc.sublat();
-          Index n = _nlist.neighbor_index(ucc);
-          for(Index f = 0; f < site_bases[b].size(); f++) {
-            ssfunc << indent << "    m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n  << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
+        //Put neighborhood in a sensible order:
+        std::map<Index, std::set<Index> > sublat_nhood;
+        for(auto const &ucc : nbor.second) {
+          sublat_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
+          //std::cout << "ucc : " << ucc << "; n: " << _nlist.neighbor_index(ucc)  << "\n";
+        }
+
+        for(auto const &sublat : sublat_nhood) {
+          Index b = sublat.first;
+          for(Index n : sublat.second) {
+
+            for(Index f = 0; f < site_bases[b].size(); f++) {
+              ssfunc << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f << ", " << n  << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
+            }
           }
         }
         if(ssfunc.str().size()) {
           ss <<
-             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
+             indent << "  if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) != ParamPack::READ) {\n" <<
              ssfunc.str() <<
              indent << "  }\n";
         }
-        ss << indent << "break;\n";
+        ss << indent << "  break;\n";
       }
       ss << indent << "}\n";
       return ss.str();
@@ -194,22 +202,22 @@ namespace CASM {
                                                                       std::vector<BasisSet> const &site_bases,
                                                                       std::string const &indent) const {
       std::stringstream ss, ssfunc;
-
-      std::set<UnitCellCoord> tot_nhood;
+      std::map<Index, std::set<Index> > tot_nhood;
       for(auto const &nbor : _nhood)
-        tot_nhood.insert(nbor.second.begin(), nbor.second.end());
+        for(auto const &ucc : nbor.second)
+          tot_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
 
-      for(auto const &ucc : tot_nhood) {
-        Index n = _nlist.neighbor_index(ucc);
-        Index b = ucc.sublat();
-
-        for(Index f = 0; f < site_bases[b].size(); f++) {
-          ssfunc << indent << "  m_params.write(m_" << site_basis_name() << "_param_key, " << f << ", " << n << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
+      for(auto const &nbor : tot_nhood) {
+        Index b = nbor.first;
+        for(Index n : nbor.second) {
+          for(Index f = 0; f < site_bases[b].size(); f++) {
+            ssfunc << indent << "  ParamPack::Val<Scalar>::set(m_params, m_" << site_basis_name() << "_param_key, " << f << ", " << n << ", eval_occ_func_" << b << "_" << f << "(" << n << "));\n";
+          }
         }
       }
       if(ssfunc.str().size()) {
         ss <<
-           indent << "if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) == ParamPack::DEFAULT) {\n" <<
+           indent << "if(m_params.eval_mode(m_" << site_basis_name() << "_param_key) != ParamPack::READ) {\n" <<
            ssfunc.str() <<
            indent << "}\n";
       }
@@ -296,15 +304,15 @@ namespace CASM {
 
     //************************************************************
 
-    std::vector<std::tuple<std::string, Index, Index> > OccupationDoFTraits::param_pack_allocation(Structure const &_prim,
+    std::vector<DoFType::ParamAllocation> OccupationDoFTraits::param_pack_allocation(Structure const &_prim,
         std::vector<BasisSet> const &_bases) const {
-      std::vector<std::tuple<std::string, Index, Index> > result;
+      std::vector<DoFType::ParamAllocation> result;
       Index NB = 0;
       for(BasisSet const &basis : _bases) {
         NB = max(basis.size(), NB);
       }
       if(NB)
-        result.push_back(std::make_tuple(site_basis_name(), Index(-1), NB));
+        result.push_back(DoFType::ParamAllocation(site_basis_name(), NB, Index(-1), true));
 
       return result;
 
@@ -374,9 +382,9 @@ namespace CASM {
     }
 
 
-    std::vector<std::unique_ptr<FunctionVisitor> > OccupationDoFTraits::site_function_visitors() const {
+    std::vector<std::unique_ptr<FunctionVisitor> > OccupationDoFTraits::site_function_visitors(std::string const &nlist_specifier) const {
       std::vector<std::unique_ptr<FunctionVisitor> > result;
-      result.push_back(std::unique_ptr<FunctionVisitor>(new OccFuncLabeler("occ_func_%b_%f(%n)")));
+      result.push_back(std::unique_ptr<FunctionVisitor>(new OccFuncLabeler("occ_func_%b_%f(" + nlist_specifier + ")")));
       return result;
     }
 

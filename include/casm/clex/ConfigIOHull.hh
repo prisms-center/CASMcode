@@ -41,7 +41,7 @@ namespace CASM {
                double _bottom_facet_tol = 1e-8);
 
       /// \brief Calculates the convex hull
-      void init(const Configuration &_tmplt) const override;
+      bool init(const Configuration &_tmplt) const override;
 
       /// \brief column header to use
       std::string short_header(const Configuration &_config) const override;

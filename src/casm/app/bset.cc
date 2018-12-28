@@ -277,7 +277,9 @@ namespace CASM {
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), bset));
 
-        ClexBasisWriter clexwriter(primclex.prim());
+        std::string parampack_type("DEFAULT");
+        bspecs_json.get_if(parampack_type, "param_pack");
+        ClexBasisWriter clexwriter(primclex.prim(), parampack_type);
         clexwriter.print_clexulator(set.global_clexulator_name(),
                                     *clex_basis_ptr,
                                     local_orbits,
@@ -306,7 +308,9 @@ namespace CASM {
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), bset));
 
-        ClexBasisWriter clexwriter(primclex.prim());
+        std::string parampack_type("DEFAULT");
+        bspecs_json.get_if(parampack_type, "param_pack");
+        ClexBasisWriter clexwriter(primclex.prim(), parampack_type);
         clexwriter.print_clexulator(set.global_clexulator_name(),
                                     *clex_basis_ptr,
                                     orbits,

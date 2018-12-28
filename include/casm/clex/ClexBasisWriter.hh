@@ -18,7 +18,11 @@ namespace CASM {
   public:
 
     /// \brief Construct ClexBasisWriter, collecting requisite DoF info from '_prim'
-    ClexBasisWriter(Structure const &_prim, ParamPackMixIn const *parampack_mix_in = nullptr);
+    ClexBasisWriter(Structure const &_prim, std::string const &parampack_type);
+
+    /// \brief Construct ClexBasisWriter, collecting requisite DoF info from '_prim'
+    ClexBasisWriter(Structure const &_prim, ParamPackMixIn const &parampack_mix_in);
+
 
     /// \brief Print clexulator
     template <typename OrbitType>
@@ -30,6 +34,8 @@ namespace CASM {
                           double xtal_tol);
 
   private:
+    void _initialize(Structure const &_prim, ParamPackMixIn const &parampack_mix_in);
+
     std::vector<std::unique_ptr<FunctionVisitor> > const &_site_function_visitors() const {
       return m_site_visitors;
     }
@@ -54,6 +60,7 @@ namespace CASM {
     std::vector<std::unique_ptr<FunctionVisitor> > m_site_visitors;
     std::vector<std::unique_ptr<FunctionVisitor> > m_clust_visitors;
     std::vector<std::unique_ptr<OrbitFunctionTraits> > m_orbit_func_traits;
+    notstd::cloneable_ptr<ParamPackMixIn> m_param_pack_mix_in;
   };
 
 
@@ -63,6 +70,7 @@ namespace CASM {
 
     std::string clexulator_member_declarations(std::string const &class_name,
                                                ClexBasis const &clex,
+                                               ParamPackMixIn const &_param_pack_mix_in,
                                                std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
                                                std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                std::string const &indent);
@@ -130,6 +138,7 @@ namespace CASM {
 
     std::string clexulator_interface_declaration(std::string const &class_name,
                                                  ClexBasis const &clex,
+                                                 ParamPackMixIn const &_param_pack_mix_in,
                                                  std::string const &indent);
 
     //*******************************************************************************************
@@ -140,6 +149,7 @@ namespace CASM {
                                                   std::vector<OrbitType> const &_tree,
                                                   std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
                                                   PrimNeighborList &_nlist,
+                                                  ParamPackMixIn const &_param_pack_mix_in,
                                                   std::vector<std::string> const &orbit_method_names,
                                                   std::vector< std::vector<std::string> > const &flower_method_names,
                                                   std::vector< std::vector<std::string> > const &dflower_method_names,

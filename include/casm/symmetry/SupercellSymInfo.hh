@@ -102,9 +102,22 @@ namespace CASM {
 
   };
 
+  /// \brief Find the subgroup of supercell factor group (specified by _syminfo) that leaves a subset of sites invariant
+  /// An operation is included if no site indices in the subset are mapped onto indices outside the subset after its application
+  /// @param begin,end Iterator pair to list of site indices that define invariant subset
+  /// @param _syminfo SupercellSymInfo object that defines all symmetry properties of supercell
+  /// \result vector of PermuteIterator, referenced to _syminfo, that specify the factor group operations
   template<typename IterType>
   std::vector<PermuteIterator> scel_subset_group(IterType begin, IterType end, SupercellSymInfo const &_syminfo);
 
+
+  /// \brief Find the symmetry representation for group '_group' describing the transformation of DoF '_key' among a subset of sites
+  /// @param begin,end Iterator pair to list of site indices that define subset of sites of interest
+  /// @param _syminfo SupercellSymInfo object that defines all symmetry properties of supercell
+  /// @param _key DoFKey specifying which local DoF is of interest
+  /// @param _group vector of PermuteIterators forming the group that is to be represented (this may be larger than a crystallographic factor group)
+  /// \result pair containing a MasterSymGroup instantiation of _group and a SymGroupRepID that can be used to access the 'collective_dof_symrep' within
+  /// the returned MasterSymGroup
   template<typename IterType>
   std::pair<MasterSymGroup, SymGroupRepID> collective_dof_symrep(IterType begin,
                                                                  IterType end,
@@ -112,12 +125,28 @@ namespace CASM {
                                                                  DoFKey const &_key,
                                                                  std::vector<PermuteIterator> const &_group);
 
+  /// \brief Find symmetry-adapted normal coordinate basis vectors for action of '_group' acting on local DoF '_key' at site indices [begin,end]
+  /// @param begin,end Iterator pair to list of site indices that define subset of sites of interest
+  /// @param _syminfo SupercellSymInfo object that defines all symmetry properties of supercell
+  /// @param _key DoFKey specifying which local DoF is of interest
+  /// @param _group vector of PermuteIterators forming the group that is to be represented (this may be larger than a crystallographic factor group)
+  /// \result Orthogonal matrix comprising normal coordinate basis vectors as its rows.
   template<typename IterType>
   Eigen::MatrixXd collective_dof_normal_coords(IterType begin,
                                                IterType end,
                                                SupercellSymInfo const &_syminfo,
                                                DoFKey const &_key,
                                                std::vector<PermuteIterator> const &_group);
+
+  /// \brief Find symmetry-adapted normal coordinate basis vectors for action of '_group' acting on local DoF '_key' at site indices [begin,end]
+  /// In addition to returning the normal coordinate transformation matrix, it also returns a list of dimensions of the corresponding
+  /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
+  /// @param begin,end Iterator pair to list of site indices that define subset of sites of interest
+  /// @param _syminfo SupercellSymInfo object that defines all symmetry properties of supercell
+  /// @param _key DoFKey specifying which local DoF is of interest
+  /// @param _group vector of PermuteIterators forming the group that is to be represented (this may be larger than a crystallographic factor group)
+  /// \result Pair containin an orthogonal matrix comprising normal coordinate basis vectors as its rows and a list of subspace dimensions, corresponding to
+  /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
   template<typename IterType>
   std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
                                               IterType end,

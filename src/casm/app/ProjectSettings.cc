@@ -31,7 +31,7 @@ namespace CASM {
     // for now, include sublattices with >= 2 components
     std::set<int> sublat_indices;
     for(int b = 0; b < prim.basis().size(); ++b) {
-      if(prim.basis()[b].site_occupant().size() >= 2) {
+      if(prim.basis()[b].site_occupant().size() >= 2 || prim.basis()[b].dof_size() > 0) {
         sublat_indices.insert(b);
       }
     }
@@ -219,6 +219,10 @@ namespace CASM {
 
         if(settings.contains("nlist_sublat_indices")) {
           from_json(m_nlist_sublat_indices, settings["nlist_sublat_indices"]);
+          //if(m_nlist_sublat_indices.size() && (*m_nlist_sublat_indices.rbegin())>=prim.basis().size()){
+          //std::cout << "ABOUT TO BAIL: " <<  *m_nlist_sublat_indices.rbegin() << " vs " << prim.basis().size() << std::endl;
+          //throw std::runtime_error("JSON settings field \"nlist_sublat_indices\" is incompatible with prim.json. This may occur if prim.json is edited without re-initializing project.");
+          //}
         }
         else {
           m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);

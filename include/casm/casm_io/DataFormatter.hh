@@ -58,6 +58,27 @@ namespace CASM {
   /// \ingroup DataFormatter
 
 
+  // Given multi-dimensional index expression string such as
+  //   "3:7, :, 5"
+  // splits expresion and returns a pair of vectors containing lower and upper bounds
+  // that can be counted over to expand index expression into a set of indices.
+  // a standalone ':' character is converted to the special index value of -1 to
+  // indicate that all indices are to be counted over in that dimension
+  // The result for the example case yields the pair
+  //   {{3, -1, 5}, {7, -1 5}}
+  // commas must be present as delimitters between expressions. Whitespace is ignored.
+  std::pair<std::vector<long>, std::vector<long> > index_expression_to_bounds(const std::string &_expr);
+
+  // Given expression string
+  //   "subexpr1 subexpr2(subsub1) subexpr3(subsub2(subsubsub1))"
+  // splits expresion so that
+  //    tag_names = {"subexpr1", "subexpr2", "subexpr3"}
+  //    sub_exprs = {"","subsub1", "subsub2(subsubsub1)"}
+  // whitespace and commas are ignored
+  void split_formatter_expression(const std::string &input_expr,
+                                  std::vector<std::string> &tag_names,
+                                  std::vector<std::string> &sub_exprs);
+
   // Given expression string
   //   "subexpr1 subexpr2(subsub1) subexpr3(subsub2(subsubsub1))"
   // splits expresion so that
@@ -273,6 +294,9 @@ namespace CASM {
     void set_header_prefix(const std::string &_prefix) {
       m_comment += _prefix;
     }
+
+    bool initialize(const DataObject &_tmplt) const;
+
   private:
     mutable bool m_initialized;
     //List of all the ConfigFormatter objects you want outputted
@@ -288,7 +312,6 @@ namespace CASM {
     //comment prefix -- default to "#"
     std::string m_comment;
 
-    void _initialize(const DataObject &_tmplt) const;
   };
 
   /// \brief Abstract base class from which all other DatumFormatter<DataObject> classes inherit
@@ -345,8 +368,11 @@ namespace CASM {
       return std::unique_ptr<BaseDatumFormatter<DataObject> >(this->_clone());
     }
 
-    virtual void init(const DataObject &_template_obj) const {
-
+    /// \brief Perform all initialization steps using _template_obj.
+    /// Returns true if initialization is successful and false if _template_obj has
+    /// insufficient data to complete initialization.
+    virtual bool init(const DataObject &_template_obj) const {
+      return true;
     };
 
     ///\brief Returns true if _data_obj has valid values for requested data

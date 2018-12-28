@@ -40,16 +40,16 @@ namespace CASM {
 
     //****************************************************************************************
 
-    void RelaxationStrain::init(const Configuration &_tmplt) const {
+    bool RelaxationStrain::init(const Configuration &_tmplt) const {
       if(m_metric_name.size() == 0)
         m_metric_name = "GL";
       m_straincalc.set_mode(m_metric_name);
       if(_index_rules().size() > 0)
-        return;
+        return true;
 
       for(Index i = 0; i < 6; i++)
         _add_rule(std::vector<Index>({i}));
-
+      return true;
     }
     //****************************************************************************************
 
@@ -115,16 +115,16 @@ namespace CASM {
 
     //****************************************************************************************
 
-    void DoFStrain::init(const Configuration &_tmplt) const {
+    bool DoFStrain::init(const Configuration &_tmplt) const {
       if(m_metric_name.size() == 0)
         m_metric_name = "GL";
       m_straincalc.set_mode(m_metric_name);
       if(_index_rules().size() > 0)
-        return;
+        return true;
 
       for(Index i = 0; i < 6; i++)
         _add_rule(std::vector<Index>({i}));
-
+      return true;
     }
 
     //****************************************************************************************

@@ -4,8 +4,6 @@ lib_LTLIBRARIES += \
 libcasm_la_SOURCES = \
   src/casm/CASM_global_definitions.cc\
   src/casm/CASM_global_enum.cc\
-  src/casm/app/.view.cc.swo\
-  src/casm/app/.view.cc.swp\
   src/casm/app/APICommand.cc\
   src/casm/app/AppIO.cc\
   src/casm/app/CLIParse.cc\
@@ -61,8 +59,6 @@ libcasm_la_SOURCES = \
   src/casm/casm_io/jsonParser.cc\
   src/casm/casm_io/json_io/SpeciesSetParser.cc\
   src/casm/casm_io/json_io/clex.cc\
-  src/casm/clex/.ConfigEnumStrain.cc.swp\
-  src/casm/clex/.Configuration.cc.swp\
   src/casm/clex/Calculable.cc\
   src/casm/clex/ChemicalReference.cc\
   src/casm/clex/Clex.cc\
@@ -110,9 +106,6 @@ libcasm_la_SOURCES = \
   src/casm/completer/Handlers.cc\
   src/casm/container/LinearAlgebra.cc\
   src/casm/container/Permutation.cc\
-  src/casm/crystallography/.Lattice.cc.swp\
-  src/casm/crystallography/.Niggli.cc.swp\
-  src/casm/crystallography/.Site.cc.swp\
   src/casm/crystallography/BasicStructure.cc\
   src/casm/crystallography/Coordinate.cc\
   src/casm/crystallography/CoordinateSystems.cc\
@@ -185,8 +178,6 @@ libcasm_la_SOURCES = \
   src/casm/external/qhull/libqhullcpp/RoadError.cpp\
   src/casm/external/qhull/libqhullcpp/RoadLogEvent.cpp\
   src/casm/hull/Hull.cc\
-  src/casm/kinetics/.DiffTransConfiguration.cc.swp\
-  src/casm/kinetics/.DiffusionTransformation.cc.swp\
   src/casm/kinetics/DiffTransConfigEnumOccPerturbations.cc\
   src/casm/kinetics/DiffTransConfigInterpolation.cc\
   src/casm/kinetics/DiffTransConfigIsEqual.cc\
@@ -231,11 +222,7 @@ libcasm_la_SOURCES = \
   src/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.cc\
   src/casm/monte_carlo/grand_canonical/GrandCanonicalIO.cc\
   src/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.cc\
-  src/casm/stage/.basis.cc.swp\
-  src/casm/stage/.events.cc.swp\
   src/casm/strain/StrainConverter.cc\
-  src/casm/symmetry/.SymGroup.cc.swo\
-  src/casm/symmetry/.SymGroupRep.cc.swp\
   src/casm/symmetry/ConfigSubOrbits.cc\
   src/casm/symmetry/InvariantSubgroup.cc\
   src/casm/symmetry/Orbit.cc\
@@ -253,8 +240,7 @@ libcasm_la_SOURCES = \
   src/casm/symmetry/SymRepTools.cc\
   src/casm/system/Popen.cc\
   src/casm/system/RuntimeLibrary.cc\
-  src/casm/version/autoversion.cc\
-  src/casm/version/develop_version.cc
+  src/casm/version/autoversion.cc
 
 libcasm_la_LIBADD = \
   $(BOOST_SYSTEM_LIB)\

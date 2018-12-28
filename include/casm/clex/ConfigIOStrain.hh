@@ -48,7 +48,7 @@ namespace CASM {
 
       // --- Specialized implementation -----------
 
-      void init(const Configuration &_tmplt) const override;
+      bool init(const Configuration &_tmplt) const override;
 
       bool validate(const Configuration &_config) const override;
 
@@ -114,7 +114,7 @@ namespace CASM {
 
       // --- Specialized implementation -----------
 
-      void init(const Configuration &_tmplt) const override;
+      bool init(const Configuration &_tmplt) const override;
 
       std::string short_header(const Configuration &_config) const override;
 

@@ -10,13 +10,16 @@
 #include "casm/casm_io/EnumIO.hh"
 
 namespace CASM {
+  /** \ingroup Clexulator
+   * @{ */
+
   class BasicClexParamKey : public ClexParamPack_impl::BaseKey {
   public:
     typedef ClexParamPack::size_type size_type;
 
 
-    BasicClexParamKey(std::string const &_name = "", size_type _ind = -1) :
-      ClexParamPack_impl::BaseKey(_name),
+    BasicClexParamKey(std::string const &_name = "", bool _standalone = false, size_type _ind = -1) :
+      ClexParamPack_impl::BaseKey(_name, _standalone),
       m_index(_ind) {}
 
     ~BasicClexParamKey() {
@@ -35,6 +38,7 @@ namespace CASM {
   };
 
   /// \brief Abstract base class for reading/writing clexulator parameters
+  /// Parameters are assume be naturally representable as 1D or 2D arrays
   class BasicClexParamPack : public ClexParamPack {
   public:
 
@@ -49,6 +53,13 @@ namespace CASM {
 
     using Key = BasicClexParamKey;
     using DoubleReference = Eigen::MatrixXd::CoeffReturnType;
+
+    template<typename Scalar>
+    using Val = ValAccess<Scalar>;
+
+    template<typename Scalar>
+    friend class ValAccess;
+
 
     size_type size(ClexParamKey const &_key) const override {
       return size(*static_cast<Key const *>(_key.ptr()));
@@ -130,12 +141,12 @@ namespace CASM {
       m_data[_key.index()](_i, _j) = _val;
     }
 
-    Key allocate(std::string const &_keyname, Index _rows, Index _cols) {
+    Key allocate(std::string const &_keyname, Index _rows, Index _cols, bool _independent) {
       auto it = keys().find(_keyname);
       if(it != keys().end())
         throw std::runtime_error("Naming collision in BasicClexParamPack::allocate(), ClexParamPack already managing parameter allocation corresponding to name " + _keyname + ".");
 
-      Key protokey(_keyname, m_data.size());
+      Key protokey(_keyname, true, m_data.size());
 
       m_data.push_back(Eigen::MatrixXd::Zero(_rows, _cols));
 
@@ -151,6 +162,33 @@ namespace CASM {
     std::vector<EvalMode> m_eval;
   };
 
+
+  template<>
+  struct ValAccess<double> {
+    using size_type = BasicClexParamPack::size_type;
+
+    static double const &get(BasicClexParamPack const &_pack, BasicClexParamKey const &_key, size_type i) {
+      return _pack.m_data[_key.index()](i, 0);
+    }
+
+    static double const &get(BasicClexParamPack const &_pack, BasicClexParamKey const &_key, size_type i, size_type j) {
+      return _pack.m_data[_key.index()](i, j);
+    }
+
+    static void set(BasicClexParamPack &_pack, BasicClexParamKey const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val) {
+      _pack.m_data[_key.index()] = _val;
+    }
+
+    template<typename Scalar2>
+    static void set(BasicClexParamPack &_pack, BasicClexParamKey const &_key, size_type i, Scalar2 const &_val) {
+      _pack.m_data[_key.index()](i, 0) = _val;
+    }
+
+    template<typename Scalar2>
+    static  void set(BasicClexParamPack &_pack, BasicClexParamKey const &_key, size_type i, size_type j, Scalar2 const &_val) {
+      _pack.m_data[_key.index()](i, j) = _val;
+    }
+  };
 
   template<>
   struct traits<BasicClexParamPack::EvalMode> {
@@ -188,6 +226,6 @@ namespace CASM {
   const BasicClexParamPack::EvalMode BasicClexParamPack::READ = BasicClexParamPack::EvalMode::READ;
 
 
-
+  /** @} */
 }
 #endif

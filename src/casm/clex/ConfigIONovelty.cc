@@ -9,7 +9,7 @@
 namespace CASM {
 
   namespace ConfigIO {
-    void Novelty::init(const Configuration &_tmplt) const {
+    bool Novelty::init(const Configuration &_tmplt) const {
 
       m_format.clear();
       m_format.push_back(Corr());
@@ -33,7 +33,7 @@ namespace CASM {
 
       m_gram_mat = (double(tcovar.rows()) * tcovar + 1E-6 *
                     Eigen::MatrixXd::Identity(tcovar.rows(), tcovar.cols())).inverse();
-
+      return true;
     }
 
     //****************************************************************************************

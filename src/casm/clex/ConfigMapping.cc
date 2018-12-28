@@ -873,7 +873,7 @@ namespace CASM {
 
       if(std::none_of(ref_hermites.begin(), ref_hermites.end(), [&](const Eigen::Matrix3i x)->bool{
       return hermite_adjacency(iround(primclex().prim().lattice().inv_lat_column_mat() *
-      it->lat_column_mat()), x);
+                                      it->lat_column_mat()), x);
       })) {
         continue;
       }

@@ -12,37 +12,15 @@
 namespace CASM {
 
 
-  //****************************************************************************************
-  template<typename DataObject>
+
+  template <typename DataObject>
   void BaseDatumFormatter<DataObject>::_parse_index_expression(const std::string &_expr) {
-    //std::cout << "Parsing index expression: " << _expr << "\n";
-    typedef boost::tokenizer<boost::char_separator<char> >
-    tokenizer;
-    boost::char_separator<char> sep1(","), sep2(" \t", ":");
-    tokenizer tok1(_expr, sep1);
-    std::vector<std::string> split_expr(tok1.begin(), tok1.end());
-    std::vector<difference_type> ind_vec_begin(split_expr.size());
-    std::vector<difference_type> ind_vec_end(split_expr.size());
-    for(Index i = 0; i < split_expr.size(); i++) {
-      Index rev_i = split_expr.size() - (i + 1);
-      tokenizer tok2(split_expr[i], sep2);
-      std::vector<std::string> ind_expr(tok2.begin(), tok2.end());
-      if(ind_expr.size() == 1) {
-        if(ind_expr[0][0] == ':')
-          ind_vec_begin[rev_i] = -1;
-        else
-          ind_vec_begin[rev_i] = boost::lexical_cast<difference_type>(ind_expr[0]);
-        ind_vec_end[rev_i] = ind_vec_begin[rev_i];
-      }
-      else if(ind_expr.size() == 3) {
-        ind_vec_begin[rev_i] = boost::lexical_cast<difference_type>(ind_expr[0]);
-        ind_vec_end[rev_i] = boost::lexical_cast<difference_type>(ind_expr[2]);
-      }
-      else
-        throw std::runtime_error(std::string("In BaseDatumFormatter::_parse_index_expression(), invalid expression \"")
-                                 + _expr + "\" passed as indices for format keyword '" + name() + "'\n");
-    }
-    Counter<std::vector<difference_type> > ind_count(ind_vec_begin, ind_vec_end, std::vector<difference_type>(split_expr.size(), 1));
+    auto bounds = index_expression_to_bounds(_expr);
+    std::vector<difference_type> ind_begin(bounds.first.rbegin(), bounds.first.rend());
+    std::vector<difference_type> ind_end(bounds.second.rbegin(), bounds.second.rend());
+
+    Counter<std::vector<difference_type> > ind_count(ind_begin, ind_end, std::vector<difference_type>(ind_begin.size(), 1));
+
     for(; ind_count.valid(); ++ind_count) {
       m_index_rules.push_back(std::vector<difference_type>(ind_count().rbegin(), ind_count().rend()));
     }
@@ -53,8 +31,7 @@ namespace CASM {
 
   template<typename DataObject>
   bool DataFormatter<DataObject>::validate(const DataObject &_obj) const {
-    if(!m_initialized)
-      _initialize(_obj);
+    initialize(_obj);
     for(Index i = 0; i < m_data_formatters.size(); i++)
       if(!m_data_formatters[i]->validate(_obj))
         return false;
@@ -66,8 +43,7 @@ namespace CASM {
 
   template<typename DataObject>
   void DataFormatter<DataObject>::inject(const DataObject &_obj, DataStream &_stream) const {
-    if(!m_initialized)
-      _initialize(_obj);
+    initialize(_obj);
 
     Index num_pass(1), tnum;
     for(Index i = 0; i < m_data_formatters.size(); i++) {
@@ -150,8 +126,7 @@ namespace CASM {
 
   template<typename DataObject>
   void DataFormatter<DataObject>::print(const DataObject &_obj, std::ostream &_stream) const {
-    if(!m_initialized)
-      _initialize(_obj);
+    initialize(_obj);
     _stream << std::setprecision(m_prec) << std::fixed;
     Index num_pass(1), tnum;
     for(Index i = 0; i < m_data_formatters.size(); i++) {
@@ -194,8 +169,7 @@ namespace CASM {
 
   template<typename DataObject>
   jsonParser &DataFormatter<DataObject>::to_json(const DataObject &_obj, jsonParser &json) const {
-    if(!m_initialized)
-      _initialize(_obj);
+    initialize(_obj);
     for(Index i = 0; i < m_data_formatters.size(); i++) {
       m_data_formatters[i]->to_json(_obj, json[m_data_formatters[i]->short_header(_obj)]);
     }
@@ -207,9 +181,7 @@ namespace CASM {
 
   template<typename DataObject>
   jsonParser &DataFormatter<DataObject>::to_json_arrays(const DataObject &_obj, jsonParser &json) const {
-    if(!m_initialized) {
-      _initialize(_obj);
-    }
+    initialize(_obj);
 
     jsonParser::iterator it;
     jsonParser::iterator end = json.end();
@@ -234,8 +206,9 @@ namespace CASM {
   template<typename DataObject>
   void DataFormatter<DataObject>::print_header(const DataObject &_template_obj, std::ostream &_stream) const {
     _stream << m_comment;
-    if(!m_initialized)
-      _initialize(_template_obj);
+
+    initialize(_template_obj);
+
     int header_size, twidth;
     for(Index i = 0; i < m_data_formatters.size(); i++) {
       std::stringstream t_ss;
@@ -272,11 +245,13 @@ namespace CASM {
   //******************************************************************************
 
   template<typename DataObject>
-  void DataFormatter<DataObject>::_initialize(const DataObject &_template_obj) const {
-    for(Index i = 0; i < m_data_formatters.size(); i++)
-      m_data_formatters[i]->init(_template_obj);
-    m_initialized = true;
-    return;
+  bool DataFormatter<DataObject>::initialize(const DataObject &_template_obj) const {
+    if(!m_initialized) {
+      m_initialized = true;
+      for(Index i = 0; i < m_data_formatters.size(); i++)
+        m_initialized =  m_data_formatters[i]->init(_template_obj) && m_initialized;
+    }
+    return m_initialized;
   }
 
   //******************************************************************************

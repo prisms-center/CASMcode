@@ -1,9 +1,46 @@
 #include <vector>
+#include <iostream>
+#include <casm/casm_io/stream_io/container.hh>
 #include <string>
 #include <boost/algorithm/string.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
+  //****************************************************************************************
+
+  std::pair<std::vector<long>, std::vector<long> > index_expression_to_bounds(const std::string &_expr) {
+    //std::cout << "Parsing index expression: " << _expr << "\n";
+    typedef boost::tokenizer<boost::char_separator<char> >
+    tokenizer;
+    boost::char_separator<char> sep1(","), sep2(" \t", ":");
+    tokenizer tok1(_expr, sep1);
+    std::vector<std::string> split_expr(tok1.begin(), tok1.end());
+    std::vector<long> ind_vec_begin(split_expr.size());
+    std::vector<long> ind_vec_end(split_expr.size());
+    for(Index i = 0; i < split_expr.size(); i++) {
+      tokenizer tok2(split_expr[i], sep2);
+      std::vector<std::string> ind_expr(tok2.begin(), tok2.end());
+      if(ind_expr.size() == 1) {
+        if(ind_expr[0][0] == ':')
+          ind_vec_begin[i] = -1;
+        else
+          ind_vec_begin[i] = boost::lexical_cast<long>(ind_expr[0]);
+        ind_vec_end[i] = ind_vec_begin[i];
+      }
+      else if(ind_expr.size() == 3) {
+        ind_vec_begin[i] = boost::lexical_cast<long>(ind_expr[0]);
+        ind_vec_end[i] = boost::lexical_cast<long>(ind_expr[2]);
+      }
+      else
+        throw std::runtime_error(std::string("In index_expression_to_bounds(), invalid index expression \"")
+                                 + _expr + "\"");
+    }
+    //std::cout << "Lower bound: " << ind_vec_begin << "\n";
+    //std::cout << "upper bound: " << ind_vec_end << "\n";
+    return std::make_pair(std::move(ind_vec_begin), std::move(ind_vec_end));
+  }
   //****************************************************************************************
 
   std::string::const_iterator end_of_literal(std::string::const_iterator it, std::string::const_iterator end_it) {

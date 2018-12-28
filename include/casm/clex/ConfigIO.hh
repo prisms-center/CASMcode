@@ -5,6 +5,7 @@
 #include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/container/ContainerTraits.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/ClexParamPack.hh"
 #include "casm/clex/ECIContainer.hh"
 
 namespace CASM {
@@ -45,7 +46,7 @@ namespace CASM {
       bool parse_args(const std::string &args) override;
 
       /// \brief Adds index rules corresponding to the parsed args
-      void init(const Configuration &_tmplt) const override;
+      bool init(const Configuration &_tmplt) const override;
 
       /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
       std::vector<std::string> col_header(const Configuration &_tmplt) const override;
@@ -226,48 +227,6 @@ namespace CASM {
     /// \brief In the future, AtomFrac will actually be atoms only
     typedef AtomFrac SpeciesFrac;
 
-    /// \brief Returns the site-specific magnetic moments
-    ///
-    /// Site-specific magnetic moments, should they exist
-    ///
-
-    class MagBase : public ConfigIO_impl::MolDependent {
-      /* class MagBase : public VectorXdAttribute<Configuration> { */
-
-    public:
-
-      static const std::string Name;
-
-      static const std::string Desc;
-
-
-      MagBase() : MolDependent(Name, Desc) {}
-
-      // --- Required implementations -----------
-
-      /// \brief Returns the mag sites
-      Eigen::VectorXd evaluate(const Configuration &config) const override;
-
-      /// \brief Clone using copy constructor
-      std::unique_ptr<MagBase> clone() const {
-        return std::unique_ptr<MagBase>(this->_clone());
-      }
-
-      // --- Specialized implementation -----------
-
-      /// \brief Returns true if the Configuration has relaxed_mag
-      bool validate(const Configuration &config) const override;
-
-    private:
-
-      /// \brief Clone using copy constructor
-      MagBase *_clone() const override {
-        return new MagBase(*this);
-      }
-
-    };
-
-
     /// \brief Returns correlation values
     ///
     /// Evaluated basis function values, normalized per primitive cell;
@@ -302,7 +261,7 @@ namespace CASM {
       // --- Specialized implementation -----------
 
       /// \brief If not yet initialized, use the global clexulator from the PrimClex
-      void init(const Configuration &_tmplt) const override;
+      bool init(const Configuration &_tmplt) const override;
 
       /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
       /// 'corr(clex_name,index_expression)'
@@ -318,6 +277,60 @@ namespace CASM {
 
       mutable Clexulator m_clexulator;
       mutable std::string m_clex_name;
+
+    };
+
+    /// \brief Returns correlation values
+    ///
+    /// Evaluated gradient of basis function values, w.r.t. specified DoF
+    ///
+    class GradCorr : public MatrixXdAttribute<Configuration> {
+
+    public:
+
+      static const std::string Name;
+
+      static const std::string Desc;
+
+
+      GradCorr() : MatrixXdAttribute<Configuration>(Name, Desc), m_clex_name("") {}
+
+      GradCorr(const Clexulator &clexulator) :
+        MatrixXdAttribute<Configuration>(Name, Desc),
+        m_clexulator(clexulator) {}
+
+
+      // --- Required implementations -----------
+
+      /// \brief Returns the atom fraction
+      Eigen::MatrixXd evaluate(const Configuration &config) const override;
+
+      /// \brief Clone using copy constructor
+      std::unique_ptr<GradCorr> clone() const {
+        return std::unique_ptr<GradCorr>(this->_clone());
+      }
+
+
+      // --- Specialized implementation -----------
+
+      /// \brief If not yet initialized, use the global clexulator from the PrimClex
+      bool init(const Configuration &_tmplt) const override;
+
+      /// \brief Expects 'gradcorr(dof_name)', 'gradcorr(dof_name,clex_name)', 'gradcorr(dof_name,index_expression)', or
+      /// 'gradcorr(dof_name,clex_name,index_expression)'
+      bool parse_args(const std::string &args) override;
+
+
+    private:
+
+      /// \brief Clone using copy constructor
+      GradCorr *_clone() const override {
+        return new GradCorr(*this);
+      }
+
+      mutable Clexulator m_clexulator;
+      mutable std::string m_clex_name;
+      mutable DoFKey m_key;
 
     };
 
@@ -355,7 +368,7 @@ namespace CASM {
       // eci were obtained ok
 
       /// \brief If not yet initialized, use the global clexulator and eci from the PrimClex
-      void init(const Configuration &_tmplt) const override;
+      bool init(const Configuration &_tmplt) const override;
 
       /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy_per_species)'
       bool parse_args(const std::string &args) override;
@@ -495,6 +508,9 @@ namespace CASM {
 
   template<>
   VectorXdAttributeDictionary<Configuration> make_vectorxd_dictionary<Configuration>();
+
+  template<>
+  MatrixXdAttributeDictionary<Configuration> make_matrixxd_dictionary<Configuration>();
 
   /** @} */
 
