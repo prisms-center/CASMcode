@@ -5,6 +5,8 @@ from casm.quantumespresso.quantumespresso import \
     QuantumEspressoError,\
     QuantumEspressoWarning,\
     error_check,\
+    continue_job,\
+    complete_job,\
     run
     
 from casm.quantumespresso.relax import Relax
@@ -14,4 +16,6 @@ __all__ = ['FreezeError',
     'QuantumEspressoWarning',
     'Relax',
     'error_check',
+    'continue_job',
+    'complete_job',
     'run']
