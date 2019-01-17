@@ -439,6 +439,119 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+  /// Returns array of orbits of high-symmetry directions in the vector space on
+  /// which this representation is defined. This routine is different from special_total_directions
+  /// in that it does not rely on the character tables to generate the special directions. The
+  /// routine also adopts the faster method to generating the irreducible transformation matrix
+
+  multivector< Eigen::VectorXd >::X<3>
+  calc_special_total_directions_experimental(SymGroupRep const &_rep,
+                                             const SymGroup &head_group){
+    auto symmetrizer_func = [](const SymGroupRep &t_rep, const SymGroup &head){return Eigen::MatrixXd::Identity(_rep.MatrixXd(head_group[0])->rows(),
+                                                                                                                _rep.MatrixXd(head_group[0])->rows());};
+    //std::pair<Eigen::MatrixXd, std::vector<Index>> itrans = _get_irrep_trans_mat_blind(head_group);
+    std::pair< Eigen::MatrixXd, std::vector<Index> > itrans = get_irrep_trans_mat_and_dims(_rep,head_group,symmetrizer_func);
+    auto sgroups = head_group.small_subgroups();
+
+    Eigen::MatrixXd trans_mat = itrans.first;
+    std::vector<Index> idims = itrans.second;
+
+    std::vector<std::vector<Eigen::VectorXd>> t_result;
+    Eigen::MatrixXd R;
+
+    // Loop over irrep subspaces, corresponding to elements of idims
+    for (Index l = 0, i = 0; l < trans_mat.rows(); l += idims[i++]) {
+      t_result.push_back(std::vector<Eigen::VectorXd>());
+      // Loop over small (i.e., cyclic) subgroups and hope that each special
+      // direction is invariant to at least one small subgroup
+      for (auto const &orbit : sgroups) {
+        // Reynolds for small subgroup *(orbit.begin()) in irrep subspace i
+        R.setZero(idims[i], idims[i]);
+
+        // trans_mat.block(l,0,idims[i],trans_mat.cols()) is transformation matrix
+        // from big vector space to irreducible subspace
+        for (Index op : *(orbit.begin())) {
+          R += trans_mat.block(l, 0, idims[i], trans_mat.cols()) *
+               (*(MatrixXd(head_group[op]))) *
+               trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose();
+        }
+        // Find spanning vectors of column space of R
+        auto QR = R.colPivHouseholderQr();
+        QR.setThreshold(1e-5);
+
+        // If only one spanning vector, it is special direction
+        if (QR.rank() > 1)
+          continue;
+
+        Eigen::MatrixXd Q = QR.householderQ();
+
+        // Convert from irrep subspace back to total space and push_back
+        t_result.back().push_back(
+            trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose() *
+            Q.col(0));
+      }
+    }
+    multivector<Eigen::VectorXd>::X<3> special_directions;
+
+    // std::vector<std::vector<Eigen::VectorXd>> special_directions;
+    double vector_norm_compare_tolerance = 0.001;
+    // Cleaning up duplicate directions in t_result:
+    for (auto irrep : t_result) {
+      special_directions.push_back(std::vector<std::vector<Eigen::VectorXd>>());
+      // special_directions.push_back(std::vector<Eigen::VectorXd>());
+      for (auto direction_iterator = irrep.begin();
+           direction_iterator != irrep.end(); direction_iterator++) {
+        if (_is_new_direction(special_directions, *direction_iterator,
+                              vector_norm_compare_tolerance))
+          _generate_special_direction_orbit(special_directions.back(),
+                                            *direction_iterator, trans_mat,
+                                            head_group);
+      }
+    }
+
+    // t_result may contain duplicates, or elements that are equivalent by
+    // symmetry. To discern more info, it would be necessary to find the orbit of
+    // each element of t_result, and then exclude difficults. this would also
+    // reveal the invariant subgroups.
+    return special_directions;
+    }
+
+    ool _is_new_direction(
+        const multivector<Eigen::VectorXd>::X<3> &special_directions,
+        const Eigen::VectorXd &test_direction,
+        double vector_norm_compare_tolerance) {
+      bool is_unique = true;
+      for (auto irrep : special_directions) {
+        for (auto orbit : irrep) {
+          for (direction : orbit) {
+            if (std::abs((*(compare_direction_iterator) - *(direction_iterator))
+                             .norm()) <= vector_norm_compare_tolerance) {
+              is_unique = false;
+              break;
+            }
+          }
+          if (!is_unique)
+            break;
+        }
+        if (!is_unique)
+          break;
+      }
+      return is_unique;
+    }
+
+    void _generate_special_direction_orbit(
+        std::vector<std::vector<Eigen::VectorXd>> &irrep_directions,
+        const Eigen::VectorXd &direction, const Eigen::MatrixXd &irrep_trans_mat,
+        const SymGroup &head_group) {
+      std::vector<Eigen::VectorXd> orbit;
+      for (auto operation : head_group) {
+        sym_transformed_direction =
+            (trans_mat * MatrixXd(operation) * trans_mat.transpose()) * direction;
+      }
+      return;
+    }
+    
+  //*******************************************************************************************
   std::vector<std::vector< Eigen::VectorXd> > special_irrep_directions(SymGroupRep const &_rep, const SymGroup &head_group) {
     if(!_rep.size() || !(_rep.MatrixXd(head_group[0]))) {
       default_err_log() << "CRITICAL ERROR: In special_irrep_directions() called on imcompatible SymGroupRep.\n Exiting...\n";
@@ -1478,80 +1591,6 @@ namespace CASM {
     return new_rep;
   }
 
-// //*******************************************************************************************
-// /// Returns array of orbits of high-symmetry directions in the vector space on
-// /// which this representation is defined.
-//
-// std::vector<std::vector<Eigen::VectorXd>>
-// SymGroupRep::calc_special_total_directions_experimental(
-//     const SymGroup &head_group) const {
-//   std::pair<Eigen::MatrixXd, std::vector<Index>> itrans =
-//       _get_irrep_trans_mat_blind(head_group);
-//   auto sgroups = head_group._small_subgroups();
-//
-//   Eigen::MatrixXd trans_mat = itrans.first;
-//   std::vector<Index> idims = itrans.second;
-//
-//   std::vector<std::vector<Eigen::VectorXd>> t_result;
-//   Eigen::MatrixXd R;
-//
-//   // Loop over irrep subspaces, corresponding to elements of idims
-//   for (Index l = 0, i = 0; l < trans_mat.rows(); l += idims[i++]) {
-//     t_result.push_back(std::vector<Eigen::VectorXd>());
-//     // Loop over small (i.e., cyclic) subgroups and hope that each special
-//     // direction is invariant to at least one small subgroup
-//     for (auto const &orbit : sgroups) {
-//       // Reynolds for small subgroup *(orbit.begin()) in irrep subspace i
-//       R.setZero(idims[i], idims[i]);
-//
-//       // trans_mat.block(l,0,idims[i],trans_mat.cols()) is transformation matrix
-//       // from big vector space to irreducible subspace
-//       for (Index op : *(orbit.begin())) {
-//         R += trans_mat.block(l, 0, idims[i], trans_mat.cols()) *
-//              (*(MatrixXd(head_group[op]))) *
-//              trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose();
-//       }
-//       // Find spanning vectors of column space of R
-//       auto QR = R.colPivHouseholderQr();
-//       QR.setThreshold(1e-5);
-//
-//       // If only one spanning vector, it is special direction
-//       if (QR.rank() > 1)
-//         continue;
-//
-//       Eigen::MatrixXd Q = QR.householderQ();
-//
-//       // Convert from irrep subspace back to total space and push_back
-//       t_result.back().push_back(
-//           trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose() *
-//           Q.col(0));
-//     }
-//   }
-//   multivector<Eigen::VectorXd>::X<3> special_directions;
-//
-//   // std::vector<std::vector<Eigen::VectorXd>> special_directions;
-//   double vector_norm_compare_tolerance = 0.001;
-//   // Cleaning up duplicate directions in t_result:
-//   for (auto irrep : t_result) {
-//     special_directions.push_back(std::vector<std::vector<Eigen::VectorXd>>());
-//     // special_directions.push_back(std::vector<Eigen::VectorXd>());
-//     for (auto direction_iterator = irrep.begin();
-//          direction_iterator != irrep.end(); direction_iterator++) {
-//       if (_is_new_direction(special_directions, *direction_iterator,
-//                             vector_norm_compare_tolerance))
-//         _generate_special_direction_orbit(special_directions.back(),
-//                                           *direction_iterator, trans_mat,
-//                                           head_group);
-//     }
-//   }
-//
-//   // t_result may contain duplicates, or elements that are equivalent by
-//   // symmetry. To discern more info, it would be necessary to find the orbit of
-//   // each element of t_result, and then exclude difficults. this would also
-//   // reveal the invariant subgroups.
-//   return special_directions;
-//   }
-   
   //*******************************************************************************************
 
   jsonParser &to_json(const SymGroupRep &rep, jsonParser &json) {
