@@ -1130,7 +1130,10 @@ namespace CASM {
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep, const SymGroup &head_group) {
+  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep,
+                                                                              const SymGroup &head_group,
+                                                                              std::function<Eigen::MatrixXd(const SymGroupRep &,
+                                                                                const SymGroup &head_group)> symmetrizer_func) {
 
     std::vector<Index> irrep_dims;
     if(!_rep.size() || !head_group.size() || !_rep.MatrixXd(head_group[0])) {
@@ -1284,7 +1287,8 @@ namespace CASM {
                 SymGroupRep t_rep(coord_transformed_copy(_rep, ttrans_mat.transpose()));
                 //std::cout << "***Adding columns!\n" << Eigen::MatrixXd(qr.householderQ()).leftCols(rnk) << "\n\n";
                 //trans_mat.block(0, Nfound, dim, rnk) = Eigen::MatrixXd(qr.householderQ()).leftCols(rnk);
-                trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * (symmetrized_irrep_trans_mat(t_rep, head_group)).transpose();
+                //trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * (symmetrized_irrep_trans_mat(t_rep, head_group)).transpose();
+                trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * symmetrizer_func(t_rep,head_group);
                 Nfound += rnk;
                 found_new_irreps = true;
                 //std::cout << "trans_mat is now: \n" << trans_mat << "\n\n";
@@ -1324,8 +1328,9 @@ namespace CASM {
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
   Eigen::MatrixXd get_irrep_trans_mat_blind(SymGroupRep const &_rep, const SymGroup &head_group) {
-    return get_irrep_trans_mat_and_dims(_rep, head_group).first;
-
+    return get_irrep_trans_mat_and_dims(_rep,
+                                        head_group,
+                                        [](const SymGroupRep &t_rep, const SymGroup &head) {return (symmetrized_irrep_trans_mat(t_rep, head)).transpose();}).first;
   }
 
   //*******************************************************************************************
@@ -1473,6 +1478,80 @@ namespace CASM {
     return new_rep;
   }
 
+// //*******************************************************************************************
+// /// Returns array of orbits of high-symmetry directions in the vector space on
+// /// which this representation is defined.
+//
+// std::vector<std::vector<Eigen::VectorXd>>
+// SymGroupRep::calc_special_total_directions_experimental(
+//     const SymGroup &head_group) const {
+//   std::pair<Eigen::MatrixXd, std::vector<Index>> itrans =
+//       _get_irrep_trans_mat_blind(head_group);
+//   auto sgroups = head_group._small_subgroups();
+//
+//   Eigen::MatrixXd trans_mat = itrans.first;
+//   std::vector<Index> idims = itrans.second;
+//
+//   std::vector<std::vector<Eigen::VectorXd>> t_result;
+//   Eigen::MatrixXd R;
+//
+//   // Loop over irrep subspaces, corresponding to elements of idims
+//   for (Index l = 0, i = 0; l < trans_mat.rows(); l += idims[i++]) {
+//     t_result.push_back(std::vector<Eigen::VectorXd>());
+//     // Loop over small (i.e., cyclic) subgroups and hope that each special
+//     // direction is invariant to at least one small subgroup
+//     for (auto const &orbit : sgroups) {
+//       // Reynolds for small subgroup *(orbit.begin()) in irrep subspace i
+//       R.setZero(idims[i], idims[i]);
+//
+//       // trans_mat.block(l,0,idims[i],trans_mat.cols()) is transformation matrix
+//       // from big vector space to irreducible subspace
+//       for (Index op : *(orbit.begin())) {
+//         R += trans_mat.block(l, 0, idims[i], trans_mat.cols()) *
+//              (*(MatrixXd(head_group[op]))) *
+//              trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose();
+//       }
+//       // Find spanning vectors of column space of R
+//       auto QR = R.colPivHouseholderQr();
+//       QR.setThreshold(1e-5);
+//
+//       // If only one spanning vector, it is special direction
+//       if (QR.rank() > 1)
+//         continue;
+//
+//       Eigen::MatrixXd Q = QR.householderQ();
+//
+//       // Convert from irrep subspace back to total space and push_back
+//       t_result.back().push_back(
+//           trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose() *
+//           Q.col(0));
+//     }
+//   }
+//   multivector<Eigen::VectorXd>::X<3> special_directions;
+//
+//   // std::vector<std::vector<Eigen::VectorXd>> special_directions;
+//   double vector_norm_compare_tolerance = 0.001;
+//   // Cleaning up duplicate directions in t_result:
+//   for (auto irrep : t_result) {
+//     special_directions.push_back(std::vector<std::vector<Eigen::VectorXd>>());
+//     // special_directions.push_back(std::vector<Eigen::VectorXd>());
+//     for (auto direction_iterator = irrep.begin();
+//          direction_iterator != irrep.end(); direction_iterator++) {
+//       if (_is_new_direction(special_directions, *direction_iterator,
+//                             vector_norm_compare_tolerance))
+//         _generate_special_direction_orbit(special_directions.back(),
+//                                           *direction_iterator, trans_mat,
+//                                           head_group);
+//     }
+//   }
+//
+//   // t_result may contain duplicates, or elements that are equivalent by
+//   // symmetry. To discern more info, it would be necessary to find the orbit of
+//   // each element of t_result, and then exclude difficults. this would also
+//   // reveal the invariant subgroups.
+//   return special_directions;
+//   }
+   
   //*******************************************************************************************
 
   jsonParser &to_json(const SymGroupRep &rep, jsonParser &json) {
@@ -1487,4 +1566,3 @@ namespace CASM {
 
 
 }
-

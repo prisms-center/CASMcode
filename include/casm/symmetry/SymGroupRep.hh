@@ -260,7 +260,10 @@ namespace CASM {
   /// the new basis vectors in terms of the old such that
   /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
   /// The second element is the dimension of irreducible subspaces, ordered identically to the rows of the transformation matrix
-  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep, const SymGroup &head_group);
+  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep,
+                                                                              const SymGroup &head_group,
+                                                                              std::function<Eigen::MatrixXd(const SymGroupRep &,
+                                                                                const SymGroup &head_group)> symmetrizer_func);
 
 
   /// \brief Make copy of (*this) that is transformed so that axes are oriented along high-symmetry direction

@@ -97,7 +97,9 @@ namespace CASM {
     std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group);
 
     //SymGroupRep::RemoteHandle rep(rep_info.first, rep_info.second);
-    return get_irrep_trans_mat_and_dims(rep_info.first.representation(rep_info.second), rep_info.first);
+    return get_irrep_trans_mat_and_dims(rep_info.first.representation(rep_info.second),
+                                        rep_info.first,
+                                        [](const SymGroupRep &t_rep, const SymGroup &head) {return (symmetrized_irrep_trans_mat(t_rep, head)).transpose();});
 
   }
 }
