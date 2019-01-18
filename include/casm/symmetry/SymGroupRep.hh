@@ -199,6 +199,21 @@ namespace CASM {
   /// Direction vectors are normalized to unit length. The total set of all directions is guaranteed to span the space.
   multivector<Eigen::VectorXd>::X<3> special_total_directions(SymGroupRep const &_rep, const SymGroup &head_group);
 
+  /// \brief finds high-symmetry directions within vector space supporting _rep wrt symmetry of head_group using the small_subgroups of head_group
+  /// \result Set of directions in the vector space on which '_rep' is defined, such that each direction is invariant
+  /// a subgroup of 'head_group'. These are constructed by finding irreps of _rep and then calling special_irrep_directions on each
+  /// result[i] is the set of special directions belonging to the i'th irrep constituting _rep
+  /// result[i][j] s an orbit of symmetrically equivalent directions, and result[i][j][k] is an individual direction.
+  /// Direction vectors are normalized to unit length. This routine is EXPERIMENTAL, USE AT YOUR OWN RISK
+  multivector< Eigen::VectorXd >::X<3> calc_special_total_directions_experimental(SymGroupRep const &_rep, const SymGroup &head_group,double vector_norm_compare_tolerance = 0.001);
+
+  /// \brief
+  bool is_new_direction(const multivector<Eigen::VectorXd>::X<3> &special_directions,const Eigen::VectorXd &test_direction,double vector_norm_compare_tolerance);
+
+  /// \brief generates the orbit of equivalent directions to direction by applying the operations of head_group
+  /// \result A set of directions that are equivalent to direction under the application of head_group operations
+  std::vector<Eigen::VectorXd> generate_special_direction_orbit(Eigen::VectorXd direction,const SymGroup &head_group,double vector_norm_compare_tolerance);
+
   /// \brief finds high-symmetry subspaces within vector space supporting _rep, wrt symmetry of head_group
   /// High-symmetry subspaces are closed under the action of a nontrivial subgroup of head_group, without spanning
   /// the entire vector space supporting _rep

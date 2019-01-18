@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <vector>
 
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/Comparisons.hh"
