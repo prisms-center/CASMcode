@@ -212,7 +212,7 @@ namespace CASM {
 
   /// \brief generates the orbit of equivalent directions to direction by applying the operations of head_group
   /// \result A set of directions that are equivalent to direction under the application of head_group operations
-  std::vector<Eigen::VectorXd> generate_special_direction_orbit(Eigen::VectorXd direction,const SymGroup &head_group,double vector_norm_compare_tolerance);
+  std::vector<Eigen::VectorXd> generate_special_direction_orbit(Eigen::VectorXd direction,const SymGroupRep &_rep,const SymGroup &head_group,double vector_norm_compare_tolerance);
 
   /// \brief finds high-symmetry subspaces within vector space supporting _rep, wrt symmetry of head_group
   /// High-symmetry subspaces are closed under the action of a nontrivial subgroup of head_group, without spanning

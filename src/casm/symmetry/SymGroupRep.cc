@@ -475,7 +475,7 @@ namespace CASM {
         // from big vector space to irreducible subspace
         for(Index op : * (orbit.begin())) {
           R += trans_mat.block(l, 0, idims[i], trans_mat.cols()) *
-               (*(MatrixXd(head_group[op]))) *
+                *(_rep.MatrixXd(head_group[op])) *
                trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose();
         }
         // Find spanning vectors of column space of R
@@ -504,7 +504,7 @@ namespace CASM {
       special_directions.push_back(std::vector<std::vector<Eigen::VectorXd>>());
       for(auto _dir: irrep){
           if(is_new_direction(special_directions,_dir,vector_norm_compare_tolerance))
-            special_directions.back().push_back(generate_special_direction_orbit(_dir,head_group,vector_norm_compare_tolerance));
+            special_directions.back().push_back(generate_special_direction_orbit(_dir,_rep,head_group,vector_norm_compare_tolerance));
         }
     }
     return special_directions;
@@ -517,9 +517,8 @@ namespace CASM {
     bool is_unique = true;
     for(auto irrep : special_directions) {
       for(auto orbit : irrep) {
-        for(direction : orbit) {
-          if(std::abs((*(compare_direction_iterator) - * (direction_iterator))
-                      .norm()) <= vector_norm_compare_tolerance) {
+        for(auto direction : orbit) {
+          if(std::abs((direction - test_direction).norm()) <= vector_norm_compare_tolerance) {
             is_unique = false;
             break;
           }
@@ -536,14 +535,15 @@ namespace CASM {
   //*******************************************************************************************
   std::vector<Eigen::VectorXd> generate_special_direction_orbit(
     Eigen::VectorXd direction,
+    const SymGroupRep &_rep,
     const SymGroup &head_group,
     double vector_norm_compare_tolerance) {
     std::vector<Eigen::VectorXd> orbit;
     for(auto operation : head_group) {
-      sym_transformed_direction = MatrixXd(operation) * direction;
+      Eigen::VectorXd sym_transformed_direction = *(_rep.MatrixXd(operation)) * direction;
       bool is_unique = true;
       for(auto sym_dir : orbit){
-          if(std::abs((*(compare_direction_iterator) - * (direction_iterator)).norm()) <= vector_norm_compare_tolerance){
+          if(std::abs((sym_dir - sym_transformed_direction).norm()) <= vector_norm_compare_tolerance){
               is_unique = false;
               break;
           }
