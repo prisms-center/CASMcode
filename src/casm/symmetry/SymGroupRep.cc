@@ -478,20 +478,45 @@ namespace CASM {
                 *(_rep.MatrixXd(head_group[op])) *
                trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose();
         }
+        // Use SVD to figure out the rank of the matrix. QR rank in Eigen
+        // seems to have a bug.
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(R);
+        int svd_rank = 0;
+        for(auto singular_index = 0 ; singular_index<svd.singularValues().size() ; singular_index++)
+          svd_rank += (std::abs(svd.singularValues()[singular_index]) > 1e-5);
+        if(svd_rank != 1)
+          continue;
+
         // Find spanning vectors of column space of R
         auto QR = R.colPivHouseholderQr();
         QR.setThreshold(1e-5);
 
-        // If only one spanning vector, it is special direction
-        if(QR.rank() > 1)
-          continue;
+        // // If only one spanning vector, it is special direction
+        // if(QR.rank() > 1)
+        //   continue;
 
         Eigen::MatrixXd Q = QR.householderQ();
-
+        // // PRINT OUT  the Reynolds matrix if its going to be added
+        // std::cout<< " ---------------------------------------------------------- " << std::endl;
+        // std::cout<< R <<std::endl;
         // Convert from irrep subspace back to total space and push_back
         t_result.back().push_back(
           trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose() *
           Q.col(0));
+        // std::cout<< " The added vector is : "<<t_result.back().back().transpose()<<std::endl;
+        // //Calculate the rank using an SVD decomposition
+        // Eigen::JacobiSVD<Eigen::MatrixXd> svd(R);
+        // svd.setThreshold(1e-5);
+        // std::cout<<"The SVD rank is          : "<<svd.rank()<<std::endl;
+        // std::cout<<"The singular values are  : "<<svd.singularValues().transpose()<<std::endl;
+        // //Loop over the SVD and count the number of non-zero singular values
+        // int svd_rank = 0;
+        // for(auto singular_index = 0 ; singular_index<svd.singularValues().size() ; singular_index++)
+        //   svd_rank += (std::abs(svd.singularValues()[singular_index]) > 1e-5);
+        // std::cout<<"The calculated rank is   : "<<svd_rank<<std::endl;
+        // std::cout<<"The threshold is         : "<<svd.threshold()<<std::endl;
+        // std::cout<<"The maxPivot  is         : "<<QR.maxPivot()<<std::endl;
+        // std::cout<< " ---------------------------------------------------------- " << std::endl;
       }
     }
     // t_result may contain duplicates, or elements that are equivalent by
@@ -505,6 +530,9 @@ namespace CASM {
       for(auto _dir: irrep){
           if(is_new_direction(special_directions,_dir,vector_norm_compare_tolerance))
             special_directions.back().push_back(generate_special_direction_orbit(_dir,_rep,head_group,vector_norm_compare_tolerance));
+          //explicitly consider the negative direction as well
+          if(is_new_direction(special_directions,-_dir,vector_norm_compare_tolerance))
+            special_directions.back().push_back(generate_special_direction_orbit(-_dir,_rep,head_group,vector_norm_compare_tolerance));
         }
     }
     return special_directions;
@@ -1431,8 +1459,8 @@ namespace CASM {
     for(Index i = 0; i < head_group.size(); i++) {
       block_shape += (trans_mat.transpose() * (*_rep.MatrixXd(head_group[i])) * trans_mat).cwiseAbs2();
     }
-    std::cout << "BLOCK MATRIX IS:\n"
-              << block_shape << "\n\n";
+    // std::cout << "BLOCK MATRIX IS:\n"
+    //           << block_shape << "\n\n";
     //std::cout << "IRREP DIMENSIONS ARE: " << irrep_dims << "\n\n";
     return std::make_pair(trans_mat.transpose(), irrep_dims);
 
