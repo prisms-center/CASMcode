@@ -6,6 +6,7 @@ import json
 from os import getcwd
 from os.path import join, abspath
 import sys
+import six
 
 from casm.misc import compat, noindent
 from casm.project import Project, Selection
@@ -128,7 +129,9 @@ def main(argv = None):
             output = Relax.properties(finaldir)
           calc_props = proj.dir.calculated_properties(configname, clex)
           print("writing:", calc_props)
-          compat.dump(json, output, calc_props, 'w', cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)
+          with open(calc_props, 'wb') as f:
+              f.write(six.u(json.dumps(output, cls=noindent.NoIndentEncoder, indent=2)).encode('utf-8'))
+        #compat.dump(json, output, calc_props, 'w', cls=noindent.NoIndentEncoder, indent=4, sort_keys=True)
         except:
           print(("Unable to report properties for directory {}.\n" 
                 "Please verify that it contains a completed calculation.".format(configdir)))
