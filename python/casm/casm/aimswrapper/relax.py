@@ -16,7 +16,7 @@ from casm.aims.io.geometry import Geometry
 
 
 class Relax(object):
-    """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
+    """The Relax class contains functions for setting up, executing, and parsing a relaxation.
 
         The relaxation creates the following directory structure:
         config/
@@ -27,10 +27,9 @@ class Relax(object):
               run.final/
 
         'run.i' directories are only created when ready.
-        'run.final' is a final constant volume run {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}
+        'run.final' is a final run
 
-        This automatically looks for VASP settings files using:
-          casm.project.DirectoryStructure.settings_path_crawl
+        This automatically looks for the settings files using casm.project.DirectoryStructure.settings_path_crawl
 
     Attributes
     ----------
@@ -42,7 +41,7 @@ class Relax(object):
         CASM project directory hierarchy
       
       settings: dict
-        Settings for pbs and the relaxation, see vaspwrapper.read_settings
+        Settings for pbs and the relaxation, see casm.project.io.read_project_settings
       
       configdir: str
         Directory where configuration results are stored. The result of:
@@ -62,18 +61,17 @@ class Relax(object):
         Currently, fixed to self.casm_settings.default_clex.
     
     """
-    def __init__(self, configdir=None, auto=True, sort=True):
+    def __init__(self, configdir=None, auto=False, sort=True):
         """
-        Construct a VASP relaxation job object.
+        Construct a relaxation job object.
 
         Arguments
         ----------
     
             configdir: str, optional, default=None
-              Path to configuration directory. If None, uses the current working
-              directory
+              Path to configuration directory. If None, uses the current working directory
             
-            auto: boolean, optional, default=True,
+            auto: boolean, optional, default=True
               Use True to use the pbs module's JobDB to manage pbs jobs
             
             sort: boolean, optional, default=True,
@@ -183,6 +181,7 @@ class Relax(object):
                           "  Jobstatus:" + job["jobstatus"] + "  Not submitting.")
                     sys.stdout.flush()
                     return
+
         # second, only submit a job if relaxation status is "incomplete"
         # construct the Relax object
         relaxation = AimsRelax(self.calcdir, self.run_settings())
