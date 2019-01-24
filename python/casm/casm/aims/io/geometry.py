@@ -208,7 +208,7 @@ class Geometry:
                     pos[0] = float(word[1])
                     pos[1] = float(word[2])
                     pos[2] = float(word[3])
-                    atom_name = str(word[4])
+                    atom_name = word[4].decode('UTF-8')
                 except ValueError:
                     raise GeometryError("Error reading basis coordinate: '" + line + "'")
 
@@ -224,7 +224,7 @@ class Geometry:
                     pos[0] = float(word[1])
                     pos[1] = float(word[2])
                     pos[2] = float(word[3])
-                    atom_name = str(word[4])
+                    atom_name = word[4].decode('UTF-8')
                 except ValueError:
                     raise GeometryError("Error reading basis coordinate: '" + line + "'")
 
