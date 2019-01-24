@@ -200,43 +200,39 @@ class Geometry:
                 lat.append([float(x) for x in line.split()[1:4]])
 
             if b'atom ' in line:
-                #                    print line
                 self.coord_mode = 'cartesian'
                 cart = True
                 atom_read = True
                 word = line.split()
                 try:
-                    pos[0] = word[1]
-                    pos[1] = word[2]
-                    pos[2] = word[3]
-                    atom_name = word[4]
+                    pos[0] = float(word[1])
+                    pos[1] = float(word[2])
+                    pos[2] = float(word[3])
+                    atom_name = str(word[4])
                 except ValueError:
                     raise GeometryError("Error reading basis coordinate: '" + line + "'")
 
-#                sd_flags = self.check_constraints(cont, ln+1, total_lines)
-                sd_flags = ''
-                print('reading SD: ', sd_flags)
+                # sd_flags = self.check_constraints(cont, ln+1, total_lines)
+                # print('reading SD: ', sd_flags)
 
             if b'atom_frac ' in line:
-                #                    print line
                 self.coord_mode = 'direct'
                 cart = False
                 atom_read = True
                 word = line.split()
                 try:
-                    pos[0] = word[1]
-                    pos[1] = word[2]
-                    pos[2] = word[3]
-                    atom_name = word[4]
+                    pos[0] = float(word[1])
+                    pos[1] = float(word[2])
+                    pos[2] = float(word[3])
+                    atom_name = str(word[4])
                 except ValueError:
                     raise GeometryError("Error reading basis coordinate: '" + line + "'")
 
-#                sd_flags = self.check_constraints(cont, ln+1, total_lines)
-                sd_flags = ''
-                print('reading SD: ', sd_flags)
+                # sd_flags = self.check_constraints(cont, ln+1, total_lines)
+                # print('reading SD: ', sd_flags)
 
             if atom_read:
-                #                    print 'adding atom: ', atom_name, SD_FLAGS
+                # print 'adding atom: ', atom_name, SD_FLAGS
                 sd_flags = 'T T T'
                 self.basis.append(Site(cart=cart, position=np.array(pos),
                                        sd_flags=sd_flags, occupant=atom_name, occ_alias=atom_name))
