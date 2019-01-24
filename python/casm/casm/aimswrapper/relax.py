@@ -4,6 +4,8 @@ import json
 
 from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
 
+from casm.wrapper.misc import confname_as_jobname
+
 from casm import wrapper
 from casm.project import DirectoryStructure, ProjectSettings
 from casm.misc.noindent import NoIndent, NoIndentEncoder
@@ -50,9 +52,6 @@ class Relax(object):
       configname: str
         The name of the configuration to be calculated
       
-      auto: boolean
-        True if using pbs module's JobDB to manage pbs jobs
-      
       sort: boolean
         True if sorting atoms in POSCAR by type
       
@@ -61,7 +60,7 @@ class Relax(object):
         Currently, fixed to self.casm_settings.default_clex.
     
     """
-    def __init__(self, configdir=None, auto=False, sort=True):
+    def __init__(self, configdir=None, auto=True, sort=True):
         """
         Construct a relaxation job object.
 
@@ -70,9 +69,6 @@ class Relax(object):
     
             configdir: str, optional, default=None
               Path to configuration directory. If None, uses the current working directory
-            
-            auto: boolean, optional, default=True
-              Use True to use the pbs module's JobDB to manage pbs jobs
             
             sort: boolean, optional, default=True,
               Use True to sort atoms in POSCAR by type
@@ -136,7 +132,7 @@ class Relax(object):
             self.settings["prerun"] = None
         if "postrun" not in self.settings:
             self.settings["postrun"] = None
-        
+
         self.auto = auto
         self.sort = sort
         self.strict_kpoints = self.settings['strict_kpoints']
@@ -244,7 +240,7 @@ class Relax(object):
         sys.stdout.flush()
 
         # construct a pbs.Job
-        job = Job(name=wrapper.jobname(self.configdir),
+        job = Job(name=confname_as_jobname(self.configdir),
                   account=self.settings["account"],
                   nodes=int(self.settings["nodes"]),
                   ppn=int(ncpus),
