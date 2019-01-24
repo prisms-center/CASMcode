@@ -1,5 +1,7 @@
 import json
 
+from casm.project.io import read_project_settings
+
 from casm.aims.aims import AimsError
 from casm.aims.io.io import DEFAULT_AIMS_COPY_LIST, DEFAULT_AIMS_MOVE_LIST
 
@@ -42,7 +44,7 @@ def read_settings(filename):
     """
     try:
         file = open(filename)
-        settings = json.load(file)
+        settings = read_project_settings(filename)
         file.close()
     except IOError as e:
         print("Error reading settings file:", filename)
