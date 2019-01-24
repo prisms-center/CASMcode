@@ -12,6 +12,8 @@ import casm.aimswrapper
 import casm.aims
 import casm.aims.io.geometry
 
+from casm.aims.io.geometry import Geometry
+from casm.aims.io.basis import basis_settings
 from casm.aims.io.io import DEFAULT_AIMS_GZIP_LIST, DEFAULT_AIMS_COPY_LIST, \
                             DEFAULT_AIMS_REMOVE_LIST, DEFAULT_AIMS_MOVE_LIST
 
@@ -102,8 +104,8 @@ def continue_job(jobdir, contdir, settings):
     if os.path.isfile(os.path.join(jobdir, "geometry.in.next_step")) and \
             os.path.getsize(os.path.join(jobdir, "geometry.in.next_step")) > 0:
         shutil.move(os.path.join(jobdir, "control.in"), os.path.join(contdir, "control.in"))
-        my_basis = casm.aims.io.basis.basis_settings(basisfile)
-        newgeo = casm.aims.io.geometry.Geometry(os.path.join(jobdir, "geometry.in.next_step"), my_basis)
+        my_basis = basis_settings(basisfile)
+        newgeo = Geometry(os.path.join(jobdir, "geometry.in.next_step"))
         newgeo.write(os.path.join(contdir, "geometry.in"), my_basis)
         print("  cp geometry.in.next_step -> geometry.in (and added default moments)")
     else:

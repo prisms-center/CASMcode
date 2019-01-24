@@ -168,8 +168,6 @@ class Relax(object):
         sub_id = db.select_regex_id("rundir", self.calcdir)
 
         if sub_id is not []:
-            print("JobID:" + sub_id)
-            sys.stdout.flush()
             for j in sub_id:
                 job = db.select_job(j)
                 if job["jobstatus"] != "?":
