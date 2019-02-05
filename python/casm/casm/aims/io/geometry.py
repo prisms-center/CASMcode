@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from casm.vasp.io.poscar import Poscar
+from casm.vasp.io.poscar import Poscar, Site
 from casm.project import DirectoryStructure, ProjectSettings
 import casm.aimswrapper
 
@@ -12,27 +12,6 @@ class GeometryError(Exception):
 
     def __str__(self):
         return self.msg
-
-
-class Site:
-    """ Site in a basis.
-
-        Contains:
-            self.cart = True if cartesian coordinate
-            self.sd_flag = string for selective dynamics description
-            self.occupant = CASM specie name, empty string by default
-            self.occ_alias = alias species name, empty string by default
-            self.position = np.array coordinate
-    """
-    def __init__(self, cart, position, sd_flags='', occupant='', occ_alias=''):
-        """ Site constructor """
-        self.cart = cart
-        self.sd_flags = sd_flags
-        self.occupant = occupant
-        self.occ_alias = occ_alias
-        if not isinstance(position, np.ndarray):
-            raise GeometryError("Attempting to construct a Site and 'position' is not a numpy ndarray")
-        self.position = position
 
 
 class Geometry:
@@ -194,13 +173,15 @@ class Geometry:
         atom_name = None
         cart = None
         lat = []
-        for line in file:
+#        ln = 0
+        cont = file.readlines()
+        for line in cont:
             pos = np.empty(3)
+            sd_flags = 'T T T'
             if b'lattice_vector' in line:
                 lat.append([float(x) for x in line.split()[1:4]])
 
             if b'atom ' in line:
-                #                    print line
                 self.coord_mode = 'cartesian'
                 cart = True
                 atom_read = True
@@ -213,12 +194,9 @@ class Geometry:
                 except ValueError:
                     raise GeometryError("Error reading basis coordinate: '" + line + "'")
 
-#                sd_flags = self.check_constraints(cont, ln+1, total_lines)
-                sd_flags = ''
-                print('reading SD: ', sd_flags)
+#                sd_flags = self.check_constraints(cont, ln + 1, len(cont))
 
             if b'atom_frac ' in line:
-                #                    print line
                 self.coord_mode = 'direct'
                 cart = False
                 atom_read = True
@@ -231,16 +209,14 @@ class Geometry:
                 except ValueError:
                     raise GeometryError("Error reading basis coordinate: '" + line + "'")
 
-#                sd_flags = self.check_constraints(cont, ln+1, total_lines)
-                sd_flags = ''
-                print('reading SD: ', sd_flags)
+#                sd_flags = self.check_constraints(cont, ln + 1, len(cont))
 
             if atom_read:
-                #                    print 'adding atom: ', atom_name, SD_FLAGS
-                sd_flags = 'T T T'
                 self.basis.append(Site(cart=cart, position=np.array(pos),
-                                       sd_flags=sd_flags, occupant=atom_name, occ_alias=atom_name))
+                                       SD_FLAG=sd_flags, occupant=atom_name, occ_alias=atom_name))
                 atom_read = False
+
+#            ln += 1
 
         # done reading, analyze now
         all_names = []
@@ -284,43 +260,38 @@ class Geometry:
         del tmp, symbols, nums
 
     def check_constraints(self, cont, ln, total_lines):
-        flags = ["T" in range(3)]
+        flags = ['T', 'T', 'T']
 
         if ln >= total_lines:
             return flags[0] + ' ' + flags[1] + ' ' + flags[2]
 
         next_line = cont[ln]
         k = 0
-        if "initial_moment" in next_line:
+
+        if b'initial_moment' in next_line:
             raise ValueError('Initial Moments will be added automatically, please remove from geometry.skel.')
-        if "constrain_relaxation " in next_line:
-            limit = np.min([3, total_lines-ln])
-            # print 'CC1: ', self.SD_FLAG
+
+        if b'constrain_relaxation ' in next_line:
+            limit = np.min([3, total_lines - ln])
             self.sel_dyn = True
-            # print 'CC2: ', self.SD_FLAG
             check_lines = cont[ln:ln+limit]
             check = check_lines[k].strip()
-            while "constrain_relaxation " in check:
-                # print check
+            while b'constrain_relaxation ' in check:
                 try:
                     word = check.split()
-#                    print word
-                    if word[1] == ".true.":
-                        flags = ["F" in range(3)]
-#                        print 'true'
-                    if word[1].lower() == "x":
-                        flags[0] = "F"
-#                        print 'x'
-                    if word[1].lower() == "y":
-                        flags[1] = "F"
-#                        print 'y'
-                    if word[1].lower() == "z":
-                        flags[2] = "F"
-#                        print 'z'
+                    if word[1] == b'.true.':
+                        flags = ['F', 'F', 'F']
+                    if word[1].lower() == b'x':
+                        flags[0] = 'F'
+                    if word[1].lower() == b'y':
+                        flags[1] = 'F'
+                    if word[1].lower() == b'z':
+                        flags[2] = 'F'
                 except ValueError:
                     raise GeometryError("Error reading constrints from line '" + check + "'")
+
                 k += 1
-#                print k,len(check_lines)
+
                 if k == len(check_lines):
                     break
                 check = check_lines[k].strip()
