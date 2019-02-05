@@ -4,6 +4,8 @@ import json
 
 from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBError, EligibilityError
 
+from casm.wrapper.misc import confname_as_jobname
+
 from casm import wrapper
 from casm.project import DirectoryStructure, ProjectSettings
 from casm.misc.noindent import NoIndent, NoIndentEncoder
@@ -16,7 +18,7 @@ from casm.aims.io.geometry import Geometry
 
 
 class Relax(object):
-    """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
+    """The Relax class contains functions for setting up, executing, and parsing a relaxation.
 
         The relaxation creates the following directory structure:
         config/
@@ -27,10 +29,9 @@ class Relax(object):
               run.final/
 
         'run.i' directories are only created when ready.
-        'run.final' is a final constant volume run {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}
+        'run.final' is a final run
 
-        This automatically looks for VASP settings files using:
-          casm.project.DirectoryStructure.settings_path_crawl
+        This automatically looks for the settings files using casm.project.DirectoryStructure.settings_path_crawl
 
     Attributes
     ----------
@@ -42,7 +43,7 @@ class Relax(object):
         CASM project directory hierarchy
       
       settings: dict
-        Settings for pbs and the relaxation, see vaspwrapper.read_settings
+        Settings for pbs and the relaxation, see casm.project.io.read_project_settings
       
       configdir: str
         Directory where configuration results are stored. The result of:
@@ -50,9 +51,6 @@ class Relax(object):
       
       configname: str
         The name of the configuration to be calculated
-      
-      auto: boolean
-        True if using pbs module's JobDB to manage pbs jobs
       
       sort: boolean
         True if sorting atoms in POSCAR by type
@@ -64,17 +62,13 @@ class Relax(object):
     """
     def __init__(self, configdir=None, auto=True, sort=True):
         """
-        Construct a VASP relaxation job object.
+        Construct a relaxation job object.
 
         Arguments
         ----------
     
             configdir: str, optional, default=None
-              Path to configuration directory. If None, uses the current working
-              directory
-            
-            auto: boolean, optional, default=True,
-              Use True to use the pbs module's JobDB to manage pbs jobs
+              Path to configuration directory. If None, uses the current working directory
             
             sort: boolean, optional, default=True,
               Use True to sort atoms in POSCAR by type
@@ -138,7 +132,7 @@ class Relax(object):
             self.settings["prerun"] = None
         if "postrun" not in self.settings:
             self.settings["postrun"] = None
-        
+
         self.auto = auto
         self.sort = sort
         self.strict_kpoints = self.settings['strict_kpoints']
@@ -172,8 +166,6 @@ class Relax(object):
         db = JobDB()
         print("Calculation directory: ", self.calcdir)
         sub_id = db.select_regex_id("rundir", self.calcdir)
-        print("JobID:" + sub_id)
-        sys.stdout.flush()
 
         if sub_id is not []:
             for j in sub_id:
@@ -183,6 +175,7 @@ class Relax(object):
                           "  Jobstatus:" + job["jobstatus"] + "  Not submitting.")
                     sys.stdout.flush()
                     return
+
         # second, only submit a job if relaxation status is "incomplete"
         # construct the Relax object
         relaxation = AimsRelax(self.calcdir, self.run_settings())
@@ -245,7 +238,7 @@ class Relax(object):
         sys.stdout.flush()
 
         # construct a pbs.Job
-        job = Job(name=wrapper.jobname(self.configdir),
+        job = Job(name=confname_as_jobname(self.configdir),
                   account=self.settings["account"],
                   nodes=int(self.settings["nodes"]),
                   ppn=int(ncpus),

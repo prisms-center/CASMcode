@@ -38,6 +38,7 @@ class Geometry:
         self._reciprocal_lattice = np.zeros((3, 3))
         self.coord_mode = ''
         self.sel_dyn = False
+        self.SD_FLAG = False
         self.num_atoms = []
         self.type_atoms = []
         self.type_atoms_alias = list(self.type_atoms)
@@ -173,11 +174,9 @@ class Geometry:
         atom_name = None
         cart = None
         lat = []
-#        ln = 0
         cont = file.readlines()
         for line in cont:
             pos = np.empty(3)
-            sd_flags = 'T T T'
             if b'lattice_vector' in line:
                 lat.append([float(x) for x in line.split()[1:4]])
 
@@ -187,14 +186,12 @@ class Geometry:
                 atom_read = True
                 word = line.split()
                 try:
-                    pos[0] = word[1]
-                    pos[1] = word[2]
-                    pos[2] = word[3]
-                    atom_name = word[4]
+                    pos[0] = float(word[1])
+                    pos[1] = float(word[2])
+                    pos[2] = float(word[3])
+                    atom_name = word[4].decode('UTF-8')
                 except ValueError:
                     raise GeometryError("Error reading basis coordinate: '" + line + "'")
-
-#                sd_flags = self.check_constraints(cont, ln + 1, len(cont))
 
             if b'atom_frac ' in line:
                 self.coord_mode = 'direct'
@@ -202,16 +199,15 @@ class Geometry:
                 atom_read = True
                 word = line.split()
                 try:
-                    pos[0] = word[1]
-                    pos[1] = word[2]
-                    pos[2] = word[3]
-                    atom_name = word[4]
+                    pos[0] = float(word[1])
+                    pos[1] = float(word[2])
+                    pos[2] = float(word[3])
+                    atom_name = word[4].decode('UTF-8')
                 except ValueError:
                     raise GeometryError("Error reading basis coordinate: '" + line + "'")
 
-#                sd_flags = self.check_constraints(cont, ln + 1, len(cont))
-
             if atom_read:
+                sd_flags = 'T T T'
                 self.basis.append(Site(cart=cart, position=np.array(pos),
                                        SD_FLAG=sd_flags, occupant=atom_name, occ_alias=atom_name))
                 atom_read = False
