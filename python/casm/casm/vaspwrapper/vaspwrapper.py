@@ -13,7 +13,7 @@ class VaspWrapperError(Exception):
         return self.msg
 
 
-def read_settings(filename):
+def old_read_vasp_settings(filename):
     """Returns a JSON object reading JSON files containing settings for VASP PBS jobs.
 
    Returns:

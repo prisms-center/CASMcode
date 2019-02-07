@@ -19,8 +19,9 @@ except ImportError:
 from casm import vasp, wrapper
 from casm.misc import noindent
 from casm.project import DirectoryStructure, ProjectSettings
-from casm.vaspwrapper import VaspWrapperError, read_settings, write_settings, \
-  vasp_input_file_names
+from casm.vaspwrapper import VaspWrapperError, write_settings, vasp_input_file_names
+
+from casm.project.io import read_project_settings
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
@@ -133,7 +134,7 @@ class Relax(object):
 
         else:
             print("  Read settings from:", setfile)
-        self.settings = read_settings(setfile)
+        self.settings = read_project_settings(setfile)
 
         # set default settings if not present
         if not "ncore" in self.settings:

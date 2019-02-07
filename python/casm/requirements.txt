@@ -8,3 +8,4 @@ scipy
 sh
 six
 tornado
+atomate

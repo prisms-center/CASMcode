@@ -102,9 +102,7 @@ def write_abort_scf(mode='e', jobdir=None):
         raise AimsIOError("Invalid abort mode specified: " + str(mode))
 
     try:
-        stop_write = open(filename, 'w')
+        with open(filename, 'w') as f:
+            f.write(stop_string)
     except IOError as e:
         raise e
-
-    stop_write.write(stop_string)
-    stop_write.close()

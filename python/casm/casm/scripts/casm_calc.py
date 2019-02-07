@@ -1,15 +1,13 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import argparse
-import json
-from os import getcwd
-from os.path import join, abspath
+import os
 import sys
+import json
+import argparse
+import casm.project.io
 
 from casm.misc import compat, noindent
 from casm.project import Project, Selection
-import casm.project.io
-
 from casm.qewrapper import Relax as QERelax
 from casm.vaspwrapper import Relax as VaspRelax
 from casm.aimswrapper.relax import Relax as AimsRelax
@@ -74,10 +72,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
   
     if args.path is None:
-        args.path = getcwd()
+        args.path = os.getcwd()
   
     try:
-        proj = Project(abspath(args.path))
+        proj = Project(os.path.abspath(args.path))
         sel = Selection(proj, args.configs, all=False)
         if sel.data["configname"] is not None:
             configname = sel.data["configname"][0]
@@ -93,7 +91,7 @@ def main(argv=None):
         setfile = casm_directories.settings_path_crawl("relax.json", configname, casm_settings.default_clex)
 
         if setfile is None:
-            raise casm.qewrapper.QEWrapperError("Could not find \"relax.json\" in \"settings\" directory")
+            raise CasmCalcError("Could not find \"relax.json\" in \"settings\" directory")
         else:
             print("Using " + str(setfile) + " as settings...")
 
@@ -140,7 +138,7 @@ def main(argv=None):
                 configdir = proj.dir.configuration_dir(configname)
                 clex = proj.settings.default_clex
                 calcdir = proj.dir.calctype_dir(configname, clex)
-                finaldir = join(calcdir, "run.final")
+                finaldir = os.path.join(calcdir, "run.final")
                 try:
                     if settings['software'] == "quantumespresso":
                         if settings["outfilename"] is None:

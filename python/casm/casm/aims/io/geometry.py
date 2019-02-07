@@ -68,8 +68,7 @@ class Geometry:
         return settings
 
     def write(self, filename, species_data):
-        """ Write geometry.in to 'filename'.
-        """
+        """ Write geometry to filename """
         try:
             file = open(filename, 'w')
         except IOError:
@@ -77,7 +76,7 @@ class Geometry:
 
         settings = self.read_casm_settings()
     
-        file.write('#auto-gemerated geometry.in by CASM\n')
+        file.write('#auto-generated geometry.in by CASM\n')
         for i in range(3):
             file.write("lattice_vector %.8f %.8f %.8f\n" %
                        (self._lattice[i, 0], self._lattice[i, 1], self._lattice[i, 2]))
@@ -212,8 +211,6 @@ class Geometry:
                                        SD_FLAG=sd_flags, occupant=atom_name, occ_alias=atom_name))
                 atom_read = False
 
-#            ln += 1
-
         # done reading, analyze now
         all_names = []
         for a in self.basis:
@@ -296,7 +293,7 @@ class Geometry:
 
     def read_pos(self, file):
         self.basis = Poscar(file).basis
-        self._lattice = Poscar(file)._lattice
+        self._lattice = Poscar(file).lattice()
         self._reciprocal_lattice = Poscar(file).reciprocal_lattice()
         self.coord_mode = Poscar(file).coord_mode
         self.SD_FLAG = Poscar(file).SD_FLAG

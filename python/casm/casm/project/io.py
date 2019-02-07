@@ -76,6 +76,7 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     # refresh proj to reflect new eci
     proj.refresh(clear_clex=True)
 
+
 def read_project_settings(filename):
     """Returns a JSON object reading JSON files containing settings for Quantum Espresso PBS jobs.
 
@@ -124,12 +125,15 @@ def read_project_settings(filename):
         print("Error reading settings file:", filename)
         raise e
 
+    if settings['software'] != 'vasp':
+        raise IOError('ONLY VASP in experimental status...')
+
     required = ["queue", "ppn", "walltime", "software", "run_cmd"]
 
     optional = ["account", "pmem", "priority", "message", "email", "qos", "npar", "ncore", "kpar",
                 "ncpus", "run_limit", "nrg_convergence",
                 "encut", "kpoints", "extra_input_files", "move", "copy", "remove", "compress",
-                "backup", "initial", "final", "strict_kpoints", "err_types",
+                "backup", "initial", "final", "strict_kpoints", "err_types", "preamble",
                 "infilename", "outfilename", "atom_per_proc", "nodes", "is_slab", "fix_pos", "basis"]
 
     for key in required:
