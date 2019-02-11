@@ -25,7 +25,7 @@ namespace CASM {
   //*******************************************************************************
 
   void ConfigDoF::clear() {
-    m_occupation.clear();
+    m_occupation.values().setZero();
     m_global_dofs.clear();
     m_local_dofs.clear();
   }
@@ -39,21 +39,6 @@ namespace CASM {
     std::swap(m_tol, RHS.m_tol);
   }
 
-  //*******************************************************************************
-
-  void ConfigDoF::set_occupation(const std::vector<int> &new_occupation) {
-
-    if(occupation().size() != new_occupation.size()) {
-      std::cerr << "CRITICAL ERROR: In ConfigDoF::set_occupation(), attempting to set occupation to size " << new_occupation.size() << ",\n"
-                << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
-    }
-
-    m_occupation = new_occupation;
-
-  }
 
   //*******************************************************************************
 
@@ -89,6 +74,8 @@ namespace CASM {
     Permutation tperm(it.combined_permute());
     if(occupation().size()) {
       //ALSO DO SPECIES PERMUTATION
+      std::cerr << "OCCUPATION SYM TRANSFORM IS NOT IMPLEMENTED FOR CONFIGDOF";
+      exit(1);
       set_occupation(tperm * occupation());
     }
 
@@ -114,6 +101,8 @@ namespace CASM {
       dof.second.values() = *(_op.representation(dof.second.info().symrep_ID()).MatrixXd()) * dof.second.values();
     }
 
+    std::cerr << "OCCUPATION SYM TRANSFORM IS NOT IMPLEMENTED FOR CONFIGDOF";
+    exit(1);
     //DO SPECIES PERMUTE HERE
     //Permutation tperm(it.combined_permute());
     //if(occupation().size()) {
@@ -138,7 +127,7 @@ namespace CASM {
   jsonParser &ConfigDoF::to_json(jsonParser &json) const {
     json = jsonParser::object();
     if(occupation().size())
-      json["occ"] = occupation();
+      json["occ"] = m_occupation;
     if(!m_local_dofs.empty()) {
       json["local_dofs"] = m_local_dofs;
     }

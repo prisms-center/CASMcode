@@ -1,4 +1,5 @@
 #include "casm/app/AppIO_impl.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/app/HamiltonianModules.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/Orbit_impl.hh"
@@ -70,6 +71,24 @@ namespace CASM {
       COORD_TYPE mode;
       from_json(mode, json["coordinate_mode"]);
 
+      // Molecules
+      std::map<std::string, Molecule> mol_map;
+      Eigen::Matrix3d f2c;
+      if(mode == CART)
+        f2c = lat.lat_column_mat();
+      else
+        f2c.setIdentity();
+
+      if(json.contains("species")) {
+        auto it = json["species"].begin();
+        auto it_end = json["species"].end();
+        for(; it != it_end; ++it) {
+          auto mol_it = mol_map.emplace(it.name(), Molecule(it.name())).first;
+          from_json(mol_it->second, *it, f2c);
+        }
+      }
+
+
       // read basis sites
       for(jsonParser const &bjson : json["basis"]) {
         Site tsite = bjson.get<Site>(prim.lattice(), mode);
@@ -84,8 +103,12 @@ namespace CASM {
         if(!occ_key.empty()) {
           for(std::string const &occ : bjson[occ_key].get<std::vector<std::string> >()) {
             //std::cout << "CREATING OCCUPANT " << occ << "\n";
-            //REPLACE THIS LINE FOR GENERALIZED OCCUPANTS
-            t_occ.push_back(Molecule::make_atom(occ));
+            // Have convenience options for attributes like magnetic moment, etc?
+            auto it = mol_map.find(occ);
+            if(it != mol_map.end())
+              t_occ.push_back(it->second);
+            else
+              t_occ.push_back(Molecule::make_atom(occ));
           }
         }
         //std::cout << "t_occ.size() = " << t_occ.size() << "\n";

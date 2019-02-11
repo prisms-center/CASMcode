@@ -4,7 +4,6 @@
 #include <map>
 
 #include "casm/misc/Comparisons.hh"
-#include "casm/misc/cloneable_ptr.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
@@ -168,7 +167,13 @@ namespace CASM {
     ///
     /// \throws If \code newoccupation.size() != this->size() \endcode
     ///
-    void set_occupation(const std::vector<int> &newoccupation);
+    /// set_occupation ensures that ConfigDoF::size() is compatible with _occupation.size()
+    /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _occupation.size()
+    template <typename OtherOccContainerType>
+    void set_occupation(const OtherOccContainerType &_occupation) {
+      configdof().set_occupation(_occupation);
+    }
+
 
     /// \brief Occupant variables
     ///
@@ -182,7 +187,7 @@ namespace CASM {
     /// to the occupant DoF in a "prim.json" file. This means that for the
     /// background structure, 'occupation' is all 0
     ///
-    const std::vector<int> &occupation() const {
+    ConfigDoF::OccValueType const &occupation() const {
       return configdof().occupation();
     }
 

@@ -68,7 +68,7 @@ namespace CASM {
     };
 
     /// \brief Abstract base class specialization of Base for
-    /// integral DoF types
+    /// integral Do.F types
     ///
     /// - The protected '_check' method provides for both checking equality and if
     ///   not equivalent, storing the 'less than' result
@@ -166,6 +166,163 @@ namespace CASM {
       }
 
       ConfigDoF const *m_configdof_ptr;
+    };
+
+    /// \brief Abstract base class specialization of Base for
+    /// integral DoF types
+    ///
+    /// - The protected '_check' method provides for both checking equality and if
+    ///   not equivalent, storing the 'less than' result
+    class AnisoOccupation: public Base {
+
+    public:
+      using DoFValuesType = ConfigDoF::OccDoFContainerType;
+
+      AnisoOccupation(ConfigDoF const &_configdof) :
+        m_configdof_ptr(&_configdof),
+        m_tmp_valid(true),
+        m_fg_index_A(0),
+        m_new_occ_A(m_configdof_ptr->occupation()),
+        m_fg_index_B(0),
+        m_new_occ_B(m_configdof_ptr->occupation()) {}
+
+      /// \brief Return config == other, store config < other
+      bool operator()(ConfigDoF const &other) const override {
+        return _for_each(
+        [&](Index i) {
+          return this->configdof().occ(i);
+        },
+        [&](Index i) {
+          return other.occ(i);
+        });
+      }
+
+      /// \brief Return config == B*config, store config < B*config
+      bool operator()(PermuteIterator const &B) const override {
+        _update_B(B, configdof());
+        m_tmp_valid = true;
+
+        return _for_each(
+        [&](Index i) {
+          return this->configdof().occ(i);
+        },
+        [&](Index i) {
+          return this->m_new_occ_B[B.permute_ind(i)];
+        });
+      }
+
+      /// \brief Return A*config == B*config, store A*config < B*config
+      bool operator()(PermuteIterator const &A, PermuteIterator const &B) const override {
+        _update_A(A, configdof());
+        _update_B(B, configdof());
+        m_tmp_valid = true;
+
+        return _for_each(
+        [&](Index i) {
+          return this->m_new_occ_A[A.permute_ind(i)];
+        },
+        [&](Index i) {
+          return this->m_new_occ_B[B.permute_ind(i)];
+        });
+
+      }
+
+      /// \brief Return config == B*other, store config < B*other
+      bool operator()(PermuteIterator const &B, ConfigDoF const &other) const override {
+
+        _update_B(B, other);
+        m_tmp_valid = false;
+
+        return _for_each(
+        [&](Index i) {
+          return this->m_configdof_ptr->occ(i);
+        },
+        [&](Index i) {
+          return this->m_new_occ_B[B.permute_ind(i)];
+        });
+      }
+
+      /// \brief Return A*config == B*other, store A*config < B*other
+      bool operator()(PermuteIterator const &A, PermuteIterator const &B, ConfigDoF const &other) const override {
+        _update_A(A, configdof());
+        _update_B(B, other);
+        m_tmp_valid = false;
+
+        return _for_each(
+        [&](Index i) {
+          return this->m_new_occ_A[A.permute_ind(i)];
+        },
+        [&](Index i) {
+          return this->m_new_occ_B[B.permute_ind(i)];
+        });
+      }
+
+    protected:
+      ConfigDoF const &configdof() const {
+        return *m_configdof_ptr;
+      }
+
+      template<typename F, typename G>
+      bool _for_each(F f, G g) const {
+        Index i;
+        for(i = 0; i < configdof().size(); i++) {
+          if(!_check(f(i), g(i))) {
+            return false;
+          }
+        }
+        //std::cout << "Equal!\n";
+        return true;
+      }
+
+
+      void _update_A(PermuteIterator const &A, ConfigDoF const &before) const {
+        if(A.factor_group_index() != m_fg_index_A || !m_tmp_valid) {
+          m_fg_index_A = A.factor_group_index();
+          Index l = 0;
+          for(Index b = 0; b < m_configdof_ptr->n_basis(); ++b) {
+            for(Index n = 0; n < m_configdof_ptr->n_vol(); ++n) {
+              m_new_occ_A[l] = (*(A.occ_rep(b).permutation()))[before.occ(l)];
+            }
+          }
+        }
+      }
+
+      void _update_B(PermuteIterator const &B, ConfigDoF const &before) const {
+        if(B.factor_group_index() != m_fg_index_B || !m_tmp_valid) {
+          m_fg_index_B = B.factor_group_index();
+          Index l = 0;
+          for(Index b = 0; b < m_configdof_ptr->n_basis(); ++b) {
+            for(Index n = 0; n < m_configdof_ptr->n_vol(); ++n) {
+              m_new_occ_B[l] = (*(B.occ_rep(b).permutation()))[before.occ(l)];
+            }
+          }
+        }
+      }
+
+    private:
+      AnisoOccupation *_clone() const override {
+        return new AnisoOccupation(*this);
+      }
+
+      template<typename T>
+      bool _check(const T &A, const T &B) const {
+        if(A == B) {
+          return true;
+        }
+        m_less = (A < B);
+        return false;
+      }
+
+      ConfigDoF const *m_configdof_ptr;
+
+      mutable bool m_tmp_valid;
+
+      mutable Index m_fg_index_A;
+      mutable DoFValuesType::ValueType m_new_occ_A;
+
+      mutable Index m_fg_index_B;
+      mutable DoFValuesType::ValueType m_new_occ_B;
+
     };
 
     /// \brief Abstract base class specialization of Base for

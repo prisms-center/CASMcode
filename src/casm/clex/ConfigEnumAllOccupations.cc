@@ -57,22 +57,43 @@ namespace CASM {
   int ConfigEnumAllOccupations::run(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOption &enum_opt,
+    EnumeratorMap const *interface_map) {
 
-    std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
+    std::vector<ConfigEnumInput> in_configs = make_enumerator_input_configs(primclex, _kwargs, enum_opt, interface_map);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
-    return run(primclex, scel_enum->begin(), scel_enum->end(), filter_expr, CASM::dry_run(_kwargs, enum_opt));
+    return run(primclex, in_configs.begin(), in_configs.end(), filter_expr, CASM::dry_run(_kwargs, enum_opt));
+  }
+
+  namespace local_impl {
+    std::vector<int> max_selected_occupation(ConfigEnumInput const &_config) {
+      std::vector<int> max = _config.supercell().max_allowed_occupation();
+      std::vector<int> maxselect;
+      for(Index i : _config.sites())
+        maxselect.push_back(max[i]);
+
+      if(maxselect.empty())
+        return max;
+      else
+        return maxselect;
+    }
   }
 
   /// \brief Construct with a Supercell, using all permutations
-  ConfigEnumAllOccupations::ConfigEnumAllOccupations(const Supercell &_scel) :
+  ConfigEnumAllOccupations::ConfigEnumAllOccupations(const ConfigEnumInput &_input_config) :
+    m_selection(_input_config.sites().begin(), _input_config.sites().end()),
     m_counter(
-      std::vector<int>(_scel.num_sites(), 0),
-      _scel.max_allowed_occupation(),
-      std::vector<int>(_scel.num_sites(), 1)) {
+      std::vector<int>(_input_config.sites().size(), 0),
+      local_impl::max_selected_occupation(_input_config),
+      std::vector<int>(_input_config.sites().size(), 1)),
 
-    m_current = notstd::make_cloneable<Configuration>(Configuration::zeros(_scel));
+    m_current(notstd::make_cloneable<Configuration>(_input_config.config())),
+    m_subset_mode(false) {
+
+    if(m_counter.size() != _input_config.sites().size())
+      m_subset_mode = true;
+
     m_current->set_source(this->source(0));
     m_current->set_occupation(m_counter());
     reset_properties(*m_current);
@@ -96,8 +117,9 @@ namespace CASM {
     bool is_valid_config {false};
 
     while(!is_valid_config && ++m_counter) {
-
-      m_current->set_occupation(m_counter());
+      for(Index l : m_selection) {
+        m_current->set_occ(l, m_counter[l]);
+      }
       is_valid_config = _check_current();
     }
 
@@ -112,7 +134,7 @@ namespace CASM {
 
   /// Returns true if current() is primitive and canonical
   bool ConfigEnumAllOccupations::_check_current() const {
-    return current().is_primitive() && current().is_canonical();
+    return current().is_primitive() && (!m_subset_mode && current().is_canonical());
   }
 
 }

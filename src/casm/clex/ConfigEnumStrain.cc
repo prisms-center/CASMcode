@@ -100,7 +100,8 @@ namespace CASM {
   int ConfigEnumStrain::run(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOption &enum_opt,
+    EnumeratorMap const *interface_map) {
     bool trim_corners = _kwargs.get_if_else<bool>("trim_corners", true);
     bool sym_axes = _kwargs.get_if_else<bool>("sym_axes", false);
     //bool analysis = _kwargs.get_if_else<bool>("analysis", false);
@@ -123,50 +124,19 @@ namespace CASM {
         min_val = 0 * max_val;
       }
 
-
-      if(_kwargs.contains("confignames")) {
-        if(!_kwargs["confignames"].is_array())
-          throw std::runtime_error("Field \"confignames\" must specify array of string values.");
-        confignames = _kwargs["confignames"].get<std::vector<std::string> >();
-      }
     }
     catch(std::exception &e) {
       throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigStrain:") + e.what());
     }
 
-    std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
+    std::vector<ConfigEnumInput> in_configs = make_enumerator_input_configs(primclex, _kwargs, enum_opt, interface_map);
 
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
 
-    for(Supercell const &scel : *scel_enum) {
+    for(ConfigEnumInput const &config : in_configs) {
       Index result = run(primclex,
-                         Configuration::zeros(scel),
-                         axes,
-                         min_val,
-                         max_val,
-                         inc_val,
-                         sym_axes,
-                         auto_range,
-                         trim_corners,
-                         //analysis,
-                         filter_expr,
-                         CASM::dry_run(_kwargs, enum_opt));
-      if(result)
-        return result;
-    }
-
-    for(std::string const &configname : enum_opt.config_strs())
-      confignames.push_back(configname);
-
-    std::cout << "confignames is: " << confignames << "\n";
-    for(std::string const &configname : confignames) {
-      auto it = primclex.const_db<Configuration>().find(configname);
-      if(it == primclex.const_db<Configuration>().end())
-        throw std::runtime_error("Specified configuration " + configname + " does not exist in database.\n");
-
-      Index result = run(primclex,
-                         *it,
+                         config,
                          axes,
                          min_val,
                          max_val,
@@ -185,7 +155,7 @@ namespace CASM {
   }
 
   int ConfigEnumStrain::run(PrimClex const &_primclex,
-                            Configuration const &_config,
+                            ConfigEnumInput const &_config,
                             Eigen::Ref<const Eigen::MatrixXd> const &_axes,
                             Eigen::Ref<const Eigen::VectorXd> const &min_val,
                             Eigen::Ref<const Eigen::VectorXd> const &max_val,
@@ -199,7 +169,7 @@ namespace CASM {
 
     std::vector<SymRepTools::SubWedge> wedges;
     std::vector<int> dims;
-    SymGroup pg = make_sym_group(_config.point_group());
+    SymGroup pg = make_sym_group(_config.group());
     DoFKey strain_dof_key;
     std::vector<DoFKey> tdof_types = global_dof_types(_primclex.prim());
     Index istrain = find_index_if(tdof_types,
@@ -239,8 +209,8 @@ namespace CASM {
 
     //return 0;
     //}
-    auto constructor = [&](const Supercell & scel) {
-      return notstd::make_unique<ConfigEnumStrain>(_config,
+    auto constructor = [&](const ConfigEnumInput & in_config) {
+      return notstd::make_unique<ConfigEnumStrain>(in_config,
                                                    wedges,
                                                    min_val,
                                                    max_val,
@@ -262,7 +232,7 @@ namespace CASM {
 
   }
 
-  ConfigEnumStrain::ConfigEnumStrain(const Configuration &_init,
+  ConfigEnumStrain::ConfigEnumStrain(const ConfigEnumInput &_init,
                                      const std::vector<SymRepTools::SubWedge> &_wedges,
                                      Eigen::VectorXd min_val,
                                      Eigen::VectorXd max_val,
@@ -272,7 +242,7 @@ namespace CASM {
                                      bool trim_corners) :
     m_strain_key(_strain_key),
     m_trim_corners(trim_corners),
-    m_current(_init),
+    m_current(_init.config()),
     m_equiv_ind(0),
     m_wedges(_wedges),
     //m_perm_begin(_scel.permute_begin()),

@@ -154,25 +154,14 @@ namespace CASM {
   }
 
   //*********************************************************************************
+
   void Configuration::init_occupation() {
     _modify_dof();
     set_occupation(std::vector<int>(this->size(), 0));
   }
 
   //*********************************************************************************
-  void Configuration::set_occupation(const std::vector<int> &new_occupation) {
-    _modify_dof();
-    if(new_occupation.size() != this->size()) {
-      default_err_log().error("Configuration::set_occupation size error");
-      default_err_log() << "new_occupation.size(): " << new_occupation.size() << std::endl;
-      default_err_log() << "Configuration size(): " << this->size() << std::endl;
-      throw std::runtime_error("Error: Configuration::set_occupation with array of the wrong size");
-    }
-    m_configdof.set_occupation(new_occupation);
-    return;
-  }
 
-  //*********************************************************************************
   void Configuration::set_occ(Index site_l, int val) {
     _modify_dof();
     m_configdof.occ(site_l) = val;

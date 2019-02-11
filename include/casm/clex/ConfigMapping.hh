@@ -5,9 +5,7 @@
 #include <unordered_set>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_math.hh"
-#include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Site.hh"
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 struct HermiteHash {
@@ -29,6 +27,7 @@ namespace CASM {
   class PrimClex;
   class Configuration;
   class ConfigDoF;
+  class Structure;
 
   namespace Completer {
     class ImportOption;
@@ -42,7 +41,7 @@ namespace CASM {
 
     /// Output structure, after applying lattice similarity and/or rotation to
     /// input structure.
-    BasicStructure<Site> structure;
+    SimpleStructure structure;
 
     /// The configuration the input structure was mapped onto
     std::unique_ptr<Configuration> config;
@@ -91,7 +90,7 @@ namespace CASM {
 
     MappedConfig(Index Nsites) :
       deformation(Eigen::Matrix3d::Identity()),
-      occupation(Nsites, 0),
+      occupation(Eigen::VectorXi::Zero(Nsites)),
       displacement(Eigen::MatrixXd::Zero(3, Nsites)) {}
 
     void clear() {
@@ -112,7 +111,7 @@ namespace CASM {
 
 
     Eigen::Matrix3d deformation;
-    std::vector<int> occupation;
+    Eigen::VectorXi occupation;
     Eigen::MatrixXd displacement;
   };
 
@@ -214,7 +213,7 @@ namespace CASM {
 
     ///\brief imports structure specified by '_struc' into primclex()
     ///
-    ConfigMapperResult import_structure_occupation(const BasicStructure<Site> &_struc) const;
+    ConfigMapperResult import_structure_occupation(const SimpleStructure &_struc) const;
 
     ///\brief imports structure specified by '_struc' into primclex()
     ///\param hint_ptr[in]
@@ -225,7 +224,7 @@ namespace CASM {
     ///                or be used to provide user reports of the form "Suggested mapping: 0.372; Optimal mapping: 0.002"
     ///\endparblock
     ///
-    ConfigMapperResult import_structure_occupation(const BasicStructure<Site> &_struc,
+    ConfigMapperResult import_structure_occupation(const SimpleStructure &_struc,
                                                    const Configuration *hint_ptr) const;
 
 
@@ -237,13 +236,13 @@ namespace CASM {
     ///\brief imports structure specified by '_struc' into primclex() by finding optimal mapping
     ///       unlike import_structure_occupation, displacements and strain are preserved
     ///
-    ConfigMapperResult import_structure(const BasicStructure<Site> &_struc) const;
+    ConfigMapperResult import_structure(const SimpleStructure &_struc) const;
 
 
     ///\brief Low-level routine to map a structure onto a MappedConfig
     ///\param mapped_config[out] MappedConfig that is result of mapping procedure
     ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
-    bool struc_to_configdof(const BasicStructure<Site> &_struc,
+    bool struc_to_configdof(const SimpleStructure &_struc,
                             MappedConfig &mapped_config,
                             Lattice &mapped_lat) const;
 
@@ -256,7 +255,7 @@ namespace CASM {
     ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
     ///\endparblock
     ///\param best_cost[in] optional parameter. Method will return false of no mapping is found better than 'best_cost'
-    bool struc_to_configdof(const BasicStructure<Site> &_struc,
+    bool struc_to_configdof(const SimpleStructure &_struc,
                             MappedConfig &mapped_config,
                             Lattice &mapped_lat,
                             std::vector<Index> &best_assignment,
@@ -291,7 +290,7 @@ namespace CASM {
     ///                   populated by the permutation of sites in the imported structure
     ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
     ///\endparblock
-    bool ideal_struc_to_configdof(const BasicStructure<Site> &struc,
+    bool ideal_struc_to_configdof(const SimpleStructure &struc,
                                   MappedConfig &mapped_config,
                                   Lattice &mapped_lat,
                                   std::vector<Index> &best_assignment,
@@ -307,7 +306,7 @@ namespace CASM {
     ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
     ///\endparblock
     ///\param best_cost[in] optional parameter. Method will return false of no mapping is found better than 'best_cost'
-    bool deformed_struc_to_configdof(const BasicStructure<Site> &_struc,
+    bool deformed_struc_to_configdof(const SimpleStructure &_struc,
                                      MappedConfig &mapped_config,
                                      Lattice &mapped_lat,
                                      std::vector<Index> &best_assignment,
@@ -324,7 +323,7 @@ namespace CASM {
     ///                   populated by the permutation of sites in the imported structure
     ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
     ///\endparblock
-    bool deformed_struc_to_configdof_of_lattice(const BasicStructure<Site> &struc,
+    bool deformed_struc_to_configdof_of_lattice(const SimpleStructure &struc,
                                                 const Lattice &imposed_lat,
                                                 double &best_cost,
                                                 MappedConfig &mapped_config,
@@ -354,12 +353,12 @@ namespace CASM {
 
 
   namespace ConfigMap_impl {
-
+    // TODO: Refactor -- The two overloads of struc_to_configdof are *very* similar.
     // Assignment Problem Routines
     // Find cost matrix for displacements between ideal crystal and relaxed structure ('rstruc').
     // Returns false if 'rstruc' is incompatible with 'scel'
     bool calc_cost_matrix(const Supercell &scel,
-                          const BasicStructure<Site> &rstruc,
+                          const SimpleStructure &rstruc,
                           const Coordinate &trans,
                           const Eigen::Matrix3d &metric,
                           Eigen::MatrixXd &cost_matrix);
@@ -368,12 +367,10 @@ namespace CASM {
     // Find cost matrix for displacements between ideal configuration and a relaxed structure ('rstruc').
     // Returns false if 'rstruc' is incompatible with 'scel'
     bool calc_cost_matrix(const Configuration &config,
-                          const BasicStructure<Site> &rstruc,
+                          const SimpleStructure &rstruc,
                           const Coordinate &trans,
                           const Eigen::Matrix3d &metric,
                           Eigen::MatrixXd &cost_matrix);
-
-    //\JSB
 
 
 
@@ -383,33 +380,34 @@ namespace CASM {
     //   TRANSLATE = true -> rigid-translations are removed. (typically this option should be used, especially if you care about vacancies)
     //
     //   TRANSLATE = false -> rigid translations are not considered. (less robust but more efficient -- use only if you know rigid translations are small or zero)
-
+    // TODO: Refactor -- The two overloads of struc_to_configdof are *very* similar.
     bool struc_to_configdof(const Supercell &scel,
-                            BasicStructure<Site> rstruc,
+                            SimpleStructure rstruc,
                             MappedConfig &mapped_config,
                             std::vector<Index> &best_assignment,
                             const bool translate_flag,
                             const double _tol);
 
+    bool struc_to_configdof(const Configuration &config,
+                            SimpleStructure rstruc,
+                            MappedConfig &mapped_config,
+                            std::vector<Index> &best_assignment,
+                            const bool translate_flag,
+                            const double _tol);
+
+    // TODO: Refactor -- The two overloads of preconditioned_struc_to_configdof are *very* similar.
     /// Same as struc_to_configdof, except 'rstruc' is de-rotated and de-strained. Any deformation is instead specified by 'deformation'
     bool preconditioned_struc_to_configdof(const Supercell &scel,
-                                           const BasicStructure<Site> &rstruc,
+                                           const SimpleStructure &rstruc,
                                            const Eigen::Matrix3d &deformation,
                                            MappedConfig &mapped_config,
                                            std::vector<Index> &best_assignment,
                                            const bool translate_flag,
                                            const double _tol);
 
-    bool struc_to_configdof(const Configuration &config,
-                            BasicStructure<Site> rstruc,
-                            MappedConfig &mapped_config,
-                            std::vector<Index> &best_assignment,
-                            const bool translate_flag,
-                            const double _tol);
-
     /// Same as struc_to_mapped_config, except 'rstruc' is de-rotated and de-strained. Any deformation is instead specified by 'deformation'
     bool preconditioned_struc_to_configdof(const Configuration &config,
-                                           const BasicStructure<Site> &rstruc,
+                                           const SimpleStructure &rstruc,
                                            const Eigen::Matrix3d &deformation,
                                            MappedConfig &mapped_config,
                                            std::vector<Index> &best_assignment,
@@ -422,13 +420,21 @@ namespace CASM {
   namespace ConfigMapping {
     /// \brief Calculate the strain cost function of a MappedConfig using LatticeMap::calc_strain_cost()
     /// \param Nsites number of atoms in the relaxed structure, for proper normalization
-    double strain_cost(const Lattice &relaxed_lat, const MappedConfig &mapped_config, Index Nsites);
+    double strain_cost(double relaxed_lat_vol, const MappedConfig &mapped_config, Index Nsites);
 
     /// \brief Calculate the basis cost function of a MappedConfig as the mean-square displacement of its atoms
     /// \param Nsites number of atoms in the relaxed structure, for proper normalization
     double basis_cost(const MappedConfig &mapped_config, Index Nsites);
 
 
+    /// \brief Find a supercell of prim_lat that is closest to relaxed_lat
+    /// Considers all supercells having integer volumes on the range [min_vol, max_vol], wrt prim_lat.volume()
+    /// Returns best lattice such that relaxed_lat = deformation * result * trans_mat
+    /// \param sym_group point group of crystal (whose order is equal to or less than the lattice point group of prim_lat)
+    /// used for supercell enumeration only
+    /// \param trans_mat 3x3 integer matrix found by algorithm
+    /// \param deformation 3x3 matrix of doubles found by algorithm
+    /// \param best_cost Lattice mapping score, as defined in LatticeMap class
     Lattice find_nearest_super_lattice(const Lattice &prim_lat,
                                        const Lattice &relaxed_lat,
                                        const SymGroup &sym_group,
@@ -439,6 +445,14 @@ namespace CASM {
                                        Index max_vol,
                                        double _tol);
 
+    /// \brief Find a supercell of prim_lat that is closest to relaxed_lat
+    /// Considers all supercells contained in vector from_range
+    /// Returns best lattice such that relaxed_lat = deformation * result * trans_mat
+    /// \param sym_group point group of crystal (whose order is equal to or less than the lattice point group of prim_lat)
+    /// used for supercell enumeration only
+    /// \param trans_mat 3x3 integer matrix found by algorithm
+    /// \param deformation 3x3 matrix of doubles found by algorithm
+    /// \param best_cost Lattice mapping score, as defined in LatticeMap class
     Lattice find_nearest_super_lattice(const Lattice &prim_lat,
                                        const Lattice &relaxed_lat,
                                        const SymGroup &sym_group,

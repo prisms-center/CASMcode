@@ -25,19 +25,19 @@ namespace CASM {
   /// \param filter_expr An vector of Configuration filtering expressions. No filtering if empty.
   ///
   /// \returns 0 if success, ERR_INVALID_ARG if filter_expr cannot be parsed
-  template<typename ScelIterator, typename ConfigEnumConstructor>
+  template<typename InConfigIterator, typename ConfigEnumConstructor>
   int insert_unique_canon_configs(
     std::string method,
     const PrimClex &primclex,
-    ScelIterator begin,
-    ScelIterator end,
+    InConfigIterator begin,
+    InConfigIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
     bool dry_run) {
     for(; begin != end; ++begin) {
       if(0 != insert_unique_canon_configs(method,
                                           primclex,
-                                          *begin,
+                                          ConfigEnumInput(*begin),
                                           f,
                                           filter_expr,
                                           dry_run)) {
@@ -62,16 +62,14 @@ namespace CASM {
   int insert_unique_canon_configs(
     std::string method,
     const PrimClex &primclex,
-    Supercell  const &scel,
+    ConfigEnumInput const &in_config,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
     bool dry_run) {
 
     Log &log = primclex.log();
     auto &db_config = primclex.db<Configuration>();
-    auto distance = [&](const std::string & scelname) {
-      return db_config.scel_range_size(scelname);
-    };
+
 
     std::string dry_run_msg = CASM::dry_run_msg(dry_run);
 
@@ -81,11 +79,11 @@ namespace CASM {
     log.begin(method);
 
 
-    auto enumerator_ptr = f(scel);
+    auto enumerator_ptr = f(in_config);
     auto &enumerator = *enumerator_ptr;
-    log << dry_run_msg << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
+    log << dry_run_msg << "Enumerate configurations for " << in_config.name() << " ...  " << std::flush;
 
-    Index num_before = distance(scel.name());
+    Index num_before = db_config.scel_range_size(in_config.supercell().name());
     if(!filter_expr.empty()) {
       try {
         primclex.db<Configuration>().insert(
@@ -105,7 +103,7 @@ namespace CASM {
       primclex.db<Configuration>().insert(enumerator.begin(), enumerator.end());
     }
 
-    log << (distance(scel.name()) - num_before) << " configs." << std::endl;
+    log << (db_config.scel_range_size(in_config.supercell().name()) - num_before) << " configs." << std::endl;
     log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
     Index Nfinal = db_config.size();
@@ -139,12 +137,12 @@ namespace CASM {
   ///
   /// \returns 0 if success, ERR_INVALID_ARG if filter_expr cannot be parsed
   ///
-  template<typename ScelIterator, typename ConfigEnumConstructor>
+  template<typename InConfigIterator, typename ConfigEnumConstructor>
   int insert_configs(
     std::string method,
     const PrimClex &primclex,
-    ScelIterator begin,
-    ScelIterator end,
+    InConfigIterator begin,
+    InConfigIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
     bool primitive_only,
@@ -152,7 +150,7 @@ namespace CASM {
     for(; begin != end; ++begin) {
       if(0 != insert_configs(method,
                              primclex,
-                             *begin,
+                             ConfigEnumInput(*begin),
                              f,
                              filter_expr,
                              primitive_only,
@@ -179,7 +177,7 @@ namespace CASM {
   int insert_configs(
     std::string method,
     const PrimClex &primclex,
-    Supercell const &scel,
+    ConfigEnumInput const &in_config,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
     bool primitive_only,
@@ -187,9 +185,6 @@ namespace CASM {
 
     Log &log = primclex.log();
     auto &db_config = primclex.db<Configuration>();
-    auto distance = [&](const std::string & scelname) {
-      return db_config.scel_range_size(scelname);
-    };
 
     std::string dry_run_msg = CASM::dry_run_msg(dry_run);
 
@@ -198,11 +193,11 @@ namespace CASM {
 
     log.begin(method);
 
-    log << dry_run_msg << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
+    log << dry_run_msg << "Enumerate configurations for " << in_config.name() << " ...  " << std::flush;
 
-    auto enumerator_ptr = f(scel);
+    auto enumerator_ptr = f(in_config);
     auto &enumerator = *enumerator_ptr;
-    Index num_before = distance(scel.name());
+    Index num_before = db_config.scel_range_size(in_config.supercell().name());
     if(!filter_expr.empty()) {
       try {
         auto it = filter_begin(
@@ -230,7 +225,7 @@ namespace CASM {
       }
     }
 
-    log << (distance(scel.name()) - num_before) << " configs." << std::endl;
+    log << (db_config.scel_range_size(in_config.supercell().name()) - num_before) << " configs." << std::endl;
 
     log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
@@ -294,7 +289,7 @@ namespace CASM {
       const Supercell &canon_scel = scel.canonical_form();
       log << dry_run_msg << "Enumerate configurations for " << canon_scel.name() << " ...  " << std::flush;
 
-      auto enumerator_ptr = f(scel);
+      auto enumerator_ptr = f(ConfigEnumInput(Configuration::zeros(scel)));
       auto &enumerator = *enumerator_ptr;
       Index num_before = distance(canon_scel.name());
       if(!filter_expr.empty()) {

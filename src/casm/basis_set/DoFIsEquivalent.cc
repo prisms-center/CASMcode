@@ -4,6 +4,7 @@
 #include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
+
   bool DoFIsEquivalent::operator()(DoFSet const &other) const {
     return _label_equiv(other) && _vector_equiv(other.basis());
   }
@@ -56,7 +57,5 @@ namespace CASM {
 
     return true;
   }
-
-
 
 }

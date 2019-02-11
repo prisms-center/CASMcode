@@ -224,8 +224,7 @@ namespace CASM {
 
   bool Site::compare_type(const Site &test_site) const {
     assert(((site_occupant().size() <= 1 || test_site.site_occupant().size() <= 1)
-            || ((site_occupant().is_specified() && test_site.site_occupant().is_specified())
-                || (!site_occupant().is_specified() && !test_site.site_occupant().is_specified())))
+            || (site_occupant().is_specified() == test_site.site_occupant().is_specified()))
            && "In Site::compare_type() comparing initialized occupant to uninitialized occupant!  This isn't a good idea!");
 
     return (_type_ID() == test_site._type_ID()) && site_occupant().value() == test_site.site_occupant().value();

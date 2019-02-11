@@ -68,7 +68,8 @@ namespace CASM {
       static int run(
         const PrimClex &primclex,
         const jsonParser &_kwargs,
-        const Completer::EnumOption &enum_opt);
+        const Completer::EnumOption &enum_opt,
+        EnumeratorMap const *interface_map);
 
       /// Enumerate DiffTransConfigEnumOccPerturbations into any std::set-like database
       template<typename DatabaseType>

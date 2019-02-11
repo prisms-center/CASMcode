@@ -10,6 +10,7 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
+#include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/casm_io/Log.hh"
 
@@ -123,7 +124,7 @@ namespace CASM {
     if(m_identity_rep_IDs[dim].empty()) {
       m_rep_array.push_back(new SymGroupRep(*this));
       for(Index i = 0; i < size(); i++) {
-        m_rep_array.back()->set_rep(i, SymMatrixXd(Eigen::MatrixXd::Identity(dim, dim)));
+        m_rep_array.back()->set_rep(i, SymPermutation(Permutation(dim)));
       }
       m_identity_rep_IDs[dim] = SymGroupRepID(group_index(), m_rep_array.size() - 1);
     }

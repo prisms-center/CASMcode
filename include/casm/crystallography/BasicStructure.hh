@@ -87,6 +87,10 @@ namespace CASM {
       return m_lattice;
     }
 
+    bool selective_dynamics() const {
+      return m_SD_flag;
+    }
+
     const std::vector<CoordType> &basis() const {
       return m_basis;
     }

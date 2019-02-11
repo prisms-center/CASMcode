@@ -89,7 +89,7 @@ namespace CASM {
   private:
 
     mutable std::unique_ptr<EnumeratorMap> m_standard_enumerators;
-    mutable const EnumeratorMap *m_enumerators;
+    mutable const EnumeratorMap *m_enumerator_map;
   };
 }
 

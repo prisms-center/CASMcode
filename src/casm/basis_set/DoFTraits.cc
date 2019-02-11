@@ -5,16 +5,25 @@
 #include "casm/basis_set/MagSpinDoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/NeighborList.hh"
 
 namespace CASM {
 
   namespace DoFType {
+
+    void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+      if(global())
+        _struc.global_dofs[type_name()] = _dof.global_dof(type_name()).standard_values();
+      else
+        _struc.mol_info.dofs[type_name()] = _dof.local_dof(type_name()).standard_values();
+    }
 
     //************************************************************
     std::string Traits::clexulator_point_prepare_string(Structure const &_prim,
@@ -211,6 +220,23 @@ namespace CASM {
                                                                      const std::string &indent) const {
       return "";
     }
+
+    //************************************************************
+
+    std::string Traits::clexulator_public_method_declarations_string(Structure const &_prim,
+                                                                     std::vector<BasisSet> const &site_bases,
+                                                                     std::string const &indent) const {
+      return "";
+    }
+
+    //************************************************************
+
+    std::string Traits::clexulator_public_method_definitions_string(Structure const &_prim,
+                                                                    std::vector<BasisSet> const &site_bases,
+                                                                    std::string const &indent) const  {
+      return "";
+    }
+
     //************************************************************
 
     std::string Traits::clexulator_private_method_declarations_string(Structure const &_prim,
@@ -372,25 +398,25 @@ namespace CASM {
                                          std::back_inserter(asym_unit),
                                          nullstream);
       /*
-      for(const auto &asym : asym_unit) {
+        for(const auto &asym : asym_unit) {
         for(const auto &equiv : asym) {
-          Index nb = equiv[0].sublat();
-          for(Index f = 0; f < _site_bases[nb].size(); f++) {
+        Index nb = equiv[0].sublat();
+        for(Index f = 0; f < _site_bases[nb].size(); f++) {
 
-            for(Index s = 0; s < _prim.basis()[nb].site_occupant().size(); s++) {
-              OccFuncEvaluator t_eval(s);
-              _site_bases[nb][f]->accept(t_eval);
+        for(Index s = 0; s < _prim.basis()[nb].site_occupant().size(); s++) {
+        OccFuncEvaluator t_eval(s);
+        _site_bases[nb][f]->accept(t_eval);
 
-              if(s == 0)
-                stream << indent;
-                stream << "m_" << site_basis_name() << "_" << nb << '_' << f << '[' << s << "] = "
-                     << t_eval.value();
-              if(s + 1 == _prim.basis()[nb].site_occupant().size())
-                stream << ";\n\n";
-              else
-                stream << ", ";
-            }
-          }
+        if(s == 0)
+        stream << indent;
+        stream << "m_" << site_basis_name() << "_" << nb << '_' << f << '[' << s << "] = "
+        << t_eval.value();
+        if(s + 1 == _prim.basis()[nb].site_occupant().size())
+        stream << ";\n\n";
+        else
+        stream << ", ";
+        }
+        }
         }
         }*/
       return stream.str();
@@ -416,6 +442,12 @@ namespace CASM {
       }
       return result;
     }
+
+
+    std::string Traits::site_basis_description(BasisSet site_bset, Site site) const {
+      return std::string();
+    }
+
   }
 
   template<>

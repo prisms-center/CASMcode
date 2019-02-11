@@ -82,138 +82,68 @@ namespace CASM {
   }
 
   int ConfigEnumNormalCoords::run(
-    const PrimClex &primclex,
-    const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    PrimClex const &primclex,
+    jsonParser const &_kwargs,
+    Completer::EnumOption const &enum_opt,
+    EnumeratorMap const *interface_map) {
 
-    std::vector<Index> sublats;
-    std::vector<UnitCellCoord> sites;
+    std::vector<ConfigEnumInput> in_configs = make_enumerator_input_configs(primclex, _kwargs, enum_opt, interface_map);
+    std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
+
     DoFKey dof;
-    std::vector<std::string> confignames;
-    std::vector<std::string> filter_expr;
     try {
       if(!_kwargs.contains("dof")) {
         throw std::runtime_error("Field \"dof\" is required.\n");
       }
       from_json(dof, _kwargs["dof"]);
       DoF::traits(dof);
-      if(_kwargs.contains("confignames")) {
-        if(!_kwargs["confignames"].is_array())
-          throw std::runtime_error("Field \"confignames\" must specify array of string values.");
-        confignames = _kwargs["confignames"].get<std::vector<std::string> >();
-      }
-
-      if(_kwargs.contains("sublats"))
-        from_json(sublats, _kwargs["sublats"]);
-
-      if(_kwargs.contains("sites"))
-        from_json(sites, _kwargs["sites"], primclex.prim());
-
-      filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
-
     }
     catch(std::exception &e) {
       throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigEnumNormalCoords:") + e.what());
     }
 
-    std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
-
-
-    for(Supercell const &scel : *scel_enum) {
+    for(ConfigEnumInput const &config : in_configs) {
       Index result = run(primclex,
-                         Configuration::zeros(scel),
+                         config,
                          dof,
-                         sublats,
-                         sites,
                          filter_expr,
                          CASM::dry_run(_kwargs, enum_opt));
       if(result)
         return result;
     }
 
-    for(std::string const &configname : enum_opt.config_strs())
-      confignames.push_back(configname);
-
-    std::cout << "confignames is: " << confignames << "\n";
-    for(std::string const &configname : confignames) {
-      auto it = primclex.const_db<Configuration>().find(configname);
-      if(it == primclex.const_db<Configuration>().end())
-        throw std::runtime_error("Specified configuration " + configname + " does not exist in database.\n");
-
-      Index result = run(primclex,
-                         *it,
-                         dof,
-                         sublats,
-                         sites,
-                         filter_expr,
-                         CASM::dry_run(_kwargs, enum_opt));
-      if(result)
-        return result;
-    }
     return 0;
   }
 
   int ConfigEnumNormalCoords::run(PrimClex const &_primclex,
-                                  Configuration config,
+                                  ConfigEnumInput const &_in_config,
                                   DoFKey const &_dof,
-                                  std::vector<Index> const &_sublats,
-                                  std::vector<UnitCellCoord> const &_sites,
                                   std::vector<std::string> const &_filter_expr,
                                   bool dry_run) {
+    Configuration tconfig = _in_config.config();
 
-    std::set<Index> pert_sites;
-    for(Index b : _sublats) {
-      Index V = config.supercell().volume();
-      for(Index i = b * V; i < (b + 1)*V; ++i) {
-        pert_sites.insert(i);
-      }
-    }
-
-    for(UnitCellCoord const &ucc : _sites)
-      pert_sites.insert(config.supercell().prim_grid().find(ucc));
-
-    if(pert_sites.size() == 0) {
-      config.configdof().local_dof(_dof).values().setZero();
+    if(_in_config.sites().size() == 0) {
+      tconfig.configdof().local_dof(_dof).values().setZero();
     }
     else {
-      for(Index s : pert_sites) {
-        config.configdof().local_dof(_dof).site_value(s).setZero();
+      for(Index s : _in_config.sites()) {
+        tconfig.configdof().local_dof(_dof).site_value(s).setZero();
       }
     }
 
-    std::vector<PermuteIterator> pg;
-    for(PermuteIterator const &perm_it : config.factor_group()) {
-      bool add_it = true;
+    ConfigEnumInput config(tconfig, _in_config.sites());
 
-      for(Index s : pert_sites) {
-        if(pert_sites.count(perm_it.permute_ind(s)) == 0) {
-          add_it = false;
-          break;
-        }
-      }
-      if(add_it)
-        pg.push_back(perm_it);
-    }
-
-
-    // if pert_sites is emptywe will fill it now to contain all the sites.
-    if(pert_sites.size() == 0) {
-      for(Index s = 0; s < config.size(); s++) {
-        pert_sites.insert(s);
-      }
-    }
-    Eigen::MatrixXd norm_coords = collective_dof_normal_coords(pert_sites.begin(),
-                                                               pert_sites.end(),
+    Eigen::MatrixXd norm_coords = collective_dof_normal_coords(config.sites().begin(),
+                                                               config.sites().end(),
                                                                config.supercell().sym_info(),
                                                                _dof,
-                                                               pg).transpose();
+                                                               config.group()).transpose();
 
     std::cout << "norm_coords are \n" << norm_coords << "\n";
 
-    auto constructor = [&](const Supercell & scel) {
+    auto constructor = [&](const ConfigEnumInput & _config) {
       return notstd::make_unique<ConfigEnumNormalCoords>(config,
                                                          _dof,
-                                                         pert_sites,
                                                          norm_coords);
     };
 
@@ -229,13 +159,12 @@ namespace CASM {
 
   }
 
-  ConfigEnumNormalCoords::ConfigEnumNormalCoords(const Configuration &_init,
+  ConfigEnumNormalCoords::ConfigEnumNormalCoords(const ConfigEnumInput &_init,
                                                  DoFKey const &_dof,
-                                                 std::set<Index> const &_sites,
                                                  Eigen::Ref<const Eigen::MatrixXd> const &_coords):
-    m_current(_init),
+    m_current(_init.config()),
     m_dof_key(_dof),
-    m_sites(_sites),
+    m_sites(_init.sites()),
     m_coords(_coords) {
 
 

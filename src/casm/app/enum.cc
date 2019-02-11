@@ -5,10 +5,8 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/EnumeratorHandler.hh"
+#include "casm/enumerator/Enumerator.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ScelEnum.hh"
-#include "casm/clex/ConfigEnumAllOccupations.hh"
-#include "casm/clex/SuperConfigEnum.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/casm_io/stream_io/container.hh"
 
@@ -56,7 +54,7 @@ namespace CASM {
 
   EnumCommand::EnumCommand(const CommandArgs &_args, Completer::EnumOption &_opt) :
     APICommand<Completer::EnumOption>(_args, _opt),
-    m_enumerators(nullptr) {}
+    m_enumerator_map(nullptr) {}
 
   int EnumCommand::vm_count_check() const {
     if(!in_project()) {
@@ -158,7 +156,7 @@ namespace CASM {
 
     if(count == 1) {
       auto it = std::find_if(enumerators().begin(), enumerators().end(), lambda);
-      return it->run(primclex(), input, opt());
+      return it->run(primclex(), input, opt(), m_enumerator_map);
     }
     else if(count < 1) {
       // allows for number aliasing
@@ -170,7 +168,7 @@ namespace CASM {
           for(int k = 0; k < m; ++k) {
             ++it;
           }
-          return it->run(primclex(), input, opt());
+          return it->run(primclex(), input, opt(), m_enumerator_map);
         }
       }
       catch(...) {}
@@ -187,16 +185,16 @@ namespace CASM {
   }
 
   const EnumeratorMap &EnumCommand::enumerators() const {
-    if(!m_enumerators) {
+    if(!m_enumerator_map) {
       if(in_project()) {
-        m_enumerators = &primclex().settings().enumerator_handler().map();
+        m_enumerator_map = &primclex().settings().enumerator_handler().map();
       }
       else {
         m_standard_enumerators = make_standard_enumerator_map();
-        m_enumerators = m_standard_enumerators.get();
+        m_enumerator_map = m_standard_enumerators.get();
       }
     }
-    return *m_enumerators;
+    return *m_enumerator_map;
   }
 
   void EnumCommand::print_names(std::ostream &sout, const EnumeratorMap &enumerators) const {

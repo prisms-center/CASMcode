@@ -23,9 +23,8 @@ namespace CASM {
 
   public:
 
-    ConfigEnumNormalCoords(const Configuration &_init,
+    ConfigEnumNormalCoords(const ConfigEnumInput &_init,
                            DoFKey const &_dof_key,
-                           std::set<Index> const &_sites,
                            Eigen::Ref<const Eigen::MatrixXd> const &_coords);
 
 
@@ -40,13 +39,12 @@ namespace CASM {
 
     static int run(PrimClex const &primclex,
                    jsonParser const &kwargs,
-                   Completer::EnumOption const &enum_opt);
+                   Completer::EnumOption const &enum_opt,
+                   EnumeratorMap const *interface_map);
 
     static int run(PrimClex const &_primclex,
-                   Configuration config,
+                   ConfigEnumInput const &_in_config,
                    DoFKey const &_dof,
-                   std::vector<Index> const &_sublats,
-                   std::vector<UnitCellCoord> const &_sites,
                    std::vector<std::string> const &_filter_expr,
                    bool dry_run);
   private:

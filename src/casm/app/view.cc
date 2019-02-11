@@ -5,12 +5,12 @@
 #include "casm/system/Popen.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/kinetics/DiffTransConfigInterpolation.hh"
-#include "casm/crystallography/jsonStruc.hh"
 
 #include "casm/completer/Handlers.hh"
 #include "casm/database/DatabaseTypesTraits.hh"
@@ -162,8 +162,8 @@ namespace CASM {
           args.log() << pos_path.string() << std::endl;
           jsonParser datajson(pos_path);
           for(auto it = datajson.begin() ; it != datajson.end() ; ++it) {
-            BasicStructure<Site> import_struc;
-            from_json(simple_json(import_struc, "relaxed_"), *it);
+            SimpleStructure import_struc("relaxed_");
+            from_json(import_struc, *it);
             fs::ofstream file;
             fs::path POSCARpath = tmp_dir / ("POSCAR" + it.name());
             file.open(POSCARpath);
@@ -259,9 +259,9 @@ namespace CASM {
         fs::path pos_path = calc_properties_path(primclex, config.name());
         args.log() << "Obtaining relaxed structure from:\n";
         args.log() << pos_path.string() << std::endl;
-        BasicStructure<Site> import_struc;
+        SimpleStructure import_struc("relaxed_");
         jsonParser datajson(pos_path);
-        from_json(simple_json(import_struc, "relaxed_"), datajson);
+        from_json(import_struc, datajson);
 
         file.open(POSCARpath);
         VaspIO::PrintPOSCAR p(import_struc);

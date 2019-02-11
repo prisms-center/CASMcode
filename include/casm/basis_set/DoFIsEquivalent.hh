@@ -2,7 +2,9 @@
 #define CASM_DoFIsEquivalent
 
 #include "casm/external/Eigen/Dense"
+#include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFSet.hh"
+#include "casm/container/Permutation.hh"
 
 namespace CASM {
   class DoFSet;
@@ -50,6 +52,46 @@ namespace CASM {
 
     mutable Eigen::MatrixXd m_U;
   };
+
+
+  /// \brief Class for checking equivalence of two OccupantDoF objects, with respect to symmetry transformations
+  ///
+  /// OccupantDoFs dofA and dofB are considered equivalent if
+  /// - dofA and dofB have the same number of allowed occupants AND
+  /// - each allowed occupant of dofA is also an allowed occupant of dofB AND
+  /// - if compare_occupant is set to TRUE, the current occupant of dofA is equivalent to the current occupant of dofB
+  ///
+  /// \ingroup IsEquivalent
+  ///
+  template<typename OccType>
+  class OccupantDoFIsEquivalent {
+  public:
+    using OccDoFType = OccupantDoF<OccType>;
+
+    OccupantDoFIsEquivalent(OccDoFType const &_dof) : m_dof(_dof), m_P(_dof.size()) {}
+
+    /// returns true if m_dof and _other have matching labels, and m_dof = P.permute(_other)
+    bool operator()(OccDoFType const &_other) const;
+
+    /// returns true if copy_apply(_op,m_dof) = P.permute(m_dof)
+    bool operator()(SymOp const &_op) const;
+
+    /// returns true if copy_apply(_op,m_dof) =  P.permute(_other)
+    bool operator()(SymOp const &_op, OccDoFType const &_other) const;
+
+    /// return transformation permutation P calculated during last successful comparison
+    Permutation const &perm() const {
+      return m_P;
+    }
+
+  private:
+
+    OccDoFType m_dof;
+
+    mutable Permutation m_P;
+  };
+
+
 }
 
 #endif

@@ -9,7 +9,8 @@
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/app/casm_functions.hh"
-
+//#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/clex/Configuration.hh"
 namespace CASM {
 
   /** \defgroup Enumerator
@@ -413,6 +414,63 @@ namespace CASM {
       @{
   */
 
+  class ConfigEnumInput {
+  public:
+    ConfigEnumInput(Configuration const &_config, std::set<Index> const &_sites_selection = {}, std::string const &_name = "");
+    ConfigEnumInput(Supercell const &_scel, std::set<Index> const &_sites_selection = {});
+
+    std::string const &name() const {
+      return m_name;
+    }
+
+    template<typename SitesContainer>
+    void set_sites(SitesContainer const &_container) {
+      m_sites_selection.clear();
+      for(auto const &site : _container)
+        _add_site(site);
+    }
+
+    std::set<Index> const &sites() const {
+      return m_sites_selection;
+    }
+
+    Supercell const &supercell() const {
+      return m_config.supercell();
+    }
+
+    Configuration const &config() const {
+      return m_config;
+    }
+
+    ConfigDoF const &configdof() const {
+      return m_config.configdof();
+    }
+
+    void set_group(std::vector<PermuteIterator> const &_group) {
+      m_group = _group;
+    }
+
+    std::vector<PermuteIterator> const &group() const {
+      if(m_group.empty())
+        _generate_group();
+      return m_group;
+    }
+
+  private:
+
+    void _generate_group() const;
+
+    void _add_site(Index b);
+
+    void _add_site(UnitCellCoord const &_ucc);
+
+    std::string m_name;
+    std::set<Index> m_sites_selection;
+    Configuration m_config;
+    mutable std::vector<PermuteIterator> m_group;
+  };
+
+
   typedef InterfaceBase<Completer::EnumOption> EnumInterfaceBase;
   typedef InterfaceMap<Completer::EnumOption> EnumeratorMap;
 
@@ -459,19 +517,19 @@ namespace CASM {
   int insert_unique_canon_configs(
     std::string method,
     const PrimClex &primclex,
-    Supercell const &scel,
+    ConfigEnumInput const &in_config,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
     bool dry_run);
 
   /// \brief Standardizes insertion from enumerators that construct unique
   /// primitive canonical configurations
-  template<typename ScelIterator, typename ConfigEnumConstructor>
+  template<typename InConfigIterator, typename ConfigEnumConstructor>
   int insert_unique_canon_configs(
     std::string method,
     const PrimClex &primclex,
-    ScelIterator begin,
-    ScelIterator end,
+    InConfigIterator begin,
+    InConfigIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
     bool dry_run);
@@ -481,19 +539,19 @@ namespace CASM {
   int insert_configs(
     std::string method,
     const PrimClex &primclex,
-    Supercell const &scel,
+    ConfigEnumInput const &in_config,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
     bool primitive_only,
     bool dry_run);
 
   /// \brief Standardizes insertion from enumerators that construct configurations
-  template<typename ScelIterator, typename ConfigEnumConstructor>
+  template<typename InConfigIterator, typename ConfigEnumConstructor>
   int insert_configs(
     std::string method,
     const PrimClex &primclex,
-    ScelIterator begin,
-    ScelIterator end,
+    InConfigIterator begin,
+    InConfigIterator end,
     ConfigEnumConstructor f,
     std::vector<std::string> filter_expr,
     bool primitive_only,
@@ -525,8 +583,8 @@ namespace CASM {
       return Derived::enumerator_name;
     }
 
-    int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override {
-      return Derived::run(primclex, kwargs, enum_opt);
+    int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt, EnumeratorMap const *interface_map = nullptr) const override {
+      return Derived::run(primclex, kwargs, enum_opt, interface_map);
     }
 
     std::unique_ptr<EnumInterfaceBase> clone() const {
@@ -547,8 +605,13 @@ namespace CASM {
 
   std::unique_ptr<EnumeratorMap> make_standard_enumerator_map();
 
-  /** @}*/
+  std::vector<ConfigEnumInput> make_enumerator_input_configs(
+    PrimClex const &primclex,
+    jsonParser const &_kwargs,
+    Completer::EnumOption const &enum_opt,
+    EnumeratorMap const *interface_map);
 
+  /** @}*/
 }
 
 #endif

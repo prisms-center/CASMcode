@@ -16,7 +16,9 @@ namespace CASM {
                                      std::map<DoFKey, std::vector<SymGroupRepID> > const &local_dof_symrep_IDs) :
     m_prim_grid(_prim_lat, _super_lat, NB),
     m_factor_group(_super_lat.invariant_subgroup(_prim_factor_group)),
-    m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID) {
+    m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID),
+    m_has_aniso_occs(false),
+    m_has_occupation_dofs(false) {
     for(auto const &dofID : global_dof_symrep_IDs)
       m_global_dof_symreps.emplace(std::make_pair(dofID.first, SymGroupRep::RemoteHandle(factor_group(), dofID.second)));
 
@@ -31,6 +33,13 @@ namespace CASM {
 
     m_occ_symreps.resize(NB);
     for(Index b = 0; b < NB; ++b) {
+      if(!occ_symrep_IDs[b].is_identity()) {
+        m_has_aniso_occs = true;
+        m_has_occupation_dofs = true;
+      }
+      else if(occ_symrep_IDs[b].group_index() > 1)
+        m_has_occupation_dofs = true;
+
       m_occ_symreps[b] = SymGroupRep::RemoteHandle(factor_group(), occ_symrep_IDs[b]);
     }
 

@@ -1,6 +1,6 @@
 #include "casm/database/ConfigImport.hh"
 
-#include "casm/crystallography/jsonStruc.hh"
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -154,15 +154,15 @@ namespace CASM {
       }
 
       // read from structure file or properties.calc.json file (if exists)
-      BasicStructure<Site> struc = this->_make_structure(res.pos);
+      SimpleStructure sstruc = this->_make_structure(res.pos);
 
       // do mapping
       ConfigMapperResult map_result;
       if(_occupation_only()) {
-        map_result = m_configmapper->import_structure_occupation(struc, hint_config.get());
+        map_result = m_configmapper->import_structure_occupation(sstruc, hint_config.get());
       }
       else {
-        map_result =  m_configmapper->import_structure(struc);
+        map_result =  m_configmapper->import_structure(sstruc);
       }
 
       if(!map_result.success) {
@@ -223,18 +223,20 @@ namespace CASM {
     ///
     /// If 'p.extension()' == ".json" or ".JSON", read as properties.calc.json
     /// Else, read as VASP POSCAR
-    BasicStructure<Site> StructureMap<Configuration>::_make_structure(const fs::path &p) const {
+    SimpleStructure StructureMap<Configuration>::_make_structure(const fs::path &p) const {
 
-      BasicStructure<Site> struc;
+      SimpleStructure sstruc("relaxed_");
       if(p.extension() == ".json" || p.extension() == ".JSON") {
         jsonParser json(p);
-        from_json(simple_json(struc, "relaxed_"), json);
+        from_json(sstruc, json);
       }
       else {
+        BasicStructure<Site> struc;
         fs::ifstream struc_stream(p);
         struc.read(struc_stream);
+        sstruc = SimpleStructure(struc);
       }
-      return struc;
+      return sstruc;
     }
 
     /// \brief Import Configuration with only occupation DoF

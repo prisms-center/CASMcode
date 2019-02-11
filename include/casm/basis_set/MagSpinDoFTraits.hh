@@ -30,24 +30,6 @@ namespace CASM {
 
       Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override;
 
-      std::string site_basis_description(BasisSet site_bset, Site site) const override {
-        return "";
-      }
-
-      std::string clexulator_public_method_declarations_string(Structure const &_prim,
-                                                               std::vector<BasisSet> const &site_bases,
-                                                               std::string const &indent) const override {
-        //todo
-        return std::string();
-      }
-
-      std::string clexulator_public_method_definitions_string(Structure const &_prim,
-                                                              std::vector<BasisSet> const &site_bases,
-                                                              std::string const &indent) const override {
-        // todo
-        return std::string();
-      }
-
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
       std::vector<BasisSet> construct_site_bases(Structure const &_prim,
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,

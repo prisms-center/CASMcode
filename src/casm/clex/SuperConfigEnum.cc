@@ -156,7 +156,8 @@ namespace CASM {
   int SuperConfigEnum::run(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOption &enum_opt,
+    EnumeratorMap const *interface_map) {
 
     // -- Disallow 'name' & --scelnames options --
     if(_kwargs.contains("name") || enum_opt.vm().count("scelnames")) {
@@ -197,8 +198,8 @@ namespace CASM {
       subconfig);
 
     // -- Enumerator construction --
-    auto lambda = [&](Supercell & scel) {
-      return notstd::make_unique<SuperConfigEnum>(scel, subconfig.begin(), subconfig.end());
+    auto lambda = [&](ConfigEnumInput const & _config) {
+      return notstd::make_unique<SuperConfigEnum>(_config.supercell(), subconfig.begin(), subconfig.end());
     };
 
     int returncode = insert_configs_via_lattice_enum(

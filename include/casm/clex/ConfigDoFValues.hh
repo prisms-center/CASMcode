@@ -130,6 +130,15 @@ namespace CASM {
       return m_vals;
     }
 
+    Eigen::MatrixXd standard_values() const {
+      Index rows = m_info[0].basis().rows();
+      Eigen::MatrixXd result(rows, m_vals.cols());
+      for(Index b = 0; b < n_basis(); ++b) {
+        result.block(0, b * n_vol(), rows, n_vol()) = m_info[b].basis() * sublat(b);
+      }
+      return result;
+    }
+
     SiteReference site_value(Index l) {
       return m_vals.col(l);
     }
@@ -200,6 +209,11 @@ namespace CASM {
     ConstReference values() const {
       return m_vals;
     }
+
+    Eigen::MatrixXd standard_values() const {
+      return m_info.basis() * m_vals;
+    }
+
 
     DoFSetInfo const &info() const {
       return m_info;

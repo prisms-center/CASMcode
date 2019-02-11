@@ -2,7 +2,7 @@
 #include <boost/filesystem.hpp>
 #include "casm/casm_io/EigenDataStream.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/jsonStruc.hh"
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigMapping.hh"
@@ -118,7 +118,7 @@ namespace CASM {
     Eigen::VectorXd StrucScore::evaluate(const Configuration &_config)const {
       std::vector<double> result_vec;
 
-      BasicStructure<Site> relaxed_struc;
+      SimpleStructure relaxed_struc("relaxed_");
       MappedConfig mapped_config;
       Lattice mapped_lat;
 
@@ -130,7 +130,7 @@ namespace CASM {
         return res;
       };
 
-      from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(_calc_properties_path(_config)));
+      from_json(relaxed_struc, jsonParser(_calc_properties_path(_config)));
 
       if(!m_configmapper->struc_to_configdof(relaxed_struc, mapped_config, mapped_lat)) {
         for(Index i = 0; i < m_prop_names.size(); i++) {
@@ -141,13 +141,13 @@ namespace CASM {
       }
       for(Index i = 0; i < m_prop_names.size(); i++) {
         if(m_prop_names[i] == "basis_score")
-          result_vec.push_back(ConfigMapping::basis_cost(mapped_config, relaxed_struc.basis().size()));
+          result_vec.push_back(ConfigMapping::basis_cost(mapped_config, relaxed_struc.n_mol()));
         else if(m_prop_names[i] == "lattice_score")
-          result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_config, relaxed_struc.basis().size()));
+          result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapped_config, relaxed_struc.n_mol()));
         else if(m_prop_names[i] == "total_score") {
-          double sc = ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_config, relaxed_struc.basis().size());
+          double sc = ConfigMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapped_config, relaxed_struc.n_mol());
 
-          double bc = ConfigMapping::basis_cost(mapped_config, relaxed_struc.basis().size());
+          double bc = ConfigMapping::basis_cost(mapped_config, relaxed_struc.n_mol());
 
           double w = m_configmapper->lattice_weight();
           result_vec.push_back(w * sc + (1.0 - w)*bc);

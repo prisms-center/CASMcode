@@ -53,6 +53,14 @@ namespace CASM {
       return m_factor_group;
     }
 
+    bool has_aniso_occs() const {
+      return m_has_aniso_occs;
+    }
+
+    bool has_occupation_dofs() const {
+      return m_has_occupation_dofs;
+    }
+
     /// \brief Begin iterator over pure translational permutations
     permute_const_iterator translate_begin() const;
 
@@ -90,6 +98,12 @@ namespace CASM {
     std::map<DoFKey, SublatSymReps> m_local_dof_symreps;
 
     std::map<DoFKey, SymGroupRep::RemoteHandle> m_global_dof_symreps;
+
+    // true if there species with non-identity symreps
+    bool m_has_aniso_occs;
+
+    // true if any site has occupation DoFs
+    bool m_has_occupation_dofs;
 
     // m_perm_symrep_ID is the ID of the SymGroupRep of prim().factor_group() that describes how
     // operations of m_factor_group permute sites of the Supercell.

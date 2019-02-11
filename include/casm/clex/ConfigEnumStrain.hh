@@ -27,7 +27,7 @@ namespace CASM {
 
   public:
 
-    ConfigEnumStrain(const Configuration &_init,
+    ConfigEnumStrain(const ConfigEnumInput &_init,
                      const std::vector<SymRepTools::SubWedge> &_wedges,
                      Eigen::VectorXd min_val,
                      Eigen::VectorXd max_val,
@@ -47,10 +47,11 @@ namespace CASM {
 
     static int run(PrimClex const &primclex,
                    jsonParser const &kwargs,
-                   Completer::EnumOption const &enum_opt);
+                   Completer::EnumOption const &enum_opt,
+                   EnumeratorMap const *interface_map);
 
     static int run(PrimClex const &_primclex,
-                   Configuration const &_config,
+                   ConfigEnumInput const &_config,
                    Eigen::Ref<const Eigen::MatrixXd> const &_axes,
                    Eigen::Ref<const Eigen::VectorXd> const &min_val,
                    Eigen::Ref<const Eigen::VectorXd> const &max_val,

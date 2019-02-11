@@ -31,7 +31,7 @@ namespace CASM {
 
     /// \brief Construct with a Supercell, using all permutations
     ConfigEnumRandomOccupations(
-      const Supercell &_scel,
+      ConfigEnumInput const &_in_config,
       Index _n_config,
       MTRand &_mtrand);
 
@@ -41,7 +41,7 @@ namespace CASM {
 
     static const std::string enumerator_name;
     static std::string interface_help();
-    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt, EnumeratorMap const *interface_map = nullptr);
 
   private:
 
@@ -56,6 +56,7 @@ namespace CASM {
     Index m_n_config;
     MTRand *m_mtrand;
     std::vector<int> m_max_allowed;
+    std::vector<Index> m_site_selection;
     notstd::cloneable_ptr<Configuration> m_current;
   };
 

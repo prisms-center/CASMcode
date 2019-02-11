@@ -16,6 +16,8 @@
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
+  class SymGroup;
+
   class Molecule;
   class jsonParser;
 
@@ -113,9 +115,20 @@ namespace CASM {
         return type_name();
       }
 
+
       /// \brief return standard coordinate axes for continuous variable space
       std::vector<std::string> const &standard_var_names() const {
         return m_standard_var_names;
+      }
+
+      /// \brief Return list of DoFs that *must* be applied before this DoF is applied
+      virtual std::set<std::string> before_dof_apply() const {
+        return {};
+      }
+
+      /// \brief Return list of DoFs that *must* be applied after this DoF is applied
+      virtual std::set<std::string> after_dof_apply() const {
+        return {};
       }
 
       /// \brief returns true if time-reversal changes the DoF value
@@ -398,6 +411,10 @@ namespace CASM {
     void set_symrep_ID(SymGroupRepID _id) const {
       m_symrep_ID = _id;
     }
+
+    /// \brief Allocates an empty symmetry representation in \param _group and records its SymGroupRepID
+    /// This representation becomes THE representation for this DiscreteDoF, to be initialized accordingly
+    void allocate_symrep(SymGroup const &_group) const;
 
     bool is_specified() const {
       return valid_index(m_current_state);

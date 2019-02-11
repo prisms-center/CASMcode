@@ -24,9 +24,9 @@ namespace CASM {
 
   template class LatticeCanonicalForm<Comparisons<CRTPBase<Lattice> > >;
 
-  Lattice::Lattice(const Eigen::Vector3d &vec1,
-                   const Eigen::Vector3d &vec2,
-                   const Eigen::Vector3d &vec3,
+  Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
+                   Eigen::Ref<const Eigen::Vector3d> const &vec2,
+                   Eigen::Ref<const Eigen::Vector3d> const &vec3,
                    double xtal_tol,
                    bool force) : m_tol(xtal_tol) {
     m_lat_mat << vec1, vec2, vec3;

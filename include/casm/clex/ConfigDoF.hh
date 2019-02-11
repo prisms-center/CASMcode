@@ -5,6 +5,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/clex/ConfigDoFValues.hh"
+#include "casm/container/ContainerTraits.hh"
 namespace CASM {
 
   class PermuteIterator;
@@ -23,24 +24,39 @@ namespace CASM {
   class ConfigDoF {
 
   public:
-    using GlobalValueType = GlobalContinuousConfigDoFValues;
-    using LocalValueType = LocalContinuousConfigDoFValues;
+    using GlobalDoFContainerType = GlobalContinuousConfigDoFValues;
+    using LocalDoFContainerType = LocalContinuousConfigDoFValues;
+    using OccDoFContainerType = LocalDiscreteConfigDoFValues;
+
+    using OccValueType = OccDoFContainerType::ValueType;
 
     // Can treat as a Eigen::VectorXd
     //typedef displacement_matrix_t::ColXpr displacement_t;
     //typedef displacement_matrix_t::ConstColXpr const_displacement_t;
 
     /// Initialize with number of sites, and dimensionality of global and local DoFs
-    /// GlobalContainerType is an iterable container of value_type std::pair<DoFKey,ContinuousDoFInfo>
-    /// LocalContainerType is an iterable container of value_type std::pair<DoFKey,std::vector<ContinuousDoFInfo>  >
-    template<typename GlobalContainerType, typename LocalContainerType>
-    ConfigDoF(Index _N_sublat, Index _N_vol, GlobalContainerType const &global_dof_dims, LocalContainerType const &local_dof_dims, double _tol);
+    /// GlobalInfoContainerType is an iterable container of value_type std::pair<DoFKey,ContinuousDoFInfo>
+    /// LocalInfoContainerType is an iterable container of value_type std::pair<DoFKey,std::vector<ContinuousDoFInfo>  >
+    template<typename GlobalInfoContainerType, typename LocalInfoContainerType>
+    ConfigDoF(Index _N_sublat,
+              Index _N_vol,
+              GlobalInfoContainerType const &global_dof_info,
+              LocalInfoContainerType const &local_dof_info,
+              double _tol);
 
     ///Initialize with explicit occupation
     //ConfigDoF(const std::vector<int> &_occupation, double _tol = TOL);
 
     Index size() const {
-      return m_occupation.size();
+      return occupation().size();
+    }
+
+    Index n_vol() const {
+      return m_occupation.n_vol();
+    }
+
+    Index n_basis() const {
+      return m_occupation.n_basis();
     }
 
     double tol() const {
@@ -53,36 +69,40 @@ namespace CASM {
     // -- Occupation ------------------
 
     int &occ(Index i) {
-      return m_occupation[i];
-    };
+      return m_occupation.values()[i];
+    }
 
     const int &occ(Index i) const {
-      return m_occupation[i];
-    };
+      return m_occupation.values()[i];
+    }
 
     /// set_occupation ensures that ConfigDoF::size() is compatible with _occupation.size()
     /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _occupation.size()
-    void set_occupation(const std::vector<int> &_occupation);
+    template <typename OtherOccContainerType, typename std::enable_if<std::is_integral<typename ContainerTraits<OtherOccContainerType>::value_type>::value>::type * = nullptr>
+    void set_occupation(const OtherOccContainerType &_occupation) {
+      if(occupation().size() != _occupation.size())
+        throw std::runtime_error("Size mismatch in ConfigDoF::set_occupation()");
+      for(Index i = 0; i < occupation().size(); ++i)
+        occ(i) = _occupation[i];
+    }
 
-    const std::vector<int> &occupation() const {
-      return m_occupation;
-    };
+    OccValueType const &occupation() const {
+      return m_occupation.values();
+    }
 
     bool has_occupation() const {
       return size() != 0 && occupation().size() == size();
     }
 
-    //void resize(Index _N);
-
-    std::map<DoFKey, GlobalValueType> const &global_dofs() const {
+    std::map<DoFKey, GlobalDoFContainerType> const &global_dofs() const {
       return m_global_dofs;
     }
 
-    GlobalValueType const &global_dof(DoFKey const &_key) const {
+    GlobalDoFContainerType const &global_dof(DoFKey const &_key) const {
       return global_dofs().at(_key);
     }
 
-    GlobalValueType &global_dof(DoFKey const &_key) {
+    GlobalDoFContainerType &global_dof(DoFKey const &_key) {
       auto it = m_global_dofs.find(_key);
       if(it == m_global_dofs.end())
         throw std::runtime_error("Attempting to access unitialized ConfigDoF value for '" + _key + "'");
@@ -97,22 +117,20 @@ namespace CASM {
 
     void set_global_dof(DoFKey const &_key, Eigen::Ref<const Eigen::VectorXd> const &_val);
 
-    std::map<DoFKey, LocalValueType> const &local_dofs() const {
+    std::map<DoFKey, LocalDoFContainerType> const &local_dofs() const {
       return m_local_dofs;
     }
 
-    LocalValueType const &local_dof(DoFKey const &_key) const {
+    LocalDoFContainerType const &local_dof(DoFKey const &_key) const {
       return local_dofs().at(_key);
     }
 
-    LocalValueType &local_dof(DoFKey const &_key) {
+    LocalDoFContainerType &local_dof(DoFKey const &_key) {
       auto it = m_local_dofs.find(_key);
       if(it == m_local_dofs.end())
         throw std::runtime_error("Attempting to access unitialized ConfigDoF value for '" + _key + "'");
       return it->second;
     }
-
-
 
     bool has_local_dof(DoFKey const &_key) const {
       return local_dofs().count(_key);
@@ -141,9 +159,6 @@ namespace CASM {
     // ***DON'T FORGET: If you add something here, also update ConfigDoF::swap!!
 
 
-    /// \brief Number of sites in the Configuration
-    Index m_N;
-
     /// With one value for each site in the Configuration, this std::vector
     /// describes which occupant is at each of the 'N' sites of the configuration
     ///
@@ -156,11 +171,11 @@ namespace CASM {
     ///       basis0: [prim0|prim1|prim2|...] up to supercell.volume()
     ///
     ///
-    std::vector<int> m_occupation;
+    OccDoFContainerType m_occupation;
 
-    std::map<std::string, GlobalContinuousConfigDoFValues> m_global_dofs;
+    std::map<std::string, GlobalDoFContainerType> m_global_dofs;
 
-    std::map<std::string, LocalContinuousConfigDoFValues> m_local_dofs;
+    std::map<std::string, LocalDoFContainerType> m_local_dofs;
 
     /// Tolerance used for transformation to canonical form -- used also for comparisons, since
     /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form
@@ -172,7 +187,11 @@ namespace CASM {
   template<>
   struct jsonConstructor<ConfigDoF> {
 
-    static ConfigDoF from_json(const jsonParser &json, Index NB, std::map<DoFKey, DoFSetInfo> const &global_info, std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info, double _tol);
+    static ConfigDoF from_json(const jsonParser &json,
+                               Index NB,
+                               std::map<DoFKey, DoFSetInfo> const &global_info,
+                               std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info,
+                               double _tol);
     //from_json(const jsonParser &json, Index NB);
   };
 
@@ -188,11 +207,15 @@ namespace CASM {
   }
 
   /// Initialize with number of sites, and dimensionality of global and local DoFs
-  /// GlobalContainerType is an iterable container of value_type std::pair<DoFKey,ContinuousDoFInfo>
-  /// LocalContainerType is an iterable container of value_type std::pair<DoFKey,std::vector<ContinuousDoFInfo>  >
-  template<typename GlobalContainerType, typename LocalContainerType>
-  ConfigDoF::ConfigDoF(Index _N_sublat, Index _N_vol, GlobalContainerType const &global_dof_info, LocalContainerType const &local_dof_info, double _tol) :
-    m_occupation(_N_sublat * _N_vol, 0),
+  /// GlobalInfoContainerType is an iterable container of value_type std::pair<DoFKey,ContinuousDoFInfo>
+  /// LocalInfoContainerType is an iterable container of value_type std::pair<DoFKey,std::vector<ContinuousDoFInfo>  >
+  template<typename GlobalInfoContainerType, typename LocalInfoContainerType>
+  ConfigDoF::ConfigDoF(Index _N_sublat,
+                       Index _N_vol,
+                       GlobalInfoContainerType const &global_dof_info,
+                       LocalInfoContainerType const &local_dof_info,
+                       double _tol) :
+    m_occupation(DoF::traits("occ"), _N_sublat, _N_vol, OccValueType::Zero(_N_sublat * _N_vol)),
     m_tol(_tol) {
     for(auto const &dof : global_dof_info) {
       DoF::BasicTraits const &ttraits = DoF::traits(dof.first);

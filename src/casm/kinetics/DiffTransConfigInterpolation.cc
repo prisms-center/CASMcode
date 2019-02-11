@@ -131,7 +131,8 @@ namespace CASM {
 
     int DiffTransConfigInterpolation::run(const PrimClex &primclex,
                                           const jsonParser &kwargs,
-                                          const Completer::EnumOption &enum_optconst) {
+                                          const Completer::EnumOption &enum_opt,
+                                          EnumeratorMap const *interface_map) {
 
       // get selection filename from json/enumoption // do json for now
       // selcection by names

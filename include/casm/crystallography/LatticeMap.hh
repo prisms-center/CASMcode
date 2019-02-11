@@ -30,10 +30,16 @@ namespace CASM {
     typedef Eigen::Matrix<double, 3, 3, Eigen::DontAlign> DMatType;
     typedef Eigen::Matrix<int, 3, 3, Eigen::DontAlign> IMatType;
 
-    LatticeMap(const Lattice &_ideal, const Lattice &_strained, Index _num_atoms, double _tol /*= TOL*/, int _range /*= 2*/);
+    LatticeMap(Lattice const &_ideal, Lattice const &_strained, Index _num_atoms, double _tol /*= TOL*/, int _range /*= 2*/);
+    LatticeMap(Eigen::Ref<const DMatType> const &_ideal,
+               Eigen::Ref<const DMatType> const &_strained,
+               Index _num_atoms,
+               double _tol /*= TOL*/,
+               int _range /*= 2*/);
+
     // Finds the smallest strain tensor (in terms of Frobenius norm) that deforms (*this) into a lattice symmetrically equivalent to 'strained_lattice'
-    const LatticeMap &best_strain_mapping() const;
-    const LatticeMap &next_mapping_better_than(double max_cost) const;
+    LatticeMap const &best_strain_mapping() const;
+    LatticeMap const &next_mapping_better_than(double max_cost) const;
     double strain_cost() const {
       return m_cost;
     }
@@ -59,7 +65,7 @@ namespace CASM {
     mutable EigenCounter<IMatType> m_inv_count;
     mutable DMatType m_F, m_N, m_cache;
 
-    const LatticeMap &_next_mapping_better_than(double max_cost) const;
+    LatticeMap const &_next_mapping_better_than(double max_cost) const;
     // use m_F and m_atomic_vol to calculate strain cost
     double _calc_strain_cost() const;
 
