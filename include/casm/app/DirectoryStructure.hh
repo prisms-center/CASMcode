@@ -179,6 +179,9 @@ namespace CASM {
     /// \brief Return path to POS file
     fs::path POS(std::string configname) const;
 
+    /// \brief Return path to config.json file
+    fs::path config_json(std::string configname) const;
+
     /// \brief Return calculation settings directory path, for global settings
     fs::path calc_settings_dir(std::string calctype) const;
 

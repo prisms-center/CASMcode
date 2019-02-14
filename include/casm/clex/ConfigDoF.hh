@@ -10,6 +10,7 @@ namespace CASM {
 
   class PermuteIterator;
   class jsonParser;
+  class SymGroupRepID;
 
   /// \brief A container class for the different degrees of freedom a Configuration
   /// might have
@@ -35,13 +36,15 @@ namespace CASM {
     //typedef displacement_matrix_t::ConstColXpr const_displacement_t;
 
     /// Initialize with number of sites, and dimensionality of global and local DoFs
-    /// GlobalInfoContainerType is an iterable container of value_type std::pair<DoFKey,ContinuousDoFInfo>
-    /// LocalInfoContainerType is an iterable container of value_type std::pair<DoFKey,std::vector<ContinuousDoFInfo>  >
+    /// GlobalInfoContainerType is an iterable container having value_type std::pair<DoFKey,ContinuousDoFInfo>
+    /// LocalInfoContainerType is an iterable container having value_type std::pair<DoFKey,std::vector<ContinuousDoFInfo>  >
+    /// OccInfoContainerType is an iterable container having value_type SymGroupRepID
     template<typename GlobalInfoContainerType, typename LocalInfoContainerType>
     ConfigDoF(Index _N_sublat,
               Index _N_vol,
               GlobalInfoContainerType const &global_dof_info,
               LocalInfoContainerType const &local_dof_info,
+              std::vector<SymGroupRepID> const &occ_symrep_IDs,
               double _tol);
 
     ///Initialize with explicit occupation
@@ -191,6 +194,7 @@ namespace CASM {
                                Index NB,
                                std::map<DoFKey, DoFSetInfo> const &global_info,
                                std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info,
+                               std::vector<SymGroupRepID> const &_occ_symrep_IDs,
                                double _tol);
     //from_json(const jsonParser &json, Index NB);
   };
@@ -214,8 +218,9 @@ namespace CASM {
                        Index _N_vol,
                        GlobalInfoContainerType const &global_dof_info,
                        LocalInfoContainerType const &local_dof_info,
+                       std::vector<SymGroupRepID> const &occ_symrep_IDs,
                        double _tol) :
-    m_occupation(DoF::traits("occ"), _N_sublat, _N_vol, OccValueType::Zero(_N_sublat * _N_vol)),
+    m_occupation(DoF::traits("occ"), _N_sublat, _N_vol, OccValueType::Zero(_N_sublat * _N_vol), occ_symrep_IDs),
     m_tol(_tol) {
     for(auto const &dof : global_dof_info) {
       DoF::BasicTraits const &ttraits = DoF::traits(dof.first);

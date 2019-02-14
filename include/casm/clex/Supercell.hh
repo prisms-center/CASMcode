@@ -153,9 +153,6 @@ namespace CASM {
     bool is_supercell_of(const Structure &structure, Eigen::Matrix3d &multimat) const;
     std::vector<int> vacant()const;
 
-    void write_pos() const;
-    std::ostream &write_pos(std::ostream &sout) const;
-
   private:
 
     friend Comparisons<SupercellCanonicalForm<CRTPBase<Supercell>>>;
@@ -214,6 +211,10 @@ namespace CASM {
     mutable Index m_nlist_size_at_construction;
 
   };
+
+  void write_pos(Supercell const &_scel);
+
+  std::string pos_string(Supercell const &_scel);
 
   /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
   const Supercell &make_supercell(const PrimClex &primclex, std::string name);

@@ -346,12 +346,6 @@ namespace CASM {
     /// Reads the Configuration from JSON
     void from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname);
 
-    /// Write the POS file to stream
-    std::ostream &write_pos(std::ostream &sout) const;
-
-    /// Write the POS file to pos_path
-    void write_pos() const;
-
     /// Writes incomplete properties.calc.json of config for kra purposes
     std::ostream &print_properties(std::string calctype, std::ostream &sout) const;
 
@@ -441,6 +435,20 @@ namespace CASM {
     PermuteIterator from_canonical_config;
     Eigen::Matrix3i transf_mat;
   };
+
+
+
+  /// \brief Write the POS file to string
+  std::string pos_string(Configuration const &_config);
+
+  /// Write the POS file to pos_path
+  void write_pos(Configuration const &_config);
+
+  /// \brief Write the config.json file to string
+  std::string config_json_string(Configuration const &_config);
+
+  /// Write the config.json file to config_json_path
+  void write_config_json(Configuration const &_config);
 
   Configuration sub_configuration(Supercell &sub_scel,
                                   const Configuration &super_config,

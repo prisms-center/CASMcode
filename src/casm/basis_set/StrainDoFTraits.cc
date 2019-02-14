@@ -60,6 +60,8 @@ namespace CASM {
       _struc.lat_column_mat = F * _struc.lat_column_mat;
       _struc.mol_info.coords = F * _struc.mol_info.coords;
       _struc.atom_info.coords = F * _struc.atom_info.coords;
+      _struc.global_dofs[type_name()]["deformation"] = F;
+      to_json_array(unrolled_metric, _struc.global_dofs[type_name()]["value"]);
     }
   }
 

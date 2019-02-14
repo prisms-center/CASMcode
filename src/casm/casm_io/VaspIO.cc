@@ -192,10 +192,8 @@ namespace CASM {
       m_lat = Lattice(sstruc.lat_column_mat);
       set_title(_title);
 
-      //const Supercell &scel = config.supercell();
-
       // create tuples collecting (Atom name, Coordinate, SelectiveDynamics) for each site
-      for(Index i : sstruc.atom_info.permute) {
+      for(Index i = 0; i < sstruc.n_atom(); ++i) {
         m_atom_order.push_back(
           tuple_type(
             sstruc.atom_info.names[i],

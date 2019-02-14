@@ -13,6 +13,7 @@
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/basis_set/DoFIsEquivalent_impl.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
@@ -540,7 +541,7 @@ namespace CASM {
         auto const &dofref_from = basis()[b].site_occupant();
         OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
         if(eq(op, dofref_to)) {
-          if(dofref_from.symrep_ID().empty()) {
+          if(dofref_from.symrep_ID().is_identity()) {
             if(!eq.perm().is_identity()) {
               dofref_from.allocate_symrep(m_factor_group);
               Index s2;
@@ -549,12 +550,12 @@ namespace CASM {
               }
               m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
             }
-
           }
           else {
             op.set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
           }
         }
+        else throw std::runtime_error("In Structure::_generate_basis_symreps(), Sites originally identified as equivalent cannot be mapped by symmetry.");
       }
 
       for(auto const &dof_dim : local_dof_dims(*this)) {

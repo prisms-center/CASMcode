@@ -8,6 +8,7 @@
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/OccupationDoFTraits.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"
+#include "casm/basis_set/DoFIsEquivalent_impl.hh"
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {
@@ -604,7 +605,7 @@ namespace CASM {
 
   bool Site::_compare_type_no_ID(const Site &_other) const {
     //compare domain but not value
-    if(!(label() == _other.label() && site_occupant().compare(_other.site_occupant(), false)))
+    if(!(label() == _other.label() && OccupantDoFIsEquivalent<Molecule>(site_occupant())(_other.site_occupant())))
       return false;
 
     if(m_dof_map.size() != _other.m_dof_map.size())

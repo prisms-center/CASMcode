@@ -22,6 +22,16 @@ namespace CASM {
       _values.sublat(b).topRows(_values.info()[b].dim()) = _values.info()[b].inv_basis() * tval.block(0, b * _values.n_vol(), _values.dim(), _values.n_vol());
   }
 
+  jsonParser &to_json(LocalDiscreteConfigDoFValues const &_values, jsonParser &_json) {
+    to_json_array(_values.values(), _json);
+    return _json;
+  }
+
+  void from_json(LocalDiscreteConfigDoFValues &_values, jsonParser const &_json) {
+    _values.resize_vol(_json.size() / _values.n_basis());
+    _values.values() = _json.get<LocalDiscreteConfigDoFValues::ValueType>();
+  }
+
   jsonParser &to_json(GlobalContinuousConfigDoFValues const &_values, jsonParser &_json) {
     Eigen::VectorXd tval;
     //Size tval to the size of the native DoF vector space

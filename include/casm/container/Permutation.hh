@@ -49,20 +49,20 @@ namespace CASM {
     explicit Permutation(Index N):
       m_perm_array(N) {
       std::iota(m_perm_array.begin(), m_perm_array.end(), 0);
-    };
+    }
 
     template<typename Iterator>
-    Permutation(Iterator begin, Iterator end): m_perm_array(begin, end) {};
-    explicit Permutation(const std::vector<Index> &init_perm): m_perm_array(init_perm) {};
-    explicit Permutation(std::vector<Index> &&init_perm): m_perm_array(std::move(init_perm)) {};
+    Permutation(Iterator begin, Iterator end): m_perm_array(begin, end) {}
+    explicit Permutation(const std::vector<Index> &init_perm): m_perm_array(init_perm) {}
+    explicit Permutation(std::vector<Index> &&init_perm): m_perm_array(std::move(init_perm)) {}
 
     Index size() const {
       return m_perm_array.size();
-    };
+    }
 
     const std::vector<Index> &perm_array() const {
       return m_perm_array;
-    };
+    }
 
     /// Checks that m_perm_array contains values from 0 to m_perm_array.size()-1 and that no value is repeated
     bool is_perm() const;
@@ -90,12 +90,12 @@ namespace CASM {
     /// const access of m_perm_array for doing low-level permutation algebra
     const Index  &operator[](Index i) const {
       return m_perm_array[i];
-    };
+    }
 
-    /// const access of m_perm_array for doing low-level permutation algebra
-    const Index  &at(Index i) const {
+    /// non-const access of m_perm_array for doing low-level permutation algebra
+    Index &set(Index i) {
       return m_perm_array[i];
-    };
+    }
 
     /// Generate permuted copy of indexed container
     template<typename Container>

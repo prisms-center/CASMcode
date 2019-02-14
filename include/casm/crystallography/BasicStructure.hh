@@ -294,6 +294,9 @@ namespace CASM {
   std::vector<DoFKey> continuous_local_dof_types(BasicStructure<CoordType> const &_struc);
 
   template<typename CoordType>
+  std::vector<SymGroupRepID> occ_symrep_IDs(BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
   std::vector<DoFKey> global_dof_types(BasicStructure<CoordType> const &_struc);
 
   template<typename CoordType>

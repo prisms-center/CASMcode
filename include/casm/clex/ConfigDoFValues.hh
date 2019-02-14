@@ -60,9 +60,14 @@ namespace CASM {
 
     LocalDiscreteConfigDoFValues() {}
 
-    LocalDiscreteConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol, Eigen::Ref< const ValueType > const &_vals) :
+    LocalDiscreteConfigDoFValues(DoFType::BasicTraits const &_traits,
+                                 Index _n_basis,
+                                 Index _n_vol,
+                                 Eigen::Ref< const ValueType > const &_vals,
+                                 std::vector<SymGroupRepID> const &_symrep_IDs) :
       ConfigDoFValues(_traits, _n_basis, _n_vol),
-      m_vals(_vals) {
+      m_vals(_vals),
+      m_symrep_IDs(_symrep_IDs) {
 
     }
 
@@ -82,6 +87,10 @@ namespace CASM {
       return m_vals.segment(b * n_vol(), n_vol());
     }
 
+    std::vector<SymGroupRepID> const &symrep_IDs() const {
+      return m_symrep_IDs;
+    }
+
   protected:
     void _resize() override {
       m_vals.resize(n_vol()*n_basis());
@@ -89,6 +98,7 @@ namespace CASM {
 
   private:
     ValueType m_vals;
+    std::vector<SymGroupRepID> m_symrep_IDs;
   };
 
   jsonParser &to_json(LocalDiscreteConfigDoFValues const &_values, jsonParser &_json);
@@ -111,7 +121,11 @@ namespace CASM {
 
     LocalContinuousConfigDoFValues() {}
 
-    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol,  Eigen::Ref< const ValueType > const &_vals, std::vector<DoFSetInfo> const &_info) :
+    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits,
+                                   Index _n_basis,
+                                   Index _n_vol,
+                                   Eigen::Ref< const ValueType > const &_vals,
+                                   std::vector<DoFSetInfo> const &_info) :
       ConfigDoFValues(_traits, _n_basis, _n_vol),
       m_vals(_vals),
       m_info(_info) {

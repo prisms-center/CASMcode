@@ -263,7 +263,7 @@ namespace CASM {
 
   jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat);
 
-  void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+  void from_json(Molecule &mol, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat);
 
   template<>
   struct jsonConstructor<Molecule> {

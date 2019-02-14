@@ -280,7 +280,7 @@ namespace CASM {
           m_fg_index_A = A.factor_group_index();
           Index l = 0;
           for(Index b = 0; b < m_configdof_ptr->n_basis(); ++b) {
-            for(Index n = 0; n < m_configdof_ptr->n_vol(); ++n) {
+            for(Index n = 0; n < m_configdof_ptr->n_vol(); ++n, ++l) {
               m_new_occ_A[l] = (*(A.occ_rep(b).permutation()))[before.occ(l)];
             }
           }
@@ -292,7 +292,7 @@ namespace CASM {
           m_fg_index_B = B.factor_group_index();
           Index l = 0;
           for(Index b = 0; b < m_configdof_ptr->n_basis(); ++b) {
-            for(Index n = 0; n < m_configdof_ptr->n_vol(); ++n) {
+            for(Index n = 0; n < m_configdof_ptr->n_vol(); ++n, ++l) {
               m_new_occ_B[l] = (*(B.occ_rep(b).permutation()))[before.occ(l)];
             }
           }

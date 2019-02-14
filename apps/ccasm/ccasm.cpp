@@ -7,11 +7,16 @@ using namespace CASM;
 // ccasm main:
 
 int main(int argc, char *argv[]) {
-  std::ios_base::Init ostream_init;
+  try {
+    std::ios_base::Init ostream_init;
+    default_log() << "Starting CASM!\n";
+    PrimClex *_primclex = nullptr;
+    CommandArgs args(argc, argv, _primclex, fs::path(), default_log(), default_err_log());
 
-  PrimClex *_primclex = nullptr;
-  CommandArgs args(argc, argv, _primclex, fs::path(), default_log(), default_err_log());
-
-  return casm_api(args);
-
+    return casm_api(args);
+  }
+  catch(std::exception const &e) {
+    default_log() << "Uncaught exception: \n" << e.what();
+  }
+  return 1;
 }

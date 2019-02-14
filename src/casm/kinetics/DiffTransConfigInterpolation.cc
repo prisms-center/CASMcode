@@ -156,8 +156,7 @@ namespace CASM {
           auto file_path = primclex.dir().configuration_calc_dir(config.name(), calctype);
           file_path += "/N_images_" + std::to_string(length) + "/poscars/0" + std::to_string(i) + "/POSCAR";
           fs::create_directories(file_path.parent_path());
-          fs::ofstream file(file_path);
-          enumerator.at_step(i)->write_pos(file);
+          fs::ofstream(file_path) << pos_string(*enumerator.at_step(i));
         }
         jsonParser endpts_json;
         fs::ofstream endpts(primclex.dir().configuration_calc_dir(config.name(), calctype) / ("/N_images_" + std::to_string(length)) / "endpoint_props.json");
@@ -268,8 +267,8 @@ namespace CASM {
       //Eigen::Matrix3d deformation = input_config.deformation();
       Configuration final_config = make_configuration(primclex, output_configname);
       //final_config.set_deformation(deformation);
-      fs::ofstream file(output_path);
-      final_config.write_pos(file);
+      fs::ofstream(output_path) << pos_string(final_config);
+
       return;
     }
   }

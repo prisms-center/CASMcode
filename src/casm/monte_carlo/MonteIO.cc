@@ -391,6 +391,7 @@ namespace CASM {
       ConfigDoF config_dof = jsonParser(dir.initial_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size(),
                              global_dof_info(mc.primclex().prim()),
                              local_dof_info(mc.primclex().prim()),
+                             occ_symrep_IDs(mc.primclex().prim()),
                              mc.primclex().crystallography_tol());
 
       if(!fs::exists(dir.initial_state_json(cond_index))) {
@@ -420,6 +421,7 @@ namespace CASM {
       ConfigDoF config_dof = jsonParser(dir.final_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size(),
                              global_dof_info(mc.primclex().prim()),
                              local_dof_info(mc.primclex().prim()),
+                             occ_symrep_IDs(mc.primclex().prim()),
                              mc.primclex().crystallography_tol());
 
 
@@ -477,6 +479,7 @@ namespace CASM {
           trajectory.push_back(it->get<ConfigDoF>(primstruc.basis().size(),
                                                   global_dof_info(primstruc),
                                                   local_dof_info(primstruc),
+                                                  occ_symrep_IDs(primstruc),
                                                   primstruc.lattice().tol()));
         }
 

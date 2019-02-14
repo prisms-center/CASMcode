@@ -102,6 +102,7 @@ namespace CASM {
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt,
     EnumeratorMap const *interface_map) {
+    std::cout << "Strain enum top RUN\n";
     bool trim_corners = _kwargs.get_if_else<bool>("trim_corners", true);
     bool sym_axes = _kwargs.get_if_else<bool>("sym_axes", false);
     //bool analysis = _kwargs.get_if_else<bool>("analysis", false);
@@ -129,10 +130,13 @@ namespace CASM {
       throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigStrain:") + e.what());
     }
 
+    std::cout << "**A**\n";
     std::vector<ConfigEnumInput> in_configs = make_enumerator_input_configs(primclex, _kwargs, enum_opt, interface_map);
+    std::cout << "**B**\n";
 
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
+    std::cout << "***Strain enumeration: in_configs size is " << in_configs.size() << "\n";
 
     for(ConfigEnumInput const &config : in_configs) {
       Index result = run(primclex,
@@ -166,7 +170,7 @@ namespace CASM {
                             //bool analysis,
                             std::vector<std::string> const &_filter_expr,
                             bool dry_run) {
-
+    std::cout << "Strain enum inner RUN\n";
     std::vector<SymRepTools::SubWedge> wedges;
     std::vector<int> dims;
     SymGroup pg = make_sym_group(_config.group());
@@ -248,7 +252,7 @@ namespace CASM {
     //m_perm_begin(_scel.permute_begin()),
     //m_perm_end(_scel.permute_end()),
     m_shape_factor(Eigen::MatrixXd::Identity(min_val.size(), min_val.size())) {
-
+    std::cout << "Strain enum constructor!\n";
     //Condition range arrays and build shape_factor matrix
     Index nc = 0;
     if(m_wedges.size() == 0)
@@ -301,7 +305,7 @@ namespace CASM {
   void ConfigEnumStrain::increment() {
     //bool is_valid_config(false);
     //std::cout << "Incrementing...\n";
-
+    std::cout << "Strain enum increment!\n";
     while(++m_counter && (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
       //just burning throught the count
       std::cout << "TOO BIG: " << m_counter().transpose() << "\n";

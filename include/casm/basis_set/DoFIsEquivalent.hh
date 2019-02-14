@@ -24,7 +24,7 @@ namespace CASM {
   class DoFIsEquivalent {
   public:
 
-    DoFIsEquivalent(DoFSet const &_dof) : m_dof(_dof) {}
+    DoFIsEquivalent(DoFSet const &_dof, double tol = TOL) : m_dof(_dof), m_tol(tol) {}
 
     /// returns true if m_dof and _other have matching labels, and m_dof.basis() = _other.basis()*U
     bool operator()(DoFSet const &_other) const;
@@ -50,6 +50,8 @@ namespace CASM {
 
     DoFSet m_dof;
 
+    double m_tol;
+
     mutable Eigen::MatrixXd m_U;
   };
 
@@ -68,7 +70,7 @@ namespace CASM {
   public:
     using OccDoFType = OccupantDoF<OccType>;
 
-    OccupantDoFIsEquivalent(OccDoFType const &_dof) : m_dof(_dof), m_P(_dof.size()) {}
+    OccupantDoFIsEquivalent(OccDoFType const &_dof, double tol = TOL) : m_dof(_dof), m_tol(tol), m_P(_dof.size()) {}
 
     /// returns true if m_dof and _other have matching labels, and m_dof = P.permute(_other)
     bool operator()(OccDoFType const &_other) const;
@@ -87,6 +89,8 @@ namespace CASM {
   private:
 
     OccDoFType m_dof;
+
+    double m_tol;
 
     mutable Permutation m_P;
   };

@@ -73,9 +73,14 @@ namespace CASM {
 
     Permutation tperm(it.combined_permute());
     if(occupation().size()) {
-      //ALSO DO SPECIES PERMUTATION
-      std::cerr << "OCCUPATION SYM TRANSFORM IS NOT IMPLEMENTED FOR CONFIGDOF";
-      exit(1);
+      if(it.sym_info().has_aniso_occs()) {
+        Index l = 0;
+        for(Index b = 0; b < n_basis(); ++b) {
+          for(Index n = 0; n < n_vol(); ++n, ++l) {
+            occ(l) = (*(it.occ_rep(b).permutation()))[occ(l)];
+          }
+        }
+      }
       set_occupation(tperm * occupation());
     }
 
@@ -101,22 +106,24 @@ namespace CASM {
       dof.second.values() = *(_op.representation(dof.second.info().symrep_ID()).MatrixXd()) * dof.second.values();
     }
 
-    std::cerr << "OCCUPATION SYM TRANSFORM IS NOT IMPLEMENTED FOR CONFIGDOF";
-    exit(1);
-    //DO SPECIES PERMUTE HERE
-    //Permutation tperm(it.combined_permute());
-    //if(occupation().size()) {
-    //set_occupation(tperm * occupation());
-    //}
+    if(occupation().size()) {
+      Index l = 0;
+      for(Index b = 0; b < n_basis(); ++b) {
+        if(!m_occupation.symrep_IDs()[b].is_identity()) {
+          SymPermutation const &permrep(*_op.get_permutation_rep(m_occupation.symrep_IDs()[b]));
+          l = b * n_vol();
+          for(Index n = 0; n < n_vol(); ++n, ++l) {
+            occ(l) = (*permrep.permutation())[occ(l)];
+          }
+        }
+      }
+    }
 
     for(auto &dof : m_local_dofs) {
       LocalContinuousConfigDoFValues tmp = dof.second;
 
       for(Index b = 0; b < tmp.n_basis(); ++b)
         dof.second.sublat(b) = *(_op.representation(dof.second.info()[b].symrep_ID()).MatrixXd()) * dof.second.sublat(b);
-      //for(Index l = 0; l < size(); ++l) {
-      //dof.second.site_value(l) = tmp.site_value(tperm[l]);
-      //}
     }
 
     return *this;
@@ -170,9 +177,9 @@ namespace CASM {
 
   //*******************************************************************************
 
-  ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json, Index NB, std::map<DoFKey, DoFSetInfo> const &global_info, std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info, double _tol) {
+  ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json, Index NB, std::map<DoFKey, DoFSetInfo> const &global_info, std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info, std::vector<SymGroupRepID> const &_occ_symrep_IDs, double _tol) {
 
-    ConfigDoF result(NB, 0, global_info, local_info, _tol);
+    ConfigDoF result(NB, 0, global_info, local_info,  _occ_symrep_IDs, _tol);
     result.from_json(json);//, NB);
 
     return result;

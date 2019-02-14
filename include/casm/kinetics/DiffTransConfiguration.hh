@@ -136,11 +136,6 @@ namespace CASM {
       /// A permute iterator it such that to_config = copy_apply(it,to_config.canonical_form())
       PermuteIterator to_config_from_canonical() const;
 
-      /// writes the initial and final positions of atoms to a file
-      void write_pos() const;
-      /// writes the initial and final positions of atoms to a file
-      std::ostream &write_pos(std::ostream &sout) const;
-
       /// \brief Determines if diff_trans is possible with bg_config
       static bool is_valid(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
 
@@ -184,6 +179,12 @@ namespace CASM {
 
       iterator canonical_it;
     };
+
+    /// writes the initial and final positions of atoms to a file
+    void write_pos(DiffTransConfiguration const &dtc);
+
+    /// writes the initial and final positions of atoms to a string
+    std::string pos_string(DiffTransConfiguration const &dtc);
 
     /// \brief prints this DiffTransConfiguration
     std::ostream &operator<<(std::ostream &sout, const DiffTransConfiguration &dtc) ;

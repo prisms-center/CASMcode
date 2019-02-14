@@ -182,54 +182,60 @@ namespace CASM {
     Completer::EnumOption const &enum_opt,
     EnumeratorMap const *interface_map) {
     std::vector<ConfigEnumInput> result;
-    auto scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
-    for(auto const &scel : *scel_enum)
-      result.push_back(ConfigEnumInput(scel));
-
     std::vector<std::string> confignames;
-    _kwargs.get_if(confignames, "confignames");
-    if(enum_opt.vm().count("confignames")) {
-      for(std::string const &configname : enum_opt.config_strs())
-        confignames.push_back(configname);
-    }
-    for(std::string const &configname : confignames) {
-      auto it = primclex.const_db<Configuration>().find(configname);
-      auto end = primclex.const_db<Configuration>().end();
-      if(it == end)
-        throw std::runtime_error("Attempting to parse enumeration input, but no valid config exists named '" + configname + "'.");
-      result.push_back(ConfigEnumInput(*it));
-    }
+    try {
+      auto scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
+      for(auto const &scel : *scel_enum)
+        result.push_back(ConfigEnumInput(scel));
 
-    if(_kwargs.contains("configs_from_enum")) {
-      throw std::runtime_error("How do we extract configurations from enumerator? OutputIterator interface?");
-      //interface_map->run(primclex, _kwargs["configs_from_enum"], Completer::EnumOption(), interface_map);
-    }
+      _kwargs.get_if(confignames, "confignames");
+      if(enum_opt.vm().count("confignames")) {
+        for(std::string const &configname : enum_opt.config_strs())
+          confignames.push_back(configname);
+      }
+      for(std::string const &configname : confignames) {
+        auto it = primclex.const_db<Configuration>().find(configname);
+        auto end = primclex.const_db<Configuration>().end();
+        if(it == end)
+          throw std::runtime_error("Attempting to parse enumeration input, but no valid config exists named '" + configname + "'.");
+        result.push_back(ConfigEnumInput(*it));
+      }
 
-    bool is_init = false;
-    auto find_it = _kwargs.find("sublats");
-    if(find_it != _kwargs.end()) {
-      is_init = true;
-      std::vector<Index> sublats;
-      find_it->get(sublats);
-      for(ConfigEnumInput &config : result) {
-        config.set_sites(sublats);
+      if(_kwargs.contains("configs_from_enum")) {
+        throw std::runtime_error("How do we extract configurations from enumerator? OutputIterator interface?");
+        //interface_map->run(primclex, _kwargs["configs_from_enum"], Completer::EnumOption(), interface_map);
+      }
+
+      bool is_init = false;
+      auto find_it = _kwargs.find("sublats");
+      if(find_it != _kwargs.end()) {
+        is_init = true;
+        std::vector<Index> sublats;
+        find_it->get(sublats);
+        for(ConfigEnumInput &config : result) {
+          config.set_sites(sublats);
+        }
+      }
+
+      find_it = _kwargs.find("sites");
+      if(find_it != _kwargs.end()) {
+        std::vector<UnitCellCoord> sites;
+        find_it->get(sites, primclex.prim());
+        Index l = 0;
+        if(is_init) {
+          l = result.size();
+          result.reserve(2 * result.size());
+
+          for(Index i = 0; i < l; ++i)
+            result.push_back(result[i]);
+        }
+        for(; l < result.size(); ++l)
+          result[l].set_sites(sites);
       }
     }
-
-    find_it = _kwargs.find("sites");
-    if(find_it != _kwargs.end()) {
-      std::vector<UnitCellCoord> sites;
-      find_it->get(sites, primclex.prim());
-      Index l = 0;
-      if(is_init) {
-        l = result.size();
-        result.reserve(2 * result.size());
-
-        for(Index i = 0; i < l; ++i)
-          result.push_back(result[i]);
-      }
-      for(; l < result.size(); ++l)
-        result[l].set_sites(sites);
+    catch(std::exception const &e) {
+      std::cout << "ERROR: " << e.what() << "\n";
+      throw std::runtime_error(std::string("Unable to parse configurtion input arguments:\n") + e.what());
     }
     return result;
   }

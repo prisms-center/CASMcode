@@ -50,6 +50,7 @@ namespace CASM {
 
 
   void TransformDirective::transform(ConfigDoF const  &_config, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+    std::cout << "Applying transformation: " << m_name << "\n";
     if(m_traits_ptr)
       m_traits_ptr->apply_dof(_config, _reference, _struc);
     else
@@ -68,8 +69,7 @@ namespace CASM {
     m_prefix(_prefix),
     m_atomized(false) {
 
-    if(selective_dynamics)
-      mol_info.SD.setZero(3, _struc.basis().size());
+    mol_info.SD = Eigen::MatrixXi::Zero(3, _struc.basis().size());
 
     mol_info.coords.resize(3, _struc.basis().size());
     mol_info.names.reserve(_struc.basis().size());
@@ -89,7 +89,7 @@ namespace CASM {
     m_atomized(false) {
 
     if(selective_dynamics)
-      mol_info.SD.setZero(3, _dof.size());
+      mol_info.SD = Eigen::MatrixXi::Zero(3, _dof.size());
 
     mol_info.coords.resize(3, _dof.size());
     mol_info.names.reserve(_dof.size());
@@ -132,11 +132,11 @@ namespace CASM {
       }
     }
 
-    atom_info.coords.setZero(3, N_atoms);
+    std::cout << "Atomizing with N_atom = " << N_atoms << "; nv = " << nv << "; nb = " << nb << "\n";
+    atom_info.coords.resize(3, N_atoms);
     atom_info.names.resize(N_atoms);
 
-    if(selective_dynamics)
-      atom_info.SD.setZero(3, N_atoms);
+    atom_info.SD = Eigen::MatrixXi::Zero(3, N_atoms);
 
     // a indexes atom, s indexes site (molecule)
     Index a = 0;
@@ -144,6 +144,7 @@ namespace CASM {
     for(Index b = 0; b < nb; ++b) {
       for(Index v = 0; v < nv; ++v, ++s) {
         Molecule const &molref = _reference.basis(b).site_occupant()[mol_occ[s]];
+        std::cout << "(b,v): (" << b << ", " << v << "); molref.size() = " << molref.size() << "\n";
         for(Index ms = 0; ms < molref.size(); ++ms, ++a) {
           atom_info.coords.col(a) = mol_info.coords.col(s) + molref.atom(ms).cart();
           atom_info.names[a] = molref.atom(ms).name();
@@ -159,7 +160,7 @@ namespace CASM {
     }
   }
 
-  jsonParser &to_json(SimpleStructure const &_struc, jsonParser &json, std::set<std::string> excluded_species) {
+  jsonParser &to_json(SimpleStructure const &_struc, jsonParser &json, std::set<std::string> const &excluded_species) {
 
     std::string prefix = _struc.prefix();
     if(!prefix.empty())
@@ -187,7 +188,7 @@ namespace CASM {
       mol_map[_struc.mol_info.names[i]].push_back(i);
     }
 
-    _struc.atom_info.permute.clear();
+    _struc.mol_info.permute.clear();
     json["mols_per_type"].put_array();
     json["mol_type"].put_array();
     for(auto const &species : mol_map) {
@@ -220,6 +221,7 @@ namespace CASM {
 
       for(; it != end_it; ++it) {
         jsonParser &tjson = json[prefix + "mol_dofs"][it.name()].put_array();
+        std::cout << "WORKING ON mol_dof" << it.name() << "\n";
         for(Index i : _struc.mol_info.permute)
           tjson.push_back((*it)[i]);
       }
@@ -321,12 +323,6 @@ namespace CASM {
     }
   }
 
-  std::string POS_file(SimpleStructure &_struc) {
-    std::stringstream ss;
-
-    return ss.str();
-  }
-
 
   void SimpleStructure::_apply_dofs(ConfigDoF const &_config, BasicStructure<Site> const &_reference) {
     std::set<TransformDirective> tformers({TransformDirective("atomize")});
@@ -335,6 +331,7 @@ namespace CASM {
     for(std::string const &dof : global_dof_types(_reference))
       tformers.insert(dof);
 
+    std::cout << "About to transform!!!\n";
     for(TransformDirective const &tformer : tformers) {
       tformer.transform(_config, _reference, *this);
     }
