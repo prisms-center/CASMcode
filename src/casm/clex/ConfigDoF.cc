@@ -75,7 +75,7 @@ namespace CASM {
     if(occupation().size()) {
       if(it.sym_info().has_aniso_occs()) {
         Index l = 0;
-        for(Index b = 0; b < n_basis(); ++b) {
+        for(Index b = 0; b < n_sublat(); ++b) {
           for(Index n = 0; n < n_vol(); ++n, ++l) {
             occ(l) = (*(it.occ_rep(b).permutation()))[occ(l)];
           }
@@ -87,7 +87,7 @@ namespace CASM {
     for(auto &dof : m_local_dofs) {
       LocalContinuousConfigDoFValues tmp = dof.second;
 
-      for(Index b = 0; b < tmp.n_basis(); ++b)
+      for(Index b = 0; b < tmp.n_sublat(); ++b)
         tmp.sublat(b) = *(it.local_dof_rep(dof.first, b).MatrixXd()) * dof.second.sublat(b);
       for(Index l = 0; l < size(); ++l) {
         dof.second.site_value(l) = tmp.site_value(tperm[l]);
@@ -108,7 +108,7 @@ namespace CASM {
 
     if(occupation().size()) {
       Index l = 0;
-      for(Index b = 0; b < n_basis(); ++b) {
+      for(Index b = 0; b < n_sublat(); ++b) {
         if(!m_occupation.symrep_IDs()[b].is_identity()) {
           SymPermutation const &permrep(*_op.get_permutation_rep(m_occupation.symrep_IDs()[b]));
           l = b * n_vol();
@@ -122,7 +122,7 @@ namespace CASM {
     for(auto &dof : m_local_dofs) {
       LocalContinuousConfigDoFValues tmp = dof.second;
 
-      for(Index b = 0; b < tmp.n_basis(); ++b)
+      for(Index b = 0; b < tmp.n_sublat(); ++b)
         dof.second.sublat(b) = *(_op.representation(dof.second.info()[b].symrep_ID()).MatrixXd()) * dof.second.sublat(b);
     }
 

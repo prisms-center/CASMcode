@@ -279,7 +279,7 @@ namespace CASM {
         if(A.factor_group_index() != m_fg_index_A || !m_tmp_valid) {
           m_fg_index_A = A.factor_group_index();
           Index l = 0;
-          for(Index b = 0; b < m_configdof_ptr->n_basis(); ++b) {
+          for(Index b = 0; b < m_configdof_ptr->n_sublat(); ++b) {
             for(Index n = 0; n < m_configdof_ptr->n_vol(); ++n, ++l) {
               m_new_occ_A[l] = (*(A.occ_rep(b).permutation()))[before.occ(l)];
             }
@@ -291,7 +291,7 @@ namespace CASM {
         if(B.factor_group_index() != m_fg_index_B || !m_tmp_valid) {
           m_fg_index_B = B.factor_group_index();
           Index l = 0;
-          for(Index b = 0; b < m_configdof_ptr->n_basis(); ++b) {
+          for(Index b = 0; b < m_configdof_ptr->n_sublat(); ++b) {
             for(Index n = 0; n < m_configdof_ptr->n_vol(); ++n, ++l) {
               m_new_occ_B[l] = (*(B.occ_rep(b).permutation()))[before.occ(l)];
             }
@@ -491,7 +491,7 @@ namespace CASM {
 
       void _update_A(PermuteIterator const &A, DoFValuesType const &before) const {
         if(A.factor_group_index() != m_fg_index_A || !m_tmp_valid) {
-          for(Index b = 0; b < m_values_ptr->n_basis(); ++b) {
+          for(Index b = 0; b < m_values_ptr->n_sublat(); ++b) {
             m_fg_index_A = A.factor_group_index();
             m_new_dof_A.sublat(b) = *(A.local_dof_rep(key(), b).MatrixXd()) * before.sublat(b);
           }
@@ -500,7 +500,7 @@ namespace CASM {
 
       void _update_B(PermuteIterator const &B, DoFValuesType const &before) const {
         if(B.factor_group_index() != m_fg_index_B || !m_tmp_valid) {
-          for(Index b = 0; b < m_values_ptr->n_basis(); ++b) {
+          for(Index b = 0; b < m_values_ptr->n_sublat(); ++b) {
             m_fg_index_B = B.factor_group_index();
             m_new_dof_B.sublat(b) = *(B.local_dof_rep(key(), b).MatrixXd()) * before.sublat(b);
           }

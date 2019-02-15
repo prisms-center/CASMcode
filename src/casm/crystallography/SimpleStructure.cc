@@ -6,7 +6,7 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/basis_set/DoFTraits.hh"
-
+#include "casm/casm_io/stream_io/container.hh"
 
 namespace CASM {
 
@@ -50,7 +50,7 @@ namespace CASM {
 
 
   void TransformDirective::transform(ConfigDoF const  &_config, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
-    std::cout << "Applying transformation: " << m_name << "\n";
+    //std::cout << "Applying transformation: " << m_name << "\n";
     if(m_traits_ptr)
       m_traits_ptr->apply_dof(_config, _reference, _struc);
     else
@@ -94,7 +94,7 @@ namespace CASM {
     mol_info.coords.resize(3, _dof.size());
     mol_info.names.reserve(_dof.size());
     mol_occ = _dof.occupation();
-    for(Index b = 0, l = 0; b < _dof.n_basis(); ++b) {
+    for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
       for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
         mol_info.coords.col(l) = _scel.coord(l).const_cart();
         std::string mol_name = _scel.prim().basis()[ b ].site_occupant()[_dof.occ(l)].name();
@@ -132,7 +132,7 @@ namespace CASM {
       }
     }
 
-    std::cout << "Atomizing with N_atom = " << N_atoms << "; nv = " << nv << "; nb = " << nb << "\n";
+    //std::cout << "Atomizing with N_atom = " << N_atoms << "; nv = " << nv << "; nb = " << nb << "\n";
     atom_info.coords.resize(3, N_atoms);
     atom_info.names.resize(N_atoms);
 
@@ -144,7 +144,7 @@ namespace CASM {
     for(Index b = 0; b < nb; ++b) {
       for(Index v = 0; v < nv; ++v, ++s) {
         Molecule const &molref = _reference.basis(b).site_occupant()[mol_occ[s]];
-        std::cout << "(b,v): (" << b << ", " << v << "); molref.size() = " << molref.size() << "\n";
+        //std::cout << "(b,v): (" << b << ", " << v << "); molref.size() = " << molref.size() << "\n";
         for(Index ms = 0; ms < molref.size(); ++ms, ++a) {
           atom_info.coords.col(a) = mol_info.coords.col(s) + molref.atom(ms).cart();
           atom_info.names[a] = molref.atom(ms).name();
@@ -158,6 +158,8 @@ namespace CASM {
         }
       }
     }
+    //std::cout << "atom_info.names: " << atom_info.names << "\n"
+    //        << "atom_info.coords: \n" << atom_info.coords << "\n";
   }
 
   jsonParser &to_json(SimpleStructure const &_struc, jsonParser &json, std::set<std::string> const &excluded_species) {
@@ -221,33 +223,37 @@ namespace CASM {
 
       for(; it != end_it; ++it) {
         jsonParser &tjson = json[prefix + "mol_dofs"][it.name()].put_array();
-        std::cout << "WORKING ON mol_dof" << it.name() << "\n";
+        //std::cout << "WORKING ON mol_dof " << it.name() << "\n";
         for(Index i : _struc.mol_info.permute)
           tjson.push_back((*it)[i]);
       }
     }
 
 
-    json["selective_dynamics"] = _struc.selective_dynamics;
+
     if(_struc.selective_dynamics) {
+      json["selective_dynamics"] = _struc.selective_dynamics;
       json["atom_selective_dynamics"].put_array();
       json["mol_selective_dynamics"].put_array();
     }
 
 
-    json[prefix + "atom_coords"].put_array();
-    for(Index i : _struc.atom_info.permute) {
-      json[prefix + "atom_coords"].push_back(_struc.atom_info.coords.col(i).transpose());
-      if(_struc.selective_dynamics)
-        json["atom_selective_dynamics"].push_back(_struc.atom_info.SD.col(i).transpose());
+    {
+      jsonParser &tjson = json[prefix + "atom_coords"].put_array();
+      for(Index i : _struc.atom_info.permute) {
+        tjson.push_back(_struc.atom_info.coords.col(i).transpose(), jsonParser::as_array());
+        if(_struc.selective_dynamics)
+          json["atom_selective_dynamics"].push_back(_struc.atom_info.SD.col(i).transpose(), jsonParser::as_array());
+      }
     }
 
-
-    json[prefix + "mol_coords"].put_array();
-    for(Index i : _struc.mol_info.permute) {
-      json[prefix + "mol_coords"].push_back(_struc.mol_info.coords.col(i).transpose());
-      if(_struc.selective_dynamics)
-        json["mol_selective_dynamics"].push_back(_struc.mol_info.SD.col(i).transpose());
+    {
+      jsonParser &tjson = json[prefix + "mol_coords"].put_array();
+      for(Index i : _struc.mol_info.permute) {
+        tjson.push_back(_struc.mol_info.coords.col(i).transpose(), jsonParser::as_array());
+        if(_struc.selective_dynamics)
+          json["mol_selective_dynamics"].push_back(_struc.mol_info.SD.col(i).transpose(), jsonParser::as_array());
+      }
     }
     return json;
   }
@@ -331,7 +337,7 @@ namespace CASM {
     for(std::string const &dof : global_dof_types(_reference))
       tformers.insert(dof);
 
-    std::cout << "About to transform!!!\n";
+    //std::cout << "About to transform!!!\n";
     for(TransformDirective const &tformer : tformers) {
       tformer.transform(_config, _reference, *this);
     }

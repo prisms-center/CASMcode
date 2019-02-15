@@ -22,7 +22,7 @@ namespace CASM {
       if(global())
         _struc.global_dofs[type_name()] = _dof.global_dof(type_name()).standard_values();
       else
-        _struc.mol_info.dofs[type_name()] = _dof.local_dof(type_name()).standard_values();
+        _struc.mol_info.dofs[type_name()] = _dof.local_dof(type_name()).standard_values().transpose();
     }
 
     //************************************************************

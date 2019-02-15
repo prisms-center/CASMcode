@@ -125,7 +125,6 @@ namespace CASM {
     }
 
     m_current = notstd::make_cloneable<Configuration>(_in_config.config());
-    m_current->init_occupation();
 
     reset_properties(*m_current);
     this->_initialize(&(*m_current));

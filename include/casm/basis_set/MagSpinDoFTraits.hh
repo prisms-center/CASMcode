@@ -15,7 +15,9 @@ namespace CASM {
       },
       DoFType::CONTINUOUS,
       DoFType::LOCAL,
-      true) {
+      /*_requires_site_basis = */ true,
+      /*_unit_length = */ true) {
+
       }
 
       bool time_reversal_active() const override {

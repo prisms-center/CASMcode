@@ -12,7 +12,9 @@ namespace CASM {
       {},
       DoFType::DISCRETE,
       DoFType::LOCAL,
-      true) {
+      /*_requires_site_basis = */ true,
+      /*_unit_length = */ false) {
+
       }
 
       /// \brief Output @param _in to JSON

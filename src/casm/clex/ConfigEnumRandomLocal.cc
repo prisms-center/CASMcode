@@ -4,6 +4,7 @@
 #include "casm/external/MersenneTwister/MersenneTwister.h"
 #include "casm/clex/FilteredConfigIterator.hh"
 
+
 extern "C" {
   CASM::EnumInterfaceBase *make_ConfigEnumRandomLocal_interface() {
     return new CASM::EnumInterface<CASM::ConfigEnumRandomLocal>();
@@ -89,6 +90,22 @@ namespace CASM {
     else
       throw std::runtime_error("Keyword argument \"dof\" must be provided to run enumeration method \"ConfigEnumRandomLocal\".");
 
+    double mag;
+    if(_kwargs.contains("magnitude"))
+      _kwargs["magnitude"].get(mag);
+    else
+      throw std::runtime_error("Keyword argument \"magnitude\" must be provided to run enumeration method \"ConfigEnumRandomLocal\".");
+
+    bool normal = true;
+    if(_kwargs.contains("distribution")) {
+      std::string distribution;
+      _kwargs["distribution"].get(distribution);
+      if(distribution == "uniform")
+        normal = false;
+      else if(distribution != "normal")
+        throw std::runtime_error("Keyword argument \"distribution\"ethod \"ConfigEnumRandomLocal\".");
+    }
+
     Index n_config;
     _kwargs.get_else<Index>(n_config, "n_config", 100);
 
@@ -97,7 +114,7 @@ namespace CASM {
 
 
     auto lambda = [&](const ConfigEnumInput & _input) {
-      return notstd::make_unique<ConfigEnumRandomLocal>(_input, dof_key, n_config, mtrand);
+      return notstd::make_unique<ConfigEnumRandomLocal>(_input, dof_key, n_config, mag, normal, mtrand);
     };
 
     int returncode = insert_configs(
@@ -125,11 +142,18 @@ namespace CASM {
   ConfigEnumRandomLocal::ConfigEnumRandomLocal(ConfigEnumInput const &_in_config,
                                                DoFKey const &_dof_key,
                                                Index _n_config,
+                                               double _mag,
+                                               bool _normal,
                                                MTRand &_mtrand):
     m_n_config(_n_config),
     m_mtrand(&_mtrand),
-    m_max_allowed(_in_config.supercell().max_allowed_occupation()),
+    m_mag(_mag),
+    m_normal(_normal),
+    m_unit_length(DoFType::traits(_dof_key).unit_length()),
     m_site_selection(_in_config.sites().begin(), _in_config.sites().end()) {
+
+    if(m_unit_length)
+      m_normal = false;
 
     if(m_n_config < 0) {
       throw std::runtime_error("Error in ConfigEnumRandomLocal: n_config < 0");
@@ -139,16 +163,30 @@ namespace CASM {
       return;
     }
 
+
+
     m_current = notstd::make_cloneable<Configuration>(_in_config.config());
-    m_current->init_occupation();
 
     reset_properties(*m_current);
     this->_initialize(&(*m_current));
+
+    m_dof_vals = &(m_current->configdof().local_dof(_dof_key));
+
+    auto const &dof_info = m_dof_vals->info();
+    for(Index l : m_site_selection)
+      m_dof_dims.push_back(dof_info[m_current->sublat(l)].dim());
 
     // Make initial random config
     this->randomize();
     _set_step(0);
     m_current->set_source(this->source(step()));
+
+    //std::cout << "Selection: " << m_site_selection <<"\n"
+    //        << "dofkey: " << _dof_key << "\n"
+    //        << "mag: " << m_mag << "\n"
+    //        << "dof_dims: " << m_dof_dims << "\n"
+    //        << "unit_length: " << m_unit_length << "\n"
+    //        << "m_normal: " << m_normal << "\n";
   }
 
   /// Set m_current to correct value at specified step and return a reference to it
@@ -166,9 +204,20 @@ namespace CASM {
   }
 
   void ConfigEnumRandomLocal::randomize() {
-    for(Index l : m_site_selection) {
-      m_current->set_occ(l, m_mtrand->randNorm(m_max_allowed[l]));
+    double tnorm;
+    for(Index i = 0; i < m_site_selection.size(); ++i) {
+      for(Index j = 0; j < m_dof_dims[i]; ++j) {
+        m_dof_vals->site_value(m_site_selection[i])[j] = m_mtrand->randNorm(0., m_mag);
+      }
+      if(!m_normal) {
+        tnorm = m_dof_vals->site_value(m_site_selection[i]).norm();
+        if(!m_unit_length) {
+          tnorm += -m_mag * log(m_mtrand->rand());
+        }
+        (m_dof_vals->site_value(m_site_selection[i])) /= tnorm;
+      }
     }
+    //std::cout << "Randomized: \n" << m_dof_vals->values() << "\n";
   }
 
 }

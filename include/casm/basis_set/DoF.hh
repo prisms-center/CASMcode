@@ -47,12 +47,14 @@ namespace CASM {
                   std::vector<std::string> const &_std_var_names,
                   DOF_DOMAIN _domain,
                   DOF_MODE _mode,
-                  bool _requires_site_basis) :
+                  bool _requires_site_basis,
+                  bool _unit_length) :
         m_type_name(_type_name),
         m_standard_var_names(_std_var_names),
         m_domain(_domain),
         m_mode(_mode),
-        m_requires_site_basis(_requires_site_basis) {
+        m_requires_site_basis(_requires_site_basis),
+        m_unit_length(_unit_length) {
       }
 
       /// \brief Allow destruction through base pointer
@@ -81,6 +83,11 @@ namespace CASM {
       /// \brief returns true if DoF must utilize site basis set
       bool requires_site_basis()const {
         return m_requires_site_basis;
+      }
+
+      /// \brief returns true if DoF must always have unit length
+      bool unit_length()const {
+        return m_unit_length;
       }
 
       /// \brief returns true if DoF is discrete
@@ -170,6 +177,7 @@ namespace CASM {
       DOF_DOMAIN m_domain;
       DOF_MODE m_mode;
       bool m_requires_site_basis;
+      bool m_unit_length;
     };
 
   }

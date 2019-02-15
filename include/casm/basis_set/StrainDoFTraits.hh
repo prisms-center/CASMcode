@@ -11,7 +11,8 @@ namespace CASM {
                         std::vector<std::string>({"e_1", "e_2", "e_3", "e_4", "e_5", "e_6"}),
       DoFType::CONTINUOUS,
       DoFType::GLOBAL,
-      false),
+      /*_requires_site_basis = */ false,
+      /*_unit_length = */ false),
       m_metric(_metric) {
       }
 

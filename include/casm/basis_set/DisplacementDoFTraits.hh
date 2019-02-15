@@ -13,7 +13,8 @@ namespace CASM {
       },
       DoFType::CONTINUOUS,
       DoFType::LOCAL,
-      false) {
+      /*_requires_site_basis = */ false,
+      /*_unit_length = */ false) {
       }
 
       /// \brief Output @param _in to JSON

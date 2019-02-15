@@ -58,8 +58,8 @@ namespace CASM {
       return m_occupation.n_vol();
     }
 
-    Index n_basis() const {
-      return m_occupation.n_basis();
+    Index n_sublat() const {
+      return m_occupation.n_sublat();
     }
 
     double tol() const {

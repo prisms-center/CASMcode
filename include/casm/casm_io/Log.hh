@@ -430,11 +430,13 @@ namespace CASM {
 
 
   inline Log &default_log() {
+    std::ios_base::Init tmp;
     static Log log;
     return log;
   }
 
   inline Log &default_err_log() {
+    std::ios_base::Init tmp;
     static Log log(std::cerr);
     return log;
   }

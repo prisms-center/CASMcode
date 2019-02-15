@@ -2,6 +2,8 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/ConfigEnumRandomOccupations.hh"
+#include "casm/clex/ConfigEnumRandomLocal.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
 #include "casm/clex/ConfigEnumNormalCoords.hh"
 #include "casm/clex/SuperConfigEnum.hh"
@@ -73,6 +75,8 @@ namespace CASM {
     emap->insert(
       EnumInterface<ScelEnum>(),
       EnumInterface<ConfigEnumAllOccupations>(),
+      EnumInterface<ConfigEnumRandomLocal>(),
+      EnumInterface<ConfigEnumRandomOccupations>(),
       EnumInterface<ConfigEnumStrain>(),
       EnumInterface<ConfigEnumNormalCoords>(),
       EnumInterface<SuperConfigEnum>(),

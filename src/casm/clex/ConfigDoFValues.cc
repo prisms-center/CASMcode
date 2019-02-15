@@ -8,7 +8,7 @@ namespace CASM {
 
     //Size tval to the size of the native DoF vector space
     tval.setZero(DoF::traits(_values.type_name()).dim(), _values.values().cols());
-    for(Index b = 0; b < _values.n_basis(); ++b)
+    for(Index b = 0; b < _values.n_sublat(); ++b)
       tval.block(0, b * _values.n_vol(), tval.rows(), _values.n_vol()) = _values.info()[b].basis() * _values.sublat(b).topRows(_values.info()[b].dim());
 
     to_json(tval.transpose(), _json["values"]);
@@ -17,8 +17,8 @@ namespace CASM {
 
   void from_json(LocalContinuousConfigDoFValues &_values, jsonParser const &_json) {
     Eigen::MatrixXd tval = _json["values"].get<Eigen::MatrixXd>().transpose();
-    _values.resize_vol(tval.cols() / _values.n_basis());
-    for(Index b = 0; b < _values.n_basis(); ++b)
+    _values.resize_vol(tval.cols() / _values.n_sublat());
+    for(Index b = 0; b < _values.n_sublat(); ++b)
       _values.sublat(b).topRows(_values.info()[b].dim()) = _values.info()[b].inv_basis() * tval.block(0, b * _values.n_vol(), _values.dim(), _values.n_vol());
   }
 
@@ -28,7 +28,7 @@ namespace CASM {
   }
 
   void from_json(LocalDiscreteConfigDoFValues &_values, jsonParser const &_json) {
-    _values.resize_vol(_json.size() / _values.n_basis());
+    _values.resize_vol(_json.size() / _values.n_sublat());
     _values.values() = _json.get<LocalDiscreteConfigDoFValues::ValueType>();
   }
 

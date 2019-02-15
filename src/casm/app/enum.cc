@@ -171,10 +171,11 @@ namespace CASM {
           return it->run(primclex(), input, opt(), m_enumerator_map);
         }
       }
-      catch(...) {}
-      err_log() << "No match found for --method " << opt().method() << std::endl;
-      print_names(err_log(), enumerators());
-      return ERR_INVALID_ARG;
+      catch(...) {
+        err_log() << "No match found for --method " << opt().method() << std::endl;
+        print_names(err_log(), enumerators());
+        return ERR_INVALID_ARG;
+      }
     }
     else if(count > 1) {
       err_log() << "Multiple matches found for --method " << opt().method() << std::endl;
