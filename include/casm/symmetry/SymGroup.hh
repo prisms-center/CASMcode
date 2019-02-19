@@ -199,6 +199,8 @@ namespace CASM {
 
     SymInfo info(Index i) const;
 
+    std::vector<std::set<std::set<Index> > > small_subgroups() const { return _small_subgroups(); };
+
   protected:
     void _generate_conjugacy_classes() const;
     void _generate_character_table() const;
