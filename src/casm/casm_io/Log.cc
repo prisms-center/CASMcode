@@ -25,7 +25,7 @@ namespace CASM {
     m_justification(JustificationType::Left),
     m_ostream(&_ostream) {
 
-
+    begin_section();
   }
 
   void Log::restart_clock() {
