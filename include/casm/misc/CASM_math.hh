@@ -192,12 +192,16 @@ namespace CASM {
       return 0;
     }
   }
+
   // *******************************************************************************************
 
   // Works for signed and unsigned types
   template <typename IntType>
   IntType nchoosek(IntType n, IntType k) {
-    assert(k <= n && 0 <= k);
+    if(n < k)
+      return 0;
+
+    assert(0 <= k);
     if(n < 2 * k)
       k = n - k;
 
@@ -212,6 +216,28 @@ namespace CASM {
     return result;
   }
 
+
+  // *******************************************************************************************
+
+  // Works for signed and unsigned types
+  template <typename IntType>
+  std::vector<IntType> index_to_kcombination(IntType ind, IntType k) {
+    std::vector<IntType> result;
+    result.reserve(k);
+    IntType n;
+    IntType big, bigger;
+    for(; k > 0; --k) {
+      n = k;
+      bigger = 1;
+      while(bigger <= ind) {
+        big = bigger;
+        bigger = nchoosek(++n, k);
+      }
+      result.push_back(n - 1);
+      ind -= big;
+    }
+    return result;
+  }
 
   // *******************************************************************************************
   /// \brief Computes the Damerescau-Levenshtein distance

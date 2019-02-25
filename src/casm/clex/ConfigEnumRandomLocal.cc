@@ -29,6 +29,12 @@ namespace CASM {
       "    How many random configurations to generate. Includes duplicate and pre-\n"
       "    existing configurations.                                                 \n\n"
 
+      "  magnitude: positive number (optional, default=1) \n"
+      "    Magnitude used to scale random vector at each site. If \"distribution\" == \"normal\",\n"
+      "    magnitude specifies standard deviation of D-dimensional Gaussian (D is dimension of \n"
+      "    site DoF value). If \"distribution\" == \"uniform\", magnitude is radius of D-dimensional\n"
+      "    ball from which random vectors are chosen.\n\n"
+
       "  dof: string (required) \n"
       "    Name of site degree of freecom  for which normal coordinates are to be generated.\n"
       "    Must be one of the degrees of freedom under consideration in the current project,\n"

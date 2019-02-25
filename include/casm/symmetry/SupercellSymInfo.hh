@@ -168,6 +168,24 @@ namespace CASM {
                                               DoFKey const &_key,
                                               std::vector<PermuteIterator> const &_group);
 
+  /// \brief Find symmetry-adapted normal coordinate basis vectors for action of '_group' acting on local DoF '_key' at site indices [begin,end]
+  /// In addition to returning the normal coordinate transformation matrix, it also returns a list of dimensions of the corresponding
+  /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
+  /// @param begin,end Iterator pair to list of site indices that define subset of sites of interest
+  /// @param _syminfo SupercellSymInfo object that defines all symmetry properties of supercell
+  /// @param _key DoFKey specifying which local DoF is of interest
+  /// @param _group vector of PermuteIterators forming the group that is to be represented (this may be larger than a crystallographic factor group)
+  /// @param __subspace matrix whose columns span a subspace of allowed DoF values for selected sites
+  /// \result Pair containin an orthogonal matrix comprising normal coordinate basis vectors as its rows and a list of subspace dimensions, corresponding to
+  /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
+  template<typename IterType>
+  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
+                                              IterType end,
+                                              SupercellSymInfo const &_syminfo,
+                                              DoFKey const &_key,
+                                              std::vector<PermuteIterator> const &_group,
+                                              Eigen::Ref<const Eigen::MatrixXd> const &_subspace);
+
 
 }
 

@@ -23,9 +23,15 @@ namespace CASM {
 
   public:
 
-    ConfigEnumNormalCoords(const ConfigEnumInput &_init,
-                           DoFKey const &_dof_key,
-                           Eigen::Ref<const Eigen::MatrixXd> const &_coords);
+    ConfigEnumNormalCoords(ConfigEnumInput const &_init,
+                           DoFKey const &_dof,
+                           Eigen::Ref<const Eigen::MatrixXd> const &_axes,
+                           Eigen::Ref<const Eigen::VectorXd> const &min_val,
+                           Eigen::Ref<const Eigen::VectorXd> const &max_val,
+                           Eigen::Ref<const Eigen::VectorXd> const &inc_val,
+                           Index _min_nonzero,
+                           Index _max_nonzero);
+
 
 
     std::string name() const override {
@@ -45,23 +51,64 @@ namespace CASM {
     static int run(PrimClex const &_primclex,
                    ConfigEnumInput const &_in_config,
                    DoFKey const &_dof,
+                   Eigen::Ref<const Eigen::MatrixXd> const &_axes,
+                   Eigen::Ref<const Eigen::VectorXd> const &min_val,
+                   Eigen::Ref<const Eigen::VectorXd> const &max_val,
+                   Eigen::Ref<const Eigen::VectorXd> const &inc_val,
+                   bool sym_axes,
+                   Index _min_nonzero,
+                   Index _max_nonzero,
                    std::vector<std::string> const &_filter_expr,
                    bool dry_run);
-  private:
-    void _set_dof();
 
     /// Implements increment over all strain states
     void increment() override;
 
+  private:
+    void _set_dof();
+
+    void _initialize_count();
+
+    bool _increment_combo();
+
+    bool _check_sparsity() const;
+
+    bool _check_current() const;
 
     // -- Unique -------------------
-    Configuration m_current;
+    notstd::cloneable_ptr<Configuration> m_current;
+
+    ConfigDoF::LocalDoFContainerType *m_dof_vals;
 
     DoFKey m_dof_key;
 
-    std::set<Index> m_sites;
+    Index m_min_nonzero;
 
-    Eigen::MatrixXd m_coords;
+    Index m_max_nonzero;
+
+    Eigen::MatrixXd m_axes;
+
+    Eigen::VectorXd m_min;
+
+    Eigen::VectorXd m_max;
+
+    Eigen::VectorXd m_inc;
+
+    bool m_unit_length;
+
+    std::vector<Index> m_sites;
+
+    std::vector<Index> m_dof_dims;
+
+    bool m_subset_mode;
+
+    bool m_combo_mode;
+
+    Index m_combo_index;
+
+    std::vector<Index> m_combo;
+
+    EigenCounter<Eigen::VectorXd> m_counter;
 
     // counts over normal coords
     //Index m_i_coord;

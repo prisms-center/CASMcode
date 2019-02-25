@@ -35,7 +35,8 @@ namespace CASM {
                                                                  IterType end,
                                                                  SupercellSymInfo const &_syminfo,
                                                                  DoFKey const &_key,
-                                                                 std::vector<PermuteIterator> const &_group) {
+                                                                 std::vector<PermuteIterator> const &_group,
+                                                                 Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
 
 
     std::pair<MasterSymGroup, SymGroupRepID> result;// = std::make_pair(make_sym_group(_group),SymGroupRepID());
@@ -69,7 +70,7 @@ namespace CASM {
         trep.block(subdim * (*it), subdim * perm.permute_ind(*it), ptr->rows(), ptr->cols()) = *ptr;
       }
       std::cout << "trep " << g << " is \n" << trep << "\n\n";
-      result.first[g++].set_rep(result.second, SymMatrixXd(trep));
+      result.first[g++].set_rep(result.second, SymMatrixXd(_subspace.transpose()*trep * _subspace));
       //std::cout << "cartesian symop is: \n" << perm.sym_op().matrix() << "\n";
     }
     result.first.sort();
@@ -78,13 +79,14 @@ namespace CASM {
   //***********************************************************
 
   template<typename IterType>
-  Eigen::MatrixXd collective_dof_normal_coords(IterType begin,
-                                               IterType end,
-                                               SupercellSymInfo const &_syminfo,
-                                               DoFKey const &_key,
-                                               std::vector<PermuteIterator> const &_group) {
-    return collective_dof_normal_coords_and_irrep_dims(begin, end, _syminfo, _key, _group).first;
+  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
+                                              IterType end,
+                                              SupercellSymInfo const &_syminfo,
+                                              DoFKey const &_key,
+  std::vector<PermuteIterator> const &_group) {
 
+    Index dim = _syminfo.local_dof_symreps(_key)[0].dim() * std::distance(begin, end);
+    return collective_dof_normal_coords_and_irrep_dims(begin, end, _syminfo, _key, _group, Eigen::MatrixXd::Identity(dim, dim));
   }
 
   template<typename IterType>
@@ -92,16 +94,21 @@ namespace CASM {
                                               IterType end,
                                               SupercellSymInfo const &_syminfo,
                                               DoFKey const &_key,
-  std::vector<PermuteIterator> const &_group) {
+                                              std::vector<PermuteIterator> const &_group,
+  Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
     //std::vector<PermuteIterator> perms = scel_subset_group(begin,end,_syminfo);
-    std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group);
+    std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group, _subspace);
 
-    //SymGroupRep::RemoteHandle rep(rep_info.first, rep_info.second);
-    return get_irrep_trans_mat_and_dims(rep_info.first.representation(rep_info.second),
-                                        rep_info.first,
-                                        [](const SymGroupRep &t_rep, const SymGroup &head) {return (symmetrized_irrep_trans_mat(t_rep, head)).transpose();});
 
+    auto result = get_irrep_trans_mat_and_dims(rep_info.first.representation(rep_info.second),
+                                               rep_info.first,
+    [](const SymGroupRep & t_rep, const SymGroup & head) {
+      return (symmetrized_irrep_trans_mat(t_rep, head)).transpose();
+    });
+    result.first = result.first * _subspace.transpose();
+    return result;
   }
+
 }
 
 #endif

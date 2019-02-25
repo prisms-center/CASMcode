@@ -73,8 +73,9 @@ namespace CASM {
 
       "  sym_axes: bool (optional, default=false)\n"
       "    If true, overrides \"axes\" field and instead constructs symmetry-adapted grid axes\n"
-      "    as the symmetry-adapted strain order parameters of 'config'. Running with option \n"
-      "    \"analysis\": true will display information including the symmetry-adapted axes.\n\n"
+      "    as the symmetry-adapted strain order parameters of 'config'. Run with option \n"
+      "    \"dry_run\": true to obtain analysis report including the symmetry-adapted axes\n"
+      "    without adding enumerated configurations to project.\n\n"
 
       "  trim_corners: bool (optional, default=true) Exclude extreme grid points, if true\n"
       "    If true, any grid points outside the largest ellipsoid inscribed within the extrema\n"

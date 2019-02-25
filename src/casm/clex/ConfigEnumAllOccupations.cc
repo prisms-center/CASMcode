@@ -94,7 +94,7 @@ namespace CASM {
     if(m_counter.size() != _input_config.sites().size())
       m_subset_mode = true;
 
-    m_current->set_source(this->source(0));
+
     m_current->set_occupation(m_counter());
     reset_properties(*m_current);
     this->_initialize(&(*m_current));

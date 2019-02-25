@@ -19,10 +19,11 @@ namespace CASM {
   namespace DoFType {
 
     void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+
       if(global())
-        _struc.global_dofs[type_name()] = _dof.global_dof(type_name()).standard_values();
+        _struc.global_dofs[type_name()]["value"] = _dof.global_dof(type_name()).standard_values();
       else
-        _struc.mol_info.dofs[type_name()] = _dof.local_dof(type_name()).standard_values().transpose();
+        _struc.mol_info.dofs[type_name()]["value"] = _dof.local_dof(type_name()).standard_values().transpose();
     }
 
     //************************************************************

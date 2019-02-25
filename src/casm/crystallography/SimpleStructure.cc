@@ -168,37 +168,23 @@ namespace CASM {
     if(!prefix.empty())
       prefix.push_back('_');
 
-    std::map<std::string, std::vector<Index> > atom_map;
-    for(Index i = 0; i < _struc.atom_info.names.size(); ++i) {
-      atom_map[_struc.atom_info.names[i]].push_back(i);
-    }
 
+    jsonParser &ajson = json["atom_type"].put_array();
     _struc.atom_info.permute.clear();
-    json["atoms_per_type"].put_array();
-    json["atom_type"].put_array();
-    for(auto const &species : atom_map) {
-      if(excluded_species.count(species.first))
+    for(Index i = 0; i < _struc.atom_info.names.size(); ++i) {
+      if(excluded_species.count(_struc.atom_info.names[i]))
         continue;
-      json["atom_type"].push_back(species.first);
-      json["atoms_per_type"].push_back(species.second.size());
-      _struc.atom_info.permute.insert(_struc.atom_info.permute.end(), species.second.begin(), species.second.end());
+      ajson.push_back(_struc.atom_info.names[i]);
+      _struc.atom_info.permute.push_back(i);
     }
 
-
-    std::map<std::string, std::vector<Index> > mol_map;
-    for(Index i = 0; i < _struc.mol_info.names.size(); ++i) {
-      mol_map[_struc.mol_info.names[i]].push_back(i);
-    }
-
+    jsonParser &mjson = json["mol_type"].put_array();
     _struc.mol_info.permute.clear();
-    json["mols_per_type"].put_array();
-    json["mol_type"].put_array();
-    for(auto const &species : mol_map) {
-      if(excluded_species.count(species.first))
+    for(Index i = 0; i < _struc.mol_info.names.size(); ++i) {
+      if(excluded_species.count(_struc.mol_info.names[i]))
         continue;
-      json["mol_type"].push_back(species.first);
-      json["mols_per_type"].push_back(species.second.size());
-      _struc.mol_info.permute.insert(_struc.mol_info.permute.end(), species.second.begin(), species.second.end());
+      ajson.push_back(_struc.mol_info.names[i]);
+      _struc.mol_info.permute.push_back(i);
     }
 
     json[prefix + "lattice"] = _struc.lat_column_mat.transpose();
@@ -230,7 +216,7 @@ namespace CASM {
     }
 
 
-
+    //Why does selective_dynamics default to ON?;
     if(_struc.selective_dynamics) {
       json["selective_dynamics"] = _struc.selective_dynamics;
       json["atom_selective_dynamics"].put_array();
