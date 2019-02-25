@@ -358,8 +358,6 @@ namespace CASM {
 
     bool _print() const;
 
-    std::ios_base::Init m_ostream_init;
-
     std::vector<int> m_required_verbosity;
 
     /// If m_verbosity >= required verbosity, then print
@@ -430,13 +428,11 @@ namespace CASM {
 
 
   inline Log &default_log() {
-    std::ios_base::Init tmp;
     static Log log;
     return log;
   }
 
   inline Log &default_err_log() {
-    std::ios_base::Init tmp;
     static Log log(std::cerr);
     return log;
   }
@@ -459,8 +455,10 @@ namespace CASM {
     /// - 0: print nothing
     /// - 10: print all standard output
     /// - 100: print all possible output
-    OStringStreamLog(int _verbosity = standard, bool _show_clock = false) :
-      Log(m_ss, _verbosity, _show_clock) {}
+    OStringStreamLog(int _verbosity = standard, bool _show_clock = false):
+      Log(std::cout, _verbosity, _show_clock) {
+      reset(m_ss);
+    }
 
     std::ostringstream &ss() {
       return m_ss;

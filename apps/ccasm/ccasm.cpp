@@ -8,8 +8,6 @@ using namespace CASM;
 
 int main(int argc, char *argv[]) {
   try {
-    std::ios_base::Init ostream_init;
-    default_log() << "Starting CASM!\n";
     PrimClex *_primclex = nullptr;
     CommandArgs args(argc, argv, _primclex, fs::path(), default_log(), default_err_log());
 

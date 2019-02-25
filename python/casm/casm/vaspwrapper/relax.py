@@ -10,9 +10,7 @@ import six
 import sys
 import json
 import shutil
-import vasp
 import casm
-import vaspwrapper
 from casm.vaspwrapper.vasp_calculator_base import VaspCalculatorBase
 from casm.vasp import Relax as calculator
 

@@ -22,8 +22,8 @@ namespace CASM {
 - Add a 'prim.json' file to the directory describing the primitive cell.  \n\
   See 'casm format --prim' for the format of the 'prim.json' file.        \n\
 - Execute: 'casm init'                                                    \n\
-- Several directories are created: 'symmetry', 'basis_sets',              \n\
-  'training_data', and 'cluster_expansions'  \n\
+- Several directories are created: 'basis_sets', 'cluster_expansions',    \n\
+  'reports', 'symmetry', and 'training_data'                              \n\
 - If necessary, set configuration options for runtime compilation and     \n\
   linking by using the 'casm settings' command or by setting environment  \n\
   variables. \n\
@@ -478,7 +478,7 @@ Instructions for fitting ECI:                                          \n\n\
       if(!fs::exists(dir.prim())) {
         args.log() << " ERROR\n\n";
 
-        args.log() << "- Found a CASM project, but no '" << dir.prim() << "' file." << std::endl;
+        args.log() << "- Found a CASM project, but no " << dir.prim() << " file." << std::endl;
         args.log() << "- CASM project location: " << root << std::endl;
         args.log() << "Please add a prim.json file, or rm the '.casm' directory." << std::endl << std::endl;
 
@@ -502,7 +502,7 @@ Instructions for fitting ECI:                                          \n\n\
     std::string eci = desc.eci;
 
 
-    args.log() << "TRUE\n";
+    args.log() << "1) Project initialized: TRUE\n\n";
     args.log() << "- Project name: " << primclex.settings().name() << std::endl;
     args.log() << "- Project location: " << primclex.dir().root_dir().string() << std::endl;
 
@@ -778,5 +778,3 @@ Instructions for fitting ECI:                                          \n\n\
   };
 
 }
-
-

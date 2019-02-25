@@ -26,7 +26,7 @@ from casm.vaspwrapper import VaspWrapperError, read_settings, write_settings, \
 class VaspCalculatorBase(object):
     """
     Base class containing all the basic functions that method classes can inherit
-    
+
     Attributes
     ----------
     selection : casm.project.Selection
@@ -222,7 +222,7 @@ class VaspCalculatorBase(object):
         # Verify that the last relaxation reached electronic convergence
         for i in range(len(calculation.rundir)):
             try:
-                print calculation.rundir[-i-1]
+                print(calculation.rundir[-i-1])
                 vrun_oszicar = vasp.io.Oszicar(os.path.join(calculation.calcdir, calculation.rundir[-i-1],
                                                             self.results_subdir, "OSZICAR"))
                 vrun_nelm = vasp.io.get_incar_tag("NELM", os.path.join(calculation.calcdir, calculation.rundir[-i-1]))
