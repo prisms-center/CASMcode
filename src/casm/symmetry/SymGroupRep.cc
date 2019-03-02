@@ -5,10 +5,12 @@
 #include "casm/external/Eigen/CASM_AddOns"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/stream_io/container.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/container/Permutation.hh"
+#include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
 
@@ -475,14 +477,14 @@ namespace CASM {
         // from big vector space to irreducible subspace
         for(Index op : * (orbit.begin())) {
           R += trans_mat.block(l, 0, idims[i], trans_mat.cols()) *
-                *(_rep.MatrixXd(head_group[op])) *
+               *(_rep.MatrixXd(head_group[op])) *
                trans_mat.block(l, 0, idims[i], trans_mat.cols()).transpose();
         }
         // Use SVD to figure out the rank of the matrix. QR rank in Eigen
         // seems to have a bug.
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(R);
         int svd_rank = 0;
-        for(auto singular_index = 0 ; singular_index<svd.singularValues().size() ; singular_index++)
+        for(auto singular_index = 0 ; singular_index < svd.singularValues().size() ; singular_index++)
           svd_rank += (std::abs(svd.singularValues()[singular_index]) > 1e-5);
         if(svd_rank != 1)
           continue;
@@ -527,26 +529,26 @@ namespace CASM {
     // Cleaning up duplicate directions in t_result:
     for(auto irrep : t_result) {
       special_directions.push_back(std::vector<std::vector<Eigen::VectorXd>>());
-      for(auto _dir: irrep){
-          if(is_new_direction(special_directions,_dir,vector_norm_compare_tolerance))
-            special_directions.back().push_back(generate_special_direction_orbit(_dir,_rep,head_group,vector_norm_compare_tolerance));
-          //explicitly consider the negative direction as well
-          if(is_new_direction(special_directions,-_dir,vector_norm_compare_tolerance))
-            special_directions.back().push_back(generate_special_direction_orbit(-_dir,_rep,head_group,vector_norm_compare_tolerance));
-        }
+      for(auto _dir : irrep) {
+        if(is_new_direction(special_directions, _dir, vector_norm_compare_tolerance))
+          special_directions.back().push_back(generate_special_direction_orbit(_dir, _rep, head_group, vector_norm_compare_tolerance));
+        //explicitly consider the negative direction as well
+        if(is_new_direction(special_directions, -_dir, vector_norm_compare_tolerance))
+          special_directions.back().push_back(generate_special_direction_orbit(-_dir, _rep, head_group, vector_norm_compare_tolerance));
+      }
     }
     return special_directions;
-    }
+  }
 
   //*******************************************************************************************
   // Routine to check if the given test_direction is a new direction
   // compared against the directions in special_directions
-  bool is_new_direction(const multivector<Eigen::VectorXd>::X<3> &special_directions, const Eigen::VectorXd &test_direction, double vector_norm_compare_tolerance) {
+  bool is_new_direction(const multivector<Eigen::VectorXd>::X<3> &special_directions, const Eigen::VectorXd &test_direction, double vec_compare_tol) {
     bool is_unique = true;
     for(auto irrep : special_directions) {
       for(auto orbit : irrep) {
         for(auto direction : orbit) {
-          if(std::abs((direction - test_direction).norm()) <= vector_norm_compare_tolerance) {
+          if(almost_equal(direction, test_direction, vec_compare_tol)) {
             is_unique = false;
             break;
           }
@@ -565,16 +567,16 @@ namespace CASM {
     Eigen::VectorXd direction,
     const SymGroupRep &_rep,
     const SymGroup &head_group,
-    double vector_norm_compare_tolerance) {
+    double vec_compare_tol) {
     std::vector<Eigen::VectorXd> orbit;
     for(auto operation : head_group) {
       Eigen::VectorXd sym_transformed_direction = *(_rep.MatrixXd(operation)) * direction;
       bool is_unique = true;
-      for(auto sym_dir : orbit){
-          if(std::abs((sym_dir - sym_transformed_direction).norm()) <= vector_norm_compare_tolerance){
-              is_unique = false;
-              break;
-          }
+      for(auto sym_dir : orbit) {
+        if(almost_equal(sym_dir, sym_transformed_direction, vec_compare_tol)) {
+          is_unique = false;
+          break;
+        }
       }
       if(is_unique)
         orbit.push_back(sym_transformed_direction);
@@ -1135,9 +1137,8 @@ namespace CASM {
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  Eigen::MatrixXd get_irrep_trans_mat(SymGroupRep const &_rep, const SymGroup &head_group) {
-    std::vector< std::vector<Index> > subspaces;
-    return get_irrep_trans_mat(_rep, head_group, subspaces);
+  Eigen::MatrixXd get_irrep_trans_mat_old(SymGroupRep const &_rep, const SymGroup &head_group) {
+    return get_irrep_trans_mat_and_dims_old(_rep, head_group).first;
   }
 
   //*******************************************************************************************
@@ -1146,18 +1147,20 @@ namespace CASM {
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
   // Also populate 'subspaces' with lists of columns that form irreps
-  Eigen::MatrixXd get_irrep_trans_mat(SymGroupRep const &_rep, const SymGroup &head_group, std::vector< std::vector<Index> > &subspaces) {
+  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims_old(SymGroupRep const &_rep, const SymGroup &head_group) {
+
     //std::cout << "INSIDE GET_IRREP_TRANS_MAT\n";
     const std::vector<bool > &complex_irrep(head_group.get_complex_irrep_list());
     //const std::vector<std::vector<std::complex<double> > > &char_table(_rep.master_group().character_table());
     const std::vector<std::vector<std::complex<double> > > &char_table(head_group.character_table());
 
     std::vector<Index> irrep_decomp(num_each_real_irrep(_rep, head_group));
-
+    std::vector<Index> irrep_dims;
     //get_irrep_IDs() harvests any new irreps that appear in this representation
     std::vector<SymGroupRepID> irrep_IDs(get_irrep_IDs(_rep, head_group));
 
     int rep_dim = _rep.MatrixXd(head_group[0])->rows();
+
 
     // We will fill the columns of trans_mat and then return its transpose at the end
     Eigen::MatrixXd tproj(Eigen::MatrixXd::Zero(rep_dim, rep_dim)),
@@ -1236,8 +1239,7 @@ namespace CASM {
 
       //std::cout << "QR yields:\n " << QR.matrixQ() << "\n\n";
       for(EigenIndex n = 0; n < QR.rank(); n++) {
-        subspaces.push_back(std::vector<Index>(irrep_dim));
-        std::iota(subspaces.back().begin(), subspaces.back().end(), col_count + n * irrep_dim);
+        irrep_dims.push_back(irrep_dim);
         trans_mat.col(col_count + n * irrep_dim) = QR.matrixQ().col(n);
       }
       //std::cout << "Initial trans_mat is:\n" << trans_mat << "\n\n";
@@ -1267,7 +1269,36 @@ namespace CASM {
       col_count += irrep_decomp[i] * irrep_dim;
     }
 
-    return trans_mat.transpose();
+    return std::pair<Eigen::MatrixXd, std::vector<Index>>(trans_mat.transpose(), irrep_dims);
+  }
+
+  bool rep_check(SymGroupRep const &_rep, SymGroup const &head_group) {
+    bool passed = true;
+    for(Index ns = 0; ns < head_group.size(); ns++) {
+      Eigen::MatrixXd tmat = *(_rep.MatrixXd(head_group[ns]));
+      if(!almost_equal<double>((tmat * tmat.transpose()).trace(), tmat.cols())) {
+        passed = false;
+        std::cout << "  Representation failed full-rank/orthogonality check!\n"
+                  << "  ns: " << ns << "\n"
+                  << "  Matrix: \n" << tmat << "\n\n"
+                  << "  Matrix*transpose: \n" << tmat.transpose()*tmat << "\n\n";
+      }
+      for(Index ns2 = ns; ns2 < head_group.size(); ns2++) {
+        auto prod = (*(_rep.MatrixXd(head_group[ns]))) * (*(_rep.MatrixXd(head_group[ns2])));
+        Index iprod = head_group[ns].ind_prod(head_group[ns2]);
+        double norm = (prod - * (_rep.MatrixXd(iprod))).norm();
+        if(!almost_zero(norm)) {
+          passed = false;
+          std::cout << "  Representation failed multiplication check!\n";
+          std::cout << "  ns: " << ns << "  ns2: " << ns2 << " iprod: " << iprod << " NO MATCH\n";
+          std::cout << "  prod: \n" << prod << "\n\n";
+          std::cout << "  mat(ns): \n" << *(_rep.MatrixXd(ns)) << "\n\n";
+          std::cout << "  mat(ns2): \n" << *(_rep.MatrixXd(ns2)) << "\n\n";
+          std::cout << "  mat(iprod): \n" << *(_rep.MatrixXd(iprod)) << "\n\n";
+        }
+      }
+    }
+    return passed;
   }
   //*******************************************************************************************
 
@@ -1285,7 +1316,7 @@ namespace CASM {
                         << "          No valid irreps will be returned.\n";
       return std::make_pair(Eigen::MatrixXd(), irrep_dims);
     }
-
+    assert(rep_check(_rep, head_group) && "REPRESENTATION IS ILL-DEFINED!!");
     int dim(_rep.MatrixXd(head_group[0])->rows());
     std::vector<Eigen::MatrixXcd> commuters;
     std::cout.precision(8);
@@ -1306,21 +1337,7 @@ namespace CASM {
     Eigen::MatrixXd trans_mat(Eigen::MatrixXd::Zero(dim, dim));
 
     // Initialize kernel as a random orthogonal matrix
-    Eigen::MatrixXd kernel(Eigen::MatrixXd::Random(dim, dim).householderQr().householderQ());
-
-    //std::cout << "rep_check:";
-    //for(Index ns = 0; ns < head_group.size(); ns++) {
-    //for(Index ns2 = ns; ns2 < head_group.size(); ns2++) {
-    //  auto prod=(*(_rep.MatrixXd(head_group[ns])))*(*(_rep.MatrixXd(head_group[ns2])));
-    //  Index iprod=head_group[ns].ind_prod(head_group[ns2]);
-    //  double norm = (prod-*(_rep.MatrixXd(iprod))).norm();
-    //  if(!almost_zero(norm)){
-    //    std::cout << "ns: " << ns << "  ns2: " << ns2 << " iprod: " << iprod << " NO MATCH\n";
-    //    std::cout << "prod: \n" << prod << "\n\n";
-    //    std::cout << "mat(iprod): \n" << *(_rep.MatrixXd(iprod)) << "\n\n";
-    //  }
-    //}
-    //}
+    Eigen::MatrixXd kernel(((1000 * iround(Eigen::MatrixXd::Random(dim, dim))).cast<double>() / 1000.).householderQr().householderQ());
 
 
 
@@ -1359,7 +1376,8 @@ namespace CASM {
           double tnorm((tcommute.array().conjugate()*tcommute.array()).sum().real());
           if(tnorm > TOL) {
             commuters.push_back(tcommute / tnorm);
-            //std::cout << commuters.back() << "\n\n";
+            //std::cout << "\nCommuter " << commuters.size() << "\n";
+            //std::cout << commuters.back().real() << "\n\n";
           }
           else continue;  // Attempt to construct the next commuter...
 
@@ -1375,15 +1393,8 @@ namespace CASM {
           //std::cout << "KERNEL IS:\n" << kernel << "\n\n";
           //std::cout << esolve.eigenvalues().size() << " EIGENVALUES of commuter " << nc << " are \n" << esolve.eigenvalues().transpose() << "\n";
           std::vector<Index> subspace_dims = partition_distinct_values(esolve.eigenvalues());
-          //std::cout << "Eigenvectors are:\n" << esolve.eigenvectors().real() << "\n\n" << esolve.eigenvectors().imag() << "\n\n";
-          //std::cout << "QR Eigenvectors are:\n"
-          //<< Eigen::MatrixXcd(esolve.eigenvectors().householderQr().householderQ()).real() << "\n\n"
-          //<< Eigen::MatrixXcd(esolve.eigenvectors().householderQr().householderQ()).imag() << "\n\n";
 
           tmat = kernel * (esolve.eigenvectors().householderQr().householderQ());
-          //std::cout << "Considering vectors:\n" << tmat.real() << "\n\n" << tmat.imag() << "\n\n";
-          //std::cout << "orthonormality check 1:\n" << (tmat.adjoint()*tmat).real() << "\n\n" << (tmat.adjoint()*tmat).imag() << "\n\n";
-          //std::cout << "orthonormality check 2:\n" << (tmat * tmat.adjoint()).real() << "\n\n" << (tmat * tmat.adjoint()).imag() << "\n\n";
 
           // make transformed copy of the representation
           std::vector<Eigen::MatrixXcd> trans_rep(head_group.size());
@@ -1396,20 +1407,27 @@ namespace CASM {
           }
           //std::cout << "Mini block shape:\n" << block_shape << "\n";
           Index last_i = 0;
+          //std::cout << "subspace_dims is : " << subspace_dims << "\n";
           for(Index ns = 0; ns < subspace_dims.size(); ns++) {
-            double tnorm(0);
-            std::vector<std::complex<double> > char_array;
+            //std::cout << "ns is " << ns << "\n";
+            double sqnorm(0);
+            std::vector<double> char_array;
 
+            // 'ns' indexes an invariant subspace
+            // Loop over group operation and calculate character vector for the group representation on this
+            // invariant subspace. If the squared norm of the character vector is equal to the group order,
+            // the invariant subspace is also irreducible
             for(Index ng = 0; ng < trans_rep.size(); ng++) {
               cplx tchar(0, 0);
               for(Index i = last_i; i < last_i + subspace_dims[ns]; i++)
                 tchar += trans_rep[ng](i, i);
-              char_array.push_back(tchar);
-              tnorm += std::norm(tchar);
+              char_array.push_back(tchar.real());
+              //std::norm is squared norm
+              sqnorm += std::norm(tchar);
             }
 
-            if(almost_equal(tnorm, double(head_group.size()))) { // this representation is irreducible
-              //std::cout << "THE REPRESENTATION IS IRREDUCIBLE!!\n";
+            if(almost_equal(sqnorm, double(head_group.size()))) { // this representation is irreducible
+              //std::cout << "THE REPRESENTATION IS IRREDUCIBLE with norm = "<< sqnorm << "\n";
               //std::cout << "It's characters are: " << char_array << "\n\n";
               Eigen::MatrixXd ttrans_mat(dim, 2 * subspace_dims[ns]);
               //std::cout << "Vectors in this subspace are:\n" << tmat.block(0, last_i, dim, subspace_dims[ns]) << "\n\n";
@@ -1432,11 +1450,19 @@ namespace CASM {
                 //std::cout << "***Adding columns!\n" << Eigen::MatrixXd(qr.householderQ()).leftCols(rnk) << "\n\n";
                 //trans_mat.block(0, Nfound, dim, rnk) = Eigen::MatrixXd(qr.householderQ()).leftCols(rnk);
                 //trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * (symmetrized_irrep_trans_mat(t_rep, head_group)).transpose();
+                //std::cout << "symmetrizer_func is \n" << symmetrizer_func(t_rep, head_group) << "\n\n";
+                //std::cout << "trans_mat is \n" << trans_mat << "\n\n";
+                //std::cout << "ttrans_mat is \n" << ttrans_mat << "\n\n";
+                //std::cout << "Nfound, dim, rnk: " << Nfound << ", " << dim << ", " << rnk << "\n\n ---------------\n";
                 trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * symmetrizer_func(t_rep, head_group);
                 Nfound += rnk;
                 found_new_irreps = true;
                 //std::cout << "trans_mat is now: \n" << trans_mat << "\n\n";
               }
+            }
+            else {
+              //std::cout << "THE REPRESENTATION IS **REDUCIBLE with norm = "<< sqnorm << "\n";
+              //std::cout << "It's characters are: " << char_array << "\n\n";
             }
             last_i += subspace_dims[ns];
           }
@@ -1459,9 +1485,7 @@ namespace CASM {
     for(Index i = 0; i < head_group.size(); i++) {
       block_shape += (trans_mat.transpose() * (*_rep.MatrixXd(head_group[i])) * trans_mat).cwiseAbs2();
     }
-    // std::cout << "BLOCK MATRIX IS:\n"
-    //           << block_shape << "\n\n";
-    //std::cout << "IRREP DIMENSIONS ARE: " << irrep_dims << "\n\n";
+
     return std::make_pair(trans_mat.transpose(), irrep_dims);
 
   }
@@ -1471,7 +1495,7 @@ namespace CASM {
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  Eigen::MatrixXd get_irrep_trans_mat_blind(SymGroupRep const &_rep, const SymGroup &head_group) {
+  Eigen::MatrixXd get_irrep_trans_mat(SymGroupRep const &_rep, const SymGroup &head_group) {
     return get_irrep_trans_mat_and_dims(_rep,
                                         head_group,
     [](const SymGroupRep & t_rep, const SymGroup & head) {

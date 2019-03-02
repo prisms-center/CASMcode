@@ -183,7 +183,7 @@ namespace CASM {
     for(Index i = 0; i < _struc.mol_info.names.size(); ++i) {
       if(excluded_species.count(_struc.mol_info.names[i]))
         continue;
-      ajson.push_back(_struc.mol_info.names[i]);
+      mjson.push_back(_struc.mol_info.names[i]);
       _struc.mol_info.permute.push_back(i);
     }
 
@@ -196,9 +196,19 @@ namespace CASM {
       end_it = _struc.atom_info.dofs.end();
 
       for(; it != end_it; ++it) {
-        jsonParser &tjson = json[prefix + "atom_dofs"][it.name()].put_array();
-        for(Index i : _struc.atom_info.permute)
-          tjson.push_back((*it)[i]);
+        auto
+        it2 = it->begin(),
+        end_it2 = it->end();
+        for(; it2 != end_it2; ++it2) {
+          if(it2->is_array()) {
+            jsonParser &tjson = json[prefix + "atom_dofs"][it.name()][it2.name()].put_array();
+            for(Index i : _struc.atom_info.permute)
+              tjson.push_back((*it2)[i]);
+          }
+          else {
+            json[prefix + "atom_dofs"][it.name()][it2.name()] = *it2;
+          }
+        }
       }
     }
 
@@ -208,10 +218,19 @@ namespace CASM {
       end_it = _struc.mol_info.dofs.end();
 
       for(; it != end_it; ++it) {
-        jsonParser &tjson = json[prefix + "mol_dofs"][it.name()].put_array();
-        //std::cout << "WORKING ON mol_dof " << it.name() << "\n";
-        for(Index i : _struc.mol_info.permute)
-          tjson.push_back((*it)[i]);
+        auto
+        it2 = it->begin(),
+        end_it2 = it->end();
+        for(; it2 != end_it2; ++it2) {
+          if(it2->is_array()) {
+            jsonParser &tjson = json[prefix + "mol_dofs"][it.name()][it2.name()].put_array();
+            for(Index i : _struc.mol_info.permute)
+              tjson.push_back((*it2)[i]);
+          }
+          else {
+            json[prefix + "mol_dofs"][it.name()][it2.name()] = *it2;
+          }
+        }
       }
     }
 

@@ -63,7 +63,7 @@ namespace CASM {
       "    in [b,i,j,k] convention, where 'b' is sublattice index and [i,j,k] spedifies line-\n"
       "    ar combinations of primitive-cell lattice vectors.\n"
       "    Ex: \"sites\" : [[0,0,0,0],\n"
-      "                     [2,0,0,0]]\n\n"
+      "                   [2,0,0,0]]\n\n"
 
       "  axes: matrix of doubles (optional, default=identity matrix) \n"
       "    Coordinate axes of dof grid. Rows of matrix specify unrolled elements of\n"
@@ -72,8 +72,8 @@ namespace CASM {
       "    major order, such that values from a particular site are listed contiguously.\n"
       "    'axes' matrix be rank deficient.\n"
       "    Ex: \"axes\" : [[1, 1, 1, 1, 1, 1],\n"
-      "                    [1,-1, 0,-1, 1, 0],\n"
-      "                    [1,-1, 0, 1,-1, 0]]\n\n"
+      "                  [1,-1, 0,-1, 1, 0],\n"
+      "                  [1,-1, 0, 1,-1, 0]]\n\n"
 
       "  sym_axes: bool (optional, default=false)\n"
       "    If true, overrides \"axes\" field and instead constructs symmetry-adapted grid axes\n"
@@ -145,12 +145,6 @@ namespace CASM {
       }
     }
 
-    auto const &dof_info = in_configs[0].configdof().local_dof(dof).info();
-    for(Index l : in_configs[0].sites()) {
-      dof_dims.push_back(dof_info[in_configs[0].config().sublat(l)].dim());
-      tot_dim += dof_dims.back();
-    }
-
     Index max_nonzero(-1), min_nonzero(0);
     Eigen::MatrixXd axes;
     Eigen::VectorXd min, max, inc;
@@ -160,6 +154,12 @@ namespace CASM {
       }
       from_json(dof, _kwargs["dof"]);
       DoF::traits(dof);
+
+      auto const &dof_info = in_configs[0].configdof().local_dof(dof).info();
+      for(Index l : in_configs[0].sites()) {
+        dof_dims.push_back(dof_info[in_configs[0].config().sublat(l)].dim());
+        tot_dim += dof_dims.back();
+      }
 
       if(_kwargs.contains("sym_axes")) {
         _kwargs["sym_axes"].get(sym_axes);
@@ -181,26 +181,26 @@ namespace CASM {
       }
 
       //min
-      if(!_kwargs.contains("min")) {
-        throw std::runtime_error("Field \"min\" is required.\n");
-      }
+      if(_kwargs.contains("min")) {
 
-      if(_kwargs["min"].is_number()) {
-        min = Eigen::VectorXd::Constant(axes.cols(), _kwargs["min"].get<double>());
+        if(_kwargs["min"].is_number()) {
+          min = Eigen::VectorXd::Constant(axes.cols(), _kwargs["min"].get<double>());
+        }
+        else {
+          _kwargs["min"].get(min);
+          if(min.size() != axes.cols()) {
+            throw std::runtime_error("Array field \"min\" must have dimension equal to number of coordinate axes!");
+          }
+        }
       }
       else {
-        _kwargs["min"].get(min);
-        if(min.size() != axes.cols()) {
-          throw std::runtime_error("Array field \"min\" must have dimension equal to number of coordinate axes!");
-        }
+        min = Eigen::VectorXd::Constant(axes.cols(), 0);
       }
 
       //max
       if(!_kwargs.contains("max")) {
         throw std::runtime_error("Field \"max\" is required.\n");
       }
-      _kwargs["max"].get(max);
-
       if(_kwargs["max"].is_number()) {
         max = Eigen::VectorXd::Constant(axes.cols(), _kwargs["max"].get<double>());
       }
@@ -215,8 +215,6 @@ namespace CASM {
       if(!_kwargs.contains("increment")) {
         throw std::runtime_error("Field \"increment\" is required.\n");
       }
-      _kwargs["increment"].get(inc);
-
       if(_kwargs["increment"].is_number()) {
         inc = Eigen::VectorXd::Constant(axes.cols(), _kwargs["increment"].get<double>());
       }
@@ -234,7 +232,7 @@ namespace CASM {
 
     }
     catch(std::exception &e) {
-      throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigEnumNormalCoords:") + e.what());
+      throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigEnumNormalCoords: ") + e.what());
     }
 
     for(ConfigEnumInput const &config : in_configs) {
@@ -294,7 +292,10 @@ namespace CASM {
                                                                   config.group(),
                                                                   _axes);
       axes = normcoords.first.transpose();
-      log << "Enumeration will be performed using symmetry-adapted normal coordinates as axes. Normal coordinates are:\n";
+      //std::cout << "Axes:\n" << axes.transpose().format(tformat) << "\n";
+      log << "Enumeration will be performed using symmetry-adapted normal coordinates as axes.\n"
+          << "Normal coordinates partition DoF space into " << normcoords.second.size() << " subspaces.\n"
+          << "Normal coordinates are:\n";
       Index l = 0;
       for(Index d = 0; d < normcoords.second.size(); ++d) {
         log << "Axes for irreducible representation " << (d + 1) << "\n  --------------\n";
@@ -372,30 +373,28 @@ namespace CASM {
     }
     else {
       m_current = notstd::make_cloneable<Configuration>(_init.config());
-      reset_properties(m_current);
+      reset_properties(*m_current);
+
       m_dof_vals = &(m_current->configdof().local_dof(m_dof_key));
-      _initialize_count();
-      _set_dof();
       auto const &dof_info = m_dof_vals->info();
       for(Index l : m_sites)
         m_dof_dims.push_back(dof_info[m_current->sublat(l)].dim());
-      _set_step(0);
+
+      if(m_max_nonzero > m_axes.cols() / 3) {
+        m_combo.resize(m_max_nonzero - 1);
+        m_combo_index = m_max_nonzero;
+      }
+      if(_increment_combo())
+        this->_initialize(&(*m_current));
+      _set_dof();
       m_current->set_source(this->source(step()));
     }
   }
 
-  void ConfigEnumNormalCoords::_initialize_count() {
-    if(m_max_nonzero > m_axes.cols() / 3) {
-      m_combo.resize(m_max_nonzero - 1);
-      m_combo_index = m_max_nonzero;
-    }
-    _increment_combo();
-  }
-
-
   bool ConfigEnumNormalCoords::_increment_combo() {
     Index k = max<Index>(m_combo.size(), m_min_nonzero);
     bool invalid = true;
+    //std::cout << "COMBO INCREMENT: " << m_combo << "  to  ";
     while(invalid) {
       if(m_combo_index >= nchoosek(m_axes.cols(), k)) {
         ++k;
@@ -410,14 +409,19 @@ namespace CASM {
            vmax(m_combo.size()),
            vinc(m_combo.size());
       for(Index i = 0; i < m_combo.size(); ++i) {
-        vmin[i] = m_min[m_combo[i]];
-        vmax[i] = m_max[m_combo[i]];
-        vinc[i] = m_inc[m_combo[i]];
+        Index j = m_combo.size() - 1 - i;
+        vmin[i] = m_min[m_combo[j]];
+        vmax[i] = m_max[m_combo[j]];
+        vinc[i] = m_inc[m_combo[j]];
         if(almost_zero(vmin[i]) && almost_zero(vmax[i]))
           invalid = true;
       }
       m_counter = EigenCounter<Eigen::VectorXd>(vmin, vmax, vinc);
     }
+
+    //std::cout << m_combo << "\n";
+
+    //std::cout << "counter.valid() = " << m_counter.valid() << "; values: " << m_counter().transpose() << "\n";
     return !invalid;
   }
 
@@ -446,14 +450,16 @@ namespace CASM {
     bool is_valid_config = false;
     do {
       while(!is_valid_config && ++m_counter) {
+        //std::cout << "Counting point: " << m_counter() << "\n";
         if(_check_sparsity()) {
           _set_dof();
           is_valid_config = _check_current();
         }
+        //std::cout << "is_valid? " << (is_valid_config? "yes\n" : "no\n");
       }
     }
-    while(!is_valid_config || _increment_combo());
-
+    while(!is_valid_config && _increment_combo());
+    //std::cout << "OUTSIDE!! is_valid? " << (is_valid_config? "yes\n" : "no\n");
     if(is_valid_config) {
       this->_increment_step();
       m_current->set_source(this->source(step()));

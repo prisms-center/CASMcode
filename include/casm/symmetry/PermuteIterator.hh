@@ -153,6 +153,20 @@ namespace CASM {
   ///
   /// - The result is sorted
   template<typename PermuteIteratorContainer>
+  SymGroup make_point_group(const PermuteIteratorContainer &container) {
+    return make_point_group(container.begin(), container.end());
+  }
+
+  /// \brief Returns a SymGroup generated from a range of PermuteIterator
+  template<typename PermuteIteratorIt>
+  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end);
+
+  /// \brief Returns a SymGroup generated from a container of PermuteIterator
+  ///
+  /// \param container A container of PermuteIterator
+  ///
+  /// - The result is sorted
+  template<typename PermuteIteratorContainer>
   SymGroup make_sym_group(const PermuteIteratorContainer &container) {
     return make_sym_group(container.begin(), container.end());
   }

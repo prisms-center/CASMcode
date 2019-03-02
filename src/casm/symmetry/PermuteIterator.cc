@@ -218,6 +218,30 @@ namespace CASM {
   /// - The result is sorted
   /// - The result uses the Supercell lattice for periodic comparisons
   template<typename PermuteIteratorIt>
+  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end) {
+    SymGroup result;
+    result.set_lattice(begin->prim_grid().scel_lattice());
+    for(; begin != end; ++begin) {
+      Index f = begin->factor_group_index();
+      Index i;
+      for(i = 0; i < result.size(); ++i) {
+        if(f == result[i].index())
+          break;
+      }
+      if(i == result.size())
+        result.push_back((begin->sym_op()).no_trans());
+    }
+    result.sort();
+    return result;
+  }
+
+  /// \brief Returns a SymGroup generated from a range of PermuteIterator
+  ///
+  /// \param begin,end A range of PermuteIterator
+  ///
+  /// - The result is sorted
+  /// - The result uses the Supercell lattice for periodic comparisons
+  template<typename PermuteIteratorIt>
   SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end) {
     SymGroup sym_group;
     sym_group.set_lattice(begin->prim_grid().scel_lattice());
@@ -236,6 +260,16 @@ namespace CASM {
     std::vector<PermuteIterator>::const_iterator begin,
     std::vector<PermuteIterator>::const_iterator end);
   template SymGroup make_sym_group(
+    std::vector<PermuteIterator>::iterator begin,
+    std::vector<PermuteIterator>::iterator end);
+
+  template SymGroup make_point_group(
+    PermuteIterator begin,
+    PermuteIterator end);
+  template SymGroup make_point_group(
+    std::vector<PermuteIterator>::const_iterator begin,
+    std::vector<PermuteIterator>::const_iterator end);
+  template SymGroup make_point_group(
     std::vector<PermuteIterator>::iterator begin,
     std::vector<PermuteIterator>::iterator end);
 

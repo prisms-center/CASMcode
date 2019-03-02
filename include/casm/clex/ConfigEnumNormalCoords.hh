@@ -67,8 +67,6 @@ namespace CASM {
   private:
     void _set_dof();
 
-    void _initialize_count();
-
     bool _increment_combo();
 
     bool _check_sparsity() const;

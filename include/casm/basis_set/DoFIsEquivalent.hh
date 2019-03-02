@@ -45,8 +45,9 @@ namespace CASM {
     /// returns true if m_dof and _other are same type, same size, and have same variable names
     bool _label_equiv(DoFSet const &_other) const;
 
-    /// returns true if the matrix equation _other_basis * U = m_dof.basis() has a unique solution U
-    bool _vector_equiv(Eigen::Ref<const Eigen::MatrixXd> const &_other_basis) const;
+    /// returns true if the matrix equation _before_basis * U = _after_basis has a unique solution U
+    /// stores solution in m_U
+    bool _vector_equiv(Eigen::Ref<const Eigen::MatrixXd> const &_before_basis, Eigen::Ref<const Eigen::MatrixXd> const &_after_basis) const;
 
     DoFSet m_dof;
 
