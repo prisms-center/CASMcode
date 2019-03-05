@@ -35,8 +35,7 @@ namespace CASM {
                                                                  IterType end,
                                                                  SupercellSymInfo const &_syminfo,
                                                                  DoFKey const &_key,
-                                                                 std::vector<PermuteIterator> const &_group,
-                                                                 Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
+                                                                 std::vector<PermuteIterator> const &_group) {
 
 
     std::pair<MasterSymGroup, SymGroupRepID> result;// = std::make_pair(make_sym_group(_group),SymGroupRepID());
@@ -71,7 +70,7 @@ namespace CASM {
         trep.block(subdim * (*it), subdim * perm.permute_ind(*it), ptr->rows(), ptr->cols()) = *ptr;
       }
       //std::cout << "trep " << g << " is \n" << trep << "\n\n";
-      result.first[g++].set_rep(result.second, SymMatrixXd(_subspace.transpose()*trep * _subspace));
+      result.first[g++].set_rep(result.second, SymMatrixXd(trep));
       //std::cout << "cartesian symop is: \n" << perm.sym_op().matrix() << "\n";
     }
     result.first.sort();
@@ -98,7 +97,7 @@ namespace CASM {
                                               std::vector<PermuteIterator> const &_group,
   Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
     //std::vector<PermuteIterator> perms = scel_subset_group(begin,end,_syminfo);
-    std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group, _subspace);
+    std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group);
 
 
     auto result = get_irrep_trans_mat_and_dims(rep_info.first.representation(rep_info.second),
@@ -106,8 +105,9 @@ namespace CASM {
     [](const SymGroupRep & t_rep, const SymGroup & head) {
       Eigen::MatrixXd result = (symmetrized_irrep_trans_mat(t_rep, head)).transpose();
       return result;
-    });
-    result.first = result.first * _subspace.transpose();
+    },
+    _subspace);
+    //result.first = result.first * _subspace.transpose();
     return result;
   }
 

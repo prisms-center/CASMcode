@@ -5,7 +5,7 @@
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
 #include "casm/clex/ConfigEnumRandomLocal.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
-#include "casm/clex/ConfigEnumNormalCoords.hh"
+#include "casm/clex/ConfigEnumSiteDoFs.hh"
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
@@ -78,7 +78,7 @@ namespace CASM {
       EnumInterface<ConfigEnumRandomLocal>(),
       EnumInterface<ConfigEnumRandomOccupations>(),
       EnumInterface<ConfigEnumStrain>(),
-      EnumInterface<ConfigEnumNormalCoords>(),
+      EnumInterface<ConfigEnumSiteDoFs>(),
       EnumInterface<SuperConfigEnum>(),
       EnumInterface<Kinetics::DiffusionTransformationEnum>(),
       EnumInterface<Kinetics::DiffTransConfigEnumOccPerturbations>(),

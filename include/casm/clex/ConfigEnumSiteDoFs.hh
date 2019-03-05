@@ -1,5 +1,5 @@
-#ifndef CASM_ConfigEnumNormalCoords
-#define CASM_ConfigEnumNormalCoords
+#ifndef CASM_ConfigEnumSiteDoFs
+#define CASM_ConfigEnumSiteDoFs
 
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/enumerator/InputEnumerator.hh"
@@ -7,7 +7,7 @@
 #include "casm/clex/Configuration.hh"
 
 extern "C" {
-  CASM::EnumInterfaceBase *make_ConfigEnumNormalCoords_interface();
+  CASM::EnumInterfaceBase *make_ConfigEnumSiteDoFs_interface();
 }
 
 namespace CASM {
@@ -17,20 +17,20 @@ namespace CASM {
   ///
   /// \ingroup ConfigEnumGroup
   ///
-  class ConfigEnumNormalCoords : public InputEnumeratorBase<Configuration> {
+  class ConfigEnumSiteDoFs : public InputEnumeratorBase<Configuration> {
 
     // -- Required members -------------------
 
   public:
 
-    ConfigEnumNormalCoords(ConfigEnumInput const &_init,
-                           DoFKey const &_dof,
-                           Eigen::Ref<const Eigen::MatrixXd> const &_axes,
-                           Eigen::Ref<const Eigen::VectorXd> const &min_val,
-                           Eigen::Ref<const Eigen::VectorXd> const &max_val,
-                           Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-                           Index _min_nonzero,
-                           Index _max_nonzero);
+    ConfigEnumSiteDoFs(ConfigEnumInput const &_init,
+                       DoFKey const &_dof,
+                       Eigen::Ref<const Eigen::MatrixXd> const &_axes,
+                       Eigen::Ref<const Eigen::VectorXd> const &min_val,
+                       Eigen::Ref<const Eigen::VectorXd> const &max_val,
+                       Eigen::Ref<const Eigen::VectorXd> const &inc_val,
+                       Index _min_nonzero,
+                       Index _max_nonzero);
 
 
 

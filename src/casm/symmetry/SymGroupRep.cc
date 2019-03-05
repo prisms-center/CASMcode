@@ -1308,8 +1308,44 @@ namespace CASM {
   std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep,
                                                                               const SymGroup &head_group,
                                                                               std::function<Eigen::MatrixXd(const SymGroupRep &,
-  const SymGroup &head_group)> symmetrizer_func) {
+                                                                                  const SymGroup &head_group)> symmetrizer_func,
+  Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
 
+    auto result = get_irrep_trans_mat_and_dims(_rep, head_group, symmetrizer_func);
+    if(_subspace.rows() != result.first.cols()) {
+      throw std::runtime_error("In get_irrep_trans_mat_and_dims, subspace matrix does not have proper number of rows (should have "
+                               + std::to_string(result.first.cols()) + ", but has " + std::to_string(_subspace.rows()));
+    }
+    Eigen::VectorXd trans_mags = (result.first * _subspace).array().square().rowwise().sum();
+    std::pair<Eigen::MatrixXd, std::vector<Index>> new_result;
+
+    Index l = 0;
+    Index keep = 0;
+    for(Index i : result.second) {
+      double sqmag(0.);
+      Index firstl = l;
+      for(; l < firstl + i; ++l)
+        sqmag += trans_mags[l];
+      if(sqmag > 0.5) {
+        new_result.first.conservativeResize(new_result.first.rows() + i, result.first.cols());
+        new_result.first.block(keep, 0, i, result.first.cols()) = result.first.block(firstl, 0, i, result.first.cols());
+        new_result.second.push_back(i);
+        keep += i;
+      }
+    }
+
+    return new_result;
+  }
+  //*******************************************************************************************
+
+  // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
+  // The ROWS of trans_mat are the new basis vectors in terms of the old such that
+  // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
+  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep,
+                                                                              const SymGroup &head_group,
+                                                                              std::function<Eigen::MatrixXd(const SymGroupRep &,
+  const SymGroup &head_group)> symmetrizer_func) {
+    std::vector<Eigen::VectorXcd> char_table;
     std::vector<Index> irrep_dims;
     if(!_rep.size() || !head_group.size() || !_rep.MatrixXd(head_group[0])) {
       default_err_log() << "WARNING:  In calc_new_irreps, size of representation is " << _rep.size() << " and MatrixXd address is " << _rep.MatrixXd(head_group[0]) << std::endl
@@ -1411,19 +1447,18 @@ namespace CASM {
           for(Index ns = 0; ns < subspace_dims.size(); ns++) {
             //std::cout << "ns is " << ns << "\n";
             double sqnorm(0);
-            std::vector<double> char_array;
+            Eigen::VectorXcd char_vec(head_group.size());
 
             // 'ns' indexes an invariant subspace
             // Loop over group operation and calculate character vector for the group representation on this
             // invariant subspace. If the squared norm of the character vector is equal to the group order,
             // the invariant subspace is also irreducible
             for(Index ng = 0; ng < trans_rep.size(); ng++) {
-              cplx tchar(0, 0);
+              char_vec[ng] = cplx(0, 0);
               for(Index i = last_i; i < last_i + subspace_dims[ns]; i++)
-                tchar += trans_rep[ng](i, i);
-              char_array.push_back(tchar.real());
+                char_vec[ng] += trans_rep[ng](i, i);
               //std::norm is squared norm
-              sqnorm += std::norm(tchar);
+              sqnorm += std::norm(char_vec[ng]);
             }
 
             if(almost_equal(sqnorm, double(head_group.size()))) { // this representation is irreducible
@@ -1457,6 +1492,7 @@ namespace CASM {
                 trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * symmetrizer_func(t_rep, head_group);
                 Nfound += rnk;
                 found_new_irreps = true;
+                char_table.push_back(char_vec);
                 //std::cout << "trans_mat is now: \n" << trans_mat << "\n\n";
               }
             }
@@ -1485,6 +1521,7 @@ namespace CASM {
     for(Index i = 0; i < head_group.size(); i++) {
       block_shape += (trans_mat.transpose() * (*_rep.MatrixXd(head_group[i])) * trans_mat).cwiseAbs2();
     }
+
 
     return std::make_pair(trans_mat.transpose(), irrep_dims);
 

@@ -1,4 +1,4 @@
-#include "casm/clex/ConfigEnumNormalCoords.hh"
+#include "casm/clex/ConfigEnumSiteDoFs.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
@@ -12,8 +12,8 @@
 //#include "casm/misc/algorithm.hh"
 
 extern "C" {
-  CASM::EnumInterfaceBase *make_ConfigEnumNormalCoords_interface() {
-    return new CASM::EnumInterface<CASM::ConfigEnumNormalCoords>();
+  CASM::EnumInterfaceBase *make_ConfigEnumSiteDoFs_interface() {
+    return new CASM::EnumInterface<CASM::ConfigEnumSiteDoFs>();
   }
 }
 
@@ -31,11 +31,11 @@ namespace CASM {
 
   };
 
-  const std::string ConfigEnumNormalCoords::enumerator_name = "ConfigEnumNormalCoords";
+  const std::string ConfigEnumSiteDoFs::enumerator_name = "ConfigEnumSiteDoFs";
 
-  std::string ConfigEnumNormalCoords::interface_help() {
+  std::string ConfigEnumSiteDoFs::interface_help() {
     return
-      "ConfigEnumNormalCoords: \n\n"
+      "ConfigEnumSiteDoFs: \n\n"
 
       "  confignames: Array of strings (optional) \n"
       "    Names of configurations to be used as reference states. Normal coordinates are enum-\n"
@@ -112,7 +112,7 @@ namespace CASM {
 
       "  Examples:\n"
       "    To enumerate all DoF perturbations of a particular configuration:\n"
-      "      casm enum --method ConfigEnumNormalCoords -i \n"
+      "      casm enum --method ConfigEnumSiteDoFs -i \n"
       "      '{ \n"
       "        \"config\": \"SCEL4_1_4_1_0_0_0/3\",\n"
       "        \"analysis\": true,\n"
@@ -120,7 +120,7 @@ namespace CASM {
       "      }' \n\n";
   }
 
-  int ConfigEnumNormalCoords::run(
+  int ConfigEnumSiteDoFs::run(
     PrimClex const &primclex,
     jsonParser const &_kwargs,
     Completer::EnumOption const &enum_opt,
@@ -141,7 +141,7 @@ namespace CASM {
     Index tot_dim(0);
     for(auto const &_in : in_configs) {
       if(_in.sites().size() != nsites) {
-        throw std::runtime_error("Starting configurations or supercells passed to ConfigEnumNormalCoords must all have the same number of selected sites!\n");
+        throw std::runtime_error("Starting configurations or supercells passed to ConfigEnumSiteDoFs must all have the same number of selected sites!\n");
       }
     }
 
@@ -228,11 +228,11 @@ namespace CASM {
 
       _kwargs.get_if(min_nonzero, "min_nonzero");
 
-      _kwargs.get_else(max_nonzero, "min_nonzero", axes.cols());
+      _kwargs.get_else(max_nonzero, "max_nonzero", axes.cols());
 
     }
     catch(std::exception &e) {
-      throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigEnumNormalCoords: ") + e.what());
+      throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigEnumSiteDoFs: ") + e.what());
     }
 
     for(ConfigEnumInput const &config : in_configs) {
@@ -255,18 +255,18 @@ namespace CASM {
     return 0;
   }
 
-  int ConfigEnumNormalCoords::run(PrimClex const &_primclex,
-                                  ConfigEnumInput const &_in_config,
-                                  DoFKey const &_dof,
-                                  Eigen::Ref<const Eigen::MatrixXd> const &_axes,
-                                  Eigen::Ref<const Eigen::VectorXd> const &min_val,
-                                  Eigen::Ref<const Eigen::VectorXd> const &max_val,
-                                  Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-                                  bool sym_axes,
-                                  Index _min_nonzero,
-                                  Index _max_nonzero,
-                                  std::vector<std::string> const &_filter_expr,
-                                  bool dry_run) {
+  int ConfigEnumSiteDoFs::run(PrimClex const &_primclex,
+                              ConfigEnumInput const &_in_config,
+                              DoFKey const &_dof,
+                              Eigen::Ref<const Eigen::MatrixXd> const &_axes,
+                              Eigen::Ref<const Eigen::VectorXd> const &min_val,
+                              Eigen::Ref<const Eigen::VectorXd> const &max_val,
+                              Eigen::Ref<const Eigen::VectorXd> const &inc_val,
+                              bool sym_axes,
+                              Index _min_nonzero,
+                              Index _max_nonzero,
+                              std::vector<std::string> const &_filter_expr,
+                              bool dry_run) {
     Configuration tconfig = _in_config.config();
 
     if(_in_config.sites().size() == 0) {
@@ -282,9 +282,9 @@ namespace CASM {
     Eigen::MatrixXd axes = _axes;
     //PRINT INFO TO LOG:
     Log &log = _primclex.log();
-    log << "ConfigEnumNormalCoords summary for DoF '" << _dof << "':\n";
     Eigen::IOFormat tformat(4, 0, 8, " ", "\n", "    ", "", "", "");
     if(sym_axes) {
+      log << "Option \"sym_axes\" selected. Preparing to construct symmetry-adapted axes. This may take several minutes...\n\n";
       std::pair<Eigen::MatrixXd, std::vector<Index>> normcoords = collective_dof_normal_coords_and_irrep_dims(config.sites().begin(),
                                                                   config.sites().end(),
                                                                   config.supercell().sym_info(),
@@ -292,6 +292,8 @@ namespace CASM {
                                                                   config.group(),
                                                                   _axes);
       axes = normcoords.first.transpose();
+      log << "ConfigEnumSiteDoFs summary for DoF '" << _dof << "':\n";
+
       //std::cout << "Axes:\n" << axes.transpose().format(tformat) << "\n";
       log << "Enumeration will be performed using symmetry-adapted normal coordinates as axes.\n"
           << "Normal coordinates partition DoF space into " << normcoords.second.size() << " subspaces.\n"
@@ -303,6 +305,10 @@ namespace CASM {
         for(Index i = 0; i < dim; ++i, ++l) {
           log <<  axes.col(l).transpose().format(tformat) << "\n";
         }
+      }
+      if(axes.cols() != _axes.cols()) {
+        throw std::runtime_error("In ConfigEnumSiteDoFs, symmetry-adapted axes do not have same dimension as provided axes. "
+                                 "Please ensure that provided axes completely span one or more of subspaces listed above.");
       }
     }
     else {
@@ -316,14 +322,14 @@ namespace CASM {
 
 
     auto constructor = [&](const ConfigEnumInput & _config) {
-      return notstd::make_unique<ConfigEnumNormalCoords>(config,
-                                                         _dof,
-                                                         axes,
-                                                         min_val,
-                                                         max_val,
-                                                         inc_val,
-                                                         _min_nonzero,
-                                                         _max_nonzero);
+      return notstd::make_unique<ConfigEnumSiteDoFs>(config,
+                                                     _dof,
+                                                     axes,
+                                                     min_val,
+                                                     max_val,
+                                                     inc_val,
+                                                     _min_nonzero,
+                                                     _max_nonzero);
     };
 
     int returncode = insert_configs(enumerator_name,
@@ -338,14 +344,14 @@ namespace CASM {
 
   }
 
-  ConfigEnumNormalCoords::ConfigEnumNormalCoords(ConfigEnumInput const &_init,
-                                                 DoFKey const &_dof,
-                                                 Eigen::Ref<const Eigen::MatrixXd> const &_axes,
-                                                 Eigen::Ref<const Eigen::VectorXd> const &min_val,
-                                                 Eigen::Ref<const Eigen::VectorXd> const &max_val,
-                                                 Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-                                                 Index _min_nonzero,
-                                                 Index _max_nonzero) :
+  ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(ConfigEnumInput const &_init,
+                                         DoFKey const &_dof,
+                                         Eigen::Ref<const Eigen::MatrixXd> const &_axes,
+                                         Eigen::Ref<const Eigen::VectorXd> const &min_val,
+                                         Eigen::Ref<const Eigen::VectorXd> const &max_val,
+                                         Eigen::Ref<const Eigen::VectorXd> const &inc_val,
+                                         Index _min_nonzero,
+                                         Index _max_nonzero) :
 
     //m_current(_init.config()),
     m_dof_key(_dof),
@@ -391,7 +397,7 @@ namespace CASM {
     }
   }
 
-  bool ConfigEnumNormalCoords::_increment_combo() {
+  bool ConfigEnumSiteDoFs::_increment_combo() {
     Index k = max<Index>(m_combo.size(), m_min_nonzero);
     bool invalid = true;
     //std::cout << "COMBO INCREMENT: " << m_combo << "  to  ";
@@ -416,6 +422,7 @@ namespace CASM {
         if(almost_zero(vmin[i]) && almost_zero(vmax[i]))
           invalid = true;
       }
+      m_combo_index++;
       m_counter = EigenCounter<Eigen::VectorXd>(vmin, vmax, vinc);
     }
 
@@ -426,9 +433,12 @@ namespace CASM {
   }
 
 
-  void ConfigEnumNormalCoords::_set_dof() {
+  void ConfigEnumSiteDoFs::_set_dof() {
     Eigen::MatrixXd vals = m_current->configdof().local_dof(m_dof_key).values();
-    Eigen::VectorXd pert_vals = m_axes * m_counter();
+    Eigen::VectorXd pert_vals(Eigen::VectorXd::Zero(m_axes.rows()));
+
+    for(Index i = 0; i < m_combo.size(); ++i)
+      pert_vals += m_counter[i] * m_axes.col(m_combo[i]);
     Index l = 0;
 
     for(Index i = 0; i < m_sites.size(); ++i) {
@@ -445,7 +455,7 @@ namespace CASM {
   }
 
   /// Implements _increment over all occupations
-  void ConfigEnumNormalCoords::increment() {
+  void ConfigEnumSiteDoFs::increment() {
 
     bool is_valid_config = false;
     do {
@@ -469,7 +479,7 @@ namespace CASM {
     }
   }
 
-  bool ConfigEnumNormalCoords::_check_sparsity() const {
+  bool ConfigEnumSiteDoFs::_check_sparsity() const {
     if(m_min_nonzero == 0 && m_max_nonzero == m_axes.cols())
       return true;
 
@@ -481,7 +491,7 @@ namespace CASM {
   }
 
   /// Returns true if current() is primitive and canonical
-  bool ConfigEnumNormalCoords::_check_current() const {
+  bool ConfigEnumSiteDoFs::_check_current() const {
     return current().is_primitive() && _check_sparsity() && (!m_subset_mode && current().is_canonical());
   }
 

@@ -280,6 +280,19 @@ namespace CASM {
                                                                               std::function<Eigen::MatrixXd(const SymGroupRep &,
                                                                                   const SymGroup &head_group)> symmetrizer_func);
 
+  /// \brief Finds the transformation matrix that block-diagonalizes this representation of head_group into irrep blocks
+  /// It does not rely on the character table, but instead utilizes a brute-force method
+  /// \param head_group The group with respect to which irreps are determined, which may be a subset of all operations in this representation
+  /// \result Pair, with first element being the transformation matrix with the ROWS comprising
+  /// the new basis vectors in terms of the old such that
+  /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
+  /// The second element is the dimension of irreducible subspaces, ordered identically to the rows of the transformation matrix
+  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep,
+                                                                              const SymGroup &head_group,
+                                                                              std::function<Eigen::MatrixXd(const SymGroupRep &,
+                                                                                  const SymGroup &head_group)> symmetrizer_func,
+                                                                              Eigen::Ref<const Eigen::MatrixXd> const &_subspace);
+
 
   /// \brief Make copy of (*this) that is transformed so that axes are oriented along high-symmetry direction
   /// and confined to subspaces that transform as irreps.
