@@ -1,12 +1,17 @@
+#include "casm/symmetry/SymOp.hh"
 #include "casm/basis_set/StrainDoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
+#include "casm/basis_set/BasisSet.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/symmetry/SymOp.hh"
+#include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/Site.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/strain/StrainConverter.hh"
 
 namespace CASM {
   namespace DoF_impl {
@@ -43,7 +48,23 @@ namespace CASM {
       return result;
     }
 
+
+
+
+    /// \brief Apply DoF values for this DoF to _struc
+    void StrainDoFTraits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+      Eigen::VectorXd unrolled_metric = _dof.global_dof(type_name()).standard_values();
+      StrainConverter c(m_metric);
+      Eigen::Matrix3d F = c.unrolled_strain_metric_to_F(unrolled_metric);
+
+      _struc.lat_column_mat = F * _struc.lat_column_mat;
+      _struc.mol_info.coords = F * _struc.mol_info.coords;
+      _struc.atom_info.coords = F * _struc.atom_info.coords;
+      _struc.global_dofs[type_name()]["deformation"] = F;
+      to_json_array(unrolled_metric, _struc.global_dofs[type_name()]["value"]);
+    }
   }
+
   namespace DoFType {
     DoF_impl::StrainDoFTraits GLstrain() {
       return DoF_impl::StrainDoFTraits("GL");

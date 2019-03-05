@@ -374,33 +374,6 @@ namespace CASM {
       return res;
     }
 
-    void DiffTransConfiguration::write_pos() const {
-      const auto &dir = primclex().dir();
-      try {
-        fs::create_directories(dir.configuration_dir(name()));
-      }
-      catch(const fs::filesystem_error &ex) {
-        default_err_log() << "Error in DiffTransConfiguration::write_pos()." << std::endl;
-        default_err_log() << ex.what() << std::endl;
-      }
-
-      fs::ofstream file(dir.POS(name()));
-      write_pos(file);
-      return;
-    }
-    std::ostream &DiffTransConfiguration::write_pos(std::ostream &sout) const {
-      sout << "Initial POS:" << std::endl;
-      VaspIO::PrintPOSCAR from(sorted().from_config());
-      from.sort();
-      from.print(sout);
-      sout << std::endl;
-      sout << "Final POS:" << std::endl;
-      VaspIO::PrintPOSCAR to(sorted().to_config());
-      to.sort();
-      to.print(sout);
-      return sout;
-    }
-
     /// \brief prints this DiffTransConfiguration
     std::ostream &operator<<(std::ostream &sout, const DiffTransConfiguration &dtc) {
       sout << dtc.diff_trans();
@@ -445,6 +418,35 @@ namespace CASM {
     }
 
 
+    void write_pos(DiffTransConfiguration const &dtc) {
+      const auto &dir = dtc.primclex().dir();
+      try {
+        fs::create_directories(dir.configuration_dir(dtc.name()));
+      }
+      catch(const fs::filesystem_error &ex) {
+        default_err_log() << "Error in DiffTransConfiguration::write_pos()." << std::endl;
+        default_err_log() << ex.what() << std::endl;
+      }
+
+      fs::ofstream(dir.POS(dtc.name())) << pos_string(dtc);
+
+      return;
+    }
+
+
+    std::string pos_string(DiffTransConfiguration const &dtc) {
+      std::stringstream ss;
+      ss << "Initial POS:" << std::endl;
+      VaspIO::PrintPOSCAR from(dtc.sorted().from_config());
+      from.sort();
+      from.print(ss);
+      ss << std::endl;
+      ss << "Final POS:" << std::endl;
+      VaspIO::PrintPOSCAR to(dtc.sorted().to_config());
+      to.sort();
+      to.print(ss);
+      return ss.str();
+    }
 
     /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
     Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {

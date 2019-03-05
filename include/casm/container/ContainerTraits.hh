@@ -2,6 +2,7 @@
 #define CASM_ContainerTraits_HH
 
 #include "casm/external/Eigen/Dense"
+#include <vector>
 #include "casm/misc/CASM_TMP.hh"
 
 namespace CASM {
@@ -17,6 +18,28 @@ namespace CASM {
   ///
   template<typename _Container>
   struct ContainerTraits {};
+
+  template<typename _value_type, typename Allocator>
+  struct ContainerTraits<std::vector<_value_type, Allocator> > {
+    using Container = std::vector<_value_type, Allocator>;
+    using value_type = typename Container::value_type;
+    using size_type = typename Container::size_type;
+    using Access = CASM_TMP::BracketAccess<Container, value_type, size_type>;
+
+    static size_type size(const Container &vec) {
+      return vec.size();
+    }
+
+    static size_type rows(const Container &vec) {
+      return vec.size();
+    }
+
+    static size_type cols(const Container &vec) {
+      return 1;
+    }
+
+  };
+
 
   /// \brief Eigen::MatrixXd container traits
 

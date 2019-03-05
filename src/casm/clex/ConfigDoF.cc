@@ -25,7 +25,7 @@ namespace CASM {
   //*******************************************************************************
 
   void ConfigDoF::clear() {
-    m_occupation.clear();
+    m_occupation.values().setZero();
     m_global_dofs.clear();
     m_local_dofs.clear();
   }
@@ -39,21 +39,6 @@ namespace CASM {
     std::swap(m_tol, RHS.m_tol);
   }
 
-  //*******************************************************************************
-
-  void ConfigDoF::set_occupation(const std::vector<int> &new_occupation) {
-
-    if(occupation().size() != new_occupation.size()) {
-      std::cerr << "CRITICAL ERROR: In ConfigDoF::set_occupation(), attempting to set occupation to size " << new_occupation.size() << ",\n"
-                << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
-    }
-
-    m_occupation = new_occupation;
-
-  }
 
   //*******************************************************************************
 
@@ -88,14 +73,21 @@ namespace CASM {
 
     Permutation tperm(it.combined_permute());
     if(occupation().size()) {
-      //ALSO DO SPECIES PERMUTATION
+      if(it.sym_info().has_aniso_occs()) {
+        Index l = 0;
+        for(Index b = 0; b < n_sublat(); ++b) {
+          for(Index n = 0; n < n_vol(); ++n, ++l) {
+            occ(l) = (*(it.occ_rep(b).permutation()))[occ(l)];
+          }
+        }
+      }
       set_occupation(tperm * occupation());
     }
 
     for(auto &dof : m_local_dofs) {
       LocalContinuousConfigDoFValues tmp = dof.second;
 
-      for(Index b = 0; b < tmp.n_basis(); ++b)
+      for(Index b = 0; b < tmp.n_sublat(); ++b)
         tmp.sublat(b) = *(it.local_dof_rep(dof.first, b).MatrixXd()) * dof.second.sublat(b);
       for(Index l = 0; l < size(); ++l) {
         dof.second.site_value(l) = tmp.site_value(tperm[l]);
@@ -114,20 +106,24 @@ namespace CASM {
       dof.second.values() = *(_op.representation(dof.second.info().symrep_ID()).MatrixXd()) * dof.second.values();
     }
 
-    //DO SPECIES PERMUTE HERE
-    //Permutation tperm(it.combined_permute());
-    //if(occupation().size()) {
-    //set_occupation(tperm * occupation());
-    //}
+    if(occupation().size()) {
+      Index l = 0;
+      for(Index b = 0; b < n_sublat(); ++b) {
+        if(!m_occupation.symrep_IDs()[b].is_identity()) {
+          SymPermutation const &permrep(*_op.get_permutation_rep(m_occupation.symrep_IDs()[b]));
+          l = b * n_vol();
+          for(Index n = 0; n < n_vol(); ++n, ++l) {
+            occ(l) = (*permrep.permutation())[occ(l)];
+          }
+        }
+      }
+    }
 
     for(auto &dof : m_local_dofs) {
       LocalContinuousConfigDoFValues tmp = dof.second;
 
-      for(Index b = 0; b < tmp.n_basis(); ++b)
+      for(Index b = 0; b < tmp.n_sublat(); ++b)
         dof.second.sublat(b) = *(_op.representation(dof.second.info()[b].symrep_ID()).MatrixXd()) * dof.second.sublat(b);
-      //for(Index l = 0; l < size(); ++l) {
-      //dof.second.site_value(l) = tmp.site_value(tperm[l]);
-      //}
     }
 
     return *this;
@@ -138,7 +134,7 @@ namespace CASM {
   jsonParser &ConfigDoF::to_json(jsonParser &json) const {
     json = jsonParser::object();
     if(occupation().size())
-      json["occ"] = occupation();
+      json["occ"] = m_occupation;
     if(!m_local_dofs.empty()) {
       json["local_dofs"] = m_local_dofs;
     }
@@ -181,9 +177,9 @@ namespace CASM {
 
   //*******************************************************************************
 
-  ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json, Index NB, std::map<DoFKey, DoFSetInfo> const &global_info, std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info, double _tol) {
+  ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json, Index NB, std::map<DoFKey, DoFSetInfo> const &global_info, std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info, std::vector<SymGroupRepID> const &_occ_symrep_IDs, double _tol) {
 
-    ConfigDoF result(NB, 0, global_info, local_info, _tol);
+    ConfigDoF result(NB, 0, global_info, local_info,  _occ_symrep_IDs, _tol);
     result.from_json(json);//, NB);
 
     return result;

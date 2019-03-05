@@ -49,7 +49,7 @@ def continue_job(jobdir, contdir, settings):
     remove = list(set(settings['remove']))
     compress = list(set(settings['compress']))
     backup = list(set(settings['backup']))
-    
+
     # Check that necessary files are being moved/copied: INCAR, POTCAR, KPOINTS
     if not "POTCAR" in (move + copy):
         warnings.warn("Warning: POTCAR not found in either 'move' or 'copy'. Moving POTCAR by default", VaspWarning)
@@ -188,7 +188,7 @@ def continue_job(jobdir, contdir, settings):
     print("")
 
     # check if the run is a neb job and copy the image CONTCAR to POSCAR
-    # if "n_images" is a key available to the settings then it is assumed that its a neb run 
+    # if "n_images" is a key available to the settings then it is assumed that its a neb run
     if "n_images" in settings:
         # go through each image folder, make a new image folder in contdir and copy CONTCAR
         i = 0
@@ -749,7 +749,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
             err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError', 'NbandsError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
 
     """
-    print "Begin vasp run:"
+    print("Begin vasp run:")
     sys.stdout.flush()
 
     if jobdir is None:
@@ -787,8 +787,8 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     if kpar is not None:
         io.set_incar_tag({"KPAR":kpar}, jobdir)
 
-    print "  jobdir:", jobdir
-    print "  exec:", command
+    print("  jobdir:", jobdir)
+    print("  exec:", command)
     sys.stdout.flush()
 
     if is_neb:
@@ -817,7 +817,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
             if err != None:
                 # FreezeErrors are fatal and usually not helped with STOPCAR
                 if "FreezeError" in err.keys():
-                    print "  VASP is frozen, killing job"
+                    print("  VASP is frozen, killing job")
                     sys.stdout.flush()
                     # Sometimes p.kill doesn't work if the process is on multiple nodes
                     os.kill(p.pid, signal.SIGKILL)
@@ -828,17 +828,17 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
                     time.sleep(30)
                 # Other errors can be killed with STOPCAR, which is safer
                 elif stopcar_time is None:
-                    print "  Found errors:",
+                    print("  Found errors:", end='')
                     for e in err:
-                        print e,
-                    print "\n  Killing job with STOPCAR"
+                        print(e, end='')
+                    print("\n  Killing job with STOPCAR")
                     sys.stdout.flush()
                     io.write_stopcar('e', jobdir)
                     stopcar_time = time.time()
                     time.sleep(30)
                 # If the STOPCAR exists, wait 5 min before manually killing the job
                 elif time.time() - stopcar_time > 300:
-                    print "  VASP is non-responsive, killing job"
+                    print("  VASP is non-responsive, killing job")
                     sys.stdout.flush()
                     os.kill(p.pid, signal.SIGKILL)
                     p.kill()
@@ -855,7 +855,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
     os.chdir(currdir)
 
-    print "Run complete"
+    print("Run complete")
     sys.stdout.flush()
 
     # check finished job for errors
@@ -872,9 +872,10 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
             else:
                 err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
     if err != None:
-        print "  Found errors:",
+        print("  Found errors:", end='')
         for e in err:
-            print e,
-    print "\n"
+            print(e, end='')
+    print("\n")
+    sys.stdout.flush()
 
     return err

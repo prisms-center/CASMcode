@@ -16,6 +16,18 @@ namespace CASM {
     next_mapping_better_than(1e10);
   }
 
+
+  LatticeMap::LatticeMap(Eigen::Ref<const LatticeMap::DMatType> const &_ideal,
+                         Eigen::Ref<const LatticeMap::DMatType> const &_strained,
+                         Index _num_atoms,
+                         double _tol /*= TOL*/,
+                         int _range /*= 2*/) :
+    LatticeMap(Lattice(_ideal),
+               Lattice(_strained),
+               _num_atoms,
+               _tol,
+               _range) {}
+
   //*******************************************************************************************
   /*
    *  For L_strained = (*this).lat_column_mat() and L_ideal = _ideal_lat.lat_column_mat(), we find the mapping:

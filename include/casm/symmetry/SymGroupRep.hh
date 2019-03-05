@@ -199,6 +199,21 @@ namespace CASM {
   /// Direction vectors are normalized to unit length. The total set of all directions is guaranteed to span the space.
   multivector<Eigen::VectorXd>::X<3> special_total_directions(SymGroupRep const &_rep, const SymGroup &head_group);
 
+  /// \brief finds high-symmetry directions within vector space supporting _rep wrt symmetry of head_group using the small_subgroups of head_group
+  /// \result Set of directions in the vector space on which '_rep' is defined, such that each direction is invariant
+  /// a subgroup of 'head_group'. These are constructed by finding irreps of _rep and then calling special_irrep_directions on each
+  /// result[i] is the set of special directions belonging to the i'th irrep constituting _rep
+  /// result[i][j] s an orbit of symmetrically equivalent directions, and result[i][j][k] is an individual direction.
+  /// Direction vectors are normalized to unit length. This routine is EXPERIMENTAL, USE AT YOUR OWN RISK
+  multivector< Eigen::VectorXd >::X<3> calc_special_total_directions_experimental(SymGroupRep const &_rep, const SymGroup &head_group, double vector_norm_compare_tolerance = 0.001);
+
+  /// \brief
+  bool is_new_direction(const multivector<Eigen::VectorXd>::X<3> &special_directions, const Eigen::VectorXd &test_direction, double vector_norm_compare_tolerance);
+
+  /// \brief generates the orbit of equivalent directions to direction by applying the operations of head_group
+  /// \result A set of directions that are equivalent to direction under the application of head_group operations
+  std::vector<Eigen::VectorXd> generate_special_direction_orbit(Eigen::VectorXd direction, const SymGroupRep &_rep, const SymGroup &head_group, double vector_norm_compare_tolerance);
+
   /// \brief finds high-symmetry subspaces within vector space supporting _rep, wrt symmetry of head_group
   /// High-symmetry subspaces are closed under the action of a nontrivial subgroup of head_group, without spanning
   /// the entire vector space supporting _rep
@@ -236,13 +251,13 @@ namespace CASM {
   /// Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   /// The ROWS of trans_mat are the new basis vectors in terms of the old such that
   /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  Eigen::MatrixXd get_irrep_trans_mat(SymGroupRep const &_rep, const SymGroup &head_group);
+  Eigen::MatrixXd get_irrep_trans_mat_old(SymGroupRep const &_rep, const SymGroup &head_group);
 
   /// Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   /// The ROWS of trans_mat are the new basis vectors in terms of the old such that
   /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
   /// Also populate 'subspaces' with lists of columns that form irreps
-  Eigen::MatrixXd get_irrep_trans_mat(SymGroupRep const &_rep, const SymGroup &head_group, std::vector<std::vector<Index> > &subspaces);
+  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims_old(SymGroupRep const &_rep, const SymGroup &head_group);
 
   /// \brief Finds the transformation matrix that block-diagonalizes this representation of head_group into irrep blocks
   /// It does not rely on the character table, but instead utilizes a brute-force method
@@ -251,7 +266,7 @@ namespace CASM {
   /// \param head_group The group with respect to which irreps are determined, which may be a subset of all operations in this representation
   /// \result Transformation matrix with the ROWS comprising the new basis vectors in terms of the old such that
   /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  Eigen::MatrixXd get_irrep_trans_mat_blind(SymGroupRep const &_rep, const SymGroup &head_group);
+  Eigen::MatrixXd get_irrep_trans_mat(SymGroupRep const &_rep, const SymGroup &head_group);
 
   /// \brief Finds the transformation matrix that block-diagonalizes this representation of head_group into irrep blocks
   /// It does not rely on the character table, but instead utilizes a brute-force method
@@ -260,7 +275,23 @@ namespace CASM {
   /// the new basis vectors in terms of the old such that
   /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
   /// The second element is the dimension of irreducible subspaces, ordered identically to the rows of the transformation matrix
-  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep, const SymGroup &head_group);
+  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep,
+                                                                              const SymGroup &head_group,
+                                                                              std::function<Eigen::MatrixXd(const SymGroupRep &,
+                                                                                  const SymGroup &head_group)> symmetrizer_func);
+
+  /// \brief Finds the transformation matrix that block-diagonalizes this representation of head_group into irrep blocks
+  /// It does not rely on the character table, but instead utilizes a brute-force method
+  /// \param head_group The group with respect to which irreps are determined, which may be a subset of all operations in this representation
+  /// \result Pair, with first element being the transformation matrix with the ROWS comprising
+  /// the new basis vectors in terms of the old such that
+  /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
+  /// The second element is the dimension of irreducible subspaces, ordered identically to the rows of the transformation matrix
+  std::pair<Eigen::MatrixXd, std::vector<Index>> get_irrep_trans_mat_and_dims(SymGroupRep const &_rep,
+                                                                              const SymGroup &head_group,
+                                                                              std::function<Eigen::MatrixXd(const SymGroupRep &,
+                                                                                  const SymGroup &head_group)> symmetrizer_func,
+                                                                              Eigen::Ref<const Eigen::MatrixXd> const &_subspace);
 
 
   /// \brief Make copy of (*this) that is transformed so that axes are oriented along high-symmetry direction

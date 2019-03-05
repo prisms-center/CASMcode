@@ -67,7 +67,7 @@ namespace CASM {
   jsonParser &to_json(AtomPosition const &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat) {
     json.put_obj();
     to_json_array(c2f_mat * apos.cart(), json["coordinate"]);
-    json["species"] = apos.species();
+    json["name"] = apos.species();
     json["SD_flag"] = apos.sd_flag();
     return json;
   }
@@ -81,7 +81,7 @@ namespace CASM {
     Eigen::Vector3d _pos(0., 0., 0.);
     AtomPosition::sd_type _SD_flag {{false, false, false}};
     if(json.is_obj()) {
-      _name = json["species"].get<std::string>();
+      _name = json["name"].get<std::string>();
       if(json.contains("coordinate"))
         _pos = f2c_mat * json["coordinate"].get<Eigen::Vector3d>();
       if(json.contains("SD_flag"))
@@ -102,7 +102,7 @@ namespace CASM {
     Eigen::Vector3d _pos(0., 0., 0.);
     AtomPosition::sd_type _SD_flag {{false, false, false}};
     if(json.is_obj()) {
-      _name = json["species"].get<std::string>();
+      _name = json["name"].get<std::string>();
       if(json.contains("coordinate"))
         _pos = f2c_mat * json["coordinate"].get<Eigen::Vector3d>();
       if(json.contains("SD_flag"))
@@ -253,7 +253,7 @@ namespace CASM {
   //
   //****************************************************
 
-  jsonParser &to_json(const Molecule &mol, jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat) {
+  jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat) {
     return mol.to_json(json, c2f_mat);
   }
 
@@ -261,7 +261,7 @@ namespace CASM {
   //
   //****************************************************
 
-  void from_json(Molecule &mol, const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
+  void from_json(Molecule &mol, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
     mol.from_json(json, f2c_mat);
   }
 

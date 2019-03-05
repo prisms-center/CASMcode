@@ -16,6 +16,12 @@ namespace CASM {
   class BasisSet;
   class Site;
   class SymOp;
+
+  template<typename CoordType>
+  class BasicStructure;
+
+  class ConfigDoF;
+  class SimpleStructure;
   //namespace DoF_impl{
   //class OccupationDoFTraits;
   //}
@@ -38,12 +44,14 @@ namespace CASM {
              std::vector<std::string> const &_std_var_names,
              DOF_DOMAIN _domain,
              DOF_MODE _mode,
-             bool _requires_site_basis) :
+             bool _requires_site_basis,
+             bool _unit_length) :
         BasicTraits(_type_name,
                     _std_var_names,
                     _domain,
                     _mode,
-                    _requires_site_basis) {
+                    _requires_site_basis,
+                    _unit_length) {
 
       }
 
@@ -54,6 +62,7 @@ namespace CASM {
       virtual std::vector<BasisSet> construct_site_bases(Structure const &_prim,
                                                          std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                          jsonParser const &_bspecs) const = 0;
+
 
       /// \brief Populate @param _in from JSON
       virtual void from_json(DoFSet &_in, jsonParser const &_json) const { }
@@ -72,11 +81,13 @@ namespace CASM {
 
       */
 
+      virtual void apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const;
+
       virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors(std::string const &nlist_specifier = "%n") const;
 
       virtual std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const;
 
-      virtual std::string site_basis_description(BasisSet site_bset, Site site) const = 0;
+      virtual std::string site_basis_description(BasisSet site_bset, Site site) const;
 
       virtual std::vector<ParamAllocation> param_pack_allocation(Structure const &_prim,
                                                                  std::vector<BasisSet> const &_bases) const;
@@ -107,7 +118,7 @@ namespace CASM {
 
       virtual std::string clexulator_public_method_declarations_string(Structure const &_prim,
                                                                        std::vector<BasisSet> const &site_bases,
-                                                                       std::string const &indent) const = 0;
+                                                                       std::string const &indent) const;
 
       virtual std::string clexulator_private_method_definitions_string(Structure const &_prim,
                                                                        std::vector<BasisSet> const &site_bases,
@@ -115,7 +126,7 @@ namespace CASM {
 
       virtual std::string clexulator_public_method_definitions_string(Structure const &_prim,
                                                                       std::vector<BasisSet> const &site_bases,
-                                                                      std::string const &indent) const = 0;
+                                                                      std::string const &indent) const;
 
       /// \brief non-virtual method to obtain copy through Traits pointer
       std::unique_ptr<Traits> clone() const {

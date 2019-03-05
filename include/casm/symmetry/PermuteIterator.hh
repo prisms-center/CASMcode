@@ -112,10 +112,6 @@ namespace CASM {
     ///    after_permutation[i] = before_permutation[permutat_iterator.permute_ind(i)];
     Index permute_ind(Index i) const;
 
-    /// Return after_array[i], given i and before_array
-    //template<typename T>
-    //const T &permute_by_bit(Index i, const Array<T> &before_array) const;
-
     bool operator<(const PermuteIterator &iter) const;
 
     // prefix ++PermuteIterator
@@ -150,6 +146,20 @@ namespace CASM {
 
   /// \brief Output PermuteIterator as (fg_index, i, j, k)
   std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op);
+
+  /// \brief Returns a SymGroup generated from a container of PermuteIterator
+  ///
+  /// \param container A container of PermuteIterator
+  ///
+  /// - The result is sorted
+  template<typename PermuteIteratorContainer>
+  SymGroup make_point_group(const PermuteIteratorContainer &container) {
+    return make_point_group(container.begin(), container.end());
+  }
+
+  /// \brief Returns a SymGroup generated from a range of PermuteIterator
+  template<typename PermuteIteratorIt>
+  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end);
 
   /// \brief Returns a SymGroup generated from a container of PermuteIterator
   ///

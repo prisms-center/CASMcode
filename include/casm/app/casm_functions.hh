@@ -181,6 +181,12 @@ namespace CASM {
 
   int version_command(const CommandArgs &args);
 
+  template<typename OptionType>
+  class InterfaceBase;
+
+  /// \brief Used to hold a list of all algorithms that may be accessed via the API
+  template<typename OptionType>
+  using InterfaceMap = notstd::unique_cloneable_map<std::string, InterfaceBase<OptionType> >;
 
   /// \brief Base class for generic use of algorithms through the API
   template<typename OptionType>
@@ -196,7 +202,7 @@ namespace CASM {
 
     virtual std::string name() const = 0;
 
-    virtual int run(const PrimClex &primclex, const jsonParser &kwargs, const OptionType &opt) const = 0;
+    virtual int run(const PrimClex &primclex, const jsonParser &kwargs, const OptionType &opt, InterfaceMap<OptionType> const *interface_map = nullptr) const = 0;
 
     std::unique_ptr<InterfaceBase> clone() const {
       return std::unique_ptr<InterfaceBase>(this->_clone());
@@ -207,10 +213,6 @@ namespace CASM {
     virtual InterfaceBase *_clone() const = 0;
 
   };
-
-  /// \brief Used to hold a list of all algorithms that may be accessed via the API
-  template<typename OptionType>
-  using InterfaceMap = notstd::unique_cloneable_map<std::string, InterfaceBase<OptionType> >;
 
   /// \brief Use to construct an InterfaceMap
   template<typename OptionType>

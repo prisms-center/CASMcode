@@ -87,6 +87,10 @@ namespace CASM {
       return m_lattice;
     }
 
+    bool selective_dynamics() const {
+      return m_SD_flag;
+    }
+
     const std::vector<CoordType> &basis() const {
       return m_basis;
     }
@@ -288,6 +292,9 @@ namespace CASM {
 
   template<typename CoordType>
   std::vector<DoFKey> continuous_local_dof_types(BasicStructure<CoordType> const &_struc);
+
+  template<typename CoordType>
+  std::vector<SymGroupRepID> occ_symrep_IDs(BasicStructure<CoordType> const &_struc);
 
   template<typename CoordType>
   std::vector<DoFKey> global_dof_types(BasicStructure<CoordType> const &_struc);

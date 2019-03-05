@@ -93,6 +93,7 @@ namespace CASM {
       return jsonParser(configdof_path).get<ConfigDoF>(primclex().n_basis(),
                                                        global_dof_info(primclex().prim()),
                                                        local_dof_info(primclex().prim()),
+                                                       occ_symrep_IDs(primclex().prim()),
                                                        primclex().crystallography_tol());
     }
 

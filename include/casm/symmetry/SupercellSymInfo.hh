@@ -53,6 +53,14 @@ namespace CASM {
       return m_factor_group;
     }
 
+    bool has_aniso_occs() const {
+      return m_has_aniso_occs;
+    }
+
+    bool has_occupation_dofs() const {
+      return m_has_occupation_dofs;
+    }
+
     /// \brief Begin iterator over pure translational permutations
     permute_const_iterator translate_begin() const;
 
@@ -90,6 +98,12 @@ namespace CASM {
     std::map<DoFKey, SublatSymReps> m_local_dof_symreps;
 
     std::map<DoFKey, SymGroupRep::RemoteHandle> m_global_dof_symreps;
+
+    // true if there species with non-identity symreps
+    bool m_has_aniso_occs;
+
+    // true if any site has occupation DoFs
+    bool m_has_occupation_dofs;
 
     // m_perm_symrep_ID is the ID of the SymGroupRep of prim().factor_group() that describes how
     // operations of m_factor_group permute sites of the Supercell.
@@ -153,6 +167,24 @@ namespace CASM {
                                               SupercellSymInfo const &_syminfo,
                                               DoFKey const &_key,
                                               std::vector<PermuteIterator> const &_group);
+
+  /// \brief Find symmetry-adapted normal coordinate basis vectors for action of '_group' acting on local DoF '_key' at site indices [begin,end]
+  /// In addition to returning the normal coordinate transformation matrix, it also returns a list of dimensions of the corresponding
+  /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
+  /// @param begin,end Iterator pair to list of site indices that define subset of sites of interest
+  /// @param _syminfo SupercellSymInfo object that defines all symmetry properties of supercell
+  /// @param _key DoFKey specifying which local DoF is of interest
+  /// @param _group vector of PermuteIterators forming the group that is to be represented (this may be larger than a crystallographic factor group)
+  /// @param __subspace matrix whose columns span a subspace of allowed DoF values for selected sites
+  /// \result Pair containin an orthogonal matrix comprising normal coordinate basis vectors as its rows and a list of subspace dimensions, corresponding to
+  /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
+  template<typename IterType>
+  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
+                                              IterType end,
+                                              SupercellSymInfo const &_syminfo,
+                                              DoFKey const &_key,
+                                              std::vector<PermuteIterator> const &_group,
+                                              Eigen::Ref<const Eigen::MatrixXd> const &_subspace);
 
 
 }

@@ -13,6 +13,7 @@
 namespace CASM {
   class ConfigMapper;
   class Configuration;
+  class SimpleStructure;
   class PrimClex;
   class jsonParser;
   template<typename T> class BasicStructure;
@@ -69,8 +70,8 @@ namespace CASM {
       /// \brief Import Configuration with only occupation DoF
       bool _occupation_only() const;
 
-      /// \brief Read BasicStructure<Site> to be imported
-      BasicStructure<Site> _make_structure(const fs::path &p) const;
+      /// \brief Read SimpleStructure to be imported
+      SimpleStructure _make_structure(const fs::path &p) const;
 
       std::unique_ptr<ConfigMapper> m_configmapper;
       jsonParser m_used;

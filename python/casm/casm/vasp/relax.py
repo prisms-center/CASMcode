@@ -56,16 +56,7 @@ class Relax(object):
             calcdir = os.getcwd()
         self.calcdir = os.path.abspath(calcdir)
 
-<<<<<<< HEAD:python/casm/casm/vasp/relax.py
-        # store path to .../relaxdir, and create if not existing
-        if relaxdir is None:
-            relaxdir = os.getcwd()
-        self.relaxdir = os.path.abspath(relaxdir)
-
-        print("  Relax directory:", self.relaxdir)
-=======
-        print "  Relax directory:", self.calcdir
->>>>>>> skk74/0.3a1_clexulator+database:python/vasp/vasp/relax.py
+        print("  Calculation directory:", self.calcdir)
         sys.stdout.flush()
 
         # find existing .../calcdir/run.run_index directories, store paths in self.rundir list
@@ -160,17 +151,10 @@ class Relax(object):
 
         print("Moving files into initial run directory:", initdir)
         initdir = os.path.abspath(initdir)
-<<<<<<< HEAD:python/casm/casm/vasp/relax.py
-        for p in os.listdir(self.relaxdir):
-            if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.relaxdir, p) != initdir):
-                os.rename(os.path.join(self.relaxdir,p), os.path.join(initdir,p))
-        print("")
-=======
         for p in os.listdir(self.calcdir):
             if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.calcdir, p) != initdir):
                 os.rename(os.path.join(self.calcdir,p), os.path.join(initdir,p))
-        print ""
->>>>>>> skk74/0.3a1_clexulator+database:python/vasp/vasp/relax.py
+        print("")
         sys.stdout.flush()
         if "subdir" in settings:
             if settings["subdir"]=="01":
@@ -255,13 +239,8 @@ class Relax(object):
 
             elif task == "relax":
                 self.add_rundir()
-<<<<<<< HEAD:python/casm/casm/vasp/relax.py
-                casm.vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
-                shutil.copyfile(os.path.join(self.relaxdir,"INCAR.base"),os.path.join(self.rundir[-1],"INCAR"))
-=======
                 vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
                 shutil.copyfile(os.path.join(self.calcdir,"INCAR.base"),os.path.join(self.rundir[-1],"INCAR"))
->>>>>>> skk74/0.3a1_clexulator+database:python/vasp/vasp/relax.py
 
             elif task == "constant":
                 self.add_rundir()
@@ -316,13 +295,8 @@ class Relax(object):
                                         "ngx" : init_outcar.ngx*2,
                                         "ngy" : init_outcar.ngy*2,
                                         "ngz" : init_outcar.ngz*2}
-<<<<<<< HEAD:python/casm/casm/vasp/relax.py
                                     print(ng_tags)
-                                    io.set_incar_tag(ng_tags, self.relaxdir, "INCAR.base")
-=======
-                                    print ng_tags
                                     io.set_incar_tag(ng_tags, self.calcdir, "INCAR.base")
->>>>>>> skk74/0.3a1_clexulator+database:python/vasp/vasp/relax.py
                     break
 
                 # else, attempt to fix first error

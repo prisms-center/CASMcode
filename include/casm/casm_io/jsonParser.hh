@@ -112,6 +112,10 @@ namespace CASM {
     }
 
 
+    /// Formatting directive, when passed as argument to to_json method, will attempt to format
+    /// as single, instead of nested array
+    struct as_array { };
+
     // ---- Read/Print JSON  ----------------------------------
 
     /// Reads json from the stream

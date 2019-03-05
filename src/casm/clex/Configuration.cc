@@ -10,6 +10,7 @@
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/CompositionConverter.hh"
@@ -92,6 +93,7 @@ namespace CASM {
         *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>(primclex().n_basis(),
                                                                              global_dof_info(primclex().prim()),
                                                                              local_dof_info(primclex().prim()),
+                                                                             occ_symrep_IDs(primclex().prim()),
                                                                              primclex().crystallography_tol()));
         return;
       }
@@ -118,10 +120,12 @@ namespace CASM {
   //*********************************************************************************
 
   Configuration Configuration::zeros(Supercell const &_scel, double _tol) {
+
     ConfigDoF tdof(_scel.basis_size(),
                    _scel.volume(),
                    global_dof_info(_scel.prim()),
                    local_dof_info(_scel.prim()),
+                   occ_symrep_IDs(_scel.prim()),
                    _tol);
 
 
@@ -141,6 +145,7 @@ namespace CASM {
                    _scel->volume(),
                    global_dof_info(_scel->prim()),
                    local_dof_info(_scel->prim()),
+                   occ_symrep_IDs(_scel->prim()),
                    _tol);
 
 
@@ -154,25 +159,14 @@ namespace CASM {
   }
 
   //*********************************************************************************
+
   void Configuration::init_occupation() {
     _modify_dof();
     set_occupation(std::vector<int>(this->size(), 0));
   }
 
   //*********************************************************************************
-  void Configuration::set_occupation(const std::vector<int> &new_occupation) {
-    _modify_dof();
-    if(new_occupation.size() != this->size()) {
-      default_err_log().error("Configuration::set_occupation size error");
-      default_err_log() << "new_occupation.size(): " << new_occupation.size() << std::endl;
-      default_err_log() << "Configuration size(): " << this->size() << std::endl;
-      throw std::runtime_error("Error: Configuration::set_occupation with array of the wrong size");
-    }
-    m_configdof.set_occupation(new_occupation);
-    return;
-  }
 
-  //*********************************************************************************
   void Configuration::set_occ(Index site_l, int val) {
     _modify_dof();
     m_configdof.occ(site_l) = val;
@@ -800,33 +794,6 @@ namespace CASM {
 
   //*********************************************************************************
 
-  std::ostream &Configuration::write_pos(std::ostream &sout) const {
-    VaspIO::PrintPOSCAR p(*this);
-    p.sort();
-    p.print(sout);
-    return sout;
-  }
-
-  //*********************************************************************************
-
-  void Configuration::write_pos() const {
-
-    const auto &dir = primclex().dir();
-    try {
-      fs::create_directories(dir.configuration_dir(name()));
-    }
-    catch(const fs::filesystem_error &ex) {
-      std::cerr << "Error in Configuration::write_pos()." << std::endl;
-      std::cerr << ex.what() << std::endl;
-    }
-
-    fs::ofstream file(dir.POS(name()));
-    write_pos(file);
-    return;
-  }
-
-  //*********************************************************************************
-
   std::ostream &Configuration::print_properties(std::string calctype, std::ostream &sout) const {
     jsonParser prop_calc_json = print_properties(calctype);
     sout << prop_calc_json;
@@ -1010,6 +977,64 @@ namespace CASM {
     return Configuration(scel, id, json);
   }
 
+  //*********************************************************************************
+
+  std::string pos_string(Configuration const  &_config) {
+    std::stringstream ss;
+    VaspIO::PrintPOSCAR p(_config);
+    p.sort();
+    p.print(ss);
+    return ss.str();
+  }
+
+  //*********************************************************************************
+
+  void write_pos(Configuration const &_config) {
+
+    try {
+      fs::create_directories(_config.primclex().dir().configuration_dir(_config.name()));
+    }
+    catch(const fs::filesystem_error &ex) {
+      std::cerr << "Error in Configuration::write_pos()." << std::endl;
+      std::cerr << ex.what() << std::endl;
+    }
+
+    fs::ofstream(_config.primclex().dir().POS(_config.name()))
+        << pos_string(_config);
+    return;
+  }
+
+
+  //*********************************************************************************
+
+
+  std::string config_json_string(Configuration const  &_config) {
+    std::stringstream ss;
+    jsonParser tjson;
+    to_json(SimpleStructure(_config), tjson);
+    tjson.print(ss);
+    return ss.str();
+  }
+
+  //*********************************************************************************
+
+  void write_config_json(Configuration const &_config) {
+
+    try {
+      fs::create_directories(_config.primclex().dir().configuration_dir(_config.name()));
+    }
+    catch(const fs::filesystem_error &ex) {
+      std::cerr << "Error in Configuration::write_pos()." << std::endl;
+      std::cerr << ex.what() << std::endl;
+    }
+
+    fs::ofstream(_config.primclex().dir().config_json(_config.name()))
+        << config_json_string(_config);
+    return;
+  }
+
+
+  //*********************************************************************************
   /// \brief Returns the sub-configuration that fills a particular Supercell
   ///
   /// \param sub_scel The Supercell of the sub-configuration
@@ -1576,6 +1601,12 @@ namespace CASM {
       result = notstd::make_unique<Configuration>(*m_scel);
     }
 
+    // We reorien the starting configuration (motif) by m_op in two steps.
+    // In the first step, we transform the DoFs of motif by m_op, without permuting their site indices
+    // Then, we utilize m_index_table to decorate the new cell with these transformed DoFs.
+    // m_index_table is built in FillSupercel::_init() by explicitly transforming each UnitCellCoordinate of
+    // the starting supercell (*m_motif_scel) and finding it in the resultant supercell (*m_supercell_ptr)
+    // This ensures that sublattice permutation and microscopic translations are handled appropriately
     ConfigDoF trans_motif(motif.configdof());
     trans_motif.apply_sym_no_permute(*m_op);
 

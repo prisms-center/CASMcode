@@ -447,24 +447,25 @@ namespace CASM {
 
 
 
-  std::ostream &Supercell::write_pos(std::ostream &sout) const {
-    sout << lattice().lat_column_mat() << std::endl;
-    return sout;
+  std::string pos_string(Supercell const &_scel) {
+    std::stringstream ss;
+    ss << _scel.lattice().lat_column_mat() << std::endl;
+    return ss.str();
   }
 
 
-  void Supercell::write_pos() const {
-    const auto &dir = primclex().dir();
+  void write_pos(Supercell const &_scel) {
+    const auto &dir = _scel.primclex().dir();
     try {
-      fs::create_directories(dir.configuration_dir(name()));
+      fs::create_directories(dir.configuration_dir(_scel.name()));
     }
     catch(const fs::filesystem_error &ex) {
       default_err_log() << "Error in Supercell::write_pos()." << std::endl;
       default_err_log() << ex.what() << std::endl;
     }
 
-    fs::ofstream file(dir.LAT(name()));
-    write_pos(file);
+    fs::ofstream file(dir.LAT(_scel.name()));
+    file << pos_string(_scel);
     return;
   }
 
@@ -591,19 +592,13 @@ namespace CASM {
     }
 
 
-    std::vector<SymGroupRepID> occ_symrep_IDs;
-    occ_symrep_IDs.resize(_prim.basis().size());
-    for(Index b = 0; b < _prim.basis().size(); ++b) {
-      occ_symrep_IDs[b] = _prim.basis()[b].site_occupant().symrep_ID();
-    }
-
     return SupercellSymInfo(_prim.lattice(),
                             _slat,
                             _prim.basis().size(),
                             _prim.factor_group(),
                             _prim.basis_permutation_symrep_ID(),
                             global_dof_symrep_IDs,
-                            occ_symrep_IDs,
+                            occ_symrep_IDs(_prim),
                             local_dof_symrep_IDs);
 
 

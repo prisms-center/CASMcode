@@ -50,7 +50,7 @@ namespace CASM {
 
     static const std::string enumerator_name;
     static std::string interface_help();
-    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt, EnumeratorMap const *interface_map);
 
 
     // -- Unique -------------------

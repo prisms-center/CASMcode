@@ -132,7 +132,7 @@ namespace CASM {
   /// \brief Print AtomPosition to json after applying affine transformation cart2frac*cart()+trans
   jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &cart2frac);
 
-  /// \brief Read AtomPosition from json and then apply affine transformation cart2frac*cart()+trans
+  /// \brief Read AtomPosition from json and then apply affine transformation cart2frac*cart()
   void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &frac2cart);
 
   template<>
@@ -177,7 +177,7 @@ namespace CASM {
     static Molecule make_vacancy();
 
     Molecule(std::string const &_name,
-             std::initializer_list<AtomPosition> const &_atoms,
+             std::initializer_list<AtomPosition> const &_atoms = {},
              bool _divisible = false) :
       m_name(_name),
       m_atoms(_atoms),
@@ -263,7 +263,7 @@ namespace CASM {
 
   jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat);
 
-  void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+  void from_json(Molecule &mol, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat);
 
   template<>
   struct jsonConstructor<Molecule> {

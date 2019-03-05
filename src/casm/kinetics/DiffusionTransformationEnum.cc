@@ -313,7 +313,8 @@ namespace CASM {
     int DiffusionTransformationEnum::run(
       const PrimClex &primclex,
       const jsonParser &_kwargs,
-      const Completer::EnumOption &enum_opt) {
+      const Completer::EnumOption &enum_opt,
+      EnumeratorMap const *interface_map) {
 
       jsonParser input {_kwargs};
       DiffTransEnumParser parser(primclex, input, enum_opt, fs::path(), true);

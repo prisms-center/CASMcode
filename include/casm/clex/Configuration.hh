@@ -4,7 +4,6 @@
 #include <map>
 
 #include "casm/misc/Comparisons.hh"
-#include "casm/misc/cloneable_ptr.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
@@ -168,7 +167,13 @@ namespace CASM {
     ///
     /// \throws If \code newoccupation.size() != this->size() \endcode
     ///
-    void set_occupation(const std::vector<int> &newoccupation);
+    /// set_occupation ensures that ConfigDoF::size() is compatible with _occupation.size()
+    /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _occupation.size()
+    template <typename OtherOccContainerType>
+    void set_occupation(const OtherOccContainerType &_occupation) {
+      configdof().set_occupation(_occupation);
+    }
+
 
     /// \brief Occupant variables
     ///
@@ -182,7 +187,7 @@ namespace CASM {
     /// to the occupant DoF in a "prim.json" file. This means that for the
     /// background structure, 'occupation' is all 0
     ///
-    const std::vector<int> &occupation() const {
+    ConfigDoF::OccValueType const &occupation() const {
       return configdof().occupation();
     }
 
@@ -341,12 +346,6 @@ namespace CASM {
     /// Reads the Configuration from JSON
     void from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname);
 
-    /// Write the POS file to stream
-    std::ostream &write_pos(std::ostream &sout) const;
-
-    /// Write the POS file to pos_path
-    void write_pos() const;
-
     /// Writes incomplete properties.calc.json of config for kra purposes
     std::ostream &print_properties(std::string calctype, std::ostream &sout) const;
 
@@ -436,6 +435,20 @@ namespace CASM {
     PermuteIterator from_canonical_config;
     Eigen::Matrix3i transf_mat;
   };
+
+
+
+  /// \brief Write the POS file to string
+  std::string pos_string(Configuration const &_config);
+
+  /// Write the POS file to pos_path
+  void write_pos(Configuration const &_config);
+
+  /// \brief Write the config.json file to string
+  std::string config_json_string(Configuration const &_config);
+
+  /// Write the config.json file to config_json_path
+  void write_config_json(Configuration const &_config);
 
   Configuration sub_configuration(Supercell &sub_scel,
                                   const Configuration &super_config,

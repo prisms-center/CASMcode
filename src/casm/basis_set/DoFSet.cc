@@ -86,35 +86,25 @@ namespace CASM {
     auto const &traits_ref = DoFType::traits(type_name());
 
     json.get_if(m_excluded_occs, "excluded_occupants");
-    auto it = json.find("basis");
+    auto it = json.find("axes");
     if(it != json.end()) {
       if(it->is_array()) {
-        Eigen::MatrixXd tbasis(traits_ref.dim(), it->size());
-        int col = 0;
-        for(auto const &el : *it) {
-          if(is_error || el.size() != (traits_ref.dim() + 1) || !el[0].is_string()) {
-            //std::cout << "ERROR 1\n" << std::endl;
-            is_error = true;
-            break;
-          }
+        std::vector<std::string> anames;
+        json.get_if(anames, "axis_names");
+        if(anames.size() != it->size()) {
+          throw std::runtime_error("Parsing DoF " + type_name() + ", field \"axes\" must have the same number of elements as field \"axes\"");
+        }
 
+        for(std::string const &aname : anames)
           m_components.push_back(ContinuousDoF(traits_ref,
-                                               el[0].get<std::string>(), //var_name
+                                               aname,
                                                -1, // ID
                                                -std::numeric_limits<double>::infinity(),
                                                std::numeric_limits<double>::infinity()));
-          if(traits_ref.global())
-            m_components.back().lock_ID();
-          for(Index row = 1; row < traits_ref.dim() + 1; row++) {
-            if(!el[row].is_number() && !el[row].is_int()) {
-              //std::cout << "ERROR 2\n" << row << ": \n" << el[row] << std::endl;
-              is_error = true;
-              break;
-            }
-            tbasis(row - 1, col) = el[row].get<double>();
 
-          }
-          ++col;
+        Eigen::MatrixXd tbasis = it->get<Eigen::MatrixXd>().transpose();
+        if(tbasis.rows() != traits_ref.dim()) {
+          throw std::runtime_error("Parsing DoF " + type_name() + ", number of columns in field \"axes\" must be " + std::to_string(traits_ref.dim()));
         }
         m_info.set_basis(tbasis);
       }

@@ -2,9 +2,6 @@
 #define CASM_StrainDoFTraits
 #include "casm/basis_set/DoFTraits.hh"
 
-#include "casm/basis_set/BasisSet.hh"
-#include "casm/crystallography/Site.hh"
-
 namespace CASM {
   namespace DoF_impl {
     class StrainDoFTraits : public DoFType::Traits {
@@ -14,7 +11,8 @@ namespace CASM {
                         std::vector<std::string>({"e_1", "e_2", "e_3", "e_4", "e_5", "e_6"}),
       DoFType::CONTINUOUS,
       DoFType::GLOBAL,
-      false),
+      /*_requires_site_basis = */ false,
+      /*_unit_length = */ false),
       m_metric(_metric) {
       }
 
@@ -28,43 +26,21 @@ namespace CASM {
       Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override;
 
 
-      std::string site_basis_description(BasisSet site_bset, Site site) const override {
-        return "";
-      }
-
-      std::string clexulator_constructor_string(Structure const &_prim,
-                                                std::vector<BasisSet> const &site_bases,
-                                                std::string const &indent) const override {
-        return "";
-      }
-
-
-      std::string clexulator_member_declarations_string(Structure const &_prim,
-                                                        std::vector<BasisSet> const &site_bases,
-                                                        std::string const &indent) const override {
-        return "";
-      }
-
-      std::string clexulator_public_method_declarations_string(Structure const &_prim,
-                                                               std::vector<BasisSet> const &site_bases,
-                                                               std::string const &indent) const override {
-        //todo
-        return std::string();
-      }
-
-
-      std::string clexulator_public_method_definitions_string(Structure const &_prim,
-                                                              std::vector<BasisSet> const &site_bases,
-                                                              std::string const &indent) const override {
-        // todo
-        return std::string();
-      }
-
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
       std::vector<BasisSet> construct_site_bases(Structure const &_prim,
                                                  std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                  jsonParser const &_bspecs) const override;
+
+      /// \brief Apply DoF values for this DoF to _struc
+      void apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const override;
+
+      /// \brief Return list of DoFs that *must* be applied before this DoF is applied
+      std::set<std::string> before_dof_apply() const override {
+        return {"atomize", "disp"};
+      }
+
     protected:
+
       DoFType::BasicTraits *_clone() const override {
         return new StrainDoFTraits(*this);
       }

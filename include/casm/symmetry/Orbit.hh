@@ -211,10 +211,6 @@ namespace CASM {
                       const SymCompareType &sym_compare,
                       const PrimClex *_primclex);
 
-    void write_pos() const;
-
-    void write_pos(std::ostream &sout) const;
-
     const PrimClex &primclex() const;
 
   private:
@@ -230,6 +226,12 @@ namespace CASM {
 
 
   // -- Orbit Helpers --------------------
+
+  template<typename _Element, typename _SymCompareType>
+  void write_pos(DatabaseTypeOrbit<_Element, _SymCompareType> const &_el);
+
+  template<typename _Element, typename _SymCompareType>
+  std::string pos_string(DatabaseTypeOrbit<_Element, _SymCompareType> const &_el);
 
   /// \brief Find orbit containing an element in a range of Orbit
   template<typename OrbitIterator, typename Element>

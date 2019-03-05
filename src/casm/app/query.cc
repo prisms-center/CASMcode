@@ -272,7 +272,7 @@ namespace CASM {
   template<typename DataObject>
   int QueryCommandImpl<DataObject>::_write_pos() const {
     for(const auto &obj : _sel().selected()) {
-      obj.write_pos();
+      write_pos(obj);
     }
     return 0;
   }

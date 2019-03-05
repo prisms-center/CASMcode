@@ -54,7 +54,8 @@ namespace CASM {
 
     int EnumDiffTransConfigEndpoints::run(const PrimClex &primclex,
                                           const jsonParser &kwargs,
-                                          const Completer::EnumOption &enum_optconst) {
+                                          const Completer::EnumOption &enum_optconst,
+                                          EnumeratorMap const *interface_map) {
 
       // get selection filename from json/enumoption // do json for now
       // Constrct a DB selection of DiffTransConfiguration from json and enumoption inputs

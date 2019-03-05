@@ -327,26 +327,6 @@ namespace CASM {
     m_primclex(_primclex) {}
 
   template<typename _Element, typename _SymCompareType>
-  void DatabaseTypeOrbit<_Element, _SymCompareType>::write_pos() const {
-    const auto &dir = primclex().dir();
-    try {
-      fs::create_directories(dir.configuration_dir(this->name()));
-    }
-    catch(const fs::filesystem_error &ex) {
-      std::cerr << "Error in DatabaseTypeOrbit::write_pos(): could not create_directories" << std::endl;
-      std::cerr << ex.what() << std::endl;
-    }
-
-    fs::ofstream file(dir.POS(this->name()));
-    write_pos(file);
-  }
-
-  template<typename _Element, typename _SymCompareType>
-  void DatabaseTypeOrbit<_Element, _SymCompareType>::write_pos(std::ostream &sout) const {
-    OrbitTraits<_Element, _SymCompareType>::write_pos(*this, sout);
-  }
-
-  template<typename _Element, typename _SymCompareType>
   const PrimClex &DatabaseTypeOrbit<_Element, _SymCompareType>::primclex() const {
     if(!m_primclex) {
       throw std::runtime_error("DatabaseTypeOrbit primclex pointer was not set");
@@ -363,6 +343,30 @@ namespace CASM {
   void DatabaseTypeOrbit<_Element, _SymCompareType>::set_primclex(const PrimClex *_primclex) {
     m_primclex = _primclex;
   }
+
+
+  template<typename _Element, typename _SymCompareType>
+  void write_pos(DatabaseTypeOrbit<_Element, _SymCompareType> const &_el) {
+    const auto &dir = _el.primclex().dir();
+    try {
+      fs::create_directories(dir.configuration_dir(_el.name()));
+    }
+    catch(const fs::filesystem_error &ex) {
+      std::cerr << "Error in DatabaseTypeOrbit::write_pos(): could not create_directories" << std::endl;
+      std::cerr << ex.what() << std::endl;
+    }
+
+    fs::ofstream file(dir.POS(_el.name()));
+    file << pos_string(_el);
+  }
+
+  template<typename _Element, typename _SymCompareType>
+  std::string pos_string(DatabaseTypeOrbit<_Element, _SymCompareType> const &_el) {
+    std::stringstream ss;
+    OrbitTraits<_Element, _SymCompareType>::write_pos(_el, ss);
+    return ss.str();
+  }
+
 
 }
 

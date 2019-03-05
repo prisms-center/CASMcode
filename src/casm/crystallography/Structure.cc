@@ -8,10 +8,12 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include "casm/misc/algorithm.hh"
+#include "casm/container/algorithm.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/basis_set/DoFIsEquivalent_impl.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
@@ -523,7 +525,8 @@ namespace CASM {
     //                                       * doftype.symop_to_matrix(op)
     //                                       * basis()[sitemap[b].sublat()].dof(doftype.name().basis())
     Eigen::MatrixXd trep, trepblock;
-    for(SymOp const &op : m_factor_group) {
+    for(Index s = 0; s < m_factor_group.size(); ++s) {
+      SymOp const &op = m_factor_group[s];
       if(verbose) {
         if(op.index() % 100 == 0)
           std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << op.index() << "/" << m_factor_group.size() << std::flush;
@@ -532,16 +535,39 @@ namespace CASM {
       sitemap = symop_site_map(op, *this);
       op.set_rep(m_basis_perm_rep_ID, SymBasisPermute(op, lattice(), sitemap));
 
+      for(Index b = 0; b < basis().size(); ++b) {
+        // copy_aply(symop,dofref_from) = P.permute(dofref_to);
+        auto const &dofref_to = basis()[sitemap[b].sublat()].site_occupant();
+        auto const &dofref_from = basis()[b].site_occupant();
+        OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
+        if(eq(op, dofref_to)) {
+          if(dofref_from.symrep_ID().is_identity()) {
+            if(!eq.perm().is_identity()) {
+              dofref_from.allocate_symrep(m_factor_group);
+              Index s2;
+              for(s2 = 0; s2 < s; ++s2) {
+                m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(sequence<Index>(0, dofref_from.size())));
+              }
+              m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
+            }
+          }
+          else {
+            op.set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
+          }
+        }
+        else throw std::runtime_error("In Structure::_generate_basis_symreps(), Sites originally identified as equivalent cannot be mapped by symmetry.");
+      }
+
       for(auto const &dof_dim : local_dof_dims(*this)) {
         for(Index b = 0; b < basis().size(); ++b) {
           if(!basis()[b].has_dof(dof_dim.first))
             continue;
 
-          // copy_aply(symop,dofref_to) = dofref_from * U
+          // copy_aply(symop,dofref_from) = dofref_to * U
           DoFSet const &dofref_to = basis()[sitemap[b].sublat()].dof(dof_dim.first);
           DoFSet const &dofref_from = basis()[b].dof(dof_dim.first);
-          DoFIsEquivalent eq(dofref_to);
-          if(!eq(op)) {
+          DoFIsEquivalent eq(dofref_from);
+          if(!eq(op, dofref_to)) {
             throw std::runtime_error("While generating symmetry representation for local DoF \""
                                      + dof_dim.first
                                      + "\", a symmetry operation was identified that invalidates the degree of freedom. "
@@ -549,8 +575,8 @@ namespace CASM {
           }
 
           trep.setIdentity(dof_dim.second, dof_dim.second);
-          trep.topLeftCorner(dofref_to.size(), dofref_to.size()) = eq.U().transpose();
-          op.set_rep(dofref_to.symrep_ID(), SymMatrixXd(trep));
+          trep.topLeftCorner(dofref_from.size(), dofref_from.size()) = eq.U();
+          op.set_rep(dofref_from.symrep_ID(), SymMatrixXd(trep));
         }
       }
     }

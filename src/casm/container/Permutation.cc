@@ -73,6 +73,17 @@ namespace CASM {
   }
 
   //**************************************************************
+
+  /// Checks whether any indices remain unchanged by permutation
+  bool Permutation::is_identity() const {
+    for(Index i = 0; i < size(); i++) {
+      if(m_perm_array[i] != i)
+        return false;
+    }
+    return true;
+  }
+
+  //**************************************************************
   /// Add new indices that remain unchanged by permutation
   void Permutation::append_fixed_points(Index N_new) {
     if(!N_new)

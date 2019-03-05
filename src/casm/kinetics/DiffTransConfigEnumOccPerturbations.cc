@@ -353,7 +353,8 @@ namespace CASM {
     int DiffTransConfigEnumOccPerturbations::run(
       const PrimClex &primclex,
       const jsonParser &kwargs,
-      const Completer::EnumOption &enum_opt) {
+      const Completer::EnumOption &enum_opt,
+      EnumeratorMap const *interface_map) {
 
       auto &db = primclex.db<DiffTransConfiguration>();
       std::string type_name = traits<DiffTransConfiguration>::name;

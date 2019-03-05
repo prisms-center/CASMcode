@@ -5,6 +5,7 @@
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/casm_io/DataFormatter_impl.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
 
@@ -390,6 +391,7 @@ namespace CASM {
       ConfigDoF config_dof = jsonParser(dir.initial_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size(),
                              global_dof_info(mc.primclex().prim()),
                              local_dof_info(mc.primclex().prim()),
+                             occ_symrep_IDs(mc.primclex().prim()),
                              mc.primclex().crystallography_tol());
 
       if(!fs::exists(dir.initial_state_json(cond_index))) {
@@ -401,7 +403,7 @@ namespace CASM {
       // write file
       fs::ofstream sout(dir.POSCAR_initial(cond_index));
       _log << "write: " << dir.POSCAR_initial(cond_index) << "\n";
-      VaspIO::PrintPOSCAR p(mc.supercell(), config_dof);
+      VaspIO::PrintPOSCAR p(SimpleStructure(mc.supercell(), config_dof));
       p.sort();
       p.print(sout);
       return;
@@ -419,6 +421,7 @@ namespace CASM {
       ConfigDoF config_dof = jsonParser(dir.final_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size(),
                              global_dof_info(mc.primclex().prim()),
                              local_dof_info(mc.primclex().prim()),
+                             occ_symrep_IDs(mc.primclex().prim()),
                              mc.primclex().crystallography_tol());
 
 
@@ -431,7 +434,7 @@ namespace CASM {
       // write file
       fs::ofstream sout(dir.POSCAR_final(cond_index));
       _log << "write: " << dir.POSCAR_final(cond_index) << "\n";
-      VaspIO::PrintPOSCAR p(mc.supercell(), config_dof);
+      VaspIO::PrintPOSCAR p(SimpleStructure(mc.supercell(), config_dof));
       p.sort();
       p.print(sout);
       return;
@@ -476,6 +479,7 @@ namespace CASM {
           trajectory.push_back(it->get<ConfigDoF>(primstruc.basis().size(),
                                                   global_dof_info(primstruc),
                                                   local_dof_info(primstruc),
+                                                  occ_symrep_IDs(primstruc),
                                                   primstruc.lattice().tol()));
         }
 
@@ -524,7 +528,7 @@ namespace CASM {
         // write file
         fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));
         _log << "write: " << dir.POSCAR_snapshot(cond_index, i) << "\n";
-        VaspIO::PrintPOSCAR p(mc.supercell(), trajectory[i]);
+        VaspIO::PrintPOSCAR p(SimpleStructure(mc.supercell(), trajectory[i]));
         p.set_title(ss.str());
         p.sort();
         p.print(sout);

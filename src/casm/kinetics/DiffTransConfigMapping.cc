@@ -94,8 +94,8 @@ namespace CASM {
       Lattice to_lat;
       Eigen::Matrix3d cart_op;
       std::vector<Index> best_assign;
-      mapper.struc_to_configdof(result.structures[0], from_dof, from_lat, best_assign, cart_op);
-      mapper.struc_to_configdof(result.structures.back(), to_dof, to_lat);
+      mapper.struc_to_configdof(SimpleStructure(result.structures[0]), from_dof, from_lat, best_assign, cart_op);
+      mapper.struc_to_configdof(SimpleStructure(result.structures.back()), to_dof, to_lat);
       auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_lat);
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
@@ -103,12 +103,11 @@ namespace CASM {
       std::set<UnitCellCoord> vacancy_from;
       std::set<UnitCellCoord> vacancy_to;
       //This rigid rotation and rigid shift seems unnecessary surprisingly
-      BasicStructure<Site> cpy = result.structures[0];
-      cpy.set_lattice(Lattice(from_dof.deformation.inverse() * result.structures[0].lattice().lat_column_mat()), FRAC);
+      Coordinate first_site = Coordinate(result.structures[0].basis(0).const_frac(), scel_ptr->lattice(), FRAC);
 
-      Coordinate rigid_shift = copy_apply(SymOp::point_op(cart_op), cpy.basis()[0]) - Coordinate(scel_ptr->uccoord(std::find(best_assign.begin(), best_assign.end(), 0) - best_assign.begin()));
-      Coordinate t_shift(primclex().prim().lattice());
-      t_shift.cart() = rigid_shift.cart();
+      Coordinate t_shift = copy_apply(SymOp::point_op(cart_op), first_site) - Coordinate(scel_ptr->uccoord(find_index(best_assign, 0)));
+      t_shift.set_lattice(primclex().prim().lattice(), CART);
+
       //std::cout << "t shift " << t_shift.const_frac() << std::endl;
       //Maybe check coordinate similarity after applying deformations
       //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config

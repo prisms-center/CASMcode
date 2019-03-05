@@ -319,6 +319,11 @@ namespace CASM {
     return configuration_dir(configname) / "POS";
   }
 
+  /// \brief Return path to config.json file
+  fs::path DirectoryStructure::config_json(std::string configname) const {
+    return configuration_dir(configname) / "config.json";
+  }
+
   /// \brief Return calculation settings directory path, for global settings
   fs::path DirectoryStructure::calc_settings_dir(std::string calctype) const {
     return m_root / m_calc_dir / m_set_dir / _calctype(calctype);

@@ -1253,6 +1253,7 @@ namespace CASM {
 
 
   //************************************************************
+
   template<typename CoordType>
   std::vector<DoFKey> global_dof_types(BasicStructure<CoordType> const &_struc) {
     std::vector<std::string> result;
@@ -1262,6 +1263,17 @@ namespace CASM {
   }
 
 
+  //************************************************************
+
+  template<typename CoordType>
+  std::vector<SymGroupRepID> occ_symrep_IDs(BasicStructure<CoordType> const &_struc) {
+    std::vector<SymGroupRepID> result;
+    result.resize(_struc.basis().size());
+    for(Index b = 0; b < _struc.basis().size(); ++b) {
+      result[b] = _struc.basis()[b].site_occupant().symrep_ID();
+    }
+    return result;
+  }
   //************************************************************
 
   template<typename CoordType>

@@ -16,6 +16,8 @@
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
+  class SymGroup;
+
   class Molecule;
   class jsonParser;
 
@@ -45,12 +47,14 @@ namespace CASM {
                   std::vector<std::string> const &_std_var_names,
                   DOF_DOMAIN _domain,
                   DOF_MODE _mode,
-                  bool _requires_site_basis) :
+                  bool _requires_site_basis,
+                  bool _unit_length) :
         m_type_name(_type_name),
         m_standard_var_names(_std_var_names),
         m_domain(_domain),
         m_mode(_mode),
-        m_requires_site_basis(_requires_site_basis) {
+        m_requires_site_basis(_requires_site_basis),
+        m_unit_length(_unit_length) {
       }
 
       /// \brief Allow destruction through base pointer
@@ -79,6 +83,11 @@ namespace CASM {
       /// \brief returns true if DoF must utilize site basis set
       bool requires_site_basis()const {
         return m_requires_site_basis;
+      }
+
+      /// \brief returns true if DoF must always have unit length
+      bool unit_length()const {
+        return m_unit_length;
       }
 
       /// \brief returns true if DoF is discrete
@@ -113,9 +122,20 @@ namespace CASM {
         return type_name();
       }
 
+
       /// \brief return standard coordinate axes for continuous variable space
       std::vector<std::string> const &standard_var_names() const {
         return m_standard_var_names;
+      }
+
+      /// \brief Return list of DoFs that *must* be applied before this DoF is applied
+      virtual std::set<std::string> before_dof_apply() const {
+        return {};
+      }
+
+      /// \brief Return list of DoFs that *must* be applied after this DoF is applied
+      virtual std::set<std::string> after_dof_apply() const {
+        return {};
       }
 
       /// \brief returns true if time-reversal changes the DoF value
@@ -157,6 +177,7 @@ namespace CASM {
       DOF_DOMAIN m_domain;
       DOF_MODE m_mode;
       bool m_requires_site_basis;
+      bool m_unit_length;
     };
 
   }
@@ -398,6 +419,10 @@ namespace CASM {
     void set_symrep_ID(SymGroupRepID _id) const {
       m_symrep_ID = _id;
     }
+
+    /// \brief Allocates an empty symmetry representation in \param _group and records its SymGroupRepID
+    /// This representation becomes THE representation for this DiscreteDoF, to be initialized accordingly
+    void allocate_symrep(SymGroup const &_group) const;
 
     bool is_specified() const {
       return valid_index(m_current_state);

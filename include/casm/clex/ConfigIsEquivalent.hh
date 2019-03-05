@@ -28,9 +28,10 @@ namespace CASM {
       for(auto const &dof : config().configdof().global_dofs())
         m_global_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Global>(_config, dof.first, _tol));
 
-      if(config().configdof().has_occupation()) {
+      if(config().supercell().sym_info().has_aniso_occs())
+        m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::AnisoOccupation>(_config.configdof()));
+      else if(config().supercell().sym_info().has_occupation_dofs())
         m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Occupation>(_config.configdof()));
-      }
 
       for(auto const &dof : config().configdof().local_dofs())
         m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Local>(_config, dof.first, _tol));

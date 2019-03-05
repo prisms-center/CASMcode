@@ -7,7 +7,7 @@
 
 namespace CASM {
 
-  Coordinate::Coordinate(const Eigen::Vector3d &init_vec,
+  Coordinate::Coordinate(const Eigen::Ref<const Coordinate::vector_type> &init_vec,
                          const Lattice &init_home,
                          COORD_TYPE mode)
     : m_home(&init_home),

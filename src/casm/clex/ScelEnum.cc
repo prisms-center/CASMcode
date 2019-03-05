@@ -252,7 +252,8 @@ namespace CASM {
   int ScelEnum::run(
     const PrimClex &primclex,
     const jsonParser &kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOption &enum_opt,
+    EnumeratorMap const *interface_map) {
 
     Log &log = primclex.log();
     log.begin(enumerator_name);

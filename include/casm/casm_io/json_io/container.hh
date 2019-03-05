@@ -125,19 +125,19 @@ namespace CASM {
   // --- std::map<std::string, T> --------------
 
   /// Converts to a JSON object
-  template<typename T>
-  jsonParser &to_json(const std::map<std::string, T> &map, jsonParser &json) {
-    return json.put_obj(map.begin(), map.end());
+  template<typename T, typename... Args>
+  jsonParser &to_json(const std::map<std::string, T> &map, jsonParser &json, Args &&... args) {
+    return json.put_obj(map.begin(), map.end(), std::forward<Args>(args)...);
   }
 
   /// Read map from JSON
   ///
   /// Clears any previous contents
-  template<typename T>
-  void from_json(std::map<std::string, T> &map, const jsonParser &json) {
+  template<typename T, typename... Args>
+  void from_json(std::map<std::string, T> &map, const jsonParser &json, Args &&... args) {
     map.clear();
     for(auto it = json.begin(); it != json.end(); ++it) {
-      from_json(map[it.name()], *it);
+      from_json(map[it.name()], *it, std::forward<Args>(args)...);
     }
   }
 
@@ -243,9 +243,9 @@ namespace CASM {
   }
 
 
-  /// \brief Write Eigen Matrix with 1 row or 1 column to JSON array
+  /// \brief Write Eigen Matrix/Vector to JSON
   template <typename Derived>
-  CASM::jsonParser &to_json_array(const Eigen::MatrixBase<Derived> &value, CASM::jsonParser &json) {
+  CASM::jsonParser &to_json(const Eigen::MatrixBase<Derived> &value, CASM::jsonParser &json, CASM::jsonParser::as_array) {
     json.put_array();
     if(value.rows() == 1) {
       for(int i = 0; i < value.cols(); ++i) {
@@ -260,6 +260,14 @@ namespace CASM {
     else {
       throw std::runtime_error("Error in 'to_json_array': Not a vector");
     }
+    return json;
+  }
+
+
+  /// \brief Write Eigen Matrix with 1 row or 1 column to JSON array
+  template <typename Derived>
+  CASM::jsonParser &to_json_array(const Eigen::MatrixBase<Derived> &value, CASM::jsonParser &json) {
+    to_json(value, json, CASM::jsonParser::as_array());
     return json;
   }
 

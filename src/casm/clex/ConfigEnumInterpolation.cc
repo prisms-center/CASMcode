@@ -20,7 +20,8 @@ namespace CASM {
   int ConfigEnumInterpolation::run(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOption &enum_opt,
+    EnumeratorMap const *interface_map) {
     throw std::runtime_error("ConfigEnumAllOccupations::run is not implemented");
   }
 

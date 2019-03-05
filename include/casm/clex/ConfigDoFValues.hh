@@ -8,11 +8,11 @@ namespace CASM {
 
   class ConfigDoFValues {
   public:
-    ConfigDoFValues() : m_n_basis(0), m_n_vol(0)
+    ConfigDoFValues() : m_n_sublat(0), m_n_vol(0)
     {}
-    ConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol) :
+    ConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_sublat, Index _n_vol) :
       m_type(_traits.type_name()),
-      m_n_basis(_n_basis),
+      m_n_sublat(_n_sublat),
       m_n_vol(_n_vol) {
     }
 
@@ -24,8 +24,8 @@ namespace CASM {
       return m_n_vol;
     }
 
-    Index n_basis() const {
-      return m_n_basis;
+    Index n_sublat() const {
+      return m_n_sublat;
     }
 
     void resize_vol(Index _n_vol) {
@@ -39,7 +39,7 @@ namespace CASM {
   private:
 
     DoFKey m_type;
-    Index m_n_basis;
+    Index m_n_sublat;
     Index m_n_vol;
   };
 
@@ -60,9 +60,14 @@ namespace CASM {
 
     LocalDiscreteConfigDoFValues() {}
 
-    LocalDiscreteConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol, Eigen::Ref< const ValueType > const &_vals) :
-      ConfigDoFValues(_traits, _n_basis, _n_vol),
-      m_vals(_vals) {
+    LocalDiscreteConfigDoFValues(DoFType::BasicTraits const &_traits,
+                                 Index _n_sublat,
+                                 Index _n_vol,
+                                 Eigen::Ref< const ValueType > const &_vals,
+                                 std::vector<SymGroupRepID> const &_symrep_IDs) :
+      ConfigDoFValues(_traits, _n_sublat, _n_vol),
+      m_vals(_vals),
+      m_symrep_IDs(_symrep_IDs) {
 
     }
 
@@ -82,13 +87,18 @@ namespace CASM {
       return m_vals.segment(b * n_vol(), n_vol());
     }
 
+    std::vector<SymGroupRepID> const &symrep_IDs() const {
+      return m_symrep_IDs;
+    }
+
   protected:
     void _resize() override {
-      m_vals.resize(n_vol()*n_basis());
+      m_vals.resize(n_vol()*n_sublat());
     }
 
   private:
     ValueType m_vals;
+    std::vector<SymGroupRepID> m_symrep_IDs;
   };
 
   jsonParser &to_json(LocalDiscreteConfigDoFValues const &_values, jsonParser &_json);
@@ -111,8 +121,12 @@ namespace CASM {
 
     LocalContinuousConfigDoFValues() {}
 
-    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_basis, Index _n_vol,  Eigen::Ref< const ValueType > const &_vals, std::vector<DoFSetInfo> const &_info) :
-      ConfigDoFValues(_traits, _n_basis, _n_vol),
+    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits,
+                                   Index _n_sublat,
+                                   Index _n_vol,
+                                   Eigen::Ref< const ValueType > const &_vals,
+                                   std::vector<DoFSetInfo> const &_info) :
+      ConfigDoFValues(_traits, _n_sublat, _n_vol),
       m_vals(_vals),
       m_info(_info) {
 
@@ -128,6 +142,15 @@ namespace CASM {
 
     ConstReference values() const {
       return m_vals;
+    }
+
+    Eigen::MatrixXd standard_values() const {
+      Index rows = m_info[0].basis().rows();
+      Eigen::MatrixXd result(rows, m_vals.cols());
+      for(Index b = 0; b < n_sublat(); ++b) {
+        result.block(0, b * n_vol(), rows, n_vol()) = m_info[b].basis() * sublat(b);
+      }
+      return result;
     }
 
     SiteReference site_value(Index l) {
@@ -153,7 +176,7 @@ namespace CASM {
 
   protected:
     void _resize() override {
-      m_vals.resize(m_vals.rows(), n_vol()*n_basis());
+      m_vals.resize(m_vals.rows(), n_vol()*n_sublat());
     }
 
   private:
@@ -179,11 +202,11 @@ namespace CASM {
       m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(0, 0)) {}
 
     GlobalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits,
-                                    Index _n_basis,
+                                    Index _n_sublat,
                                     Index _n_vol,
                                     Eigen::Ref< const ValueType > const &_vals,
                                     DoFSetInfo const &_info) :
-      ConfigDoFValues(_traits, _n_basis, _n_vol),
+      ConfigDoFValues(_traits, _n_sublat, _n_vol),
       m_vals(_vals),
       m_info(_info) {
 
@@ -200,6 +223,11 @@ namespace CASM {
     ConstReference values() const {
       return m_vals;
     }
+
+    Eigen::MatrixXd standard_values() const {
+      return m_info.basis() * m_vals;
+    }
+
 
     DoFSetInfo const &info() const {
       return m_info;

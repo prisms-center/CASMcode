@@ -49,7 +49,7 @@ namespace CASM {
       m_basis_ind(-1) {
     }
 
-    Coordinate(const vector_type &_vec, const Lattice &_home, COORD_TYPE _mode);
+    Coordinate(Eigen::Ref<const vector_type> const &_vec, const Lattice &_home, COORD_TYPE _mode);
 
     Coordinate(double _x, double _y, double _z, const Lattice &_home, COORD_TYPE _mode);
 

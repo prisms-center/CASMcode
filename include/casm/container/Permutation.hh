@@ -49,26 +49,29 @@ namespace CASM {
     explicit Permutation(Index N):
       m_perm_array(N) {
       std::iota(m_perm_array.begin(), m_perm_array.end(), 0);
-    };
+    }
 
     template<typename Iterator>
-    Permutation(Iterator begin, Iterator end): m_perm_array(begin, end) {};
-    explicit Permutation(const std::vector<Index> &init_perm): m_perm_array(init_perm) {};
-    explicit Permutation(std::vector<Index> &&init_perm): m_perm_array(std::move(init_perm)) {};
+    Permutation(Iterator begin, Iterator end): m_perm_array(begin, end) {}
+    explicit Permutation(const std::vector<Index> &init_perm): m_perm_array(init_perm) {}
+    explicit Permutation(std::vector<Index> &&init_perm): m_perm_array(std::move(init_perm)) {}
 
     Index size() const {
       return m_perm_array.size();
-    };
+    }
 
     const std::vector<Index> &perm_array() const {
       return m_perm_array;
-    };
+    }
 
     /// Checks that m_perm_array contains values from 0 to m_perm_array.size()-1 and that no value is repeated
     bool is_perm() const;
 
     /// Checks whether any indices remain unchanged by permutation
     bool has_fixed_points() const;
+
+    /// Checks whether permutation is identity (i.e., m_perm_aray[i]==i for all i)
+    bool is_identity() const;
 
     /// Add new indices that remain unchanged by permutation
     void append_fixed_points(Index N_new);
@@ -87,24 +90,24 @@ namespace CASM {
     /// const access of m_perm_array for doing low-level permutation algebra
     const Index  &operator[](Index i) const {
       return m_perm_array[i];
-    };
+    }
 
-    /// const access of m_perm_array for doing low-level permutation algebra
-    const Index  &at(Index i) const {
+    /// non-const access of m_perm_array for doing low-level permutation algebra
+    Index &set(Index i) {
       return m_perm_array[i];
-    };
+    }
 
-    /// Generate permuted copy of type-T std::vector
-    template<typename T>
-    std::vector<T> permute(const std::vector<T> &before_vec) const;
+    /// Generate permuted copy of indexed container
+    template<typename Container>
+    Container permute(const Container &_before) const;
 
     /// Generate inversely permuted copy of type-T std::vector
-    template<typename T>
-    std::vector<T> ipermute(const std::vector<T> &before_array) const;
+    template<typename Container>
+    Container ipermute(const Container &_before) const;
 
-    template<typename T>
-    std::vector<T> operator*(const std::vector<T> &before_array) const {
-      return this->permute(before_array);
+    template<typename Container>
+    Container operator*(const Container &_before) const {
+      return this->permute(_before);
     }
 
     Permutation operator*(const Permutation &RHS) const;
@@ -124,15 +127,15 @@ namespace CASM {
   /// Generate permuted copy of type-T std::vector
   /// THIS IMPLEMENTATION DEPENDS ON DEFINITION OF PERMUTATION CONVENTION
   /// Note: To switch conventions, swap names of permute and ipermute
-  template<typename T>
-  std::vector<T> Permutation::permute(const std::vector<T> &before_vec) const {
-    assert(before_vec.size() == size() && "WARNING: You're trying to permute an std::vector with an incompatible permutation!");
+  template<typename Container>
+  Container Permutation::permute(const Container &before_vec) const {
+    assert(before_vec.size() == size() && "WARNING: You're trying to permute a Container with an incompatible permutation!");
 
-    std::vector<T> after_vec;
-    after_vec.reserve(size());
+    Container after_vec(before_vec);
+    //after_vec.reserve(size());
 
     for(Index i = 0; i < size(); i++) {
-      after_vec.push_back(before_vec[m_perm_array[i]]);
+      after_vec[i] = before_vec[m_perm_array[i]];
     }
     return after_vec;
   }
@@ -142,11 +145,11 @@ namespace CASM {
   /// Generate inversely permuted copy of type-T std::vector
   /// THIS IMPLEMENTATION DEPENDS ON DEFINITION OF PERMUTATION CONVENTION
   /// Note: To switch conventions, swap names of permute and ipermute
-  template<typename T>
-  std::vector<T> Permutation::ipermute(const std::vector<T> &before_array) const {
-    assert(before_array.size() == size() && "WARNING: You're trying to permute an std::vector with an incompatible permutation!");
+  template<typename Container>
+  Container Permutation::ipermute(const Container &before_array) const {
+    assert(before_array.size() == size() && "WARNING: You're trying to permute an Container with an incompatible permutation!");
 
-    std::vector<T> after_array(before_array);
+    Container after_array(before_array);
     //after_array.reserve(size());
 
     for(Index i = 0; i < size(); i++) {

@@ -67,7 +67,8 @@ namespace CASM {
   int ConfigEnumRandomOccupations::run(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOption &enum_opt,
+    EnumeratorMap const *interface_map) {
 
     std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
@@ -80,8 +81,8 @@ namespace CASM {
     _kwargs.get_if(primitive_only, "primitive_only");
 
 
-    auto lambda = [&](const Supercell & scel) {
-      return notstd::make_unique<ConfigEnumRandomOccupations>(scel, n_config, mtrand);
+    auto lambda = [&](const ConfigEnumInput & _input) {
+      return notstd::make_unique<ConfigEnumRandomOccupations>(_input, n_config, mtrand);
     };
 
     int returncode = insert_configs(
@@ -107,12 +108,13 @@ namespace CASM {
   ///   which points past-the-final element, as is typical
   /// - `_size` will be equal to \code std::distance(this->begin(), this->end()) \endcode
   ConfigEnumRandomOccupations::ConfigEnumRandomOccupations(
-    const Supercell &_scel,
+    ConfigEnumInput const &_in_config,
     Index _n_config,
     MTRand &_mtrand):
     m_n_config(_n_config),
     m_mtrand(&_mtrand),
-    m_max_allowed(_scel.max_allowed_occupation()) {
+    m_max_allowed(_in_config.supercell().max_allowed_occupation()),
+    m_site_selection(_in_config.sites().begin(), _in_config.sites().end()) {
 
     if(m_n_config < 0) {
       throw std::runtime_error("Error in ConfigEnumRandomOccupations: n_config < 0");
@@ -122,8 +124,7 @@ namespace CASM {
       return;
     }
 
-    m_current = notstd::make_cloneable<Configuration>(_scel, this->source(0));
-    m_current->init_occupation();
+    m_current = notstd::make_cloneable<Configuration>(_in_config.config());
 
     reset_properties(*m_current);
     this->_initialize(&(*m_current));
@@ -149,8 +150,8 @@ namespace CASM {
   }
 
   void ConfigEnumRandomOccupations::randomize() {
-    for(Index i = 0; i < m_current->size(); ++i) {
-      m_current->set_occ(i, m_mtrand->randInt(m_max_allowed[i]));
+    for(Index l : m_site_selection) {
+      m_current->set_occ(l, m_mtrand->randInt(m_max_allowed[l]));
     }
   }
 
