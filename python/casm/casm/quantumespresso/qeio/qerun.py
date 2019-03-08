@@ -139,7 +139,10 @@ class QErun:
                line = line.strip()
                m = re.search("highest occupied level.*|.*Fermi energy is.*",line)
         try:
-            self.efermi = float(line.split()[-1])
+            if line.split()[-1]=="ev":
+                self.efermi = float(line.split()[-2])
+            else:
+                self.efermi = float(line.split()[-1])
         except ValueError:
             raise QErunError("could not convert efermi to float")
 
