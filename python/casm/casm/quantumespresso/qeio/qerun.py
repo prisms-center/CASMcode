@@ -130,14 +130,14 @@ class QErun:
         f.seek(0)
         
         line=f.readline()
-        m = re.search("highest occupied level.*",line)
+        m = re.search("highest occupied level.*|.*Fermi energy is.*",line)
         if not m:
             while not m:
                line = f.readline()
                if line=='':
-                    raise QErunError("EOF reach without finding highest occupied level")
+                    raise QErunError("EOF reach without finding highest occupied level or Fermi energy")
                line = line.strip()
-               m = re.search("highest occupied level.*",line)
+               m = re.search("highest occupied level.*|.*Fermi energy is.*",line)
         try:
             self.efermi = float(line.split()[-1])
         except ValueError:
