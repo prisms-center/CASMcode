@@ -1,6 +1,7 @@
 #ifndef CASM_OrbitDecl
 #define CASM_OrbitDecl
 
+//#include "casm/symmetry/SymCompare.hh"
 namespace CASM {
 
   template<typename Derived> struct traits;
@@ -30,11 +31,66 @@ namespace CASM {
   template<typename Element, typename U = void>
   class WithinScelSymCompare;
 
-  template<typename _Element, typename _SymCompareType>
+  /// \brief Template class to be specialized for comparisons of vector directions
+  template<typename Element, typename SymApply>
+  class DirectionSymCompare;
+
+  /// \brief Template class to be specialized for comparisons of vector subspaces
+  template<typename Element, typename SymApply>
+  class SubspaceSymCompare;
+
+
+  template<typename _SymCompareType>
   class GenericOrbit;
 
-  template<typename _Element, typename _SymCompareType>
+  template<typename _SymCompareType>
   class DatabaseTypeOrbit;
+
+  // -- Previously from SymCompare.hh --
+  /// \brief Traits class for AperiodicSymCompare
+  template<typename _Element>
+  struct traits<AperiodicSymCompare<_Element>> {
+    typedef _Element Element;
+    typedef AperiodicSymCompare<Element> MostDerived;
+  };
+
+  /// \brief Traits class for PrimPeriodicSymCompare
+  template<typename _Element>
+  struct traits<PrimPeriodicSymCompare<_Element>> {
+    typedef _Element Element;
+    typedef PrimPeriodicSymCompare<Element> MostDerived;
+  };
+
+  /// \brief Traits class for ScelPeriodicSymCompare
+  template<typename _Element>
+  struct traits<ScelPeriodicSymCompare<_Element>> {
+    typedef _Element Element;
+    typedef ScelPeriodicSymCompare<Element> MostDerived;
+  };
+
+  /// \brief Traits class for WithinScelPeriodicSymCompare
+  template<typename _Element>
+  struct traits<WithinScelSymCompare<_Element>> {
+    typedef _Element Element;
+    typedef WithinScelSymCompare<Element> MostDerived;
+  };
+
+  /// \brief Traits class for DirectionSymCompare
+  template<typename _Element, typename _SymApply>
+  struct traits<DirectionSymCompare<_Element, _SymApply>> {
+    typedef _Element Element;
+    typedef _SymApply SymApply;
+    typedef DirectionSymCompare<_Element, _SymApply> MostDerived;
+  };
+
+  /// \brief Traits class for SubspaceSymCompare
+  template<typename _Element, typename _SymApply>
+  struct traits<SubspaceSymCompare<_Element, _SymApply>> {
+    typedef _Element Element;
+    typedef _SymApply SymApply;
+    typedef SubspaceSymCompare<_Element, _SymApply> MostDerived;
+  };
+  //\-- from SymCompare.hh --
 
   /// \brief OrbitTraits can be specialized for Orbit types that will be stored in a database
   ///
@@ -44,44 +100,40 @@ namespace CASM {
   /// struct OrbitTraits<DiffusionTransformation, PrimPeriodicSymCompare<DiffusionTransformation>> {
   ///   typedef DiffusionTransformation Element;
   ///   typedef PrimPeriodicSymCompare<DiffusionTransformation> SymCompareType;
-  ///   typedef DatabaseTypeOrbit<Element, SymCompareType> OrbitType;
+  ///   typedef DatabaseTypeOrbit<SymCompareType> OrbitType;
   ///
   ///   static write_pos(const OrbitType& orbit);
   ///   static std::string generate_name_impl(const OrbitType& orbit);
   /// };
   /// \endcode
   ///
-  template <
-    typename _Element,
-    typename _SymCompareType >
+  template <typename _SymCompareType>
   struct OrbitTraits {
-    typedef _Element Element;
-    typedef _SymCompareType SymCompareType;
-    typedef GenericOrbit<_Element, _SymCompareType> OrbitType;
+    using Element = typename traits<_SymCompareType>::Element;
+    using SymCompareType = _SymCompareType;
+    using OrbitType = GenericOrbit<_SymCompareType>;
   };
 
   /// Alias to select between GenericOrbit and DatabaseTypeOrbit by checking
-  ///   OrbitTraits<_Element, _SymCompareType>::IsDatabaseType
-  template <
-    typename _Element,
-    typename _SymCompareType >
-  using Orbit = typename OrbitTraits<_Element, _SymCompareType>::OrbitType;
+  ///   OrbitTraits<_SymCompareType>::IsDatabaseType
+  template <typename _SymCompareType>
+  using Orbit = typename OrbitTraits<_SymCompareType>::OrbitType;
 
 
   template<typename Element>
-  using AperiodicOrbit = Orbit<Element, AperiodicSymCompare<Element>>;
+  using AperiodicOrbit = Orbit<AperiodicSymCompare<Element>>;
 
   template<typename Element>
   using LocalOrbit = AperiodicOrbit<Element>;
 
   template<typename Element>
-  using ScelPeriodicOrbit = Orbit<Element, ScelPeriodicSymCompare<Element>>;
+  using ScelPeriodicOrbit = Orbit<ScelPeriodicSymCompare<Element>>;
 
   template<typename Element>
-  using PrimPeriodicOrbit = Orbit<Element, PrimPeriodicSymCompare<Element>>;
+  using PrimPeriodicOrbit = Orbit<PrimPeriodicSymCompare<Element>>;
 
   template<typename Element>
-  using WithinScelOrbit = Orbit<Element, WithinScelSymCompare<Element>>;
+  using WithinScelOrbit = Orbit<WithinScelSymCompare<Element>>;
 
 }
 

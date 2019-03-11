@@ -16,6 +16,7 @@
 #include "casm/container/multivector.hh"
 
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymGroupRep.hh"
@@ -960,7 +961,7 @@ namespace CASM {
 
 
     SymGroupRep const &t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
-    trans_mat = get_irrep_trans_mat(t_rep, head_group);
+    trans_mat = irrep_trans_mat(t_rep, head_group);
     BasisSet normal_basis(transform_copy(trans_mat));
     normal_basis.m_basis_symrep_ID = t_rep.master_group().add_representation(coord_transformed_copy(t_rep, trans_mat));
     return normal_basis;

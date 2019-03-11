@@ -604,7 +604,7 @@ namespace CASM {
                                    + "\", a symmetry operation was identified that invalidates the degree of freedom. "
                                    + "Degrees of freedom must be fully specified before performing symmetry analyses.");
         }
-        op.set_rep(dof.second.symrep_ID(), SymMatrixXd(eq.U().transpose()));
+        op.set_rep(dof.second.symrep_ID(), SymMatrixXd(eq.U()));
       }
 
     }

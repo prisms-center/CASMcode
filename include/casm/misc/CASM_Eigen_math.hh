@@ -9,10 +9,35 @@
 namespace CASM {
 
   /// \brief Floating point lexicographical comparison with tol
-  inline bool float_lexicographical_compare(const Eigen::VectorXd &A, const Eigen::VectorXd &B, double tol) {
+  inline bool float_lexicographical_compare(const Eigen::Ref<const Eigen::MatrixXd> &A, const Eigen::Ref<const Eigen::MatrixXd> &B, double tol) {
     return float_lexicographical_compare(A.data(), A.data() + A.size(), B.data(), B.data() + B.size(), tol);
   }
 
+  /// \brief Floating point lexicographical comparison with tol
+  inline bool colmajor_lex_compare(const Eigen::Ref<const Eigen::MatrixXd> &A, const Eigen::Ref<const Eigen::MatrixXd> &B, double tol) {
+    if(A.cols() == B.cols()) {
+      if(A.rows() == B.rows()) {
+        for(Index j = 0; j < A.cols(); ++j) {
+          for(Index i = 0; i < A.rows(); ++i) {
+            if(!almost_equal(A(i, j), B(i, j), tol))
+              return A(i, j) < B(i, j);
+          }
+        }
+        return false;
+      }
+      else if(A.rows() < B.rows())
+        return true;
+      else
+        return false;
+    }
+    else if(A.cols() < B.cols())
+      return true;
+    else
+      return false;
+  }
+
+
+  Eigen::MatrixXd reduced_column_echelon(Eigen::Ref<const Eigen::MatrixXd> const &M, double tol);
 
   Eigen::VectorXd eigen_vector_from_string(const std::string &tstr, const int &size);
 

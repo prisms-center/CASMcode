@@ -207,7 +207,7 @@ namespace CASM {
   template<typename _Element, ORBIT_PRINT_MODE>
   struct OrbitPrinter {};
 
-  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including only prototypes
+  /// \brief Print Orbit<SymCompareType>, including only prototypes
   template<typename _Element>
   struct OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO> : public Printer<_Element> {
 
@@ -230,7 +230,7 @@ namespace CASM {
 
   typedef PrototypePrinter<IntegralCluster> ProtoSitesPrinter;
 
-  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including all equivalents
+  /// \brief Print Orbit<SymCompareType>, including all equivalents
   template<typename _Element>
   struct OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL> : public Printer<_Element> {
 
@@ -253,7 +253,7 @@ namespace CASM {
 
   typedef FullOrbitPrinter<IntegralCluster> FullSitesPrinter;
 
-  /// \brief Print Orbit<IntegralCluster, SymCompareType> & ClexBasis, including prototypes and prototype basis functions
+  /// \brief Print Orbit<SymCompareType> & ClexBasis, including prototypes and prototype basis functions
   struct ProtoFuncsPrinter : public SitesPrinter {
 
     ClexBasis const &clex_basis;
@@ -316,7 +316,7 @@ namespace CASM {
 
   // ---------- clust.json IO ------------------------------------------------------------------
 
-  /// \brief Read JSON containing Orbit<IntegralCluster, SymCompareType> prototypes
+  /// \brief Read JSON containing Orbit<SymCompareType> prototypes
   template<typename ClusterOutputIterator, typename SymCompareType>
   ClusterOutputIterator read_clust(
     ClusterOutputIterator result,
@@ -326,7 +326,7 @@ namespace CASM {
     const SymCompareType &sym_compare,
     double xtal_tol);
 
-  /// \brief Write Orbit<IntegralCluster, SymCompareType> to JSON, including 'bspecs'
+  /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
   template<typename ClusterOrbitIterator, typename Printer>
   jsonParser &write_clust(
     ClusterOrbitIterator begin,
@@ -334,7 +334,7 @@ namespace CASM {
     jsonParser &json,
     Printer printer);
 
-  /// \brief Write Orbit<IntegralCluster, SymCompareType> to JSON, including 'bspecs'
+  /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
   template<typename ClusterOrbitIterator, typename Printer>
   jsonParser &write_clust(
     ClusterOrbitIterator begin,

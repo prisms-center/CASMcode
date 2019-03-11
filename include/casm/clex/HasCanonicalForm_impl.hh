@@ -19,7 +19,7 @@ namespace CASM {
     const SymGroup &g,
     const SymCompareType &sym_compare) const {
 
-    IsCanonical<Orbit<MostDerived, SymCompareType>> f(g, sym_compare);
+    IsCanonical<Orbit<SymCompareType>> f(g, sym_compare);
     return f(derived());
   }
 
@@ -29,7 +29,7 @@ namespace CASM {
     const SymGroup &g,
     const SymCompareType &sym_compare) const {
 
-    CanonicalGenerator<Orbit<MostDerived, SymCompareType>> f(g, sym_compare);
+    CanonicalGenerator<Orbit<SymCompareType>> f(g, sym_compare);
     return f(derived());
   }
 
@@ -39,7 +39,7 @@ namespace CASM {
     const MostDerived &other,
     const SymGroup &g,
     const SymCompareType &sym_compare) const {
-    CanonicalGenerator<Orbit<MostDerived, SymCompareType>> f(g, sym_compare);
+    CanonicalGenerator<Orbit<SymCompareType>> f(g, sym_compare);
     return sym_compare.equal(f(derived()), f(other));
   }
 
@@ -50,7 +50,7 @@ namespace CASM {
     ObjIterator end,
     const SymGroup &g,
     const SymCompareType &sym_compare) const {
-    CanonicalGenerator<Orbit<MostDerived, SymCompareType>> f(g, sym_compare);
+    CanonicalGenerator<Orbit<SymCompareType>> f(g, sym_compare);
     auto canon = f(derived());
     auto is_sym_equiv = [&](const MostDerived & test) {
       return sym_compare.equal(canon, f(test));
@@ -64,7 +64,7 @@ namespace CASM {
     const SymGroup &g,
     const SymCompareType &sym_compare) const {
 
-    CanonicalGenerator<Orbit<MostDerived, SymCompareType>> f(g, sym_compare);
+    CanonicalGenerator<Orbit<SymCompareType>> f(g, sym_compare);
     f(derived());
     return f.to_canonical();
   }

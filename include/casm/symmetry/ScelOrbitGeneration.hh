@@ -26,7 +26,7 @@ namespace CASM {
 
     typedef _ElementType Element;
     typedef ScelPeriodicSymCompare<Element> SymCompareType;
-    typedef Orbit<Element, SymCompareType> OrbitType;
+    typedef Orbit<SymCompareType> OrbitType;
 
     ScelCanonicalGenerator(const Supercell &_scel);
 

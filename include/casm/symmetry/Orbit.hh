@@ -30,7 +30,7 @@ namespace CASM {
   /// for how to implement the necessary methods.
   ///
   /// The following relationships will be valid:
-  ///    element(i) = copy_apply(equivalence_map()[i][j], prototype()), for all j < equivalence_map()[i].size()
+  ///    element(i) = sym_compare.copy_apply(equivalence_map()[i][j], prototype()), for all j < equivalence_map()[i].size()
   ///    equivalence_map()[i][j] = t * g;
   ///      where g is a generating group element,
   ///      and t is the "spatial_transform" defined by the SymCompareType for equivalent elements such that:
@@ -39,16 +39,16 @@ namespace CASM {
   ///
   /// \ingroup Clusterography
   ///
-  template<typename _Element, typename _SymCompareType>
-  class GenericOrbit : public Comparisons<CRTPBase<GenericOrbit<_Element, _SymCompareType>>> {
+  template<typename _SymCompareType>
+  class GenericOrbit : public Comparisons<CRTPBase<GenericOrbit<_SymCompareType>>> {
 
   public:
 
-    typedef unsigned int size_type;
-    typedef _Element Element;
-    typedef _SymCompareType SymCompareType;
-    typedef typename std::vector<Element>::const_iterator const_iterator;
-    typedef typename std::vector<SymOp>::const_iterator const_symop_iterator;
+    using size_type = unsigned int;
+    using Element = typename _SymCompareType::Element;
+    using SymCompareType = _SymCompareType;
+    using const_iterator = typename std::vector<Element>::const_iterator;
+    using const_symop_iterator = typename std::vector<SymOp>::const_iterator;
 
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
     GenericOrbit(Element generating_element,
@@ -197,13 +197,13 @@ namespace CASM {
 
   /// \brief Specialize GenericOrbit for Orbit types that will be stored in a database
   ///
-  template<typename _Element, typename _SymCompareType>
+  template<typename _SymCompareType>
   class DatabaseTypeOrbit :
-    public GenericOrbit<_Element, _SymCompareType>,
-    public HasPrimClex<DB::Indexed<CRTPBase<DatabaseTypeOrbit<_Element, _SymCompareType>>>> {
+    public GenericOrbit<_SymCompareType>,
+    public HasPrimClex<DB::Indexed<CRTPBase<DatabaseTypeOrbit<_SymCompareType>>>> {
   public:
-    typedef _Element Element;
-    typedef _SymCompareType SymCompareType;
+    using Element = typename _SymCompareType::Element;
+    using SymCompareType = _SymCompareType;
 
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
     DatabaseTypeOrbit(Element generating_element,
@@ -215,7 +215,7 @@ namespace CASM {
 
   private:
 
-    friend DB::Named<CRTPBase<DatabaseTypeOrbit<_Element, _SymCompareType>>>;
+    friend DB::Named<CRTPBase<DatabaseTypeOrbit<_SymCompareType>>>;
 
     std::string generate_name_impl() const;
 
@@ -224,14 +224,29 @@ namespace CASM {
     const PrimClex *m_primclex;
   };
 
+  /// \brief Iterator over Generators (potential prototypes) and insert resulting orbits into 'result' iterator
+  template<typename GeneratorIterator, typename SymCompareType, typename OrbitOutputIterator>
+  OrbitOutputIterator make_orbits(
+    GeneratorIterator gen_begin,
+    GeneratorIterator gen_end,
+    const SymGroup &generating_group,
+    const SymCompareType &sym_compare,
+    OrbitOutputIterator result) {
+
+    using OrbitType = typename OrbitOutputIterator::container_type::value_type;
+    for(; gen_begin != gen_end; ++gen_begin) {
+      *(result++) = OrbitType(*gen_begin, generating_group, sym_compare);
+    }
+    return result;
+  }
 
   // -- Orbit Helpers --------------------
 
-  template<typename _Element, typename _SymCompareType>
-  void write_pos(DatabaseTypeOrbit<_Element, _SymCompareType> const &_el);
+  template<typename _SymCompareType>
+  void write_pos(DatabaseTypeOrbit<_SymCompareType> const &_el);
 
-  template<typename _Element, typename _SymCompareType>
-  std::string pos_string(DatabaseTypeOrbit<_Element, _SymCompareType> const &_el);
+  template<typename _SymCompareType>
+  std::string pos_string(DatabaseTypeOrbit<_SymCompareType> const &_el);
 
   /// \brief Find orbit containing an element in a range of Orbit
   template<typename OrbitIterator, typename Element>

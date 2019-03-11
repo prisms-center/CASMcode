@@ -8,7 +8,7 @@
 
 namespace CASM {
 
-  template class DatabaseTypeOrbit<Kinetics::DiffusionTransformation, PrimPeriodicDiffTransSymCompare>;
+  template class DatabaseTypeOrbit<PrimPeriodicDiffTransSymCompare>;
 
   UnitCellCoord traits<Kinetics::DiffusionTransformation>::position(
     const Kinetics::DiffusionTransformation &diff_trans) {

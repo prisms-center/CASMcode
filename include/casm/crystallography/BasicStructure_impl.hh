@@ -91,13 +91,13 @@ namespace CASM {
 
   //***********************************************************
   /*
-  template<typename CoordType>
-  BasicStructure<CoordType> &BasicStructure<CoordType>::apply_sym(const SymOp &op) {
+    template<typename CoordType>
+    BasicStructure<CoordType> &BasicStructure<CoordType>::apply_sym(const SymOp &op) {
     for(Index i = 0; i < basis().size(); i++) {
-      m_basis[i].apply_sym(op);
+    m_basis[i].apply_sym(op);
     }
     return *this;
-  }
+    }
   */
   //***********************************************************
 
@@ -861,61 +861,61 @@ namespace CASM {
   /*
     template<typename CoordType>
     void BasicStructure<CoordType>::print_cif(std::ostream &stream) const {
-      const char quote = '\'';
-      const char indent[] = "   ";
+    const char quote = '\'';
+    const char indent[] = "   ";
 
-      //double amag, bmag, cmag;
-      //double alpha, beta, gamma;
+    //double amag, bmag, cmag;
+    //double alpha, beta, gamma;
 
-      // Copying format based on VESTA .cif output.
+    // Copying format based on VESTA .cif output.
 
-      // Heading text.
+    // Heading text.
 
-      stream << '#';
-      for(int i = 0; i < 70; i++) {
-        stream << '=';
-      }
-      stream << "\n\n";
-      stream << "# CRYSTAL DATA\n\n";
-      stream << '#';
-      for(int i = 0; i < 70; i++) {
-        stream << '-';
-      }
-      stream << "\n\n";
-      stream << "data_CASM\n\n\n";
+    stream << '#';
+    for(int i = 0; i < 70; i++) {
+    stream << '=';
+    }
+    stream << "\n\n";
+    stream << "# CRYSTAL DATA\n\n";
+    stream << '#';
+    for(int i = 0; i < 70; i++) {
+    stream << '-';
+    }
+    stream << "\n\n";
+    stream << "data_CASM\n\n\n";
 
-      stream.precision(5);
-      stream.width(11);
-      stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+    stream.precision(5);
+    stream.width(11);
+    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
 
-      stream << std::setw(40) << "_pd_phase_name" << quote << title << quote << '\n';
-      stream << std::setw(40) << "_cell_length_a" << lattice().lengths[0] << '\n';
-      stream << std::setw(40) << "_cell_length_b" << lattice().lengths[1] << '\n';
-      stream << std::setw(40) << "_cell_length_c" << lattice().lengths[2] << '\n';
-      stream << std::setw(40) << "_cell_angle_alpha" << lattice().angles[0] << '\n';
-      stream << std::setw(40) << "_cell_angle_beta" << lattice().angles[1] << '\n';
-      stream << std::setw(40) << "_cell_angle_gamma" << lattice().angles[2] << '\n';
-      stream << std::setw(40) << "_symmetry_space_group_name_H-M" << quote << "TBD" << quote << '\n';
-      stream << std::setw(40) << "_symmetry_Int_Tables_number" << "TBD" << "\n\n";
+    stream << std::setw(40) << "_pd_phase_name" << quote << title << quote << '\n';
+    stream << std::setw(40) << "_cell_length_a" << lattice().lengths[0] << '\n';
+    stream << std::setw(40) << "_cell_length_b" << lattice().lengths[1] << '\n';
+    stream << std::setw(40) << "_cell_length_c" << lattice().lengths[2] << '\n';
+    stream << std::setw(40) << "_cell_angle_alpha" << lattice().angles[0] << '\n';
+    stream << std::setw(40) << "_cell_angle_beta" << lattice().angles[1] << '\n';
+    stream << std::setw(40) << "_cell_angle_gamma" << lattice().angles[2] << '\n';
+    stream << std::setw(40) << "_symmetry_space_group_name_H-M" << quote << "TBD" << quote << '\n';
+    stream << std::setw(40) << "_symmetry_Int_Tables_number" << "TBD" << "\n\n";
 
-      stream << "loop_\n";
-      stream << "_symmetry_equiv_pos_as_xyz\n";
+    stream << "loop_\n";
+    stream << "_symmetry_equiv_pos_as_xyz\n";
 
-      // Equivalent atom positions here. Form: 'x, y, z', '-x, -y, -z', 'x+1/2, y+1/2, z', etc.
-      // Use stream << indent << etc.
+    // Equivalent atom positions here. Form: 'x, y, z', '-x, -y, -z', 'x+1/2, y+1/2, z', etc.
+    // Use stream << indent << etc.
 
-      stream << '\n';
-      stream << "loop_\n";
-      stream << indent << "_atom_site_label" << '\n';
-      stream << indent << "_atom_site_occupancy" << '\n';
-      stream << indent << "_atom_site_fract_x" << '\n';
-      stream << indent << "_atom_site_fract_y" << '\n';
-      stream << indent << "_atom_site_fract_z" << '\n';
-      stream << indent << "_atom_site_adp_type" << '\n';
-      stream << indent << "_atom_site_B_iso_or_equiv" << '\n';
-      stream << indent << "_atom_site_type_symbol" << '\n';
+    stream << '\n';
+    stream << "loop_\n";
+    stream << indent << "_atom_site_label" << '\n';
+    stream << indent << "_atom_site_occupancy" << '\n';
+    stream << indent << "_atom_site_fract_x" << '\n';
+    stream << indent << "_atom_site_fract_y" << '\n';
+    stream << indent << "_atom_site_fract_z" << '\n';
+    stream << indent << "_atom_site_adp_type" << '\n';
+    stream << indent << "_atom_site_B_iso_or_equiv" << '\n';
+    stream << indent << "_atom_site_type_symbol" << '\n';
 
-      // Use stream << indent << etc.
+    // Use stream << indent << etc.
     }
   */
   //***********************************************************

@@ -132,7 +132,7 @@ namespace CASM {
       }
     }
 
-    //std::cout << "Atomizing with N_atom = " << N_atoms << "; nv = " << nv << "; nb = " << nb << "\n";
+    std::cout << "Atomizing with N_atom = " << N_atoms << "; nv = " << nv << "; nb = " << nb << "\n";
     atom_info.coords.resize(3, N_atoms);
     atom_info.names.resize(N_atoms);
 
@@ -158,8 +158,10 @@ namespace CASM {
         }
       }
     }
-    //std::cout << "atom_info.names: " << atom_info.names << "\n"
-    //        << "atom_info.coords: \n" << atom_info.coords << "\n";
+    std::cout << "mol_info.names: " << mol_info.names << "\n"
+              << "mol_info.coords: \n" << mol_info.coords << "\n";
+    std::cout << "atom_info.names: " << atom_info.names << "\n"
+              << "atom_info.coords: \n" << atom_info.coords << "\n";
   }
 
   jsonParser &to_json(SimpleStructure const &_struc, jsonParser &json, std::set<std::string> const &excluded_species) {

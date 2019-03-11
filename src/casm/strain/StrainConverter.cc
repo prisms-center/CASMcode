@@ -304,8 +304,8 @@ namespace CASM {
 
     Eigen::MatrixXd bigmat(tvec.size(), tvec.size() + 1);
     bigmat.col(0) = breathing;
-    bigmat.rightCols(tvec.size()) = get_irrep_trans_mat(strain_rep, pg).transpose();
-    //m_sop_transf_mat=strain_rep.get_irrep_trans_mat(pg).transpose();
+    bigmat.rightCols(tvec.size()) = irrep_trans_mat(strain_rep, pg).transpose();
+    //m_sop_transf_mat=irrep_trans_mat(strain_rep,pg).transpose();
     Eigen::HouseholderQR<Eigen::MatrixXd> QR(bigmat);
     m_sop_transf_mat = QR.householderQ();
     m_symrep_ID = pg.master_group().add_representation(coord_transformed_copy(strain_rep, m_sop_transf_mat.transpose()));
