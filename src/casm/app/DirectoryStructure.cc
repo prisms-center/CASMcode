@@ -189,9 +189,9 @@ namespace CASM {
     return m_root / m_casm_dir / "dof";
   }
 
-  /// \brief Return Molecule Traits plugin dir
-  fs::path DirectoryStructure::molecule_traits_plugins() const {
-    return m_root / m_casm_dir / "molecule_traits";
+  /// \brief Return Species Traits plugin dir
+  fs::path DirectoryStructure::species_traits_plugins() const {
+    return m_root / m_casm_dir / "species_traits";
   }
 
   template<typename DataObject>

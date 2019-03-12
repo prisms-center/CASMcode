@@ -17,7 +17,7 @@ namespace CASM {
     class BasicTraits;
   }
 
-  namespace MoleculeAttribute_impl {
+  namespace SpeciesAttribute_impl {
     class BasicTraits;
   }
 
@@ -26,7 +26,7 @@ namespace CASM {
   public:
 
     using DoFDictionary = ParsingDictionary<DoFType::BasicTraits>;
-    using MolAttributeDictionary = ParsingDictionary<MoleculeAttribute_impl::BasicTraits>;
+    using SpeciesAttributeDictionary = ParsingDictionary<SpeciesAttribute_impl::BasicTraits>;
 
     HamiltonianModules(ProjectSettings const *set = nullptr);
 
@@ -36,9 +36,9 @@ namespace CASM {
 
     DoFDictionary const &dof_dict()const;
 
-    MolAttributeDictionary &mol_attribute_dict();
+    SpeciesAttributeDictionary &species_attribute_dict();
 
-    MolAttributeDictionary const &mol_attribute_dict()const;
+    SpeciesAttributeDictionary const &species_attribute_dict()const;
 
     //std::unique_ptr<HamiltonianModules > clone() const;
 
@@ -46,11 +46,11 @@ namespace CASM {
 
     notstd::cloneable_ptr<DoFDictionary >  m_dof_dict;
 
-    notstd::cloneable_ptr<MolAttributeDictionary>  m_mol_attribute_dict;
+    notstd::cloneable_ptr<SpeciesAttributeDictionary>  m_species_attribute_dict;
 
     std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_dof_lib;
 
-    std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_mol_attribute_lib;
+    std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_species_attribute_lib;
 
   };
 
@@ -62,10 +62,10 @@ namespace CASM {
     DoFDictInserter dict_it,
     RuntimeLibInserter lib_it);
 
-  /// \brief Load MoleculeAttribute plugins from a CASM project
+  /// \brief Load SpeciesAttribute plugins from a CASM project
   template<typename AttributeDictInserter, typename RuntimeLibInserter>
   std::pair<AttributeDictInserter, RuntimeLibInserter>
-  load_mol_attribute_plugins(
+  load_species_attribute_plugins(
     const ProjectSettings &set,
     AttributeDictInserter dict_it,
     RuntimeLibInserter lib_it);

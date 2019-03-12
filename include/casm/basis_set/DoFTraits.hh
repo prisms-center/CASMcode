@@ -10,7 +10,6 @@
 
 namespace CASM {
   class jsonParser;
-  class MasterSymGroup;
   class PrimNeighborList;
   class Structure;
   class BasisSet;

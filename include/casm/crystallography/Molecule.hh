@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "casm/misc/Comparisons.hh"
-#include "casm/crystallography/MoleculeAttribute.hh"
+#include "casm/crystallography/SpeciesAttribute.hh"
 
 namespace CASM {
 
@@ -105,6 +105,17 @@ namespace CASM {
       return m_sd_flag;
     }
 
+    std::map<std::string, SpeciesAttribute> const &attributes() const {
+      return m_attribute_map;
+    }
+
+    void set_attributes(std::map<std::string, SpeciesAttribute> const &_attr) {
+      m_attribute_map = _attr;
+    }
+
+    /// \brief Comparison with tolerance (max allowed distance between LHS and RHS, in Angstr.)
+    bool identical(AtomPosition const &RHS, double _tol)const;
+
     /// \brief Print AtomPosition after applying affine transformation cart2frac*cart()+trans
     void print(std::ostream &stream,
                Eigen::Ref<const Eigen::Vector3d> const &trans,
@@ -122,12 +133,11 @@ namespace CASM {
     /// Cartesian position; origin is centered at site
     Eigen::Vector3d m_position;
 
+    std::map<std::string, SpeciesAttribute> m_attribute_map;
+
     /// selective dynamics flags
     sd_type m_sd_flag;
   };
-
-  /// \brief Comparison with tolerance (max allowed distance between LHS and RHS, in Angstr.)
-  bool identical(AtomPosition const &LHS, AtomPosition const &RHS, double _tol);
 
   /// \brief Print AtomPosition to json after applying affine transformation cart2frac*cart()+trans
   jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &cart2frac);
@@ -208,6 +218,14 @@ namespace CASM {
 
     bool is_vacancy() const;
 
+    std::map<std::string, SpeciesAttribute> const &attributes() const {
+      return m_attribute_map;
+    }
+
+    void set_attributes(std::map<std::string, SpeciesAttribute> const &_attr) {
+      m_attribute_map = _attr;
+    }
+
     Molecule &apply_sym(SymOp const &op);
 
     /// \brief Check equality of two molecules, within specified tolerance.
@@ -241,8 +259,9 @@ namespace CASM {
   private:
     std::string m_name;
     std::vector<AtomPosition> m_atoms;
-    std::map<std::string, MoleculeAttribute> m_attribute_map;
     bool m_divisible;
+
+    std::map<std::string, SpeciesAttribute> m_attribute_map;
   };
 
   inline

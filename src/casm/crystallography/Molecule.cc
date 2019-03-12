@@ -49,6 +49,9 @@ namespace CASM {
 
   AtomPosition &AtomPosition::apply_sym(const SymOp &op) {
     m_position = op.matrix() * m_position;
+    for(auto it = m_attribute_map.begin(); it != m_attribute_map.end(); ++it)
+      (it->second).apply_sym(op);
+
     return *this;
   }
 
@@ -56,9 +59,21 @@ namespace CASM {
   //
   //****************************************************
 
-  bool identical(AtomPosition const &LHS, AtomPosition const &RHS, double _tol = TOL) {
-    return LHS.species() == RHS.species()
-           && almost_equal(LHS.cart(), RHS.cart(), _tol);
+  bool AtomPosition::identical(AtomPosition const &RHS, double _tol = TOL) const {
+    // compare number of attributes
+    if(m_attribute_map.size() != RHS.m_attribute_map.size())
+      return false;
+    if(species() != RHS.species())
+      return false;
+    // compare attributes
+    auto it(m_attribute_map.cbegin()), end_it(m_attribute_map.cend());
+    for(; it != end_it; ++it) {
+      auto it_RHS = RHS.m_attribute_map.find(it->first);
+      if(it_RHS == RHS.m_attribute_map.cend() || !(it->second).identical(it_RHS->second, _tol))
+        return false;
+    }
+
+    return almost_equal(cart(), RHS.cart(), _tol);
   }
   //****************************************************
   //
@@ -69,6 +84,8 @@ namespace CASM {
     to_json_array(c2f_mat * apos.cart(), json["coordinate"]);
     json["name"] = apos.species();
     json["SD_flag"] = apos.sd_flag();
+    if(apos.attributes().size())
+      json["attributes"] = apos.attributes();
     return json;
   }
 
@@ -77,22 +94,8 @@ namespace CASM {
   //****************************************************
 
   void from_json(AtomPosition &apos, const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
-    std::string _name;
-    Eigen::Vector3d _pos(0., 0., 0.);
-    AtomPosition::sd_type _SD_flag {{false, false, false}};
-    if(json.is_obj()) {
-      _name = json["name"].get<std::string>();
-      if(json.contains("coordinate"))
-        _pos = f2c_mat * json["coordinate"].get<Eigen::Vector3d>();
-      if(json.contains("SD_flag"))
-        _SD_flag = json["SD_flag"].get<typename AtomPosition::sd_type>();
-    }
-    else if(json.is_string()) {
-      _name = json.get<std::string>();
-    }
-    else
-      throw std::runtime_error("Invalid JSON input encountered. Unable to parse AtomPosition object.\n");
-    apos = AtomPosition(_pos, AtomSpecies(_name), _SD_flag);
+    apos = json.get<AtomPosition>(f2c_mat);
+
     return;
   }
 
@@ -101,19 +104,32 @@ namespace CASM {
     std::string _name;
     Eigen::Vector3d _pos(0., 0., 0.);
     AtomPosition::sd_type _SD_flag {{false, false, false}};
+    std::map<std::string, SpeciesAttribute> attr_map;
     if(json.is_obj()) {
       _name = json["name"].get<std::string>();
       if(json.contains("coordinate"))
         _pos = f2c_mat * json["coordinate"].get<Eigen::Vector3d>();
       if(json.contains("SD_flag"))
         _SD_flag = json["SD_flag"].get<typename AtomPosition::sd_type>();
+
+      if(json.contains("attributes")) {
+        auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
+        for(; it != end_it; ++it) {
+          auto result_pair = attr_map.emplace(it.name(), it.name());
+          (result_pair.first->second).from_json(*it);
+        }
+      }
+
     }
     else if(json.is_string()) {
       _name = json.get<std::string>();
     }
     else
       throw std::runtime_error("Invalid JSON input encountered. Unable to parse AtomPosition object.\n");
-    return AtomPosition(_pos, AtomSpecies(_name), _SD_flag);
+
+    AtomPosition result(_pos, AtomSpecies(_name), _SD_flag);
+    result.set_attributes(attr_map);
+    return result;
   }
 
   bool Molecule::is_vacancy() const {
@@ -126,9 +142,8 @@ namespace CASM {
   //****************************************************
 
   Molecule &Molecule::apply_sym(SymOp const &op) {
-    for(Index i = 0; i < size(); i++) {
+    for(Index i = 0; i < size(); i++)
       m_atoms[i].apply_sym(op);
-    }
     for(auto it = m_attribute_map.begin(); it != m_attribute_map.end(); ++it)
       (it->second).apply_sym(op);
     return *this;
@@ -139,19 +154,19 @@ namespace CASM {
   //****************************************************
 
   bool Molecule::identical(Molecule const &RHS, double _tol) const {
-    // compare number of atoms
-    if(size() != RHS.size())
-      return false;
-
     // compare number of attributes
     if(m_attribute_map.size() != RHS.m_attribute_map.size())
+      return false;
+
+    // compare number of atoms
+    if(size() != RHS.size())
       return false;
 
     // compare atoms, irrespective of order
     for(Index i = 0; i < RHS.size(); i++) {
       Index j = 0;
       for(j = 0; j < size(); j++) {
-        if(CASM::identical(atom(i), RHS.atom(j), _tol))
+        if(atom(i).identical(RHS.atom(j), _tol))
           break;
       }
       if(j == size())
@@ -165,6 +180,7 @@ namespace CASM {
       if(it_RHS == RHS.m_attribute_map.cend() || !(it->second).identical(it_RHS->second, _tol))
         return false;
     }
+
     return true;
   }
 
@@ -203,8 +219,10 @@ namespace CASM {
   jsonParser &Molecule::to_json(jsonParser &json, Eigen::Matrix3d const &f2c_mat) const {
     json.put_obj();
     CASM::to_json(m_atoms, json["atoms"], f2c_mat);
-    json["attributes"] = m_attribute_map;
     json["name"] = name();
+    if(attributes().size())
+      json["attributes"] = attributes();
+
     return json;
   }
 
@@ -216,11 +234,10 @@ namespace CASM {
 
   void Molecule::from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
     m_atoms.clear();
-    m_attribute_map.clear();
     if(json.contains("atoms")) {
       CASM::from_json(m_atoms, json["atoms"], f2c_mat);
     }
-
+    m_attribute_map.clear();
     if(json.contains("attributes")) {
       auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
       for(; it != end_it; ++it) {
