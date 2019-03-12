@@ -83,7 +83,7 @@ namespace CASM {
 
     /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
     std::vector<BasisSet> OccupationDoFTraits::construct_site_bases(Structure const &_prim,
-                                                                    std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
+                                                                    std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                                     jsonParser const &_bspecs) const {
       std::vector<BasisSet> result(_prim.basis().size());
 
@@ -230,7 +230,7 @@ namespace CASM {
                                                                            std::vector<BasisSet> const &_site_bases,
                                                                            std::string const &indent) const {
       std::stringstream stream;
-      std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
+      std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
       make_prim_periodic_asymmetric_unit(_prim,
                                          CASM_TMP::ConstantFunctor<bool>(true),
@@ -265,7 +265,7 @@ namespace CASM {
                                                                                    std::vector<BasisSet> const &_site_bases,
                                                                                    const std::string &indent) const {
       std::stringstream stream;
-      std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
+      std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
       make_prim_periodic_asymmetric_unit(_prim,
                                          CASM_TMP::ConstantFunctor<bool>(true),
@@ -326,7 +326,7 @@ namespace CASM {
       stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
       stream.precision(10);
 
-      std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
+      std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
       make_prim_periodic_asymmetric_unit(_prim,
                                          CASM_TMP::ConstantFunctor<bool>(true),

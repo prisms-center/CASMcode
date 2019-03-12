@@ -596,7 +596,7 @@ namespace CASM {
 
     std::ostream nullstream(0);
     COORD_MODE printer_mode(mode);
-    std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
+    std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
     make_prim_periodic_asymmetric_unit(prim,
                                        CASM_TMP::ConstantFunctor<bool>(true),
                                        TOL,
@@ -687,7 +687,7 @@ namespace CASM {
     sitef = jsonParser::array(prim.basis().size(), jsonParser::object());
 
     std::ostream nullstream(0);
-    std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
+    std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
     make_prim_periodic_asymmetric_unit(prim,
                                        CASM_TMP::ConstantFunctor<bool>(true),
                                        TOL,

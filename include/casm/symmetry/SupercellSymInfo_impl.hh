@@ -1,5 +1,6 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 
 #ifndef CASM_SupercellSymInfo_impl
@@ -99,11 +100,11 @@ namespace CASM {
     //std::vector<PermuteIterator> perms = scel_subset_group(begin,end,_syminfo);
     std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group);
 
-
-    auto result = get_irrep_trans_mat_and_dims(rep_info.first.representation(rep_info.second),
-                                               rep_info.first,
-    [](const SymGroupRep & t_rep, const SymGroup & head) {
-      Eigen::MatrixXd result = (symmetrized_irrep_trans_mat(t_rep, head)).transpose();
+    SymGroupRep const &rep = rep_info.first.representation(rep_info.second);
+    auto result = irrep_trans_mat_and_dims(rep,
+                                           rep_info.first,
+    [&](Eigen::Ref<const Eigen::MatrixXd> const & f_subspace) {
+      Eigen::MatrixXd result = irrep_symmetrizer(rep, rep_info.first, f_subspace, TOL);
       return result;
     },
     _subspace);

@@ -34,8 +34,8 @@ namespace CASM {
   /// - First compares by number of sites in cluster
   /// - Then compare all displacements, from longest to shortest
   template<typename Base>
-  bool ClusterSymCompare<Base>::invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
-    return CASM::compare(A, B, tol());
+  bool ClusterSymCompare<Base>::invariants_compare_impl(const Element &A, const Element &B) const {
+    return CASM::compare(A.invariants(), B.invariants(), tol());
   }
 
   /// \brief Compares 'prepared' elements
@@ -119,7 +119,7 @@ namespace CASM {
 
   /// \brief Prepare an element for comparison
   ///
-  /// - Sorts and translates so that obj[0] is in the origin unit cell
+  /// - translates so that obj[0] is in the origin unit cell
   template<typename Element>
   Element PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   spatial_prepare_impl(Element obj) const {
@@ -134,7 +134,7 @@ namespace CASM {
 
   /// \brief Prepare an element for comparison
   ///
-  /// - Sorts and translates so that obj[0] is in the origin unit cell
+  /// - Sorts so that, after translation obj[0] is in the origin unit cell
   template<typename Element>
   Element PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   representation_prepare_impl(Element obj) const {

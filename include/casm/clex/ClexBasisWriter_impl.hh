@@ -723,7 +723,7 @@ namespace CASM {
       std::set<UnitCellCoord>  result;
 
       typedef IntegralCluster cluster_type;
-      typedef Orbit<cluster_type, IntegralClusterSymCompareType> orbit_type;
+      typedef Orbit<IntegralClusterSymCompareType> orbit_type;
 
 
       if(begin == end)

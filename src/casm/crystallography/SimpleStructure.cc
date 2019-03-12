@@ -19,6 +19,7 @@ namespace CASM {
       _accumulate_after({_name}, m_after);
       if(m_after.count("atomize") == 0)
         m_before.insert("atomize");
+
     }
   }
 
@@ -32,19 +33,19 @@ namespace CASM {
 
   void TransformDirective::_accumulate_before(std::set<std::string>const &_queue, std::set<std::string> &_result) const {
     for(std::string const &el : _queue) {
-      if(el == "atomize" || _result.count(el))
-        continue;
-      _result.insert(el);
-      _accumulate_before(DoF::traits(el).before_dof_apply(), _result);
+      if(el != name())
+        _result.insert(el);
+      if(el != "atomize")
+        _accumulate_before(DoF::traits(el).before_dof_apply(), _result);
     }
   }
 
   void TransformDirective::_accumulate_after(std::set<std::string>const &_queue, std::set<std::string> &_result) const {
     for(std::string const &el : _queue) {
-      if(el == "atomize" || _result.count(el))
-        continue;
-      _result.insert(el);
-      _accumulate_after(DoF::traits(el).after_dof_apply(), _result);
+      if(el != name())
+        _result.insert(el);
+      if(el != "atomize")
+        _accumulate_after(DoF::traits(el).after_dof_apply(), _result);
     }
   }
 
@@ -158,8 +159,6 @@ namespace CASM {
         }
       }
     }
-    //std::cout << "atom_info.names: " << atom_info.names << "\n"
-    //        << "atom_info.coords: \n" << atom_info.coords << "\n";
   }
 
   jsonParser &to_json(SimpleStructure const &_struc, jsonParser &json, std::set<std::string> const &excluded_species) {

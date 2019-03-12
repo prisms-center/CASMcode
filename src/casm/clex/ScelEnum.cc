@@ -300,7 +300,6 @@ namespace CASM {
   ///
   /// \see EnumInterface<ScelEnum>::run
   ScelEnum::ScelEnum(const PrimClex &primclex, const jsonParser &input) {
-    std::cout << "ScelEnum input is \n" << input << '\n';
     if(input.contains("name")) {
       m_enum.ptr.reset(new ScelEnumByName(primclex, input["name"]));
     }

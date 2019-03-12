@@ -247,7 +247,7 @@ namespace CASM {
 
   /// \brief Print IntegralCluster orbits
   ///
-  /// \param begin,end Range of Orbit<IntegralCluster, SymCompareType>
+  /// \param begin,end Range of Orbit<SymCompareType>
   /// \param out output stream
   /// \param mode Coordinate output mode
   /// \param printer A functor to control printing for the orbit
@@ -255,7 +255,7 @@ namespace CASM {
   /// Printer is expected to have:
   /// - \code std::string Printer::indent(); \endcode
   /// - \code void Printer::coord_type(Log& out); \endcode
-  /// - \code void Printer::operator()(const Orbit<IntegralCluster, SymCompareType>& orbit, Log& out, Index orbit_index, Index Norbits); \endcode
+  /// - \code void Printer::operator()(const Orbit<SymCompareType>& orbit, Log& out, Index orbit_index, Index Norbits); \endcode
   ///
   template<typename ClusterOrbitIterator, typename OrbitPrinter>
   void print_clust(
@@ -319,7 +319,7 @@ namespace CASM {
 
   // ---------- clust.json IO ------------------------------------------------------------------
 
-  /// \brief Read JSON containing Orbit<IntegralCluster, SymCompareType> prototypes
+  /// \brief Read JSON containing Orbit<SymCompareType> prototypes
   ///
   /// - Uses 'prim', 'generating_grp', and 'sym_compare' to generate orbits from
   ///   prototypes read from the JSON
@@ -334,7 +334,7 @@ namespace CASM {
     const SymCompareType &sym_compare,
     double xtal_tol) {
 
-    typedef Orbit<IntegralCluster, SymCompareType> orbit_type;
+    typedef Orbit<SymCompareType> orbit_type;
 
     for(const auto &j : json["orbits"]) {
       *result++ = orbit_type(j["prototype"].get<IntegralCluster>(prim, xtal_tol), generating_grp, sym_compare);
@@ -342,7 +342,7 @@ namespace CASM {
     return result;
   }
 
-  /// \brief Write Orbit<IntegralCluster, SymCompareType> to JSON, including 'bspecs'
+  /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
   ///
   /// Format:
   /// \code
@@ -373,7 +373,7 @@ namespace CASM {
     return json;
   }
 
-  /// \brief Write Orbit<IntegralCluster, SymCompareType> to JSON, including 'bspecs'
+  /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
   ///
   /// Format:
   /// \code

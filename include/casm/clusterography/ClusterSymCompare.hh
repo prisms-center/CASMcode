@@ -75,7 +75,7 @@ namespace CASM {
 
 
     /// \brief Orders 'prepared' elements in the same orbit
-    bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
+    bool invariants_compare_impl(const Element &A, const Element &B) const;
 
     /// \brief Compares 'prepared' elements
     bool compare_impl(const Element &A, const Element &B) const;

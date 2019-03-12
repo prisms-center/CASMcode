@@ -94,10 +94,10 @@ namespace CASM {
   /// \param generating_group The group used for generating the orbit
   /// \param sym_compare Binary functor that implements symmetry properties
   ///
-  template<typename _Element, typename _SymCompareType>
-  GenericOrbit<_Element, _SymCompareType>::GenericOrbit(Element generating_element,
-                                                        const SymGroup &generating_group,
-                                                        const _SymCompareType &sym_compare) :
+  template<typename _SymCompareType>
+  GenericOrbit<_SymCompareType>::GenericOrbit(Element generating_element,
+                                              const SymGroup &generating_group,
+                                              const SymCompareType &sym_compare) :
     m_generating_group(generating_group),
     m_sym_compare(sym_compare) {
 
@@ -127,7 +127,7 @@ namespace CASM {
     std::map<Element, std::set<Index>, decltype(compare)> t_equiv(compare);
     try {
       for(Index i = 0; i < g.size(); i++) {
-        t_equiv[m_sym_compare.prepare(copy_apply(g[i], generating_element))].insert(i); // not g[i].index()!!;
+        t_equiv[m_sym_compare.prepare(m_sym_compare.copy_apply(g[i], generating_element))].insert(i); // not g[i].index()!!;
       }
     }
     catch(const std::exception &e) {
@@ -199,16 +199,16 @@ namespace CASM {
         //Index of group element that maps proto to equiv 'i'
         Index proto2i = *(row.values.begin());
 
-        Element tequiv = m_sym_compare.prepare(copy_apply(g[proto2i], tmp_element[newproto_i]));
+        Element tequiv = m_sym_compare.prepare(m_sym_compare.copy_apply(g[proto2i], tmp_element[newproto_i]));
         SymOp ttrans = m_sym_compare.spatial_transform();
 
-        m_element.push_back(copy_apply(ttrans * g[proto2i], tmp_element[newproto_i]));
+        m_element.push_back(m_sym_compare.copy_apply(ttrans * g[proto2i], tmp_element[newproto_i]));
         m_equivalence_map.emplace_back();
         // Loop over elements 'j' of new, sorted clust_group (0 row of best.map)
         for(const auto &cg_j : best.map.begin()->values) {
           Index value = g.ind_prod(proto2i, cg_j);
 
-          tequiv = m_sym_compare.prepare(copy_apply(g[value], tmp_element[newproto_i]));
+          tequiv = m_sym_compare.prepare(m_sym_compare.copy_apply(g[value], tmp_element[newproto_i]));
           ttrans = m_sym_compare.spatial_transform();
 
 
@@ -229,8 +229,8 @@ namespace CASM {
   }
 
   /// \brief Apply symmetry to Orbit
-  template<typename _Element, typename _SymCompareType>
-  GenericOrbit<_Element, _SymCompareType> &GenericOrbit<_Element, _SymCompareType>::apply_sym(const SymOp &op) {
+  template<typename _SymCompareType>
+  GenericOrbit<_SymCompareType> &GenericOrbit<_SymCompareType>::apply_sym(const SymOp &op) {
 
     // transform elements
     for(auto it = m_element.begin(); it != m_element.end(); ++it) {
@@ -250,8 +250,8 @@ namespace CASM {
     return *this;
   }
 
-  template<typename _Element, typename _SymCompareType>
-  void GenericOrbit<_Element, _SymCompareType>::_construct_canonization_rep() const {
+  template<typename _SymCompareType>
+  void GenericOrbit<_SymCompareType>::_construct_canonization_rep() const {
     if(equivalence_map().size() == 0)
       throw std::runtime_error("In GenericOrbit::_construct_canonization_rep(), equivalence_map is uninitialized or empty! Cannot continue.");
 
@@ -263,7 +263,7 @@ namespace CASM {
     m_canonization_rep_ID = equivalence_map()[0][0].master_group().allocate_representation();
 
     for(Index j = 0; j < equivalence_map()[0].size(); j++) {
-      std::unique_ptr<SymOpRepresentation> new_rep = m_sym_compare.canonical_transform(copy_apply(equivalence_map()[0][j], prototype()))->inverse();
+      std::unique_ptr<SymOpRepresentation> new_rep = m_sym_compare.canonical_transform(m_sym_compare.copy_apply(equivalence_map()[0][j], prototype()))->inverse();
 
       for(Index i = 0; i < equivalence_map().size(); i++) {
         equivalence_map()[i][j].set_rep(m_canonization_rep_ID, *new_rep);
@@ -281,7 +281,7 @@ namespace CASM {
   /// \returns Iterator to Orbit containing e, or end if not found
   ///
   /// - Expects `typename std::iterator_traits<OrbitIterator>::value_type` to
-  ///   be the Orbit<Element, SymCompareType> type
+  ///   be the Orbit<SymCompareType> type
   /// - Expects `e` to be `prepared` via `SymCompareType::prepare`
   /// - Assume range of orbit is sorted according to `SymCompareType::invariants_compare`
   /// - Uses `SymCompareType::compare` (via `Orbit::contains`) to check for
@@ -294,7 +294,7 @@ namespace CASM {
 
     // first find range of possible orbit by checking invariants
     auto compare = [&](const Element & A, const Element & B) {
-      return sym_compare.invariants_compare(A.invariants(), B.invariants());
+      return sym_compare.invariants_compare(A, B);
     };
     auto _range = std::equal_range(prototype_iterator(begin), prototype_iterator(end), e, compare);
 
@@ -318,35 +318,35 @@ namespace CASM {
   /// \param _primclex PrimClex pointer. May be nullptr if only the GenericOrbit
   ///        interface is needed, but this is probably the less likely use case
   ///        so it must be explicitly given.
-  template<typename _Element, typename _SymCompareType>
-  DatabaseTypeOrbit<_Element, _SymCompareType>::DatabaseTypeOrbit(Element generating_element,
-                                                                  const SymGroup &generating_group,
-                                                                  const SymCompareType &sym_compare,
-                                                                  const PrimClex *_primclex) :
-    GenericOrbit<_Element, _SymCompareType>(generating_element, generating_group, sym_compare),
+  template<typename _SymCompareType>
+  DatabaseTypeOrbit<_SymCompareType>::DatabaseTypeOrbit(Element generating_element,
+                                                        const SymGroup &generating_group,
+                                                        const SymCompareType &sym_compare,
+                                                        const PrimClex *_primclex) :
+    GenericOrbit<_SymCompareType>(generating_element, generating_group, sym_compare),
     m_primclex(_primclex) {}
 
-  template<typename _Element, typename _SymCompareType>
-  const PrimClex &DatabaseTypeOrbit<_Element, _SymCompareType>::primclex() const {
+  template<typename _SymCompareType>
+  const PrimClex &DatabaseTypeOrbit<_SymCompareType>::primclex() const {
     if(!m_primclex) {
       throw std::runtime_error("DatabaseTypeOrbit primclex pointer was not set");
     }
     return *m_primclex;
   }
 
-  template<typename _Element, typename _SymCompareType>
-  std::string DatabaseTypeOrbit<_Element, _SymCompareType>::generate_name_impl() const {
-    return OrbitTraits<_Element, _SymCompareType>::generate_name_impl(*this);
+  template<typename _SymCompareType>
+  std::string DatabaseTypeOrbit<_SymCompareType>::generate_name_impl() const {
+    return OrbitTraits<_SymCompareType>::generate_name_impl(*this);
   }
 
-  template<typename _Element, typename _SymCompareType>
-  void DatabaseTypeOrbit<_Element, _SymCompareType>::set_primclex(const PrimClex *_primclex) {
+  template<typename _SymCompareType>
+  void DatabaseTypeOrbit<_SymCompareType>::set_primclex(const PrimClex *_primclex) {
     m_primclex = _primclex;
   }
 
 
-  template<typename _Element, typename _SymCompareType>
-  void write_pos(DatabaseTypeOrbit<_Element, _SymCompareType> const &_el) {
+  template<typename _SymCompareType>
+  void write_pos(DatabaseTypeOrbit<_SymCompareType> const &_el) {
     const auto &dir = _el.primclex().dir();
     try {
       fs::create_directories(dir.configuration_dir(_el.name()));
@@ -360,10 +360,10 @@ namespace CASM {
     file << pos_string(_el);
   }
 
-  template<typename _Element, typename _SymCompareType>
-  std::string pos_string(DatabaseTypeOrbit<_Element, _SymCompareType> const &_el) {
+  template<typename _SymCompareType>
+  std::string pos_string(DatabaseTypeOrbit<_SymCompareType> const &_el) {
     std::stringstream ss;
-    OrbitTraits<_Element, _SymCompareType>::write_pos(_el, ss);
+    OrbitTraits<_SymCompareType>::write_pos(_el, ss);
     return ss.str();
   }
 

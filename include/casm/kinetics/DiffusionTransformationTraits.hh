@@ -27,16 +27,16 @@ namespace CASM {
 
   /// Specialization gives required for DatabaseTypeOrbit
   template<>
-  struct OrbitTraits<Kinetics::DiffusionTransformation, PrimPeriodicDiffTransSymCompare> {
+  struct OrbitTraits<PrimPeriodicDiffTransSymCompare> {
     typedef Kinetics::DiffusionTransformation Element;
     typedef PrimPeriodicDiffTransSymCompare SymCompareType;
-    typedef DatabaseTypeOrbit<Element, SymCompareType> OrbitType;
+    typedef DatabaseTypeOrbit<SymCompareType> OrbitType;
 
     static void write_pos(const OrbitType &orbit, std::ostream &sout);
     static std::string generate_name_impl(const OrbitType &orbit);
   };
 
-  typedef OrbitTraits<Kinetics::DiffusionTransformation, PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbitTraits;
+  typedef OrbitTraits<PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbitTraits;
 
   namespace Kinetics {
     typedef PrimPeriodicOrbit<Kinetics::DiffusionTransformation> PrimPeriodicDiffTransOrbit;

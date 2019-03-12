@@ -34,7 +34,7 @@ namespace CASM {
 
     /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
     std::vector<BasisSet> StrainDoFTraits::construct_site_bases(Structure const &_prim,
-                                                                std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
+                                                                std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                                 jsonParser const &_bspecs) const {
 
 

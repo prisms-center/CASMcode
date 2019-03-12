@@ -101,57 +101,10 @@ namespace CASM {
   }
 
 
-  /*
-  void print_eci_in(ClexBasis const &_clex_basis,
-                    std::ostream &out,
-                    std::vector<Orbit<IntegralCluster> > const &_tree) const {
-    if(_tree.index.size() != _tree.size())
-      get_index();
-    if(_tree.subcluster.size() != _tree.size())
-      _tree.get_hierarchy();
-
-    out << std::left
-        << std::setw(8) << "label"
-        << std::setw(8) << "weight"
-        << std::setw(8) << "mult"
-        << std::setw(8) << "size"
-        << std::setw(12) << "length"
-        << std::setw(8) << "hierarchy" << std::endl;
-
-
-    int functioncount = 0;
-    for(Index i = 0; i < _tree.size(); i++) {
-      for(Index j = 0; j < _tree.size(i); j++) {
-
-        for(Index k = 0; k < m_bset_tree[_tree.orbit(i, j).index()].size(); k++, functioncount++) {
-
-          out << std::left
-              << std::setw(8) << functioncount
-              << std::setw(8) << 0
-              << std::setw(8) << _tree.orbit(i, j).size()
-              << std::setw(8) << _tree.prototype(i, j).size()
-              << std::setw(12) << _tree.prototype(i, j).max_length();
-
-          // print hierarchy
-          out << std::left << std::setw(8) << 0;
-          for(Index l = 0; l < _tree.subcluster[ _tree.index[i][j]].size(); l++) {
-            out << std::left
-                << std::setw(8) << _tree.subcluster[ _tree.index[i][j] ][l];
-          }
-          out << '\n' << std::flush;
-        }
-
-      }
-    }
-
-    //std::cout << "finish print_eci_in" << std::endl;
-
-  }
-  */
   //********************************************************************
 
   void ClexBasis::_populate_site_bases() {
-    std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
+    std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
     std::ostream nullstream(0);
     make_prim_periodic_asymmetric_unit(prim(),
                                        CASM_TMP::ConstantFunctor<bool>(true),

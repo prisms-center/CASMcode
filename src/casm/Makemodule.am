@@ -72,10 +72,10 @@ libcasm_la_SOURCES = \
   src/casm/clex/ConfigEnumAllOccupations.cc\
   src/casm/clex/ConfigEnumEquivalents.cc\
   src/casm/clex/ConfigEnumInterpolation.cc\
-  src/casm/clex/ConfigEnumNormalCoords.cc\
   src/casm/clex/ConfigEnumOccPerturbations.cc\
   src/casm/clex/ConfigEnumRandomLocal.cc\
   src/casm/clex/ConfigEnumRandomOccupations.cc\
+  src/casm/clex/ConfigEnumSiteDoFs.cc\
   src/casm/clex/ConfigEnumStrain.cc\
   src/casm/clex/ConfigIO.cc\
   src/casm/clex/ConfigIOHull.cc\
@@ -115,11 +115,11 @@ libcasm_la_SOURCES = \
   src/casm/crystallography/LatticeIsEquivalent.cc\
   src/casm/crystallography/LatticeMap.cc\
   src/casm/crystallography/Molecule.cc\
-  src/casm/crystallography/MoleculeAttribute.cc\
   src/casm/crystallography/Niggli.cc\
   src/casm/crystallography/PrimGrid.cc\
   src/casm/crystallography/SimpleStructure.cc\
   src/casm/crystallography/Site.cc\
+  src/casm/crystallography/SpeciesAttribute.cc\
   src/casm/crystallography/Structure.cc\
   src/casm/crystallography/SupercellEnumerator.cc\
   src/casm/crystallography/UnitCellCoord.cc\

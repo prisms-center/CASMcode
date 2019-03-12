@@ -19,33 +19,6 @@ namespace CASM {
   class UnitCell;
   class Coordinate;
 
-  /// \brief Traits class for AperiodicSymCompare
-  template<typename _Element>
-  struct traits<AperiodicSymCompare<_Element>> {
-    typedef _Element Element;
-    typedef AperiodicSymCompare<Element> MostDerived;
-  };
-
-  /// \brief Traits class for PrimPeriodicSymCompare
-  template<typename _Element>
-  struct traits<PrimPeriodicSymCompare<_Element>> {
-    typedef _Element Element;
-    typedef PrimPeriodicSymCompare<Element> MostDerived;
-  };
-
-  /// \brief Traits class for ScelPeriodicSymCompare
-  template<typename _Element>
-  struct traits<ScelPeriodicSymCompare<_Element>> {
-    typedef _Element Element;
-    typedef ScelPeriodicSymCompare<Element> MostDerived;
-  };
-
-  /// \brief Traits class for WithinScelPeriodicSymCompare
-  template<typename _Element>
-  struct traits<WithinScelSymCompare<_Element>> {
-    typedef _Element Element;
-    typedef WithinScelSymCompare<Element> MostDerived;
-  };
 
   /// \brief CRTP base class for implementing element and orbit comparison
   ///
@@ -66,6 +39,11 @@ namespace CASM {
   /// - bool Derived::inter_orbit_compare_impl(const Element &A, const Element &B) const
   ///   - breaks 'invariants_compare' ties
   ///   - default uses this->compare(A, B)
+  /// - void Derived::copy_apply_sym(SymOp const &op, Element obj) const
+  ///   - defines application of SymOp to object of type Element
+  ///   - default uses standalone copy_apply() function
+  ///   - allows flexibility for working outside the typical MasterSymGroup/SymGroupRep framework
+  ///     or when symmetry application is ambiguous (like applying symmetry to a Eigen::VectorXd)
   /// - void Derived::apply_sym_impl(const SymOp &op) const
   ///   - not sure if this is needed... use to apply_sym to the SymCompare object itself
   ///   - default does nothing
@@ -83,10 +61,14 @@ namespace CASM {
 
   public:
 
-    typedef typename Base::MostDerived MostDerived;
+    using MostDerived = typename Base::MostDerived;
     using Base::derived;
-    typedef typename traits<MostDerived>::Element Element;
-    typedef typename traits<Element>::InvariantsType InvariantsType;
+    using Element = typename traits<MostDerived>::Element;
+
+    /// \brief Applies SymOp to Element. Default performs standalone copy_apply
+    Element copy_apply(SymOp const &op, Element obj) const {
+      return derived().copy_apply_impl(op, obj);
+    }
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
@@ -137,14 +119,14 @@ namespace CASM {
     /// - Returns 'true' to indicate A < B
     /// - Equivalence is indicated by \code !invariants_compare(A,B) && !invariants_compare(B,A) \endcode
     /// - Assumes elements are 'prepared' before being compared
-    bool invariants_compare(const InvariantsType &A, const InvariantsType &B) const {
+    bool invariants_compare(const Element &A, const Element &B) const {
       return derived().invariants_compare_impl(A, B);
     }
 
     /// \brief Check equivalence of invariants
     ///
     /// \returns \code !invariants_compare(A,B) && !invariants_compare(B,A) \endcode
-    bool invariants_equal(const InvariantsType &A, const InvariantsType &B) const {
+    bool invariants_equal(const Element &A, const Element &B) const {
       return !invariants_compare(A, B) && !invariants_compare(B, A);
     }
 
@@ -198,15 +180,25 @@ namespace CASM {
     bool inter_orbit_compare_impl(const Element &A, const Element &B) const {
 
       // first compare invariants
-      if(this->invariants_compare(A.invariants(), B.invariants())) {
+      if(this->invariants_compare(A, B)) {
         return true;
       }
-      if(this->invariants_compare(B.invariants(), A.invariants())) {
+      if(this->invariants_compare(B, A)) {
         return false;
       }
 
       // next compare A and B
       return this->compare(A, B);
+    }
+
+    /// \brief Default spatial_prepare does nothing
+    Element spatial_prepare_impl(Element obj) const {
+      return obj;
+    }
+
+    /// \brief Applies SymOp to Element. Default performs standalone copy_apply
+    Element copy_apply_impl(SymOp const &op, Element obj) const {
+      return CASM::copy_apply(op, obj);
     }
 
     /// \brief Transforms the SymCompare object, default does nothing

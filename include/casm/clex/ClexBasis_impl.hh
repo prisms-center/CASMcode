@@ -5,6 +5,7 @@
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/symmetry/SymRepTools.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clex/NeighborList.hh"

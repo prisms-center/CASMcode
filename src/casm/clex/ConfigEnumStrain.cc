@@ -103,7 +103,6 @@ namespace CASM {
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt,
     EnumeratorMap const *interface_map) {
-    std::cout << "Strain enum top RUN\n";
     bool trim_corners = _kwargs.get_if_else<bool>("trim_corners", true);
     bool sym_axes = _kwargs.get_if_else<bool>("sym_axes", false);
     //bool analysis = _kwargs.get_if_else<bool>("analysis", false);
@@ -131,13 +130,9 @@ namespace CASM {
       throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigStrain:") + e.what());
     }
 
-    std::cout << "**A**\n";
     std::vector<ConfigEnumInput> in_configs = make_enumerator_input_configs(primclex, _kwargs, enum_opt, interface_map);
-    std::cout << "**B**\n";
 
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
-
-    std::cout << "***Strain enumeration: in_configs size is " << in_configs.size() << "\n";
 
     for(ConfigEnumInput const &config : in_configs) {
       Index result = run(primclex,
@@ -171,7 +166,6 @@ namespace CASM {
                             //bool analysis,
                             std::vector<std::string> const &_filter_expr,
                             bool dry_run) {
-    std::cout << "Strain enum inner RUN\n";
     std::vector<SymRepTools::SubWedge> wedges;
     std::vector<int> dims;
     SymGroup pg = make_point_group(_config.group());

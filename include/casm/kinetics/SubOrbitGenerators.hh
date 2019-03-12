@@ -11,7 +11,7 @@ namespace CASM {
 
     template<typename Element, typename SymCompareType, typename ElementOutputIterator>
     ElementOutputIterator sub_orbit_generators_prim_config(
-      const Orbit<Element, SymCompareType> &orbit,
+      const Orbit<SymCompareType> &orbit,
       const Configuration &prim_config,
       ElementOutputIterator result) {
       // Find unique orbit elements in prim_config
@@ -38,7 +38,7 @@ namespace CASM {
 
     template<typename Element, typename SymCompareType, typename ElementOutputIterator>
     ElementOutputIterator sub_orbit_generators(
-      const Orbit<Element, SymCompareType> &orbit,
+      const Orbit<SymCompareType> &orbit,
       const Configuration &config,
       ElementOutputIterator result) {
       // Find unique orbit elements in prim_config
