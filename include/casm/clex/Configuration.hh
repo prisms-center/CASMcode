@@ -4,7 +4,6 @@
 #include <map>
 
 #include "casm/misc/Comparisons.hh"
-#include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/HasCanonicalForm.hh"

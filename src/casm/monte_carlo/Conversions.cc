@@ -26,8 +26,8 @@ namespace CASM {
     Conversions::Conversions(const Configuration &unit_config, const Supercell &mc_scel) :
       m_unit_scel(&unit_config.supercell()),
       m_mc_scel(&mc_scel),
-      m_struc_mol(m_mc_scel->prim().struc_molecule()),
-      m_struc_molname(m_mc_scel->prim().struc_molecule_name()) {
+      m_struc_mol(struc_molecule(m_mc_scel->prim())),
+      m_struc_molname(struc_molecule_name(m_mc_scel->prim())) {
 
       // make m_unitl_to_asym, m_Nasym
       Index asym = 0;

@@ -18,6 +18,8 @@ namespace CASM {
   // --- These functions are for casm I/O -----------
 
   template<typename CoordType> class BasicStructure;
+  class AtomPosition;
+  class Molecule;
   class Site;
   class jsonParser;
   class ClexBasis;
@@ -39,6 +41,51 @@ namespace CASM {
 
 
   // --------- PrimIO Declarations --------------------------------------------------
+
+  /// \brief Print AtomPosition to json after applying affine transformation cart2frac*cart()+trans
+  jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &cart2frac);
+
+  /// \brief Read AtomPosition from json and then apply affine transformation cart2frac*cart()
+  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &frac2cart);
+
+  template<>
+  struct jsonConstructor<AtomPosition> {
+
+    /// \brief Read from json [b, i, j, k], using 'unit' for AtomPosition::unit()
+    static AtomPosition from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+  };
+
+  jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat);
+
+  void from_json(Molecule &mol, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat);
+
+  template<>
+  struct jsonConstructor<Molecule> {
+    static Molecule from_json(const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat);
+  };
+
+  template<>
+  struct jsonConstructor<Site> {
+
+    static Site from_json(const jsonParser &json,
+                          Lattice const &_home,
+                          COORD_TYPE coordtype,
+                          std::map<std::string, Molecule> const &mol_map,
+                          HamiltonianModules const &_modules);
+  };
+
+  jsonParser &to_json(const Site &value,
+                      jsonParser &json,
+                      COORD_TYPE coordtype);
+
+  void from_json(Site &value,
+                 const jsonParser &json,
+                 Lattice const &_home,
+                 COORD_TYPE coordtype,
+                 std::map<std::string, Molecule> const &mol_map,
+                 HamiltonianModules const &_modules);
+
+
 
   BasicStructure<Site> read_prim(fs::path filename, HamiltonianModules const &_modules, double xtal_tol);
 

@@ -3,7 +3,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymOp.hh"
-#include "casm/container/LinearAlgebra.hh"
 
 namespace CASM {
 

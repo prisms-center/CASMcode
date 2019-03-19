@@ -12,6 +12,7 @@ namespace CASM {
   namespace DoF_impl {
     /// \brief Generate a symmetry representation for the supporting vector space
     Eigen::MatrixXd MagSpinDoFTraits::symop_to_matrix(SymOp const &op) const {
+      //std::cout << "Getting magspin symrep, time_reversal() is " << op.time_reversal() << "\n";
       return ((op.time_reversal() ? -1 : 1) * op.matrix().determinant()) * op.matrix();
     }
 

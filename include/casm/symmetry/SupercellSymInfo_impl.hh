@@ -1,3 +1,4 @@
+#include "casm/misc/CASM_math.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymRepTools.hh"

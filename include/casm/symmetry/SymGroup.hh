@@ -186,8 +186,9 @@ namespace CASM {
     std::vector<SymGroup> unique_subgroups() const;
 
     ///Space group (added by Donghee );
-    void get_rotation_groups()const;
-    void get_point_group_type()const;
+    std::vector<Index> get_rotation_groups()const;
+
+    std::map<std::string, std::string> point_group_info()const;
     void print_space_group_info(std::ostream &out) const;
 
     ///Fill up a SymGroup with *this minus the shifts
@@ -199,7 +200,9 @@ namespace CASM {
 
     SymInfo info(Index i) const;
 
-    std::vector<std::set<std::set<Index> > > small_subgroups() const { return _small_subgroups(); };
+    std::vector<std::set<std::set<Index> > > small_subgroups() const {
+      return _small_subgroups();
+    };
 
   protected:
     void _generate_conjugacy_classes() const;
@@ -256,14 +259,6 @@ namespace CASM {
     mutable std::string comment;
 
     mutable double m_max_error;
-
-    ///Space group (added by Donghee );
-    mutable std::vector<std::vector<SymOp> > rotation_groups;
-    mutable std::string crystal_system;
-    mutable bool centric; // if it is centric, special point is same in reciprocal space
-    mutable std::vector<int> group_number; // space group number (min and max)
-    mutable std::vector<std::string> group_name; // 0: International 1: Schonflies
-
 
   };
 

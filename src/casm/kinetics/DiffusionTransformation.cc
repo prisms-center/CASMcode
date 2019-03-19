@@ -1,4 +1,5 @@
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
@@ -22,9 +23,9 @@ namespace CASM {
   namespace Kinetics {
 
     namespace debug {
-      std::ostream &operator<<(std::ostream &sout, const std::map<AtomSpecies, Index> &count) {
+      std::ostream &operator<<(std::ostream &sout, const std::map<std::string, Index> &count) {
         for(const auto &t : count) {
-          sout << "  " << t.first.name() << ": " << t.second << std::endl;
+          sout << "  " << t.first << ": " << t.second << std::endl;
         }
         return sout;
       }
@@ -45,8 +46,8 @@ namespace CASM {
       return uccoord.sublat_site().site_occupant()[occ];
     }
 
-    const AtomSpecies &SpeciesLocation::species() const {
-      return mol().atom(pos).species();
+    const std::string &SpeciesLocation::species() const {
+      return mol().atom(pos).name();
     }
 
     std::tuple<UnitCellCoord, Index, Index> SpeciesLocation::_tuple() const {
@@ -123,7 +124,7 @@ namespace CASM {
       return to.uccoord;
     }
     /// \brief Gives the name of the specie moving
-    AtomSpecies SpeciesTrajectory::species() const {
+    std::string SpeciesTrajectory::species() const {
       if(species_types_map()) {
         return from.species();
       }
@@ -205,7 +206,7 @@ namespace CASM {
     sout << obj.cluster_invariants;
     if(obj.species_count.size() > 0) {
       for(const auto &t : obj.species_count) {
-        sout << " " << t.first.name() << ":" << t.second;
+        sout << " " << t.first << ":" << t.second;
       }
     }
     return sout;
@@ -316,7 +317,7 @@ namespace CASM {
     /// \brief Check if species_traj() and occ_transform() are consistent
     ///
     /// - Checks if species_traj occ indices match occ_transform indices
-    ///   and that there as many traj as AtomSpecies in a Molecule
+    ///   and that there as many traj as std::string in a Molecule
     ///
     bool DiffusionTransformation::is_self_consistent() const {
       for(const auto &trans : occ_transform()) {
@@ -378,9 +379,9 @@ namespace CASM {
     ///
     /// - Uses occ_transform() 'from' specie
     /// - Is equal to 'to' specie count if is_valid_occ_transform() == true
-    const std::map<AtomSpecies, Index> &DiffusionTransformation::species_count() const {
+    const std::map<std::string, Index> &DiffusionTransformation::species_count() const {
       if(!m_species_count) {
-        m_species_count = notstd::make_cloneable<std::map<AtomSpecies, Index> >(_from_species_count());
+        m_species_count = notstd::make_cloneable<std::map<std::string, Index> >(_from_species_count());
       }
       return *m_species_count;
     }
@@ -535,11 +536,11 @@ namespace CASM {
       m_species_count.reset();
     }
 
-    std::map<AtomSpecies, Index> DiffusionTransformation::_from_species_count() const {
+    std::map<std::string, Index> DiffusionTransformation::_from_species_count() const {
       return from_species_count(m_occ_transform.begin(), m_occ_transform.end());
     }
 
-    std::map<AtomSpecies, Index> DiffusionTransformation::_to_species_count() const {
+    std::map<std::string, Index> DiffusionTransformation::_to_species_count() const {
       return to_species_count(m_occ_transform.begin(), m_occ_transform.end());
     }
 
@@ -694,7 +695,7 @@ namespace CASM {
     bool path_collision(const DiffusionTransformation &diff_trans) {
       std::vector<SpeciesTrajectory> paths_to_check;
       for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); ++it) {
-        if(!is_vacancy(it->from.species().name())) {
+        if(!is_vacancy(it->from.species())) {
           paths_to_check.push_back(*it);
         }
       }
@@ -816,7 +817,7 @@ namespace CASM {
         out.ostream().precision(prec);
         out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
         for(const auto &traj : trans.species_traj()) {
-          if(traj.from.species().name().length() > name_width) name_width = traj.from.species().name().length();
+          if(traj.from.species().length() > name_width) name_width = traj.from.species().length();
           Eigen::Vector3d vec_from, vec_to;
           if(this->opt.coord_type == CART) {
             vec_from = traj.from.uccoord.coordinate().cart();
@@ -834,7 +835,7 @@ namespace CASM {
         Eigen::IOFormat format(prec, width + 1);
         for(const auto &traj : trans.species_traj()) {
           out << out.indent_str();
-          out << std::setw(name_width) << traj.from.species().name() << ": ";
+          out << std::setw(name_width) << traj.from.species() << ": ";
           {
             const auto &obj = traj.from;
             obj.uccoord.coordinate().print(out, 0, format);
@@ -859,7 +860,7 @@ namespace CASM {
         out.ostream().precision(prec);
         out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
         for(const auto &traj : trans.species_traj()) {
-          if(traj.from.species().name().length() > name_width) name_width = traj.from.species().name().length();
+          if(traj.from.species().length() > name_width) name_width = traj.from.species().length();
           width = print_matrix_width(out, traj.from.uccoord.unitcell(), width);
           width = print_matrix_width(out, traj.to.uccoord.unitcell(), width);
         }
@@ -868,7 +869,7 @@ namespace CASM {
         Eigen::IOFormat format(prec, width);
         for(const auto &traj : trans.species_traj()) {
           out << out.indent_str();
-          out << std::setw(name_width) << traj.from.species().name() << ": ";
+          out << std::setw(name_width) << traj.from.species() << ": ";
           {
             const auto &obj = traj.from;
             out << obj.uccoord.sublat() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
@@ -892,9 +893,9 @@ namespace CASM {
       out << out.indent_str() << "species trajectory:" << this->opt.delim;
       for(const auto &traj : trans.species_traj()) {
         out << out.indent_str();
-        out << traj.from << " (" << traj.from.species().name() << ")";
+        out << traj.from << " (" << traj.from.species() << ")";
         out << "  ->  ";
-        out << traj.to << " (" << traj.to.species().name() << ")";
+        out << traj.to << " (" << traj.to.species() << ")";
 
         if(this->opt.delim)
           out << this->opt.delim;

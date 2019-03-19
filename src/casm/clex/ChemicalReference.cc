@@ -26,7 +26,7 @@ namespace CASM {
     std::function<Eigen::VectorXd(Configuration)> n,
     std::function<double(Configuration)> e) {
 
-    auto names = config.prim().struc_molecule_name();
+    auto names = struc_molecule_name(config.prim());
     auto vec = n(config);
 
     if(vec.size() != names.size()) {
@@ -318,7 +318,7 @@ namespace CASM {
     Eigen::MatrixXd C = composition_space(prim, tol);
 
     // get Molecule allowed in prim, and how many there are
-    std::vector<Molecule> struc_mol = prim.struc_molecule();
+    std::vector<Molecule> struc_mol = struc_molecule(prim);
     for(int i = 0; i < struc_mol.size(); i++) {
       if(!is_molecule_name(struc_mol[i], struc_mol_name[i])) {
         std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
@@ -476,7 +476,7 @@ namespace CASM {
     indent(_indent),
     indent_incr(_indent_incr),
     ref(_ref),
-    struc_mol_name(ref.prim().struc_molecule_name()) {}
+    struc_mol_name(struc_molecule_name(ref.prim())) {}
 
   void ChemicalReferencePrinter::incr() {
     indent += indent_incr;

@@ -181,7 +181,7 @@ namespace CASM {
 
       ss << "       For this project, the expected order is:\n"
          << "        '[";
-      auto names = prim.struc_molecule_name();
+      auto names = struc_molecule_name(prim);
       for(int i = 0; i < names.size(); i++) {
         ss << names[i];
         if(i != names.size() - 1) {

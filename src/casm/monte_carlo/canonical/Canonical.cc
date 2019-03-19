@@ -1,5 +1,6 @@
 
 #include "casm/monte_carlo/canonical/Canonical.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/monte_carlo/MonteCarlo_impl.hh"
 #include "casm/monte_carlo/MonteIO_impl.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"

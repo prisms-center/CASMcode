@@ -57,6 +57,10 @@ namespace CASM {
         m_unit_length(_unit_length) {
       }
 
+      static std::string class_desc() {
+        return "DoFTraits";
+      }
+
       /// \brief Allow destruction through base pointer
       virtual ~BasicTraits() {}
 

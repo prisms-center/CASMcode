@@ -18,7 +18,6 @@ namespace CASM {
   class SiteCluster;
   class MasterSymGroup;
   class Molecule;
-  class AtomSpecies;
   //  class DoFSet;
 
   /** \defgroup Structure
@@ -212,7 +211,6 @@ namespace CASM {
     /// Counts sites that allow vacancies
     Index max_possible_vacancies()const;
 
-    /// Print intpolated images in seperate directries
     //CASM canonical input/output
     virtual void read(std::istream &stream);  //John do this
 
@@ -220,10 +218,10 @@ namespace CASM {
     void print_xyz(std::ostream &stream, bool frac = false) const;
     //void print_cif(std::ostream &stream) const;
 
-    jsonParser &to_json(jsonParser &json) const;
+    //jsonParser &to_json(jsonParser &json) const;
 
     // Assumes constructor CoordType::CoordType(Lattice) exists
-    void from_json(const jsonParser &json);
+    //void from_json(const jsonParser &json);
   };
 
   template<typename CoordType>
@@ -245,25 +243,20 @@ namespace CASM {
   template<typename CoordType>
   std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol);
 
-  template<typename CoordType>
-  jsonParser &to_json(const BasicStructure<CoordType> &basic, jsonParser &json);
+  //template<typename CoordType>
+  //jsonParser &to_json(const BasicStructure<CoordType> &basic, jsonParser &json);
 
 
   //************************************************************
-
-  /// Returns an Array of each *possible* Specie in this Structure
-  template<typename CoordType>
-  std::vector<AtomSpecies> struc_species(BasicStructure<CoordType> const &_struc);
-
-  //************************************************************
-
   /// Returns an Array of each *possible* Molecule in this Structure
   template<typename CoordType>
   std::vector<Molecule> struc_molecule(BasicStructure<CoordType> const &_struc);
+
   //************************************************************
   /// Returns an Array of each *possible* AtomSpecie in this Structure
   template<typename CoordType>
-  std::vector<std::string> struc_species_name(BasicStructure<CoordType> const &_struc);
+  std::vector<std::string> struc_species(BasicStructure<CoordType> const &_struc);
+
   //************************************************************
   /// Returns an Array of each *possible* Molecule in this Structure
   template<typename CoordType>
@@ -284,8 +277,8 @@ namespace CASM {
   Eigen::VectorXi num_each_molecule(BasicStructure<CoordType> const &_struc);
 
   // Assumes constructor CoordType::CoordType(Lattice) exists
-  template<typename CoordType>
-  void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
+  //template<typename CoordType>
+  //void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
 
   template<typename CoordType>
   std::vector<DoFKey> all_local_dof_types(BasicStructure<CoordType> const &_struc);

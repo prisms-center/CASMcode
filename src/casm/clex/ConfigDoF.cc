@@ -4,6 +4,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/symmetry/PermuteIterator.hh"
+#include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/Structure.hh"
 
 

@@ -114,9 +114,7 @@ namespace CASM {
     */
     //*************************************************************
     //GENERATE Routines
-    void generate_components();
     void generate_prim_end_members();
-    //void generate_composition_axes();
     void generate_composition_transf();
     void generate_sublattice_map();
     void generate_composition_space(bool verbose = false);

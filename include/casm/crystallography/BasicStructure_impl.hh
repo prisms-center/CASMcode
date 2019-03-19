@@ -6,6 +6,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include "casm/crystallography/BasicStructure.hh"
+
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
@@ -17,7 +19,6 @@
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/crystallography/Niggli.hh"
-#include "casm/casm_io/json_io/container.hh"
 
 #ifndef CASM_BasicStructure_impl
 #define CASM_BasicStructure_impl
@@ -137,6 +138,8 @@ namespace CASM {
 
     SymGroup const &point_group = super_group;
     Index time_max = Index(_time_reversal_active() && time_reversal_enabled);
+    //std::cout << "time_max is " << time_max << "\n";
+    //std::cout << "time_reversal_enabled is " << time_reversal_enabled << "\n";
     SymOp test_op;
     if(factor_group.size() != 0) {
       std::cerr << "WARNING in BasicStructure<CoordType>::generate_factor_group_slow" << std::endl;
@@ -424,14 +427,15 @@ namespace CASM {
 
   template<typename CoordType>
   bool BasicStructure<CoordType>::is_primitive(BasicStructure<CoordType> &new_prim) const {
-    SymGroup valid_translations, identity_group;
-    identity_group.push_back(SymOp());
     Eigen::Vector3d prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);
     std::vector<Eigen::Vector3d > shift;
     double tvol, min_vol;
     bool prim_flag = true;
     double prim_vol_tol = std::abs(0.5 * lattice().vol() / double(basis().size())); //sets a hard lower bound for the minimum value of the volume of the primitive cell
 
+    SymGroup valid_translations, identity_group;
+    identity_group.push_back(SymOp());
+    _generate_factor_group_slow(valid_translations, identity_group, false);
     if(valid_translations.size() > 1) {
       prim_flag = false;
       for(auto &trans : valid_translations) {
@@ -476,24 +480,15 @@ namespace CASM {
     //superstructures. We eliminate the noise by reconstructing it now via
     //rounded to integer transformation matrix.
 
-    Eigen::Matrix3d transmat, invtransmat, reduced_new_lat_mat;
-    SymGroup pgroup;
-    reduced_new_lat.generate_point_group(pgroup);
+    Eigen::Matrix3d transmat, invtransmat;
+    //lattice().lat_column_mat() = reduced_new_lat.lat_column_mat()*transmat
+    transmat = reduced_new_lat.lat_column_mat().inverse() * lattice().lat_column_mat();
 
-    //Do not check to see if it returned true, it very well may not!
-    lattice().is_supercell_of(reduced_new_lat, pgroup, transmat);
-    //Round transformation elements to integers
-    for(int i = 0; i < 3; i++) {
-      for(int j = 0; j < 3; j++) {
-        transmat(i, j) = floor(transmat(i, j) + 0.5);
-      }
-    }
-    invtransmat = transmat.inverse();
-    reduced_new_lat_mat = lattice().lat_column_mat();
-    //When constructing this, why are we using *this as the primitive cell? Seems like I should only specify the vectors
-    Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat * invtransmat, lattice().tol());
-    reconstructed_reduced_new_lat.make_right_handed();
-    //Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat*invtransmat,lattice);
+    invtransmat = iround(transmat).cast<double>().inverse();
+
+    //By using invtransmat, the new prim is guaranteed to perfectly tile the old prim
+    Lattice reconstructed_reduced_new_lat(lattice().lat_column_mat() * invtransmat, lattice().tol());
+
 
     new_prim.set_lattice(reconstructed_reduced_new_lat, CART);
     CoordType tsite(new_prim.lattice());
@@ -1000,85 +995,6 @@ namespace CASM {
     return false;
   }
 
-  //****************************************************
-
-  template<typename CoordType>
-  jsonParser &BasicStructure<CoordType>::to_json(jsonParser &json) const {
-    json.put_obj();
-
-    // std::string title;
-    json["title"] = title();
-
-    // Lattice lattice;
-    json["lattice"] = lattice();
-
-    json["coordinate_mode"] = FRAC;
-
-    // std::vector<CoordType> basis;
-    CASM::to_json(basis(), json["basis"], FRAC);
-
-    // std::map<std::string, DoFSet> dof_map;
-    json["dof"] = m_dof_map;
-
-    return json;
-  }
-
-  //****************************************************
-
-  // Assumes constructor CoordType::CoordType(Lattice) exists
-  template<typename CoordType>
-  void BasicStructure<CoordType>::from_json(const jsonParser &json) {
-
-    // std::string title;
-    set_title(json["title"].get<std::string>());
-
-    // Lattice lattice;
-    CASM::from_json(m_lattice, json["lattice"], lattice().tol());
-
-    // Global DoFs
-    if(json.contains("dof")) {
-      auto it = json["dof"].begin(), end_it = json["dof"].end();
-      for(; it != end_it; ++it) {
-        if(m_dof_map.count(it.name()))
-          throw std::runtime_error("Error parsing global field \"dof\" from JSON. DoF type " + it.name() + " cannot be repeated.");
-
-        try {
-          m_dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(DoF::traits(it.name()))));
-        }
-        catch(std::exception &e) {
-          throw std::runtime_error("Error parsing global field \"dof\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
-        }
-
-      }
-    }
-
-    // read basis coordinate mode
-    COORD_TYPE mode;
-    CASM::from_json(mode, json["coordinate_mode"]);
-
-    // std::vector<CoordType> basis;
-    m_basis.clear();
-    for(int i = 0; i < json["basis"].size(); i++) {
-      push_back(json["basis"][i].get<CoordType>(lattice(), mode));
-    }
-
-  }
-
-  //****************************************************
-
-  template<typename CoordType>
-  jsonParser &to_json(const BasicStructure<CoordType> &basic, jsonParser &json) {
-    return basic.to_json(json);
-  }
-
-  //****************************************************
-
-  // Assumes constructor CoordType::CoordType(Lattice) exists
-  template<typename CoordType>
-  void from_json(BasicStructure<CoordType> &basic, const jsonParser &json) {
-    basic.from_json(json);
-  }
-
   //***********************************************************
 
   template<typename CoordType>
@@ -1102,24 +1018,21 @@ namespace CASM {
 
   /// Returns an std::vector of each *possible* Specie in this Structure
   template<typename CoordType>
-  std::vector<AtomSpecies> struc_species(BasicStructure<CoordType> const &_struc) {
+  std::vector<std::string> struc_species(BasicStructure<CoordType> const &_struc) {
 
     std::vector<Molecule> tstruc_molecule = struc_molecule(_struc);
-    std::vector<AtomSpecies> tstruc_species;
+    std::set<std::string> result;
 
     Index i, j;
 
     //For each molecule type
     for(i = 0; i < tstruc_molecule.size(); i++) {
       // For each atomposition in the molecule
-      for(j = 0; j < tstruc_molecule[i].size(); j++) {
-        if(!contains(tstruc_species, tstruc_molecule[i].atom(j).species())) {
-          tstruc_species.push_back(tstruc_molecule[i].atom(j).species());
-        }
-      }
+      for(j = 0; j < tstruc_molecule[i].size(); j++)
+        result.insert(tstruc_molecule[i].atom(j).name());
     }
 
-    return tstruc_species;
+    return std::vector<std::string>(result.begin(), result.end());
   }
 
   //************************************************************
@@ -1146,23 +1059,6 @@ namespace CASM {
   }
 
   //************************************************************
-  /// Returns an std::vector of each *possible* AtomSpecie in this Structure
-  template<typename CoordType>
-  std::vector<std::string> struc_species_name(BasicStructure<CoordType> const &_struc) {
-
-    // get AtomSpecie allowed in struc
-    std::vector<AtomSpecies> struc_spec = struc_species(_struc);
-
-    // store AtomSpecie names in vector
-    std::vector<std::string> struc_spec_name;
-    for(int i = 0; i < struc_spec.size(); i++) {
-      struc_spec_name.push_back(struc_spec[i].name());
-    }
-
-    return struc_spec_name;
-  }
-
-  //************************************************************
   /// Returns an std::vector of each *possible* Molecule in this Structure
   template<typename CoordType>
   std::vector<std::string> struc_molecule_name(BasicStructure<CoordType> const &_struc) {
@@ -1186,8 +1082,8 @@ namespace CASM {
   template<typename CoordType>
   Eigen::VectorXi num_each_species(BasicStructure<CoordType> const &_struc) {
 
-    std::vector<AtomSpecies> tstruc_species = struc_species(_struc);
-    Eigen::VectorXi tnum_each_species = Eigen::VectorXi::Zero(tstruc_species.size());
+    std::vector<std::string> tspecies = struc_species(_struc);
+    Eigen::VectorXi tnum_each_species = Eigen::VectorXi::Zero(tspecies.size());
 
     Index i, j;
     // For each site
@@ -1195,7 +1091,7 @@ namespace CASM {
       // For each atomposition in the molecule on the site
       for(j = 0; j < _struc.basis()[i].occ().size(); j++) {
         // Count the present species
-        tnum_each_species(find_index(tstruc_species, _struc.basis()[i].occ().atom(j).species()))++;
+        tnum_each_species(find_index(tspecies, _struc.basis()[i].occ().atom(j).name()))++;
       }
     }
 

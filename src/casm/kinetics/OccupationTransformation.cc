@@ -88,58 +88,58 @@ namespace CASM {
     }
   }
 
-  std::map<AtomSpecies, Index> empty_species_count(const UnitCellCoord::UnitType &prim) {
+  std::map<std::string, Index> empty_species_count(const UnitCellCoord::UnitType &prim) {
     auto species = struc_species(prim);
-    std::map<AtomSpecies, Index> _species_count;
-    for(const AtomSpecies &s : species) {
+    std::map<std::string, Index> _species_count;
+    for(const std::string &s : species) {
       _species_count[s] = 0;
     }
     return _species_count;
   }
 
   template<typename OccTransfIt>
-  std::map<AtomSpecies, Index> from_species_count(OccTransfIt begin, OccTransfIt end) {
+  std::map<std::string, Index> from_species_count(OccTransfIt begin, OccTransfIt end) {
     if(begin == end) {
-      return std::map<AtomSpecies, Index>();
+      return std::map<std::string, Index>();
     }
-    std::map<AtomSpecies, Index> _species_count = empty_species_count(begin->prim());
+    std::map<std::string, Index> _species_count = empty_species_count(begin->prim());
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
       const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.from_value];
       for(const AtomPosition &species_pos : mol.atoms()) {
-        _species_count[species_pos.species()]++;
+        _species_count[species_pos.name()]++;
       }
     }
     return _species_count;
   }
   typedef std::vector<OccupationTransformation>::iterator OccTransfVecIt;
   typedef std::vector<OccupationTransformation>::const_iterator OccTransfVecConstIt;
-  template std::map<AtomSpecies, Index> from_species_count<OccTransfVecIt>(
+  template std::map<std::string, Index> from_species_count<OccTransfVecIt>(
     OccTransfVecIt begin,
     OccTransfVecIt end);
-  template std::map<AtomSpecies, Index> from_species_count<OccTransfVecConstIt>(
+  template std::map<std::string, Index> from_species_count<OccTransfVecConstIt>(
     OccTransfVecConstIt begin,
     OccTransfVecConstIt end);
 
   template<typename OccTransfIt>
-  std::map<AtomSpecies, Index> to_species_count(OccTransfIt begin, OccTransfIt end) {
+  std::map<std::string, Index> to_species_count(OccTransfIt begin, OccTransfIt end) {
     if(begin == end) {
-      return std::map<AtomSpecies, Index>();
+      return std::map<std::string, Index>();
     }
-    std::map<AtomSpecies, Index> _species_count = empty_species_count(begin->prim());
+    std::map<std::string, Index> _species_count = empty_species_count(begin->prim());
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
       const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.to_value];
       for(const AtomPosition &species_pos : mol.atoms()) {
-        _species_count[species_pos.species()]++;
+        _species_count[species_pos.name()]++;
       }
     }
     return _species_count;
   }
-  template std::map<AtomSpecies, Index> to_species_count<OccTransfVecIt>(
+  template std::map<std::string, Index> to_species_count<OccTransfVecIt>(
     OccTransfVecIt begin,
     OccTransfVecIt end);
-  template std::map<AtomSpecies, Index> to_species_count<OccTransfVecConstIt>(
+  template std::map<std::string, Index> to_species_count<OccTransfVecConstIt>(
     OccTransfVecConstIt begin,
     OccTransfVecConstIt end);
 

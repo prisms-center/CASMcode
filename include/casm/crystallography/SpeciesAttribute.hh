@@ -21,11 +21,19 @@ namespace CASM {
         return "Species Attribute";
       }
 
+      BasicTraits(std::string const &_name) : m_name(_name) {}
+
       /// \brief allow destruction through base pointer
       virtual ~BasicTraits() {}
 
       /// \brief Name of attribute. Used globally to uniquely identify the attribute
-      virtual std::string name() const = 0;
+      virtual std::string name() const {
+        return m_name;
+      }
+
+      virtual bool time_reversal_active() const {
+        return false;
+      }
 
       /// \brief Populate @param _in from JSON
       virtual void from_json(SpeciesAttribute &_in, jsonParser const &_json) const = 0;
@@ -45,6 +53,8 @@ namespace CASM {
       }
     private:
       virtual BasicTraits *_clone() const = 0;
+
+      std::string m_name;
     };
 
 
@@ -89,18 +99,18 @@ namespace CASM {
     SpeciesAttribute &apply_sym(SymOp const &op);
 
     jsonParser &to_json(jsonParser &json) const {
-      return _traits().to_json(*this, json);
+      return traits().to_json(*this, json);
     }
 
     void from_json(const jsonParser &json) {
-      _traits().from_json(*this, json);
+      traits().from_json(*this, json);
       return;
     }
 
-  private:
-    BasicTraits const &_traits() const {
+    BasicTraits const &traits() const {
       return *m_traits_ptr;
     }
+  private:
 
     std::string m_name;
     Eigen::VectorXd m_value;

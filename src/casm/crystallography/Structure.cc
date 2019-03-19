@@ -130,31 +130,6 @@ namespace CASM {
   }
 
   //************************************************************
-  std::vector<AtomSpecies> Structure::struc_species() const {
-    return CASM::struc_species(*this);
-  }
-  //************************************************************
-  std::vector<Molecule> Structure::struc_molecule() const {
-    return CASM::struc_molecule(*this);
-  }
-  //************************************************************
-  std::vector<std::string> Structure::struc_species_name() const {
-    return CASM::struc_species_name(*this);
-  }
-
-  //************************************************************
-  std::vector<std::string> Structure::struc_molecule_name() const {
-    return CASM::struc_molecule_name(*this);
-  }
-  //************************************************************
-  Eigen::VectorXi Structure::num_each_species() const {
-    return CASM::num_each_species(*this);
-  }
-  //************************************************************
-  Eigen::VectorXi Structure::num_each_molecule() const {
-    return CASM::num_each_molecule(*this);
-  }
-  //************************************************************
 
   void Structure::fg_converge(double small_tol, double large_tol, double increment) {
     BasicStructure<Site>::fg_converge(m_factor_group, small_tol, large_tol, increment);
@@ -266,48 +241,6 @@ namespace CASM {
   }
 
   //***********************************************************
-  /*shorttag allows the user to decide whether or not to print the
-   * entire symmetry matrix.  If shorttag=0, then only the name of the
-   * operation and the eigenvector will be printed.  If it equals anything else,
-   * then the symmetry operation matrix will be printed out.
-   */
-  /*
-    void Structure::print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag = 1) {
-      GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-      asym_unit.generate_asymmetric_unit(basis, factor_group());
-
-      stream <<  " Printing symmetry operations that leave each site unchanged:\n \n";
-      for(Index i = 0; i < asym_unit.size(); i++) {
-        for(Index j = 0; j < asym_unit[i].size(); j++) {
-          stream << "Site: ";
-          asym_unit.at(i).at(j).at(0).print(stream); //Print the site (not cluster) for the asymmetric unit
-          stream << " Total Symmetry Operations: " << asym_unit[i][j].clust_group().size() << "\n";
-
-          for(Index nc = 0; nc < asym_unit[i][j].clust_group().size(); nc++) {
-            //print_short is a new fxn I added in SymOp to not print out the whole symmetry matrix
-            if(shorttag == 0) {
-              stream <<  std::setw(4)  << nc + 1 << ": ";
-              //asym_unit[i][j].clust_group()[nc].print_short(stream); // I turned this off because the "print_short" function does not appear to exist...
-            }
-
-
-            else {
-              stream.flags(std::ios::left);
-              stream << "\n" <<  std::setw(3)  << nc + 1 << ": ";
-              stream.unsetf(std::ios::left);
-              if(mode == CART)
-                asym_unit[i][j].clust_group()[nc].print(stream, Eigen::Matrix3d::Identity());
-              else
-                asym_unit[i][j].clust_group()[nc].print(stream, lattice().inv_lat_column_mat());
-            }
-          }
-          stream << "\n  ---------------------------------------------------------------------   \n\n";
-        }
-      }
-      return;
-    }
-  */
-  //***********************************************************
 
   void Structure::reset() {
     //std::cout << "begin reset() " << this << std::endl;
@@ -339,9 +272,9 @@ namespace CASM {
       default_err_log() << "*******************************************\n"
                         << "ERROR in Structure::map_superstruc_to_prim:\n"
                         << "The structure \n";
-      default_err_log() << jsonParser(*this) << std::endl;
+      //default_err_log() << jsonParser(*this) << std::endl;
       default_err_log() << "is not a supercell of the given prim!\n";
-      default_err_log() << jsonParser(prim) << std::endl;
+      //default_err_log() << jsonParser(prim) << std::endl;
       default_err_log() << "*******************************************\n";
       exit(1);
     }
@@ -642,46 +575,6 @@ namespace CASM {
     }
     m_factor_group -= shift.cart();
     return (*this);
-  }
-
-  //****************************************************
-
-  jsonParser &Structure::to_json(jsonParser &json) const {
-
-    // class Structure : public BasicStructure<Site>
-    BasicStructure<Site>::to_json(json);
-
-    // mutable MasterSymGroup m_factor_group;
-    json["factor_group"] = m_factor_group;
-
-    return json;
-  }
-
-  //****************************************************
-
-  // Assumes constructor CoordType::CoordType(Lattice) exists
-  void Structure::from_json(const jsonParser &json) {
-
-
-    // class Structure : public BasicStructure<Site>
-    BasicStructure<Site> &basic = *this;
-    basic.from_json(json);
-
-    // mutable MasterSymGroup m_factor_group;
-    m_factor_group.clear();
-    m_factor_group.from_json(json["factor_group"]);
-
-    update();
-  }
-
-  //****************************************************
-
-  jsonParser &to_json(const Structure &structure, jsonParser &json) {
-    return structure.to_json(json);
-  }
-
-  void from_json(Structure &structure, const jsonParser &json) {
-    structure.from_json(json);
   }
 
   //***********************************************************

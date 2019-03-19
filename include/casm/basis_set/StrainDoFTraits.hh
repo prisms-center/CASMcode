@@ -17,11 +17,6 @@ namespace CASM {
       }
 
 
-      /// \brief Output @param _in to JSON
-      void to_json(DoFSet const &_out, jsonParser &_json) const override {
-        throw std::runtime_error("StrainDoFTraits::to_json not implemented!");
-      }
-
       /// \brief Generate a symmetry representation for the supporting vector space
       Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override;
 

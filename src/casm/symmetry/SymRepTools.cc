@@ -1,7 +1,9 @@
+#include <numeric>
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/external/Eigen/CASM_AddOns"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
+#include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/Orbit_impl.hh"

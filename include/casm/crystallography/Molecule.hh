@@ -18,43 +18,8 @@ namespace CASM {
 
   class SymOp;
   class Molecule;
-  template<typename T> struct jsonConstructor;
 
-  //****************************************************
-  ///\brief Lightweight container for intrinsic atom properties.
 
-  /// - For now, it only contains the name, but in future other properties
-  /// may be needed (mass, atomic number, etc).
-  /// - Additional fields should only be added if absolutely necessary!
-  /// - Vacancies are AtomSpecie with name == "Va"
-  class AtomSpecies : public Comparisons<CRTPBase<AtomSpecies>> {
-  public:
-
-    /// \brief Constructor
-    AtomSpecies(std::string const &_name) :
-      m_name(_name) {}
-
-    /// \brief Return name of species
-    std::string const &name() const {
-      return m_name;
-    }
-
-    /// \brief Equality comparison for two AtomSpecies
-    bool operator==(AtomSpecies const &RHS) const {
-      return name() == RHS.name();
-    }
-
-    bool operator<(AtomSpecies const &RHS) const {
-      return name() < RHS.name();
-    }
-
-  private:
-    std::string m_name;
-  };
-
-  void from_json(AtomSpecies &_species, jsonParser const &json);
-
-  jsonParser &to_json(AtomSpecies const &_species, jsonParser &json);
   //****************************************************
 
   /// \brief An atomic species associated with a position in space
@@ -65,21 +30,19 @@ namespace CASM {
     typedef std::array<bool, 3> sd_type;
 
 
-    /// \brief Construct with x,y,z position coordinates and AtomSpecie
-    template<typename AtomSpeciesConvertible>
+    /// \brief Construct with x,y,z position coordinates and atom name
     AtomPosition(double _pos1,
                  double _pos2,
                  double _pos3,
-                 AtomSpeciesConvertible _species,
+                 std::string const &_species,
     sd_type const &_sd_flag = sd_type{{false, false, false}}) :
       m_species(_species),
       m_position(_pos1, _pos2, _pos3),
       m_sd_flag(_sd_flag) { }
 
-    /// \brief Construct with vector position and AtomSpecies
-    template<typename AtomSpeciesConvertible>
+    /// \brief Construct with vector position and atom name
     AtomPosition(Eigen::Ref<const Eigen::Vector3d> const &_pos,
-                 AtomSpeciesConvertible _species,
+                 std::string const &_species,
     sd_type const &_sd_flag = sd_type{{false, false, false}}) :
       m_species(_species),
       m_position(_pos),
@@ -87,11 +50,6 @@ namespace CASM {
 
     /// Const access of species name
     std::string const &name() const {
-      return m_species.name();
-    }
-
-    /// Const access of atomic species
-    AtomSpecies const &species() const {
       return m_species;
     }
 
@@ -105,12 +63,20 @@ namespace CASM {
       return m_sd_flag;
     }
 
+    bool time_reversal_active() const {
+      for(auto const &_attr : attributes()) {
+        if(_attr.second.traits().time_reversal_active())
+          return true;
+      }
+      return false;
+    }
+
     std::map<std::string, SpeciesAttribute> const &attributes() const {
       return m_attribute_map;
     }
 
-    void set_attributes(std::map<std::string, SpeciesAttribute> const &_attr) {
-      m_attribute_map = _attr;
+    void set_attributes(std::map<std::string, SpeciesAttribute> _attr) {
+      m_attribute_map = std::move(_attr);
     }
 
     /// \brief Comparison with tolerance (max allowed distance between LHS and RHS, in Angstr.)
@@ -128,7 +94,7 @@ namespace CASM {
 
   private:
     /// Atomic species
-    AtomSpecies m_species;
+    std::string m_species;
 
     /// Cartesian position; origin is centered at site
     Eigen::Vector3d m_position;
@@ -137,19 +103,6 @@ namespace CASM {
 
     /// selective dynamics flags
     sd_type m_sd_flag;
-  };
-
-  /// \brief Print AtomPosition to json after applying affine transformation cart2frac*cart()+trans
-  jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &cart2frac);
-
-  /// \brief Read AtomPosition from json and then apply affine transformation cart2frac*cart()
-  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &frac2cart);
-
-  template<>
-  struct jsonConstructor<AtomPosition> {
-
-    /// \brief Read from json [b, i, j, k], using 'unit' for AtomPosition::unit()
-    static AtomPosition from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
   };
 
   //****************************************************
@@ -186,18 +139,19 @@ namespace CASM {
     /// \brief Return a vacancy Molecule
     static Molecule make_vacancy();
 
+    /*
     Molecule(std::string const &_name,
              std::initializer_list<AtomPosition> const &_atoms = {},
              bool _divisible = false) :
       m_name(_name),
       m_atoms(_atoms),
       m_divisible(_divisible) {}
-
+    */
     Molecule(std::string const &_name,
-             std::vector<AtomPosition> const &_atoms,
+             std::vector<AtomPosition> _atoms = {},
              bool _divisible = false) :
       m_name(_name),
-      m_atoms(_atoms),
+      m_atoms(std::move(_atoms)),
       m_divisible(_divisible) {}
 
     Index size() const {
@@ -218,12 +172,29 @@ namespace CASM {
 
     bool is_vacancy() const;
 
+    bool time_reversal_active() const {
+      for(auto const &_atom : atoms()) {
+        if(_atom.time_reversal_active())
+          return true;
+      }
+      for(auto const &_attr : attributes()) {
+        if(_attr.second.traits().time_reversal_active())
+          return true;
+      }
+      return false;
+    }
+
+
     std::map<std::string, SpeciesAttribute> const &attributes() const {
       return m_attribute_map;
     }
 
-    void set_attributes(std::map<std::string, SpeciesAttribute> const &_attr) {
-      m_attribute_map = _attr;
+    void set_attributes(std::map<std::string, SpeciesAttribute> _attr) {
+      m_attribute_map = std::move(_attr);
+    }
+
+    void set_atoms(std::vector<AtomPosition> _atoms) {
+      m_atoms = std::move(_atoms);
     }
 
     Molecule &apply_sym(SymOp const &op);
@@ -243,10 +214,6 @@ namespace CASM {
                int spaces,
                char delim,
                bool print_sd_flags  = false) const;
-
-    jsonParser &to_json(jsonParser &json, Eigen::Matrix3d const &c2f_mat) const;
-
-    void from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
 
     bool is_divisible() const {
       return m_divisible;
@@ -280,14 +247,6 @@ namespace CASM {
     return mol.name() == name || (mol.is_vacancy() && is_vacancy(name));
   }
 
-  jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat);
-
-  void from_json(Molecule &mol, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat);
-
-  template<>
-  struct jsonConstructor<Molecule> {
-    static Molecule from_json(const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat);
-  };
   /** @} */
 }
 

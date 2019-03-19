@@ -2,7 +2,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
-#include "casm/container/LinearAlgebra.hh"
 #include "casm/misc/CASM_math.hh"
 namespace CASM {
   NiggliRep::NiggliRep(const Eigen::Matrix3d &init_lat_col_mat):

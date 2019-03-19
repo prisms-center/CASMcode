@@ -640,7 +640,6 @@ namespace CASM {
   ///   with units number Molecule / prim
   Eigen::MatrixXd end_members(const Structure &prim) {
     ParamComposition param_comp(prim);
-    param_comp.generate_components();
     param_comp.generate_sublattice_map();
     param_comp.generate_prim_end_members();
     return param_comp.prim_end_members().transpose();
@@ -649,7 +648,7 @@ namespace CASM {
   /// \brief Non-orthogonal composition space
   Eigen::MatrixXd _composition_space(const Structure &prim, double tol) {
     // Get Va index if it exists, and store 0 or 1 in N_Va
-    std::vector<std::string> struc_mol_name = prim.struc_molecule_name();
+    std::vector<std::string> struc_mol_name = struc_molecule_name(prim);
     Index Va_index = find_index_if(struc_mol_name, [ = ](const std::string & str) {
       return is_vacancy(str);
     });

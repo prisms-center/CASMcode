@@ -90,10 +90,13 @@ namespace CASM {
   //****************************************************
 
   bool Site::time_reversal_active() const {
-    for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
-      if(DoF::traits(it->first).time_reversal_active())
+    for(auto const &_dof : m_dof_map)
+      if(DoF::traits(_dof.first).time_reversal_active())
         return true;
 
+    for(auto const &mol : site_occupant().domain())
+      if(mol.time_reversal_active())
+        return true;
     return false;
   }
 
@@ -285,10 +288,8 @@ namespace CASM {
 
   //****************************************************
 
-  void Site::set_local_dofs(std::vector<DoFSet> const &_new_dofs) {
-    m_dof_map.clear();
-    for(DoFSet const &_dof : _new_dofs)
-      m_dof_map.emplace(std::make_pair(_dof.type_name(), _dof));
+  void Site::set_dofs(std::map<std::string, DoFSet> _dofs) {
+    m_dof_map = std::move(_dofs);
   }
 
 
@@ -511,96 +512,6 @@ namespace CASM {
     return stream;
   }
 
-  //****************************************************
-
-  Site jsonConstructor<Site>::from_json(const jsonParser &json, Lattice const &_home, COORD_TYPE coordtype) {
-    Site result(_home);
-    CASM::from_json(result, json, _home, coordtype);
-    return result;
-  }
-
-  //****************************************************
-
-  jsonParser &to_json(const Site &site, jsonParser &json, COORD_TYPE coordtype) {
-    json.put_obj();
-
-    // class Site : public Coordinate
-    if(coordtype == FRAC)
-      to_json_array(site.frac(), json["coordinate"]);
-    else
-      to_json_array(site.cart(), json["coordinate"]);
-
-    // MoleculeOccupant site_occupant;
-    Eigen::Matrix3d c2f = Eigen::Matrix3d::Identity();
-    // change this to use FormatFlag
-    if(coordtype == FRAC)
-      c2f = site.home().inv_lat_column_mat();
-    CASM::to_json(site.site_occupant(), json["site_occupant"], c2f);
-
-
-    // Index m_label
-    if(valid_index(site.label()))
-      json["label"] = site.label();
-
-
-    return json;
-
-  }
-
-  //****************************************************
-
-  void from_json(Site &site, const jsonParser &json, Lattice const &_home, COORD_TYPE coordtype) {
-    site.set_lattice(_home, coordtype);
-    if(coordtype == FRAC)
-      site.frac() = json["coordinate"].get<Eigen::Vector3d>();
-    else
-      site.cart() = json["coordinate"].get<Eigen::Vector3d>();
-
-    // MoleculeOccupant -- allowed occupants at site
-    //MoleculeOccupant t_occ(DoF::traits("occ"));
-    //if(coordtype == FRAC)
-    //CASM::from_json(t_occ, json["site_occupant"], _home.inv_lat_column_mat());
-    //else
-    //CASM::from_json(t_occ, json["site_occupant"], Eigen::Matrix3d::Identity());
-    //if(t_occ.size())
-    //site.set_allowed_occupants(t_occ.domain());
-    //else
-    //site.set_allowed_occupants({Molecule::make_unknown()});
-
-    // Index m_label -- must be greater than zero
-    Index _label = -1;
-    if(json.contains("label")) {
-      CASM::from_json(_label, json["label"]);
-      if(!valid_index(_label))
-        throw std::runtime_error("JSON specification of site has {\"label\" : " + std::to_string(_label) + "}, but \"label\" must be greater than 0.\n");
-    }
-    site.set_label(_label);
-
-    // Local continuous dofs
-    std::vector<DoFSet> _dof_vec;
-    if(json.contains("dof")) {
-      std::map<std::string, DoFSet> _dof_map;
-      auto it = json["dof"].begin(), end_it = json["dof"].end();
-      for(; it != end_it; ++it) {
-        if(_dof_map.count(it.name()))
-          throw std::runtime_error("Error parsing global field \"dof\" from JSON. DoF type " + it.name() + " cannot be repeated.");
-
-        try {
-          _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(DoF::traits(it.name()))));
-        }
-        catch(std::exception &e) {
-          throw std::runtime_error("Error parsing global field \"dof\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
-        }
-
-      }
-      for(auto const &_dof : _dof_map)
-        _dof_vec.push_back(_dof.second);
-    }
-    site.set_local_dofs(_dof_vec);
-
-
-  }
-
   //*******************************************************************************************
 
   bool Site::_compare_type_no_ID(const Site &_other) const {
@@ -613,8 +524,10 @@ namespace CASM {
 
     auto it1 = m_dof_map.begin(), it2 = _other.m_dof_map.begin();
     for(; it1 != m_dof_map.end(); ++it1, ++it2)
-      if(!DoFIsEquivalent(it1->second)(it2->second))
+      if(!DoFIsEquivalent(it1->second)(it2->second)) {
+        std::cout << "SiteTypes not equivalent!!\n";
         return false;
+      }
 
 
     return true;

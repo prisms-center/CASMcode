@@ -1,6 +1,6 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 
-#include "casm/external/Eigen/Dense"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"

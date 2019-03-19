@@ -84,7 +84,7 @@ namespace CASM {
                                                 double tol) {
 
     // store Molecule names in vector
-    std::vector<std::string> struc_mol_name = prim.struc_molecule_name();
+    std::vector<std::string> struc_mol_name = struc_molecule_name(prim);
 
     // --- find any Molecule not in the prim, add to end of vector -------------
 

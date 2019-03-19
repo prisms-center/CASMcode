@@ -233,15 +233,9 @@ namespace CASM {
   template<typename OutputIterator>
   OutputIterator standard_composition_axes(const Structure &prim, OutputIterator result) {
     ParamComposition param_comp(prim);
-    param_comp.generate_components();
     param_comp.generate_sublattice_map();
     param_comp.generate_prim_end_members();
     param_comp.generate_composition_space();
-
-    std::vector<std::string> components;
-    for(int i = 0; i < param_comp.components().size(); i++) {
-      components.push_back(param_comp.components()[i]);
-    }
 
     for(int i = 0; i < param_comp.allowed_list().size(); i++) {
       const ParamComposition &curr = param_comp.allowed_list()[i];
@@ -250,7 +244,7 @@ namespace CASM {
         end_members.col(j) = curr.spanning_end_members()[j];
       }
 
-      *result++ = CompositionConverter(components.begin(), components.end(), curr.origin(), end_members);
+      *result++ = CompositionConverter(param_comp.components().begin(), param_comp.components().end(), curr.origin(), end_members);
     }
 
     return result;

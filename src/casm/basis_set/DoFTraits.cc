@@ -18,6 +18,29 @@ namespace CASM {
 
   namespace DoFType {
 
+    void Traits::to_json(DoFSet const &_out, jsonParser &_json) const {
+      bool simple = false;
+      if(_out.dim() == standard_var_names().size() && _out.basis().isIdentity()) {
+        simple = true;
+        for(Index i = 0; i < _out.dim(); ++i) {
+          if(_out[i].var_name() != standard_var_names()[i]) {
+            simple = false;
+            break;
+          }
+        }
+      }
+
+      if(simple)
+        _json.put_obj();
+      else {
+        _json["axes"] = _out.basis().transpose();
+        _json["axis_names"].put_array();
+        for(Index i = 0; i < _out.dim(); ++i) {
+          _json["axis_names"].push_back(_out[i].var_name());
+        }
+      }
+    }
+
     void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
 
       if(global())

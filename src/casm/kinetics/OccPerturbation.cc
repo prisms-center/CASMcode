@@ -55,13 +55,13 @@ namespace CASM {
     sout << " from(";
     if(obj.from_species_count.size() > 0) {
       for(const auto &t : obj.from_species_count) {
-        sout << " " << t.first.name() << ":" << t.second;
+        sout << " " << t.first << ":" << t.second;
       }
     }
     sout << ") to(";
     if(obj.to_species_count.size() > 0) {
       for(const auto &t : obj.to_species_count) {
-        sout << " " << t.first.name() << ":" << t.second;
+        sout << " " << t.first << ":" << t.second;
       }
     }
     sout << ")";

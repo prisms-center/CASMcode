@@ -6,6 +6,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
@@ -669,7 +670,7 @@ namespace CASM {
     Index i;
 
     // [basis_site][site_occupant_index]
-    auto convert = make_index_converter(prim(), prim().struc_molecule());
+    auto convert = make_index_converter(prim(), struc_molecule(prim()));
 
     // create an array to count the number of each molecule
     std::vector<Eigen::VectorXi> sublat_num_each_molecule;
@@ -697,11 +698,11 @@ namespace CASM {
     int num_atoms = 0;
 
     // need to know which molecules are vacancies
-    auto struc_molecule = prim().struc_molecule();
+    auto struc_mol = struc_molecule(prim());
 
     Index i;
-    for(i = 0; i < struc_molecule.size(); i++) {
-      if(struc_molecule[i].is_vacancy()) {
+    for(i = 0; i < struc_mol.size(); i++) {
+      if(struc_mol[i].is_vacancy()) {
         // set to zero, so the Va concentration is reported as 0.0
         _num_each_molecule[i] = 0;
       }
@@ -1830,10 +1831,10 @@ namespace CASM {
   Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
 
     // [basis_site][site_occupant_index]
-    auto convert = make_index_converter(scel.prim(), scel.prim().struc_molecule());
+    auto convert = make_index_converter(scel.prim(), struc_molecule(scel.prim()));
 
     // create an array to count the number of each molecule
-    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.prim().struc_molecule().size());
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(struc_molecule(scel.prim()).size());
 
     // count the number of each molecule
     for(Index i = 0; i < configdof.size(); i++) {

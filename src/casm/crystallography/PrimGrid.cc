@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cassert>
 
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/container/Counter.hh"
 #include "casm/casm_io/Log.hh"
 
