@@ -5,6 +5,7 @@ import json
 from os import getcwd
 from os.path import join, abspath
 import sys
+import six
 
 from casm.misc import compat, noindent
 from casm.project import Project, Selection
@@ -123,7 +124,7 @@ def main(argv=None):
                 elif settings['software'] == 'vasp':
                     relaxation = VaspRelax(proj.dir.configuration_dir(configname))
                 relaxation.submit()
-    
+
         elif args.run:
             sel.write_pos()
             for configname in sel.data["configname"]:
@@ -161,7 +162,6 @@ def main(argv=None):
 
     except ValueError as e:
         raise CasmCalcError(e)
-
 
 if __name__ == "__main__":
     main()
