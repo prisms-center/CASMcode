@@ -125,8 +125,8 @@ def read_project_settings(filename):
         print("Error reading settings file:", filename)
         raise e
 
-    if settings['software'] != 'vasp':
-        raise IOError('ONLY VASP in experimental status...')
+#    if settings['software'] != 'vasp':
+#        raise IOError('ONLY VASP in experimental status...')
 
     required = ["queue", "ppn", "walltime", "software", "run_cmd"]
 

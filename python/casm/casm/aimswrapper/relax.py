@@ -241,7 +241,7 @@ class Relax(object):
         job = Job(name=confname_as_jobname(self.configdir),
                   account=self.settings["account"],
                   nodes=int(self.settings["nodes"]),
-                  ppn=int(ncpus),
+                  ppn=int(self.settings['ppn']),
                   walltime=self.settings["walltime"],
                   pmem=self.settings["pmem"],
                   qos=self.settings["qos"],

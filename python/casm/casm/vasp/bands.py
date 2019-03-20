@@ -64,7 +64,7 @@ class Bands(object):
                 if any(remove_tags) not in line:
                     self.new_incar.append(line)
         nbands = int(Procar(os.path.join(self.contcar_dir, 'PROCAR')).nbands)
-        self.new_incar.append('NBANDS = %i' % (nbands * 1.5))  # use 50% more bands just to make sure
+        self.new_incar.append('NBANDS = %i' % int(nbands * 1.5))  # use 50% more bands just to make sure
         self.new_incar.append('NEDOS = 15001')
         self.new_incar.append('EMIN = -15')
         self.new_incar.append('EMAX =  10')
