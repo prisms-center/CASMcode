@@ -28,4 +28,4 @@ def confname_as_jobname(configname):
     :return
         configuration name without path
     """
-    return configname.split('/')[-1]
+    return str(configname.split('/')[-2]) + '/' + str(configname.split('/')[-1])

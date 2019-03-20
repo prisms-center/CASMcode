@@ -6,7 +6,6 @@ from prisms_jobs import Job, JobDB, error_job, complete_job, JobsError, JobDBErr
 
 from casm.wrapper.misc import confname_as_jobname
 
-from casm import wrapper
 from casm.project import DirectoryStructure, ProjectSettings
 from casm.misc.noindent import NoIndent, NoIndentEncoder
 
@@ -231,8 +230,6 @@ class Relax(object):
         cmd += "python -c \"import casm.aimswrapper; casm.aimswrapper.Relax('" + self.configdir + "').run()\"\n"
         if self.settings["postrun"] is not None:
             cmd += self.settings["postrun"] + "\n"
-
-        ncpus = int(self.settings['nodes']) * int(self.settings['ppn'])
 
         print("Constructing the job")
         sys.stdout.flush()
