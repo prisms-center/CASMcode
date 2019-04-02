@@ -25,11 +25,6 @@ namespace CASM {
         return true;
       }
 
-      /// \brief Output @param _in to JSON
-      void to_json(DoFSet const &_out, jsonParser &_json) const override {
-        throw std::runtime_error("MagSpinDoFTraits::to_json not implemented!");
-      }
-
       Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override;
 
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site

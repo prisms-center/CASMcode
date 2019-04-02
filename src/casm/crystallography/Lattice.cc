@@ -3,7 +3,8 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
-#include "casm/container/LinearAlgebra.hh"
+
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/symmetry/SymOp.hh"

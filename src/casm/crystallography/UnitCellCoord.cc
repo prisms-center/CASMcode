@@ -5,7 +5,7 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
-#include "casm/container/LinearAlgebra.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {

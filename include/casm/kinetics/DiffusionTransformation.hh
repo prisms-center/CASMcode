@@ -14,7 +14,6 @@
 
 namespace CASM {
 
-  class AtomSpecies;
   class Structure;
   class Configuration;
   class SymOp;
@@ -50,7 +49,7 @@ namespace CASM {
 
       const Molecule &mol() const;
 
-      const AtomSpecies &species() const;
+      const std::string &species() const;
 
     private:
 
@@ -111,7 +110,7 @@ namespace CASM {
       /// \brief Gives the ending coordinate of the specie moving
       UnitCellCoord to_loc() const;
       /// \brief Gives the name of the specie moving
-      AtomSpecies species() const;
+      std::string species() const;
 
 
       SpeciesLocation from;
@@ -157,7 +156,7 @@ namespace CASM {
       /// Upon application of symmetry the cluster size&shape does not change
       /// as well as the species that are present
       ClusterInvariants<IntegralCluster> cluster_invariants;
-      std::map<AtomSpecies, Index> species_count;
+      std::map<std::string, Index> species_count;
 
     };
   }
@@ -246,7 +245,7 @@ namespace CASM {
       /// lives on
       const IntegralCluster &cluster() const;
       /// Gives a map from type of atom to amount in this DiffusionTransformation
-      const std::map<AtomSpecies, Index> &species_count() const;
+      const std::map<std::string, Index> &species_count() const;
 
       /// \brief Compare DiffusionTransformation
       /// Lexicographical Comparison for sorting purposes
@@ -302,8 +301,8 @@ namespace CASM {
       /// \brief Reset mutable members, cluster and invariants, when necessary
       void _reset();
 
-      std::map<AtomSpecies, Index> _from_species_count() const;
-      std::map<AtomSpecies, Index> _to_species_count() const;
+      std::map<std::string, Index> _from_species_count() const;
+      std::map<std::string, Index> _to_species_count() const;
 
       const Structure *m_prim_ptr;
 
@@ -315,7 +314,7 @@ namespace CASM {
 
       // stores Specie -> count, using 'from' species
       // - is equal to 'to' species count if is_valid_occ_transform() == true
-      mutable notstd::cloneable_ptr<std::map<AtomSpecies, Index> > m_species_count;
+      mutable notstd::cloneable_ptr<std::map<std::string, Index> > m_species_count;
 
     };
 
@@ -384,10 +383,10 @@ namespace CASM {
   };
 
   template<typename NameIterator>
-  bool includes_all(const std::map<AtomSpecies, Index> species_count, NameIterator begin, NameIterator end);
+  bool includes_all(const std::map<std::string, Index> species_count, NameIterator begin, NameIterator end);
 
   template<typename NameIterator>
-  bool excludes_all(const std::map<AtomSpecies, Index> species_count, NameIterator begin, NameIterator end);
+  bool excludes_all(const std::map<std::string, Index> species_count, NameIterator begin, NameIterator end);
 
 }
 

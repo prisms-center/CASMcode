@@ -40,7 +40,7 @@ namespace CASM {
       for(auto it = m_search_list.begin(); it != m_search_list.end(); ++it) {
         bool tmp = false;
         for(auto it2 = speciesmap.begin(); it2 != speciesmap.end(); ++it2) {
-          if(it2->first.name() == *it && it2->second != 0) {
+          if(it2->first == *it && it2->second != 0) {
             tmp = true;
           }
         }
@@ -116,7 +116,7 @@ namespace CASM {
         std::string result = "";
         for(auto it = speciesmap.begin(); it != speciesmap.end(); ++it) {
           for(int i = 0; i < it->second; i++) {
-            result += (it->first.name() + " ");
+            result += (it->first + " ");
           }
         }
         return result;

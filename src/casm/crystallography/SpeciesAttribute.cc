@@ -19,7 +19,7 @@ namespace CASM {
 
   //*******************************************************************
   SpeciesAttribute &SpeciesAttribute::apply_sym(SymOp const &_op) {
-    return *this = _traits().copy_apply(_op, *this);
+    return *this = traits().copy_apply(_op, *this);
   }
 
   //*******************************************************************

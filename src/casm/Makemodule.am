@@ -105,7 +105,6 @@ libcasm_la_SOURCES = \
   src/casm/clusterography/IntegralCluster.cc\
   src/casm/completer/Complete.cc\
   src/casm/completer/Handlers.cc\
-  src/casm/container/LinearAlgebra.cc\
   src/casm/container/Permutation.cc\
   src/casm/crystallography/BasicStructure.cc\
   src/casm/crystallography/Coordinate.cc\

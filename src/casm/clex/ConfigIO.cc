@@ -42,24 +42,24 @@ namespace CASM {
 
     /// \brief Adds index rules corresponding to the parsed args
     bool MolDependent::init(const Configuration &_tmplt) const {
-      auto struc_molecule = _tmplt.primclex().prim().struc_molecule();
+      auto struc_mol = struc_molecule(_tmplt.primclex().prim());
 
       if(m_mol_names.size() == 0) {
-        for(Index i = 0; i < struc_molecule.size(); i++) {
+        for(Index i = 0; i < struc_mol.size(); i++) {
           _add_rule(std::vector<Index>({i}));
-          m_mol_names.push_back(struc_molecule[i].name());
+          m_mol_names.push_back(struc_mol[i].name());
         }
       }
       else {
         for(Index n = 0; n < m_mol_names.size(); n++) {
           Index i = 0;
-          for(i = 0; i < struc_molecule.size(); i++) {
-            if(struc_molecule[i].name() == m_mol_names[n]) {
+          for(i = 0; i < struc_mol.size(); i++) {
+            if(struc_mol[i].name() == m_mol_names[n]) {
               _add_rule(std::vector<Index>({i}));
               break;
             }
           }
-          if(i == struc_molecule.size())
+          if(i == struc_mol.size())
             throw std::runtime_error(std::string("Format tag: '") + name() + "(" +
                                      m_mol_names[n] + ")' does not correspond to a viable composition.\n");
         }

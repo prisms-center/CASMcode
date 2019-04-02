@@ -64,7 +64,7 @@ namespace CASM {
       virtual void from_json(DoFSet &_in, jsonParser const &_json) const { }
 
       /// \brief Output @param _in to JSON
-      virtual void to_json(DoFSet const &_out, jsonParser &_json) const { };
+      virtual void to_json(DoFSet const &_out, jsonParser &_json) const;
 
       /// \brief Generate a symmetry representation for the supporting vector space
       virtual Eigen::MatrixXd symop_to_matrix(SymOp const &op) const = 0;

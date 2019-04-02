@@ -11,13 +11,13 @@ namespace CASM {
 
   namespace {
     struct IsIncluded {
-      IsIncluded(const std::map<AtomSpecies, Index> &_species_count) :
+      IsIncluded(const std::map<std::string, Index> &_species_count) :
         species_count(_species_count) {}
-      const std::map<AtomSpecies, Index> &species_count;
+      const std::map<std::string, Index> &species_count;
 
       bool operator()(std::string name) {
-        auto lambda = [&](const std::pair<AtomSpecies, Index> &val) {
-          return (val.first.name() == name) && val.second != 0;
+        auto lambda = [&](const std::pair<std::string, Index> &val) {
+          return (val.first == name) && val.second != 0;
         };
         return std::any_of(species_count.begin(), species_count.end(), lambda);
       }
@@ -25,12 +25,12 @@ namespace CASM {
   }
 
   template<typename NameIterator>
-  bool includes_all(const std::map<AtomSpecies, Index> species_count, NameIterator begin, NameIterator end) {
+  bool includes_all(const std::map<std::string, Index> species_count, NameIterator begin, NameIterator end) {
     return std::all_of(begin, end, IsIncluded(species_count));
   }
 
   template<typename NameIterator>
-  bool excludes_all(const std::map<AtomSpecies, Index> species_count, NameIterator begin, NameIterator end) {
+  bool excludes_all(const std::map<std::string, Index> species_count, NameIterator begin, NameIterator end) {
     return !std::any_of(begin, end, IsIncluded(species_count));
   }
 }

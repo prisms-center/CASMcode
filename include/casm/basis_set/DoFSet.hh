@@ -178,6 +178,10 @@ namespace CASM {
       return m_excluded_occs.count(_occ_name);
     }
 
+    Index dim() const {
+      return m_info.dim();
+    }
+
     /// \brief Matrix that relates DoFSet variables to a conventional coordiante system
     /// columns of coordinate_space() matrix are directions in conventional coordinate system
     /// so that  conventional_coord = DoFSet.coordinate_space()*DoFSet.values()
@@ -252,6 +256,12 @@ namespace CASM {
   struct jsonConstructor<DoFSet> {
     static DoFSet from_json(const jsonParser &json, DoF::BasicTraits const &_type);
   };
+
+  //********************************************************************
+  inline
+  void from_json(DoFSet &_dof, jsonParser &json) {
+    return _dof.from_json(json);
+  }
 
   //********************************************************************
   inline

@@ -6,6 +6,7 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/PrimClex.hh"
 
 namespace CASM {
@@ -13,33 +14,6 @@ namespace CASM {
 
   //*************************************************************
   //GENERATE Routines
-
-  //*************************************************************
-  /* GENERATE COMPONENTS
-
-     This routine generates the set ofx unique alloying components
-     that are listed in the prim structure. The unique alloying
-     components are stored as an std::vector< std::string >
-  */
-  //*************************************************************
-
-  void ParamComposition::generate_components() {
-
-    if(m_components.size() != 0) {
-      std::cerr << "WARNING in ParamComposition::generate_components(), the components data member in the class";
-      std::cerr << " is not empty. Clearing it anyways.\n";
-      m_components.clear();
-    }
-
-    auto struc_molecule = m_prim_struc->struc_molecule();
-    for(auto it = struc_molecule.begin(); it != struc_molecule.end(); ++it) {
-      m_components.push_back(it->name());
-    }
-
-    return;
-  }
-
-  //---------------------------------------------------------------------------
 
   //*************************************************************
   /* GENERATE SUBLATTICE MAP
@@ -59,7 +33,7 @@ namespace CASM {
   //*************************************************************
   void ParamComposition::generate_sublattice_map() {
     if(m_components.size() == 0)
-      generate_components();
+      m_components = struc_molecule_name(*m_prim_struc);
     //figuring out the number of sublattices on which alloying is happening
     std::vector< std::vector< std::string> > tocc;
     std::vector< std::string > tlist;

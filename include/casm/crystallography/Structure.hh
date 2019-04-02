@@ -6,7 +6,6 @@
 #include <cmath>
 
 #include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/symmetry/SymGroup.hh"
@@ -73,13 +72,6 @@ namespace CASM {
     //const SymGroup &point_group();
     SymGroupRep const *basis_permutation_symrep()const;
     SymGroupRepID basis_permutation_symrep_ID()const override;
-
-    std::vector<AtomSpecies> struc_species() const;
-    std::vector<Molecule> struc_molecule() const;
-    std::vector<std::string> struc_species_name() const;
-    std::vector<std::string> struc_molecule_name() const;
-    Eigen::VectorXi num_each_species() const;
-    Eigen::VectorXi num_each_molecule() const;
 
     // ****Mutators****
 
@@ -150,15 +142,9 @@ namespace CASM {
     bool read_species(); //Ivy 11/27/12
     void assign_species(std::vector<std::string> &names, std::vector<double> &masses, std::vector<double> &magmoms, std::vector<double> &Us, std::vector<double> &Js); //Added by Ivy
 
-    jsonParser &to_json(jsonParser &json) const;
-    void from_json(const jsonParser &json);
-
   };
 
   //Structure operator*(const SymOp &LHS, const Structure &RHS);
-
-  jsonParser &to_json(const Structure &structure, jsonParser &json);
-  void from_json(Structure &structure, const jsonParser &json);
 
   Structure operator*(const Lattice &LHS, const Structure &RHS);
 

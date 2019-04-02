@@ -1,7 +1,6 @@
 #ifndef LATTICEMAP_HH
 #define LATTICEMAP_HH
 
-#include "casm/container/LinearAlgebra.hh"
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/Lattice.hh"
 

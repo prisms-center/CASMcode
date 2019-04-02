@@ -518,114 +518,83 @@ namespace CASM {
   //
   // Donghee
   //*****************************************************************
-  void SymGroup::get_rotation_groups() const {
-    std::vector<SymOp> E, TF, THF, FF, SF;
-    std::vector<SymOp> I, ITF, ITHF, IFF, ISF;
+  std::vector<Index> SymGroup::get_rotation_groups() const {
+    std::vector<Index> result(12, 0);
     for(Index i = 0; i < size(); i++) {
       SymInfo info(at(i), lattice());
       if(info.op_type == symmetry_type::identity_op) {
-        E.push_back(at(i));
+        result[0]++;
       }
-      if(info.op_type == symmetry_type::inversion_op) {
-        I.push_back(at(i));
+      else if(info.op_type == symmetry_type::inversion_op) {
+        result[1]++;
       }
-      if(info.op_type == symmetry_type::rotation_op) {
-        if(std::abs(180 - info.angle) < TOL) {
-          TF.push_back(at(i));
+      else {
+        Index bit = 0;
+        if(at(i).matrix().determinant() < 0)
+          bit = 1;
+        for(Index n = 2; n <= 6; ++n) {
+          if(almost_equal<double>(360. / n, info.angle)) {
+            result[2 * (n - 1) + bit]++;
+            break;
+          }
+
         }
-        else if(std::abs(120 - info.angle) < TOL) {
-          THF.push_back(at(i));
-        }
-        else if(std::abs(90 - info.angle) < TOL) {
-          FF.push_back(at(i));
-        }
-        else if(std::abs(60 - info.angle) < TOL) {
-          SF.push_back(at(i));
-        }
-        else continue;
-      }
-      if(info.op_type == symmetry_type::rotoinversion_op || info.op_type == symmetry_type::mirror_op) {
-        if(info.op_type == symmetry_type::mirror_op) {
-          ITF.push_back(at(i));
-        }
-        else if(std::abs(120 - info.angle) < TOL) {
-          ITHF.push_back(at(i));
-        }
-        else if(std::abs(90 - info.angle) < TOL) {
-          IFF.push_back(at(i));
-        }
-        else if(std::abs(60 - info.angle) < TOL) {
-          ISF.push_back(at(i));
-        }
-        else continue;
       }
     }
-    rotation_groups.push_back(E);
-    rotation_groups.push_back(I);
-    rotation_groups.push_back(TF);
-    rotation_groups.push_back(ITF);
-    rotation_groups.push_back(THF);
-    rotation_groups.push_back(ITHF);
-    rotation_groups.push_back(FF);
-    rotation_groups.push_back(IFF);
-    rotation_groups.push_back(SF);
-    rotation_groups.push_back(ISF);
-
-    return;
+    return result;
   }
   //*****************************************************************
-  void SymGroup::get_point_group_type() const {
-    if(!rotation_groups.size()) {
-      get_rotation_groups();
-    }
+  std::map<std::string, std::string> SymGroup::point_group_info() const {
+    std::vector<Index> rgroups = get_rotation_groups();
+    std::map<std::string, std::string> result;
     // Calculate total number of rotation elements
-    Index nm = rotation_groups[2].size() + 1;
-    for(Index k = 4; k < rotation_groups.size(); k++) {
-      nm += rotation_groups[k].size();
+    Index nm = rgroups[2] + 1;
+    for(Index k = 4; k < rgroups.size(); k++) {
+      nm += rgroups[k];
     }
-    centric = true;
-    if(!rotation_groups[1].size()) {
+    bool centric = true;
+    result["centricity"] = "Centric";
+    if(!rgroups[1]) {
       centric = false;
+      result["centricity"] = "Acentric";
     }
     // naming point gorup
-    group_name.resize(2);
-    group_number.resize(2);
-    if((rotation_groups[4].size() + rotation_groups[5].size()) == 8) {
-      crystal_system = "Cubic";
+    if((rgroups[4] + rgroups[5]) == 8) {
+      result["crystal_system"] = "Cubic";
       switch(nm) {
       case 12:
         if(centric) {
-          group_name[0] = "m-3";
-          group_name[1] = "Th";
-          group_number[0] = 200;
-          group_number[1] = 206;
+          result["international_name"] = "m-3";
+          result["name"] = "Th";
+          result["latex_name"] = "T_h";
+          result["space_group_range"] = "200-206";
         }
         else {
-          group_name[0] = "23";
-          group_name[1] = "T (Chiral)";
-          group_number[0] = 195;
-          group_number[1] = 199;
+          result["international_name"] = "23";
+          result["name"] = "T (Chiral)";
+          result["latex_name"] = "T";
+          result["space_group_range"] = "195-199";
         }
         break;
       case 24:
         if(centric) {
-          group_name[0] = "m-3m";
-          group_name[1] = "Oh";
-          group_number[0] = 221;
-          group_number[1] = 230;
+          result["international_name"] = "m-3m";
+          result["name"] = "Oh";
+          result["latex_name"] = "O_h";
+          result["space_group_range"] = "221-230";
         }
         else {
-          if(rotation_groups[6].size() == 6) {
-            group_name[0] = "432";
-            group_name[1] = "O (Chiral)";
-            group_number[0] = 207;
-            group_number[1] = 214;
+          if(rgroups[6] == 6) {
+            result["international_name"] = "432";
+            result["name"] = "O (Chiral)";
+            result["latex_name"] = "O";
+            result["space_group_range"] = "207-214";
           }
-          else if(rotation_groups[7].size() == 6) {
-            group_name[0] = "-43m";
-            group_name[1] = "Td";
-            group_number[0] = 215;
-            group_number[1] = 220;
+          else if(rgroups[7] == 6) {
+            result["international_name"] = "-43m";
+            result["name"] = "Td";
+            result["latex_name"] = "T_d";
+            result["space_group_range"] = "215-220";
           }
           else {
             default_err_log() << "\n Error Cubic case 24 Acentric \n ";
@@ -636,28 +605,28 @@ namespace CASM {
         default_err_log() << "\n Error Cubic \n";
       }
     } // for cubic;
-    else if((rotation_groups[8].size() + rotation_groups[9].size()) == 2) {
-      crystal_system = "Hexagonal";
+    else if((rgroups[10] + rgroups[11]) == 2) {
+      result["crystal_system"] = "Hexagonal";
       switch(nm) {
       case 6:
         if(centric) {
-          group_name[0] = "6/m";
-          group_name[1] = "C6h";
-          group_number[0] = 175;
-          group_number[1] = 176;
+          result["international_name"] = "6/m";
+          result["name"] = "C6h";
+          result["latex_name"] = "C_{6h}";
+          result["space_group_range"] = "175-176";
         }
         else {
-          if(rotation_groups[8].size() == 2) {
-            group_name[0] = "6";
-            group_name[1] = "C6 (Chiral)";
-            group_number[0] = 168;
-            group_number[1] = 173;
+          if(rgroups[10] == 2) {
+            result["international_name"] = "6";
+            result["name"] = "C6 (Chiral)";
+            result["latex_name"] = "C_6";
+            result["space_group_range"] = "168-173";
           }
-          else if(rotation_groups[9].size() == 2) {
-            group_name[0] = "-6";
-            group_name[1] = "C3h";
-            group_number[0] = 174;
-            group_number[1] = 174;
+          else if(rgroups[11] == 2) {
+            result["international_name"] = "-6";
+            result["name"] = "C3h";
+            result["latex_name"] = "C_{3h}";
+            result["space_group_range"] = "174";
           }
           else {
             default_err_log() << "\n Error Hexagonal case 6 Acentric \n ";
@@ -666,33 +635,32 @@ namespace CASM {
         break;
       case 12:
         if(centric) {
-          group_name[0] = "6/mmm";
-          group_name[1] = "D6h";
-          group_number[0] = 191;
-          group_number[1] = 194;
-
+          result["international_name"] = "6/mmm";
+          result["name"] = "D6h";
+          result["latex_name"] = "D_{6h}";
+          result["space_group_range"] = "191-194";
         }
         else {
-          if(rotation_groups[8].size() == 2) {
-            if(rotation_groups[3].size() == 7) {
-              group_name[0] = "622";
-              group_name[1] = "D6 (Chiral)";
-              group_number[0] = 177;
-              group_number[1] = 182;
+          if(rgroups[10] == 2) {
+            if(rgroups[3] == 7) {
+              result["international_name"] = "622";
+              result["name"] = "D6 (Chiral)";
+              result["latex_name"] = "D_{6h}";
+              result["space_group_range"] = "177-182";
             }
-            else if(rotation_groups[4].size() == 6) {
-              group_name[0] = "6mm";
-              group_name[1] = "C6v";
-              group_number[0] = 183;
-              group_number[1] = 186;
+            else if(rgroups[4] == 6) {
+              result["international_name"] = "6mm";
+              result["name"] = "C6v";
+              result["latex_name"] = "C_{6v}";
+              result["space_group_range"] = "183-186";
             }
             else default_err_log() << "\n Error Hexagonal case 12 Ancentric #6 \n";
           }
-          else if(rotation_groups[9].size() == 2) {
-            group_name[0] = "-6m2";
-            group_name[1] = "D3h";
-            group_number[0] = 187;
-            group_number[1] = 190;
+          else if(rgroups[11] == 2) {
+            result["international_name"] = "-6m2";
+            result["name"] = "D3h";
+            result["latex_name"] = "D_{3h}";
+            result["space_group_range"] = "187-190";
           }
           else {
             default_err_log() << "\n Error Hexagonal case 12 Acentric \n ";
@@ -703,42 +671,42 @@ namespace CASM {
         default_err_log() << "\n Error Hexagonal \n";
       }
     } // for hexagonal
-    else if((rotation_groups[4].size() + rotation_groups[5].size()) == 2) {
-      crystal_system = "Trigonal";
+    else if((rgroups[4] + rgroups[5]) == 2) {
+      result["crystal_system"] = "Trigonal";
       switch(nm) {
       case 3:
         if(centric) {
-          group_name[0] = "-3";
-          group_name[1] = "S6";
-          group_number[0] = 147;
-          group_number[1] = 148;
+          result["international_name"] = "-3";
+          result["name"] = "S6";
+          result["latex_name"] = "S_6";
+          result["space_group_range"] = "147-148";
         }
         else {
-          group_name[0] = "3";
-          group_name[1] = "C3 (Chiral)";
-          group_number[0] = 143;
-          group_number[1] = 146;
+          result["international_name"] = "3";
+          result["name"] = "C3 (Chiral)";
+          result["latex_name"] = "C_3";
+          result["space_group_range"] = "143-146";
         }
         break;
       case 6:
         if(centric) {
-          group_name[0] = "-3m";
-          group_name[1] = "D3d";
-          group_number[0] = 162;
-          group_number[1] = 167;
+          result["international_name"] = "-3m";
+          result["name"] = "D3d";
+          result["latex_name"] = "D_{3d}";
+          result["space_group_range"] = "162-167";
         }
         else {
-          if(rotation_groups[2].size() == 3) {
-            group_name[0] = "32";
-            group_name[1] = "D3 (Chiral)";
-            group_number[0] = 149;
-            group_number[1] = 155;
+          if(rgroups[2] == 3) {
+            result["international_name"] = "32";
+            result["name"] = "D3 (Chiral)";
+            result["latex_name"] = "D_3";
+            result["space_group_range"] = "149-155";
           }
-          else if(rotation_groups[3].size() == 3) {
-            group_name[0] = "3m";
-            group_name[1] = "C3v";
-            group_number[0] = 156;
-            group_number[1] = 161;
+          else if(rgroups[3] == 3) {
+            result["international_name"] = "3m";
+            result["name"] = "C3v";
+            result["latex_name"] = "C_{3v}";
+            result["space_group_range"] = "156-161";
           }
           else {
             default_err_log() << "\n Error Trigonal case 6 Acentric \n ";
@@ -749,28 +717,28 @@ namespace CASM {
         default_err_log() << "\n Error Trigonal \n";
       }
     } // for trigonal
-    else if((rotation_groups[6].size() + rotation_groups[7].size()) == 2) {
-      crystal_system = "Tetragonal";
+    else if((rgroups[6] + rgroups[7]) == 2) {
+      result["crystal_system"] = "Tetragonal";
       switch(nm) {
       case 4:
         if(centric) {
-          group_name[0] = "4/m";
-          group_name[1] = "C4h";
-          group_number[0] = 83;
-          group_number[1] = 88;
+          result["international_name"] = "4/m";
+          result["name"] = "C4h";
+          result["latex_name"] = "C_{4h}";
+          result["space_group_range"] = "83-88";
         }
         else {
-          if(rotation_groups[6].size() == 2) {
-            group_name[0] = "4";
-            group_name[1] = "C4 (Chiral)";
-            group_number[0] = 75;
-            group_number[1] = 80;
+          if(rgroups[6] == 2) {
+            result["international_name"] = "4";
+            result["name"] = "C4 (Chiral)";
+            result["latex_name"] = "C_4";
+            result["space_group_range"] = "75-80";
           }
-          else if(rotation_groups[7].size() == 2) {
-            group_name[0] = "-4";
-            group_name[1] = "S4";
-            group_number[0] = 81;
-            group_number[1] = 82;
+          else if(rgroups[7] == 2) {
+            result["international_name"] = "-4";
+            result["name"] = "S4";
+            result["latex_name"] = "S_4";
+            result["space_group_range"] = "81-82";
           }
           else {
             default_err_log() << "\n Error Tetragonal case 4 Acentric \n ";
@@ -780,32 +748,32 @@ namespace CASM {
         break;
       case 8:
         if(centric) {
-          group_name[0] = "4/mmm";
-          group_name[1] = "D4h";
-          group_number[0] = 123;
-          group_number[1] = 142;
+          result["international_name"] = "4/mmm";
+          result["name"] = "D4h";
+          result["latex_name"] = "D_{4h}";
+          result["space_group_range"] = "123-142";
         }
         else {
-          if(rotation_groups[6].size() == 2) {
-            if(rotation_groups[3].size() == 5) {
-              group_name[0] = "422";
-              group_name[1] = "D4 (Chiral)";
-              group_number[0] = 89;
-              group_number[1] = 98;
+          if(rgroups[6] == 2) {
+            if(rgroups[3] == 5) {
+              result["international_name"] = "422";
+              result["name"] = "D4 (Chiral)";
+              result["latex_name"] = "D_4";
+              result["space_group_range"] = "89-98";
             }
-            else if(rotation_groups[4].size() == 4) {
-              group_name[0] = "4mm";
-              group_name[1] = "C4v";
-              group_number[0] = 99;
-              group_number[1] = 110;
+            else if(rgroups[4] == 4) {
+              result["international_name"] = "4mm";
+              result["name"] = "C4v";
+              result["latex_name"] = "C_{4v}";
+              result["space_group_range"] = "99-110";
             }
             else default_err_log() << "\n Error Tetragonal case 8 Ancentric #4 \n";
           }
-          else if(rotation_groups[7].size() == 2) {
-            group_name[0] = "-42m";
-            group_name[1] = "D2d";
-            group_number[0] = 111;
-            group_number[1] = 122;
+          else if(rgroups[7] == 2) {
+            result["international_name"] = "-42m";
+            result["name"] = "D2d";
+            result["latex_name"] = "D_{2d}";
+            result["space_group_range"] = "111-122";
           }
           else {
             default_err_log() << "\n Error Tetragonal case 8 Acentric \n ";
@@ -816,26 +784,26 @@ namespace CASM {
         default_err_log() << "\n Error Tetragonal \n";
       }
     } // for tetragonal
-    else if((rotation_groups[2].size() + rotation_groups[3].size()) == 3 || ((rotation_groups[2].size() + rotation_groups[3].size()) == 6  && nm == 4)) {
-      crystal_system = "Orthorhomic";
+    else if((rgroups[2] + rgroups[3]) == 3 || ((rgroups[2] + rgroups[3]) == 6  && nm == 4)) {
+      result["crystal_system"] = "Orthorhomic";
       if(centric) {
-        group_name[0] = "mmm";
-        group_name[1] = "D2h";
-        group_number[0] = 47;
-        group_number[1] = 74;
+        result["international_name"] = "mmm";
+        result["name"] = "D2h";
+        result["latex_name"] = "D_{2h}";
+        result["space_group_range"] = "47-84";
       }
       else {
-        if(rotation_groups[3].size() == 3) {
-          group_name[0] = "222";
-          group_name[1] = "D2 (Chiral)";
-          group_number[0] = 16;
-          group_number[1] = 24;
+        if(rgroups[3] == 3) {
+          result["international_name"] = "222";
+          result["name"] = "D2 (Chiral)";
+          result["latex_name"] = "D_2";
+          result["space_group_range"] = "16-24";
         }
-        else if(rotation_groups[4].size() == 2) {
-          group_name[0] = "mm2";
-          group_name[1] = "C2v";
-          group_number[0] = 25;
-          group_number[1] = 46;
+        else if(rgroups[4] == 2) {
+          result["international_name"] = "mm2";
+          result["name"] = "C2v";
+          result["latex_name"] = "C_{2v}";
+          result["space_group_range"] = "25-46";
         }
         else {
           default_err_log() << "\n Error Orthorhombic Acentric \n ";
@@ -843,26 +811,26 @@ namespace CASM {
       }
     } // for orthorhombic
 
-    else if((rotation_groups[2].size() + rotation_groups[3].size()) == 1 || nm == 2) {
-      crystal_system = "Monoclinic";
+    else if((rgroups[2] + rgroups[3]) == 1 || nm == 2) {
+      result["crystal_system"] = "Monoclinic";
       if(centric) {
-        group_name[0] = "2/m";
-        group_name[1] = "C2h";
-        group_number[0] = 10;
-        group_number[1] = 15;
+        result["international_name"] = "2/m";
+        result["name"] = "C2h";
+        result["latex_name"] = "C_{2h}";
+        result["space_group_range"] = "10-15";
       }
       else {
-        if(rotation_groups[3].size() == 1) {
-          group_name[0] = "2";
-          group_name[1] = "C2 (Chiral)";
-          group_number[0] = 3;
-          group_number[1] = 5;
+        if(rgroups[3] == 1) {
+          result["international_name"] = "2";
+          result["name"] = "C2 (Chiral)";
+          result["latex_name"] = "C_2";
+          result["space_group_range"] = "3-5";
         }
-        else if(rotation_groups[4].size() == 1) {
-          group_name[0] = "m";
-          group_name[1] = "Cs";
-          group_number[0] = 6;
-          group_number[1] = 9;
+        else if(rgroups[4] == 1) {
+          result["international_name"] = "m";
+          result["name"] = "Cs";
+          result["latex_name"] = "C_s";
+          result["space_group_range"] = "6-9";
         }
         else {
           default_err_log() << "\n Error Monoclinic Acentric \n ";
@@ -870,43 +838,34 @@ namespace CASM {
       }
     } // for Acentric monoclinic
     else if(nm == 1) {
-      crystal_system = "Triclinic";
+      result["crystal_system"] = "Triclinic";
       if(centric) {
-        group_name[0] = "-1";
-        group_name[1] = "Ci";
-        group_number[0] = 2;
-        group_number[1] = 2;
+        result["international_name"] = "-1";
+        result["name"] = "Ci";
+        result["latex_name"] = "C_i";
+        result["space_group_range"] = "2";
       }
       else {
-        group_name[0] = "1";
-        group_name[1] = "C1 (Chiral)";
-        group_number[0] = 1;
-        group_number[1] = 1;
+        result["international_name"] = "1";
+        result["name"] = "C1 (Chiral)";
+        result["latex_name"] = "C_1";
+        result["space_group_range"] = "1";
       }
     }
     else {
       default_err_log() << "Error foind point group type \n";
     }
-    return;
+    return result;
   }
 
   //*******************************************************************************************
 
   void SymGroup::print_space_group_info(std::ostream &out) const {
-    if(!rotation_groups.size())
-      get_rotation_groups();
 
-    if(!crystal_system.size())
-      get_point_group_type();
-
-    out << "  Crystal System : " << crystal_system << "\n";
-    out << "  Point Group # : " << group_number[0] << " - " << group_number[1] << "\n";
-    out << "  Point Group is " ;
-    if(!centric) {
-      out << " Acentric ";
-    }
-    else out << " Centric ";
-    out << " " << group_name[0] << " ( " << group_name[1] << " ) \n";
+    auto result = point_group_info();
+    out << "  Crystal System : " << result["crystal_system"] << "\n";
+    out << "  Space Group # : " << result["space_group_range"] << "\n";
+    out << "  Point Group is " << result["centricity"] << " " << result["international_name"] << " ( " << result["name"] << " ) \n";
   }
 
   //*******************************************************************************************
@@ -3779,32 +3738,11 @@ namespace CASM {
     // mutable std::vector<std::vector<int> > elem_order_table;
     json["elem_order_table"] = elem_order_table;
 
-    // mutable std::string name;
-    json["name"] = name;
-
-    // mutable std::string latex_name;
-    json["latex_name"] = latex_name;
-
-    //mutable std::string comment;
-    json["comment"] = comment;
-
     // mutable double max_error;
     json["max_error"] = m_max_error;
 
-    // mutable std::vector<std::vector<SymOp> > rotation_groups;
-    json["rotation_groups"] = rotation_groups;
-
-    // mutable std::string crystal_system;
-    json["crystal_system"] = crystal_system;
-
-    // mutable bool centric;
-    json["centric"] = centric;
-
-    // mutable std::vector<int> group_number; // space group number (min and max)
-    json["group_number"] = group_number;
-
-    // mutable std::vector<std::string> group_name; // 0: International 1: Schonflies
-    json["group_name"] = group_name;
+    for(auto const &info : point_group_info())
+      json[info.first] = info.second;
 
     return json;
   }
@@ -3860,41 +3798,8 @@ namespace CASM {
       // mutable std::vector<std::vector<int> > elem_order_table;
       CASM::from_json(elem_order_table, json["elem_order_table"]);
 
-      // mutable std::string name;
-      CASM::from_json(name, json["name"]);
-
-      // mutable std::string latex_name;
-      CASM::from_json(latex_name, json["latex_name"]);
-
-      //mutable std::string comment;
-      CASM::from_json(comment, json["comment"]);
-
       // mutable double max_error;
       CASM::from_json(m_max_error, json["max_error"]);
-
-      // mutable std::vector<std::vector<SymOp> > rotation_groups;
-      //CASM::from_json( rotation_groups, json["rotation_groups"]);
-      rotation_groups.clear();
-      std::vector<SymOp> group;
-      for(int i = 0; i < json["rotation_groups"].size(); i++) {
-        group.clear();
-        for(int j = 0; i < json["rotation_groups"][i].size(); j++) {
-          group.push_back(json["rotation_groups"][i][j].get<SymOp>());
-        }
-        rotation_groups.push_back(group);
-      }
-
-      // mutable std::string crystal_system;
-      CASM::from_json(crystal_system, json["crystal_system"]);
-
-      // mutable bool centric;
-      CASM::from_json(centric, json["centric"]);
-
-      // mutable std::vector<int> group_number; // space group number (min and max)
-      CASM::from_json(group_number, json["group_number"]);
-
-      // mutable std::vector<std::string> group_name; // 0: International 1: Schonflies
-      CASM::from_json(group_name, json["group_name"]);
 
     }
     catch(...) {

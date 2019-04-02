@@ -6,7 +6,7 @@
 #include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/container/LinearAlgebra.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/HallOfFame.hh"
 
 namespace CASM {

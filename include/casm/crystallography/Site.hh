@@ -79,8 +79,11 @@ namespace CASM {
 
     void set_occ(const Molecule &new_occ);
 
-    void set_local_dofs(std::vector<DoFSet> const &new_dofs);
+    void set_dofs(std::map<std::string, DoFSet> _dofs);
 
+    std::map<std::string, DoFSet> const &dofs() const {
+      return m_dof_map;
+    }
 
     std::vector<std::string> allowed_occupants() const;
 
@@ -132,15 +135,6 @@ namespace CASM {
 
 
   };
-
-  template<>
-  struct jsonConstructor<Site> {
-
-    static Site from_json(const jsonParser &json, Lattice const &_home, COORD_TYPE coordtype);
-  };
-
-  jsonParser &to_json(const Site &value, jsonParser &json, COORD_TYPE coordtype);
-  void from_json(Site &value, const jsonParser &json, Lattice const &_home, COORD_TYPE coordtype);
 
   std::ostream &operator<< (std::ostream &stream, const Site &site);
 

@@ -21,8 +21,8 @@ namespace CASM {
     OccPerturbationInvariants(const OccPerturbation &perturb);
 
     ClusterInvariants<IntegralCluster> cluster_invariants;
-    std::map<AtomSpecies, Index> from_species_count;
-    std::map<AtomSpecies, Index> to_species_count;
+    std::map<std::string, Index> from_species_count;
+    std::map<std::string, Index> to_species_count;
   };
 
   /// \brief Check if OccPerturbationInvariants are equal

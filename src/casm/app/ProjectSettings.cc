@@ -469,14 +469,14 @@ namespace CASM {
 
   HamiltonianModules &ProjectSettings::hamiltonian_modules() {
     if(!m_hamiltonian_modules) {
-      notstd::make_cloneable<HamiltonianModules>(this);
+      m_hamiltonian_modules = notstd::make_cloneable<HamiltonianModules>(this);
     }
     return *m_hamiltonian_modules;
   }
 
   HamiltonianModules const &ProjectSettings::hamiltonian_modules()const {
     if(!m_hamiltonian_modules) {
-      notstd::make_cloneable<HamiltonianModules>(this);
+      m_hamiltonian_modules = notstd::make_cloneable<HamiltonianModules>(this);
     }
     return *m_hamiltonian_modules;
   }

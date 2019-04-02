@@ -9,7 +9,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/container/Permutation.hh"
-#include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/Orbit.hh"

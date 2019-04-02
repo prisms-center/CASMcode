@@ -13,6 +13,216 @@ namespace CASM {
 
   // --------- PrimIO Definitions --------------------------------------------------
 
+  //****************************************************
+  jsonParser &to_json(AtomPosition const &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat) {
+    json.put_obj();
+    to_json_array(c2f_mat * apos.cart(), json["coordinate"]);
+    json["name"] = apos.name();
+    json["SD_flag"] = apos.sd_flag();
+    if(apos.attributes().size())
+      json["attributes"] = apos.attributes();
+    return json;
+  }
+
+  //****************************************************
+
+  void from_json(AtomPosition &apos, const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
+    apos = json.get<AtomPosition>(f2c_mat);
+
+    return;
+  }
+
+  //****************************************************
+
+  AtomPosition jsonConstructor<AtomPosition>::from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
+    std::string _name;
+    Eigen::Vector3d _pos(0., 0., 0.);
+    AtomPosition::sd_type _SD_flag {{false, false, false}};
+    std::map<std::string, SpeciesAttribute> attr_map;
+    if(json.is_obj()) {
+      _name = json["name"].get<std::string>();
+      if(json.contains("coordinate"))
+        _pos = f2c_mat * json["coordinate"].get<Eigen::Vector3d>();
+      if(json.contains("SD_flag"))
+        _SD_flag = json["SD_flag"].get<typename AtomPosition::sd_type>();
+
+      if(json.contains("attributes")) {
+        auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
+        for(; it != end_it; ++it) {
+          auto result_pair = attr_map.emplace(it.name(), it.name());
+          (result_pair.first->second).from_json(*it);
+        }
+      }
+
+    }
+    else if(json.is_string()) {
+      _name = json.get<std::string>();
+    }
+    else
+      throw std::runtime_error("Invalid JSON input encountered. Unable to parse AtomPosition object.\n");
+
+    AtomPosition result(_pos, _name, _SD_flag);
+    result.set_attributes(attr_map);
+    return result;
+  }
+
+  //****************************************************
+  //   Write Molecule to json.
+  //****************************************************
+
+  jsonParser &to_json(Molecule const &mol, jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
+    json.put_obj();
+    CASM::to_json(mol.atoms(), json["atoms"], f2c_mat);
+    json["name"] = mol.name();
+    if(mol.attributes().size())
+      json["attributes"] = mol.attributes();
+
+    return json;
+  }
+
+  //****************************************************
+  //
+  //    Read Molecule from json.
+  //
+  //****************************************************
+
+  void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
+    std::vector<AtomPosition> _atoms;
+    if(json.contains("atoms")) {
+      CASM::from_json(_atoms, json["atoms"], f2c_mat);
+    }
+    mol.set_atoms(_atoms);
+
+    std::map<std::string, SpeciesAttribute> attr_map;
+    if(json.contains("attributes")) {
+      auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
+      for(; it != end_it; ++it) {
+        auto result_pair = attr_map.emplace(it.name(), it.name());
+        (result_pair.first->second).from_json(*it);
+      }
+    }
+    mol.set_attributes(attr_map);
+  }
+
+  //****************************************************
+  //
+  //****************************************************
+
+  Molecule jsonConstructor<Molecule>::from_json(const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
+    return json.get<Molecule>(f2c_mat);
+  }
+
+  //****************************************************
+
+  Site jsonConstructor<Site>::from_json(const jsonParser &json,
+                                        Lattice const &_home,
+                                        COORD_TYPE coordtype,
+                                        std::map<std::string, Molecule> const &mol_map,
+                                        HamiltonianModules const &_modules) {
+    Site result(_home);
+    CASM::from_json(result, json, _home, coordtype, mol_map, _modules);
+    return result;
+  }
+
+  //****************************************************
+
+  jsonParser &to_json(const Site &site, jsonParser &json, COORD_TYPE coordtype) {
+    json.put_obj();
+
+    // class Site : public Coordinate
+    if(coordtype == FRAC)
+      to_json_array(site.frac(), json["coordinate"]);
+    else
+      to_json_array(site.cart(), json["coordinate"]);
+
+    // MoleculeOccupant site_occupant;
+    Eigen::Matrix3d c2f = Eigen::Matrix3d::Identity();
+    // change this to use FormatFlag
+    if(coordtype == FRAC)
+      c2f = site.home().inv_lat_column_mat();
+    CASM::to_json(site.site_occupant(), json["site_occupant"], c2f);
+
+    if(site.dofs().size()) {
+      json["dofs"] = site.dofs();
+    }
+
+    // Index m_label
+    if(valid_index(site.label()))
+      json["label"] = site.label();
+
+
+    return json;
+
+  }
+
+  //****************************************************
+
+  void from_json(Site &site,
+                 const jsonParser &json,
+                 Lattice const &_home,
+                 COORD_TYPE coordtype,
+                 std::map<std::string, Molecule> const &mol_map,
+                 HamiltonianModules const &_modules) {
+    site.set_lattice(_home, coordtype);
+    if(coordtype == FRAC)
+      site.frac() = json["coordinate"].get<Eigen::Vector3d>();
+    else
+      site.cart() = json["coordinate"].get<Eigen::Vector3d>();
+
+    // Index m_label -- must be greater than zero
+    Index _label = -1;
+    if(json.contains("label")) {
+      CASM::from_json(_label, json["label"]);
+      if(!valid_index(_label))
+        throw std::runtime_error("JSON specification of site has {\"label\" : " + std::to_string(_label) + "}, but \"label\" must be greater than 0.\n");
+    }
+    site.set_label(_label);
+
+    // Local continuous dofs
+
+    std::map<std::string, DoFSet> _dof_map;
+    if(json.contains("dofs")) {
+
+      auto it = json["dofs"].begin(), end_it = json["dofs"].end();
+      for(; it != end_it; ++it) {
+        if(_dof_map.count(it.name()))
+          throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
+
+        try {
+          _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*_modules.dof_dict().lookup(it.name()))));
+        }
+        catch(std::exception &e) {
+          throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
+        }
+
+      }
+    }
+    site.set_dofs(_dof_map);
+
+    std::vector<Molecule> t_occ;
+    std::string occ_key;
+    if(json.contains("occupants"))
+      occ_key = "occupants";
+    else if(json.contains("occupant_dof"))
+      occ_key = "occupant_dof";
+
+    if(!occ_key.empty()) {
+      for(std::string const &occ : json[occ_key].get<std::vector<std::string> >()) {
+        //std::cout << "CREATING OCCUPANT " << occ << "\n";
+        // Have convenience options for attributes like magnetic moment, etc?
+        auto it = mol_map.find(occ);
+        if(it != mol_map.end())
+          t_occ.push_back(it->second);
+        else
+          t_occ.push_back(Molecule::make_atom(occ));
+      }
+    }
+    //std::cout << "t_occ.size() = " << t_occ.size() << "\n";
+    if(t_occ.empty())
+      t_occ = {Molecule::make_unknown()};
+    site.set_allowed_occupants(t_occ);
+  }
+
   BasicStructure<Site> read_prim(fs::path filename, HamiltonianModules const &_modules, double xtal_tol) {
 
     try {
@@ -56,7 +266,7 @@ namespace CASM {
               throw std::runtime_error("Error parsing global field \"dof\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
             try {
-              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(DoF::traits(it.name()))));
+              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*_modules.dof_dict().lookup(it.name()))));
             }
             catch(std::exception &e) {
               throw std::runtime_error("Error parsing global field \"dof\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
@@ -90,33 +300,8 @@ namespace CASM {
 
 
       // read basis sites
-      for(jsonParser const &bjson : json["basis"]) {
-        Site tsite = bjson.get<Site>(prim.lattice(), mode);
-
-        std::vector<Molecule> t_occ;
-        std::string occ_key;
-        if(bjson.contains("occupants"))
-          occ_key = "occupants";
-        else if(bjson.contains("occupant_dof"))
-          occ_key = "occupant_dof";
-
-        if(!occ_key.empty()) {
-          for(std::string const &occ : bjson[occ_key].get<std::vector<std::string> >()) {
-            //std::cout << "CREATING OCCUPANT " << occ << "\n";
-            // Have convenience options for attributes like magnetic moment, etc?
-            auto it = mol_map.find(occ);
-            if(it != mol_map.end())
-              t_occ.push_back(it->second);
-            else
-              t_occ.push_back(Molecule::make_atom(occ));
-          }
-        }
-        //std::cout << "t_occ.size() = " << t_occ.size() << "\n";
-        if(t_occ.empty())
-          t_occ = {Molecule::make_unknown()};
-        tsite.set_allowed_occupants(t_occ);
-        prim.push_back(tsite);
-      }
+      for(jsonParser const &bjson : json["basis"])
+        prim.push_back(bjson.get<Site>(prim.lattice(), mode, mol_map, _modules));
 
       return prim;
     }
@@ -160,25 +345,34 @@ namespace CASM {
       json["coordinate_mode"] = "Cartesian";
     }
 
-    json["basis"] = jsonParser::array(prim.basis().size());
+    // Global DoFs
+    for(auto const &_dof : prim.global_dofs()) {
+      json[_dof.first] = _dof.second;
+    }
+
+    jsonParser &bjson = (json["basis"] = jsonParser::array(prim.basis().size()));
     for(int i = 0; i < prim.basis().size(); i++) {
-      json["basis"][i] = jsonParser::object();
-      json["basis"][i]["coordinate"].put_array();
+      bjson[i] = jsonParser::object();
+      jsonParser &cjson = bjson[i]["coordinate"].put_array();
       if(mode == FRAC) {
-        json["basis"][i]["coordinate"].push_back(prim.basis()[i].frac(0));
-        json["basis"][i]["coordinate"].push_back(prim.basis()[i].frac(1));
-        json["basis"][i]["coordinate"].push_back(prim.basis()[i].frac(2));
+        cjson.push_back(prim.basis()[i].frac(0));
+        cjson.push_back(prim.basis()[i].frac(1));
+        cjson.push_back(prim.basis()[i].frac(2));
       }
       else if(mode == CART) {
-        json["basis"][i]["coordinate"].push_back(prim.basis()[i].cart(0));
-        json["basis"][i]["coordinate"].push_back(prim.basis()[i].cart(1));
-        json["basis"][i]["coordinate"].push_back(prim.basis()[i].cart(2));
+        cjson.push_back(prim.basis()[i].cart(0));
+        cjson.push_back(prim.basis()[i].cart(1));
+        cjson.push_back(prim.basis()[i].cart(2));
       }
 
-      json["basis"][i]["occupant_dof"] = jsonParser::array(prim.basis()[i].site_occupant().size());
+      if(prim.basis()[i].dofs().size()) {
+        bjson[i]["dofs"] = prim.basis()[i].dofs();
+      }
+
+      bjson[i]["occupants"] = jsonParser::array(prim.basis()[i].site_occupant().size());
 
       for(int j = 0; j < prim.basis()[i].site_occupant().size(); j++) {
-        json["basis"][i]["occupant_dof"][j] = prim.basis()[i].site_occupant()[j].name();
+        bjson[i]["occupants"][j] = prim.basis()[i].site_occupant()[j].name();
       }
 
     }
@@ -224,7 +418,7 @@ namespace CASM {
       json["inverse"][i] = grp.ind_inverse(i);
     }
     json["multiplication_table"] = grp.get_multi_table();
-    json["character_table"] = grp.character_table();
+    //json["character_table"] = grp.character_table();
   }
 
 

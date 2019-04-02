@@ -51,7 +51,7 @@ namespace CASM {
         ConstMonteCarloPtr ptr = mc;
         return static_cast<const MonteType *>(ptr)->conditions().chem_pot(index);
       };
-      std::string header = std::string("chem_pot(") + mc.primclex().prim().struc_molecule_name()[index] + ")";
+      std::string header = std::string("chem_pot(") + struc_molecule_name(mc.primclex().prim())[index] + ")";
       return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator);
     }
 
@@ -73,7 +73,7 @@ namespace CASM {
         ConstMonteCarloPtr ptr = mc;
         return static_cast<const MonteType *>(ptr)->conditions().mol_composition()(index);
       };
-      std::string header = std::string("comp_n(") + mc.primclex().prim().struc_molecule_name()[index] + ")";
+      std::string header = std::string("comp_n(") + struc_molecule_name(mc.primclex().prim())[index] + ")";
       return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator);
     }
 
@@ -86,7 +86,7 @@ namespace CASM {
         Eigen::VectorXd site_frac = comp_n / mc->primclex().prim().basis().size();
         return site_frac(index);
       };
-      std::string header = std::string("site_frac(") + mc.primclex().prim().struc_molecule_name()[index] + ")";
+      std::string header = std::string("site_frac(") + struc_molecule_name(mc.primclex().prim())[index] + ")";
       return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator);
     }
 
@@ -102,7 +102,7 @@ namespace CASM {
         auto atom_frac = comp_n / comp_n.sum();
         return atom_frac[index];
       };
-      std::string header = std::string("atom_frac(") + mc.primclex().prim().struc_molecule_name()[index] + ")";
+      std::string header = std::string("atom_frac(") + struc_molecule_name(mc.primclex().prim())[index] + ")";
       return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator);
     }
 

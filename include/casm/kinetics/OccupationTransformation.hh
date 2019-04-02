@@ -11,7 +11,6 @@ namespace CASM {
 
   class Configuration;
   class SymOp;
-  class AtomSpecies;
   class Molecule;
 
   namespace Kinetics {
@@ -85,15 +84,15 @@ namespace CASM {
   }
 
   /// Returns an empty map for a given infinite crystal
-  std::map<AtomSpecies, Index> empty_species_count(const UnitCellCoord::UnitType &prim);
+  std::map<std::string, Index> empty_species_count(const UnitCellCoord::UnitType &prim);
 
   /// Iterates over a vector of Occupation Transformation to give the count map of initial species
   template<typename OccTransfIt>
-  std::map<AtomSpecies, Index> from_species_count(OccTransfIt begin, OccTransfIt end);
+  std::map<std::string, Index> from_species_count(OccTransfIt begin, OccTransfIt end);
 
   /// Iterates over a vector of OccupationTransformation to give the count map of final species
   template<typename OccTransfIt>
-  std::map<AtomSpecies, Index> to_species_count(OccTransfIt begin, OccTransfIt end);
+  std::map<std::string, Index> to_species_count(OccTransfIt begin, OccTransfIt end);
 
 
   /// \brief Write OccupationTransformation to JSON object

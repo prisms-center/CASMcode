@@ -76,10 +76,10 @@ namespace CASM {
         std::copy(names.begin(), names.end(), std::inserter(allowed_names, allowed_names.end()));
       };
       if(m_allowed_species_types == ALLOWED_SPECIES_TYPES::ATOM || m_allowed_species_types == ALLOWED_SPECIES_TYPES::ALL) {
-        copy(prim().struc_species_name());
+        copy(struc_species(prim()));
       }
       if(m_allowed_species_types == ALLOWED_SPECIES_TYPES::MOLECULE || m_allowed_species_types == ALLOWED_SPECIES_TYPES::ALL) {
-        copy(prim().struc_molecule_name());
+        copy(struc_molecule_name(prim()));
       }
       jsonParser json;
 

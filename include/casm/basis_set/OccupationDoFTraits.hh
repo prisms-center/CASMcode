@@ -17,10 +17,6 @@ namespace CASM {
 
       }
 
-      /// \brief Output @param _in to JSON
-      void to_json(DoFSet const &_out, jsonParser &_json) const override {
-        throw std::runtime_error("OccupationDoFTraits::to_json not implemented!");
-      }
 
       /*/// \brief Generate a symmetry representation for this DoF
       SymGroupRepID generate_symrep(MasterSymGroup const &_group,
