@@ -2,6 +2,8 @@
 #define BASICSTRUCTURE_HH
 
 #include <iostream>
+#include <vector>
+#include <string>
 #include <cstdlib>
 #include <cmath>
 

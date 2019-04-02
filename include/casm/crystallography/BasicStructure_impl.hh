@@ -2,6 +2,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <vector>
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>

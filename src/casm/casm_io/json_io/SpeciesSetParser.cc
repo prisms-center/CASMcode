@@ -1,5 +1,6 @@
 #include "casm/casm_io/json_io/SpeciesSetParser_impl.hh"
 #include "casm/casm_io/json_io/container.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 
 namespace CASM {
 

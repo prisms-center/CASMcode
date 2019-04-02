@@ -13,6 +13,7 @@
 #include <sstream>
 */
 
+#include <vector>
 #include <cmath>
 #include <complex>
 #include <cassert>
