@@ -414,6 +414,7 @@ namespace CASM {
       verbatim(ss.str(), indent_first_line);
       decrease_indent_spaces(n_indent_spaces);
     }
+    return *this;
   }
 
   template<typename T>

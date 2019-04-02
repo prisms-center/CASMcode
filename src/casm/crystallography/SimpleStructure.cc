@@ -161,6 +161,65 @@ namespace CASM {
     }
   }
 
+  multivector<Index>::X<2> mol_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim) {
+    multivector<Index>::X<2> result;
+    result.reserve(sstruc.mol_info.names.size());
+    for(std::string const &sp : sstruc.mol_info.names) {
+      result.push_back({});
+      for(Index b = 0; b < _prim.basis().size(); ++b) {
+        if(_prim.basis()[b].contains(sp)) {
+          result.back().push_back(b);
+        }
+      }
+    }
+    return result;
+  }
+
+  multivector<Index>::X<2> mol_site_compatibility(SimpleStructure const &sstruc, Configuration const &_config) {
+    multivector<Index>::X<2> result;
+    result.reserve(sstruc.mol_info.names.size());
+    for(std::string const &sp : sstruc.mol_info.names) {
+      result.push_back({});
+      for(Index l = 0; l < _config.size(); ++l) {
+        if(_config.mol(l).name() == sp) {
+          result.back().push_back(l);
+        }
+      }
+    }
+    return result;
+  }
+
+  multivector<Index>::X<2> atom_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim) {
+    multivector<Index>::X<2> result;
+    result.reserve(sstruc.atom_info.names.size());
+    for(std::string const &sp : sstruc.atom_info.names) {
+      result.push_back({});
+      for(Index b = 0; b < _prim.basis().size(); ++b) {
+        for(Molecule const &mol : _prim.basis(b).site_occupant().domain()) {
+          if(mol.contains(sp)) {
+            result.back().push_back(b);
+            break;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  multivector<Index>::X<2> atom_site_compatibility(SimpleStructure const &sstruc, Configuration const &_config) {
+    multivector<Index>::X<2> result;
+    result.reserve(sstruc.atom_info.names.size());
+    for(std::string const &sp : sstruc.atom_info.names) {
+      result.push_back({});
+      for(Index l = 0; l < _config.size(); ++l) {
+        if(_config.mol(l).contains(sp)) {
+          result.back().push_back(l);
+        }
+      }
+    }
+    return result;
+  }
+
   jsonParser &to_json(SimpleStructure const &_struc, jsonParser &json, std::set<std::string> const &excluded_species) {
 
     std::string prefix = _struc.prefix();
