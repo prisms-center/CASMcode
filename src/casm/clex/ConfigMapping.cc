@@ -53,7 +53,7 @@ namespace CASM {
 
       for(auto it = from_range.cbegin(); it != from_range.cend(); ++it) {
         //Supercell matches size, now check to see see if lattices are related to each other
-        LatticeMap strainmap(*it, relaxed_lat, 1, _tol, 1);
+        LatticeMap strainmap(*it, relaxed_lat, 1, _tol, 1, {});
         if(strainmap.best_strain_mapping().strain_cost() < best_cost) {
           trans_mat = strainmap.matrixN();
           deformation = strainmap.matrixF();
@@ -86,7 +86,7 @@ namespace CASM {
         Lattice tlat = canonical_equivalent_lattice(*it, sym_group, _tol);
 
         //Supercell matches size, now check to see see if lattices are related to each other
-        LatticeMap strainmap(tlat, relaxed_lat, 1, _tol, 1);
+        LatticeMap strainmap(tlat, relaxed_lat, 1, _tol, 1, {});
         if(strainmap.best_strain_mapping().strain_cost() < best_cost) {
           trans_mat = strainmap.matrixN();
           deformation = strainmap.matrixF();
@@ -757,7 +757,7 @@ namespace CASM {
 
     // If the simplest mapping is best, we have avoided a lot of extra work, but we still need to check for
     // non-trivial mappings that are better than both the simplest mapping and the best found mapping
-    LatticeMap strainmap(imposed_lat, Lattice(struc.lat_column_mat), round(num_atoms), m_tol, 1);
+    LatticeMap strainmap(imposed_lat, Lattice(struc.lat_column_mat), round(num_atoms), m_tol, 1, primclex().prim().point_group());
     strain_cost = lw * strainmap.strain_cost();
     if(best_cost < strain_cost)
       strain_cost = lw * strainmap.next_mapping_better_than(best_cost).strain_cost();

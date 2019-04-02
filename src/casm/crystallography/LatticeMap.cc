@@ -1,19 +1,59 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/LatticeMap.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/crystallography/LatticeIsEquivalent.hh"
+#include "casm/symmetry/SymOp.hh"
 namespace CASM {
-  LatticeMap::LatticeMap(const Lattice &_ideal, const Lattice &_strained, Index num_atoms, double _tol/*=TOL*/, int _range/*=2*/) :
-    m_L1(Eigen::Matrix3d(_ideal.reduced_cell().lat_column_mat())),
-    m_L2(Eigen::Matrix3d(_strained.reduced_cell().lat_column_mat())),
-    m_scale(pow(std::abs(m_L2.determinant() / m_L1.determinant()), 1.0 / 3.0)),
-    m_atomic_vol(std::abs(m_L2.determinant() / (double)num_atoms)),
+  LatticeMap::LatticeMap(const Lattice &_ideal,
+                         const Lattice &_strained,
+                         Index num_atoms,
+                         double _tol/*=TOL*/,
+                         int _range/*=2*/,
+                         std::vector<SymOp> const &_point_group /*={}*/) :
+    m_L2(_strained.reduced_cell().lat_column_mat()),
+    m_scale(pow(std::abs(m_L2.determinant() / m_L1.determinant()), 1. / 3.)),
+    m_atomic_factor(pow(std::abs(m_L2.determinant() / (double)num_atoms), 2. / 3.)),
     m_tol(_tol),
+    m_range(_range),
     m_cost(1e20),
-    m_inv_count(-std::abs(_range) * IMatType::Ones(3, 3), std::abs(_range) * IMatType::Ones(3, 3), IMatType::Ones(3, 3)) {
+    m_currmat(0) {
 
-    m_U = Eigen::Matrix3d(_ideal.inv_lat_column_mat()) * m_L1;
-    m_V_inv = m_L2.inverse() * Eigen::Matrix3d(_strained.lat_column_mat());
-    // Initialize to first valid mapping
-    next_mapping_better_than(1e10);
+    Lattice reduced_ideal = _ideal.reduced_cell();
+    m_L1 = reduced_ideal.lat_column_mat();
+
+
+    m_U = _ideal.inv_lat_column_mat() * m_L1;
+    m_V_inv = m_L2.inverse() * _strained.lat_column_mat();
+
+    if(_range == 1)
+      m_mvec_ptr = &unimodular_matrices<1>();
+    else if(_range == 2)
+      m_mvec_ptr = &unimodular_matrices<2>();
+    else if(_range == 3)
+      m_mvec_ptr = &unimodular_matrices<3>();
+    else if(_range == 4)
+      m_mvec_ptr = &unimodular_matrices<4>();
+    else
+      throw std::runtime_error("LatticeMap cannot currently be invoked for range>4");
+
+    // Construct inverse fractional symops
+    LatticeIsEquivalent symcheck(reduced_ideal);
+    m_fsym_mats.reserve(_point_group.size());
+    for(SymOp const &op : _point_group) {
+      if(!symcheck(op))
+        continue;
+      if(symcheck.U().isIdentity())
+        continue;
+      m_fsym_mats.push_back(iround(symcheck.U().cast<double>().inverse()));
+      for(Index i = 0; i < (m_fsym_mats.size() - 1); ++i) {
+        if(m_fsym_mats[i] == m_fsym_mats.back()) {
+          m_fsym_mats.pop_back();
+          break;
+        }
+      }
+    }
+
+    reset();
   }
 
 
@@ -21,13 +61,29 @@ namespace CASM {
                          Eigen::Ref<const LatticeMap::DMatType> const &_strained,
                          Index _num_atoms,
                          double _tol /*= TOL*/,
-                         int _range /*= 2*/) :
+                         int _range /*= 2*/,
+                         std::vector<SymOp> const &_point_group /*={}*/) :
     LatticeMap(Lattice(_ideal),
                Lattice(_strained),
                _num_atoms,
                _tol,
-               _range) {}
+               _range,
+               _point_group) {}
 
+  //*******************************************************************************************
+  void LatticeMap::reset() {
+    m_currmat = 0;
+    // Initialize to first valid mapping
+    if(_check_canonical()) {
+      // From relation F * L1 * inv_mat.inverse() = L2
+      m_F = m_L2 * inv_mat().cast<double>() * m_L1.inverse(); // -> F
+      m_cost = _calc_strain_cost();
+      // reconstruct correct N for unreduced lattice
+      m_N = m_U * inv_mat().cast<double>().inverse() * m_V_inv;
+    }
+    else
+      next_mapping_better_than(1e10);
+  }
   //*******************************************************************************************
   /*
    *  For L_strained = (*this).lat_column_mat() and L_ideal = _ideal_lat.lat_column_mat(), we find the mapping:
@@ -61,11 +117,11 @@ namespace CASM {
   //*******************************************************************************************
 
   const LatticeMap &LatticeMap::best_strain_mapping() const {
-    m_inv_count.reset();
+    m_currmat = 0;
 
     // Get an upper bound on the best mapping by starting with no lattice equivalence
     m_N = DMatType::Identity(3, 3);
-    // m_cache -> value of m_inv_count that gives m_N = identity;
+    // m_cache -> value of inv_mat() that gives m_N = identity;
     m_cache = m_V_inv * m_U;
     m_F = m_L2 * m_cache * m_L1.inverse();
     //std::cout << "starting m_F is \n" << m_F << "  det: " << m_F.determinant() << "\n";
@@ -87,6 +143,7 @@ namespace CASM {
     m_cost = 1e20;
     return _next_mapping_better_than(max_cost);
   }
+
   //*******************************************************************************************
   // Implements the algorithm as above, with generalized inputs:
   //       -- m_inv_count saves the state between calls
@@ -97,12 +154,12 @@ namespace CASM {
     // tcost initial value shouldn't matter unles m_inv_count is invalid
     double tcost = max_cost;
 
-    for(++m_inv_count; m_inv_count.valid(); ++m_inv_count) {
-      //continue if determinant is not 1, because it doesn't preserve volume
-      if(!almost_equal(std::abs(m_inv_count().determinant()), 1))
+    while(++m_currmat < n_mat()) {
+      if(m_fsym_mats.size() && !_check_canonical())
         continue;
 
-      m_F = m_L2 * m_inv_count().cast<double>() * m_L1.inverse(); // -> F
+      // From relation F * L1 * inv_mat.inverse() = L2
+      m_F = m_L2 * inv_mat().cast<double>() * m_L1.inverse(); // -> F
       tcost = _calc_strain_cost();
       if(tcost < max_cost) {
         m_cost = tcost;
@@ -110,9 +167,9 @@ namespace CASM {
         // need to undo the effect of transformation to reduced cell on 'N'
         // Maybe better to get m_N from m_F instead?  m_U and m_V_inv depend on the lattice reduction
         // that was performed in the constructor, so we would need to store "non-reduced" L1 and L2
-        m_N = m_U * m_inv_count().cast<double>().inverse() * m_V_inv;
+        m_N = m_U * inv_mat().cast<double>().inverse() * m_V_inv;
         //  We already have:
-        //        m_F = m_L2 * m_inv_count().cast<double>() * m_L1.inverse();
+        //        m_F = m_L2 * inv_mat().cast<double>() * m_L1.inverse();
         break;
       }
     }
@@ -140,14 +197,38 @@ namespace CASM {
     // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
     return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * cache.squaredNorm() / 7.795554179;
   }
+
   //*******************************************************************************************
+
   double LatticeMap::_calc_strain_cost() const {
     // -> epsilon=(F_deviatoric-identity)
-    m_cache.noalias() = 0.5 * (m_F.transpose() * m_F / (m_scale * m_scale) - Eigen::Matrix3d::Identity(3, 3));
+    m_cache = (m_F / m_scale - Eigen::Matrix3d::Identity(3, 3));
 
     // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-    return std::pow(m_atomic_vol, 2.0 / 3.0) * m_cache.squaredNorm() / 7.795554179;
+    return m_atomic_factor * m_cache.squaredNorm() / 7.795554179;
   }
 
+  //*******************************************************************************************
 
+  bool LatticeMap::_check_canonical() const {
+    Eigen::Matrix3i tmp;
+    for(Eigen::Matrix3i const &op : m_fsym_mats) {
+      tmp = inv_mat() * op;
+      // Skip ops that transform matrix out of range; they won't be enumerated
+      if(std::abs(tmp(0, 0)) > m_range
+         || std::abs(tmp(0, 1)) > m_range
+         || std::abs(tmp(0, 2)) > m_range
+         || std::abs(tmp(1, 0)) > m_range
+         || std::abs(tmp(1, 1)) > m_range
+         || std::abs(tmp(1, 2)) > m_range
+         || std::abs(tmp(2, 0)) > m_range
+         || std::abs(tmp(2, 1)) > m_range
+         || std::abs(tmp(2, 2)) > m_range)
+        continue;
+
+      if(std::lexicographical_compare(tmp.data(), tmp.data() + 9, inv_mat().data(), inv_mat().data() + 9))
+        return false;
+    }
+    return true;
+  }
 }

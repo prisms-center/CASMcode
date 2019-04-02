@@ -187,14 +187,22 @@ namespace CASM {
           Derived::RowsAtCompileTime - 1,
           Derived::ColsAtCompileTime - 1 >
           subM(M.rows() - 1, M.cols() - 1);
-    int _i, _j;
-    for(int i = 0; i < M.rows(); i++) {
-      for(int j = 0; j < M.cols(); j++) {
-        if(i == row || j == col)
-          continue;
-        (i < row) ? _i = i : _i = i - 1;
-        (j < col) ? _j = j : _j = j - 1;
-        subM(_i, _j) = M(i, j);
+    int i, j;
+    for(i = 0; i < row; ++i) {
+      for(j = 0; j < col; ++j) {
+        subM(i, j) = M(i, j);
+      }
+      for(++j; j < M.cols(); ++j) {
+        subM(i, j - 1) = M(i, j);
+      }
+    }
+
+    for(++i; i < M.rows(); ++i) {
+      for(j = 0; j < col; ++j) {
+        subM(i - 1, j) = M(i, j);
+      }
+      for(++j; j < M.cols(); ++j) {
+        subM(i - 1, j - 1) = M(i, j);
       }
     }
 
@@ -221,7 +229,7 @@ namespace CASM {
           Mcof(M.rows(), M.cols());
     for(int i = 0; i < Mcof.rows(); i++) {
       for(int j = 0; j < Mcof.cols(); j++) {
-        (((i + j) % 2) == 0) ? Mcof(i, j) = matrix_minor(M, i, j) : Mcof(i, j) = -matrix_minor(M, i, j);
+        Mcof(i, j) = ((((i + j) % 2) == 0) ? matrix_minor(M, i, j) : -matrix_minor(M, i, j));
       }
     }
     return Mcof;
@@ -442,10 +450,16 @@ namespace CASM {
     return;
   }
 
-  std::vector<Eigen::Matrix3i> _unimodular_matrices(bool positive, bool negative);
+  std::vector<Eigen::Matrix3i> _unimodular_matrices(bool positive, bool negative, int range = 1);
   const std::vector<Eigen::Matrix3i> &positive_unimodular_matrices();
   const std::vector<Eigen::Matrix3i> &negative_unimodular_matrices();
-  const std::vector<Eigen::Matrix3i> &unimodular_matrices();
+
+  template<int range = 1>
+  const std::vector<Eigen::Matrix3i> &unimodular_matrices() {
+    static std::vector<Eigen::Matrix3i> static_all(_unimodular_matrices(true, true, range));
+    return static_all;
+  }
+
 
   /** @} */
 

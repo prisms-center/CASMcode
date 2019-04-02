@@ -259,17 +259,17 @@ namespace CASM {
       // Global DoFs
       {
         std::map<std::string, DoFSet> _dof_map;
-        if(json.contains("dof")) {
-          auto it = json["dof"].begin(), end_it = json["dof"].end();
+        if(json.contains("dofs")) {
+          auto it = json["dofs"].begin(), end_it = json["dofs"].end();
           for(; it != end_it; ++it) {
             if(_dof_map.count(it.name()))
-              throw std::runtime_error("Error parsing global field \"dof\" from JSON. DoF type " + it.name() + " cannot be repeated.");
+              throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
             try {
               _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*_modules.dof_dict().lookup(it.name()))));
             }
             catch(std::exception &e) {
-              throw std::runtime_error("Error parsing global field \"dof\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
+              throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
             }
 
           }
@@ -347,7 +347,7 @@ namespace CASM {
 
     // Global DoFs
     for(auto const &_dof : prim.global_dofs()) {
-      json[_dof.first] = _dof.second;
+      json["dofs"][_dof.first] = _dof.second;
     }
 
     jsonParser &bjson = (json["basis"] = jsonParser::array(prim.basis().size()));

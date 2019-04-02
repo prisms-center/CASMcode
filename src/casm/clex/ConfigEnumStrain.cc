@@ -103,26 +103,85 @@ namespace CASM {
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt,
     EnumeratorMap const *interface_map) {
-    bool trim_corners = _kwargs.get_if_else<bool>("trim_corners", true);
-    bool sym_axes = _kwargs.get_if_else<bool>("sym_axes", false);
     //bool analysis = _kwargs.get_if_else<bool>("analysis", false);
+
+    DoFKey strain_dof_key;
+    std::vector<DoFKey> tdof_types = global_dof_types(primclex.prim());
+    Index istrain = find_index_if(tdof_types,
+    [](DoFKey const & other) {
+      return other.find("strain") != std::string::npos;
+    });
+    if(istrain == tdof_types.size())
+      throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
+    strain_dof_key = tdof_types[istrain];
+    Index dim = primclex.prim().global_dof(strain_dof_key).dim();
+
     Eigen::MatrixXd axes;
     Eigen::VectorXd min_val, max_val, inc_val;
     std::vector<std::string> confignames;
 
     bool auto_range = false;
-
+    bool trim_corners = true;
+    bool sym_axes = false;
     try {
-      if(!(_kwargs.contains("max") && _kwargs.contains("increment")))
-        throw std::runtime_error("JSON options for enumeration method 'ConfigEnumStrain' must specify BOTH \"max\", and \"increment\"");
-      from_json(max_val, _kwargs["max"]);
-      from_json(inc_val, _kwargs["increment"]);
+      _kwargs.get_if(trim_corners, "trim_corners");
+      _kwargs.get_if(sym_axes, "sym_axes");
+      if(!(_kwargs.contains("axes"))) {
+        axes.setIdentity(dim, dim);
+      }
+      else {
+        axes = _kwargs["axes"].get<Eigen::MatrixXd>().transpose();
+        if(axes.rows() != dim || axes.cols() > dim) {
+          throw std::runtime_error("In JSON input for ConfigEnumStrain, field \"axes\" must be a matrix having exactly " + std::to_string(dim) +
+                                   " columns and no more than " + std::to_string(dim) + " rows.");
+        }
+      }
+
+      //min
       if(_kwargs.contains("min")) {
-        from_json(min_val, _kwargs["min"]);
+
+        if(_kwargs["min"].is_number()) {
+          min_val = Eigen::VectorXd::Constant(axes.cols(), _kwargs["min"].get<double>());
+        }
+        else {
+          _kwargs["min"].get(min_val);
+          if(min_val.size() != axes.cols()) {
+            throw std::runtime_error("Array field \"min\" must have dimension equal to number of coordinate axes!");
+          }
+        }
       }
       else {
         auto_range = sym_axes;
-        min_val = 0 * max_val;
+        min_val = Eigen::VectorXd::Constant(axes.cols(), 0);
+      }
+
+      //max
+      if(!_kwargs.contains("max")) {
+        throw std::runtime_error("Field \"max\" is required.\n");
+      }
+      if(_kwargs["max"].is_number()) {
+        max_val = Eigen::VectorXd::Constant(axes.cols(), _kwargs["max"].get<double>());
+      }
+      else {
+        _kwargs["max"].get(max_val);
+        if(max_val.size() != axes.cols()) {
+          throw std::runtime_error("Array field \"max\" must have dimension equal to number of coordinate axes!");
+        }
+      }
+
+      //inc
+      if(!_kwargs.contains("increment")) {
+        throw std::runtime_error("Field \"increment\" is required.\n");
+      }
+      if(_kwargs["increment"].is_number()) {
+        inc_val = Eigen::VectorXd::Constant(axes.cols(), _kwargs["increment"].get<double>());
+      }
+      else {
+        _kwargs["increment"].get(inc_val);
+        if(inc_val.size() != axes.cols()) {
+          throw std::runtime_error("Array field \"increment\" must have dimension equal to number of coordinate axes!");
+        }
+
       }
 
     }
