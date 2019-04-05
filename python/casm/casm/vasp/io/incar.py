@@ -197,12 +197,15 @@ class Incar(object):
                 pass
             else:
                 if tag.lower() in VASP_TAG_SITEF_LIST + VASP_TAG_SPECF_LIST:
-                    rem_cs = ['\[', '\]', '\,', '\'']
+                    rem_cs = ['\[', '\]', '\,', '\'', '\"']
                     for rt in rem_cs:
                         self.tags[tag] = re.sub(rt, "", str(self.tags[tag]))
                     incar_write.write('{} = {}\n'.format(tag.upper(), self.tags[tag]))
                 elif tag.lower() in VASP_TAG_SPECI_LIST:
-                    incar_write.write('{} = {}\n'.format(tag.upper(), remove_chars(self.tags[tag], "\[\]")))
+                    rem_cs = ['\[', '\]', '\,', '\'', '\"']
+                    for rt in rem_cs:
+                        self.tags[tag] = re.sub(rt, "", str(self.tags[tag]))
+                    incar_write.write('{} = {}\n'.format(tag.upper(), self.tags[tag]))
                 elif tag.lower() in VASP_TAG_BOOL_LIST:
                     if self.tags[tag] == True:
                         incar_write.write('{} = .TRUE.\n'.format(tag.upper()))
