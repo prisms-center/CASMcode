@@ -269,7 +269,7 @@ class Relax(object):
                 if result is None or self.not_converging():
                     # Check for actions that should be taken after the initial run
                     if len(self.rundir) == 1:
-                        if self.settings["fine_ngx"]:
+                        if "fine_ngx" in self.settings:
                             outcarfile = os.path.join(self.rundir[-1], "OUTCAR")
                             if not os.path.isfile(outcarfile):
                                 # This is an error but I'm not sure what to do about it

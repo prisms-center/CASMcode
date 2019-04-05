@@ -267,7 +267,7 @@ class Relax(object):
 
         # set default values
         if settings["ncpus"] is None:
-                settings["ncpus"] = int(settings["nodes"]) * int(settings["ppn"])
+            settings["ncpus"] = int(settings["nodes"]) * int(settings["ppn"])
 
         if settings["run_limit"] is None or settings["run_limit"] == "CASM_DEFAULT":
             settings["run_limit"] = 10

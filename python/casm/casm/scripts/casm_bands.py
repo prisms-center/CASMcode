@@ -74,8 +74,8 @@ def main(argv=None):
     settings = read_project_settings(setfile)
     print("DFT software is:", settings['software'])
 
-    if settings['software'] is not 'vasp':
-        raise CasmBandsError('THis is currently ONLY VASP capable.')
+    if settings['software'] != 'vasp':
+        raise CasmBandsError('This is currently ONLY VASP capable.')
 
     band_calculator = None
 

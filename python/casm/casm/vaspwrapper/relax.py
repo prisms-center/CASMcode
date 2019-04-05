@@ -297,18 +297,18 @@ class Relax(object):
         print("Constructing a job")
         sys.stdout.flush()
         # construct a Job
-        job = Job(name=wrapper.jobname(self.configname),\
-                      account=self.settings["account"],\
-                      nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
-                      ppn=int(self.settings["ppn"]),\
-                      walltime=self.settings["walltime"],\
-                      pmem=self.settings["pmem"],\
-                      qos=self.settings["qos"],\
-                      queue=self.settings["queue"],\
-                      message=self.settings["message"],\
-                      email=self.settings["email"],\
-                      priority=self.settings["priority"],\
-                      command=cmd,\
+        job = Job(name=wrapper.jobname(self.configname),
+                      account=self.settings["account"],
+                      nodes=self.settings["nodes"],
+                      ppn=int(self.settings["ppn"]),
+                      walltime=self.settings["walltime"],
+                      pmem=self.settings["pmem"],
+                      qos=self.settings["qos"],
+                      queue=self.settings["queue"],
+                      message=self.settings["message"],
+                      email=self.settings["email"],
+                      priority=self.settings["priority"],
+                      command=cmd,
                       auto=self.auto)
 
         print("Submitting")

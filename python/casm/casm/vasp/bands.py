@@ -28,10 +28,10 @@ class Bands(object):
 
         # store path to .../relaxdir, and create if not existing
         if rundir is None:
-            raise BandsError('Can not create from nothing directory')
+            raise BandsError('Can not create from nothing-directory')
 
-        self.band_dir = os.path.abspath(os.path.join(rundir, 'band_structure'))
-        self.contcar_dir = os.path.abspath(os.path.join(rundir, 'run.final'))
+        self.band_dir = os.path.abspath(os.path.join(rundir, 'calctype.default', 'band_structure'))
+        self.contcar_dir = os.path.abspath(os.path.join(rundir, 'calctype.default', 'run.final'))
         self.new_incar = []
 
         print("  Run directory: %s" % self.band_dir)
@@ -49,7 +49,7 @@ class Bands(object):
         s = Structure.from_file(os.path.join(self.contcar_dir, 'CONTCAR'))
         irr_bri_zone = HighSymmKpath(s)
 
-        s.to(os.path.join(self.band_dir, 'POSCAR'), fmt='POSCAR')
+        s.to(filename=os.path.join(self.band_dir, 'POSCAR'), fmt='POSCAR')
         Kpoints.automatic_linemode(100, irr_bri_zone).write_file(os.path.join(self.band_dir, 'KPOINTS'))
         sh.copyfile(os.path.join(self.contcar_dir, 'POTCAR'), os.path.join(self.band_dir, 'POTCAR'))
         self.manage_tags(os.path.join(self.contcar_dir, 'INCAR'))
@@ -61,11 +61,11 @@ class Bands(object):
         remove_tags = ['NSW', 'EDIFFG', 'IBRION', 'ISIF']
         with open(os.path.abspath(incar_file)) as f:
             for line in f:
-                if any(remove_tags) not in line:
+                if not any(tag in line for tag in remove_tags):
                     self.new_incar.append(line)
         nbands = int(Procar(os.path.join(self.contcar_dir, 'PROCAR')).nbands)
-        self.new_incar.append('NBANDS = %i' % int(nbands * 1.5))  # use 50% more bands just to make sure
-        self.new_incar.append('NEDOS = 15001')
-        self.new_incar.append('EMIN = -15')
-        self.new_incar.append('EMAX =  10')
+        self.new_incar.append('NBANDS = %i\n' % int(nbands * 1.5))  # use 50% more bands just to make sure
+        self.new_incar.append('NEDOS = 15001\n')
+        self.new_incar.append('EMIN = -15\n')
+        self.new_incar.append('EMAX =  10\n')
         self.new_incar.append('ICORELEVEL = 1')
