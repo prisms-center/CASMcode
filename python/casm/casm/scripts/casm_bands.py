@@ -85,7 +85,7 @@ def main(argv=None):
             if settings['software'] == "quantumespresso":
                 raise CasmBandsError('QE not implemented, use VASP')
             elif settings['software'] == "aims":
-                raise CasmBandsError('QE not implemented, use VASP')
+                raise CasmBandsError('FHI-aims not implemented, use VASP')
             elif settings['software'] == 'vasp':
                 band_calculator = VaspBand(proj.dir.configuration_dir(configname))
             band_calculator.setup()
@@ -96,10 +96,10 @@ def main(argv=None):
             if settings['software'] == "quantumespresso":
                 raise CasmBandsError('QE not implemented, use VASP')
             elif settings['software'] == "aims":
-                raise CasmBandsError('QE not implemented, use VASP')
+                raise CasmBandsError('FHI-aims not implemented, use VASP')
             elif settings['software'] == 'vasp':
                 band_calculator = VaspBand(proj.dir.configuration_dir(configname))
-            band_calculator.submit()
+            band_calculator.submit(settings=settings)
 
     elif args.run:
         sel.write_pos()
@@ -107,10 +107,10 @@ def main(argv=None):
             if settings['software'] == "quantumespresso":
                 raise CasmBandsError('QE not implemented, use VASP')
             elif settings['software'] == "aims":
-                raise CasmBandsError('QE not implemented, use VASP')
+                raise CasmBandsError('FHI-aims not implemented, use VASP')
             elif settings['software'] == 'vasp':
                 band_calculator = VaspBand(proj.dir.configuration_dir(configname))
-            band_calculator.run()
+            band_calculator.exec_dft(settings=settings)
 
 
 if __name__ == "__main__":

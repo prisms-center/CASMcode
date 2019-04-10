@@ -2,7 +2,6 @@ import json
 
 from casm.project.io import read_project_settings
 
-from casm.aims.aims import AimsError
 from casm.aims.io.io import DEFAULT_AIMS_COPY_LIST, DEFAULT_AIMS_MOVE_LIST
 
 
@@ -144,12 +143,12 @@ def aims_input_file_names(workdir, configname, clex):
 
     # Verify that required input files exist
     if controlfile is None:
-        raise AimsError("aims_input_file_names failed. No control.skel file found in CASM project.")
+        raise AimsWrapperError("aims_input_file_names failed. No control.skel file found in CASM project.")
     if prim_geometryfile is None:
-        raise AimsError("No reference geometry.skel found in CASM project.")
+        raise AimsWrapperError("No reference geometry.skel found in CASM project.")
     if super_poscarfile is None:
-        raise AimsError("aims_input_file_names failed. No POS file found for this configuration.")
+        raise AimsWrapperError("aims_input_file_names failed. No POS file found for this configuration.")
     if basisfile is None:
-        raise AimsError("aims_input_file_names failed. No SPECIES file found in CASM project.")
+        raise AimsWrapperError("aims_input_file_names failed. No SPECIES file found in CASM project.")
 
     return controlfile, prim_geometryfile, super_poscarfile, basisfile
