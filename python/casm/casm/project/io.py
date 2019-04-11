@@ -36,12 +36,12 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
       verbose: be verbose?
     
     """
-    dir = proj.dir
+    wdir = proj.dir
     if clex is None:
       clex = proj.settings.default_clex
     
     # read basis.json
-    filename = dir.basis(clex)
+    filename = wdir.basis(clex)
     with open(filename, 'rb') as f:
         j = json.loads(f.read().decode('utf-8'))
     #print(json.dumps(j, indent=2))
@@ -55,7 +55,7 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     
     # pretty printing
     for entry in j["site_functions"]:
-      if entry["basis"] != None:
+      if entry["basis"] is not None:
         basis = entry["basis"]
         for key, val in basis.items():
           basis[key] = noindent.NoIndent(val)
@@ -66,7 +66,7 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
         sites[i] = noindent.NoIndent(sites[i])
     
     # write eci.json
-    filename = dir.eci(clex)
+    filename = wdir.eci(clex)
     
     if verbose:
       print("Writing:", filename, "\n")
@@ -131,10 +131,17 @@ def read_project_settings(filename):
     required = ["queue", "ppn", "walltime", "software", "run_cmd"]
 
     optional = ["account", "pmem", "priority", "message", "email", "qos", "npar", "ncore", "kpar",
-                "ncpus", "run_limit", "nrg_convergence",
+                "ncpus", "run_limit", "nrg_convergence", "prerun", "postrun",
                 "encut", "kpoints", "extra_input_files", "move", "copy", "remove", "compress",
                 "backup", "initial", "final", "strict_kpoints", "err_types", "preamble",
                 "infilename", "outfilename", "atom_per_proc", "nodes", "is_slab", "fix_pos", "basis"]
+
+    band_args = ["band_subdiv", "band_bs_projection", "band_dos_projection", "band_vb_energy_range",
+                 "band_cb_energy_range", "band_fixed_cb_energy", "band_egrid_interval", "band_font",
+                 "band_axis_fontsize", "band_tick_fontsize", "band_legend_fontsize", "band_bs_legend",
+                 "band_dos_legend", "band_rgb_legend", "band_fig_size", "band_plot_name"]
+
+    optional += band_args
 
     for key in required:
         if key not in settings:
@@ -147,9 +154,7 @@ def read_project_settings(filename):
             else:
                 settings[key] = None
 
-    # THIS IS QE SPECIFIC ONLY - WHY IS THIS HERE? The READ_SETTINGS has to be general for all codes...
-    # TODO: Define a COMMON DEFAULT_XXXX_LIST for all codes and append / handle these, don't use separate
-    # TODO: lists for each code
+    # TODO: Define a COMMON DEFAULT_XXXX_LIST for all codes and append / handle these, don't use separates for codes
 
     if settings['software'] == 'vasp':
         from casm.vasp.io.io import DEFAULT_VASP_COPY_LIST as DEFAULT_COPY_LIST
@@ -195,5 +200,65 @@ def read_project_settings(filename):
     settings['DEF_MV'] = DEFAULT_MOVE_LIST
     settings['DEF_RM'] = DEFAULT_REMOVE_LIST
     settings['DEF_GZ'] = DEFAULT_GZIP_LIST
+
+    return settings
+
+
+def read_band_settings(filename):
+    """Returns a JSON object reading JSON files containing settings for band structure plots.
+
+    Returns:
+         settings = a JSON object containing the settings file contents
+                      This can be accessed like a dict: settings["account"], etc.
+                      ** All values are expected to be 'str' type. **
+    """
+    try:
+        with open(filename, 'rb') as file:
+            settings = json.loads(file.read().decode('utf-8'))
+    except IOError as e:
+        print("Error reading settings file:", filename)
+        raise e
+
+    band_args = ["band_subdiv", "band_bs_projection", "band_dos_projection", "band_vb_energy_range",
+                 "band_cb_energy_range", "band_fixed_cb_energy", "band_egrid_interval", "band_font",
+                 "band_axis_fontsize", "band_tick_fontsize", "band_legend_fontsize", "band_bs_legend",
+                 "band_dos_legend", "band_rgb_legend", "band_fig_size", "band_plot_name", "band_plot_dpi"]
+
+    for key in band_args:
+        if key not in settings:
+            if key == 'band_subdiv':
+                settings['band_subdiv'] = 100
+            if key == 'band_bs_projection':
+                settings['band_bs_projection'] = 'elements'
+            if key == 'band_dos_projection':
+                settings['band_dos_projection'] = 'elements'
+            if key == 'band_vb_energy_range':
+                settings['band_vb_energy_range'] = 4
+            if key == 'band_cb_energy_range':
+                settings['band_cb_energy_range'] = 4
+            if key == 'band_fixed_cb_energy':
+                settings['band_fixed_cb_energy'] = False
+            if key == 'band_egrid_interval':
+                settings['band_egrid_interval'] = 1
+            if key == 'band_font':
+                settings['band_font'] = 'Times New Roman'
+            if key == 'band_axis_fontsize':
+                settings['band_axis_fontsize'] = 20
+            if key == 'band_tick_fontsize':
+                settings['band_tick_fontsize'] = 15
+            if key == 'band_legend_fontsize':
+                settings['band_legend_fontsize'] = 14
+            if key == 'band_bs_legend':
+                settings['band_bs_legend'] = 'best'
+            if key == 'band_dos_legend':
+                settings['band_dos_legend'] = 'best'
+            if key == 'band_rgb_legend':
+                settings['band_rgb_legend'] = True
+            if key == 'band_fig_size':
+                settings['band_fig_size'] = (11, 8.5)
+            if key == 'band_plot_name':
+                settings['band_plot_name'] = 'BSDOS.png'
+            if key == 'band_plot_dpi':
+                settings['band_plot_dpi'] = 170
 
     return settings

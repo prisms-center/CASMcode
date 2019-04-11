@@ -37,6 +37,10 @@ setup_help = """
 Setup calculation for all selected configurations.
 """
 
+plot_help = """
+Plots band structure and DoS for selected configurations.
+"""
+
 
 def main(argv=None):
     if argv is None:
@@ -47,6 +51,7 @@ def main(argv=None):
     parser.add_argument('--run', help=run_help, action="store_true", default=False)
     parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
     parser.add_argument('--setup', help=setup_help, action="store_true", default=False)
+    parser.add_argument('--plot', help=plot_help, action="store_true", default=False)
     args = parser.parse_args(argv)
 
     args.path = os.getcwd()
@@ -64,12 +69,18 @@ def main(argv=None):
     casm_directories = proj.dir
     print("  Reading relax.json settings file")
     sys.stdout.flush()
-    setfile = casm_directories.settings_path_crawl("relax.json", configname, casm_settings.default_clex)
 
+    setfile = casm_directories.settings_path_crawl("relax.json", configname, casm_settings.default_clex)
     if setfile is None:
         raise CasmBandsError("Could not find \"relax.json\" in \"settings\" directory")
     else:
-        print("Using " + str(setfile) + " as settings...")
+        print("Using " + str(setfile) + " as computation settings...")
+
+    bandfile = casm_directories.settings_path_crawl("bands.json", configname, casm_settings.default_clex)
+    if bandfile is None:
+        raise CasmBandsError("Could not find \"bands.json\" in \"settings\" directory")
+    else:
+        print("Using " + str(bandfile) + " as band structure settings...")
 
     settings = read_project_settings(setfile)
     print("DFT software is:", settings['software'])
@@ -99,7 +110,7 @@ def main(argv=None):
                 raise CasmBandsError('FHI-aims not implemented, use VASP')
             elif settings['software'] == 'vasp':
                 band_calculator = VaspBand(proj.dir.configuration_dir(configname))
-            band_calculator.submit(settings=settings)
+            band_calculator.submit()
 
     elif args.run:
         sel.write_pos()
@@ -110,7 +121,19 @@ def main(argv=None):
                 raise CasmBandsError('FHI-aims not implemented, use VASP')
             elif settings['software'] == 'vasp':
                 band_calculator = VaspBand(proj.dir.configuration_dir(configname))
-            band_calculator.exec_dft(settings=settings)
+            band_calculator.run()
+
+    elif args.plot:
+        sel.write_pos()
+        for configname in sel.data["configname"]:
+            if settings['software'] == "quantumespresso":
+                raise CasmBandsError('QE not implemented, use VASP')
+            elif settings['software'] == "aims":
+                raise CasmBandsError('FHI-aims not implemented, use VASP')
+            elif settings['software'] == 'vasp':
+                band_calculator = VaspBand(proj.dir.configuration_dir(configname))
+            band_calculator.plot_bandos(plot_dir=os.path.abspath(os.path.join(proj.dir.configuration_dir(configname),
+                                                                              'calctype.default', 'band_structure')))
 
 
 if __name__ == "__main__":
