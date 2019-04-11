@@ -11,6 +11,7 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 
 namespace CASM {
 

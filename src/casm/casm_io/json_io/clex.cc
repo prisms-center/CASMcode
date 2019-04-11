@@ -1,6 +1,7 @@
 #include "casm/casm_io/json_io/clex.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ChemicalReference.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 
 #include "casm/casm_io/json_io/container.hh"
 

@@ -222,7 +222,7 @@ namespace CASM {
     SymGroup result;
     result.set_lattice(begin->prim_grid().scel_lattice());
     for(; begin != end; ++begin) {
-      Index f = begin->factor_group_index();
+      Index f = begin->sym_op().index();
       Index i;
       for(i = 0; i < result.size(); ++i) {
         if(f == result[i].index())

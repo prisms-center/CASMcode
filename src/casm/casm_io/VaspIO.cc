@@ -198,7 +198,7 @@ namespace CASM {
           tuple_type(
             sstruc.atom_info.names[i],
             Coordinate(sstruc.atom_info.coords.col(i), lattice(), CART),
-            sstruc.atom_info.SD.col(i)
+            SelectiveDynamics(sstruc.atom_info.SD.col(i))
           )
         );
       }

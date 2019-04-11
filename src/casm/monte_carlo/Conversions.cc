@@ -5,6 +5,7 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 
 namespace CASM {
   namespace Monte {

@@ -1,5 +1,5 @@
 #include "casm/crystallography/SimpleStructure.hh"
-#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clex/Configuration.hh"
