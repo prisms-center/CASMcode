@@ -11,6 +11,7 @@
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_ConfigEnumStrain_interface() {

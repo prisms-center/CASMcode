@@ -4,6 +4,7 @@
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
