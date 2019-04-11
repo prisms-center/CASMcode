@@ -231,7 +231,7 @@ class Bands(object):
 
             # cd to configdir, submit jobs from configdir, then cd back to currdir
             currdir = os.getcwd()
-            os.chdir(self.band_dir)
+            os.chdir(self.submit_dir)
 
             # construct command to be run
             cmd = ""
@@ -245,7 +245,7 @@ class Bands(object):
             sys.stdout.flush()
 
             # construct a pbs.Job
-            job = Job(name=self.configname,
+            job = Job(name=self.configname + '_BANDS',
                       account=self.settings["account"],
                       nodes=int(self.settings["nodes"]),
                       ppn=int(self.settings['ppn']),
