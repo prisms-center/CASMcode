@@ -289,7 +289,7 @@ namespace CASM {
       }
       else {
         for(Index j = 0; j < prim_grid.size(); j++) {
-          factor_group.push_back(SymOp::translation(prim_grid.coord(j, SCEL).cart())*prim_fg[i]);
+          factor_group.push_back(SymOp::translation(prim_grid.scel_coord(j).cart())*prim_fg[i]);
           // set lattice, in case SymOp::operator* ever changes
         }
       }
@@ -372,7 +372,7 @@ namespace CASM {
       for(i = 0; i < prim_grid.size(); i++) {
 
         //push back translated basis site of prim onto superstructure basis
-        push_back(prim.basis()[j] + prim_grid.coord(i, PRIM));
+        push_back(prim.basis()[j] + prim_grid.scel_coord(i));
 
         m_basis.back().within();
       }

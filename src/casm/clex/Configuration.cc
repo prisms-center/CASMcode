@@ -173,17 +173,12 @@ namespace CASM {
     m_configdof.occ(site_l) = val;
   }
 
-  //*********************************************************************************
-  /*  void Configuration::clear_occupation() {
-    _modify_dof();
-    m_configdof.clear_occupation();
-  }
-  */
   //*******************************************************************************
 
   /// \brief Check if this is a primitive Configuration
   bool Configuration::is_primitive() const {
     if(!cache().contains("is_primitive")) {
+      auto it = find_translation();
       bool result = (find_translation() == supercell().sym_info().translate_end());
       cache_insert("is_primitive", result);
       return result;
@@ -359,6 +354,7 @@ namespace CASM {
   //*******************************************************************************
 
   bool Configuration::is_canonical() const {
+
     if(!cache().contains("is_canonical")) {
       bool result = ConfigurationBase::is_canonical();
       cache_insert("is_canonical", result);
@@ -1688,7 +1684,7 @@ namespace CASM {
       // for each unit cell of the oriented motif in the supercell, copy the occupation
       for(Index i = 0 ; i < prim_grid.size() ; i++) {
 
-        Index prim_motif_tile_ind = m_scel->prim_grid().find(prim_grid.coord(i, PRIM));
+        Index prim_motif_tile_ind = m_scel->prim_grid().find(prim_grid.scel_coord(i));
 
         UnitCellCoord mc_uccoord(
           prim,

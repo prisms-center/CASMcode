@@ -61,6 +61,7 @@ namespace CASM {
   template<typename Element, typename SymApply>
   Element SubspaceSymCompare<Element, SymApply>::
   representation_prepare_impl(Element obj) const {
+    //std::cout << "reduced_column_echelon of \n" << obj << "\n is\n" <<reduced_column_echelon(obj, this->tol()) << "\n";
     Eigen::MatrixXd result = Eigen::MatrixXd(reduced_column_echelon(obj, this->tol()).householderQr().householderQ()).leftCols(obj.cols());
     Index col = 0;
     for(Index row = 0; row < result.rows(); ++row) {

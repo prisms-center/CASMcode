@@ -7,13 +7,12 @@ namespace CASM {
   LatticeMap::LatticeMap(const Lattice &_ideal,
                          const Lattice &_strained,
                          Index num_atoms,
-                         double _tol/*=TOL*/,
                          int _range/*=2*/,
-                         std::vector<SymOp> const &_point_group /*={}*/) :
+                         std::vector<SymOp> const &_point_group /*={}*/,
+                         double _init_better_than /* = 1e20 */) :
     m_L2(_strained.reduced_cell().lat_column_mat()),
     m_scale(pow(std::abs(m_L2.determinant() / m_L1.determinant()), 1. / 3.)),
     m_atomic_factor(pow(std::abs(m_L2.determinant() / (double)num_atoms), 2. / 3.)),
-    m_tol(_tol),
     m_range(_range),
     m_cost(1e20),
     m_currmat(0) {
@@ -53,36 +52,36 @@ namespace CASM {
       }
     }
 
-    reset();
+    reset(_init_better_than);
   }
 
 
   LatticeMap::LatticeMap(Eigen::Ref<const LatticeMap::DMatType> const &_ideal,
                          Eigen::Ref<const LatticeMap::DMatType> const &_strained,
                          Index _num_atoms,
-                         double _tol /*= TOL*/,
                          int _range /*= 2*/,
-                         std::vector<SymOp> const &_point_group /*={}*/) :
+                         std::vector<SymOp> const &_point_group /*={}*/,
+                         double _init_better_than /* = 1e20 */) :
     LatticeMap(Lattice(_ideal),
                Lattice(_strained),
                _num_atoms,
-               _tol,
                _range,
                _point_group) {}
 
   //*******************************************************************************************
-  void LatticeMap::reset() {
+  void LatticeMap::reset(double _better_than) {
     m_currmat = 0;
+    double tcost = _calc_strain_cost();
     // Initialize to first valid mapping
-    if(_check_canonical()) {
+    if(tcost <= _better_than && _check_canonical()) {
       // From relation F * L1 * inv_mat.inverse() = L2
       m_F = m_L2 * inv_mat().cast<double>() * m_L1.inverse(); // -> F
-      m_cost = _calc_strain_cost();
+      m_cost = tcost;
       // reconstruct correct N for unreduced lattice
       m_N = m_U * inv_mat().cast<double>().inverse() * m_V_inv;
     }
     else
-      next_mapping_better_than(1e10);
+      next_mapping_better_than(_better_than);
   }
   //*******************************************************************************************
   /*
@@ -121,15 +120,15 @@ namespace CASM {
 
     // Get an upper bound on the best mapping by starting with no lattice equivalence
     m_N = DMatType::Identity(3, 3);
-    // m_cache -> value of inv_mat() that gives m_N = identity;
-    m_cache = m_V_inv * m_U;
-    m_F = m_L2 * m_cache * m_L1.inverse();
+    // m_dcache -> value of inv_mat() that gives m_N = identity;
+    m_dcache = m_V_inv * m_U;
+    m_F = m_L2 * m_dcache * m_L1.inverse();
     //std::cout << "starting m_F is \n" << m_F << "  det: " << m_F.determinant() << "\n";
     double best_cost = _calc_strain_cost();
     //std::cout << "starting cost is " << m_cost << "\n";
     //std::cout << "Starting cost is " << m_cost << ", starting N is \n" << m_N << "\nand starting F is \n" << m_F << "\n";
     //std::cout << "Best_cost progression: " << best_cost;
-    while(next_mapping_better_than(best_cost - m_tol).strain_cost() < best_cost) {
+    while(next_mapping_better_than(best_cost).strain_cost() < best_cost) {
       best_cost = strain_cost();
       //std::cout << "    " << best_cost;
     }
@@ -155,7 +154,7 @@ namespace CASM {
     double tcost = max_cost;
 
     while(++m_currmat < n_mat()) {
-      if(m_fsym_mats.size() && !_check_canonical())
+      if(!_check_canonical())
         continue;
 
       // From relation F * L1 * inv_mat.inverse() = L2
@@ -202,31 +201,30 @@ namespace CASM {
 
   double LatticeMap::_calc_strain_cost() const {
     // -> epsilon=(F_deviatoric-identity)
-    m_cache = (m_F / m_scale - Eigen::Matrix3d::Identity(3, 3));
+    m_dcache = (m_F / m_scale - Eigen::Matrix3d::Identity(3, 3));
 
     // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-    return m_atomic_factor * m_cache.squaredNorm() / 7.795554179;
+    return m_atomic_factor * m_dcache.squaredNorm() / 7.795554179;
   }
 
   //*******************************************************************************************
 
   bool LatticeMap::_check_canonical() const {
-    Eigen::Matrix3i tmp;
-    for(Eigen::Matrix3i const &op : m_fsym_mats) {
-      tmp = inv_mat() * op;
+    for(auto const &op : m_fsym_mats) {
+      m_icache = inv_mat() * op;
       // Skip ops that transform matrix out of range; they won't be enumerated
-      if(std::abs(tmp(0, 0)) > m_range
-         || std::abs(tmp(0, 1)) > m_range
-         || std::abs(tmp(0, 2)) > m_range
-         || std::abs(tmp(1, 0)) > m_range
-         || std::abs(tmp(1, 1)) > m_range
-         || std::abs(tmp(1, 2)) > m_range
-         || std::abs(tmp(2, 0)) > m_range
-         || std::abs(tmp(2, 1)) > m_range
-         || std::abs(tmp(2, 2)) > m_range)
+      if(std::abs(m_icache(0, 0)) > m_range
+         || std::abs(m_icache(0, 1)) > m_range
+         || std::abs(m_icache(0, 2)) > m_range
+         || std::abs(m_icache(1, 0)) > m_range
+         || std::abs(m_icache(1, 1)) > m_range
+         || std::abs(m_icache(1, 2)) > m_range
+         || std::abs(m_icache(2, 0)) > m_range
+         || std::abs(m_icache(2, 1)) > m_range
+         || std::abs(m_icache(2, 2)) > m_range)
         continue;
 
-      if(std::lexicographical_compare(tmp.data(), tmp.data() + 9, inv_mat().data(), inv_mat().data() + 9))
+      if(std::lexicographical_compare(m_icache.data(), m_icache.data() + 9, inv_mat().data(), inv_mat().data() + 9))
         return false;
     }
     return true;

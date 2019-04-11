@@ -188,7 +188,7 @@ namespace CASM {
       for(i = 0; i < prim_grid.size(); i++) {
 
         //push back translated basis site of prim onto superstructure basis
-        push_back(prim.basis()[j] + prim_grid.coord(i, PRIM));
+        push_back(prim.basis()[j] + prim_grid.scel_coord(i));
 
         m_basis.back().within();
         for(Index k = 0; k < basis().size() - 1; k++) {
@@ -206,7 +206,7 @@ namespace CASM {
       }
       else {
         for(Index j = 0; j < prim_grid.size(); j++) {
-          m_factor_group.push_back(within_cell(SymOp::translation(prim_grid.coord(j, SCEL).const_cart())*prim.factor_group()[i],
+          m_factor_group.push_back(within_cell(SymOp::translation(prim_grid.scel_coord(j).const_cart())*prim.factor_group()[i],
                                                lattice(),
                                                PERIODIC));
         }
@@ -258,65 +258,6 @@ namespace CASM {
     */
     return;
   }
-
-  //*********************************************************
-
-  void Structure::map_superstruc_to_prim(Structure &prim) {
-
-    Index prim_to_scel;
-    Site shifted_site(prim.lattice());
-
-
-    //Check that (*this) is actually a supercell of the prim
-    if(!lattice().is_supercell_of(prim.lattice(), prim.point_group())) {
-      default_err_log() << "*******************************************\n"
-                        << "ERROR in Structure::map_superstruc_to_prim:\n"
-                        << "The structure \n";
-      //default_err_log() << jsonParser(*this) << std::endl;
-      default_err_log() << "is not a supercell of the given prim!\n";
-      //default_err_log() << jsonParser(prim) << std::endl;
-      default_err_log() << "*******************************************\n";
-      exit(1);
-    }
-
-    //Get prim grid of supercell to get the lattice translations
-    //necessary to stamp the prim in the superstructure
-    PrimGrid prim_grid(prim.lattice(), lattice());
-
-    // Translate each of the prim atoms by prim_grid translation
-    // vectors, and map that translated atom in the supercell.
-    for(Index pg = 0; pg < prim_grid.size(); pg++) {
-      for(Index pb = 0; pb < prim.basis().size(); pb++) {
-        shifted_site = prim.basis()[pb];
-        shifted_site += prim_grid.coord(pg, PRIM);
-        shifted_site.set_lattice(lattice(), CART);
-        shifted_site.within();
-
-        // invalidate asym_ind and basis_ind because when we use
-        // Structure::find, we don't want a comparison using the
-        // basis_ind and asym_ind; we want a comparison using the
-        // cartesian and Specie type.
-
-        shifted_site.set_basis_ind(-1);
-        prim_to_scel = find(shifted_site);
-
-        if(prim_to_scel == basis().size()) {
-          default_err_log() << "*******************************************\n"
-                            << "ERROR in Structure::map_superstruc_to_prim:\n"
-                            << "Cannot associate site \n"
-                            << shifted_site << "\n"
-                            << "with a site in the supercell basis. \n"
-                            << "*******************************************\n";
-          default_err_log() << "The basis_ind is "
-                            << shifted_site.basis_ind() << "\n ";
-          exit(2);
-        }
-
-        // Set ind_to_prim of the basis site
-        //basis[prim_to_scel].ind_to_prim = pb;
-      }
-    }
-  };
 
   //***********************************************************
   //

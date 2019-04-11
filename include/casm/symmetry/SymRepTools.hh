@@ -66,10 +66,12 @@ namespace CASM {
   /// to a unique subgroup of 'head_group' (i.e., no other direction in the space, except the negative of that direction, is invariant to that subgroup)
   /// result[i] is an orbit of symmetrically equivalent directions, result[i][j] is an individual direction. Direction vectors are normalized to unit length.
   /// The total set of all directions is guaranteed to span the space.
+  /// @param all_subgroups denotes whether all subgroups of head_group should be used for symmetry analysis (if true), or only cyclic subgroups (if false)
   multivector<Eigen::VectorXd>::X<2> special_irrep_directions(SymGroupRep const &_rep,
                                                               SymGroup const &head_group,
                                                               Eigen::Ref<const Eigen::MatrixXd> const &_subspace,
-                                                              double vec_compare_tol);
+                                                              double vec_compare_tol,
+                                                              bool all_subgroups = false);
 
 
   /// Find a new coordinate system oriented along high-symmetry directions in vector space 'V' as determined by

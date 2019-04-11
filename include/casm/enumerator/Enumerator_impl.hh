@@ -221,7 +221,12 @@ namespace CASM {
       auto end = enumerator.end();
       for(; it != end; ++it) {
         //std::cout << "ITER: " << it->configdof().global_dof("GLstrain").values().transpose() << "\n";
+        //auto result = it->insert(primitive_only);
         it->insert(primitive_only);
+        //std::cout << "Iter insert...\n";
+        //std::cout << "Iter insert result, primitive as " << result.primitive_it->name() << "\n";
+        //std::cout << "Iter insert result, primitive as " << result.canonical_it->name() << "\n";
+
       }
     }
 

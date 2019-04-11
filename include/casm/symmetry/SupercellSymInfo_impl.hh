@@ -47,7 +47,7 @@ namespace CASM {
     for(PermuteIterator const &perm : _group) {
       result.first.push_back(perm.sym_op());
     }
-    std::cout << "\n";
+
 
     result.second = result.first.allocate_representation();
     Index subdim = 0;

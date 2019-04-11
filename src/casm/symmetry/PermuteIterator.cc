@@ -50,20 +50,6 @@ namespace CASM {
     return translation_permute() * factor_group_permute();
   }
 
-  /// Apply the combined factor_group permutation and translation permutation being pointed at
-  /*template<typename T>
-  ReturnArray<T> PermuteIterator::permute(const Array<T> &before_array) const {
-    assert(before_array.size() == factor_group_permute().size() && "WARNING: You're trying to permute an Array with an incompatible permutation!");
-
-    Array<T> after_array;
-    after_array.reserve(before_array.size());
-
-    for(int i = 0; i < before_array.size(); i++) {
-      after_array.push_back(permute_by_bit(i, before_array));
-    }
-    return after_array;
-    }*/
-
   /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
   SupercellSymInfo const &PermuteIterator::sym_info() const {
     return *m_sym_info;

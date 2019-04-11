@@ -18,8 +18,8 @@
 
 namespace CASM {
   PrimGrid::PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB) {
-    m_lat[static_cast<int>(PRIM)] = &p_lat;
-    m_lat[static_cast<int>(SCEL)] = &s_lat;
+    m_lat[static_cast<int>(PRIM)] = p_lat;
+    m_lat[static_cast<int>(SCEL)] = s_lat;
 
     m_NB = NB;
 
@@ -66,8 +66,8 @@ namespace CASM {
                      const Eigen::Ref<const PrimGrid::matrix_type> &U,
                      const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
                      Index NB) : m_U(U) {
-    m_lat[static_cast<int>(PRIM)] = &p_lat;
-    m_lat[static_cast<int>(SCEL)] = &s_lat;
+    m_lat[static_cast<int>(PRIM)] = p_lat;
+    m_lat[static_cast<int>(SCEL)] = s_lat;
 
     m_NB = NB;
 
@@ -104,23 +104,21 @@ namespace CASM {
   }
 
   //**********************************************************************************************
-
-  const Lattice &PrimGrid::prim_lattice() const {
-    return *m_lat[static_cast<int>(PRIM)];
+  const Lattice &PrimGrid::_prim_lattice() const {
+    return m_lat[static_cast<int>(PRIM)];
   }
-
   //**********************************************************************************************
 
   const Lattice &PrimGrid::scel_lattice() const {
-    return *m_lat[static_cast<int>(SCEL)];
+    return m_lat[static_cast<int>(SCEL)];
   }
 
   //**********************************************************************************************
-
+  /*
   const Lattice &PrimGrid::lattice(CELL_TYPE lat_mode) const {
-    return *m_lat[static_cast<int>(lat_mode)];
+    return m_lat[static_cast<int>(lat_mode)];
   }
-
+  */
 
   //**********************************************************************************************
 
@@ -129,14 +127,7 @@ namespace CASM {
   }
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
-
-    auto lambda = [](double val) {
-      return floor(val);
-    };
-    auto frac((prim_lattice().inv_lat_column_mat()*_coord.cart()).array() + _coord.lattice().tol());
-    UnitCell ijk(frac.unaryExpr(lambda).matrix().cast<long>());
-
-    return find(ijk);
+    return find_cart(_coord.cart(), _coord.lattice().tol());
   }
 
   //**********************************************************************************************
@@ -149,7 +140,18 @@ namespace CASM {
   //**********************************************************************************************
 
   Index PrimGrid::find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const {
-    return find(Coordinate(_cart_coord, prim_lattice(), CART));
+    return find_cart(_cart_coord, _prim_lattice().tol());
+  }
+  //**********************************************************************************************
+
+  Index PrimGrid::find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord, double _tol) const {
+    auto lambda = [](double val) {
+      return floor(val);
+    };
+    auto frac((_prim_lattice().inv_lat_column_mat()*_cart_coord).array() + _tol);
+    UnitCell ijk(frac.unaryExpr(lambda).matrix().cast<long>());
+
+    return find(ijk);
   }
 
   //**********************************************************************************************
@@ -199,18 +201,18 @@ namespace CASM {
 
   //**********************************************************************************************
 
-  Coordinate PrimGrid::coord(const UnitCell &ijk, CELL_TYPE lat_mode)const {
+  Coordinate PrimGrid::scel_coord(const UnitCell &ijk)const {
 
-    Coordinate tcoord(ijk.cast<double>(), prim_lattice(), FRAC);
+    Coordinate tcoord(ijk.cast<double>(), _prim_lattice(), FRAC);
 
-    tcoord.set_lattice(lattice(lat_mode), CART);
+    tcoord.set_lattice(scel_lattice(), CART);
     return tcoord;
   }
 
   //**********************************************************************************************
 
-  Coordinate PrimGrid::coord(Index l, CELL_TYPE lat_mode)const {
-    return coord(unitcell(l), lat_mode);
+  Coordinate PrimGrid::scel_coord(Index l)const {
+    return scel_coord(unitcell(l));
   }
 
   //**********************************************************************************************
@@ -352,7 +354,7 @@ namespace CASM {
 
   //==============================================================================================
   SymOp PrimGrid::sym_op(Index l) const {
-    return SymOp::translation(coord(l, PRIM).cart());
+    return SymOp::translation(scel_coord(l).cart());
   }
 }
 

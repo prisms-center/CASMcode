@@ -69,10 +69,12 @@ namespace CASM {
   namespace local_impl {
     std::vector<int> max_selected_occupation(ConfigEnumInput const &_config) {
       std::vector<int> max = _config.supercell().max_allowed_occupation();
+
       std::vector<int> maxselect;
       for(Index i : _config.sites())
         maxselect.push_back(max[i]);
 
+      std::cout << "Revealing maxselect: " << maxselect << "\n";
       if(maxselect.empty())
         return max;
       else
@@ -113,20 +115,23 @@ namespace CASM {
 
   /// Implements _increment over all occupations
   void ConfigEnumAllOccupations::increment() {
-
+    std::cout << "Incrementing!\n";
     bool is_valid_config {false};
 
     while(!is_valid_config && ++m_counter) {
       for(Index l : m_selection) {
         m_current->set_occ(l, m_counter[l]);
       }
+      std::cout << "Set occupation to : " << m_current->occupation() << "\n";
       is_valid_config = _check_current();
     }
-
     if(m_counter.valid()) {
+      std::cout << "Escaped loop, valid state\n";
+
       this->_increment_step();
     }
     else {
+      std::cout << "Escaped loop, invalid state\n";
       this->_invalidate();
     }
     m_current->set_source(this->source(step()));
@@ -134,7 +139,9 @@ namespace CASM {
 
   /// Returns true if current() is primitive and canonical
   bool ConfigEnumAllOccupations::_check_current() const {
-    return current().is_primitive() && (!m_subset_mode && current().is_canonical());
+    std::cout << "prim, subset, canonical: "
+              << current().is_primitive() << " " << m_subset_mode << " " << current().is_canonical() << "\n";
+    return current().is_primitive() && (m_subset_mode || current().is_canonical());
   }
 
 }
