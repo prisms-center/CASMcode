@@ -456,19 +456,18 @@ namespace CASM {
 
   /// Implements _increment over all occupations
   void ConfigEnumSiteDoFs::increment() {
-
+    //std::cout << "m_combo before increment: " << m_combo << "\n";
     bool is_valid_config = false;
-    do {
-      while(!is_valid_config && ++m_counter) {
-        //std::cout << "Counting point: " << m_counter() << "\n";
-        if(_check_sparsity()) {
-          _set_dof();
-          is_valid_config = _check_current();
-        }
-        //std::cout << "is_valid? " << (is_valid_config? "yes\n" : "no\n");
+    while(!is_valid_config && (++m_counter || _increment_combo())) {
+      //std::cout << "Counting point: " << m_counter() << "\n";
+      if(_check_sparsity()) {
+        //std::cout << "Sparsity is good!\n";
+        _set_dof();
+        is_valid_config = _check_current();
       }
+      //std::cout << "is_valid? " << (is_valid_config? "yes\n" : "no\n");
     }
-    while(!is_valid_config && _increment_combo());
+    //std::cout << "m_combo after increment: " << m_combo << "\n";
     //std::cout << "OUTSIDE!! is_valid? " << (is_valid_config? "yes\n" : "no\n");
     if(is_valid_config) {
       this->_increment_step();
@@ -492,7 +491,8 @@ namespace CASM {
 
   /// Returns true if current() is primitive and canonical
   bool ConfigEnumSiteDoFs::_check_current() const {
-    return current().is_primitive() && _check_sparsity() && (!m_subset_mode && current().is_canonical());
+    return true;
+    //return current().is_primitive() && _check_sparsity() && (m_subset_mode || current().is_canonical());
   }
 
 

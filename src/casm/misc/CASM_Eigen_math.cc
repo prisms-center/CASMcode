@@ -11,16 +11,17 @@ namespace CASM {
       Index i = 0;
       for(i = col; i < R.cols(); ++i) {
         if(!almost_zero(R(row, i), _tol)) {
-          if(i == col)
-            break;
-          R.col(i).swap(R.col(col));
+          if(i != col)
+            R.col(i).swap(R.col(col));
+          break;
         }
       }
       if(i == R.cols())
         continue;
       R.col(col) /= R(row, col);
-      for(i = col + 1; i < R.cols(); ++i) {
-        R.col(i) -= R(row, i) * R.col(col);
+      for(i = 0; i < R.cols(); ++i) {
+        if(i != col)
+          R.col(i) -= R(row, i) * R.col(col);
       }
       ++col;
     }

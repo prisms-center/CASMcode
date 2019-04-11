@@ -38,8 +38,7 @@ namespace CASM {
   //Copy constructor is needed for proper initialization of m_prim_grid
   Supercell::Supercell(const Supercell &RHS) :
     m_primclex(&RHS.primclex()),
-    m_lattice(RHS.m_lattice),
-    m_sym_info(make_supercell_sym_info(prim(), m_lattice)),
+    m_sym_info(make_supercell_sym_info(prim(), RHS.lattice())),
     //m_nlist(RHS.m_nlist),
     m_nlist_size_at_construction(-1) {
 
@@ -47,16 +46,14 @@ namespace CASM {
 
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     m_primclex(_prim),
-    m_lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), _prim->crystallography_tol()),
-    m_sym_info(make_supercell_sym_info(prim(), m_lattice)),
+    m_sym_info(make_supercell_sym_info(prim(), Lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), _prim->crystallography_tol()))),
     m_nlist_size_at_construction(-1) {
 
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
     m_primclex(_prim),
-    m_lattice(superlattice),
-    m_sym_info(make_supercell_sym_info(prim(), m_lattice)),
+    m_sym_info(make_supercell_sym_info(prim(), superlattice)),
     m_nlist_size_at_construction(-1) {
 
     auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
@@ -119,7 +116,7 @@ namespace CASM {
   /// \brief Return the coordinate corresponding to linear index in the supercell
   ///
   Coordinate Supercell::coord(Index linear_index) const {
-    Coordinate tcoord(prim_grid().coord(linear_index % volume(), SCEL));
+    Coordinate tcoord(prim_grid().scel_coord(linear_index % volume()));
     tcoord.cart() += prim().basis()[sublat(linear_index)].cart();
     return tcoord;
     // return uccoord(linear_index).coordinate();
@@ -168,7 +165,7 @@ namespace CASM {
     default_err_log() << "WARNING in Supercell::config(): This routine has not been tested on relaxed structures using 'tol'" << std::endl;
 
     // create a 'superstruc' that fills '*this'
-    BasicStructure<Site> superstruc = structure_to_config.create_superstruc(m_lattice);
+    BasicStructure<Site> superstruc = structure_to_config.create_superstruc(lattice());
 
 
     // Set the occuation state of a Configuration from superstruc
@@ -229,7 +226,7 @@ namespace CASM {
   ///
   Structure Supercell::superstructure() const {
     // create a 'superstruc' that fills '*this'
-    Structure superstruc = prim().create_superstruc(m_lattice);
+    Structure superstruc = prim().create_superstruc(lattice());
 
     // sort basis sites so that they agree with config_index_to_bijk
     //   This sorting may not be necessary,
@@ -267,8 +264,8 @@ namespace CASM {
     superstruc.reset();
 
     return superstruc;
-
   }
+
   const PrimGrid &Supercell::prim_grid() const {
     return sym_info().prim_grid();
   }
@@ -287,11 +284,11 @@ namespace CASM {
   }
 
   Eigen::Matrix3i Supercell::transf_mat() const {
-    return CASM::transf_mat(primclex(), m_lattice);
+    return CASM::transf_mat(primclex(), lattice());
   }
 
   const Lattice &Supercell::lattice() const {
-    return m_lattice;
+    return prim_grid().scel_lattice();
   }
 
   /// \brief Returns the SuperNeighborList
@@ -322,56 +319,6 @@ namespace CASM {
   const SupercellSymInfo &Supercell::sym_info() const {
     return m_sym_info;
   }
-
-
-  // permutation_symrep() populates permutation symrep if needed
-  // const Permutation &Supercell::factor_group_permute(Index i) const {
-  //return *(permutation_symrep().get_permutation(factor_group()[i]));
-  //}
-
-  // PrimGrid populates translation permutations if needed
-  //const Permutation &Supercell::translation_permute(Index i) const {
-  //return prim_grid().translation_permutation(i);
-  //}
-
-  // PrimGrid populates translation permutations if needed
-  //const std::vector<Permutation> &Supercell::translation_permute() const {
-  //return prim_grid().translation_permutations();
-  //}
-
-  /// \brief Begin iterator over translation permutations
-  //Supercell::permute_const_iterator Supercell::translate_begin() const {
-  //return permute_begin();
-  //}
-
-  /// \brief End iterator over translation permutations
-  //Supercell::permute_const_iterator Supercell::translate_end() const {
-  //return permute_begin().begin_next_fg_op();
-  //}
-
-  /// Example usage case:
-  ///  Supercell my_supercell;
-  ///  Configuration my_config(my_supercell, configuration_info);
-  ///  ConfigDoF my_dof=my_config.configdof();
-  ///  my_dof.is_canonical(my_supercell.permute_begin(),my_supercell.permute_end());
-  ///
-  //Supercell::permute_const_iterator Supercell::permute_begin() const {
-  //return permute_it(0, 0); // starting indices
-  //}
-
-  //Supercell::permute_const_iterator Supercell::permute_end() const {
-  //return permute_it(factor_group().size(), 0); // one past final indices
-  //}
-
-  //Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, Index trans_index) const {
-  //return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
-  //                              prim_grid(),
-  //                              fg_index, trans_index);
-  // }
-
-  //Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, UnitCell trans) const {
-  //return permute_it(fg_index, prim_grid().find(trans));
-  //}
 
   bool Supercell::operator<(const Supercell &B) const {
     if(&primclex() != &B.primclex()) {
@@ -414,7 +361,7 @@ namespace CASM {
     Structure tstruct = structure;
     SymGroup point_group;
     tstruct.lattice().generate_point_group(point_group);
-    return m_lattice.is_supercell_of(tstruct.lattice(), point_group, mat);
+    return lattice().is_supercell_of(tstruct.lattice(), point_group, mat);
   }
 
   ///  Returns an std::vector<int> consistent with

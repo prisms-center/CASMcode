@@ -32,18 +32,18 @@ namespace CASM {
     LatticeMap(Lattice const &_ideal,
                Lattice const &_strained,
                Index _num_atoms,
-               double _tol /*= TOL*/,
                int _range /*= 2*/,
-               std::vector<SymOp> const &_point_group/*={}*/);
+               std::vector<SymOp> const &_point_group/*={}*/,
+               double _init_better_than = 1e20);
 
     LatticeMap(Eigen::Ref<const DMatType> const &_ideal,
                Eigen::Ref<const DMatType> const &_strained,
                Index _num_atoms,
-               double _tol /*= TOL*/,
                int _range /*= 2*/,
-               std::vector<SymOp> const &_point_group/*={}*/);
+               std::vector<SymOp> const &_point_group/*={}*/,
+               double _init_better_than = 1e20);
 
-    void reset();
+    void reset(double _better_than = 1e20);
 
     // Finds the smallest strain tensor (in terms of Frobenius norm) that deforms (*this) into a lattice symmetrically equivalent to 'strained_lattice'
     LatticeMap const &best_strain_mapping() const;
@@ -81,8 +81,8 @@ namespace CASM {
     std::vector<Eigen::Matrix3i> m_fsym_mats;
     mutable double m_cost;
     mutable Index m_currmat;
-    mutable DMatType m_F, m_N, m_cache;
-
+    mutable DMatType m_F, m_N, m_dcache;
+    mutable IMatType m_icache;
 
     Eigen::Matrix3i const &inv_mat() const {
       return (*m_mvec_ptr)[m_currmat];

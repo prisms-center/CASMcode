@@ -8,7 +8,7 @@
 
 #include "casm/CASM_global_enum.hh"
 #include "casm/container/Permutation.hh"
-
+#include "casm/crystallography/Lattice.hh"
 
 namespace CASM {
 
@@ -32,7 +32,7 @@ namespace CASM {
     typedef Eigen::Matrix<long, 3, 3> matrix_type;
     typedef Eigen::Matrix<long, 3, 1> vector_type;
     ///m_lat[PRIM] is primitive lattice, lat[SCEL] is super lattice
-    Lattice const *m_lat[2];
+    Lattice m_lat[2];
 
     /// Number of primgrid lattice points in the supercell
     long int m_N_vol;
@@ -41,7 +41,7 @@ namespace CASM {
     long int m_NB;
 
     /// The transformation matrix, 'trans_mat', is:
-    ///   lat[SCEL]->lat_column_mat() = (lat[PRIM]->lat_column_mat())*trans_mat;
+    ///   lat[SCEL].lat_column_mat() = (lat[PRIM].lat_column_mat())*trans_mat;
     ///   plane_mat = trans_mat.determinant()*trans_mat.inverse();
     matrix_type m_plane_mat, m_trans_mat;
 
@@ -53,16 +53,16 @@ namespace CASM {
 
     ///==============================================================================================
     /// Because
-    ///        m_lat[SCEL]->lat_column_mat() = (m_lat[PRIM]->lat_column_mat())*trans_mat;
+    ///        m_lat[SCEL].lat_column_mat() = (m_lat[PRIM].lat_column_mat())*trans_mat;
     /// and
     ///        trans_mat=U*S*V
     /// we know that
-    ///        (m_lat[SCEL]->lat_column_mat())*V.inverse() = (m_lat[PRIM]->lat_column_mat())*U*S;
+    ///        (m_lat[SCEL].lat_column_mat())*V.inverse() = (m_lat[PRIM].lat_column_mat())*U*S;
     ///
-    /// In other words, [(m_lat[PRIM]->lat_column_mat())*U] is a primitive lattice that perfectly tiles
-    /// the equivalent super lattice [(m_lat[SCEL]->lat_column_mat())*V.inverse()]   -- (because S is diagonal)
+    /// In other words, [(m_lat[PRIM].lat_column_mat())*U] is a primitive lattice that perfectly tiles
+    /// the equivalent super lattice [(m_lat[SCEL].lat_column_mat())*V.inverse()]   -- (because S is diagonal)
     ///
-    /// We thus use (m,n,p) on the grid specified by [(m_lat[PRIM]->lat_column_mat())*U] as a canonical indexing
+    /// We thus use (m,n,p) on the grid specified by [(m_lat[PRIM].lat_column_mat())*U] as a canonical indexing
     ///
     /// We can do this by manipulating fractional coordinates:
     ///         trans_mat*super_frac_coord = prim_frac_coord
@@ -80,13 +80,14 @@ namespace CASM {
     ///  (m,n,p) = invU * (i,j,k)    and    (i,j,k) = U * (m,n,p)
     ///
     ///  where (i,j,k) are the UnitCellCoords relative to m_lat[PRIM], and (m,n,p) are canonical UnitCellCoords,
-    ///  relative to (m_lat[PRIM]->lat_column_mat())*U
+    ///  relative to (m_lat[PRIM].lat_column_mat())*U
 
     // stride maps canonical 3d index (m,n,p) onto linear index -- l = m + n*stride[0] + p*stride[1]
     // S is diagonals of smith normal form S matrix
     int m_stride[2];
     Eigen::Matrix<long, 3, 1> m_S;
 
+    const Lattice &_prim_lattice() const;
 
     /// Convert UnitCell (ijk) to canonical UnitCell (mnp)
     /// mnp = invU * ijk
@@ -105,11 +106,9 @@ namespace CASM {
              const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
              Index NB);
 
-    const Lattice &prim_lattice() const;
-
     const Lattice &scel_lattice() const;
 
-    const Lattice &lattice(CELL_TYPE lat_mode) const;
+    //const Lattice &lattice(CELL_TYPE lat_mode) const;
 
     Index size() const {
       return m_N_vol;
@@ -136,6 +135,7 @@ namespace CASM {
     Index find(const Coordinate &_coord) const;
     Index find(const UnitCell &_unitcell) const;
     Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const;
+    Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord, double _tol) const;
 
     /// map a UnitCell inside the supercell
     UnitCell within(const UnitCell &ijk) const;
@@ -144,8 +144,8 @@ namespace CASM {
     UnitCellCoord within(const UnitCellCoord &_uccoord) const;
 
     // get Coordinate or UnitCell from linear index
-    Coordinate coord(Index l, CELL_TYPE lat_mode) const;
-    Coordinate coord(const UnitCell &ijk, CELL_TYPE lat_mode) const;
+    Coordinate scel_coord(Index l) const;
+    Coordinate scel_coord(const UnitCell &ijk) const;
     UnitCell unitcell(Index i) const;
 
     SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep) const;

@@ -109,7 +109,7 @@ namespace CASM {
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
     std::vector<PermuteIterator> result;
-    Coordinate coord(scel.prim_grid().prim_lattice());
+    Coordinate coord(scel.prim().lattice());
     auto it = begin;
     while(it != end) {
       auto test = sym_compare.prepare(copy_apply(it.sym_op(), e));
@@ -147,7 +147,7 @@ namespace CASM {
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
     std::vector<PermuteIterator> result;
-    Coordinate coord(scel.prim_grid().prim_lattice());
+    Coordinate coord(scel.prim().lattice());
     auto it = begin;
     while(it != end) {
       auto test = sym_compare.prepare(copy_apply(it->sym_op(), e));
