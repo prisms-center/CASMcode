@@ -136,12 +136,12 @@ def read_project_settings(filename):
                 "backup", "initial", "final", "strict_kpoints", "err_types", "preamble",
                 "infilename", "outfilename", "atom_per_proc", "nodes", "is_slab", "fix_pos", "basis"]
 
-    band_args = ["band_subdiv", "band_bs_projection", "band_dos_projection", "band_vb_energy_range",
-                 "band_cb_energy_range", "band_fixed_cb_energy", "band_egrid_interval", "band_font",
-                 "band_axis_fontsize", "band_tick_fontsize", "band_legend_fontsize", "band_bs_legend",
-                 "band_dos_legend", "band_rgb_legend", "band_fig_size", "band_plot_name"]
+#    band_args = ["band_subdiv", "band_bs_projection", "band_dos_projection", "band_vb_energy_range",
+#                 "band_cb_energy_range", "band_fixed_cb_energy", "band_egrid_interval", "band_font",
+#                 "band_axis_fontsize", "band_tick_fontsize", "band_legend_fontsize", "band_bs_legend",
+#                 "band_dos_legend", "band_rgb_legend", "band_fig_size", "band_plot_name"]
 
-    optional += band_args
+#    optional += band_args
 
     for key in required:
         if key not in settings:
@@ -279,7 +279,13 @@ def read_feff_settings(filename):
         raise e
 
     feff_args = ["feff_cmd", "feff_nkpts", "feff_radius", "feff_user_tags",
-                 "feff_plot_sigma", "feff_plot_use_omega"]
+                 "feff_plot_sigma", "feff_plot_use_omega", "feff_base_dir",
+                 "feff_base_mpi"]
+
+    if not "feff_base_dir" and not "feff_base_mpi" in settings:
+        raise ProjectIOError('You have to define the base directory for the FEFF programs.\n'
+                             'Either >feff_base_dir< for single cpu or >feff_base_mpi< for\n'
+                             'multicore runs needs to be set.')
 
     for key in feff_args:
         if key not in settings:

@@ -22,7 +22,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from prisms_jobs import Job, JobDB
 
 
-class FeffError:
+class FeffError(Exception):
     def __init__(self, msg):
         self.msg = msg
 
@@ -68,7 +68,7 @@ class Feff(object):
 
         fefffile = self.casm_directories.settings_path_crawl("feff.json", self.configname, self.clex)
         if fefffile is None:
-            raise FeffError("Could not find bands.json in settings directory")
+            raise FeffError("Could not find feff.json in settings directory")
         else:
             print("  Read FEFF settings from:" + fefffile)
         self.feff_settings = read_feff_settings(fefffile)
@@ -79,12 +79,14 @@ class Feff(object):
         self.new_incar = []
         self.status_file = os.path.abspath(os.path.join(rundir, 'calctype.default', 'status.json'))
 
+        self.feff_program_sequence = ['rdinp', 'atomic', 'dmdw', 'pot', 'ldos', 'screen', 'opconsat',
+                                      'xsph', 'fms', 'mkgtr', 'path', 'genfmt', 'ff2x', 'sfconv',
+                                      'compton', 'eels']
+
         print("  Run directory: %s" % self.feff_dir)
         sys.stdout.flush()
 
     def setup(self):
-        """ Create VASP input files and take CONTCAR from last converged run """
-
         print('Getting structure for FEFF computation in directory: ')
         print('  %s' % self.feff_dir)
 
@@ -98,31 +100,27 @@ class Feff(object):
                 to_compute.append(str(s))
                 sp_compute.append(str(st.species[int(s)].symbol))
 
-#        print('Atom indices to compute: ', to_compute)
-#        print('Species are: ', sp_compute)
-
         for ab in range(len(to_compute)):
             edge = ['K']
 
             for e in edge:
                 self.feff_settings['feff_user_tags']['EDGE'] = e
                 mp_xanes = MPXANESSet(absorbing_atom=int(to_compute[ab]), structure=st,
-                                      nkpts=self.feff_settings['nkpts'],
-                                      radius=self.feff_settings['radius'],
-                                      user_tag_settings=self.settings['feff_user_tags'])
+                                      nkpts=self.feff_settings['feff_nkpts'],
+                                      radius=self.feff_settings['feff_radius'],
+                                      user_tag_settings=self.feff_settings['feff_user_tags'])
 
-                mp_xanes.write_input(self.feff_dir, make_dir_if_not_present=True)
+                mp_xanes.write_input(os.path.join(self.feff_dir, str(sp_compute[ab]) + '_' +
+                                                  str(e) + '_' + str(to_compute[ab])),
+                                                  make_dir_if_not_present=True)
 
-    def exec_feff(self, jobdir=None, stdout="std.out", stderr="std.err", command=None, ncpus=None,
-                 poll_check_time=5.0, err_check_time=60.0):
-        """ Run selected DFT software using subprocess.
+    def exec_feff(self, jobdir=None, command=None, ncpus=None, poll_check_time=5.0, err_check_time=60.0):
+        """ Run FEFF program sequence
 
             The 'command' is executed in the directory 'jobdir'.
 
             Args:
                 jobdir:     directory to run.  If jobdir is None, the current directory is used.
-                stdout:     filename to write to.  If stdout is None, "std.out" is used.
-                stderr:     filename to write to.  If stderr is None, "std.err" is used.
                 command:    (str or None) FHI-aims execution command
                             If command != None: then 'command' is run in a subprocess
                             Else, if ncpus == 1, then command = "aims"
@@ -136,7 +134,10 @@ class Feff(object):
         sys.stdout.flush()
 
         if jobdir is None:
-            jobdir = os.getcwd()
+            raise FeffError('Can NOT run FEFF in higher directories')
+
+        if command is not None:
+            raise FeffError('You can not specify a single program to run from FEFF.')
 
         currdir = os.getcwd()
         os.chdir(jobdir)
@@ -149,56 +150,52 @@ class Feff(object):
             else:
                 ncpus = 1
 
-        if command is None:
-            if ncpus == 1:
-                command = self.feff_settings['feff_cmd']
-            else:
-                command = "mpirun -np {NCPUS} " + self.feff_settings['feff_cmd']
-
-        if re.search("NCPUS", command):
-            command = command.format(NCPUS=str(ncpus))
-
-        print("  jobdir:", jobdir)
-        print("  exec:", command)
-        sys.stdout.flush()
-
         err = None
-        sout = open(os.path.join(jobdir, stdout), 'w')
-        serr = open(os.path.join(jobdir, stderr), 'w')
 
-        p = subprocess.Popen(command.split(), stdout=sout, stderr=serr)
+        for p in self.feff_program_sequence:
 
-        # wait for process to end, and periodically check for errors
-        last_check = time.time()
-        while p.poll() is None:
-            time.sleep(poll_check_time)
-            if time.time() - last_check > err_check_time:
-                last_check = time.time()
-                err = error_check(jobdir, os.path.join(jobdir, stdout))
-                if err is not None:
-                    # FreezeErrors are fatal and usually not helped with abort_scf
-                    if "FreezeError" in err.keys():
-                        print("  FEFF run seems frozen, killing job")
-                        sys.stdout.flush()
-                        p.kill()
+            if ncpus == 1:
+                command = os.path.join(self.feff_settings['feff_base_dir'], p)
+            else:
+                command = "mpirun -np {NCPUS} " + os.path.join(self.feff_settings['feff_base_mpi'], p)
 
-        # close output files
-        sout.close()
-        serr.close()
+            if re.search("NCPUS", command):
+                command = command.format(NCPUS=str(ncpus))
+
+            print("  jobdir:", jobdir)
+            print("  exec:", command)
+            sys.stdout.flush()
+
+            stdout = p + '.log'
+            stderr = p + '.err'
+
+            sout = open(os.path.join(jobdir, stdout), 'w')
+            serr = open(os.path.join(jobdir, stderr), 'w')
+
+            p = subprocess.Popen(command.split(), stdout=sout, stderr=serr)
+
+            # wait for process to end, and periodically check for errors
+            last_check = time.time()
+            while p.poll() is None:
+                time.sleep(poll_check_time)
+                if time.time() - last_check > err_check_time:
+                    last_check = time.time()
+                    err = error_check(jobdir, os.path.join(jobdir, stdout))
+                    if err is not None:
+                        # FreezeErrors are fatal and usually not helped with abort_scf
+                        if "FreezeError" in err.keys():
+                            print("  FEFF run seems frozen, killing job")
+                            sys.stdout.flush()
+                            p.kill()
+
+            # close output files
+            sout.close()
+            serr.close()
 
         os.chdir(currdir)
 
         print("Run ended")
         sys.stdout.flush()
-
-        # check finished job for errors
-        if err is None:
-            err = error_check(jobdir, os.path.join(jobdir, stdout))
-            if err is not None:
-                print("  Found errors:", end='')
-                for e in err:
-                    print(e, end='')
-            print("\n")
 
         return err
 
@@ -236,42 +233,57 @@ class Feff(object):
 
         # check the current status
         if status == "complete":
-            print("Preparing to submit the FEFF job")
+            print("Preparing to submit the FEFF jobs")
             sys.stdout.flush()
 
             # cd to configdir, submit jobs from configdir, then cd back to currdir
             currdir = os.getcwd()
             os.chdir(self.submit_dir)
 
-            # construct command to be run
-            cmd = ""
-            if self.settings["prerun"] is not None:
-                cmd += self.settings["prerun"] + "\n"
-            cmd += "python -c \"from casm.feff.feff import Feff; Feff('" + self.submit_dir + "').run()\"\n"
-            if self.settings["postrun"] is not None:
-                cmd += self.settings["postrun"] + "\n"
+            st = Structure.from_file(os.path.join(self.contcar_dir, 'CONTCAR'))
 
-            print("Constructing the job")
-            sys.stdout.flush()
+            to_compute = []
+            sp_compute = []
 
-            # construct a pbs.Job
-            job = Job(name=self.configname + '_FEFF',
-                      account=self.settings["account"],
-                      nodes=int(self.settings["nodes"]),
-                      ppn=int(self.settings['ppn']),
-                      walltime=self.settings["walltime"],
-                      pmem=self.settings["pmem"],
-                      qos=self.settings["qos"],
-                      queue=self.settings["queue"],
-                      message=self.settings["message"],
-                      email=self.settings["email"],
-                      priority=self.settings["priority"],
-                      command=cmd)
+            for s in SpacegroupAnalyzer(st).get_symmetry_dataset()['equivalent_atoms']:
+                if to_compute.count(str(s)) == 0:
+                    to_compute.append(str(s))
+                    sp_compute.append(str(st.species[int(s)].symbol))
 
-            print("Submitting")
-            sys.stdout.flush()
-            # submit the job
-            job.submit()
+            for ab in range(len(to_compute)):
+                edge = ['K']
+
+                for e in edge:
+                    rdir = os.path.join(self.feff_dir, str(sp_compute[ab]) + '_' +
+                                        str(e) + '_' + str(to_compute[ab]))
+
+                    # construct command to be run
+                    cmd = ""
+                    if self.settings["prerun"] is not None:
+                        cmd += self.settings["prerun"] + "\n"
+                    cmd += "python -c \"from casm.feff.feff import Feff; Feff('" + rdir + "').run()\"\n"
+                    if self.settings["postrun"] is not None:
+                        cmd += self.settings["postrun"] + "\n"
+
+                    print("Constructing the job")
+                    sys.stdout.flush()
+
+                    # construct the Job
+                    job = Job(name=self.configname + '_FEFF',
+                              account=self.settings["account"],
+                              nodes=int(self.settings["nodes"]),
+                              ppn=int(self.settings['ppn']),
+                              walltime=self.settings["walltime"],
+                              pmem=self.settings["pmem"],
+                              queue=self.settings["queue"],
+                              message=self.settings["message"],
+                              email=self.settings["email"],
+                              command=cmd)
+
+                    print("Submitting: " + rdir)
+                    sys.stdout.flush()
+                    # submit the job
+                    job.submit()
 
             # return to current directory
             os.chdir(currdir)
