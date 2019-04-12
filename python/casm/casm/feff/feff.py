@@ -114,21 +114,15 @@ class Feff(object):
                                                   str(e) + '_' + str(to_compute[ab])),
                                                   make_dir_if_not_present=True)
 
-    def exec_feff(self, jobdir=None, command=None, ncpus=None, poll_check_time=5.0, err_check_time=60.0):
+    def exec_feff(self, jobdir=None, poll_check_time=5.0, err_check_time=60.0):
         """ Run FEFF program sequence
 
             The 'command' is executed in the directory 'jobdir'.
 
             Args:
-                jobdir:     directory to run.  If jobdir is None, the current directory is used.
-                command:    (str or None) FHI-aims execution command
-                            If command != None: then 'command' is run in a subprocess
-                            Else, if ncpus == 1, then command = "aims"
-                            Else, command = "mpirun -np {NCPUS} aims"
-                ncpus:      (int) if '{NCPUS}' is in 'command' string, then 'ncpus' is substituted in the command.
-                            if ncpus==None, $PBS_NP is used if it exists, else 1
-                poll_check_time: how frequently to check if the vasp job is completed
-                err_check_time: how frequently to parse vasp output to check for errors
+                jobdir:     directory to run it
+                poll_check_time: how frequently to check if the job is completed
+                err_check_time: how frequently to check for freeze
         """
         print("Begin FEFF run:")
         sys.stdout.flush()
@@ -136,19 +130,15 @@ class Feff(object):
         if jobdir is None:
             raise FeffError('Can NOT run FEFF in higher directories')
 
-        if command is not None:
-            raise FeffError('You can not specify a single program to run from FEFF.')
-
         currdir = os.getcwd()
         os.chdir(jobdir)
 
-        if ncpus is None:
-            if "PBS_NP" in os.environ:
-                ncpus = os.environ["PBS_NP"]
-            elif "SLURM_NPROCS" in os.environ:
-                ncpus = os.environ["SLURM_NPROCS"]
-            else:
-                ncpus = 1
+        if "PBS_NP" in os.environ:
+            ncpus = int(os.environ["PBS_NP"])
+        elif "SLURM_NPROCS" in os.environ:
+            ncpus = int(os.environ["SLURM_NPROCS"])
+        else:
+            ncpus = 1
 
         err = None
 
@@ -200,10 +190,37 @@ class Feff(object):
         return err
 
     def run(self):
-        self.setup()
-        result = self.exec_feff(jobdir=self.feff_dir)
-        if result is None:
-            self.plot_feff(plot_dir=self.feff_dir)
+
+        print('Getting structure for FEFF computation in directory: ')
+        print('  %s' % self.feff_dir)
+
+        st = Structure.from_file(os.path.join(self.contcar_dir, 'CONTCAR'))
+
+        to_compute = []
+        sp_compute = []
+
+        for s in SpacegroupAnalyzer(st).get_symmetry_dataset()['equivalent_atoms']:
+            if to_compute.count(str(s)) == 0:
+                to_compute.append(str(s))
+                sp_compute.append(str(st.species[int(s)].symbol))
+
+        for ab in range(len(to_compute)):
+            edge = ['K']
+
+            for e in edge:
+                self.feff_settings['feff_user_tags']['EDGE'] = e
+                mp_xanes = MPXANESSet(absorbing_atom=int(to_compute[ab]), structure=st,
+                                      nkpts=self.feff_settings['feff_nkpts'],
+                                      radius=self.feff_settings['feff_radius'],
+                                      user_tag_settings=self.feff_settings['feff_user_tags'])
+
+                mp_xanes.write_input(os.path.join(self.feff_dir, str(sp_compute[ab]) + '_' +
+                                                  str(e) + '_' + str(to_compute[ab])),
+                                     make_dir_if_not_present=True)
+                self.exec_feff(jobdir=os.path.join(self.feff_dir, str(sp_compute[ab]) + '_' +
+                                                  str(e) + '_' + str(to_compute[ab])))
+
+        self.plot_feff(plot_dir=self.feff_dir)
 
     def submit(self):
         """Submit a job for this band structure computation"""
@@ -261,7 +278,7 @@ class Feff(object):
                     cmd = ""
                     if self.settings["prerun"] is not None:
                         cmd += self.settings["prerun"] + "\n"
-                    cmd += "python -c \"from casm.feff.feff import Feff; Feff('" + rdir + "').run()\"\n"
+                    cmd += "python -c \"from casm.feff.feff import Feff; Feff('" + self.submit_dir + "').run()\"\n"
                     if self.settings["postrun"] is not None:
                         cmd += self.settings["postrun"] + "\n"
 
@@ -484,6 +501,17 @@ class Feff(object):
             kernel = kernel / sum(kernel)
             yvals[ii] = sum(y_data * kernel)
         return yvals
+
+
+def check_consistent_settings(project_settings=None, feff_settings=None):
+    if project_settings is None and feff_settings is None:
+        raise FeffError('Need to specify both settings here.')
+    if project_settings['ppn'] != 1 or project_settings['nodes'] != 1:
+        if 'feff_base_mpi' not in feff_settings:
+            raise FeffError('You have to specify >feff_base_mpi< for FEFF '
+                            'when running with more than 1 core.')
+    elif 'feff_base_dir' not in feff_settings:
+        raise FeffError('You have to specify >feff_base_dir< for FEFF.')
 
 
 class FreezeError(object):

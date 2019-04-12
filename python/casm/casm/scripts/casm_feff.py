@@ -4,9 +4,9 @@ import os
 import sys
 import argparse
 
-from casm.project.io import read_project_settings
+from casm.project.io import read_project_settings, read_feff_settings
 from casm.project import Project, Selection
-from casm.feff import Feff
+from casm.feff import Feff, check_consistent_settings
 
 
 class CasmFeffError(Exception):
@@ -75,18 +75,21 @@ def main(argv=None):
         raise CasmFeffError("Could not find \"relax.json\" in \"settings\" directory")
     else:
         print("Using " + str(setfile) + " as computation settings...")
+    settings = read_project_settings(setfile)
 
-    fefffile = casm_directories.settings_path_crawl("bands.json", configname, casm_settings.default_clex)
+    fefffile = casm_directories.settings_path_crawl("feff.json", configname, casm_settings.default_clex)
     if fefffile is None:
         raise CasmFeffError("Could not find \"feff.json\" in \"settings\" directory")
     else:
         print("Using " + str(fefffile) + " for FEFF settings...")
+    feff_settings = read_feff_settings(fefffile)
 
-    settings = read_project_settings(setfile)
     print("DFT software is:", settings['software'])
 
     if settings['software'] != 'vasp':
         raise CasmFeffError('This is currently ONLY VASP capable.')
+
+    check_consistent_settings(settings, feff_settings)
 
     feff_calculator = None
 
@@ -132,8 +135,8 @@ def main(argv=None):
                 raise CasmFeffError('FHI-aims not implemented, use VASP')
             elif settings['software'] == 'vasp':
                 feff_calculator = Feff(proj.dir.configuration_dir(configname))
-            feff_calculator.plot_bfeff(plot_dir=os.path.abspath(os.path.join(proj.dir.configuration_dir(configname),
-                                                                              'calctype.default', 'band_structure')))
+            feff_calculator.plot_feff(plot_dir=os.path.abspath(os.path.join(proj.dir.configuration_dir(configname),
+                                                                              'calctype.default', 'xanes')))
 
 
 if __name__ == "__main__":
