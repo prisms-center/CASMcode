@@ -262,3 +262,38 @@ def read_band_settings(filename):
                 settings['band_plot_dpi'] = 170
 
     return settings
+
+def read_feff_settings(filename):
+    """Returns a JSON object reading JSON files containing settings for XAS computations.
+
+    Returns:
+         settings = a JSON object containing the settings file contents
+                      This can be accessed like a dict: settings["account"], etc.
+                      ** All values are expected to be 'str' type. **
+    """
+    try:
+        with open(filename, 'rb') as file:
+            settings = json.loads(file.read().decode('utf-8'))
+    except IOError as e:
+        print("Error reading settings file:", filename)
+        raise e
+
+    feff_args = ["feff_cmd", "feff_nkpts", "feff_radius", "feff_user_tags",
+                 "feff_plot_sigma", "feff_plot_use_omega"]
+
+    for key in feff_args:
+        if key not in settings:
+            if key == 'feff_cmd':
+                settings['feff_cmd'] = 'feff'
+            if key == 'feff_nkpts':
+                settings['feff_nkpts'] = 1000
+            if key == 'feff_radius':
+                settings['feff_radius'] = 12
+            if key == 'feff_user_tags':
+                settings['feff_user_tags'] = {}
+            if key == 'feff_plot_sigma':
+                settings['feff_plot_sigma'] = 1.0
+            if key == 'feff_plot_use_omega':
+                settings['feff_plot_use_omega'] = False
+
+    return settings
