@@ -395,41 +395,43 @@ class Feff(object):
                     absmax = data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])]['mins'][1]
                 absvals[str(sp_compute[ab]) + str(e)] = [absmin, absmax]
 
+
+        species = []
+        for ab in range(len(to_compute)):
+            if str(sp_compute[ab]) not in species:
+                species.append(str(sp_compute[ab]))
+
         # interpolate and average now
-        avg = np.empty((num_grid, 2))
+        avg = np.empty((num_grid, 2, len(species)))
         avg.fill(0)
 
-        raise FeffError('FIXME: AVG plot each species')
-
-        for ab in range(len(to_compute)):
-            edge = ['K']
-            for e in edge:
-                if not str(sp_compute[ab]) + str(e) + str(to_compute[ab]) in data:
-                    print('Check: ', str(sp_compute[ab]) + str(e) + str(to_compute[ab]))
+        for si, sp in enumerate(species):
+            for ab in range(len(to_compute)):
+                if sp_compute[ab] != sp:
                     continue
-                xi = np.linspace(absvals[str(sp_compute[ab]) + str(e)][0],
-                                 absvals[str(sp_compute[ab]) + str(e)][1], num_grid)
-                yi = sci_int.griddata(data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])]['data'][0],
-                                      data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])]['data'][1],
-                                      xi[:], method='linear', fill_value=0)
-                for i in range(num_grid):
-                    avg[i, 0] = xi[i]
-                    avg[i, 1] += yi[i]
+                edge = ['K']
+                for e in edge:
+                    if not str(sp_compute[ab]) + str(e) + str(to_compute[ab]) in data:
+                        print('Check: ', str(sp_compute[ab]) + str(e) + str(to_compute[ab]))
+                        continue
+                    xi = np.linspace(absvals[str(sp_compute[ab]) + str(e)][0],
+                                     absvals[str(sp_compute[ab]) + str(e)][1], num_grid)
+                    yi = sci_int.griddata(data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])]['data'][0],
+                                          data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])]['data'][1],
+                                          xi[:], method='linear', fill_value=0)
+                    for i in range(num_grid):
+                        avg[i, 0, si] = xi[i]
+                        avg[i, 1, si] += yi[i]
 
-                avg[:, 1] /= float(len(to_compute[ab]))
+                    avg[:, 1, si] /= float(len(to_compute[ab]))
 
-        counts = []
-        for s in sp_compute:
-            counts.append(str(s))
-
-        for ab in range(len(to_compute)):
-            edge = ['K']
-            for e in edge:
-                fname = 'average_xanes_' + str(sp_compute[ab]) + '_' + str(e) + '.png'
-                print(fname)
-                lbl = r'Average ' + str(e) + '-Edge ' + str(sp_compute[ab]) + ' (' + \
-                      str(len(to_compute[ab])) + ' total)'
-                self.plot_avgs(avg, lbl, fname)
+        for si, sp in enumerate(species):
+                edge = ['K']
+                for e in edge:
+                    fname = 'average_xanes_' + sp + '_' + str(e) + '.png'
+                    print(fname)
+                    lbl = r'Average ' + str(e) + '-Edge ' + sp + ' (' + str(si) + ' total)'
+                    self.plot_avgs(avg, si, lbl, fname)
 
         os.chdir(currdir)
 
@@ -465,7 +467,7 @@ class Feff(object):
         plt.savefig(oname, dpi=170)
         plt.clf()
 
-    def plot_avgs(self, in_data, lbls, oname):
+    def plot_avgs(self, in_data, sp_num, lbls, oname):
         plt.rcParams['xtick.major.size'] = 8
         plt.rcParams['xtick.major.width'] = 3
         plt.rcParams['xtick.minor.size'] = 4
@@ -482,9 +484,9 @@ class Feff(object):
         plt.xlabel(r'Energy [eV]', fontsize=16)
         plt.ylabel(r'Absorption $\mu_{0}$', fontsize=16)
 
-        g_y = self.gauss_broad(in_data[:, 0], in_data[:, 1],
+        g_y = self.gauss_broad(in_data[:, 0, sp_num], in_data[:, 1,sp_num],
                                float(self.fwhm2sigma(self.feff_settings['feff_plot_sigma'])))
-        plt.plot(in_data[:, 0], g_y / np.nanmax(g_y), '-', color='navy', label=lbls, linewidth=1.0)
+        plt.plot(in_data[:, 0, sp_num], g_y / np.nanmax(g_y), '-', color='navy', label=lbls, linewidth=1.0)
 
         plt.tight_layout()
         plt.savefig(oname, dpi=170)
