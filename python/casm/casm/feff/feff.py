@@ -347,12 +347,12 @@ class Feff(object):
         for ab in range(len(to_compute)):
             edge = ['K']
 
-            for e in edge:
+            for ed in edge:
                 emin = 1E31
                 emax = -1E9
 
                 mufile = os.path.join(plot_dir,
-                                      str(sp_compute[ab]) + '_' + str(e) + '_' + str(to_compute[ab]), 'xmu.dat')
+                                      str(sp_compute[ab]) + '_' + str(ed) + '_' + str(to_compute[ab]), 'xmu.dat')
 
                 if not os.path.isfile(mufile):
                     print('  ***  WARNING: File not found:   %s' % mufile)
@@ -369,17 +369,17 @@ class Feff(object):
                         emin = np.amin(w)
                     if np.amax(w) > emax:
                         emax = np.amax(w)
-                    data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])] = {'data': [w, mu0], 'mins': [emin, emax]}
+                    data[str(sp_compute[ab]) + str(ed) + str(to_compute[ab])] = {'data': [w, mu0], 'mins': [emin, emax]}
                 else:
                     if np.amin(e) < emin:
                         emin = np.amin(e)
                     if np.amax(e) > emax:
                         emax = np.amax(e)
-                    data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])] = {'data': [e, mu0], 'mins': [emin, emax]}
+                    data[str(sp_compute[ab]) + str(ed) + str(to_compute[ab])] = {'data': [e, mu0], 'mins': [emin, emax]}
 
                 fname = os.path.join(plot_dir, str(sp_compute[ab]) + '_'
-                                     + str(e) + '_' + str(to_compute[ab]), 'xanes_single.png')
-                self.plot_single(data, str(sp_compute[ab]) + str(e) + str(to_compute[ab]), fname)
+                                     + str(ed) + '_' + str(to_compute[ab]), 'xanes_single.png')
+                self.plot_single(data, str(sp_compute[ab]) + str(ed) + str(to_compute[ab]), fname)
                 print(fname)
 
         # find the min / max x values to interpolate
