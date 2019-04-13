@@ -189,10 +189,6 @@ class Feff(object):
         return err
 
     def run(self):
-
-        print('Getting structure for FEFF computation in directory: ')
-        print('  %s' % self.feff_dir)
-
         st = Structure.from_file(os.path.join(self.contcar_dir, 'CONTCAR'))
 
         to_compute = []
@@ -291,14 +287,9 @@ class Feff(object):
             sys.stdout.flush()
 
             return
-
-        elif status == "not_converging":
-            print("Status:" + status + "  Not submitting.")
-            sys.stdout.flush()
-            return
-
-        elif status != "incomplete":
-            raise FeffError("unexpected relaxation status: '" + status)
+        else:
+            raise FeffError("Unexpected relaxation status: " + status + '\n'
+                            'To run FEFF the relaxation has to be \'complete\'')
 
     def plot_feff(self, plot_dir=None):
         if plot_dir is None:
@@ -534,7 +525,7 @@ class FreezeError(object):
                 most_recent = t
                 most_recent_file = f
 
-        print("Most recent file output (" + most_recent_file + "):", most_recent, " seconds ago.")
+        print("    -> Most recent file output (" + most_recent_file + "):", most_recent, " seconds ago.")
         sys.stdout.flush()
         if most_recent < 1200:
             return False
