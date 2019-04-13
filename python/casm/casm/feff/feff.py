@@ -337,7 +337,6 @@ class Feff(object):
         weights = dict(zip(wt, ct))
 
         print('Plotting FEFF data in ' + plot_dir)
-        print('  Atom indices in Structure to compute: ', to_compute)
         print('    Species are: ', sp_compute)
         print('    Weights are: ', weights)
 
@@ -398,7 +397,6 @@ class Feff(object):
                     absmax = data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])]['mins'][1]
                 absvals[str(sp_compute[ab]) + str(e)] = [absmin, absmax]
 
-
         species = []
         for ab in range(len(to_compute)):
             if str(sp_compute[ab]) not in species:
@@ -429,12 +427,12 @@ class Feff(object):
                     avg[:, 1, si] /= float(len(to_compute[ab]))
 
         for si, sp in enumerate(species):
-                edge = ['K']
-                for e in edge:
-                    fname = 'average_xanes_' + sp + '_' + str(e) + '.png'
-                    print(fname)
-                    lbl = r'Average ' + str(e) + '-Edge ' + sp + ' (' + str(si) + ' total)'
-                    self.plot_avgs(avg, si, lbl, fname)
+            edge = ['K']
+            for e in edge:
+                fname = 'average_xanes_' + sp + '_' + str(e) + '.png'
+                print(fname)
+                lbl = r'Average ' + str(e) + '-Edge ' + sp + ' (' + str(si) + ' total)'
+                self.plot_avgs(avg, si, lbl, fname)
 
         os.chdir(currdir)
 
@@ -490,7 +488,7 @@ class Feff(object):
         plt.xlabel(r'Energy [eV]', fontsize=16)
         plt.ylabel(r'Absorption $\mu_{0}$', fontsize=16)
 
-        g_y = self.gauss_broad(in_data[:, 0, sp_num], in_data[:, 1,sp_num],
+        g_y = self.gauss_broad(in_data[:, 0, sp_num], in_data[:, 1, sp_num],
                                float(self.fwhm2sigma(self.feff_settings['feff_plot_sigma'])))
         plt.plot(in_data[:, 0, sp_num], g_y / np.nanmax(g_y), '-', color='navy', label=lbls, linewidth=1.0)
 
