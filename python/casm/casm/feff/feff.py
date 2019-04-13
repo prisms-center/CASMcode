@@ -321,9 +321,6 @@ class Feff(object):
         if plot_dir is None:
             raise FeffError('Need to supply a diretory to plot in')
 
-        currdir = os.getcwd()
-        os.chdir(plot_dir)
-
         st = Structure.from_file(os.path.join(self.contcar_dir, 'CONTCAR'))
 
         to_compute = []
@@ -402,6 +399,8 @@ class Feff(object):
         avg = np.empty((num_grid, 2))
         avg.fill(0)
 
+        raise FeffError('FIXME: AVG plot each species')
+
         for ab in range(len(to_compute)):
             edge = ['K']
             for e in edge:
@@ -423,11 +422,14 @@ class Feff(object):
         for s in sp_compute:
             counts.append(str(s))
 
-        fname = 'average_xanes_O_K.png'  # + str(sp_compute[ab]) + '_' + str(e) + '.png'
-        print(fname)
-        lbl = r'Average O K-Edge (' + str(counts.count('O')) + ' total, $\sigma=$ 1 eV)'
-        # lbl = r'Average ' + str(e) + '-Edge ' + str(sp_compute[ab]) + ' (' + str(len(to_compute[ab])) + ' total)'
-        self.plot_avgs(avg, lbl, fname)
+        for ab in range(len(to_compute)):
+            edge = ['K']
+            for e in edge:
+                fname = 'average_xanes_' + str(sp_compute[ab]) + '_' + str(e) + '.png'
+                print(fname)
+                lbl = r'Average ' + str(e) + '-Edge ' + str(sp_compute[ab]) + ' (' + \
+                      str(len(to_compute[ab])) + ' total)'
+                self.plot_avgs(avg, lbl, fname)
 
         os.chdir(currdir)
 
