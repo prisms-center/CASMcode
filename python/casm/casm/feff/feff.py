@@ -321,6 +321,9 @@ class Feff(object):
         if plot_dir is None:
             raise FeffError('Need to supply a diretory to plot in')
 
+        currdir = os.getcwd()
+        os.chdir(plot_dir)
+
         st = Structure.from_file(os.path.join(self.contcar_dir, 'CONTCAR'))
 
         to_compute = []
@@ -435,7 +438,10 @@ class Feff(object):
 
         os.chdir(currdir)
 
-        state = {'status': 'complete', 'feff': 'plotted'}
+        with open(self.status_file, 'r') as f:
+            state = json.load(f)
+
+        state['feff'] = 'plotted'
 
         with open(self.status_file, 'w') as f:
             json.dump(state, f)
