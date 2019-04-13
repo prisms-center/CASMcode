@@ -1,6 +1,3 @@
-import matplotlib
-matplotlib.use('Agg')
-
 import re
 import os
 import sys
@@ -20,6 +17,9 @@ from pymatgen.core.structure import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from prisms_jobs import Job, JobDB
+
+import matplotlib
+matplotlib.use('Agg')
 
 
 class FeffError(Exception):
@@ -111,8 +111,7 @@ class Feff(object):
                                       user_tag_settings=self.feff_settings['feff_user_tags'])
 
                 mp_xanes.write_input(os.path.join(self.feff_dir, str(sp_compute[ab]) + '_' +
-                                                  str(e) + '_' + str(to_compute[ab])),
-                                                  make_dir_if_not_present=True)
+                                                  str(e) + '_' + str(to_compute[ab])), make_dir_if_not_present=True)
 
     def exec_feff(self, jobdir=None, poll_check_time=5.0, err_check_time=60.0):
         """ Run FEFF program sequence
@@ -218,7 +217,7 @@ class Feff(object):
                                                   str(e) + '_' + str(to_compute[ab])),
                                      make_dir_if_not_present=True)
                 self.exec_feff(jobdir=os.path.join(self.feff_dir, str(sp_compute[ab]) + '_' +
-                                                  str(e) + '_' + str(to_compute[ab])))
+                                                   str(e) + '_' + str(to_compute[ab])))
 
         self.plot_feff(plot_dir=self.feff_dir)
 
@@ -365,7 +364,7 @@ class Feff(object):
                 for i in range(len(mu0)):
                     mu0 *= weights[int(to_compute[ab])]
 
-                if self.feff_settings['feff_use_omega']:
+                if self.feff_settings['feff_plot_use_omega']:
                     if np.amin(w) < emin:
                         emin = np.amin(w)
                     if np.amax(w) > emax:

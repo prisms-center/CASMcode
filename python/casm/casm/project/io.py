@@ -256,6 +256,7 @@ def read_band_settings(filename):
 
     return settings
 
+
 def read_feff_settings(filename):
     """Returns a JSON object reading JSON files containing settings for XAS computations.
 
@@ -274,11 +275,6 @@ def read_feff_settings(filename):
     feff_args = ["feff_cmd", "feff_nkpts", "feff_radius", "feff_user_tags",
                  "feff_plot_sigma", "feff_plot_use_omega", "feff_base_dir",
                  "feff_base_mpi"]
-
-    if not "feff_base_dir" and not "feff_base_mpi" in settings:
-        raise ProjectIOError('You have to define the base directory for the FEFF programs.\n'
-                             'Either >feff_base_dir< for single cpu or >feff_base_mpi< for\n'
-                             'multicore runs needs to be set.')
 
     for key in feff_args:
         if key not in settings:
