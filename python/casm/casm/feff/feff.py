@@ -256,50 +256,33 @@ class Feff(object):
             currdir = os.getcwd()
             os.chdir(self.submit_dir)
 
-            st = Structure.from_file(os.path.join(self.contcar_dir, 'CONTCAR'))
+            # construct command to be run
+            cmd = ""
+            if self.settings["prerun"] is not None:
+                cmd += self.settings["prerun"] + "\n"
+            cmd += "python -c \"from casm.feff.feff import Feff; Feff('" + self.submit_dir + "').run()\"\n"
+            if self.settings["postrun"] is not None:
+                cmd += self.settings["postrun"] + "\n"
 
-            to_compute = []
-            sp_compute = []
+            print("Constructing the job")
+            sys.stdout.flush()
 
-            for s in SpacegroupAnalyzer(st).get_symmetry_dataset()['equivalent_atoms']:
-                if to_compute.count(str(s)) == 0:
-                    to_compute.append(str(s))
-                    sp_compute.append(str(st.species[int(s)].symbol))
+            # construct the Job
+            job = Job(name=self.configname + '_FEFF',
+                      account=self.settings["account"],
+                      nodes=int(self.settings["nodes"]),
+                      ppn=int(self.settings['ppn']),
+                      walltime=self.settings["walltime"],
+                      pmem=self.settings["pmem"],
+                      queue=self.settings["queue"],
+                      message=self.settings["message"],
+                      email=self.settings["email"],
+                      command=cmd)
 
-            for ab in range(len(to_compute)):
-                edge = ['K']
-
-                for e in edge:
-                    rdir = os.path.join(self.feff_dir, str(sp_compute[ab]) + '_' +
-                                        str(e) + '_' + str(to_compute[ab]))
-
-                    # construct command to be run
-                    cmd = ""
-                    if self.settings["prerun"] is not None:
-                        cmd += self.settings["prerun"] + "\n"
-                    cmd += "python -c \"from casm.feff.feff import Feff; Feff('" + self.submit_dir + "').run()\"\n"
-                    if self.settings["postrun"] is not None:
-                        cmd += self.settings["postrun"] + "\n"
-
-                    print("Constructing the job")
-                    sys.stdout.flush()
-
-                    # construct the Job
-                    job = Job(name=self.configname + '_FEFF',
-                              account=self.settings["account"],
-                              nodes=int(self.settings["nodes"]),
-                              ppn=int(self.settings['ppn']),
-                              walltime=self.settings["walltime"],
-                              pmem=self.settings["pmem"],
-                              queue=self.settings["queue"],
-                              message=self.settings["message"],
-                              email=self.settings["email"],
-                              command=cmd)
-
-                    print("Submitting: " + rdir)
-                    sys.stdout.flush()
-                    # submit the job
-                    job.submit()
+            print("Submitting: " + self.submit_dir)
+            sys.stdout.flush()
+            # submit the job
+            job.submit()
 
             # return to current directory
             os.chdir(currdir)
