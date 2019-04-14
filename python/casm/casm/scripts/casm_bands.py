@@ -99,7 +99,7 @@ def main(argv=None):
                 raise CasmBandsError('FHI-aims not implemented, use VASP')
             elif settings['software'] == 'vasp':
                 band_calculator = VaspBand(proj.dir.configuration_dir(configname))
-            band_calculator.setup()
+            band_calculator.setup_chg()
 
     elif args.submit:
         sel.write_pos()

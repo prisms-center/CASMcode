@@ -82,7 +82,26 @@ class Bands(object):
         print("  Run directory: %s" % self.band_dir)
         sys.stdout.flush()
 
-    def setup(self):
+    def setup_chg(self):
+        """ Create VASP input files and take CONTCAR from last converged run """
+
+        print('Getting VASP input files for charge computation in directory: ')
+        print('  %s' % self.band_dir)
+
+        if not os.path.isdir(os.path.join(self.band_dir)):
+            os.mkdir(os.path.join(self.band_dir))
+
+        s = Structure.from_file(os.path.join(self.contcar_dir, 'CONTCAR'))
+
+        s.to(filename=os.path.join(self.band_dir, 'POSCAR'), fmt='POSCAR')
+        Kpoints.automatic_density(s, 1000, force_gamma=True).write_file(os.path.join(self.band_dir, 'KPOINTS'))
+        sh.copyfile(os.path.join(self.contcar_dir, 'POTCAR'), os.path.join(self.band_dir, 'POTCAR'))
+        self.manage_tags_chg(os.path.join(self.contcar_dir, 'INCAR'))
+        with open(os.path.join(self.band_dir, 'INCAR'), 'w') as f:
+            for line in self.new_incar:
+                f.write(line)
+
+    def setup_band(self):
         """ Create VASP input files and take CONTCAR from last converged run """
 
         print('Getting VASP input files for band structure computation in directory: ')
@@ -98,12 +117,101 @@ class Bands(object):
         Kpoints.automatic_linemode(self.band_settings['band_subdiv'],
                                    irr_bri_zone).write_file(os.path.join(self.band_dir, 'KPOINTS'))
         sh.copyfile(os.path.join(self.contcar_dir, 'POTCAR'), os.path.join(self.band_dir, 'POTCAR'))
-        self.manage_tags(os.path.join(self.contcar_dir, 'INCAR'))
+        self.manage_tags_bands(os.path.join(self.contcar_dir, 'INCAR'))
         with open(os.path.join(self.band_dir, 'INCAR'), 'w') as f:
             for line in self.new_incar:
                 f.write(line)
 
-    def exec_dft(self, jobdir=None, stdout="std.out", stderr="std.err", command=None, ncpus=None,
+    def exec_chg(self, jobdir=None, stdout="chg.out", stderr="chg.err", command=None, ncpus=None,
+                 poll_check_time=5.0, err_check_time=60.0):
+        """ Run selected DFT software using subprocess.
+
+            The 'command' is executed in the directory 'jobdir'.
+
+            Args:
+                jobdir:     directory to run.  If jobdir is None, the current directory is used.
+                stdout:     filename to write to.  If stdout is None, "std.out" is used.
+                stderr:     filename to write to.  If stderr is None, "std.err" is used.
+                command:    (str or None) FHI-aims execution command
+                            If command != None: then 'command' is run in a subprocess
+                            Else, if ncpus == 1, then command = "aims"
+                            Else, command = "mpirun -np {NCPUS} aims"
+                ncpus:      (int) if '{NCPUS}' is in 'command' string, then 'ncpus' is substituted in the command.
+                            if ncpus==None, $PBS_NP is used if it exists, else 1
+                poll_check_time: how frequently to check if the vasp job is completed
+                err_check_time: how frequently to parse vasp output to check for errors
+        """
+        print("Begin charge density run:")
+        sys.stdout.flush()
+
+        if jobdir is None:
+            jobdir = os.getcwd()
+
+        currdir = os.getcwd()
+        os.chdir(jobdir)
+
+        if ncpus is None:
+            if "PBS_NP" in os.environ:
+                ncpus = os.environ["PBS_NP"]
+            elif "SLURM_NPROCS" in os.environ:
+                ncpus = os.environ["SLURM_NPROCS"]
+            else:
+                ncpus = 1
+
+        if command is None:
+            if ncpus == 1:
+                command = self.settings['run_cmd']
+            else:
+                command = "mpirun -np {NCPUS} " + self.settings['run_cmd']
+
+        if re.search("NCPUS", command):
+            command = command.format(NCPUS=str(ncpus))
+
+        print("  jobdir:", jobdir)
+        print("  exec:", command)
+        sys.stdout.flush()
+
+        err = None
+        sout = open(os.path.join(jobdir, stdout), 'w')
+        serr = open(os.path.join(jobdir, stderr), 'w')
+
+        p = subprocess.Popen(command.split(), stdout=sout, stderr=serr)
+
+        # wait for process to end, and periodically check for errors
+        last_check = time.time()
+        while p.poll() is None:
+            time.sleep(poll_check_time)
+            if time.time() - last_check > err_check_time:
+                last_check = time.time()
+                err = error_check(jobdir, os.path.join(jobdir, stdout))
+                if err is not None:
+                    # FreezeErrors are fatal and usually not helped with abort_scf
+                    if "FreezeError" in err.keys():
+                        print("  DFT for CHG run seems frozen, killing job")
+                        sys.stdout.flush()
+                        p.kill()
+
+        # close output files
+        sout.close()
+        serr.close()
+
+        os.chdir(currdir)
+
+        print("Run ended")
+        sys.stdout.flush()
+
+        # check finished job for errors
+        if err is None:
+            err = error_check(jobdir, os.path.join(jobdir, stdout))
+            if err is not None:
+                print("  Found errors:", end='')
+                for e in err:
+                    print(e, end='')
+            print("\n")
+
+        return err
+
+    def exec_band(self, jobdir=None, stdout="band.out", stderr="band.err", command=None, ncpus=None,
                  poll_check_time=5.0, err_check_time=60.0):
         """ Run selected DFT software using subprocess.
 
@@ -193,8 +301,12 @@ class Bands(object):
         return err
 
     def run(self):
-        self.setup()
-        result = self.exec_dft(jobdir=self.band_dir)
+        self.setup_chg()
+        result = self.exec_chg(jobdir=self.band_dir)
+        if result is not None:
+            raise BandsError('Self consistent charge computation did not complete, check what happended.')
+        self.setup_band()
+        result = self.exec_band(jobdir=self.band_dir)
         if result is None:
             self.plot_bandos(plot_dir=self.band_dir)
 
@@ -279,8 +391,8 @@ class Bands(object):
         elif status != "incomplete":
             raise BandsError("unexpected relaxation status: '" + status)
 
-    def manage_tags(self, incar_file):
-        remove_tags = ['NSW', 'EDIFFG', 'IBRION', 'ISIF', 'ISMEAR']
+    def manage_tags_chg(self, incar_file):
+        remove_tags = ['NSW', 'EDIFFG', 'IBRION', 'ISIF', 'ISMEAR', 'LCHARG']
         with open(os.path.abspath(incar_file)) as f:
             for line in f:
                 if not any(tag in line for tag in remove_tags):
@@ -288,6 +400,18 @@ class Bands(object):
         nbands = int(Procar(os.path.join(self.contcar_dir, 'PROCAR')).nbands)
         self.new_incar.append('ISMEAR = 2\n')
         self.new_incar.append('NBANDS = %i\n' % int(nbands * 1.5))  # use 50% more bands just to make sure
+        self.new_incar.append('LCHARG = .TRUE.\n')
+
+    def manage_tags_bands(self, incar_file):
+        remove_tags = ['NSW', 'EDIFFG', 'IBRION', 'ISIF', 'ISMEAR', 'LCHARG']
+        with open(os.path.abspath(incar_file)) as f:
+            for line in f:
+                if not any(tag in line for tag in remove_tags):
+                    self.new_incar.append(line)
+        nbands = int(Procar(os.path.join(self.contcar_dir, 'PROCAR')).nbands)
+        self.new_incar.append('ISMEAR = 2\n')
+        self.new_incar.append('NBANDS = %i\n' % int(nbands * 1.5))  # use 80% more bands just to make sure
+        self.new_incar.append('ICHARG = 11\n')
         self.new_incar.append('NEDOS = 5001\n')
         self.new_incar.append('EMIN = -15\n')
         self.new_incar.append('EMAX =  15\n')
