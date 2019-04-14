@@ -3,15 +3,13 @@ import os
 import sys
 import time
 import json
+import matplotlib
 import subprocess
 
 import shutil as sh
 
 from casm.project import DirectoryStructure, ProjectSettings
 from casm.project.io import read_project_settings, read_band_settings
-
-import matplotlib
-matplotlib.use('Agg')
 
 from pymatgen.io.vasp import Kpoints, Procar
 from pymatgen.io.vasp.outputs import Vasprun
@@ -20,6 +18,8 @@ from pymatgen.symmetry.bandstructure import HighSymmKpath
 from pymatgen.electronic_structure.plotter import BSDOSPlotter
 
 from prisms_jobs import Job, JobDB
+
+matplotlib.use('Agg')
 
 
 class BandsError:
@@ -212,7 +212,7 @@ class Bands(object):
         return err
 
     def exec_band(self, jobdir=None, stdout="band.out", stderr="band.err", command=None, ncpus=None,
-                 poll_check_time=5.0, err_check_time=60.0):
+                  poll_check_time=5.0, err_check_time=60.0):
         """ Run selected DFT software using subprocess.
 
             The 'command' is executed in the directory 'jobdir'.
