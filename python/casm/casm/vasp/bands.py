@@ -94,7 +94,8 @@ class Bands(object):
         s = Structure.from_file(os.path.join(self.contcar_dir, 'CONTCAR'))
 
         s.to(filename=os.path.join(self.band_dir, 'POSCAR'), fmt='POSCAR')
-        Kpoints.automatic_density(s, 1000, force_gamma=True).write_file(os.path.join(self.band_dir, 'KPOINTS'))
+        Kpoints.automatic_density(s, int(self.band_settings['band_kpt_dens']),
+                                  force_gamma=True).write_file(os.path.join(self.band_dir, 'KPOINTS'))
         sh.copyfile(os.path.join(self.contcar_dir, 'POTCAR'), os.path.join(self.band_dir, 'POTCAR'))
         self.manage_tags_chg(os.path.join(self.contcar_dir, 'INCAR'))
         with open(os.path.join(self.band_dir, 'INCAR'), 'w') as f:

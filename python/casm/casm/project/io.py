@@ -215,10 +215,13 @@ def read_band_settings(filename):
     band_args = ["band_subdiv", "band_bs_projection", "band_dos_projection", "band_vb_energy_range",
                  "band_cb_energy_range", "band_fixed_cb_energy", "band_egrid_interval", "band_font",
                  "band_axis_fontsize", "band_tick_fontsize", "band_legend_fontsize", "band_bs_legend",
-                 "band_dos_legend", "band_rgb_legend", "band_fig_size", "band_plot_name", "band_plot_dpi"]
+                 "band_dos_legend", "band_rgb_legend", "band_fig_size", "band_plot_name", "band_plot_dpi",
+                 "band_kpt_dens"]
 
     for key in band_args:
         if key not in settings:
+            if key == 'band_kpt_dens':
+                settings['band_kpt_dens'] = 1000
             if key == 'band_subdiv':
                 settings['band_subdiv'] = 100
             if key == 'band_bs_projection':
