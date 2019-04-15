@@ -310,6 +310,8 @@ class Bands(object):
         result = self.exec_band(jobdir=self.band_dir)
         if result is None:
             self.plot_bandos(plot_dir=self.band_dir)
+        else:
+            raise BandsError('Band structure computation did not complete, check what happended.')
 
     def submit(self):
         """Submit a job for this band structure computation"""
