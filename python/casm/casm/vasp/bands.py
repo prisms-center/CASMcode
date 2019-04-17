@@ -41,7 +41,7 @@ class Bands(object):
         if rundir is None:
             raise BandsError('Can not create from nothing-directory')
 
-        print("Constructing a VASP BandRun object")
+        print("Constructing a VASP Band object")
         sys.stdout.flush()
 
         print("  Reading CASM settings")
@@ -63,14 +63,14 @@ class Bands(object):
         if setfile is None:
             raise BandsError("Could not find relax.json in settings directory")
         else:
-            print("  Read DFT settings from:" + setfile)
+            print("  Read DFT settings from: " + setfile)
         self.settings = read_project_settings(setfile)
 
         bandfile = self.casm_directories.settings_path_crawl("bands.json", self.configname, self.clex)
         if bandfile is None:
             raise BandsError("Could not find bands.json in settings directory")
         else:
-            print("  Read band settings from:" + bandfile)
+            print("  Read band settings from: " + bandfile)
         self.band_settings = read_band_settings(bandfile)
 
         self.submit_dir = rundir
@@ -335,7 +335,7 @@ class Bands(object):
 
         if 'bands' in state:
             if state['bands'] == 'plotted':
-                print('Band Structure in ' + self.configname + ' is already plotted, skipping submit.')
+                print('    ******** Band Structure in ' + self.configname + ' is already plotted, skipping submit.')
                 return
         status = state['status']
 
