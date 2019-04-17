@@ -364,7 +364,9 @@ class Feff(object):
                 absmax = 0
                 if not str(sp_compute[ab]) + str(e) + str(to_compute[ab]) in data:
                     print('Check: ', str(sp_compute[ab]) + str(e) + str(to_compute[ab]))
-                    continue
+                    raise FeffError('Not all Spectra could be computed.\n If running in MPI mode'
+                                    'try running in single core mode first before checking further.\n'
+                                    'FEFF sometimes has convergence issues in MPI mode.')
                 if data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])]['mins'][0] < absmin:
                     absmin = data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])]['mins'][0]
                 if data[str(sp_compute[ab]) + str(e) + str(to_compute[ab])]['mins'][1] > absmax:
