@@ -6,6 +6,7 @@ import json
 import matplotlib
 import subprocess
 
+import numpy as np
 import shutil as sh
 
 from casm.project import DirectoryStructure, ProjectSettings
@@ -492,7 +493,8 @@ class FreezeError(object):
                 most_recent = t
                 most_recent_file = f
 
-        print("Most recent file output (" + most_recent_file + "):", most_recent, " seconds ago.")
+        print("Most recent file output (" + most_recent_file + "):",
+              np.round(most_recent, decimals=3), " seconds ago.")
         sys.stdout.flush()
         if most_recent < 300:
             return False
