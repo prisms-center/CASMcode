@@ -93,8 +93,7 @@ namespace CASM {
     Structure prim(read_prim(dir.prim(), set.hamiltonian_modules(), set.crystallography_tol()));
 
     args.log() << "Generating lattice point group. " << std::endl << std::endl;
-    SymGroup prim_pg;
-    prim.lattice().generate_point_group(prim_pg);
+    SymGroup prim_pg(SymGroup::lattice_point_group(prim.lattice()));
     prim_pg.character_table();
 
 
@@ -144,10 +143,8 @@ namespace CASM {
       Structure tmp = struc;
       // a) symmetrize the lattice vectors
       Lattice lat = tmp.lattice();
-      lat.symmetrize(tol);
+      lat = lat.symmetrized(tol);
       lat.set_tol(tol);
-      SymGroup pg;
-      lat.generate_point_group(pg);
 
       tmp.set_lattice(lat, FRAC);
 

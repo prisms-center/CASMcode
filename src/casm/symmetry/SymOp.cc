@@ -53,7 +53,7 @@ namespace CASM {
       t_op.set_index(master_group(), master_group().ind_prod(index(), RHS.index()));
     }
     else if(RHS.m_master_group && !m_master_group && is_identity()) {
-      t_op.set_index(*RHS.m_master_group, RHS.index());
+      t_op.set_index(RHS.master_group(), RHS.index());
     }
     else if(m_master_group && !RHS.m_master_group && RHS.is_identity()) {
       t_op.set_index(master_group(), index());

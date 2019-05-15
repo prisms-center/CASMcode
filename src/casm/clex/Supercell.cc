@@ -155,7 +155,7 @@ namespace CASM {
   Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) const {
     //Because the user is a fool and the supercell may not be a supercell (This still doesn't check the basis!)
     Eigen::Matrix3d transmat;
-    if(!structure_to_config.lattice().is_supercell_of(prim().lattice(), prim().factor_group(), transmat)) {
+    if(!structure_to_config.lattice().is_supercell_of(prim().lattice(), transmat)) {
       default_err_log() << "ERROR in Supercell::configuration" << std::endl;
       default_err_log() << "The provided structure is not a supercell of the PRIM. Tranformation matrix was:" << std::endl;
       default_err_log() << transmat << std::endl;
@@ -342,42 +342,6 @@ namespace CASM {
                lattice(),
                prim().point_group(),
                crystallography_tol()));
-  }
-
-  ///  Check if a Structure fits in this Supercell
-  ///  - Checks that 'structure'.lattice is supercell of 'lattice'
-  ///  - Does *NOT* check basis sites
-  ///
-  bool Supercell::is_supercell_of(const Structure &structure) const {
-    Eigen::Matrix3d mat;
-    return is_supercell_of(structure, mat);
-  }
-
-  ///  Check if a Structure fits in this Supercell
-  ///  - Checks that 'structure'.lattice is supercell of 'lattice'
-  ///  - Does *NOT* check basis sites
-  ///
-  bool Supercell::is_supercell_of(const Structure &structure, Eigen::Matrix3d &mat) const {
-    Structure tstruct = structure;
-    SymGroup point_group;
-    tstruct.lattice().generate_point_group(point_group);
-    return lattice().is_supercell_of(tstruct.lattice(), point_group, mat);
-  }
-
-  ///  Returns an std::vector<int> consistent with
-  ///    Configuration::occupation that is all vacancies.
-  ///    A site which can not contain a vacancy is set to -1.
-  ///
-  std::vector<int> Supercell::vacant() const {
-    std::vector<int> occupation(num_sites(), -1);
-    int b, index;
-    for(Index i = 0; i < num_sites(); i++) {
-      b = sublat(i);
-      if(prim().basis()[b].contains("Va", index)) {
-        occupation[i] = index;
-      }
-    }
-    return occupation;
   }
 
   bool Supercell::eq_impl(const Supercell &B) const {
@@ -572,7 +536,7 @@ namespace CASM {
       primclex.err_log() << "transformation matrix: \n" << primclex.prim().lattice().lat_column_mat().inverse() * super_lat.lat_column_mat() << std::endl;
       throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
     }
-    return res.second;
+    return iround(res.second);
   }
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat) {

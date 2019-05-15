@@ -1,9 +1,49 @@
 #include "casm/crystallography/Niggli.hh"
+#include <set>
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/symmetry/SymGroup.hh"
 #include "casm/misc/CASM_math.hh"
 namespace CASM {
+  std::vector<Eigen::Matrix3d> _cell_invariant_transforms() {
+    std::vector<Eigen::Matrix3d> result(24, Eigen::Matrix3d::Zero());
+    Index i = 0;
+    result[i].setIdentity();
+
+    ++i;
+    result[i](0, 1) = result[i](1, 2) = result[i](2, 0) = 1;
+
+    ++i;
+    result[i](0, 2) = result[i](1, 0) = result[i](2, 1) = 1;
+
+    ++i;
+    result[i](0, 1) = result[i](1, 0) = result[i](2, 2) = -1;
+
+    ++i;
+    result[i](0, 2) = result[i](1, 1) = result[i](2, 0) = -1;
+
+    ++i;
+    result[i](0, 0) = result[i](1, 2) = result[i](2, 1) = -1;
+
+    Eigen::Matrix3d tmat(-Eigen::Matrix3d::Identity());
+
+    for(Index j = 0; j < 3; ++j) {
+      tmat(j, j) = 1;
+      for(Index k = 0; k < 6; ++k) {
+        result[++i] = result[k] * tmat;
+      }
+      tmat(j, j) = -1;
+    }
+
+    return result;
+
+  }
+
+  std::vector<Eigen::Matrix3d> const &NiggliRep::cell_invariant_transforms() {
+    static std::vector<Eigen::Matrix3d> result = _cell_invariant_transforms();
+    return result;
+  }
+
   NiggliRep::NiggliRep(const Eigen::Matrix3d &init_lat_col_mat):
     m_metrical_matrix(init_lat_col_mat.transpose() * init_lat_col_mat),
     m_scale_factor(cuberoot(init_lat_col_mat.determinant()))	{
@@ -219,15 +259,61 @@ namespace CASM {
     return;
   }
 
-  bool is_niggli(const Eigen::Matrix3d &test_lat_mat, double compare_tol) {
-    NiggliRep niggtest(test_lat_mat);
+  Index NiggliRep::niggli_index(double compare_tol) const {
+    return
+      Index(meets_criteria_1(compare_tol))
+      + Index(meets_criteria_2(compare_tol))
+      + Index(meets_criteria_3(compare_tol)
+              || meets_criteria_4(compare_tol))
+      + Index(meets_criteria_5(compare_tol))
+      + Index(meets_criteria_6(compare_tol))
+      + Index(meets_criteria_7(compare_tol))
+      + Index(meets_criteria_8(compare_tol));
+  }
 
-    //niggtest.debug_criteria(compare_tol);
-    return niggtest.is_niggli(compare_tol);
+  Index niggli_index(const Eigen::Matrix3d &test_lat_mat, double compare_tol) {
+    return NiggliRep(test_lat_mat).niggli_index(compare_tol);
+  }
+
+  bool is_niggli(const Eigen::Matrix3d &test_lat_mat, double compare_tol) {
+    NiggliRep ntest(test_lat_mat);
+
+    //ntest.debug_criteria(compare_tol);
+    return ntest.is_niggli(compare_tol);
   }
 
   bool is_niggli(const Lattice &test_lat, double compare_tol) {
     return is_niggli(test_lat.lat_column_mat(), compare_tol);
+  }
+
+  // Helper function, declared only in this file. Returns all niggli cells of 'in_lat'
+  std::set<Eigen::Matrix3d, StandardOrientationCompare> _niggli_set(const Lattice &in_lat, double compare_tol, bool keep_handedness) {
+    Lattice reduced_in = in_lat.reduced_cell();
+
+    if(!keep_handedness) {
+      reduced_in.make_right_handed();
+    }
+
+    std::set<Eigen::Matrix3d, StandardOrientationCompare> result((StandardOrientationCompare(compare_tol)));
+
+    // The parallelepipiped of the reduced cell already has the shape of the finally niggli cell,
+    // but we must select which edges will form the lattice vectors (satisfying the Niggli property)
+    // and which orientation of the lattice vectors to use (satisfying the CASM-canonical property)
+    // For now, we optimize both properties simultaneously by looping over all
+    // transformation matrices with determinant 1 and elements -1, 0 or 1. There are 3480 such matrices
+    // We could vastly improve this to maximum 24 + 24 transformations if we knew the (CRYSTAL) point-group
+    // There are 24 possible lattice vector choices to screen for Niggli, starting from the reduced cell
+    // Once the Niggli condition is achieved, there are maximum 24 proper point group rotations to consider
+    // to screen for canonical orientation
+    const std::vector<Eigen::Matrix3i> &candidate_trans_mats = positive_unimodular_matrices();
+    Eigen::Matrix3d candidate_lat_mat;
+    for(auto it = candidate_trans_mats.begin(); it != candidate_trans_mats.end(); ++it) {
+      candidate_lat_mat = reduced_in.lat_column_mat() * it->cast<double>();
+      if(is_niggli(candidate_lat_mat, compare_tol)) {
+        result.insert(candidate_lat_mat);
+      }
+    }
+    return result;
   }
 
   /**
@@ -242,34 +328,12 @@ namespace CASM {
    */
 
   Lattice niggli(const Lattice &in_lat, double compare_tol, bool keep_handedness) {
-
-    Lattice target_lat(in_lat);
-
-
-    if(!keep_handedness) {
-      target_lat.make_right_handed();
+    auto lat_set = _niggli_set(in_lat, compare_tol, keep_handedness);
+    if(lat_set.empty()) {
+      throw std::runtime_error("In niggli(), did not find any lattices matching niggli criteria!");
     }
+    return Lattice(*lat_set.begin(), in_lat.tol());
 
-    const Lattice reduced_in = target_lat.reduced_cell();
-    bool first_niggli = true;
-    Eigen::Matrix3d best_lat_mat = Eigen::Matrix3d::Zero();
-
-    //Like the point group, but brute forcing for every possible transformation matrix ever with determinant 1 and elements -1, 0 or 1
-    const std::vector<Eigen::Matrix3i> &candidate_trans_mats = positive_unimodular_matrices();
-
-    for(auto it = candidate_trans_mats.begin(); it != candidate_trans_mats.end(); ++it) {
-      Eigen::Matrix3d candidate_lat_mat = reduced_in.lat_column_mat() * it->cast<double>();
-      if(is_niggli(candidate_lat_mat, compare_tol)) {
-        if(first_niggli || standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
-          best_lat_mat = candidate_lat_mat;
-          first_niggli = false;
-        }
-      }
-    }
-    if(first_niggli) {
-      throw std::runtime_error("First niggli guess was accepted, this shouldn't happen");
-    }
-    return Lattice(best_lat_mat);
   }
 
   /**
@@ -280,7 +344,7 @@ namespace CASM {
    * is selected.
    */
 
-  Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
+  Lattice canonical_equivalent_lattice(const Lattice &in_lat, const std::vector<SymOp> &point_grp, double compare_tol) {
     return _canonical_equivalent_lattice(in_lat, point_grp, compare_tol).first;
   }
 
@@ -293,38 +357,40 @@ namespace CASM {
   ///
   std::pair<Lattice, SymOp> _canonical_equivalent_lattice(
     const Lattice &in_lat,
-    const SymGroup &point_grp,
+    const std::vector<SymOp> &point_grp,
     double compare_tol) {
 
-    //Ensure you at least get *something* back that's niggli AND right handed
-    Lattice most_canonical = niggli(in_lat, compare_tol, false);
-    Eigen::Matrix3d most_canonical_lat_mat = most_canonical.lat_column_mat();
-    Eigen::Matrix3d ref_lat_mat = most_canonical.lat_column_mat();
+    auto lat_set = _niggli_set(in_lat, compare_tol, true);
+    if(lat_set.empty())
+      throw std::runtime_error("In _canonical_equivalent_lattice(), did not find any niggli representations of provided lattice.");
+    bool first = true;
+    Eigen::Matrix3d most_canonical_lat_mat, trans_lat_mat;
     auto to_canonical = point_grp.begin();
 
+    // The niggli cell is based purely on the metric tensor, and so is invariant cartesian rotation
+    // (i.e., the niggli cell uniquely orders lattice parameters and angles but does not uniquely specify orientation)
+    // We find all niggli representations for 'in_lat', and then loop over point group operations.
+    // For each point group operation, reorient all the niggli representations, keeping track of
+    // which orientation is 'most' canonical, according to casm standard orientation
     for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
-
       //Skip operations that change the handedness of the lattice
       if(it->matrix().determinant() <= 0.0) {
         continue;
       }
-      Eigen::Matrix3d transformed_lat_mat = it->matrix() * ref_lat_mat;
-      // Eigen::Matrix3d transformed_lat_mat = it->matrix() * in_lat.lat_column_mat();
 
-      Lattice transformed_lat(transformed_lat_mat);
-      Eigen::Matrix3d candidate_lat_mat = niggli(transformed_lat, compare_tol).lat_column_mat();
+      for(Eigen::MatrixXd const &lat_mat : lat_set) {
+        trans_lat_mat = it->matrix() * lat_mat;
+        assert(is_niggli(lat_mat, compare_tol) && "Result of 'niggli()' is not a Niggli cell");
 
-      if(!is_niggli(candidate_lat_mat, compare_tol)) {
-        throw std::runtime_error("Result of 'niggli()' is not a Niggli cell");
-      }
-
-      if(standard_orientation_compare(most_canonical_lat_mat, candidate_lat_mat, compare_tol)) {
-        most_canonical_lat_mat = candidate_lat_mat;
-        to_canonical = it;
+        if(first || standard_orientation_compare(most_canonical_lat_mat, trans_lat_mat, compare_tol)) {
+          first = false;
+          most_canonical_lat_mat = trans_lat_mat;
+          to_canonical = it;
+        }
       }
     }
 
-    return std::make_pair(Lattice(most_canonical_lat_mat), *to_canonical);
+    return std::make_pair(Lattice(most_canonical_lat_mat, in_lat.tol()), *to_canonical);
   }
 
   /**

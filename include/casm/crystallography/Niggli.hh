@@ -2,10 +2,10 @@
 #define NIGGLI_HH
 
 #include "casm/external/Eigen/Core"
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
   class Lattice;
-  class SymGroup;
   class SymOp;
 
   /** \ingroup Lattice
@@ -46,6 +46,9 @@ namespace CASM {
 
   class NiggliRep {
   public:
+    /// List of all 24 operations that permute or reflect lattice vectors without changing
+    /// cell shape or handedness of lattice vectors
+    static std::vector<Eigen::Matrix3d> const &cell_invariant_transforms();
 
     NiggliRep(const Lattice &init_lat);
 
@@ -107,6 +110,8 @@ namespace CASM {
 
     void debug_criteria(double compare_tol) const;
 
+    /// Number of criteria met
+    Index niggli_index(double compare_tol) const;
   private:
 
     ///Transpose of initialization lattice dotted with itself
@@ -116,14 +121,16 @@ namespace CASM {
     const double m_scale_factor;
   };
 
+  /// Number of niggli criteria met
+  Index niggli_index(const Eigen::Matrix3d &test_lat_mat, double compare_tol);
 
   ///Find the niggli, most standard oriented version of the given orbit (defined by the given SymGroup) of lattices
-  Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol);
+  Lattice canonical_equivalent_lattice(Lattice const &in_lat, std::vector<SymOp> const &point_grp, double compare_tol);
 
   /// Return canonical equivalent lattice, and 'to_canonical' SymOp
   std::pair<Lattice, SymOp> _canonical_equivalent_lattice(
-    const Lattice &in_lat,
-    const SymGroup &point_grp,
+    Lattice const &in_lat,
+    std::vector<SymOp> const &point_grp,
     double compare_tol);
 
   ///Convert the given lattice into it's niggli reduced form, with the most standard orientation possilbe
@@ -144,6 +151,18 @@ namespace CASM {
   /// \brief Determine whether high_score has a more standard format than low_score
   bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
 
+  class StandardOrientationCompare {
+  public:
+    StandardOrientationCompare(double _tol) : m_tol(_tol) {}
+
+    bool operator()(const Eigen::Matrix3d &LHS, const Eigen::Matrix3d &RHS)const {
+      return standard_orientation_compare(LHS, RHS, m_tol);
+    }
+
+  private:
+    double m_tol;
+
+  };
   /** @} */
 }
 

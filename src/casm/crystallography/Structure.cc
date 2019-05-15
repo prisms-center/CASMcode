@@ -172,9 +172,6 @@ namespace CASM {
   void Structure::fill_supercell(const Structure &prim) {
     Index i, j;
 
-    SymGroup latvec_pg;
-    m_lattice.generate_point_group(latvec_pg);
-
     m_SD_flag = prim.m_SD_flag;
     PrimGrid prim_grid(prim.lattice(), lattice());
 
@@ -200,13 +197,11 @@ namespace CASM {
       }
     }
     //trans_and_expand primitive factor_group
-    for(i = 0; i < prim.factor_group().size(); i++) {
-      if(latvec_pg.find_no_trans(prim.factor_group()[i]) == latvec_pg.size()) {
-        continue;
-      }
-      else {
+    IsPointGroupOp check_op(lattice());
+    for(SymOp const &op : prim.factor_group()) {
+      if(check_op(op)) {
         for(Index j = 0; j < prim_grid.size(); j++) {
-          m_factor_group.push_back(within_cell(SymOp::translation(prim_grid.scel_coord(j).const_cart())*prim.factor_group()[i],
+          m_factor_group.push_back(within_cell(SymOp::translation(prim_grid.scel_coord(j).const_cart())*op,
                                                lattice(),
                                                PERIODIC));
         }

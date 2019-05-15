@@ -62,8 +62,17 @@ namespace CASM {
       return m_F;
     }
 
+    const DMatType &parent_matrix() const {
+      return m_L1;
+    }
+
+    const DMatType &child_matrix() const {
+      return m_L2;
+    }
+
     // calculated strain cost function given deformation gradient 'F' and volume of the relaxed cell
     static double calc_strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol);
+
 
   private:
     DMatType m_L1, m_L2;

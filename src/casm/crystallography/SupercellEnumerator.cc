@@ -1,7 +1,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/crystallography/Structure.hh"
+#include "casm/symmetry/SymGroup.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/database/ScelDatabase.hh"
@@ -569,13 +569,13 @@ namespace CASM {
       throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
     }
 
-    m_lat.generate_point_group(m_point_group);
+    m_point_group = SymGroup::lattice_point_group(m_lat);
 
   }
 
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    const SymGroup &point_grp,
+                                                    const std::vector<SymOp> &point_grp,
                                                     const ScelEnumProps &enum_props) :
     m_unit(unit),
     m_lat(unit),
@@ -596,7 +596,7 @@ namespace CASM {
   Eigen::Matrix3i enforce_min_volume<Lattice>(
     const Lattice &unit,
     const Eigen::Matrix3i &T,
-    const SymGroup &point_grp,
+    const std::vector<SymOp> &point_grp,
     Index volume,
     bool fix_shape) {
 
@@ -664,7 +664,7 @@ namespace CASM {
   ///
   /// \relatesalso Lattice
   ///
-  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SymGroup &effective_pg, const Lattice &ref_lattice) {
+  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SymOp> &effective_pg, const Lattice &ref_lattice) {
     Eigen::Matrix3d lat = ref_lattice.lat_column_mat();
 
     //get T in hermite normal form

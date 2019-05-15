@@ -125,8 +125,7 @@ namespace CASM {
 
       // Calculate symmetry  --------------------
       // get lattice point group and character table
-      SymGroup lattice_point_grp;
-      prim.lattice().generate_point_group(lattice_point_grp);
+      SymGroup lattice_point_grp(SymGroup::lattice_point_group(prim.lattice()));
       lattice_point_grp.character_table();
 
       // get factor group

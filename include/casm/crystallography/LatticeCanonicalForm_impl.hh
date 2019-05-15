@@ -17,9 +17,7 @@ namespace CASM {
   /// Uses Lattice point group
   template<typename Base>
   bool LatticeCanonicalForm<Base>::is_canonical() const {
-    SymGroup pg;
-    derived().generate_point_group(pg);
-    return is_canonical(pg);
+    return is_canonical(calc_point_group(derived()));
   }
 
   /// Check if *this = other*U, where U is unimodular
@@ -38,9 +36,7 @@ namespace CASM {
   /// Canonical equivalent lattice, using this lattice's point group
   template<typename Base>
   Lattice LatticeCanonicalForm<Base>::canonical_form() const {
-    SymGroup pg;
-    derived().generate_point_group(pg);
-    return canonical_form(pg);
+    return canonical_form(calc_point_group(derived()));
   }
 
 
@@ -48,7 +44,7 @@ namespace CASM {
   ///
   /// - True if lat_column_mat is approximately equal to the lat_column_mat of the canonical_form
   template<typename Base>
-  bool LatticeCanonicalForm<Base>::is_canonical(const SymGroup &g) const {
+  bool LatticeCanonicalForm<Base>::is_canonical(std::vector<SymOp> const &g) const {
     return almost_equal(derived().lat_column_mat(), canonical_form(g).lat_column_mat(), _tol());
   }
 
@@ -59,7 +55,7 @@ namespace CASM {
   ///   may be false because they may be equivalent, but without identical
   ///   lat_column_mat().
   template<typename Base>
-  SymOp LatticeCanonicalForm<Base>::to_canonical(const SymGroup &g) const {
+  SymOp LatticeCanonicalForm<Base>::to_canonical(std::vector<SymOp> const &g) const {
     return _canonical_equivalent_lattice(derived(), g, _tol()).second;
   }
 
@@ -69,20 +65,20 @@ namespace CASM {
   ///   may be false because they may be equivalent, but without identical
   ///   lat_column_mat().
   template<typename Base>
-  SymOp LatticeCanonicalForm<Base>::from_canonical(const SymGroup &g) const {
+  SymOp LatticeCanonicalForm<Base>::from_canonical(std::vector<SymOp> const &g) const {
     return to_canonical(g).inverse();
   }
 
   /// Canonical equivalent lattice, using the provided group
   template<typename Base>
-  Lattice LatticeCanonicalForm<Base>::canonical_form(const SymGroup &g) const {
+  Lattice LatticeCanonicalForm<Base>::canonical_form(std::vector<SymOp> const &g) const {
     return canonical_equivalent_lattice(derived(), g, _tol());
   }
 
 
   /// \brief Construct the subgroup that leaves a lattice unchanged
   template<typename Base>
-  SymGroup LatticeCanonicalForm<Base>::invariant_subgroup(const SymGroup &super_grp) const {
+  SymGroup LatticeCanonicalForm<Base>::invariant_subgroup(std::vector<SymOp> const &super_grp) const {
     return invariant_subgroup(super_grp.begin(), super_grp.end());
   }
 

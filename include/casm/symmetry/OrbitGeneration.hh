@@ -105,11 +105,11 @@ namespace CASM {
     typedef typename OrbitType::Element Element;
     typedef typename OrbitType::SymCompareType SymCompareType;
 
-    const SymGroup &generating_group;
+    const std::vector<SymOp> &generating_group;
     const SymCompareType &sym_compare;
 
     CanonicalGenerator(
-      const SymGroup &_generating_group,
+      const std::vector<SymOp> &_generating_group,
       const SymCompareType &_sym_compare);
 
     /// \brief Applies symmetry to return an equivalent Element in a canonical form
@@ -139,11 +139,11 @@ namespace CASM {
     typedef typename OrbitType::Element Element;
     typedef typename OrbitType::SymCompareType SymCompareType;
 
-    const SymGroup &generating_group;
+    const std::vector<SymOp> &generating_group;
     const SymCompareType &sym_compare;
 
     IsCanonical(
-      const SymGroup &_generating_group,
+      const std::vector<SymOp> &_generating_group,
       const SymCompareType &_sym_compare);
 
     /// \brief Applies symmetry to check if any Element is greater than e

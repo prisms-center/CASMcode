@@ -102,6 +102,10 @@ namespace CASM {
       jsonParser dofs;
       jsonParser props;
       mutable std::vector<Index> permute;
+
+      Index size() const {
+        return names.size();
+      }
     };
 
     Eigen::Matrix3d lat_column_mat;

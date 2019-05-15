@@ -79,14 +79,14 @@ namespace CASM {
   ///
   /// \returns pair corresponding to first successful op and T, or with op=end if not successful
   template<typename Object, typename OpIterator>
-  std::pair<OpIterator, Eigen::MatrixXi> is_supercell(
+  std::pair<OpIterator, Eigen::Matrix3d> is_supercell(
     const Object &scel,
     const Object &unit,
     OpIterator begin,
     OpIterator end,
     double tol) {
 
-    std::pair<bool, Eigen::MatrixXi> res;
+    std::pair<bool, Eigen::Matrix3d> res;
     for(auto it = begin; it != end; ++it) {
       res = is_supercell(scel, copy_apply(*it, unit), tol);
       if(res.first) {

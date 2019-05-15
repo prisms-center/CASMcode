@@ -433,12 +433,33 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+  SymGroup SymGroup::lattice_point_group(Lattice const &_lat) {
 
-  SymGroup::SymGroup(const std::vector<SymOp> &from_array, PERIODICITY_TYPE init_type) :
+    SymGroup point_group(calc_point_group(_lat));
+    point_group.set_lattice(_lat);
+
+    if(!point_group.is_group(_lat.tol())) {
+      std::cerr << "*** WARNING *** \n"
+                << "    SymGroup::lattice_point_group() has been called on an ill-conditioned lattice \n"
+                << "    (i.e., a well-defined point group could not be found with the current tolerance of " << _lat.tol() << ").\n"
+                << "    CASM will use the group closure of the symmetry operations that were found.  Please consider using the \n"
+                << "    CASM symmetrization tool on your input files.\n";
+      std::cout << "lat_column_mat:\n" << _lat.lat_column_mat() << "\n\n";
+
+      point_group.enforce_group(_lat.tol());
+
+    }
+    //Sort point_group by trace/conjugacy class
+    point_group.sort();
+
+    return point_group;
+  }
+
+  //*******************************************************************************************
+  SymGroup::SymGroup(std::vector<SymOp> from_array, PERIODICITY_TYPE init_type) :
     m_group_periodicity(init_type),
     m_max_error(-1) {
-    for(Index i = 0; i < from_array.size(); i++)
-      push_back(from_array[i]);
+    std::vector<SymOp>::swap(from_array);
 
   }
 
@@ -3558,9 +3579,9 @@ namespace CASM {
     };
 
     // sort elements in each conjugracy class (or just put all elements in the first map)
-    std::vector<map_type> sorter;
+    std::set<map_type, std::reference_wrapper<decltype(cclass_compare)> > sorter(cclass_compare);
 
-    // first put identity in position 0
+    // first put identity in position 0 in order to calculat multi_table correctly
     for(int i = 0; i < size(); ++i) {
       if(at(i).is_identity()) {
         std::swap(at(0), at(i));
@@ -3576,31 +3597,28 @@ namespace CASM {
 
       // insert elements into each conjugacy class to sort the class
       for(int i = 0; i < conjugacy_classes.size(); ++i) {
-        sorter.push_back(map_type(op_compare));
-        auto &cclass = sorter.back();
-
+        map_type cclass(op_compare);
         for(int j = 0; j < conjugacy_classes[i].size(); ++j) {
           const SymOp &op = at(conjugacy_classes[i][j]);
           cclass.insert(std::make_pair(make_key(op, lattice()), op));
         }
+
+        sorter.emplace(std::move(cclass));
       }
-
-      // sort conjugacy class using the first symop in the sorted class
-      std::sort(sorter.begin(), sorter.end(), cclass_compare);
-
     }
     else {
       // else just sort element
-      sorter.push_back(map_type(op_compare));
+      map_type all_op(op_compare);
       for(auto it = begin(); it != end(); ++it) {
-        sorter.back().insert(std::make_pair(make_key(*it, lattice()), *it));
+        all_op.emplace(make_key(*it, lattice()), *it);
       }
+      sorter.emplace(std::move(all_op));
     }
 
     // copy symop back into group
     int j = 0;
-    for(int i = 0; i < sorter.size(); ++i) {
-      for(auto it = sorter[i].begin(); it != sorter[i].end(); ++it) {
+    for(auto const &cclass : sorter) {
+      for(auto it = cclass.begin(); it != cclass.end(); ++it) {
         at(j) = it->second;
         ++j;
       }

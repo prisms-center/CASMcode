@@ -253,9 +253,8 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
-    SymGroup point_group;
+    SymGroup point_group((SymGroup::lattice_point_group(lattice())));
 
-    lattice().generate_point_group(point_group);
     _generate_factor_group_slow(factor_group, point_group);
     return;
   }
@@ -280,9 +279,7 @@ namespace CASM {
     SymGroup prim_fg;
     tprim.generate_factor_group_slow(prim_fg);
 
-    SymGroup point_group;
-    lattice().generate_point_group(point_group);
-    point_group.enforce_group(lattice().tol());
+    SymGroup point_group((SymGroup::lattice_point_group(lattice())));
 
     for(Index i = 0; i < prim_fg.size(); i++) {
       if(point_group.find_no_trans(prim_fg[i]) == point_group.size()) {
@@ -483,7 +480,7 @@ namespace CASM {
 
     Eigen::Matrix3d transmat, invtransmat;
     //lattice().lat_column_mat() = reduced_new_lat.lat_column_mat()*transmat
-    transmat = reduced_new_lat.lat_column_mat().inverse() * lattice().lat_column_mat();
+    transmat = reduced_new_lat.inv_lat_column_mat() * lattice().lat_column_mat();
 
     invtransmat = iround(transmat).cast<double>().inverse();
 

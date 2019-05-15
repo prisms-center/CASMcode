@@ -462,7 +462,7 @@ namespace CASM {
                  config.prim().point_group().end(),
                  config.crystallography_tol());
     this->from_canonical_lat = *res.first;
-    this->transf_mat = res.second;
+    this->transf_mat = iround(res.second);
 
     // given op2, find op1
     auto f = config.equal_to();

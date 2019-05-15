@@ -4,9 +4,8 @@
 #include <vector>
 
 namespace CASM {
-
-  class SymOp;
   class SymGroup;
+  class SymOp;
   class PermuteIterator;
   class Supercell;
 
@@ -22,20 +21,20 @@ namespace CASM {
     /// Check if canonical
     template<typename SymCompareType>
     bool is_canonical(
-      const SymGroup &g,
+      const std::vector<SymOp> &g,
       const SymCompareType &sym_compare) const;
 
     /// Return canonical form
     template<typename SymCompareType>
     MostDerived canonical_form(
-      const SymGroup &g,
+      const std::vector<SymOp> &g,
       const SymCompareType &sym_compare) const;
 
     /// Check if two elements have the same canonical form
     template<typename SymCompareType>
     bool is_sym_equivalent(
       const MostDerived &other,
-      const SymGroup &g,
+      const std::vector<SymOp> &g,
       const SymCompareType &sym_compare) const;
 
     /// Find element that has the same canonical form
@@ -43,19 +42,19 @@ namespace CASM {
     ObjIterator find_sym_equivalent(
       ObjIterator begin,
       ObjIterator end,
-      const SymGroup &g,
+      const std::vector<SymOp> &g,
       const SymCompareType &sym_compare) const;
 
     /// Return op that transforms this into canonical form
     template<typename SymCompareType>
     SymOp to_canonical(
-      const SymGroup &g,
+      const std::vector<SymOp> &g,
       const SymCompareType &sym_compare) const;
 
     /// Return op that transforms the canonical form into this
     template<typename SymCompareType>
     SymOp from_canonical(
-      const SymGroup &g,
+      const std::vector<SymOp> &g,
       const SymCompareType &sym_compare) const;
 
     /// Return subgroup of super_grp that leaves this invariant

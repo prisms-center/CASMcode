@@ -68,7 +68,7 @@ namespace CASM {
 
   template<typename _OrbitType>
   CanonicalGenerator<_OrbitType>::CanonicalGenerator(
-    const SymGroup &_generating_group,
+    const std::vector<SymOp> &_generating_group,
     const SymCompareType &_sym_compare) :
     generating_group(_generating_group),
     sym_compare(_sym_compare),
@@ -106,7 +106,7 @@ namespace CASM {
 
   template<typename _OrbitType>
   IsCanonical<_OrbitType>::IsCanonical(
-    const SymGroup &_generating_group,
+    const std::vector<SymOp> &_generating_group,
     const SymCompareType &_sym_compare) :
     generating_group(_generating_group),
     sym_compare(_sym_compare) {}

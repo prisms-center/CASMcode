@@ -107,8 +107,8 @@ namespace CASM {
     tMat = tMat * tMat.transpose();
 
     // The diagonal elements of tMat describe the square of the distance by which the transformed vectors 'miss' the original vectors
-    double tol = m_lat.tol();
-    if(tMat(0, 0) < tol * tol && tMat(1, 1) < tol * tol && tMat(2, 2) < tol * tol) {
+    double tol2 = m_lat.tol() * m_lat.tol();
+    if(tMat(0, 0) < tol2 && tMat(1, 1) < tol2 && tMat(2, 2) < tol2) {
       m_map_error = sqrt(tMat.diagonal().maxCoeff());
       return true;
     }

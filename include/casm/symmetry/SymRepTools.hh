@@ -46,6 +46,8 @@ namespace CASM {
     std::vector<SubWedge> symrep_subwedges(SymGroup const &_group, SymGroupRepID id);
   }
 
+  bool rep_check(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose);
+
   /// \brief Find irrep decomposition of _rep and add them to irrep listing in sub_group
   void calc_new_irreps(SymGroupRep const &_rep, const SymGroup &sub_group, int max_iter = 1000);
 

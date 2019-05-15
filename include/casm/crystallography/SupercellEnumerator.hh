@@ -4,7 +4,7 @@
 #include "casm/external/Eigen/Dense"
 
 #include "casm/misc/cloneable_ptr.hh"
-#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
@@ -383,7 +383,7 @@ namespace CASM {
     /// \param enum_props Data structure specifying how to enumerate supercells
     ///
     SupercellEnumerator(UnitType unit,
-                        const SymGroup &point_grp,
+                        const std::vector<SymOp> &point_grp,
                         const ScelEnumProps &enum_props);
 
 
@@ -394,7 +394,7 @@ namespace CASM {
     const Lattice &lattice() const;
 
     /// \brief Access the unit point group
-    const SymGroup &point_group() const;
+    const std::vector<SymOp> &point_group() const;
 
     /// \brief Set the beginning volume
     void begin_volume(size_type _begin_volume);
@@ -438,7 +438,7 @@ namespace CASM {
     Lattice m_lat;
 
     /// \brief The point group of the unit cell
-    SymGroup m_point_group;         //factor group...?
+    std::vector<SymOp> m_point_group;         //factor group...?
 
     /// \brief The first volume supercells to be iterated over (what cbegin uses)
     const int m_begin_volume;
@@ -477,7 +477,7 @@ namespace CASM {
   Eigen::Matrix3i enforce_min_volume(
     const UnitType &unit,
     const Eigen::Matrix3i &T,
-    const SymGroup &point_grp,
+    const std::vector<SymOp> &point_grp,
     Index volume,
     bool fix_shape = false);
 
@@ -610,7 +610,7 @@ namespace CASM {
   }
 
   template<typename UnitType>
-  const SymGroup &SupercellEnumerator<UnitType>::point_group() const {
+  const std::vector<SymOp> &SupercellEnumerator<UnitType>::point_group() const {
     return m_point_group;
   }
 
@@ -684,20 +684,20 @@ namespace CASM {
 
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    const SymGroup &point_grp,
+                                                    const std::vector<SymOp> &point_grp,
                                                     const ScelEnumProps &enum_props);
 
   template<>
   Eigen::Matrix3i enforce_min_volume<Lattice>(
     const Lattice &unit,
     const Eigen::Matrix3i &T,
-    const SymGroup &point_grp,
+    const std::vector<SymOp> &point_grp,
     Index volume,
     bool fix_shape);
 
 
   /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
-  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SymGroup &effective_pg, const Lattice &ref_lattice);
+  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SymOp> &effective_pg, const Lattice &ref_lattice);
 
   /** @} */
 }

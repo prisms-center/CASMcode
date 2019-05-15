@@ -125,12 +125,6 @@ namespace CASM {
     /// \brief Insert the canonical form of this into the database
     std::pair<DB::DatabaseIterator<Supercell>, bool> insert() const;
 
-    // **** Other ****
-
-    bool is_supercell_of(const Structure &structure) const;
-    bool is_supercell_of(const Structure &structure, Eigen::Matrix3d &multimat) const;
-    std::vector<int> vacant()const;
-
   private:
 
     friend Comparisons<SupercellCanonicalForm<CRTPBase<Supercell>>>;

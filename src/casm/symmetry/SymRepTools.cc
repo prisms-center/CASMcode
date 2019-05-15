@@ -104,8 +104,8 @@ namespace CASM {
             }
           }
         }
-        //std::cout << "PLAN A-- col: " << col << "; dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n" << axes << "\norb_axes: \n" << orb_axes << "\n\n";
         if(col == dim) {
+          std::cout << "PLAN A-- col: " << col << "; dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n" << axes << "\norb_axes: \n" << orb_axes << "\n\n";
           orb_orthog = true;
           min_mult = orbit.size();
           axes = orb_axes;
@@ -129,8 +129,8 @@ namespace CASM {
             }
           }
         }
-        //std::cout << "PLAN B-- col: " << tot_col << "; dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << tot_orthog << ";\naxes: \n" << axes << "\ntot_axes: \n" << tot_axes << "\n\n";
         if(tot_col == dim) {
+          std::cout << "PLAN B-- col: " << tot_col << "; dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << tot_orthog << ";\naxes: \n" << axes << "\ntot_axes: \n" << tot_axes << "\n\n";
           tot_orthog = true;
           axes = tot_axes;
         }
@@ -142,7 +142,7 @@ namespace CASM {
         for(Index col = 0; col < orbit.size(); ++col) {
           orb_axes.col(col) = orbit[col];
         }
-        //std::cout << "PLAN C--  dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n" << axes;
+        std::cout << "PLAN C--  dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n" << axes;
         min_mult = orbit.size();
         axes = Eigen::MatrixXd(orb_axes.colPivHouseholderQr().matrixQ()).leftCols(dim);
         //std::cout << "\norb_axes: \n" << orb_axes << "\n\n";
@@ -150,6 +150,7 @@ namespace CASM {
     }
     //std::cout << "axes: \n" << axes << "\n";
     if(axes.cols() == 0) {
+      std::cout << "Plan D\n";
       SubspaceSymCompare<Eigen::MatrixXd, EigenSymRepApply<Eigen::MatrixXd>> tcompare(vec_compare_tol, _rep);
       result = *(tcompare.canonical_transform(_subspace)->MatrixXd());
     }
@@ -158,8 +159,8 @@ namespace CASM {
       result = _subspace.colPivHouseholderQr().solve(axes);
     }
 
-    //std::cout << "result: \n" << result << "\n"
-    //<< "_subspace*result: \n" << _subspace*result << "\n";
+    std::cout << "result: \n" << result << "\n"
+              << "_subspace*result: \n" << _subspace *result << "\n";
     return result;//.transpose();
   }
 
@@ -283,18 +284,22 @@ namespace CASM {
     multivector<Eigen::VectorXd>::X<2> result;
     Index o(0);
     for(VectorOrbit const &orbit : orbit_result) {
-      //std::cout << "Orbit " << o << ": \n";
-      //for(auto const & v : orbit){
-      //std::cout << v.transpose() << "\n";
-      //}
-      //std::cout << "---------\n";
+      std::cout << "Orbit " << ++o << ": \n";
+      for(auto const &v : orbit) {
+        std::cout << v.transpose() << "\n";
+      }
+      std::cout << "---------\n";
       result.emplace_back(orbit.begin(), orbit.end());
     }
 
-    if(all_subgroups || !result.empty())
+    if(all_subgroups || !result.empty()) {
+      std::cout << "special_irrep_direcions RETURNING RESULT\n";
       return result;
-    else
+    }
+    else {
+      std::cout << "special_irrep_direcions REDOING CALCULATION\n";
       return special_irrep_directions(_rep, head_group, _subspace, vec_compare_tol, true);
+    }
   }
 
   //*******************************************************************************************
@@ -1008,6 +1013,10 @@ namespace CASM {
         keep += i;
       }
     }
+    std::cout << "PRUNING TRANS_MAT, starting from:\n"
+              << result.first << "\n"
+              << "trans_mags is " << trans_mags.transpose() << "\n"
+              << "new trans_mat is \n" << new_result.first << "\n";
 
     return new_result;
   }
@@ -1141,8 +1150,8 @@ namespace CASM {
 
             //std::cout << "REPRESENTATION norm = "<< sqnorm << "\n";
             if(almost_equal(sqnorm, double(head_group.size()))) { // this representation is irreducible
-              //std::cout << "THE REPRESENTATION IS IRREDUCIBLE with norm = "<< sqnorm << "\n";
-              //std::cout << "Its characters are: " << char_vec << "\n\n";
+              std::cout << "THE REPRESENTATION IS IRREDUCIBLE with norm = " << sqnorm << "\n";
+              std::cout << "Its characters are: " << char_vec << "\n\n";
               Eigen::MatrixXd ttrans_mat(dim, 2 * subspace_dims[ns]);
               //std::cout << "Vectors in this subspace are:\n" << tmat.block(0, last_i, dim, subspace_dims[ns]) << "\n\n";
               ttrans_mat.leftCols(subspace_dims[ns]) = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).real();
@@ -1167,9 +1176,9 @@ namespace CASM {
                 //trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * (irrep_symmetrizer(t_rep, head_group, tol)).transpose();
                 //std::cout << "Nfound, dim, rnk: " << Nfound << ", " << dim << ", " << rnk << "\n\n ---------------\n";
                 trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * symmetrizer_func(ttrans_mat);
-                //std::cout << "trans_mat is \n" << trans_mat << "\n\n";
-                //std::cout << "ttrans_mat is \n" << ttrans_mat << "\n\n";
-                //std::cout << "symmetrizer_func is \n" << symmetrizer_func(ttrans_mat) << "\n\n";
+                std::cout << "trans_mat is \n" << trans_mat << "\n\n";
+                std::cout << "ttrans_mat is \n" << ttrans_mat << "\n\n";
+                std::cout << "symmetrizer_func is \n" << symmetrizer_func(ttrans_mat) << "\n\n";
                 Nfound += rnk;
                 found_new_irreps = true;
                 char_table.push_back(char_vec);
