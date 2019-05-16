@@ -51,7 +51,7 @@ class AimsRun:
             err_str += 'Quitting, please perturb input geometry to force relaxation.'
             raise AimsRunError(err_str)
 
-        with open(geofile, 'rb') as f:
+        with open(geofile, 'rt') as f:
             atom = []
             name = []
             for line in f:
