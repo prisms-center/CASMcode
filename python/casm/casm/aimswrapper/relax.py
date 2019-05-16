@@ -424,26 +424,17 @@ class Relax(object):
         if super_posfile is not None and basisfile is not None:
             # basis_settings_loc = basis_settings(basisfile)
             super_cell = Geometry(super_posfile)
-            unsort_dict = super_cell.unsort_dict()
+            # unsort_dict = super_cell.unsort_dict()
         else:
             # fake unsort_dict (unsort_dict[i] == i)
-            unsort_dict = dict(zip(range(0, len(arun.basis)), range(0, len(arun.basis))))
+            # unsort_dict = dict(zip(range(0, len(arun.basis)), range(0, len(arun.basis))))
             super_cell = Geometry(os.path.join(aimsdir, "geometry.in"))
 
         output["atom_type"] = super_cell.type_atoms
         output["atoms_per_type"] = super_cell.num_atoms
         output["coord_mode"] = arun.coord_mode
-
-        # as lists
-        output["relaxed_forces"] = [None in range(len(arun.forces))]
-        for i, v in enumerate(arun.forces):
-            output["relaxed_forces"][unsort_dict[i]] = NoIndent(arun.forces[i])
-
+        output["relaxed_forces"] = [NoIndent(v) for v in arun.forces]
         output["relaxed_lattice"] = [NoIndent(v) for v in arun.lattice]
-        output["relaxed_basis"] = [None in range(len(arun.basis))]
-
-        for i, v in enumerate(arun.basis):
-            output["relaxed_basis"][unsort_dict[i]] = NoIndent(arun.basis[i])
-
+        output["relaxed_basis"] = [NoIndent(v) for v in arun.basis]
         output["relaxed_energy"] = arun.total_energy
         return output

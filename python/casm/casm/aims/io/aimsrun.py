@@ -55,17 +55,18 @@ class AimsRun:
             atom = []
             name = []
             for line in f:
+                line = line.split()
                 if len(line) > 1:
                     if line[0] == 'lattice_vector':
-                        self.lattice.append([float(x) for x in line.split()[1:4]])
+                        self.lattice.append([float(x) for x in line[1:4]])
                     if line[0] == 'atom_frac':
                         self.coord_mode = 'direct'
-                        atom.append([float(x) for x in line.split()[1:4]])
-                        name.append(line.split()[4])
+                        atom.append([float(x) for x in line[1:4]])
+                        name.append(line[4])
                     if line[0] == 'atom':
                         self.coord_mode = 'cartesian'
-                        atom.append([float(x) for x in line.split()[1:4]])
-                        name.append(line.split()[4])
+                        atom.append([float(x) for x in line[1:4]])
+                        name.append(line[4])
 
         symbols = [name[0]]
         for i in range(len(name)):
@@ -93,11 +94,11 @@ class AimsRun:
         #  Parse output now
         if os.path.isfile(self.filename):
             if self.filename.split('.')[-1].lower() == 'gz':
-                f = gzip.open(self.filename, 'rb')
+                f = gzip.open(self.filename, 'rt')
             else:
                 f = open(self.filename)
         elif os.path.isfile(self.filename + '.gz'):
-            f = gzip.open(self.filename + '.gz', 'rb')
+            f = gzip.open(self.filename + '.gz', 'rt')
         else:
             raise AimsRunError('file not found: ' + self.filename)
 
@@ -106,7 +107,8 @@ class AimsRun:
         k = 0
         read_forces = False
         for line in f:
-            if b'Total atomic forces' in line:
+            if 'Total atomic forces' in line:
+                print(line)
                 read_forces = True
                 self.forces = []
                 k = 0
@@ -120,10 +122,10 @@ class AimsRun:
                 if k >= len(atom):
                     read_forces = False
 
-            if b'| Total energy                  :' in line:
-                self.all_e_0.append(float(line.split()[11]))
+            if '| Total energy                  :' in line:
+                self.all_e_0.append(float(line.split()[6]))
 
-            if b'Total energy of the DFT / Hartree-Fock s.c.f. calculation      :' in line:
+            if 'Total energy of the DFT / Hartree-Fock s.c.f. calculation      :' in line:
                 self.total_energy = float(line.split()[11])
 
     def is_complete(self):

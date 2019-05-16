@@ -21,9 +21,9 @@ class AimsRelaxError:
 
 
 class AimsRelax(object):
-    """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
+    """The Relax class contains functions for setting up, executing, and parsing a elaxation.
 
-        The relaxation is initialized in a directory containing VASP input files, called 'relaxdir'.
+        The relaxation is initialized in a directory containing input files, called 'relaxdir'.
         It then creates the following directory structure:
         .../relaxdir/
             run.0/
@@ -32,7 +32,7 @@ class AimsRelax(object):
             run.final/
 
         'run.i' directories are only created when ready.
-        'run.final' is a final constant volume run {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}.
+        'run.final' contains the final run
 
         Contains:
             self.relaxdir  (.../relax)
@@ -41,15 +41,15 @@ class AimsRelax(object):
     """
     def __init__(self, relaxdir=None, settings=None):
         """
-        Construct a VASP relaxation job object.
+        Construct a relaxation job object.
 
         Args:
-            relaxdir:  path to vasp relaxation directory
+            relaxdir:  path to relaxation directory
             settings:   dictionary-like object containing settings, or if None, it reads
                         the json file: .../relaxdir/relax.json
 
                 possible settings keys are:
-                    used by vasp.run() function:
+                    used by .run() function:
                         "ncpus": number of ncpus to run mpi on
                         "aims_cmd": (default "aims") shell command to execute FHI-aims
                                     or None to use default mpirun
