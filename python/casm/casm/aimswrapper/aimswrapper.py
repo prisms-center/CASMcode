@@ -80,10 +80,7 @@ def read_settings(filename):
     else:
         settings["is_slab"] = False
 
-    if 'strict_kpoints' not in settings:
-        settings['strict_kpoints'] = False
-    else:
-        settings['strict_kpoints'] = True
+    settings['strict_kpoints'] = False
 
     return settings
 
