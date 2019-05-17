@@ -12,7 +12,7 @@ namespace CASM {
   /// \brief Construct global reference via range ChemicalReferenceState
   ///
   template<typename RefStateIterator>
-  ChemicalReference::ChemicalReference(const Structure &prim,
+  ChemicalReference::ChemicalReference(const BasicStructure<Site> &prim,
                                        RefStateIterator begin,
                                        RefStateIterator end,
                                        double tol) :
@@ -79,7 +79,7 @@ namespace CASM {
   ///          each ChemicalReferenceState
   ///
   template<typename RefStateIterator>
-  Eigen::VectorXd ChemicalReference::hyperplane(const Structure &prim,
+  Eigen::VectorXd ChemicalReference::hyperplane(const BasicStructure<Site> &prim,
                                                 RefStateIterator begin,
                                                 RefStateIterator end,
                                                 double tol) {

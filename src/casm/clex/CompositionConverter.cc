@@ -1,6 +1,7 @@
 #include "casm/clex/CompositionConverter.hh"
 
-#include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Site.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 // currently still relies on this for getting standard composition axes
@@ -631,14 +632,14 @@ namespace CASM {
 
   /// \brief Generate a column matrix containing all the possible molecular end members
   ///
-  /// \param prim A Structure to find the end members of (does
+  /// \param prim A BasicStructure<Site> to find the end members of (does
   ///             not check if it is actually primitive).
   ///
   /// - Each column corresponds to a point in composition space (specifying number
   ///   of each Molecule per prim)
-  /// - Each row corresponds to a Molecule, ordered as from Structure::struc_molecule,
+  /// - Each row corresponds to a Molecule, ordered as from BasicStructure<Site>::struc_molecule,
   ///   with units number Molecule / prim
-  Eigen::MatrixXd end_members(const Structure &prim) {
+  Eigen::MatrixXd end_members(const BasicStructure<Site> &prim) {
     ParamComposition param_comp(prim);
     param_comp.generate_sublattice_map();
     param_comp.generate_prim_end_members();
@@ -646,7 +647,7 @@ namespace CASM {
   }
 
   /// \brief Non-orthogonal composition space
-  Eigen::MatrixXd _composition_space(const Structure &prim, double tol) {
+  Eigen::MatrixXd _composition_space(const BasicStructure<Site> &prim, double tol) {
     // Get Va index if it exists, and store 0 or 1 in N_Va
     std::vector<std::string> struc_mol_name = struc_molecule_name(prim);
     Index Va_index = find_index_if(struc_mol_name, [ = ](const std::string & str) {
@@ -671,30 +672,30 @@ namespace CASM {
     return M;
   }
 
-  /// \brief Return the composition space of a Structure
+  /// \brief Return the composition space of a BasicStructure<Site>
   ///
-  /// \param prim A Structure to find the standard composition space for (does
+  /// \param prim A BasicStructure<Site> to find the standard composition space for (does
   ///             not check if it is actually primitive).
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
   /// - Each column corresponds to an orthogonal vector in atom fraction space
-  /// - Each row corresponds to a Molecule, ordered as from Structure::struc_molecule
-  Eigen::MatrixXd composition_space(const Structure &prim, double tol) {
+  /// - Each row corresponds to a Molecule, ordered as from BasicStructure<Site>::struc_molecule
+  Eigen::MatrixXd composition_space(const BasicStructure<Site> &prim, double tol) {
     auto Qr = _composition_space(prim, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);
     auto Q = Qr.matrixQ();
     return Q.leftCols(Qr.rank());
   }
 
-  /// \brief Return the null composition space of a Structure
+  /// \brief Return the null composition space of a BasicStructure<Site>
   ///
-  /// \param prim A Structure to find the standard composition space for (does
+  /// \param prim A BasicStructure<Site> to find the standard composition space for (does
   ///             not check if it is actually primitive).
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
   /// - Each column corresponds to an orthogonal vector in atom fraction space
-  /// - Each row corresponds to a Molecule, ordered as from Structure::struc_molecule
-  Eigen::MatrixXd null_composition_space(const Structure &prim, double tol) {
+  /// - Each row corresponds to a Molecule, ordered as from BasicStructure<Site>::struc_molecule
+  Eigen::MatrixXd null_composition_space(const BasicStructure<Site> &prim, double tol) {
     auto Qr = _composition_space(prim, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);
     auto Q = Qr.matrixQ();

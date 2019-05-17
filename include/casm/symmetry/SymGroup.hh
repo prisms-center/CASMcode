@@ -194,7 +194,7 @@ namespace CASM {
     void print_space_group_info(std::ostream &out) const;
 
     ///Fill up a SymGroup with *this minus the shifts
-    void copy_no_trans(SymGroup &shiftless, bool keep_repeated = false) const;
+    SymGroup copy_no_trans(bool keep_repeated = false) const;
 
     jsonParser &to_json(jsonParser &json) const;
 

@@ -80,6 +80,9 @@ namespace CASM {
     /// \brief Apply homogeneous deformation gradient tensor _F to lat_column_mat, mol_info, and atom_info
     void deform(Eigen::Ref<const Eigen::Matrix3d> const &_F);
 
+    /// \brief Apply homogeneous rotation matrix _R to lat_column_mat, mol_info, and atom_info
+    void rotate(Eigen::Ref<const Eigen::Matrix3d> const &_R);
+
     /// \brief use information in _reference to initialize atom_info from mol_info
     void atomize(BasicStructure<Site> const &_reference);
 

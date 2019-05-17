@@ -71,32 +71,33 @@ namespace CASM {
                           m_robust_flag || m_rotate_flag || m_strict_flag,
                           primclex().crystallography_tol());
       //Find out which species are moving from which basis site to the other
-      mapper.set_max_va_frac(m_max_va_frac);
-      mapper.set_min_va_frac(m_min_va_frac);
+      mapper.struc_mapper().set_max_va_frac(m_max_va_frac);
+      mapper.struc_mapper().set_min_va_frac(m_min_va_frac);
       if(m_restricted) {
-        mapper.restricted();
+        mapper.struc_mapper().restricted();
       }
       if(m_lattices_to_force.size()) {
-        mapper.force_lattices(m_lattices_to_force);
+        mapper.add_allowed_lattices(m_lattices_to_force);
       }
       if(hint_ptr != nullptr) {
         Configuration tmp = hint_ptr->from_config().canonical_form();
         std::vector<std::string> scelname;
         scelname.push_back(tmp.supercell().name());
-        mapper.unforce_lattices();
-        mapper.force_lattices(scelname);
+        mapper.clear_allowed_lattices();
+        mapper.add_allowed_lattices({scelname});
         //	*result.config =*hint_ptr;
       }
       //      else {
-      MappedConfig from_dof;
-      MappedConfig to_dof;
-      Lattice from_lat;
-      Lattice to_lat;
-      Eigen::Matrix3d cart_op;
-      std::vector<Index> best_assign;
-      mapper.struc_to_configdof(SimpleStructure(result.structures[0]), from_dof, from_lat, best_assign, cart_op);
-      mapper.struc_to_configdof(SimpleStructure(result.structures.back()), to_dof, to_lat);
-      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_lat);
+      std::set<MappingNode> from_set = mapper.struc_mapper().map_deformed_struc(SimpleStructure(result.structures[0]));
+      std::set<MappingNode> to_set = mapper.struc_mapper().map_deformed_struc(SimpleStructure(result.structures.back()));
+
+      if(from_set.empty() || to_set.empty()) {
+        return result;
+      }
+      MappingNode from_node = *from_set.begin();
+      MappingNode to_node = *to_set.begin();
+
+      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lat_node.parent.scel_lattice());
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
 
@@ -105,7 +106,9 @@ namespace CASM {
       //This rigid rotation and rigid shift seems unnecessary surprisingly
       Coordinate first_site = Coordinate(result.structures[0].basis(0).const_frac(), scel_ptr->lattice(), FRAC);
 
-      Coordinate t_shift = copy_apply(SymOp::point_op(cart_op), first_site) - Coordinate(scel_ptr->uccoord(find_index(best_assign, 0)));
+      Coordinate t_shift =
+        copy_apply(SymOp::point_op(from_node.lat_node.isometry), first_site)
+        - Coordinate(scel_ptr->uccoord(find_index(from_node.permutation, 0)));
       t_shift.set_lattice(primclex().prim().lattice(), CART);
 
       //std::cout << "t shift " << t_shift.const_frac() << std::endl;
@@ -118,15 +121,18 @@ namespace CASM {
       //from.print_xyz(std::cout,true);
       //std::cout << "unconditioned to struc" << std::endl;
       //to.print_xyz(std::cout,true);
-      _precondition_from_and_to(cart_op, from_dof.deformation, t_shift.const_cart(), from, to);
-      //std::cout << "cart_op"<<cart_op<< std::endl;
-      //std::cout << "deformation"<<from_dof.deformation<< std::endl;
+      _precondition_from_and_to(from_node.lat_node.isometry,
+                                from_node.lat_node.rstretch,
+                                t_shift.const_cart(),
+                                from,
+                                to);
+
       //std::cout << "trans" << t_shift.const_cart() << std::endl;
       //std::cout << "from struc" << std::endl;
       //from.print_xyz(std::cout,true);
       //std::cout << "to struc" << std::endl;
       //to.print_xyz(std::cout,true);
-      double uccoord_tol = 1.1 * max(from_dof.displacement.colwise().norm().maxCoeff(), to_dof.displacement.colwise().norm().maxCoeff()) + cuberoot(abs(from_lat.vol())) * primclex().crystallography_tol();
+      double uccoord_tol = 1.1 * max(from_node.displacement.colwise().norm().maxCoeff(), to_node.displacement.colwise().norm().maxCoeff()) + cuberoot(abs(scel_ptr->lattice().vol())) * primclex().crystallography_tol();
       //std::cout << "uccoord_tol " << uccoord_tol <<std::endl;
       std::vector<Index> moving_atoms = _analyze_atoms_ideal(from,
                                                              to,
@@ -153,7 +159,8 @@ namespace CASM {
       //
 
       Configuration from_config(Configuration::zeros(scel_ptr));
-      from_config.set_occupation(from_dof.occupation);
+      from_config.set_occupation(mapper.occupation(SimpleStructure(result.structures[0]),
+                                                   from_node));
       Kinetics::DiffusionTransformation final_diff_trans = _shortest_hop(diff_trans, from_config.supercell());
       //THIS IS THE FIRST CASE IN WHICH WE DON'T WANT TO SORT DIFFTRANS ON CONSTRUCTION -speak with brian about removing sorting from prepare
       //or stick with prepareless workaround. Alternatively check if sorted, if not then sort diff trans and flip from/to then create.

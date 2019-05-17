@@ -99,17 +99,17 @@ namespace CASM {
                              max_vol_change,
                              map_opt,
                              primclex.crystallography_tol()));
-      m_configmapper->set_min_va_frac(min_va_frac);
-      m_configmapper->set_max_va_frac(max_va_frac);
+      m_configmapper->struc_mapper().set_min_va_frac(min_va_frac);
+      m_configmapper->struc_mapper().set_max_va_frac(max_va_frac);
 
       //If the settings specified at least one lattice, then force that on the configmapper
       if(lattices_forced_in_settings) {
-        m_configmapper->force_lattices(forced_lattice_names);
+        m_configmapper->add_allowed_lattices(forced_lattice_names);
       }
 
       //If the settings specified use boxiness, then force that on the configmapper
       if(restricted) {
-        m_configmapper->restricted();
+        m_configmapper->struc_mapper().restricted();
       }
     }
 
@@ -159,13 +159,13 @@ namespace CASM {
       // do mapping
       ConfigMapperResult map_result;
       if(_occupation_only()) {
-        map_result = m_configmapper->import_structure_occupation(sstruc, hint_config.get());
+        map_result = m_configmapper->import_structure(sstruc, hint_config.get());
       }
       else {
         map_result =  m_configmapper->import_structure(sstruc);
       }
 
-      if(!map_result.success) {
+      if(!map_result.success()) {
         res.fail_msg = map_result.fail_msg;
         *result++ = res;
         return result;
@@ -197,8 +197,8 @@ namespace CASM {
       for(; it != end; ++it) {
         res.mapped_props.mapped[it.name()] = *it;
       }
-      res.mapped_props.mapped["best_assignment"] = map_result.best_assignment;
-      res.mapped_props.mapped["cart_op"] = map_result.cart_op;
+      res.mapped_props.mapped["best_assignment"] = map_result.result.permutation;
+      res.mapped_props.mapped["cart_op"] = map_result.result.lat_node.isometry;
 
       // at this point, the mapped structure result is complete
       *result++ = res;

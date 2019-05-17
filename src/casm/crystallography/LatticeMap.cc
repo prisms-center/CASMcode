@@ -7,12 +7,14 @@ namespace CASM {
   LatticeMap::LatticeMap(const Lattice &_ideal,
                          const Lattice &_strained,
                          Index num_atoms,
+                         double _tol,
                          int _range/*=2*/,
                          std::vector<SymOp> const &_point_group /*={}*/,
                          double _init_better_than /* = 1e20 */) :
     m_L2(_strained.reduced_cell().lat_column_mat()),
     m_scale(pow(std::abs(m_L2.determinant() / m_L1.determinant()), 1. / 3.)),
     m_atomic_factor(pow(std::abs(m_L2.determinant() / (double)num_atoms), 2. / 3.)),
+    m_tol(_tol),
     m_range(_range),
     m_cost(1e20),
     m_currmat(0) {
@@ -59,12 +61,14 @@ namespace CASM {
   LatticeMap::LatticeMap(Eigen::Ref<const LatticeMap::DMatType> const &_ideal,
                          Eigen::Ref<const LatticeMap::DMatType> const &_strained,
                          Index _num_atoms,
+                         double _tol,
                          int _range /*= 2*/,
                          std::vector<SymOp> const &_point_group /*={}*/,
                          double _init_better_than /* = 1e20 */) :
     LatticeMap(Lattice(_ideal),
                Lattice(_strained),
                _num_atoms,
+               _tol,
                _range,
                _point_group) {}
 

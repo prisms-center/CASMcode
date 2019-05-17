@@ -76,7 +76,7 @@ namespace CASM {
 
   const SymGroup &MasterSymGroup::point_group() const {
     if(!m_point_group.size()) {
-      copy_no_trans(m_point_group, false);
+      m_point_group = copy_no_trans(false);
     }
     return m_point_group;
   }
@@ -896,23 +896,17 @@ namespace CASM {
    * will not be added.
    */
   //*******************************************************************************************
-  void SymGroup::copy_no_trans(SymGroup &shiftless, bool keep_repeated) const {
-    if(shiftless.size() != 0) {
-      default_err_log() << "WARNING in SymGroup::copy_no_trans" << std::endl;
-      default_err_log() << "The provided SymGroup wasn't empty and it's about to be erased. Say goodbye." << std::endl;
-      shiftless.clear();
-    }
-    shiftless.m_lat_ptr = m_lat_ptr;
+  SymGroup SymGroup::copy_no_trans(bool keep_repeated) const {
+    SymGroup result;
+
+    result.m_lat_ptr = m_lat_ptr;
     for(Index i = 0; i < size(); i++) {
       SymOp tsymop(at(i).no_trans());
-      if(keep_repeated) {
-        shiftless.push_back(tsymop);
-      }
-      else if(!contains(shiftless, tsymop)) {
-        shiftless.push_back(tsymop);
+      if(keep_repeated || !contains(result, tsymop)) {
+        result.push_back(tsymop);
       }
     }
-    return;
+    return result;
   }
 
   //*******************************************************************************************

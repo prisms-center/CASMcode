@@ -1,11 +1,13 @@
 #include <functional>
 #include <boost/filesystem.hpp>
 #include "casm/casm_io/EigenDataStream.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/clex/ConfigIO.hh"
-#include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -25,20 +27,24 @@ namespace CASM {
 
     StrucScore::StrucScore() :
       VectorXdAttribute<Configuration>("struc_score", "Evaluates the mapping of a configuration onto an arbitrary primitive structure, specified by its path. Allowed options are [ 'basis_score' (mean-square site displacement) | 'lattice_score' (lattice deformation metric having units Angstr.^2) | 'total_score' (w*lattice_score+(1.0-w)*basis_score) ].  The struc_score weighting parameter 'w' can be provided as an optional decimal parameter from 0.0 to 1.0 (default 0.5). Ex: struc_score(path/to/PRIM, basis_score, 0.4)"),
-      m_configmapper(notstd::make_unique<ConfigMapper>(ConfigMapper::null_initializer)) {};
+      m_strucmapper(notstd::make_unique<StrucMapper>(StrucMapper::null_initializer)),
+      m_lattice_weight(0.5) {
+
+    };
 
     StrucScore::StrucScore(const StrucScore &RHS) :
       VectorXdAttribute<Configuration>(RHS),
-      m_altprimclex((RHS.m_altprimclex == nullptr) ? nullptr : new PrimClex(RHS.m_altprimclex->prim())),
-      m_configmapper(notstd::make_unique<ConfigMapper>(*RHS.m_configmapper)),
+      m_altprim((RHS.m_altprim == nullptr) ? nullptr : new BasicStructure<Site>(*(RHS.m_altprim))),
+      m_strucmapper(notstd::make_unique<StrucMapper>(*RHS.m_strucmapper)),
+      m_lattice_weight(RHS.m_lattice_weight),
       m_prim_path(RHS.m_prim_path),
       m_prop_names(RHS.m_prop_names) {
-      m_configmapper->set_primclex(*m_altprimclex);
+
     }
 
     bool StrucScore::parse_args(const std::string &args) {
       std::vector<std::string> splt_vec;
-      double _lattice_weight(0.5);
+      double _lattice_weight = 0.5;
       bool already_initialized = !m_prim_path.empty();
       int pushed_args = 0;
       boost::split(splt_vec, args, boost::is_any_of(", "), boost::token_compress_on);
@@ -56,8 +62,6 @@ namespace CASM {
           throw std::runtime_error("Attempted to initialize format tag " + name()
                                    + " invalid file path '" + fs::absolute(m_prim_path).string() + "'. File does not exist.\n");
         }
-
-        m_altprimclex.reset(new PrimClex(Structure(m_prim_path)));
       }
       for(Index i = 1; i < splt_vec.size(); ++i) {
         if(splt_vec[i] != "basis_score" && splt_vec[i] != "lattice_score" && splt_vec[i] != "total_score") {
@@ -68,7 +72,7 @@ namespace CASM {
             throw std::runtime_error("Attempted to initialize format tag " + name()
                                      + " with invalid argument '" + splt_vec[i] + "'. Valid arguments are [ basis_score | lattice_score | total_score ]\n");
           }
-          if(already_initialized && !almost_equal(_lattice_weight, m_configmapper->lattice_weight())) {
+          if(already_initialized && !almost_equal(_lattice_weight, m_lattice_weight)) {
             for(; pushed_args > 0; pushed_args--)
               m_prop_names.pop_back();
             return false;
@@ -79,7 +83,19 @@ namespace CASM {
           ++pushed_args;
         }
       }
-      m_configmapper = notstd::make_unique<ConfigMapper>(*m_altprimclex, _lattice_weight);
+      return true;
+    }
+
+    //****************************************************************************************
+
+    /// \brief If not yet initialized, use the default clexulator from the PrimClex
+    bool StrucScore::init(const Configuration &_tmplt) const {
+      PrimClex const &pclex(_tmplt.primclex());
+      m_altprim.reset(new BasicStructure<Site>(read_prim(m_prim_path,
+                                                         pclex.settings().hamiltonian_modules(),
+                                                         _tmplt.crystallography_tol())));
+
+      m_strucmapper = notstd::make_unique<StrucMapper>(PrimStrucMapCalculator(*m_altprim), m_lattice_weight);
       return true;
     }
 
@@ -96,7 +112,7 @@ namespace CASM {
       for(Index i = 0; i < m_prop_names.size(); i++) {
         std::stringstream t_ss;
         t_ss << "    " << name() << '(' << m_prim_path.string() << ','
-             << m_prop_names[i] << ',' << m_configmapper->lattice_weight() << ')';
+             << m_prop_names[i] << ',' << m_strucmapper->lattice_weight() << ')';
         col.push_back(t_ss.str());
       }
       return col;
@@ -110,7 +126,7 @@ namespace CASM {
       t_ss << name() << '(' << m_prim_path.string();
       for(Index i = 0; i < m_prop_names.size(); i++)
         t_ss   << ',' << m_prop_names[i];
-      t_ss << ',' << m_configmapper->lattice_weight() << ')';
+      t_ss << ',' << m_strucmapper->lattice_weight() << ')';
       return t_ss.str();
     }
 
@@ -119,8 +135,6 @@ namespace CASM {
       std::vector<double> result_vec;
 
       SimpleStructure relaxed_struc("relaxed_");
-      MappedConfig mapped_config;
-      Lattice mapped_lat;
 
       auto lambda = [&](const std::vector<double> &result_vec) {
         Eigen::VectorXd res = Eigen::VectorXd::Zero(result_vec.size());
@@ -132,24 +146,28 @@ namespace CASM {
 
       from_json(relaxed_struc, jsonParser(_calc_properties_path(_config)));
 
-      if(!m_configmapper->struc_to_configdof(relaxed_struc, mapped_config, mapped_lat)) {
+      auto result = m_strucmapper->map_deformed_struc(relaxed_struc);
+      if(result.empty()) {
         for(Index i = 0; i < m_prop_names.size(); i++) {
           result_vec.push_back(1e9);
         }
 
         return lambda(result_vec);
       }
+
+      MappingNode const &mapping(*result.begin());
+
       for(Index i = 0; i < m_prop_names.size(); i++) {
         if(m_prop_names[i] == "basis_score")
-          result_vec.push_back(ConfigMapping::basis_cost(mapped_config, relaxed_struc.n_mol()));
+          result_vec.push_back(StrucMapping::basis_cost(mapping, relaxed_struc.n_mol()));
         else if(m_prop_names[i] == "lattice_score")
-          result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapped_config, relaxed_struc.n_mol()));
+          result_vec.push_back(StrucMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapping, relaxed_struc.n_mol()));
         else if(m_prop_names[i] == "total_score") {
-          double sc = ConfigMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapped_config, relaxed_struc.n_mol());
+          double sc = StrucMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapping, relaxed_struc.n_mol());
 
-          double bc = ConfigMapping::basis_cost(mapped_config, relaxed_struc.n_mol());
+          double bc = StrucMapping::basis_cost(mapping, relaxed_struc.n_mol());
 
-          double w = m_configmapper->lattice_weight();
+          double w = m_strucmapper->lattice_weight();
           result_vec.push_back(w * sc + (1.0 - w)*bc);
         }
       }

@@ -114,6 +114,10 @@ namespace CASM {
       return m_N_vol;
     }
 
+    const matrix_type &trans_mat() const {
+      return m_trans_mat;
+    }
+
     const matrix_type &matrixU()const {
       return m_U;
     };

@@ -6,7 +6,11 @@
 namespace CASM {
 
   class PrimClex;
-  class Structure;
+
+  class Site;
+
+  template<typename CoordType>
+  class BasicStructure;
 
   /** \ingroup Reference
    *
@@ -46,7 +50,7 @@ namespace CASM {
 
 
     /// \brief Constructor
-    explicit ChemicalReference(const Structure &prim,
+    explicit ChemicalReference(const BasicStructure<Site> &prim,
                                const Eigen::VectorXd &_global_ref,
                                SpecializedRef _supercell_ref = SpecializedRef(),
                                SpecializedRef _config_ref = SpecializedRef());
@@ -54,7 +58,7 @@ namespace CASM {
     /// \brief Construct global reference via range ChemicalReferenceState
     ///
     template<typename RefStateIterator>
-    explicit ChemicalReference(const Structure &prim,
+    explicit ChemicalReference(const BasicStructure<Site> &prim,
                                RefStateIterator begin,
                                RefStateIterator end,
                                double tol);
@@ -63,8 +67,8 @@ namespace CASM {
     /// \brief Clone
     std::unique_ptr<ChemicalReference> clone() const;
 
-    /// \brief Get primitive Structure
-    const Structure &prim() const;
+    /// \brief Get primitive BasicStructure<Site>
+    const BasicStructure<Site> &prim() const;
 
     // --- Global reference ---
 
@@ -139,7 +143,7 @@ namespace CASM {
 
     /// \brief Convert a set of ChemicalReferenceState to a hyperplane, including checks
     template<typename RefStateIterator>
-    static Eigen::VectorXd hyperplane(const Structure &prim,
+    static Eigen::VectorXd hyperplane(const BasicStructure<Site> &prim,
                                       RefStateIterator begin,
                                       RefStateIterator end,
                                       double tol);
@@ -165,7 +169,7 @@ namespace CASM {
 
     /// \brief Convert a set of ChemicalReferenceState to a hyperplane, including checks
     static Eigen::VectorXd _calc_hyperplane(
-      const Structure &prim,
+      const BasicStructure<Site> &prim,
       const std::vector<std::string> &struc_mol_name,
       Eigen::MatrixXd N,
       Eigen::VectorXd E,
@@ -174,8 +178,8 @@ namespace CASM {
     /// \brief Clone
     ChemicalReference *_clone() const;
 
-    // \brief non-owning pointer to const primitive Structure
-    const Structure *m_prim;
+    // \brief non-owning pointer to const primitive BasicStructure<Site>
+    const BasicStructure<Site> *m_prim;
 
 
     // --- Store ChemicalReferenceState if known ----
@@ -189,7 +193,7 @@ namespace CASM {
   ///        with 'extreme' compositions
   ChemicalReference auto_chemical_reference(const PrimClex &primclex, double lin_alg_tol);
 
-  /// \brief Structure to help print ChemicalReference
+  /// \brief BasicStructure<Site> to help print ChemicalReference
   struct ChemicalReferencePrinter {
 
     // -- constructor --

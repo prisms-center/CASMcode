@@ -119,6 +119,7 @@ libcasm_la_SOURCES = \
   src/casm/crystallography/SimpleStructure.cc\
   src/casm/crystallography/Site.cc\
   src/casm/crystallography/SpeciesAttribute.cc\
+  src/casm/crystallography/StrucMapping.cc\
   src/casm/crystallography/Structure.cc\
   src/casm/crystallography/SupercellEnumerator.cc\
   src/casm/crystallography/UnitCellCoord.cc\

@@ -535,7 +535,7 @@ namespace CASM {
           double lattice_weight = 0.5;
           ConfigMapper configmapper(primclex, lattice_weight, vol_tol, map_opt, tol);
 
-          auto map_res = configmapper.import_structure_occupation(super);
+          auto map_res = configmapper.import_structure(SimpleStructure(super));
           auto insert_res = map_res.config->insert();
           Configuration imported_config = *insert_res.canonical_it;
 

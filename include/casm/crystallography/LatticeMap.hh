@@ -32,6 +32,7 @@ namespace CASM {
     LatticeMap(Lattice const &_ideal,
                Lattice const &_strained,
                Index _num_atoms,
+               double _tol,
                int _range /*= 2*/,
                std::vector<SymOp> const &_point_group/*={}*/,
                double _init_better_than = 1e20);
@@ -39,6 +40,7 @@ namespace CASM {
     LatticeMap(Eigen::Ref<const DMatType> const &_ideal,
                Eigen::Ref<const DMatType> const &_strained,
                Index _num_atoms,
+               double _tol,
                int _range /*= 2*/,
                std::vector<SymOp> const &_point_group/*={}*/,
                double _init_better_than = 1e20);

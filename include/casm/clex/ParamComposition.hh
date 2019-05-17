@@ -7,8 +7,10 @@
 #include "casm/casm_io/stream_io/container.hh"
 
 namespace CASM {
+  template<typename CoordType>
+  class BasicStructure;
 
-  class Structure;
+  class Site;
 
   //defines the enum type used in composition.
   enum COMPOSITION_TYPE {PARAM_COMP = 0, NUMBER_ATOMS = 1};
@@ -29,7 +31,7 @@ namespace CASM {
     int m_rank_of_space;
 
     // The prim that we are considering compositions of
-    const Structure *m_prim_struc;
+    const BasicStructure<Site> *m_prim_struc;
 
     //holds the list of end members as defined in this space by the
     //comp and origin matrices
@@ -58,7 +60,7 @@ namespace CASM {
       return;
     };
 
-    ParamComposition(const Structure &_prim) : m_prim_end_members(0, 0), m_sublattice_map(0, 0) {
+    ParamComposition(const BasicStructure<Site> &_prim) : m_prim_end_members(0, 0), m_sublattice_map(0, 0) {
       m_comp.resize(2);
       m_comp[0].resize(0, 0);
       m_comp[1].resize(0, 0);
@@ -67,7 +69,7 @@ namespace CASM {
       m_rank_of_space = -1;
     }
 
-    ParamComposition(const std::vector< std::string > &_components, const Eigen::MatrixXd &transf_mat, const Eigen::VectorXd &_origin, const int &_rank_of_space, const Structure &_prim, const int &COMP_TYPE) {
+    ParamComposition(const std::vector< std::string > &_components, const Eigen::MatrixXd &transf_mat, const Eigen::VectorXd &_origin, const int &_rank_of_space, const BasicStructure<Site> &_prim, const int &COMP_TYPE) {
       m_rank_of_space = _rank_of_space;
       m_components = _components;
       m_origin = _origin;
@@ -87,7 +89,7 @@ namespace CASM {
 
     /*
         // Add in the primclex pointer
-        ParamComposition(const std::string &json_filename, const Structure &_prim) {
+        ParamComposition(const std::string &json_filename, const BasicStructure<Site> &_prim) {
           m_prim_struc = &_prim;
           m_comp.resize(2);
           m_comp[0].resize(0, 0);
@@ -103,7 +105,7 @@ namespace CASM {
           return;
         };
 
-        ParamComposition(ptree comp_ptree, const Structure &_prim) {
+        ParamComposition(ptree comp_ptree, const BasicStructure<Site> &_prim) {
           m_prim_struc = &_prim;
           m_comp.resize(2);
           m_comp[0].resize(0, 0);
@@ -188,7 +190,7 @@ namespace CASM {
     //*************************************************************
     //ACCESSORS
 
-    const Structure &prim() const {
+    const BasicStructure<Site> &prim() const {
       return *m_prim_struc;
     }
 
@@ -217,7 +219,7 @@ namespace CASM {
       return m_rank_of_space;
     };
 
-    /// \brief Components are ordered as in Structure::struc_molecule
+    /// \brief Components are ordered as in BasicStructure<Site>::struc_molecule
     const std::vector<std::string> &components() const {
       return m_components;
     };
