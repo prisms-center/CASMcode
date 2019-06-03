@@ -1049,7 +1049,7 @@ namespace CASM {
     // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
     Eigen::Matrix3d tMat(tLat2), tMat2;
 
-    Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat);
+    Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat, Eigen::ComputeFullU | Eigen::ComputeFullV);
     tMat = Eigen::Matrix3d::Zero();
     for(int i = 0; i < 3; i++) {
       tMat(i, i) = tSVD.singularValues()[i];
