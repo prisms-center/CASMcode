@@ -126,7 +126,7 @@ namespace CASM {
         for(auto &site : candidate_sites) {
           Index l = dtconfig.from_config().linear_index(site);
           Index occ_idx = dtconfig.from_config().occ(l);
-          std::string occ_name = dtconfig.from_config().prim().basis()[ dtconfig.from_config().sublat(l) ].site_occupant()[occ_idx].name();
+          std::string occ_name = dtconfig.from_config().prim().basis()[ dtconfig.from_config().sublat(l) ].occupant_dof()[occ_idx].name();
           if(species_map.find(occ_name) == species_map.end()) {
             species_map.emplace(occ_name, 1);
           }

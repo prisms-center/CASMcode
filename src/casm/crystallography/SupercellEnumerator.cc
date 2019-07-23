@@ -551,28 +551,6 @@ namespace CASM {
     }
   }
 
-
-  //******************************************************************************************************************//
-
-
-  template<>
-  SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    const ScelEnumProps &enum_props) :
-    m_unit(unit),
-    m_lat(unit),
-    m_begin_volume(enum_props.begin_volume()),
-    m_end_volume(enum_props.end_volume()),
-    m_gen_mat(enum_props.generating_matrix()),
-    m_dims(enum_props.dims()) {
-
-    if(m_gen_mat.determinant() < 1) {
-      throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
-    }
-
-    m_point_group = SymGroup::lattice_point_group(m_lat);
-
-  }
-
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
                                                     const std::vector<SymOp> &point_grp,

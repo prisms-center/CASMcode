@@ -12,6 +12,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/CompositionConverter.hh"
@@ -589,7 +590,7 @@ namespace CASM {
 
   //*********************************************************************************
   const Molecule &Configuration::mol(Index site_l) const {
-    return prim().basis()[ sublat(site_l) ].site_occupant()[ occ(site_l) ];
+    return prim().basis()[ sublat(site_l) ].occupant_dof()[ occ(site_l) ];
   }
 
   //*********************************************************************************
@@ -671,7 +672,7 @@ namespace CASM {
     // create an array to count the number of each molecule
     std::vector<Eigen::VectorXi> sublat_num_each_molecule;
     for(i = 0; i < prim().basis().size(); i++) {
-      sublat_num_each_molecule.push_back(Eigen::VectorXi::Zero(prim().basis()[i].site_occupant().size()));
+      sublat_num_each_molecule.push_back(Eigen::VectorXi::Zero(prim().basis()[i].occupant_dof().size()));
     }
 
     // count the number of each molecule by sublattice
@@ -978,7 +979,7 @@ namespace CASM {
 
   std::string pos_string(Configuration const  &_config) {
     std::stringstream ss;
-    VaspIO::PrintPOSCAR p(_config);
+    VaspIO::PrintPOSCAR p(to_simple_structure(_config), _config.name());
     p.sort();
     p.print(ss);
     return ss.str();
@@ -1004,11 +1005,10 @@ namespace CASM {
 
   //*********************************************************************************
 
-
   std::string config_json_string(Configuration const  &_config) {
     std::stringstream ss;
-    jsonParser tjson;
-    to_json(SimpleStructure(_config), tjson);
+    jsonParser tjson = json_supplement(_config);
+    to_json(to_simple_structure(_config), tjson);
     tjson.print(ss);
     return ss.str();
   }

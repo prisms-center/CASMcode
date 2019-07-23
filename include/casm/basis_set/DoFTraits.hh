@@ -69,16 +69,15 @@ namespace CASM {
       /// \brief Generate a symmetry representation for the supporting vector space
       virtual Eigen::MatrixXd symop_to_matrix(SymOp const &op) const = 0;
 
-      /*
-      /// \brief Generate a symmetry representation for this DoF
-      virtual SymGroupRepID generate_symrep(MasterSymGroup const &_group,
-                                            Structure const &_prim,
-                                            Index _nb) const = 0;
-
-      */
-
+      /// \brief Transforms SimpleSructure @param _struc by applying DoF values contained in @param _dof in a type-specific way
       virtual void apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const;
 
+      /// \brief Serialize type-specific DoF values from ConfigDoF
+      virtual jsonParser dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const;
+
+      // ** The following functionality is utilized for controlling clexulator printing. It only needs to be overridden in special cases **
+
+      /// \brief
       virtual std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors(std::string const &nlist_specifier = "%n") const;
 
       virtual std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const;

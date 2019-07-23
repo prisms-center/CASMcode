@@ -7,7 +7,6 @@
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/clex/ParamComposition.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
@@ -15,6 +14,7 @@
 #include "casm/crystallography/LatticeMap.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
@@ -47,8 +47,6 @@ namespace CASM {
       m_tol(max(1e-9, _tol)) {
       //squeeze lattice_weight into (0,1] if necessary
       m_lattice_weight = max(min(_lattice_weight, 1.0), 1e-9);
-      ParamComposition param_comp(_pclex.prim());
-      m_fixed_components = param_comp.fixed_components();
       m_max_volume_change = max(m_tol, _max_volume_change);
     }
 
@@ -88,8 +86,11 @@ namespace CASM {
         //	*result.config =*hint_ptr;
       }
       //      else {
-      std::set<MappingNode> from_set = mapper.struc_mapper().map_deformed_struc(SimpleStructure(result.structures[0]));
-      std::set<MappingNode> to_set = mapper.struc_mapper().map_deformed_struc(SimpleStructure(result.structures.back()));
+      SimpleStructure from_child = to_simple_structure(result.structures[0]);
+      std::set<MappingNode> from_set = mapper.struc_mapper().map_deformed_struc(from_child);
+
+      SimpleStructure to_child = to_simple_structure(result.structures.back());
+      std::set<MappingNode> to_set = mapper.struc_mapper().map_deformed_struc(to_child);
 
       if(from_set.empty() || to_set.empty()) {
         return result;
@@ -158,22 +159,28 @@ namespace CASM {
       // make temp storage "final_diff_trans" replace if max length is smaller for current diff_trans
       //
 
-      Configuration from_config(Configuration::zeros(scel_ptr));
-      from_config.set_occupation(mapper.occupation(SimpleStructure(result.structures[0]),
-                                                   from_node));
-      Kinetics::DiffusionTransformation final_diff_trans = _shortest_hop(diff_trans, from_config.supercell());
-      //THIS IS THE FIRST CASE IN WHICH WE DON'T WANT TO SORT DIFFTRANS ON CONSTRUCTION -speak with brian about removing sorting from prepare
-      //or stick with prepareless workaround. Alternatively check if sorted, if not then sort diff trans and flip from/to then create.
-      //Need to somehow only use occupation from the config to construct diff_trans_config
-      diff_trans = final_diff_trans;
-      //std::cout << "diff_trans is " << std::endl;
-      //std::cout << diff_trans << std::endl;
-      //Attach hop to ideal from config in same orientation
+      {
+        SimpleStructure oriented_struc = resolve_setting(from_node, from_child);
 
-      //std::cout << "from config is " << std::endl << from_config << std::endl;
-      result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
-      if(!result.config->has_valid_from_occ()) {
-        throw std::runtime_error("Moving forward with invalid diff_trans_config is a bad idea.");
+        Configuration from_config(scel_ptr, jsonParser(), to_configdof(from_node, oriented_struc, primclex()));
+
+        //Configuration from_config(Configuration::zeros(scel_ptr));
+        //from_config.set_occupation(mapper.occupation(to_simple_structure(result.structures[0]),
+        //from_node));
+        Kinetics::DiffusionTransformation final_diff_trans = _shortest_hop(diff_trans, from_config.supercell());
+        //THIS IS THE FIRST CASE IN WHICH WE DON'T WANT TO SORT DIFFTRANS ON CONSTRUCTION -speak with brian about removing sorting from prepare
+        //or stick with prepareless workaround. Alternatively check if sorted, if not then sort diff trans and flip from/to then create.
+        //Need to somehow only use occupation from the config to construct diff_trans_config
+        diff_trans = final_diff_trans;
+        //std::cout << "diff_trans is " << std::endl;
+        //std::cout << diff_trans << std::endl;
+        //Attach hop to ideal from config in same orientation
+
+        //std::cout << "from config is " << std::endl << from_config << std::endl;
+        result.config = notstd::make_unique<Kinetics::DiffTransConfiguration>(from_config, diff_trans);
+        if(!result.config->has_valid_from_occ()) {
+          throw std::runtime_error("Moving forward with invalid diff_trans_config is a bad idea.");
+        }
       }
       //std::cout << "to config is " << std::endl << non_canon_to_config << std::endl;
       //NEED TO SET ORBIT NAME OF DTC SOMEHOW FOR NEW DIFF TRANS

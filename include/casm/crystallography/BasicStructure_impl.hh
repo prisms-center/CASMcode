@@ -1045,10 +1045,10 @@ namespace CASM {
     //loop over all Sites in basis
     for(i = 0; i < _struc.basis().size(); i++) {
       //loop over all Molecules in Site
-      for(j = 0; j < _struc.basis()[i].site_occupant().size(); j++) {
+      for(j = 0; j < _struc.basis()[i].occupant_dof().size(); j++) {
         //Collect unique Molecules
-        if(!contains(tstruc_molecule, _struc.basis()[i].site_occupant()[j])) {
-          tstruc_molecule.push_back(_struc.basis()[i].site_occupant()[j]);
+        if(!contains(tstruc_molecule, _struc.basis()[i].occupant_dof()[j])) {
+          tstruc_molecule.push_back(_struc.basis()[i].occupant_dof()[j]);
         }
       }
     }//end loop over all Sites
@@ -1138,7 +1138,7 @@ namespace CASM {
     for(CoordType const &site : _struc.basis()) {
       auto sitetypes = site.dof_types();
       tresult.insert(sitetypes.begin(), sitetypes.end());
-      if(site.site_occupant().size() > 1) {
+      if(site.occupant_dof().size() > 1) {
         tresult.insert(DoFType::occupation().name());
       }
     }
@@ -1164,7 +1164,7 @@ namespace CASM {
     std::vector<SymGroupRepID> result;
     result.resize(_struc.basis().size());
     for(Index b = 0; b < _struc.basis().size(); ++b) {
-      result[b] = _struc.basis()[b].site_occupant().symrep_ID();
+      result[b] = _struc.basis()[b].occupant_dof().symrep_ID();
     }
     return result;
   }

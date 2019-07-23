@@ -258,7 +258,7 @@ namespace CASM {
       }
     }
     else {
-      throw std::runtime_error("Error in 'to_json_array': Not a vector");
+      throw std::runtime_error("Error in 'to_json': Not a vector");
     }
     return json;
   }
@@ -269,6 +269,14 @@ namespace CASM {
   CASM::jsonParser &to_json_array(const Eigen::MatrixBase<Derived> &value, CASM::jsonParser &json) {
     to_json(value, json, CASM::jsonParser::as_array());
     return json;
+  }
+
+  /// \brief Write Eigen Matrix with 1 row or 1 column to JSON array
+  template <typename Derived>
+  CASM::jsonParser to_json_array(const Eigen::MatrixBase<Derived> &value) {
+    jsonParser json;
+    to_json(value, json, CASM::jsonParser::as_array());
+    return std::move(json);
   }
 
   /// \brief Read Eigen Matrix/Vector from JSON

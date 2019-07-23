@@ -3,42 +3,11 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/LatticeMap.hh"
 
 namespace CASM {
-  LatticeNode::LatticeNode(Lattice const &p_prim,
-                           Lattice const &p_scel,
-                           Lattice const &c_prim,
-                           Lattice const &c_scel,
-                           Index c_N_atom) :
-    parent(p_prim, p_scel),
-    child(Lattice((p_scel.lat_column_mat() * c_scel.inv_lat_column_mat())
-                  * c_prim.lat_column_mat()),
-          p_scel) {
-
-
-    Eigen::Matrix3d F = c_scel.lat_column_mat() * p_scel.inv_lat_column_mat();
-    rstretch = StrainConverter::right_stretch_tensor(F);
-    isometry = F * rstretch.inverse();
-
-    cost = LatticeMap::calc_strain_cost(rstretch, c_prim.vol() / double(max(c_N_atom, Index(1))));
-  }
-
-  //*******************************************************************************************
-
-  LatticeNode::LatticeNode(LatticeMap const &_lat_map,
-                           Lattice const &p_prim,
-                           Lattice const &c_prim,
-                           Index c_N_atom) :
-    rstretch(StrainConverter::right_stretch_tensor(_lat_map.matrixF())),
-    isometry(_lat_map.matrixF() * rstretch.inverse()),
-    parent(p_prim, Lattice(_lat_map.parent_matrix(), p_prim.tol())),
-    child(Lattice(_lat_map.matrixF().inverse() * c_prim.lat_column_mat()), Lattice(_lat_map.parent_matrix(), p_prim.tol())),
-    cost(LatticeMap::calc_strain_cost(rstretch, c_prim.vol() / double(max(c_N_atom, Index(1))))) {
-
-  }
-
   //*******************************************************************************************
 
   namespace StrucMapping {
@@ -57,7 +26,58 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  StrucMapper::StrucMapper(StrucMapCalculatorInterface const &_calculator,
+  LatticeNode::LatticeNode(Lattice const &parent_prim,
+                           Lattice const &parent_scel,
+                           Lattice const &child_prim,
+                           Lattice const &child_scel,
+                           Index child_N_atom) :
+    parent(parent_prim, parent_scel),
+    child(Lattice((parent_scel.lat_column_mat() * child_scel.inv_lat_column_mat())
+                  * child_prim.lat_column_mat()),
+          parent_scel) {
+
+
+    Eigen::Matrix3d F = child_scel.lat_column_mat() * parent_scel.inv_lat_column_mat();
+    rstretch = StrainConverter::right_stretch_tensor(F);
+    isometry = F * rstretch.inverse();
+
+    cost = LatticeMap::calc_strain_cost(rstretch, child_prim.vol() / double(max(child_N_atom, Index(1))));
+  }
+
+  //*******************************************************************************************
+
+  LatticeNode::LatticeNode(LatticeMap const &_lat_map,
+                           Lattice const &parent_prim,
+                           Lattice const &child_prim,
+                           Index child_N_atom) :
+    rstretch(StrainConverter::right_stretch_tensor(_lat_map.matrixF())),
+    isometry(_lat_map.matrixF() * rstretch.inverse()),
+    parent(parent_prim, Lattice(_lat_map.parent_matrix(), parent_prim.tol())),
+    child(Lattice(_lat_map.matrixF().inverse() * child_prim.lat_column_mat()), Lattice(_lat_map.parent_matrix(), parent_prim.tol())),
+    cost(LatticeMap::calc_strain_cost(rstretch, child_prim.vol() / double(max(child_N_atom, Index(1))))) {
+
+  }
+
+  //*******************************************************************************************
+
+  void MappingNode::calc() {
+    if(is_viable) {
+      basis_node.cost = hungarian_method(basis_node.cost_mat, basis_node.assignment, tol()) + basis_node.cost_offset;
+      if(StrucMapping::is_inf(basis_node.cost)) {
+        is_viable = false;
+        cost = StrucMapping::big_inf();
+      }
+      else {
+        cost += basis_weight + basis_node.cost;
+      }
+    }
+    else
+      cost = StrucMapping::big_inf();
+  }
+
+  //*******************************************************************************************
+
+  StrucMapper::StrucMapper(StrucMapCalculatorInterface const &calculator,
                            double _lattice_weight /*= 0.5*/,
                            Index _Nbest/*= 1*/,
                            double _max_volume_change /*= 0.5*/,
@@ -65,19 +85,17 @@ namespace CASM {
                            double _tol /*= TOL*/,
                            double _min_va_frac /*= 0.*/,
                            double _max_va_frac /*= 1.*/) :
-    m_calc_ptr(_calculator.clone()),
+    m_calc_ptr(calculator.clone()),
     //squeeze lattice_weight into (0,1] if necessary
     m_lattice_weight(max(min(_lattice_weight, 1.0), 1e-9)),
     m_Nbest(_Nbest),
     m_max_volume_change(_max_volume_change),
-    m_robust_flag(_options & robust),
-    m_strict_flag(_options & strict),
+    m_options(_options),
     m_tol(max(1e-9, _tol)),
     m_min_va_frac(0.),
     m_max_va_frac(1.) {
 
     //ParamComposition param_comp(_pclex.prim());
-    //m_fixed_components = param_comp.fixed_components();
     m_max_volume_change = max(m_tol, _max_volume_change);
   }
 
@@ -152,14 +170,14 @@ namespace CASM {
     Index min_vol(0), max_vol(0);
     //mapped_result.clear();
 
-    if(_calculator().fixed_components().size() > 0) {
-      std::string tcompon = _calculator().fixed_components()[0].first;
+    if(_calculator().fixed_species().size() > 0) {
+      std::string tcompon = _calculator().fixed_species().begin()->first;
       int ncompon(0);
       for(Index i = 0; i < child_struc.n_mol(); i++) {
         if(child_struc.mol_info.names[i] == tcompon)
           ncompon++;
       }
-      min_vol = ncompon / int(_calculator().fixed_components()[0].second);
+      min_vol = ncompon / int(_calculator().fixed_species().begin()->second);
       max_vol = min_vol;
     }
     else {
@@ -231,7 +249,6 @@ namespace CASM {
     return mapping_seed;
   }
 
-
   //*******************************************************************************************
 
   std::set<MappingNode> StrucMapper::map_deformed_struc(const SimpleStructure &child_struc,
@@ -242,7 +259,6 @@ namespace CASM {
     k_best_maps_better_than(child_struc, mapping_seed, best_cost, keep_invalid);
     return mapping_seed;
   }
-
 
   //*******************************************************************************************
 
@@ -286,8 +302,8 @@ namespace CASM {
     return mapping_seed;
   }
 
-
   //*******************************************************************************************
+
   std::vector<Lattice> StrucMapper::_lattices_of_vol(Index prim_vol) const {
     if(!m_restricted) {
       //If you specified that you wanted certain lattices, return those, otherwise do the
@@ -327,14 +343,12 @@ namespace CASM {
     }
 
     return lat_vec;
-
   }
-
 
   //***************************************************************************************************
 
-  std::vector<Eigen::Vector3d> SimpleStrucMapCalculator::get_translations(SimpleStructure const &ichild_struc,
-                                                                          LatticeNode const &lat_node) const {
+  std::vector<Eigen::Vector3d> SimpleStrucMapCalculator::translations(SimpleStructure const &ichild_struc,
+                                                                      LatticeNode const &lat_node) const {
 
     SimpleStructure::Info const &p_info(info(parent()));
     SimpleStructure::Info const &c_info(info(ichild_struc));
@@ -441,7 +455,10 @@ namespace CASM {
           ++k;
 
         if(k < m_Nbest && !current->is_partitioned)
-          current->partition(std::inserter(queue, current));
+          partition_node(*current,
+                         calculator(),
+                         child_struc,
+                         std::inserter(queue, current));
 
         if(!current->is_valid && ! keep_invalid)
           queue.erase(current);
@@ -551,7 +568,7 @@ namespace CASM {
         inf_counter = 0;
         Index k = 0;
         for(Index i = 0; i < p_info.size(); ++i) {
-          if(!m_allowed_species[i].count(c_info.names[j])) {
+          if(!_allowed_species()[i].count(c_info.names[j])) {
             k += pgrid.size();
             ++inf_counter;
             continue;

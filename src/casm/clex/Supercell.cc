@@ -138,7 +138,7 @@ namespace CASM {
 
     // Figures out the maximum number of occupants in each basis site, to initialize counter with
     for(Index i = 0; i < prim().basis().size(); i++) {
-      std::vector<int> tmp(volume(), prim().basis()[i].site_occupant().size() - 1);
+      std::vector<int> tmp(volume(), prim().basis()[i].occupant_dof().size() - 1);
       max_allowed.insert(max_allowed.end(), tmp.begin(), tmp.end());
     }
     //std::cout << "max_allowed_occupation is:  " << max_allowed << "\n\n";

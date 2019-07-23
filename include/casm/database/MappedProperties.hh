@@ -58,7 +58,7 @@ namespace CASM {
       ///     the cartesian displacement of each Molecule reference position from the
       ///     ideal basis location. Remember, displacements are applied before
       ///     deformation.
-      /// - From ConfigMapperResult::best_assignment:
+      /// - From ConfigMapperResult
       ///   - "best_assignment": Permutation, Representations the permutation
       ///     that maps sites in the imported structure onto sites of the ideal crystal.
       ///     i.e. config[i] = imported_structure[best_assignment[i]]

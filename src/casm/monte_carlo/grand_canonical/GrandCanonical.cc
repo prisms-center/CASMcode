@@ -200,7 +200,7 @@ namespace CASM {
       int new_occupant = possible_mutation[_mtrand().randInt(possible_mutation.size() - 1)];
 
       if(debug()) {
-        const auto &site_occ = primclex().prim().basis()[sublat].site_occupant();
+        const auto &site_occ = primclex().prim().basis()[sublat].occupant_dof();
         _log().custom("Propose event");
 
         _log()  << "  Mutating site (linear index): " << mutating_site << "\n"

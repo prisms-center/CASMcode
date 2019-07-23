@@ -92,7 +92,7 @@ namespace CASM {
       for(Index i = 0; i < _asym_unit.size(); i++) {
         Site const &_site = _asym_unit[i].prototype()[0].sublat_site();
 
-        if(_site.site_occupant().size() < 2)
+        if(_site.occupant_dof().size() < 2)
           continue;
 
         Index b_ind = _asym_unit[i].prototype()[0].sublat();
@@ -104,12 +104,12 @@ namespace CASM {
 
           switch(std::tolower(func_type[0])) {
           case 'c': { //chebychev
-            tprob = std::vector<double>(_site.site_occupant().size(),
-                                        1. / double(_site.site_occupant().size()));
+            tprob = std::vector<double>(_site.occupant_dof().size(),
+                                        1. / double(_site.occupant_dof().size()));
             break;
           }
           case 'o': { //occupation
-            tprob = std::vector<double>(_site.site_occupant().size(),
+            tprob = std::vector<double>(_site.occupant_dof().size(),
                                         0.);
             tprob[0] = 1.;
             break;
@@ -126,11 +126,11 @@ namespace CASM {
           OccupationDoFTraits_impl::prob_vec_from_json(prob_vec, _bspecs);
 
           double tsum(0);
-          for(Index ns = 0; ns < _site.site_occupant().size(); ns++) {
-            if(prob_vec[b_ind].find(_site.site_occupant()[ns].name()) == prob_vec[b_ind].end())
-              throw std::runtime_error("In BSPECS.JSON, basis site " + std::to_string(b_ind) + " must have a composition specified for species " + _site.site_occupant()[ns].name() + "\n");
+          for(Index ns = 0; ns < _site.occupant_dof().size(); ns++) {
+            if(prob_vec[b_ind].find(_site.occupant_dof()[ns].name()) == prob_vec[b_ind].end())
+              throw std::runtime_error("In BSPECS.JSON, basis site " + std::to_string(b_ind) + " must have a composition specified for species " + _site.occupant_dof()[ns].name() + "\n");
 
-            tprob.push_back(prob_vec[b_ind][_site.site_occupant()[ns].name()]);
+            tprob.push_back(prob_vec[b_ind][_site.occupant_dof()[ns].name()]);
             tsum += tprob[ns];
           }
           for(Index j = 0; j < tprob.size(); j++)
@@ -138,7 +138,7 @@ namespace CASM {
         }
 
 
-        result[b_ind].construct_orthonormal_discrete_functions(_site.site_occupant(),
+        result[b_ind].construct_orthonormal_discrete_functions(_site.occupant_dof(),
                                                                tprob,
                                                                _asym_unit[i].prototype()[0].sublat(),
                                                                SymGroup(_asym_unit[i].equivalence_map(0).first,
@@ -250,7 +250,7 @@ namespace CASM {
                  indent << "//   - basis site " << nb << ":\n";
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
             stream <<
-                   indent << "double " << "m_occ_func_" << nb << '_' << f << '[' << _prim.basis()[nb].site_occupant().size() << "];\n";
+                   indent << "double " << "m_occ_func_" << nb << '_' << f << '[' << _prim.basis()[nb].occupant_dof().size() << "];\n";
           }
           stream << '\n';
         }
@@ -339,7 +339,7 @@ namespace CASM {
           Index nb = equiv[0].sublat();
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
 
-            for(Index s = 0; s < _prim.basis()[nb].site_occupant().size(); s++) {
+            for(Index s = 0; s < _prim.basis()[nb].occupant_dof().size(); s++) {
               OccFuncEvaluator t_eval(s);
               _site_bases[nb][f]->accept(t_eval);
 
@@ -347,7 +347,7 @@ namespace CASM {
                 stream << indent;
               stream << "m_occ_func_" << nb << '_' << f << '[' << s << "] = "
                      << t_eval.value();
-              if(s + 1 == _prim.basis()[nb].site_occupant().size())
+              if(s + 1 == _prim.basis()[nb].occupant_dof().size())
                 stream << ";\n\n";
               else
                 stream << ", ";
@@ -362,17 +362,17 @@ namespace CASM {
       std::stringstream ss;
       if(site_bset.size() == 0)
         ss << "        [No site basis functions]\n\n";
-      std::vector<DoF::RemoteHandle> handles(1, site.site_occupant().handle());
+      std::vector<DoF::RemoteHandle> handles(1, site.occupant_dof().handle());
       int s;
       handles[0] = s;
       site_bset.register_remotes(handles);
       for(Index f = 0; f < site_bset.size(); f++) {
-        for(s = 0; s < site.site_occupant().size(); s++) {
+        for(s = 0; s < site.occupant_dof().size(); s++) {
           if(s == 0)
             ss << "    ";
-          ss << "    \\phi_" << site.basis_ind() << '_' << f << '[' << site.site_occupant()[s].name() << "] = "
+          ss << "    \\phi_" << site.basis_ind() << '_' << f << '[' << site.occupant_dof()[s].name() << "] = "
              << site_bset[f]->remote_eval();
-          if(s + 1 == site.site_occupant().size())
+          if(s + 1 == site.occupant_dof().size())
             ss << "\n";
           else
             ss << ",   ";

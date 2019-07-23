@@ -5,6 +5,7 @@
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
@@ -27,7 +28,6 @@ namespace CASM {
 
     StrucScore::StrucScore() :
       VectorXdAttribute<Configuration>("struc_score", "Evaluates the mapping of a configuration onto an arbitrary primitive structure, specified by its path. Allowed options are [ 'basis_score' (mean-square site displacement) | 'lattice_score' (lattice deformation metric having units Angstr.^2) | 'total_score' (w*lattice_score+(1.0-w)*basis_score) ].  The struc_score weighting parameter 'w' can be provided as an optional decimal parameter from 0.0 to 1.0 (default 0.5). Ex: struc_score(path/to/PRIM, basis_score, 0.4)"),
-      m_strucmapper(notstd::make_unique<StrucMapper>(StrucMapper::null_initializer)),
       m_lattice_weight(0.5) {
 
     };
@@ -35,10 +35,12 @@ namespace CASM {
     StrucScore::StrucScore(const StrucScore &RHS) :
       VectorXdAttribute<Configuration>(RHS),
       m_altprim((RHS.m_altprim == nullptr) ? nullptr : new BasicStructure<Site>(*(RHS.m_altprim))),
-      m_strucmapper(notstd::make_unique<StrucMapper>(*RHS.m_strucmapper)),
       m_lattice_weight(RHS.m_lattice_weight),
       m_prim_path(RHS.m_prim_path),
       m_prop_names(RHS.m_prop_names) {
+
+      if(RHS.m_strucmapper)
+        m_strucmapper = notstd::make_unique<StrucMapper>(*RHS.m_strucmapper);
 
     }
 

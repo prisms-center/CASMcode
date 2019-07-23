@@ -4,7 +4,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/StrucMapping.hh"
-
+#include "casm/crystallography/BasicStructure.hh"
 
 namespace CASM {
   class Supercell;
@@ -15,38 +15,39 @@ namespace CASM {
   class Configuration;
   class ConfigDoF;
   class Structure;
+  class SupercellSymInfo;
+
+  class Site;
+
+  template<typename T>
+  class BasicStructure;
 
   namespace Completer {
     class ImportOption;
   }
 
-  class PrimStrucMapCalculator : public StrucMapCalculatorInterface {
+  //TO IMPLEMENT
+  /// \brief Find symop (as PermuteIterator) that gives the most 'faithful' equivalent mapping
+  /// This means that
+  ///   (1) the site permutation is as close to identity as possible (i.e., maximal character)
+  ///   (2) ties at (1) are broken by ensuring _node.isometry is proper and close to zero rotation (i.e., maximal character*determinant)
+  ///   (3) if (1) and (2) are ties, then we minimize _node.translation.norm()
+  PermuteIterator strictest_equivalent(PermuteIterator begin, PermuteIterator end, MappingNode const &_node);
+
+  /// \brief Reorders the permutation and compounds the spatial isometry (rotation + translation) of _node with that of _it
+  MappingNode copy_apply(PermuteIterator const &_it, MappingNode const &_node);
+
+  /// \brief Creates copy of _child_struc by applyin isometry, lattice transformation, translation, and site permutation of _node
+  SimpleStructure resolve_setting(MappingNode const &_node, SimpleStructure const &_child_struc);
+
+  /// \brief Initializes configdof corresponding to a mapping (encoded by _node) of _child_struc onto _pclex
+  ConfigDoF to_configdof(MappingNode const _node, SimpleStructure const &_child_struc, PrimClex const &_pclex);
+  //\TO IMPLEMENT
+
+  class PrimStrucMapCalculator : public SimpleStrucMapCalculator {
   public:
     PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
-                           StrucMapping::SpeciesMode _species_mode = StrucMapping::ATOM);
-
-
-    SimpleStructure::Info const &info(SimpleStructure const &_struc) const override {
-      return m_species_mode == StrucMapping::ATOM ?  _struc.atom_info : _struc.mol_info;
-    }
-
-    Index max_n_va() const override;
-
-    std::vector<Eigen::Vector3d> get_translations(SimpleStructure const &child_struc,
-                                                  LatticeNode const &lat_node) const override;
-
-    bool populate_cost_mat(MappingNode &_node,
-                           SimpleStructure const &child_struc) const override;
-
-    void populate_displacement(MappingNode &_node,
-                               SimpleStructure const &child_struc) const override;
-
-    void populate_properties(MappingNode &_node,
-                             const SimpleStructure &child_struc) const override;
-
-    bool validate(MappingNode const &_node) const override {
-      return true;
-    }
+                           SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM);
 
   private:
     /// \brief Make an exact copy of the calculator (including any initialized members)
@@ -55,38 +56,41 @@ namespace CASM {
     }
 
     BasicStructure<Site> m_prim;
-    StrucMapping::SpeciesMode m_species_mode;
-    std::vector<std::pair<std::string, Index> > m_fixed_components;
 
   };
 
+
+
   /// Data structure holding results of ConfigMapper algorithm
   struct ConfigMapperResult {
+    enum class HintStatus { None, Derivative, Equivalent, Identical};
+
+    struct Individual {
+      Individual(std::string _name,
+                 std::unique_ptr<Configuration> _config_ptr,
+                 HintStatus _hint_status = HintStatus::None) :
+        name(std::move(_name)),
+        config_ptr(std::move(_config_ptr)),
+        hint_status(_hint_status) {}
+
+      std::string name;
+      std::unique_ptr<Configuration> config_ptr;
+      HintStatus hint_status;
+    };
 
     ConfigMapperResult() {}
 
     bool success() const {
-      return !StrucMapping::is_inf(result.cost);
+      return !maps.empty();
     }
 
-    MappingNode result;
-
-    /// Output structure, after applying lattice similarity and/or rotation to
+    /// Mapped structure, before applying lattice similarity and/or rotation to
     /// input structure.
     SimpleStructure structure;
 
-    /// The configuration the input structure was mapped onto
-    std::unique_ptr<Configuration> config;
+    /// The configurations that the input structure mapped onto
+    std::map<MappingNode, Individual> maps;
 
-    /// relaxation_properties is populated by relaxation properties:
-    ///
-    /// - 'lattice_deformation': lattice mapping score
-    /// - 'basis_deformation': atomic mapping score
-    /// - 'volume_relaxation': V/V_ideal
-    /// - 'relaxation_deformation': 3x3 tensor describing cell relaxation
-    /// - 'relaxation_displacement': Nx3 matrix describing basis displacements
-    /// - 'relaxed_energy': the energy of the relaxed configuration
-    jsonParser relaxation_properties;
 
     /// Failure message if could not map to prim
     std::string fail_msg;
@@ -101,19 +105,6 @@ namespace CASM {
   /// \ingroup Configuration
   class ConfigMapper {
   public:
-
-    enum NullInitializer {null_initializer};
-    enum Options {none = 0,
-                  rotate = (1u << 0),
-                  strict = (1u << 1),
-                  robust = (1u << 2)
-                 };
-
-    ///\brief Default construction not allowed -- this constructor provides an override
-    ConfigMapper(NullInitializer) :
-      m_pclex(nullptr),
-      m_struc_mapper(StrucMapper::null_initializer) {
-    }
 
     ///\brief Construct and initialize a ConfigMapper
     ///\param _pclex the PrimClex that describes the crystal template
@@ -142,15 +133,19 @@ namespace CASM {
     ///\endparblock
     ///
     ///\param _tol tolerance for mapping comparisons (default is _pclex.crystallography_tol())
-    ConfigMapper(const PrimClex &_pclex,
+    ConfigMapper(PrimClex const &_pclex,
                  double _lattice_weight,
                  double _max_volume_change = 0.5,
-                 int _options = robust, // this should actually be a bitwise-OR of ConfigMapper::Options
+                 int _options = StrucMapper::robust, // this should actually be a bitwise-OR of StrucMapper::Options
                  double _tol = -1.);
 
 
     const PrimClex &primclex() const {
       return *m_pclex;
+    }
+
+    bool strict() const {
+      return struc_mapper().options() && StrucMapper::strict;
     }
 
     void set_primclex(const PrimClex &_pclex) {
@@ -165,14 +160,12 @@ namespace CASM {
       return m_struc_mapper;
     }
 
-    void add_allowed_lattices(std::vector<std::string> const &_lattice_names) {
-
-      throw std::runtime_error("ConfigMapper::add_allowed_lattices() not implemented");
-    }
+    void add_allowed_lattices(std::vector<std::string> const &_lattice_names);
 
     void clear_allowed_lattices() {
       struc_mapper().clear_allowed_lattices();
     }
+
     //STEPS:
     //    0) [If Hint] Do SimpleStructure -> SimpleStructure(Config) mapping => HintMapping (Default, HintMapping.cost=inf())
     //    1) If HintMapping.cost>tol  Do SimpleStructure -> PrimClex mapping => ClexMapping (Default, ClexMapping.cost=inf())
@@ -181,16 +174,6 @@ namespace CASM {
     //       [a] - BestMapping attributes that define ConfigDoF are mapped 'DoF', all others mapped 'property'
     //       [b] - 'property' attributes are subsumed into 'relaxation_properties' object
     //    4) Construct Configuration as ConfigDoF + relation_properties
-
-    ///\brief imports structure specified by 'pos_path' into primclex() by finding optimal mapping
-    ///       unlike import_structure_occupation, displacements and strain are preserved
-    ///
-    ConfigMapperResult import_structure(const std::string &pos_path) const;
-
-    ///\brief imports structure specified by '_struc' into primclex() by finding optimal mapping
-    ///       unlike import_structure_occupation, displacements and strain are preserved
-    ///
-    ConfigMapperResult import_structure(const SimpleStructure &_struc) const;
 
     ///\brief imports structure specified by '_struc' into primclex()
     ///\param hint_ptr[in]
@@ -201,15 +184,25 @@ namespace CASM {
     ///                or be used to provide user reports of the form "Suggested mapping: 0.372; Optimal mapping: 0.002"
     ///\endparblock
     ///
-    ConfigMapperResult import_structure(const SimpleStructure &_struc,
-                                        const Configuration *hint_ptr) const;
+    ConfigMapperResult import_structure(SimpleStructure const &_struc,
+                                        Configuration const *hint_ptr = nullptr,
+                                        std::vector<DoFKey> const &_hint_dofs = {"occ"}) const;
+
+    ConfigMapperResult import_structure(SimpleStructure const &_struc,
+                                        Index k,
+                                        Configuration const *hint_ptr = nullptr,
+                                        std::vector<DoFKey> const &_hint_dofs = {"occ"}) const;
 
 
-    std::vector<Index> occupation(const SimpleStructure &_struc, MappingNode const &_node) const {
-      throw std::runtime_error("ConfigMapper::occupation() is not implemented");
-      return {};
-    }
   private:
+
+    template <typename IterType, typename ScelType, typename OutputIter>
+    void _to_configmaps(SimpleStructure const &child_struc,
+                        IterType begin,
+                        IterType end,
+                        ScelType const &scel,
+                        SupercellSymInfo const &sym_info,
+                        OutputIter out) const;
 
     const PrimClex *m_pclex;
     ///Maps the supercell volume to a vector of Lattices with that volume

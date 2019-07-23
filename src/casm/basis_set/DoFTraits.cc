@@ -41,12 +41,22 @@ namespace CASM {
       }
     }
 
+    //************************************************************
     void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+      return;
+    }
+
+    //************************************************************
+    jsonParser Traits::dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const {
+      jsonParser result;
+      result.put_obj();
 
       if(global())
-        _struc.global_dofs[type_name()]["value"] = _dof.global_dof(type_name()).standard_values();
+        result["value"] = _dof.global_dof(type_name()).standard_values();
       else
-        _struc.mol_info.dofs[type_name()]["value"] = _dof.local_dof(type_name()).standard_values().transpose();
+        result["value"] = _dof.local_dof(type_name()).standard_values().transpose();
+      return result;
+
     }
 
     //************************************************************
@@ -228,7 +238,7 @@ namespace CASM {
                  indent << "//   - basis site " << nb << ":\n";
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
             stream <<
-            indent << "double " << "m_" << site_basis_name() << "_" << nb << '_' << f << '[' << _prim.basis()[nb].site_occupant().size() << "];\n";
+            indent << "double " << "m_" << site_basis_name() << "_" << nb << '_' << f << '[' << _prim.basis()[nb].occupant_dof().size() << "];\n";
           }
           stream << '\n';
         }
@@ -427,7 +437,7 @@ namespace CASM {
         Index nb = equiv[0].sublat();
         for(Index f = 0; f < _site_bases[nb].size(); f++) {
 
-        for(Index s = 0; s < _prim.basis()[nb].site_occupant().size(); s++) {
+        for(Index s = 0; s < _prim.basis()[nb].occupant_dof().size(); s++) {
         OccFuncEvaluator t_eval(s);
         _site_bases[nb][f]->accept(t_eval);
 
@@ -435,7 +445,7 @@ namespace CASM {
         stream << indent;
         stream << "m_" << site_basis_name() << "_" << nb << '_' << f << '[' << s << "] = "
         << t_eval.value();
-        if(s + 1 == _prim.basis()[nb].site_occupant().size())
+        if(s + 1 == _prim.basis()[nb].occupant_dof().size())
         stream << ";\n\n";
         else
         stream << ", ";

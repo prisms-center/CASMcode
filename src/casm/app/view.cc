@@ -5,7 +5,7 @@
 #include "casm/system/Popen.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/clex/PrimClex_impl.hh"
@@ -193,7 +193,7 @@ namespace CASM {
               ostr << std::setfill('0') << std::setw(2) << count;
               fs::path POSCARpath = tmp_dir / ("POSCAR" + ostr.str());
               file.open(POSCARpath);
-              VaspIO::PrintPOSCAR p(interpol.config_enum_interpol()[count]);
+              VaspIO::PrintPOSCAR p(to_simple_structure(interpol.config_enum_interpol()[count]));
               p.sort();
               p.print(file);
               file.close();
@@ -208,14 +208,14 @@ namespace CASM {
             fs::ofstream file_i;
             fs::path POSCARpath_i = tmp_dir / "POSCAR00";
             file_i.open(POSCARpath_i);
-            VaspIO::PrintPOSCAR p_i(config.sorted().from_config());
+            VaspIO::PrintPOSCAR p_i(to_simple_structure(config.sorted().from_config()));
             p_i.print(file_i);
             file_i.close();
 
             fs::ofstream file_f;
             fs::path POSCARpath_f = tmp_dir / "POSCAR01";
             file_f.open(POSCARpath_f);
-            VaspIO::PrintPOSCAR p_f(config.sorted().to_config());
+            VaspIO::PrintPOSCAR p_f(to_simple_structure(config.sorted().to_config()));
             p_f.print(file_f);
             file_f.close();
 
@@ -278,7 +278,7 @@ namespace CASM {
         fs::ofstream file;
         fs::path POSCARpath = tmp_dir / "POSCAR";
         file.open(POSCARpath);
-        VaspIO::PrintPOSCAR p(config);
+        VaspIO::PrintPOSCAR p(to_simple_structure(config));
         p.sort();
         p.print(file);
         file.close();

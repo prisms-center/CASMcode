@@ -18,8 +18,8 @@ namespace CASM {
     Coordinate(init_home),
     m_label(-1),
     m_type_ID(-1),
-    m_site_occupant(MoleculeOccupant(DoFType::occupation(), "s" /*variable name*/, std::vector<Molecule>()).clone()) {
-    //site_occupant.set_value(0);
+    m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation(), "s" /*variable name*/, std::vector<Molecule>()).clone()) {
+    //occupant_dof.set_value(0);
   }
 
   //****************************************************
@@ -28,12 +28,12 @@ namespace CASM {
     Coordinate(init_pos),
     m_label(-1),
     m_type_ID(-1),
-    m_site_occupant(MoleculeOccupant(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>()).clone()) {
+    m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>()).clone()) {
 
     std::vector<Molecule> tocc;
     tocc.push_back(Molecule::make_atom(occ_name));
-    m_site_occupant->set_domain(tocc);
-    m_site_occupant->set_value(0);
+    m_occupant_dof->set_domain(tocc);
+    m_occupant_dof->set_value(0);
 
     return;
   }
@@ -43,7 +43,7 @@ namespace CASM {
     Coordinate(init_pos),
     m_label(-1),
     m_type_ID(-1),
-    m_site_occupant(MoleculeOccupant(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>(site_occ)).clone()) {
+    m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>(site_occ)).clone()) {
 
   }
 
@@ -51,8 +51,8 @@ namespace CASM {
 
   //****************************************************
 
-  const MoleculeOccupant &Site::site_occupant() const {
-    return *m_site_occupant;
+  const OccupantDoF<Molecule> &Site::occupant_dof() const {
+    return *m_occupant_dof;
   }
 
   //****************************************************
@@ -73,15 +73,15 @@ namespace CASM {
 
   //****************************************************
   bool Site::has_dof(std::string const &_dof_type) const {
-    return site_occupant().size() > 1 || m_dof_map.find(_dof_type) != m_dof_map.end();
+    return occupant_dof().size() > 1 || m_dof_map.find(_dof_type) != m_dof_map.end();
   }
 
   //****************************************************
 
   std::vector<std::string> Site::dof_types() const {
     std::vector<std::string> result;
-    //if(site_occupant().size() > 1)
-    //result.push_back(site_occupant().type_name());
+    //if(occupant_dof().size() > 1)
+    //result.push_back(occupant_dof().type_name());
     for(auto it = m_dof_map.begin(); it != m_dof_map.end(); ++it)
       result.push_back(it->first);
     return result;
@@ -94,7 +94,7 @@ namespace CASM {
       if(DoF::traits(_dof.first).time_reversal_active())
         return true;
 
-    for(auto const &mol : site_occupant().domain())
+    for(auto const &mol : occupant_dof().domain())
       if(mol.time_reversal_active())
         return true;
     return false;
@@ -103,8 +103,8 @@ namespace CASM {
   //****************************************************
 
   bool Site::is_vacant()const {
-    return site_occupant().is_specified()
-           && site_occupant().occ().is_vacancy();
+    return occupant_dof().is_specified()
+           && occupant_dof().occ().is_vacancy();
   }
 
   //****************************************************
@@ -116,22 +116,22 @@ namespace CASM {
   //****************************************************
 
   std::string Site::occ_name() const {
-    if(!site_occupant().is_specified())
+    if(!occupant_dof().is_specified())
       return "?";
     else
-      return site_occupant().occ().name();
+      return occupant_dof().occ().name();
   }
 
   //****************************************************
 
   const Molecule &Site::occ() const {
-    return site_occupant().occ();
+    return occupant_dof().occ();
   }
 
   //****************************************************
   Site &Site::_apply_sym_attributes(const SymOp &op) {
-    for(Index i = 0; i < site_occupant().size(); i++)
-      (*m_site_occupant)[i].apply_sym(op);
+    for(Index i = 0; i < occupant_dof().size(); i++)
+      (*m_occupant_dof)[i].apply_sym(op);
 
     auto it = m_dof_map.begin();
     for(; it != m_dof_map.end(); ++it)
@@ -227,11 +227,11 @@ namespace CASM {
   //*******************************************************************************************
 
   bool Site::compare_type(const Site &test_site) const {
-    assert(((site_occupant().size() <= 1 || test_site.site_occupant().size() <= 1)
-            || (site_occupant().is_specified() == test_site.site_occupant().is_specified()))
+    assert(((occupant_dof().size() <= 1 || test_site.occupant_dof().size() <= 1)
+            || (occupant_dof().is_specified() == test_site.occupant_dof().is_specified()))
            && "In Site::compare_type() comparing initialized occupant to uninitialized occupant!  This isn't a good idea!");
 
-    return (_type_ID() == test_site._type_ID()) && site_occupant().value() == test_site.site_occupant().value();
+    return (_type_ID() == test_site._type_ID()) && occupant_dof().value() == test_site.occupant_dof().value();
   }
 
   //*******************************************************************************************
@@ -249,8 +249,8 @@ namespace CASM {
   //****************************************************
 
   bool Site::contains(const std::string &name) const {
-    for(Index i = 0; i < site_occupant().size(); i++)
-      if(site_occupant()[i].contains(name)) {
+    for(Index i = 0; i < occupant_dof().size(); i++)
+      if(occupant_dof()[i].contains(name)) {
         return true;
       }
     return false;
@@ -259,8 +259,8 @@ namespace CASM {
   //****************************************************
 
   bool Site::contains(const std::string &name, int &index) const {
-    for(Index i = 0; i < site_occupant().size(); i++)
-      if(site_occupant()[i].contains(name)) {
+    for(Index i = 0; i < occupant_dof().size(); i++)
+      if(occupant_dof()[i].contains(name)) {
         index = i;
         return true;
       }
@@ -270,20 +270,20 @@ namespace CASM {
   //****************************************************
 
   void Site::set_allowed_occupants(std::vector<Molecule> const &_occ_domain) {
-    m_site_occupant->set_domain(_occ_domain);
+    m_occupant_dof->set_domain(_occ_domain);
     m_type_ID = -1;
   }
 
   //****************************************************
 
   void Site::set_occ_value(int new_val) {
-    m_site_occupant->set_value(new_val);
+    m_occupant_dof->set_value(new_val);
   }
 
   //****************************************************
 
   void Site::set_occ(const Molecule &new_occ) {
-    m_site_occupant->set_current_state(new_occ);
+    m_occupant_dof->set_current_state(new_occ);
   }
 
   //****************************************************
@@ -297,8 +297,8 @@ namespace CASM {
 
   std::vector<std::string> Site::allowed_occupants() const {
     std::vector<std::string> occ_list;
-    for(Index i = 0; i < site_occupant().size(); i++) {
-      occ_list.push_back(site_occupant()[i].name());
+    for(Index i = 0; i < occupant_dof().size(); i++) {
+      occ_list.push_back(occupant_dof()[i].name());
     }
     return occ_list;
   }
@@ -307,7 +307,7 @@ namespace CASM {
 
   void Site::set_basis_ind(Index new_ind) {
     Coordinate::set_basis_ind(new_ind);
-    m_site_occupant->set_ID(new_ind);
+    m_occupant_dof->set_ID(new_ind);
     for(auto &dof : m_dof_map)
       dof.second.set_ID(new_ind);
   }
@@ -372,7 +372,7 @@ namespace CASM {
       stream >> mol_name;
 
       if(tocc.size()) {
-        m_site_occupant->set_domain(tocc);
+        m_occupant_dof->set_domain(tocc);
         Index index = tocc.size();
         for(Index i = 0; i < tocc.size(); i++)
           if(tocc[i].name() == mol_name) {
@@ -389,7 +389,7 @@ namespace CASM {
           exit(1);
         }
         else
-          m_site_occupant->set_value(index);
+          m_occupant_dof->set_value(index);
 
       }
       else {
@@ -400,7 +400,7 @@ namespace CASM {
     }
 
     if(tocc.size()) {
-      m_site_occupant->set_domain(tocc);
+      m_occupant_dof->set_domain(tocc);
     }
     else {
       default_err_log() << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
@@ -438,7 +438,7 @@ namespace CASM {
     tocc.push_back(Molecule::make_atom(elem, SD_flag));
 
     if(tocc.size()) {
-      m_site_occupant->set_domain(tocc);
+      m_occupant_dof->set_domain(tocc);
     }
     else {
       default_err_log() << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
@@ -457,10 +457,10 @@ namespace CASM {
   //****************************************************
 
   void Site::print(std::ostream &stream, Eigen::IOFormat format) const {
-    //site_occupant().occ().print(stream, *this, SD_is_on);
+    //occupant_dof().occ().print(stream, *this, SD_is_on);
     Coordinate::print(stream, 0, format);
     stream << " ";
-    site_occupant().print(stream);
+    occupant_dof().print(stream);
     stream << std::flush;
 
     return;
@@ -472,10 +472,10 @@ namespace CASM {
   //****************************************************
 
   void Site::print_occ(std::ostream &stream, Eigen::IOFormat format) const {
-    //site_occupant().occ().print(stream, *this, SD_is_on);
+    //occupant_dof().occ().print(stream, *this, SD_is_on);
     Site::print(stream, format);
     stream << " :: ";
-    site_occupant().print_occ(stream);
+    occupant_dof().print_occ(stream);
     stream << std::flush;
 
     return;
@@ -496,12 +496,12 @@ namespace CASM {
     // change this to use FormatFlag
     if(COORD_MODE::IS_FRAC())
       c2f = home().inv_lat_column_mat();
-    site_occupant().occ().print(stream,
-                                cart(),
-                                c2f,
-                                spaces,
-                                delim,
-                                SD_is_on);
+    occupant_dof().occ().print(stream,
+                               cart(),
+                               c2f,
+                               spaces,
+                               delim,
+                               SD_is_on);
     return;
   }
 
@@ -516,7 +516,7 @@ namespace CASM {
 
   bool Site::_compare_type_no_ID(const Site &_other) const {
     //compare domain but not value
-    if(!(label() == _other.label() && OccupantDoFIsEquivalent<Molecule>(site_occupant())(_other.site_occupant())))
+    if(!(label() == _other.label() && OccupantDoFIsEquivalent<Molecule>(occupant_dof())(_other.occupant_dof())))
       return false;
 
     if(m_dof_map.size() != _other.m_dof_map.size())

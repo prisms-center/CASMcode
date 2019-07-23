@@ -406,8 +406,8 @@ namespace CASM {
 
       for(Index b = 0; b < basis().size(); ++b) {
         // copy_aply(symop,dofref_from) = P.permute(dofref_to);
-        auto const &dofref_to = basis()[sitemap[b].sublat()].site_occupant();
-        auto const &dofref_from = basis()[b].site_occupant();
+        auto const &dofref_to = basis()[sitemap[b].sublat()].occupant_dof();
+        auto const &dofref_from = basis()[b].occupant_dof();
         OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
         if(eq(op, dofref_to)) {
           if(dofref_from.symrep_ID().is_identity()) {
@@ -542,10 +542,10 @@ namespace CASM {
     std::vector< std::vector<Index> > converter(struc.basis().size());
 
     for(Index i = 0; i < struc.basis().size(); i++) {
-      converter[i].resize(struc.basis()[i].site_occupant().size());
+      converter[i].resize(struc.basis()[i].occupant_dof().size());
 
-      for(Index j = 0; j < struc.basis()[i].site_occupant().size(); j++) {
-        converter[i][j] = find_index(mol_list, struc.basis()[i].site_occupant()[j]);
+      for(Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
+        converter[i][j] = find_index(mol_list, struc.basis()[i].occupant_dof()[j]);
       }
     }
 
@@ -560,10 +560,10 @@ namespace CASM {
     std::vector< std::vector<Index> > converter(struc.basis().size());
 
     for(Index i = 0; i < struc.basis().size(); i++) {
-      converter[i].resize(struc.basis()[i].site_occupant().size());
+      converter[i].resize(struc.basis()[i].occupant_dof().size());
 
-      for(Index j = 0; j < struc.basis()[i].site_occupant().size(); j++) {
-        converter[i][j] = find_index(mol_name_list, struc.basis()[i].site_occupant()[j].name());
+      for(Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
+        converter[i][j] = find_index(mol_name_list, struc.basis()[i].occupant_dof()[j].name());
       }
     }
 
@@ -574,7 +574,7 @@ namespace CASM {
   /// Returns 'converter_inverse' which converts 'mol_name_list' indices to Site::site_occupant indices:
   ///  site_occupant_index = converter_inverse[basis_site][mol_name_list_index]
   ///
-  /// If mol is not allowed on basis_site, return struc.basis()[basis_site].site_occupant().size()
+  /// If mol is not allowed on basis_site, return struc.basis()[basis_site].occupant_dof().size()
   std::vector< std::vector<Index> > make_index_converter_inverse(const Structure &struc, std::vector<std::string> mol_name_list) {
 
     std::vector< std::vector<Index> > converter_inv(struc.basis().size());
@@ -583,8 +583,8 @@ namespace CASM {
       converter_inv[i].resize(mol_name_list.size());
 
       std::vector<std::string> site_occ_name_list;
-      for(Index j = 0; j < struc.basis()[i].site_occupant().size(); j++) {
-        site_occ_name_list.push_back(struc.basis()[i].site_occupant()[j].name());
+      for(Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
+        site_occ_name_list.push_back(struc.basis()[i].occupant_dof()[j].name());
       }
 
       for(Index j = 0; j < mol_name_list.size(); j++) {

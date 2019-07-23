@@ -117,6 +117,7 @@ libcasm_la_SOURCES = \
   src/casm/crystallography/Niggli.cc\
   src/casm/crystallography/PrimGrid.cc\
   src/casm/crystallography/SimpleStructure.cc\
+  src/casm/crystallography/SimpleStructureTools.cc\
   src/casm/crystallography/Site.cc\
   src/casm/crystallography/SpeciesAttribute.cc\
   src/casm/crystallography/StrucMapping.cc\

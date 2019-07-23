@@ -5,9 +5,10 @@
 
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/symmetry/SymOp.hh"
+#include "casm/casm_io/jsonParser.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/Site.hh"
+//#include "casm/crystallography/BasicStructure.hh"
+//#include "casm/crystallography/Site.hh"
 #include "casm/casm_io/Log.hh"
 
 #include "casm/container/Counter.hh"
@@ -363,16 +364,6 @@ namespace CASM {
 
     typedef SupercellIterator<UnitType> const_iterator;
 
-    /// \brief Construct a SupercellEnumerator
-    ///
-    /// \returns a SupercellEnumerator
-    ///
-    /// \param unit The thing that is tiled to form supercells. For now Lattice.
-    /// \param enum_props Data structure specifying how to enumerate supercells
-    /// \param tol Tolerance for generating the point group
-    ///
-    SupercellEnumerator(UnitType unit,
-                        const ScelEnumProps &enum_props);
 
     /// \brief Construct a SupercellEnumerator using custom point group operations
     ///
@@ -677,11 +668,6 @@ namespace CASM {
 
 
   // declare specializations for Lattice
-
-  template<>
-  SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    const ScelEnumProps &enum_props);
-
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
                                                     const std::vector<SymOp> &point_grp,

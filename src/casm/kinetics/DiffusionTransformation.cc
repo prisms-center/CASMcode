@@ -43,7 +43,7 @@ namespace CASM {
     }
 
     const Molecule &SpeciesLocation::mol() const {
-      return uccoord.sublat_site().site_occupant()[occ];
+      return uccoord.sublat_site().occupant_dof()[occ];
     }
 
     const std::string &SpeciesLocation::species() const {

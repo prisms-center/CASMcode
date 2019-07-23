@@ -23,7 +23,6 @@ namespace CASM {
 
   template<typename OccType>
   class OccupantDoF;
-  using MoleculeOccupant = OccupantDoF<Molecule>;
 
   class ContinuousDoF;
   class DoFSet;

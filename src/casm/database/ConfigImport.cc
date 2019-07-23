@@ -1,6 +1,7 @@
 #include "casm/database/ConfigImport.hh"
 
 #include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -19,6 +20,18 @@
 namespace CASM {
 
   template class DataFormatter<DB::ConfigIO::Result>;
+
+  jsonParser &to_json(MappingNode const &_map, jsonParser &_json) {
+
+    _json["relaxation_deformation"] = _map.lat_node.rstretch;
+    _json["relaxation_displacement"] = _map.displacement;
+    _json["cart_op"] = _map.lat_node.isometry;
+    _json["basis_cost"] = _map.basis_node.cost;
+    _json["lattice_cost"] = _map.lat_node.cost;
+    _json["total_cost"] = _map.cost;
+
+    return _json;
+  }
 
   namespace DB {
 
@@ -45,11 +58,11 @@ namespace CASM {
       bool primitive_only,
       std::vector<std::string> dof) :
       ConfigData<Configuration>(primclex, null_log()),
+      m_preserve_rotation(false),
       m_primitive_only(primitive_only),
       m_dof(dof) {
 
       // -- read settings --
-      bool rotate = true;
       bool strict = false;
       bool ideal;
       kwargs.get_else(ideal, "ideal", false);
@@ -88,10 +101,9 @@ namespace CASM {
         m_used["restricted"] = restricted;
       }
       // -- construct ConfigMapper --
-      int map_opt = ConfigMapper::none;
-      if(rotate) map_opt |= ConfigMapper::rotate;
-      if(strict) map_opt |= ConfigMapper::strict;
-      if(!ideal) map_opt |= ConfigMapper::robust;
+      int map_opt = StrucMapper::none;
+      if(strict) map_opt |= StrucMapper::strict;
+      if(!ideal) map_opt |= StrucMapper::robust;
 
       m_configmapper.reset(new ConfigMapper(
                              primclex,
@@ -170,16 +182,8 @@ namespace CASM {
         *result++ = res;
         return result;
       }
-      // if the result was a success, need to populate relaxed energy in
-      // map_result.relaxation_properties["best_mapping"]["relaxed_energy"]
-      if(res.pos.extension() == ".json" || res.pos.extension() == ".JSON") {
-        jsonParser json(res.pos);
-        if(json.contains("relaxed_energy")) {
-          map_result.relaxation_properties["best_mapping"]["relaxed_energy"] = json["relaxed_energy"];
-        }
-      }
       // insert in database (note that this also/only inserts primitive)
-      ConfigInsertResult insert_result = map_result.config->insert(m_primitive_only);
+      ConfigInsertResult insert_result = (map_result.maps.begin()->second).config_ptr->insert(m_primitive_only);
 
       res.is_new_config = insert_result.insert_canonical;
 
@@ -191,14 +195,16 @@ namespace CASM {
           read_calc_properties<Configuration>(primclex(), prop_path);
       }
 
-      // copy relaxation properties from best config mapping into 'mapped' props
-      auto it = map_result.relaxation_properties["best_mapping"].begin();
-      auto end = map_result.relaxation_properties["best_mapping"].end();
-      for(; it != end; ++it) {
-        res.mapped_props.mapped[it.name()] = *it;
+      to_json(map_result.maps.begin()->first, res.mapped_props.mapped);
+
+      // if the result was a success, need to populate relaxed energy in
+      // map_result.relaxation_properties["best_mapping"]["relaxed_energy"]
+      if(res.pos.extension() == ".json" || res.pos.extension() == ".JSON") {
+        jsonParser json(res.pos);
+        if(json.contains("relaxed_energy")) {
+          res.mapped_props.mapped["relaxed_energy"] = json["relaxed_energy"];
+        }
       }
-      res.mapped_props.mapped["best_assignment"] = map_result.result.permutation;
-      res.mapped_props.mapped["cart_op"] = map_result.result.lat_node.isometry;
 
       // at this point, the mapped structure result is complete
       *result++ = res;
@@ -234,7 +240,7 @@ namespace CASM {
         BasicStructure<Site> struc;
         fs::ifstream struc_stream(p);
         struc.read(struc_stream);
-        sstruc = SimpleStructure(struc);
+        sstruc = to_simple_structure(struc);
       }
       return sstruc;
     }

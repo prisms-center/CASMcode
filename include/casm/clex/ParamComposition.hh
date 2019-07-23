@@ -87,33 +87,6 @@ namespace CASM {
 
     };
 
-    /*
-        // Add in the primclex pointer
-        ParamComposition(const std::string &json_filename, const BasicStructure<Site> &_prim) {
-          m_prim_struc = &_prim;
-          m_comp.resize(2);
-          m_comp[0].resize(0, 0);
-          m_comp[1].resize(0, 0);
-          m_origin.resize(0);
-          std::ifstream comp_json_file;
-          comp_json_file.open(json_filename.c_str());
-          if(!comp_json_file) {
-            std::cout << "ERROR\n";
-            return;
-          }
-          read(comp_json_file);
-          return;
-        };
-
-        ParamComposition(ptree comp_ptree, const BasicStructure<Site> &_prim) {
-          m_prim_struc = &_prim;
-          m_comp.resize(2);
-          m_comp[0].resize(0, 0);
-          m_comp[1].resize(0, 0);
-          m_origin.resize(0);
-          read(comp_ptree);
-        }
-    */
     //*************************************************************
     //GENERATE Routines
     void generate_prim_end_members();
@@ -134,7 +107,7 @@ namespace CASM {
 
     // Lists components (species) of crystal whose compositions are fixed (i.e., are not involved in alloying)
     // each pair gives (species_name, #in_prim)
-    std::vector<std::pair<std::string, Index> > fixed_components();
+    std::vector<std::pair<std::string, Index> > fixed_species();
     //*************************************************************
     //PRINT Routines
 

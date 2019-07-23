@@ -31,7 +31,7 @@ namespace CASM {
     // for now, include sublattices with >= 2 components
     std::set<int> sublat_indices;
     for(int b = 0; b < prim.basis().size(); ++b) {
-      if(prim.basis()[b].site_occupant().size() >= 2 || prim.basis()[b].dof_size() > 0) {
+      if(prim.basis()[b].occupant_dof().size() >= 2 || prim.basis()[b].dof_size() > 0) {
         sublat_indices.insert(b);
       }
     }

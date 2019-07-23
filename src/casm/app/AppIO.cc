@@ -135,12 +135,12 @@ namespace CASM {
     else
       to_json_array(site.cart(), json["coordinate"]);
 
-    // MoleculeOccupant site_occupant;
+    // Occupant_DoF<Molecule> occupant_dof;
     Eigen::Matrix3d c2f = Eigen::Matrix3d::Identity();
     // change this to use FormatFlag
     if(coordtype == FRAC)
       c2f = site.home().inv_lat_column_mat();
-    CASM::to_json(site.site_occupant(), json["site_occupant"], c2f);
+    CASM::to_json(site.occupant_dof(), json["occupant_dof"], c2f);
 
     if(site.dofs().size()) {
       json["dofs"] = site.dofs();
@@ -369,10 +369,10 @@ namespace CASM {
         bjson[i]["dofs"] = prim.basis()[i].dofs();
       }
 
-      bjson[i]["occupants"] = jsonParser::array(prim.basis()[i].site_occupant().size());
+      bjson[i]["occupants"] = jsonParser::array(prim.basis()[i].occupant_dof().size());
 
-      for(int j = 0; j < prim.basis()[i].site_occupant().size(); j++) {
-        bjson[i]["occupants"][j] = prim.basis()[i].site_occupant()[j].name();
+      for(int j = 0; j < prim.basis()[i].occupant_dof().size(); j++) {
+        bjson[i]["occupants"][j] = prim.basis()[i].occupant_dof()[j].name();
       }
 
     }
@@ -759,7 +759,7 @@ namespace CASM {
       Eigen::IOFormat format(prec, width);
       for(const auto &coord : clust) {
         out << out.indent_str() << coord << " ";
-        coord.site().site_occupant().print(out);
+        coord.site().occupant_dof().print(out);
         out << std::flush;
         if(this->opt.delim) out << this->opt.delim;
         out << std::flush;
@@ -808,7 +808,7 @@ namespace CASM {
               << "  ";
           if(printer_mode.check() == INTEGRAL) {
             out << indent << indent << asym_unit[no][ne][0] << ' ';
-            asym_unit[no][ne][0].site().site_occupant().print(out);
+            asym_unit[no][ne][0].site().occupant_dof().print(out);
             out << std::flush;
           }
           else
@@ -823,16 +823,16 @@ namespace CASM {
               BasisSet tbasis(dofset.second[b]);
 
               int s;
-              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].site_occupant().ID()));
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID()));
               remote[0] = s;
               tbasis.register_remotes(remote);
 
-              for(s = 0; s < prim.basis()[b].site_occupant().size(); s++) {
+              for(s = 0; s < prim.basis()[b].occupant_dof().size(); s++) {
                 if(s == 0)
                   out << "    ";
-                out << "    \\phi_" << b << '_' << f << '[' << prim.basis()[b].site_occupant()[s].name() << "] = "
+                out << "    \\phi_" << b << '_' << f << '[' << prim.basis()[b].occupant_dof()[s].name() << "] = "
                     << tbasis[f]->remote_eval();
-                if(s + 1 == prim.basis()[b].site_occupant().size())
+                if(s + 1 == prim.basis()[b].occupant_dof().size())
                   out << "\n";
                 else
                   out << ",   ";
@@ -910,12 +910,12 @@ namespace CASM {
               fname << "\\phi_" << b << '_' << f;
               BasisSet tbasis(dofset.second[b]);
               int s;
-              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].site_occupant().ID()));
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID()));
               remote[0] = s;
               tbasis.register_remotes(remote);
 
-              for(s = 0; s < prim.basis()[b].site_occupant().size(); s++) {
-                sitef[b][dofset.first]["basis"][fname.str()][prim.basis()[b].site_occupant()[s].name()] = tbasis[f]->remote_eval();
+              for(s = 0; s < prim.basis()[b].occupant_dof().size(); s++) {
+                sitef[b][dofset.first]["basis"][fname.str()][prim.basis()[b].occupant_dof()[s].name()] = tbasis[f]->remote_eval();
               }
             }
             else {

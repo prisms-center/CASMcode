@@ -17,7 +17,7 @@ namespace CASM {
 
   template<typename OccType>
   class OccupantDoF;
-  using MoleculeOccupant = OccupantDoF<Molecule>;
+
 
   class DoFSet;
 
@@ -36,7 +36,7 @@ namespace CASM {
 
     ~Site();
 
-    const MoleculeOccupant &site_occupant() const;
+    const OccupantDoF<Molecule> &occupant_dof() const;
 
     DoFSet const &dof(std::string const &_dof_type) const;
 
@@ -123,7 +123,7 @@ namespace CASM {
     // Configuration state is fundamentally different from most other degrees of freedom,
     // so we'll treat it separately. 'occupant' is the discrete degree of freedom associated
     // with the molecule that occupies the site
-    notstd::cloneable_ptr<MoleculeOccupant> m_site_occupant;
+    notstd::cloneable_ptr<OccupantDoF<Molecule>> m_occupant_dof;
 
     /// additional continuous degrees of freedom
     std::map <std::string, DoFSet > m_dof_map;

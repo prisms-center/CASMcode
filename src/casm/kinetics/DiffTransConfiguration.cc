@@ -4,6 +4,7 @@
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clex/Clexulator.hh"
@@ -437,12 +438,12 @@ namespace CASM {
     std::string pos_string(DiffTransConfiguration const &dtc) {
       std::stringstream ss;
       ss << "Initial POS:" << std::endl;
-      VaspIO::PrintPOSCAR from(dtc.sorted().from_config());
+      VaspIO::PrintPOSCAR from(to_simple_structure(dtc.sorted().from_config()), dtc.sorted().from_config().name());
       from.sort();
       from.print(ss);
       ss << std::endl;
       ss << "Final POS:" << std::endl;
-      VaspIO::PrintPOSCAR to(dtc.sorted().to_config());
+      VaspIO::PrintPOSCAR to(to_simple_structure(dtc.sorted().to_config()), dtc.sorted().to_config().name());
       to.sort();
       to.print(ss);
       return ss.str();
