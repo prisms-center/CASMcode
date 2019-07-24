@@ -12,7 +12,7 @@ namespace CASM {
 
   namespace StrucMapping {
     double strain_cost(double relaxed_lat_vol, const MappingNode &mapped_result, const Index Nsites) {
-      return LatticeMap::calc_strain_cost(mapped_result.lat_node.rstretch, relaxed_lat_vol / double(max(Nsites, Index(1))));
+      return StrainCostCalculator::iso_strain_cost(mapped_result.lat_node.rstretch, relaxed_lat_vol / double(max(Nsites, Index(1))));
     }
 
     //*******************************************************************************************
@@ -30,7 +30,8 @@ namespace CASM {
                            Lattice const &parent_scel,
                            Lattice const &child_prim,
                            Lattice const &child_scel,
-                           Index child_N_atom) :
+                           Index child_N_atom,
+                           double _cost /*=StrucMapping::big_inf()*/) :
     parent(parent_prim, parent_scel),
     child(Lattice((parent_scel.lat_column_mat() * child_scel.inv_lat_column_mat())
                   * child_prim.lat_column_mat()),
@@ -41,7 +42,9 @@ namespace CASM {
     rstretch = StrainConverter::right_stretch_tensor(F);
     isometry = F * rstretch.inverse();
 
-    cost = LatticeMap::calc_strain_cost(rstretch, child_prim.vol() / double(max(child_N_atom, Index(1))));
+    if(StrucMapping::is_inf(_cost))
+      _cost = StrainCostCalculator::iso_strain_cost(rstretch, child_prim.vol() / double(max(child_N_atom, Index(1))));
+    cost = _cost;
   }
 
   //*******************************************************************************************
@@ -54,7 +57,7 @@ namespace CASM {
     isometry(_lat_map.matrixF() * rstretch.inverse()),
     parent(parent_prim, Lattice(_lat_map.parent_matrix(), parent_prim.tol())),
     child(Lattice(_lat_map.matrixF().inverse() * child_prim.lat_column_mat()), Lattice(_lat_map.parent_matrix(), parent_prim.tol())),
-    cost(LatticeMap::calc_strain_cost(rstretch, child_prim.vol() / double(max(child_N_atom, Index(1))))) {
+    cost(_lat_map.strain_cost()) {
 
   }
 
@@ -78,7 +81,7 @@ namespace CASM {
   //*******************************************************************************************
 
   StrucMapper::StrucMapper(StrucMapCalculatorInterface const &calculator,
-                           double _lattice_weight /*= 0.5*/,
+                           double _strain_weight /*= 0.5*/,
                            Index _Nbest/*= 1*/,
                            double _max_volume_change /*= 0.5*/,
                            int _options /*= robust*/, // this should actually be a bitwise-OR of StrucMapper::Options
@@ -86,8 +89,8 @@ namespace CASM {
                            double _min_va_frac /*= 0.*/,
                            double _max_va_frac /*= 1.*/) :
     m_calc_ptr(calculator.clone()),
-    //squeeze lattice_weight into (0,1] if necessary
-    m_lattice_weight(max(min(_lattice_weight, 1.0), 1e-9)),
+    //squeeze strain_weight into (0,1] if necessary
+    m_strain_weight(max(min(_strain_weight, 1.0), 1e-9)),
     m_Nbest(_Nbest),
     m_max_volume_change(_max_volume_change),
     m_options(_options),
@@ -146,15 +149,14 @@ namespace CASM {
     // to derot_c_lat by rigid rotation only. Following line finds R and T such that derot_c_lat = R*c_lat*T
     auto res = is_supercell(derot_c_lat, c_lat, _calculator().point_group().begin(), _calculator().point_group().end(), m_tol);
 
-    double lw = m_lattice_weight;
-    double bw = 1.0 - lw;
     std::set<MappingNode> mapping_seed({MappingNode(LatticeNode(Lattice(parent().lat_column_mat, m_tol),
                                                                 derot_c_lat,
                                                                 c_lat,
                                                                 Lattice(child_struc.lat_column_mat * res.second.cast<double>(), m_tol),
-                                                                child_struc.n_atom()),
-                                                    lw,
-                                                    bw)});
+                                                                child_struc.n_atom(),
+                                                                0. /*strain_cost is zero in ideal case*/),
+                                                    m_strain_weight)});
+
 
     Index k = k_best_maps_better_than(child_struc, mapping_seed, m_tol, false);
     if(k == 0) {
@@ -216,10 +218,6 @@ namespace CASM {
   std::set<MappingNode> StrucMapper::seed_from_vol_range(SimpleStructure const &child_struc,
                                                          Index min_vol,
                                                          Index max_vol) const {
-    //squeeze lattice_weight into [0,1] if necessary
-    double lw = m_lattice_weight;
-    double bw = 1.0 - lw;
-
     int Nkeep = 10 + 5 * m_Nbest;
     if(!valid_index(min_vol) || !valid_index(min_vol) || max_vol < min_vol) {
       auto vol_range = _vol_range(child_struc);
@@ -232,16 +230,10 @@ namespace CASM {
       std::vector<Lattice> lat_vec;
       lat_vec = _lattices_of_vol(i_vol);
 
-      std::set<MappingNode> t_seed = StrucMapping_impl::k_best_nodes_better_than(Lattice(parent().lat_column_mat),
-                                                                                 lat_vec,
-                                                                                 Lattice(child_struc.lat_column_mat),
+      std::set<MappingNode> t_seed = seed_k_best_from_super_lats(child_struc,
+                                                                 lat_vec,
       {Lattice(child_struc.lat_column_mat)},
-      child_struc.n_atom(),
-      _calculator().point_group(),
-      Nkeep,
-      lw,
-      bw,
-      m_tol);
+      Nkeep);
 
       mapping_seed.insert(std::make_move_iterator(t_seed.begin()), std::make_move_iterator(t_seed.end()));
 
@@ -267,20 +259,10 @@ namespace CASM {
                                                                        double best_cost,
                                                                        bool keep_invalid) const {
 
-    double lw = m_lattice_weight;
-    double bw = 1.0 - lw;
-
-    std::set<MappingNode> mapping_seed = StrucMapping_impl::k_best_nodes_better_than(Lattice(parent().lat_column_mat),
+    std::set<MappingNode> mapping_seed = seed_k_best_from_super_lats(child_struc,
     {imposed_lat},
-    Lattice(child_struc.lat_column_mat),
     {Lattice(child_struc.lat_column_mat)},
-    child_struc.n_atom(),
-    _calculator().point_group(),
-    m_Nbest,
-    lw,
-    bw,
-    m_tol);
-
+    m_Nbest);
 
     k_best_maps_better_than(child_struc, mapping_seed, best_cost, keep_invalid);
     return mapping_seed;
@@ -293,11 +275,8 @@ namespace CASM {
                                                                             double best_cost,
                                                                             bool keep_invalid) const {
 
-    double lw = m_lattice_weight;
-    double bw = 1.0 - lw;
-
     std::set<MappingNode> mapping_seed;
-    mapping_seed.emplace(imposed_node, lw, bw);
+    mapping_seed.emplace(imposed_node, m_strain_weight);
     k_best_maps_better_than(child_struc, mapping_seed, best_cost, keep_invalid);
     return mapping_seed;
   }
@@ -400,13 +379,20 @@ namespace CASM {
     return result;
   }
 
+  void SimpleStrucMapCalculator::finalize(MappingNode &_node,
+                                          SimpleStructure const &child_struc) const {
+
+    populate_displacement(_node, child_struc);
+    _node.cost = _node.basis_weight * StrucMapping::basis_cost(_node, info(child_struc).size()) + _node.strain_weight * _node.lat_node.cost;
+    return;
+  }
 
   //*******************************************************************************************
   /*
    * Given a structure and a set of mapping nodes, iterate over many supercells of the prim and for ideal supercells that
    * nearly match the structure's lattice, try to map the structure's basis onto that supercell
    *
-   * This process iteratively improves the mapping cost function -> total_cost = w*lattice_cost + (1-w)*basis_cost
+   * This process iteratively improves the mapping cost function -> total_cost = w*strain_cost + (1-w)*basis_cost
    * where 'w' is the lattice-cost weight parameter. It's unlikely that there is an objective way to choose 'w'
    * without information regarding the physics of the system (e.g., where is the extremum of the energy barrier
    * when going from a particular ideal configuration to the specified deformed structure)
@@ -628,47 +614,39 @@ namespace CASM {
 
   //****************************************************************************************************************
 
-  namespace StrucMapping_impl {
-    // Find all mappings better than min_cost and at most the k best mappings in range [min_cost,max_cost]
-    std::set<MappingNode> k_best_nodes_better_than(Lattice const &_parent_prim,
-                                                   std::vector<Lattice> const &_parent_scels,
-                                                   Lattice const &_child_prim,
-                                                   std::vector<Lattice> const &_child_scels,
-                                                   Index _num_atoms,
-                                                   std::vector<SymOp> const &_parent_pg,
-                                                   Index k,
-                                                   double lat_weight,
-                                                   double basis_weight,
-                                                   double _tol,
-                                                   double min_cost /*=1e-6*/,
-                                                   double max_cost /*=StrucMapping::small_inf()*/) {
-      std::set<MappingNode> result;
+  // Find all Lattice mappings better than min_cost and at most the k best mappings in range [min_cost,max_cost]
+  std::set<MappingNode> StrucMapper::seed_k_best_from_super_lats(SimpleStructure const &child_struc,
+                                                                 std::vector<Lattice> const &_parent_scels,
+                                                                 std::vector<Lattice> const &_child_scels,
+                                                                 Index k,
+                                                                 double min_cost /*=1e-6*/,
+                                                                 double max_cost /*=StrucMapping::small_inf()*/) const {
+    Lattice p_lat(parent().lat_column_mat);
+    Lattice c_lat(child_struc.lat_column_mat);
+    std::set<MappingNode> result;
 
-      for(Lattice const &c_lat : _child_scels) {
-        for(Lattice const &p_lat : _parent_scels) {
-          LatticeMap strainmap(p_lat, c_lat, _num_atoms, _tol, 1, _parent_pg, max_cost);
-          double strain_cost = strainmap.strain_cost();
+    for(Lattice const &c_lat : _child_scels) {
+      for(Lattice const &p_lat : _parent_scels) {
+        LatticeMap strain_map(p_lat, c_lat, child_struc.n_atom(), tol(), 1, calculator().point_group(), m_strain_gram_mat, max_cost);
 
-          // strainmap is initialized to first mapping better than 'max_cost', if such a mapping exists
-          // We will continue checking possibilities until all such mappings are exhausted
-          while(strain_cost < max_cost) {
+        // strain_map is initialized to first mapping better than 'max_cost', if such a mapping exists
+        // We will continue checking possibilities until all such mappings are exhausted
+        while(strain_map.strain_cost() < max_cost) {
 
-            // Make k bigger if we find really exception mappings
-            if(strain_cost < min_cost)
-              ++k;
+          // Make k bigger if we find really exception mappings
+          if(strain_map.strain_cost() < min_cost)
+            ++k;
 
-            result.emplace(LatticeNode(strainmap, _parent_prim, _child_prim, _num_atoms), lat_weight, basis_weight);
-            if(result.size() > k) {
-              result.erase(std::next(result.rbegin()).base());
-              max_cost = (result.rbegin())->cost;
-            }
-            strain_cost = strainmap.next_mapping_better_than(max_cost).strain_cost();
+          result.emplace(LatticeNode(strain_map, p_lat, c_lat, child_struc.n_atom()), strain_weight());
+          if(result.size() > k) {
+            result.erase(std::next(result.rbegin()).base());
+            max_cost = (result.rbegin())->cost;
           }
+          strain_map.next_mapping_better_than(max_cost);
         }
       }
-      return result;
     }
-
-
+    return result;
   }
+
 }

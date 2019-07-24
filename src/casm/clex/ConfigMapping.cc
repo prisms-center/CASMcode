@@ -75,13 +75,13 @@ namespace CASM {
   //*******************************************************************************************
 
   ConfigMapper::ConfigMapper(PrimClex const &_pclex,
-                             double _lattice_weight,
+                             double _strain_weight,
                              double _max_volume_change/*=0.5*/,
                              int options/*=robust*/,
                              double _tol/*=-1.*/) :
     m_pclex(&_pclex),
     m_struc_mapper(PrimStrucMapCalculator(_pclex.prim()),
-                   _lattice_weight,
+                   _strain_weight,
                    1,//_Nbest,
                    //std::vector<SymOp>({SymOp()}),
                    _max_volume_change,
@@ -104,7 +104,7 @@ namespace CASM {
       StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(to_simple_structure(*hint_ptr, "", _hint_dofs),
                                                                    make_point_group(hint_ptr->point_group()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
-                          struc_mapper().lattice_weight(),
+                          struc_mapper().strain_weight(),
                           1,
                           0.,
                           struc_mapper().options(),

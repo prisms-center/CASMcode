@@ -28,14 +28,14 @@ namespace CASM {
 
     StrucScore::StrucScore() :
       VectorXdAttribute<Configuration>("struc_score", "Evaluates the mapping of a configuration onto an arbitrary primitive structure, specified by its path. Allowed options are [ 'basis_score' (mean-square site displacement) | 'lattice_score' (lattice deformation metric having units Angstr.^2) | 'total_score' (w*lattice_score+(1.0-w)*basis_score) ].  The struc_score weighting parameter 'w' can be provided as an optional decimal parameter from 0.0 to 1.0 (default 0.5). Ex: struc_score(path/to/PRIM, basis_score, 0.4)"),
-      m_lattice_weight(0.5) {
+      m_strain_weight(0.5) {
 
     };
 
     StrucScore::StrucScore(const StrucScore &RHS) :
       VectorXdAttribute<Configuration>(RHS),
       m_altprim((RHS.m_altprim == nullptr) ? nullptr : new BasicStructure<Site>(*(RHS.m_altprim))),
-      m_lattice_weight(RHS.m_lattice_weight),
+      m_strain_weight(RHS.m_strain_weight),
       m_prim_path(RHS.m_prim_path),
       m_prop_names(RHS.m_prop_names) {
 
@@ -46,7 +46,7 @@ namespace CASM {
 
     bool StrucScore::parse_args(const std::string &args) {
       std::vector<std::string> splt_vec;
-      double _lattice_weight = 0.5;
+      double _strain_weight = 0.5;
       bool already_initialized = !m_prim_path.empty();
       int pushed_args = 0;
       boost::split(splt_vec, args, boost::is_any_of(", "), boost::token_compress_on);
@@ -68,13 +68,13 @@ namespace CASM {
       for(Index i = 1; i < splt_vec.size(); ++i) {
         if(splt_vec[i] != "basis_score" && splt_vec[i] != "lattice_score" && splt_vec[i] != "total_score") {
           try {
-            _lattice_weight = std::stod(splt_vec[i]);
+            _strain_weight = std::stod(splt_vec[i]);
           }
           catch(...) {
             throw std::runtime_error("Attempted to initialize format tag " + name()
                                      + " with invalid argument '" + splt_vec[i] + "'. Valid arguments are [ basis_score | lattice_score | total_score ]\n");
           }
-          if(already_initialized && !almost_equal(_lattice_weight, m_lattice_weight)) {
+          if(already_initialized && !almost_equal(_strain_weight, m_strain_weight)) {
             for(; pushed_args > 0; pushed_args--)
               m_prop_names.pop_back();
             return false;
@@ -97,7 +97,7 @@ namespace CASM {
                                                          pclex.settings().hamiltonian_modules(),
                                                          _tmplt.crystallography_tol())));
 
-      m_strucmapper = notstd::make_unique<StrucMapper>(PrimStrucMapCalculator(*m_altprim), m_lattice_weight);
+      m_strucmapper = notstd::make_unique<StrucMapper>(PrimStrucMapCalculator(*m_altprim), m_strain_weight);
       return true;
     }
 
@@ -114,7 +114,7 @@ namespace CASM {
       for(Index i = 0; i < m_prop_names.size(); i++) {
         std::stringstream t_ss;
         t_ss << "    " << name() << '(' << m_prim_path.string() << ','
-             << m_prop_names[i] << ',' << m_strucmapper->lattice_weight() << ')';
+             << m_prop_names[i] << ',' << m_strucmapper->strain_weight() << ')';
         col.push_back(t_ss.str());
       }
       return col;
@@ -128,7 +128,7 @@ namespace CASM {
       t_ss << name() << '(' << m_prim_path.string();
       for(Index i = 0; i < m_prop_names.size(); i++)
         t_ss   << ',' << m_prop_names[i];
-      t_ss << ',' << m_strucmapper->lattice_weight() << ')';
+      t_ss << ',' << m_strucmapper->strain_weight() << ')';
       return t_ss.str();
     }
 
@@ -169,7 +169,7 @@ namespace CASM {
 
           double bc = StrucMapping::basis_cost(mapping, relaxed_struc.n_mol());
 
-          double w = m_strucmapper->lattice_weight();
+          double w = m_strucmapper->strain_weight();
           result_vec.push_back(w * sc + (1.0 - w)*bc);
         }
       }

@@ -23,6 +23,42 @@ namespace CASM {
   class SimpleStrucMapCalculator;
   class StrucMapper;
 
+  namespace StrucMapping {
+
+    // Denotes (name, number composition) of any species whose number-composition is fixed for the parent primitive cell
+    using FixedSpecies = std::map<std::string, Index>;
+
+    // List of species allowed at each site of primitive
+    using AllowedSpecies = std::vector<std::unordered_set<std::string>>;
+
+    inline
+    double big_inf() {
+      return 10E20;
+    }
+
+    inline
+    double small_inf() {
+      return 10E10;
+    }
+
+    inline
+    bool is_inf(double _val) {
+      return _val > small_inf() / 2.;
+    }
+
+
+
+    /// \brief Calculate the strain cost function of a MappingNode using LatticeMap::calc_strain_cost()
+    /// \param Nsites number of atoms in the relaxed structure, for proper normalization
+    double strain_cost(double relaxed_lat_vol, const MappingNode &mapped_config, Index Nsites);
+
+    /// \brief Calculate the basis cost function of a MappingNode as the mean-square displacement of its atoms
+    /// \param Nsites number of atoms in the relaxed structure, for proper normalization
+    double basis_cost(const MappingNode &mapped_config, Index Nsites);
+
+
+  }
+
   /// \brief Class describing the lattice-mapping portion of a particular mapping
   /// A general map for child_struc onto parent_struc may require forming a supercell of
   /// parent_struc (most commonly) and/or of child_struc.
@@ -79,7 +115,8 @@ namespace CASM {
                 Lattice const &parent_scel,
                 Lattice const &child_prim,
                 Lattice const &child_scel,
-                Index child_N_atom);
+                Index child_N_atom,
+                double _cost = StrucMapping::big_inf());
 
     /// \brief Construct with LatticeMap, which relates a supercell of parent_prim to a supercell of child_prim
     /// @param lat_map specifies a supercell that is a supercell of parent_prim, but also an idealized supercell of child_prim
@@ -181,19 +218,22 @@ namespace CASM {
       is_partitioned(false) {
     }
 
-    MappingNode(LatticeNode _lat_node, double _lat_weight, double _basis_weight) :
+    MappingNode(LatticeNode _lat_node, double _strain_weight) :
       lat_node(std::move(_lat_node)),
-      lat_weight(_lat_weight),
-      basis_weight(_basis_weight),
       is_viable(true),
       is_valid(false),
-      is_partitioned(false),
-      cost(lat_weight * lat_node.cost) {
-
+      is_partitioned(false) {
+      set_strain_weight(_strain_weight);
+      cost = strain_weight * lat_node.cost;
     }
 
     double tol() const {
       return basis_node.tol();
+    }
+
+    void set_strain_weight(double _lw) {
+      strain_weight = max(min(_lw, 1.0), 1e-9);
+      basis_weight = 1. - strain_weight;
     }
 
     std::pair<Index, Index> vol_pair() const {
@@ -219,7 +259,7 @@ namespace CASM {
 
     LatticeNode lat_node;
     HungarianNode basis_node;
-    double lat_weight;
+    double strain_weight;
     double basis_weight;
 
     /// \brief true if assignment problem is not yet known to be insoluable -- default true
@@ -252,42 +292,6 @@ namespace CASM {
       return false;
     }
   };
-
-  namespace StrucMapping {
-
-    // Denotes (name, number composition) of any species whose number-composition is fixed for the parent primitive cell
-    using FixedSpecies = std::map<std::string, Index>;
-
-    // List of species allowed at each site of primitive
-    using AllowedSpecies = std::vector<std::unordered_set<std::string>>;
-
-    inline
-    double big_inf() {
-      return 10E20;
-    }
-
-    inline
-    double small_inf() {
-      return 10E10;
-    }
-
-    inline
-    bool is_inf(double _val) {
-      return _val > small_inf() / 2.;
-    }
-
-
-
-    /// \brief Calculate the strain cost function of a MappingNode using LatticeMap::calc_strain_cost()
-    /// \param Nsites number of atoms in the relaxed structure, for proper normalization
-    double strain_cost(double relaxed_lat_vol, const MappingNode &mapped_config, Index Nsites);
-
-    /// \brief Calculate the basis cost function of a MappingNode as the mean-square displacement of its atoms
-    /// \param Nsites number of atoms in the relaxed structure, for proper normalization
-    double basis_cost(const MappingNode &mapped_config, Index Nsites);
-
-
-  }
 
   class StrucMapCalculatorInterface {
   public:
@@ -440,8 +444,9 @@ namespace CASM {
 
     std::vector<Eigen::Vector3d> translations(SimpleStructure const &child_struc,
                                               LatticeNode const &lat_node) const override;
+
     void finalize(MappingNode &_node,
-                  SimpleStructure const &child_struc) const override ;//{TODO();};
+                  SimpleStructure const &child_struc) const override;
 
 
     bool populate_cost_mat(MappingNode &_node,
@@ -486,13 +491,15 @@ namespace CASM {
 
     enum Options {none = 0,
                   strict = (1u << 0),
-                  robust = (1u << 1)
+                  robust = (1u << 1),
+                  sym_strain = (1u << 2),
+                  sym_basis = (1u << 3),
                  };
 
     ///\brief Construct and initialize a StrucMapper
     ///\param _pclex the PrimClex that describes the crystal template
     ///
-    ///\param _lattice_weight
+    ///\param _strain_weight
     ///\parblock
     ///          free parameter 'w' in the cost function: total_cost = w*lattice_deformation+(1-w)*basis_deformation
     ///          can vary between 0 (completely basis-focused) and 1 (completely lattice-focused)
@@ -517,7 +524,7 @@ namespace CASM {
     ///
     ///\param _tol tolerance for mapping comparisons
     StrucMapper(StrucMapCalculatorInterface const &_calculator,
-                double _lattice_weight = 0.5,
+                double _strain_weight = 0.5,
                 Index _Nbest = 1,
                 double _max_volume_change = 0.5,
                 int _options = robust, // this should actually be a bitwise-OR of StrucMapper::Options
@@ -529,16 +536,16 @@ namespace CASM {
       return m_tol;
     }
 
-    double lattice_weight() const {
-      return m_lattice_weight;
+    double strain_weight() const {
+      return m_strain_weight;
     }
 
     double basis_weight() const {
-      return 1. - m_lattice_weight;
+      return 1. - m_strain_weight;
     }
 
-    void set_lattice_weight(double _lw) {
-      m_lattice_weight = max(min(_lw, 1.0), 1e-9);
+    void set_strain_weight(double _lw) {
+      m_strain_weight = max(min(_lw, 1.0), 1e-9);
     }
 
     double min_va_frac() const {
@@ -676,7 +683,7 @@ namespace CASM {
         _calculator().finalize(node, child_struc);
 
         // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
-        //node.cost = lattice_weight() * node.lat_node.cost + basis_weight() * (StrucMapping::basis_cost(node, c_info.size() * node.lat_node.child.size()) + m_tol * node.basis_node.translation.norm() / 10.0);
+        //node.cost = strain_weight() * node.lat_node.cost + basis_weight() * (StrucMapping::basis_cost(node, c_info.size() * node.lat_node.child.size()) + m_tol * node.basis_node.translation.norm() / 10.0);
         if(node.cost < max_cost) {
           *it = node;
         }
@@ -689,6 +696,12 @@ namespace CASM {
       return *m_calc_ptr;
     }
 
+    std::set<MappingNode> seed_k_best_from_super_lats(SimpleStructure const &child_struc,
+                                                      std::vector<Lattice> const &_parent_scels,
+                                                      std::vector<Lattice> const &_child_scels,
+                                                      Index k,
+                                                      double min_cost = 1e-6,
+                                                      double max_cost = StrucMapping::small_inf()) const;
   private:
     //Implement filter as std::function<bool(Lattice const&)> or as polymorphic type or as query (i.e., DataFormatter)
     bool _filter_lat(Lattice const &_lat)const {
@@ -704,7 +717,9 @@ namespace CASM {
 
     notstd::cloneable_ptr<StrucMapCalculatorInterface> m_calc_ptr;
 
-    double m_lattice_weight;
+    Eigen::MatrixXd m_strain_gram_mat;
+
+    double m_strain_weight;
     Index m_Nbest;
     double m_max_volume_change;
     int m_options;
@@ -730,7 +745,7 @@ namespace CASM {
     Index j, jj, currj, tj;
     Index n = _node.basis_node.assignment.size();
     MappingNode t1(_node),
-                t2(_node.lat_node, _node.lat_weight, _node.basis_weight);
+                t2(_node.lat_node, _node.strain_weight);
 
     MappingNode *p1 = &t1;
     MappingNode *p2 = &t2;
@@ -785,18 +800,18 @@ namespace CASM {
 
   namespace StrucMapping_impl {
 
-    std::set<MappingNode> k_best_nodes_better_than(Lattice const &_parent_prim,
-                                                   std::vector<Lattice> const &_parent_scels,
-                                                   Lattice const &_child_prim,
-                                                   std::vector<Lattice> const &_child_scels,
-                                                   Index _num_atoms,
-                                                   std::vector<SymOp> const &_parent_pg,
-                                                   Index k,
-                                                   double lattice_weight,
-                                                   double basis_weight,
-                                                   double _tol,
-                                                   double min_cost = 1e-6,
-                                                   double max_cost = StrucMapping::small_inf());
+    std::set<MappingNode> k_best_lat_maps_better_than(Lattice const &_parent_prim,
+                                                      std::vector<Lattice> const &_parent_scels,
+                                                      Lattice const &_child_prim,
+                                                      std::vector<Lattice> const &_child_scels,
+                                                      Index _num_atoms,
+                                                      std::vector<SymOp> const &_parent_pg,
+                                                      Index k,
+                                                      double strain_weight,
+                                                      double basis_weight,
+                                                      double _tol,
+                                                      double min_cost = 1e-6,
+                                                      double max_cost = StrucMapping::small_inf());
 
   }
 

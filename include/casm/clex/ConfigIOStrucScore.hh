@@ -49,7 +49,7 @@ namespace CASM {
     protected:
       mutable std::unique_ptr<BasicStructure<Site> > m_altprim;
       mutable std::unique_ptr<StrucMapper> m_strucmapper;
-      double m_lattice_weight;
+      double m_strain_weight;
       fs::path m_prim_path;
       std::vector<std::string> m_prop_names;
 

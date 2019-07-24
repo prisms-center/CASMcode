@@ -109,7 +109,7 @@ namespace CASM {
     ///\brief Construct and initialize a ConfigMapper
     ///\param _pclex the PrimClex that describes the crystal template
     ///
-    ///\param _lattice_weight
+    ///\param _strain_weight
     ///\parblock
     ///          free parameter 'w' in the cost function: total_cost = w*lattice_deformation+(1-w)*basis_deformation
     ///          can vary between 0 (completely basis-focused) and 1 (completely lattice-focused)
@@ -134,7 +134,7 @@ namespace CASM {
     ///
     ///\param _tol tolerance for mapping comparisons (default is _pclex.crystallography_tol())
     ConfigMapper(PrimClex const &_pclex,
-                 double _lattice_weight,
+                 double _strain_weight,
                  double _max_volume_change = 0.5,
                  int _options = StrucMapper::robust, // this should actually be a bitwise-OR of StrucMapper::Options
                  double _tol = -1.);
