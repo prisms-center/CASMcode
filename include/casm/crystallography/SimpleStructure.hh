@@ -31,6 +31,12 @@ namespace CASM {
 
       void sort_by_name();
 
+      void resize(Index N) {
+        names.resize(N, "Va");
+        coords.setZero(3, N);
+        SD.setZero(3, N);
+      }
+
       Index size() const {
         return names.size();
       }

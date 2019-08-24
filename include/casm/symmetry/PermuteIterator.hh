@@ -65,10 +65,10 @@ namespace CASM {
 
     PermuteIterator &operator=(PermuteIterator iter);
 
-    /// Returns the combination of factor_group permutation and translation permutation
+    /// Returns a reference to this -- allows PermuteIterator to be treated as an iterator to PermuteIterator object
     const PermuteIterator &operator*() const;
 
-    /// Returns the combination of factor_group permutation and translation permutation
+    /// Returns a pointer to this -- allows PermuteIterator to be treated as an iterator to PermuteIterator object
     const PermuteIterator *operator->() const;
 
     /// Returns the combination of factor_group permutation and translation permutation
@@ -146,6 +146,18 @@ namespace CASM {
 
   /// \brief Output PermuteIterator as (fg_index, i, j, k)
   std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op);
+
+  /// Iterator to next beginning of next factor group operation
+  /// skipping all of the intervening operations that differ only by a translation
+  template<typename IterType>
+  IterType begin_next_fg_op(IterType it, IterType end) {
+    Index tfg = it->factor_group_index();
+    for(++it; it != end; ++it) {
+      if(it->factor_group_index() != tfg)
+        break;
+    }
+    return it;
+  }
 
   /// \brief Returns a SymGroup generated from a container of PermuteIterator
   ///

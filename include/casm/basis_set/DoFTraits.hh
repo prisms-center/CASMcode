@@ -38,13 +38,11 @@ namespace CASM {
     public:
       Traits(std::string const &_type_name,
              std::vector<std::string> const &_std_var_names,
-             DOF_DOMAIN _domain,
              DOF_MODE _mode,
              bool _requires_site_basis,
              bool _unit_length) :
         BasicTraits(_type_name,
                     _std_var_names,
-                    _domain,
                     _mode,
                     _requires_site_basis,
                     _unit_length) {

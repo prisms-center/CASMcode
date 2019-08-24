@@ -171,13 +171,14 @@ namespace CASM {
   }
 
   // *******************************************************************************************
-  //Return sign of number
-
+  //Return sign of integral number
   template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type * = nullptr>
   int sgn(T val) {
     return (T(0) < val) - (val < T(0));
   }
 
+  // *******************************************************************************************
+  //Return sign of floating-point number
   template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
   int float_sgn(T val, double compare_tol = TOL) {
     T zeroval(0);

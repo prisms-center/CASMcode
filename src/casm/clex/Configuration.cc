@@ -117,41 +117,25 @@ namespace CASM {
   //*********************************************************************************
 
   Configuration Configuration::zeros(Supercell const &_scel) {
-    return Configuration::zeros(_scel, _scel.primclex().crystallography_tol());
+    return Configuration(_scel, jsonParser(), _scel.zero_configdof(_scel.primclex().crystallography_tol()));
   }
+
   //*********************************************************************************
 
   Configuration Configuration::zeros(Supercell const &_scel, double _tol) {
-
-    ConfigDoF tdof(_scel.basis_size(),
-                   _scel.volume(),
-                   global_dof_info(_scel.prim()),
-                   local_dof_info(_scel.prim()),
-                   occ_symrep_IDs(_scel.prim()),
-                   _tol);
-
-
-    return Configuration(_scel, jsonParser(), tdof);
+    return Configuration(_scel, jsonParser(), _scel.zero_configdof(_tol));
   }
 
   //*********************************************************************************
 
   Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_scel) {
-    return Configuration::zeros(_scel, _scel->primclex().crystallography_tol());
+    return Configuration(_scel, jsonParser(),  _scel->zero_configdof(_scel->primclex().crystallography_tol()));
   }
 
   //*********************************************************************************
 
   Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_scel, double _tol) {
-    ConfigDoF tdof(_scel->basis_size(),
-                   _scel->volume(),
-                   global_dof_info(_scel->prim()),
-                   local_dof_info(_scel->prim()),
-                   occ_symrep_IDs(_scel->prim()),
-                   _tol);
-
-
-    return Configuration(_scel, jsonParser(), tdof);
+    return Configuration(_scel, jsonParser(),  _scel->zero_configdof(_tol));
   }
 
   //*********************************************************************************
@@ -1843,25 +1827,6 @@ namespace CASM {
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
     return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
-  }
-
-  Structure make_deformed_struc(const Configuration &c) {
-    Structure tmp = c.supercell().superstructure(c);
-    if(c.configdof().has_local_dof("disp")) {
-      //std::cout << "has disp going to apply" << std::endl;
-      std::vector<Site> new_basis;
-      for(int i = 0 ; i < tmp.basis().size(); i++) {
-        Eigen::Vector3d new_vec = tmp.basis()[i].const_cart() + c.configdof().local_dof("disp").values().col(i) ;
-        Site new_site(Coordinate(new_vec, tmp.lattice(), CART), tmp.basis()[i].occ_name());
-
-        new_basis.push_back(new_site);
-      }
-      tmp.set_basis(new_basis);
-    }
-    else {
-      //std::cout << "no disp found" << std::endl;
-    }
-    return tmp;
   }
 
 }

@@ -232,7 +232,7 @@ namespace CASM {
     /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
     ///
     /// This version calculates the translation such that
-    /// (neighbor+translation) is the periodic nearest period image of neighbor
+    /// (neighbor+translation) is the nearest periodic image of neighbor
     double min_dist(const Coordinate &neighbor, Coordinate &translation)const;
 
     /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor

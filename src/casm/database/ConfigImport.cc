@@ -23,7 +23,7 @@ namespace CASM {
 
   jsonParser &to_json(MappingNode const &_map, jsonParser &_json) {
 
-    _json["relaxation_deformation"] = _map.lat_node.rstretch;
+    _json["relaxation_deformation"] = _map.lat_node.stretch;
     _json["relaxation_displacement"] = _map.displacement;
     _json["cart_op"] = _map.lat_node.isometry;
     _json["basis_cost"] = _map.basis_node.cost;

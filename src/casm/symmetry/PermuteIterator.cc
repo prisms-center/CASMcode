@@ -40,7 +40,7 @@ namespace CASM {
     return *this;
   }
 
-  /// Returns a reference to this
+  /// Returns a pointer to this
   const PermuteIterator *PermuteIterator::operator->() const {
     return this;
   }

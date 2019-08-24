@@ -19,7 +19,6 @@
 namespace CASM {
 
   class Molecule;
-  class Structure;
   class PrimClex;
   class Supercell;
   class UnitCellCoord;
@@ -640,8 +639,6 @@ namespace CASM {
 
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);
-
-  Structure make_deformed_struc(const Configuration &c);
 
   /** @} */
 

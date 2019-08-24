@@ -13,7 +13,6 @@ namespace CASM {
         DoFType::Traits("magspin", {
         "sx", "sy", "sz"
       },
-      DoFType::CONTINUOUS,
       DoFType::LOCAL,
       /*_requires_site_basis = */ true,
       /*_unit_length = */ true) {

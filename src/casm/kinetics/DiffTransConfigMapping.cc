@@ -123,7 +123,7 @@ namespace CASM {
       //std::cout << "unconditioned to struc" << std::endl;
       //to.print_xyz(std::cout,true);
       _precondition_from_and_to(from_node.lat_node.isometry,
-                                from_node.lat_node.rstretch,
+                                from_node.lat_node.stretch,
                                 t_shift.const_cart(),
                                 from,
                                 to);
@@ -160,7 +160,7 @@ namespace CASM {
       //
 
       {
-        SimpleStructure oriented_struc = resolve_setting(from_node, from_child);
+        SimpleStructure oriented_struc = mapper.struc_mapper().calculator().resolve_setting(from_node, from_child);
 
         Configuration from_config(scel_ptr, jsonParser(), to_configdof(from_node, oriented_struc, primclex()));
 

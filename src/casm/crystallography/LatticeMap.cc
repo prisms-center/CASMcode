@@ -47,17 +47,19 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-
+  //static function
   double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol, double _vol_factor) {
+
     // -> epsilon=(F_deviatoric-identity)
-    Eigen::Matrix3d m_cache = (F / _vol_factor - Eigen::Matrix3d::Identity(3, 3));
+    double unscaled = ((F / _vol_factor - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()
+                       + (F.inverse() * _vol_factor - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()) / 2.;
 
     // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-    return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * m_cache.squaredNorm() / 7.795554179;
+    return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * unscaled / 7.795554179;
   }
 
   //*******************************************************************************************
-
+  //static function
   double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol) {
     return iso_strain_cost(F, relaxed_atomic_vol, vol_factor(F));
   }
@@ -67,16 +69,19 @@ namespace CASM {
   // strain_cost is the mean-square displacement of a point on the surface of a sphere having volume = relaxed_atomic_vol
   // when it is deformed by the volume-preserving deformation F_deviatoric = F/det(F)^(1/3)
   double StrainCostCalculator::strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol, double _vol_factor) const {
+
     if(m_sym_cost) {
-      m_cache = polar_decomposition(F / _vol_factor - Eigen::Matrix3d::Identity(3, 3));
       double cost = 0;
+      m_cache = polar_decomposition(F / _vol_factor);
+      m_cache_inv = m_cache.inverse() - Eigen::Matrix3d::Identity(3, 3);
+      m_cache -= Eigen::Matrix3d::Identity(3, 3);
       Index m = 0;
       for(Index i = 0; i < 3; ++i) {
         for(Index j = i; j < 3; ++j, ++m) {
           Index n = 0;
           for(Index k = 0; k < 3; ++k) {
             for(Index l = k; l < 3; ++l, ++n) {
-              cost += m_cache(i, j) * m_gram_mat(m, n) * m_cache(j, k);
+              cost += m_gram_mat(m, n) * (m_cache(i, j) * m_cache(j, k) + m_cache_inv(i, j) * m_cache_inv(j, k)) / 2;
             }
           }
         }
@@ -85,11 +90,7 @@ namespace CASM {
       return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * cost / 7.795554179;
     }
 
-    // -> epsilon=(F_deviatoric-identity)
-    m_cache = (F / _vol_factor - Eigen::Matrix3d::Identity(3, 3));
-
-    // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-    return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * m_cache.squaredNorm() / 7.795554179;
+    return iso_strain_cost(F, relaxed_atomic_vol, _vol_factor);
   }
 
   //*******************************************************************************************

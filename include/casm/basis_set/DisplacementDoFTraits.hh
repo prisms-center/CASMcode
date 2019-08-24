@@ -11,7 +11,6 @@ namespace CASM {
         DoFType::Traits("disp", {
         "x", "y", "z"
       },
-      DoFType::CONTINUOUS,
       DoFType::LOCAL,
       /*_requires_site_basis = */ false,
       /*_unit_length = */ false) {

@@ -3,6 +3,7 @@
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/crystallography/SimpleStrucMapCalculator.hh"
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/BasicStructure.hh"
 
@@ -32,13 +33,9 @@ namespace CASM {
   ///   (1) the site permutation is as close to identity as possible (i.e., maximal character)
   ///   (2) ties at (1) are broken by ensuring _node.isometry is proper and close to zero rotation (i.e., maximal character*determinant)
   ///   (3) if (1) and (2) are ties, then we minimize _node.translation.norm()
-  PermuteIterator strictest_equivalent(PermuteIterator begin, PermuteIterator end, MappingNode const &_node);
 
   /// \brief Reorders the permutation and compounds the spatial isometry (rotation + translation) of _node with that of _it
-  MappingNode copy_apply(PermuteIterator const &_it, MappingNode const &_node);
-
-  /// \brief Creates copy of _child_struc by applyin isometry, lattice transformation, translation, and site permutation of _node
-  SimpleStructure resolve_setting(MappingNode const &_node, SimpleStructure const &_child_struc);
+  MappingNode copy_apply(PermuteIterator const &_it, MappingNode const &_node, bool transform_cost_mat = true);
 
   /// \brief Initializes configdof corresponding to a mapping (encoded by _node) of _child_struc onto _pclex
   ConfigDoF to_configdof(MappingNode const _node, SimpleStructure const &_child_struc, PrimClex const &_pclex);

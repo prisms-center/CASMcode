@@ -133,6 +133,17 @@ namespace CASM {
     return UnitCellCoord(prim(), sublat(linear_index), prim_grid().unitcell(linear_index % volume()));
   }
 
+  /// \brief returns Supercell-compatible configdof with zeroed DoF values and user-specified tolerance
+  ConfigDoF Supercell::zero_configdof(double tol) const {
+
+    return ConfigDoF(basis_size(),
+                     volume(),
+                     global_dof_info(prim()),
+                     local_dof_info(prim()),
+                     occ_symrep_IDs(prim()),
+                     tol);
+  }
+
   std::vector<int> Supercell::max_allowed_occupation() const {
     std::vector<int> max_allowed;
 
@@ -145,126 +156,6 @@ namespace CASM {
     return max_allowed;
   }
 
-  //***********************************************************
-  /**  Generate a Configuration from a Structure
-   *  - Generally expected the user will first call
-   *      Supercell::is_supercell_of(const Structure &structure, Matrix3<double> multimat)
-   *  - tested OK for perfect prim coordinates, not yet tested with relaxed coordinates using 'tol'
-   */
-  //***********************************************************
-  Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) const {
-    //Because the user is a fool and the supercell may not be a supercell (This still doesn't check the basis!)
-    Eigen::Matrix3d transmat;
-    if(!structure_to_config.lattice().is_supercell_of(prim().lattice(), transmat)) {
-      default_err_log() << "ERROR in Supercell::configuration" << std::endl;
-      default_err_log() << "The provided structure is not a supercell of the PRIM. Tranformation matrix was:" << std::endl;
-      default_err_log() << transmat << std::endl;
-      exit(881);
-    }
-
-    default_err_log() << "WARNING in Supercell::config(): This routine has not been tested on relaxed structures using 'tol'" << std::endl;
-
-    // create a 'superstruc' that fills '*this'
-    BasicStructure<Site> superstruc = structure_to_config.create_superstruc(lattice());
-
-
-    // Set the occuation state of a Configuration from superstruc
-    //   Allow Va on sites where Va are allowed
-    //   Do not allow interstitials, print an error message and exit
-    Configuration config(*this);
-
-    // Initially set occupation to -1 (for unknown) on every site
-    config.set_occupation(std::vector<int>(num_sites(), -1));
-
-    Index _linear_index, b;
-    int val;
-
-    // For each site in superstruc, set occ index
-    for(Index i = 0; i < superstruc.basis().size(); i++) {
-      _linear_index = linear_index(Coordinate(superstruc.basis()[i]), tol);
-      b = sublat(_linear_index);
-
-      // check that we're not over-writing something already set
-      if(config.occ(_linear_index) != -1) {
-        default_err_log() << "Error in Supercell::config." << std::endl;
-        default_err_log() << "  Adding a second atom on site: linear index: " << _linear_index << " bijk: " << uccoord(_linear_index) << std::endl;
-        throw std::runtime_error("Error in Supercell::configuration: multiple molecule map to same site");
-      }
-
-      // check that the Molecule in superstruc is allowed on the site in 'prim'
-      if(!prim().basis()[b].contains(superstruc.basis()[i].occ_name(), val)) {
-        default_err_log() << "Error in Supercell::config." << std::endl;
-        default_err_log() << "  The molecule: " << superstruc.basis()[i].occ_name() << " is not allowed on basis site " << b << " of the Supercell prim." << std::endl;
-        throw std::runtime_error("Error in Supercell::configuration: molecule site mapping not allowed");
-      }
-      config.set_occ(_linear_index, val);
-    }
-
-    // Check that vacant sites are allowed
-    for(Index i = 0; i < config.size(); i++) {
-      if(config.occ(i) == -1) {
-        b = sublat(i);
-
-        if(prim().basis()[b].contains("Va", val)) {
-          config.set_occ(i, val);
-        }
-        else {
-          default_err_log() << "Error in Supercell::config." << std::endl;
-          default_err_log() << "  Missing atom.  Vacancies are not allowed on the site: " << uccoord(i) << std::endl;
-          exit(1);
-        }
-      }
-    }
-
-    return config;
-
-  }
-
-  ///  Returns a Structure equivalent to the Supercell
-  ///  - basis sites are ordered to agree with Supercell::config_index_to_bijk
-  ///  - occupation set to prim default, not curr_state
-  ///
-  Structure Supercell::superstructure() const {
-    // create a 'superstruc' that fills '*this'
-    Structure superstruc = prim().create_superstruc(lattice());
-
-    // sort basis sites so that they agree with config_index_to_bijk
-    //   This sorting may not be necessary,
-    //   but it depends on how we construct the config_index_to_bijk,
-    //   so I'll leave it in for now just to be safe
-    //for(Index i = 0; i < superstruc.basis().size(); i++) {
-    //superstruc.basis.swap_elem(i, linear_index(superstruc.basis()[i]));
-    //}
-
-    //superstruc.reset();
-
-    //set_site_internals() is better than Structure::reset(), because
-    //it doesn't destroy all the info that
-    //Structure::create_superstruc makes efficiently
-    superstruc.set_site_internals();
-    return superstruc;
-
-  }
-
-  ///  Returns a Structure equivalent to the Supercell
-  ///  - basis sites are ordered to agree with Supercell::config_index_to_bijk
-  ///  - occupation set to config
-  ///  - prim set to prim()
-  ///
-  Structure Supercell::superstructure(const Configuration &config) const {
-    // create a 'superstruc' that fills '*this'
-    Structure superstruc = superstructure();
-
-    // set basis site occupants
-    for(Index i = 0; i < superstruc.basis().size(); i++) {
-      superstruc.set_occ(i, config.occ(i));
-    }
-
-    // setting the occupation changes symmetry properties, so must reset
-    superstruc.reset();
-
-    return superstruc;
-  }
 
   const PrimGrid &Supercell::prim_grid() const {
     return sym_info().prim_grid();

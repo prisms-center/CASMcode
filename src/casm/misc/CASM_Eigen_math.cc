@@ -702,7 +702,7 @@ namespace CASM {
     return Mp;
   }
 
-  Eigen::Matrix3d polar_decomposition(Eigen::Matrix3d mat) {
+  Eigen::Matrix3d polar_decomposition(Eigen::Matrix3d const &mat) {
     return Eigen::SelfAdjointEigenSolver <Eigen::Matrix3d>(mat.transpose() * mat).operatorSqrt();
   }
 

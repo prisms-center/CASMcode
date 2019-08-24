@@ -38,6 +38,7 @@ namespace CASM {
     bool m_sym_cost;
 
     mutable Eigen::Matrix3d m_cache;
+    mutable Eigen::Matrix3d m_cache_inv;
   };
 
   /// Find the parent mapping of Lattice _parent onto Lattice _child
