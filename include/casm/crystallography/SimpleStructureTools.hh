@@ -96,7 +96,7 @@ namespace CASM {
   jsonParser json_supplement(ConfigDoF const &_dof,
                              BasicStructure<Site> const &_reference,
                              std::string const &_prefix = "",
-                             std::vector<DoFKey> const &_which_dofs = {});
+                             std::vector<DoFKey> _which_dofs = {});
 
   /// \brief Output to JSON, excluding any molecular or atomic species contained in 'excluded_species'
   jsonParser &to_json(SimpleStructure const &_struc,

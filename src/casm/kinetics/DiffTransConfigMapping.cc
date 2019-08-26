@@ -162,7 +162,7 @@ namespace CASM {
       {
         SimpleStructure oriented_struc = mapper.struc_mapper().calculator().resolve_setting(from_node, from_child);
 
-        Configuration from_config(scel_ptr, jsonParser(), to_configdof(from_node, oriented_struc, primclex()));
+        Configuration from_config(scel_ptr, jsonParser(), to_configdof(from_node, oriented_struc, *scel_ptr));
 
         //Configuration from_config(Configuration::zeros(scel_ptr));
         //from_config.set_occupation(mapper.occupation(to_simple_structure(result.structures[0]),

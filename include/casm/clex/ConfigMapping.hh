@@ -38,7 +38,7 @@ namespace CASM {
   MappingNode copy_apply(PermuteIterator const &_it, MappingNode const &_node, bool transform_cost_mat = true);
 
   /// \brief Initializes configdof corresponding to a mapping (encoded by _node) of _child_struc onto _pclex
-  ConfigDoF to_configdof(MappingNode const _node, SimpleStructure const &_child_struc, PrimClex const &_pclex);
+  ConfigDoF to_configdof(MappingNode const _node, SimpleStructure const &_child_struc, Supercell const  &_scel);
   //\TO IMPLEMENT
 
   class PrimStrucMapCalculator : public SimpleStrucMapCalculator {

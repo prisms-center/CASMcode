@@ -13,7 +13,7 @@ namespace CASM {
   class SimpleStructure;
 
   // In this file:
-  class MappingNode;
+  struct MappingNode;
   class StrucMapCalculatorInterface;
 
   namespace StrucMapping {

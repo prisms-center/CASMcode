@@ -7,8 +7,10 @@
 #include "casm/clex/ChemicalReference.hh"
 
 namespace CASM {
+  template<typename CoordType>
+  class BasicStructure;
 
-  class Structure;
+  class Site;
 
   /**
    * \ingroup ProjectIO
@@ -52,22 +54,22 @@ namespace CASM {
 
   /// \brief Read chemical reference from one of 3 alternative forms
   std::pair<Eigen::VectorXd, std::vector<ChemicalReferenceState> >
-  one_chemical_reference_from_json(const Structure &prim,
-                                   const jsonParser &json);
+  one_chemical_reference_from_json(BasicStructure<Site> const &prim,
+                                   jsonParser const &json);
 
   /// \brief Read chemical reference from JSON
   template<>
   struct jsonConstructor<ChemicalReference> {
 
-    static ChemicalReference from_json(const jsonParser &json,
-                                       const Structure &prim,
+    static ChemicalReference from_json(jsonParser const &json,
+                                       BasicStructure<Site> const &prim,
                                        double tol = 1e-14);
   };
 
   /// \brief Read chemical reference from JSON
   void from_json(ChemicalReference &ref,
-                 const jsonParser &json,
-                 const Structure &prim,
+                 jsonParser const &json,
+                 BasicStructure<Site> const &prim,
                  double tol = 1e-14);
 
   /** @} */

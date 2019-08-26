@@ -16,9 +16,9 @@ namespace CASM {
   class SimpleStructure;
 
   // In this file:
-  class LatticeNode;
-  class HungarianNode;
-  class MappingNode;
+  struct LatticeNode;
+  struct HungarianNode;
+  struct MappingNode;
   class StrucMapCalculatorInterface;
   class StrucMapper;
 
@@ -102,8 +102,6 @@ namespace CASM {
 
     /// \brief strain_cost of the LatticeNode
     double cost;
-
-    LatticeNode();
 
     /// \brief Construct with ideal parent_scel and deformed child_scel, which are related by a deformation tensor
     /// @param parent_scel and @param child_scel are integer combinations of the primitive cells 'parent_prim' and 'child_prim', respectively
@@ -239,12 +237,9 @@ namespace CASM {
     typedef DisplacementMatrix::ColXpr Displacement;
     typedef DisplacementMatrix::ConstColXpr ConstDisplacement;
 
-    MappingNode() :
-      is_viable(true),
-      is_valid(false),
-      is_partitioned(false) {
-    }
-
+    /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
+    static MappingNode invalid();
+    
     MappingNode(LatticeNode _lat_node, double _strain_weight) :
       lat_node(std::move(_lat_node)),
       is_viable(true),

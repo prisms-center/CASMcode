@@ -276,7 +276,7 @@ namespace CASM {
   CASM::jsonParser to_json_array(const Eigen::MatrixBase<Derived> &value) {
     jsonParser json;
     to_json(value, json, CASM::jsonParser::as_array());
-    return std::move(json);
+    return json;
   }
 
   /// \brief Read Eigen Matrix/Vector from JSON

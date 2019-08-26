@@ -36,10 +36,10 @@ namespace CASM {
                                       OutputIterator it) {
 
       //derotate first
-      child_struc.rotate(seed.isometry());
+      child_struc.rotate_coords(seed.isometry());
 
       //Then undeform by inverse of right stretch
-      child_struc.deform(seed.stretch());
+      child_struc.deform_coords(seed.stretch());
 
       // We want to get rid of translations.
       // define translation such that:
@@ -185,6 +185,21 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+  
+  MappingNode MappingNode::invalid(){
+    static MappingNode result(LatticeNode(Lattice::cubic(),
+                                          Lattice::cubic(),
+                                          Lattice::cubic(),
+                                          Lattice::cubic(),
+                                          1),
+                              0.5);
+    result.is_viable=false;
+    result.is_valid=false;
+    result.is_partitioned=false;
+    return result;
+  }
+  
+  //*******************************************************************************************
 
   void MappingNode::calc() {
     if(is_viable) {
@@ -251,12 +266,13 @@ namespace CASM {
     // which must be related by a point group operation
     Lattice c_lat(child_struc.lat_column_mat, m_tol);
 
+
     if(!c_lat.is_supercell_of(Lattice(parent().lat_column_mat), trans_mat)) {
       /*std::cerr << "CRITICAL ERROR: In map_ideal_struc(), primitive structure does not tile the provided\n"
         << "                superstructure. Please use map_deformed_struc() instead.\n"
         << "                Exiting...\n";
       */
-      return MappingNode();
+      return MappingNode::invalid();
     }
 
     // tstruc becomes idealized structure
@@ -283,7 +299,7 @@ namespace CASM {
 
     Index k = k_best_maps_better_than(child_struc, mapping_seed, m_tol, false);
     if(k == 0) {
-      return MappingNode();
+      return MappingNode::invalid();
     }
 
     return *(mapping_seed.begin());

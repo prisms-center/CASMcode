@@ -218,13 +218,13 @@ namespace CASM {
 
       }
     }
-    return std::move(result);
+    return result;
   }
 
   //***************************************************************************
 
-  jsonParser to_json(SimpleStructure const &_struc,
-                     jsonParser supplement,
+  jsonParser & to_json(SimpleStructure const &_struc,
+                     jsonParser & supplement,
                      std::set<std::string> const &excluded_species) {
 
     std::string prefix = _struc.prefix();
@@ -292,7 +292,7 @@ namespace CASM {
           supplement["mol_selective_dynamics"].push_back(_struc.mol_info.SD.col(i), jsonParser::as_array());
       }
     }
-    return std::move(supplement);
+    return supplement;
   }
 
   //***************************************************************************

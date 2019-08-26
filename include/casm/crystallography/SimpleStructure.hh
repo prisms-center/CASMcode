@@ -44,12 +44,6 @@ namespace CASM {
 
     SimpleStructure(std::string const &_prefix = std::string());
 
-    /// \brief Apply homogeneous deformation gradient tensor _F to lat_column_mat, mol_info, and atom_info
-    void deform(Eigen::Ref<const Eigen::Matrix3d> const &_F);
-
-    /// \brief Apply homogeneous rotation matrix _R to lat_column_mat, mol_info, and atom_info
-    void rotate(Eigen::Ref<const Eigen::Matrix3d> const &_R);
-
     Index n_mol() const {
       return mol_info.size();
     }
@@ -69,6 +63,12 @@ namespace CASM {
     std::string const &prefix() const {
       return m_prefix;
     }
+
+    /// \brief Apply homogeneous deformation gradient tensor _F to lat_column_mat, mol_info, and atom_info
+    void deform_coords(Eigen::Ref<const Eigen::Matrix3d> const &_F);
+    
+    /// \brief Apply homogeneous rotation matrix _R to lat_column_mat, mol_info, and atom_info
+    void rotate_coords(Eigen::Ref<const Eigen::Matrix3d> const &_R);
 
     Eigen::Matrix3d lat_column_mat;
     Eigen::Matrix3d cartesian_isometry;

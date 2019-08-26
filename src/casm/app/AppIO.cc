@@ -428,7 +428,7 @@ namespace CASM {
   ///
   /// See documentation in related function for expected form of the JSON
   ChemicalReference read_chemical_reference(fs::path filename,
-                                            const Structure &prim,
+                                            BasicStructure<Site> const &prim,
                                             double tol) {
     try {
       jsonParser json(filename);
@@ -461,8 +461,8 @@ namespace CASM {
   /// \endcode
   ///
   /// See one_chemical_reference_from_json for documentation of the \code {...} \endcode expected form.
-  ChemicalReference read_chemical_reference(const jsonParser &json,
-                                            const Structure &prim,
+  ChemicalReference read_chemical_reference(jsonParser const &json,
+                                            BasicStructure<Site> const &prim,
                                             double tol) {
 
     if(json.find("chemical_reference") == json.end()) {

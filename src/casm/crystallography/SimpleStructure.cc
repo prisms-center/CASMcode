@@ -14,18 +14,32 @@ namespace CASM {
     }
   }
 
+  //***************************************************************************
+  
   SimpleStructure::SimpleStructure(const std::string &_prefix) :
     selective_dynamics(false),
     m_prefix(_prefix) {
   }
 
-
-  void SimpleStructure::deform(Eigen::Ref<const Eigen::Matrix3d> const &_F) {
+  //***************************************************************************
+  
+  void SimpleStructure::deform_coords(Eigen::Ref<const Eigen::Matrix3d> const &_F) {
     lat_column_mat = _F * lat_column_mat;
     if(mol_info.coords.rows() == 3)
       mol_info.coords = _F * mol_info.coords;
     if(atom_info.coords.rows() == 3)
       atom_info.coords = _F * atom_info.coords;
+
+  }
+
+  //***************************************************************************
+  
+  void SimpleStructure::rotate_coords(Eigen::Ref<const Eigen::Matrix3d> const &_R) {
+    lat_column_mat = _R * lat_column_mat;
+    if(mol_info.coords.rows() == 3)
+      mol_info.coords = _R * mol_info.coords;
+    if(atom_info.coords.rows() == 3)
+      atom_info.coords = _R * atom_info.coords;
 
   }
 
