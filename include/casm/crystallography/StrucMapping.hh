@@ -239,7 +239,7 @@ namespace CASM {
 
     /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
     static MappingNode invalid();
-    
+
     MappingNode(LatticeNode _lat_node, double _strain_weight) :
       lat_node(std::move(_lat_node)),
       is_viable(true),

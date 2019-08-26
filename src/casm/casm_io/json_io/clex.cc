@@ -251,8 +251,8 @@ namespace CASM {
   /// See one_chemical_reference_from_json for documentation of the \code {...}
   /// \endcode expected form.
   ChemicalReference jsonConstructor<ChemicalReference>::from_json(
-                                                                  jsonParser const &json,
-                                                                  BasicStructure<Site> const &prim,
+    jsonParser const &json,
+    BasicStructure<Site> const &prim,
     double tol) {
 
     std::unique_ptr<ChemicalReference> ref;

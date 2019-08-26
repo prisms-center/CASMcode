@@ -185,20 +185,20 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  
-  MappingNode MappingNode::invalid(){
+
+  MappingNode MappingNode::invalid() {
     static MappingNode result(LatticeNode(Lattice::cubic(),
                                           Lattice::cubic(),
                                           Lattice::cubic(),
                                           Lattice::cubic(),
                                           1),
                               0.5);
-    result.is_viable=false;
-    result.is_valid=false;
-    result.is_partitioned=false;
+    result.is_viable = false;
+    result.is_valid = false;
+    result.is_partitioned = false;
     return result;
   }
-  
+
   //*******************************************************************************************
 
   void MappingNode::calc() {

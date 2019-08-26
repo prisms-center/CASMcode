@@ -223,9 +223,9 @@ namespace CASM {
 
   //***************************************************************************
 
-  jsonParser & to_json(SimpleStructure const &_struc,
-                     jsonParser & supplement,
-                     std::set<std::string> const &excluded_species) {
+  jsonParser &to_json(SimpleStructure const &_struc,
+                      jsonParser &supplement,
+                      std::set<std::string> const &excluded_species) {
 
     std::string prefix = _struc.prefix();
     if(!prefix.empty())
