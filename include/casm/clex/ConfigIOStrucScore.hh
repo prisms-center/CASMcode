@@ -7,9 +7,9 @@
 
 namespace CASM {
 
-  class PrimClex;
+  class Structure;
   class Configuration;
-  class ConfigMapper;
+  class StrucMapper;
 
   namespace ConfigIO {
 
@@ -23,7 +23,7 @@ namespace CASM {
 
       StrucScore();
 
-      StrucScore(const StrucScore &RHS);
+      StrucScore(StrucScore const &RHS);
 
       // --- Required implementations -----------
 
@@ -31,22 +31,25 @@ namespace CASM {
         return std::unique_ptr<StrucScore>(this->_clone());
       }
 
-      Eigen::VectorXd evaluate(const Configuration &_config) const override;
+      Eigen::VectorXd evaluate(Configuration const &_config) const override;
 
 
       // --- Specialized implementation -----------
 
-      bool validate(const Configuration &_config) const override;
+      bool validate(Configuration const &_config) const override;
 
-      std::string short_header(const Configuration &_config) const override;
+      std::string short_header(Configuration const &_config) const override;
 
-      std::vector<std::string> col_header(const Configuration &_config) const override;
+      std::vector<std::string> col_header(Configuration const &_config) const override;
 
-      bool parse_args(const std::string &args) override;
+      bool parse_args(std::string const &args) override;
+
+      bool init(Configuration const &tmplt) const override;
 
     protected:
-      mutable std::unique_ptr<PrimClex> m_altprimclex;
-      mutable std::unique_ptr<ConfigMapper> m_configmapper;
+      mutable std::unique_ptr<BasicStructure<Site> > m_altprim;
+      mutable std::unique_ptr<StrucMapper> m_strucmapper;
+      double m_strain_weight;
       fs::path m_prim_path;
       std::vector<std::string> m_prop_names;
 

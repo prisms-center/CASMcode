@@ -10,6 +10,7 @@
 #include "casm/app/AppIO.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 

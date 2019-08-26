@@ -70,6 +70,9 @@ namespace CASM {
     /// Checks whether any indices remain unchanged by permutation
     bool has_fixed_points() const;
 
+    /// Character of permutation is number of fixed points
+    Index character() const;
+
     /// Checks whether permutation is identity (i.e., m_perm_aray[i]==i for all i)
     bool is_identity() const;
 

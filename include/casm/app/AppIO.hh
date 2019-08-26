@@ -18,6 +18,7 @@ namespace CASM {
   // --- These functions are for casm I/O -----------
 
   template<typename CoordType> class BasicStructure;
+  class Structure;
   class AtomPosition;
   class Molecule;
   class Site;
@@ -108,9 +109,9 @@ namespace CASM {
 
   // --------- ChemicalReference IO Declarations --------------------------------------------------
 
-  ChemicalReference read_chemical_reference(fs::path filename, const Structure &prim, double tol);
+  ChemicalReference read_chemical_reference(fs::path filename, const BasicStructure<Site> &prim, double tol);
 
-  ChemicalReference read_chemical_reference(const jsonParser &json, const Structure &prim, double tol);
+  ChemicalReference read_chemical_reference(const jsonParser &json, const BasicStructure<Site> &prim, double tol);
 
   void write_chemical_reference(const ChemicalReference &chem_ref, fs::path filename);
 

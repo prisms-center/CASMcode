@@ -5,9 +5,8 @@
 
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/crystallography/Site.hh"
 
 namespace CASM {
 
@@ -39,10 +38,6 @@ namespace CASM {
     std::vector< std::string > tlist;
     for(Index i = 0; i < m_prim_struc->basis().size(); i++) {
       tlist = m_prim_struc->basis()[i].allowed_occupants();
-      //keep only those sublattices where alloying is allowed
-      // if(tlist.size() == 1) {
-      //   continue;
-      // }
       tocc.push_back(tlist);
     }
     //resize the sublattice_map array to <number_components, number_sublattices>
@@ -466,7 +461,7 @@ namespace CASM {
 
   //*************************************************************
 
-  std::vector<std::pair<std::string, Index> > ParamComposition::fixed_components() {
+  std::vector<std::pair<std::string, Index> > ParamComposition::fixed_species() {
     std::vector<std::pair<std::string, Index> >  tcompon;
     if(m_prim_end_members.cols() == 0)
       generate_prim_end_members();
@@ -628,124 +623,6 @@ namespace CASM {
     m_spanning_end_members = tspan_end;
   }
 
-  //*************************************************************
-  //READ
-  /*
-    void ParamComposition::read(const std::string &comp_filename) {
-      std::ifstream in_comp;
-      in_comp.open(comp_filename.c_str());
-      if(!in_comp) {
-        std::cerr << "ERROR in ParamComposition::read. Could not read the file: " << comp_filename.c_str() << std::endl;
-        std::cerr << "Continuing anyways. However, things could go horribly wrong. I recommend you quit." << std::endl;
-        return;
-      }
-      read(in_comp);
-
-    }
-
-    void ParamComposition::read(std::istream &stream) {
-      ptree comp_ptree;
-      read_json(stream, comp_ptree);
-      read(comp_ptree);
-    }
-
-    void ParamComposition::read(ptree comp_ptree) {
-
-      //std::cout<<"In ParamComposition::read"<<std::endl;
-      //try to read in the allowed_axes
-      try {
-        const ptree &allowed_axes_ptree = comp_ptree.child("allowed_axes");
-        //std::cout<<"Reading the allowed_axes field"<<std::endl;
-        int allowed_axes_num = 0;
-        do {
-          try {
-            std::stringstream tstr;
-            tstr << allowed_axes_num;
-            ParamComposition tc(allowed_axes_ptree.child(tstr.str().c_str()) , *m_prim_struc);
-            m_allowed_list.push_back(tc);
-          }
-          catch(std::exception const &e) {
-            break;
-          }
-          allowed_axes_num++;
-        }
-        while(true);
-      }
-      catch(std::exception const &e) {
-        //continue
-      }
-
-      //try to read in the components
-      try {
-        if(m_components.size() != 0) {
-          std::cerr << "WARNING in ParamComposition::read. your components matrix is not empty. Clearing that array and any other non-empty data members" << std::endl;
-          m_components.clear();
-          m_comp.clear();
-          m_allowed_list.clear();
-        }
-        std::string tcomp = comp_ptree.get<std::string>("components");
-        boost::char_separator< char > sep(" ");
-        boost::tokenizer< boost::char_separator< char > > tokens(tcomp, sep);
-        BOOST_FOREACH(const std::string & t, tokens) {
-          m_components.push_back(t);
-        }
-
-        //resize the other matrices to match this one
-        m_comp.resize(2);
-        m_comp[0].resize(m_components.size(), m_components.size());
-        m_comp[1].resize(m_components.size(), m_components.size());
-      }
-      catch(std::exception const &e) {
-        //      continue;
-      }
-
-      //try to read in the origin
-      try {
-        std::string tcomp = comp_ptree.get<std::string>("origin");
-        if(m_components.size() == 0) {
-          std::cerr << "ERROR in ParamComposition::read. You are trying to set an origin without specifying the components. This is dangerous, and not allowed. QUITTING." << std::endl;
-          exit(666);
-        }
-        m_origin = eigen_vector_from_string(tcomp, m_components.size());
-      }
-      catch(std::exception const &e) {
-        //      continue;
-      }
-
-      //read in the end members and then set up the transformation matrices
-      try {
-        const ptree &end_members_ptree = comp_ptree.child("end_members");
-        std::string comp_axis(1, 'a');
-        do {
-          try {
-            std::string span_string = end_members_ptree.get< std::string > (comp_axis.c_str());
-            m_spanning_end_members.push_back(eigen_vector_from_string(span_string, m_components.size()));
-          }
-          catch(std::exception const &e) {
-            break;
-          }
-          comp_axis[0]++;
-        }
-        while(true);
-        //update the transformation matrices in comp.
-        calc_transformation_matrices();
-      }
-      catch(std::exception const &e) {
-        //      continue;
-      }
-
-      //reading in the rank_of_space
-      try {
-        std::string trank_str = comp_ptree.get<std::string>("rank_of_space");
-        m_rank_of_space = atoi(trank_str.c_str());
-      }
-      catch(std::exception const &e) {
-        m_rank_of_space = -1;
-        //continue
-      }
-
-    }
-  */
   //*************************************************************
   //MISCELLANEOUS
 

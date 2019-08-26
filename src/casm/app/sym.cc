@@ -1,11 +1,13 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/casm_io/VaspIO.hh"
+
 
 #include "casm/completer/Handlers.hh"
 
@@ -93,8 +95,7 @@ namespace CASM {
     Structure prim(read_prim(dir.prim(), set.hamiltonian_modules(), set.crystallography_tol()));
 
     args.log() << "Generating lattice point group. " << std::endl << std::endl;
-    SymGroup prim_pg;
-    prim.lattice().generate_point_group(prim_pg);
+    SymGroup prim_pg(SymGroup::lattice_point_group(prim.lattice()));
     prim_pg.character_table();
 
 
@@ -144,10 +145,8 @@ namespace CASM {
       Structure tmp = struc;
       // a) symmetrize the lattice vectors
       Lattice lat = tmp.lattice();
-      lat.symmetrize(tol);
+      lat = lat.symmetrized(tol);
       lat.set_tol(tol);
-      SymGroup pg;
-      lat.generate_point_group(pg);
 
       tmp.set_lattice(lat, FRAC);
 
@@ -169,7 +168,7 @@ namespace CASM {
       fs::ofstream file_i;
       fs::path POSCARpath_i = "POSCAR_sym";
       file_i.open(POSCARpath_i);
-      VaspIO::PrintPOSCAR p_i(struc);
+      VaspIO::PrintPOSCAR p_i(to_simple_structure(struc), struc.title());
       p_i.print(file_i);
       file_i.close();
       return 0;

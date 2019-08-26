@@ -13,7 +13,6 @@
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  class SymGroup;
   class SymOp;
   class ScelEnumProps;
   class jsonParser;
@@ -57,6 +56,8 @@ namespace CASM {
 
     /// \brief Construct cubic primitive cell of unit volume
     static Lattice hexagonal(double tol = TOL);
+
+    static std::vector<Eigen::Matrix3d> const &skew_transforms();
 
     /// \brief Get i'th lattice vector as column expression
     LatVec operator[](Index i) {
@@ -131,17 +132,11 @@ namespace CASM {
     double boxiness() const;
 
 
-    /// \brief Populate \param point_group with the point group of this lattice
-    /// \param point_group should be empty
-    /// \param pg_tol can be increased to find point group of lattice vectors
-    /// that are slightly distorted due to numerical noise
-    void generate_point_group(SymGroup &point_group) const;
-
     /// \brief Populate \param supercell with symmetrically distinct supercells of this lattice
     /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
     /// \param effective_pg is a group that should either be equivalent to the full point group of this lattice
     /// or be a subgroup of that full point group
-    void generate_supercells(std::vector<Lattice> &supercell, const SymGroup &effective_pg, const ScelEnumProps &enum_props) const;
+    void generate_supercells(std::vector<Lattice> &supercell, const std::vector<SymOp> &effective_pg, const ScelEnumProps &enum_props) const;
 
     /// \brief make a supercell of this lattice.
     /// Equivalent to Lattice(lat_column_mat()*trans_mat)
@@ -151,6 +146,10 @@ namespace CASM {
     /// \brief Find the lattice vectors which give most compact unit cell
     /// Compactness is measured by how close lat_column_mat().transpose()*lat_column_mat() is to a diagonal matrix
     Lattice reduced_cell() const;
+
+    /// \brief Find the lattice vectors which give most compact unit cell
+    /// Compactness is measured by how close lat_column_mat().transpose()*lat_column_mat() is to a diagonal matrix
+    Lattice reduced_cell2() const;
 
     void print_voronoi_table(std::ostream &stream) const;
 
@@ -215,12 +214,14 @@ namespace CASM {
     std::vector<double> pg_converge(double large_tol);
     void pg_converge(double small_tol, double large_tol, double increment);
 
-    /// \brief Force this lattice to have symmetry of group \param relaxed_pg
-    void symmetrize(const SymGroup &relaxed_pg);
+    /// \brief Symmetrized copy of this lattice, having symmetry of group \param _pg
+    Lattice symmetrized(const std::vector<SymOp> &_pg) const;
 
-    /// \brief Force this lattice to have symmetry of point group calculated based on tolerance \param _tol
-    /// - Does not change internal tol
-    void symmetrize(double _tol);
+    /// \brief Symmetrized copy of this lattice, having symmetry of group formed by fractional-coordinate symops \param _pg
+    Lattice symmetrized(const std::vector<Eigen::Matrix3i> &_pg) const;
+
+    /// \brief Symmetrized copy of this lattice having symmetry of point group calculated based on tolerance \param _tol
+    Lattice symmetrized(double _tol) const;
 
     double tol() const {
       return m_tol;
@@ -267,6 +268,19 @@ namespace CASM {
      Lattice operator*(const Eigen::Matrix3d &LHS, const Lattice &RHS);
   */
 
+  /// \brief Populate \param point_group with the point group of this lattice
+  /// \param point_group should be empty
+  /// \param pg_tol can be increased to find point group of lattice vectors
+  /// that are slightly distorted due to numerical noise
+  std::vector<SymOp> calc_point_group(Lattice const &_lat);
+
+  /// \brief Populate \param point_group with the point group of this lattice
+  /// \param point_group should be empty
+  /// \param pg_tol can be increased to find point group of lattice vectors
+  /// that are slightly distorted due to numerical noise
+  std::vector<SymOp> calc_point_group(Lattice const &_lat, double _tol);
+
+
   /// \brief Returns the volume of a Lattice
   double volume(const Lattice &lat);
 
@@ -280,12 +294,12 @@ namespace CASM {
   Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat);
 
   /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
-  std::pair<bool, Eigen::MatrixXi> is_supercell(const Lattice &scel, const Lattice &unit, double tol);
+  std::pair<bool, Eigen::Matrix3d> is_supercell(const Lattice &scel, const Lattice &unit, double tol);
 
   /// Check if there is a symmetry operation, op, and transformation matrix T,
   ///   such that scel is a supercell of the result of applying op to unit
   template<typename Object, typename OpIterator>
-  std::pair<OpIterator, Eigen::MatrixXi> is_supercell(
+  std::pair<OpIterator, Eigen::Matrix3d> is_supercell(
     const Object &scel,
     const Object &unit,
     OpIterator begin,

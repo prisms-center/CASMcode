@@ -32,7 +32,7 @@ namespace CASM {
     /// Uses provided group
     ///
     /// - True if lat_column_mat is approximately equal to the lat_column_mat of the canonical_form
-    bool is_canonical(const SymGroup &g) const;
+    bool is_canonical(std::vector<SymOp> const &g) const;
 
     /// Uses provided group to find 'to_canonical' SymOp
     ///
@@ -40,21 +40,21 @@ namespace CASM {
     /// - Note that that copy_apply(this->to_canonical(), *this).is_canonical()
     ///   may be false because they may be equivalent, but without identical
     ///   lat_column_mat().
-    SymOp to_canonical(const SymGroup &g) const;
+    SymOp to_canonical(std::vector<SymOp> const &g) const;
 
     /// Returns the inverse of to_canonical(g)
     /// - Note that that
     ///     copy_apply(this->from_canonical(), this->canonical_form()) == *this
     ///   may be false because they may be equivalent, but without identical
     ///   lat_column_mat().
-    SymOp from_canonical(const SymGroup &g) const;
+    SymOp from_canonical(std::vector<SymOp> const &g) const;
 
     /// Canonical equivalent lattice, using the provided group
-    Lattice canonical_form(const SymGroup &g) const;
+    Lattice canonical_form(std::vector<SymOp> const &g) const;
 
 
     /// \brief Construct the subgroup that leaves a lattice unchanged
-    SymGroup invariant_subgroup(const SymGroup &super_grp) const;
+    SymGroup invariant_subgroup(std::vector<SymOp> const &super_grp) const;
 
     /// \brief Construct the subgroup for which this->is_equivalent(copy_apply(op, *this))
     template<typename SymOpIt>

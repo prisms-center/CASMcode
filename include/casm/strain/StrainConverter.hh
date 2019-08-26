@@ -63,8 +63,7 @@ namespace CASM {
     // Routines that calculate derived quantities given the
     // deformation tensor
     static Matrix3d metric_tensor(const Matrix3d &F);
-    static Matrix3d right_stretch_tensor(Matrix3d &C, Eigen::Vector3d &eigenvalues,
-                                         Matrix3d &eigenvectors, const Matrix3d &F);
+    static Matrix3d right_stretch_tensor(Matrix3d &C, const Matrix3d &F);
     static Matrix3d right_stretch_tensor(const Matrix3d &F);
 
     static Matrix3d strain_metric(const Matrix3d &F, STRAIN_METRIC MODE);
@@ -122,10 +121,8 @@ namespace CASM {
     VectorXd unrolled_strain_metric(const Matrix3d &F) const;
     Matrix3d unrolled_strain_metric_to_F(const VectorXd &E) const;
 
-    VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
-                 Matrix3d &eigenvectors, const Matrix3d &F) const;
-    VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
-                 Matrix3d &eigenvectors, const Matrix3d &F, STRAIN_METRIC MODE) const;
+    VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, const Matrix3d &F) const;
+    VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, const Matrix3d &F, STRAIN_METRIC MODE) const;
 
     //--------------------------------------------------
     // Routines that set the internal parameters of the

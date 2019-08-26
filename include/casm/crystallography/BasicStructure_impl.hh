@@ -253,9 +253,8 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::generate_factor_group_slow(SymGroup &factor_group) const {
-    SymGroup point_group;
+    SymGroup point_group((SymGroup::lattice_point_group(lattice())));
 
-    lattice().generate_point_group(point_group);
     _generate_factor_group_slow(factor_group, point_group);
     return;
   }
@@ -280,9 +279,7 @@ namespace CASM {
     SymGroup prim_fg;
     tprim.generate_factor_group_slow(prim_fg);
 
-    SymGroup point_group;
-    lattice().generate_point_group(point_group);
-    point_group.enforce_group(lattice().tol());
+    SymGroup point_group((SymGroup::lattice_point_group(lattice())));
 
     for(Index i = 0; i < prim_fg.size(); i++) {
       if(point_group.find_no_trans(prim_fg[i]) == point_group.size()) {
@@ -483,7 +480,7 @@ namespace CASM {
 
     Eigen::Matrix3d transmat, invtransmat;
     //lattice().lat_column_mat() = reduced_new_lat.lat_column_mat()*transmat
-    transmat = reduced_new_lat.lat_column_mat().inverse() * lattice().lat_column_mat();
+    transmat = reduced_new_lat.inv_lat_column_mat() * lattice().lat_column_mat();
 
     invtransmat = iround(transmat).cast<double>().inverse();
 
@@ -1048,10 +1045,10 @@ namespace CASM {
     //loop over all Sites in basis
     for(i = 0; i < _struc.basis().size(); i++) {
       //loop over all Molecules in Site
-      for(j = 0; j < _struc.basis()[i].site_occupant().size(); j++) {
+      for(j = 0; j < _struc.basis()[i].occupant_dof().size(); j++) {
         //Collect unique Molecules
-        if(!contains(tstruc_molecule, _struc.basis()[i].site_occupant()[j])) {
-          tstruc_molecule.push_back(_struc.basis()[i].site_occupant()[j]);
+        if(!contains(tstruc_molecule, _struc.basis()[i].occupant_dof()[j])) {
+          tstruc_molecule.push_back(_struc.basis()[i].occupant_dof()[j]);
         }
       }
     }//end loop over all Sites
@@ -1141,7 +1138,7 @@ namespace CASM {
     for(CoordType const &site : _struc.basis()) {
       auto sitetypes = site.dof_types();
       tresult.insert(sitetypes.begin(), sitetypes.end());
-      if(site.site_occupant().size() > 1) {
+      if(site.occupant_dof().size() > 1) {
         tresult.insert(DoFType::occupation().name());
       }
     }
@@ -1167,7 +1164,7 @@ namespace CASM {
     std::vector<SymGroupRepID> result;
     result.resize(_struc.basis().size());
     for(Index b = 0; b < _struc.basis().size(); ++b) {
-      result[b] = _struc.basis()[b].site_occupant().symrep_ID();
+      result[b] = _struc.basis()[b].occupant_dof().symrep_ID();
     }
     return result;
   }

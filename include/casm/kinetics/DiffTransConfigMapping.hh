@@ -229,7 +229,7 @@ namespace CASM {
       double m_max_va_frac;
       bool m_robust_flag, m_strict_flag, m_rotate_flag;
       double m_tol;
-      std::vector<std::pair<std::string, Index> > m_fixed_components;
+
       const std::vector<Lattice> &_lattices_of_vol(Index prim_vol) const;
       std::vector<std::string> m_lattices_to_force;
       bool m_restricted = false;

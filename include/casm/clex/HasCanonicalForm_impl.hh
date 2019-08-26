@@ -16,7 +16,7 @@ namespace CASM {
   template<typename _Base>
   template<typename SymCompareType>
   bool CanonicalForm<_Base>::is_canonical(
-    const SymGroup &g,
+    const std::vector<SymOp> &g,
     const SymCompareType &sym_compare) const {
 
     IsCanonical<Orbit<SymCompareType>> f(g, sym_compare);
@@ -26,7 +26,7 @@ namespace CASM {
   template<typename _Base>
   template<typename SymCompareType>
   typename CanonicalForm<_Base>::MostDerived CanonicalForm<_Base>::canonical_form(
-    const SymGroup &g,
+    const std::vector<SymOp> &g,
     const SymCompareType &sym_compare) const {
 
     CanonicalGenerator<Orbit<SymCompareType>> f(g, sym_compare);
@@ -37,7 +37,7 @@ namespace CASM {
   template<typename SymCompareType>
   bool CanonicalForm<_Base>::is_sym_equivalent(
     const MostDerived &other,
-    const SymGroup &g,
+    const std::vector<SymOp> &g,
     const SymCompareType &sym_compare) const {
     CanonicalGenerator<Orbit<SymCompareType>> f(g, sym_compare);
     return sym_compare.equal(f(derived()), f(other));
@@ -48,7 +48,7 @@ namespace CASM {
   ObjIterator CanonicalForm<_Base>::find_sym_equivalent(
     ObjIterator begin,
     ObjIterator end,
-    const SymGroup &g,
+    const std::vector<SymOp> &g,
     const SymCompareType &sym_compare) const {
     CanonicalGenerator<Orbit<SymCompareType>> f(g, sym_compare);
     auto canon = f(derived());
@@ -61,7 +61,7 @@ namespace CASM {
   template<typename _Base>
   template<typename SymCompareType>
   SymOp CanonicalForm<_Base>::to_canonical(
-    const SymGroup &g,
+    const std::vector<SymOp> &g,
     const SymCompareType &sym_compare) const {
 
     CanonicalGenerator<Orbit<SymCompareType>> f(g, sym_compare);
@@ -72,7 +72,7 @@ namespace CASM {
   template<typename _Base>
   template<typename SymCompareType>
   SymOp CanonicalForm<_Base>::from_canonical(
-    const SymGroup &g,
+    const std::vector<SymOp> &g,
     const SymCompareType &sym_compare) const {
 
     return to_canonical(g, sym_compare).inverse();

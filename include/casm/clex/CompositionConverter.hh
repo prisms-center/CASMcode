@@ -8,8 +8,11 @@
 #include "casm/clex/ParamComposition.hh"
 
 namespace CASM {
+  template<typename CoordType>
+  class BasicStructure;
 
-  class Structure;
+  class Site;
+
   class jsonParser;
 
   /// \brief Convert between number of species per unit cell and parametric composition
@@ -139,7 +142,7 @@ namespace CASM {
 
   /// \brief Generate CompositionConverter specifying standard composition axes for a prim Structure
   template<typename OutputIterator>
-  OutputIterator standard_composition_axes(const Structure &prim, OutputIterator result);
+  OutputIterator standard_composition_axes(const BasicStructure<Site> &prim, OutputIterator result);
 
   /// \brief Pretty-print map of name/CompositionConverter pairs
   void display_composition_axes(std::ostream &stream, const std::map<std::string, CompositionConverter> &map);
@@ -160,13 +163,13 @@ namespace CASM {
   void from_json(CompositionConverter &f, const jsonParser &json);
 
   /// \brief Generate a column matrix containing all the possible molecular end members
-  Eigen::MatrixXd end_members(const Structure &prim);
+  Eigen::MatrixXd end_members(const BasicStructure<Site> &prim);
 
-  /// \brief Return the composition space of a Structure
-  Eigen::MatrixXd composition_space(const Structure &prim, double tol = 1e-14);
+  /// \brief Return the composition space of a BasicStructure<Site>
+  Eigen::MatrixXd composition_space(const BasicStructure<Site> &prim, double tol = 1e-14);
 
-  /// \brief Return the null composition space of a Structure
-  Eigen::MatrixXd null_composition_space(const Structure &prim, double tol = 1e-14);
+  /// \brief Return the null composition space of a BasicStructure<Site>
+  Eigen::MatrixXd null_composition_space(const BasicStructure<Site> &prim, double tol = 1e-14);
 
 
   // ------ Definitions ---------------------------------------------
@@ -198,7 +201,7 @@ namespace CASM {
 
   /// \brief Construct a CompositionConverter
   ///
-  /// \param _prim A primitive Structure
+  /// \param _prim A primitive BasicStructure<Site>
   /// \param _origin Origin for parametric composition space
   /// \param _end_members Column vector matrix of end members for parameteric composition space axes
   ///
@@ -229,9 +232,9 @@ namespace CASM {
     _add_end_member(_others...);
   }
 
-  /// \brief Generate CompositionConverter specifying standard composition axes for a prim Structure
+  /// \brief Generate CompositionConverter specifying standard composition axes for a prim BasicStructure<Site>
   template<typename OutputIterator>
-  OutputIterator standard_composition_axes(const Structure &prim, OutputIterator result) {
+  OutputIterator standard_composition_axes(const BasicStructure<Site> &prim, OutputIterator result) {
     ParamComposition param_comp(prim);
     param_comp.generate_sublattice_map();
     param_comp.generate_prim_end_members();

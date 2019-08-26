@@ -40,11 +40,11 @@ namespace CASM {
     }
 
     const Molecule &OccupationTransformation::from_mol() const {
-      return this->uccoord.sublat_site().site_occupant()[from_value];
+      return this->uccoord.sublat_site().occupant_dof()[from_value];
     }
 
     const Molecule &OccupationTransformation::to_mol() const {
-      return this->uccoord.sublat_site().site_occupant()[to_value];
+      return this->uccoord.sublat_site().occupant_dof()[to_value];
     }
 
     bool OccupationTransformation::operator<(const OccupationTransformation &B) const {
@@ -106,7 +106,7 @@ namespace CASM {
     std::map<std::string, Index> _species_count = empty_species_count(begin->prim());
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
-      const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.from_value];
+      const Molecule &mol = t.uccoord.sublat_site().occupant_dof()[t.from_value];
       for(const AtomPosition &species_pos : mol.atoms()) {
         _species_count[species_pos.name()]++;
       }
@@ -130,7 +130,7 @@ namespace CASM {
     std::map<std::string, Index> _species_count = empty_species_count(begin->prim());
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
-      const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.to_value];
+      const Molecule &mol = t.uccoord.sublat_site().occupant_dof()[t.to_value];
       for(const AtomPosition &species_pos : mol.atoms()) {
         _species_count[species_pos.name()]++;
       }

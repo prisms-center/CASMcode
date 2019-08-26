@@ -152,7 +152,6 @@ namespace CASM {
       // copy relaxation properties from best config mapping into 'mapped' props
       res.mapped_props.mapped[insert_result.canonical_it.name()] = map_result.relaxation_properties;
       //These two aren't really being used yet
-      //res.mapped_props.mapped["best_assignment"] = map_result.best_assignment;
       //res.mapped_props.mapped["cart_op"] = map_result.cart_op;
       //This is a hack right now because default conflict score looks for minimum
       // relaxed_energy which doesn't make sense for diff_trans_config

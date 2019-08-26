@@ -12,6 +12,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/CompositionConverter.hh"
@@ -116,41 +117,25 @@ namespace CASM {
   //*********************************************************************************
 
   Configuration Configuration::zeros(Supercell const &_scel) {
-    return Configuration::zeros(_scel, _scel.primclex().crystallography_tol());
+    return Configuration(_scel, jsonParser(), _scel.zero_configdof(_scel.primclex().crystallography_tol()));
   }
+
   //*********************************************************************************
 
   Configuration Configuration::zeros(Supercell const &_scel, double _tol) {
-
-    ConfigDoF tdof(_scel.basis_size(),
-                   _scel.volume(),
-                   global_dof_info(_scel.prim()),
-                   local_dof_info(_scel.prim()),
-                   occ_symrep_IDs(_scel.prim()),
-                   _tol);
-
-
-    return Configuration(_scel, jsonParser(), tdof);
+    return Configuration(_scel, jsonParser(), _scel.zero_configdof(_tol));
   }
 
   //*********************************************************************************
 
   Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_scel) {
-    return Configuration::zeros(_scel, _scel->primclex().crystallography_tol());
+    return Configuration(_scel, jsonParser(),  _scel->zero_configdof(_scel->primclex().crystallography_tol()));
   }
 
   //*********************************************************************************
 
   Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_scel, double _tol) {
-    ConfigDoF tdof(_scel->basis_size(),
-                   _scel->volume(),
-                   global_dof_info(_scel->prim()),
-                   local_dof_info(_scel->prim()),
-                   occ_symrep_IDs(_scel->prim()),
-                   _tol);
-
-
-    return Configuration(_scel, jsonParser(), tdof);
+    return Configuration(_scel, jsonParser(),  _scel->zero_configdof(_tol));
   }
 
   //*********************************************************************************
@@ -462,7 +447,7 @@ namespace CASM {
                  config.prim().point_group().end(),
                  config.crystallography_tol());
     this->from_canonical_lat = *res.first;
-    this->transf_mat = res.second;
+    this->transf_mat = iround(res.second);
 
     // given op2, find op1
     auto f = config.equal_to();
@@ -589,7 +574,7 @@ namespace CASM {
 
   //*********************************************************************************
   const Molecule &Configuration::mol(Index site_l) const {
-    return prim().basis()[ sublat(site_l) ].site_occupant()[ occ(site_l) ];
+    return prim().basis()[ sublat(site_l) ].occupant_dof()[ occ(site_l) ];
   }
 
   //*********************************************************************************
@@ -671,7 +656,7 @@ namespace CASM {
     // create an array to count the number of each molecule
     std::vector<Eigen::VectorXi> sublat_num_each_molecule;
     for(i = 0; i < prim().basis().size(); i++) {
-      sublat_num_each_molecule.push_back(Eigen::VectorXi::Zero(prim().basis()[i].site_occupant().size()));
+      sublat_num_each_molecule.push_back(Eigen::VectorXi::Zero(prim().basis()[i].occupant_dof().size()));
     }
 
     // count the number of each molecule by sublattice
@@ -978,7 +963,7 @@ namespace CASM {
 
   std::string pos_string(Configuration const  &_config) {
     std::stringstream ss;
-    VaspIO::PrintPOSCAR p(_config);
+    VaspIO::PrintPOSCAR p(to_simple_structure(_config), _config.name());
     p.sort();
     p.print(ss);
     return ss.str();
@@ -1004,11 +989,10 @@ namespace CASM {
 
   //*********************************************************************************
 
-
   std::string config_json_string(Configuration const  &_config) {
     std::stringstream ss;
-    jsonParser tjson;
-    to_json(SimpleStructure(_config), tjson);
+    jsonParser tjson = json_supplement(_config);
+    to_json(to_simple_structure(_config), tjson);
     tjson.print(ss);
     return ss.str();
   }
@@ -1843,25 +1827,6 @@ namespace CASM {
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
     return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
-  }
-
-  Structure make_deformed_struc(const Configuration &c) {
-    Structure tmp = c.supercell().superstructure(c);
-    if(c.configdof().has_local_dof("disp")) {
-      //std::cout << "has disp going to apply" << std::endl;
-      std::vector<Site> new_basis;
-      for(int i = 0 ; i < tmp.basis().size(); i++) {
-        Eigen::Vector3d new_vec = tmp.basis()[i].const_cart() + c.configdof().local_dof("disp").values().col(i) ;
-        Site new_site(Coordinate(new_vec, tmp.lattice(), CART), tmp.basis()[i].occ_name());
-
-        new_basis.push_back(new_site);
-      }
-      tmp.set_basis(new_basis);
-    }
-    else {
-      //std::cout << "no disp found" << std::endl;
-    }
-    return tmp;
   }
 
 }

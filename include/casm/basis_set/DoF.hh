@@ -23,7 +23,6 @@ namespace CASM {
 
   template<typename OccType>
   class OccupantDoF;
-  using MoleculeOccupant = OccupantDoF<Molecule>;
 
   class ContinuousDoF;
   class DoFSet;
@@ -33,7 +32,6 @@ namespace CASM {
   namespace DoFType {
     class Traits;
 
-    enum DOF_DOMAIN {DISCRETE, CONTINUOUS};
     enum DOF_MODE {LOCAL, GLOBAL};
 
     /// \brief Base class for defining a collection of traits shared by a specific DoF type
@@ -45,13 +43,11 @@ namespace CASM {
     public:
       BasicTraits(std::string const &_type_name,
                   std::vector<std::string> const &_std_var_names,
-                  DOF_DOMAIN _domain,
                   DOF_MODE _mode,
                   bool _requires_site_basis,
                   bool _unit_length) :
         m_type_name(_type_name),
         m_standard_var_names(_std_var_names),
-        m_domain(_domain),
         m_mode(_mode),
         m_requires_site_basis(_requires_site_basis),
         m_unit_length(_unit_length) {
@@ -94,11 +90,6 @@ namespace CASM {
         return m_unit_length;
       }
 
-      /// \brief returns true if DoF is discrete
-      bool discrete() const {
-        return m_domain == DISCRETE;
-      }
-
       /// \brief conventional dimensionality of this DoF, returns -1 if always variable
       Index dim() const {
         return standard_var_names().size();
@@ -117,7 +108,6 @@ namespace CASM {
       /// \brief comparison of type_name, domain (discrete/continuous) and mode (local/global)
       bool identical(BasicTraits const &other) const {
         return type_name() == other.type_name()
-               && m_domain == other.m_domain
                && m_mode == other.m_mode;
       }
 
@@ -178,7 +168,6 @@ namespace CASM {
 
       std::string m_type_name;
       std::vector<std::string> m_standard_var_names;
-      DOF_DOMAIN m_domain;
       DOF_MODE m_mode;
       bool m_requires_site_basis;
       bool m_unit_length;

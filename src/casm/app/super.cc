@@ -2,6 +2,10 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Niggli.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
@@ -9,11 +13,8 @@
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ConfigDatabase.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/crystallography/Niggli.hh"
 
 #include "casm/completer/Handlers.hh"
 
@@ -219,7 +220,7 @@ namespace CASM {
 
     // lambda for printing
     auto print = [&](const BasicStructure<Site> &struc) {
-      VaspIO::PrintPOSCAR printer(struc);
+      VaspIO::PrintPOSCAR printer(to_simple_structure(struc), struc.title());
 
       if(vm.count("vasp5")) {
         printer.set_atom_names_on();
@@ -358,10 +359,10 @@ namespace CASM {
 
         args.log() << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
-        args.log() << "    Initial transformation matrix:\n" << T
-                   << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
+        args.log() << "    Initial transformation matrix:\n" << iround(T)
+                   << "\n    (volume = " << iround(T).cast<double>().determinant() << ")\n\n";
 
-        auto M = enforce_min_volume(prim_lat, T, pg, min_vol, vm.count("fixed-shape"));
+        auto M = enforce_min_volume(prim_lat, iround(T), pg, min_vol, vm.count("fixed-shape"));
 
         superduper = canonical_equivalent_lattice(make_supercell(superduper, M), pg, TOL);
 
@@ -370,7 +371,7 @@ namespace CASM {
         args.log() << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
         args.log() << "    Transformation matrix, after enforcing mininum volume:\n"
-                   << S << "\n    (volume = " << S.cast<double>().determinant() << ")\n\n";
+                   << iround(S) << "\n    (volume = " << iround(S).cast<double>().determinant() << ")\n\n";
 
       }
 
@@ -384,7 +385,7 @@ namespace CASM {
       args.log() << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
       args.log() << "  Transformation matrix, relative the primitive cell:\n";
-      args.log() << is_supercell(superduper, primclex.prim().lattice(), TOL).second << "\n\n";
+      args.log() << iround(is_supercell(superduper, primclex.prim().lattice(), TOL).second) << "\n\n";
 
       if(vm.count("verbose")) {
         args.log() << "Transformation matrices: \n";
@@ -397,7 +398,7 @@ namespace CASM {
           args.log() << "  Superduper = (op*unit) * T\n\nop:\n";
           args.log() << res.first->matrix() << "\n\n";
           args.log() << "  T:\n";
-          args.log() << res.second << "\n\n";
+          args.log() << iround(res.second) << "\n\n";
 
         }
         args.log() << "--- \n";
@@ -467,10 +468,10 @@ namespace CASM {
                    vm.count("fixed-shape"));
 
         Lattice niggli_lat = canonical_equivalent_lattice(make_supercell(prim_lat, T * M), pg, TOL);
-        T = is_supercell(niggli_lat, prim_lat, TOL).second;
+        T = iround(is_supercell(niggli_lat, prim_lat, TOL).second);
 
         args.log() << "    Transformation matrix, after enforcing mininum volume:\n"
-                   << T << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
+                   << T << "\n    (volume = " << iround(T).cast<double>().determinant() << ")\n\n";
       }
 
 
@@ -504,7 +505,7 @@ namespace CASM {
         std::stringstream ss;
         const Configuration &con = *primclex.db<Configuration>().find(configname[0]);
 
-        VaspIO::PrintPOSCAR p(con);
+        VaspIO::PrintPOSCAR p(to_simple_structure(con), con.name());
         p.sort();
         p.print(ss);
 
@@ -529,30 +530,35 @@ namespace CASM {
 
         if(vm.count("add-canonical")) {
 
-          int map_opt = ConfigMapper::none;
+          int map_opt = StrucMapper::none;
           double tol = TOL;
           double vol_tol = 0.25;
           double lattice_weight = 0.5;
           ConfigMapper configmapper(primclex, lattice_weight, vol_tol, map_opt, tol);
 
-          auto map_res = configmapper.import_structure_occupation(super);
-          auto insert_res = map_res.config->insert();
-          Configuration imported_config = *insert_res.canonical_it;
+          auto map_res = configmapper.import_structure(to_simple_structure(super));
 
-          if(insert_res.insert_canonical) {
-            args.log() << "  The configuration was imported successfully as "
-                       << imported_config.name() << std::endl << std::endl;
+          if(map_res.success()) {
+            auto insert_res = ((map_res.maps.begin()->second).config_ptr)->insert();
+            Configuration imported_config = *insert_res.canonical_it;
 
+            if(insert_res.insert_canonical) {
+              args.log() << "  The configuration was imported successfully as "
+                         << imported_config.name() << std::endl << std::endl;
+
+            }
+            else {
+              args.log() << "  The configuration was mapped onto pre-existing equivalent structure "
+                         << imported_config.name() << std::endl << std::endl;
+            }
+            jsonParser json_src;
+            json_src["supercell_of"] = configname[0];
+            imported_config.push_back_source(json_src);
+            primclex.db<Configuration>().update(imported_config);
           }
           else {
-            args.log() << "  The configuration was mapped onto pre-existing equivalent structure "
-                       << imported_config.name() << std::endl << std::endl;
+            args.log() << "  Failure to map configuration." << std::endl << std::endl;
           }
-
-          jsonParser json_src;
-          json_src["supercell_of"] = configname[0];
-          imported_config.push_back_source(json_src);
-          primclex.db<Configuration>().update(imported_config);
 
           //Update directories
           args.log() << "Write supercell database..." << std::endl;
@@ -646,9 +652,8 @@ namespace CASM {
 
       // see if super_lat is a supercell of unitlat
       // S == U*T
-      Eigen::Matrix3d T = unit_lat.lat_column_mat().inverse() * super_lat.lat_column_mat();
-
-      if(is_integer(T, TOL) && !almost_zero(T, TOL)) {
+      Eigen::Matrix3d T;
+      if(super_lat.is_supercell_of(unit_lat, T)) {
         args.log() << "The super lattice is a supercell of the unit lattice.\n\n";
 
         args.log() << "The transformation matrix, T, where S = U*T, is: \n" << iround(T) << "\n\n";

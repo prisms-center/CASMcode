@@ -13,22 +13,17 @@ namespace CASM {
   }
   //*******************************************************************************************
   //calculates and returns the value of U where F = R*U
-  Matrix3d StrainConverter::right_stretch_tensor(Matrix3d &C, Eigen::Vector3d &eigenvalues,
-                                                 Matrix3d &eigenvectors, const Matrix3d &F) {
+  Matrix3d StrainConverter::right_stretch_tensor(Matrix3d &C, const Matrix3d &F) {
     C = metric_tensor(F);
     Eigen::SelfAdjointEigenSolver <Matrix3d> eigen_solver(C);
-    Matrix3d U = eigen_solver.operatorSqrt();
-    eigenvalues = eigen_solver.eigenvalues();
-    eigenvectors = eigen_solver.eigenvectors();
-    return U;
+    return eigen_solver.operatorSqrt();
   }
 
   //*******************************************************************************************
   //overloaded version of the above
   Matrix3d StrainConverter::right_stretch_tensor(const Matrix3d &F) {
-    Matrix3d C, eigenvectors;
-    Eigen::Vector3d eigenvalues;
-    return right_stretch_tensor(C, eigenvalues, eigenvectors, F);
+    Matrix3d C;
+    return right_stretch_tensor(C, F);
   }
 
   //*******************************************************************************************
@@ -41,7 +36,7 @@ namespace CASM {
   /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
   Matrix3d StrainConverter::green_lagrange_to_F(const Matrix3d &E) {
     Eigen::SelfAdjointEigenSolver<Matrix3d> es(2 * E + Eigen::MatrixXd::Identity(3, 3));
-    return es.eigenvectors() * es.eigenvalues().array().sqrt().matrix().asDiagonal() * es.eigenvectors().inverse();
+    return es.operatorSqrt();
   }
 
   //*******************************************************************************************
@@ -85,8 +80,8 @@ namespace CASM {
   //*******************************************************************************************
   /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
   Matrix3d StrainConverter::euler_almansi_to_F(const Matrix3d &A) {
-    Eigen::SelfAdjointEigenSolver<Matrix3d> es((Eigen::MatrixXd::Identity(3, 3) - 2 * A).inverse());
-    return es.eigenvectors() * es.eigenvalues().array().sqrt().matrix().asDiagonal() * es.eigenvectors().inverse();
+    Eigen::SelfAdjointEigenSolver<Matrix3d> es(Eigen::MatrixXd::Identity(3, 3) - 2 * A);
+    return es.operatorInverseSqrt();
   }
 
   //*******************************************************************************************
@@ -186,9 +181,8 @@ namespace CASM {
   //*******************************************************************************************
   //Calculates a linear combination of the components of unroll_E
   //using the sop_transf_mat
-  VectorXd StrainConverter::sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
-                                Matrix3d &eigenvectors, const Matrix3d &F, STRAIN_METRIC MODE) const {
-    U = right_stretch_tensor(C, eigenvalues, eigenvectors, F);
+  VectorXd StrainConverter::sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, const Matrix3d &F, STRAIN_METRIC MODE) const {
+    U = right_stretch_tensor(C, F);
     E = strain_metric(F, MODE);
     VectorXd _unroll_E = unroll_E(E);
     VectorXd _sop = m_sop_transf_mat * _unroll_E;
@@ -197,9 +191,8 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  VectorXd StrainConverter::sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
-                                Matrix3d &eigenvectors, const Matrix3d &F) const {
-    return sop(E, C, U, eigenvalues, eigenvectors, F, STRAIN_METRIC_MODE);
+  VectorXd StrainConverter::sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, const Matrix3d &F) const {
+    return sop(E, C, U, F, STRAIN_METRIC_MODE);
   }
 
   //************************************* SET routines ****************************************

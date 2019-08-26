@@ -9,7 +9,6 @@ namespace CASM {
       StrainDoFTraits(std::string _metric) :
         DoFType::Traits(_metric + "strain",
                         std::vector<std::string>({"e_1", "e_2", "e_3", "e_4", "e_5", "e_6"}),
-      DoFType::CONTINUOUS,
       DoFType::GLOBAL,
       /*_requires_site_basis = */ false,
       /*_unit_length = */ false),
@@ -26,7 +25,10 @@ namespace CASM {
                                                  std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                  jsonParser const &_bspecs) const override;
 
-      /// \brief Apply DoF values for this DoF to _struc
+      /// \brief Serialize strain DoF values from ConfigDoF
+      jsonParser dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const override;
+
+      /// \brief Transforms SimpleSructure @param _struc by applying strain DoF values contained in @param _dof
       void apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const override;
 
       /// \brief Return list of DoFs that *must* be applied before this DoF is applied

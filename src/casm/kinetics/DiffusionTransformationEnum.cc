@@ -358,7 +358,7 @@ namespace CASM {
       std::vector<Index> init_occ(N * 2, 0);
       std::vector<Index> final_occ(N * 2);
       for(int i = 0; i < N; i++) {
-        final_occ[i] = cluster()[i].site().site_occupant().size() - 1;
+        final_occ[i] = cluster()[i].site().occupant_dof().size() - 1;
         final_occ[i + N] = final_occ[i];
       }
       std::vector<Index> incr(N * 2, 1);
@@ -388,7 +388,7 @@ namespace CASM {
       for(Index i = 0; i < N; ++i) {
         Index occ = occ_values[i + offset];
         UnitCellCoord uccoord = cluster()[i];
-        Index mol_size = uccoord.site().site_occupant()[occ].size();
+        Index mol_size = uccoord.site().occupant_dof()[occ].size();
         // for each species
         for(Index j = 0; j < mol_size; ++j) {
           loc.emplace_back(uccoord, occ, j);

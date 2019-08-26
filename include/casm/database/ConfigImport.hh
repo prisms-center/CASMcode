@@ -75,6 +75,7 @@ namespace CASM {
 
       std::unique_ptr<ConfigMapper> m_configmapper;
       jsonParser m_used;
+      bool m_preserve_rotation;
       bool m_primitive_only;
       std::vector<std::string> m_dof;
     };

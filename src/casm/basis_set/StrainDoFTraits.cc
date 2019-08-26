@@ -60,8 +60,17 @@ namespace CASM {
       _struc.lat_column_mat = F * _struc.lat_column_mat;
       _struc.mol_info.coords = F * _struc.mol_info.coords;
       _struc.atom_info.coords = F * _struc.atom_info.coords;
-      _struc.global_dofs[type_name()]["deformation"] = F;
-      to_json_array(unrolled_metric, _struc.global_dofs[type_name()]["value"]);
+    }
+
+    jsonParser StrainDoFTraits::dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const {
+      Eigen::VectorXd unrolled_metric = _dof.global_dof(type_name()).standard_values();
+      StrainConverter c(m_metric);
+      Eigen::Matrix3d F = c.unrolled_strain_metric_to_F(unrolled_metric);
+
+      jsonParser json;
+      json["deformation"] = F;
+      to_json_array(unrolled_metric, json["value"]);
+      return json;
     }
   }
 

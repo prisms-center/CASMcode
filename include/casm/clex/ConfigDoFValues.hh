@@ -144,11 +144,13 @@ namespace CASM {
       return m_vals;
     }
 
+    void from_standard_values(Eigen::Ref<const Eigen::MatrixXd> const &_values);
+
     Eigen::MatrixXd standard_values() const {
       Index rows = m_info[0].basis().rows();
       Eigen::MatrixXd result(rows, m_vals.cols());
       for(Index b = 0; b < n_sublat(); ++b) {
-        result.block(0, b * n_vol(), rows, n_vol()) = m_info[b].basis() * sublat(b);
+        result.block(0, b * n_vol(), rows, n_vol()) = info()[b].basis() * sublat(b).topRows(info()[b].dim());
       }
       return result;
     }
@@ -223,6 +225,8 @@ namespace CASM {
     ConstReference values() const {
       return m_vals;
     }
+
+    void from_standard_values(Eigen::Ref<const Eigen::MatrixXd> const &_values);
 
     Eigen::MatrixXd standard_values() const {
       return m_info.basis() * m_vals;

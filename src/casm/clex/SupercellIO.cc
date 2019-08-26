@@ -1,4 +1,5 @@
 #include "casm/clex/SupercellIO.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/DataFormatter_impl.hh"
 #include "casm/casm_io/DataFormatterTools_impl.hh"
 #include "casm/symmetry/SymOp.hh"
@@ -81,7 +82,7 @@ namespace CASM {
         *m_last_result = std::make_tuple(
                            res.first != unit.prim().factor_group().end(),
                            *res.first,
-                           res.second);
+                           iround(res.second));
       }
       return *m_last_result;
     }

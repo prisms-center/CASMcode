@@ -36,6 +36,9 @@ namespace CASM {
   public:
     typedef SymOp::vector_type vector_type;
     typedef SymOp::matrix_type matrix_type;
+
+    static SymGroup lattice_point_group(Lattice const &_lat);
+
     /// Initialize by setting periodicity mode (default mode is PERIODIC)
     SymGroup(PERIODICITY_TYPE init_type = PERIODIC) :
       m_lat_ptr(nullptr),
@@ -44,13 +47,12 @@ namespace CASM {
 
     }
 
-    SymGroup(const std::vector<SymOp> &from_array, PERIODICITY_TYPE init_type = PERIODIC);
+    SymGroup(std::vector<SymOp> from_array, PERIODICITY_TYPE init_type = PERIODIC);
 
     template<typename IterType>
     SymGroup(IterType begin,
              IterType end,
              PERIODICITY_TYPE init_type = PERIODIC);
-
 
     virtual void push_back(const SymOp &new_op);
     virtual void clear();
@@ -192,7 +194,7 @@ namespace CASM {
     void print_space_group_info(std::ostream &out) const;
 
     ///Fill up a SymGroup with *this minus the shifts
-    void copy_no_trans(SymGroup &shiftless, bool keep_repeated = false) const;
+    SymGroup copy_no_trans(bool keep_repeated = false) const;
 
     jsonParser &to_json(jsonParser &json) const;
 

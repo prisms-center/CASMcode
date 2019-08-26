@@ -10,7 +10,6 @@ namespace CASM {
       OccupationDoFTraits():
         DoFType::Traits("occ",
       {},
-      DoFType::DISCRETE,
       DoFType::LOCAL,
       /*_requires_site_basis = */ true,
       /*_unit_length = */ false) {

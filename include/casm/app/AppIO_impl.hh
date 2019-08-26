@@ -184,7 +184,7 @@ namespace CASM {
       if(opt.coord_type == INTEGRAL) {
         out << coord;
         out << " ";
-        coord.site().site_occupant().print(out);
+        coord.site().occupant_dof().print(out);
         out << std::flush;
       }
       else {

@@ -63,6 +63,17 @@ namespace CASM {
 
   //**************************************************************
 
+  Index Permutation::character() const {
+    Index result;
+    for(Index i = 0; i < size(); ++i) {
+      if(m_perm_array[i] == i)
+        ++result;
+    }
+    return result;
+  }
+
+  //**************************************************************
+
   /// Checks whether any indices remain unchanged by permutation
   bool Permutation::has_fixed_points() const {
     for(Index i = 0; i < size(); i++) {

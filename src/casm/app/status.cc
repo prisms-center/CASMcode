@@ -507,8 +507,7 @@ Instructions for fitting ECI:                                          \n\n\
     args.log() << "- Project location: " << primclex.dir().root_dir().string() << std::endl;
 
     // it'd be nice to just read this...
-    SymGroup prim_pg;
-    primclex.prim().lattice().generate_point_group(prim_pg);
+    SymGroup prim_pg(SymGroup::lattice_point_group(primclex.prim().lattice()));
     prim_pg.character_table();
     args.log() << "- Lattice point group size: " << prim_pg.size() << std::endl;
     args.log() << "- Lattice point group is " << prim_pg.get_name() << std::endl;

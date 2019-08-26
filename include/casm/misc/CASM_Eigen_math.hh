@@ -450,6 +450,8 @@ namespace CASM {
     return;
   }
 
+  Eigen::Matrix3d polar_decomposition(Eigen::Matrix3d const &mat);
+
   std::vector<Eigen::Matrix3i> _unimodular_matrices(bool positive, bool negative, int range = 1);
   const std::vector<Eigen::Matrix3i> &positive_unimodular_matrices();
   const std::vector<Eigen::Matrix3i> &negative_unimodular_matrices();

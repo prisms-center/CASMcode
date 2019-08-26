@@ -19,6 +19,7 @@ namespace CASM {
   class PermuteIterator;
   class PrimClex;
   class Clexulator;
+  class ConfigDoF;
   class Configuration;
   template<typename T> class BasicStructure;
   class Site;
@@ -78,18 +79,11 @@ namespace CASM {
     UnitCellCoord uccoord(Index linear_index) const;
 
 
-    // returns maximum allowed occupation bitstring -- used for initializing enumeration counters
+    /// \brief returns maximum allowed occupation bitstring -- used for initializing enumeration counters
     std::vector<int> max_allowed_occupation() const;
 
-    Configuration configuration(const BasicStructure<Site> &structure_to_config, double tol = TOL) const;
-
-    /// return Structure corresponding to this supercell
-    ///    w/ basis site occupation as per primclex.prim
-    Structure superstructure() const;
-
-    /// return Structure corresponding to this supercell
-    ///    w/ basis site occupation as per config
-    Structure superstructure(const Configuration &config) const;
+    /// \brief returns Supercell-compatible configdof with zeroed DoF values and user-specified tolerance
+    ConfigDoF zero_configdof(double tol) const;
 
     // **** Accessors ****
 
@@ -124,12 +118,6 @@ namespace CASM {
 
     /// \brief Insert the canonical form of this into the database
     std::pair<DB::DatabaseIterator<Supercell>, bool> insert() const;
-
-    // **** Other ****
-
-    bool is_supercell_of(const Structure &structure) const;
-    bool is_supercell_of(const Structure &structure, Eigen::Matrix3d &multimat) const;
-    std::vector<int> vacant()const;
 
   private:
 

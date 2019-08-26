@@ -702,6 +702,10 @@ namespace CASM {
     return Mp;
   }
 
+  Eigen::Matrix3d polar_decomposition(Eigen::Matrix3d const &mat) {
+    return Eigen::SelfAdjointEigenSolver <Eigen::Matrix3d>(mat.transpose() * mat).operatorSqrt();
+  }
+
   std::vector<Eigen::Matrix3i> _unimodular_matrices(bool positive, bool negative, int range) {
     std::vector<Eigen::Matrix3i> uni_det_mats;
     int totalmats = 3480;

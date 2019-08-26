@@ -40,7 +40,7 @@ namespace CASM {
     return *this;
   }
 
-  /// Returns a reference to this
+  /// Returns a pointer to this
   const PermuteIterator *PermuteIterator::operator->() const {
     return this;
   }
@@ -97,7 +97,7 @@ namespace CASM {
   }
 
   SymOp PermuteIterator::sym_op()const {
-    return prim_grid().sym_op(m_translation_index) * sym_info().site_permutation_symrep().sym_op(m_factor_group_index);
+    return prim_grid().sym_op(m_translation_index) * sym_info().factor_group()[m_factor_group_index];
   }
 
   Index PermuteIterator::permute_ind(Index i) const {
@@ -214,8 +214,10 @@ namespace CASM {
         if(f == result[i].index())
           break;
       }
-      if(i == result.size())
+      if(i == result.size()) {
         result.push_back((begin->sym_op()).no_trans());
+        std::cout << "pushed back op " << result.back().index() << "\n";
+      }
     }
     result.sort();
     return result;

@@ -15,7 +15,7 @@ namespace CASM {
 
   /// \brief Generate clusters using Site with site_occupant.size() > 1
   bool alloy_sites_filter(const Site &site) {
-    return site.site_occupant().size() > 1;
+    return site.occupant_dof().size() > 1;
   }
 
   // --- ClusterInvariants instantiations ----------------------------------------

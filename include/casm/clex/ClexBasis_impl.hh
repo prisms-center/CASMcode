@@ -24,19 +24,27 @@ namespace CASM {
     std::vector<DoFKey> global_keys;
     std::vector<DoFKey> local_keys;
 
-    //separate local_args from global_args
-    for(DoFKey const &key : dof_keys) {
-      if(m_global_bases.find(key) != m_global_bases.end()) {
-        global_keys.push_back(key);
-        //std::cout << "ADDING GLOBAL DOF " << key << "\n";
-      }
-      else if(m_site_bases.find(key) != m_site_bases.end()) {
-        local_keys.push_back(key);
-        //std::cout << "ADDING LOCAL DOF " << key << "\n";
-      }
-      else {
-        assert(0);
-        throw std::runtime_error(std::string("Attempting to build Clex basis set, but missing degree of freedom \"") + key + "\n");
+    if(dof_keys.empty()) {
+      for(auto const &dof : m_global_bases)
+        global_keys.push_back(dof.first);
+      for(auto const &dof : m_global_bases)
+        local_keys.push_back(dof.first);
+    }
+    else if(dof_keys.size() > 1 || dof_keys[0] != "none") {
+      //separate local_args from global_args
+      for(DoFKey const &key : dof_keys) {
+        if(m_global_bases.find(key) != m_global_bases.end()) {
+          global_keys.push_back(key);
+          //std::cout << "ADDING GLOBAL DOF " << key << "\n";
+        }
+        else if(m_site_bases.find(key) != m_site_bases.end()) {
+          local_keys.push_back(key);
+          //std::cout << "ADDING LOCAL DOF " << key << "\n";
+        }
+        else {
+          assert(0);
+          throw std::runtime_error(std::string("Attempting to build Clex basis set, but missing degree of freedom \"") + key + "\n");
+        }
       }
     }
     m_bset_tree.resize(std::distance(_orbit_begin, _orbit_end));
