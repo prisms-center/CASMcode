@@ -2764,7 +2764,7 @@ namespace CASM {
     std::vector< std::set<std::set<Index> > > result;
 
     int tempind = 0;
-    Index i, j, k, l;
+    Index i, j;
     if(get_alt_multi_table().size() != size()) {
       return result;
     }

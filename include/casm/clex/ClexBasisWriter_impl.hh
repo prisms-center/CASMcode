@@ -27,8 +27,6 @@ namespace CASM {
 
     enum FuncStringType {func_declaration = 0, func_definition = 1};
 
-    Index N_sublat = clex.n_sublat();
-
     Index N_corr = clex.n_functions();
 
     std::map<UnitCellCoord, std::set<UnitCellCoord> > nhood = ClexBasisWriter_impl::dependency_neighborhood(_tree.begin(), _tree.end());
@@ -83,8 +81,6 @@ namespace CASM {
 
     // temporary storage for formula
     std::vector<std::string> formulae, tformulae;
-
-    bool make_newline(false);
 
     //loop over orbits
     for(Index no = 0; no < _tree.size(); no++) {
@@ -520,8 +516,6 @@ namespace CASM {
 
 
       std::vector<std::string> formulae;
-
-      Index nbor_ind = _nlist.neighbor_index(nbor);
 
       std::string prefix, suffix;
 

@@ -424,7 +424,7 @@ namespace CASM {
     tcosets.reserve(csize);
 
     std::vector<bool> check(size(), false);
-    Index j, prod;
+    Index prod;
     for(Index i = 0; i < size() && tcosets.size() < csize; i++) {
       if(check[i])
         continue;

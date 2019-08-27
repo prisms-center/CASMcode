@@ -11,8 +11,8 @@ namespace CASM {
 
   /// Construct SymBasisPermute
   SymBasisPermute::SymBasisPermute(SymOp const &_op, Lattice const &_lat,  std::vector<UnitCellCoord> const &_ucc_permute) :
-    m_point_mat(lround(cart2frac(_op.matrix(), _lat))),
-    m_ucc_permute(_ucc_permute) {
+    m_ucc_permute(_ucc_permute),
+    m_point_mat(lround(cart2frac(_op.matrix(), _lat))) {
 
     if(!is_integer(cart2frac(_op.matrix(), _lat), _lat.tol())) {
       throw std::runtime_error(

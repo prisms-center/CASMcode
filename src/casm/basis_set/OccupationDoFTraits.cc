@@ -143,9 +143,12 @@ namespace CASM {
                                                                _asym_unit[i].prototype()[0].sublat(),
                                                                SymGroup(_asym_unit[i].equivalence_map(0).first,
                                                                         _asym_unit[i].equivalence_map(0).second));
+        //std::cout << "_asym_unit[" << i << "].size() = " << _asym_unit[i].size() << "\n";
         for(Index ne = 1; ne < _asym_unit[i].size(); ne++) {
+          result[_asym_unit[i][ne][0].sublat()] = result[b_ind];
           result[_asym_unit[i][ne][0].sublat()].apply_sym(_asym_unit[i].equivalence_map()[ne][0]);
           result[_asym_unit[i][ne][0].sublat()].accept(OccFuncBasisIndexer(_asym_unit[i][ne][0].sublat()));
+          result[_asym_unit[i][ne][0].sublat()].set_dof_IDs({_asym_unit[i][ne][0].sublat()});
         }
       }
 

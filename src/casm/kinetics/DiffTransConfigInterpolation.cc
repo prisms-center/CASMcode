@@ -213,7 +213,6 @@ namespace CASM {
       Configuration result = config;
       for(auto traj : diff_trans.species_traj()) {
         Index k = config.supercell().linear_index(traj.from.uccoord);
-        Index l = config.supercell().linear_index(traj.to.uccoord);
 
         result.set_occ(k, traj.from.occ);
 
@@ -221,7 +220,7 @@ namespace CASM {
 
         const Eigen::Vector3d from_pos = traj.from.uccoord.coordinate().const_cart();
         const Eigen::Vector3d to_pos = traj.to.uccoord.coordinate().const_cart();
-        Eigen::Vector3d ideal_pos_inc = to_pos - from_pos;
+        //Eigen::Vector3d ideal_pos_inc = to_pos - from_pos;
         //Eigen::Vector3d final_disp = displacement + ideal_pos_inc;
 
         //result.set_disp(k, final_disp);

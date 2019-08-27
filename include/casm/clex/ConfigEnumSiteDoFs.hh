@@ -100,7 +100,7 @@ namespace CASM {
 
     bool m_subset_mode;
 
-    bool m_combo_mode;
+    //bool m_combo_mode;
 
     Index m_combo_index;
 

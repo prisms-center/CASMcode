@@ -356,7 +356,6 @@ namespace CASM {
    */
   Lattice Lattice::reduced_cell2() const {
     //std::cout << "reduced_cell2()\n";
-    int i, j, k, nv;
     std::vector<Eigen::Matrix3d > const &skew(skew_transforms());
     std::vector<Eigen::Matrix3d > const &ntrans(NiggliRep::cell_invariant_transforms());
     //std::cout << "Before reduction: \n";

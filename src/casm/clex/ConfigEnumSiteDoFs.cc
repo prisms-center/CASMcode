@@ -355,7 +355,6 @@ namespace CASM {
 
     //m_current(_init.config()),
     m_dof_key(_dof),
-    m_combo_mode(false),
     m_min_nonzero(_min_nonzero),
     m_max_nonzero(_max_nonzero),
     m_axes(_axes),
@@ -365,6 +364,7 @@ namespace CASM {
     m_unit_length(DoFType::traits(_dof).unit_length()),
     m_sites(_init.sites().begin(), _init.sites().end()),
     m_subset_mode(false),
+    //m_combo_mode(false),
     m_combo_index(0) {
 
 

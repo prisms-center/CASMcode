@@ -43,11 +43,12 @@ namespace CASM {
               bool _standalone,
               std::vector<Index> const &_offset = {},
               std::vector<Index> const &_stride = {}) :
-        m_name(_name),
-        m_standalone(_standalone),
         m_offset(_offset),
         m_stride(_stride),
-        m_identifiers(_offset.size(), 0) {
+        m_identifiers(_offset.size(), 0),
+        m_name(_name),
+        m_standalone(_standalone)
+      {
 
       }
 
