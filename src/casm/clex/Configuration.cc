@@ -163,7 +163,6 @@ namespace CASM {
   /// \brief Check if this is a primitive Configuration
   bool Configuration::is_primitive() const {
     if(!cache().contains("is_primitive")) {
-      auto it = find_translation();
       bool result = (find_translation() == supercell().sym_info().translate_end());
       cache_insert("is_primitive", result);
       return result;

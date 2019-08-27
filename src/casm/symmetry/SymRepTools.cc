@@ -1460,7 +1460,6 @@ namespace CASM {
       SymGroupRep const &srep(head_group.master_group().representation(id));
       if(!srep.MatrixXd(0))
         throw std::runtime_error("In symrep_subwedges, SymGroupRep does not describe matrix representation");
-      Index dim = srep.MatrixXd(0)->cols();
 
       //for(SymOp const &op : head_group) {
       //std::cout << "OP " << op.index() << ":\n" << *(srep[op.index()]->MatrixXd()) << "\n\n";

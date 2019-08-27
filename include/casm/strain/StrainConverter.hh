@@ -21,7 +21,7 @@
 namespace CASM {
   class SymGroup;
   namespace SymRepTools {
-    class IrrepWedge;
+    struct IrrepWedge;
   }
 
   typedef Eigen::VectorXd VectorXd;

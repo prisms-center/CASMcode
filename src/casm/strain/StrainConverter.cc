@@ -259,8 +259,6 @@ namespace CASM {
       set_symmetrized_sop(pg);
     }
 
-    const SymGroupRep &srep(pg.master_group().representation(m_symrep_ID));
-
     return SymRepTools::irreducible_wedges(pg, m_symrep_ID);
   }
 

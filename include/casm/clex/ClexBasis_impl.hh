@@ -50,7 +50,6 @@ namespace CASM {
     m_bset_tree.resize(std::distance(_orbit_begin, _orbit_end));
 
     auto bset_it = m_bset_tree.begin();
-    Index i = 0;
     for(; _orbit_begin != _orbit_end; ++_orbit_begin, ++bset_it) {
       bset_it->reserve(_orbit_begin->size());
 
@@ -157,7 +156,6 @@ namespace CASM {
     template<typename OrbitType>
     BasisSet construct_proto_dof_basis(OrbitType const &_orbit, BasisSet::ArgList const &site_dof_sets) {
 
-      auto const &clust(_orbit.prototype());
       SymGroup clust_group(_orbit.equivalence_map(0).first, _orbit.equivalence_map(0).second);
 
       std::vector<SymGroupRep const *> subspace_reps;
