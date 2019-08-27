@@ -1045,12 +1045,12 @@ namespace CASM {
   BasisSet &BasisSet::apply_sym(const SymOp &op, int _dependency_layer /* = 1 */) {
     int this_dep_layer = dependency_layer();
     if(this_dep_layer == _dependency_layer) {
-      if(op.has_valid_master() && !m_basis_symrep_ID.empty() && !m_basis_symrep_ID.is_identity()){
+      if(op.has_valid_master() && !m_basis_symrep_ID.empty() && !m_basis_symrep_ID.is_identity()) {
         auto ptr = op.get_matrix_rep(m_basis_symrep_ID);
-        if(ptr==nullptr)
-          m_basis_symrep_ID=SymGroupRepID();
-        else if(!ptr->isIdentity()){
-          m_basis_symrep_ID=op.master_group().add_transformed_rep(m_basis_symrep_ID, *tptr)
+        if(ptr == nullptr)
+          m_basis_symrep_ID = SymGroupRepID();
+        else if(!ptr->isIdentity()) {
+          m_basis_symrep_ID = op.master_group().add_transformed_rep(m_basis_symrep_ID, *ptr);
         }
       }
       for(Index i = 0; i < size(); i++)
