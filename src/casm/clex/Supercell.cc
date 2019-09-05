@@ -175,7 +175,8 @@ namespace CASM {
   }
 
   Eigen::Matrix3i Supercell::transf_mat() const {
-    return CASM::transf_mat(primclex(), lattice());
+    return iround(prim_grid().trans_mat());
+    //return CASM::transf_mat(primclex().prim().lattice(), lattice(), primclex().crystallography_tol());
   }
 
   const Lattice &Supercell::lattice() const {
