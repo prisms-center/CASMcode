@@ -92,7 +92,7 @@ namespace CASM {
 
     DirectoryStructure dir(root);
     ProjectSettings set(root);
-    Structure prim(read_prim(dir.prim(), set.hamiltonian_modules(), set.crystallography_tol()));
+    Structure prim(read_prim(dir.prim(), set.crystallography_tol(), &(set.hamiltonian_modules())));
 
     args.log() << "Generating lattice point group. " << std::endl << std::endl;
     SymGroup prim_pg(SymGroup::lattice_point_group(prim.lattice()));

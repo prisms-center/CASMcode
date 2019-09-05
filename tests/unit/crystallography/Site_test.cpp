@@ -27,17 +27,17 @@ BOOST_AUTO_TEST_CASE(Test1) {
   Coordinate coord(vec, lat, CART);
 
   Site site_a(lat);
-  BOOST_CHECK_EQUAL(site_a.site_occupant().size(), 0);
+  BOOST_CHECK_EQUAL(site_a.occupant_dof().size(), 0);
 
   Site site_b(coord, "A");
-  BOOST_CHECK_EQUAL(site_b.site_occupant().size(), 1);
+  BOOST_CHECK_EQUAL(site_b.occupant_dof().size(), 1);
 
   Site site_c(coord, {Molecule::make_atom("A"), Molecule::make_atom("B"), Molecule::make_atom("C")});
-  BOOST_CHECK_EQUAL(site_c.site_occupant().size(), 3);
+  BOOST_CHECK_EQUAL(site_c.occupant_dof().size(), 3);
 
   std::vector<Molecule> tocc {Molecule::make_atom("C"), Molecule::make_atom("D")};
-  site_c.set_allowed_species(tocc);
-  BOOST_CHECK_EQUAL(site_c.site_occupant().size(), 2);
+  site_c.set_allowed_occupants(tocc);
+  BOOST_CHECK_EQUAL(site_c.occupant_dof().size(), 2);
 
 }
 

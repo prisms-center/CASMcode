@@ -61,8 +61,8 @@ BOOST_AUTO_TEST_CASE(Test3) {
 
   Lattice lat = Lattice::hexagonal();
 
-  MasterSymGroup pg;
-  lat.generate_point_group(pg);
+  SymGroup pg = SymGroup::lattice_point_group(lat);
+  //lat.generate_point_group(pg);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
@@ -87,9 +87,7 @@ BOOST_AUTO_TEST_CASE(Test3) {
 BOOST_AUTO_TEST_CASE(Test4) {
 
   Lattice lat = Lattice::cubic();
-
-  MasterSymGroup pg;
-  lat.generate_point_group(pg);
+  SymGroup pg = SymGroup::lattice_point_group(lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
@@ -125,8 +123,7 @@ BOOST_AUTO_TEST_CASE(Test5) {
 
   Lattice lat = Lattice::fcc();
 
-  MasterSymGroup pg;
-  lat.generate_point_group(pg);
+  SymGroup pg = SymGroup::lattice_point_group(lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();

@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
-  const Structure &prim(primclex.prim());
+  //const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
 
   Completer::EnumOption enum_opt;
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   // Test Supercell Selection
   {
-    auto &dict = primclex.settings().query_handler<Supercell>().dict();
+    //auto &dict = primclex.settings().query_handler<Supercell>().dict();
     BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
     DB::Selection<Supercell> selection(primclex);
     BOOST_CHECK_EQUAL(selection.size(), 13);
@@ -72,11 +72,11 @@ BOOST_AUTO_TEST_CASE(Test1) {
     // Generate
     fs::path difftrans_path = "tests/unit/kinetics/FCCTernary_diff_trans_0.json";
     jsonParser diff_trans_json {difftrans_path};
-    Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+    Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
     BOOST_CHECK_EQUAL(true, true);
 
     // Test
-    auto &dict = primclex.settings().query_handler<Kinetics::PrimPeriodicDiffTransOrbit>().dict();
+    //auto &dict = primclex.settings().query_handler<Kinetics::PrimPeriodicDiffTransOrbit>().dict();
     BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
     DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection(primclex);
     BOOST_CHECK_EQUAL(selection.size(), 28);
@@ -88,12 +88,12 @@ BOOST_AUTO_TEST_CASE(Test1) {
     // Generate
     fs::path diffperturb_path = "tests/unit/kinetics/FCCTernary_diff_perturb_0.json";
     jsonParser diff_perturb_json {diffperturb_path};
-    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
+    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
     BOOST_CHECK_EQUAL(true, true);
 
     // Test (quantity 1856 not checked for accuracy)
-    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
-    auto &dict = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>().dict();
+    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
+    //auto &dict = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>().dict();
     BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex);
     BOOST_CHECK_EQUAL(selection.size(), 1856);

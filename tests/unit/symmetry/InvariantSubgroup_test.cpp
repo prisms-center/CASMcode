@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
       OrbitGenerators<ScelPeriodicIntegralClusterOrbit> generators {config_fg, scel_sym_compare};
       for(const auto &eq : orbit) {
-        for(auto it = scel_vol2.translate_begin(); it != scel_vol2.translate_end(); ++it) {
+        for(auto it = scel_vol2.sym_info().translate_begin(); it != scel_vol2.sym_info().translate_end(); ++it) {
           generators.insert(copy_apply(it, eq));
         }
       }

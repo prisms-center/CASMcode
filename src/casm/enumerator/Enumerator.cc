@@ -91,10 +91,9 @@ namespace CASM {
 
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
-    const jsonParser &_kwargs,
+    jsonParser kwargs,
     const Completer::EnumOption &enum_opt) {
 
-    jsonParser kwargs {_kwargs};
     if(kwargs.is_null()) {
       kwargs = jsonParser::object();
     }
@@ -116,22 +115,25 @@ namespace CASM {
       scel_input.erase("max");
       scel_input["existing_only"] = true;
     }
+    else {
+      std::vector<std::string> scelnames;
+      kwargs.get_if(scelnames, "scelnames");
+      if(enum_opt.vm().count("scelnames")) {
+        for(std::string const &scelname : enum_opt.supercell_strs())
+          scelnames.push_back(scelname);
+      }
 
+      if(!scelnames.empty() && !scel_input.contains("names"))
+        scel_input["names"].put_array();
 
-
-    std::vector<std::string> scelnames;
-    kwargs.get_if(scelnames, "scelnames");
-    if(enum_opt.vm().count("scelnames")) {
       for(std::string const &scelname : enum_opt.supercell_strs())
-        scelnames.push_back(scelname);
+        scel_input["names"].push_back(scelname);
+
+      if(scel_input.begin() == scel_input.end())
+        scel_input["names"].put_array();
+      else if(!scel_input.contains("existing_only"))
+        scel_input["existing_only"] = true;
     }
-    if(scelnames.size())
-      scel_input["name"] = scelnames;
-
-    if(scel_input.begin() == scel_input.end())
-      scel_input["name"].put_array();
-    scel_input["existing_only"] = true;
-
     return scel_input;
   }
 

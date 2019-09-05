@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   auto sub_config = [&](std::initializer_list<int> occ) {
     Configuration tconfig(motif_scel);
-    tconfig.set_occupation(occ);
+    tconfig.set_occupation(std::vector<int>(occ));
     return tconfig;
   };
 

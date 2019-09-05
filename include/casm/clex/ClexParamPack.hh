@@ -47,8 +47,7 @@ namespace CASM {
         m_stride(_stride),
         m_identifiers(_offset.size(), 0),
         m_name(_name),
-        m_standalone(_standalone)
-      {
+        m_standalone(_standalone) {
 
       }
 

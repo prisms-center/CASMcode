@@ -5,9 +5,9 @@
 /// What is being tested:
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/container/LinearAlgebra.hh"
 
 /// What is being used to test it:
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/external/Eigen/Dense"
@@ -396,7 +396,7 @@ jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol
   const Lattice test_lat = test_struc.lattice();
   const SymGroup effective_pg = test_struc.factor_group();
 
-  Array<Eigen::Matrix3i> enumerated_mats;
+  std::vector<Eigen::Matrix3i> enumerated_mats;
 
   ScelEnumProps enum_props(minvol, maxvol + 1);
   SupercellEnumerator<Lattice> test_enumerator(test_lat, effective_pg, enum_props);
@@ -443,7 +443,7 @@ jsonParser lat_test_case(const std::string &pos_filename, int minvol, int maxvol
   const Lattice test_lat = test_struc.lattice();
   const SymGroup effective_pg = test_struc.factor_group();
 
-  Array<Lattice> enumerated_lats;
+  std::vector<Lattice> enumerated_lats;
   ScelEnumProps enum_props(minvol, maxvol + 1);
   test_lat.generate_supercells(enumerated_lats, effective_pg, enum_props);
 
@@ -543,8 +543,8 @@ void compare_test() {
 
 void trans_enum_test() {
   Lattice testlat(Lattice::fcc());
-  SymGroup pg;
-  testlat.generate_point_group(pg);
+  SymGroup pg = SymGroup::lattice_point_group(testlat);
+
   // int dims = 3;
   Eigen::Matrix3i transmat;
 
@@ -576,8 +576,8 @@ void restricted_test() {
 
   for(Index t = 0; t < all_test_lats.size(); t++) {
     Lattice testlat = all_test_lats[t];
-    SymGroup pg;
-    testlat.generate_point_group(pg);
+    SymGroup pg = SymGroup::lattice_point_group(testlat);
+
     // int dims = 1;
 
     ScelEnumProps enum_props(1, 15 + 1, "a");

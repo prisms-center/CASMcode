@@ -9,6 +9,7 @@
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Niggli.hh"

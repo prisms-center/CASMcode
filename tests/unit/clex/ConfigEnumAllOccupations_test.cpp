@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsRunTest) {
   {
     Completer::EnumOption opt;
     parse_args(opt, "casm enum --method ScelEnum --max 4 --dry-run", primclex);
-    ScelEnum::run(primclex, jsonParser(), opt);
+    ScelEnum::run(primclex, jsonParser(), opt, nullptr);
   }
   BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
   primclex.generic_db<Supercell>().close();
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsRunTest) {
   {
     Completer::EnumOption opt;
     parse_args(opt, "casm enum --method ScelEnum --max 4", primclex);
-    ScelEnum::run(primclex, jsonParser(), opt);
+    ScelEnum::run(primclex, jsonParser(), opt, nullptr);
   }
   BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
   primclex.generic_db<Supercell>().close();
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsRunTest) {
   {
     Completer::EnumOption opt;
     parse_args(opt, "casm enum --method ConfigEnumAllOccupations -a --dry-run", primclex);
-    ConfigEnumAllOccupations::run(primclex, jsonParser(), opt);
+    ConfigEnumAllOccupations::run(primclex, jsonParser(), opt, nullptr);
   }
   BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
   BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size(), 126);
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsRunTest) {
   {
     Completer::EnumOption opt;
     parse_args(opt, "casm enum --method ConfigEnumAllOccupations -a", primclex);
-    ConfigEnumAllOccupations::run(primclex, jsonParser(), opt);
+    ConfigEnumAllOccupations::run(primclex, jsonParser(), opt, nullptr);
   }
   BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
   BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size(), 126);

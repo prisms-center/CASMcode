@@ -27,8 +27,8 @@ using namespace CASM;
 using namespace test;
 
 typedef Orbit <
-Kinetics::DiffusionTransformation,
-         Kinetics::PrimPeriodicDiffTransSymCompare > PrimPeriodicDiffTransOrbit;
+//Kinetics::DiffusionTransformation,
+Kinetics::PrimPeriodicDiffTransSymCompare > PrimPeriodicDiffTransOrbit;
 
 namespace {
 
@@ -279,8 +279,7 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
 
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
-  const Structure &prim = primclex.prim();
-  const Lattice &lat = prim.lattice();
+  //const Structure &prim = primclex.prim();
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
   BOOST_CHECK_EQUAL(true, true);
@@ -377,16 +376,20 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
-  const Structure &prim(primclex.prim());
+  //const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
 
   // -- Generate Supercell & Configuration --
+  Completer::EnumOption enum_opt;
+  enum_opt.desc();
 
-  ScelEnumByProps enum_scel(primclex, ScelEnumProps(1, 5));
-  BOOST_CHECK_EQUAL(true, true);
+  jsonParser kwargs;
+  to_json(ScelEnumProps(1, 5), kwargs["supercells"]);
+  kwargs["supercells"]["existing_only"] = false;
+  //BOOST_CHECK_EQUAL(true, true);
 
-  ConfigEnumAllOccupations::run(primclex, enum_scel.begin(), enum_scel.end());
-  BOOST_CHECK_EQUAL(true, true);
+  ConfigEnumAllOccupations::run(primclex, kwargs, enum_opt, nullptr);
+  //BOOST_CHECK_EQUAL(true, true);
 
   // Test Kinetics::DiffTransConfigEnumOccPerturbations::run
   {
@@ -395,7 +398,7 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
 
     // Generate DiffTrans
     jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
-    int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+    int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
     const auto &diff_trans_db = primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>();
     BOOST_CHECK_EQUAL(diff_trans_db.size(), 3);
     BOOST_CHECK_EQUAL(success, 0);
@@ -408,7 +411,7 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
 
     // Generate perturbations
     jsonFile diff_perturb_json {"tests/unit/kinetics/ZrO_diff_perturb_0.json"};
-    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
+    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
     BOOST_CHECK_EQUAL(true, true);
 
     // Test (quantity 1856 not checked for accuracy)

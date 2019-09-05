@@ -8,6 +8,7 @@
 #include "Common.hh"
 #include "TestConfiguration.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 using namespace CASM;
 

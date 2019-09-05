@@ -5,7 +5,7 @@
 #include "casm/crystallography/Niggli.hh"
 
 /// What is being used to test it:
-#include "casm/container/LinearAlgebra.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
@@ -89,8 +89,7 @@ namespace CASM {
   //See issue #153 on github: https://github.com/prisms-center/CASMcode-dev/issues/153
   void single_dimension_test() {
     Lattice testlat = Lattice::fcc();
-    SymGroup pg;
-    testlat.generate_point_group(pg);
+    SymGroup pg = SymGroup::lattice_point_group(testlat);
 
     std::string dirs = "a";
     int minvol = 1;
@@ -131,8 +130,10 @@ namespace CASM {
     // enumerate size 5 supercells
     // bool verbose = false;
     ScelEnumProps enum_props(5, 6);
-    ScelEnumByProps scel_enum(primclex, enum_props);
-    for(const auto &scel : scel_enum) {}
+
+    // Is this supposed to do something? It isn't currently...
+    //ScelEnumByProps scel_enum(primclex, enum_props);
+    //for(const auto &scel : scel_enum) {}
 
     // there will be 7
     int scel_list_size = 7;

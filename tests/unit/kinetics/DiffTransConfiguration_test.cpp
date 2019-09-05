@@ -53,25 +53,16 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   Supercell scel {&primclex, Lattice(2 * a, 2 * b, 2 * c)};
 
-  Configuration config(scel);
-  config.init_occupation();
-  config.init_displacement();
-  config.init_deformation();
+  Configuration config = Configuration::zeros(scel);
   //hardcoded occupation for trans to occur is there a way to do this generally?
-  config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1});
+  config.set_occupation(std::vector<int>({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1}));
 
-  Configuration config2(scel);
-  config2.init_occupation();
-  config2.init_displacement();
-  config2.init_deformation();
+  Configuration config2 = Configuration::zeros(scel);
   //hardcoded occupation for trans to occur is there a way to do this generally?
-  config2.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0});
+  config2.set_occupation(std::vector<int>({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0}));
 
-  Configuration config3(scel);
-  config3.init_occupation();
-  config3.init_displacement();
-  config3.init_deformation();
-  config3.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  Configuration config3 = Configuration::zeros(scel);
+  config3.set_occupation(std::vector<int>({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
 
   //test make attachable
   Configuration result = make_attachable(trans, config3);
@@ -101,7 +92,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   BOOST_CHECK_EQUAL(dtc < dtc3, config < config2);
 
   //check apply sym
-  PermuteIterator it = config.supercell().permute_begin();
+  PermuteIterator it = config.supercell().sym_info().permute_begin();
   BOOST_CHECK_EQUAL(copy_apply(it, dtc) == dtc, 1);
 
   it = it.begin_next_fg_op();

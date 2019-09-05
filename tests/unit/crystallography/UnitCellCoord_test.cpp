@@ -5,6 +5,7 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 
 /// What is being used to test it:
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "FCCTernaryProj.hh"
 
 using namespace CASM;
