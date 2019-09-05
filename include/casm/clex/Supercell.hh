@@ -159,7 +159,7 @@ namespace CASM {
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel);
 
-  Eigen::Matrix3i transf_mat(const PrimClex &primclex, const Lattice &super_lat);
+  Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat);
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat);
 
