@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(BasicsTest0) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
   const Structure &prim = primclex.prim();
-  const Lattice &lat = prim.lattice();
+
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
   BOOST_CHECK_EQUAL(true, true);
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(BasicsTest0) {
   // Make background config
   Supercell _scel {&primclex, Lattice(1 * a, 1 * b, 1 * c)};
   Configuration _config(_scel);
-  _config.set_occupation({0, 0, 1, 0});
+  _config.set_occupation(std::vector<int>({0, 0, 1, 0}));
 
   Supercell background_scel {&primclex, Lattice(3 * a, 3 * b, 3 * c)};
   Configuration background_config = _config.
@@ -616,7 +616,7 @@ BOOST_AUTO_TEST_CASE(EnumTest1) {
   std::cout << "\ndiff_trans_json:\n" << diff_trans_json << std::endl;
   Completer::EnumOption enum_opt;
   enum_opt.desc();
-  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
   BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 123);
   BOOST_CHECK_EQUAL(success, 0);
 }
@@ -671,7 +671,7 @@ BOOST_AUTO_TEST_CASE(EnumTest2) {
   diff_trans_json["orbit_printer_opt"]["sym_info_opt"]["print_matrix_tau"] = true;
   Completer::EnumOption enum_opt;
   enum_opt.desc();
-  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
   BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
   BOOST_CHECK_EQUAL(success, 1);
 }

@@ -149,7 +149,7 @@ namespace CASM {
 
       prim_json = jsonParser(dir.prim());
 
-      prim = Structure(read_prim(prim_json, modules, TOL));
+      prim = Structure(read_prim(prim_json, TOL, &modules));
     }
     catch(std::runtime_error &e) {
       args.err_log() << e.what() << std::endl;

@@ -398,7 +398,7 @@ namespace CASM {
     m_group_periodicity(init_type),
     m_max_error(-1) {
 
-    if(size())
+    if(size() && at(0).has_valid_master())
       set_lattice(master_group().lattice());
 
   }

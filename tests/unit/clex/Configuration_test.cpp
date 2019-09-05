@@ -84,9 +84,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
   config.init_occupation();
   BOOST_CHECK_EQUAL(config.has_occupation(), true);
 
-  config.clear_occupation();
-  BOOST_CHECK_EQUAL(config.has_occupation(), false);
-
   config.set_occupation(std::vector<int>({0}));
   BOOST_CHECK_EQUAL(config.has_occupation(), true);
 
@@ -96,6 +93,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   }
 
   // set displacement
+  /*
   typedef Configuration::displacement_matrix_t disp_matrix_t;
   BOOST_CHECK_EQUAL(config.has_displacement(), false);
 
@@ -126,7 +124,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   config.set_deformation(Eigen::Matrix3d::Zero());
   BOOST_CHECK_EQUAL(config.has_deformation(), true);
-
+  */
 }
 
 BOOST_AUTO_TEST_CASE(TestConfigurationName) {
@@ -147,7 +145,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation({0});
+      config.set_occupation(std::vector<int>({0}));
 
       // not in datbase -> id == "none"
       BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/none");
@@ -166,7 +164,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation({1});
+      config.set_occupation(std::vector<int>({1}));
       // not in datbase -> id == "none"
       BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/none");
 
@@ -184,7 +182,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation({0});
+      config.set_occupation(std::vector<int>({0}));
 
       // not from database, but now in it -> id == "0"
       BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/0");
@@ -202,7 +200,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation({1, 0, 0, 0});
+      config.set_occupation(std::vector<int>({1, 0, 0, 0}));
       BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/none");
 
       auto res = db.insert(config.in_canonical_supercell());
@@ -215,7 +213,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // canonical scel, non-canonical primitive occ
       Configuration config(scel);
-      config.set_occupation({0, 1, 0, 0});
+      config.set_occupation(std::vector<int>({0, 1, 0, 0}));
 
       BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
 
@@ -232,7 +230,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // canonical scel, canonical non-primitive occ
       Configuration config(scel);
-      config.set_occupation({0, 0, 0, 0});
+      config.set_occupation(std::vector<int>({0, 0, 0, 0}));
 
       BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/none");
 
@@ -267,7 +265,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // non-canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation({1, 0, 0, 0});
+      config.set_occupation(std::vector<int>({1, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
       BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0");
@@ -283,7 +281,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // non-canonical scel, non-canonical primitive occ
       Configuration config(scel);
-      config.set_occupation({0, 1, 0, 0});
+      config.set_occupation(std::vector<int>({0, 1, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
       BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.3");
@@ -301,7 +299,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // equivalent, but non-canonical scel, canonical non-primitive occ
       Configuration config(scel);
-      config.set_occupation({0, 0, 0, 0});
+      config.set_occupation(std::vector<int>({0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
       BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/1");
@@ -321,7 +319,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // non-canonical, non-equivalent, scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation({1, 0, 0, 0, 0, 0, 0, 0});
+      config.set_occupation(std::vector<int>({1, 0, 0, 0, 0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
       BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/none.equiv.0.0");
@@ -337,7 +335,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // non-canonical, non-equivalent, scel, non-canonical primitive occ
       Configuration config(scel);
-      config.set_occupation({0, 1, 0, 0, 0, 0, 0, 0});
+      config.set_occupation(std::vector<int>({0, 1, 0, 0, 0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
       BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.1");
@@ -354,7 +352,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
     {
       // non-canonical, non-equivalent, scel, canonical non-primitive occ
       Configuration config(scel);
-      config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0});
+      config.set_occupation(std::vector<int>({0, 0, 0, 0, 0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
       BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
@@ -386,7 +384,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   BOOST_CHECK_EQUAL(config.size(), 2);
 
   // include occupation only
-  config.set_occupation({1, 0});
+  config.set_occupation(std::vector<int>({1, 0}));
 
   {
     // Identity op
@@ -395,7 +393,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
     Configuration filled = config.fill_supercell(scel, fg[0]);
 
     Configuration check(scel);
-    check.set_occupation({1, 0});
+    check.set_occupation(std::vector<int>({1, 0}));
 
     BOOST_CHECK_EQUAL(filled, check);
   }
@@ -407,7 +405,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
     Configuration filled = config.fill_supercell(scel, fg[0]);
 
     Configuration check(scel);
-    check.set_occupation({1, 0, 1, 0});
+    check.set_occupation(std::vector<int>({1, 0, 1, 0}));
 
     BOOST_CHECK_EQUAL(filled, check);
   }
@@ -420,7 +418,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
     Configuration filled = config.fill_supercell(scel, fg[1]);
 
     Configuration check(scel);
-    check.set_occupation({1, 0});
+    check.set_occupation(std::vector<int>({1, 0}));
 
     BOOST_CHECK_EQUAL(filled, check);
   }
@@ -432,8 +430,8 @@ BOOST_AUTO_TEST_CASE(Test2) {
   Eigen::Vector3d dy(0., 0.001, 0.);
   Eigen::Vector3d dz(0., 0., 0.001);
 
-  config.init_displacement();
-  config.set_disp(0, dx);
+
+  //config.set_disp(0, dx);
 
   {
     // Identity op
@@ -442,9 +440,8 @@ BOOST_AUTO_TEST_CASE(Test2) {
     Configuration filled = config.fill_supercell(scel, fg[0]);
 
     Configuration check(scel);
-    check.set_occupation({1, 0});
-    check.init_displacement();
-    check.set_disp(0, dx);
+    check.set_occupation(std::vector<int>({1, 0}));
+    //check.set_disp(0, dx);
 
 
     BOOST_CHECK_EQUAL(filled, check);
@@ -457,10 +454,10 @@ BOOST_AUTO_TEST_CASE(Test2) {
     Configuration filled = config.fill_supercell(scel, fg[0]);
 
     Configuration check(scel);
-    check.set_occupation({1, 0, 1, 0});
-    check.init_displacement();
-    check.set_disp(0, dx);
-    check.set_disp(2, dx);
+    check.set_occupation(std::vector<int>({1, 0, 1, 0}));
+    //check.init_displacement();
+    //check.set_disp(0, dx);
+    //check.set_disp(2, dx);
 
     BOOST_CHECK_EQUAL(filled, check);
   }
@@ -472,9 +469,9 @@ BOOST_AUTO_TEST_CASE(Test2) {
     Configuration filled = config.fill_supercell(scel, fg[1]);
 
     Configuration check(scel);
-    check.set_occupation({1, 0});
-    check.init_displacement();
-    check.set_disp(0, dy);
+    check.set_occupation(std::vector<int>({1, 0}));
+    //check.init_displacement();
+    //check.set_disp(0, dy);
 
     BOOST_CHECK_EQUAL(filled, check);
   }
@@ -502,14 +499,14 @@ BOOST_AUTO_TEST_CASE(Test3) {
 
     {
       Configuration config(scel);
-      config.set_occupation({1, 0, 0, 0});
+      config.set_occupation(std::vector<int>({1, 0, 0, 0}));
       BOOST_CHECK_EQUAL(config.is_canonical(), true);
       BOOST_CHECK_EQUAL(config.is_primitive(), true);
       BOOST_CHECK_EQUAL(config.invariant_subgroup().size(), 48);
 
       {
         Configuration test(scel);
-        test.set_occupation({1, 0, 0, 0});
+        test.set_occupation(std::vector<int>({1, 0, 0, 0}));
         BOOST_CHECK_EQUAL(config == test, true);
         BOOST_CHECK_EQUAL(config.is_sym_equivalent(test), true);
         BOOST_CHECK_EQUAL(test.is_sym_equivalent(config), true);
@@ -519,7 +516,7 @@ BOOST_AUTO_TEST_CASE(Test3) {
 
       {
         Configuration test(scel);
-        test.set_occupation({0, 1, 0, 0});
+        test.set_occupation(std::vector<int>({0, 1, 0, 0}));
         BOOST_CHECK_EQUAL(config == test, false);
         BOOST_CHECK_EQUAL(config.is_sym_equivalent(test), true);
         BOOST_CHECK_EQUAL(test.is_sym_equivalent(config), true);

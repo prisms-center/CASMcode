@@ -476,7 +476,7 @@ namespace CASM {
 
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
-    const jsonParser &_kwargs,
+    jsonParser kwargs,
     const Completer::EnumOption &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnumProps

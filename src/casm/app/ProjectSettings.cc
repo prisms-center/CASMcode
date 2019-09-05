@@ -103,7 +103,7 @@ namespace CASM {
     }
 
     // generate default nlist settings
-    Structure prim(read_prim(m_dir.prim(), hamiltonian_modules(), TOL));
+    Structure prim(read_prim(m_dir.prim(), TOL, &hamiltonian_modules()));
     m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, TOL);
     m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
   }
@@ -206,7 +206,7 @@ namespace CASM {
         bool and_commit = false;
         if(!settings.contains("nlist_weight_matrix") || !settings.contains("nlist_sublat_indices")) {
           _reset_clexulators();
-          prim = Structure(read_prim(m_dir.prim(), hamiltonian_modules(), crystallography_tol()));
+          prim = Structure(read_prim(m_dir.prim(), crystallography_tol(), &hamiltonian_modules()));
           and_commit = true;
         }
 

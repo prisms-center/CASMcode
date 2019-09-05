@@ -94,8 +94,8 @@ namespace CASM {
     bool StrucScore::init(const Configuration &_tmplt) const {
       PrimClex const &pclex(_tmplt.primclex());
       m_altprim.reset(new BasicStructure<Site>(read_prim(m_prim_path,
-                                                         pclex.settings().hamiltonian_modules(),
-                                                         _tmplt.crystallography_tol())));
+                                                         _tmplt.crystallography_tol(),
+                                                         &(pclex.settings().hamiltonian_modules()))));
 
       m_strucmapper = notstd::make_unique<StrucMapper>(PrimStrucMapCalculator(*m_altprim), m_strain_weight);
       return true;

@@ -151,7 +151,7 @@ namespace CASM {
   /// Check for existing supercells
   bool ScelEnumByProps::_include(const Lattice &lat) const {
     if(m_existing_only) {
-      std::string name = canonical_scelname(*m_primclex, *m_lat_it);
+      std::string name = canonical_scelname(m_primclex->prim(), *m_lat_it);
       return m_primclex->db<Supercell>().find(name) != m_primclex->db<Supercell>().end();
     }
     return true;
@@ -212,7 +212,7 @@ namespace CASM {
       "\n"
       "      \"unit_cell\" : \"SCEL2_1_1_2_0_0_0\"\n"
       "\n"
-      "  name: JSON array of string (optional)\n"
+      "  names: JSON array of string (optional)\n"
       "    As an alternative to the above options, an array of existing supercell\n"
       "    names to explicitly indicate which supercells to act on. If this is \n"
       "    included, other properties are ignored. This is useful as an input \n"
@@ -300,8 +300,8 @@ namespace CASM {
   ///
   /// \see EnumInterface<ScelEnum>::run
   ScelEnum::ScelEnum(const PrimClex &primclex, const jsonParser &input) {
-    if(input.contains("name")) {
-      m_enum.ptr.reset(new ScelEnumByName(primclex, input["name"]));
+    if(input.contains("names")) {
+      m_enum.ptr.reset(new ScelEnumByName(primclex, input["names"]));
     }
     else {
       m_enum.ptr.reset(new ScelEnumByProps(primclex, input));

@@ -223,11 +223,11 @@ namespace CASM {
     site.set_allowed_occupants(t_occ);
   }
 
-  BasicStructure<Site> read_prim(fs::path filename, HamiltonianModules const &_modules, double xtal_tol) {
+  BasicStructure<Site> read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules) {
 
     try {
       jsonParser json(filename);
-      return read_prim(json, _modules, xtal_tol);
+      return read_prim(json, xtal_tol, _modules);
     }
     catch(...) {
       std::cerr << "Error reading prim from " << filename << std::endl;
@@ -237,7 +237,10 @@ namespace CASM {
   }
 
   /// \brief Read prim.json
-  BasicStructure<Site> read_prim(const jsonParser &json, HamiltonianModules const &_modules, double xtal_tol) {
+  BasicStructure<Site> read_prim(const jsonParser &json, double xtal_tol, HamiltonianModules const *_modules) {
+    HamiltonianModules default_module;
+    if(_modules == nullptr)
+      _modules = &default_module;
 
     try {
 
@@ -266,7 +269,7 @@ namespace CASM {
               throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
             try {
-              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*_modules.dof_dict().lookup(it.name()))));
+              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*_modules->dof_dict().lookup(it.name()))));
             }
             catch(std::exception &e) {
               throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
@@ -301,7 +304,7 @@ namespace CASM {
 
       // read basis sites
       for(jsonParser const &bjson : json["basis"])
-        prim.push_back(bjson.get<Site>(prim.lattice(), mode, mol_map, _modules));
+        prim.push_back(bjson.get<Site>(prim.lattice(), mode, mol_map, *_modules));
 
       return prim;
     }

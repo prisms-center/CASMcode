@@ -108,7 +108,7 @@ namespace CASM {
     GlobalDoFContainerType &global_dof(DoFKey const &_key) {
       auto it = m_global_dofs.find(_key);
       if(it == m_global_dofs.end())
-        throw std::runtime_error("Attempting to access unitialized ConfigDoF value for '" + _key + "'");
+        throw std::runtime_error("Attempting to access uninitialized ConfigDoF value for '" + _key + "'");
       return it->second;
     }
 

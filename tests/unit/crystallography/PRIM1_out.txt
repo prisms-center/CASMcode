@@ -2,7 +2,7 @@
   "basis" : [
     {
       "coordinate" : [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-      "occupant_dof" : [ "A", "B", "C" ]
+      "occupants" : [ "A", "B", "C" ]
     }
   ],
   "coordinate_mode" : "Fractional",

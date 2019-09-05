@@ -40,15 +40,27 @@ namespace CASM {
       "ConfigEnumStrain: \n\n"
 
       "  confignames: Array of strings (optional) \n"
-      "    Names of configurations used as strain references. Strains are enumerated\n"
+      "    Names of configurations used as initial states. Strains are enumerated\n"
       "    as perturbations to specified configurations. \n"
       "    Ex: \"confignames\" : [\"SCEL2_2_1_1_0_0_0/3\", \"SCEL4_2_2_1_0_0_0/10\"]\n\n"
 
       "  scelnames: Array of strings (optional) \n"
-      "    Names of supercells  used as strain references. Strains are enumerated\n"
+      "    Names of supercells used as initial states. Strains are enumerated\n"
       "    as perturbations of the fully zeroed configuration of the specified"
       "    supercells.\n"
       "    Ex: \"scelnames\" : [\"SCEL2_2_1_1_0_0_0\",\"SCEL4_2_3_1_0_0_0\"]\n\n"
+
+      "  filter: string (optional, default=None)\n"
+      "    A query command to use to filter which Configurations are kept.          \n\n"
+
+      "  dry_run: bool (optional, default=false)\n"
+      "    Perform dry run and print symmetry analysis info for chosen configuration.\n\n"
+
+      "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
+      "    Indicate supercells to use as initial states of enumeration in terms of size\n"
+      "    and unit cell via a JSON object conforming to the format of 'ScelEnum' JSON\n"
+      "    settings. \"scelnames\" will override \"supercells\", but if neither is specified\n"
+      "    all existing supercells are used by default. See 'ScelEnum' description for details.\n\n"
 
       "  min: array of doubles (optional, default = [0,...,0]) \n"
       "    Minimum, starting value of grid counter\n"
@@ -81,12 +93,6 @@ namespace CASM {
       "  trim_corners: bool (optional, default=true) Exclude extreme grid points, if true\n"
       "    If true, any grid points outside the largest ellipsoid inscribed within the extrema\n"
       "    of the grid will be discarded\n\n"
-
-      "  filter: string (optional, default=None)\n"
-      "    A query command to use to filter which Configurations are kept.          \n\n"
-
-      "  dry_run: bool (optional, default=false)\n"
-      "    Perform dry run and print symmetry analysis info for chosen configuration.\n\n"
 
       "  Examples:\n"
       "    To enumerate all strain perturbations of a particular configuration:\n"

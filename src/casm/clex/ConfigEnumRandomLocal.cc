@@ -19,11 +19,40 @@ namespace CASM {
     return
       "ConfigEnumRandomLocal: \n\n"
 
+      "  confignames: Array of strings (optional) \n"
+      "    Names of configurations to be used as initial state of enumeration. All \n"
+      "    specified sublattices or sites will be enumerated on and all other DoFs will\n"
+      "    maintain the values of the initial state.\n"
+      "    Ex: \"confignames\" : [\"SCEL1_1_1_1_0_0_0/1\",\"SCEL2_2_1_1_0_0_0/3\"]\n\n"
+
+      "  scelnames: Array of strings (optional) \n"
+      "    Names of supercells used as initial state of enumeration. All site occupants\n"
+      "    will be set to the first listed occupant, and all DoFs will be set to zero.\n"
+      "    Ex: \"scelnames\" : [\"SCEL1_1_1_1_0_0_0\",\"SCEL2_2_1_1_0_0_0\"]\n\n"
+
+      "  sublats: array of integers (optional, default none) \n"
+      "    Restricts enumeration to specified sublattices. Each sublattice index corresponds\n"
+      "    to a basis site in prim.json, indexed from 0.\n"
+      "    Ex: \"sublats\" : [0,2]\n\n"
+
+      "  sites: array of 4-entry integer arrays (optional, default none) \n"
+      "    Restricts enumeration to specified sites. Sites are specified in [b,i,j,k] convention,\n"
+      "    where 'b' is sublattice index and [i,j,k] specifies linear combinations of primitive-\n"
+      "    cell lattice vectors.\n"
+      "    Ex: \"sites\" : [[0,0,0,0],\n"
+      "                   [2,0,0,0]]\n\n"
+
+      "  filter: string (optional, default=None)\n"
+      "    A query command to use to filter which Configurations are kept.          \n\n"
+
+      "  dry_run: bool (optional, default=false)\n"
+      "    Perform dry run.\n\n"
+
       "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
-      "    Indicate supercells to enumerate all occupational configurations in. May \n"
-      "    be a JSON array of supercell names, or a JSON object specifying          \n"
-      "    supercells in terms of size and unit cell. By default, all existing      \n"
-      "    supercells are used. See 'ScelEnum' description for details.         \n\n"
+      "    Indicate supercells to use as initial states of enumeration in terms of size\n"
+      "    and unit cell via a JSON object conforming to the format of 'ScelEnum' JSON\n"
+      "    settings. \"scelnames\" will override \"supercells\", but if neither is specified\n"
+      "    all existing supercells are used by default. See 'ScelEnum' description for details.\n\n"
 
       "  n_config: integer (optional, default=100) \n"
       "    How many random configurations to generate. Includes duplicate and pre-\n"
@@ -48,12 +77,6 @@ namespace CASM {
       "    If true, only the primitive form of a configuration is saved in the      \n"
       "    configuration list. Otherwise, both primitive and non-primitive          \n"
       "    configurations are saved. \n\n"
-
-      "  filter: string (optional, default=None)\n"
-      "    A query command to use to filter which Configurations are kept.          \n\n"
-
-      "  dry_run: bool (optional, default=false)\n"
-      "    Perform dry run.\n\n"
 
       "  Examples:\n"
       "    To enumerate 200 random occupations in supercells up to and including size 4:\n"

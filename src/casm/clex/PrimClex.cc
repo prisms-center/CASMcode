@@ -34,7 +34,7 @@ namespace CASM {
     PrimClexData(const fs::path &_root) :
       dir(_root),
       settings(_root),
-      prim(read_prim(dir.prim(), settings.hamiltonian_modules(), settings.crystallography_tol())) {
+      prim(read_prim(dir.prim(), settings.crystallography_tol(), &(settings.hamiltonian_modules()))) {
 
       //Guarantee presence of symmetry info;
       prim.factor_group();

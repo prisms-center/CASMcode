@@ -94,12 +94,12 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
 
     Supercell scel {&primclex, Lattice(3 * a, 2 * b, 1 * c)};
     Configuration config(scel);
-    config.set_occupation({
+    config.set_occupation(std::vector<int>({
       0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0,
       1, 1, 1, 1, 1, 1,
       0, 0, 0, 0, 0, 0
-    });
+    }));
 
     {
       std::vector<IntegralCluster> generators;
@@ -327,11 +327,11 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
 
     Supercell scel {&primclex, Lattice(3 * a, 2 * b, 2 * c)};
     Configuration config(scel);
-    config.set_occupation({
+    config.set_occupation(std::vector<int>({
       0, 0, 0, 0,
       0, 0, 0, 0,
       0, 0, 0, 0
-    });
+    }));
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
       config.supercell().prim_grid(),
       config.crystallography_tol());
@@ -541,9 +541,9 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
     // Decorating FCC to have L12
     //Supercell scel {&primclex, Lattice(1 * a, 1 * b, 1 * c)};
     Configuration config(scel);
-    config.set_occupation({
+    config.set_occupation(std::vector<int>({
       0, 1, 1, 1
-    });
+    }));
 
     // supercell of standard FCC unit cell
     Eigen::Matrix3i superlattice_matrix_2;

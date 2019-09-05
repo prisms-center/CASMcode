@@ -442,7 +442,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
   jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
   Completer::EnumOption enum_opt;
   enum_opt.desc();
-  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+  int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
   const auto &diff_trans_db = primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>();
   BOOST_CHECK_EQUAL(diff_trans_db.size(), 28);
   BOOST_CHECK_EQUAL(success, 0);
@@ -1163,7 +1163,7 @@ BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_FCCTernary) {
   /// Make test project
   test::FCCTernaryProj proj;
   proj.check_init();
-  Log &log = null_log();
+
   PrimClex primclex(proj.dir, null_log());
   BOOST_CHECK_EQUAL(true, true);
 
@@ -1211,7 +1211,7 @@ BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_ZrO) {
   /// Make test project
   test::ZrOProj proj;
   proj.check_init();
-  Log &log = null_log();
+
   PrimClex primclex(proj.dir, null_log());
   BOOST_CHECK_EQUAL(true, true);
 

@@ -88,9 +88,9 @@ namespace CASM {
 
 
 
-  BasicStructure<Site> read_prim(fs::path filename, HamiltonianModules const &_modules, double xtal_tol);
+  BasicStructure<Site> read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules = nullptr);
 
-  BasicStructure<Site> read_prim(jsonParser const &json, HamiltonianModules const &_modules, double xtal_tol);
+  BasicStructure<Site> read_prim(jsonParser const &json, double xtal_tol, HamiltonianModules const *_modules = nullptr);
 
   /// \brief Write prim.json to file
   void write_prim(const BasicStructure<Site> &prim, fs::path filename, COORD_TYPE mode);

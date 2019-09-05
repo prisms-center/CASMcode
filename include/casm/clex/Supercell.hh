@@ -163,9 +163,9 @@ namespace CASM {
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat);
 
-  std::string scelname(const PrimClex &primclex, const Lattice &lat);
+  std::string scelname(const Structure &prim, const Lattice &superlat);
 
-  std::string canonical_scelname(const PrimClex &primclex, const Lattice &lat);
+  std::string canonical_scelname(const Structure &prim, const Lattice &superlat);
 
   /** @} */
 }

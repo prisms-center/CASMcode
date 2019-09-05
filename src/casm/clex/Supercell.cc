@@ -287,7 +287,7 @@ namespace CASM {
   ///   then the FG_INDEX-th prim factor_group operation is applied
   ///
   std::string Supercell::generate_name_impl() const {
-    return scelname(primclex(), lattice());
+    return scelname(prim(), lattice());
   }
 
   /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
@@ -416,16 +416,18 @@ namespace CASM {
     return Supercell(&scel.primclex(), copy_apply(op, scel.lattice()));
   }
 
-  Eigen::Matrix3i transf_mat(const PrimClex &primclex, const Lattice &super_lat) {
-    auto res = is_supercell(super_lat, primclex.prim().lattice(), primclex.settings().crystallography_tol());
+  Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {
+    auto res = is_supercell(super_lat, prim_lat, tol);
     if(!res.first) {
-      primclex.err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
-                         << "  Bad supercell, the transformation matrix is not integer." << std::endl;
-      primclex.err_log() << "superlattice: \n" << super_lat.lat_column_mat() << std::endl;
-      primclex.err_log() << "prim lattice: \n" << primclex.prim().lattice().lat_column_mat() << std::endl;
-      primclex.err_log() << "lin_alg_tol: " << primclex.settings().lin_alg_tol() << std::endl;
-      primclex.err_log() << "transformation matrix: \n" << primclex.prim().lattice().lat_column_mat().inverse() * super_lat.lat_column_mat() << std::endl;
-      throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
+      std::stringstream err_msg;
+      err_msg <<
+              "Error finding supercell transformation matrix:\n" <<
+              "  Bad supercell, the transformation matrix is not integer.\n\n" <<
+              "superlattice: \n" << super_lat.lat_column_mat() << "\n" <<
+              "prim lattice: \n" << prim_lat.lat_column_mat() << "\n" <<
+              "tolerance: " << tol << "\n" <<
+              "transformation matrix: \n" << prim_lat.lat_column_mat().inverse() * super_lat.lat_column_mat() << "\n";
+      throw std::invalid_argument(err_msg.str());
     }
     return iround(res.second);
   }
@@ -445,21 +447,19 @@ namespace CASM {
     return name_str;
   }
 
-  std::string scelname(const PrimClex &primclex, const Lattice &lat) {
-    const SymGroup &pg = primclex.prim().point_group();
-    Lattice canon_lat = lat.canonical_form(pg);
-    if(lat.is_equivalent(canon_lat)) {
-      return CASM::generate_name(transf_mat(primclex, lat));
+  std::string scelname(const Structure &prim, const Lattice &superlat) {
+    const SymGroup &pg = prim.point_group();
+    Lattice canon_lat = superlat.canonical_form(pg);
+    std::string result = CASM::generate_name(transf_mat(prim.lattice(), canon_lat, prim.lattice().tol()));
+    if(!superlat.is_equivalent(canon_lat)) {
+      result += ("." + std::to_string(superlat.from_canonical(pg).index()));
     }
-    else {
-      return CASM::generate_name(transf_mat(primclex, canon_lat)) +
-             "." + std::to_string(lat.from_canonical(pg).index());
-    }
+    return result;
   }
 
-  std::string canonical_scelname(const PrimClex &primclex, const Lattice &lat) {
-    const SymGroup &pg = primclex.prim().point_group();
-    return CASM::generate_name(transf_mat(primclex, lat.canonical_form(pg)));
+  std::string canonical_scelname(const Structure &prim, const Lattice &superlat) {
+    const SymGroup &pg = prim.point_group();
+    return CASM::generate_name(transf_mat(prim.lattice(), superlat.canonical_form(pg), prim.lattice().tol()));
   }
 
 

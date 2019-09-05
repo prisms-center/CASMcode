@@ -18,60 +18,46 @@ void lattice_pg_test() {
   double tol = 1e-5;
 
   {
-    SymGroup pg;
-    Lattice::fcc().generate_point_group(pg);
-    BOOST_CHECK_EQUAL(pg.size(), 48);
-  }
-  {
-    SymGroup pg;
-    Lattice::bcc().generate_point_group(pg);
-    BOOST_CHECK_EQUAL(pg.size(), 48);
-  }
-  {
-    SymGroup pg;
-    Lattice::cubic(tol).generate_point_group(pg);
-    BOOST_CHECK_EQUAL(pg.size(), 48);
-  }
-  {
-    SymGroup pg;
-    Lattice::hexagonal().generate_point_group(pg);
-    BOOST_CHECK_EQUAL(pg.size(), 24);
+    BOOST_CHECK_EQUAL(SymGroup::lattice_point_group(Lattice::fcc()).size(), 48);
+
+    BOOST_CHECK_EQUAL(SymGroup::lattice_point_group(Lattice::bcc()).size(), 48);
+
+    BOOST_CHECK_EQUAL(SymGroup::lattice_point_group(Lattice::cubic()).size(), 48);
+
+    BOOST_CHECK_EQUAL(SymGroup::lattice_point_group(Lattice::hexagonal()).size(), 24);
   }
 }
 
 void lattice_is_equivalent_test() {
 
   {
-    SymGroup pg;
     Lattice fcc = Lattice::fcc();
-    fcc.generate_point_group(pg);
-
+    SymGroup pg = SymGroup::lattice_point_group(fcc);
     for(const auto &op : pg) {
       BOOST_CHECK_EQUAL(fcc.is_equivalent(copy_apply(op, fcc)), 1);
     }
   }
   {
-    SymGroup pg;
+
     Lattice bcc = Lattice::bcc();
-    bcc.generate_point_group(pg);
+    SymGroup pg = SymGroup::lattice_point_group(bcc);
 
     for(const auto &op : pg) {
       BOOST_CHECK_EQUAL(bcc.is_equivalent(copy_apply(op, bcc)), 1);
     }
   }
   {
-    SymGroup pg;
+
     Lattice cubic = Lattice::cubic();
-    cubic.generate_point_group(pg);
+    SymGroup pg = SymGroup::lattice_point_group(cubic);
 
     for(const auto &op : pg) {
       BOOST_CHECK_EQUAL(cubic.is_equivalent(copy_apply(op, cubic)), 1);
     }
   }
   {
-    SymGroup pg;
     Lattice hex = Lattice::hexagonal();
-    hex.generate_point_group(pg);
+    SymGroup pg = SymGroup::lattice_point_group(hex);
 
     for(const auto &op : pg) {
       BOOST_CHECK_EQUAL(hex.is_equivalent(copy_apply(op, hex)), 1);

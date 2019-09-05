@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   {
     jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
     BOOST_CHECK_EQUAL(true, true);
-    Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt);
+    Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
     BOOST_CHECK_EQUAL(true, true);
 
     BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   {
     jsonFile diff_perturb_json {"tests/unit/kinetics/FCCTernary_diff_perturb_0.json"};
-    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt);
+    Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
 
     /// Not checked for accuracy yet... Would need a simpler test case
     BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);

@@ -46,7 +46,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
     &primclex,
     Lattice(2.*a, 2.*b, c));
   const Supercell &scel = *tscel.insert().first;
-  Configuration config(scel, jsonParser(), ConfigDoF({0, 0, 0, 0}));
+  double tol = 1e-5;
+
+  Configuration config(scel, jsonParser(), scel.zero_configdof(tol));
 
   // Insert a Configuration
   auto res = db_config.insert(config);
