@@ -135,7 +135,6 @@ namespace CASM {
 
   /// \brief returns Supercell-compatible configdof with zeroed DoF values and user-specified tolerance
   ConfigDoF Supercell::zero_configdof(double tol) const {
-
     return ConfigDoF(basis_size(),
                      volume(),
                      global_dof_info(prim()),

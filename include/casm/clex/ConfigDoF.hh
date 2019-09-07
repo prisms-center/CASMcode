@@ -131,7 +131,7 @@ namespace CASM {
     LocalDoFContainerType &local_dof(DoFKey const &_key) {
       auto it = m_local_dofs.find(_key);
       if(it == m_local_dofs.end())
-        throw std::runtime_error("Attempting to access unitialized ConfigDoF value for '" + _key + "'");
+        throw std::runtime_error("Attempting to access uninitialized ConfigDoF value for '" + _key + "'");
       return it->second;
     }
 
