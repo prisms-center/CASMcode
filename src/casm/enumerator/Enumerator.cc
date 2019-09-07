@@ -122,11 +122,10 @@ namespace CASM {
         for(std::string const &scelname : enum_opt.supercell_strs())
           scelnames.push_back(scelname);
       }
-
       if(!scelnames.empty() && !scel_input.contains("names"))
         scel_input["names"].put_array();
 
-      for(std::string const &scelname : enum_opt.supercell_strs())
+      for(std::string const &scelname : scelnames)
         scel_input["names"].push_back(scelname);
 
       if(scel_input.begin() == scel_input.end())
@@ -240,7 +239,6 @@ namespace CASM {
       }
     }
     catch(std::exception const &e) {
-      std::cout << "ERROR: " << e.what() << "\n";
       throw std::runtime_error(std::string("Unable to parse configurtion input arguments:\n") + e.what());
     }
     return result;
