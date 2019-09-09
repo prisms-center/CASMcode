@@ -506,7 +506,7 @@ namespace CASM {
 
     Eigen::MatrixXd const &vtable = voronoi_table();
 
-    for(Index nv = 0; nv < vtable.size(); nv++) {
+    for(Index nv = 0; nv < vtable.rows(); nv++) {
       tproj = vtable.row(nv) * pos;
       if(almost_equal(tproj, 1.0)) {
         tnum++;

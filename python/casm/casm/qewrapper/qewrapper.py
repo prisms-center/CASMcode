@@ -3,6 +3,8 @@ from builtins import *
 
 import os, shutil, six, re, subprocess, json
 import warnings
+
+import casm.quantumespresso as quantumespresso
 import casm.quantumespresso.qeio as qeio
 
 class QEWrapperError(Exception):
@@ -50,8 +52,8 @@ def read_settings(filename):
         "kpoints": [start, stop, step] values for converging KPOINTS to within nrg_convergence (ex. ["5", "50", "1"],
                  default ["5", "Auto", "1"] <---- Needs to be adjusted for grid convergence
         "extra_input_files": extra input files to be copied from the settings directory, e.g., OCCUPATIONS file.
-        "initial" : location of infile with tags for the initial run, if desired 
-        "final" : location of infile with tags for the final run, if desired 
+        "initial" : location of infile with tags for the initial run, if desired
+        "final" : location of infile with tags for the final run, if desired
         "err_types" : list of errors to check for. Allowed entries are "IbzkptError" and "SubSpaceMatrixError". Default: ["SubSpaceMatrixError"] <---- STILL NEED TO IMPLEMENT
     """
     try:
@@ -106,7 +108,7 @@ def write_settings(settings, filename):
     with open(filename, 'wb') as file:
         file.write(six.u(json.dumps( settings, file, indent=4)).encode('utf-8'))
 
-      
+
 def qe_input_file_names(dirstruc, configname, clex, infilename):
     # Find required input files in CASM project directory tree
 
@@ -123,4 +125,3 @@ def qe_input_file_names(dirstruc, configname, clex, infilename):
         raise quantumespresso.QuantumEspressoError("qe_input_file_names failed. No SPECIES file found in CASM project.")
 
     return (myinfile, super_poscarfile, speciesfile)
-

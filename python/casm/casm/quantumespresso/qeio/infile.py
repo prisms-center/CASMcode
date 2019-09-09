@@ -374,7 +374,6 @@ class AtomicSpecies:
         # parse card into self.species, self.masses, self.pseudos
         for line in line_segments:
                 line = line.strip().split()
-                line=filter(bool,line)
                 if len(line) == 3:
                     self.species = self.species + [line[0].strip()]
                     try:
@@ -826,6 +825,8 @@ class Infile:
                         for flag in flags:
                             int_flags+=[int(flag[0]=='T' or flag[0]=='1')]
                         coords+= [(specie.occ_alias,specie.position,int_flags)]
+                    else:
+                        coords+= [(specie.occ_alias,specie.position)]
                 else:
                     coords+= [(specie.occ_alias,specie.position)]
             self.cards["ATOMIC_POSITIONS"].coords=coords
@@ -869,13 +870,13 @@ class Infile:
                 pass
             else:
                 if namelist in QUANTUM_ESPRESSO_NAMELIST_OBJ_LIST:
-                    infile_write.write(remove_chars('&{}\n'.format(namelist),"[\[\],]'"))
-                    infile_write.write(remove_chars('{}'.format(self.namelists[namelist].make_string()),"[\[\]]'"))
+                    infile_write.write('&{}\n'.format(namelist))
+                    infile_write.write('{}'.format(self.namelists[namelist].make_string()))
                     infile_write.write('/\n')
                 else:
                     #This branch is for namelists unrecognized by the qe wrapper
-                    infile_write.write(remove_chars('&{}\n'.format(namelist),"[\[\],]'"))
-                    infile_write.write(remove_chars('{}'.format(self.namelists[namelist]),"[\[\]]'"))
+                    infile_write.write('&{}\n'.format(namelist))
+                    infile_write.write('{}'.format(self.namelists[namelist]))
                     infile_write.write('/\n')
         for card in sorted(self.cards.keys(),key=lambda x: QUANTUM_ESPRESSO_CARD_LIST.index(x)):
             if self.cards[card] == None or str(self.cards[card]).strip() == "":
@@ -886,12 +887,12 @@ class Infile:
                         infile_write.write('{} {}\n'.format(card,self.cards[card].units))
                     else:
                         infile_write.write('{}\n'.format(card))
-                    infile_write.write(remove_chars('{}'.format(self.cards[card].make_string()),"[\[\]]'"))
+                    infile_write.write('{}'.format(self.cards[card].make_string()))
                     infile_write.write('\n')
                 else:
                     #This branch is for cards unrecognized by the qe wrapper
                     infile_write.write('{}\n'.format(card))
-                    infile_write.write(remove_chars('{}'.format(self.cards[card]),"[\[\]]'"))
+                    infile_write.write('{}'.format(self.cards[card]))
                     infile_write.write('\n')
         infile_write.close()
 

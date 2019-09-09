@@ -67,11 +67,11 @@ class Relax(object):
         print("  Configuration:", self.configname)
 
         print("Reading CASM settings")
-        self.casm_settings = ProjectSettings()
+        self.casm_settings = ProjectSettings(configdir)
         if self.casm_settings == None:
             raise QEWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
-        self.casm_directories=DirectoryStructure()
+        self.casm_directories=DirectoryStructure(configdir)
 
         print("Constructing a CASM QEWrapper Relax object")
         sys.stdout.flush()
@@ -500,9 +500,9 @@ class Relax(object):
         else:
             output["coord_mode"] = "cartesian" + qrun.coord_mode
 
-        output["relaxed_forces"] = [noindent.NoIndent(v) for v in (map(lambda y: map(lambda x: x*13.605698066/0.52918,y), qrun.forces ))] #convert Ry/bohr to eV/angst
+        output["relaxed_forces"] = [noindent.NoIndent(v) for v in list(map(lambda y: list(map(lambda x: x*13.605698066/0.52918,y)), qrun.forces ))] #convert Ry/bohr to eV/angst
 
-        output["relaxed_lattice"] = [noindent.NoIndent(v) for v in (map(lambda y: map(lambda x: x* 0.52918,y),qrun.lattice) )] #convert bohr to angst
+        output["relaxed_lattice"] = [noindent.NoIndent(v) for v in list(map(lambda y: list(map(lambda x: x* 0.52918,y)),qrun.lattice) )] #convert bohr to angst
 
         output["relaxed_basis"] = [noindent.NoIndent(v) for v in qrun.basis]
 
