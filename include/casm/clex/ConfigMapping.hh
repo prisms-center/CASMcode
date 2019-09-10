@@ -10,12 +10,10 @@
 namespace CASM {
   class Supercell;
   class Lattice;
-  class SymGroup;
   class PermuteIterator;
   class PrimClex;
   class Configuration;
   class ConfigDoF;
-  class Structure;
   class SupercellSymInfo;
 
   class Site;

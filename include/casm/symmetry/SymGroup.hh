@@ -47,7 +47,7 @@ namespace CASM {
 
     }
 
-    SymGroup(std::vector<SymOp> from_array, PERIODICITY_TYPE init_type = PERIODIC);
+    SymGroup(std::vector<SymOp> from_array, Lattice const * lat_ptr, PERIODICITY_TYPE init_type = PERIODIC);
 
     template<typename IterType>
     SymGroup(IterType begin,
