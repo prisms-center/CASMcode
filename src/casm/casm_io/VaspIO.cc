@@ -54,6 +54,10 @@ namespace CASM {
 
       auto const &info = m_struc.info(m_species_mode);
 
+      if(info.permute.size() != info.size()) {
+        throw std::runtime_error("Error in PrintPOSCAR::print: info.permute.size() != info.size()");
+      }
+
       // first filter out all atoms we are going to ignore, indices of the remaining atoms get put in 'atom'
       std::vector<Index> atom;
 

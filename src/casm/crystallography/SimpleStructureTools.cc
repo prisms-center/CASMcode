@@ -25,6 +25,7 @@ namespace CASM {
     for(Index b = 0; b < _struc.basis().size(); ++b) {
       result.mol_info.coords.col(b) = _struc.basis(b).const_cart();
       result.mol_info.names.push_back(_struc.basis(b).occ_name());
+      result.mol_info.permute.push_back(b);
       _mol_occ[b] = _struc.basis(b).occupant_dof().value();
     }
     _atomize(result, _mol_occ, _struc);
@@ -100,6 +101,7 @@ namespace CASM {
         for(Index ms = 0; ms < molref.size(); ++ms, ++a) {
           _sstruc.atom_info.coords.col(a) = _sstruc.mol_info.coords.col(s) + molref.atom(ms).cart();
           _sstruc.atom_info.names[a] = molref.atom(ms).name();
+          _sstruc.atom_info.permute.push_back(a);
           if(_sstruc.selective_dynamics) {
             _sstruc.atom_info.SD.col(a) = _sstruc.mol_info.SD.col(s);
             for(Index i = 0; i < 3; ++i) {
