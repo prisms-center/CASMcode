@@ -1,4 +1,5 @@
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/CoordinateSystems.hh"
 
 namespace CASM {
   namespace VaspIO {
@@ -131,7 +132,7 @@ namespace CASM {
       }
 
       // print coord mode
-      sout << sout.indent_str() << to_string(m_coord_mode) << "\n";
+      sout << sout.indent_str() << COORD_MODE::NAME(m_coord_mode) << "\n";
 
       // print all coordinates, and seletive dynamics settings, and atom names if applicable
       for(Index i : atom) {
