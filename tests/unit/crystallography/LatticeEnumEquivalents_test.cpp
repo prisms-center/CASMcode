@@ -12,6 +12,13 @@
 using namespace CASM;
 using namespace test;
 
+void generate_master_lat_pt_grp(MasterSymGroup* master, const Lattice& lat) {
+  master->set_lattice(lat);
+  for(const auto& op: SymGroup::lattice_point_group(lat)) {
+    master->push_back(op);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE(LatticeEnumEquivalentsTest)
 
 BOOST_AUTO_TEST_CASE(Test1) {
@@ -60,9 +67,8 @@ BOOST_AUTO_TEST_CASE(Test2) {
 BOOST_AUTO_TEST_CASE(Test3) {
 
   Lattice lat = Lattice::hexagonal();
-
-  SymGroup pg = SymGroup::lattice_point_group(lat);
-  //lat.generate_point_group(pg);
+  MasterSymGroup pg;
+  generate_master_lat_pt_grp(&pg, lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
@@ -87,7 +93,8 @@ BOOST_AUTO_TEST_CASE(Test3) {
 BOOST_AUTO_TEST_CASE(Test4) {
 
   Lattice lat = Lattice::cubic();
-  SymGroup pg = SymGroup::lattice_point_group(lat);
+  MasterSymGroup pg;
+  generate_master_lat_pt_grp(&pg, lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
@@ -122,8 +129,8 @@ BOOST_AUTO_TEST_CASE(Test4) {
 BOOST_AUTO_TEST_CASE(Test5) {
 
   Lattice lat = Lattice::fcc();
-
-  SymGroup pg = SymGroup::lattice_point_group(lat);
+  MasterSymGroup pg;
+  generate_master_lat_pt_grp(&pg, lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
