@@ -93,7 +93,7 @@ namespace CASM {
   /// is a key for retrieving the SymGroupRep that encodes how the DoFSet transforms with symmetry.
   class DoFSet {
   public:
-    using BasicTraits = DoFType::BasicTraits;
+    using BasicTraits = AnisoValTraits;
 
     using TypeFunc =  std::function<notstd::cloneable_ptr<BasicTraits>()>;
 
@@ -108,7 +108,7 @@ namespace CASM {
     ///    \endcode
     static DoFSet make_default(DoFSet::BasicTraits const &_type);
 
-    /// \brief Construct with DoFType::BasicTraits object, in order to catch typos near point of origin
+    /// \brief Construct with BasicTraits object, in order to catch typos near point of origin
     /// DoFSet is initialized to zero dimension. Use static function DoFSet::make_default() to construct
     /// A viable DoFSet having standard parameters
     /// Example usage:
@@ -254,7 +254,7 @@ namespace CASM {
   //********************************************************************
   template<>
   struct jsonConstructor<DoFSet> {
-    static DoFSet from_json(const jsonParser &json, DoF::BasicTraits const &_type);
+    static DoFSet from_json(const jsonParser &json, DoFSet::BasicTraits const &_type);
   };
 
   //********************************************************************

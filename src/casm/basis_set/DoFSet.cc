@@ -4,23 +4,9 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
-  namespace DoFType {
-
-    /// \brief implements json parsing of a specialized DoFSet.
-    void BasicTraits::from_json(DoFSet &_dof, jsonParser const &json) const {
-      return;
-    }
-
-    /// \brief implements json parsing of a specialized DoFSet.
-    void BasicTraits::to_json(DoFSet const &_dof, jsonParser &json) const {
-      return;
-    }
-  }
-
-  //********************************************************************
 
   DoFType::Traits const &DoFSet::traits() const {
-    return DoFType::traits(type_name());
+    return DoF_impl::Base::traits(type_name());
   }
 
   //********************************************************************
@@ -83,7 +69,7 @@ namespace CASM {
 
     bool is_error = false;
 
-    auto const &traits_ref = DoFType::traits(type_name());
+    auto const &traits_ref = traits();
 
     json.get_if(m_excluded_occs, "excluded_occupants");
     auto it = json.find("axes");
@@ -132,7 +118,7 @@ namespace CASM {
 
       }
     }
-    traits_ref.from_json(*this, json);
+    //traits_ref.from_json(*this, json);
 
   }
 
@@ -146,7 +132,7 @@ namespace CASM {
     if(!m_excluded_occs.empty())
       json["excluded_occupants"] = m_excluded_occs;
 
-    DoF::traits(type_name()).to_json(*this, json);
+    //DoF::traits(type_name()).to_json(*this, json);
     return json;
   }
 
@@ -154,7 +140,7 @@ namespace CASM {
 
   /// \brief Apply SymOp to a DoFSet
   DoFSet &apply(const SymOp &op, DoFSet &_dof) {
-    _dof.transform_basis(DoFType::traits(_dof.type_name()).symop_to_matrix(op));
+    _dof.transform_basis(_dof.traits().symop_to_matrix(op.matrix(), op.time_reversal()));
     return _dof;
   }
 
@@ -168,11 +154,13 @@ namespace CASM {
 
   //********************************************************************
 
-  DoFSet jsonConstructor<DoFSet>::from_json(const jsonParser &json, DoF::BasicTraits const &_type) {
+  DoFSet jsonConstructor<DoFSet>::from_json(const jsonParser &json, DoFSet::BasicTraits const &_type) {
     DoFSet value(_type);
     value.from_json(json);
     return value;
   }
+
+  //********************************************************************
 
   DoFSet DoFSet::make_default(DoFSet::BasicTraits const &_type) {
     DoFSet result(_type);

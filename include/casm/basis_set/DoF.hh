@@ -12,14 +12,9 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
   class SymGroup;
-
-  class Molecule;
-  class jsonParser;
 
   template<typename OccType>
   class OccupantDoF;
@@ -31,159 +26,9 @@ namespace CASM {
 
   namespace DoFType {
     class Traits;
-
-    enum DOF_MODE {LOCAL, GLOBAL};
-
-    /// \brief Base class for defining a collection of traits shared by a specific DoF type
-    /// The BasicTraits class maintains only the traits that do not depend on other CASM classes
-
-    /// In future, may include function pointers (wrapped in std::function<>) for controlling certain parts
-    /// of program execution
-    class BasicTraits {
-    public:
-      BasicTraits(std::string const &_type_name,
-                  std::vector<std::string> const &_std_var_names,
-                  DOF_MODE _mode,
-                  bool _requires_site_basis,
-                  bool _unit_length) :
-        m_type_name(_type_name),
-        m_standard_var_names(_std_var_names),
-        m_mode(_mode),
-        m_requires_site_basis(_requires_site_basis),
-        m_unit_length(_unit_length) {
-      }
-
-      static std::string class_desc() {
-        return "DoFTraits";
-      }
-
-      /// \brief Allow destruction through base pointer
-      virtual ~BasicTraits() {}
-
-      /// \brief const access of type_name
-      std::string const &type_name() const {
-        return m_type_name;
-      }
-
-      /// \brief const access of type_name
-      std::string const &name() const {
-        return m_type_name;
-      }
-
-      /// \brief const access of type_name
-      virtual std::string site_basis_name() const {
-        return m_type_name + "_site_func";
-      }
-
-      /// \brief returns true if DoF is global
-      bool global()const {
-        return m_mode == GLOBAL;
-      }
-
-      /// \brief returns true if DoF must utilize site basis set
-      bool requires_site_basis()const {
-        return m_requires_site_basis;
-      }
-
-      /// \brief returns true if DoF must always have unit length
-      bool unit_length()const {
-        return m_unit_length;
-      }
-
-      /// \brief conventional dimensionality of this DoF, returns -1 if always variable
-      Index dim() const {
-        return standard_var_names().size();
-      }
-
-      /// \brief equality comparison of type_name
-      bool operator==(std::string const &other_name) const {
-        return type_name() == other_name;
-      }
-
-      /// \brief lexicographic comparison of type_name
-      bool operator<(std::string const &other_name) const {
-        return type_name() < other_name;
-      }
-
-      /// \brief comparison of type_name, domain (discrete/continuous) and mode (local/global)
-      bool identical(BasicTraits const &other) const {
-        return type_name() == other.type_name()
-               && m_mode == other.m_mode;
-      }
-
-      /// \brief allow implicit conversion to std::string (type_name)
-      operator std::string const &() const {
-        return type_name();
-      }
-
-
-      /// \brief return standard coordinate axes for continuous variable space
-      std::vector<std::string> const &standard_var_names() const {
-        return m_standard_var_names;
-      }
-
-      /// \brief Return list of DoFs that *must* be applied before this DoF is applied
-      virtual std::set<std::string> before_dof_apply() const {
-        return {};
-      }
-
-      /// \brief Return list of DoFs that *must* be applied after this DoF is applied
-      virtual std::set<std::string> after_dof_apply() const {
-        return {};
-      }
-
-      /// \brief returns true if time-reversal changes the DoF value
-      virtual bool time_reversal_active() const {
-        return false;
-      }
-
-      /// \brief returns true if DoF tracks a BasicTraits (specified by @param attr_name)
-      virtual bool obscures_molecule_attribute(std::string const &attr_name) const {
-        return false;
-      }
-
-      /// \brief returns true if DoF tracks the orientation of the occupying molecule (not typical)
-      virtual bool obscures_occupant_orientation() const {
-        return false;
-      }
-
-      /// \brief returns true if DoF tracks the chirality of the occupying molecule (not typical)
-      virtual bool obscures_occupant_chirality() const {
-        return false;
-      }
-
-      /// \brief implements json parsing of a specialized DoFSet.
-      virtual void from_json(DoFSet &_dof, jsonParser const &json) const;
-
-
-      /// \brief implements json parsing of a specialized DoFSet.
-      virtual void to_json(DoFSet const &_dof, jsonParser &json) const;
-
-      std::unique_ptr<BasicTraits> clone() const {
-        return std::unique_ptr<BasicTraits>(_clone());
-      }
-
-    protected:
-      virtual BasicTraits *_clone() const = 0;
-
-      std::string m_type_name;
-      std::vector<std::string> m_standard_var_names;
-      DOF_MODE m_mode;
-      bool m_requires_site_basis;
-      bool m_unit_length;
-    };
-
   }
 
   namespace DoF_impl {
-    /// \brief A class to manage dynamic evaluation of BasisFunctions
-    //struct TraitsConverter {
-    inline
-    notstd::cloneable_ptr<DoFType::BasicTraits> traits2cloneable_ptr(const DoFType::BasicTraits &value) {
-      return notstd::cloneable_ptr<DoFType::BasicTraits>(value.clone().release());
-    }
-    //};
-
 
     /// A RemoteHandle can be initialized with either a double or integer reference and then passed to a
     /// DoF (or to a BasisFunction, which contains DoFs), in order for the DoF to access the remote value
@@ -255,136 +100,122 @@ namespace CASM {
       std::string m_var_name;
       Index m_dof_ID;
     };
+
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    /// \brief A class that represents an individual Degree of Freedom
+
+    /// Base DoF class associates three pieces of data that identify the degree of freedom
+    ///   1. type_name:     The type of DoF (e.g., occupation ("occ"), displacement ("disp"), etc.
+    ///   2. variable_name: The name that will be associated with the individual DoF.  This depends
+    ///                     on usage case (e.g., "x", "y", or "z" for displacement)
+    ///   3. ID:            Integer subscript that identifies variables of the same name and type.
+    ///                     For local DoF's, this is the site index; for global DoFs it denotes
+    ///                     a subscript (e.g., for a strain component).
+    ///
+    /// The type_name and variable_name must be set at construction. For local DoF's, the ID can be
+    /// updated as needed, but IDs of global DoFs persist throughout their lifetime.
+    /// Optionally, the ID can be 'locked' which prevents it from being changed
+    class Base {
+    public:
+      using BasicTraits = AnisoValTraits;
+      using RemoteHandle = DoF_impl::RemoteHandle;
+
+      static BasicTraits const &traits(std::string const &_type_name);
+
+      static void register_traits(BasicTraits const &_type);
+
+      Base() :
+        m_type_name("EMPTY"),
+        m_var_name("EMPTY"),
+        m_dof_ID(-1),
+        m_ID_lock(false) {}
+
+      Base(BasicTraits const &traits,
+           std::string const &_var_name,
+           Index _ID);
+
+      BasicTraits const &traits() const {
+        return traits(type_name());
+      }
+
+      /// \brief Const access of DoF type name
+      std::string type_name() const {
+        return m_type_name;
+      }
+
+      /// \brief Const access of variable name
+      std::string var_name() const {
+        return m_var_name;
+      }
+
+      /// \brief Const access of integer ID
+      Index ID() const {
+        return m_dof_ID;
+      }
+
+      /// \brief Create a RemoteHandle that refers to this DoF
+      RemoteHandle handle()const {
+        return RemoteHandle(type_name(), var_name(), ID());
+      }
+
+      /// \brief true if ID is locked
+      bool is_locked() const {
+        return m_ID_lock;
+      }
+
+      /// \brief mutator to set integer ID if it is unlocked
+      void set_ID(Index new_ID) {
+        if(m_ID_lock)
+          return;
+        //std::cout << "DoF " << this << " ID updated from " << ID() << " to " << new_ID << '\n';
+        m_dof_ID = new_ID;
+      }
+
+      /// \brief mutator to lock integer ID
+      void lock_ID() {
+        m_ID_lock = true;
+      }
+
+      /// \brief mutator to unlock integer ID
+      void unlock_ID() {
+        m_ID_lock = false;
+      }
+
+      typedef std::map<std::string, BasicTraits> TraitsMap;
+      static const TraitsMap &traits_map();
+    protected:
+      void _set_type_name(std::string _type_name) {
+        std::swap(m_type_name, _type_name);
+      }
+
+      void _set_var_name(std::string _var_name) {
+        std::swap(m_var_name, _var_name);
+      }
+    private:
+
+      static TraitsMap &_traits_map();
+
+      std::string m_type_name;
+      std::string m_var_name;
+
+      /// dof_ID is a way to distinguish between DoFs with the same name but different identities
+      /// dof_ID for now usually refers to the site index of a cluster (e.g., 0, 1, 2 of a triplet)
+      /// or an index into the primitive cell neighbor list. Other usage cases may be introduced later
+      Index m_dof_ID;
+
+      /// Locks the ID so that it can't be updated.  Is used for global DoF's
+      bool m_ID_lock;
+    };
   }
-
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  /// \brief A class that represents an individual Degree of Freedom
-
-  /// Base DoF class associates three pieces of data that identify the degree of freedom
-  ///   1. type_name:     The type of DoF (e.g., occupation ("occ"), displacement ("disp"), etc.
-  ///   2. variable_name: The name that will be associated with the individual DoF.  This depends
-  ///                     on usage case (e.g., "x", "y", or "z" for displacement)
-  ///   3. ID:            Integer subscript that identifies variables of the same name and type.
-  ///                     For local DoF's, this is the site index; for global DoFs it denotes
-  ///                     a subscript (e.g., for a strain component).
-  ///
-  /// The type_name and variable_name must be set at construction. For local DoF's, the ID can be
-  /// updated as needed, but IDs of global DoFs persist throughout their lifetime.
-  /// Optionally, the ID can be 'locked' which prevents it from being changed
-  class DoF {
+  class DiscreteDoF : public DoF_impl::Base {
   public:
-    using BasicTraits = DoFType::BasicTraits;
-    using RemoteHandle = DoF_impl::RemoteHandle;
-
-    /// DoFs are initialized using a TypeFunc
-    /// e.g., DerivedDoF my_dof(DoFType::occupation);
-    typedef std::function<notstd::cloneable_ptr<BasicTraits>()> TypeFunc;
-
-    static BasicTraits const &traits(std::string const &_type_name);
-
-    static void register_traits(BasicTraits const &_type);
-
-    DoF() :
-      m_type_name("EMPTY"),
-      m_var_name("EMPTY"),
-      m_dof_ID(-1),
-      m_ID_lock(false) {}
-
-    DoF(BasicTraits const &traits,
-        std::string const &_var_name,
-        Index _ID);
-
-    /// \brief allow destruction through base pointer
-    /// (even though DoF shouldn't be used polymorphically)
-    virtual
-    ~DoF() {}
-
-    BasicTraits const &traits() const {
-      return traits(type_name());
-    }
-
-    /// \brief Const access of DoF type name
-    std::string type_name() const {
-      return m_type_name;
-    }
-
-    /// \brief Const access of variable name
-    std::string var_name() const {
-      return m_var_name;
-    }
-
-    /// \brief Const access of integer ID
-    Index ID() const {
-      return m_dof_ID;
-    }
-
-    /// \brief Create a RemoteHandle that refers to this DoF
-    RemoteHandle handle()const {
-      return RemoteHandle(type_name(), var_name(), ID());
-    }
-
-    /// \brief true if ID is locked
-    bool is_locked() const {
-      return m_ID_lock;
-    }
-
-    /// \brief mutator to set integer ID if it is unlocked
-    void set_ID(Index new_ID) {
-      if(m_ID_lock)
-        return;
-      //std::cout << "DoF " << this << " ID updated from " << ID() << " to " << new_ID << '\n';
-      m_dof_ID = new_ID;
-    }
-
-    /// \brief mutator to lock integer ID
-    void lock_ID() {
-      m_ID_lock = true;
-    }
-
-    /// \brief mutator to unlock integer ID
-    void unlock_ID() {
-      m_ID_lock = false;
-    }
-
-    std::unique_ptr<DoF> clone() const {
-      return std::unique_ptr<DoF>(this->_clone());
-    }
-
-    typedef notstd::unique_cloneable_map<std::string, BasicTraits> TraitsMap;
-    static const TraitsMap &traits_map();
-  protected:
-    void _set_type_name(std::string _type_name) {
-      std::swap(m_type_name, _type_name);
-    }
-
-    void _set_var_name(std::string _var_name) {
-      std::swap(m_var_name, _var_name);
-    }
-  private:
-
-    virtual DoF *_clone() const = 0;
-
-    static TraitsMap &_traits_map();
-
-    std::string m_type_name;
-    std::string m_var_name;
-
-    /// dof_ID is a way to distinguish between DoFs with the same name but different identities
-    /// dof_ID for now usually refers to the site index of a cluster (e.g., 0, 1, 2 of a triplet)
-    /// or an index into the primitive cell neighbor list. Other usage cases may be introduced later
-    Index m_dof_ID;
-
-    /// Locks the ID so that it can't be updated.  Is used for global DoF's
-    bool m_ID_lock;
-  };
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  class DiscreteDoF : public DoF {
-  public:
+    using Base = DoF_impl::Base;
     DiscreteDoF():
-      DoF(),
+      Base(),
       m_current_state(0),
       m_remote_state(nullptr),
       m_symrep_ID(SymGroupRepID::identity(0)) {}
@@ -395,7 +226,7 @@ namespace CASM {
                 Index _dof_ID = -1,
                 int _current_state = 0,
                 SymGroupRepID _id = SymGroupRepID::identity(0)) :
-      DoF(_traits, _var_name, _dof_ID),
+      Base(_traits, _var_name, _dof_ID),
       m_current_state(_current_state),
       m_remote_state(nullptr),
       m_symrep_ID(_id) {
@@ -451,8 +282,6 @@ namespace CASM {
     virtual
     Index size() const = 0;
 
-    //John G 050513
-    //Make an operator for this
     virtual
     void set_value(int new_state) {
       m_current_state = new_state;
@@ -527,10 +356,6 @@ namespace CASM {
     */
     const T &occ() const {
       return m_domain[m_current_state];
-    }
-
-    std::unique_ptr<OccupantDoF<T> > clone() const {
-      return std::unique_ptr<OccupantDoF<T> >(this->_clone());
     }
 
     /// \brief Set occupant by index
@@ -617,12 +442,9 @@ namespace CASM {
         out << '?';
     }
 
-    template<typename...Args>
-    void from_json(jsonParser const &json, Args &&... args);
-
   private:
 
-    virtual OccupantDoF *_clone() const override {
+    DiscreteDoF *_clone() const override {
       return new OccupantDoF(*this);
     }
     /**** Inherited from DiscreteDoF ****
@@ -637,22 +459,17 @@ namespace CASM {
     std::vector<T> m_domain;
   };
 
-  template<typename OccType, typename...Args>
-  void from_json(OccupantDoF<OccType> &dof, const jsonParser &json, Args &&... args);
-
-  template<typename OccType, typename...Args>
-  jsonParser &to_json(OccupantDoF<int> const &dof, jsonParser &json, Args &&... args);
-
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  class ContinuousDoF : public DoF {
+  class ContinuousDoF : public DoF_impl::Base {
   public:
+    using Base = DoF_impl::Base;
     ContinuousDoF(BasicTraits const &_traits,
                   std::string const &_var_name,
                   Index _ID,
                   double _min,
                   double _max) :
-      DoF(_traits, _var_name, _ID),
+      Base(_traits, _var_name, _ID),
       min_val(_min),
       max_val(_max),
       current_val(NAN),
@@ -705,25 +522,10 @@ namespace CASM {
     }
 
     std::unique_ptr<ContinuousDoF> clone() const {
-      return std::unique_ptr<ContinuousDoF>(this->_clone());
-    }
-
-    jsonParser &to_json(jsonParser &json) const {
-      json.put_obj();
-      json["DoF_type"] = "ContinuousDoF";
-      json["type_name"] = type_name();
-      json["var_name"] = var_name();
-      json["min"] = min_val;
-      json["max"] = max_val;
-      json["current"] = current_val;
-      return json;
-    }
-
-  private:
-    virtual ContinuousDoF *_clone() const override {
       return new ContinuousDoF(*this);
     }
 
+  private:
     double min_val, max_val, current_val;
     double current_min, current_max;
 
@@ -734,48 +536,6 @@ namespace CASM {
   inline
   bool compare_no_value(ContinuousDoF const &A, ContinuousDoF const &B) {
     return A.compare(B);
-  }
-
-  void from_json(ContinuousDoF &dof, jsonParser const &json);
-
-  jsonParser &to_json(ContinuousDoF const &dof, jsonParser &json);
-
-
-  //********************************************************************
-
-  template<typename OccType> template<typename...Args>
-  void OccupantDoF<OccType>::from_json(const jsonParser &json, Args &&... args) {
-    _set_type_name(json["type_name"].get<std::string>());
-    _set_var_name(json["var_name"].get<std::string>());
-    set_ID(json["ID"].get<Index>());
-    m_domain.clear();
-
-    CASM::from_json(m_domain, json["domain"], std::forward<Args>(args)...);
-
-    json.get_else(m_current_state, "value", int(-1));
-
-  }
-
-  //********************************************************************
-
-  template<typename OccType, typename...Args>
-  void from_json(OccupantDoF<OccType> &_dof, const jsonParser &json, Args &&... args) {
-    _dof.from_json(json, std::forward<Args>(args)...);
-  }
-
-  //********************************************************************
-  // molecule version
-  template<typename OccType, typename...Args>
-  jsonParser &to_json(OccupantDoF<OccType> const &_dof, jsonParser &json, Args &&... args) {
-    json.put_obj();
-    json["type_name"] = _dof.type_name();
-    json["var_name"] = _dof.var_name();
-    json["ID"] = _dof.ID();
-
-    to_json(_dof.domain(), json["domain"], std::forward<Args>(args)...);
-    json["value"] = _dof.value();
-
-    return json;
   }
 
 }

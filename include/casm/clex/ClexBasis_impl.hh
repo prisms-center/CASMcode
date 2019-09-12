@@ -27,7 +27,7 @@ namespace CASM {
     if(dof_keys.empty()) {
       for(auto const &dof : m_global_bases)
         global_keys.push_back(dof.first);
-      for(auto const &dof : m_global_bases)
+      for(auto const &dof : m_local_bases)
         local_keys.push_back(dof.first);
     }
     else if(dof_keys.size() > 1 || dof_keys[0] != "none") {

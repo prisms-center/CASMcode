@@ -6,6 +6,7 @@
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/misc/ParsingDictionary.hh"
+#include "casm/crystallography/AnisoValTraits.hh"
 
 namespace CASM {
   class jsonParser;
@@ -14,54 +15,12 @@ namespace CASM {
   class SymOp;
 
   namespace SpeciesAttribute_impl {
-    class BasicTraits {
-    public:
-
-      static std::string class_desc() {
-        return "Species Attribute";
-      }
-
-      BasicTraits(std::string const &_name) : m_name(_name) {}
-
-      /// \brief allow destruction through base pointer
-      virtual ~BasicTraits() {}
-
-      /// \brief Name of attribute. Used globally to uniquely identify the attribute
-      virtual std::string name() const {
-        return m_name;
-      }
-
-      virtual bool time_reversal_active() const {
-        return false;
-      }
-
-      /// \brief Populate @param _in from JSON
-      virtual void from_json(SpeciesAttribute &_in, jsonParser const &_json) const = 0;
-
-      /// \brief Output @param _out to JSON
-      virtual jsonParser &to_json(SpeciesAttribute const &_out, jsonParser &_json) const = 0;
-
-      /// \brief Generate a symmetry representation for the supporting vector space
-      /// If attribute is Mx1 vector, res<ulting matrix will be MxM
-      virtual SpeciesAttribute copy_apply(SymOp const &_op, SpeciesAttribute const &_attr) const = 0;
-
-
-
-      /// \brief non-virtual method to obtain copy through BasicTraits pointer
-      std::unique_ptr<BasicTraits> clone() const {
-        return std::unique_ptr<BasicTraits>(_clone());
-      }
-    private:
-      virtual BasicTraits *_clone() const = 0;
-
-      std::string m_name;
-    };
 
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     /// \brief  Parsing dictionary for obtaining the correct SpeciesAttribute given a name
-    using TraitsDictionary = ParsingDictionary<BasicTraits>;
+    using TraitsDictionary = ParsingDictionary<AnisoValTraits>;
 
   }
 

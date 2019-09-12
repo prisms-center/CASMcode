@@ -26,10 +26,9 @@ namespace CASM {
       Eigen::MatrixXd coords;
       Eigen::MatrixXi SD;
 
-      std::map<std::string, Eigen::MatrixXd> dofs;
-      std::vector<Index> permute;
+      std::map<std::string, Eigen::MatrixXd> properties;
 
-      void sort_by_name();
+      std::vector<Index> sort_by_name();
 
       void resize(Index N) {
         names.resize(N, "Va");
@@ -71,7 +70,6 @@ namespace CASM {
     void rotate_coords(Eigen::Ref<const Eigen::Matrix3d> const &_R);
 
     Eigen::Matrix3d lat_column_mat;
-    Eigen::Matrix3d cartesian_isometry;
     bool selective_dynamics;
 
     // Use occupation vector in order to avoid messy molecule-name aliasing issues
@@ -79,7 +77,7 @@ namespace CASM {
 
     Info atom_info;
 
-    std::map<std::string, Eigen::VectorXd> dofs;
+    std::map<std::string, Eigen::VectorXd> properties;
 
   private:
     std::string m_prefix;

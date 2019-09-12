@@ -182,7 +182,7 @@ namespace CASM {
 
     /// Tolerance used for transformation to canonical form -- used also for comparisons, since
     /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form
-    /// (This is relevant only for displacement and deformation degrees of freedom
+    /// (This is relevant only for continuous degrees of freedom)
     mutable double m_tol;
 
   };
