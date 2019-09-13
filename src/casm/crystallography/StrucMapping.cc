@@ -294,7 +294,8 @@ namespace CASM {
                                                                 Lattice(child_struc.lat_column_mat * res.second.cast<double>(), m_tol),
                                                                 child_struc.n_atom(),
                                                                 0. /*strain_cost is zero in ideal case*/),
-                                                    m_strain_weight)});
+                                                    m_strain_weight)
+                                       });
 
 
     Index k = k_best_maps_better_than(child_struc, mapping_seed, m_tol, false);

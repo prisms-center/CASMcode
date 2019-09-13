@@ -12,9 +12,9 @@
 using namespace CASM;
 using namespace test;
 
-void generate_master_lat_pt_grp(MasterSymGroup* master, const Lattice& lat) {
+void generate_master_lat_pt_grp(MasterSymGroup *master, const Lattice &lat) {
   master->set_lattice(lat);
-  for(const auto& op: SymGroup::lattice_point_group(lat)) {
+  for(const auto &op : SymGroup::lattice_point_group(lat)) {
     master->push_back(op);
   }
 }
