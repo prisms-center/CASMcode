@@ -6,7 +6,7 @@
 
 /// What is being used to test it:
 #include <boost/filesystem/fstream.hpp>
-#include "ZrOProj.hh"
+#include "crystallography/TestStructures.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
