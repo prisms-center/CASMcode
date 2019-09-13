@@ -5,6 +5,7 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/misc/CASM_math.hh"
 namespace CASM {
+
   std::vector<Eigen::Matrix3d> _cell_invariant_transforms() {
     std::vector<Eigen::Matrix3d> result(24, Eigen::Matrix3d::Zero());
     Index i = 0;
@@ -332,7 +333,7 @@ namespace CASM {
     if(lat_set.empty()) {
       throw std::runtime_error("In niggli(), did not find any lattices matching niggli criteria!");
     }
-    return Lattice(*lat_set.begin(), in_lat.tol());
+    return Lattice(*lat_set.rbegin(), in_lat.tol());
 
   }
 
