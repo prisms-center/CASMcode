@@ -13,6 +13,8 @@ namespace CASM {
   ///
   /// - The 'begin' Lattice is always the canonical form, with respect to the
   ///   specified SymGroup
+  /// - Currently requires super_g to have a valid MasterSymGroup. This requirement could be relaxed
+  ///   if the comparison function is changed.
   ///
   /// \ingroup EnumEquivalents
   /// \ingroup LatticeEnum

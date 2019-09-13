@@ -1,4 +1,5 @@
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/CoordinateSystems.hh"
 
 namespace CASM {
   namespace VaspIO {
@@ -53,6 +54,10 @@ namespace CASM {
       sout.ostream().precision(prec);
 
       auto const &info = m_struc.info(m_species_mode);
+
+      if(info.permute.size() != info.size()) {
+        throw std::runtime_error("Error in PrintPOSCAR::print: info.permute.size() != info.size()");
+      }
 
       // first filter out all atoms we are going to ignore, indices of the remaining atoms get put in 'atom'
       std::vector<Index> atom;
@@ -127,7 +132,7 @@ namespace CASM {
       }
 
       // print coord mode
-      sout << sout.indent_str() << to_string(m_coord_mode) << "\n";
+      sout << sout.indent_str() << COORD_MODE::NAME(m_coord_mode) << "\n";
 
       // print all coordinates, and seletive dynamics settings, and atom names if applicable
       for(Index i : atom) {
