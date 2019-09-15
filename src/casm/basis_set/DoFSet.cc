@@ -1,12 +1,20 @@
 #include "casm/basis_set/DoFSet.hh"
-#include "casm/basis_set/DoFTraits.hh"
+#include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
 
-  DoFType::Traits const &DoFSet::traits() const {
-    return DoF_impl::Base::traits(type_name());
+  DoFSet::DoFSet(BasicTraits const &_type) :
+    m_type_name(_type.type_name()),
+    m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(_type.dim(), 0)) {
+
+  }
+
+  //********************************************************************
+
+  DoFSet::BasicTraits const &DoFSet::traits() const {
+    return DoFType::basic_traits(type_name());
   }
 
   //********************************************************************

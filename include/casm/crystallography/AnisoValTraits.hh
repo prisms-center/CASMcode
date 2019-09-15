@@ -1,32 +1,49 @@
 #ifndef CASM_AnisoValTraits
 #define CASM_AnisoValTraits
 
+#include <set>
+#include <string>
+#include <memory>
+#include <vector>
+#include "include/casm/CASM_global_definitions.hh"
+#include "include/casm/CASM_global_Eigen.hh"
+
+//Defines notstd::make_unique<>()
+#include "include/casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
-  class AnisoValSymRepBuilder {
+  class SymRepBuilder {
   public:
+    SymRepBuilder(std::string const &_name) :
+      m_name(_name) {}
+
+    std::string const &name() {
+      return m_name;
+    }
+
     virtual ~SymRepBuilder() {};
 
     virtual Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix, bool time_reversal) const = 0;
 
-    std::unique_ptr<AnisoValTraits> clone() const {
-      return std::unique_ptr<AnisoValTraits>(_clone());
+    std::unique_ptr<SymRepBuilder> clone() const {
+      return std::unique_ptr<SymRepBuilder>(_clone());
     }
 
   private:
-    virtual AnisoValTraits *_clone() const = 0;
+    virtual SymRepBuilder *_clone() const = 0;
 
+    std::string m_name;
   };
 
   /// In future, may include function pointers (wrapped in std::function<>) for controlling certain parts
   /// of program execution
   class AnisoValTraits {
   public:
-    const unsigned char LOCAL = 0;
-    const unsigned char GLOBAL = (1u << 0);
-    const unsigned char UNIT_LENGTH = (1u << 1);
-    const unsigned char TIME_REVERSAL = (1u << 2);
-    const unsigned char DESCRIBES_ORIENTATION = (1u << 3);
+    static const unsigned char LOCAL = 0;
+    static const unsigned char GLOBAL = (1u << 0);
+    static const unsigned char UNIT_LENGTH = (1u << 1);
+    static const unsigned char TIME_REVERSAL = (1u << 2);
+    static const unsigned char DESCRIBES_ORIENTATION = (1u << 3);
 
     AnisoValTraits(std::string const &_type_name,
                    std::vector<std::string> const &_std_var_names,
@@ -55,7 +72,7 @@ namespace CASM {
         return m_symrep_builder->symop_to_matrix(_matrix, time_reversal);
       }
       //else
-      return Eigen::MatrixXd()::Identity(dim(), dim());
+      return Eigen::MatrixXd::Identity(dim(), dim());
     }
 
     /// \brief const access of type_name
@@ -138,11 +155,15 @@ namespace CASM {
       return m_apply_after;
     }
 
+    std::unique_ptr<AnisoValTraits> clone() const {
+      return notstd::make_unique<AnisoValTraits>(*this);
+    }
+
   protected:
     std::string m_type_name;
     std::vector<std::string> m_standard_var_names;
     unsigned char m_opt;
-    AnisoSymRepBuilder const *m_symrep_builder;
+    SymRepBuilder const *m_symrep_builder;
     std::set<std::string> m_incompatible;
     std::set<std::string> m_apply_before;
     std::set<std::string> m_apply_after;
@@ -151,10 +172,12 @@ namespace CASM {
   namespace AnisoVal_impl {
     /// \brief A class to manage dynamic evaluation of BasisFunctions
     //struct TraitsConverter {
+    /*
     inline
     notstd::cloneable_ptr<DoFType::BasicTraits> traits2cloneable_ptr(const DoFType::BasicTraits &value) {
       return notstd::cloneable_ptr<DoFType::BasicTraits>(value.clone().release());
     }
+    */
     //};
   }
 

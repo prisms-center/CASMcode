@@ -220,17 +220,17 @@ namespace CASM {
                        LocalInfoContainerType const &local_dof_info,
                        std::vector<SymGroupRepID> const &occ_symrep_IDs,
                        double _tol) :
-    m_occupation(DoF::traits("occ"), _N_sublat, _N_vol, OccValueType::Zero(_N_sublat * _N_vol), occ_symrep_IDs),
+    m_occupation(DoFType::basic_traits("occ"), _N_sublat, _N_vol, OccValueType::Zero(_N_sublat * _N_vol), occ_symrep_IDs),
     m_tol(_tol) {
     for(auto const &dof : global_dof_info) {
-      DoF::BasicTraits const &ttraits = DoF::traits(dof.first);
+      DoFType::BasicTraits const &ttraits = DoFType::basic_traits(dof.first);
 
       if(!ttraits.global())
         throw std::runtime_error("Attempting to initialize ConfigDoF global value using local DoF " + dof.first);
       m_global_dofs[dof.first] = GlobalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::VectorXd::Zero(dof.second.dim()), dof.second);
     }
     for(auto const &dof : local_dof_info) {
-      DoF::BasicTraits const &ttraits = DoF::traits(dof.first);
+      DoFType::BasicTraits const &ttraits = DoFType::basic_traits(dof.first);
       if(_N_sublat == 0)
         continue;
       if(ttraits.global())

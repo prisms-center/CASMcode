@@ -6,12 +6,26 @@
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
+#include "casm/basis_set/DoFTraits.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 
 namespace CASM {
 
 
   // --------- PrimIO Definitions --------------------------------------------------
+
+  jsonParser const &from_json(SpeciesAttribute &_attr, jsonParser const &json) {
+    _attr.set_value(json["value"].get<Eigen::VectorXd>());
+    return json;
+  }
+
+  //****************************************************
+
+  jsonParser &to_json(SpeciesAttribute const &_attr, jsonParser &json) {
+    json.put_obj();
+    to_json_array(_attr.value(), json["value"]);
+    return json;
+  }
 
   //****************************************************
   jsonParser &to_json(AtomPosition const &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat) {
@@ -26,15 +40,15 @@ namespace CASM {
 
   //****************************************************
 
-  void from_json(AtomPosition &apos, const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
-    apos = json.get<AtomPosition>(f2c_mat);
+  void from_json(AtomPosition &apos, const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat, HamiltonianModules const &_modules) {
+    apos = json.get<AtomPosition>(f2c_mat, _modules);
 
     return;
   }
 
   //****************************************************
 
-  AtomPosition jsonConstructor<AtomPosition>::from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
+  AtomPosition jsonConstructor<AtomPosition>::from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat, HamiltonianModules const &_modules) {
     std::string _name;
     Eigen::Vector3d _pos(0., 0., 0.);
     AtomPosition::sd_type _SD_flag {{false, false, false}};
@@ -49,8 +63,8 @@ namespace CASM {
       if(json.contains("attributes")) {
         auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
         for(; it != end_it; ++it) {
-          auto result_pair = attr_map.emplace(it.name(), it.name());
-          (result_pair.first->second).from_json(*it);
+          auto result_pair = attr_map.emplace(it.name(), *(_modules.aniso_val_dict().lookup(it.name())));
+          CASM::from_json(result_pair.first->second, *it);
         }
       }
 
@@ -86,10 +100,10 @@ namespace CASM {
   //
   //****************************************************
 
-  void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
+  void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat, HamiltonianModules const &_modules) {
     std::vector<AtomPosition> _atoms;
     if(json.contains("atoms")) {
-      CASM::from_json(_atoms, json["atoms"], f2c_mat);
+      CASM::from_json(_atoms, json["atoms"], f2c_mat, _modules);
     }
     mol.set_atoms(_atoms);
 
@@ -97,8 +111,8 @@ namespace CASM {
     if(json.contains("attributes")) {
       auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
       for(; it != end_it; ++it) {
-        auto result_pair = attr_map.emplace(it.name(), it.name());
-        (result_pair.first->second).from_json(*it);
+        auto result_pair = attr_map.emplace(it.name(), *(_modules.aniso_val_dict().lookup(it.name())));
+        from_json(result_pair.first->second, *it);
       }
     }
     mol.set_attributes(attr_map);
@@ -108,8 +122,8 @@ namespace CASM {
   //
   //****************************************************
 
-  Molecule jsonConstructor<Molecule>::from_json(const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat) {
-    return json.get<Molecule>(f2c_mat);
+  Molecule jsonConstructor<Molecule>::from_json(const jsonParser &json,  Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat, HamiltonianModules const &_modules) {
+    return json.get<Molecule>(f2c_mat, _modules);
   }
 
   //****************************************************
@@ -140,7 +154,7 @@ namespace CASM {
     // change this to use FormatFlag
     if(coordtype == FRAC)
       c2f = site.home().inv_lat_column_mat();
-    CASM::to_json(site.occupant_dof(), json["occupant_dof"], c2f);
+    CASM::to_json(site.occupant_dof().domain(), json["occupants"], c2f);
 
     if(site.dofs().size()) {
       json["dofs"] = site.dofs();
@@ -189,7 +203,7 @@ namespace CASM {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
         try {
-          _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*_modules.dof_dict().lookup(it.name()))));
+          _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*(_modules.aniso_val_dict().lookup(it.name())))));
         }
         catch(std::exception &e) {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
@@ -219,7 +233,7 @@ namespace CASM {
     }
     //std::cout << "t_occ.size() = " << t_occ.size() << "\n";
     if(t_occ.empty())
-      t_occ = {Molecule::make_unknown()};
+      t_occ.push_back(Molecule::make_unknown());
     site.set_allowed_occupants(t_occ);
   }
 
@@ -269,7 +283,7 @@ namespace CASM {
               throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
             try {
-              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*_modules->dof_dict().lookup(it.name()))));
+              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*(_modules->aniso_val_dict().lookup(it.name())))));
             }
             catch(std::exception &e) {
               throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
@@ -297,7 +311,7 @@ namespace CASM {
         auto it_end = json["species"].end();
         for(; it != it_end; ++it) {
           auto mol_it = mol_map.emplace(it.name(), Molecule(it.name())).first;
-          from_json(mol_it->second, *it, f2c);
+          from_json(mol_it->second, *it, f2c, *_modules);
         }
       }
 

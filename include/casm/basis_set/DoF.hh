@@ -16,6 +16,8 @@
 namespace CASM {
   class SymGroup;
 
+  class AnisoValTraits;
+
   template<typename OccType>
   class OccupantDoF;
 
@@ -23,12 +25,13 @@ namespace CASM {
   class DoFSet;
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
   namespace DoFType {
-    class Traits;
+    using BasicTraits = AnisoValTraits;
+    BasicTraits const &basic_traits(std::string const &dof_key);
+    void register_traits(BasicTraits const &_traits);
   }
 
-  namespace DoF_impl {
+  namespace DoF {
 
     /// A RemoteHandle can be initialized with either a double or integer reference and then passed to a
     /// DoF (or to a BasisFunction, which contains DoFs), in order for the DoF to access the remote value
@@ -120,11 +123,7 @@ namespace CASM {
     class Base {
     public:
       using BasicTraits = AnisoValTraits;
-      using RemoteHandle = DoF_impl::RemoteHandle;
-
-      static BasicTraits const &traits(std::string const &_type_name);
-
-      static void register_traits(BasicTraits const &_type);
+      using RemoteHandle = DoF::RemoteHandle;
 
       Base() :
         m_type_name("EMPTY"),
@@ -137,7 +136,7 @@ namespace CASM {
            Index _ID);
 
       BasicTraits const &traits() const {
-        return traits(type_name());
+        return DoFType::basic_traits(type_name());
       }
 
       /// \brief Const access of DoF type name
@@ -183,8 +182,6 @@ namespace CASM {
         m_ID_lock = false;
       }
 
-      typedef std::map<std::string, BasicTraits> TraitsMap;
-      static const TraitsMap &traits_map();
     protected:
       void _set_type_name(std::string _type_name) {
         std::swap(m_type_name, _type_name);
@@ -194,8 +191,6 @@ namespace CASM {
         std::swap(m_var_name, _var_name);
       }
     private:
-
-      static TraitsMap &_traits_map();
 
       std::string m_type_name;
       std::string m_var_name;
@@ -211,9 +206,9 @@ namespace CASM {
   }
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  class DiscreteDoF : public DoF_impl::Base {
+  class DiscreteDoF : public DoF::Base {
   public:
-    using Base = DoF_impl::Base;
+    using Base = DoF::Base;
     DiscreteDoF():
       Base(),
       m_current_state(0),
@@ -327,9 +322,6 @@ namespace CASM {
     OccupantDoF(BasicTraits const &_traits) :
       DiscreteDoF(_traits, "s") { }
 
-    OccupantDoF(TypeFunc _func) :
-      OccupantDoF(_func, "s") {}
-
     OccupantDoF(BasicTraits const &_traits,
                 std::string const &_var_name,
                 std::vector<T> const &_domain,
@@ -442,6 +434,10 @@ namespace CASM {
         out << '?';
     }
 
+    std::unique_ptr<OccupantDoF> clone() const {
+      return std::unique_ptr<OccupantDoF>(static_cast<OccupantDoF *>(this->_clone()));
+    }
+
   private:
 
     DiscreteDoF *_clone() const override {
@@ -461,9 +457,9 @@ namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  class ContinuousDoF : public DoF_impl::Base {
+  class ContinuousDoF : public DoF::Base {
   public:
-    using Base = DoF_impl::Base;
+    using Base = DoF::Base;
     ContinuousDoF(BasicTraits const &_traits,
                   std::string const &_var_name,
                   Index _ID,
@@ -480,12 +476,14 @@ namespace CASM {
     ContinuousDoF(BasicTraits const &_traits)
       : ContinuousDoF(_traits, "", -1, NAN, NAN) {}
 
+    /*
     ContinuousDoF(TypeFunc _func,
                   std::string const &_var_name,
                   Index _ID,
                   double _min,
                   double _max) :
       ContinuousDoF(*_func(), _var_name, _ID, _min, _max) {}
+    */
 
     double value() const {
       return current_val;
@@ -522,7 +520,7 @@ namespace CASM {
     }
 
     std::unique_ptr<ContinuousDoF> clone() const {
-      return new ContinuousDoF(*this);
+      return notstd::make_unique<ContinuousDoF>(*this);
     }
 
   private:

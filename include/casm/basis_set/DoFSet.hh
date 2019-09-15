@@ -5,10 +5,12 @@
 #include "casm/basis_set/DoF.hh"
 
 
+
 namespace CASM {
 
   template<typename T> struct jsonConstructor;
 
+  class AnisoValTraits;
   class SymOp;
   class SymGroup;
 
@@ -115,9 +117,7 @@ namespace CASM {
     ///    \code
     ///    DoFSet my_disp_dof(DoF::traits("disp"))
     ///    \endcode
-    DoFSet(BasicTraits const &_type) :
-      m_type_name(_type.type_name()),
-      m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(_type.dim(), 0)) {}
+    DoFSet(BasicTraits const &_type);
 
     /// \brief Returns number of components in this DoFSet
     Index size() const {
@@ -130,7 +130,7 @@ namespace CASM {
     }
 
     /// \brief Returns traits object for the DoF type of this DoFSet
-    DoFType::Traits const &traits() const;
+    BasicTraits const &traits() const;
 
     /// \brief Set identifying index (ID) of this DoFSet
     /// ID is context dependent but is used to different distinct DoFSets that are otherwise equivalent

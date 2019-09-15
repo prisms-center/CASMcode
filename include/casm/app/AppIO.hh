@@ -19,6 +19,7 @@ namespace CASM {
 
   template<typename CoordType> class BasicStructure;
   class Structure;
+  class SpeciesAttribute;
   class AtomPosition;
   class Molecule;
   class Site;
@@ -43,26 +44,32 @@ namespace CASM {
 
   // --------- PrimIO Declarations --------------------------------------------------
 
+  /// \brief Read SpeciesAttribute from json
+  jsonParser const &from_json(SpeciesAttribute &_attr, jsonParser const &json);
+
+  /// \brief From SpeciesAttribute to json
+  jsonParser &to_json(SpeciesAttribute const &_attr, jsonParser &json);
+
   /// \brief Print AtomPosition to json after applying affine transformation cart2frac*cart()+trans
   jsonParser &to_json(const AtomPosition &apos, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &cart2frac);
 
   /// \brief Read AtomPosition from json and then apply affine transformation cart2frac*cart()
-  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &frac2cart);
+  void from_json(AtomPosition &apos, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &frac2cart, HamiltonianModules const &_modules);
 
   template<>
   struct jsonConstructor<AtomPosition> {
 
     /// \brief Read from json [b, i, j, k], using 'unit' for AtomPosition::unit()
-    static AtomPosition from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
+    static AtomPosition from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat, HamiltonianModules const &_modules);
   };
 
   jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat);
 
-  void from_json(Molecule &mol, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat);
+  void from_json(Molecule &mol, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat, HamiltonianModules const &_modules);
 
   template<>
   struct jsonConstructor<Molecule> {
-    static Molecule from_json(const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat);
+    static Molecule from_json(const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat, HamiltonianModules const &_modules);
   };
 
   template<>

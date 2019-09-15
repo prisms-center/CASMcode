@@ -2,9 +2,18 @@
 #include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
-  namespace DoF_impl {
-    void Base::register_traits(BasicTraits const &_type) {
-      _traits_map().emplace(_type.name(), _type);
+  namespace DoFType {
+    namespace Local {
+      static std::map<std::string, BasicTraits> &_traits_map() {
+        static std::map<std::string, BasicTraits> _static_traits_map;
+        return _static_traits_map;
+      }
+    }
+
+    //********************************************************************
+
+    void register_traits(BasicTraits const &_type) {
+      Local::_traits_map().emplace(_type.name(), _type);
       //std::cout << "Adding DoFType " << _type.name() << "\nMap now holds:\n";
       //for(auto  const & d : _traits_map()){
       //std::cout << "  " << d.name() << "\n";
@@ -14,27 +23,17 @@ namespace CASM {
 
     //********************************************************************
 
-    Base::TraitsMap &Base::_traits_map() {
-      static TraitsMap _static_traits_map;
-      return _static_traits_map;
-    }
-
-    //********************************************************************
-
-    const Base::TraitsMap &Base::traits_map() {
-      return _traits_map();
-    }
-
-    //********************************************************************
-
-    Base::BasicTraits const &Base::traits(std::string const &_type_name) {
-      auto it = _traits_map().find(_type_name);
-      if(it == _traits_map().end()) {
+    BasicTraits const &traits(std::string const &_type_name) {
+      auto it = Local::_traits_map().find(_type_name);
+      if(it == Local::_traits_map().end()) {
         throw std::runtime_error("Could not find DoF Traits for DoF type" + _type_name);
       }
       return *it;
     }
 
+  }
+
+  namespace DoF_impl {
     //********************************************************************
 
     Base::Base(Base::BasicTraits const &_traits,
@@ -45,7 +44,7 @@ namespace CASM {
       m_dof_ID(_ID),
       m_ID_lock(false) {
 
-      register_traits(_traits);
+      DoFType::register_traits(_traits);
 
     }
   }

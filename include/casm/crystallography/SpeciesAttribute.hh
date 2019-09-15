@@ -28,60 +28,46 @@ namespace CASM {
 
   class SpeciesAttribute {
   public:
-    using BasicTraits = SpeciesAttribute_impl::BasicTraits;
+    using BasicTraits = AnisoValTraits;
     using KeyType = std::string;
 
     BasicTraits const &traits(KeyType const &key);
 
-    SpeciesAttribute(std::string const &_name) :
-      m_name(_name) {
-      //_load_traits();
+    SpeciesAttribute(AnisoValTraits const &_traits,
+                     Eigen::Ref<const Eigen::VectorXd> const &_value) :
+      m_traits(_traits),
+      m_value(_value) {
+
     }
 
-    SpeciesAttribute(std::string const &_name,
-                     Eigen::Ref<const Eigen::VectorXd> const &_value):
-      m_name(_name),
-      m_value(_value) {
-      //_load_traits();
+    SpeciesAttribute(AnisoValTraits const &_traits) :
+      SpeciesAttribute(_traits, Eigen::VectorXd::Zero(_traits.dim())) {
+
     }
 
     std::string const &name() const {
-      return m_name;
+      return traits().name();
     }
 
     Eigen::VectorXd const &value() const {
       return m_value;
     }
 
+    void set_value(Eigen::Ref<const Eigen::VectorXd> const &_value) {
+      m_value = _value;
+    }
+
     bool identical(SpeciesAttribute const &other, double _tol) const;
 
     SpeciesAttribute &apply_sym(SymOp const &op);
 
-    jsonParser &to_json(jsonParser &json) const {
-      return traits().to_json(*this, json);
-    }
-
-    void from_json(const jsonParser &json) {
-      traits().from_json(*this, json);
-      return;
-    }
-
     BasicTraits const &traits() const {
-      return *m_traits_ptr;
+      return m_traits;
     }
   private:
-
-    std::string m_name;
+    BasicTraits m_traits;
     Eigen::VectorXd m_value;
-    mutable notstd::cloneable_ptr<const BasicTraits> m_traits_ptr;
   };
 
-  template<>
-  ParsingDictionary<SpeciesAttribute::BasicTraits>  make_parsing_dictionary<SpeciesAttribute::BasicTraits>();
-
-  inline
-  jsonParser &to_json(SpeciesAttribute const &_attr, jsonParser &json) {
-    return _attr.to_json(json);
-  }
 }
 #endif

@@ -28,7 +28,6 @@ namespace CASM {
   class InnerProduct;
   class Variable;
   class BasisSet;
-  class DoF;
   class SymOp;
   template <typename T>
   class SparseTensor;

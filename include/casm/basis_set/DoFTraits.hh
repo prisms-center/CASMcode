@@ -1,6 +1,7 @@
 #ifndef CASM_DoFTraits
 #define CASM_DoFTraits
 
+#include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/symmetry/OrbitDecl.hh"
@@ -27,25 +28,34 @@ namespace CASM {
 
     Traits const &traits(std::string const &dof_key);
 
-    BasicTraits const &basic_traits(std::string const &dof_key);
+    void register_traits(Traits const &_traits);
 
     //DoF_impl::OccupationDoFTraits occupation();
 
     /// \brief Collection of all the traits specific to a DoF type
 
-    class Traits : public BasicTraits {
+    class Traits {
     public:
-      Traits(std::string const &_type_name,
-             std::vector<std::string> const &_std_var_names,
-             DOF_MODE _mode,
-             bool _requires_site_basis,
-             bool _unit_length) :
-        BasicTraits(_type_name,
-                    _std_var_names,
-                    _mode,
-                    _requires_site_basis,
-                    _unit_length) {
+      static std::string class_desc() {
+        return "DoFType::Traits";
+      }
 
+      Traits(AnisoValTraits const &_val_traits, bool _requires_site_basis) :
+        m_val_traits(_val_traits),
+        m_requires_site_basis(_requires_site_basis) {
+
+      }
+
+      AnisoValTraits const &val_traits() const {
+        return m_val_traits;
+      }
+
+      std::string const &name() const {
+        return val_traits().name();
+      }
+
+      bool requires_site_basis() const {
+        return m_requires_site_basis;
       }
 
       /// \brief Allow destruction through base pointer
@@ -119,8 +129,14 @@ namespace CASM {
 
       /// \brief non-virtual method to obtain copy through Traits pointer
       std::unique_ptr<Traits> clone() const {
-        return std::unique_ptr<Traits>(static_cast<Traits *>(_clone()));
+        return std::unique_ptr<Traits>(_clone());
       }
+
+    private:
+      virtual Traits *_clone() const = 0;
+
+      AnisoValTraits m_val_traits;
+      bool m_requires_site_basis;
     };
 
 
@@ -145,7 +161,7 @@ namespace CASM {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     /// \brief  Parsing dictionary for obtaining the correct BasicTraits given a name
-    using TraitsDictionary = ParsingDictionary<BasicTraits>;
+    using TraitsDictionary = ParsingDictionary<Traits>;
 
     /// This will eventually be managed by ProjectSettings
     //TraitsDictionary const &traits_dict();
@@ -155,19 +171,14 @@ namespace CASM {
 
 
     inline
-    Traits const &traits(std::string const &dof_key) {
-      return static_cast<Traits const &>(DoF::traits(dof_key));
-    }
-
-    inline
     BasicTraits const &basic_traits(std::string const &dof_key) {
-      return DoF::traits(dof_key);
+      return traits(dof_key).val_traits();
     }
 
   }
 
   template<>
-  DoFType::TraitsDictionary make_parsing_dictionary<DoF::BasicTraits>();
+  DoFType::TraitsDictionary make_parsing_dictionary<DoFType::Traits>();
 
 
 }

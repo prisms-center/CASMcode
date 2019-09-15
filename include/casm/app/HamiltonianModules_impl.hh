@@ -4,8 +4,6 @@
 #include "casm/app/HamiltonianModules.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/system/RuntimeLibrary.hh"
-#include "casm/basis_set/DoF.hh"
-#include "casm/crystallography/SpeciesAttribute.hh"
 namespace CASM {
   /// \brief Load DoF plugins from a CASM project
   template<typename DoFDictInserter, typename RuntimeLibInserter>
@@ -14,7 +12,7 @@ namespace CASM {
     const ProjectSettings &set,
     DoFDictInserter dict_it,
     RuntimeLibInserter lib_it) {
-    typedef DoF::BasicTraits *traits_ptr;
+    typedef DoFType::Traits *traits_ptr;
     typedef traits_ptr(signature)();
 
     const DirectoryStructure &dir = set.dir();
@@ -38,7 +36,7 @@ namespace CASM {
           std::string f_s = f.string();
           auto f_size = f_s.size();
 
-          std::string msg = "compiling new custom dof: " + f_s.substr(0, f_size - 3);
+          std::string msg = "Compiling new custom DoFTraits for DoF: " + f_s.substr(0, f_size - 3);
 
           // '-L$CASM_PREFIX/.libs' is a hack so 'make check' works
           auto lib_ptr = std::make_shared<RuntimeLibrary>(
@@ -51,7 +49,7 @@ namespace CASM {
           auto make_dof = lib_ptr->template get_function<signature>(
             "make_" + f_s.substr(0, f_size - 3) + "_dof");
 
-          std::unique_ptr<DoF::BasicTraits> ptr(make_dof());
+          std::unique_ptr<DoFType::Traits> ptr(make_dof());
 
           // will clone on insert
           *dict_it++ = *ptr;
@@ -64,15 +62,15 @@ namespace CASM {
   }
 
 
-  /// \brief Load SpeciesAttribute plugins from a CASM project
-  template<typename AttributeDictInserter, typename RuntimeLibInserter>
-  std::pair<AttributeDictInserter, RuntimeLibInserter>
-  load_species_attribute_plugins(
+  /// \brief Load SymRepBuilder plugins from a CASM project
+  template<typename SymRepBuilderDictInserter, typename RuntimeLibInserter>
+  std::pair<SymRepBuilderDictInserter, RuntimeLibInserter>
+  load_symrep_builder_plugins(
     const ProjectSettings &set,
-    AttributeDictInserter dict_it,
+    SymRepBuilderDictInserter dict_it,
     RuntimeLibInserter lib_it) {
-    typedef SpeciesAttribute_impl::BasicTraits *traits_ptr;
-    typedef traits_ptr(signature)();
+    typedef SymRepBuilder *bldr_ptr;
+    typedef bldr_ptr(signature)();
 
     const DirectoryStructure &dir = set.dir();
 
@@ -80,10 +78,10 @@ namespace CASM {
       return std::make_pair(dict_it, lib_it);
     }
 
-    if(fs::is_directory(dir.species_traits_plugins())) {
+    if(fs::is_directory(dir.symrep_builder_plugins())) {
 
       // loop over custom query files *.cc
-      for(auto &entry : boost::make_iterator_range(fs::directory_iterator(dir.species_traits_plugins()), {})) {
+      for(auto &entry : boost::make_iterator_range(fs::directory_iterator(dir.symrep_builder_plugins()), {})) {
 
         fs::path p = entry.path();
         std::string p_s = p.string();
@@ -95,20 +93,20 @@ namespace CASM {
           std::string f_s = f.string();
           auto f_size = f_s.size();
 
-          std::string msg = "compiling new custom species attribute: " + f_s.substr(0, f_size - 3);
+          std::string msg = "Compiling new custom SymRepBuilder: " + f_s.substr(0, f_size - 3);
 
           // '-L$CASM_PREFIX/.libs' is a hack so 'make check' works
           auto lib_ptr = std::make_shared<RuntimeLibrary>(
                            p_s.substr(0, p_size - 3),
-                           set.compile_options() + " " + include_path(dir.species_traits_plugins()),
+                           set.compile_options() + " " + include_path(dir.symrep_builder_plugins()),
                            set.so_options() + " -lcasm ",
                            msg,
                            set);
 
           auto make_traits = lib_ptr->template get_function<signature>(
-            "make_" + f_s.substr(0, f_size - 3) + "_species_traits");
+            "make_" + f_s.substr(0, f_size - 3) + "_symrep_builder");
 
-          std::unique_ptr<SpeciesAttribute_impl::BasicTraits> ptr(make_traits());
+          std::unique_ptr<SymRepBuilder> ptr(make_traits());
 
           // will clone on insert
           *dict_it++ = *ptr;

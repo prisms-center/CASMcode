@@ -17,6 +17,23 @@
 namespace CASM {
 
   namespace DoFType {
+    namespace Local {
+      static TraitsDictionary &_traits_dict() {
+        static TraitsDictionary static_dict = make_parsing_dictionary<Traits>();
+        return static_dict;
+
+      }
+    }
+
+    void register_traits(Traits const &_traits) {
+      _traits_dict().insert(_traits)
+    }
+
+    Traits const &traits(std::string const &dof_key) {
+      return _traits_dict().lookup(dof_key);
+    }
+
+
 
     void Traits::to_json(DoFSet const &_out, jsonParser &_json) const {
       bool simple = false;
@@ -487,12 +504,12 @@ namespace CASM {
   template<>
   DoFType::TraitsDictionary make_parsing_dictionary<DoF::BasicTraits>() {
     //std::cout << "Making Parsing dictionary... \n";
-    DoF::register_traits(DoFType::occupation());
-    DoF::register_traits(DoFType::displacement());
-    DoF::register_traits(DoFType::magspin());
-    DoF::register_traits(DoFType::EAstrain());
-    DoF::register_traits(DoFType::Hstrain());
-    DoF::register_traits(DoFType::GLstrain());
+    DoF_impl::Base::register_traits(DoFType::occupation().val_traits());
+    DoF_impl::Base::register_traits(DoFType::displacement().val_traits());
+    DoF_impl::Base::register_traits(DoFType::magspin().val_traits());
+    DoF_impl::Base::register_traits(DoFType::EAstrain().val_traits());
+    DoF_impl::Base::register_traits(DoFType::Hstrain().val_traits());
+    DoF_impl::Base::register_traits(DoFType::GLstrain().val_traits());
     DoFType::TraitsDictionary dict;
 
     dict.insert(

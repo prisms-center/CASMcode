@@ -1,8 +1,8 @@
 #ifndef CASM_ConfigDoFValues
 #define CASM_ConfigDoFValues
 
-#include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/DoFSet.hh"
+#include "casm/crystallography/AnisoValTraits.hh"
 namespace CASM {
   class jsonParser;
 
