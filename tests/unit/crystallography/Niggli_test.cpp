@@ -10,7 +10,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ScelEnum.hh"
-#include "ZrOProj.hh"
+#include "crystallography/TestStructures.hh"
 
 namespace CASM {
 

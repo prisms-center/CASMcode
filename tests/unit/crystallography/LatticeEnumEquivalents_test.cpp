@@ -7,7 +7,7 @@
 /// What is being used to test it:
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Structure.hh"
-#include "ZrOProj.hh"
+#include "crystallography/TestStructures.hh"
 
 using namespace CASM;
 using namespace test;

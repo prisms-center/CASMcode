@@ -8,7 +8,6 @@
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include <boost/filesystem/fstream.hpp>
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/casm_io/VaspIO.hh"
 
