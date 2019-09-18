@@ -211,7 +211,7 @@ namespace CASM {
     for(DoFKey const &dof : which_dofs) {
       if(dof != "none" && dof != "occ") {
         auto traits_ptr = &DoFType::traits(dof);
-        if(traits_ptr->global())
+        if(traits_ptr->val_traits().global())
           result[_prefix + "global_dofs"][dof] = traits_ptr->dof_to_json(_dof, _reference);
         else
           result[_prefix + "mol_dofs"][dof] = traits_ptr->dof_to_json(_dof, _reference);
@@ -252,17 +252,17 @@ namespace CASM {
 
     supplement[prefix + "lattice"] = _struc.lat_column_mat.transpose();
 
-    for(auto const &dof : _struc.dofs) {
+    for(auto const &dof : _struc.properties) {
       to_json_array(dof.second, supplement[prefix + "global_dofs"][dof.first]["value"]);
     }
 
-    for(auto const &dof : _struc.atom_info.dofs) {
+    for(auto const &dof : _struc.atom_info.properties) {
       jsonParser &tjson = supplement[prefix + "atom_dofs"][dof.first]["value"].put_array();
       for(Index i : atom_permute)
         tjson.push_back(dof.second.col(i), jsonParser::as_array());
     }
 
-    for(auto const &dof : _struc.mol_info.dofs) {
+    for(auto const &dof : _struc.mol_info.properties) {
       jsonParser &tjson = supplement[prefix + "mol_dofs"][dof.first]["value"].put_array();
       for(Index i : mol_permute)
         tjson.push_back(dof.second.col(i), jsonParser::as_array());
@@ -315,7 +315,7 @@ namespace CASM {
         auto it = json.find(prefix + "global_dofs");
         if(it != json.end()) {
           for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-            _struc.dofs[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>();
+            _struc.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>();
           }
         }
       }
@@ -357,7 +357,7 @@ namespace CASM {
         auto it = json.find(prefix + "atom_dofs");
         if(it != json.end()) {
           for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-            _struc.atom_info.dofs[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
+            _struc.atom_info.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
           }
         }
       }
@@ -366,7 +366,7 @@ namespace CASM {
         auto it = json.find(prefix + "mol_dofs");
         if(it != json.end()) {
           for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-            _struc.mol_info.dofs[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
+            _struc.mol_info.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
           }
         }
       }
@@ -427,7 +427,7 @@ namespace CASM {
 
     //std::cout << "About to transform!!!\n";
     for(TransformDirective const &tformer : tformers) {
-      tformer.dofs_to_json(json, _config, _reference);
+      tformer.properties_to_json(json, _config, _reference);
     }
   }
   */
@@ -462,7 +462,7 @@ namespace CASM {
       if(el != name())
         _result.insert(el);
       if(el != "atomize")
-        _accumulate_before(DoF::traits(el).before_dof_apply(), _result);
+        _accumulate_before(DoFType::basic_traits(el).must_apply_before(), _result);
     }
   }
 
@@ -473,7 +473,7 @@ namespace CASM {
       if(el != name())
         _result.insert(el);
       if(el != "atomize")
-        _accumulate_after(DoF::traits(el).after_dof_apply(), _result);
+        _accumulate_after(DoFType::basic_traits(el).must_apply_after(), _result);
     }
   }
 
@@ -482,10 +482,10 @@ namespace CASM {
   void TransformDirective::transform(ConfigDoF const  &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
     //std::cout << "Applying transformation: " << m_name << "\n";
     if(m_traits_ptr) {
-      if(m_traits_ptr->global())
-        _struc.dofs[m_traits_ptr->type_name()] = _dof.global_dof(m_traits_ptr->type_name()).standard_values();
+      if(m_traits_ptr->val_traits().global())
+        _struc.properties[m_traits_ptr->name()] = _dof.global_dof(m_traits_ptr->name()).standard_values();
       else
-        _struc.mol_info.dofs[m_traits_ptr->type_name()] = _dof.local_dof(m_traits_ptr->type_name()).standard_values();
+        _struc.mol_info.properties[m_traits_ptr->name()] = _dof.local_dof(m_traits_ptr->name()).standard_values();
 
       m_traits_ptr->apply_dof(_dof, _reference, _struc);
     }

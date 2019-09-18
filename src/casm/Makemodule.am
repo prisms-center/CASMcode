@@ -106,6 +106,7 @@ libcasm_la_SOURCES = \
   src/casm/completer/Complete.cc\
   src/casm/completer/Handlers.cc\
   src/casm/container/Permutation.cc\
+  src/casm/crystallography/AnisoValTraits.cc\
   src/casm/crystallography/BasicStructure.cc\
   src/casm/crystallography/Coordinate.cc\
   src/casm/crystallography/CoordinateSystems.cc\

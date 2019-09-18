@@ -13,13 +13,8 @@
 
 namespace CASM {
   namespace DoF_impl {
-    DoFType::BasicTraits *DisplacementDoFTraits::_clone() const {
+    DoFType::Traits *DisplacementDoFTraits::_clone() const {
       return new DisplacementDoFTraits(*this);
-    }
-
-    /// \brief Generate a symmetry representation for the supporting vector space
-    Eigen::MatrixXd DisplacementDoFTraits::symop_to_matrix(SymOp const &op) const {
-      return op.matrix();
     }
 
     /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
@@ -32,10 +27,10 @@ namespace CASM {
 
       for(Index b = 0; b < _prim.basis().size(); b++) {
 
-        if(!_prim.basis()[b].has_dof(type_name()))
+        if(!_prim.basis()[b].has_dof(name()))
           continue;
 
-        result[b].set_variable_basis(_prim.basis()[b].dof(type_name()));
+        result[b].set_variable_basis(_prim.basis()[b].dof(name()));
         //std::cout << "+:+:+:+Created variable set for site " << b << ", size " << result[b].size() << "\n";
       }
       return result;
@@ -43,7 +38,7 @@ namespace CASM {
 
     //  Apply DoF values for this DoF to _struc
     void DisplacementDoFTraits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
-      _struc.mol_info.coords += _dof.local_dof(type_name()).standard_values();
+      _struc.mol_info.coords += _dof.local_dof(name()).standard_values();
       // Any considerations here for Selective Dynamics?
     }
 

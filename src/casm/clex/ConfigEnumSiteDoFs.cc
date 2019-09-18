@@ -166,7 +166,7 @@ namespace CASM {
         throw std::runtime_error("Field \"dof\" is required.\n");
       }
       from_json(dof, _kwargs["dof"]);
-      DoF::traits(dof);
+      DoFType::traits(dof);
 
       auto const &dof_info = in_configs[0].configdof().local_dof(dof).info();
       for(Index l : in_configs[0].sites()) {
@@ -374,7 +374,7 @@ namespace CASM {
     m_min(min_val),
     m_max(max_val),
     m_inc(inc_val),
-    m_unit_length(DoFType::traits(_dof).unit_length()),
+    m_unit_length(DoFType::basic_traits(_dof).unit_length()),
     m_sites(_init.sites().begin(), _init.sites().end()),
     m_subset_mode(false),
     //m_combo_mode(false),

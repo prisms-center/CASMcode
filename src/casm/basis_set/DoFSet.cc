@@ -6,7 +6,7 @@
 namespace CASM {
 
   DoFSet::DoFSet(BasicTraits const &_type) :
-    m_type_name(_type.type_name()),
+    m_type_name(_type.name()),
     m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(_type.dim(), 0)) {
 
   }

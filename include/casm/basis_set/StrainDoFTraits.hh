@@ -6,18 +6,10 @@ namespace CASM {
   namespace DoF_impl {
     class StrainDoFTraits : public DoFType::Traits {
     public:
-      StrainDoFTraits(std::string _metric) :
-        DoFType::Traits(_metric + "strain",
-                        std::vector<std::string>({"e_1", "e_2", "e_3", "e_4", "e_5", "e_6"}),
-      DoFType::GLOBAL,
-      /*_requires_site_basis = */ false,
-      /*_unit_length = */ false),
-      m_metric(_metric) {
+      StrainDoFTraits(std::string const &_metric) :
+        DoFType::Traits(AnisoValTraits::strain(_metric)),
+        m_metric(_metric) {
       }
-
-
-      /// \brief Generate a symmetry representation for the supporting vector space
-      Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override;
 
 
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
@@ -31,14 +23,9 @@ namespace CASM {
       /// \brief Transforms SimpleSructure @param _struc by applying strain DoF values contained in @param _dof
       void apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const override;
 
-      /// \brief Return list of DoFs that *must* be applied before this DoF is applied
-      std::set<std::string> before_dof_apply() const override {
-        return {"atomize", "disp"};
-      }
-
     protected:
 
-      DoFType::BasicTraits *_clone() const override {
+      DoFType::Traits *_clone() const override {
         return new StrainDoFTraits(*this);
       }
 

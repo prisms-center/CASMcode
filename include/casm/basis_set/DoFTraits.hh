@@ -6,8 +6,6 @@
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include "casm/clusterography/ClusterDecl.hh"
-#include "casm/misc/ParsingDictionary.hh"
-
 
 namespace CASM {
   class jsonParser;
@@ -15,6 +13,9 @@ namespace CASM {
   class Structure;
   class BasisSet;
   class Site;
+
+  template<typename T>
+  class ParsingDictionary;
 
   template<typename CoordType>
   class BasicStructure;
@@ -40,7 +41,7 @@ namespace CASM {
         return "DoFType::Traits";
       }
 
-      Traits(AnisoValTraits const &_val_traits, bool _requires_site_basis) :
+      Traits(AnisoValTraits const &_val_traits, bool _requires_site_basis = false) :
         m_val_traits(_val_traits),
         m_requires_site_basis(_requires_site_basis) {
 
@@ -52,6 +53,10 @@ namespace CASM {
 
       std::string const &name() const {
         return val_traits().name();
+      }
+
+      std::string site_basis_name() const {
+        return name() + "_site_func";
       }
 
       bool requires_site_basis() const {
@@ -160,7 +165,8 @@ namespace CASM {
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    /// \brief  Parsing dictionary for obtaining the correct BasicTraits given a name
+
+    /// \brief  Parsing dictionary for obtaining the correct Traits given a name
     using TraitsDictionary = ParsingDictionary<Traits>;
 
     /// This will eventually be managed by ProjectSettings

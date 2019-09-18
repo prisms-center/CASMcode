@@ -11,7 +11,7 @@ namespace CASM {
     ConfigDoFValues() : m_n_sublat(0), m_n_vol(0)
     {}
     ConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_sublat, Index _n_vol) :
-      m_type(_traits.type_name()),
+      m_type(_traits.name()),
       m_n_sublat(_n_sublat),
       m_n_vol(_n_vol) {
     }

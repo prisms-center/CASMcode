@@ -3,6 +3,23 @@
 
 namespace CASM {
 
+  template<>
+  HamiltonianModules::AnisoValDictionary make_parsing_dictionary<AnisoValTraits>() {
+    HamiltonianModules::AnisoValDictionary dict;
+
+    dict.insert(
+      AnisoValTraits::disp(),
+      AnisoValTraits::magspin(),
+      AnisoValTraits::magmom(),
+      AnisoValTraits::strain("EA"),
+      AnisoValTraits::strain("GL"),
+      AnisoValTraits::strain("H"),
+      AnisoValTraits::force());
+
+    return dict;
+  }
+
+
   HamiltonianModules::HamiltonianModules(ProjectSettings const *_set) :
     m_dof_dict(make_parsing_dictionary<DoFDictionary::value_type>().clone()),
     m_aniso_val_dict(make_parsing_dictionary<AnisoValDictionary::value_type>().clone()) {

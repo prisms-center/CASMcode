@@ -5,7 +5,7 @@
 namespace CASM {
 
   SpeciesAttribute &SpeciesAttribute::apply_sym(SymOp const &_op) {
-    m_value = traits().symop_to_matrix(_op.matrix(), op.time_reversal()) * m_value;
+    m_value = traits().symop_to_matrix(_op.matrix(), _op.time_reversal()) * m_value;
     return *this;
   }
 

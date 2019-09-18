@@ -14,7 +14,7 @@ namespace CASM {
   class RuntimeLibrary;
   class ProjectSettings;
 
-  class SymRepBuilder;
+  class SymRepBuilderInterface;
   class AnisoValTraits;
 
   namespace DoFType {
@@ -25,7 +25,7 @@ namespace CASM {
   public:
 
     using DoFDictionary = ParsingDictionary<DoFType::Traits>;
-    using SymRepBuilderDictionary = ParsingDictionary<SymRepBuilder>;
+    using SymRepBuilderDictionary = ParsingDictionary<SymRepBuilderInterface>;
     using AnisoValDictionary = ParsingDictionary<AnisoValTraits>;
 
     HamiltonianModules(ProjectSettings const *set = nullptr);
@@ -57,6 +57,11 @@ namespace CASM {
     std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_symrep_builder_lib;
 
   };
+
+  template<>
+  HamiltonianModules::AnisoValDictionary make_parsing_dictionary<AnisoValTraits>();
+
+
 
   /// \brief Load DoF plugins from a CASM project
   template<typename DoFDictInserter, typename RuntimeLibInserter>

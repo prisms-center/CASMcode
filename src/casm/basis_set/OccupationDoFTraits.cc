@@ -77,7 +77,7 @@ namespace CASM {
     }
 
 
-    DoFType::BasicTraits *OccupationDoFTraits::_clone() const {
+    DoFType::Traits *OccupationDoFTraits::_clone() const {
       return new OccupationDoFTraits(*this);
     }
 

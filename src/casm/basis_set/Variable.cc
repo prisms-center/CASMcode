@@ -217,7 +217,7 @@ namespace CASM {
   std::set<Index> Variable::dof_IDs() const {
     std::set<Index> result;
     for(Index i = 0; i < m_dof_set.size(); i++) {
-      if(!m_dof_set[i].traits().global() &&  !almost_zero(m_coeffs[i]))
+      if(!m_dof_set[i].is_locked() &&  !almost_zero(m_coeffs[i]))
         result.insert(m_dof_set[i].ID());
     }
     return result;

@@ -69,7 +69,7 @@ namespace CASM {
     const ProjectSettings &set,
     SymRepBuilderDictInserter dict_it,
     RuntimeLibInserter lib_it) {
-    typedef SymRepBuilder *bldr_ptr;
+    typedef SymRepBuilderInterface *bldr_ptr;
     typedef bldr_ptr(signature)();
 
     const DirectoryStructure &dir = set.dir();
@@ -93,7 +93,7 @@ namespace CASM {
           std::string f_s = f.string();
           auto f_size = f_s.size();
 
-          std::string msg = "Compiling new custom SymRepBuilder: " + f_s.substr(0, f_size - 3);
+          std::string msg = "Compiling new custom SymRepBuilderInterface: " + f_s.substr(0, f_size - 3);
 
           // '-L$CASM_PREFIX/.libs' is a hack so 'make check' works
           auto lib_ptr = std::make_shared<RuntimeLibrary>(
@@ -106,7 +106,7 @@ namespace CASM {
           auto make_traits = lib_ptr->template get_function<signature>(
             "make_" + f_s.substr(0, f_size - 3) + "_symrep_builder");
 
-          std::unique_ptr<SymRepBuilder> ptr(make_traits());
+          std::unique_ptr<SymRepBuilderInterface> ptr(make_traits());
 
           // will clone on insert
           *dict_it++ = *ptr;

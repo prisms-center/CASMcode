@@ -1751,7 +1751,7 @@ namespace CASM {
 
     Eigen::MatrixXd gcorr;
     Index scel_vol = scel.volume();
-    if(DoF::traits(key).global()) {
+    if(DoFType::basic_traits(key).global()) {
       Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
       //std::cout << "global_dof is: \n" << gcorr_func << std::endl;
       gcorr.setZero(gcorr_func.size(), clexulator.corr_size());
