@@ -1,8 +1,7 @@
 #ifndef CASM_UNIT_PROJ
 #define CASM_UNIT_PROJ
 
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 #include <boost/regex.hpp>
 
 #include "casm/CASM_global_definitions.hh"
@@ -101,17 +100,16 @@ namespace test {
   template<typename Iterator>
   void Proj::_check_composition_axes(Iterator begin, Iterator end) {
 
+    //TODO: BIG WARNING HERE. running `make check` isn't going to test your ccasm. this is testing whatever version of ccasm is already
+    //installed on your system!!
     m_p.popen(cd_and() + "ccasm composition --select 0");
 
     for(auto it = begin; it != end; ++it) {
-      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)) == true, m_p.gets());
+      ASSERT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)), true) << m_p.gets();
     }
 
-    BOOST_CHECK_MESSAGE(
-      boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Currently selected composition axes: 0)")) ==
-      true,
-      m_p.gets()
-    );
+    ASSERT_EQ(
+      boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Currently selected composition axes: 0)")), true) << m_p.gets();
   }
 }
 

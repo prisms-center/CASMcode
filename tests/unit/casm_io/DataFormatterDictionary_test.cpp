@@ -1,10 +1,10 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/casm_io/DataFormatter.hh"
 
 #include <sstream>
+#include "autotools.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/casm_io/jsonFile.hh"
@@ -25,9 +25,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(DataFormatterDictionaryTest)
-
-BOOST_AUTO_TEST_CASE(Test0) {
+TEST(DataFormatterDictionaryTest, Test0) {
   DataFormatterDictionary<Configuration> dict;
   dict.insert(ConfigIO::configname(), ConfigIO::scel_size(), alias_or_name<Configuration>());
 
@@ -59,7 +57,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
       std::string result =
         "#               configname    scel_size             alias_or_name\n"
         "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n";
-      BOOST_CHECK_EQUAL(ss.str(), result);
+      ASSERT_EQ(ss.str(), result);
     }
 
     {
@@ -71,7 +69,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
         "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n"
         "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n"
         "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n";
-      BOOST_CHECK_EQUAL(ss.str(), result);
+      ASSERT_EQ(ss.str(), result);
     }
 
     {
@@ -82,7 +80,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
       result["configname"] = "SCEL1_1_1_1_0_0_0/none";
       result["scel_size"] = 1;
       result["alias_or_name"] = "SCEL1_1_1_1_0_0_0/none";
-      BOOST_CHECK_EQUAL(json, result);
+      ASSERT_EQ(json, result);
     }
 
     {
@@ -95,14 +93,14 @@ BOOST_AUTO_TEST_CASE(Test0) {
         result[i]["scel_size"] = 1;
         result[i]["alias_or_name"] = "SCEL1_1_1_1_0_0_0/none";
       }
-      BOOST_CHECK_EQUAL(json, result);
+      ASSERT_EQ(json, result);
     }
   }
 }
 
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(DataFormatterDictionaryTest, Test1) {
 
-  BOOST_CHECK_EQUAL(true, true);
+  ASSERT_EQ(true, true);
   test::FCCTernaryProj proj;
   proj.check_init();
   proj.check_composition();
@@ -120,15 +118,15 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // -- Generate Supercell & Configuration --
 
   ScelEnumByProps enum_scel(primclex, ScelEnumProps(1, 5));
-  BOOST_CHECK_EQUAL(true, true);
+  ASSERT_EQ(true, true);
 
   ConfigEnumAllOccupations::run(primclex, enum_scel.begin(), enum_scel.end());
-  BOOST_CHECK_EQUAL(true, true);
+  ASSERT_EQ(true, true);
 
   // -- Check Supercell --
 
   {
-    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
+    ASSERT_EQ(primclex.generic_db<Supercell>().size(), 13);
     DB::Selection<Supercell> selection(primclex, "ALL");
 
     auto &qh = primclex.settings().query_handler<Supercell>();
@@ -140,13 +138,13 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
     std::stringstream ss;
     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
-    BOOST_CHECK_EQUAL(true, true);
+    ASSERT_EQ(true, true);
   }
 
   // -- Check Configuration --
 
   {
-    BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size(), 126);
+    ASSERT_EQ(primclex.generic_db<Configuration>().size(), 126);
 
     DB::Selection<Configuration> selection(primclex, "ALL");
 
@@ -159,17 +157,18 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
     std::stringstream ss;
     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
-    BOOST_CHECK_EQUAL(true, true);
+    ASSERT_EQ(true, true);
   }
   // -- DiffusionTransformation --
 
   {
-    jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
-    BOOST_CHECK_EQUAL(true, true);
+    std::string srcdir = autotools::srcdir_name();
+    jsonFile diff_trans_json {srcdir + "/tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
+    ASSERT_EQ(true, true);
     Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
-    BOOST_CHECK_EQUAL(true, true);
+    ASSERT_EQ(true, true);
 
-    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
+    ASSERT_EQ(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
     primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().commit();
     DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection(primclex, "ALL");
 
@@ -182,7 +181,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
     std::stringstream ss;
     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
-    BOOST_CHECK_EQUAL(true, true);
+    ASSERT_EQ(true, true);
   }
 
   // -- DiffTransConfiguration --
@@ -208,11 +207,12 @@ BOOST_AUTO_TEST_CASE(Test1) {
   */
 
   {
-    jsonFile diff_perturb_json {"tests/unit/kinetics/FCCTernary_diff_perturb_0.json"};
+    std::string srcdir = autotools::srcdir_name();
+    jsonFile diff_perturb_json {srcdir + "/tests/unit/kinetics/FCCTernary_diff_perturb_0.json"};
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
 
     /// Not checked for accuracy yet... Would need a simpler test case
-    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
+    ASSERT_EQ(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
 
     primclex.generic_db<Kinetics::DiffTransConfiguration>().commit();
     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex, "ALL");
@@ -226,13 +226,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
     std::stringstream ss;
     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
-    BOOST_CHECK_EQUAL(true, true);
+    ASSERT_EQ(true, true);
   }
-
 }
-
-BOOST_AUTO_TEST_SUITE_END()
-
-
-
-

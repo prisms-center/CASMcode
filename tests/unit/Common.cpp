@@ -1,4 +1,5 @@
 #include "Common.hh"
+#include "gtest/gtest.h"
 
 #include <thread>
 #include <chrono>
@@ -20,7 +21,7 @@ namespace test {
   ///
   /// If \code !expected.contains(test) && !quiet \endcode, print the calculated
   /// JSON so that it can be added to the test data.
-  bool check(std::string test,
+  void check(std::string test,
              const jsonParser &expected,
              const jsonParser &calculated,
              fs::path test_cases_path,
@@ -55,9 +56,10 @@ namespace test {
       std::cout << "Expected: \n" << expected[test].at(diff_path) << "\n"
                 << "Found: \n" << calculated.at(diff_path) << std::endl;
     }
-    BOOST_CHECK(ok);
 
-    return ok;
+    ASSERT_EQ(ok, true);
+
+    return;
   }
 
   /// \brief Create a new project directory, appending ".(#)" to ensure
@@ -96,16 +98,16 @@ namespace test {
 
   /// \brief Check some aspects of a SymGroup json
   void check_symgroup(const jsonParser &json, int N_op, int N_class) {
-    BOOST_CHECK_EQUAL(json["character_table"].size(), N_class);
-    BOOST_CHECK_EQUAL(json["conjugacy_class"].size(), N_class);
+    ASSERT_EQ(json["character_table"].size(), N_class);
+    ASSERT_EQ(json["conjugacy_class"].size(), N_class);
 
-    BOOST_CHECK_EQUAL(json["symop"].size(), N_op);
-    BOOST_CHECK_EQUAL(json["symop"][0]["type"].get<std::string>(), "identity");
+    ASSERT_EQ(json["symop"].size(), N_op);
+    ASSERT_EQ(json["symop"][0]["type"].get<std::string>(), "identity");
 
-    BOOST_CHECK_EQUAL(json["inverse"].size(), N_op);
-    BOOST_CHECK_EQUAL(json["multiplication_table"].size(), N_op);
+    ASSERT_EQ(json["inverse"].size(), N_op);
+    ASSERT_EQ(json["multiplication_table"].size(), N_op);
     for(auto i = 0; i < json["multiplication_table"].size(); ++i) {
-      BOOST_CHECK_EQUAL(json["multiplication_table"][i].size(), N_op);
+      ASSERT_EQ(json["multiplication_table"][i].size(), N_op);
     }
   }
 
@@ -124,25 +126,25 @@ namespace test {
 
     m_set->commit();
 
-    BOOST_CHECK_EQUAL(true, fs::exists(dir));
+    ASSERT_EQ(true, fs::exists(dir));
 
     // prim and settings
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.prim()));
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.project_settings()));
+    ASSERT_EQ(true, fs::exists(m_dirs.prim()));
+    ASSERT_EQ(true, fs::exists(m_dirs.project_settings()));
 
     // symmetry
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.crystal_point_group()));
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.factor_group()));
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.lattice_point_group()));
+    ASSERT_EQ(true, fs::exists(m_dirs.crystal_point_group()));
+    ASSERT_EQ(true, fs::exists(m_dirs.factor_group()));
+    ASSERT_EQ(true, fs::exists(m_dirs.lattice_point_group()));
 
     // composition axes
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.composition_axes()));
+    ASSERT_EQ(true, fs::exists(m_dirs.composition_axes()));
   }
 
   /// \brief Check that 'casm sym' runs without error
   void Proj::check_symmetry() {
     m_p.popen(cd_and() + "ccasm sym");
-    BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
+    ASSERT_EQ(m_p.exit_code(), 0);
   }
 
   /// \brief Check number of symmetry operations and classes found
@@ -158,39 +160,39 @@ namespace test {
 
     m_p.popen(cd_and() + "ccasm sym");
 
-    BOOST_CHECK_EQUAL(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Lattice point group is:\s+)" + lat_pg_name)), true);
-    BOOST_CHECK_EQUAL(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Crystal point group is:\s+)" + xtal_pg_name)), true);
+    ASSERT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Lattice point group is:\s+)" + lat_pg_name)), true);
+    ASSERT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Crystal point group is:\s+)" + xtal_pg_name)), true);
   }
 
   /// \brief Default checks '-d' runs without error
   void Proj::check_composition() {
     m_p.popen(cd_and() + "ccasm composition -d");
-    BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
+    ASSERT_EQ(m_p.exit_code(), 0);
   }
 
   /// \brief Default checks that enumerating supercells and configurations can
   /// be run for '--max 2' without error, but doesn't check results
   void Proj::check_enum() {
     m_p.popen(cd_and() + "ccasm enum --method ScelEnum --max 2");
-    BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
+    ASSERT_EQ(m_p.exit_code(), 0);
 
     m_p.popen(cd_and() + "ccasm enum --method ConfigEnumAllOccupations --all");
-    BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
+    ASSERT_EQ(m_p.exit_code(), 0);
   }
 
   /// \brief Default checks that several options run without error
   void Proj::check_select() {
     m_p.popen(cd_and() + "ccasm select --set-on");
-    BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
+    ASSERT_EQ(m_p.exit_code(), 0);
 
     m_p.popen(cd_and() + "ccasm select --set-off");
-    BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
+    ASSERT_EQ(m_p.exit_code(), 0);
   }
 
   /// \brief Default checks that several options run without error
   void Proj::check_query() {
     m_p.popen(cd_and() + "ccasm query --columns comp");
-    BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
+    ASSERT_EQ(m_p.exit_code(), 0) << m_p.gets();
   }
 
 }

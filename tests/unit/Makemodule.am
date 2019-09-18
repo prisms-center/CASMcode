@@ -1,10 +1,26 @@
 check_PROGRAMS += \
   ccasm
 
-noinst_LIBRARIES += \
-  libcasmtesting.a
 
-libcasmtesting_a_SOURCES = \
+
+check_LTLIBRARIES += \
+				   libgtest.la
+
+libgtest_la_SOURCES = \
+					  submodules/googletest/googletest/src/gtest-all.cc
+
+libgtest_la_CPPFLAGS = \
+					   $(AM_CPPFLAGS)\
+					   -DGTEST_HAS_PTHREAD=0\
+					   -DSRCDIR=$(srcdir)
+						
+
+check_LTLIBRARIES += \
+  libcasmtesting.la
+
+libcasmtesting_la_SOURCES = \
+  tests/unit/autotools.hh\
+  tests/unit/autotools.cc\
   tests/unit/Common.cpp\
   tests/unit/Common.hh\
   tests/unit/FCCTernaryProj.hh\
@@ -16,383 +32,389 @@ libcasmtesting_a_SOURCES = \
   tests/unit/TestOrbits.hh\
   tests/unit/TestSupercell.cc\
   tests/unit/TestSupercell.hh\
-  tests/unit/ZrOProj.hh\
-  tests/unit/unit_test.cpp
+  tests/unit/ZrOProj.hh
 
-check_PROGRAMS += \
-  casm_unit_App
+libcasmtesting_la_CPPFLAGS = \
+					   $(AM_CPPFLAGS)\
+					   -DSRCDIR=\"$(srcdir)\"
+						
+libcasmtesting_la_LIBADD = \
+						  libgtest.la
 
-casm_unit_App_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# check_PROGRAMS += \
+#   casm_unit_App
 
-casm_unit_App_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/App/App_test.cpp\
-  tests/unit/App/EnumeratorPlugin_test.cpp\
-  tests/unit/App/QueryPlugin_test.cpp\
-  tests/unit/App/settings_test.cpp
+# casm_unit_App_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_App_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_App_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/App/App_test.cpp\
+#   tests/unit/App/EnumeratorPlugin_test.cpp\
+#   tests/unit/App/QueryPlugin_test.cpp\
+#   tests/unit/App/settings_test.cpp
 
-EXTRA_DIST += \
-  tests/unit/App/TestCompN.cc\
-  tests/unit/App/TestCompN.hh\
-  tests/unit/App/TestConfigname.cc\
-  tests/unit/App/TestConfigname.hh\
-  tests/unit/App/TestEnum.cc\
-  tests/unit/App/TestEnum.hh\
-  tests/unit/App/TestEnum_impl.hh
+# casm_unit_App_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-TESTS += \
-  tests/unit/App/run_test_App
+# EXTRA_DIST += \
+#   tests/unit/App/TestCompN.cc\
+#   tests/unit/App/TestCompN.hh\
+#   tests/unit/App/TestConfigname.cc\
+#   tests/unit/App/TestConfigname.hh\
+#   tests/unit/App/TestEnum.cc\
+#   tests/unit/App/TestEnum.hh\
+#   tests/unit/App/TestEnum_impl.hh
+
+# TESTS += \
+#   tests/unit/App/run_test_App
 
 check_PROGRAMS += \
   casm_unit_casm_io
 
-casm_unit_casm_io_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
+casm_unit_casm_io_CPPFLAGS = \
+  $(AM_CPPFLAGS)\
   -I$(top_srcdir)/tests/unit/
 
 casm_unit_casm_io_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/casm_io/DataFormatterDictionary_test.cpp\
-  tests/unit/casm_io/EnumIO_test.cpp\
-  tests/unit/casm_io/jsonParser_test.cpp
+  tests/unit/casm_io/EnumIO_test.cpp
+  # tests/unit/casm_io/DataFormatterDictionary_test.cpp\
+  # tests/unit/casm_io/jsonParser_test.cpp
+  # tests/unit/unit_test.cpp
 
 casm_unit_casm_io_LDADD = \
   libcasm.la\
-  libcasmtesting.a\
+  libcasmtesting.la\
+  libgtest.la\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+  $(BOOST_CHRONO_LIB)
 
 TESTS += \
-  tests/unit/casm_io/run_test_casm_io
+  casm_unit_casm_io
 
-check_PROGRAMS += \
-  casm_unit_clex
+# check_PROGRAMS += \
+#   casm_unit_clex
 
-casm_unit_clex_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_clex_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_clex_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/clex/ChemicalReference_test.cpp\
-  tests/unit/clex/Clexulator_test.cpp\
-  tests/unit/clex/ConfigEnumAllOccupations_test.cpp\
-  tests/unit/clex/ConfigEnumEquivalents_test.cpp\
-  tests/unit/clex/ConfigEnumInterpolation_test.cpp\
-  tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
-  tests/unit/clex/ConfigIO_test.cpp\
-  tests/unit/clex/Configuration_test.cpp\
-  tests/unit/clex/NeighborList_test.cpp\
-  tests/unit/clex/PrimClex_test.cpp\
-  tests/unit/clex/ScelEnumEquivalents_test.cpp\
-  tests/unit/clex/ScelEnum_test.cpp\
-  tests/unit/clex/SuperConfigEnum_test.cpp\
-  tests/unit/clex/Supercell_test.cpp
+# casm_unit_clex_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/clex/ChemicalReference_test.cpp\
+#   tests/unit/clex/Clexulator_test.cpp\
+#   tests/unit/clex/ConfigEnumAllOccupations_test.cpp\
+#   tests/unit/clex/ConfigEnumEquivalents_test.cpp\
+#   tests/unit/clex/ConfigEnumInterpolation_test.cpp\
+#   tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
+#   tests/unit/clex/ConfigIO_test.cpp\
+#   tests/unit/clex/Configuration_test.cpp\
+#   tests/unit/clex/NeighborList_test.cpp\
+#   tests/unit/clex/PrimClex_test.cpp\
+#   tests/unit/clex/ScelEnumEquivalents_test.cpp\
+#   tests/unit/clex/ScelEnum_test.cpp\
+#   tests/unit/clex/SuperConfigEnum_test.cpp\
+#   tests/unit/clex/Supercell_test.cpp
 
-casm_unit_clex_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_clex_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-EXTRA_DIST += \
-  tests/unit/clex/ConfigEnumAllOccupations_test_cases.json\
-  tests/unit/clex/ConfigEnumEquivalents_test_cases.json\
-  tests/unit/clex/test_Clexulator.cc
+# EXTRA_DIST += \
+#   tests/unit/clex/ConfigEnumAllOccupations_test_cases.json\
+#   tests/unit/clex/ConfigEnumEquivalents_test_cases.json\
+#   tests/unit/clex/test_Clexulator.cc
 
-TESTS += \
-  tests/unit/clex/run_test_clex
+# TESTS += \
+#   tests/unit/clex/run_test_clex
 
-check_PROGRAMS += \
-  casm_unit_clusterography
+# check_PROGRAMS += \
+#   casm_unit_clusterography
 
-casm_unit_clusterography_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_clusterography_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_clusterography_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/clusterography/ClusterSpecsParser_test.cpp\
-  tests/unit/clusterography/Clusterography_test.cpp
+# casm_unit_clusterography_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/clusterography/ClusterSpecsParser_test.cpp\
+#   tests/unit/clusterography/Clusterography_test.cpp
 
-casm_unit_clusterography_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_clusterography_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-EXTRA_DIST += \
-  tests/unit/clusterography/test_cases.json
+# EXTRA_DIST += \
+#   tests/unit/clusterography/test_cases.json
 
-TESTS += \
-  tests/unit/clusterography/run_test_clusterography
+# TESTS += \
+#   tests/unit/clusterography/run_test_clusterography
 
-check_PROGRAMS += \
-  casm_unit_container
+# check_PROGRAMS += \
+#   casm_unit_container
 
-casm_unit_container_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_container_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_container_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/container/Counter_test.cpp\
-  tests/unit/container/Enumerator_test.cpp
+# casm_unit_container_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/container/Counter_test.cpp\
+#   tests/unit/container/Enumerator_test.cpp
 
-casm_unit_container_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_container_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-TESTS += \
-  tests/unit/container/run_test_container
+# TESTS += \
+#   tests/unit/container/run_test_container
 
-check_PROGRAMS += \
-  casm_unit_crystallography
+# check_PROGRAMS += \
+#   casm_unit_crystallography
 
-casm_unit_crystallography_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_crystallography_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_crystallography_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/crystallography/BasicStructure_test.cpp\
-  tests/unit/crystallography/Coordinate_test.cpp\
-  tests/unit/crystallography/LatticeEnumEquivalents_test.cpp\
-  tests/unit/crystallography/Lattice_test.cpp\
-  tests/unit/crystallography/Molecule_test.cpp\
-  tests/unit/crystallography/Niggli_test.cpp\
-  tests/unit/crystallography/Site_test.cpp\
-  tests/unit/crystallography/Structure_test.cpp\
-  tests/unit/crystallography/SupercellEnumerator_test.cpp\
-  tests/unit/crystallography/UnitCellCoord_test.cpp
+# casm_unit_crystallography_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/crystallography/BasicStructure_test.cpp\
+#   tests/unit/crystallography/Coordinate_test.cpp\
+#   tests/unit/crystallography/LatticeEnumEquivalents_test.cpp\
+#   tests/unit/crystallography/Lattice_test.cpp\
+#   tests/unit/crystallography/Molecule_test.cpp\
+#   tests/unit/crystallography/Niggli_test.cpp\
+#   tests/unit/crystallography/Site_test.cpp\
+#   tests/unit/crystallography/Structure_test.cpp\
+#   tests/unit/crystallography/SupercellEnumerator_test.cpp\
+#   tests/unit/crystallography/UnitCellCoord_test.cpp
 
-casm_unit_crystallography_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_crystallography_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-EXTRA_DIST += \
-  tests/unit/crystallography/POS1.txt\
-  tests/unit/crystallography/POS1_out.txt\
-  tests/unit/crystallography/POS1_vasp5_out.txt\
-  tests/unit/crystallography/PRIM1.txt\
-  tests/unit/crystallography/PRIM1_out.txt\
-  tests/unit/crystallography/PRIM2.txt\
-  tests/unit/crystallography/PRIM3.txt\
-  tests/unit/crystallography/PRIM4.txt\
-  tests/unit/crystallography/PRIM5.txt\
-  tests/unit/crystallography/test_cases.json
+# EXTRA_DIST += \
+#   tests/unit/crystallography/POS1.txt\
+#   tests/unit/crystallography/POS1_out.txt\
+#   tests/unit/crystallography/POS1_vasp5_out.txt\
+#   tests/unit/crystallography/PRIM1.txt\
+#   tests/unit/crystallography/PRIM1_out.txt\
+#   tests/unit/crystallography/PRIM2.txt\
+#   tests/unit/crystallography/PRIM3.txt\
+#   tests/unit/crystallography/PRIM4.txt\
+#   tests/unit/crystallography/PRIM5.txt\
+#   tests/unit/crystallography/test_cases.json
 
-TESTS += \
-  tests/unit/crystallography/run_test_crystallography
+# TESTS += \
+#   tests/unit/crystallography/run_test_crystallography
 
-check_PROGRAMS += \
-  casm_unit_database
+# check_PROGRAMS += \
+#   casm_unit_database
 
-casm_unit_database_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_database_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_database_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/database/ScelDatabase_test.cpp\
-  tests/unit/database/Selection_test.cpp\
-  tests/unit/database/jsonConfigDatabase_test.cpp\
-  tests/unit/database/jsonDiffTransConfigDatabase_test.cpp\
-  tests/unit/database/jsonDiffTransOrbitDatabase_test.cpp\
-  tests/unit/database/jsonPropertiesDatabase_test.cpp\
-  tests/unit/database/jsonScelDatabase_test.cpp
+# casm_unit_database_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/database/ScelDatabase_test.cpp\
+#   tests/unit/database/Selection_test.cpp\
+#   tests/unit/database/jsonConfigDatabase_test.cpp\
+#   tests/unit/database/jsonDiffTransConfigDatabase_test.cpp\
+#   tests/unit/database/jsonDiffTransOrbitDatabase_test.cpp\
+#   tests/unit/database/jsonPropertiesDatabase_test.cpp\
+#   tests/unit/database/jsonScelDatabase_test.cpp
 
-casm_unit_database_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_database_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-TESTS += \
-  tests/unit/database/run_test_database
+# TESTS += \
+#   tests/unit/database/run_test_database
 
-check_PROGRAMS += \
-  casm_unit_kinetics
+# check_PROGRAMS += \
+#   casm_unit_kinetics
 
-casm_unit_kinetics_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_kinetics_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_kinetics_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/kinetics/DiffTransConfigEnumOccPerturbations_test.cpp\
-  tests/unit/kinetics/DiffTransConfigInterpolation_test.cpp\
-  tests/unit/kinetics/DiffTransConfiguration_test.cpp\
-  tests/unit/kinetics/DiffusionTransformation_test.cpp\
-  tests/unit/kinetics/LocalClusterExpansion_test.cpp
+# casm_unit_kinetics_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/kinetics/DiffTransConfigEnumOccPerturbations_test.cpp\
+#   tests/unit/kinetics/DiffTransConfigInterpolation_test.cpp\
+#   tests/unit/kinetics/DiffTransConfiguration_test.cpp\
+#   tests/unit/kinetics/DiffusionTransformation_test.cpp\
+#   tests/unit/kinetics/LocalClusterExpansion_test.cpp
 
-casm_unit_kinetics_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_kinetics_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-EXTRA_DIST += \
-  tests/unit/kinetics/FCCTernary_bspecs_0.json\
-  tests/unit/kinetics/FCCTernary_diff_perturb_0.json\
-  tests/unit/kinetics/FCCTernary_diff_trans_0.json\
-  tests/unit/kinetics/FCCTernary_diff_trans_err_0.json\
-  tests/unit/kinetics/ZrO_bspecs_0.json\
-  tests/unit/kinetics/ZrO_diff_perturb_0.json\
-  tests/unit/kinetics/ZrO_diff_trans_0.json\
-  tests/unit/kinetics/ZrO_local_bspecs_0.json\
-  tests/unit/kinetics/ZrO_local_bspecs_1.json\
-  tests/unit/kinetics/l12_local_bspecs_0.json
+# EXTRA_DIST += \
+#   tests/unit/kinetics/FCCTernary_bspecs_0.json\
+#   tests/unit/kinetics/FCCTernary_diff_perturb_0.json\
+#   tests/unit/kinetics/FCCTernary_diff_trans_0.json\
+#   tests/unit/kinetics/FCCTernary_diff_trans_err_0.json\
+#   tests/unit/kinetics/ZrO_bspecs_0.json\
+#   tests/unit/kinetics/ZrO_diff_perturb_0.json\
+#   tests/unit/kinetics/ZrO_diff_trans_0.json\
+#   tests/unit/kinetics/ZrO_local_bspecs_0.json\
+#   tests/unit/kinetics/ZrO_local_bspecs_1.json\
+#   tests/unit/kinetics/l12_local_bspecs_0.json
 
-TESTS += \
-  tests/unit/kinetics/run_test_kinetics
+# TESTS += \
+#   tests/unit/kinetics/run_test_kinetics
 
-check_PROGRAMS += \
-  casm_unit_misc
+# check_PROGRAMS += \
+#   casm_unit_misc
 
-casm_unit_misc_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_misc_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_misc_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/misc/cloneable_ptr_test.cpp
+# casm_unit_misc_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/misc/cloneable_ptr_test.cpp
 
-casm_unit_misc_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_misc_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-TESTS += \
-  tests/unit/misc/run_test_misc
+# TESTS += \
+#   tests/unit/misc/run_test_misc
 
-check_PROGRAMS += \
-  casm_unit_monte_carlo
+# check_PROGRAMS += \
+#   casm_unit_monte_carlo
 
-casm_unit_monte_carlo_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_monte_carlo_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_monte_carlo_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/monte_carlo/GrandCanonical_test.cpp\
-  tests/unit/monte_carlo/OccLocation_test.cpp
+# casm_unit_monte_carlo_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/monte_carlo/GrandCanonical_test.cpp\
+#   tests/unit/monte_carlo/OccLocation_test.cpp
 
-casm_unit_monte_carlo_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_monte_carlo_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-EXTRA_DIST += \
-  tests/unit/monte_carlo/bspecs_0.json\
-  tests/unit/monte_carlo/eci_0.json\
-  tests/unit/monte_carlo/metropolis_grand_canonical_0.json
+# EXTRA_DIST += \
+#   tests/unit/monte_carlo/bspecs_0.json\
+#   tests/unit/monte_carlo/eci_0.json\
+#   tests/unit/monte_carlo/metropolis_grand_canonical_0.json
 
-TESTS += \
-  tests/unit/monte_carlo/run_test_monte_carlo
+# TESTS += \
+#   tests/unit/monte_carlo/run_test_monte_carlo
 
-check_PROGRAMS += \
-  casm_unit_symmetry
+# check_PROGRAMS += \
+#   casm_unit_symmetry
 
-casm_unit_symmetry_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_symmetry_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_symmetry_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/symmetry/InvariantSubgroup_test.cpp\
-  tests/unit/symmetry/Orbit_test.cpp\
-  tests/unit/symmetry/SubOrbits_test.cpp\
-  tests/unit/symmetry/SymBasisPermute_test.cpp
+# casm_unit_symmetry_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/symmetry/InvariantSubgroup_test.cpp\
+#   tests/unit/symmetry/Orbit_test.cpp\
+#   tests/unit/symmetry/SubOrbits_test.cpp\
+#   tests/unit/symmetry/SymBasisPermute_test.cpp
 
-casm_unit_symmetry_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_symmetry_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-TESTS += \
-  tests/unit/symmetry/run_test_symmetry
+# TESTS += \
+#   tests/unit/symmetry/run_test_symmetry
 
-check_PROGRAMS += \
-  casm_unit_system
+# check_PROGRAMS += \
+#   casm_unit_system
 
-casm_unit_system_CXXFLAGS = \
-  $(AM_CXXFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_system_CXXFLAGS = \
+#   $(AM_CXXFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_system_SOURCES = \
-  tests/unit/unit_test.cpp\
-  tests/unit/system/RuntimeLibrary_test.cpp
+# casm_unit_system_SOURCES = \
+#   tests/unit/unit_test.cpp\
+#   tests/unit/system/RuntimeLibrary_test.cpp
 
-casm_unit_system_LDADD = \
-  libcasm.la\
-  libcasmtesting.a\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)\
-  $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+# casm_unit_system_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.a\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)\
+#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-TESTS += \
-  tests/unit/system/run_test_system
+# TESTS += \
+#   tests/unit/system/run_test_system
 

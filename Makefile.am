@@ -7,6 +7,7 @@ ACLOCAL_AMFLAGS = -I build-aux/m4
 #===========================================================#
 #Start out empty, let the Makemodule.am files fill these in
 lib_LTLIBRARIES=
+check_LTLIBRARIES=
 noinst_LIBRARIES=
 bin_PROGRAMS=
 check_PROGRAMS=
@@ -16,17 +17,20 @@ TESTS=
 
 #===========================================================#
 #Define flags for everything ever
-TXT_VERSION:=$(shell cat $(top_srcdir)/build-aux/casm_version.txt)
+# TXT_VERSION:=$(shell cat $(top_srcdir)/build-aux/casm_version.txt)
+TXT_VERSION=tmp
 
 AM_CXXFLAGS = -DTXT_VERSION='"$(TXT_VERSION)"'\
 			  -DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long\
-			  -DGZSTREAM_NAMESPACE=gz\
-			  -I$(srcdir)/include\
-			  -I$(srcdir)/include/casm/external/gzstream\
-			  -I$(srcdir)/include/casm/external/qhull/libqhullcpp
+			  -DGZSTREAM_NAMESPACE=gz
 
 AM_CPPFLAGS = -I$(srcdir)/include/casm/external/qhull/libqhull_r/\
 			  -I$(srcdir)/include/casm/external/gzstream\
+			  -I$(srcdir)/submodules/googletest/googletest\
+			  -I$(srcdir)/submodules/googletest/googletest/include\
+			  -I$(srcdir)/include\
+			  -I$(srcdir)/include/casm/external/gzstream\
+			  -I$(srcdir)/include/casm/external/qhull/libqhullcpp
 			  $(BOOST_CPPFLAGS)
 
 AM_LDFLAGS = $(BOOST_LDFLAGS)
