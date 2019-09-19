@@ -1,5 +1,6 @@
 #include "Common.hh"
 #include "gtest/gtest.h"
+#include "autotools.hh"
 
 #include <thread>
 #include <chrono>
@@ -7,6 +8,10 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/AppIO.hh"
+
+//TODO: I'm pretty sure having these macros outside of the testing blocks is
+//causing undefined behavior
+//
 
 namespace test {
 
@@ -57,7 +62,7 @@ namespace test {
                 << "Found: \n" << calculated.at(diff_path) << std::endl;
     }
 
-    ASSERT_EQ(ok, true);
+    EXPECT_EQ(ok, true);
 
     return;
   }
@@ -98,16 +103,16 @@ namespace test {
 
   /// \brief Check some aspects of a SymGroup json
   void check_symgroup(const jsonParser &json, int N_op, int N_class) {
-    ASSERT_EQ(json["character_table"].size(), N_class);
-    ASSERT_EQ(json["conjugacy_class"].size(), N_class);
+    EXPECT_EQ(json["character_table"].size(), N_class);
+    EXPECT_EQ(json["conjugacy_class"].size(), N_class);
 
-    ASSERT_EQ(json["symop"].size(), N_op);
-    ASSERT_EQ(json["symop"][0]["type"].get<std::string>(), "identity");
+    EXPECT_EQ(json["symop"].size(), N_op);
+    EXPECT_EQ(json["symop"][0]["type"].get<std::string>(), "identity");
 
-    ASSERT_EQ(json["inverse"].size(), N_op);
-    ASSERT_EQ(json["multiplication_table"].size(), N_op);
+    EXPECT_EQ(json["inverse"].size(), N_op);
+    EXPECT_EQ(json["multiplication_table"].size(), N_op);
     for(auto i = 0; i < json["multiplication_table"].size(); ++i) {
-      ASSERT_EQ(json["multiplication_table"][i].size(), N_op);
+      EXPECT_EQ(json["multiplication_table"][i].size(), N_op);
     }
   }
 
@@ -126,25 +131,25 @@ namespace test {
 
     m_set->commit();
 
-    ASSERT_EQ(true, fs::exists(dir));
+    EXPECT_EQ(true, fs::exists(dir));
 
     // prim and settings
-    ASSERT_EQ(true, fs::exists(m_dirs.prim()));
-    ASSERT_EQ(true, fs::exists(m_dirs.project_settings()));
+    EXPECT_EQ(true, fs::exists(m_dirs.prim()));
+    EXPECT_EQ(true, fs::exists(m_dirs.project_settings()));
 
     // symmetry
-    ASSERT_EQ(true, fs::exists(m_dirs.crystal_point_group()));
-    ASSERT_EQ(true, fs::exists(m_dirs.factor_group()));
-    ASSERT_EQ(true, fs::exists(m_dirs.lattice_point_group()));
+    EXPECT_EQ(true, fs::exists(m_dirs.crystal_point_group()));
+    EXPECT_EQ(true, fs::exists(m_dirs.factor_group()));
+    EXPECT_EQ(true, fs::exists(m_dirs.lattice_point_group()));
 
     // composition axes
-    ASSERT_EQ(true, fs::exists(m_dirs.composition_axes()));
+    EXPECT_EQ(true, fs::exists(m_dirs.composition_axes()));
   }
 
   /// \brief Check that 'casm sym' runs without error
   void Proj::check_symmetry() {
-    m_p.popen(cd_and() + "ccasm sym");
-    ASSERT_EQ(m_p.exit_code(), 0);
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " sym");
+    EXPECT_EQ(m_p.exit_code(), 0);
   }
 
   /// \brief Check number of symmetry operations and classes found
@@ -158,41 +163,41 @@ namespace test {
     check_symgroup(jsonParser(m_dirs.crystal_point_group()), xtal_pg_op, xtal_pg_class);
     check_symgroup(jsonParser(m_dirs.factor_group()), fg_op, fg_class);
 
-    m_p.popen(cd_and() + "ccasm sym");
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " sym");
 
-    ASSERT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Lattice point group is:\s+)" + lat_pg_name)), true);
-    ASSERT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Crystal point group is:\s+)" + xtal_pg_name)), true);
+    EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Lattice point group is:\s+)" + lat_pg_name)), true);
+    EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Crystal point group is:\s+)" + xtal_pg_name)), true);
   }
 
   /// \brief Default checks '-d' runs without error
   void Proj::check_composition() {
-    m_p.popen(cd_and() + "ccasm composition -d");
-    ASSERT_EQ(m_p.exit_code(), 0);
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " composition -d");
+    EXPECT_EQ(m_p.exit_code(), 0);
   }
 
   /// \brief Default checks that enumerating supercells and configurations can
   /// be run for '--max 2' without error, but doesn't check results
   void Proj::check_enum() {
-    m_p.popen(cd_and() + "ccasm enum --method ScelEnum --max 2");
-    ASSERT_EQ(m_p.exit_code(), 0);
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " enum --method ScelEnum --max 2");
+    EXPECT_EQ(m_p.exit_code(), 0);
 
-    m_p.popen(cd_and() + "ccasm enum --method ConfigEnumAllOccupations --all");
-    ASSERT_EQ(m_p.exit_code(), 0);
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " enum --method ConfigEnumAllOccupations --all");
+    EXPECT_EQ(m_p.exit_code(), 0);
   }
 
   /// \brief Default checks that several options run without error
   void Proj::check_select() {
-    m_p.popen(cd_and() + "ccasm select --set-on");
-    ASSERT_EQ(m_p.exit_code(), 0);
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " select --set-on");
+    EXPECT_EQ(m_p.exit_code(), 0);
 
-    m_p.popen(cd_and() + "ccasm select --set-off");
-    ASSERT_EQ(m_p.exit_code(), 0);
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " select --set-off");
+    EXPECT_EQ(m_p.exit_code(), 0);
   }
 
   /// \brief Default checks that several options run without error
   void Proj::check_query() {
-    m_p.popen(cd_and() + "ccasm query --columns comp");
-    ASSERT_EQ(m_p.exit_code(), 0) << m_p.gets();
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " query --columns comp");
+    EXPECT_EQ(m_p.exit_code(), 0) << m_p.gets();
   }
 
 }

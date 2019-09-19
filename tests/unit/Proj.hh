@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 #include <boost/regex.hpp>
+#include "autotools.hh"
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -100,15 +101,15 @@ namespace test {
   template<typename Iterator>
   void Proj::_check_composition_axes(Iterator begin, Iterator end) {
 
-    //TODO: BIG WARNING HERE. running `make check` isn't going to test your ccasm. this is testing whatever version of ccasm is already
-    //installed on your system!!
-    m_p.popen(cd_and() + "ccasm composition --select 0");
+    //TODO: Do we really want to be running CLI executables by calling them through popen?
+    //Shouldn't all these things jut be called and checked by a bash script or similar?
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " composition --select 0");
 
     for(auto it = begin; it != end; ++it) {
-      ASSERT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)), true) << m_p.gets();
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)), true) << m_p.gets();
     }
 
-    ASSERT_EQ(
+    EXPECT_EQ(
       boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Currently selected composition axes: 0)")), true) << m_p.gets();
   }
 }

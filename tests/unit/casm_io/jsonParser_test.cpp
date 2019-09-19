@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/casm_io/jsonParser.hh"
@@ -32,52 +31,49 @@ std::string json_str =
 ]
 })";
 
-
-BOOST_AUTO_TEST_SUITE(jsonParserTest)
-
-BOOST_AUTO_TEST_CASE(Basic) {
+TEST(jsonParserTest, Basic) {
 
   jsonParser json = jsonParser::parse(json_str);
 
-  BOOST_CHECK_EQUAL(true, json.is_obj());
+  ASSERT_EQ(true, json.is_obj());
 
   // test jsonParser::get<T>()
   int i;
   from_json(i, json["int"]);
-  BOOST_CHECK_EQUAL(i, 34);
-  BOOST_CHECK_EQUAL(34, json["int"].get<int>());
+  ASSERT_EQ(i, 34);
+  ASSERT_EQ(34, json["int"].get<int>());
 
   double d;
   from_json(d, json["number"]);
-  BOOST_CHECK_EQUAL(d, 4.0023);
-  BOOST_CHECK_EQUAL(4.0023, json["number"].get<double>());
+  ASSERT_EQ(d, 4.0023);
+  ASSERT_EQ(4.0023, json["number"].get<double>());
 }
 
 template<typename T>
 void test_at(T &json) {
-  BOOST_CHECK_EQUAL(json.at("int").template get<int>(), 34);
-  BOOST_CHECK_THROW(json.at("mistake"), std::invalid_argument);
+  ASSERT_EQ(json.at("int").template get<int>(), 34);
+  ASSERT_THROW(json.at("mistake"), std::invalid_argument);
 
-  BOOST_CHECK_EQUAL(json.at(fs::path("object") / "int").template get<int>(), 34);
-  BOOST_CHECK_THROW(json.at(fs::path("object") / "mistake"), std::invalid_argument);
+  ASSERT_EQ(json.at(fs::path("object") / "int").template get<int>(), 34);
+  ASSERT_THROW(json.at(fs::path("object") / "mistake"), std::invalid_argument);
 
-  BOOST_CHECK_EQUAL(json.at(fs::path("mixed_array") / "1").template get<int>(), 34);
-  BOOST_CHECK_THROW(json.at(fs::path("mixed_array") / "10"), std::invalid_argument);
+  ASSERT_EQ(json.at(fs::path("mixed_array") / "1").template get<int>(), 34);
+  ASSERT_THROW(json.at(fs::path("mixed_array") / "10"), std::invalid_argument);
 
-  BOOST_CHECK_EQUAL(json["uniform_array"].at(0).template get<int>(), 1);
-  BOOST_CHECK_THROW(json["object"].at(0), std::invalid_argument);
-  BOOST_CHECK_THROW(json["uniform_array"].at(-1), std::out_of_range);
-  BOOST_CHECK_THROW(json["uniform_array"].at(4), std::out_of_range);
-  BOOST_CHECK_THROW(json["uniform_array"].at(100), std::out_of_range);
+  ASSERT_EQ(json["uniform_array"].at(0).template get<int>(), 1);
+  ASSERT_THROW(json["object"].at(0), std::invalid_argument);
+  ASSERT_THROW(json["uniform_array"].at(-1), std::out_of_range);
+  ASSERT_THROW(json["uniform_array"].at(4), std::out_of_range);
+  ASSERT_THROW(json["uniform_array"].at(100), std::out_of_range);
 }
 
-BOOST_AUTO_TEST_CASE(At) {
+TEST(jsonParserTest, At) {
 
   jsonParser json = jsonParser::parse(json_str);
   test_at(json);
 }
 
-BOOST_AUTO_TEST_CASE(ConstAt) {
+TEST(jsonParserTest, ConstAt) {
 
   const jsonParser json = jsonParser::parse(json_str);
   test_at(json);
@@ -86,49 +82,49 @@ BOOST_AUTO_TEST_CASE(ConstAt) {
 template<typename T>
 void test_find_at(T &json) {
 
-  BOOST_CHECK_EQUAL(&json == &*json.find_at(fs::path()), true);
-  BOOST_CHECK_EQUAL(&json == &*json.find_at(""), true);
+  ASSERT_EQ(&json == &*json.find_at(fs::path()), true);
+  ASSERT_EQ(&json == &*json.find_at(""), true);
 
   {
     auto it = json.find_at(fs::path());
-    BOOST_CHECK_EQUAL(json.end() == it, false);
+    ASSERT_EQ(json.end() == it, false);
     it++;
-    BOOST_CHECK_EQUAL(json.end() == it, true);
+    ASSERT_EQ(json.end() == it, true);
   }
 
 
-  BOOST_CHECK_EQUAL(json.find_at("int")->template get<int>(), 34);
-  BOOST_CHECK_EQUAL(json.find_at("mistake") == json.end(), true);
+  ASSERT_EQ(json.find_at("int")->template get<int>(), 34);
+  ASSERT_EQ(json.find_at("mistake") == json.end(), true);
 
-  BOOST_CHECK_EQUAL(json.find_at(fs::path("object") / "int")->template get<int>(), 34);
-  BOOST_CHECK_EQUAL(json.find_at(fs::path("object") / "mistake") == json.end(), true);
+  ASSERT_EQ(json.find_at(fs::path("object") / "int")->template get<int>(), 34);
+  ASSERT_EQ(json.find_at(fs::path("object") / "mistake") == json.end(), true);
 
-  BOOST_CHECK_EQUAL(json.find_at(fs::path("mixed_array") / "1")->template get<int>(), 34);
-  BOOST_CHECK_EQUAL(json.find_at(fs::path("mixed_array") / "10") == json.end(), true);
+  ASSERT_EQ(json.find_at(fs::path("mixed_array") / "1")->template get<int>(), 34);
+  ASSERT_EQ(json.find_at(fs::path("mixed_array") / "10") == json.end(), true);
 }
 
-BOOST_AUTO_TEST_CASE(FindAt) {
+TEST(jsonParserTest, FindAt) {
 
   jsonParser json = jsonParser::parse(json_str);
   test_find_at(json);
 }
 
-BOOST_AUTO_TEST_CASE(ConstFindAt) {
+TEST(jsonParserTest, ConstFindAt) {
 
   const jsonParser json = jsonParser::parse(json_str);
 
   test_find_at(json);
 }
 
-BOOST_AUTO_TEST_CASE(Get) {
+TEST(jsonParserTest, Get) {
 
   const jsonParser json = jsonParser::parse(json_str);
 
-  BOOST_CHECK_EQUAL(json["int"].get<int>(), 34);
-  BOOST_CHECK_THROW(json["int"].get<std::string>(), std::runtime_error);
+  ASSERT_EQ(json["int"].get<int>(), 34);
+  ASSERT_THROW(json["int"].get<std::string>(), std::runtime_error);
 }
 
-BOOST_AUTO_TEST_CASE(ArrayExtraTrailingComma) {
+TEST(jsonParserTest, ArrayExtraTrailingComma) {
 
   std::string json_extra_trailing_comma =
     R"({
@@ -153,11 +149,11 @@ BOOST_AUTO_TEST_CASE(ArrayExtraTrailingComma) {
 ]
 })";
 
-  BOOST_CHECK_THROW(jsonParser::parse(json_extra_trailing_comma), std::runtime_error);
+  ASSERT_THROW(jsonParser::parse(json_extra_trailing_comma), std::runtime_error);
 
 }
 
-BOOST_AUTO_TEST_CASE(ArrayMissingComma) {
+TEST(jsonParserTest, ArrayMissingComma) {
 
   std::string json_missing_comma =
     R"({
@@ -182,29 +178,26 @@ BOOST_AUTO_TEST_CASE(ArrayMissingComma) {
 ]
 })";
 
-  BOOST_CHECK_THROW(jsonParser::parse(json_missing_comma), std::runtime_error);
+  ASSERT_THROW(jsonParser::parse(json_missing_comma), std::runtime_error);
 
 }
 
-BOOST_AUTO_TEST_CASE(FindDiffTest) {
+TEST(jsonParserTest, FindDiffTest) {
 
   jsonParser A = jsonParser::parse(json_str);
   jsonParser B {A};
 
   B["object"]["number"] = B["object"]["number"].get<double>() + 1e-8;
 
-  BOOST_CHECK(A != B);
-  BOOST_CHECK(A.almost_equal(B, 1e-5));
+  ASSERT_TRUE(A != B);
+  ASSERT_TRUE(A.almost_equal(B, 1e-5));
 
   fs::path diff_point = find_diff(A, B);
-  BOOST_CHECK_EQUAL(diff_point, fs::path("object/number"));
-  BOOST_CHECK_EQUAL(A.at(diff_point), 4.0023);
+  ASSERT_EQ(diff_point, fs::path("object/number"));
+  ASSERT_EQ(A.at(diff_point), 4.0023);
 
   diff_point = find_diff(A, B, 1e-5);
-  BOOST_CHECK(diff_point.empty());
+  ASSERT_TRUE(diff_point.empty());
 
 }
 
-BOOST_AUTO_TEST_SUITE_END()
-
-//#include "../src/casm/casm_io/jsonParser.cc"

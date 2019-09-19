@@ -82,6 +82,10 @@ test:
 	echo "BOOST_CPPFLAGS: $(BOOST_CPPFLAGS)"
 	echo "includedir: $(includedir)"
 	echo "TXT_VERSION: $(TXT_VERSION)"
+	echo "bin_PROGRAMS: $(bin_PROGRAMS)"
+	echo "top_builddir: $(top_builddir)"
+	echo "abs_top_builddir: $(abs_top_builddir)"
+	echo "abs_srcdir: $(abs_srcdir)"
 
 #============================================================#
 #Recurse into these places (must be direct children, don't be fancy)

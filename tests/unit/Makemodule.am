@@ -11,8 +11,7 @@ libgtest_la_SOURCES = \
 
 libgtest_la_CPPFLAGS = \
 					   $(AM_CPPFLAGS)\
-					   -DGTEST_HAS_PTHREAD=0\
-					   -DSRCDIR=$(srcdir)
+					   -DGTEST_HAS_PTHREAD=0
 						
 
 check_LTLIBRARIES += \
@@ -36,46 +35,48 @@ libcasmtesting_la_SOURCES = \
 
 libcasmtesting_la_CPPFLAGS = \
 					   $(AM_CPPFLAGS)\
-					   -DSRCDIR=\"$(srcdir)\"
+					   -DABS_SRCDIR=\"$(abs_srcdir)\"\
+					   -DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"
 						
 libcasmtesting_la_LIBADD = \
 						  libgtest.la
 
-# check_PROGRAMS += \
-#   casm_unit_App
+check_PROGRAMS += \
+  casm_unit_App
 
-# casm_unit_App_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
-#   -I$(top_srcdir)/tests/unit/
+casm_unit_App_CPPFLAGS = \
+  $(AM_CPPFLAGS)\
+  -I$(top_srcdir)/tests/unit/
 
-# casm_unit_App_SOURCES = \
-#   tests/unit/unit_test.cpp\
-#   tests/unit/App/App_test.cpp\
-#   tests/unit/App/EnumeratorPlugin_test.cpp\
-#   tests/unit/App/QueryPlugin_test.cpp\
-#   tests/unit/App/settings_test.cpp
+casm_unit_App_SOURCES = \
+  tests/unit/App/App_test.cpp\
+  tests/unit/App/QueryPlugin_test.cpp\
+  tests/unit/App/settings_test.cpp\
+  tests/unit/App/EnumeratorPlugin_test.cpp\
+  tests/unit/gtest_main_run_all.cpp
 
-# casm_unit_App_LDADD = \
-#   libcasm.la\
-#   libcasmtesting.a\
-#   $(BOOST_SYSTEM_LIB)\
-#   $(BOOST_FILESYSTEM_LIB)\
-#   $(BOOST_PROGRAM_OPTIONS_LIB)\
-#   $(BOOST_REGEX_LIB)\
-#   $(BOOST_CHRONO_LIB)\
-#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+casm_unit_App_LDADD = \
+  libcasm.la\
+  libcasmtesting.la\
+  libgtest.la\
+  $(BOOST_SYSTEM_LIB)\
+  $(BOOST_FILESYSTEM_LIB)\
+  $(BOOST_PROGRAM_OPTIONS_LIB)\
+  $(BOOST_REGEX_LIB)\
+  $(BOOST_CHRONO_LIB)
 
-# EXTRA_DIST += \
-#   tests/unit/App/TestCompN.cc\
-#   tests/unit/App/TestCompN.hh\
-#   tests/unit/App/TestConfigname.cc\
-#   tests/unit/App/TestConfigname.hh\
-#   tests/unit/App/TestEnum.cc\
-#   tests/unit/App/TestEnum.hh\
-#   tests/unit/App/TestEnum_impl.hh
+EXTRA_DIST += \
+  tests/unit/App/TestCompN.cc\
+  tests/unit/App/TestCompN.hh\
+  tests/unit/App/TestConfigname.cc\
+  tests/unit/App/TestConfigname.hh\
+  tests/unit/App/TestEnum.cc\
+  tests/unit/App/TestEnum.hh\
+  tests/unit/App/TestEnum_impl.hh
 
-# TESTS += \
-#   tests/unit/App/run_test_App
+TESTS += \
+  tests/unit/App/run_test_App
+
 
 check_PROGRAMS += \
   casm_unit_casm_io
@@ -85,10 +86,10 @@ casm_unit_casm_io_CPPFLAGS = \
   -I$(top_srcdir)/tests/unit/
 
 casm_unit_casm_io_SOURCES = \
-  tests/unit/casm_io/EnumIO_test.cpp
-  # tests/unit/casm_io/DataFormatterDictionary_test.cpp\
-  # tests/unit/casm_io/jsonParser_test.cpp
-  # tests/unit/unit_test.cpp
+  tests/unit/casm_io/EnumIO_test.cpp\
+  tests/unit/casm_io/DataFormatterDictionary_test.cpp\
+  tests/unit/casm_io/jsonParser_test.cpp\
+  tests/unit/gtest_main_run_all.cpp
 
 casm_unit_casm_io_LDADD = \
   libcasm.la\
@@ -106,8 +107,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_clex
 
-# casm_unit_clex_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_clex_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_clex_SOURCES = \
@@ -148,8 +149,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_clusterography
 
-# casm_unit_clusterography_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_clusterography_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_clusterography_SOURCES = \
@@ -176,8 +177,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_container
 
-# casm_unit_container_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_container_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_container_SOURCES = \
@@ -201,8 +202,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_crystallography
 
-# casm_unit_crystallography_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_crystallography_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_crystallography_SOURCES = \
@@ -246,8 +247,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_database
 
-# casm_unit_database_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_database_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_database_SOURCES = \
@@ -276,8 +277,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_kinetics
 
-# casm_unit_kinetics_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_kinetics_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_kinetics_SOURCES = \
@@ -316,8 +317,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_misc
 
-# casm_unit_misc_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_misc_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_misc_SOURCES = \
@@ -340,8 +341,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_monte_carlo
 
-# casm_unit_monte_carlo_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_monte_carlo_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_monte_carlo_SOURCES = \
@@ -370,8 +371,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_symmetry
 
-# casm_unit_symmetry_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_symmetry_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_symmetry_SOURCES = \
@@ -397,8 +398,8 @@ TESTS += \
 # check_PROGRAMS += \
 #   casm_unit_system
 
-# casm_unit_system_CXXFLAGS = \
-#   $(AM_CXXFLAGS)\
+# casm_unit_system_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_system_SOURCES = \

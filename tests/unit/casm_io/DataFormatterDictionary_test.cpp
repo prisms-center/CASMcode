@@ -162,7 +162,7 @@ TEST(DataFormatterDictionaryTest, Test1) {
   // -- DiffusionTransformation --
 
   {
-    std::string srcdir = autotools::srcdir_name();
+    std::string srcdir = autotools::abs_srcdir();
     jsonFile diff_trans_json {srcdir + "/tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
     ASSERT_EQ(true, true);
     Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
@@ -190,28 +190,13 @@ TEST(DataFormatterDictionaryTest, Test1) {
   Supercell standard_fcc_unit {&primclex, Lattice(c + b - a, a - b + c, a + b - c)};
   Supercell background_fcc_unit {&primclex, Lattice(3 * (c + b - a), 3 * (a - b + c), 3 * (a + b - c))};
 
-  // find configurations that can fill 'background_fcc_unit'
-  /*
-  std::cout << "background_fcc_unit.name(): " << background_fcc_unit.name() << std::endl;
   {
-    auto begin = prim.point_group().begin();
-    auto end = prim.point_group().end();
-    auto tol = primclex.crystallography_tol();
-    for(const auto& config : primclex.db<Configuration>()) {
-      auto res = is_supercell(background_fcc_unit.lattice(), config.ideal_lattice(), begin, end, tol);
-      if(res.first != end) {
-        std::cout << background_fcc_unit.name() << " is a supercell of " << config.name() << std::endl;
-      }
-    }
-  }
-  */
-
-  {
-    std::string srcdir = autotools::srcdir_name();
+    std::string srcdir = autotools::abs_srcdir();
     jsonFile diff_perturb_json {srcdir + "/tests/unit/kinetics/FCCTernary_diff_perturb_0.json"};
+    //TODO: This is broken.
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
 
-    /// Not checked for accuracy yet... Would need a simpler test case
+    // Not checked for accuracy yet... Would need a simpler test case
     ASSERT_EQ(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
 
     primclex.generic_db<Kinetics::DiffTransConfiguration>().commit();
