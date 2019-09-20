@@ -365,23 +365,51 @@ libcasmtesting_la_LIBADD = \
 
 
 
-TESTS += \
-  casm_unit_symmetry
-check_PROGRAMS += \
-  casm_unit_symmetry
+# TESTS += \
+#   casm_unit_symmetry
+# check_PROGRAMS += \
+#   casm_unit_symmetry
 
-casm_unit_symmetry_CPPFLAGS = \
+# casm_unit_symmetry_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
+
+# casm_unit_symmetry_SOURCES = \
+#   tests/unit/symmetry/InvariantSubgroup_test.cpp\
+#   tests/unit/symmetry/Orbit_test.cpp\
+#   tests/unit/symmetry/SubOrbits_test.cpp\
+#   tests/unit/symmetry/SymBasisPermute_test.cpp\
+#   tests/unit/gtest_main_run_all.cpp
+
+# casm_unit_symmetry_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.la\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)
+
+
+
+
+
+
+TESTS += \
+  casm_unit_system
+check_PROGRAMS += \
+  casm_unit_system
+
+casm_unit_system_CPPFLAGS = \
   $(AM_CPPFLAGS)\
   -I$(top_srcdir)/tests/unit/
 
-casm_unit_symmetry_SOURCES = \
-  tests/unit/symmetry/InvariantSubgroup_test.cpp\
-  tests/unit/symmetry/Orbit_test.cpp\
-  tests/unit/symmetry/SubOrbits_test.cpp\
-  tests/unit/symmetry/SymBasisPermute_test.cpp\
+casm_unit_system_SOURCES = \
+  tests/unit/system/RuntimeLibrary_test.cpp\
   tests/unit/gtest_main_run_all.cpp
 
-casm_unit_symmetry_LDADD = \
+
+casm_unit_system_LDADD = \
   libcasm.la\
   libcasmtesting.la\
   $(BOOST_SYSTEM_LIB)\
@@ -389,33 +417,4 @@ casm_unit_symmetry_LDADD = \
   $(BOOST_PROGRAM_OPTIONS_LIB)\
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)
-
-
-
-
-
-
-# check_PROGRAMS += \
-#   casm_unit_system
-
-# casm_unit_system_CPPFLAGS = \
-#   $(AM_CPPFLAGS)\
-#   -I$(top_srcdir)/tests/unit/
-
-# casm_unit_system_SOURCES = \
-#   tests/unit/unit_test.cpp\
-#   tests/unit/system/RuntimeLibrary_test.cpp
-
-# casm_unit_system_LDADD = \
-#   libcasm.la\
-#   libcasmtesting.la\
-#   $(BOOST_SYSTEM_LIB)\
-#   $(BOOST_FILESYSTEM_LIB)\
-#   $(BOOST_PROGRAM_OPTIONS_LIB)\
-#   $(BOOST_REGEX_LIB)\
-#   $(BOOST_CHRONO_LIB)\
-#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
-
-# TESTS += \
-#   tests/unit/system/run_test_system
 
