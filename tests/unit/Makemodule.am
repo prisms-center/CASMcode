@@ -267,24 +267,63 @@ libcasmtesting_la_LIBADD = \
 
 
 
-TESTS += \
-  casm_unit_kinetics
-check_PROGRAMS += \
-  casm_unit_kinetics
+# TESTS += \
+#   casm_unit_kinetics
+# check_PROGRAMS += \
+#   casm_unit_kinetics
 
-casm_unit_kinetics_CPPFLAGS = \
+# casm_unit_kinetics_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
+
+# casm_unit_kinetics_SOURCES = \
+#   tests/unit/kinetics/DiffTransConfigInterpolation_test.cpp\
+#   tests/unit/kinetics/DiffusionTransformation_test.cpp\
+#   tests/unit/kinetics/DiffTransConfiguration_test.cpp\
+#   tests/unit/kinetics/DiffTransConfigEnumOccPerturbations_test.cpp\
+#   tests/unit/kinetics/LocalClusterExpansion_test.cpp\
+#   tests/unit/gtest_main_run_all.cpp
+
+# casm_unit_kinetics_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.la\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)
+
+# EXTRA_DIST += \
+#   tests/unit/kinetics/FCCTernary_bspecs_0.json\
+#   tests/unit/kinetics/FCCTernary_diff_perturb_0.json\
+#   tests/unit/kinetics/FCCTernary_diff_trans_0.json\
+#   tests/unit/kinetics/FCCTernary_diff_trans_err_0.json\
+#   tests/unit/kinetics/ZrO_bspecs_0.json\
+#   tests/unit/kinetics/ZrO_diff_perturb_0.json\
+#   tests/unit/kinetics/ZrO_diff_trans_0.json\
+#   tests/unit/kinetics/ZrO_local_bspecs_0.json\
+#   tests/unit/kinetics/ZrO_local_bspecs_1.json\
+#   tests/unit/kinetics/l12_local_bspecs_0.json
+
+
+
+
+
+
+TESTS += \
+  casm_unit_misc
+check_PROGRAMS += \
+  casm_unit_misc
+
+casm_unit_misc_CPPFLAGS = \
   $(AM_CPPFLAGS)\
   -I$(top_srcdir)/tests/unit/
 
-casm_unit_kinetics_SOURCES = \
-  tests/unit/kinetics/DiffTransConfigInterpolation_test.cpp\
-  tests/unit/kinetics/DiffusionTransformation_test.cpp\
-  tests/unit/kinetics/DiffTransConfiguration_test.cpp\
-  tests/unit/kinetics/DiffTransConfigEnumOccPerturbations_test.cpp\
-  tests/unit/kinetics/LocalClusterExpansion_test.cpp\
+casm_unit_misc_SOURCES = \
+  tests/unit/misc/cloneable_ptr_test.cpp\
   tests/unit/gtest_main_run_all.cpp
 
-casm_unit_kinetics_LDADD = \
+casm_unit_misc_LDADD = \
   libcasm.la\
   libcasmtesting.la\
   $(BOOST_SYSTEM_LIB)\
@@ -293,47 +332,10 @@ casm_unit_kinetics_LDADD = \
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)
 
-EXTRA_DIST += \
-  tests/unit/kinetics/FCCTernary_bspecs_0.json\
-  tests/unit/kinetics/FCCTernary_diff_perturb_0.json\
-  tests/unit/kinetics/FCCTernary_diff_trans_0.json\
-  tests/unit/kinetics/FCCTernary_diff_trans_err_0.json\
-  tests/unit/kinetics/ZrO_bspecs_0.json\
-  tests/unit/kinetics/ZrO_diff_perturb_0.json\
-  tests/unit/kinetics/ZrO_diff_trans_0.json\
-  tests/unit/kinetics/ZrO_local_bspecs_0.json\
-  tests/unit/kinetics/ZrO_local_bspecs_1.json\
-  tests/unit/kinetics/l12_local_bspecs_0.json
 
-
-
-
-
-
-# check_PROGRAMS += \
-#   casm_unit_misc
-
-# casm_unit_misc_CPPFLAGS = \
-#   $(AM_CPPFLAGS)\
-#   -I$(top_srcdir)/tests/unit/
-
-# casm_unit_misc_SOURCES = \
-#   tests/unit/unit_test.cpp\
-#   tests/unit/misc/cloneable_ptr_test.cpp
-
-# casm_unit_misc_LDADD = \
-#   libcasm.la\
-#   libcasmtesting.la\
-#   $(BOOST_SYSTEM_LIB)\
-#   $(BOOST_FILESYSTEM_LIB)\
-#   $(BOOST_PROGRAM_OPTIONS_LIB)\
-#   $(BOOST_REGEX_LIB)\
-#   $(BOOST_CHRONO_LIB)\
-#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 # TESTS += \
-#   tests/unit/misc/run_test_misc
-
+#   casm_unit_monte_carlo
 # check_PROGRAMS += \
 #   casm_unit_monte_carlo
 
@@ -361,8 +363,8 @@ EXTRA_DIST += \
 #   tests/unit/monte_carlo/eci_0.json\
 #   tests/unit/monte_carlo/metropolis_grand_canonical_0.json
 
-# TESTS += \
-#   tests/unit/monte_carlo/run_test_monte_carlo
+
+
 
 # check_PROGRAMS += \
 #   casm_unit_symmetry
