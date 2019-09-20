@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clusterography/ClusterSpecsParser_impl.hh"
@@ -63,11 +62,11 @@ namespace {
     TestOrbits0(const PrimClex &primclex) :
       test::TestPrimPeriodicDiffusionTransformationOrbits(
         primclex,
-        jsonFile("tests/unit/kinetics/FCCTernary_bspecs_0.json"),
+        jsonFile(autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_bspecs_0.json"),
         2, 4) {
       // counts only check for consistency, not accuracy
-      BOOST_CHECK_EQUAL(orbits.size(), 31);
-      BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 516);
+      EXPECT_EQ(orbits.size(), 31);
+      EXPECT_EQ(diff_trans_orbits.size(), 516);
     }
   };
 
@@ -75,11 +74,11 @@ namespace {
     TestOrbits1(const PrimClex &primclex) :
       test::TestPrimPeriodicDiffusionTransformationOrbits(
         primclex,
-        jsonFile("tests/unit/kinetics/ZrO_bspecs_0.json"),
+        jsonFile(autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_bspecs_0.json"),
         2, 4) {
       // counts only check for consistency, not accuracy
-      BOOST_CHECK_EQUAL(orbits.size(), 74);
-      BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 181);
+      EXPECT_EQ(orbits.size(), 74);
+      EXPECT_EQ(diff_trans_orbits.size(), 181);
     }
   };
 
@@ -109,7 +108,7 @@ namespace {
       count += orbit.size();
     }
 
-    BOOST_CHECK_EQUAL(count, ts.scel.num_sites());
+    EXPECT_EQ(count, ts.scel.num_sites());
 
     OrbitPrinterOptions opt;
     opt.coord_type = CART;
@@ -149,7 +148,7 @@ namespace {
       count += orbit.size();
     }
 
-    BOOST_CHECK_EQUAL(count, ts.scel.num_sites() * (ts.scel.num_sites() - 1) / 2);
+    EXPECT_EQ(count, ts.scel.num_sites() * (ts.scel.num_sites() - 1) / 2);
 
     OrbitPrinterOptions opt;
     opt.coord_type = CART;
@@ -160,15 +159,13 @@ namespace {
 
 }
 
-BOOST_AUTO_TEST_SUITE(ClusterSpecsParserTest)
-
-BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
+TEST(ClusterSpecsParserTest, PrimPeriodicClustersByMaxLengthTest) {
 
   /// Make test project
   test::FCCTernaryProj proj;
   proj.check_init();
   PrimClex primclex(proj.dir, null_log());
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   auto &log = null_log();
   {
@@ -178,14 +175,14 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 0);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->orbit_branch_specs().warning.size(), 0);
 
-    BOOST_CHECK_EQUAL(parser->max_branch(), 2);
-    BOOST_CHECK_EQUAL(almost_equal(parser->max_length(2), 3.0), true);
-    BOOST_CHECK_THROW(parser->max_length(1), std::invalid_argument);
-    BOOST_CHECK_THROW(parser->max_length(3), std::invalid_argument);
-    BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 0);
+    EXPECT_EQ(parser->max_branch(), 2);
+    EXPECT_EQ(almost_equal(parser->max_length(2), 3.0), true);
+    EXPECT_THROW(parser->max_length(1), std::invalid_argument);
+    EXPECT_THROW(parser->max_length(3), std::invalid_argument);
+    EXPECT_EQ(parser->custom_generators().elements.size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -195,13 +192,13 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
   {
     auto parser = PrimParser(primclex, R"({})");
 
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->error.size(), 1);
-    BOOST_CHECK_EQUAL(parser->warning.size(), 0);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 0);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->error.size(), 1);
+    EXPECT_EQ(parser->warning.size(), 0);
+    EXPECT_EQ(parser->orbit_branch_specs().warning.size(), 0);
 
-    BOOST_CHECK_EQUAL(parser->max_branch(), 1);
-    BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 0);
+    EXPECT_EQ(parser->max_branch(), 1);
+    EXPECT_EQ(parser->custom_generators().elements.size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -211,8 +208,8 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
   {
     auto parser = PrimParser(primclex, R"({"orbit_branch_specs": []})");
 
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 1);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->orbit_branch_specs().error.size(), 1);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -227,8 +224,8 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 1);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->orbit_branch_specs().warning.size(), 1);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -242,9 +239,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 0);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 1);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->orbit_branch_specs().warning.size(), 0);
+    EXPECT_EQ(parser->orbit_branch_specs().error.size(), 1);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -259,9 +256,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 0);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 1);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->orbit_branch_specs().warning.size(), 0);
+    EXPECT_EQ(parser->orbit_branch_specs().error.size(), 1);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -276,9 +273,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 0);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 0);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->orbit_branch_specs().warning.size(), 0);
+    EXPECT_EQ(parser->orbit_branch_specs().error.size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -294,9 +291,9 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().warning.size(), 2);
-    BOOST_CHECK_EQUAL(parser->orbit_branch_specs().error.size(), 0);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->orbit_branch_specs().warning.size(), 2);
+    EXPECT_EQ(parser->orbit_branch_specs().error.size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -320,10 +317,10 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       ]
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->orbit_specs().warning.size(), 0);
-    BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 0);
-    BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 3);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->orbit_specs().warning.size(), 0);
+    EXPECT_EQ(parser->orbit_specs().error.size(), 0);
+    EXPECT_EQ(parser->custom_generators().elements.size(), 3);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -346,10 +343,10 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       ]
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->orbit_specs().warning.size(), 0);
-    BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 0);
-    BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 1);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->orbit_specs().warning.size(), 0);
+    EXPECT_EQ(parser->orbit_specs().error.size(), 0);
+    EXPECT_EQ(parser->custom_generators().elements.size(), 1);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -372,10 +369,10 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       ]
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->orbit_specs().warning.size(), 0);
-    BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 0);
-    BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 4);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->orbit_specs().warning.size(), 0);
+    EXPECT_EQ(parser->orbit_specs().error.size(), 0);
+    EXPECT_EQ(parser->custom_generators().elements.size(), 4);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -398,10 +395,10 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       ]
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->orbit_specs().warning.size(), 1);
-    BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 0);
-    BOOST_CHECK_EQUAL(parser->custom_generators().elements.size(), 4);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->orbit_specs().warning.size(), 1);
+    EXPECT_EQ(parser->orbit_specs().error.size(), 0);
+    EXPECT_EQ(parser->custom_generators().elements.size(), 4);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -420,8 +417,8 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->orbit_specs().error.size(), 1);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->orbit_specs().error.size(), 1);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -429,23 +426,23 @@ BOOST_AUTO_TEST_CASE(PrimPeriodicClustersByMaxLengthTest) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
+TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
   /// Make test project
   test::FCCTernaryProj proj;
   proj.check_init();
   Log &log = null_log();
   PrimClex primclex(proj.dir, null_log());
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   TestOrbits0 to(primclex);
 
-  jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
+  jsonFile diff_trans_json {autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
   const auto &diff_trans_db = primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>();
-  BOOST_CHECK_EQUAL(diff_trans_db.size(), 28);
-  BOOST_CHECK_EQUAL(success, 0);
+  EXPECT_EQ(diff_trans_db.size(), 28);
+  EXPECT_EQ(success, 0);
 
   OrbitPrinterOptions opt;
   opt.coord_type = CART;
@@ -487,14 +484,14 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->standard->max_branch, 1);
-    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), false);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 10.), true);
-    BOOST_CHECK_THROW(parser->standard->max_length(1), std::runtime_error);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->standard->max_branch, 1);
+    EXPECT_EQ(parser->standard->max_length_including_phenomenal(), false);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(1), 10.), true);
+    EXPECT_THROW(parser->standard->max_length(1), std::runtime_error);
 
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->all_errors().size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -513,18 +510,18 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->standard->max_branch, 3);
-    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), false);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(3), 3.), true);
-    BOOST_CHECK_THROW(parser->standard->max_length(1), std::runtime_error);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 12.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(3), 10.), true);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->standard->max_branch, 3);
+    EXPECT_EQ(parser->standard->max_length_including_phenomenal(), false);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(3), 3.), true);
+    EXPECT_THROW(parser->standard->max_length(1), std::runtime_error);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(2), 12.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(3), 10.), true);
 
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->all_errors().size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -543,11 +540,11 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->standard->warning.size(), 1);
-    BOOST_CHECK_EQUAL(parser->standard->error.size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 1);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->standard->warning.size(), 1);
+    EXPECT_EQ(parser->standard->error.size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 1);
+    EXPECT_EQ(parser->all_errors().size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -566,11 +563,11 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->standard->warning.size(), 0);
-    BOOST_CHECK_EQUAL(parser->standard->error.size(), 2);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 2);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->standard->warning.size(), 0);
+    EXPECT_EQ(parser->standard->error.size(), 2);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->all_errors().size(), 2);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -590,18 +587,18 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->standard->max_branch, 3);
-    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(3), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(1), 12.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 12.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(3), 10.), true);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->standard->max_branch, 3);
+    EXPECT_EQ(parser->standard->max_length_including_phenomenal(), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(3), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(1), 12.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(2), 12.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(3), 10.), true);
 
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->all_errors().size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -621,19 +618,19 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->standard->max_branch, 3);
-    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(3), 3.), true);
-    BOOST_CHECK_EQUAL(parser->standard->max_length(1), std::numeric_limits<double>::infinity());
-    BOOST_CHECK_EQUAL((3.0 < parser->standard->max_length(1)), true);
-    BOOST_CHECK_EQUAL(parser->standard->max_length(2), std::numeric_limits<double>::infinity());
-    BOOST_CHECK_EQUAL(parser->standard->max_length(3), std::numeric_limits<double>::infinity());
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->standard->max_branch, 3);
+    EXPECT_EQ(parser->standard->max_length_including_phenomenal(), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(3), 3.), true);
+    EXPECT_EQ(parser->standard->max_length(1), std::numeric_limits<double>::infinity());
+    EXPECT_EQ((3.0 < parser->standard->max_length(1)), true);
+    EXPECT_EQ(parser->standard->max_length(2), std::numeric_limits<double>::infinity());
+    EXPECT_EQ(parser->standard->max_length(3), std::numeric_limits<double>::infinity());
 
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->all_errors().size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -653,11 +650,11 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->standard->warning.size(), 0);
-    BOOST_CHECK_EQUAL(parser->standard->error.size(), 2);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 2);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->standard->warning.size(), 0);
+    EXPECT_EQ(parser->standard->error.size(), 2);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->all_errors().size(), 2);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -702,24 +699,24 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       ]
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
+    EXPECT_EQ(parser->valid(), true);
 
-    BOOST_CHECK_EQUAL(parser->standard->max_branch, 2);
-    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(1), 4.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 4.), true);
+    EXPECT_EQ(parser->standard->max_branch, 2);
+    EXPECT_EQ(parser->standard->max_length_including_phenomenal(), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(1), 4.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(2), 4.), true);
 
-    BOOST_CHECK_EQUAL(parser->custom->data.size(), 1);
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_branch, 3);
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length_including_phenomenal(), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(1), 6.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(2), 6.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(3), 6.), true);
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(1), std::numeric_limits<double>::infinity());
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(2), std::numeric_limits<double>::infinity());
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(3), std::numeric_limits<double>::infinity());
+    EXPECT_EQ(parser->custom->data.size(), 1);
+    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_branch, 3);
+    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_length_including_phenomenal(), true);
+    EXPECT_EQ(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(1), 6.), true);
+    EXPECT_EQ(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(2), 6.), true);
+    EXPECT_EQ(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(3), 6.), true);
+    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_length(1), std::numeric_limits<double>::infinity());
+    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_length(2), std::numeric_limits<double>::infinity());
+    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_length(3), std::numeric_limits<double>::infinity());
 
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
@@ -731,32 +728,32 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
           auto find_res = parser->find(equiv);
           auto it = find_res.first;
           auto op = find_res.second;
-          BOOST_CHECK_EQUAL((it != parser->custom->data.end()), (linear_orbit_index == 0));
+          EXPECT_EQ((it != parser->custom->data.end()), (linear_orbit_index == 0));
 
           // check op*phenom == equiv
           if(it != parser->custom->data.end()) {
             auto &f = *it->phenom->prim_sym_compare;
-            BOOST_CHECK_EQUAL(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
+            EXPECT_EQ(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
           }
 
           int expected_max_branch = (linear_orbit_index == 0 ? 3 : 2);
-          BOOST_CHECK_EQUAL(parser->max_branch(it), expected_max_branch);
-          BOOST_CHECK_EQUAL(parser->max_length_including_phenomenal(it), true);
+          EXPECT_EQ(parser->max_branch(it), expected_max_branch);
+          EXPECT_EQ(parser->max_length_including_phenomenal(it), true);
 
           for(int branch = 1; branch <= parser->max_branch(it); ++branch) {
             double expected_cutoff_radius = (linear_orbit_index == 0 ? 6. : 3.);
-            BOOST_CHECK_EQUAL(parser->cutoff_radius(it, branch), expected_cutoff_radius);
+            EXPECT_EQ(parser->cutoff_radius(it, branch), expected_cutoff_radius);
 
             double expected_max_length = (linear_orbit_index == 0 ? std::numeric_limits<double>::infinity() : 4.);
-            BOOST_CHECK_EQUAL(parser->max_length(it, branch), expected_max_length);
+            EXPECT_EQ(parser->max_length(it, branch), expected_max_length);
           }
         }
         linear_orbit_index++;
       }
     }
 
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->all_errors().size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -786,23 +783,23 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     //      ]
     //    })");
     //
-    //    BOOST_CHECK_EQUAL(parser->valid(), true);
-    //    BOOST_CHECK_EQUAL(parser->standard->max_branch, 2);
-    //    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), true);
-    //    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
-    //    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
-    //    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(1), 4.), true);
-    //    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 4.), true);
+    //    EXPECT_EQ(parser->valid(), true);
+    //    EXPECT_EQ(parser->standard->max_branch, 2);
+    //    EXPECT_EQ(parser->standard->max_length_including_phenomenal(), true);
+    //    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
+    //    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
+    //    EXPECT_EQ(almost_equal(parser->standard->max_length(1), 4.), true);
+    //    EXPECT_EQ(almost_equal(parser->standard->max_length(2), 4.), true);
     //
-    //    BOOST_CHECK_EQUAL(parser->custom->data.size(), 1);
-    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_branch, 3);
-    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length_including_phenomenal(), true);
-    //    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(1), 6.), true);
-    //    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(2), 6.), true);
-    //    BOOST_CHECK_EQUAL(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(3), 6.), true);
-    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(1), std::numeric_limits<double>::infinity());
-    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(2), std::numeric_limits<double>::infinity());
-    //    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_branch_specs->max_length(3), std::numeric_limits<double>::infinity());
+    //    EXPECT_EQ(parser->custom->data.size(), 1);
+    //    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_branch, 3);
+    //    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_length_including_phenomenal(), true);
+    //    EXPECT_EQ(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(1), 6.), true);
+    //    EXPECT_EQ(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(2), 6.), true);
+    //    EXPECT_EQ(almost_equal(parser->custom->data[0].orbit_branch_specs->cutoff_radius(3), 6.), true);
+    //    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_length(1), std::numeric_limits<double>::infinity());
+    //    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_length(2), std::numeric_limits<double>::infinity());
+    //    EXPECT_EQ(parser->custom->data[0].orbit_branch_specs->max_length(3), std::numeric_limits<double>::infinity());
     //
     //    // checks comparing input phenomenal cluster to test cluster
     //    // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
@@ -814,32 +811,32 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
     //          auto find_res = parser->find(equiv);
     //          auto it = find_res.first;
     //          auto op = find_res.second;
-    //          BOOST_CHECK_EQUAL((it != parser->custom->data.end()), (linear_orbit_index == 0));
+    //          EXPECT_EQ((it != parser->custom->data.end()), (linear_orbit_index == 0));
     //
     //          // check op*phenom == equiv
     //          if(it != parser->custom->data.end()) {
     //            auto &f = *it->phenom->prim_sym_compare;
-    //            BOOST_CHECK_EQUAL(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
+    //            EXPECT_EQ(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
     //          }
     //
     //          int expected_max_branch = (linear_orbit_index == 0 ? 3 : 2);
-    //          BOOST_CHECK_EQUAL(parser->max_branch(it), expected_max_branch);
-    //          BOOST_CHECK_EQUAL(parser->max_length_including_phenomenal(it), true);
+    //          EXPECT_EQ(parser->max_branch(it), expected_max_branch);
+    //          EXPECT_EQ(parser->max_length_including_phenomenal(it), true);
     //
     //          for(int branch = 1; branch <= parser->max_branch(it); ++branch) {
     //            double expected_cutoff_radius = (linear_orbit_index == 0 ? 6. : 3.);
-    //            BOOST_CHECK_EQUAL(parser->cutoff_radius(it, branch), expected_cutoff_radius);
+    //            EXPECT_EQ(parser->cutoff_radius(it, branch), expected_cutoff_radius);
     //
     //            double expected_max_length = (linear_orbit_index == 0 ? std::numeric_limits<double>::infinity() : 4.);
-    //            BOOST_CHECK_EQUAL(parser->max_length(it, branch), expected_max_length);
+    //            EXPECT_EQ(parser->max_length(it, branch), expected_max_length);
     //          }
     //        }
     //        linear_orbit_index++;
     //      }
     //    }
     //
-    //    BOOST_CHECK_EQUAL(parser->all_warning().size(), 0);
-    //    BOOST_CHECK_EQUAL(parser->all_error().size(), 0);
+    //    EXPECT_EQ(parser->all_warning().size(), 0);
+    //    EXPECT_EQ(parser->all_error().size(), 0);
     //
     //    log << parser->report() << std::endl;
   }
@@ -884,18 +881,18 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       ]
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->standard->max_branch, 2);
-    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(1), 4.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 4.), true);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->standard->max_branch, 2);
+    EXPECT_EQ(parser->standard->max_length_including_phenomenal(), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(1), 4.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(2), 4.), true);
 
-    BOOST_CHECK_EQUAL(parser->custom->data.size(), 1);
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_specs->prototypes.size(), 1);
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_specs->prototypes[0].include_subclusters, 1);
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_specs->prototypes[0].cluster.size(), 1);
+    EXPECT_EQ(parser->custom->data.size(), 1);
+    EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes.size(), 1);
+    EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].include_subclusters, 1);
+    EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].cluster.size(), 1);
 
     ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel);
     // checks comparing input phenomenal cluster to test cluster
@@ -912,14 +909,14 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
           auto op = find_res.second;
 
           // only linear_orbit_index == 0 should match custom orbit specs
-          BOOST_CHECK_EQUAL((it != parser->custom->data.end()), (linear_orbit_index == 0));
+          EXPECT_EQ((it != parser->custom->data.end()), (linear_orbit_index == 0));
 
           // generate local orbit
           if(it != parser->custom->data.end()) {
 
             // check op*phenom == equiv
             auto &f = *it->phenom->prim_sym_compare;
-            BOOST_CHECK_EQUAL(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
+            EXPECT_EQ(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
 
             std::vector<PermuteIterator> dt_permute_group = equiv.invariant_subgroup(ts.scel);
             SymGroup dt_group = make_sym_group(dt_permute_group);
@@ -928,22 +925,22 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
 
             if(linear_orbit_index == 0) {
 
-              BOOST_CHECK_EQUAL(dt_group.size(), 8);
+              EXPECT_EQ(dt_group.size(), 8);
 
               // 2 elements (because default==include_subclusters -> null cluster)
-              BOOST_CHECK_EQUAL(test_gen.elements.size(), 2);
+              EXPECT_EQ(test_gen.elements.size(), 2);
 
               auto gen_it = test_gen.elements.begin();
               {
                 // orbit of null cluster -> 1 equiv
                 ScelPeriodicIntegralClusterOrbit orbit(*gen_it++, dt_group, ts.scel_sym_compare);
-                BOOST_CHECK_EQUAL(orbit.size(), 1);
+                EXPECT_EQ(orbit.size(), 1);
               }
 
               {
                 // should generate 4 equivalents (there are 4NN of both sites in 1NN pair cluster)
                 ScelPeriodicIntegralClusterOrbit orbit(*gen_it++, dt_group, ts.scel_sym_compare);
-                BOOST_CHECK_EQUAL(orbit.size(), 4);
+                EXPECT_EQ(orbit.size(), 4);
               }
             }
             else {
@@ -956,8 +953,8 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
       }
     }
 
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->all_errors().size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -965,13 +962,13 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
+TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
   /// Make test project
   test::FCCTernaryProj proj;
   proj.check_init();
   Log &log = null_log();
   PrimClex primclex(proj.dir, null_log());
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   TestOrbits0 to(primclex);
 
@@ -1047,21 +1044,21 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
       ]
     })");
 
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->standard->max_branch, 2);
-    BOOST_CHECK_EQUAL(parser->standard->max_length_including_phenomenal(), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(1), 4.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->standard->max_length(2), 4.), true);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->standard->max_branch, 2);
+    EXPECT_EQ(parser->standard->max_length_including_phenomenal(), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(1), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->cutoff_radius(2), 3.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(1), 4.), true);
+    EXPECT_EQ(almost_equal(parser->standard->max_length(2), 4.), true);
 
-    BOOST_CHECK_EQUAL(parser->custom->data.size(), 2);
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_specs->prototypes.size(), 1);
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_specs->prototypes[0].include_subclusters, 1);
-    BOOST_CHECK_EQUAL(parser->custom->data[0].orbit_specs->prototypes[0].cluster.size(), 1);
-    BOOST_CHECK_EQUAL(parser->custom->data[1].orbit_specs->prototypes.size(), 1);
-    BOOST_CHECK_EQUAL(parser->custom->data[1].orbit_specs->prototypes[0].include_subclusters, 1);
-    BOOST_CHECK_EQUAL(parser->custom->data[1].orbit_specs->prototypes[0].cluster.size(), 1);
+    EXPECT_EQ(parser->custom->data.size(), 2);
+    EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes.size(), 1);
+    EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].include_subclusters, 1);
+    EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].cluster.size(), 1);
+    EXPECT_EQ(parser->custom->data[1].orbit_specs->prototypes.size(), 1);
+    EXPECT_EQ(parser->custom->data[1].orbit_specs->prototypes[0].include_subclusters, 1);
+    EXPECT_EQ(parser->custom->data[1].orbit_specs->prototypes[0].cluster.size(), 1);
 
     ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel);
     // checks comparing input phenomenal cluster to test cluster
@@ -1076,7 +1073,7 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
     //    log << "check # matches" << std::endl;
     if(parser->valid()) {
       std::vector<Index> count = {0, 0};
-      BOOST_CHECK_EQUAL(to.diff_trans_orbits[0].size(), 6);
+      EXPECT_EQ(to.diff_trans_orbits[0].size(), 6);
       for(const auto &equiv : to.diff_trans_orbits[0]) {
 
         //        log << "\n##################" << std::endl;
@@ -1090,18 +1087,18 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
         auto op = find_res.second;
         if(it != parser->custom->data.end()) {
           auto &f = *it->phenom->scel_sym_compare;
-          BOOST_CHECK_EQUAL(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
+          EXPECT_EQ(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
 
           std::vector<PermuteIterator> dt_permute_group = equiv.invariant_subgroup(ts.scel);
           SymGroup dt_group = make_sym_group(dt_permute_group);
 
           if(&*it == &parser->custom->data[0]) {
             count[0]++;
-            BOOST_CHECK_EQUAL(dt_group.size(), 4);
+            EXPECT_EQ(dt_group.size(), 4);
           }
           else if(&*it == &parser->custom->data[1]) {
             count[1]++;
-            BOOST_CHECK_EQUAL(dt_group.size(), 8);
+            EXPECT_EQ(dt_group.size(), 8);
           }
 
           //          log << "--- dt_group ---" << std::endl;
@@ -1116,24 +1113,24 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
           parser->insert_custom_generators(find_res, test_gen);
 
           // 2 elements (because default==include_subclusters -> null cluster)
-          BOOST_CHECK_EQUAL(test_gen.elements.size(), 2);
+          EXPECT_EQ(test_gen.elements.size(), 2);
 
           auto gen_it = test_gen.elements.begin();
           {
             // orbit of null cluster -> 1 equiv
             ScelPeriodicIntegralClusterOrbit orbit(*gen_it++, dt_group, ts.scel_sym_compare);
-            BOOST_CHECK_EQUAL(orbit.size(), 1);
+            EXPECT_EQ(orbit.size(), 1);
           }
 
           {
             // should generate 4 equivalents (the 4 NN of both sites in 1NN pair cluster)
             ScelPeriodicIntegralClusterOrbit orbit(*gen_it++, dt_group, ts.scel_sym_compare);
-            BOOST_CHECK_EQUAL(orbit.size(), 4);
+            EXPECT_EQ(orbit.size(), 4);
           }
         }
       }
-      BOOST_CHECK_EQUAL(count[0], 4); // 4/6 equiv match first phenom
-      BOOST_CHECK_EQUAL(count[1], 2); // 2/6 equiv match second phenom
+      EXPECT_EQ(count[0], 4); // 4/6 equiv match first phenom
+      EXPECT_EQ(count[1], 2); // 2/6 equiv match second phenom
     }
 
     // other orbits should not match (this is slow)
@@ -1144,13 +1141,13 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
           auto find_res = parser->find(equiv);
           auto it = find_res.first;
           auto op = find_res.second;
-          BOOST_CHECK_EQUAL((it == parser->custom->data.end()), true);
+          EXPECT_EQ((it == parser->custom->data.end()), true);
         }
       }
     }
 
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->all_errors().size(), 0);
 
     log.begin("Report");
     log << parser->report() << std::endl;
@@ -1159,13 +1156,13 @@ BOOST_AUTO_TEST_CASE(LocalClustersByMaxLengthTest_Tet) {
 
 }
 
-BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_FCCTernary) {
+TEST(ClusterSpecsParserTest, LocalPointClustersByMaxLengthTest_FCCTernary) {
   /// Make test project
   test::FCCTernaryProj proj;
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   TestOrbits0 to(primclex);
   const auto &phenom = to.diff_trans_orbits[0].prototype();
@@ -1207,13 +1204,13 @@ BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_FCCTernary) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_ZrO) {
+TEST(ClusterSpecsParserTest, LocalPointClustersByMaxLengthTest_ZrO) {
   /// Make test project
   test::ZrOProj proj;
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   TestOrbits1 to(primclex);
   const auto &phenom = to.diff_trans_orbits[0].prototype();
@@ -1254,5 +1251,3 @@ BOOST_AUTO_TEST_CASE(LocalPointClustersByMaxLengthTest_ZrO) {
     local_pair_clusters_test(ts, phenom);
   }
 }
-
-BOOST_AUTO_TEST_SUITE_END()

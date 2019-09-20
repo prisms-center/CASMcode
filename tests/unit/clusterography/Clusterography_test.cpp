@@ -1,5 +1,5 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 #include "casm/clusterography/ClusterOrbits.hh"
@@ -52,12 +52,10 @@ jsonParser expected_Nclusters(OrbitIterator begin, OrbitIterator end) {
   return nclust;
 }
 
-BOOST_AUTO_TEST_SUITE(BasicStructureSiteTest)
-
-BOOST_AUTO_TEST_CASE(ClusterographyTest) {
+TEST(BasicStructureSiteTest, ClusterographyTest) {
 
   // read test file
-  fs::path test_cases_path("tests/unit/clusterography/test_cases.json");
+  fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clusterography/test_cases.json");
   jsonParser tests(test_cases_path);
   double tol = TOL;
 
@@ -72,9 +70,9 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
     bool quiet = false;
     j.get_else(quiet, "quiet", false);
 
-    BOOST_CHECK_MESSAGE(j.contains("title"), "test case 'title' is required");
-    BOOST_CHECK_MESSAGE(j.contains("prim"), "test case 'prim' is required");
-    BOOST_CHECK_MESSAGE(j.contains("bspecs"), "test case 'bspecs' is required");
+    EXPECT_TRUE(j.contains("title")) << "test case 'title' is required";
+    EXPECT_TRUE(j.contains("prim")) << "test case 'prim' is required";
+    EXPECT_TRUE(j.contains("bspecs")) << "test case 'bspecs' is required";
 
     // generate prim
     Structure prim(read_prim(j["prim"], TOL));
@@ -83,14 +81,14 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
     // generate a one site orbit, prim periodic
     {
       IntegralCluster clust(prim);
-      BOOST_CHECK_MESSAGE(true, "IntegralCluster constructed");
+      EXPECT_TRUE(true) << "IntegralCluster constructed";
       clust.elements().push_back(UnitCellCoord(prim, 0, UnitCell(0, 0, 0)));
-      BOOST_CHECK_MESSAGE(clust.size() == 1, "site added");
+      EXPECT_TRUE(clust.size() == 1) << "site added";
       PrimPeriodicOrbit<IntegralCluster> orbit(
         clust,
         prim.factor_group(),
         PrimPeriodicSymCompare<IntegralCluster>(crystallography_tol));
-      BOOST_CHECK_MESSAGE(orbit.prototype().size() == 1, "orbit generated");
+      EXPECT_TRUE(orbit.prototype().size() == 1) << "orbit generated";
 
       check("first_prim_periodic_orbit", j, expected_first_prim_periodic_orbit(orbit), test_cases_path, quiet);
     }
@@ -129,5 +127,3 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
   }
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

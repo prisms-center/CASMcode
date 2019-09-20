@@ -58,7 +58,6 @@ libcasmtesting_la_LIBADD = \
 # casm_unit_App_LDADD = \
 #   libcasm.la\
 #   libcasmtesting.la\
-#   libgtest.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -93,7 +92,6 @@ libcasmtesting_la_LIBADD = \
 # casm_unit_casm_io_LDADD = \
 #   libcasm.la\
 #   libcasmtesting.la\
-#   libgtest.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -101,48 +99,49 @@ libcasmtesting_la_LIBADD = \
 #   $(BOOST_CHRONO_LIB)
 
 
-TESTS += \
-		 casm_unit_clex
-check_PROGRAMS += \
-  casm_unit_clex
+# TESTS += \
+# 		 casm_unit_clex
+# check_PROGRAMS += \
+#   casm_unit_clex
 
-casm_unit_clex_CPPFLAGS = \
-  $(AM_CPPFLAGS)\
-  -I$(top_srcdir)/tests/unit/
+# casm_unit_clex_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
 
-casm_unit_clex_SOURCES = \
-  tests/unit/clex/ChemicalReference_test.cpp\
-  tests/unit/clex/Clexulator_test.cpp\
-  tests/unit/clex/ConfigEnumAllOccupations_test.cpp\
-  tests/unit/clex/ConfigEnumEquivalents_test.cpp\
-  tests/unit/clex/ConfigEnumInterpolation_test.cpp\
-  tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
-  tests/unit/clex/ConfigIO_test.cpp\
-  tests/unit/clex/Configuration_test.cpp\
-  tests/unit/clex/NeighborList_test.cpp\
-  tests/unit/clex/PrimClex_test.cpp\
-  tests/unit/clex/ScelEnumEquivalents_test.cpp\
-  tests/unit/clex/ScelEnum_test.cpp\
-  tests/unit/clex/SuperConfigEnum_test.cpp\
-  tests/unit/clex/Supercell_test.cpp\
-  tests/unit/gtest_main_run_all.cpp
+# casm_unit_clex_SOURCES = \
+#   tests/unit/clex/ChemicalReference_test.cpp\
+#   tests/unit/clex/Clexulator_test.cpp\
+#   tests/unit/clex/ConfigEnumAllOccupations_test.cpp\
+#   tests/unit/clex/ConfigEnumEquivalents_test.cpp\
+#   tests/unit/clex/ConfigEnumInterpolation_test.cpp\
+#   tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
+#   tests/unit/clex/ConfigIO_test.cpp\
+#   tests/unit/clex/Configuration_test.cpp\
+#   tests/unit/clex/NeighborList_test.cpp\
+#   tests/unit/clex/PrimClex_test.cpp\
+#   tests/unit/clex/ScelEnumEquivalents_test.cpp\
+#   tests/unit/clex/ScelEnum_test.cpp\
+#   tests/unit/clex/SuperConfigEnum_test.cpp\
+#   tests/unit/clex/Supercell_test.cpp\
+#   tests/unit/gtest_main_run_all.cpp
 
-casm_unit_clex_LDADD = \
-  libcasm.la\
-  libcasmtesting.la\
-  libgtest.la\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)
+# casm_unit_clex_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.la\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)
 
-EXTRA_DIST += \
-  tests/unit/clex/ConfigEnumAllOccupations_test_cases.json\
-  tests/unit/clex/ConfigEnumEquivalents_test_cases.json\
-  tests/unit/clex/test_Clexulator.cc
+# EXTRA_DIST += \
+#   tests/unit/clex/ConfigEnumAllOccupations_test_cases.json\
+#   tests/unit/clex/ConfigEnumEquivalents_test_cases.json\
+#   tests/unit/clex/test_Clexulator.cc
 
 
+# TESTS += \
+#   casm_unit_clusterography
 # check_PROGRAMS += \
 #   casm_unit_clusterography
 
@@ -151,9 +150,9 @@ EXTRA_DIST += \
 #   -I$(top_srcdir)/tests/unit/
 
 # casm_unit_clusterography_SOURCES = \
-#   tests/unit/unit_test.cpp\
 #   tests/unit/clusterography/ClusterSpecsParser_test.cpp\
-#   tests/unit/clusterography/Clusterography_test.cpp
+#   tests/unit/clusterography/Clusterography_test.cpp\
+#   tests/unit/gtest_main_run_all.cpp
 
 # casm_unit_clusterography_LDADD = \
 #   libcasm.la\
@@ -162,39 +161,34 @@ EXTRA_DIST += \
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
 #   $(BOOST_REGEX_LIB)\
-#   $(BOOST_CHRONO_LIB)\
-#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+#   $(BOOST_CHRONO_LIB)
 
 # EXTRA_DIST += \
 #   tests/unit/clusterography/test_cases.json
 
-# TESTS += \
-#   tests/unit/clusterography/run_test_clusterography
+TESTS += \
+  casm_unit_container
+check_PROGRAMS += \
+  casm_unit_container
 
-# check_PROGRAMS += \
-#   casm_unit_container
+casm_unit_container_CPPFLAGS = \
+  $(AM_CPPFLAGS)\
+  -I$(top_srcdir)/tests/unit/
 
-# casm_unit_container_CPPFLAGS = \
-#   $(AM_CPPFLAGS)\
-#   -I$(top_srcdir)/tests/unit/
+casm_unit_container_SOURCES = \
+  tests/unit/container/Counter_test.cpp\
+  tests/unit/container/Enumerator_test.cpp\
+  tests/unit/gtest_main_run_all.cpp
 
-# casm_unit_container_SOURCES = \
-#   tests/unit/unit_test.cpp\
-#   tests/unit/container/Counter_test.cpp\
-#   tests/unit/container/Enumerator_test.cpp
+casm_unit_container_LDADD = \
+  libcasm.la\
+  libcasmtesting.la\
+  $(BOOST_SYSTEM_LIB)\
+  $(BOOST_FILESYSTEM_LIB)\
+  $(BOOST_PROGRAM_OPTIONS_LIB)\
+  $(BOOST_REGEX_LIB)\
+  $(BOOST_CHRONO_LIB)
 
-# casm_unit_container_LDADD = \
-#   libcasm.la\
-#   libcasmtesting.la\
-#   $(BOOST_SYSTEM_LIB)\
-#   $(BOOST_FILESYSTEM_LIB)\
-#   $(BOOST_PROGRAM_OPTIONS_LIB)\
-#   $(BOOST_REGEX_LIB)\
-#   $(BOOST_CHRONO_LIB)\
-#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
-
-# TESTS += \
-#   tests/unit/container/run_test_container
 
 # check_PROGRAMS += \
 #   casm_unit_crystallography

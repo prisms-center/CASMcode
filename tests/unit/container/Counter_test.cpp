@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// Dependencies
 #include "casm/container/Array.hh"
@@ -12,9 +11,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(CounterTest)
-
-BOOST_AUTO_TEST_CASE(ArrayIntCounter) {
+TEST(CounterTest, ArrayIntCounter) {
   {
     int size = 3;
     int count = 0;
@@ -23,14 +20,14 @@ BOOST_AUTO_TEST_CASE(ArrayIntCounter) {
     Array<int> increment(size, 1);
     Counter<Array<int> > counter(initial, final, increment);
 
-    BOOST_CHECK_EQUAL(counter.size(), size);
+    EXPECT_EQ(counter.size(), size);
 
     do {
       count++;
     }
     while(++counter);
 
-    BOOST_CHECK_EQUAL(count, 8);
+    EXPECT_EQ(count, 8);
   }
 
   {
@@ -46,7 +43,7 @@ BOOST_AUTO_TEST_CASE(ArrayIntCounter) {
     }
     while(++counter);
 
-    BOOST_CHECK_EQUAL(count, 27);
+    EXPECT_EQ(count, 27);
   }
 
   {
@@ -66,11 +63,11 @@ BOOST_AUTO_TEST_CASE(ArrayIntCounter) {
     }
     while(++counter);
 
-    BOOST_CHECK_EQUAL(count, 27);
+    EXPECT_EQ(count, 27);
   }
 }
 
-BOOST_AUTO_TEST_CASE(stdVectorDoubleCounter) {
+TEST(CounterTest, stdVectorDoubleCounter) {
   {
     int size = 3;
     int count = 0;
@@ -79,14 +76,14 @@ BOOST_AUTO_TEST_CASE(stdVectorDoubleCounter) {
     Array<double> increment(size, 0.4);
     Counter<Array<double> > counter(initial, final, increment);
 
-    BOOST_CHECK_EQUAL(counter.size(), size);
+    EXPECT_EQ(counter.size(), size);
 
     do {
       count++;
     }
     while(++counter);
 
-    BOOST_CHECK_EQUAL(count, 27);
+    EXPECT_EQ(count, 27);
   }
 
   {
@@ -102,7 +99,7 @@ BOOST_AUTO_TEST_CASE(stdVectorDoubleCounter) {
     }
     while(++counter);
 
-    BOOST_CHECK_EQUAL(count, 27);
+    EXPECT_EQ(count, 27);
   }
 
   {
@@ -122,8 +119,6 @@ BOOST_AUTO_TEST_CASE(stdVectorDoubleCounter) {
     }
     while(++counter);
 
-    BOOST_CHECK_EQUAL(count, 27);
+    EXPECT_EQ(count, 27);
   }
 }
-
-BOOST_AUTO_TEST_SUITE_END()
