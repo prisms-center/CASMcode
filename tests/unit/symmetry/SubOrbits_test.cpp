@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/symmetry/SubOrbits.hh"
@@ -22,13 +21,12 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(SubOrbitsTest)
 
 /// Test individual parts of MakeConfigSubOrbitGenerators
-BOOST_AUTO_TEST_CASE(ZrOProj) {
+TEST(SubOrbitsTest, ZrOProj) {
 
   /// Make test project
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
   test::ZrOProj proj;
   proj.check_init();
   proj.check_composition();
@@ -39,11 +37,11 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
   const Lattice &lat = prim.lattice();
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
+  fs::path bspecs_path = autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -53,8 +51,8 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
     primclex.crystallography_tol(),
     std::back_inserter(orbits),
     primclex.log());
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(orbits.size(), 74); // value checked with casm0.2x
+  EXPECT_EQ(true, true);
+  EXPECT_EQ(orbits.size(), 74); // value checked with casm0.2x
 
   //print_clust(orbits.begin(), orbits.end(), std::cout, PrototypePrinter<IntegralCluster>());
 
@@ -66,8 +64,8 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
     primclex.crystallography_tol(),
     std::back_inserter(diff_trans_orbits),
     &primclex);
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
+  EXPECT_EQ(true, true);
+  EXPECT_EQ(diff_trans_orbits.size(), 4);
   // O-O pair within layer and O-O pair between layers
   // O-O and O-Va for each case -> 4 total diff_trans_orbits
 
@@ -103,26 +101,26 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
 
     {
       std::vector<IntegralCluster> generators;
-      BOOST_CHECK_EQUAL(true, true);
+      EXPECT_EQ(true, true);
       make_suborbit_generators(orbits[0], config, std::back_inserter(generators));
       //std::cout << "orbit 0: \n" << orbits[0].prototype() << std::endl;
-      BOOST_CHECK_EQUAL(generators.size(), 1);
+      EXPECT_EQ(generators.size(), 1);
     }
 
     {
       std::vector<IntegralCluster> generators;
-      BOOST_CHECK_EQUAL(true, true);
+      EXPECT_EQ(true, true);
       make_suborbit_generators(orbits[1], config, std::back_inserter(generators));
       //std::cout << "orbit 1: \n" << orbits[1].prototype() << std::endl;
-      BOOST_CHECK_EQUAL(generators.size(), 2);
+      EXPECT_EQ(generators.size(), 2);
     }
 
     {
       std::vector<IntegralCluster> generators;
-      BOOST_CHECK_EQUAL(true, true);
+      EXPECT_EQ(true, true);
       make_suborbit_generators(orbits[2], config, std::back_inserter(generators));
       //std::cout << "orbit 2: \n" << orbits[2].prototype() << std::endl;
-      BOOST_CHECK_EQUAL(generators.size(), 1);
+      EXPECT_EQ(generators.size(), 1);
     }
 
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
@@ -137,7 +135,7 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
       prim_config.supercell().prim_grid(),
       prim_config.crystallography_tol());
 
-    BOOST_CHECK_EQUAL(true, true);
+    EXPECT_EQ(true, true);
 
     //std::cout << "config: \n" << config << std::endl;
     //std::cout << "prim_config: \n" << prim_config << std::endl;
@@ -162,8 +160,8 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
       for(const auto &orbit : diff_trans_orbits) {
         gen(orbit, std::back_inserter(prim_scel_suborbit_generators));
       }
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(prim_scel_suborbit_generators.size(), 4);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(prim_scel_suborbit_generators.size(), 4);
       // prim and prim_config.supercell() are same size and shape
       // O-Va hop in c direction, O-O hop in c direction
       // O-Va hop in a direction, O-O hop in a direction; a = b
@@ -183,8 +181,8 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
           prim_config_fg.end(),
           std::back_inserter(prim_config_suborbit_generators));
       }
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(prim_config_suborbit_generators.size(), 6);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(prim_config_suborbit_generators.size(), 6);
       // O-Va hop in c direction, O-O hop in c direction
       // In Va layer: O-Va hop in a direction, O-O hop in a direction; a = b
       // In O layer: O-Va hop in a direction, O-O hop in a direction; a = b
@@ -216,8 +214,8 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
           config_subgroup.begin(), config_subgroup.end(),
           std::back_inserter(config_suborbit_generators));
       }
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 14);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(config_suborbit_generators.size(), 14);
       // O-Va hop in c direction, O-O hop in c direction
       // In Va layer: O-Va hop in a/b/a-b directions, O-O hop in a/b/a-b directions; a -=! b =! a-b
       // In O layer: O-Va hop in a/b/a-b directions, O-O hop in a/b/a-b directions; a -=! b =! a-b
@@ -233,8 +231,8 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
         diff_trans_orbits.begin(),
         diff_trans_orbits.end(),
         std::back_inserter(config_suborbit_generators));
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 14);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(config_suborbit_generators.size(), 14);
       // checked against prim_config -> config test
 
       //print_res("config_suborbit_generators 1", config_suborbit_generators, scel_sym_compare);
@@ -248,8 +246,8 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
         diff_trans_orbits.end(),
         config,
         std::back_inserter(config_suborbit_generators));
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 14);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(config_suborbit_generators.size(), 14);
       // checked against prim_config -> config test
 
       //print_res("config_suborbit_generators 2", config_suborbit_generators, scel_sym_compare);
@@ -260,10 +258,10 @@ BOOST_AUTO_TEST_CASE(ZrOProj) {
 
 /// FCC structure with pure species A background
 /// and nearest-neighbor hop species A, B, and C
-BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
+TEST(SubOrbitsTest, FCCTernaryProj) {
 
   /// Make test project
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
   test::FCCTernaryProj proj;
   proj.check_init();
   proj.check_composition();
@@ -274,10 +272,10 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
   const Lattice &lat = prim.lattice();
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/FCCTernary_bspecs_0.json";
+  fs::path bspecs_path = autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -287,8 +285,8 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
     primclex.crystallography_tol(),
     std::back_inserter(orbits),
     primclex.log());
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(orbits.size(), 31); // value checked with casm0.2x
+  EXPECT_EQ(true, true);
+  EXPECT_EQ(orbits.size(), 31); // value checked with casm0.2x
 
   //print_clust(orbits.begin(), orbits.end(), std::cout, PrototypePrinter<IntegralCluster>());
 
@@ -300,8 +298,8 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
     primclex.crystallography_tol(),
     std::back_inserter(diff_trans_orbits),
     &primclex);
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 6);
+  EXPECT_EQ(true, true);
+  EXPECT_EQ(diff_trans_orbits.size(), 6);
   // nearest neighbor A-A, A-B, A-C, B-B, B-C, C-C pairs; total of 6
 
   /*
@@ -351,7 +349,7 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
       prim_config.supercell().prim_grid(),
       prim_config.crystallography_tol());
 
-    BOOST_CHECK_EQUAL(true, true);
+    EXPECT_EQ(true, true);
 
     //std::cout << "config: \n" << config << std::endl;
     //std::cout << "prim_config: \n" << prim_config << std::endl;
@@ -376,8 +374,8 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
       for(const auto &orbit : diff_trans_orbits) {
         gen(orbit, std::back_inserter(prim_scel_suborbit_generators));
       }
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(prim_scel_suborbit_generators.size(), 6);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(prim_scel_suborbit_generators.size(), 6);
       // prim and prim_config.supercell() are equivalent
       // nearest neighbor A-A, A-B, A-C, B-B, B-C, C-C pairs; total of 6
 
@@ -395,8 +393,8 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
           prim_config_fg.end(),
           std::back_inserter(prim_config_suborbit_generators));
       }
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(prim_config_suborbit_generators.size(), 6);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(prim_config_suborbit_generators.size(), 6);
       // prim_config.supercell() and prim_config are equivalent
       // nearest neighbor A-A, A-B, A-C, B-B, B-C, C-C pairs; total of 6
 
@@ -426,8 +424,8 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
           config_subgroup.begin(), config_subgroup.end(),
           std::back_inserter(config_suborbit_generators));
       }
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 24);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(config_suborbit_generators.size(), 24);
       // b-c, a, a-b, and c directions; b = c != a
 
       //print_res("config_suborbit_generators 0", config_suborbit_generators, scel_sym_compare);
@@ -440,8 +438,8 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
         diff_trans_orbits.begin(),
         diff_trans_orbits.end(),
         std::back_inserter(config_suborbit_generators));
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 24);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(config_suborbit_generators.size(), 24);
 
       //print_res("config_suborbit_generators 1", config_suborbit_generators, scel_sym_compare);
       // checked against prim_config -> config test
@@ -455,8 +453,8 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
         diff_trans_orbits.end(),
         config,
         std::back_inserter(config_suborbit_generators));
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 24);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(config_suborbit_generators.size(), 24);
 
       //print_res("config_suborbit_generators 2", config_suborbit_generators, scel_sym_compare);
       // checked against prim_config -> config test
@@ -467,10 +465,10 @@ BOOST_AUTO_TEST_CASE(FCCTernaryProj) {
 
 /// FCC structure with L12 ordering
 /// and nearest-neighbor ternary hop of species A
-BOOST_AUTO_TEST_CASE(L12Proj) {
+TEST(SubOrbitsTest, L12Proj) {
 
   /// Make test project
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
   test::FCCTernaryProj proj;
   proj.check_init();
   proj.check_composition();
@@ -481,10 +479,10 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
   const Lattice &lat = prim.lattice();
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  fs::path bspecs_path = "tests/unit/kinetics/FCCTernary_bspecs_0.json";
+  fs::path bspecs_path = autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -494,8 +492,8 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
     primclex.crystallography_tol(),
     std::back_inserter(orbits),
     primclex.log());
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(orbits.size(), 31); // same as FCC
+  EXPECT_EQ(true, true);
+  EXPECT_EQ(orbits.size(), 31); // same as FCC
 
   // Make FCC standard unit cell
   Eigen::Matrix3i superlattice_matrix;
@@ -515,8 +513,8 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
     primclex.crystallography_tol(),
     std::back_inserter(diff_trans_orbits),
     &primclex);
-  BOOST_CHECK_EQUAL(true, true);
-  BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 10);
+  EXPECT_EQ(true, true);
+  EXPECT_EQ(diff_trans_orbits.size(), 10);
   // Nearest neighbor triplet
   // A-A-A, A-A-B, A-A-C, A-B-B, A-B-C, A-C-C
   // B-B-B, B-B-C, B-C-C, C-C-C
@@ -565,7 +563,7 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
       prim_config.supercell().prim_grid(),
       prim_config.crystallography_tol());
 
-    BOOST_CHECK_EQUAL(true, true);
+    EXPECT_EQ(true, true);
 
     /// Print out a POSCAR file
     // fs::ofstream file;
@@ -599,8 +597,8 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
       for(const auto &orbit : diff_trans_orbits) {
         gen(orbit, std::back_inserter(prim_scel_suborbit_generators));
       }
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(prim_scel_suborbit_generators.size(), 10);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(prim_scel_suborbit_generators.size(), 10);
       // prim is equivalent to prim_config.supercell()
 
       //print_res("prim_scel_suborbit_generators", prim_scel_suborbit_generators, prim_sym_compare);
@@ -626,8 +624,8 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
         prim_config_fg.end(),
         std::back_inserter(prim_config_suborbit_generators));
 
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(prim_config_suborbit_generators.size(), 3);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(prim_config_suborbit_generators.size(), 3);
       // Rotation on cluster with all B sites
       // Rotation on 1A/2B cluster sites with A going from A site to B site
       // Rotation on 1A/2B cluster sites with A going from B site to B site
@@ -658,8 +656,8 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
           config_subgroup.begin(), config_subgroup.end(),
           std::back_inserter(config_suborbit_generators));
       }
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 7);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(config_suborbit_generators.size(), 7);
       // LB = B site on long side; SB = B site on short site; A = A site
       // Cluster of LB-SB-A with A species moving from SB to LB site
       // Cluster of LB-LB-A with A species moving from LB to LB site
@@ -679,8 +677,8 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
       MakeConfigSubOrbitGenerators{bg_config}(
         diff_trans_orbits[6],
         std::back_inserter(config_suborbit_generators));
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 7);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(config_suborbit_generators.size(), 7);
       // checked against prim_config -> config test
 
       //print_res("config_suborbit_generators 1", config_suborbit_generators, scel_sym_compare);
@@ -693,8 +691,8 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
         diff_trans_orbits[6],
         bg_config,
         std::back_inserter(config_suborbit_generators));
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(config_suborbit_generators.size(), 7);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(config_suborbit_generators.size(), 7);
       // checked against prim_config -> config test
 
       //print_res("config_suborbit_generators 2", config_suborbit_generators, scel_sym_compare);
@@ -703,4 +701,3 @@ BOOST_AUTO_TEST_CASE(L12Proj) {
   }
 }
 
-BOOST_AUTO_TEST_SUITE_END()
