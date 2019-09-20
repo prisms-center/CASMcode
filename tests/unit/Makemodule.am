@@ -39,6 +39,8 @@ libcasmtesting_la_CPPFLAGS = \
 libcasmtesting_la_LIBADD = \
 						  libgtest.la
 
+# TESTS += \
+#   casm_unit_App
 # check_PROGRAMS += \
 #   casm_unit_App
 
@@ -72,11 +74,10 @@ libcasmtesting_la_LIBADD = \
 #   tests/unit/App/TestEnum.hh\
 #   tests/unit/App/TestEnum_impl.hh
 
-# TESTS += \
-#   tests/unit/App/run_test_App
-
 
 # check_PROGRAMS += \
+#   casm_unit_casm_io
+# TESTS += \
 #   casm_unit_casm_io
 
 # casm_unit_casm_io_CPPFLAGS = \
@@ -99,9 +100,9 @@ libcasmtesting_la_LIBADD = \
 #   $(BOOST_REGEX_LIB)\
 #   $(BOOST_CHRONO_LIB)
 
-# TESTS += \
-#   casm_unit_casm_io
 
+TESTS += \
+		 casm_unit_clex
 check_PROGRAMS += \
   casm_unit_clex
 
@@ -113,22 +114,22 @@ casm_unit_clex_SOURCES = \
   tests/unit/clex/ChemicalReference_test.cpp\
   tests/unit/clex/Clexulator_test.cpp\
   tests/unit/clex/ConfigEnumAllOccupations_test.cpp\
+  tests/unit/clex/ConfigEnumEquivalents_test.cpp\
+  tests/unit/clex/ConfigEnumInterpolation_test.cpp\
+  tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
+  tests/unit/clex/ConfigIO_test.cpp\
+  tests/unit/clex/Configuration_test.cpp\
+  tests/unit/clex/NeighborList_test.cpp\
+  tests/unit/clex/PrimClex_test.cpp\
+  tests/unit/clex/ScelEnumEquivalents_test.cpp\
+  tests/unit/clex/ScelEnum_test.cpp\
+  tests/unit/clex/SuperConfigEnum_test.cpp\
+  tests/unit/clex/Supercell_test.cpp\
   tests/unit/gtest_main_run_all.cpp
-  # tests/unit/clex/ConfigEnumEquivalents_test.cpp\
-  # tests/unit/clex/ConfigEnumInterpolation_test.cpp\
-  # tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
-  # tests/unit/clex/ConfigIO_test.cpp\
-  # tests/unit/clex/Configuration_test.cpp\
-  # tests/unit/clex/NeighborList_test.cpp\
-  # tests/unit/clex/PrimClex_test.cpp\
-  # tests/unit/clex/ScelEnumEquivalents_test.cpp\
-  # tests/unit/clex/ScelEnum_test.cpp\
-  # tests/unit/clex/SuperConfigEnum_test.cpp\
-  # tests/unit/clex/Supercell_test.cpp
 
 casm_unit_clex_LDADD = \
   libcasm.la\
-  libcasmtesting.a\
+  libcasmtesting.la\
   libgtest.la\
   $(BOOST_SYSTEM_LIB)\
   $(BOOST_FILESYSTEM_LIB)\
@@ -141,8 +142,6 @@ EXTRA_DIST += \
   tests/unit/clex/ConfigEnumEquivalents_test_cases.json\
   tests/unit/clex/test_Clexulator.cc
 
-TESTS += \
-  tests/unit/clex/run_test_clex
 
 # check_PROGRAMS += \
 #   casm_unit_clusterography
@@ -158,7 +157,7 @@ TESTS += \
 
 # casm_unit_clusterography_LDADD = \
 #   libcasm.la\
-#   libcasmtesting.a\
+#   libcasmtesting.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -186,7 +185,7 @@ TESTS += \
 
 # casm_unit_container_LDADD = \
 #   libcasm.la\
-#   libcasmtesting.a\
+#   libcasmtesting.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -219,7 +218,7 @@ TESTS += \
 
 # casm_unit_crystallography_LDADD = \
 #   libcasm.la\
-#   libcasmtesting.a\
+#   libcasmtesting.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -261,7 +260,7 @@ TESTS += \
 
 # casm_unit_database_LDADD = \
 #   libcasm.la\
-#   libcasmtesting.a\
+#   libcasmtesting.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -289,7 +288,7 @@ TESTS += \
 
 # casm_unit_kinetics_LDADD = \
 #   libcasm.la\
-#   libcasmtesting.a\
+#   libcasmtesting.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -325,7 +324,7 @@ TESTS += \
 
 # casm_unit_misc_LDADD = \
 #   libcasm.la\
-#   libcasmtesting.a\
+#   libcasmtesting.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -350,7 +349,7 @@ TESTS += \
 
 # casm_unit_monte_carlo_LDADD = \
 #   libcasm.la\
-#   libcasmtesting.a\
+#   libcasmtesting.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -382,7 +381,7 @@ TESTS += \
 
 # casm_unit_symmetry_LDADD = \
 #   libcasm.la\
-#   libcasmtesting.a\
+#   libcasmtesting.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\
@@ -406,7 +405,7 @@ TESTS += \
 
 # casm_unit_system_LDADD = \
 #   libcasm.la\
-#   libcasmtesting.a\
+#   libcasmtesting.la\
 #   $(BOOST_SYSTEM_LIB)\
 #   $(BOOST_FILESYSTEM_LIB)\
 #   $(BOOST_PROGRAM_OPTIONS_LIB)\

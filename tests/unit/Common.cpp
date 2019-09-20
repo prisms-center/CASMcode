@@ -175,6 +175,7 @@ namespace test {
     EXPECT_EQ(m_p.exit_code(), 0);
   }
 
+
   /// \brief Default checks that enumerating supercells and configurations can
   /// be run for '--max 2' without error, but doesn't check results
   void Proj::check_enum() {

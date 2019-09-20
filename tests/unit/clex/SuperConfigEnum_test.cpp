@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/SuperConfigEnum.hh"
@@ -12,9 +11,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(SuperConfigEnumTest)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(SuperConfigEnumTest, Test1) {
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -52,7 +49,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   {
     SuperConfigEnum e(target_scel, sub_configs.begin(), sub_configs.end());
-    BOOST_CHECK_EQUAL(pow(2, 8), std::distance(e.begin(), e.end()));
+    EXPECT_EQ(pow(2, 8), std::distance(e.begin(), e.end()));
   }
 
   {
@@ -68,9 +65,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     //  std::cout << "counter: " << val.second << "  occ: " << val.first.occupation() << std::endl;
     //}
 
-    BOOST_CHECK_EQUAL(cmap.size(), 22);
+    EXPECT_EQ(cmap.size(), 22);
   }
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

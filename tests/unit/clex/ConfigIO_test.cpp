@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/ConfigIO.hh"
@@ -18,9 +17,10 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(ConfigIOTest)
+//TODO: What exactly are we testing here?
+//some tests don't contain any assertions...
 
-BOOST_AUTO_TEST_CASE(DatumFormatters) {
+TEST(ConfigIOTest, DatumFormatters) {
 
   using namespace ConfigIO;
 
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(DatumFormatters) {
   auto check = [&](const BaseDatumFormatter<Configuration> &formatter) {
     auto prev_size = dict.size();
     dict.insert(formatter);
-    BOOST_CHECK_MESSAGE(prev_size + 1 == dict.size(), formatter.name());
+    EXPECT_TRUE(prev_size + 1 == dict.size()) << formatter.name();
   };
 
   // String
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(DatumFormatters) {
 
 }
 
-BOOST_AUTO_TEST_CASE(Make) {
+TEST(ConfigIOTest, Make) {
 
   std::stringstream ss;
   typedef notstd::cloneable_ptr< BaseDatumFormatter<Configuration> > cloner;
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(Make) {
   //std::cout << ss.str() << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(AllTest) {
+TEST(ConfigIOTest, AllTest) {
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -232,5 +232,3 @@ BOOST_AUTO_TEST_CASE(AllTest) {
   //std::cout << ss.str() << std::endl;
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

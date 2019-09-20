@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 #include "casm/clex/ConfigEnumAllOccupations.hh"
@@ -18,16 +19,15 @@
 using namespace CASM;
 using namespace test;
 
-
 TEST(ConfigEnumTest, ConfigEnumAllOccupationsTest) {
 
   // tests ConfigEnumAllOccupations and ConfigEnumEquivalents
 
   // read test file
-  fs::path test_cases_path("tests/unit/clex/ConfigEnumAllOccupations_test_cases.json");
+  fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clex/ConfigEnumAllOccupations_test_cases.json");
   jsonParser tests(test_cases_path);
   double tol = TOL;
-  fs::path test_proj_dir("tests/unit/clex/test_proj");
+  fs::path test_proj_dir(autotools::abs_srcdir() + "/tests/unit/clex/test_proj");
 
   for(auto test_it = tests.begin(); test_it != tests.end(); ++test_it) {
 

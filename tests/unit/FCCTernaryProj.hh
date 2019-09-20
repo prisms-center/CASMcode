@@ -2,6 +2,7 @@
 #define CASMtest_FCCTernaryProj
 
 #include "gtest/gtest.h"
+#include "autotools.hh"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>

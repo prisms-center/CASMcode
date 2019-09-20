@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/PrimClex.hh"
@@ -13,17 +12,14 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(PrimClexTest)
-
-BOOST_AUTO_TEST_CASE(Basics) {
+TEST(PrimClexTest, Basics) {
 
   Structure prim(test::FCC_ternary_prim());
-  BOOST_CHECK_EQUAL(prim.basis().size(), 1);
+  EXPECT_EQ(prim.basis().size(), 1);
+
 
   // Construct from prim
   PrimClex primclex(prim, null_log());
-  BOOST_CHECK_EQUAL(primclex.prim().basis().size(), 1);
+  EXPECT_EQ(primclex.prim().basis().size(), 1);
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()
