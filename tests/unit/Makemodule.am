@@ -190,29 +190,71 @@ libcasmtesting_la_LIBADD = \
 #   $(BOOST_CHRONO_LIB)
 
 
-TESTS += \
-  casm_unit_crystallography
-check_PROGRAMS += \
-  casm_unit_crystallography
+# TESTS += \
+#   casm_unit_crystallography
+# check_PROGRAMS += \
+#   casm_unit_crystallography
 
-casm_unit_crystallography_CPPFLAGS = \
+# casm_unit_crystallography_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
+
+# casm_unit_crystallography_SOURCES = \
+#   tests/unit/crystallography/Coordinate_test.cpp\
+#   tests/unit/crystallography/Lattice_test.cpp\
+#   tests/unit/crystallography/Molecule_test.cpp\
+#   tests/unit/crystallography/Site_test.cpp\
+#   tests/unit/crystallography/Structure_test.cpp\
+#   tests/unit/crystallography/SupercellEnumerator_test.cpp\
+#   tests/unit/crystallography/UnitCellCoord_test.cpp\
+#   tests/unit/crystallography/BasicStructure_test.cpp\
+#   tests/unit/crystallography/LatticeEnumEquivalents_test.cpp\
+#   tests/unit/crystallography/Niggli_test.cpp\
+#   tests/unit/gtest_main_run_all.cpp
+
+# casm_unit_crystallography_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.la\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)
+
+# EXTRA_DIST += \
+#   tests/unit/crystallography/POS1.txt\
+#   tests/unit/crystallography/POS1_out.txt\
+#   tests/unit/crystallography/POS1_vasp5_out.txt\
+#   tests/unit/crystallography/PRIM1.txt\
+#   tests/unit/crystallography/PRIM1_out.txt\
+#   tests/unit/crystallography/PRIM2.txt\
+#   tests/unit/crystallography/PRIM3.txt\
+#   tests/unit/crystallography/PRIM4.txt\
+#   tests/unit/crystallography/PRIM5.txt\
+#   tests/unit/crystallography/test_cases.json
+
+
+
+TESTS += \
+  casm_unit_database
+check_PROGRAMS += \
+  casm_unit_database
+
+casm_unit_database_CPPFLAGS = \
   $(AM_CPPFLAGS)\
   -I$(top_srcdir)/tests/unit/
 
-casm_unit_crystallography_SOURCES = \
-  tests/unit/crystallography/Coordinate_test.cpp\
-  tests/unit/crystallography/Lattice_test.cpp\
-  tests/unit/crystallography/Molecule_test.cpp\
-  tests/unit/crystallography/Site_test.cpp\
-  tests/unit/crystallography/Structure_test.cpp\
-  tests/unit/crystallography/SupercellEnumerator_test.cpp\
-  tests/unit/crystallography/UnitCellCoord_test.cpp\
-  tests/unit/crystallography/BasicStructure_test.cpp\
-  tests/unit/crystallography/LatticeEnumEquivalents_test.cpp\
-  tests/unit/crystallography/Niggli_test.cpp\
+casm_unit_database_SOURCES = \
+  tests/unit/database/ScelDatabase_test.cpp\
+  tests/unit/database/jsonConfigDatabase_test.cpp\
+  tests/unit/database/jsonDiffTransOrbitDatabase_test.cpp\
+  tests/unit/database/jsonPropertiesDatabase_test.cpp\
+  tests/unit/database/jsonDiffTransConfigDatabase_test.cpp\
+  tests/unit/database/Selection_test.cpp\
+  tests/unit/database/jsonScelDatabase_test.cpp\
   tests/unit/gtest_main_run_all.cpp
 
-casm_unit_crystallography_LDADD = \
+casm_unit_database_LDADD = \
   libcasm.la\
   libcasmtesting.la\
   $(BOOST_SYSTEM_LIB)\
@@ -221,49 +263,9 @@ casm_unit_crystallography_LDADD = \
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)
 
-EXTRA_DIST += \
-  tests/unit/crystallography/POS1.txt\
-  tests/unit/crystallography/POS1_out.txt\
-  tests/unit/crystallography/POS1_vasp5_out.txt\
-  tests/unit/crystallography/PRIM1.txt\
-  tests/unit/crystallography/PRIM1_out.txt\
-  tests/unit/crystallography/PRIM2.txt\
-  tests/unit/crystallography/PRIM3.txt\
-  tests/unit/crystallography/PRIM4.txt\
-  tests/unit/crystallography/PRIM5.txt\
-  tests/unit/crystallography/test_cases.json
 
 
 
-# check_PROGRAMS += \
-#   casm_unit_database
-
-# casm_unit_database_CPPFLAGS = \
-#   $(AM_CPPFLAGS)\
-#   -I$(top_srcdir)/tests/unit/
-
-# casm_unit_database_SOURCES = \
-#   tests/unit/unit_test.cpp\
-#   tests/unit/database/ScelDatabase_test.cpp\
-#   tests/unit/database/Selection_test.cpp\
-#   tests/unit/database/jsonConfigDatabase_test.cpp\
-#   tests/unit/database/jsonDiffTransConfigDatabase_test.cpp\
-#   tests/unit/database/jsonDiffTransOrbitDatabase_test.cpp\
-#   tests/unit/database/jsonPropertiesDatabase_test.cpp\
-#   tests/unit/database/jsonScelDatabase_test.cpp
-
-# casm_unit_database_LDADD = \
-#   libcasm.la\
-#   libcasmtesting.la\
-#   $(BOOST_SYSTEM_LIB)\
-#   $(BOOST_FILESYSTEM_LIB)\
-#   $(BOOST_PROGRAM_OPTIONS_LIB)\
-#   $(BOOST_REGEX_LIB)\
-#   $(BOOST_CHRONO_LIB)\
-#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
-
-# TESTS += \
-#   tests/unit/database/run_test_database
 
 # check_PROGRAMS += \
 #   casm_unit_kinetics
