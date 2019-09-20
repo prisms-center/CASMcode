@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 ///   the command line executable
@@ -16,7 +15,6 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(OccLocationTest)
 
 void random_config(Configuration &config, Monte::Conversions &convert, MTRand &mtrand) {
   config.init_occupation();
@@ -43,7 +41,7 @@ void dilute_config(Configuration &config, Monte::Conversions &convert, MTRand &m
 void check_occ_init(Configuration &config, Monte::OccLocation &occ_loc, Monte::Conversions &convert, Monte::OccCandidateList &cand_list) {
   // check OccLocation initialization
   for(Index mol_id = 0; mol_id < occ_loc.size(); ++mol_id) {
-    BOOST_REQUIRE_EQUAL(mol_id, occ_loc.mol(mol_id).id);
+    ASSERT_EQ(mol_id, occ_loc.mol(mol_id).id);
   }
 
   for(Index l = 0; l < config.size(); ++l) {
@@ -53,17 +51,17 @@ void check_occ_init(Configuration &config, Monte::OccLocation &occ_loc, Monte::C
     }
     auto &mol = occ_loc.mol(mol_id);
 
-    BOOST_REQUIRE_EQUAL(mol.l, l);
-    BOOST_REQUIRE_EQUAL(mol.id, mol_id);
+    ASSERT_EQ(mol.l, l);
+    ASSERT_EQ(mol.id, mol_id);
 
     Index asym = convert.l_to_asym(l);
-    BOOST_REQUIRE_EQUAL(asym, mol.asym);
+    ASSERT_EQ(asym, mol.asym);
 
-    BOOST_REQUIRE_EQUAL(config.occ(l), convert.occ_index(asym, mol.species_index));
-    BOOST_REQUIRE_EQUAL(convert.species_index(asym, config.occ(l)), mol.species_index);
+    ASSERT_EQ(config.occ(l), convert.occ_index(asym, mol.species_index));
+    ASSERT_EQ(convert.species_index(asym, config.occ(l)), mol.species_index);
 
     Index cand_index = cand_list.index(mol.asym, mol.species_index);
-    BOOST_REQUIRE_EQUAL(mol.id, occ_loc.mol_id(cand_index, mol.loc));
+    ASSERT_EQ(mol.id, occ_loc.mol_id(cand_index, mol.loc));
   }
 }
 
@@ -74,18 +72,18 @@ void check_occ(Configuration &config, Monte::OccEvent &e, Monte::OccLocation &oc
     Index mol_id = occ_loc.l_to_mol_id(l);
     auto &mol = occ_loc.mol(mol_id);
 
-    BOOST_REQUIRE_EQUAL(mol.l, l);
-    BOOST_REQUIRE_EQUAL(mol.id, mol_id);
-    BOOST_REQUIRE_EQUAL(occ.mol_id, mol_id);
+    ASSERT_EQ(mol.l, l);
+    ASSERT_EQ(mol.id, mol_id);
+    ASSERT_EQ(occ.mol_id, mol_id);
 
     Index asym = convert.l_to_asym(l);
-    BOOST_REQUIRE_EQUAL(asym, mol.asym);
+    ASSERT_EQ(asym, mol.asym);
 
-    BOOST_REQUIRE_EQUAL(config.occ(l), convert.occ_index(asym, mol.species_index));
-    BOOST_REQUIRE_EQUAL(convert.species_index(asym, config.occ(l)), mol.species_index);
+    ASSERT_EQ(config.occ(l), convert.occ_index(asym, mol.species_index));
+    ASSERT_EQ(convert.species_index(asym, config.occ(l)), mol.species_index);
 
     Index cand_index = cand_list.index(mol.asym, mol.species_index);
-    BOOST_REQUIRE_EQUAL(mol.id, occ_loc.mol_id(cand_index, mol.loc));
+    ASSERT_EQ(mol.id, occ_loc.mol_id(cand_index, mol.loc));
   }
 }
 
@@ -133,31 +131,30 @@ void run_case(ProjType &proj, ConfigInit f, MTRand &mtrand) {
 }
 
 
-BOOST_AUTO_TEST_CASE(ZrO_RandomConfig) {
+TEST(OccLocationTest, ZrO_RandomConfig) {
 
   MTRand mtrand;
   test::ZrOProj proj;
   run_case(proj, random_config, mtrand);
 }
 
-BOOST_AUTO_TEST_CASE(ZrO_DiluteConfig) {
+TEST(OccLocationTest, ZrO_DiluteConfig) {
 
   MTRand mtrand;
   test::ZrOProj proj;
   run_case(proj, dilute_config, mtrand);
 }
-BOOST_AUTO_TEST_CASE(FCCTernary_RandomConfig) {
+TEST(OccLocationTest, FCCTernary_RandomConfig) {
 
   MTRand mtrand;
   test::FCCTernaryProj proj;
   run_case(proj, random_config, mtrand);
 }
 
-BOOST_AUTO_TEST_CASE(FCCTernary_DiluteConfig) {
+TEST(OccLocationTest, FCCTernary_DiluteConfig) {
 
   MTRand mtrand;
   test::FCCTernaryProj proj;
   run_case(proj, dilute_config, mtrand);
 }
 
-BOOST_AUTO_TEST_SUITE_END()

@@ -310,20 +310,45 @@ libcasmtesting_la_LIBADD = \
 
 
 
-TESTS += \
-  casm_unit_misc
-check_PROGRAMS += \
-  casm_unit_misc
+# TESTS += \
+#   casm_unit_misc
+# check_PROGRAMS += \
+#   casm_unit_misc
 
-casm_unit_misc_CPPFLAGS = \
+# casm_unit_misc_CPPFLAGS = \
+#   $(AM_CPPFLAGS)\
+#   -I$(top_srcdir)/tests/unit/
+
+# casm_unit_misc_SOURCES = \
+#   tests/unit/misc/cloneable_ptr_test.cpp\
+#   tests/unit/gtest_main_run_all.cpp
+
+# casm_unit_misc_LDADD = \
+#   libcasm.la\
+#   libcasmtesting.la\
+#   $(BOOST_SYSTEM_LIB)\
+#   $(BOOST_FILESYSTEM_LIB)\
+#   $(BOOST_PROGRAM_OPTIONS_LIB)\
+#   $(BOOST_REGEX_LIB)\
+#   $(BOOST_CHRONO_LIB)
+
+
+
+TESTS += \
+  casm_unit_monte_carlo
+check_PROGRAMS += \
+  casm_unit_monte_carlo
+
+casm_unit_monte_carlo_CPPFLAGS = \
   $(AM_CPPFLAGS)\
   -I$(top_srcdir)/tests/unit/
 
-casm_unit_misc_SOURCES = \
-  tests/unit/misc/cloneable_ptr_test.cpp\
+casm_unit_monte_carlo_SOURCES = \
+  tests/unit/monte_carlo/GrandCanonical_test.cpp\
+  tests/unit/monte_carlo/OccLocation_test.cpp\
   tests/unit/gtest_main_run_all.cpp
 
-casm_unit_misc_LDADD = \
+casm_unit_monte_carlo_LDADD = \
   libcasm.la\
   libcasmtesting.la\
   $(BOOST_SYSTEM_LIB)\
@@ -332,36 +357,10 @@ casm_unit_misc_LDADD = \
   $(BOOST_REGEX_LIB)\
   $(BOOST_CHRONO_LIB)
 
-
-
-# TESTS += \
-#   casm_unit_monte_carlo
-# check_PROGRAMS += \
-#   casm_unit_monte_carlo
-
-# casm_unit_monte_carlo_CPPFLAGS = \
-#   $(AM_CPPFLAGS)\
-#   -I$(top_srcdir)/tests/unit/
-
-# casm_unit_monte_carlo_SOURCES = \
-#   tests/unit/unit_test.cpp\
-#   tests/unit/monte_carlo/GrandCanonical_test.cpp\
-#   tests/unit/monte_carlo/OccLocation_test.cpp
-
-# casm_unit_monte_carlo_LDADD = \
-#   libcasm.la\
-#   libcasmtesting.la\
-#   $(BOOST_SYSTEM_LIB)\
-#   $(BOOST_FILESYSTEM_LIB)\
-#   $(BOOST_PROGRAM_OPTIONS_LIB)\
-#   $(BOOST_REGEX_LIB)\
-#   $(BOOST_CHRONO_LIB)\
-#   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
-
-# EXTRA_DIST += \
-#   tests/unit/monte_carlo/bspecs_0.json\
-#   tests/unit/monte_carlo/eci_0.json\
-#   tests/unit/monte_carlo/metropolis_grand_canonical_0.json
+EXTRA_DIST += \
+  tests/unit/monte_carlo/bspecs_0.json\
+  tests/unit/monte_carlo/eci_0.json\
+  tests/unit/monte_carlo/metropolis_grand_canonical_0.json
 
 
 
