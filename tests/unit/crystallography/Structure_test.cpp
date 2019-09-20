@@ -1,5 +1,5 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 #include "casm/crystallography/Structure.hh"
@@ -29,13 +29,13 @@ void prim1_read_test(Structure &struc) {
 
   double tol = 1e-5;
 
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(0.0, 2.0, 2.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(2.0, 0.0, 2.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(2.0, 2.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.basis().size(), 1);
+  EXPECT_EQ(almost_equal(struc.lattice()[0], Eigen::Vector3d(0.0, 2.0, 2.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[1], Eigen::Vector3d(2.0, 0.0, 2.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[2], Eigen::Vector3d(2.0, 2.0, 0.0), tol), true);
+  EXPECT_EQ(struc.basis().size(), 1);
 
   // basis site 0 has three possible occupants
-  BOOST_CHECK_EQUAL(struc.basis()[0].occupant_dof().size(), 3);
+  EXPECT_EQ(struc.basis()[0].occupant_dof().size(), 3);
 
   std::string check_name[3] = {"A", "B", "C"};
 
@@ -43,13 +43,13 @@ void prim1_read_test(Structure &struc) {
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis()[0].occupant_dof()[i].name(), check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis()[0].occupant_dof()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis()[0].occupant_dof()[i].atom(0).name(), check_name[i]);
+    EXPECT_EQ(struc.basis()[0].occupant_dof()[i].name(), check_name[i]);
+    EXPECT_EQ(almost_equal(struc.basis()[0].occupant_dof()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    EXPECT_EQ(struc.basis()[0].occupant_dof()[i].atom(0).name(), check_name[i]);
   }
 
   // FCC motif
-  BOOST_CHECK_EQUAL(48, struc.factor_group().size());
+  EXPECT_EQ(48, struc.factor_group().size());
 }
 
 /** PRIM2 *****************************
@@ -70,13 +70,13 @@ void prim2_read_test(Structure &struc) {
 
   double tol = 1e-5;
 
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.basis().size(), 4);
+  EXPECT_EQ(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
+  EXPECT_EQ(struc.basis().size(), 4);
 
   // basis site 0 has three possible occupants
-  BOOST_CHECK_EQUAL(struc.basis()[0].occupant_dof().size(), 3);
+  EXPECT_EQ(struc.basis()[0].occupant_dof().size(), 3);
 
   std::string check_name[3] = {"A", "B", "C"};
   int check_value[4] = {0, 0, 1, 2};
@@ -86,15 +86,15 @@ void prim2_read_test(Structure &struc) {
       // occupants are Molecule with name "A", etc.
       // Molecule are composed of AtomPosition
       // An AtomPosition 'is' a Coordinate with a Specie
-      BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof()[j].name(), check_name[j]);
-      BOOST_CHECK_EQUAL(almost_equal(struc.basis()[0].occupant_dof()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-      BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof()[j].atom(0).name(), check_name[j]);
+      EXPECT_EQ(struc.basis()[i].occupant_dof()[j].name(), check_name[j]);
+      EXPECT_EQ(almost_equal(struc.basis()[0].occupant_dof()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+      EXPECT_EQ(struc.basis()[i].occupant_dof()[j].atom(0).name(), check_name[j]);
     }
-    BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof().value(), check_value[i]);
+    EXPECT_EQ(struc.basis()[i].occupant_dof().value(), check_value[i]);
   }
 
   // ordering on FCC motif
-  BOOST_CHECK_EQUAL(16, struc.factor_group().size());
+  EXPECT_EQ(16, struc.factor_group().size());
 }
 
 
@@ -134,34 +134,38 @@ void pos1_read_test(Structure &struc) {
 
   double tol = 1e-5;
 
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.basis().size(), 4);
+  EXPECT_EQ(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
+  EXPECT_EQ(struc.basis().size(), 4);
 
   std::string check_name[4] = {"A", "A", "B", "C"};
 
   for(int i = 0; i < 4; i++) {
     // basis site 0 and 1 have one possible occupant
-    BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof().size(), 1);
+    EXPECT_EQ(struc.basis()[i].occupant_dof().size(), 1);
 
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof()[0].name(), check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis()[i].occupant_dof()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof()[0].atom(0).name(), check_name[i]);
+    EXPECT_EQ(struc.basis()[i].occupant_dof()[0].name(), check_name[i]);
+    EXPECT_EQ(almost_equal(struc.basis()[i].occupant_dof()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    EXPECT_EQ(struc.basis()[i].occupant_dof()[0].atom(0).name(), check_name[i]);
   }
 
   // FCC structure
-  BOOST_CHECK_EQUAL(16, struc.factor_group().size());
+  EXPECT_EQ(16, struc.factor_group().size());
 }
 
-BOOST_AUTO_TEST_SUITE(StructureTest)
+namespace {
+  fs::path crystallography_test_directory() {
+    return autotools::abs_srcdir() + "/tests/unit/crystallography";
+  }
+}
 
-BOOST_AUTO_TEST_CASE(PRIM1Test) {
+TEST(StructureTest, PRIM1Test) {
 
-  fs::path testdir = "tests/unit/crystallography";
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
   Structure struc(fs::path(testdir / "PRIM1.txt"));
@@ -177,18 +181,18 @@ BOOST_AUTO_TEST_CASE(PRIM1Test) {
 
 }
 
-BOOST_AUTO_TEST_CASE(PRIM2Test) {
+TEST(StructureTest, PRIM2Test) {
 
-  fs::path testdir = "tests/unit/crystallography";
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
   Structure struc(fs::path(testdir / "PRIM2.txt"));
   prim2_read_test(struc);
 }
 
-BOOST_AUTO_TEST_CASE(POS1Test) {
+TEST(StructureTest, POS1Test) {
 
-  fs::path testdir = "tests/unit/crystallography";
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
   Structure struc(fs::path(testdir / "POS1.txt"));
@@ -208,9 +212,9 @@ BOOST_AUTO_TEST_CASE(POS1Test) {
 
 }
 
-BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
+TEST(StructureTest, POS1Vasp5Test) {
 
-  fs::path testdir = "tests/unit/crystallography";
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
   Structure struc(fs::path(testdir / "POS1.txt"));
@@ -228,9 +232,9 @@ BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
 
 }
 
-BOOST_AUTO_TEST_CASE(POS1jsonPrimTest) {
+TEST(StructureTest, POS1jsonPrimTest) {
 
-  fs::path testdir = "tests/unit/crystallography";
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
   Structure struc(fs::path(testdir / "POS1.txt"));
@@ -249,5 +253,3 @@ BOOST_AUTO_TEST_CASE(POS1jsonPrimTest) {
   pos1_read_test(struc);
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

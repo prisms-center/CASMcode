@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/crystallography/Niggli.hh"
@@ -20,13 +19,13 @@ namespace CASM {
 
     Lattice non_niggli(known_niggli_form.lat_column_mat()*skewed_unimodular.cast<double>());
 
-    BOOST_CHECK(!is_niggli(non_niggli, CASM::TOL));
+    EXPECT_TRUE(!is_niggli(non_niggli, CASM::TOL));
 
     Lattice reniggli = niggli(non_niggli, CASM::TOL);
 
-    BOOST_CHECK(known_niggli_form == reniggli);
+    EXPECT_TRUE(known_niggli_form == reniggli);
 
-    BOOST_CHECK(niggli(niggli(non_niggli, CASM::TOL), CASM::TOL) == niggli(non_niggli, CASM::TOL));
+    EXPECT_TRUE(niggli(niggli(non_niggli, CASM::TOL), CASM::TOL) == niggli(non_niggli, CASM::TOL));
 
     //known_niggli_form.print(std::cout);
     //reniggli.print(std::cout);
@@ -37,28 +36,28 @@ namespace CASM {
 
 
   void confirm_fcc_lattice(const Eigen::Matrix3i &skewed_unimodular) {
-    BOOST_TEST_MESSAGE("Checking fcc lattice");
+    /* BOOST_TEST_MESSAGE("Checking fcc lattice"); */
     CASM::confirm_lattice(CASM::Lattice::fcc(), skewed_unimodular);
     CASM::confirm_lattice(CASM::Lattice::fcc(), skewed_unimodular.transpose());
     return;
   }
 
   void confirm_bcc_lattice(const Eigen::Matrix3i &skewed_unimodular) {
-    BOOST_TEST_MESSAGE("Checking bcc lattice");
+    /* BOOST_TEST_MESSAGE("Checking bcc lattice"); */
     CASM::confirm_lattice(CASM::Lattice::bcc(), skewed_unimodular);
     CASM::confirm_lattice(CASM::Lattice::bcc(), skewed_unimodular.transpose());
     return;
   }
 
   void confirm_hexagonal_lattice(const Eigen::Matrix3i &skewed_unimodular) {
-    BOOST_TEST_MESSAGE("Checking hexagonal lattice");
+    /* BOOST_TEST_MESSAGE("Checking hexagonal lattice"); */
     CASM::confirm_lattice(CASM::Lattice::hexagonal(), skewed_unimodular);
     CASM::confirm_lattice(CASM::Lattice::hexagonal(), skewed_unimodular.transpose());
     return;
   }
 
   void confirm_cubic_lattice(const Eigen::Matrix3i &skewed_unimodular) {
-    BOOST_TEST_MESSAGE("Checking cubic lattice");
+    /* BOOST_TEST_MESSAGE("Checking cubic lattice"); */
     CASM::confirm_lattice(CASM::Lattice::cubic(), skewed_unimodular);
     CASM::confirm_lattice(CASM::Lattice::cubic(), skewed_unimodular.transpose());
     return;
@@ -74,16 +73,16 @@ namespace CASM {
            4, 8, 11, 13, 14,
            5, 9, 12, 14, 15;
 
-    BOOST_CHECK(is_symmetric(symmat));
-    BOOST_CHECK(!is_persymmetric(symmat));
+    EXPECT_TRUE(is_symmetric(symmat));
+    EXPECT_TRUE(!is_persymmetric(symmat));
 
     persymmat << 4, 3, 2, 1,
               7, 6, 5, 2,
               9, 8, 6, 3,
               10, 9, 7, 4;
 
-    BOOST_CHECK(!is_symmetric(persymmat));
-    BOOST_CHECK(is_persymmetric(persymmat));
+    EXPECT_TRUE(!is_symmetric(persymmat));
+    EXPECT_TRUE(is_persymmetric(persymmat));
   }
 
   //See issue #153 on github: https://github.com/prisms-center/CASMcode-dev/issues/153
@@ -112,7 +111,7 @@ namespace CASM {
       Lattice nigglicompare = canonical_equivalent_lattice(comparelat, pg, TOL);
       Lattice nigglitest = canonical_equivalent_lattice(*it, pg, TOL);
 
-      BOOST_CHECK(nigglicompare == nigglitest);
+      EXPECT_TRUE(nigglicompare == nigglitest);
       l++;
     }
     return;
@@ -120,7 +119,7 @@ namespace CASM {
 
   void ZrO_supercell_enum_test() {
 
-    BOOST_TEST_MESSAGE("Checking known ZrO lattices");
+    /* BOOST_TEST_MESSAGE("Checking known ZrO lattices"); */
 
     // ZrO prim
     test::ZrOProj proj;
@@ -137,7 +136,7 @@ namespace CASM {
 
     // there will be 7
     int scel_list_size = 7;
-    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), scel_list_size);
+    EXPECT_EQ(primclex.generic_db<Supercell>().size(), scel_list_size);
 
     // check if the canonical equivalent lattice of this volume 5 left handed
     // lattice is among the enumerated lattices
@@ -151,12 +150,12 @@ namespace CASM {
     // since we already enumerated supercells the supercell list size should
     // not increase
     Supercell(&primclex, test_lat).insert();
-    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), scel_list_size);
+    EXPECT_EQ(primclex.generic_db<Supercell>().size(), scel_list_size);
   }
 
   void ZrO_supercell_enum_test2() {
 
-    BOOST_TEST_MESSAGE("Checking niggli and canonical_equivalent_lattice");
+    /* BOOST_TEST_MESSAGE("Checking niggli and canonical_equivalent_lattice"); */
 
     const Structure test_struc(test::ZrO_prim());
     const Lattice test_lat = test_struc.lattice();
@@ -179,7 +178,7 @@ namespace CASM {
                             niggli2.lat_column_mat(),
                             tol);
 
-      BOOST_CHECK_EQUAL(check_niggli, true);
+      EXPECT_EQ(check_niggli, true);
 
       // -- check canonical generation
 
@@ -190,14 +189,14 @@ namespace CASM {
                      canon2.lat_column_mat(),
                      tol);
 
-      BOOST_CHECK_EQUAL(check, true);
+      EXPECT_EQ(check, true);
 
     }
   }
 
   void standard_orientation_compare_test() {
 
-    BOOST_TEST_MESSAGE("Checking standard_orientation_compare");
+    /* BOOST_TEST_MESSAGE("Checking standard_orientation_compare"); */
 
     double tol = TOL;
 
@@ -224,34 +223,32 @@ namespace CASM {
 
     Lattice lat_B(lat_mat_B);
 
-    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_A, lat_mat_B, tol), true);
-    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_B, lat_mat_A, tol), false);
+    EXPECT_EQ(standard_orientation_compare(lat_mat_A, lat_mat_B, tol), true);
+    EXPECT_EQ(standard_orientation_compare(lat_mat_B, lat_mat_A, tol), false);
 
-    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_A2, lat_mat_B, tol), true);
-    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_B, lat_mat_A2, tol), false);
+    EXPECT_EQ(standard_orientation_compare(lat_mat_A2, lat_mat_B, tol), true);
+    EXPECT_EQ(standard_orientation_compare(lat_mat_B, lat_mat_A2, tol), false);
 
-    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_A, lat_mat_A2, tol), false);
-    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_A2, lat_mat_A, tol), false);
+    EXPECT_EQ(standard_orientation_compare(lat_mat_A, lat_mat_A2, tol), false);
+    EXPECT_EQ(standard_orientation_compare(lat_mat_A2, lat_mat_A, tol), false);
 
     Structure prim(test::ZrO_prim());
     Lattice canon_A = canonical_equivalent_lattice(lat_A, prim.point_group(), tol);
     Lattice canon_A2 = canonical_equivalent_lattice(lat_A2, prim.point_group(), tol);
     Lattice canon_B = canonical_equivalent_lattice(lat_B, prim.point_group(), tol);
 
-    BOOST_CHECK_EQUAL(canon_A == canon_A2, true);
-    BOOST_CHECK_EQUAL(canon_A2 == canon_B, true);
-    BOOST_CHECK_EQUAL(canon_A == canon_B, true);
+    EXPECT_EQ(canon_A == canon_A2, true);
+    EXPECT_EQ(canon_A2 == canon_B, true);
+    EXPECT_EQ(canon_A == canon_B, true);
 
   };
 }
 
-BOOST_AUTO_TEST_SUITE(NiggliTest)
-
-BOOST_AUTO_TEST_CASE(SymmetricTest) {
+TEST(NiggliTest, SymmetricTest) {
   CASM::symmetric_testing();
 }
 
-BOOST_AUTO_TEST_CASE(EeasyTests) {
+TEST(NiggliTest, EeasyTests) {
   Eigen::Matrix3i skewed_unimodular;
   skewed_unimodular << 1, 2, 3,
                     0, 1, 4,
@@ -263,15 +260,13 @@ BOOST_AUTO_TEST_CASE(EeasyTests) {
   CASM::confirm_hexagonal_lattice(skewed_unimodular);
 }
 
-BOOST_AUTO_TEST_CASE(EvilNiggliTest) {
+TEST(NiggliTest, EvilNiggliTest) {
   CASM::single_dimension_test();
 }
 
-BOOST_AUTO_TEST_CASE(ZrOScelEnumTest) {
+TEST(NiggliTest, ZrOScelEnumTest) {
   CASM::ZrO_supercell_enum_test();
   CASM::ZrO_supercell_enum_test2();
   CASM::standard_orientation_compare_test();
 }
 
-
-BOOST_AUTO_TEST_SUITE_END()
