@@ -366,12 +366,6 @@ def main():
     # Update 'Makefile.am' to include all Makemodule.am
     replace_lines('Makefile.am', ['include $(srcdir)/'+val+'\n' for val in makemodules])
 
-    # Update 'configure.ac' to include all 'run_test_<name>'
-    lines_to_insert = []
-    for name in testnames:
-        runtest = join('tests', 'unit', name, 'run_test_' + name)
-        lines_to_insert.append('AC_CONFIG_FILES([' + runtest + '], [chmod +x ' + runtest + '])\n')
-    replace_lines('configure.ac', lines_to_insert)
 
 
 if __name__ == "__main__":
