@@ -18,20 +18,20 @@ libcasmtesting_la_CPPFLAGS = \
     -DABS_SRCDIR=\"$(abs_srcdir)\"\
     -DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"
 libcasmtesting_la_SOURCES = \
-    ../CASMcode-dev/tests/unit/Common.hh\
-    ../CASMcode-dev/tests/unit/TestSupercell.hh\
-    ../CASMcode-dev/tests/unit/ZrOProj.hh\
-    ../CASMcode-dev/tests/unit/TestOrbits.hh\
-    ../CASMcode-dev/tests/unit/TestConfiguration.hh\
-    ../CASMcode-dev/tests/unit/FCCTernaryProj.hh\
-    ../CASMcode-dev/tests/unit/TestDiffTransConfigOccPerturbations.hh\
-    ../CASMcode-dev/tests/unit/Proj.hh\
-    ../CASMcode-dev/tests/unit/autotools.hh\
-    ../CASMcode-dev/tests/unit/autotools.cc\
-    ../CASMcode-dev/tests/unit/TestConfiguration.cc\
-    ../CASMcode-dev/tests/unit/TestOrbits.cc\
-    ../CASMcode-dev/tests/unit/TestSupercell.cc\
-    ../CASMcode-dev/tests/unit/Common.cpp
+    tests/unit/Common.hh\
+    tests/unit/TestSupercell.hh\
+    tests/unit/ZrOProj.hh\
+    tests/unit/TestOrbits.hh\
+    tests/unit/TestConfiguration.hh\
+    tests/unit/FCCTernaryProj.hh\
+    tests/unit/TestDiffTransConfigOccPerturbations.hh\
+    tests/unit/Proj.hh\
+    tests/unit/autotools.hh\
+    tests/unit/autotools.cc\
+    tests/unit/TestConfiguration.cc\
+    tests/unit/TestOrbits.cc\
+    tests/unit/TestSupercell.cc\
+    tests/unit/Common.cpp
 libcasmtesting_la_LIBADD = \
     libgtest.la
 
@@ -84,7 +84,6 @@ EXTRA_DIST += \
     tests/unit/kinetics/ZrO_local_bspecs_0.json\
     tests/unit/kinetics/ZrO_bspecs_0.json\
     tests/unit/kinetics/ZrO_diff_perturb_0.json\
-    tests/unit/kinetics/run_test_kinetics.in\
     tests/unit/kinetics/FCCTernary_diff_perturb_0.json\
     tests/unit/kinetics/ZrO_diff_trans_0.json\
     tests/unit/kinetics/FCCTernary_diff_trans_0.json\
@@ -113,8 +112,7 @@ casm_unit_misc_LDADD = \
     $(BOOST_PROGRAM_OPTIONS_LIB)\
     $(BOOST_REGEX_LIB)\
     $(BOOST_CHRONO_LIB)
-EXTRA_DIST += \
-    tests/unit/misc/run_test_misc.in
+
 
 #-------------------------------------------------------------------------------#
 
@@ -139,8 +137,7 @@ casm_unit_symmetry_LDADD = \
     $(BOOST_PROGRAM_OPTIONS_LIB)\
     $(BOOST_REGEX_LIB)\
     $(BOOST_CHRONO_LIB)
-EXTRA_DIST += \
-    tests/unit/symmetry/run_test_symmetry.in
+
 
 #-------------------------------------------------------------------------------#
 
@@ -196,7 +193,6 @@ casm_unit_clusterography_LDADD = \
     $(BOOST_REGEX_LIB)\
     $(BOOST_CHRONO_LIB)
 EXTRA_DIST += \
-    tests/unit/clusterography/run_test_clusterography.in\
     tests/unit/clusterography/test_cases.json
 
 #-------------------------------------------------------------------------------#
@@ -219,8 +215,7 @@ casm_unit_system_LDADD = \
     $(BOOST_PROGRAM_OPTIONS_LIB)\
     $(BOOST_REGEX_LIB)\
     $(BOOST_CHRONO_LIB)
-EXTRA_DIST += \
-    tests/unit/system/run_test_system.in
+
 
 #-------------------------------------------------------------------------------#
 
@@ -267,8 +262,7 @@ casm_unit_container_LDADD = \
     $(BOOST_PROGRAM_OPTIONS_LIB)\
     $(BOOST_REGEX_LIB)\
     $(BOOST_CHRONO_LIB)
-EXTRA_DIST += \
-    tests/unit/container/run_test_container.in
+
 
 #-------------------------------------------------------------------------------#
 
@@ -306,7 +300,6 @@ casm_unit_clex_LDADD = \
 EXTRA_DIST += \
     tests/unit/clex/ConfigEnumEquivalents_test_cases.json\
     tests/unit/clex/test_Clexulator.cc\
-    tests/unit/clex/run_test_clex.in\
     tests/unit/clex/ConfigEnumAllOccupations_test_cases.json
 
 #-------------------------------------------------------------------------------#
@@ -348,7 +341,6 @@ EXTRA_DIST += \
     tests/unit/crystallography/PRIM2.txt\
     tests/unit/crystallography/PRIM3.txt\
     tests/unit/crystallography/POS1.txt\
-    tests/unit/crystallography/run_test_crystallography.in\
     tests/unit/crystallography/test_cases.json
 
 #-------------------------------------------------------------------------------#
@@ -377,8 +369,7 @@ casm_unit_database_LDADD = \
     $(BOOST_PROGRAM_OPTIONS_LIB)\
     $(BOOST_REGEX_LIB)\
     $(BOOST_CHRONO_LIB)
-EXTRA_DIST += \
-    tests/unit/database/run_test_database.in
+
 
 #-------------------------------------------------------------------------------#
 
@@ -402,7 +393,6 @@ casm_unit_monte_carlo_LDADD = \
     $(BOOST_REGEX_LIB)\
     $(BOOST_CHRONO_LIB)
 EXTRA_DIST += \
-    tests/unit/monte_carlo/run_test_monte_carlo.in\
     tests/unit/monte_carlo/bspecs_0.json\
     tests/unit/monte_carlo/eci_0.json\
     tests/unit/monte_carlo/metropolis_grand_canonical_0.json
