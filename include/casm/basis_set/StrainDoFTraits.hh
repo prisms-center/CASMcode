@@ -8,7 +8,9 @@ namespace CASM {
     public:
       StrainDoFTraits(std::string _metric) :
         DoFType::Traits(_metric + "strain",
-                        std::vector<std::string>({"e_1", "e_2", "e_3", "e_4", "e_5", "e_6"}),
+                        std::vector<std::string>({
+        "e_1", "e_2", "e_3", "e_4", "e_5", "e_6"
+      }),
       DoFType::GLOBAL,
       /*_requires_site_basis = */ false,
       /*_unit_length = */ false),

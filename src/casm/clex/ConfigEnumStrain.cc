@@ -287,7 +287,7 @@ namespace CASM {
 
     int returncode = insert_configs(enumerator_name,
                                     _primclex,
-                                    _config.supercell(),
+                                    _config,
                                     constructor,
                                     _filter_expr,
                                     false,
@@ -313,7 +313,6 @@ namespace CASM {
     //m_perm_begin(_scel.permute_begin()),
     //m_perm_end(_scel.permute_end()),
     m_shape_factor(Eigen::MatrixXd::Identity(min_val.size(), min_val.size())) {
-    //std::cout << "Strain enum constructor!\n";
     //Condition range arrays and build shape_factor matrix
     Index nc = 0;
     if(m_wedges.size() == 0)

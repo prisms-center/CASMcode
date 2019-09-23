@@ -6,7 +6,7 @@
 
 /// What is being used to test it:
 #include <boost/filesystem/fstream.hpp>
-#include "ZrOProj.hh"
+#include "crystallography/TestStructures.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
@@ -222,7 +222,7 @@ TEST(BasicStructureSiteTest, POS1Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR printer(to_simple_structure(struc));
+  VaspIO::PrintPOSCAR printer(to_simple_structure(struc), struc.title());
   printer.set_append_atom_names_off();
   printer.print(sout);
   sout.close();
@@ -244,7 +244,7 @@ TEST(BasicStructureSiteTest, POS1Vasp5Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_vasp5_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR(to_simple_structure(struc)).print(sout);
+  VaspIO::PrintPOSCAR(to_simple_structure(struc), struc.title()).print(sout);
   sout.close();
 
   // Read new file and run tests again

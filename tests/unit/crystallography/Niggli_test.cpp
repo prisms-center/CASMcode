@@ -9,7 +9,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ScelEnum.hh"
-#include "ZrOProj.hh"
+#include "crystallography/TestStructures.hh"
 
 namespace CASM {
 
@@ -23,13 +23,11 @@ namespace CASM {
 
     Lattice reniggli = niggli(non_niggli, CASM::TOL);
 
+    EXPECT_TRUE(is_niggli(known_niggli_form, CASM::TOL));
+    EXPECT_TRUE(is_niggli(reniggli, CASM::TOL));
     EXPECT_TRUE(known_niggli_form == reniggli);
-
     EXPECT_TRUE(niggli(niggli(non_niggli, CASM::TOL), CASM::TOL) == niggli(non_niggli, CASM::TOL));
 
-    //known_niggli_form.print(std::cout);
-    //reniggli.print(std::cout);
-    //std::cout<<spatial_unroll(known_niggli_form.lat_column_mat(), CASM::TOL)<<"    vs    "<<spatial_unroll(reniggli.lat_column_mat(), CASM::TOL)<<std::endl;
 
     return;
   }
@@ -117,83 +115,6 @@ namespace CASM {
     return;
   }
 
-  void ZrO_supercell_enum_test() {
-
-    /* BOOST_TEST_MESSAGE("Checking known ZrO lattices"); */
-
-    // ZrO prim
-    test::ZrOProj proj;
-    proj.check_init();
-    PrimClex primclex(proj.dir, null_log());
-
-    // enumerate size 5 supercells
-    // bool verbose = false;
-    ScelEnumProps enum_props(5, 6);
-
-    // Is this supposed to do something? It isn't currently...
-    //ScelEnumByProps scel_enum(primclex, enum_props);
-    //for(const auto &scel : scel_enum) {}
-
-    // there will be 7
-    int scel_list_size = 7;
-    EXPECT_EQ(primclex.generic_db<Supercell>().size(), scel_list_size);
-
-    // check if the canonical equivalent lattice of this volume 5 left handed
-    // lattice is among the enumerated lattices
-    Eigen::Matrix3d test_lat_mat;
-    test_lat_mat << 3.2339869, 0.0,       -1.6169934,
-                 0.0,       0.0,       14.003574,
-                 0.0,       5.1686783,  0.0;
-    Lattice test_lat(test_lat_mat);
-
-    // this should generate the canonical equivalent lattice and add it, but
-    // since we already enumerated supercells the supercell list size should
-    // not increase
-    Supercell(&primclex, test_lat).insert();
-    EXPECT_EQ(primclex.generic_db<Supercell>().size(), scel_list_size);
-  }
-
-  void ZrO_supercell_enum_test2() {
-
-    /* BOOST_TEST_MESSAGE("Checking niggli and canonical_equivalent_lattice"); */
-
-    const Structure test_struc(test::ZrO_prim());
-    const Lattice test_lat = test_struc.lattice();
-    const SymGroup effective_pg = test_struc.factor_group();
-
-    ScelEnumProps enum_props(1, 11);
-    SupercellEnumerator<Lattice> test_enumerator(test_lat, effective_pg, enum_props);
-
-    // check that niggli cell and canonical lattice don't change when re-applied
-
-    double tol = TOL;
-    for(auto it = test_enumerator.begin(); it != test_enumerator.end(); ++it) {
-
-      // -- check niggli generation
-
-      Lattice niggli1 = niggli(*it, tol);
-      Lattice niggli2 = niggli(niggli1, tol);
-      bool check_niggli = almost_equal(
-                            niggli1.lat_column_mat(),
-                            niggli2.lat_column_mat(),
-                            tol);
-
-      EXPECT_EQ(check_niggli, true);
-
-      // -- check canonical generation
-
-      Lattice canon = canonical_equivalent_lattice(*it, effective_pg, tol);
-      Lattice canon2 = canonical_equivalent_lattice(canon, effective_pg, tol);
-      bool check = almost_equal(
-                     canon.lat_column_mat(),
-                     canon2.lat_column_mat(),
-                     tol);
-
-      EXPECT_EQ(check, true);
-
-    }
-  }
-
   void standard_orientation_compare_test() {
 
     /* BOOST_TEST_MESSAGE("Checking standard_orientation_compare"); */
@@ -241,14 +162,14 @@ namespace CASM {
     EXPECT_EQ(canon_A2 == canon_B, true);
     EXPECT_EQ(canon_A == canon_B, true);
 
-  };
+  }
 }
 
 TEST(NiggliTest, SymmetricTest) {
   CASM::symmetric_testing();
 }
 
-TEST(NiggliTest, EeasyTests) {
+TEST(NiggliTest, EasyTests) {
   Eigen::Matrix3i skewed_unimodular;
   skewed_unimodular << 1, 2, 3,
                     0, 1, 4,
@@ -262,11 +183,5 @@ TEST(NiggliTest, EeasyTests) {
 
 TEST(NiggliTest, EvilNiggliTest) {
   CASM::single_dimension_test();
-}
-
-TEST(NiggliTest, ZrOScelEnumTest) {
-  CASM::ZrO_supercell_enum_test();
-  CASM::ZrO_supercell_enum_test2();
-  CASM::standard_orientation_compare_test();
 }
 

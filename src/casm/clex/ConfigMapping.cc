@@ -203,7 +203,9 @@ namespace CASM {
   PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
     SimpleStrucMapCalculator(to_simple_structure(_prim),
-                             std::vector<SymOp>({SymOp()}),
+                             std::vector<SymOp>({
+    SymOp()
+  }),
   _species_mode,
   ConfigMapping::_allowed_species(_prim)),
 

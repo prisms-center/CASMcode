@@ -6,10 +6,17 @@
 /// What is being used to test it:
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Structure.hh"
-#include "ZrOProj.hh"
+#include "crystallography/TestStructures.hh"
 
 using namespace CASM;
 using namespace test;
+
+void generate_master_lat_pt_grp(MasterSymGroup *master, const Lattice &lat) {
+  master->set_lattice(lat);
+  for(const auto &op : SymGroup::lattice_point_group(lat)) {
+    master->push_back(op);
+  }
+}
 
 TEST(LatticeEnumEquivalentsTest, Test1) {
 
@@ -57,9 +64,8 @@ TEST(LatticeEnumEquivalentsTest, Test2) {
 TEST(LatticeEnumEquivalentsTest, Test3) {
 
   Lattice lat = Lattice::hexagonal();
-
-  SymGroup pg = SymGroup::lattice_point_group(lat);
-  //lat.generate_point_group(pg);
+  MasterSymGroup pg;
+  generate_master_lat_pt_grp(&pg, lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
@@ -84,7 +90,8 @@ TEST(LatticeEnumEquivalentsTest, Test3) {
 TEST(LatticeEnumEquivalentsTest, Test4) {
 
   Lattice lat = Lattice::cubic();
-  SymGroup pg = SymGroup::lattice_point_group(lat);
+  MasterSymGroup pg;
+  generate_master_lat_pt_grp(&pg, lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
@@ -119,8 +126,8 @@ TEST(LatticeEnumEquivalentsTest, Test4) {
 TEST(LatticeEnumEquivalentsTest, Test5) {
 
   Lattice lat = Lattice::fcc();
-
-  SymGroup pg = SymGroup::lattice_point_group(lat);
+  MasterSymGroup pg;
+  generate_master_lat_pt_grp(&pg, lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();

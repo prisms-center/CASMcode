@@ -538,7 +538,7 @@ namespace Eigen {
       for(i = 0; i < dubs.rows(); i++) {
         for(j = 0; j < dubs.cols(); j++) {
 
-          if(!CASM::almost_zero(round(tdubs(i, j)) - tdubs(i, j), _tol))
+          if(!CASM::almost_zero(boost::math::round(tdubs(i, j)) - tdubs(i, j), _tol))
             break;
         }
         if(j < dubs.cols())
@@ -551,7 +551,7 @@ namespace Eigen {
     if(within_tol) {
       for(i = 0; i < dubs.rows(); i++) {
         for(j = 0; j < dubs.cols(); j++) {
-          ints(i, j) = round(tdubs(i, j));
+          ints(i, j) = boost::math::round(tdubs(i, j));
         }
       }
     }
