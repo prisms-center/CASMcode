@@ -10,6 +10,8 @@ libgtest_la_CPPFLAGS = \
     -DGTEST_LINKED_AS_SHARED_LIBRARY=1
 libgtest_la_SOURCES = \
     submodules/googletest/googletest/src/gtest-all.cc
+EXTRA_DIST += \
+    submodules/googletest
 
 #-------------------------------------------------------------------------------#
 

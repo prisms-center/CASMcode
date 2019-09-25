@@ -92,6 +92,7 @@ libcasm_la_SOURCES = \
     src/casm/external/qhull/libqhullcpp/RboxPoints.cpp\
     src/casm/external/qhull/libqhullcpp/QhullVertex.cpp\
     src/casm/external/qhull/libqhullcpp/QhullFacet.cpp\
+    src/casm/external/gzstream/gzstream.C\
     src/casm/kinetics/KineticsOrbits.cc\
     src/casm/kinetics/RemovePrimPeriodicDiffTransOrbit.cc\
     src/casm/kinetics/DiffTransConfigInterpolation.cc\

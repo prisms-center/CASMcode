@@ -22,6 +22,7 @@
 *.orig
 [#]*[#]
 *.bkup
+*.bak
 *.old
 
 # Debugging files

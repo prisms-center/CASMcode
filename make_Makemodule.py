@@ -241,7 +241,7 @@ def source_extensions():
     list of str
 
     """
-    return [".c", ".cc", ".cxx", ".cpp"]
+    return [".c", ".cc", ".cxx", ".cpp", ".C"]
 
 
 def has_header_extension(filepath):
@@ -398,7 +398,7 @@ def make_libgtest():
     str
 
     """
-    return make_add_to_LTLIBRARIES(
+    value= make_add_to_LTLIBRARIES(
         "libgtest",
         "check",
         SOURCES=["submodules/googletest/googletest/src/gtest-all.cc"],
@@ -406,6 +406,10 @@ def make_libgtest():
             "$(AM_CPPFLAGS)", "-DGTEST_HAS_PTHREAD=0",
             "-DGTEST_LINKED_AS_SHARED_LIBRARY=1"
         ])
+
+    value+="\n"
+    value+=make_add_to_EXTRA_DIST(["submodules/googletest"])
+    return value
 
 
 def make_unit_test(unit_test_directory):
