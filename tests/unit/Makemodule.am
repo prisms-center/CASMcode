@@ -1,11 +1,13 @@
 
+
 #-------------------------------------------------------------------------------#
 
 check_LTLIBRARIES += \
     libgtest.la
 libgtest_la_CPPFLAGS = \
     $(AM_CPPFLAGS)\
-    -DGTEST_HAS_PTHREAD=0
+    -DGTEST_HAS_PTHREAD=0\
+    -DGTEST_LINKED_AS_SHARED_LIBRARY=1
 libgtest_la_SOURCES = \
     submodules/googletest/googletest/src/gtest-all.cc
 
@@ -341,6 +343,7 @@ EXTRA_DIST += \
     tests/unit/crystallography/PRIM2.txt\
     tests/unit/crystallography/PRIM3.txt\
     tests/unit/crystallography/POS1.txt\
+    tests/unit/crystallography/TestStructures.hh\
     tests/unit/crystallography/test_cases.json
 
 #-------------------------------------------------------------------------------#
@@ -398,5 +401,4 @@ EXTRA_DIST += \
     tests/unit/monte_carlo/metropolis_grand_canonical_0.json
 
 #-------------------------------------------------------------------------------#
-
 

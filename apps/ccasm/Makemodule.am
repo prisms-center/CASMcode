@@ -1,17 +1,11 @@
 bin_PROGRAMS += \
-  ccasm
-
-man1_MANS += \
-  man/ccasm.1
-
+    ccasm
 ccasm_SOURCES = \
-  apps/ccasm/ccasm.cpp
-
+    apps/ccasm/ccasm.cpp
 ccasm_LDADD = \
-  libcasm.la\
-  $(BOOST_SYSTEM_LIB)\
-  $(BOOST_FILESYSTEM_LIB)\
-  $(BOOST_PROGRAM_OPTIONS_LIB)\
-  $(BOOST_REGEX_LIB)\
-  $(BOOST_CHRONO_LIB)
-
+    libcasm.la\
+    $(BOOST_SYSTEM_LIB)\
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_REGEX_LIB)\
+    $(BOOST_CHRONO_LIB)

@@ -1,9 +1,7 @@
 lib_LTLIBRARIES += \
-  libccasm.la
-
+    libccasm.la
 libccasm_la_SOURCES = \
-  src/ccasm/api.cc
-
-libccasm_la_LDFLAGS = \
-  -avoid-version
-
+    src/ccasm/api.cc\
+    include/ccasm/api.hh
+libccasm_la_LDFAGS = \
+    -avoid-version
