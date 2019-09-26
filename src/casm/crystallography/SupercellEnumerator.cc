@@ -1,7 +1,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 
+#include "casm/external/Eigen/Dense"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SymGroup.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/database/ScelDatabase.hh"
@@ -415,7 +415,7 @@ namespace CASM {
      * H will work on.
      *
      * Note that the resulting matrix will probably *NOT* retain it's Hermite normal
-     * form. For use in the SupercellEnumerator class, the order within the first n
+     * form. For use in the SuperlatticeEnumerator class, the order within the first n
      * vectors and the order within the last m-n vectors will not affect your enumerations.
      */
 
@@ -551,12 +551,10 @@ namespace CASM {
     }
   }
 
-  template<>
-  SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    const std::vector<SymOp> &point_grp,
-                                                    const ScelEnumProps &enum_props) :
+  SuperlatticeEnumerator::SuperlatticeEnumerator(const Lattice &unit,
+                                                 const std::vector<SymOpType> &point_grp,
+                                                 const ScelEnumProps &enum_props) :
     m_unit(unit),
-    m_lat(unit),
     m_point_group(point_grp),
     m_begin_volume(enum_props.begin_volume()),
     m_end_volume(enum_props.end_volume()),
@@ -570,11 +568,10 @@ namespace CASM {
 
 
 
-  template<>
-  Eigen::Matrix3i enforce_min_volume<Lattice>(
+  Eigen::Matrix3i enforce_min_volume(
     const Lattice &unit,
     const Eigen::Matrix3i &T,
-    const std::vector<SymOp> &point_grp,
+    const std::vector<SuperlatticeEnumerator::SymOpType> &point_grp,
     Index volume,
     bool fix_shape) {
 
@@ -603,7 +600,7 @@ namespace CASM {
         return compactness(A) < compactness(B);
       };
 
-      SupercellEnumerator<Lattice> scel(unit, point_grp, ScelEnumProps(m, m + 1));
+      SuperlatticeEnumerator scel(unit, point_grp, ScelEnumProps(m, m + 1));
       auto best_it = std::min_element(scel.begin(), scel.end(), compare);
       return best_it.matrix();
     }
@@ -642,7 +639,7 @@ namespace CASM {
   ///
   /// \relatesalso Lattice
   ///
-  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SymOp> &effective_pg, const Lattice &ref_lattice) {
+  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SuperlatticeEnumerator::SymOpType> &effective_pg, const Lattice &ref_lattice) {
     Eigen::Matrix3d lat = ref_lattice.lat_column_mat();
 
     //get T in hermite normal form

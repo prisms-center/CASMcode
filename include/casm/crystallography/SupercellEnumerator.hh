@@ -1,16 +1,12 @@
-#ifndef SupercellEnumerator_HH
-#define SupercellEnumerator_HH
+#ifndef SuperlatticeEnumerator_HH
+#define SuperlatticeEnumerator_HH
 
 #include "casm/external/Eigen/Dense"
 
 #include "casm/misc/cloneable_ptr.hh"
-#include "casm/symmetry/SymOp.hh"
+#include "casm/crystallography/SymmetryAdapter.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/crystallography/Lattice.hh"
-//#include "casm/crystallography/BasicStructure.hh"
-//#include "casm/crystallography/Site.hh"
-#include "casm/casm_io/Log.hh"
-
 #include "casm/container/Counter.hh"
 
 namespace CASM {
@@ -58,16 +54,12 @@ namespace CASM {
 
       if(begin_volume < 1) {
         std::string msg = "Error constructing ScelEnumProps: begin_volume < 1";
-        default_err_log().error("Constructing ScelEnumProps");
-        default_err_log() << msg << "\n" << std::endl;
         throw std::invalid_argument(msg);
       }
 
       for(int i = 0; i < m_dirs.size(); i++) {
         if(m_dirs[i] != 'a' && m_dirs[i] != 'b' && m_dirs[i] != 'c') {
           std::string msg = "Error constructing ScelEnumProps: an element of dirs != 'a', 'b', or 'c'";
-          default_err_log().error("Constructing ScelEnumProps");
-          default_err_log() << msg << "\n" << std::endl;
           throw std::invalid_argument(msg);
         }
       }
@@ -257,14 +249,14 @@ namespace CASM {
 
   //******************************************************************************************************************//
 
-  template <typename UnitType> class SupercellEnumerator;
+  class SuperlatticeEnumerator;
 
-  /// \brief Iterators used with SupercellEnumerator
+  /// \brief Iterators used with SuperlatticeEnumerator
   ///
-  /// Allows iterating over unique supercells of a UnitType object (may be Lattice, eventually BasicStructure, or Structure)
+  /// Allows iterating over unique superlattices
   ///
-  template <typename UnitType>
-  class SupercellIterator {
+
+  class SuperlatticeIterator {
 
   public:
 
@@ -273,27 +265,27 @@ namespace CASM {
 
     typedef std::forward_iterator_tag iterator_category;
     typedef int difference_type;
-    typedef UnitType value_type;
-    typedef const UnitType &reference;
-    typedef const UnitType *pointer;
+    typedef Lattice value_type;
+    typedef const Lattice &reference;
+    typedef const Lattice *pointer;
 
-    SupercellIterator<UnitType>() {}
+    SuperlatticeIterator() {}
 
-    SupercellIterator<UnitType>(const SupercellEnumerator<UnitType> &enumerator,
-                                int volume,
-                                int dims);
+    SuperlatticeIterator(const SuperlatticeEnumerator &enumerator,
+                         int volume,
+                         int dims);
 
     //required for all iterators
-    //SupercellIterator<UnitType>(const SupercellIterator<UnitType> &B);
+    //SuperlatticeIterator<UnitType>(const SuperlatticeIterator<UnitType> &B);
 
     //required for all iterators?
-    SupercellIterator<UnitType> &operator=(const SupercellIterator<UnitType> &B);
+    SuperlatticeIterator &operator=(const SuperlatticeIterator &B);
 
     /// \brief Iterator comparison
-    bool operator==(const SupercellIterator<UnitType> &B) const;
+    bool operator==(const SuperlatticeIterator &B) const;
 
     /// \brief Iterator comparison
-    bool operator!=(const SupercellIterator<UnitType> &B) const;
+    bool operator!=(const SuperlatticeIterator &B) const;
 
     /// \brief Access the supercell
     reference operator*() const;
@@ -307,14 +299,14 @@ namespace CASM {
     /// \brief current volume
     HermiteCounter::value_type volume() const;
 
-    /// \brief const reference to the SupercellEnumerator this is iterating with
-    const SupercellEnumerator<UnitType> &enumerator() const;
+    /// \brief const reference to the SuperlatticeEnumerator this is iterating with
+    const SuperlatticeEnumerator &enumerator() const;
 
     /// \brief Prefix increment operator. Increment to next unique supercell.
-    SupercellIterator<UnitType> &operator++();
+    SuperlatticeIterator &operator++();
 
     /// \brief Postfix increment operator. Increment to next unique supercell.
-    //SupercellIterator<UnitType> operator++(int);  TODO
+    //SuperlatticeIterator<UnitType> operator++(int);  TODO
 
 
   private:
@@ -335,14 +327,14 @@ namespace CASM {
     /// \brief Indicates if m_super reflects the current m_current supercell matrix
     mutable bool m_super_updated;
 
-    /// \brief Pointer to SupercellEnumerator which holds the unit cell and point group
-    const SupercellEnumerator<UnitType> *m_enum;
+    /// \brief Pointer to SuperlatticeEnumerator which holds the unit cell and point group
+    const SuperlatticeEnumerator *m_enum;
 
     /// \brief Current supercell matrix in HermitCounter form
     notstd::cloneable_ptr<HermiteCounter> m_current;
 
     /// \brief A supercell, stored here so that iterator dereferencing will be OK. Only used when requested.
-    mutable UnitType m_super;
+    mutable Lattice m_super;
 
     /// \brief Keep track of the HNF matrices for the current determinant value
     std::vector<Eigen::Matrix3i> m_canon_hist;
@@ -352,40 +344,37 @@ namespace CASM {
 
   /// \brief A fake container of supercell matrices
   ///
-  /// Provides iterators over symmetrically unique supercells of some object of UnitType. Could be Lattice,
-  /// eventually BasicStructure or Structure
-  ///
-  template<typename UnitType>
-  class SupercellEnumerator {
+  /// Provides iterators over symmetrically unique superlattices.
+
+  class SuperlatticeEnumerator {
 
   public:
 
     typedef long int size_type;
 
-    typedef SupercellIterator<UnitType> const_iterator;
+    typedef SuperlatticeIterator const_iterator;
+
+    typedef Adapter::SymOpMatrixType SymOpType;
 
 
-    /// \brief Construct a SupercellEnumerator using custom point group operations
+    /// \brief Construct a SuperlatticeEnumerator using custom point group operations
     ///
-    /// \returns a SupercellEnumerator
+    /// \returns a SuperlatticeEnumerator
     ///
     /// \param unit The thing that is tiled to form supercells. For now Lattice.
     /// \param point_grp Point group operations to use for checking supercell uniqueness.
     /// \param enum_props Data structure specifying how to enumerate supercells
     ///
-    SupercellEnumerator(UnitType unit,
-                        const std::vector<SymOp> &point_grp,
-                        const ScelEnumProps &enum_props);
+    SuperlatticeEnumerator(const Lattice &unit,
+                           const std::vector<SymOpType> &point_grp,
+                           const ScelEnumProps &enum_props);
 
 
-    /// \brief Access the unit the is being made into supercells
-    const UnitType &unit() const;
-
-    /// \brief Access the unit lattice
-    const Lattice &lattice() const;
+    /// \brief Access the unit the is being made into superlattices
+    const Lattice &unit() const;
 
     /// \brief Access the unit point group
-    const std::vector<SymOp> &point_group() const;
+    const std::vector<SymOpType> &point_group() const;
 
     /// \brief Set the beginning volume
     void begin_volume(size_type _begin_volume);
@@ -423,13 +412,13 @@ namespace CASM {
   private:
 
     /// \brief The unit cell of the supercells
-    const UnitType m_unit;
+    const Lattice m_unit;
 
     /// \brief The lattice of the unit cell
-    Lattice m_lat;
+    /* Lattice m_lat; */
 
     /// \brief The point group of the unit cell
-    std::vector<SymOp> m_point_group;         //factor group...?
+    std::vector<SymOpType> m_point_group;
 
     /// \brief The first volume supercells to be iterated over (what cbegin uses)
     const int m_begin_volume;
@@ -464,25 +453,23 @@ namespace CASM {
   ///          and S.determinant() >= volume
   ///
   ///
-  template<typename UnitType>
   Eigen::Matrix3i enforce_min_volume(
-    const UnitType &unit,
+    const Lattice &unit,
     const Eigen::Matrix3i &T,
-    const std::vector<SymOp> &point_grp,
+    const std::vector<SuperlatticeEnumerator::SymOpType> &point_grp,
     Index volume,
     bool fix_shape = false);
 
 
 
-  template<typename UnitType>
-  SupercellIterator<UnitType>::SupercellIterator(const SupercellEnumerator<UnitType> &enumerator,
-                                                 int volume,
-                                                 int dims):
+  SuperlatticeIterator::SuperlatticeIterator(const SuperlatticeEnumerator &enumerator,
+                                             int volume,
+                                             int dims):
     m_super_updated(false),
     m_enum(&enumerator),
     m_current(notstd::make_cloneable<HermiteCounter>(volume, dims)) {
     if(enumerator.begin_volume() > enumerator.end_volume()) {
-      throw std::runtime_error("The beginning volume of the SupercellEnumerator cannot be greater than the end volume!");
+      throw std::runtime_error("The beginning volume of the SuperlatticeEnumerator cannot be greater than the end volume!");
     }
 
     if(dims < 1) {
@@ -490,16 +477,7 @@ namespace CASM {
     }
   }
 
-  /*
-  template<typename UnitType>
-  SupercellIterator<UnitType>::SupercellIterator(const SupercellIterator &B)
-  {
-      *this = B;
-  };
-  */
-
-  template<typename UnitType>
-  SupercellIterator<UnitType> &SupercellIterator<UnitType>::operator=(const SupercellIterator &B) {
+  SuperlatticeIterator &SuperlatticeIterator::operator=(const SuperlatticeIterator &B) {
     m_enum = B.m_enum;
     m_current = B.m_current;
     m_super_updated = false;
@@ -508,18 +486,15 @@ namespace CASM {
     return *this;
   }
 
-  template<typename UnitType>
-  bool SupercellIterator<UnitType>::operator==(const SupercellIterator &B) const {
+  bool SuperlatticeIterator::operator==(const SuperlatticeIterator &B) const {
     return (m_enum == B.m_enum) && (matrix() - B.matrix()).isZero();
   }
 
-  template<typename UnitType>
-  bool SupercellIterator<UnitType>::operator!=(const SupercellIterator &B) const {
+  bool SuperlatticeIterator::operator!=(const SuperlatticeIterator &B) const {
     return !(*this == B);
   }
 
-  template<typename UnitType>
-  typename SupercellIterator<UnitType>::reference SupercellIterator<UnitType>::operator*() const {
+  typename SuperlatticeIterator::reference SuperlatticeIterator::operator*() const {
     if(!m_super_updated) {
       m_super = make_supercell(m_enum->unit(), matrix());
       m_super_updated = true;
@@ -527,8 +502,7 @@ namespace CASM {
     return m_super;
   }
 
-  template<typename UnitType>
-  typename SupercellIterator<UnitType>::pointer SupercellIterator<UnitType>::operator->() const {
+  typename SuperlatticeIterator::pointer SuperlatticeIterator::operator->() const {
     if(!m_super_updated) {
       m_super = make_supercell(m_enum->unit(), matrix());
       m_super_updated = true;
@@ -536,43 +510,30 @@ namespace CASM {
     return &m_super;
   }
 
-  template<typename UnitType>
-  HermiteCounter::value_type SupercellIterator<UnitType>::volume() const {
+  HermiteCounter::value_type SuperlatticeIterator::volume() const {
     return m_current->determinant();
   }
 
-  template<typename UnitType>
-  Eigen::Matrix3i SupercellIterator<UnitType>::matrix() const {
+  /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
+  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SuperlatticeEnumerator::SymOpType> &effective_pg, const Lattice &ref_lattice);
+
+  Eigen::Matrix3i SuperlatticeIterator::matrix() const {
     Eigen::Matrix3i expanded = HermiteCounter_impl::_expand_dims((*m_current)(), m_enum->gen_mat());
-    return canonical_hnf(expanded, m_enum->point_group(), m_enum->lattice());
+    return canonical_hnf(expanded, m_enum->point_group(), m_enum->unit());
+    /* return canonical_hnf(expanded, m_enum->point_group(), m_enum->lattice()); */
   }
 
-  template<typename UnitType>
-  const SupercellEnumerator<UnitType> &SupercellIterator<UnitType>::enumerator() const {
+  const SuperlatticeEnumerator &SuperlatticeIterator::enumerator() const {
     return *m_enum;
   }
 
   // prefix
-  template<typename UnitType>
-  SupercellIterator<UnitType> &SupercellIterator<UnitType>::operator++() {
+  SuperlatticeIterator &SuperlatticeIterator::operator++() {
     _increment();
     return *this;
   }
 
-  /*
-  // postfix
-  template<typename UnitType>
-  SupercellIterator<UnitType> SupercellIterator<UnitType>::operator++(int)
-  {
-      SupercellIterator result(*this);
-      _increment();
-      return result;
-  }
-  */
-
-
-  template<typename UnitType>
-  void SupercellIterator<UnitType>::_increment() {
+  void SuperlatticeIterator::_increment() {
     m_canon_hist.push_back(matrix());
     HermiteCounter::value_type last_determinant = m_current->determinant();
     ++(*m_current);
@@ -590,100 +551,64 @@ namespace CASM {
 
   //********************************************************************************************************//
 
-  template<typename UnitType>
-  const UnitType &SupercellEnumerator<UnitType>::unit() const {
+  const Lattice &SuperlatticeEnumerator::unit() const {
     return m_unit;
   }
 
-  template<typename UnitType>
-  const Lattice &SupercellEnumerator<UnitType>::lattice() const {
-    return m_lat;
-  }
-
-  template<typename UnitType>
-  const std::vector<SymOp> &SupercellEnumerator<UnitType>::point_group() const {
+  const std::vector<SuperlatticeEnumerator::SymOpType> &SuperlatticeEnumerator::point_group() const {
     return m_point_group;
   }
 
-  template<typename UnitType>
-  const Eigen::Matrix3i &SupercellEnumerator<UnitType>::gen_mat() const {
+  const Eigen::Matrix3i &SuperlatticeEnumerator::gen_mat() const {
     return m_gen_mat;
   }
 
-  template<typename UnitType>
-  int SupercellEnumerator<UnitType>::dimension() const {
+  int SuperlatticeEnumerator::dimension() const {
     return m_dims;
   }
 
-  /*
-  template<typename UnitType>
-  void SupercellEnumerator<UnitType>::begin_volume(size_type _begin_volume)
-  {
-      m_begin_volume = _begin_volume;
-  }
-  */
-
-  template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::size_type SupercellEnumerator<UnitType>::begin_volume() const {
+  typename SuperlatticeEnumerator::size_type SuperlatticeEnumerator::begin_volume() const {
     return m_begin_volume;
   }
 
-  /*
-  template<typename UnitType>
-  void SupercellEnumerator<UnitType>::end_volume(size_type _end_volume)
-  {
-      m_end_volume = _end_volume;
-  }
-  */
-
-  template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::size_type SupercellEnumerator<UnitType>::end_volume() const {
+  typename SuperlatticeEnumerator::size_type SuperlatticeEnumerator::end_volume() const {
     return m_end_volume;
   }
 
-  template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::begin() const {
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::begin() const {
     return const_iterator(*this, m_begin_volume, dimension());
   }
 
-  template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::end() const {
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::end() const {
     return const_iterator(*this, m_end_volume, dimension());
   }
 
-  template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cbegin() const {
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::cbegin() const {
     return const_iterator(*this, m_begin_volume, dimension());
   }
 
-  template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cend() const {
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::cend() const {
     return const_iterator(*this, m_end_volume, dimension());
   }
 
-  template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::citerator(size_type volume) const {
-    return SupercellIterator<UnitType>(*this, volume, dimension());
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::citerator(size_type volume) const {
+    return SuperlatticeIterator(*this, volume, dimension());
   }
 
 
-  // declare specializations for Lattice
-  template<>
-  SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    const std::vector<SymOp> &point_grp,
-                                                    const ScelEnumProps &enum_props);
+  /* template<> */
+  /* SuperlatticeEnumerator<Lattice>::SuperlatticeEnumerator(Lattice unit, */
+  /*                                                   const std::vector<SymOpType> &point_grp, */
+  /*                                                   const ScelEnumProps &enum_props); */
 
-  template<>
-  Eigen::Matrix3i enforce_min_volume<Lattice>(
-    const Lattice &unit,
-    const Eigen::Matrix3i &T,
-    const std::vector<SymOp> &point_grp,
-    Index volume,
-    bool fix_shape);
+  /* template<> */
+  /* Eigen::Matrix3i enforce_min_volume<Lattice>( */
+  /*   const Lattice &unit, */
+  /*   const Eigen::Matrix3i &T, */
+  /*   const std::vector<SymOpType> &point_grp, */
+  /*   Index volume, */
+  /*   bool fix_shape); */
 
-
-  /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
-  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SymOp> &effective_pg, const Lattice &ref_lattice);
 
   /** @} */
 }
