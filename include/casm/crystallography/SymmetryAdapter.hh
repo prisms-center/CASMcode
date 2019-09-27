@@ -12,6 +12,7 @@ namespace CASM {
 
     SymOpMatrixType symop_to_matrix(const CASM::SymOp &op);
     std::vector<SymOpMatrixType> symop_to_matrix(const CASM::SymGroup &group);
+    std::vector<SymOpMatrixType> symop_to_matrix(const std::vector<CASM::SymOp> &group);
 
 
   } // namespace Adapter
