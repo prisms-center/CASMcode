@@ -1,5 +1,5 @@
 #include "casm/clex/SuperConfigEnum.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumEquivalents.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
@@ -169,8 +169,8 @@ namespace CASM {
     bool primitive_only = true;
     _kwargs.get_if(primitive_only, "primitive_only");
 
-    // -- make <SupercellEnumerator<Lattice> & filter_expr from input
-    std::unique_ptr<SupercellEnumerator<Lattice> > superlat_enum =
+    // -- make SuperlatticeEnumerator & filter_expr from input
+    std::unique_ptr<SuperlatticeEnumerator> superlat_enum =
       make_enumerator_superlat_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
