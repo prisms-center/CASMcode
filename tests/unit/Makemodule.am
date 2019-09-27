@@ -323,7 +323,6 @@ casm_unit_crystallography_SOURCES = \
     tests/unit/crystallography/Niggli_test.cpp\
     tests/unit/crystallography/Lattice_test.cpp\
     tests/unit/crystallography/Site_test.cpp\
-    tests/unit/crystallography/SupercellEnumerator_test.cpp\
     tests/unit/crystallography/Coordinate_test.cpp\
     tests/unit/crystallography/Structure_test.cpp\
     tests/unit/gtest_main_run_all.cpp
