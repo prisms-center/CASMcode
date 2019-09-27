@@ -12,8 +12,6 @@
 #include "FCCTernaryProj.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
-//#include "casm/app/AppIO.hh"
-//#include "casm/app/AppIO_impl.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clex/PrimClex.hh"

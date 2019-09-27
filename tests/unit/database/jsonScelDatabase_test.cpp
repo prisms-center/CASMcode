@@ -10,7 +10,7 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
 
 using namespace CASM;
 
@@ -33,7 +33,7 @@ TEST(jsonScelDatabase_Test, Test1) {
   int minvol = 1;
   int maxvol = 10;
   ScelEnumProps enum_props(minvol, maxvol + 1);
-  SupercellEnumerator<Lattice> lat_enum(prim.lattice(), prim.factor_group(), enum_props);
+  SuperlatticeEnumerator lat_enum(prim.lattice(), Adapter::symop_to_matrix(prim.factor_group()), enum_props);
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
     db_scel.emplace(&primclex, it->canonical_form(prim.point_group()));
   }

@@ -9,7 +9,8 @@
 
 /// What is being used to test it:
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
+#include "casm/crystallography/SymmetryAdapter.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/crystallography/Niggli.hh"
@@ -400,7 +401,7 @@ jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol
   std::vector<Eigen::Matrix3i> enumerated_mats;
 
   ScelEnumProps enum_props(minvol, maxvol + 1);
-  SupercellEnumerator<Lattice> test_enumerator(test_lat, effective_pg, enum_props);
+  SuperlatticeEnumerator test_enumerator(test_lat, Adapter::symop_to_matrix(effective_pg), enum_props);
 
   double tol = TOL;
   for(auto it = test_enumerator.begin(); it != test_enumerator.end(); ++it) {
@@ -556,7 +557,7 @@ void trans_enum_test() {
   Lattice bigunit = make_supercell(testlat, transmat);
 
   ScelEnumProps enum_props(1, 5 + 1, "abc", transmat);
-  SupercellEnumerator<Lattice> enumerator(testlat, pg, enum_props);
+  SuperlatticeEnumerator enumerator(testlat, Adapter::symop_to_matrix(pg), enum_props);
 
   std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
 
@@ -582,7 +583,7 @@ void restricted_test() {
     // int dims = 1;
 
     ScelEnumProps enum_props(1, 15 + 1, "a");
-    SupercellEnumerator<Lattice> enumerator(testlat, pg, enum_props);
+    SuperlatticeEnumerator enumerator(testlat, Adapter::symop_to_matrix(pg), enum_props);
 
     int l = 1;
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
@@ -591,7 +592,7 @@ void restricted_test() {
                     0, 1, 0,
                     0, 0, 1;
 
-      EXPECT_TRUE(it.matrix() == canonical_hnf(comp_transmat, pg, testlat));
+      EXPECT_TRUE(it.matrix() == canonical_hnf(comp_transmat, Adapter::symop_to_matrix(pg), testlat));
       l++;
     }
   }
@@ -600,11 +601,11 @@ void restricted_test() {
 }
 
 
-TEST(SupercellEnumeratorTest, HermiteConstruction) {
+TEST(SuperlatticeEnumeratorTest, HermiteConstruction) {
   hermite_init();
 }
 
-TEST(SupercellEnumeratorTest, HermiteImpl) {
+TEST(SuperlatticeEnumeratorTest, HermiteImpl) {
   spill_test();
   next_position_test();
   triangle_count_test();
@@ -614,7 +615,7 @@ TEST(SupercellEnumeratorTest, HermiteImpl) {
   compare_test();
 }
 
-TEST(SupercellEnumeratorTest, HermiteCounting) {
+TEST(SuperlatticeEnumeratorTest, HermiteCounting) {
   increment_test();
 }
 
@@ -626,7 +627,7 @@ TEST(SupercellEnumeratorTest, HermiteCounting) {
 //they should have been, so these hard coded examples to check
 //had to be regenerated...
 
-TEST(SupercellEnumeratorTest, EnumeratorConsistency) {
+TEST(SuperlatticeEnumeratorTest, EnumeratorConsistency) {
 
   boost::filesystem::path old_test_path = testdir / "test_cases.json";
   boost::filesystem::path current_test_path = testdir / "current_test_results.json";
@@ -680,7 +681,7 @@ results were incorrect, and these are an improvement. If you are sure you want t
 
 }
 
-TEST(SupercellEnumeratorTest, RestrictedEnumeration) {
+TEST(SuperlatticeEnumeratorTest, RestrictedEnumeration) {
   trans_enum_test();
   restricted_test();
 }

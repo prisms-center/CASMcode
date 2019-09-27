@@ -8,7 +8,6 @@
 
 /// What is being used to test it:
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/NeighborList.hh"
