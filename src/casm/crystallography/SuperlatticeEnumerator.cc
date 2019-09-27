@@ -12,6 +12,158 @@
 namespace CASM {
 
   //*******************************************************************************************************************//
+  //ScelEnumProps
+
+  //*******************************************************************************************************************//
+  //SuperlatticeIterator
+
+  SuperlatticeIterator::SuperlatticeIterator(const SuperlatticeEnumerator &enumerator,
+                                             int volume,
+                                             int dims):
+    m_super_updated(false),
+    m_enum(&enumerator),
+    m_current(notstd::make_cloneable<HermiteCounter>(volume, dims)) {
+    if(enumerator.begin_volume() > enumerator.end_volume()) {
+      throw std::runtime_error("The beginning volume of the SuperlatticeEnumerator cannot be greater than the end volume!");
+    }
+
+    if(dims < 1) {
+      throw std::runtime_error("Dimensions to count over must be greater than 0!");
+    }
+  }
+
+  SuperlatticeIterator &SuperlatticeIterator::operator=(const SuperlatticeIterator &B) {
+    m_enum = B.m_enum;
+    m_current = B.m_current;
+    m_super_updated = false;
+
+    m_canon_hist = B.m_canon_hist;
+    return *this;
+  }
+
+  bool SuperlatticeIterator::operator==(const SuperlatticeIterator &B) const {
+    return (m_enum == B.m_enum) && (matrix() - B.matrix()).isZero();
+  }
+
+  bool SuperlatticeIterator::operator!=(const SuperlatticeIterator &B) const {
+    return !(*this == B);
+  }
+
+  typename SuperlatticeIterator::reference SuperlatticeIterator::operator*() const {
+    if(!m_super_updated) {
+      m_super = make_supercell(m_enum->unit(), matrix());
+      m_super_updated = true;
+    }
+    return m_super;
+  }
+
+  typename SuperlatticeIterator::pointer SuperlatticeIterator::operator->() const {
+    if(!m_super_updated) {
+      m_super = make_supercell(m_enum->unit(), matrix());
+      m_super_updated = true;
+    }
+    return &m_super;
+  }
+
+  HermiteCounter::value_type SuperlatticeIterator::volume() const {
+    return m_current->determinant();
+  }
+
+  const SuperlatticeEnumerator &SuperlatticeIterator::enumerator() const {
+    return *m_enum;
+  }
+
+  // prefix
+  SuperlatticeIterator &SuperlatticeIterator::operator++() {
+    _increment();
+    return *this;
+  }
+
+  void SuperlatticeIterator::_increment() {
+    m_canon_hist.push_back(matrix());
+    HermiteCounter::value_type last_determinant = m_current->determinant();
+    ++(*m_current);
+
+    if(last_determinant != m_current->determinant()) {
+      m_canon_hist.clear();
+    }
+
+    while(std::find(m_canon_hist.begin(), m_canon_hist.end(), matrix()) != m_canon_hist.end()) {
+      ++(*m_current);
+    }
+
+    m_super_updated = false;
+  }
+
+  Eigen::Matrix3i SuperlatticeIterator::matrix() const {
+    Eigen::Matrix3i expanded = HermiteCounter_impl::_expand_dims((*m_current)(), m_enum->gen_mat());
+    return canonical_hnf(expanded, m_enum->point_group(), m_enum->unit());
+    /* return canonical_hnf(expanded, m_enum->point_group(), m_enum->lattice()); */
+  }
+
+  //*******************************************************************************************************************//
+  //SuperlatticeEnumerator
+
+  SuperlatticeEnumerator::SuperlatticeEnumerator(const Lattice &unit,
+                                                 const std::vector<SymOpType> &point_grp,
+                                                 const ScelEnumProps &enum_props) :
+    m_unit(unit),
+    m_point_group(point_grp),
+    m_begin_volume(enum_props.begin_volume()),
+    m_end_volume(enum_props.end_volume()),
+    m_gen_mat(enum_props.generating_matrix()),
+    m_dims(enum_props.dims()) {
+
+    if(m_gen_mat.determinant() < 1) {
+      throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
+    }
+  }
+
+  const Lattice &SuperlatticeEnumerator::unit() const {
+    return m_unit;
+  }
+
+  const std::vector<SuperlatticeEnumerator::SymOpType> &SuperlatticeEnumerator::point_group() const {
+    return m_point_group;
+  }
+
+  const Eigen::Matrix3i &SuperlatticeEnumerator::gen_mat() const {
+    return m_gen_mat;
+  }
+
+  int SuperlatticeEnumerator::dimension() const {
+    return m_dims;
+  }
+
+  typename SuperlatticeEnumerator::size_type SuperlatticeEnumerator::begin_volume() const {
+    return m_begin_volume;
+  }
+
+  typename SuperlatticeEnumerator::size_type SuperlatticeEnumerator::end_volume() const {
+    return m_end_volume;
+  }
+
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::begin() const {
+    return const_iterator(*this, m_begin_volume, dimension());
+  }
+
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::end() const {
+    return const_iterator(*this, m_end_volume, dimension());
+  }
+
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::cbegin() const {
+    return const_iterator(*this, m_begin_volume, dimension());
+  }
+
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::cend() const {
+    return const_iterator(*this, m_end_volume, dimension());
+  }
+
+  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::citerator(size_type volume) const {
+    return SuperlatticeIterator(*this, volume, dimension());
+  }
+
+  //*******************************************************************************************************************//
   //Functions
 
   Eigen::Matrix3i make_unit_cell(const PrimClex &primclex, const jsonParser &input) {
@@ -149,127 +301,6 @@ namespace CASM {
 
     return H_best;
     //return std::make_pair<Eigen::Matrix3i, Eigen::MatrixXd>(H_best, effective_pg[i_canon].matrix());
-  }
-
-  //*******************************************************************************************************************//
-  //ScelEnumProps
-
-  //*******************************************************************************************************************//
-  //SuperlatticeIterator
-
-  SuperlatticeIterator::SuperlatticeIterator(const SuperlatticeEnumerator &enumerator,
-                                             int volume,
-                                             int dims):
-    m_super_updated(false),
-    m_enum(&enumerator),
-    m_current(notstd::make_cloneable<HermiteCounter>(volume, dims)) {
-    if(enumerator.begin_volume() > enumerator.end_volume()) {
-      throw std::runtime_error("The beginning volume of the SuperlatticeEnumerator cannot be greater than the end volume!");
-    }
-
-    if(dims < 1) {
-      throw std::runtime_error("Dimensions to count over must be greater than 0!");
-    }
-  }
-
-  SuperlatticeIterator &SuperlatticeIterator::operator=(const SuperlatticeIterator &B) {
-    m_enum = B.m_enum;
-    m_current = B.m_current;
-    m_super_updated = false;
-
-    m_canon_hist = B.m_canon_hist;
-    return *this;
-  }
-
-  bool SuperlatticeIterator::operator==(const SuperlatticeIterator &B) const {
-    return (m_enum == B.m_enum) && (matrix() - B.matrix()).isZero();
-  }
-
-  bool SuperlatticeIterator::operator!=(const SuperlatticeIterator &B) const {
-    return !(*this == B);
-  }
-
-  typename SuperlatticeIterator::reference SuperlatticeIterator::operator*() const {
-    if(!m_super_updated) {
-      m_super = make_supercell(m_enum->unit(), matrix());
-      m_super_updated = true;
-    }
-    return m_super;
-  }
-
-  typename SuperlatticeIterator::pointer SuperlatticeIterator::operator->() const {
-    if(!m_super_updated) {
-      m_super = make_supercell(m_enum->unit(), matrix());
-      m_super_updated = true;
-    }
-    return &m_super;
-  }
-
-  HermiteCounter::value_type SuperlatticeIterator::volume() const {
-    return m_current->determinant();
-  }
-
-
-  //*******************************************************************************************************************//
-  //SuperlatticeEnumerator
-
-  SuperlatticeEnumerator::SuperlatticeEnumerator(const Lattice &unit,
-                                                 const std::vector<SymOpType> &point_grp,
-                                                 const ScelEnumProps &enum_props) :
-    m_unit(unit),
-    m_point_group(point_grp),
-    m_begin_volume(enum_props.begin_volume()),
-    m_end_volume(enum_props.end_volume()),
-    m_gen_mat(enum_props.generating_matrix()),
-    m_dims(enum_props.dims()) {
-
-    if(m_gen_mat.determinant() < 1) {
-      throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
-    }
-  }
-
-  const Lattice &SuperlatticeEnumerator::unit() const {
-    return m_unit;
-  }
-
-  const std::vector<SuperlatticeEnumerator::SymOpType> &SuperlatticeEnumerator::point_group() const {
-    return m_point_group;
-  }
-
-  const Eigen::Matrix3i &SuperlatticeEnumerator::gen_mat() const {
-    return m_gen_mat;
-  }
-
-  int SuperlatticeEnumerator::dimension() const {
-    return m_dims;
-  }
-
-  typename SuperlatticeEnumerator::size_type SuperlatticeEnumerator::begin_volume() const {
-    return m_begin_volume;
-  }
-
-  typename SuperlatticeEnumerator::size_type SuperlatticeEnumerator::end_volume() const {
-    return m_end_volume;
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::begin() const {
-    return const_iterator(*this, m_begin_volume, dimension());
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::end() const {
-    return const_iterator(*this, m_end_volume, dimension());
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::cbegin() const {
-    return const_iterator(*this, m_begin_volume, dimension());
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::cend() const {
-    return const_iterator(*this, m_end_volume, dimension());
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::citerator(size_type volume) const {
-    return SuperlatticeIterator(*this, volume, dimension());
   }
 
   //*******************************************************************************************************************//

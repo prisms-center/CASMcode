@@ -11,10 +11,17 @@ namespace CASM {
     typedef Eigen::Matrix3d SymOpMatrixType;
 
     SymOpMatrixType symop_to_matrix(const CASM::SymOp &op);
-    std::vector<SymOpMatrixType> symop_to_matrix(const CASM::SymGroup &group);
-    std::vector<SymOpMatrixType> symop_to_matrix(const std::vector<CASM::SymOp> &group);
 
+    template<typename SymGroupType>
+    std::vector<SymOpMatrixType> symop_to_matrix(const SymGroupType &group) {
+      std::vector<SymOpMatrixType> casted_group;
+      casted_group.reserve(group.size());
+      for(const auto &op : group) {
+        casted_group.push_back(symop_to_matrix(op));
+      }
 
+      return casted_group;
+    }
   } // namespace Adapter
 
 } // namespace CASM

@@ -116,54 +116,6 @@ namespace CASM {
 
   };
 
-  /// \brief Read unit cell transformation matrix from JSON input
-  ///
-  /// Input json with one of the following forms:
-  /// - \code
-  ///   {
-  ///     "unit_cell" : [
-  ///       [X, X, X],
-  ///       [X, X, X],
-  ///       [X, X, X]
-  ///     ]
-  ///   }
-  ///   \endcode
-  /// - \code
-  ///   { "unit_cell" : "SCEL..."}
-  ///   \endcode
-  /// - If input is null or does not contain "unit_cell", returns identity matrix.
-  ///
-  Eigen::Matrix3i make_unit_cell(const PrimClex &primclex, const jsonParser &json);
-
-  /// \brief Make a ScelEnumProps object from JSON input
-  ///
-  /// - min: int (default=1)
-  /// - max: int (default=max existing supercell size)
-  /// - dirs: string, (default="abc")
-  /// - unit_cell: 3x3 matrix of int, or string (default=identity matrix)
-  /// \code
-  /// {
-  ///   "min" : 1,
-  ///   "max" : 5,
-  ///   "dirs" : "abc",
-  ///   "unit_cell" : [
-  ///     [0, 0, 0],
-  ///     [0, 0, 0],
-  ///     [0, 0, 0]
-  ///   ],
-  ///   "unit_cell" : "SCEL...",
-  /// }
-  /// \endcode
-  ///
-  ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
-
-  jsonParser &to_json(const ScelEnumProps &props, jsonParser &json);
-
-  template<>
-  struct jsonConstructor<ScelEnumProps> {
-    static ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
-  };
-
   //******************************************************************************************************************//
 
   class SuperlatticeEnumerator;
@@ -353,6 +305,56 @@ namespace CASM {
   };
 
 
+  //********************************************************************************************************//
+
+  /// \brief Read unit cell transformation matrix from JSON input
+  ///
+  /// Input json with one of the following forms:
+  /// - \code
+  ///   {
+  ///     "unit_cell" : [
+  ///       [X, X, X],
+  ///       [X, X, X],
+  ///       [X, X, X]
+  ///     ]
+  ///   }
+  ///   \endcode
+  /// - \code
+  ///   { "unit_cell" : "SCEL..."}
+  ///   \endcode
+  /// - If input is null or does not contain "unit_cell", returns identity matrix.
+  ///
+  Eigen::Matrix3i make_unit_cell(const PrimClex &primclex, const jsonParser &json);
+
+  /// \brief Make a ScelEnumProps object from JSON input
+  ///
+  /// - min: int (default=1)
+  /// - max: int (default=max existing supercell size)
+  /// - dirs: string, (default="abc")
+  /// - unit_cell: 3x3 matrix of int, or string (default=identity matrix)
+  /// \code
+  /// {
+  ///   "min" : 1,
+  ///   "max" : 5,
+  ///   "dirs" : "abc",
+  ///   "unit_cell" : [
+  ///     [0, 0, 0],
+  ///     [0, 0, 0],
+  ///     [0, 0, 0]
+  ///   ],
+  ///   "unit_cell" : "SCEL...",
+  /// }
+  /// \endcode
+  ///
+  ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
+
+  jsonParser &to_json(const ScelEnumProps &props, jsonParser &json);
+
+  template<>
+  struct jsonConstructor<ScelEnumProps> {
+    static ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
+  };
+
   /// \brief Return a transformation matrix that ensures a supercell of at least
   ///        some volume
   ///
@@ -376,7 +378,6 @@ namespace CASM {
     const std::vector<SuperlatticeEnumerator::SymOpType> &point_grp,
     Index volume,
     bool fix_shape = false);
-
 
   /// \brief Return canonical hermite normal form of the supercell matrix
   ///
@@ -410,40 +411,6 @@ namespace CASM {
   /// \relatesalso Lattice
   ///
   Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SuperlatticeEnumerator::SymOpType> &effective_pg, const Lattice &ref_lattice);
-
-  Eigen::Matrix3i SuperlatticeIterator::matrix() const {
-    Eigen::Matrix3i expanded = HermiteCounter_impl::_expand_dims((*m_current)(), m_enum->gen_mat());
-    return canonical_hnf(expanded, m_enum->point_group(), m_enum->unit());
-    /* return canonical_hnf(expanded, m_enum->point_group(), m_enum->lattice()); */
-  }
-
-  const SuperlatticeEnumerator &SuperlatticeIterator::enumerator() const {
-    return *m_enum;
-  }
-
-  // prefix
-  SuperlatticeIterator &SuperlatticeIterator::operator++() {
-    _increment();
-    return *this;
-  }
-
-  void SuperlatticeIterator::_increment() {
-    m_canon_hist.push_back(matrix());
-    HermiteCounter::value_type last_determinant = m_current->determinant();
-    ++(*m_current);
-
-    if(last_determinant != m_current->determinant()) {
-      m_canon_hist.clear();
-    }
-
-    while(std::find(m_canon_hist.begin(), m_canon_hist.end(), matrix()) != m_canon_hist.end()) {
-      ++(*m_current);
-    }
-
-    m_super_updated = false;
-  }
-
-  //********************************************************************************************************//
 
 
 }

@@ -7,14 +7,5 @@ namespace CASM {
     SymOpMatrixType symop_to_matrix(const CASM::SymOp &op) {
       return op.matrix();
     }
-    std::vector<SymOpMatrixType> symop_to_matrix(const CASM::SymGroup &group) {
-      std::vector<SymOpMatrixType> casted_group;
-      casted_group.reserve(group.size());
-      for(const auto &op : group) {
-        casted_group.push_back(symop_to_matrix(op));
-      }
-
-      return casted_group;
-    }
   } // namespace Adapter
 } // namespace CASM

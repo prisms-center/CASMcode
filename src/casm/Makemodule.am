@@ -207,6 +207,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/BasicStructure.cc\
     src/casm/crystallography/SimpleStrucMapCalculator.cc\
     src/casm/crystallography/LatticeMap.cc\
+    src/casm/crystallography/HermiteCounter.cc\
     src/casm/crystallography/CoordinateSystems.cc\
     src/casm/database/PropertiesDatabase.cc\
     src/casm/database/DiffTransConfigDatabase.cc\
@@ -856,6 +857,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/PrimGrid.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/Lattice.hh\
+    include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LatticeCanonicalForm_impl.hh\
