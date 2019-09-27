@@ -903,11 +903,11 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SpeciesAttribute.hh\
     include/casm/crystallography/CoordinateSystems.hh\
     include/casm/crystallography/StrucMapping.hh\
+    include/casm/crystallography/SymmetryAdapter.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/PrimGrid.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
-    include/casm/crystallography/SupercellEnumerator.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/Lattice_impl.hh\
@@ -915,6 +915,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/BasicStructure.hh\
+    include/casm/crystallography/SuperlatticeEnumerator.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/Site.hh\
     include/casm/crystallography/Coordinate.hh\

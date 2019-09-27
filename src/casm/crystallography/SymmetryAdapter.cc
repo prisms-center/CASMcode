@@ -11,7 +11,7 @@ namespace CASM {
       std::vector<SymOpMatrixType> casted_group;
       casted_group.reserve(group.size());
       for(const auto &op : group) {
-        casted_group.push_back(cast(op));
+        casted_group.push_back(symop_to_matrix(op));
       }
 
       return casted_group;

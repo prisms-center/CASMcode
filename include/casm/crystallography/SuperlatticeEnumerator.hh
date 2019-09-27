@@ -7,7 +7,7 @@
 #include "casm/crystallography/SymmetryAdapter.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/container/Counter.hh"
+#include "casm/crystallography/HermiteCounter.hh"
 
 namespace CASM {
 
@@ -117,9 +117,44 @@ namespace CASM {
   };
 
   /// \brief Read unit cell transformation matrix from JSON input
+  ///
+  /// Input json with one of the following forms:
+  /// - \code
+  ///   {
+  ///     "unit_cell" : [
+  ///       [X, X, X],
+  ///       [X, X, X],
+  ///       [X, X, X]
+  ///     ]
+  ///   }
+  ///   \endcode
+  /// - \code
+  ///   { "unit_cell" : "SCEL..."}
+  ///   \endcode
+  /// - If input is null or does not contain "unit_cell", returns identity matrix.
+  ///
   Eigen::Matrix3i make_unit_cell(const PrimClex &primclex, const jsonParser &json);
 
   /// \brief Make a ScelEnumProps object from JSON input
+  ///
+  /// - min: int (default=1)
+  /// - max: int (default=max existing supercell size)
+  /// - dirs: string, (default="abc")
+  /// - unit_cell: 3x3 matrix of int, or string (default=identity matrix)
+  /// \code
+  /// {
+  ///   "min" : 1,
+  ///   "max" : 5,
+  ///   "dirs" : "abc",
+  ///   "unit_cell" : [
+  ///     [0, 0, 0],
+  ///     [0, 0, 0],
+  ///     [0, 0, 0]
+  ///   ],
+  ///   "unit_cell" : "SCEL...",
+  /// }
+  /// \endcode
+  ///
   ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
 
   jsonParser &to_json(const ScelEnumProps &props, jsonParser &json);
@@ -128,124 +163,6 @@ namespace CASM {
   struct jsonConstructor<ScelEnumProps> {
     static ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
   };
-
-  /**
-   * Given the dimensions of a square matrix and its determinant,
-   * HermiteCounter will cycle through every possible matrix that
-   * maintains it's Hermite normal form:
-   *  -Upper triangular matrix
-   *  -Determinant remains constant
-   *  -row values to the right of the diagonal will always be smaller than
-   *  the value of the diagonal
-   *
-   * In addition, this class is limited to SQUARE matrices, and NONZERO
-   * determinants. The idea is to use it for supcercell enumerations,
-   * where these conditions are always met.
-   *
-   * For a determinant det, the initial value of the counter will be
-   * a n x n identity matrix H with H(0,0)=det.
-   * The final position will be a n x n identity matrix with H(n-1,n-1)=det.
-   * Once the final position for a particular determinant is reached,
-   * the counter starts over with the next integer determinant value.
-   *
-   * There are two main steps in the counter:
-   *  -Incrementing the diagonal of the matrix such that its product remains
-   *  equal to the determinant
-   *  -Incrementing the upper triangular values such that they never exceed
-   *  the diagonal
-   *
-   * The diagonal increments are achieved by working only with two adjacent
-   * values at a time, distributing factors to the next diagonal element
-   * only if it equals 1. If not, the next adjacent pair is selected.
-   */
-
-  class HermiteCounter {
-  public:
-    typedef Eigen::VectorXi::Scalar value_type;
-    typedef CASM::Index Index;
-
-    /// \brief constructor to satisfy iterator requirements. Do not recommend.
-    //HermiteCounter() {};
-
-    /// \brief constructor given the desired determinant and square matrix dimensions
-    HermiteCounter(int init_determinant, int init_dim);
-
-    //You probably will never need these. They're just here for testing more than anything.
-    //Either way, they're safe to call.
-    Index position() const;
-    Eigen::VectorXi diagonal() const;
-    //value_type low() const;
-    //value_type high() const;
-
-    /// \brief Get the current matrix the counter is on
-    Eigen::MatrixXi current() const;
-
-    /// \brief Get the current determinant
-    value_type determinant() const;
-
-    /// \brief Get the dimensions of *this
-    Index dim() const;
-
-    /// \brief reset the counter to the first iteration of the current determinant
-    void reset_current();
-
-    /// \brief Skip the remaining iterations and start at the next determinant value
-    void next_determinant();
-
-    /// \brief Reset the diagonal to the specified determinant and set the other elements to zero
-    void jump_to_determinant(value_type new_det);
-
-    /// \brief Jump to the next available HNF matrix.
-    HermiteCounter &operator++();
-
-    /// \brief Get the current matrix the counter is on
-    Eigen::MatrixXi operator()() const;
-
-
-  private:
-
-    /// \brief Keeps track of the current diagonal element that needs to be factored
-    Index m_pos;
-
-    /// \brief Vector holding diagonal element values
-    Eigen::VectorXi m_diagonal;
-
-    /// \brief unrolled vector of the upper triangle (does not include diagonal elements)
-    EigenVectorXiCounter m_upper_tri;
-
-    /// \brief Go to the next values of diagonal elements that keep the same determinant
-    Index _increment_diagonal();
-
-  };
-
-  namespace HermiteCounter_impl {
-    /// \brief Find the next factor of the specified position and share with next element. Use attempt as starting point.
-    HermiteCounter::Index _spill_factor(Eigen::VectorXi &diag, HermiteCounter::Index position, HermiteCounter::value_type attempt);
-
-    /// \brief Spill the next factor of the specified element with its neighbor, and return new position
-    HermiteCounter::Index next_spill_position(Eigen::VectorXi &diag, HermiteCounter::Index position);
-
-    /// \brief Determine the number of elements in the upper triangular matrix (excluding diagonal)
-    HermiteCounter::Index upper_size(HermiteCounter::Index init_dim);
-
-    /// \brief Create a counter for the elements above the diagonal based on the current diagonal value
-    EigenVectorXiCounter _upper_tri_counter(const Eigen::VectorXi &current_diag);
-
-    /// \brief Assemble a matrix diagonal and unrolled upper triangle values into a matrix
-    Eigen::MatrixXi _zip_matrix(const Eigen::VectorXi &current_diag, const Eigen::VectorXi &current_upper_tri);
-
-    /// \brief Expand a n x n Hermite normal matrix into a m x m one (e.g. for 2D supercells)
-    Eigen::MatrixXi _expand_dims_old(const Eigen::MatrixXi &hermit_mat, const Eigen::VectorXi &active_dims);
-
-    /// \brief Expand a n x n Hermite normal matrix (H) into a m x m one through a m x m generating matrix (G) (e.g. for arbitrary 2D supercells)
-    Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &H, const Eigen::MatrixXi &G);
-
-    /// \brief Unroll a Hermit normal form square matrix into a vector such that it's canonical form is easy to compare
-    Eigen::VectorXi _canonical_unroll(const Eigen::MatrixXi &hermit_mat);
-
-    /// \brief Compare two integer matrices and see which one is lexicographically greatest. Returns true if H0<H1
-    bool _canonical_compare(const Eigen::MatrixXi &H0, const Eigen::MatrixXi &H1);
-  }
 
   //******************************************************************************************************************//
 
@@ -461,60 +378,37 @@ namespace CASM {
     bool fix_shape = false);
 
 
-
-  SuperlatticeIterator::SuperlatticeIterator(const SuperlatticeEnumerator &enumerator,
-                                             int volume,
-                                             int dims):
-    m_super_updated(false),
-    m_enum(&enumerator),
-    m_current(notstd::make_cloneable<HermiteCounter>(volume, dims)) {
-    if(enumerator.begin_volume() > enumerator.end_volume()) {
-      throw std::runtime_error("The beginning volume of the SuperlatticeEnumerator cannot be greater than the end volume!");
-    }
-
-    if(dims < 1) {
-      throw std::runtime_error("Dimensions to count over must be greater than 0!");
-    }
-  }
-
-  SuperlatticeIterator &SuperlatticeIterator::operator=(const SuperlatticeIterator &B) {
-    m_enum = B.m_enum;
-    m_current = B.m_current;
-    m_super_updated = false;
-
-    m_canon_hist = B.m_canon_hist;
-    return *this;
-  }
-
-  bool SuperlatticeIterator::operator==(const SuperlatticeIterator &B) const {
-    return (m_enum == B.m_enum) && (matrix() - B.matrix()).isZero();
-  }
-
-  bool SuperlatticeIterator::operator!=(const SuperlatticeIterator &B) const {
-    return !(*this == B);
-  }
-
-  typename SuperlatticeIterator::reference SuperlatticeIterator::operator*() const {
-    if(!m_super_updated) {
-      m_super = make_supercell(m_enum->unit(), matrix());
-      m_super_updated = true;
-    }
-    return m_super;
-  }
-
-  typename SuperlatticeIterator::pointer SuperlatticeIterator::operator->() const {
-    if(!m_super_updated) {
-      m_super = make_supercell(m_enum->unit(), matrix());
-      m_super_updated = true;
-    }
-    return &m_super;
-  }
-
-  HermiteCounter::value_type SuperlatticeIterator::volume() const {
-    return m_current->determinant();
-  }
-
-  /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
+  /// \brief Return canonical hermite normal form of the supercell matrix
+  ///
+  /// \returns Eigen::Matrix3i of H in canonical form
+  ///
+  /// \param T A supercell matrix (Eigen::Matrix3i), such that S = U*T,
+  ///          where S is the superlattice and U the unit lattice, as column vector matrices
+  /// \param ref_lattice The lattice the transformation matrix T is meant to be acting on
+  ///
+  /// \param effective_pg Group of symmetry operations to use for determining whether a canonical
+  ///        HNF matrix has been found. This is probably the point group of a structure or configuration
+  //         that has a lattice ref_lat (not to be confused with the point group of ref_lat itself).
+  ///
+  /// Canonical form is such that T is in Hermite normal form (as from CASM::hermite_normal_form),
+  ///  and the unrolled coefficients
+  /// \code
+  /// [a f e]
+  /// [0 b d] -> abcdef
+  /// [0 0 c]
+  /// \endcode
+  /// form the highest lexicographic order when considering equivalent superlattices by point group operations.
+  ///
+  /// - Equivalent superlattices can be obtained using point group operations: S' = op*S = U*H*V,
+  ///   where V is integer and has determinant +/- 1
+  /// - Substituting S = U*T, we have op*U*T = U*H*V.
+  /// - Or H*V = U.inverse*op*U*T, which is the hermite normal form of U.inverse*op*U*T
+  /// - So T is canonical if it is in hermite normal form and for all point group operations
+  ///   it has a higher lexicographic order than the resulting H
+  ///
+  ///
+  /// \relatesalso Lattice
+  ///
   Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SuperlatticeEnumerator::SymOpType> &effective_pg, const Lattice &ref_lattice);
 
   Eigen::Matrix3i SuperlatticeIterator::matrix() const {
@@ -551,66 +445,7 @@ namespace CASM {
 
   //********************************************************************************************************//
 
-  const Lattice &SuperlatticeEnumerator::unit() const {
-    return m_unit;
-  }
 
-  const std::vector<SuperlatticeEnumerator::SymOpType> &SuperlatticeEnumerator::point_group() const {
-    return m_point_group;
-  }
-
-  const Eigen::Matrix3i &SuperlatticeEnumerator::gen_mat() const {
-    return m_gen_mat;
-  }
-
-  int SuperlatticeEnumerator::dimension() const {
-    return m_dims;
-  }
-
-  typename SuperlatticeEnumerator::size_type SuperlatticeEnumerator::begin_volume() const {
-    return m_begin_volume;
-  }
-
-  typename SuperlatticeEnumerator::size_type SuperlatticeEnumerator::end_volume() const {
-    return m_end_volume;
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::begin() const {
-    return const_iterator(*this, m_begin_volume, dimension());
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::end() const {
-    return const_iterator(*this, m_end_volume, dimension());
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::cbegin() const {
-    return const_iterator(*this, m_begin_volume, dimension());
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::cend() const {
-    return const_iterator(*this, m_end_volume, dimension());
-  }
-
-  typename SuperlatticeEnumerator::const_iterator SuperlatticeEnumerator::citerator(size_type volume) const {
-    return SuperlatticeIterator(*this, volume, dimension());
-  }
-
-
-  /* template<> */
-  /* SuperlatticeEnumerator<Lattice>::SuperlatticeEnumerator(Lattice unit, */
-  /*                                                   const std::vector<SymOpType> &point_grp, */
-  /*                                                   const ScelEnumProps &enum_props); */
-
-  /* template<> */
-  /* Eigen::Matrix3i enforce_min_volume<Lattice>( */
-  /*   const Lattice &unit, */
-  /*   const Eigen::Matrix3i &T, */
-  /*   const std::vector<SymOpType> &point_grp, */
-  /*   Index volume, */
-  /*   bool fix_shape); */
-
-
-  /** @} */
 }
 
 #endif

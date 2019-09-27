@@ -5,7 +5,8 @@
 #include "casm/casm_io/json_io/container.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
+#include "casm/crystallography/SymmetryAdapter.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/symmetry/SymOp.hh"
 
@@ -326,7 +327,7 @@ namespace CASM {
                                     const std::vector<SymOp> &effective_pg,
                                     const ScelEnumProps &enum_props) const {
 
-    SupercellEnumerator<Lattice> enumerator(*this, effective_pg, enum_props);
+    SuperlatticeEnumerator enumerator(*this, Adapter::symop_to_matrix(effective_pg), enum_props);
     supercell.clear();
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       supercell.push_back(canonical_equivalent_lattice(*it, effective_pg, TOL));
