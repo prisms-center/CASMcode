@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/NeighborList.hh"
@@ -16,9 +15,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(NeighborListTest)
-
-BOOST_AUTO_TEST_CASE(PrimNeighborListBasics) {
+TEST(NeighborListTest, PrimNeighborListBasics) {
   Structure prim(test::FCC_ternary_prim());
   std::set<int> sublat_indices;
   for(int i = 0; i < prim.basis().size(); i++) {
@@ -37,7 +34,7 @@ BOOST_AUTO_TEST_CASE(PrimNeighborListBasics) {
   W << 2, 1, 1,
   1, 2, 1,
   1, 1, 2;
-  BOOST_CHECK_EQUAL(nlist.weight_matrix() == W, true);
+  EXPECT_EQ(nlist.weight_matrix() == W, true);
 
   // expand
   std::set<UnitCellCoord> nbors;
@@ -45,21 +42,21 @@ BOOST_AUTO_TEST_CASE(PrimNeighborListBasics) {
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
-  BOOST_CHECK_EQUAL(nlist.size(), 177);
+  EXPECT_EQ(nlist.size(), 177);
 
   // copy
   PrimNeighborList nlist2 = nlist;
-  BOOST_CHECK_EQUAL(nlist2.size(), 177);
+  EXPECT_EQ(nlist2.size(), 177);
 
   // clone
   notstd::cloneable_ptr<PrimNeighborList> ptr1(nlist.clone());
-  BOOST_CHECK_EQUAL(ptr1->size(), 177);
+  EXPECT_EQ(ptr1->size(), 177);
   std::unique_ptr<PrimNeighborList> ptr2 = nlist.clone();
-  BOOST_CHECK_EQUAL(ptr2->size(), 177);
+  EXPECT_EQ(ptr2->size(), 177);
 
 }
 
-BOOST_AUTO_TEST_CASE(SuperNeighborListBasics) {
+TEST(NeighborListTest, SuperNeighborListBasics) {
   Structure prim(test::FCC_ternary_prim());
   std::set<int> sublat_indices;
   for(int i = 0; i < prim.basis().size(); i++) {
@@ -79,7 +76,7 @@ BOOST_AUTO_TEST_CASE(SuperNeighborListBasics) {
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
-  BOOST_CHECK_EQUAL(nlist.size(), 177);
+  EXPECT_EQ(nlist.size(), 177);
 
   // construct SuperNeighborList
   Eigen::Matrix3i T;
@@ -92,15 +89,15 @@ BOOST_AUTO_TEST_CASE(SuperNeighborListBasics) {
 
   // size
   for(int i = 0; i < grid.size(); ++i) {
-    BOOST_CHECK_EQUAL(super_nlist.sites(i).size(), 177);
+    EXPECT_EQ(super_nlist.sites(i).size(), 177);
   }
 
   for(int i = 0; i < grid.size(); ++i) {
-    BOOST_CHECK_EQUAL(super_nlist.unitcells(i).size(), 177);
+    EXPECT_EQ(super_nlist.unitcells(i).size(), 177);
   }
 
   // overlaps
-  BOOST_CHECK_EQUAL(super_nlist.overlaps(), true);
+  EXPECT_EQ(super_nlist.overlaps(), true);
 
   // copy
   SuperNeighborList super_nlist2 = super_nlist;
@@ -112,7 +109,7 @@ BOOST_AUTO_TEST_CASE(SuperNeighborListBasics) {
 
 }
 
-BOOST_AUTO_TEST_CASE(NeighborListTestLatticeTests) {
+TEST(NeighborListTest, NeighborListTestLatticeTests) {
 
   Eigen::Matrix3d latvec;
   latvec.col(0) <<  2.955270000000, 0.000000000000, 0.000000000000;
@@ -126,10 +123,10 @@ BOOST_AUTO_TEST_CASE(NeighborListTestLatticeTests) {
   W_check.row(1) << 1, 2, 1;
   W_check.row(2) << 1, 1, 32;
 
-  BOOST_CHECK_EQUAL(W == W_check, true);
+  EXPECT_EQ(W == W_check, true);
 }
 
-BOOST_AUTO_TEST_CASE(Proj) {
+TEST(NeighborListTest, Proj) {
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -164,14 +161,12 @@ BOOST_AUTO_TEST_CASE(Proj) {
 
   //std::cout << "expand nlist" << std::endl;
   nlist.expand(nbors.begin(), nbors.end());
-  BOOST_CHECK_EQUAL(nlist.size(), 177);
+  EXPECT_EQ(nlist.size(), 177);
 
   //std::cout << "expand nlist again" << std::endl;
   nbors.clear();
   nbors.insert(UnitCellCoord(prim, 0, UnitCell(4, 0, 0)));
   nlist.expand(nbors.begin(), nbors.end());
-  BOOST_CHECK_EQUAL(nlist.size(), 381);
+  EXPECT_EQ(nlist.size(), 381);
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

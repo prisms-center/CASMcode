@@ -1,6 +1,7 @@
 #ifndef NIGGLI_HH
 #define NIGGLI_HH
 
+#include <vector>
 #include "casm/external/Eigen/Core"
 #include "casm/CASM_global_definitions.hh"
 

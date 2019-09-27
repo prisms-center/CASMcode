@@ -237,7 +237,7 @@ namespace CASM {
     // -- no casm project necessary for super cell of a POSCAR -------
 
     // want absolute paths
-    for(auto && file : tmatfile) {
+    for(auto &&file : tmatfile) {
       abs_tmatfile.push_back(fs::absolute(file));
     }
     abs_structfile = fs::absolute(structfile);

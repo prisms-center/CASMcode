@@ -1,5 +1,5 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 #include "casm/database/DiffTransConfigDatabase.hh"
@@ -49,14 +49,14 @@ namespace {
     TestOrbits0(const PrimClex &primclex) :
       test::TestPrimPeriodicDiffusionTransformationOrbits(
         primclex,
-        jsonFile("tests/unit/kinetics/FCCTernary_bspecs_0.json"),
+        jsonFile(autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_bspecs_0.json"),
         2, 4) {}
   };
 
   struct TestEnumerator0 {
 
     TestEnumerator0() :
-      diff_perturb_specs("tests/unit/kinetics/FCCTernary_diff_perturb_0.json") {}
+      diff_perturb_specs(autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_diff_perturb_0.json") {}
 
     typedef Kinetics::DiffTransConfigEnumOccPerturbations EnumType;
     typedef std::unique_ptr<EnumType> EnumPtr;
@@ -71,9 +71,8 @@ namespace {
   };
 }
 
-BOOST_AUTO_TEST_SUITE(jsonDiffTransConfigDatabase_Test)
 
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(jsonDiffTransConfigDatabase_Test, Test1) {
 
   // Make test project
   test::FCCTernaryProj proj;
@@ -87,12 +86,12 @@ BOOST_AUTO_TEST_CASE(Test1) {
   std::cout << "point 1\n";
   // Make DiffTransConfiguration database
   DB::jsonDatabase<Kinetics::DiffTransConfiguration> db_diff_trans_config(primclex);
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   std::cout << "point 2\n";
   // Open DiffTransConfiguration database
   db_diff_trans_config.open();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
+  EXPECT_EQ(db_diff_trans_config.size(), 0);
 
   std::cout << "point 3\n";
   // Make DiffTransConfiguration enumerator and enumerate configs
@@ -103,16 +102,16 @@ BOOST_AUTO_TEST_CASE(Test1) {
     db_diff_trans_config.insert(diff_trans_config);
   }
   db_diff_trans_config.commit();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 29); // not checked for accuracy
+  EXPECT_EQ(db_diff_trans_config.size(), 29); // not checked for accuracy
   std::cout << "point 4\n";
 
   // Check cached properties
   std::cout << "skipping cache check" << std::endl;
   ////  for(const auto &diff_trans_config : db_diff_trans_config) {
   ////    //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
-  ////    BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), false);
-  ////    BOOST_CHECK_EQUAL(diff_trans_config.multiplicity() != 0, true);
-  ////    BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), true);
+  ////    EXPECT_EQ(diff_trans_config.cache().contains("multiplicity"), false);
+  ////    EXPECT_EQ(diff_trans_config.multiplicity() != 0, true);
+  ////    EXPECT_EQ(diff_trans_config.cache().contains("multiplicity"), true);
   ////  }
   ////  db_diff_trans_config.commit();
   //
@@ -122,22 +121,22 @@ BOOST_AUTO_TEST_CASE(Test1) {
     auto it = next++;
     auto end = db_diff_trans_config.end();
     for(; next != end; ++it, ++next) {
-      BOOST_CHECK_EQUAL(*it < *next, true);
+      EXPECT_EQ(*it < *next, true);
     }
   }
   std::cout << "point 5\n";
   // Close DiffTransConfiguration database
   db_diff_trans_config.close();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 0);
+  EXPECT_EQ(db_diff_trans_config.size(), 0);
 
   // Re-open DiffTransConfiguration database
   db_diff_trans_config.open();
-  BOOST_CHECK_EQUAL(db_diff_trans_config.size(), 29); // not checked for accuracy
+  EXPECT_EQ(db_diff_trans_config.size(), 29); // not checked for accuracy
   std::cout << "point 6\n";
   //  // Check cached properties
   std::cout << "skipping cache check" << std::endl;
   ////  for(const auto &diff_trans_config : db_diff_trans_config) {
-  ////    BOOST_CHECK_EQUAL(diff_trans_config.cache().contains("multiplicity"), true);
+  ////    EXPECT_EQ(diff_trans_config.cache().contains("multiplicity"), true);
   ////  }
 
   // Check that the database is sorted
@@ -146,13 +145,11 @@ BOOST_AUTO_TEST_CASE(Test1) {
     auto it = next++;
     auto end = db_diff_trans_config.end();
     for(; next != end; ++it, ++next) {
-      BOOST_CHECK_EQUAL(*it < *next, true);
+      EXPECT_EQ(*it < *next, true);
     }
   }
 
   // Close DiffTransConfiguration database
   db_diff_trans_config.close();
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 }
-
-BOOST_AUTO_TEST_SUITE_END()

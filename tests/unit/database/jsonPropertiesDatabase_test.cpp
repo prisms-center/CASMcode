@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/database/json/jsonPropertiesDatabase.hh"
@@ -13,9 +12,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(jsonPropertiesDatabase_Test)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(jsonPropertiesDatabase_Test, Test1) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -23,17 +20,17 @@ BOOST_AUTO_TEST_CASE(Test1) {
   PrimClex primclex(proj.dir, null_log());
   //const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
-  BOOST_CHECK_EQUAL(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
+  EXPECT_EQ(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
 
   std::string calc_type("test");
   fs::path loc("tests/unit/database/config_props.json");
   DB::jsonPropertiesDatabase db_props(primclex, calc_type, loc);
-  BOOST_CHECK_EQUAL(1, 1);
+  EXPECT_EQ(1, 1);
 
   db_props.open();
-  BOOST_CHECK_EQUAL(1, 1);
-  BOOST_CHECK_EQUAL(db_props.empty(), true);
-  BOOST_CHECK_EQUAL(db_props.size(), 0);
+  EXPECT_EQ(1, 1);
+  EXPECT_EQ(db_props.empty(), true);
+  EXPECT_EQ(db_props.size(), 0);
 
   DB::MappedProperties props;
   props.from = "from/0";
@@ -42,15 +39,15 @@ BOOST_AUTO_TEST_CASE(Test1) {
   props.mapped = jsonParser::parse(std::string(R"({"relaxed_energy":0.1})"));
 
   auto res = db_props.insert(props);
-  BOOST_CHECK_EQUAL(res.second, true);
-  BOOST_CHECK_EQUAL(db_props.size(), 1);
-  BOOST_CHECK_EQUAL(db_props.find_via_from("from/0")->to, "to/0");
-  BOOST_CHECK_EQUAL(db_props.find_via_to("to/0")->from, "from/0");
-  BOOST_CHECK_EQUAL(db_props.relaxed_from_all("to/0").size(), 1);
-  BOOST_CHECK_EQUAL(db_props.relaxed_to("from/0"), "to/0");
-  BOOST_CHECK_EQUAL(db_props.relaxed_from("to/0"), "from/0");
-  BOOST_CHECK_EQUAL(db_props.best_score("to/0"), 0.1);
-  BOOST_CHECK_EQUAL(db_props.score("from/0"), 0.1);
+  EXPECT_EQ(res.second, true);
+  EXPECT_EQ(db_props.size(), 1);
+  EXPECT_EQ(db_props.find_via_from("from/0")->to, "to/0");
+  EXPECT_EQ(db_props.find_via_to("to/0")->from, "from/0");
+  EXPECT_EQ(db_props.relaxed_from_all("to/0").size(), 1);
+  EXPECT_EQ(db_props.relaxed_to("from/0"), "to/0");
+  EXPECT_EQ(db_props.relaxed_from("to/0"), "from/0");
+  EXPECT_EQ(db_props.best_score("to/0"), 0.1);
+  EXPECT_EQ(db_props.score("from/0"), 0.1);
 
   props.from = "from/1";
   props.to = "to/1";
@@ -58,15 +55,15 @@ BOOST_AUTO_TEST_CASE(Test1) {
   props.mapped = jsonParser::parse(std::string(R"({"relaxed_energy":0.2})"));
 
   res = db_props.insert(props);
-  BOOST_CHECK_EQUAL(res.second, true);
-  BOOST_CHECK_EQUAL(db_props.size(), 2);
-  BOOST_CHECK_EQUAL(db_props.find_via_from("from/1")->to, "to/1");
-  BOOST_CHECK_EQUAL(db_props.find_via_to("to/1")->from, "from/1");
-  BOOST_CHECK_EQUAL(db_props.relaxed_from_all("to/1").size(), 1);
-  BOOST_CHECK_EQUAL(db_props.relaxed_to("from/1"), "to/1");
-  BOOST_CHECK_EQUAL(db_props.relaxed_from("to/1"), "from/1");
-  BOOST_CHECK_EQUAL(almost_equal(db_props.best_score("to/1"), 0.2), true);
-  BOOST_CHECK_EQUAL(almost_equal(db_props.score("from/1"), 0.2), true);
+  EXPECT_EQ(res.second, true);
+  EXPECT_EQ(db_props.size(), 2);
+  EXPECT_EQ(db_props.find_via_from("from/1")->to, "to/1");
+  EXPECT_EQ(db_props.find_via_to("to/1")->from, "from/1");
+  EXPECT_EQ(db_props.relaxed_from_all("to/1").size(), 1);
+  EXPECT_EQ(db_props.relaxed_to("from/1"), "to/1");
+  EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
+  EXPECT_EQ(almost_equal(db_props.best_score("to/1"), 0.2), true);
+  EXPECT_EQ(almost_equal(db_props.score("from/1"), 0.2), true);
 
   props.from = "from/2";
   props.to = "to/1";
@@ -74,42 +71,40 @@ BOOST_AUTO_TEST_CASE(Test1) {
   props.mapped = jsonParser::parse(std::string(R"({"relaxed_energy":0.3})"));
 
   res = db_props.insert(props);
-  BOOST_CHECK_EQUAL(res.second, true);
-  BOOST_CHECK_EQUAL(db_props.size(), 3);
-  BOOST_CHECK_EQUAL(db_props.find_via_from("from/2")->to, "to/1");
-  BOOST_CHECK_EQUAL(db_props.find_via_to("to/1")->from, "from/1");
-  BOOST_CHECK_EQUAL(db_props.relaxed_from_all("to/1").size(), 2);
-  BOOST_CHECK_EQUAL(db_props.relaxed_to("from/2"), "to/1");
-  BOOST_CHECK_EQUAL(db_props.relaxed_from("to/1"), "from/1");
-  BOOST_CHECK_EQUAL(almost_equal(db_props.best_score("to/1"), 0.2), true);
-  BOOST_CHECK_EQUAL(almost_equal(db_props.score("from/2"), 0.3), true);
+  EXPECT_EQ(res.second, true);
+  EXPECT_EQ(db_props.size(), 3);
+  EXPECT_EQ(db_props.find_via_from("from/2")->to, "to/1");
+  EXPECT_EQ(db_props.find_via_to("to/1")->from, "from/1");
+  EXPECT_EQ(db_props.relaxed_from_all("to/1").size(), 2);
+  EXPECT_EQ(db_props.relaxed_to("from/2"), "to/1");
+  EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
+  EXPECT_EQ(almost_equal(db_props.best_score("to/1"), 0.2), true);
+  EXPECT_EQ(almost_equal(db_props.score("from/2"), 0.3), true);
 
   auto it = db_props.find_via_to("to/1");
   db_props.erase(it);
-  BOOST_CHECK_EQUAL(db_props.size(), 2);
-  BOOST_CHECK_EQUAL(db_props.find_via_from("from/1") == db_props.end(), true);
-  BOOST_CHECK_EQUAL(db_props.find_via_to("to/1")->from, "from/2");
-  BOOST_CHECK_EQUAL(db_props.relaxed_from_all("to/1").size(), 1);
-  BOOST_CHECK_EQUAL(db_props.relaxed_from("to/1"), "from/2");
-  BOOST_CHECK_EQUAL(almost_equal(db_props.best_score("to/1"), 0.3), true);
+  EXPECT_EQ(db_props.size(), 2);
+  EXPECT_EQ(db_props.find_via_from("from/1") == db_props.end(), true);
+  EXPECT_EQ(db_props.find_via_to("to/1")->from, "from/2");
+  EXPECT_EQ(db_props.relaxed_from_all("to/1").size(), 1);
+  EXPECT_EQ(db_props.relaxed_from("to/1"), "from/2");
+  EXPECT_EQ(almost_equal(db_props.best_score("to/1"), 0.3), true);
 
   db_props.commit();
-  BOOST_CHECK_EQUAL(1, 1);
+  EXPECT_EQ(1, 1);
   //fs::ifstream file(loc);
   //std::cout << file.rdbuf() << std::endl;
 
   db_props.close();
-  BOOST_CHECK_EQUAL(1, 1);
+  EXPECT_EQ(1, 1);
 
   db_props.open();
-  BOOST_CHECK_EQUAL(db_props.empty(), false);
-  BOOST_CHECK_EQUAL(db_props.size(), 2);
-  BOOST_CHECK_EQUAL(std::distance(db_props.begin(), db_props.end()), 2);
+  EXPECT_EQ(db_props.empty(), false);
+  EXPECT_EQ(db_props.size(), 2);
+  EXPECT_EQ(std::distance(db_props.begin(), db_props.end()), 2);
 
   db_props.close();
-  BOOST_CHECK_EQUAL(1, 1);
+  EXPECT_EQ(1, 1);
 
   fs::remove(loc);
 }
-
-BOOST_AUTO_TEST_SUITE_END()

@@ -1,5 +1,6 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
+
 #include<boost/filesystem.hpp>
 
 /// What is being tested:
@@ -14,10 +15,10 @@
 #include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
-boost::filesystem::path testdir("tests/unit/crystallography");
+boost::filesystem::path testdir(autotools::abs_srcdir() + "/tests/unit/crystallography");
 
 void autofail() {
-  BOOST_CHECK_EQUAL(1, 0);
+  EXPECT_EQ(1, 0);
   return;
 }
 
@@ -30,12 +31,12 @@ void hermite_init() {
   Eigen::VectorXi init_diagonal(Eigen::VectorXi::Ones(dims));
   init_diagonal(0) = det;
 
-  BOOST_CHECK_EQUAL(init_diagonal, hermit_test.diagonal());
-  BOOST_CHECK_EQUAL(0, hermit_test.position());
+  EXPECT_EQ(init_diagonal, hermit_test.diagonal());
+  EXPECT_EQ(0, hermit_test.position());
 
   auto tricounter = HermiteCounter_impl::_upper_tri_counter(hermit_test.diagonal());
   Eigen::VectorXi startcount(Eigen::VectorXi::Zero(HermiteCounter_impl::upper_size(dims)));
-  BOOST_CHECK_EQUAL(tricounter.current(), startcount);
+  EXPECT_EQ(tricounter.current(), startcount);
 
 
   Eigen::VectorXi endcount(Eigen::VectorXi::Zero(HermiteCounter_impl::upper_size(dims)));
@@ -50,7 +51,7 @@ void hermite_init() {
     finalcounterstate = tricounter;
   }
 
-  BOOST_CHECK_EQUAL(finalcounterstate.current(), endcount);
+  EXPECT_EQ(finalcounterstate.current(), endcount);
 
 
   return;
@@ -66,30 +67,30 @@ void spill_test() {
   int p = 0;
   diagonal0(p) = 2;
   int p0 = HermiteCounter_impl::_spill_factor(diagonal0, p, 2);
-  BOOST_CHECK_EQUAL(p0, p + 1);
-  BOOST_CHECK_EQUAL(diagonal0(p), 1);
-  BOOST_CHECK_EQUAL(diagonal0(p + 1), 2);
+  EXPECT_EQ(p0, p + 1);
+  EXPECT_EQ(diagonal0(p), 1);
+  EXPECT_EQ(diagonal0(p + 1), 2);
 
   p = 3;
   diagonal1(p) = 6;
   int p1 = HermiteCounter_impl::_spill_factor(diagonal1, p, 2);
-  BOOST_CHECK_EQUAL(p1, p + 1);
-  BOOST_CHECK_EQUAL(diagonal1(p), 3);
-  BOOST_CHECK_EQUAL(diagonal1(p + 1), 2);
+  EXPECT_EQ(p1, p + 1);
+  EXPECT_EQ(diagonal1(p), 3);
+  EXPECT_EQ(diagonal1(p + 1), 2);
 
   p = 3;
   diagonal2(p) = 6;
   int p2 = HermiteCounter_impl::_spill_factor(diagonal2, p, 4);
-  BOOST_CHECK_EQUAL(p2, p + 1);
-  BOOST_CHECK_EQUAL(diagonal2(p), 1);
-  BOOST_CHECK_EQUAL(diagonal2(p + 1), 6);
+  EXPECT_EQ(p2, p + 1);
+  EXPECT_EQ(diagonal2(p), 1);
+  EXPECT_EQ(diagonal2(p + 1), 6);
 
   p = 2;
   diagonal3(p) = 8;
   int p3 = HermiteCounter_impl::_spill_factor(diagonal3, p, 4);
-  BOOST_CHECK_EQUAL(p3, p + 1);
-  BOOST_CHECK_EQUAL(diagonal3(p), 2);
-  BOOST_CHECK_EQUAL(diagonal3(p + 1), 4);
+  EXPECT_EQ(p3, p + 1);
+  EXPECT_EQ(diagonal3(p), 2);
+  EXPECT_EQ(diagonal3(p + 1), 4);
 
   return;
 }
@@ -105,8 +106,8 @@ void next_position_test() {
 
   p = HermiteCounter_impl::next_spill_position(diagonal, p);
 
-  BOOST_CHECK_EQUAL(diagonal, next_diagonal);
-  BOOST_CHECK_EQUAL(p, 1);
+  EXPECT_EQ(diagonal, next_diagonal);
+  EXPECT_EQ(p, 1);
 
 
   diagonal = Eigen::VectorXi::Ones(5);
@@ -120,8 +121,8 @@ void next_position_test() {
   p = 4;
   p = HermiteCounter_impl::next_spill_position(diagonal, p);
 
-  BOOST_CHECK_EQUAL(diagonal, next_diagonal);
-  BOOST_CHECK_EQUAL(p, 2);
+  EXPECT_EQ(diagonal, next_diagonal);
+  EXPECT_EQ(p, 2);
 
   //*************/
   //Make sure every enumerated diagonal has the right determinant
@@ -138,7 +139,7 @@ void next_position_test() {
     for(int i = 0; i < diag.size(); i++) {
       testdet = testdet * diag(i);
     }
-    BOOST_CHECK_EQUAL(det, testdet);
+    EXPECT_EQ(det, testdet);
     p = CASM::HermiteCounter_impl::next_spill_position(diag, p);
   }
 
@@ -147,7 +148,7 @@ void next_position_test() {
 
 void triangle_count_test() {
   HermiteCounter::Index totals = HermiteCounter_impl::upper_size(7);
-  BOOST_CHECK_EQUAL(totals, -7 + 7 + 6 + 5 + 4 + 3 + 2 + 1);
+  EXPECT_EQ(totals, -7 + 7 + 6 + 5 + 4 + 3 + 2 + 1);
 
   int dims = 5;
   // int det = 30;
@@ -183,7 +184,7 @@ void triangle_count_test() {
   end_count_value(6) = 2;
   //Rest of the values are zero
 
-  BOOST_CHECK_EQUAL(finalcount.current(), end_count_value);
+  EXPECT_EQ(finalcount.current(), end_count_value);
 
   return;
 }
@@ -205,7 +206,7 @@ void matrix_construction_test() {
           0, 0, 6, 33,
           0, 0, 0, 8;
 
-  BOOST_CHECK_EQUAL(diagmat, HermiteCounter_impl::_zip_matrix(diag, upper));
+  EXPECT_EQ(diagmat, HermiteCounter_impl::_zip_matrix(diag, upper));
 
   return;
 }
@@ -222,7 +223,7 @@ void increment_test() {
           0, 0, 1, 0,
           0, 0, 0, 1;
 
-  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+  EXPECT_EQ(hermmat, hermit_test());
 
   //Test next status
   ++hermit_test;
@@ -231,7 +232,7 @@ void increment_test() {
           0, 0, 1, 0,
           0, 0, 0, 1;
 
-  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+  EXPECT_EQ(hermmat, hermit_test());
 
   //Jump to just before you need a new diagonal
   hermmat << 6, 5, 5, 5,
@@ -250,7 +251,7 @@ void increment_test() {
           0, 0, 1, 0,
           0, 0, 0, 1;
 
-  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+  EXPECT_EQ(hermmat, hermit_test());
 
   //Check invalidation and last status
   auto lastherm = hermmat;
@@ -264,7 +265,7 @@ void increment_test() {
           0, 0, 1, 0,
           0, 0, 0, 6;
 
-  BOOST_CHECK_EQUAL(hermmat, lastherm);
+  EXPECT_EQ(hermmat, lastherm);
 
   //Check determinant jump
   hermit_test = HermiteCounter(3, 4);
@@ -288,7 +289,7 @@ void increment_test() {
           0, 0, 1, 0,
           0, 0, 0, 1;
 
-  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+  EXPECT_EQ(hermmat, hermit_test());
   return;
 }
 
@@ -316,11 +317,11 @@ void reset_test() {
 
   hermit_test.reset_current();
 
-  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+  EXPECT_EQ(hermmat, hermit_test());
 
   hermit_test.jump_to_determinant(1);
 
-  BOOST_CHECK_EQUAL(startmat, hermit_test());
+  EXPECT_EQ(startmat, hermit_test());
 
   return;
 }
@@ -342,7 +343,7 @@ void expand_dims_test() {
             0, 0, 0, 0, 0, 0, 1, 0,
             3, 3, 3, 0, 3, 0, 0, 1;
 
-  BOOST_CHECK_EQUAL(expandmat, HermiteCounter_impl::_expand_dims_old(expandmat, expanddims));
+  EXPECT_EQ(expandmat, HermiteCounter_impl::_expand_dims_old(expandmat, expanddims));
 
   HermiteCounter minicount(1, 4);
   for(int i = 0; i < 12; i++) {
@@ -355,7 +356,7 @@ void expand_dims_test() {
            0, 0, 1, 0,
            0, 0, 0, 1;
 
-  BOOST_CHECK_EQUAL(endcount, minicount());
+  EXPECT_EQ(endcount, minicount());
 
   Eigen::MatrixXi transmat(Eigen::MatrixXi::Identity(6, 6));
 
@@ -368,7 +369,7 @@ void expand_dims_test() {
            0, 0, 0, 0, 1, 0,
            0, 0, 0, 0, 0, 1;
 
-  BOOST_CHECK_EQUAL(blockmat, expanded);
+  EXPECT_EQ(blockmat, expanded);
 
   Eigen::Matrix2Xi miniherm;
   miniherm << 2, 1,
@@ -384,7 +385,7 @@ void expand_dims_test() {
              0, 0, 1,
              0, 3, 0;
 
-  BOOST_CHECK_EQUAL(HermiteCounter_impl::_expand_dims(miniherm, minitrans), miniexpand);
+  EXPECT_EQ(HermiteCounter_impl::_expand_dims(miniherm, minitrans), miniexpand);
 
 
   return;
@@ -414,7 +415,7 @@ jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol
                           niggli2.lat_column_mat(),
                           tol);
 
-    BOOST_CHECK_EQUAL(check_niggli, true);
+    EXPECT_EQ(check_niggli, true);
 
     // -- check canonical generation
 
@@ -425,7 +426,7 @@ jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol
                    canon2.lat_column_mat(),
                    tol);
 
-    BOOST_CHECK_EQUAL(check, true);
+    EXPECT_EQ(check, true);
 
   }
 
@@ -498,7 +499,7 @@ void unroll_test() {
   Eigen::VectorXi vec5(5 + 4 + 3 + 2 + 1);
   vec5 << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
 
-  BOOST_CHECK_EQUAL(vec5, HermiteCounter_impl::_canonical_unroll(mat5));
+  EXPECT_EQ(vec5, HermiteCounter_impl::_canonical_unroll(mat5));
 
   return;
 
@@ -510,7 +511,7 @@ void unroll_test() {
   Eigen::Vector3i vec3(3 + 2 + 1);
   vec3 << 1, 2, 3, 4, 5, 6;
 
-  BOOST_CHECK_EQUAL(vec3, HermiteCounter_impl::_canonical_unroll(mat3));
+  EXPECT_EQ(vec3, HermiteCounter_impl::_canonical_unroll(mat3));
 
   return;
 }
@@ -526,7 +527,7 @@ void compare_test() {
        0, 1, 0,
        0, 0, 1;
 
-  BOOST_CHECK(HermiteCounter_impl::_canonical_compare(low, high));
+  EXPECT_TRUE(HermiteCounter_impl::_canonical_compare(low, high));
 
   low << 1, 9, 9,
       0, 9, 9,
@@ -536,7 +537,7 @@ void compare_test() {
        0, 9, 9,
        0, 9, 9;
 
-  BOOST_CHECK(HermiteCounter_impl::_canonical_compare(low, high));
+  EXPECT_TRUE(HermiteCounter_impl::_canonical_compare(low, high));
 
   return;
 }
@@ -560,7 +561,7 @@ void trans_enum_test() {
   std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
 
   for(Index i = 0; i > enumerated_lat.size(); i++) {
-    BOOST_CHECK(enumerated_lat[i].is_supercell_of(bigunit));
+    EXPECT_TRUE(enumerated_lat[i].is_supercell_of(bigunit));
   }
 
   return;
@@ -590,7 +591,7 @@ void restricted_test() {
                     0, 1, 0,
                     0, 0, 1;
 
-      BOOST_CHECK(it.matrix() == canonical_hnf(comp_transmat, pg, testlat));
+      EXPECT_TRUE(it.matrix() == canonical_hnf(comp_transmat, pg, testlat));
       l++;
     }
   }
@@ -599,13 +600,11 @@ void restricted_test() {
 }
 
 
-BOOST_AUTO_TEST_SUITE(SupercellEnumeratorTest)
-
-BOOST_AUTO_TEST_CASE(HermiteConstruction) {
+TEST(SupercellEnumeratorTest, HermiteConstruction) {
   hermite_init();
 }
 
-BOOST_AUTO_TEST_CASE(HermiteImpl) {
+TEST(SupercellEnumeratorTest, HermiteImpl) {
   spill_test();
   next_position_test();
   triangle_count_test();
@@ -615,7 +614,7 @@ BOOST_AUTO_TEST_CASE(HermiteImpl) {
   compare_test();
 }
 
-BOOST_AUTO_TEST_CASE(HermiteCounting) {
+TEST(SupercellEnumeratorTest, HermiteCounting) {
   increment_test();
 }
 
@@ -627,7 +626,7 @@ BOOST_AUTO_TEST_CASE(HermiteCounting) {
 //they should have been, so these hard coded examples to check
 //had to be regenerated...
 
-BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
+TEST(SupercellEnumeratorTest, EnumeratorConsistency) {
 
   boost::filesystem::path old_test_path = testdir / "test_cases.json";
   boost::filesystem::path current_test_path = testdir / "current_test_results.json";
@@ -671,7 +670,7 @@ BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
   }
 
 
-  BOOST_CHECK(failure_point.empty());
+  EXPECT_TRUE(failure_point.empty());
 
   current_test_results["WARNING"] = "This has been added as an inconvenience to anyone who is thinking of replacing the \
 current test_results.json file. Do not replace anything unless you're certain the old \
@@ -681,9 +680,7 @@ results were incorrect, and these are an improvement. If you are sure you want t
 
 }
 
-BOOST_AUTO_TEST_CASE(RestrictedEnumeration) {
+TEST(SupercellEnumeratorTest, RestrictedEnumeration) {
   trans_enum_test();
   restricted_test();
 }
-
-BOOST_AUTO_TEST_SUITE_END()

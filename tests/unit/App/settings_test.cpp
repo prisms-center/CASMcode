@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/app/casm_functions.hh"
@@ -12,10 +11,7 @@
 
 using namespace CASM;
 
-
-BOOST_AUTO_TEST_SUITE(settingsTest)
-
-BOOST_AUTO_TEST_CASE(Basics) {
+TEST(settingsTest, Basics) {
 
   // create a project
   test::FCCTernaryProj proj;
@@ -34,20 +30,18 @@ BOOST_AUTO_TEST_CASE(Basics) {
     return casm_api(cmdargs);
   };
 
-  BOOST_CHECK_EQUAL(exec("casm settings -l"), 0);
-  BOOST_CHECK_EQUAL(exec("casm settings --new-calctype test1"), 0);
-  BOOST_CHECK_EQUAL(exec("casm settings --new-ref test1"), 0);
-  BOOST_CHECK_EQUAL(exec("casm settings --new-bset test1"), 0);
-  BOOST_CHECK_EQUAL(exec("casm settings --new-eci test1"), 0);
-  BOOST_CHECK_EQUAL(exec("casm settings --set-calctype default"), 0);
-  BOOST_CHECK_EQUAL(exec("casm settings --set-calctype does_not_exist"), 1);
-  BOOST_CHECK_EQUAL(exec("casm settings --set-calctype test1"), 0);
-  BOOST_CHECK_EQUAL(exec("casm settings --set-bset test1"), 0);
-  BOOST_CHECK_EQUAL(exec("casm settings --set-bset default"), 0);
+  EXPECT_EQ(exec("casm settings -l"), 0);
+  EXPECT_EQ(exec("casm settings --new-calctype test1"), 0);
+  EXPECT_EQ(exec("casm settings --new-ref test1"), 0);
+  EXPECT_EQ(exec("casm settings --new-bset test1"), 0);
+  EXPECT_EQ(exec("casm settings --new-eci test1"), 0);
+  EXPECT_EQ(exec("casm settings --set-calctype default"), 0);
+  EXPECT_EQ(exec("casm settings --set-calctype does_not_exist"), 1);
+  EXPECT_EQ(exec("casm settings --set-calctype test1"), 0);
+  EXPECT_EQ(exec("casm settings --set-bset test1"), 0);
+  EXPECT_EQ(exec("casm settings --set-bset default"), 0);
 
   //std::cout << ss_log.ss().str() << std::endl;
   //std::cout << ss_err_log.ss().str() << std::endl;
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

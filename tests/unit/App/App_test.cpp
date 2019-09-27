@@ -1,5 +1,5 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 ///   the command line executable
@@ -25,9 +25,8 @@ struct Checks {
   std::string help_command;
 };
 
-BOOST_AUTO_TEST_SUITE(AppTest)
 
-BOOST_AUTO_TEST_CASE(ProjectCommands) {
+TEST(AppTest, ProjectCommands) {
 
   Popen p;
   Log &log = default_log();
@@ -43,15 +42,16 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
   };
 
   // check help doesn't need to be in a project
-  p.popen("ccasm init -h");
-  BOOST_CHECK_MESSAGE(p.exit_code() == 0, p.gets());
+  p.popen(autotools::abs_ccasm_path() + " init -h");
+  EXPECT_EQ(p.exit_code(), 0) << p.gets();
 
+  //TODO: This does not check the compiled ccasm, it checks whatever ccasm is already on the system!!!!
   for(auto it = command.begin(); it != command.end(); ++it) {
-    p.popen("ccasm " + it->type + " " + it->no_proj_command);
-    BOOST_CHECK_MESSAGE(p.exit_code() == 3, p.gets());
+    p.popen(autotools::abs_ccasm_path() + " " + it->type + " " + it->no_proj_command);
+    EXPECT_EQ(p.exit_code(), 3) << p.gets();
 
-    p.popen("ccasm " + it->type + " " + it->help_command);
-    BOOST_CHECK_MESSAGE(p.exit_code() == 0, p.gets());
+    p.popen(autotools::abs_ccasm_path() + " " + it->type + " " + it->help_command);
+    EXPECT_EQ(p.exit_code(), 0) << p.gets();
   }
 
   // checks of 'ccasm X' commands for several projects
@@ -101,5 +101,3 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
 
   log << "leaving test cast ProjectCommands" << std::endl;
 }
-
-BOOST_AUTO_TEST_SUITE_END()

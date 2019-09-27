@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 ///   the command line executable
@@ -12,9 +11,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(QueryPluginTest)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(QueryPlugin, Test1) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -23,18 +20,19 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   PrimClex primclex(proj.dir, Logging(null_log(), null_log(), null_log()));
 
+  //TODO: This is more code duplication
   auto cp = [&](std::string _filename) {
 
     fs::path filename(_filename);
     fs::path src = "tests/unit/App" / filename;
-    BOOST_REQUIRE(fs::exists(src));
+    ASSERT_TRUE(fs::exists(src));
 
     fs::path dest = primclex.dir().query_plugins<Configuration>();
     fs::create_directories(dest);
-    BOOST_REQUIRE(fs::exists(dest));
+    ASSERT_TRUE(fs::exists(dest));
 
     fs::copy_file(src, dest / filename, fs::copy_option::overwrite_if_exists);
-    BOOST_REQUIRE(fs::exists(dest / filename));
+    ASSERT_TRUE(fs::exists(dest / filename));
 
   };
 
@@ -54,20 +52,19 @@ BOOST_AUTO_TEST_CASE(Test1) {
     return !casm_api(args);
   };
 
-  BOOST_CHECK(check(R"(ccasm select -h)"));
+  EXPECT_TRUE(check(R"(ccasm select -h)"));
 
-  BOOST_CHECK(check(R"(ccasm select --set-on)"));
+  EXPECT_TRUE(check(R"(ccasm select --set-on)"));
 
-  BOOST_CHECK(check(R"(ccasm query -h p)"));
+  EXPECT_TRUE(check(R"(ccasm query -h p)"));
 
-  BOOST_CHECK(check(R"(ccasm query -k test_comp_n)"));
+  EXPECT_TRUE(check(R"(ccasm query -k test_comp_n)"));
 
-  BOOST_CHECK(check(R"(ccasm query -k 'test_comp_n(Zr)')"));
+  EXPECT_TRUE(check(R"(ccasm query -k 'test_comp_n(Zr)')"));
 
-  BOOST_CHECK(check(R"(ccasm query -k 'test_comp_n(O)')"));
+  EXPECT_TRUE(check(R"(ccasm query -k 'test_comp_n(O)')"));
 
-  BOOST_CHECK(check(R"(ccasm query -k 'test_configname')"));
+  EXPECT_TRUE(check(R"(ccasm query -k 'test_configname')"));
 
 }
 
-BOOST_AUTO_TEST_SUITE_END()

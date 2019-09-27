@@ -1,5 +1,5 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 ///   the command line executable
@@ -13,9 +13,8 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(GrandCanonicalTest)
 
-BOOST_AUTO_TEST_CASE(Test0) {
+TEST(GrandCanonicalTest, Test0) {
 
   std::cout << "skipping GrandCanonical_test" << std::endl;
   if(true) {
@@ -30,15 +29,15 @@ BOOST_AUTO_TEST_CASE(Test0) {
   //Logging logging;
   PrimClex primclex(proj.dir, logging);
 
-  fs::path eci_src = "tests/unit/monte_carlo/eci_0.json";
+  fs::path eci_src = autotools::abs_srcdir() + "/tests/unit/monte_carlo/eci_0.json";
   fs::path eci_dest = primclex.dir().eci("formation_energy", "default", "default", "default", "default");
   fs::copy_file(eci_src, eci_dest, fs::copy_option::overwrite_if_exists);
 
-  fs::path bspecs_src = "tests/unit/monte_carlo/bspecs_0.json";
+  fs::path bspecs_src = autotools::abs_srcdir() + "/tests/unit/monte_carlo/bspecs_0.json";
   fs::path bspecs_dest = primclex.dir().bspecs("default");
   fs::copy_file(bspecs_src, bspecs_dest, fs::copy_option::overwrite_if_exists);
 
-  fs::path settings_src = "tests/unit/monte_carlo/metropolis_grand_canonical_0.json";
+  fs::path settings_src = autotools::abs_srcdir() + "/tests/unit/monte_carlo/metropolis_grand_canonical_0.json";
   fs::path mc_dir = primclex.dir().root_dir() / "mc_0";
   fs::create_directory(mc_dir);
   fs::path settings_dest = mc_dir / settings_src.filename();
@@ -54,10 +53,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
     return !casm_api(args);
   };
 
-  BOOST_CHECK(check(R"(casm bset -u)"));
+  EXPECT_TRUE(check(R"(casm bset -u)"));
 
-  BOOST_CHECK(check(std::string("casm monte -s ") + settings_dest.string()));
+  EXPECT_TRUE(check(std::string("casm monte -s ") + settings_dest.string()));
 
 }
 
-BOOST_AUTO_TEST_SUITE_END()

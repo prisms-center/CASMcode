@@ -1,9 +1,9 @@
 #ifndef CASM_UNIT_PROJ
 #define CASM_UNIT_PROJ
 
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 #include <boost/regex.hpp>
+#include "autotools.hh"
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -101,17 +101,16 @@ namespace test {
   template<typename Iterator>
   void Proj::_check_composition_axes(Iterator begin, Iterator end) {
 
-    m_p.popen(cd_and() + "ccasm composition --select 0");
+    //TODO: Do we really want to be running CLI executables by calling them through popen?
+    //Shouldn't all these things jut be called and checked by a bash script or similar?
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " composition --select 0");
 
     for(auto it = begin; it != end; ++it) {
-      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)) == true, m_p.gets());
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)), true) << m_p.gets();
     }
 
-    BOOST_CHECK_MESSAGE(
-      boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Currently selected composition axes: 0)")) ==
-      true,
-      m_p.gets()
-    );
+    EXPECT_EQ(
+      boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Currently selected composition axes: 0)")), true) << m_p.gets();
   }
 }
 

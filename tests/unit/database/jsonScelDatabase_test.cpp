@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/database/ScelDatabase.hh"
@@ -15,9 +14,8 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(jsonScelDatabase_Test)
 
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(jsonScelDatabase_Test, Test1) {
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -25,12 +23,12 @@ BOOST_AUTO_TEST_CASE(Test1) {
   PrimClex primclex(proj.dir, null_log());
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
-  BOOST_CHECK_EQUAL(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
+  EXPECT_EQ(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
 
   DB::jsonDatabase<Supercell> db_scel(primclex);
 
   db_scel.open();
-  BOOST_CHECK_EQUAL(db_scel.size(), 0);
+  EXPECT_EQ(db_scel.size(), 0);
 
   int minvol = 1;
   int maxvol = 10;
@@ -39,18 +37,17 @@ BOOST_AUTO_TEST_CASE(Test1) {
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
     db_scel.emplace(&primclex, it->canonical_form(prim.point_group()));
   }
-  BOOST_CHECK_EQUAL(db_scel.size(), 87);
+  EXPECT_EQ(db_scel.size(), 87);
 
   db_scel.commit();
   //fs::ifstream file(primclex.dir().scel_list());
   //std::cout << file.rdbuf() << std::endl;
 
   db_scel.close();
-  BOOST_CHECK_EQUAL(db_scel.size(), 0);
+  EXPECT_EQ(db_scel.size(), 0);
 
   db_scel.open();
-  BOOST_CHECK_EQUAL(db_scel.size(), 87);
+  EXPECT_EQ(db_scel.size(), 87);
 
 }
 
-BOOST_AUTO_TEST_SUITE_END()

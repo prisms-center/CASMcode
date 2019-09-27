@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/kinetics/DiffTransConfigInterpolation.hh"
@@ -22,9 +21,8 @@
 using namespace CASM;
 using namespace test;
 
-BOOST_AUTO_TEST_SUITE(DiffTransConfigInterpolationTest)
 
-BOOST_AUTO_TEST_CASE(Test0) {
+TEST(DiffTransConfigInterpolationTest, Test0) {
   /*
   test::ZrOProj proj;
   proj.check_init();
@@ -112,4 +110,3 @@ BOOST_AUTO_TEST_CASE(Test0) {
   */
 }
 
-BOOST_AUTO_TEST_SUITE_END()

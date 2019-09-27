@@ -1,8 +1,8 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
-
 /// What is being tested:
 ///   the command line executable
+
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
@@ -15,9 +15,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(EnumeratorPluginTest)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(EnumeratorPlugin, Test1) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -28,15 +26,15 @@ BOOST_AUTO_TEST_CASE(Test1) {
   auto cp = [&](std::string _filename) {
 
     fs::path filename(_filename);
-    fs::path src = "tests/unit/App" / filename;
-    BOOST_REQUIRE(fs::exists(src));
+    fs::path src = std::string(autotools::abs_srcdir() + "/tests/unit/App") / filename;
+    ASSERT_TRUE(fs::exists(src));
 
     fs::path dest = primclex.dir().enumerator_plugins();
     fs::create_directories(dest);
-    BOOST_REQUIRE(fs::exists(dest));
+    ASSERT_TRUE(fs::exists(dest));
 
     fs::copy_file(src, dest / filename, fs::copy_option::overwrite_if_exists);
-    BOOST_REQUIRE(fs::exists(dest / filename));
+    ASSERT_TRUE(fs::exists(dest / filename));
 
   };
 
@@ -49,7 +47,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   auto check = [&](std::string str) {
     CommandArgs args(str, &primclex, primclex.dir().root_dir(), primclex);
-    BOOST_CHECK(!run_api_command<EnumCommand>(args));
+    ASSERT_TRUE(!run_api_command<EnumCommand>(args));
   };
 
   check(R"(enum -h)");
@@ -58,7 +56,5 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   check(R"(enum --method TestEnum -i '{"supercells": {"max": 4}}')");
 
-  BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size(), 336);
+  ASSERT_EQ(primclex.generic_db<Configuration>().size(), 336);
 }
-
-BOOST_AUTO_TEST_SUITE_END()

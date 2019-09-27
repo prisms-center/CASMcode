@@ -1,5 +1,5 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 #include "casm/database/Selection.hh"
@@ -22,9 +22,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(Selection_Test)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(Selection_Test, Test1) {
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -39,66 +37,65 @@ BOOST_AUTO_TEST_CASE(Test1) {
   // -- Generate Supercell & Configuration --
 
   ScelEnumByProps enum_scel(primclex, ScelEnumProps(1, 5));
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   ConfigEnumAllOccupations::run(primclex, enum_scel.begin(), enum_scel.end());
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
 
   // Test Supercell Selection
   {
     //auto &dict = primclex.settings().query_handler<Supercell>().dict();
-    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
+    EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
     DB::Selection<Supercell> selection(primclex);
-    BOOST_CHECK_EQUAL(selection.size(), 13);
-    BOOST_CHECK_EQUAL(selection.selected_size(), 0);
+    EXPECT_EQ(selection.size(), 13);
+    EXPECT_EQ(selection.selected_size(), 0);
   }
 
   // Test Configuration Selection
   {
-    BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size(), 126);
+    EXPECT_EQ(primclex.generic_db<Configuration>().size(), 126);
 
     DB::Selection<Configuration> selection(primclex);
-    BOOST_CHECK_EQUAL(selection.size(), 126);
-    BOOST_CHECK_EQUAL(selection.selected_size(), 0);
+    EXPECT_EQ(selection.size(), 126);
+    EXPECT_EQ(selection.selected_size(), 0);
 
     auto &dict = primclex.settings().query_handler<Configuration>().dict();
     selection.set(dict, "lt(scel_size,3)");
-    BOOST_CHECK_EQUAL(selection.selected_size(), 9);
+    EXPECT_EQ(selection.selected_size(), 9);
   }
 
   // Test PrimPeriodicDiffTransOrbit Selection
   {
     // Generate
-    fs::path difftrans_path = "tests/unit/kinetics/FCCTernary_diff_trans_0.json";
+    fs::path difftrans_path = autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_diff_trans_0.json";
     jsonParser diff_trans_json {difftrans_path};
     Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
-    BOOST_CHECK_EQUAL(true, true);
+    EXPECT_EQ(true, true);
 
     // Test
     //auto &dict = primclex.settings().query_handler<Kinetics::PrimPeriodicDiffTransOrbit>().dict();
-    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
+    EXPECT_EQ(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
     DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection(primclex);
-    BOOST_CHECK_EQUAL(selection.size(), 28);
-    BOOST_CHECK_EQUAL(selection.selected_size(), 0);
+    EXPECT_EQ(selection.size(), 28);
+    EXPECT_EQ(selection.selected_size(), 0);
   }
 
   // Test DiffTransConfiguration Selection
   {
     // Generate
-    fs::path diffperturb_path = "tests/unit/kinetics/FCCTernary_diff_perturb_0.json";
+    fs::path diffperturb_path = autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_diff_perturb_0.json";
     jsonParser diff_perturb_json {diffperturb_path};
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
-    BOOST_CHECK_EQUAL(true, true);
+    EXPECT_EQ(true, true);
 
     // Test (quantity 1856 not checked for accuracy)
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
     //auto &dict = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>().dict();
-    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
+    EXPECT_EQ(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex);
-    BOOST_CHECK_EQUAL(selection.size(), 1856);
-    BOOST_CHECK_EQUAL(selection.selected_size(), 0);
+    EXPECT_EQ(selection.size(), 1856);
+    EXPECT_EQ(selection.selected_size(), 0);
   }
 }
 
-BOOST_AUTO_TEST_SUITE_END()

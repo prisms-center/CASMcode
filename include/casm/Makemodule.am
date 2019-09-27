@@ -1,259 +1,23 @@
-lib_LTLIBRARIES += \
-    libcasm.la
-libcasm_la_LIBADD = \
-    $(BOOST_SYSTEM_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
-    $(BOOST_REGEX_LIB)\
-    $(BOOST_CHRONO_LIB)
-libcasm_la_SOURCES = \
-    src/casm/CASM_global_enum.cc\
-    src/casm/CASM_global_definitions.cc\
-    src/casm/strain/StrainConverter.cc\
-    src/casm/basis_set/DoFTraits.cc\
-    src/casm/basis_set/DoFIsEquivalent.cc\
-    src/casm/basis_set/DoFSet.cc\
-    src/casm/basis_set/Variable.cc\
-    src/casm/basis_set/DoF.cc\
-    src/casm/basis_set/BasisSet.cc\
-    src/casm/basis_set/BasisFunction.cc\
-    src/casm/basis_set/OccupantFunction.cc\
-    src/casm/basis_set/MagSpinDoFTraits.cc\
-    src/casm/basis_set/PolynomialFunction.cc\
-    src/casm/basis_set/DisplacementDoFTraits.cc\
-    src/casm/basis_set/StrainDoFTraits.cc\
-    src/casm/basis_set/FunctionVisitor.cc\
-    src/casm/basis_set/OccupationDoFTraits.cc\
-    src/casm/app/monte.cc\
-    src/casm/app/rm.cc\
-    src/casm/app/HamiltonianModules.cc\
-    src/casm/app/run.cc\
-    src/casm/app/format.cc\
-    src/casm/app/ClexDescription.cc\
-    src/casm/app/init.cc\
-    src/casm/app/APICommand.cc\
-    src/casm/app/settings.cc\
-    src/casm/app/update.cc\
-    src/casm/app/CLIParse.cc\
-    src/casm/app/sym.cc\
-    src/casm/app/ProjectSettings.cc\
-    src/casm/app/perturb.cc\
-    src/casm/app/select.cc\
-    src/casm/app/import.cc\
-    src/casm/app/casm_functions.cc\
-    src/casm/app/ProjectBuilder.cc\
-    src/casm/app/query.cc\
-    src/casm/app/EnumeratorHandler.cc\
-    src/casm/app/ref.cc\
-    src/casm/app/QueryHandler.cc\
-    src/casm/app/AppIO.cc\
-    src/casm/app/enum.cc\
-    src/casm/app/bset.cc\
-    src/casm/app/view.cc\
-    src/casm/app/status.cc\
-    src/casm/app/files.cc\
-    src/casm/app/DirectoryStructure.cc\
-    src/casm/app/composition.cc\
-    src/casm/app/DBInterface.cc\
-    src/casm/app/super.cc\
-    src/casm/enumerator/EnumInputParser.cc\
-    src/casm/enumerator/Enumerator.cc\
-    src/casm/external/qhull/libqhull_r/geom2_r.c\
-    src/casm/external/qhull/libqhull_r/geom_r.c\
-    src/casm/external/qhull/libqhull_r/poly_r.c\
-    src/casm/external/qhull/libqhull_r/random_r.c\
-    src/casm/external/qhull/libqhull_r/user_r.c\
-    src/casm/external/qhull/libqhull_r/rboxlib_r.c\
-    src/casm/external/qhull/libqhull_r/poly2_r.c\
-    src/casm/external/qhull/libqhull_r/libqhull_r.c\
-    src/casm/external/qhull/libqhull_r/merge_r.c\
-    src/casm/external/qhull/libqhull_r/mem_r.c\
-    src/casm/external/qhull/libqhull_r/stat_r.c\
-    src/casm/external/qhull/libqhull_r/qset_r.c\
-    src/casm/external/qhull/libqhull_r/usermem_r.c\
-    src/casm/external/qhull/libqhull_r/io_r.c\
-    src/casm/external/qhull/libqhull_r/global_r.c\
-    src/casm/external/qhull/libqhullcpp/QhullRidge.cpp\
-    src/casm/external/qhull/libqhullcpp/Coordinates.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullFacetList.cpp\
-    src/casm/external/qhull/libqhullcpp/PointCoordinates.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullStat.cpp\
-    src/casm/external/qhull/libqhullcpp/Qhull.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullPoints.cpp\
-    src/casm/external/qhull/libqhullcpp/RoadError.cpp\
-    src/casm/external/qhull/libqhullcpp/RoadLogEvent.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullPoint.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullQh.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullSet.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullVertexSet.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullPointSet.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullFacetSet.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullHyperplane.cpp\
-    src/casm/external/qhull/libqhullcpp/RboxPoints.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullVertex.cpp\
-    src/casm/external/qhull/libqhullcpp/QhullFacet.cpp\
-    src/casm/external/gzstream/gzstream.C\
-    src/casm/kinetics/KineticsOrbits.cc\
-    src/casm/kinetics/RemovePrimPeriodicDiffTransOrbit.cc\
-    src/casm/kinetics/DiffTransConfigInterpolation.cc\
-    src/casm/kinetics/DiffTransConfiguration.cc\
-    src/casm/kinetics/DiffusionTransformationTraits.cc\
-    src/casm/kinetics/DiffTransConfigIsEqual.cc\
-    src/casm/kinetics/DiffTransConfigurationIO.cc\
-    src/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.cc\
-    src/casm/kinetics/EnumDiffTransConfigEndpoints.cc\
-    src/casm/kinetics/DiffTransConfigurationTraits.cc\
-    src/casm/kinetics/DiffusionTransformationEnum.cc\
-    src/casm/kinetics/PrimPeriodicDiffTransOrbitIO.cc\
-    src/casm/kinetics/OccPerturbation.cc\
-    src/casm/kinetics/OccupationTransformation.cc\
-    src/casm/kinetics/DoFTransformation.cc\
-    src/casm/kinetics/DiffTransConfigMapping.cc\
-    src/casm/kinetics/DiffusionTransformation.cc\
-    src/casm/kinetics/DiffTransConfigEnumOccPerturbations.cc\
-    src/casm/kinetics/OccupationTransformationTraits.cc\
-    src/casm/misc/CASM_Eigen_math.cc\
-    src/casm/misc/CASM_Array_math.cc\
-    src/casm/misc/CASM_math.cc\
-    src/casm/symmetry/PermuteIterator.cc\
-    src/casm/symmetry/SymOp.cc\
-    src/casm/symmetry/InvariantSubgroup.cc\
-    src/casm/symmetry/SymGroupRepID.cc\
-    src/casm/symmetry/SymPermutation.cc\
-    src/casm/symmetry/SymInfo.cc\
-    src/casm/symmetry/SymOpRepresentation.cc\
-    src/casm/symmetry/SymBasisPermute.cc\
-    src/casm/symmetry/SymGroupRep.cc\
-    src/casm/symmetry/ConfigSubOrbits.cc\
-    src/casm/symmetry/Orbit.cc\
-    src/casm/symmetry/SymMatrixXd.cc\
-    src/casm/symmetry/SymRepTools.cc\
-    src/casm/symmetry/SymGroup.cc\
-    src/casm/symmetry/SupercellSymInfo.cc\
-    src/casm/clusterography/ClusterOrbits.cc\
-    src/casm/clusterography/ClusterSpecsParser.cc\
-    src/casm/clusterography/IntegralCluster.cc\
-    src/casm/system/Popen.cc\
-    src/casm/system/RuntimeLibrary.cc\
-    src/casm/casm_io/VaspIO.cc\
-    src/casm/casm_io/Log.cc\
-    src/casm/casm_io/DataStream.cc\
-    src/casm/casm_io/jsonParser.cc\
-    src/casm/casm_io/InputParser.cc\
-    src/casm/casm_io/DataFormatter.cc\
-    src/casm/casm_io/FormatFlag.cc\
-    src/casm/casm_io/json_io/clex.cc\
-    src/casm/casm_io/json_io/SpeciesSetParser.cc\
-    src/casm/container/Permutation.cc\
-    src/casm/clex/SupercellTraits.cc\
-    src/casm/clex/ConfigDoFValues.cc\
-    src/casm/clex/ConfigEnumSiteDoFs.cc\
-    src/casm/clex/ConfigEnumStrain.cc\
-    src/casm/clex/Configuration.cc\
-    src/casm/clex/SuperConfigEnum.cc\
-    src/casm/clex/ECIContainer.cc\
-    src/casm/clex/Calculable.cc\
-    src/casm/clex/ConfigEnumEquivalents.cc\
-    src/casm/clex/Supercell_functions.cc\
-    src/casm/clex/ConfigIOStrucScore.cc\
-    src/casm/clex/RemoveSupercell.cc\
-    src/casm/clex/ConfigIONovelty.cc\
-    src/casm/clex/Supercell.cc\
-    src/casm/clex/ConfigEnumInterpolation.cc\
-    src/casm/clex/ConfigIOStrain.cc\
-    src/casm/clex/Reference.cc\
-    src/casm/clex/Clexulator.cc\
-    src/casm/clex/ConfigIsEquivalent.cc\
-    src/casm/clex/CompositionConverter.cc\
-    src/casm/clex/ScelEnum.cc\
-    src/casm/clex/NeighborList.cc\
-    src/casm/clex/ConfigEnumRandomLocal.cc\
-    src/casm/clex/OrbitFunctionTraits.cc\
-    src/casm/clex/ConfigDoF.cc\
-    src/casm/clex/ScelEnumEquivalents.cc\
-    src/casm/clex/SupercellIO.cc\
-    src/casm/clex/PrimClex.cc\
-    src/casm/clex/ConfigIOHull.cc\
-    src/casm/clex/ConfigurationTraits.cc\
-    src/casm/clex/ChemicalReference.cc\
-    src/casm/clex/ConfigIO.cc\
-    src/casm/clex/ConfigCompare.cc\
-    src/casm/clex/ClexBasis.cc\
-    src/casm/clex/ConfigEnumOccPerturbations.cc\
-    src/casm/clex/ConfigEnumRandomOccupations.cc\
-    src/casm/clex/ParamComposition.cc\
-    src/casm/clex/ConfigEnumAllOccupations.cc\
-    src/casm/clex/Clex.cc\
-    src/casm/clex/ConfigMapping.cc\
-    src/casm/clex/ClexBasisWriter.cc\
-    src/casm/version/autoversion.cc\
-    src/casm/hull/Hull.cc\
-    src/casm/crystallography/StrucMapping.cc\
-    src/casm/crystallography/Coordinate.cc\
-    src/casm/crystallography/Structure.cc\
-    src/casm/crystallography/PrimGrid.cc\
-    src/casm/crystallography/UnitCellCoord.cc\
-    src/casm/crystallography/Niggli.cc\
-    src/casm/crystallography/LatticeIsEquivalent.cc\
-    src/casm/crystallography/SpeciesAttribute.cc\
-    src/casm/crystallography/Site.cc\
-    src/casm/crystallography/LatticeEnumEquivalents.cc\
-    src/casm/crystallography/SimpleStructureTools.cc\
-    src/casm/crystallography/Molecule.cc\
-    src/casm/crystallography/Lattice.cc\
-    src/casm/crystallography/SimpleStructure.cc\
-    src/casm/crystallography/BasicStructure.cc\
-    src/casm/crystallography/SimpleStrucMapCalculator.cc\
-    src/casm/crystallography/LatticeMap.cc\
-    src/casm/crystallography/SupercellEnumerator.cc\
-    src/casm/crystallography/CoordinateSystems.cc\
-    src/casm/database/PropertiesDatabase.cc\
-    src/casm/database/DiffTransConfigDatabase.cc\
-    src/casm/database/ScelDatabase.cc\
-    src/casm/database/ConfigData.cc\
-    src/casm/database/ConfigDatabase.cc\
-    src/casm/database/Selection.cc\
-    src/casm/database/Import.cc\
-    src/casm/database/DiffTransOrbitDatabase.cc\
-    src/casm/database/Update.cc\
-    src/casm/database/Remove.cc\
-    src/casm/database/Selected.cc\
-    src/casm/database/ConfigImport.cc\
-    src/casm/database/DatabaseTypes.cc\
-    src/casm/database/Database.cc\
-    src/casm/database/DiffTransConfigImport.cc\
-    src/casm/database/MappedProperties.cc\
-    src/casm/database/DatabaseHandler.cc\
-    src/casm/database/json/jsonPropertiesDatabase.cc\
-    src/casm/database/json/jsonDatabase.cc\
-    src/casm/completer/Handlers.cc\
-    src/casm/completer/Complete.cc\
-    src/casm/monte_carlo/OccLocation.cc\
-    src/casm/monte_carlo/MonteSettings.cc\
-    src/casm/monte_carlo/MonteCounter.cc\
-    src/casm/monte_carlo/MonteDefinitions.cc\
-    src/casm/monte_carlo/MonteDriver.cc\
-    src/casm/monte_carlo/MCData.cc\
-    src/casm/monte_carlo/MonteCarloEnum.cc\
-    src/casm/monte_carlo/MonteSampler.cc\
-    src/casm/monte_carlo/MonteCarlo.cc\
-    src/casm/monte_carlo/OccCandidate.cc\
-    src/casm/monte_carlo/MonteIO.cc\
-    src/casm/monte_carlo/SiteExchanger.cc\
-    src/casm/monte_carlo/Conversions.cc\
-    src/casm/monte_carlo/grand_canonical/GrandCanonical.cc\
-    src/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.cc\
-    src/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.cc\
-    src/casm/monte_carlo/grand_canonical/GrandCanonicalIO.cc\
-    src/casm/monte_carlo/canonical/Canonical.cc\
-    src/casm/monte_carlo/canonical/CanonicalConditions.cc\
-    src/casm/monte_carlo/canonical/CanonicalSettings.cc\
-    src/casm/monte_carlo/canonical/CanonicalIO.cc\
-    src/casm/monte_carlo/canonical/CanonicalEvent.cc\
+
+
+#-------------------------------------------------------------------------------#
+
+casm_includedir=$(includedir)/casm
+casm_include_HEADERS = \
     include/casm/CASM_global_definitions.hh\
     include/casm/CASM_global_Eigen.hh\
-    include/casm/CASM_global_enum.hh\
-    include/casm/strain/StrainConverter.hh\
+    include/casm/CASM_global_enum.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_strain_includedir=$(includedir)/casm/strain
+casm_strain_include_HEADERS = \
+    include/casm/strain/StrainConverter.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_basis_set_includedir=$(includedir)/casm/basis_set
+casm_basis_set_include_HEADERS = \
     include/casm/basis_set/DoF.hh\
     include/casm/basis_set/PolynomialFunction.hh\
     include/casm/basis_set/StrainDoFTraits.hh\
@@ -269,7 +33,12 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/Variable.hh\
     include/casm/basis_set/MagSpinDoFTraits.hh\
     include/casm/basis_set/DoFSet.hh\
-    include/casm/basis_set/OccupantFunction.hh\
+    include/casm/basis_set/OccupantFunction.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_app_includedir=$(includedir)/casm/app
+casm_app_include_HEADERS = \
     include/casm/app/run.hh\
     include/casm/app/QueryHandler_impl.hh\
     include/casm/app/CLIParse.hh\
@@ -306,17 +75,37 @@ libcasm_la_SOURCES = \
     include/casm/app/view.hh\
     include/casm/app/query.hh\
     include/casm/app/casm_functions.hh\
-    include/casm/app/settings.hh\
+    include/casm/app/settings.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_enumerator_includedir=$(includedir)/casm/enumerator
+casm_enumerator_include_HEADERS = \
     include/casm/enumerator/RandomAccessEnumerator.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/EnumInputParser.hh\
     include/casm/enumerator/Enumerator_impl.hh\
-    include/casm/enumerator/Enumerator.hh\
-    include/casm/external/MersenneTwister/MersenneTwister.h\
+    include/casm/enumerator/Enumerator.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_external_MersenneTwister_includedir=$(includedir)/casm/external/MersenneTwister
+casm_external_MersenneTwister_include_HEADERS = \
+    include/casm/external/MersenneTwister/MersenneTwister.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_fadbad_includedir=$(includedir)/casm/external/fadbad
+casm_external_fadbad_include_HEADERS = \
     include/casm/external/fadbad/fadiff.h\
     include/casm/external/fadbad/fadbad.h\
     include/casm/external/fadbad/tadiff.h\
-    include/casm/external/fadbad/badiff.h\
+    include/casm/external/fadbad/badiff.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_qhull_libqhull_r_includedir=$(includedir)/casm/external/qhull/libqhull_r
+casm_external_qhull_libqhull_r_include_HEADERS = \
     include/casm/external/qhull/libqhull_r/qset_r.h\
     include/casm/external/qhull/libqhull_r/user_r.h\
     include/casm/external/qhull/libqhull_r/qhull_ra.h\
@@ -327,7 +116,12 @@ libcasm_la_SOURCES = \
     include/casm/external/qhull/libqhull_r/mem_r.h\
     include/casm/external/qhull/libqhull_r/merge_r.h\
     include/casm/external/qhull/libqhull_r/geom_r.h\
-    include/casm/external/qhull/libqhull_r/io_r.h\
+    include/casm/external/qhull/libqhull_r/io_r.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_qhull_libqhullcpp_includedir=$(includedir)/casm/external/qhull/libqhullcpp
+casm_external_qhull_libqhullcpp_include_HEADERS = \
     include/casm/external/qhull/libqhullcpp/functionObjects.h\
     include/casm/external/qhull/libqhullcpp/RoadError.h\
     include/casm/external/qhull/libqhullcpp/QhullVertexSet.h\
@@ -351,13 +145,23 @@ libcasm_la_SOURCES = \
     include/casm/external/qhull/libqhullcpp/RboxPoints.h\
     include/casm/external/qhull/libqhullcpp/Coordinates.h\
     include/casm/external/qhull/libqhullcpp/QhullSets.h\
-    include/casm/external/qhull/libqhullcpp/QhullFacetSet.h\
+    include/casm/external/qhull/libqhullcpp/QhullFacetSet.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_json_spirit_includedir=$(includedir)/casm/external/json_spirit
+casm_external_json_spirit_include_HEADERS = \
     include/casm/external/json_spirit/json_spirit_writer_template.h\
     include/casm/external/json_spirit/json_spirit_writer_options.h\
     include/casm/external/json_spirit/json_spirit_value.h\
     include/casm/external/json_spirit/json_spirit_reader_template.h\
     include/casm/external/json_spirit/json_spirit_error_position.h\
-    include/casm/external/json_spirit/json_spirit.h\
+    include/casm/external/json_spirit/json_spirit.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_includedir=$(includedir)/casm/external/Eigen
+casm_external_Eigen_include_HEADERS = \
     include/casm/external/Eigen/LU\
     include/casm/external/Eigen/UmfPackSupport\
     include/casm/external/Eigen/StdList\
@@ -391,14 +195,34 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/Core\
     include/casm/external/Eigen/Jacobi\
     include/casm/external/Eigen/SPQRSupport\
-    include/casm/external/Eigen/Array\
+    include/casm/external/Eigen/Array
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_LU_includedir=$(includedir)/casm/external/Eigen/src/LU
+casm_external_Eigen_src_LU_include_HEADERS = \
     include/casm/external/Eigen/src/LU/FullPivLU.h\
     include/casm/external/Eigen/src/LU/Inverse.h\
     include/casm/external/Eigen/src/LU/PartialPivLU_MKL.h\
     include/casm/external/Eigen/src/LU/Determinant.h\
-    include/casm/external/Eigen/src/LU/PartialPivLU.h\
-    include/casm/external/Eigen/src/LU/arch/Inverse_SSE.h\
-    include/casm/external/Eigen/src/UmfPackSupport/UmfPackSupport.h\
+    include/casm/external/Eigen/src/LU/PartialPivLU.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_LU_arch_includedir=$(includedir)/casm/external/Eigen/src/LU/arch
+casm_external_Eigen_src_LU_arch_include_HEADERS = \
+    include/casm/external/Eigen/src/LU/arch/Inverse_SSE.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_UmfPackSupport_includedir=$(includedir)/casm/external/Eigen/src/UmfPackSupport
+casm_external_Eigen_src_UmfPackSupport_include_HEADERS = \
+    include/casm/external/Eigen/src/UmfPackSupport/UmfPackSupport.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_SparseLU_includedir=$(includedir)/casm/external/Eigen/src/SparseLU
+casm_external_Eigen_src_SparseLU_include_HEADERS = \
     include/casm/external/Eigen/src/SparseLU/SparseLU_pivotL.h\
     include/casm/external/Eigen/src/SparseLU/SparseLU_heap_relax_snode.h\
     include/casm/external/Eigen/src/SparseLU/SparseLU_relax_snode.h\
@@ -415,20 +239,45 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/src/SparseLU/SparseLU_pruneL.h\
     include/casm/external/Eigen/src/SparseLU/SparseLU_SupernodalMatrix.h\
     include/casm/external/Eigen/src/SparseLU/SparseLU_Structs.h\
-    include/casm/external/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h\
+    include/casm/external/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Householder_includedir=$(includedir)/casm/external/Eigen/src/Householder
+casm_external_Eigen_src_Householder_include_HEADERS = \
     include/casm/external/Eigen/src/Householder/HouseholderSequence.h\
     include/casm/external/Eigen/src/Householder/BlockHouseholder.h\
-    include/casm/external/Eigen/src/Householder/Householder.h\
+    include/casm/external/Eigen/src/Householder/Householder.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Cholesky_includedir=$(includedir)/casm/external/Eigen/src/Cholesky
+casm_external_Eigen_src_Cholesky_include_HEADERS = \
     include/casm/external/Eigen/src/Cholesky/LLT.h\
     include/casm/external/Eigen/src/Cholesky/LDLT.h\
-    include/casm/external/Eigen/src/Cholesky/LLT_MKL.h\
+    include/casm/external/Eigen/src/Cholesky/LLT_MKL.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_misc_includedir=$(includedir)/casm/external/Eigen/src/misc
+casm_external_Eigen_src_misc_include_HEADERS = \
     include/casm/external/Eigen/src/misc/SparseSolve.h\
     include/casm/external/Eigen/src/misc/Image.h\
     include/casm/external/Eigen/src/misc/Solve.h\
     include/casm/external/Eigen/src/misc/Kernel.h\
-    include/casm/external/Eigen/src/misc/blas.h\
+    include/casm/external/Eigen/src/misc/blas.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_SparseCholesky_includedir=$(includedir)/casm/external/Eigen/src/SparseCholesky
+casm_external_Eigen_src_SparseCholesky_include_HEADERS = \
     include/casm/external/Eigen/src/SparseCholesky/SimplicialCholesky.h\
-    include/casm/external/Eigen/src/SparseCholesky/SimplicialCholesky_impl.h\
+    include/casm/external/Eigen/src/SparseCholesky/SimplicialCholesky_impl.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Geometry_includedir=$(includedir)/casm/external/Eigen/src/Geometry
+casm_external_Eigen_src_Geometry_include_HEADERS = \
     include/casm/external/Eigen/src/Geometry/OrthoMethods.h\
     include/casm/external/Eigen/src/Geometry/Umeyama.h\
     include/casm/external/Eigen/src/Geometry/Homogeneous.h\
@@ -442,14 +291,34 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/src/Geometry/Quaternion.h\
     include/casm/external/Eigen/src/Geometry/RotationBase.h\
     include/casm/external/Eigen/src/Geometry/AlignedBox.h\
-    include/casm/external/Eigen/src/Geometry/ParametrizedLine.h\
-    include/casm/external/Eigen/src/Geometry/arch/Geometry_SSE.h\
+    include/casm/external/Eigen/src/Geometry/ParametrizedLine.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Geometry_arch_includedir=$(includedir)/casm/external/Eigen/src/Geometry/arch
+casm_external_Eigen_src_Geometry_arch_include_HEADERS = \
+    include/casm/external/Eigen/src/Geometry/arch/Geometry_SSE.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_QR_includedir=$(includedir)/casm/external/Eigen/src/QR
+casm_external_Eigen_src_QR_include_HEADERS = \
     include/casm/external/Eigen/src/QR/ColPivHouseholderQR_MKL.h\
     include/casm/external/Eigen/src/QR/HouseholderQR_MKL.h\
     include/casm/external/Eigen/src/QR/FullPivHouseholderQR.h\
     include/casm/external/Eigen/src/QR/ColPivHouseholderQR.h\
-    include/casm/external/Eigen/src/QR/HouseholderQR.h\
-    include/casm/external/Eigen/src/CholmodSupport/CholmodSupport.h\
+    include/casm/external/Eigen/src/QR/HouseholderQR.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_CholmodSupport_includedir=$(includedir)/casm/external/Eigen/src/CholmodSupport
+casm_external_Eigen_src_CholmodSupport_include_HEADERS = \
+    include/casm/external/Eigen/src/CholmodSupport/CholmodSupport.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_SparseCore_includedir=$(includedir)/casm/external/Eigen/src/SparseCore
+casm_external_Eigen_src_SparseCore_include_HEADERS = \
     include/casm/external/Eigen/src/SparseCore/SparseMatrixBase.h\
     include/casm/external/Eigen/src/SparseCore/SparseVector.h\
     include/casm/external/Eigen/src/SparseCore/SparseBlock.h\
@@ -474,7 +343,12 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/src/SparseCore/SparseCwiseBinaryOp.h\
     include/casm/external/Eigen/src/SparseCore/SparseMatrix.h\
     include/casm/external/Eigen/src/SparseCore/SparseCwiseUnaryOp.h\
-    include/casm/external/Eigen/src/SparseCore/AmbiVector.h\
+    include/casm/external/Eigen/src/SparseCore/AmbiVector.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Eigenvalues_includedir=$(includedir)/casm/external/Eigen/src/Eigenvalues
+casm_external_Eigen_src_Eigenvalues_include_HEADERS = \
     include/casm/external/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h\
     include/casm/external/Eigen/src/Eigenvalues/ComplexSchur_MKL.h\
     include/casm/external/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h\
@@ -488,35 +362,95 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/src/Eigenvalues/ComplexEigenSolver.h\
     include/casm/external/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h\
     include/casm/external/Eigen/src/Eigenvalues/RealQZ.h\
-    include/casm/external/Eigen/src/Eigenvalues/ComplexSchur.h\
-    include/casm/external/Eigen/src/MetisSupport/MetisSupport.h\
-    include/casm/external/Eigen/src/unsupported/KroneckerTensorProduct.h\
-    include/casm/external/Eigen/src/PaStiXSupport/PaStiXSupport.h\
-    include/casm/external/Eigen/src/SparseQR/SparseQR.h\
+    include/casm/external/Eigen/src/Eigenvalues/ComplexSchur.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_MetisSupport_includedir=$(includedir)/casm/external/Eigen/src/MetisSupport
+casm_external_Eigen_src_MetisSupport_include_HEADERS = \
+    include/casm/external/Eigen/src/MetisSupport/MetisSupport.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_unsupported_includedir=$(includedir)/casm/external/Eigen/src/unsupported
+casm_external_Eigen_src_unsupported_include_HEADERS = \
+    include/casm/external/Eigen/src/unsupported/KroneckerTensorProduct.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_PaStiXSupport_includedir=$(includedir)/casm/external/Eigen/src/PaStiXSupport
+casm_external_Eigen_src_PaStiXSupport_include_HEADERS = \
+    include/casm/external/Eigen/src/PaStiXSupport/PaStiXSupport.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_SparseQR_includedir=$(includedir)/casm/external/Eigen/src/SparseQR
+casm_external_Eigen_src_SparseQR_include_HEADERS = \
+    include/casm/external/Eigen/src/SparseQR/SparseQR.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_SVD_includedir=$(includedir)/casm/external/Eigen/src/SVD
+casm_external_Eigen_src_SVD_include_HEADERS = \
     include/casm/external/Eigen/src/SVD/UpperBidiagonalization.h\
     include/casm/external/Eigen/src/SVD/JacobiSVD_MKL.h\
-    include/casm/external/Eigen/src/SVD/JacobiSVD.h\
+    include/casm/external/Eigen/src/SVD/JacobiSVD.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_StlSupport_includedir=$(includedir)/casm/external/Eigen/src/StlSupport
+casm_external_Eigen_src_StlSupport_include_HEADERS = \
     include/casm/external/Eigen/src/StlSupport/details.h\
     include/casm/external/Eigen/src/StlSupport/StdVector.h\
     include/casm/external/Eigen/src/StlSupport/StdDeque.h\
-    include/casm/external/Eigen/src/StlSupport/StdList.h\
+    include/casm/external/Eigen/src/StlSupport/StdList.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_plugins_includedir=$(includedir)/casm/external/Eigen/src/plugins
+casm_external_Eigen_src_plugins_include_HEADERS = \
     include/casm/external/Eigen/src/plugins/ArrayCwiseBinaryOps.h\
     include/casm/external/Eigen/src/plugins/ArrayCwiseUnaryOps.h\
     include/casm/external/Eigen/src/plugins/CommonCwiseUnaryOps.h\
     include/casm/external/Eigen/src/plugins/MatrixCwiseUnaryOps.h\
     include/casm/external/Eigen/src/plugins/BlockMethods.h\
     include/casm/external/Eigen/src/plugins/CommonCwiseBinaryOps.h\
-    include/casm/external/Eigen/src/plugins/MatrixCwiseBinaryOps.h\
+    include/casm/external/Eigen/src/plugins/MatrixCwiseBinaryOps.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_IterativeLinearSolvers_includedir=$(includedir)/casm/external/Eigen/src/IterativeLinearSolvers
+casm_external_Eigen_src_IterativeLinearSolvers_include_HEADERS = \
     include/casm/external/Eigen/src/IterativeLinearSolvers/ConjugateGradient.h\
     include/casm/external/Eigen/src/IterativeLinearSolvers/BiCGSTAB.h\
     include/casm/external/Eigen/src/IterativeLinearSolvers/BasicPreconditioners.h\
     include/casm/external/Eigen/src/IterativeLinearSolvers/IterativeSolverBase.h\
-    include/casm/external/Eigen/src/IterativeLinearSolvers/IncompleteLUT.h\
+    include/casm/external/Eigen/src/IterativeLinearSolvers/IncompleteLUT.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_OrderingMethods_includedir=$(includedir)/casm/external/Eigen/src/OrderingMethods
+casm_external_Eigen_src_OrderingMethods_include_HEADERS = \
     include/casm/external/Eigen/src/OrderingMethods/Eigen_Colamd.h\
     include/casm/external/Eigen/src/OrderingMethods/Ordering.h\
-    include/casm/external/Eigen/src/OrderingMethods/Amd.h\
-    include/casm/external/Eigen/src/PardisoSupport/PardisoSupport.h\
-    include/casm/external/Eigen/src/SuperLUSupport/SuperLUSupport.h\
+    include/casm/external/Eigen/src/OrderingMethods/Amd.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_PardisoSupport_includedir=$(includedir)/casm/external/Eigen/src/PardisoSupport
+casm_external_Eigen_src_PardisoSupport_include_HEADERS = \
+    include/casm/external/Eigen/src/PardisoSupport/PardisoSupport.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_SuperLUSupport_includedir=$(includedir)/casm/external/Eigen/src/SuperLUSupport
+casm_external_Eigen_src_SuperLUSupport_include_HEADERS = \
+    include/casm/external/Eigen/src/SuperLUSupport/SuperLUSupport.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Eigen2Support_includedir=$(includedir)/casm/external/Eigen/src/Eigen2Support
+casm_external_Eigen_src_Eigen2Support_include_HEADERS = \
     include/casm/external/Eigen/src/Eigen2Support/Lazy.h\
     include/casm/external/Eigen/src/Eigen2Support/Minor.h\
     include/casm/external/Eigen/src/Eigen2Support/LU.h\
@@ -531,7 +465,12 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/src/Eigen2Support/Memory.h\
     include/casm/external/Eigen/src/Eigen2Support/MathFunctions.h\
     include/casm/external/Eigen/src/Eigen2Support/Block.h\
-    include/casm/external/Eigen/src/Eigen2Support/TriangularSolver.h\
+    include/casm/external/Eigen/src/Eigen2Support/TriangularSolver.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Eigen2Support_Geometry_includedir=$(includedir)/casm/external/Eigen/src/Eigen2Support/Geometry
+casm_external_Eigen_src_Eigen2Support_Geometry_include_HEADERS = \
     include/casm/external/Eigen/src/Eigen2Support/Geometry/AngleAxis.h\
     include/casm/external/Eigen/src/Eigen2Support/Geometry/Hyperplane.h\
     include/casm/external/Eigen/src/Eigen2Support/Geometry/Rotation2D.h\
@@ -542,7 +481,12 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/src/Eigen2Support/Geometry/All.h\
     include/casm/external/Eigen/src/Eigen2Support/Geometry/RotationBase.h\
     include/casm/external/Eigen/src/Eigen2Support/Geometry/AlignedBox.h\
-    include/casm/external/Eigen/src/Eigen2Support/Geometry/ParametrizedLine.h\
+    include/casm/external/Eigen/src/Eigen2Support/Geometry/ParametrizedLine.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Core_includedir=$(includedir)/casm/external/Eigen/src/Core
+casm_external_Eigen_src_Core_include_HEADERS = \
     include/casm/external/Eigen/src/Core/NumTraits.h\
     include/casm/external/Eigen/src/Core/Random.h\
     include/casm/external/Eigen/src/Core/Visitor.h\
@@ -602,15 +546,40 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/src/Core/CoreIterators.h\
     include/casm/external/Eigen/src/Core/Assign_MKL.h\
     include/casm/external/Eigen/src/Core/Diagonal.h\
-    include/casm/external/Eigen/src/Core/Fuzzy.h\
+    include/casm/external/Eigen/src/Core/Fuzzy.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Core_arch_AltiVec_includedir=$(includedir)/casm/external/Eigen/src/Core/arch/AltiVec
+casm_external_Eigen_src_Core_arch_AltiVec_include_HEADERS = \
     include/casm/external/Eigen/src/Core/arch/AltiVec/PacketMath.h\
-    include/casm/external/Eigen/src/Core/arch/AltiVec/Complex.h\
+    include/casm/external/Eigen/src/Core/arch/AltiVec/Complex.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Core_arch_NEON_includedir=$(includedir)/casm/external/Eigen/src/Core/arch/NEON
+casm_external_Eigen_src_Core_arch_NEON_include_HEADERS = \
     include/casm/external/Eigen/src/Core/arch/NEON/PacketMath.h\
-    include/casm/external/Eigen/src/Core/arch/NEON/Complex.h\
+    include/casm/external/Eigen/src/Core/arch/NEON/Complex.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Core_arch_SSE_includedir=$(includedir)/casm/external/Eigen/src/Core/arch/SSE
+casm_external_Eigen_src_Core_arch_SSE_include_HEADERS = \
     include/casm/external/Eigen/src/Core/arch/SSE/MathFunctions.h\
     include/casm/external/Eigen/src/Core/arch/SSE/PacketMath.h\
-    include/casm/external/Eigen/src/Core/arch/SSE/Complex.h\
-    include/casm/external/Eigen/src/Core/arch/Default/Settings.h\
+    include/casm/external/Eigen/src/Core/arch/SSE/Complex.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Core_arch_Default_includedir=$(includedir)/casm/external/Eigen/src/Core/arch/Default
+casm_external_Eigen_src_Core_arch_Default_include_HEADERS = \
+    include/casm/external/Eigen/src/Core/arch/Default/Settings.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Core_products_includedir=$(includedir)/casm/external/Eigen/src/Core/products
+casm_external_Eigen_src_Core_products_include_HEADERS = \
     include/casm/external/Eigen/src/Core/products/SelfadjointMatrixMatrix_MKL.h\
     include/casm/external/Eigen/src/Core/products/TriangularSolverMatrix_MKL.h\
     include/casm/external/Eigen/src/Core/products/TriangularMatrixMatrix_MKL.h\
@@ -632,7 +601,12 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/src/Core/products/GeneralMatrixMatrixTriangular_MKL.h\
     include/casm/external/Eigen/src/Core/products/TriangularMatrixMatrix.h\
     include/casm/external/Eigen/src/Core/products/SelfadjointMatrixMatrix.h\
-    include/casm/external/Eigen/src/Core/products/SelfadjointProduct.h\
+    include/casm/external/Eigen/src/Core/products/SelfadjointProduct.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Core_util_includedir=$(includedir)/casm/external/Eigen/src/Core/util
+casm_external_Eigen_src_Core_util_include_HEADERS = \
     include/casm/external/Eigen/src/Core/util/ReenableStupidWarnings.h\
     include/casm/external/Eigen/src/Core/util/StaticAssert.h\
     include/casm/external/Eigen/src/Core/util/ForwardDeclarations.h\
@@ -644,10 +618,30 @@ libcasm_la_SOURCES = \
     include/casm/external/Eigen/src/Core/util/XprHelper.h\
     include/casm/external/Eigen/src/Core/util/MKL_support.h\
     include/casm/external/Eigen/src/Core/util/BlasUtil.h\
-    include/casm/external/Eigen/src/Core/util/Constants.h\
-    include/casm/external/Eigen/src/Jacobi/Jacobi.h\
-    include/casm/external/Eigen/src/SPQRSupport/SuiteSparseQRSupport.h\
-    include/casm/external/gzstream/gzstream.h\
+    include/casm/external/Eigen/src/Core/util/Constants.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_Jacobi_includedir=$(includedir)/casm/external/Eigen/src/Jacobi
+casm_external_Eigen_src_Jacobi_include_HEADERS = \
+    include/casm/external/Eigen/src/Jacobi/Jacobi.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_Eigen_src_SPQRSupport_includedir=$(includedir)/casm/external/Eigen/src/SPQRSupport
+casm_external_Eigen_src_SPQRSupport_include_HEADERS = \
+    include/casm/external/Eigen/src/SPQRSupport/SuiteSparseQRSupport.h
+
+#-------------------------------------------------------------------------------#
+
+casm_external_gzstream_includedir=$(includedir)/casm/external/gzstream
+casm_external_gzstream_include_HEADERS = \
+    include/casm/external/gzstream/gzstream.h
+
+#-------------------------------------------------------------------------------#
+
+casm_kinetics_includedir=$(includedir)/casm/kinetics
+casm_kinetics_include_HEADERS = \
     include/casm/kinetics/OccupationTransformationTraits.hh\
     include/casm/kinetics/OccupationTransformation.hh\
     include/casm/kinetics/SubOrbitGenerators.hh\
@@ -674,7 +668,12 @@ libcasm_la_SOURCES = \
     include/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh\
     include/casm/kinetics/RemovePrimPeriodicDiffTransOrbit.hh\
     include/casm/kinetics/KineticsDecl.hh\
-    include/casm/kinetics/DiffusionTransformationEnum.hh\
+    include/casm/kinetics/DiffusionTransformationEnum.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_misc_includedir=$(includedir)/casm/misc
+casm_misc_include_HEADERS = \
     include/casm/misc/type_traits.hh\
     include/casm/misc/CRTPBase.hh\
     include/casm/misc/Comparisons.hh\
@@ -690,7 +689,12 @@ libcasm_la_SOURCES = \
     include/casm/misc/cloneable_ptr.hh\
     include/casm/misc/CASM_math.hh\
     include/casm/misc/CASM_Eigen_math.hh\
-    include/casm/misc/unique_cloneable_map.hh\
+    include/casm/misc/unique_cloneable_map.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_symmetry_includedir=$(includedir)/casm/symmetry
+casm_symmetry_include_HEADERS = \
     include/casm/symmetry/OrbitGeneration.hh\
     include/casm/symmetry/VectorSymCompare_impl.hh\
     include/casm/symmetry/SymOp.hh\
@@ -723,7 +727,12 @@ libcasm_la_SOURCES = \
     include/casm/symmetry/Orbit.hh\
     include/casm/symmetry/OrbitDecl.hh\
     include/casm/symmetry/SymOpRepresentation.hh\
-    include/casm/symmetry/SupercellSymInfo.hh\
+    include/casm/symmetry/SupercellSymInfo.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_clusterography_includedir=$(includedir)/casm/clusterography
+casm_clusterography_include_HEADERS = \
     include/casm/clusterography/ClusterSymCompare.hh\
     include/casm/clusterography/IntegralCluster.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
@@ -737,9 +746,19 @@ libcasm_la_SOURCES = \
     include/casm/clusterography/ClusterOrbits_impl.hh\
     include/casm/clusterography/ClusterSpecsParser_impl.hh\
     include/casm/clusterography/CoordCluster.hh\
-    include/casm/clusterography/ClusterSpecsParser.hh\
+    include/casm/clusterography/ClusterSpecsParser.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_system_includedir=$(includedir)/casm/system
+casm_system_include_HEADERS = \
     include/casm/system/RuntimeLibrary.hh\
-    include/casm/system/Popen.hh\
+    include/casm/system/Popen.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_casm_io_includedir=$(includedir)/casm/casm_io
+casm_casm_io_include_HEADERS = \
     include/casm/casm_io/Help.hh\
     include/casm/casm_io/EnumIO.hh\
     include/casm/casm_io/Log.hh\
@@ -757,12 +776,27 @@ libcasm_la_SOURCES = \
     include/casm/casm_io/InputParser_impl.hh\
     include/casm/casm_io/DataFormatterDecl.hh\
     include/casm/casm_io/DataFormatterTools.hh\
-    include/casm/casm_io/FormatFlag.hh\
-    include/casm/casm_io/stream_io/container.hh\
+    include/casm/casm_io/FormatFlag.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_casm_io_stream_io_includedir=$(includedir)/casm/casm_io/stream_io
+casm_casm_io_stream_io_include_HEADERS = \
+    include/casm/casm_io/stream_io/container.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_casm_io_json_io_includedir=$(includedir)/casm/casm_io/json_io
+casm_casm_io_json_io_include_HEADERS = \
     include/casm/casm_io/json_io/SpeciesSetParser.hh\
     include/casm/casm_io/json_io/container.hh\
     include/casm/casm_io/json_io/clex.hh\
-    include/casm/casm_io/json_io/SpeciesSetParser_impl.hh\
+    include/casm/casm_io/json_io/SpeciesSetParser_impl.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_container_includedir=$(includedir)/casm/container
+casm_container_include_HEADERS = \
     include/casm/container/Counter.hh\
     include/casm/container/MultiCounter.hh\
     include/casm/container/PolyTrie.hh\
@@ -774,7 +808,12 @@ libcasm_la_SOURCES = \
     include/casm/container/IsoCounter.hh\
     include/casm/container/Array.hh\
     include/casm/container/Tensor.hh\
-    include/casm/container/Template_Algorithms.hh\
+    include/casm/container/Template_Algorithms.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_clex_includedir=$(includedir)/casm/clex
+casm_clex_include_HEADERS = \
     include/casm/clex/HasPrimClex_impl.hh\
     include/casm/clex/ConfigEnumRandomLocal.hh\
     include/casm/clex/Supercell_impl.hh\
@@ -839,9 +878,24 @@ libcasm_la_SOURCES = \
     include/casm/clex/Calculable.hh\
     include/casm/clex/ConfigEnumStrain.hh\
     include/casm/clex/ConfigDoFIsEquivalent.hh\
-    include/casm/clex/BasicClexParamPack.hh\
-    include/casm/version/version.hh\
-    include/casm/hull/Hull.hh\
+    include/casm/clex/BasicClexParamPack.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_version_includedir=$(includedir)/casm/version
+casm_version_include_HEADERS = \
+    include/casm/version/version.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_hull_includedir=$(includedir)/casm/hull
+casm_hull_include_HEADERS = \
+    include/casm/hull/Hull.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_crystallography_includedir=$(includedir)/casm/crystallography
+casm_crystallography_include_HEADERS = \
     include/casm/crystallography/Structure.hh\
     include/casm/crystallography/SimpleStructure.hh\
     include/casm/crystallography/LatticeCanonicalForm.hh\
@@ -866,7 +920,12 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/jsonStruc.hh\
     include/casm/crystallography/Niggli.hh\
-    include/casm/crystallography/UnitCellCoord.hh\
+    include/casm/crystallography/UnitCellCoord.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_database_includedir=$(includedir)/casm/database
+casm_database_include_HEADERS = \
     include/casm/database/PropertiesDatabase.hh\
     include/casm/database/DatabaseSetIterator.hh\
     include/casm/database/Selected.hh\
@@ -900,11 +959,26 @@ libcasm_la_SOURCES = \
     include/casm/database/Named.hh\
     include/casm/database/Database_impl.hh\
     include/casm/database/ConfigDatabaseDefs.hh\
-    include/casm/database/Selection.hh\
+    include/casm/database/Selection.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_database_json_includedir=$(includedir)/casm/database/json
+casm_database_json_include_HEADERS = \
     include/casm/database/json/jsonDatabase.hh\
-    include/casm/database/json/jsonPropertiesDatabase.hh\
+    include/casm/database/json/jsonPropertiesDatabase.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_completer_includedir=$(includedir)/casm/completer
+casm_completer_include_HEADERS = \
     include/casm/completer/Handlers.hh\
-    include/casm/completer/Complete.hh\
+    include/casm/completer/Complete.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_monte_carlo_includedir=$(includedir)/casm/monte_carlo
+casm_monte_carlo_include_HEADERS = \
     include/casm/monte_carlo/SiteExchanger.hh\
     include/casm/monte_carlo/DoFMod.hh\
     include/casm/monte_carlo/MonteDriver_impl.hh\
@@ -922,20 +996,29 @@ libcasm_la_SOURCES = \
     include/casm/monte_carlo/MonteCarlo_impl.hh\
     include/casm/monte_carlo/MonteCarloEnum.hh\
     include/casm/monte_carlo/MCData.hh\
-    include/casm/monte_carlo/MonteIO_impl.hh\
+    include/casm/monte_carlo/MonteIO_impl.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_monte_carlo_grand_canonical_includedir=$(includedir)/casm/monte_carlo/grand_canonical
+casm_monte_carlo_grand_canonical_include_HEADERS = \
     include/casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh\
     include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings_impl.hh\
     include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh\
     include/casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh\
     include/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh\
-    include/casm/monte_carlo/grand_canonical/GrandCanonical.hh\
+    include/casm/monte_carlo/grand_canonical/GrandCanonical.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_monte_carlo_canonical_includedir=$(includedir)/casm/monte_carlo/canonical
+casm_monte_carlo_canonical_include_HEADERS = \
     include/casm/monte_carlo/canonical/CanonicalIO.hh\
     include/casm/monte_carlo/canonical/CanonicalSettings_impl.hh\
     include/casm/monte_carlo/canonical/CanonicalConditions.hh\
     include/casm/monte_carlo/canonical/CanonicalSettings.hh\
     include/casm/monte_carlo/canonical/Canonical.hh\
     include/casm/monte_carlo/canonical/CanonicalEvent.hh
-libcasm_la_LDFAGS = \
-    -avoid-version\
-    $(BOOST_LDFLAGS)
-src/casm/version/autoversion.lo: .FORCE
+
+#-------------------------------------------------------------------------------#
+
