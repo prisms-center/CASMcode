@@ -380,22 +380,23 @@ void unroll_test() {
        0, 0, 0, 4, 6,
        0, 0, 0, 0, 5;
 
-  Eigen::VectorXi vec5(5 + 4 + 3 + 2 + 1);
-  vec5 << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
+  auto result5 = HermiteCounter_impl::_canonical_unroll(mat5);
 
-  EXPECT_EQ(vec5, HermiteCounter_impl::_canonical_unroll(mat5));
+  for(int i = 0; i < result5.size(); ++i) {
+    EXPECT_EQ(i + 1, result5(i));
+  }
 
-  /* return; */
 
-  Eigen::Matrix3i mat3;
+  Eigen::MatrixXi mat3(3, 3);
   mat3 << 1, 6, 5,
        0, 2, 4,
        0, 0, 3;
 
-  Eigen::Vector3i vec3(3 + 2 + 1);
-  vec3 << 1, 2, 3, 4, 5, 6;
-
-  EXPECT_EQ(vec3, HermiteCounter_impl::_canonical_unroll(mat3));
+  auto result3 = HermiteCounter_impl::_canonical_unroll(mat3);
+  for(int i = 0; i < result5.size(); ++i) {
+    std::cerr << result3(i) << std::endl;
+    EXPECT_EQ(i + 1, result5(i));
+  }
 
   return;
 }
