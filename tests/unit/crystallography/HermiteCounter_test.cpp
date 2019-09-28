@@ -387,7 +387,8 @@ void unroll_test() {
   }
 
 
-  Eigen::MatrixXi mat3(3, 3);
+  /* Eigen::MatrixXi mat3(3, 3); */
+  Eigen::Matrix3i mat3;
   mat3 << 1, 6, 5,
        0, 2, 4,
        0, 0, 3;
