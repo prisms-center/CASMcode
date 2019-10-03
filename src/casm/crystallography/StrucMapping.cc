@@ -1,5 +1,7 @@
 #include "casm/crystallography/StrucMapping.hh"
 
+#include "casm/crystallography/SymmetryAdapter.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/StrucMapCalculatorInterface.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/strain/StrainConverter.hh"
@@ -453,9 +455,9 @@ namespace CASM {
     std::vector<Lattice> tlat_vec;
     std::vector<Lattice> &lat_vec = (m_restricted ? tlat_vec : m_superlat_map[prim_vol]);
 
-    SupercellEnumerator<Lattice> enumerator(Lattice(parent().lat_column_mat),
-                                            calculator().point_group(),
-                                            ScelEnumProps(prim_vol, prim_vol + 1));
+    SuperlatticeEnumerator enumerator(Lattice(parent().lat_column_mat),
+                                      Adapter::symop_to_matrix(calculator().point_group()),
+                                      ScelEnumProps(prim_vol, prim_vol + 1));
 
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       if(m_restricted && !_filter_lat(*it)) {

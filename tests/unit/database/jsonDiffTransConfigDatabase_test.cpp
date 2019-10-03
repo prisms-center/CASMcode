@@ -13,7 +13,6 @@
 #include "TestOrbits.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/ScelEnum_impl.hh"
 #include "casm/database/ScelDatabase.hh"

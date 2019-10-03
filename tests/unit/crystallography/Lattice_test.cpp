@@ -5,7 +5,7 @@
 
 /// What is being used to test it:
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/symmetry/SymGroup.hh"
@@ -86,7 +86,7 @@ void lattice_superduper_test() {
   Lattice lat(Lattice::fcc());
 
   ScelEnumProps enum_props(1, 6);
-  SupercellEnumerator<Lattice> enumerator(lat, pg, enum_props);
+  SuperlatticeEnumerator enumerator(lat, Adapter::symop_to_matrix(pg), enum_props);
 
   std::vector<Lattice> lat_list(enumerator.begin(), enumerator.end());
 

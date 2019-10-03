@@ -189,6 +189,7 @@ libcasm_la_SOURCES = \
     src/casm/version/autoversion.cc\
     src/casm/hull/Hull.cc\
     src/casm/crystallography/StrucMapping.cc\
+    src/casm/crystallography/SuperlatticeEnumerator.cc\
     src/casm/crystallography/Coordinate.cc\
     src/casm/crystallography/Structure.cc\
     src/casm/crystallography/PrimGrid.cc\
@@ -202,10 +203,11 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Lattice.cc\
     src/casm/crystallography/SimpleStructure.cc\
+    src/casm/crystallography/SymmetryAdapter.cc\
     src/casm/crystallography/BasicStructure.cc\
     src/casm/crystallography/SimpleStrucMapCalculator.cc\
     src/casm/crystallography/LatticeMap.cc\
-    src/casm/crystallography/SupercellEnumerator.cc\
+    src/casm/crystallography/HermiteCounter.cc\
     src/casm/crystallography/CoordinateSystems.cc\
     src/casm/database/PropertiesDatabase.cc\
     src/casm/database/DiffTransConfigDatabase.cc\
@@ -849,18 +851,20 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SpeciesAttribute.hh\
     include/casm/crystallography/CoordinateSystems.hh\
     include/casm/crystallography/StrucMapping.hh\
+    include/casm/crystallography/SymmetryAdapter.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/PrimGrid.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
-    include/casm/crystallography/SupercellEnumerator.hh\
     include/casm/crystallography/Lattice.hh\
+    include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LatticeCanonicalForm_impl.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/BasicStructure.hh\
+    include/casm/crystallography/SuperlatticeEnumerator.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/Site.hh\
     include/casm/crystallography/Coordinate.hh\

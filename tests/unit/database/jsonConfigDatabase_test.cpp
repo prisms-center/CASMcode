@@ -10,7 +10,6 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/stream_io/container.hh"

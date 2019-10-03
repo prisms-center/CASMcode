@@ -10,7 +10,7 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
@@ -75,7 +75,7 @@ TEST(ScelDatabase_Test, Test1) {
   int minvol = 1;
   int maxvol = 10;
   ScelEnumProps enum_props(minvol, maxvol + 1);
-  SupercellEnumerator<Lattice> lat_enum(prim.lattice(), prim.factor_group(), enum_props);
+  SuperlatticeEnumerator lat_enum(prim.lattice(), Adapter::symop_to_matrix(prim.factor_group()), enum_props);
   EXPECT_EQ(true, true);
   EXPECT_EQ(std::distance(lat_enum.begin(), lat_enum.end()), 87);
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {

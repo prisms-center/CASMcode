@@ -4,7 +4,8 @@
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
+#include "casm/crystallography/SymmetryAdapter.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
@@ -362,7 +363,7 @@ namespace CASM {
         args.log() << "    Initial transformation matrix:\n" << iround(T)
                    << "\n    (volume = " << iround(T).cast<double>().determinant() << ")\n\n";
 
-        auto M = enforce_min_volume(prim_lat, iround(T), pg, min_vol, vm.count("fixed-shape"));
+        auto M = enforce_min_volume(prim_lat, iround(T), Adapter::symop_to_matrix(pg), min_vol, vm.count("fixed-shape"));
 
         superduper = canonical_equivalent_lattice(make_supercell(superduper, M), pg, TOL);
 
@@ -463,7 +464,7 @@ namespace CASM {
         auto M = enforce_min_volume(
                    primclex.prim().lattice(),
                    T,
-                   pg,
+                   Adapter::symop_to_matrix(pg),
                    min_vol,
                    vm.count("fixed-shape"));
 

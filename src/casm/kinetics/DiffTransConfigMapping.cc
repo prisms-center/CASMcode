@@ -12,7 +12,6 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/LatticeMap.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/symmetry/PermuteIterator.hh"

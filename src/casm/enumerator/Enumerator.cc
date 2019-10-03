@@ -1,5 +1,6 @@
 #include "casm/enumerator/Enumerator_impl.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
+#include "casm/crystallography/SymmetryAdapter.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
@@ -147,10 +148,10 @@ namespace CASM {
              make_enumerator_scel_enum_input(_kwargs, enum_opt));
   }
 
-  /// \brief Standardizes parsing casm enum input options to make an SupercellEnumerator<Lattice>
+  /// \brief Standardizes parsing casm enum input options to make a SuperlatticeEnumerator
   ///
   /// See SuperConfigEnum for example documentation
-  std::unique_ptr<SupercellEnumerator<Lattice> > make_enumerator_superlat_enum(
+  std::unique_ptr<SuperlatticeEnumerator> make_enumerator_superlat_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
@@ -162,9 +163,9 @@ namespace CASM {
 
     Supercell unit_cell(&primclex, enum_props.generating_matrix());
 
-    return notstd::make_unique<SupercellEnumerator<Lattice> >(
+    return notstd::make_unique<SuperlatticeEnumerator>(
              primclex.prim().lattice(),
-             unit_cell.factor_group(),
+             Adapter::symop_to_matrix(unit_cell.factor_group()),
              enum_props);
   }
 

@@ -14,7 +14,7 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/casm_io/VaspIO.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 
 using namespace CASM;
@@ -260,7 +260,7 @@ TEST(BasicStructureSiteTest, IsPrimitiveTest) {
   const SymGroup effective_pg = prim.factor_group();
 
   ScelEnumProps enum_props(1, 6);
-  SupercellEnumerator<Lattice> scel_enum(prim.lattice(), effective_pg, enum_props);
+  SuperlatticeEnumerator scel_enum(prim.lattice(), Adapter::symop_to_matrix(effective_pg), enum_props);
 
   for(auto it = scel_enum.begin(); it != scel_enum.end(); ++it) {
 

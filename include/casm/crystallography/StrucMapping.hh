@@ -8,7 +8,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/PrimGrid.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
 
 namespace CASM {
   class Lattice;

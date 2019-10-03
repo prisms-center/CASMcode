@@ -6,7 +6,7 @@
 /// What is being used to test it:
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "crystallography/TestStructures.hh"
@@ -93,7 +93,7 @@ namespace CASM {
     int maxvol = 10;
 
     ScelEnumProps enum_props(minvol, maxvol + 1, dirs);
-    SupercellEnumerator<Lattice> latenumerator(testlat, pg, enum_props);
+    SuperlatticeEnumerator latenumerator(testlat, Adapter::symop_to_matrix(pg), enum_props);
     std::vector<Lattice> enumerated_lat(latenumerator.begin(), latenumerator.end());
 
 

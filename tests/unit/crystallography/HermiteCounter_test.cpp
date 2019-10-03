@@ -1,26 +1,7 @@
 #include "gtest/gtest.h"
-#include "autotools.hh"
-
-#include<boost/filesystem.hpp>
-
-/// What is being tested:
-#include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/Structure.hh"
-
-/// What is being used to test it:
-#include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
-#include "casm/symmetry/SymGroup.hh"
-#include "casm/external/Eigen/Dense"
-#include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/HermiteCounter.hh"
 
 using namespace CASM;
-boost::filesystem::path testdir(autotools::abs_srcdir() + "/tests/unit/crystallography");
-
-void autofail() {
-  EXPECT_EQ(1, 0);
-  return;
-}
 
 void hermite_init() {
   int dims = 5;
@@ -391,103 +372,6 @@ void expand_dims_test() {
   return;
 }
 
-jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol) {
-
-  const Structure test_struc(testdir / pos_filename);
-  const Lattice test_lat = test_struc.lattice();
-  const SymGroup effective_pg = test_struc.factor_group();
-
-  std::vector<Eigen::Matrix3i> enumerated_mats;
-
-  ScelEnumProps enum_props(minvol, maxvol + 1);
-  SupercellEnumerator<Lattice> test_enumerator(test_lat, effective_pg, enum_props);
-
-  double tol = TOL;
-  for(auto it = test_enumerator.begin(); it != test_enumerator.end(); ++it) {
-    enumerated_mats.push_back(it.matrix());
-
-    // -- check niggli generation
-
-    Lattice niggli1 = niggli(*it, tol);
-    Lattice niggli2 = niggli(niggli1, tol);
-    bool check_niggli = almost_equal(
-                          niggli1.lat_column_mat(),
-                          niggli2.lat_column_mat(),
-                          tol);
-
-    EXPECT_EQ(check_niggli, true);
-
-    // -- check canonical generation
-
-    Lattice canon = canonical_equivalent_lattice(*it, effective_pg, tol);
-    Lattice canon2 = canonical_equivalent_lattice(canon, effective_pg, tol);
-    bool check = almost_equal(
-                   canon.lat_column_mat(),
-                   canon2.lat_column_mat(),
-                   tol);
-
-    EXPECT_EQ(check, true);
-
-  }
-
-  jsonParser mat_dump;
-  mat_dump["input"]["min_vol"] = minvol;
-  mat_dump["input"]["max_vol"] = maxvol;
-  mat_dump["input"]["source"] = pos_filename;
-  mat_dump["output"]["mats"] = enumerated_mats;
-
-  return mat_dump;
-}
-
-jsonParser lat_test_case(const std::string &pos_filename, int minvol, int maxvol) {
-  const Structure test_struc(testdir / pos_filename);
-  const Lattice test_lat = test_struc.lattice();
-  const SymGroup effective_pg = test_struc.factor_group();
-
-  std::vector<Lattice> enumerated_lats;
-  ScelEnumProps enum_props(minvol, maxvol + 1);
-  test_lat.generate_supercells(enumerated_lats, effective_pg, enum_props);
-
-  jsonParser lat_dump;
-  lat_dump["input"]["min_vol"] = minvol;
-  lat_dump["input"]["max_vol"] = maxvol;
-  lat_dump["input"]["source"] = pos_filename;
-  lat_dump["output"]["lats"] = enumerated_lats;
-
-  return lat_dump;
-}
-
-jsonParser generate_all_test_cases() {
-  jsonParser all_test_cases;
-
-  //********************************************************************//
-
-  std::vector<jsonParser> all_mat_tests;
-  all_mat_tests.push_back(mat_test_case("POS1.txt", 1, 6));
-  all_mat_tests.push_back(mat_test_case("PRIM1.txt", 2, 9));
-  all_mat_tests.push_back(mat_test_case("PRIM2.txt", 4, 7));
-  all_mat_tests.push_back(mat_test_case("PRIM4.txt", 1, 8));
-  all_test_cases["mat_test_cases"] = all_mat_tests;
-
-  //********************************************************************//
-
-  std::vector<jsonParser> all_lat_tests;
-  all_lat_tests.push_back(lat_test_case("POS1.txt", 2, 6));
-  all_lat_tests.push_back(lat_test_case("PRIM1.txt", 2, 9));
-  all_lat_tests.push_back(lat_test_case("PRIM2.txt", 3, 7));
-  all_lat_tests.push_back(lat_test_case("PRIM4.txt", 1, 8));
-  all_lat_tests.push_back(lat_test_case("PRIM5.txt", 1, 8));
-
-  all_test_cases["lat_test_cases"] = all_lat_tests;
-
-  //********************************************************************//
-
-  jsonParser test1 = all_test_cases;
-  jsonParser test2 = all_test_cases;
-
-  return all_test_cases;
-}
-
 void unroll_test() {
   Eigen::MatrixXi mat5(5, 5);
   mat5 << 1, 12, 11, 10, 9,
@@ -496,22 +380,24 @@ void unroll_test() {
        0, 0, 0, 4, 6,
        0, 0, 0, 0, 5;
 
-  Eigen::VectorXi vec5(5 + 4 + 3 + 2 + 1);
-  vec5 << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
+  auto result5 = HermiteCounter_impl::_canonical_unroll(mat5);
 
-  EXPECT_EQ(vec5, HermiteCounter_impl::_canonical_unroll(mat5));
+  for(int i = 0; i < result5.size(); ++i) {
+    EXPECT_EQ(i + 1, result5(i));
+  }
 
-  return;
 
+  /* Eigen::MatrixXi mat3(3, 3); */
   Eigen::Matrix3i mat3;
   mat3 << 1, 6, 5,
        0, 2, 4,
        0, 0, 3;
 
-  Eigen::Vector3i vec3(3 + 2 + 1);
-  vec3 << 1, 2, 3, 4, 5, 6;
-
-  EXPECT_EQ(vec3, HermiteCounter_impl::_canonical_unroll(mat3));
+  auto result3 = HermiteCounter_impl::_canonical_unroll(mat3);
+  for(int i = 0; i < result5.size(); ++i) {
+    std::cerr << result3(i) << std::endl;
+    EXPECT_EQ(i + 1, result5(i));
+  }
 
   return;
 }
@@ -542,145 +428,40 @@ void compare_test() {
   return;
 }
 
-void trans_enum_test() {
-  Lattice testlat(Lattice::fcc());
-  SymGroup pg = SymGroup::lattice_point_group(testlat);
 
-  // int dims = 3;
-  Eigen::Matrix3i transmat;
-
-  transmat << -1, 1, 1,
-           1, -1, 1,
-           1, 1, -1;
-
-  Lattice bigunit = make_supercell(testlat, transmat);
-
-  ScelEnumProps enum_props(1, 5 + 1, "abc", transmat);
-  SupercellEnumerator<Lattice> enumerator(testlat, pg, enum_props);
-
-  std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
-
-  for(Index i = 0; i > enumerated_lat.size(); i++) {
-    EXPECT_TRUE(enumerated_lat[i].is_supercell_of(bigunit));
-  }
-
-  return;
-}
-
-
-void restricted_test() {
-  std::vector<Lattice> all_test_lats;
-  all_test_lats.push_back(Lattice::fcc());
-  all_test_lats.push_back(Lattice::bcc());
-  all_test_lats.push_back(Lattice::cubic());
-  all_test_lats.push_back(Lattice::hexagonal());
-
-  for(Index t = 0; t < all_test_lats.size(); t++) {
-    Lattice testlat = all_test_lats[t];
-    SymGroup pg = SymGroup::lattice_point_group(testlat);
-
-    // int dims = 1;
-
-    ScelEnumProps enum_props(1, 15 + 1, "a");
-    SupercellEnumerator<Lattice> enumerator(testlat, pg, enum_props);
-
-    int l = 1;
-    for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-      Eigen::Matrix3i comp_transmat;
-      comp_transmat << (l), 0, 0,
-                    0, 1, 0,
-                    0, 0, 1;
-
-      EXPECT_TRUE(it.matrix() == canonical_hnf(comp_transmat, pg, testlat));
-      l++;
-    }
-  }
-
-  return;
-}
-
-
-TEST(SupercellEnumeratorTest, HermiteConstruction) {
+TEST(HermiteCounterTest, HermiteConstruction) {
   hermite_init();
 }
 
-TEST(SupercellEnumeratorTest, HermiteImpl) {
+TEST(HermiteCounterTest, HermiteImpl_spill) {
   spill_test();
+}
+
+TEST(HermiteCounterTest, HermiteImpl_next_position) {
   next_position_test();
+}
+
+TEST(HermiteCounterTest, HermiteImpl_triangle_count) {
   triangle_count_test();
+}
+
+TEST(HermiteCounterTest, HermiteImpl_matrix_construction) {
   matrix_construction_test();
+}
+
+TEST(HermiteCounterTest, HermiteImpl_reset_test) {
   reset_test();
+}
+
+TEST(HermiteCounterTest, HermiteImpl_unroll_test) {
   unroll_test();
+}
+
+TEST(HermiteCounterTest, HermiteImpl_compare_test) {
   compare_test();
 }
 
-TEST(SupercellEnumeratorTest, HermiteCounting) {
+TEST(HermiteCounterTest, HermiteCounting_increment_test) {
   increment_test();
 }
 
-//Tests in here were created by first getting results from
-//before HermiteCounter existed and then making sure the results
-//didn't change after it was introduced
-
-//Unfortunately, the old niggli routines weren't working as
-//they should have been, so these hard coded examples to check
-//had to be regenerated...
-
-TEST(SupercellEnumeratorTest, EnumeratorConsistency) {
-
-  boost::filesystem::path old_test_path = testdir / "test_cases.json";
-  boost::filesystem::path current_test_path = testdir / "current_test_results.json";
-
-  jsonParser current_test_results = generate_all_test_cases();
-  current_test_results.write(current_test_path);
-
-  //Find out where things fail
-  //Comparison will fail if you don't compare from pre-written files.
-  jsonParser curr(current_test_path);
-  jsonParser existing(old_test_path);
-
-  boost::filesystem::path failure_point = find_diff(curr, existing, TOL);
-
-  if(!failure_point.empty()) {
-    std::cout << "Difference at: " << failure_point << "\n" << std::endl;
-
-    auto &_existing = existing.at(failure_point);
-    auto &_curr = curr.at(failure_point);
-    if(_existing.type() != _curr.type()) {
-      std::cout << "Different types\n" << std::endl;
-    }
-    else if(_existing.is_array() && (_existing.size() != _curr.type())) {
-      std::cout << "Different array sizes" << std::endl;
-      std::cout << "  Expected: " << _existing.size() << std::endl;
-      std::cout << "  Found: " << _curr.size() << std::endl;
-
-    }
-    else if(_existing.is_obj() && (_existing.size() != _curr.type())) {
-      std::cout << "Different object sizes\n" << std::endl;
-      std::cout << "  Expected: " << _existing.size() << std::endl;
-      std::cout << "  Found: " << _curr.size() << std::endl;
-
-    }
-    else {
-      std::cout << "Different values\n" << std::endl;
-    }
-
-    std::cout << "Expected: \n" << existing.at(failure_point) << "\n"
-              << "Found: \n" << curr.at(failure_point) << std::endl;
-  }
-
-
-  EXPECT_TRUE(failure_point.empty());
-
-  current_test_results["WARNING"] = "This has been added as an inconvenience to anyone who is thinking of replacing the \
-current test_results.json file. Do not replace anything unless you're certain the old \
-results were incorrect, and these are an improvement. If you are sure you want to proceed, eliminate this key.";
-
-  current_test_results.write(current_test_path);
-
-}
-
-TEST(SupercellEnumeratorTest, RestrictedEnumeration) {
-  trans_enum_test();
-  restricted_test();
-}
