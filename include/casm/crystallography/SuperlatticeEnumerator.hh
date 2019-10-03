@@ -3,11 +3,11 @@
 
 #include "casm/external/Eigen/Dense"
 
-#include "casm/misc/cloneable_ptr.hh"
-#include "casm/crystallography/SymmetryAdapter.hh"
 #include "casm/casm_io/jsonParser.hh"
-#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/HermiteCounter.hh"
+#include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/SymmetryAdapter.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
 
@@ -27,7 +27,6 @@ namespace CASM {
   class ScelEnumProps {
 
   public:
-
     typedef long size_type;
 
     /// \brief Constructor
@@ -46,11 +45,8 @@ namespace CASM {
     ScelEnumProps(size_type begin_volume,
                   size_type end_volume,
                   std::string dirs = "abc",
-                  Eigen::Matrix3i generating_matrix = Eigen::Matrix3i::Identity()) :
-      m_begin_volume(begin_volume),
-      m_end_volume(end_volume),
-      m_dims(dirs.size()),
-      m_dirs(dirs) {
+                  Eigen::Matrix3i generating_matrix = Eigen::Matrix3i::Identity())
+      : m_begin_volume(begin_volume), m_end_volume(end_volume), m_dims(dirs.size()), m_dirs(dirs) {
 
       if(begin_volume < 1) {
         std::string msg = "Error constructing ScelEnumProps: begin_volume < 1";
@@ -85,7 +81,6 @@ namespace CASM {
       m_gen_mat = generating_matrix * P;
     }
 
-
     size_type begin_volume() const {
       return m_begin_volume;
     }
@@ -107,13 +102,11 @@ namespace CASM {
     }
 
   private:
-
     size_type m_begin_volume;
     size_type m_end_volume;
     int m_dims;
     std::string m_dirs;
     Eigen::Matrix3i m_gen_mat;
-
   };
 
   //******************************************************************************************************************//
@@ -128,7 +121,6 @@ namespace CASM {
   class SuperlatticeIterator {
 
   public:
-
     /// fixes alignment of m_deformation
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -140,14 +132,12 @@ namespace CASM {
 
     SuperlatticeIterator() {}
 
-    SuperlatticeIterator(const SuperlatticeEnumerator &enumerator,
-                         int volume,
-                         int dims);
+    SuperlatticeIterator(const SuperlatticeEnumerator &enumerator, int volume, int dims);
 
-    //required for all iterators
-    //SuperlatticeIterator<UnitType>(const SuperlatticeIterator<UnitType> &B);
+    // required for all iterators
+    // SuperlatticeIterator<UnitType>(const SuperlatticeIterator<UnitType> &B);
 
-    //required for all iterators?
+    // required for all iterators?
     SuperlatticeIterator &operator=(const SuperlatticeIterator &B);
 
     /// \brief Iterator comparison
@@ -175,23 +165,20 @@ namespace CASM {
     SuperlatticeIterator &operator++();
 
     /// \brief Postfix increment operator. Increment to next unique supercell.
-    //SuperlatticeIterator<UnitType> operator++(int);  TODO
-
+    // SuperlatticeIterator<UnitType> operator++(int);  TODO
 
   private:
-
     /// \brief Uses _try_increment until the next unique supercell is found.
     void _increment();
 
     /// \brief Check if the current supercell matrix hermite normal form is in a canonical form
-    //bool _is_canonical() const;
+    // bool _is_canonical() const;
 
     /// \brief Increment the supercell matrix by one (maintaining hermite normal form)
     void _try_increment();
 
     /// \brief Update m_super when required
     void _update_super();
-
 
     /// \brief Indicates if m_super reflects the current m_current supercell matrix
     mutable bool m_super_updated;
@@ -207,9 +194,7 @@ namespace CASM {
 
     /// \brief Keep track of the HNF matrices for the current determinant value
     std::vector<Eigen::Matrix3i> m_canon_hist;
-
   };
-
 
   /// \brief A fake container of supercell matrices
   ///
@@ -218,13 +203,12 @@ namespace CASM {
   class SuperlatticeEnumerator {
 
   public:
-
     typedef long int size_type;
 
     typedef SuperlatticeIterator const_iterator;
 
-    typedef Adapter::SymOpMatrixType SymOpType;
-
+    typedef Adapter::SymOpType SymOpType;
+    typedef Adapter::SymGroupType SymGroupType;
 
     /// \brief Construct a SuperlatticeEnumerator using custom point group operations
     ///
@@ -238,6 +222,16 @@ namespace CASM {
                            const std::vector<SymOpType> &point_grp,
                            const ScelEnumProps &enum_props);
 
+    /// Initialize with the unit lattice to be tiled, and specification for how to enumerate
+    /// the superlattices. The symmetry operations are given with an iterator range, whose
+    /// type must have Adapter::to_symgroup_type defined.
+    template <typename ExternSymGroupTypeIt>
+    SuperlatticeEnumerator(ExternSymGroupTypeIt begin,
+                           ExternSymGroupTypeIt end,
+                           const Lattice &unit,
+                           const ScelEnumProps &enum_props)
+      : SuperlatticeEnumerator(unit, Adapter::to_symgroup_type(begin, end), enum_props) {
+    }
 
     /// \brief Access the unit the is being made into superlattices
     const Lattice &unit() const;
@@ -263,7 +257,8 @@ namespace CASM {
     /// \brief Get the dimensions of the enumerator (1D, 2D or 3D)
     int dimension() const;
 
-    /// \brief A const iterator to the beginning volume, specify here how the iterator should jump through the enumeration
+    /// \brief A const iterator to the beginning volume, specify here how the iterator should jump through the
+    /// enumeration
     const_iterator begin() const;
 
     /// \brief A const iterator to the past-the-last volume
@@ -279,7 +274,6 @@ namespace CASM {
     const_iterator citerator(size_type volume) const;
 
   private:
-
     /// \brief The unit cell of the supercells
     const Lattice m_unit;
 
@@ -287,7 +281,7 @@ namespace CASM {
     /* Lattice m_lat; */
 
     /// \brief The point group of the unit cell
-    std::vector<SymOpType> m_point_group;
+    SymGroupType m_point_group;
 
     /// \brief The first volume supercells to be iterated over (what cbegin uses)
     const int m_begin_volume;
@@ -295,15 +289,13 @@ namespace CASM {
     /// \brief The past-the-last volume supercells to be iterated over (what cend uses)
     const int m_end_volume;
 
-    /// \brief This matrix (G) specifies new lattice vectors to enumerate over column-wise, such that the resulting transformation matrix
-    /// is G*B, where B is the block matrix constructed out of the HermiteCounter matrix H.
+    /// \brief This matrix (G) specifies new lattice vectors to enumerate over column-wise, such that the resulting
+    /// transformation matrix is G*B, where B is the block matrix constructed out of the HermiteCounter matrix H.
     const Eigen::Matrix3i m_gen_mat;
 
     /// \brief The number of lattice directions the enumeration is being done in
     const int m_dims;
-
   };
-
 
   //********************************************************************************************************//
 
@@ -350,7 +342,7 @@ namespace CASM {
 
   jsonParser &to_json(const ScelEnumProps &props, jsonParser &json);
 
-  template<>
+  template <>
   struct jsonConstructor<ScelEnumProps> {
     static ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
   };
@@ -372,12 +364,21 @@ namespace CASM {
   ///          and S.determinant() >= volume
   ///
   ///
-  Eigen::Matrix3i enforce_min_volume(
-    const Lattice &unit,
-    const Eigen::Matrix3i &T,
-    const std::vector<SuperlatticeEnumerator::SymOpType> &point_grp,
-    Index volume,
-    bool fix_shape = false);
+  Eigen::Matrix3i enforce_min_volume(const Lattice &unit,
+                                     const Eigen::Matrix3i &T,
+                                     const SuperlatticeEnumerator::SymGroupType &point_grp,
+                                     Index volume,
+                                     bool fix_shape = false);
+
+  template <typename ExternSymGroupTypeIt>
+  Eigen::Matrix3i enforce_min_volume(ExternSymGroupTypeIt begin,
+                                     ExternSymGroupTypeIt end,
+                                     const Lattice &unit,
+                                     const Eigen::Matrix3i &T,
+                                     Index volume,
+                                     bool fix_shape = false) {
+    return enforce_min_volume(unit, T, Adapter::to_symgroup_type(begin, end), volume, fix_shape);
+  }
 
   /// \brief Return canonical hermite normal form of the supercell matrix
   ///
@@ -410,9 +411,10 @@ namespace CASM {
   ///
   /// \relatesalso Lattice
   ///
-  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SuperlatticeEnumerator::SymOpType> &effective_pg, const Lattice &ref_lattice);
+  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T,
+                                const std::vector<SuperlatticeEnumerator::SymOpType> &effective_pg,
+                                const Lattice &ref_lattice);
 
-
-}
+} // namespace CASM
 
 #endif

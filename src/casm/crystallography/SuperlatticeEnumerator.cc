@@ -278,7 +278,7 @@ namespace CASM {
 
   }
 
-  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const std::vector<SuperlatticeEnumerator::SymOpType> &effective_pg, const Lattice &ref_lattice) {
+  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SuperlatticeEnumerator::SymGroupType &effective_pg, const Lattice &ref_lattice) {
     Eigen::Matrix3d lat = ref_lattice.lat_column_mat();
 
     //get T in hermite normal form
@@ -289,8 +289,8 @@ namespace CASM {
     Eigen::Matrix3i H_best;
     H_best = H;
 
-    for(Index i = 0; i < effective_pg.size(); i++) {
-      Eigen::Matrix3i transformed = iround(lat.inverse() * effective_pg[i].matrix() * lat) * H;
+    for(const auto &op : effective_pg) {
+      Eigen::Matrix3i transformed = iround(lat.inverse() * Adapter::get_matrix(op) * lat) * H;
       Eigen::Matrix3i H_transformed = hermite_normal_form(transformed).first;
 
       //If you fall in here then transformed was greater than H

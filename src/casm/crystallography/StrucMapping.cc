@@ -455,8 +455,8 @@ namespace CASM {
     std::vector<Lattice> tlat_vec;
     std::vector<Lattice> &lat_vec = (m_restricted ? tlat_vec : m_superlat_map[prim_vol]);
 
-    SuperlatticeEnumerator enumerator(Lattice(parent().lat_column_mat),
-                                      Adapter::symop_to_matrix(calculator().point_group()),
+    auto pg = calculator().point_group();
+    SuperlatticeEnumerator enumerator(pg.begin(), pg.end(), Lattice(parent().lat_column_mat),
                                       ScelEnumProps(prim_vol, prim_vol + 1));
 
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {

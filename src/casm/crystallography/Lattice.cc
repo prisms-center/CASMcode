@@ -327,7 +327,7 @@ namespace CASM {
                                     const std::vector<SymOp> &effective_pg,
                                     const ScelEnumProps &enum_props) const {
 
-    SuperlatticeEnumerator enumerator(*this, Adapter::symop_to_matrix(effective_pg), enum_props);
+    SuperlatticeEnumerator enumerator(effective_pg.begin(), effective_pg.end(), *this,  enum_props);
     supercell.clear();
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       supercell.push_back(canonical_equivalent_lattice(*it, effective_pg, TOL));
