@@ -4,10 +4,13 @@
 #include "casm/symmetry/SymCompare.hh"
 
 namespace CASM {
+  namespace xtal {
+    class PrimGrid;
+  }
+  using namespace xtal;
 
   template<typename Derived>
   class ClusterSymCompare;
-  class PrimGrid;
   class PrimClex;
   class Supercell;
 

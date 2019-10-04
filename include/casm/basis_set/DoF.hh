@@ -17,9 +17,11 @@
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Molecule;
+  }
   class SymGroup;
 
-  class Molecule;
   class jsonParser;
 
   template<typename OccType>
@@ -27,6 +29,8 @@ namespace CASM {
 
   class ContinuousDoF;
   class DoFSet;
+
+  using namespace xtal;
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

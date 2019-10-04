@@ -4,13 +4,15 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/clex/ClexBasis.hh"
 namespace CASM {
+  namespace xtal {
+    class Structure;
+  }
   class ClexBasis;
-  class Structure;
   class PrimNeighborList;
   class ParamPackMixIn;
   class OrbitFunctionTraits;
 
-
+  using namespace xtal;
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

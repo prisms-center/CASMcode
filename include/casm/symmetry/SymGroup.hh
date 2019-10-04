@@ -10,8 +10,11 @@
 #include "casm/container/multivector.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Lattice;
+  }
 
-  class Lattice;
+  using namespace xtal;
 
   class SymGroup;
   class MasterSymGroup;
@@ -47,7 +50,7 @@ namespace CASM {
 
     }
 
-    SymGroup(std::vector<SymOp> from_array, Lattice const * lat_ptr, PERIODICITY_TYPE init_type = PERIODIC);
+    SymGroup(std::vector<SymOp> from_array, Lattice const *lat_ptr, PERIODICITY_TYPE init_type = PERIODIC);
 
     template<typename IterType>
     SymGroup(IterType begin,

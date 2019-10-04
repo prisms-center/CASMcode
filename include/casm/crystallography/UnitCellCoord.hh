@@ -180,22 +180,6 @@ namespace CASM {
       return sout << site.sublat() << ", " << site.unitcell().transpose();
     }
 
-    /// \brief Print to json as [b, i, j, k]
-    jsonParser &to_json(const UnitCellCoord &ucc_val, jsonParser &fill_json);
-
-    template<typename T> struct jsonConstructor;
-
-    template<>
-    struct jsonConstructor<UnitCellCoord> {
-
-      /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
-      static UnitCellCoord from_json(const jsonParser &json, const BasicStructure<Site> &unit);
-    };
-
-    /// \brief Read from json [b, i, j, k]
-    void from_json(UnitCellCoord &fill_value, const jsonParser &read_json);
-
-
     /* -- UnitCellCoord Definitions ------------------------------------- */
 
     inline UnitCellCoord::UnitCellCoord(const UnitType &unit) :
@@ -292,6 +276,23 @@ namespace CASM {
 
     /** @} */
   }
+
+  /// \brief Print to json as [b, i, j, k]
+  jsonParser &to_json(const xtal::UnitCellCoord &ucc_val, jsonParser &fill_json);
+
+  template<typename T> struct jsonConstructor;
+
+  template<>
+  struct jsonConstructor<xtal::UnitCellCoord> {
+
+    /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
+    static xtal::UnitCellCoord from_json(const jsonParser &json, const xtal::BasicStructure<xtal::Site> &unit);
+  };
+
+  /// \brief Read from json [b, i, j, k]
+  void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json);
+
+
 }
 #endif
 

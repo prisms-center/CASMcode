@@ -6,10 +6,14 @@
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Structure;
+  }
 
-  class Structure;
   class Configuration;
   class StrucMapper;
+
+  using namespace xtal;
 
   namespace ConfigIO {
 

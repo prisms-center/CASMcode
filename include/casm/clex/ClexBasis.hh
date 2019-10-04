@@ -9,16 +9,19 @@
 #include "casm/clusterography/ClusterDecl.hh"
 
 namespace CASM {
-  class Site;
-  template<typename CoordType>
-  class BasicStructure;
-  class Structure;
-  class UnitCell;
+  namespace xtal {
+    class Site;
+    template<typename CoordType>
+    class BasicStructure;
+    class Structure;
+    class UnitCell;
+  }
+  using namespace xtal;
 
 
   class PrimNeighborList;
-
   class ClexBasisBuilder;
+
 
   class ClexBasis {
   public:

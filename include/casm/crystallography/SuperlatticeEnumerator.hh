@@ -341,13 +341,6 @@ namespace CASM {
     ///
     ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
 
-    jsonParser &to_json(const ScelEnumProps &props, jsonParser &json);
-
-    template <>
-    struct jsonConstructor<ScelEnumProps> {
-      static ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
-    };
-
     /// \brief Return a transformation matrix that ensures a supercell of at least
     ///        some volume
     ///
@@ -424,7 +417,14 @@ namespace CASM {
       return canonical_hnf(T, Adapter::to_symgroup_type(begin, end), ref_lattice);
     }
 
-  } // namespace CASM
+  }
+  jsonParser &to_json(const xtal::ScelEnumProps &props, jsonParser &json);
+
+  template <>
+  struct jsonConstructor<xtal::ScelEnumProps> {
+    static xtal::ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
+  };
+
 }
 
 #endif
