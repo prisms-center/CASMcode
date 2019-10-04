@@ -105,7 +105,7 @@ namespace CASM {
   //SuperlatticeEnumerator
 
   SuperlatticeEnumerator::SuperlatticeEnumerator(const Lattice &unit,
-                                                 const std::vector<SymOpType> &point_grp,
+                                                 const SymGroupType &point_grp,
                                                  const ScelEnumProps &enum_props) :
     m_unit(unit),
     m_point_group(point_grp),
@@ -123,7 +123,7 @@ namespace CASM {
     return m_unit;
   }
 
-  const std::vector<SuperlatticeEnumerator::SymOpType> &SuperlatticeEnumerator::point_group() const {
+  const SuperlatticeEnumerator::SymGroupType &SuperlatticeEnumerator::point_group() const {
     return m_point_group;
   }
 
@@ -242,7 +242,7 @@ namespace CASM {
   Eigen::Matrix3i enforce_min_volume(
     const Lattice &unit,
     const Eigen::Matrix3i &T,
-    const std::vector<SuperlatticeEnumerator::SymOpType> &point_grp,
+    const SuperlatticeEnumerator::SymGroupType &point_grp,
     Index volume,
     bool fix_shape) {
 

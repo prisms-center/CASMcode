@@ -4,6 +4,7 @@
 #include<vector>
 #include<set>
 #include<functional>
+#include<string>
 #include<boost/algorithm/string.hpp>
 #include "casm/basis_set/DoFDecl.hh"
 #include "casm/CASM_global_definitions.hh"
