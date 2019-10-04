@@ -260,7 +260,7 @@ TEST(BasicStructureSiteTest, IsPrimitiveTest) {
   const SymGroup effective_pg = prim.factor_group();
 
   ScelEnumProps enum_props(1, 6);
-  SuperlatticeEnumerator scel_enum(prim.lattice(), Adapter::symop_to_matrix(effective_pg), enum_props);
+  SuperlatticeEnumerator scel_enum(effective_pg.begin(), effective_pg.end(), prim.lattice(), enum_props);
 
   for(auto it = scel_enum.begin(); it != scel_enum.end(); ++it) {
 

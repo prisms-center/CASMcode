@@ -414,6 +414,14 @@ namespace CASM {
   Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T,
                                 const std::vector<SuperlatticeEnumerator::SymOpType> &effective_pg,
                                 const Lattice &ref_lattice);
+  template<typename ExternSymGroupTypeIt>
+  Eigen::Matrix3i canonical_hnf(
+    ExternSymGroupTypeIt begin,
+    ExternSymGroupTypeIt end,
+    const Eigen::Matrix3i &T,
+    const Lattice &ref_lattice) {
+    return canonical_hnf(T, Adapter::to_symgroup_type(begin, end), ref_lattice);
+  }
 
 } // namespace CASM
 

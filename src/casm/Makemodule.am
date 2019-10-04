@@ -24,6 +24,7 @@ libcasm_la_SOURCES = \
     src/casm/basis_set/StrainDoFTraits.cc\
     src/casm/basis_set/FunctionVisitor.cc\
     src/casm/basis_set/OccupationDoFTraits.cc\
+    src/casm/adapters/SymmetryToCrystallography.cc\
     src/casm/app/monte.cc\
     src/casm/app/rm.cc\
     src/casm/app/HamiltonianModules.cc\
@@ -272,6 +273,7 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/MagSpinDoFTraits.hh\
     include/casm/basis_set/DoFSet.hh\
     include/casm/basis_set/OccupantFunction.hh\
+    include/casm/adapters/SymmetryToCrystallography.hh\
     include/casm/app/run.hh\
     include/casm/app/QueryHandler_impl.hh\
     include/casm/app/CLIParse.hh\

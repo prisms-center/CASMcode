@@ -33,7 +33,8 @@ TEST(jsonScelDatabase_Test, Test1) {
   int minvol = 1;
   int maxvol = 10;
   ScelEnumProps enum_props(minvol, maxvol + 1);
-  SuperlatticeEnumerator lat_enum(prim.lattice(), Adapter::symop_to_matrix(prim.factor_group()), enum_props);
+  auto fg = prim.factor_group();
+  SuperlatticeEnumerator lat_enum(fg.begin(), fg.end(), prim.lattice(), enum_props);
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
     db_scel.emplace(&primclex, it->canonical_form(prim.point_group()));
   }

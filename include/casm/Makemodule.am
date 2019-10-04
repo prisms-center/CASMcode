@@ -37,6 +37,12 @@ casm_basis_set_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
+casm_adapters_includedir=$(includedir)/casm/adapters
+casm_adapters_include_HEADERS = \
+    include/casm/adapters/SymmetryToCrystallography.hh
+
+#-------------------------------------------------------------------------------#
+
 casm_app_includedir=$(includedir)/casm/app
 casm_app_include_HEADERS = \
     include/casm/app/run.hh\

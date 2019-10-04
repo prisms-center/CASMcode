@@ -93,7 +93,7 @@ namespace CASM {
     int maxvol = 10;
 
     ScelEnumProps enum_props(minvol, maxvol + 1, dirs);
-    SuperlatticeEnumerator latenumerator(testlat, Adapter::symop_to_matrix(pg), enum_props);
+    SuperlatticeEnumerator latenumerator(pg.begin(), pg.end(), testlat, enum_props);
     std::vector<Lattice> enumerated_lat(latenumerator.begin(), latenumerator.end());
 
 

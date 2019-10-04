@@ -3,7 +3,8 @@
 
 namespace CASM {
   namespace Adapter {
-    SymOpType to_symop_type(const SymOp &op) {
+    template<>
+    SymOpType to_symop_type<SymOp>(const SymOp &op) {
       return SymOpType(op.matrix(), op.tau(), op.time_reversal());
     }
   }

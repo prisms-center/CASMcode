@@ -9,25 +9,31 @@ namespace {
 namespace CASM {
   namespace Adapter {
 
-    SymOpType to_symop_type(const SymOpType &op) {
+    template<>
+    SymOpType to_symop_type<SymOpType>(const SymOpType &op) {
       return op;
     }
 
-    SymOpMatrixType &get_matrix(SymOpType &op) {
+    template<>
+    SymOpMatrixType &get_matrix<SymOpType>(SymOpType &op) {
       return op.matrix;
     }
-    const SymOpMatrixType &get_matrix(const SymOpType &op) {
+    template<>
+    const SymOpMatrixType &get_matrix<SymOpType>(const SymOpType &op) {
       return op.matrix;
     }
 
-    SymOpTranslationType &get_translation(SymOpType &op) {
+    template<>
+    SymOpTranslationType &get_translation<SymOpType>(SymOpType &op) {
       return op.translation;
     }
-    const SymOpTranslationType &get_translation(const SymOpType &op) {
+    template<>
+    const SymOpTranslationType &get_translation<SymOpType>(const SymOpType &op) {
       return op.translation;
     }
 
-    SymOpTimeReversalType get_time_reversal(const SymOpType &op) {
+    template<>
+    SymOpTimeReversalType get_time_reversal<SymOpType>(const SymOpType &op) {
       return op.is_time_reversal_active;
     }
 
