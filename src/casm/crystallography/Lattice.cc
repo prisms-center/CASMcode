@@ -1070,33 +1070,6 @@ namespace CASM {
     }
 
 
-
-    //********************************************************************
-    // write Lattice in json as array of vectors
-    jsonParser &to_json(const Lattice &lat, jsonParser &json) {
-      json.put_array();
-      json.push_back(lat[0]);
-      json.push_back(lat[1]);
-      json.push_back(lat[2]);
-      return json;
-    };
-
-    //********************************************************************
-    // read Lattice from a json array of Eigen::Vector3d
-    void from_json(Lattice &lat, const jsonParser &json, double xtal_tol) {
-      try {
-        lat = Lattice(
-                json[0].get<Eigen::Vector3d >(),
-                json[1].get<Eigen::Vector3d >(),
-                json[2].get<Eigen::Vector3d >(),
-                xtal_tol);
-      }
-      catch(...) {
-        /// re-throw exceptions
-        throw;
-      }
-    };
-
     /// \brief Apply SymOp to a Lattice
     Lattice &apply(const SymOp &op, Lattice &lat) {
       return lat = Lattice(op.matrix() * lat.lat_column_mat(), lat.tol());
@@ -1264,6 +1237,30 @@ namespace CASM {
       }
 
       return new_lat;
+    }
+  }
+
+  // write Lattice in json as array of vectors
+  jsonParser &to_json(const Lattice &lat, jsonParser &json) {
+    json.put_array();
+    json.push_back(lat[0]);
+    json.push_back(lat[1]);
+    json.push_back(lat[2]);
+    return json;
+  }
+
+  // read Lattice from a json array of Eigen::Vector3d
+  void from_json(Lattice &lat, const jsonParser &json, double xtal_tol) {
+    try {
+      lat = Lattice(
+              json[0].get<Eigen::Vector3d >(),
+              json[1].get<Eigen::Vector3d >(),
+              json[2].get<Eigen::Vector3d >(),
+              xtal_tol);
+    }
+    catch(...) {
+      /// re-throw exceptions
+      throw;
     }
   }
 }
