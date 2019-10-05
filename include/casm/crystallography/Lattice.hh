@@ -257,10 +257,6 @@ namespace CASM {
     };
 
 
-    // write Lattice in json as array of vectors
-    jsonParser &to_json(const Lattice &lat, jsonParser &json);
-    void from_json(Lattice &lat, const jsonParser &json, double xtal_tol);
-
 
     /* never write a Matrix*Lattice operator, PLEASE
 
@@ -322,9 +318,6 @@ namespace CASM {
 
     Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol);
 
-
-
-
     //********************************************************************
     ///\brief Returns 'frac_mat' which is transformation of 'cart_mat'
     /// if
@@ -377,5 +370,9 @@ namespace CASM {
     /** @} */
 
   }
+  // write Lattice in json as array of vectors
+  jsonParser &to_json(const xtal::Lattice &lat, jsonParser &json);
+  void from_json(xtal::Lattice &lat, const jsonParser &json, double xtal_tol);
+
 }
 #endif

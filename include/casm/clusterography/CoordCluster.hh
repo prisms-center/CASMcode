@@ -14,7 +14,11 @@ namespace CASM {
 
   /* -- CoordCluster Declarations ------------------------------------- */
 
-  class Structure;
+  namespace xtal {
+    class Structure;
+  }
+  using namespace xtal;
+
   class SymOp;
 
   /** \defgroup Clusterography

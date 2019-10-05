@@ -11,6 +11,7 @@
 #include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
+  using namespace xtal;
 
   /** \ingroup Symmetry
    *  @{

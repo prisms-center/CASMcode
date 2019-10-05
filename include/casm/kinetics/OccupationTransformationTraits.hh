@@ -1,6 +1,7 @@
 #ifndef CASM_OccupationTransformationTraits
 #define CASM_OccupationTransformationTraits
 
+#include "casm/CASM_global_definitions.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 
 namespace CASM {
@@ -16,9 +17,13 @@ namespace CASM {
   }
   typedef Kinetics::OccupationTransformation OccupationTransformation;
 
+  namespace xtal {
+    class UnitCellCoord;
+  }
+  using namespace xtal;
+
   class OccPerturbation;
   class OccPerturbationInvariants;
-  class UnitCellCoord;
 
   /// Traits necessary for SymCompare
   template<>
@@ -34,9 +39,6 @@ namespace CASM {
 
   typedef PrimPeriodicOrbit<OccPerturbation> PrimPeriodicOccPerturbOrbit;
   typedef ScelPeriodicOrbit<OccPerturbation> ScelPeriodicOccPerturbOrbit;
-
-
-
 }
 
 #endif

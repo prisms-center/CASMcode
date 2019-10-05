@@ -20,8 +20,9 @@ namespace CASM {
   namespace xtal {
     class Molecule;
   }
-  class SymGroup;
+  using namespace xtal;
 
+  class SymGroup;
   class jsonParser;
 
   template<typename OccType>
@@ -30,7 +31,6 @@ namespace CASM {
   class ContinuousDoF;
   class DoFSet;
 
-  using namespace xtal;
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

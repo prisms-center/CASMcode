@@ -38,7 +38,6 @@ namespace CASM {
       std::string m_prefix;
     };
 
-
     template< bool IsConst >
     jsonParser &SimpleJSonSiteStructure<IsConst>::to_json(jsonParser &json) const {
       if(COORD_MODE::IS_FRAC())

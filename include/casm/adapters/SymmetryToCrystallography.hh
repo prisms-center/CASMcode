@@ -6,11 +6,16 @@
 namespace CASM {
   class SymOp;
   class SymGroup;
-  namespace Adapter {
-    template<>
-    SymOpType to_symop_type<SymOp>(const SymOp &op);
-    /* SymGroupType to_symgroup_type(const SymGroup& group); */
-  }
+  namespace xtal {
+    namespace Adapter {
+      template <>
+      SymOpType to_symop_type<SymOp>(const SymOp &op);
+
+      /* template <> */
+      /* SymGroupType to_symgroup_type(const SymGroup& group); */
+
+    } // namespace Adapter
+  } // namespace xtal
 } // namespace CASM
 
 #endif

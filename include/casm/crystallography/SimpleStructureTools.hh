@@ -14,6 +14,12 @@ namespace CASM {
   class Supercell;
   class ConfigDoF;
   class Configuration;
+
+  namespace DoFType {
+    class Traits;
+  }
+
+
   namespace xtal {
 
     /** \ingroup Structure
@@ -25,10 +31,6 @@ namespace CASM {
 
     template<typename CoordType>
     class BasicStructure;
-
-    namespace DoFType {
-      class Traits;
-    }
 
     class TransformDirective {
     public:

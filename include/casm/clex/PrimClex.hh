@@ -11,6 +11,7 @@ namespace CASM {
   namespace xtal {
     class Structure;
   }
+  using namespace xtal;
 
   class DirectoryStructure;
   class ProjectSettings;
@@ -22,7 +23,6 @@ namespace CASM {
   class Clexulator;
   class ECIContainer;
 
-  using namespace xtal;
 
   namespace DB {
     template<typename T> class ValDatabase;

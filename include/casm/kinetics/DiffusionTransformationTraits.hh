@@ -5,7 +5,10 @@
 #include <iostream>
 
 namespace CASM {
-  class UnitCellCoord;
+  namespace xtal {
+    class UnitCellCoord;
+  }
+  using namespace xtal;
 
   namespace Kinetics {
     class DiffusionTransformation;
