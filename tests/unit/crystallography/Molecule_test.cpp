@@ -7,6 +7,7 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 
 using namespace CASM;
+using namespace xtal;
 
 TEST(MoleculeTest, AtomPositionTest1) {
 

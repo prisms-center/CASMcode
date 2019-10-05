@@ -2,6 +2,7 @@
 #include "casm/crystallography/HermiteCounter.hh"
 
 using namespace CASM;
+using namespace xtal;
 
 void hermite_init() {
   int dims = 5;
@@ -121,7 +122,7 @@ void next_position_test() {
       testdet = testdet * diag(i);
     }
     EXPECT_EQ(det, testdet);
-    p = CASM::HermiteCounter_impl::next_spill_position(diag, p);
+    p = CASM::xtal::HermiteCounter_impl::next_spill_position(diag, p);
   }
 
   return;
@@ -394,7 +395,7 @@ void unroll_test() {
        0, 0, 3;
 
   auto result3 = HermiteCounter_impl::_canonical_unroll(mat3);
-  for(int i = 0; i < result5.size(); ++i) {
+  for(int i = 0; i < result3.size(); ++i) {
     std::cerr << result3(i) << std::endl;
     EXPECT_EQ(i + 1, result5(i));
   }
