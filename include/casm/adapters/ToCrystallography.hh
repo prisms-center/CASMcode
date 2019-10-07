@@ -15,7 +15,7 @@ namespace CASM {
     /// module, simply declare and define accessors get_matrix, get_translation, and
     /// get_time_reversal
     template <typename FromType>
-    struct Adapter<FromType, xtal::SymOpType> {
+    struct Adapter<xtal::SymOpType, FromType> {
       xtal::SymOpType operator()(const FromType &adaptable) {
         return xtal::SymOpType(get_matrix(adaptable), get_translation(adaptable), get_time_reversal(adaptable));
       }
@@ -24,10 +24,10 @@ namespace CASM {
     /// Converts any container of any symmetry type with begin() and end() defined into
     /// SymGroupType, as defined by the crystallography module.
     template <typename FromTypeIt>
-    struct Adapter<FromTypeIt, xtal::SymGroupType> {
+    struct Adapter<xtal::SymGroupType, FromTypeIt> {
       xtal::SymGroupType operator()(FromTypeIt begin, FromTypeIt end) {
         xtal::SymGroupType casted_group;
-        Adapter<typename FromTypeIt::value_type, xtal::SymOpType> to_symop_type;
+        Adapter<xtal::SymOpType, typename FromTypeIt::value_type> to_symop_type;
         for(auto it = begin; it != end; ++it) {
           casted_group.emplace_back(to_symop_type(*it));
         }

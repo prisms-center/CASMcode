@@ -227,13 +227,13 @@ namespace CASM {
 
       /// Initialize with the unit lattice to be tiled, and specification for how to enumerate
       /// the superlattices. The symmetry operations are given with an iterator range, whose
-      /// type must have Adapter::to_symgroup_type defined.
+      /// type must either have an Adapter functor defined, or the same external accessors as SymOpType
       template <typename ExternSymGroupTypeIt>
       SuperlatticeEnumerator(ExternSymGroupTypeIt begin,
                              ExternSymGroupTypeIt end,
                              const Lattice &unit,
                              const ScelEnumProps &enum_props)
-        : SuperlatticeEnumerator(unit, adapter::Adapter<ExternSymGroupTypeIt, SymGroupType>()(begin, end), enum_props) {
+        : SuperlatticeEnumerator(unit, adapter::Adapter<SymGroupType, ExternSymGroupTypeIt>()(begin, end), enum_props) {
       }
 
       /// \brief Access the unit the is being made into superlattices
@@ -373,7 +373,7 @@ namespace CASM {
                                        const Eigen::Matrix3i &T,
                                        Index volume,
                                        bool fix_shape = false) {
-      return enforce_min_volume(unit, T, adapter::Adapter<ExternSymGroupTypeIt, SymGroupType>()(begin, end), volume, fix_shape);
+      return enforce_min_volume(unit, T, adapter::Adapter<SymGroupType, ExternSymGroupTypeIt>()(begin, end), volume, fix_shape);
     }
 
     /// \brief Return canonical hermite normal form of the supercell matrix
@@ -416,7 +416,7 @@ namespace CASM {
       ExternSymGroupTypeIt end,
       const Eigen::Matrix3i &T,
       const Lattice &ref_lattice) {
-      return canonical_hnf(T, adapter::Adapter<ExternSymGroupTypeIt, SymGroupType>()(begin, end), ref_lattice);
+      return canonical_hnf(T, adapter::Adapter<SymGroupType, ExternSymGroupTypeIt>()(begin, end), ref_lattice);
     }
 
   }

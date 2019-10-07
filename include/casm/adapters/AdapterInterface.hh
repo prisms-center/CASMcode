@@ -6,7 +6,7 @@ namespace CASM {
     /// In order to convert types between modules (e.g. turn SymOp
     /// into SymOpType so the symmetry operation is primed for the crystallography
     /// module), this Adapter functor must be defined
-    template <typename FromType, typename ToType>
+    template <typename ToType, typename FromType>
     struct Adapter {
     };
   } // namespace adapter
