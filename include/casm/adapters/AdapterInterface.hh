@@ -9,6 +9,22 @@ namespace CASM {
     template <typename ToType, typename FromType>
     struct Adapter {
     };
+
+    //TODO: Do we want this?
+    /// Allows for conversion between types without having to create the Adapter
+    /// functor. Instead, you can invoke the conversion with
+    /// adapter::Adapt::cast<ToType,FromType>::cast(my_from_type)
+    /*
+    template <typename ToType, typename FromType>
+    struct Adapt
+    {
+        template <typename... Ts>
+        static ToType cast(Ts... args)
+        {
+            return Adapter<ToType,FromType>()(args...);
+        }
+    };
+    */
   } // namespace adapter
 } // namespace CASM
 
