@@ -1,6 +1,6 @@
 #include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
-#include "casm/crystallography/SymmetryAdapter.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumRandomOccupations.hh"

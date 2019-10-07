@@ -6,7 +6,6 @@
 
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
-#include "casm/crystallography/SymmetryAdapter.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/symmetry/SymOp.hh"
 

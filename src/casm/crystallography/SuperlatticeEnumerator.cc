@@ -124,7 +124,7 @@ namespace CASM {
       return m_unit;
     }
 
-    const SuperlatticeEnumerator::SymGroupType &SuperlatticeEnumerator::point_group() const {
+    const SymGroupType &SuperlatticeEnumerator::point_group() const {
       return m_point_group;
     }
 
@@ -230,7 +230,7 @@ namespace CASM {
     Eigen::Matrix3i enforce_min_volume(
       const Lattice &unit,
       const Eigen::Matrix3i &T,
-      const SuperlatticeEnumerator::SymGroupType &point_grp,
+      const SymGroupType &point_grp,
       Index volume,
       bool fix_shape) {
 
@@ -266,7 +266,7 @@ namespace CASM {
 
     }
 
-    Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SuperlatticeEnumerator::SymGroupType &effective_pg, const Lattice &ref_lattice) {
+    Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SymGroupType &effective_pg, const Lattice &ref_lattice) {
       Eigen::Matrix3d lat = ref_lattice.lat_column_mat();
 
       //get T in hermite normal form
@@ -278,7 +278,7 @@ namespace CASM {
       H_best = H;
 
       for(const auto &op : effective_pg) {
-        Eigen::Matrix3i transformed = iround(lat.inverse() * Adapter::get_matrix(op) * lat) * H;
+        Eigen::Matrix3i transformed = iround(lat.inverse() * get_matrix(op) * lat) * H;
         Eigen::Matrix3i H_transformed = hermite_normal_form(transformed).first;
 
         //If you fall in here then transformed was greater than H

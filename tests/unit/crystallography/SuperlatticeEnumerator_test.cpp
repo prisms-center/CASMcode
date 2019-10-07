@@ -10,7 +10,7 @@
 /// What is being used to test it:
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
-#include "casm/crystallography/SymmetryAdapter.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/crystallography/Niggli.hh"

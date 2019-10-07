@@ -909,7 +909,6 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SpeciesAttribute.hh\
     include/casm/crystallography/CoordinateSystems.hh\
     include/casm/crystallography/StrucMapping.hh\
-    include/casm/crystallography/SymmetryAdapter.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/PrimGrid.hh\

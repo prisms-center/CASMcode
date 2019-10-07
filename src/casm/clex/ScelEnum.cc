@@ -1,5 +1,5 @@
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
-#include "casm/crystallography/SymmetryAdapter.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/clex/ScelEnum_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/app/enum.hh"

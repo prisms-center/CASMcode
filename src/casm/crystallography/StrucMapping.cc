@@ -1,6 +1,5 @@
 #include "casm/crystallography/StrucMapping.hh"
 
-#include "casm/crystallography/SymmetryAdapter.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/StrucMapCalculatorInterface.hh"
 #include "casm/misc/CASM_Eigen_math.hh"

@@ -6,8 +6,10 @@
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/crystallography/HermiteCounter.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/SymmetryAdapter.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/misc/cloneable_ptr.hh"
+
+#include "casm/adapters/SymmetryToCrystallography.hh"
 
 namespace CASM {
   class PrimClex;
@@ -208,9 +210,6 @@ namespace CASM {
 
       typedef SuperlatticeIterator const_iterator;
 
-      typedef Adapter::SymOpType SymOpType;
-      typedef Adapter::SymGroupType SymGroupType;
-
       /// \brief Construct a SuperlatticeEnumerator using custom point group operations
       ///
       /// \returns a SuperlatticeEnumerator
@@ -231,7 +230,7 @@ namespace CASM {
                              ExternSymGroupTypeIt end,
                              const Lattice &unit,
                              const ScelEnumProps &enum_props)
-        : SuperlatticeEnumerator(unit, Adapter::to_symgroup_type(begin, end), enum_props) {
+        : SuperlatticeEnumerator(unit, adapter::Adapter<ExternSymGroupTypeIt, SymGroupType>()(begin, end), enum_props) {
       }
 
       /// \brief Access the unit the is being made into superlattices
@@ -360,7 +359,7 @@ namespace CASM {
     ///
     Eigen::Matrix3i enforce_min_volume(const Lattice &unit,
                                        const Eigen::Matrix3i &T,
-                                       const SuperlatticeEnumerator::SymGroupType &point_grp,
+                                       const SymGroupType &point_grp,
                                        Index volume,
                                        bool fix_shape = false);
 
@@ -371,7 +370,7 @@ namespace CASM {
                                        const Eigen::Matrix3i &T,
                                        Index volume,
                                        bool fix_shape = false) {
-      return enforce_min_volume(unit, T, Adapter::to_symgroup_type(begin, end), volume, fix_shape);
+      return enforce_min_volume(unit, T, adapter::Adapter<ExternSymGroupTypeIt, SymGroupType>()(begin, end), volume, fix_shape);
     }
 
     /// \brief Return canonical hermite normal form of the supercell matrix
@@ -406,7 +405,7 @@ namespace CASM {
     /// \relatesalso Lattice
     ///
     Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T,
-                                  const SuperlatticeEnumerator::SymGroupType &effective_pg,
+                                  const SymGroupType &effective_pg,
                                   const Lattice &ref_lattice);
     template<typename ExternSymGroupTypeIt>
     Eigen::Matrix3i canonical_hnf(
@@ -414,7 +413,7 @@ namespace CASM {
       ExternSymGroupTypeIt end,
       const Eigen::Matrix3i &T,
       const Lattice &ref_lattice) {
-      return canonical_hnf(T, Adapter::to_symgroup_type(begin, end), ref_lattice);
+      return canonical_hnf(T, adapter::Adapter<ExternSymGroupTypeIt, SymGroupType>()(begin, end), ref_lattice);
     }
 
   }
