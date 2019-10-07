@@ -210,6 +210,10 @@ namespace CASM {
 
   };
 
+  const SymOp::matrix_type &get_matrix(const SymOp &op);
+  const SymOp::vector_type &get_translation(const SymOp &op);
+  bool get_time_reversal(const SymOp &op);
+
 
   jsonParser &to_json(const SymOp &sym, jsonParser &json);
   void from_json(SymOp &sym, const jsonParser &json);
