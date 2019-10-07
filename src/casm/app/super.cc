@@ -4,7 +4,7 @@
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
-#include "casm/adapters/SymmetryToCrystallography.hh"
+#include "casm/adapters/ToCrystallography.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Niggli.hh"

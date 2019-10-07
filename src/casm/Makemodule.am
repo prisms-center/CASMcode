@@ -24,7 +24,6 @@ libcasm_la_SOURCES = \
     src/casm/basis_set/StrainDoFTraits.cc\
     src/casm/basis_set/FunctionVisitor.cc\
     src/casm/basis_set/OccupationDoFTraits.cc\
-    src/casm/adapters/SymmetryToCrystallography.cc\
     src/casm/app/monte.cc\
     src/casm/app/rm.cc\
     src/casm/app/HamiltonianModules.cc\
@@ -273,7 +272,8 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/MagSpinDoFTraits.hh\
     include/casm/basis_set/DoFSet.hh\
     include/casm/basis_set/OccupantFunction.hh\
-    include/casm/adapters/SymmetryToCrystallography.hh\
+    include/casm/adapters/AdapterInterface.hh\
+    include/casm/adapters/ToCrystallography.hh\
     include/casm/app/run.hh\
     include/casm/app/QueryHandler_impl.hh\
     include/casm/app/CLIParse.hh\
@@ -862,6 +862,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LatticeCanonicalForm_impl.hh\
+    include/casm/crystallography/SymType.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/BasicStructure.hh\
@@ -943,4 +944,4 @@ libcasm_la_SOURCES = \
 libcasm_la_LDFAGS = \
     -avoid-version\
     $(BOOST_LDFLAGS)
-src/casm/version/autoversion.lo: .FORCE
+
