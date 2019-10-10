@@ -23,8 +23,9 @@ namespace CASM {
 
     /// Converts any container of any symmetry type with begin() and end() defined into
     /// SymGroupType, as defined by the crystallography module.
-    template <typename FromTypeIt>
-    struct Adapter<xtal::SymGroupType, FromTypeIt> {
+    template <typename FromType>
+    struct Adapter<xtal::SymGroupType, FromType> {
+      template <typename FromTypeIt>
       xtal::SymGroupType operator()(FromTypeIt begin, FromTypeIt end) {
         xtal::SymGroupType casted_group;
         Adapter<xtal::SymOpType, typename FromTypeIt::value_type> to_symop_type;
@@ -32,6 +33,10 @@ namespace CASM {
           casted_group.emplace_back(to_symop_type(*it));
         }
         return casted_group;
+      }
+
+      xtal::SymGroupType operator()(const FromType &adaptable) {
+        return this->operator()(adaptable.begin(), adaptable.end());
       }
     };
   } // namespace adapter
