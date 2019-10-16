@@ -12,7 +12,7 @@
 //Including this file allows passing arbitrary
 //symmetry types from the outside without requiring
 //conversion.
-#include "casm/adapters/ToCrystallography.hh"
+#include "casm/crystallography/Adapter.hh"
 
 namespace CASM {
   class PrimClex;

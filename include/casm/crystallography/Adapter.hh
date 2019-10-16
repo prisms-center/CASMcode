@@ -1,12 +1,14 @@
-#ifndef SYMMETRYTOCRYSTALLOGRAPHY_HH
-#define SYMMETRYTOCRYSTALLOGRAPHY_HH
+#ifndef CRYSTALLOGRAPHYADAPTER_HH
+#define CRYSTALLOGRAPHYADAPTER_HH
 
-#include "casm/adapters/AdapterInterface.hh"
 #include "casm/crystallography/SymType.hh"
 
 namespace CASM {
 
   namespace adapter {
+    template <typename ToType, typename FromType>
+    struct Adapter;
+
     /// Convertes any symmetry type to SymOpType, as defined by the crystallography module.
     /// Works for any symmetry type that has the get_matrix, get_translation, and
     /// get_time_reversal accessors defined.
