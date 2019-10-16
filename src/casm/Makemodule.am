@@ -203,9 +203,9 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Lattice.cc\
     src/casm/crystallography/SimpleStructure.cc\
-    src/casm/crystallography/SymmetryAdapter.cc\
     src/casm/crystallography/BasicStructure.cc\
     src/casm/crystallography/SimpleStrucMapCalculator.cc\
+    src/casm/crystallography/SymType.cc\
     src/casm/crystallography/LatticeMap.cc\
     src/casm/crystallography/HermiteCounter.cc\
     src/casm/crystallography/CoordinateSystems.cc\
@@ -272,6 +272,8 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/MagSpinDoFTraits.hh\
     include/casm/basis_set/DoFSet.hh\
     include/casm/basis_set/OccupantFunction.hh\
+    include/casm/adapters/AdapterInterface.hh\
+    include/casm/adapters/ToCrystallography.hh\
     include/casm/app/run.hh\
     include/casm/app/QueryHandler_impl.hh\
     include/casm/app/CLIParse.hh\
@@ -851,7 +853,6 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SpeciesAttribute.hh\
     include/casm/crystallography/CoordinateSystems.hh\
     include/casm/crystallography/StrucMapping.hh\
-    include/casm/crystallography/SymmetryAdapter.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/PrimGrid.hh\
@@ -861,6 +862,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LatticeCanonicalForm_impl.hh\
+    include/casm/crystallography/SymType.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/BasicStructure.hh\
@@ -942,4 +944,4 @@ libcasm_la_SOURCES = \
 libcasm_la_LDFAGS = \
     -avoid-version\
     $(BOOST_LDFLAGS)
-src/casm/version/autoversion.lo: .FORCE
+

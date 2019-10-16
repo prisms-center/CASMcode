@@ -11,12 +11,17 @@
 #include "casm/basis_set/DoFDecl.hh"
 
 namespace CASM {
-  class UnitCellCoord;
-  class Structure;
+  namespace xtal {
+    class UnitCellCoord;
+    class Structure;
+  }
+  using namespace xtal;
+
   class BasisSet;
   class SymGroup;
   class ClexBasis;
   class PrimNeighborList;
+
 
   class ClexBasisBuilder {
   public:

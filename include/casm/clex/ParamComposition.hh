@@ -7,10 +7,12 @@
 #include "casm/casm_io/stream_io/container.hh"
 
 namespace CASM {
-  template<typename CoordType>
-  class BasicStructure;
-
-  class Site;
+  namespace xtal {
+    template<typename CoordType>
+    class BasicStructure;
+    class Site;
+  }
+  using namespace xtal;
 
   //defines the enum type used in composition.
   enum COMPOSITION_TYPE {PARAM_COMP = 0, NUMBER_ATOMS = 1};

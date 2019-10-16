@@ -6,6 +6,7 @@
 #include "casm/crystallography/Coordinate.hh"
 
 using namespace CASM;
+using namespace xtal;
 
 void coordinate_constructor_test() {
   double tol = 1e-5;

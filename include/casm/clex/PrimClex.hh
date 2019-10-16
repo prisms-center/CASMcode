@@ -8,16 +8,21 @@
 /// Cluster expansion class
 namespace CASM {
 
+  namespace xtal {
+    class Structure;
+  }
+  using namespace xtal;
+
   class DirectoryStructure;
   class ProjectSettings;
   struct ClexDescription;
   class CompositionConverter;
   class ChemicalReference;
-  class Structure;
   class PrimNeighborList;
   class ClexBasis;
   class Clexulator;
   class ECIContainer;
+
 
   namespace DB {
     template<typename T> class ValDatabase;

@@ -210,6 +210,13 @@ namespace CASM {
 
   };
 
+  /// Accessor to allow conversion to xtal::SymOpType. Returns Cartesian transformation matrix.
+  const SymOp::matrix_type &get_matrix(const SymOp &op);
+  /// Accessor to allow conversion to xtal::SymOpType. Returns translation vector (tau).
+  const SymOp::vector_type &get_translation(const SymOp &op);
+  /// Accessor to allow conversion to xtal::SymOpType. Returns whether the symmetry operation is time reversal active.
+  bool get_time_reversal(const SymOp &op);
+
 
   jsonParser &to_json(const SymOp &sym, jsonParser &json);
   void from_json(SymOp &sym, const jsonParser &json);

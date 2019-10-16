@@ -13,6 +13,25 @@
 #include "casm/clex/Configuration.hh"
 namespace CASM {
 
+  template<typename ValueType, bool IsConst>
+  class ValEnumerator;
+
+  class PrimClex;
+  class Supercell;
+  class ScelEnum;
+
+  namespace Completer {
+    class EnumOption;
+  }
+
+  namespace xtal {
+    class ScelEnumProps;
+    class Lattice;
+    class SuperlatticeEnumerator;
+  }
+  using namespace xtal;
+
+
   /** \defgroup Enumerator
    *
    *  \ingroup Container
@@ -85,9 +104,6 @@ namespace CASM {
 
       @{
   */
-
-  template<typename ValueType, bool IsConst>
-  class ValEnumerator;
 
   // ---- Enumerator ---------------------
 
@@ -397,17 +413,6 @@ namespace CASM {
   /** @}*/
 
   // ---- Interface ---------------------
-
-  class PrimClex;
-  class ScelEnum;
-  class ScelEnumProps;
-  class Lattice;
-  class Supercell;
-  class SuperlatticeEnumerator;
-
-  namespace Completer {
-    class EnumOption;
-  }
 
   /** \addtogroup Enumerator
       @{

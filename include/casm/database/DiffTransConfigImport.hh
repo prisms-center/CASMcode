@@ -15,10 +15,14 @@ namespace CASM {
     class DiffTransConfigMapper;
     class DiffTransConfiguration;
   }
+  namespace xtal {
+    template<typename T> class BasicStructure;
+    class Site;
+  }
+  using namespace xtal;
+
   class PrimClex;
   class jsonParser;
-  template<typename T> class BasicStructure;
-  class Site;
 }
 
 namespace CASM {

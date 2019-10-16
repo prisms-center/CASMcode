@@ -7,8 +7,12 @@
 #include "casm/container/Permutation.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Lattice;
+  }
   class MasterSymGroup;
-  class Lattice;
+
+  using namespace xtal;
 
   /** \ingroup Symmetry
    *  @{

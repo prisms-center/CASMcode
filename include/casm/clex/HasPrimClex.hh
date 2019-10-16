@@ -3,16 +3,20 @@
 
 namespace CASM {
 
+  namespace xtal {
+    class Structure;
+  }
+
   class PrimClex;
-  class Structure;
+
+  using namespace xtal;
 
   /// \brief Implements PrimClex dependent functions
   ///
   /// - Useful if MostDerived class has const PrimClex& MostDerived::primclex() const;
-  template<typename Base>
+  template <typename Base>
   class HasPrimClex : public Base {
   public:
-
     typedef typename Base::MostDerived MostDerived;
     using Base::derived;
 
@@ -21,6 +25,6 @@ namespace CASM {
     double crystallography_tol() const;
   };
 
-}
+} // namespace CASM
 
 #endif

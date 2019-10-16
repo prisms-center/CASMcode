@@ -8,8 +8,12 @@
 #include "casm/crystallography/PrimGrid.hh"
 
 namespace CASM {
-  class Structure;
+  namespace xtal {
+    class Structure;
+  }
   class PermuteIterator;
+
+  using namespace xtal;
 
   class SupercellSymInfo {
   public:

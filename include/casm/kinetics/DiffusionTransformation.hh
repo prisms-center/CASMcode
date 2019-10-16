@@ -14,7 +14,11 @@
 
 namespace CASM {
 
-  class Structure;
+  namespace xtal {
+    class Structure;
+  }
+  using namespace xtal;
+
   class Configuration;
   class SymOp;
   class jsonParser;

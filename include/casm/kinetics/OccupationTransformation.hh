@@ -8,10 +8,14 @@
 #include "casm/app/AppIO.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Molecule;
+  }
+  using namespace xtal;
+
 
   class Configuration;
   class SymOp;
-  class Molecule;
 
   namespace Kinetics {
 

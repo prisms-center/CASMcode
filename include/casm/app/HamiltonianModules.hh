@@ -17,8 +17,10 @@ namespace CASM {
     class BasicTraits;
   }
 
-  namespace SpeciesAttribute_impl {
-    class BasicTraits;
+  namespace xtal {
+    namespace SpeciesAttribute_impl {
+      class BasicTraits;
+    }
   }
 
 
@@ -26,7 +28,7 @@ namespace CASM {
   public:
 
     using DoFDictionary = ParsingDictionary<DoFType::BasicTraits>;
-    using SpeciesAttributeDictionary = ParsingDictionary<SpeciesAttribute_impl::BasicTraits>;
+    using SpeciesAttributeDictionary = ParsingDictionary<CASM::xtal::SpeciesAttribute_impl::BasicTraits>;
 
     HamiltonianModules(ProjectSettings const *set = nullptr);
 

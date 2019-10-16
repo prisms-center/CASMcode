@@ -37,6 +37,13 @@ casm_basis_set_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
+casm_adapters_includedir=$(includedir)/casm/adapters
+casm_adapters_include_HEADERS = \
+    include/casm/adapters/AdapterInterface.hh\
+    include/casm/adapters/ToCrystallography.hh
+
+#-------------------------------------------------------------------------------#
+
 casm_app_includedir=$(includedir)/casm/app
 casm_app_include_HEADERS = \
     include/casm/app/run.hh\
@@ -903,7 +910,6 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SpeciesAttribute.hh\
     include/casm/crystallography/CoordinateSystems.hh\
     include/casm/crystallography/StrucMapping.hh\
-    include/casm/crystallography/SymmetryAdapter.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/PrimGrid.hh\
@@ -913,6 +919,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LatticeCanonicalForm_impl.hh\
+    include/casm/crystallography/SymType.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/BasicStructure.hh\

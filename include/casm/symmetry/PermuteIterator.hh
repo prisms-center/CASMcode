@@ -8,7 +8,10 @@
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
-  class PrimGrid;
+  namespace xtal {
+    class PrimGrid;
+  }
+  using namespace xtal;
 
   /** \ingroup SymOp
    *  @{

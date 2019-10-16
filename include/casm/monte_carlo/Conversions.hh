@@ -7,13 +7,16 @@
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
+  namespace xtal {
+    class UnitCell;
+    class UnitCellCoord;
+    class Molecule;
+  }
+  using namespace xtal;
 
   class PrimClex;
   class Supercell;
   class Configuration;
-  class UnitCell;
-  class UnitCellCoord;
-  class Molecule;
 
   namespace Monte {
 

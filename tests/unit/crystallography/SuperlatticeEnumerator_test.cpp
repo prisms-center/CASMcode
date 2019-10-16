@@ -10,7 +10,7 @@
 /// What is being used to test it:
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
-#include "casm/crystallography/SymmetryAdapter.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/crystallography/Niggli.hh"
@@ -33,7 +33,7 @@ jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol
   std::vector<Eigen::Matrix3i> enumerated_mats;
 
   ScelEnumProps enum_props(minvol, maxvol + 1);
-  SuperlatticeEnumerator test_enumerator(test_lat, Adapter::symop_to_matrix(effective_pg), enum_props);
+  SuperlatticeEnumerator test_enumerator(effective_pg.begin(), effective_pg.end(), test_lat, enum_props);
 
   double tol = TOL;
   for(auto it = test_enumerator.begin(); it != test_enumerator.end(); ++it) {
@@ -136,7 +136,7 @@ void trans_enum_test() {
   Lattice bigunit = make_supercell(testlat, transmat);
 
   ScelEnumProps enum_props(1, 5 + 1, "abc", transmat);
-  SuperlatticeEnumerator enumerator(testlat, Adapter::symop_to_matrix(pg), enum_props);
+  SuperlatticeEnumerator enumerator(pg.begin(), pg.end(), testlat, enum_props);
 
   std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
 
@@ -162,7 +162,7 @@ void restricted_test() {
     // int dims = 1;
 
     ScelEnumProps enum_props(1, 15 + 1, "a");
-    SuperlatticeEnumerator enumerator(testlat, Adapter::symop_to_matrix(pg), enum_props);
+    SuperlatticeEnumerator enumerator(pg.begin(), pg.end(), testlat, enum_props);
 
     int l = 1;
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
@@ -171,7 +171,7 @@ void restricted_test() {
                     0, 1, 0,
                     0, 0, 1;
 
-      EXPECT_TRUE(it.matrix() == canonical_hnf(comp_transmat, Adapter::symop_to_matrix(pg), testlat));
+      EXPECT_TRUE(it.matrix() == canonical_hnf(pg.begin(), pg.end(), comp_transmat, testlat));
       l++;
     }
   }

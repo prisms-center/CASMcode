@@ -1,5 +1,5 @@
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
-#include "casm/crystallography/SymmetryAdapter.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/clex/ScelEnum_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/app/enum.hh"
@@ -83,9 +83,12 @@ namespace CASM {
   ScelEnumByProps::ScelEnumByProps(const PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only) :
     m_primclex(&primclex),
     m_existing_only(existing_only) {
+
+    auto pg = m_primclex->prim().point_group();
     m_lattice_enum.reset(new SuperlatticeEnumerator(
+                           pg.begin(),
+                           pg.end(),
                            m_primclex->prim().lattice(),
-                           Adapter::symop_to_matrix(m_primclex->prim().point_group()),
                            enum_props
                          ));
 

@@ -4,6 +4,11 @@
 #include "casm/symmetry/OrbitDecl.hh"
 
 namespace CASM {
+  namespace xtal {
+    class UnitCellCoord;
+  }
+
+  using namespace xtal;
 
   template<typename T> struct traits;
 
@@ -14,7 +19,6 @@ namespace CASM {
 
   template<typename CoordType> class CoordCluster;
 
-  class UnitCellCoord;
 
   /// \brief Cluster of UnitCellCoord
   ///

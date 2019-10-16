@@ -12,9 +12,12 @@
 #include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Structure;
+    class Site;
+  }
+  using namespace xtal;
 
-  class Structure;
-  class Site;
   class Supercell;
 
   template<typename OrbitType> struct OrbitGenerators;

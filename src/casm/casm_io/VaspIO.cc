@@ -22,7 +22,7 @@ namespace CASM {
     /// Currently:
     /// - assumes molecules should be printed as their individual atoms.
     ///
-    PrintPOSCAR::PrintPOSCAR(SimpleStructure _struc, std::string _title, PrintPOSCAR::SpeciesMode _mode) :
+    PrintPOSCAR::PrintPOSCAR(xtal::SimpleStructure _struc, std::string _title, PrintPOSCAR::SpeciesMode _mode) :
       m_title(std::move(_title)),
       m_species_mode(_mode),
       m_struc(std::move(_struc)),
@@ -132,7 +132,7 @@ namespace CASM {
       }
 
       // print coord mode
-      sout << sout.indent_str() << COORD_MODE::NAME(m_coord_mode) << "\n";
+      sout << sout.indent_str() << xtal::COORD_MODE::NAME(m_coord_mode) << "\n";
 
       // print all coordinates, and seletive dynamics settings, and atom names if applicable
       for(Index i : atom) {

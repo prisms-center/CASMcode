@@ -71,7 +71,7 @@ namespace CASM {
     const ProjectSettings &set,
     AttributeDictInserter dict_it,
     RuntimeLibInserter lib_it) {
-    typedef SpeciesAttribute_impl::BasicTraits *traits_ptr;
+    typedef xtal::SpeciesAttribute_impl::BasicTraits *traits_ptr;
     typedef traits_ptr(signature)();
 
     const DirectoryStructure &dir = set.dir();

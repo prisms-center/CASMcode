@@ -4,9 +4,9 @@
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {
-
-  template class BasicStructure<Site>;
-  template Index BasicStructure<Site>::find<Coordinate>(const Coordinate &bsite) const;
-  template Index BasicStructure<Site>::find<Site>(const Site &bsite) const;
-
+  namespace xtal {
+    template class BasicStructure<Site>;
+    template Index BasicStructure<Site>::find<Coordinate>(const Coordinate &bsite) const;
+    template Index BasicStructure<Site>::find<Site>(const Site &bsite) const;
+  }
 }

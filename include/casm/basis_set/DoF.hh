@@ -4,6 +4,7 @@
 #include<vector>
 #include<set>
 #include<functional>
+#include<string>
 #include<boost/algorithm/string.hpp>
 #include "casm/basis_set/DoFDecl.hh"
 #include "casm/CASM_global_definitions.hh"
@@ -16,9 +17,12 @@
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
-  class SymGroup;
+  namespace xtal {
+    class Molecule;
+  }
+  using namespace xtal;
 
-  class Molecule;
+  class SymGroup;
   class jsonParser;
 
   template<typename OccType>
@@ -26,6 +30,7 @@ namespace CASM {
 
   class ContinuousDoF;
   class DoFSet;
+
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

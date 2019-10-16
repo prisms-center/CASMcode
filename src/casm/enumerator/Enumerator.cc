@@ -1,6 +1,6 @@
 #include "casm/enumerator/Enumerator_impl.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
-#include "casm/crystallography/SymmetryAdapter.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
@@ -163,9 +163,11 @@ namespace CASM {
 
     Supercell unit_cell(&primclex, enum_props.generating_matrix());
 
+    auto fg = unit_cell.factor_group();
     return notstd::make_unique<SuperlatticeEnumerator>(
+             fg.begin(),
+             fg.end(),
              primclex.prim().lattice(),
-             Adapter::symop_to_matrix(unit_cell.factor_group()),
              enum_props);
   }
 
