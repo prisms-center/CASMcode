@@ -2,6 +2,7 @@
 #define CASM_LatticeCanonicalForm
 
 #include <vector>
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
   class SymGroup;
@@ -56,16 +57,15 @@ namespace CASM {
       Lattice canonical_form(std::vector<SymOp> const &g) const;
 
 
-      /// \brief Construct the subgroup that leaves a lattice unchanged
-      SymGroup invariant_subgroup(std::vector<SymOp> const &super_grp) const;
+      /// \brief Construct indices of the subgroup that leaves a lattice unchanged
+      std::vector<Index> invariant_subgroup_indices(std::vector<SymOp> const &super_grp) const;
 
-      /// \brief Construct the subgroup for which this->is_equivalent(copy_apply(op, *this))
-      template<typename SymOpIt>
-      SymGroup invariant_subgroup(SymOpIt begin, SymOpIt end) const;
+      /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
+      std::vector<Index> invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end) const;
 
-      /// \brief Construct the subgroup for which this->is_equivalent(copy_apply(op, *this))
-      template<typename SymOpIt, typename OutputIt>
-      OutputIt invariant_subgroup(SymOpIt begin, SymOpIt end, OutputIt result) const;
+      /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
+      template<typename OutputIt>
+      OutputIt invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end, OutputIt result) const;
 
     private:
 

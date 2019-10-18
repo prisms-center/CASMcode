@@ -79,26 +79,33 @@ namespace CASM {
 
     /// \brief Construct the subgroup that leaves a lattice unchanged
     template<typename Base>
-    SymGroup LatticeCanonicalForm<Base>::invariant_subgroup(std::vector<SymOp> const &super_grp) const {
-      return invariant_subgroup(super_grp.begin(), super_grp.end());
+    std::vector<Index> LatticeCanonicalForm<Base>::invariant_subgroup_indices(std::vector<SymOp> const &super_grp) const {
+      return invariant_subgroup_indices(super_grp.begin(), super_grp.end());
     }
 
     /// \brief Construct the subgroup for which this->is_equivalent(copy_apply(op, *this))
     template<typename Base>
-    template<typename SymOpIt>
-    SymGroup LatticeCanonicalForm<Base>::invariant_subgroup(SymOpIt begin, SymOpIt end) const {
-      SymGroup result;
-      invariant_subgroup(begin, end, std::back_inserter(result));
-      result.set_lattice(derived());
+    std::vector<Index> LatticeCanonicalForm<Base>::invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end) const {
+      std::vector<Index> result;
+      invariant_subgroup_indices(begin, end, std::back_inserter(result));
       return result;
     }
 
     /// \brief Construct the subgroup for which this->is_equivalent(copy_apply(op, *this))
     template<typename Base>
-    template<typename SymOpIt, typename OutputIt>
-    OutputIt LatticeCanonicalForm<Base>::invariant_subgroup(SymOpIt begin, SymOpIt end, OutputIt result) const {
+    template<typename OutputIt>
+    OutputIt LatticeCanonicalForm<Base>::invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end, OutputIt result) const {
       LatticeIsEquivalent is_equiv(derived());
-      return std::copy_if(begin, end, result, is_equiv);
+
+      Index ix = 0;
+      for(auto it = begin; it != end; ++it) {
+        if(is_equiv(*it)) {
+          *result = ix;
+          ++result;
+        }
+        ++ix;
+      }
+      return result;
     }
 
 

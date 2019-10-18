@@ -1,6 +1,6 @@
 #include "casm/crystallography/LatticeEnumEquivalents.hh"
 #include "casm/crystallography/Lattice_impl.hh"
-#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymTools.hh"
 
 namespace CASM {
   namespace xtal {
@@ -17,7 +17,7 @@ namespace CASM {
           SymOpIterator begin,
           SymOpIterator end,
           SymOpOutputIterator result) {
-          return lat.invariant_subgroup(begin, end, result);
+          return sym::invariant_subgroup(begin, end, lat, result);
         }
 
       };

@@ -124,6 +124,7 @@ libcasm_la_SOURCES = \
     src/casm/symmetry/SymOpRepresentation.cc\
     src/casm/symmetry/SymBasisPermute.cc\
     src/casm/symmetry/SymGroupRep.cc\
+    src/casm/symmetry/SymTools.cc\
     src/casm/symmetry/ConfigSubOrbits.cc\
     src/casm/symmetry/Orbit.cc\
     src/casm/symmetry/SymMatrixXd.cc\
@@ -272,8 +273,6 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/MagSpinDoFTraits.hh\
     include/casm/basis_set/DoFSet.hh\
     include/casm/basis_set/OccupantFunction.hh\
-    include/casm/adapters/AdapterInterface.hh\
-    include/casm/adapters/ToCrystallography.hh\
     include/casm/app/run.hh\
     include/casm/app/QueryHandler_impl.hh\
     include/casm/app/CLIParse.hh\
@@ -709,7 +708,9 @@ libcasm_la_SOURCES = \
     include/casm/symmetry/Orbit_impl.hh\
     include/casm/symmetry/SubOrbits.hh\
     include/casm/symmetry/ScelSubOrbits.hh\
+    include/casm/symmetry/SymTools_impl.hh\
     include/casm/symmetry/SymBasisPermute.hh\
+    include/casm/symmetry/SymTools.hh\
     include/casm/symmetry/SymMatrixXd.hh\
     include/casm/symmetry/ConfigSubOrbits_impl.hh\
     include/casm/symmetry/InvariantSubgroup_impl.hh\
@@ -856,6 +857,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/PrimGrid.hh\
+    include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/HermiteCounter.hh\
@@ -944,4 +946,4 @@ libcasm_la_SOURCES = \
 libcasm_la_LDFAGS = \
     -avoid-version\
     $(BOOST_LDFLAGS)
-
+src/casm/version/autoversion.lo: .FORCE
