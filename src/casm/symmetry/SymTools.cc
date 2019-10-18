@@ -1,5 +1,6 @@
 #include <iterator>
 #include "casm/symmetry/SymTools.hh"
+#include "casm/symmetry/SymTools_impl.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
 
