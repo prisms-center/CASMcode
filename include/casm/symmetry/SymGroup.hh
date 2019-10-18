@@ -209,9 +209,6 @@ namespace CASM {
       return _small_subgroups();
     };
 
-    ///Create a subgroup of *this given a list of indices of each symmetry operation
-    SymGroup subgroup_from_indices(const std::vector<Index> &subgroup_indices) const;
-
   protected:
     void _generate_conjugacy_classes() const;
     void _generate_character_table() const;

@@ -3,12 +3,23 @@
 #include "casm/symmetry/SymTools_impl.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
+namespace {
+  CASM::SymGroup subgroup_from_indices(const CASM::SymGroup &super_group, const std::vector<CASM::Index> &subgroup_indices) {
+    std::vector<CASM::SymOp> subgroup_operations;
+    for(auto ix : subgroup_indices) {
+      subgroup_operations.push_back(super_group[ix]);
+    }
 
+    return CASM::SymGroup(subgroup_operations, &(super_group.lattice()), super_group.periodicity());
+  }
+
+  //*******************************************************************************************
+}
 namespace CASM {
   namespace sym {
     SymGroup invariant_subgroup(const SymGroup &super_group, const xtal::Lattice &lat) {
       auto subgroup_operation_indices = lat.invariant_subgroup_indices(super_group);
-      return super_group.subgroup_from_indices(subgroup_operation_indices);
+      return subgroup_from_indices(super_group, subgroup_operation_indices);
     }
 
     std::vector<SymOp> invariant_subgroup(std::vector<SymOp>::const_iterator begin,

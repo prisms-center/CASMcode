@@ -917,17 +917,6 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  SymGroup SymGroup::subgroup_from_indices(const std::vector<Index> &subgroup_indices) const {
-    std::vector<SymOp> subgroup_operations;
-    for(auto ix : subgroup_indices) {
-      subgroup_operations.push_back(this->operator[](ix));
-    }
-
-    return SymGroup(subgroup_operations, &(this->lattice()), this->periodicity());
-  }
-
-  //*******************************************************************************************
-
   double SymGroup::max_error() {
 
     return m_max_error;
