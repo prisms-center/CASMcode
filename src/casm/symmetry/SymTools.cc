@@ -1,3 +1,4 @@
+#include <iterator>
 #include "casm/symmetry/SymTools.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
@@ -16,21 +17,8 @@ namespace CASM {
       std::vector<SymOp> result;
       invariant_subgroup(begin, end, lat, std::back_inserter(result));
       return result;
+
     }
 
-    template <typename OutputIt>
-    OutputIt invariant_subgroup(std::vector<SymOp>::const_iterator begin,
-                                std::vector<SymOp>::const_iterator end,
-                                const xtal::Lattice &lat,
-                                OutputIt result) {
-      auto subgroup_operation_indices = lat.invariant_subgroup_indices(begin, end);
-      for(auto ix : subgroup_operation_indices) {
-        auto it = begin;
-        std::advance(begin, ix);
-        *result = *it;
-        ++result;
-      }
-      return result;
-    }
   } // namespace sym
 } // namespace CASM
