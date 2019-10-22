@@ -21,16 +21,5 @@ namespace CASM {
       auto subgroup_operation_indices = lat.invariant_subgroup_indices(super_group);
       return subgroup_from_indices(super_group, subgroup_operation_indices);
     }
-
-    std::vector<SymOp> invariant_subgroup(std::vector<SymOp>::const_iterator begin,
-                                          std::vector<SymOp>::const_iterator end,
-                                          const xtal::Lattice &lat) {
-      auto subgroup_operation_indices = lat.invariant_subgroup_indices(begin, end);
-      std::vector<SymOp> result;
-      invariant_subgroup(begin, end, lat, std::back_inserter(result));
-      return result;
-
-    }
-
   } // namespace sym
 } // namespace CASM

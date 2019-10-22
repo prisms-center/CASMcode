@@ -51,7 +51,7 @@ namespace CASM {
       ///     copy_apply(this->from_canonical(), this->canonical_form()) == *this
       ///   may be false because they may be equivalent, but without identical
       ///   lat_column_mat().
-      SymOp from_canonical(std::vector<SymOp> const &g) const;
+      /* SymOp from_canonical(std::vector<SymOp> const &g) const; */
 
       /// Canonical equivalent lattice, using the provided group
       Lattice canonical_form(std::vector<SymOp> const &g) const;
@@ -61,11 +61,11 @@ namespace CASM {
       std::vector<Index> invariant_subgroup_indices(std::vector<SymOp> const &super_grp) const;
 
       /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
-      std::vector<Index> invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end) const;
+      /* std::vector<Index> invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end) const; */
 
       /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
       template<typename OutputIt>
-      OutputIt invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end, OutputIt result) const;
+      OutputIt invariant_subgroup_indices(const std::vector<SymOp> &super_group, OutputIt result) const;
 
     private:
 

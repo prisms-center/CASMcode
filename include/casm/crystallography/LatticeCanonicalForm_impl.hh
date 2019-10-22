@@ -65,10 +65,10 @@ namespace CASM {
     ///     copy_apply(this->from_canonical(), this->canonical_form()) == *this
     ///   may be false because they may be equivalent, but without identical
     ///   lat_column_mat().
-    template<typename Base>
-    SymOp LatticeCanonicalForm<Base>::from_canonical(std::vector<SymOp> const &g) const {
-      return to_canonical(g).inverse();
-    }
+    /* template<typename Base> */
+    /* SymOp LatticeCanonicalForm<Base>::from_canonical(std::vector<SymOp> const &g) const { */
+    /*   return to_canonical(g).inverse(); */
+    /* } */
 
     /// Canonical equivalent lattice, using the provided group
     template<typename Base>
@@ -80,25 +80,27 @@ namespace CASM {
     /// \brief Construct the subgroup that leaves a lattice unchanged
     template<typename Base>
     std::vector<Index> LatticeCanonicalForm<Base>::invariant_subgroup_indices(std::vector<SymOp> const &super_grp) const {
-      return invariant_subgroup_indices(super_grp.begin(), super_grp.end());
-    }
-
-    /// \brief Construct the subgroup for which this->is_equivalent(copy_apply(op, *this))
-    template<typename Base>
-    std::vector<Index> LatticeCanonicalForm<Base>::invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end) const {
       std::vector<Index> result;
-      invariant_subgroup_indices(begin, end, std::back_inserter(result));
+      invariant_subgroup_indices(super_grp, std::back_inserter(result));
       return result;
     }
 
     /// \brief Construct the subgroup for which this->is_equivalent(copy_apply(op, *this))
+    /* template<typename Base> */
+    /* std::vector<Index> LatticeCanonicalForm<Base>::invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end) const { */
+    /*   std::vector<Index> result; */
+    /*   invariant_subgroup_indices(begin, end, std::back_inserter(result)); */
+    /*   return result; */
+    /* } */
+
+    /// \brief Construct the subgroup for which this->is_equivalent(copy_apply(op, *this))
     template<typename Base>
     template<typename OutputIt>
-    OutputIt LatticeCanonicalForm<Base>::invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end, OutputIt result) const {
+    OutputIt LatticeCanonicalForm<Base>::invariant_subgroup_indices(const std::vector<SymOp> &super_group, OutputIt result) const {
       LatticeIsEquivalent is_equiv(derived());
 
       Index ix = 0;
-      for(auto it = begin; it != end; ++it) {
+      for(auto it = super_group.begin(); it != super_group.end(); ++it) {
         if(is_equiv(*it)) {
           *result = ix;
           ++result;

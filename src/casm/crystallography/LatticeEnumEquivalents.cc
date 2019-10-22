@@ -18,7 +18,7 @@ namespace CASM {
           SymOpIterator begin,
           SymOpIterator end,
           SymOpOutputIterator result) {
-          return sym::invariant_subgroup(begin, end, lat, result);
+          return sym::invariant_subgroup(std::vector<SymOp>(begin, end), lat, result);
         }
 
       };

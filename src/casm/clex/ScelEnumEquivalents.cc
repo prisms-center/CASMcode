@@ -16,7 +16,7 @@ namespace CASM {
 
       template<typename SymOpIterator, typename SymOpOutputIterator>
       SymOpOutputIterator operator()(const Supercell &scel, SymOpIterator begin, SymOpIterator end, SymOpOutputIterator result) {
-        return sym::invariant_subgroup(begin, end, scel.lattice(), result);
+        return sym::invariant_subgroup(std::vector<SymOp>(begin, end), scel.lattice(), result);
       }
     };
 

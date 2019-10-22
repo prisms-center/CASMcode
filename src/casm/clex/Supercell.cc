@@ -452,7 +452,7 @@ namespace CASM {
     Lattice canon_lat = superlat.canonical_form(pg);
     std::string result = CASM::generate_name(transf_mat(prim.lattice(), canon_lat, prim.lattice().tol()));
     if(!superlat.is_equivalent(canon_lat)) {
-      result += ("." + std::to_string(superlat.from_canonical(pg).index()));
+      result += ("." + std::to_string(superlat.to_canonical(pg).inverse().index()));
     }
     return result;
   }
