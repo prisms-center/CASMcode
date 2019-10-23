@@ -1,4 +1,4 @@
-# Build and upload conda packages 'casm-cpp' 'casm-python' and 'casm'
+# Build and upload conda packages 'casm-cpp' and 'casm'
 #
 #   requires variables:
 #     CASM_CONDA_TOKEN
@@ -21,7 +21,7 @@ detect_os
 check_var "CASM_DOCKER_CONTAINER" "Docker container used to build the conda packages"
 check_var "CASM_CONDA_FEATURE" "Conda feature name (typically xcode/condagcc/condagcc_centos6)"
 check_var "CASM_CONDA_LABEL" "Conda channel label (\"dev\" or \"main\")" "dev"
-check_var "CASM_BUILD_BOOST" "If non-zero length, build casm-boost, otherwise build casm-python, casm-cpp, and casm" ""
+check_var "CASM_BUILD_BOOST" "If non-zero length, build casm-boost, otherwise build casm-cpp and casm" ""
 check_var "CASM_GIT_ID_USER" "Pulls CASMcode from this Github user"
 check_var "CASM_BRANCH" "Which branch to build"
 

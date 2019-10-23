@@ -1,4 +1,4 @@
-# use CASM conda build environment to build and run all tests for casm-cpp and casm-python
+# use CASM conda build environment to build and run all tests for casm-cpp
 #   if CASM_TEST_PROJECTS_DIR is non-zero length, requires
 #     CASM_TEST_PROJECTS_ID and MC_API_KEY
 
@@ -35,7 +35,3 @@ export CASM_PREFIX=$CONDA_PREFIX
 # make-check-cpp
 bash $CASM_BUILD_DIR/build_scripts/make-check-cpp.sh \
   || { echo "'make-check-cpp.sh' failed"; exit 1; }
-
-# check-python
-bash $CASM_BUILD_DIR/build_scripts/check-python.sh \
-  || { echo "'check-python.sh' failed"; exit 1; }
