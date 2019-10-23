@@ -131,7 +131,7 @@ namespace CASM {
     Lattice canonical_equivalent_lattice(Lattice const &in_lat, std::vector<SymOp> const &point_grp, double compare_tol);
 
     /// Return canonical equivalent lattice, and 'to_canonical' SymOp
-    std::pair<Lattice, SymOp> _canonical_equivalent_lattice(
+    std::pair<Lattice, Index> _canonical_equivalent_lattice(
       Lattice const &in_lat,
       std::vector<SymOp> const &point_grp,
       double compare_tol);

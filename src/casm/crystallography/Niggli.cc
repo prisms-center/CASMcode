@@ -358,7 +358,7 @@ namespace CASM {
     /// to within the specified tolerance.
     ///   where ref_lat = niggli(in_lat, compare_tol, false)
     ///
-    std::pair<Lattice, SymOp> _canonical_equivalent_lattice(
+    std::pair<Lattice, Index> _canonical_equivalent_lattice(
       const Lattice &in_lat,
       const std::vector<SymOp> &point_grp,
       double compare_tol) {
@@ -368,14 +368,15 @@ namespace CASM {
         throw std::runtime_error("In _canonical_equivalent_lattice(), did not find any niggli representations of provided lattice.");
       bool first = true;
       Eigen::Matrix3d most_canonical_lat_mat, trans_lat_mat;
-      auto to_canonical = point_grp.begin();
+      Index to_canonical_ix = 0;
 
       // The niggli cell is based purely on the metric tensor, and so is invariant cartesian rotation
       // (i.e., the niggli cell uniquely orders lattice parameters and angles but does not uniquely specify orientation)
       // We find all niggli representations for 'in_lat', and then loop over point group operations.
       // For each point group operation, reorient all the niggli representations, keeping track of
       // which orientation is 'most' canonical, according to casm standard orientation
-      for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
+      Index ix = 0;
+      for(auto it = point_grp.begin(); it != point_grp.end(); ++it, ++ix) {
         //Skip operations that change the handedness of the lattice
         if(it->matrix().determinant() <= 0.0) {
           continue;
@@ -388,12 +389,12 @@ namespace CASM {
           if(first || standard_orientation_compare(most_canonical_lat_mat, trans_lat_mat, compare_tol)) {
             first = false;
             most_canonical_lat_mat = trans_lat_mat;
-            to_canonical = it;
+            to_canonical_ix = ix;
           }
         }
       }
 
-      return std::make_pair(Lattice(most_canonical_lat_mat, in_lat.tol()), *to_canonical);
+      return std::make_pair(Lattice(most_canonical_lat_mat, in_lat.tol()), to_canonical_ix);
     }
 
     /**

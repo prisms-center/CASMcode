@@ -56,19 +56,9 @@ namespace CASM {
     ///   may be false because they may be equivalent, but without identical
     ///   lat_column_mat().
     template<typename Base>
-    SymOp LatticeCanonicalForm<Base>::to_canonical(std::vector<SymOp> const &g) const {
+    Index LatticeCanonicalForm<Base>::to_canonical(std::vector<SymOp> const &g) const {
       return _canonical_equivalent_lattice(derived(), g, _tol()).second;
     }
-
-    /// Returns the inverse of to_canonical(g)
-    /// - Note that that
-    ///     copy_apply(this->from_canonical(), this->canonical_form()) == *this
-    ///   may be false because they may be equivalent, but without identical
-    ///   lat_column_mat().
-    /* template<typename Base> */
-    /* SymOp LatticeCanonicalForm<Base>::from_canonical(std::vector<SymOp> const &g) const { */
-    /*   return to_canonical(g).inverse(); */
-    /* } */
 
     /// Canonical equivalent lattice, using the provided group
     template<typename Base>

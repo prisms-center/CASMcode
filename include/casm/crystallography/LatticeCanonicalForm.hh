@@ -44,14 +44,7 @@ namespace CASM {
       /// - Note that that copy_apply(this->to_canonical(), *this).is_canonical()
       ///   may be false because they may be equivalent, but without identical
       ///   lat_column_mat().
-      SymOp to_canonical(std::vector<SymOp> const &g) const;
-
-      /// Returns the inverse of to_canonical(g)
-      /// - Note that that
-      ///     copy_apply(this->from_canonical(), this->canonical_form()) == *this
-      ///   may be false because they may be equivalent, but without identical
-      ///   lat_column_mat().
-      /* SymOp from_canonical(std::vector<SymOp> const &g) const; */
+      Index to_canonical(std::vector<SymOp> const &g) const;
 
       /// Canonical equivalent lattice, using the provided group
       Lattice canonical_form(std::vector<SymOp> const &g) const;

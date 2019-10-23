@@ -338,7 +338,8 @@ namespace CASM {
 
   template<typename Base>
   SymOp SupercellCanonicalForm<Base>::to_canonical() const {
-    return derived().lattice().to_canonical(derived().prim().point_group());
+    auto to_canonical_ix = derived().lattice().to_canonical(derived().prim().point_group());
+    return derived().prim().point_group()[to_canonical_ix];
   }
 
   template<typename Base>
