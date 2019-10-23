@@ -41,10 +41,9 @@ echo "Will build:"
 echo
 echo "from: "$CASM_BOOST_URL
 echo "  casm-boost "$CASM_BOOST_VERSION" "$CASM_BOOST_BUILD_STR
-echo 
+echo
 echo "from: "$CASM_REPO:$CASM_BRANCH
 echo "  casm-cpp "$CASM_CONDA_VERSION
-echo "  casm-python "$CASM_CONDA_VERSION
 echo "  (metapackage) casm "$CASM_CONDA_VERSION
 echo
 echo "using: "
@@ -55,26 +54,26 @@ echo "    "$CASM_DEVTOOLSET_BUILD_STR" (devtoolset-"$CASM_DEVTOOLSET_VERSION")"
 echo
 echo "  python:"
 echo "    python"$CASM_PYTHON_VERSION"*"
-echo 
+echo
 echo "And upload to: "
 echo "  anaconda.org/"$CASM_CONDA_ID_USER"/label/"$CASM_CONDA_LABEL
-echo 
+echo
 read -p "Continue? [Yy|Nn]: " -n 1 -r
 echo    # (optional) move to a new line
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
   # handle exits from shell or function but don't exit interactive shell
-  [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 
+  [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1
 fi
 
 ### Build base docker images for building linux conda packages
 build_docker "casm-build" "condagcc" \
 "--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
-"--build-arg CONDAGCC_VERSION=$CASM_CONDAGCC_VERSION" 
+"--build-arg CONDAGCC_VERSION=$CASM_CONDAGCC_VERSION"
 
 build_docker "casm-build" "devtoolset" \
 "--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
-"--build-arg DEVTOOLSET_VERSION=$CASM_DEVTOOLSET_VERSION" 
+"--build-arg DEVTOOLSET_VERSION=$CASM_DEVTOOLSET_VERSION"
 
 ### Build osx conda packages
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -83,16 +82,14 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 
 ### Build linux conda packages
-linux_build_casm_python
 linux_build_conda "condagcc"
 linux_build_conda "devtoolset"
 
 ### Build casm docker images
 build_docker "casm" "condagcc" \
 "--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
-"--build-arg CONDAGCC_VERSION=$CASM_CONDAGCC_VERSION" 
+"--build-arg CONDAGCC_VERSION=$CASM_CONDAGCC_VERSION"
 
 build_docker "casm" "devtoolset" \
 "--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
-"--build-arg DEVTOOLSET_VERSION=$CASM_DEVTOOLSET_VERSION" 
-
+"--build-arg DEVTOOLSET_VERSION=$CASM_DEVTOOLSET_VERSION"
