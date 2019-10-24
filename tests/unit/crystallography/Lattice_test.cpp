@@ -2,6 +2,7 @@
 
 /// What is being tested:
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/LatticeIsEquivalent.hh"
 
 /// What is being used to test it:
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -33,7 +34,7 @@ void lattice_is_equivalent_test() {
     Lattice fcc = Lattice::fcc();
     SymGroup pg = SymGroup::lattice_point_group(fcc);
     for(const auto &op : pg) {
-      EXPECT_EQ(fcc.is_equivalent(copy_apply(op, fcc)), 1);
+      EXPECT_TRUE(xtal::is_equivalent(fcc, copy_apply(op, fcc)));
     }
   }
   {
@@ -42,7 +43,7 @@ void lattice_is_equivalent_test() {
     SymGroup pg = SymGroup::lattice_point_group(bcc);
 
     for(const auto &op : pg) {
-      EXPECT_EQ(bcc.is_equivalent(copy_apply(op, bcc)), 1);
+      EXPECT_TRUE(xtal::is_equivalent(bcc, copy_apply(op, bcc)));
     }
   }
   {
@@ -51,7 +52,7 @@ void lattice_is_equivalent_test() {
     SymGroup pg = SymGroup::lattice_point_group(cubic);
 
     for(const auto &op : pg) {
-      EXPECT_EQ(cubic.is_equivalent(copy_apply(op, cubic)), 1);
+      EXPECT_TRUE(xtal::is_equivalent(cubic, copy_apply(op, cubic)));
     }
   }
   {
@@ -59,7 +60,7 @@ void lattice_is_equivalent_test() {
     SymGroup pg = SymGroup::lattice_point_group(hex);
 
     for(const auto &op : pg) {
-      EXPECT_EQ(hex.is_equivalent(copy_apply(op, hex)), 1);
+      EXPECT_TRUE(xtal::is_equivalent(hex, copy_apply(op, hex)));
     }
   }
 }

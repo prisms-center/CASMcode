@@ -449,11 +449,10 @@ namespace CASM {
   }
 
   std::string scelname(const Structure &prim, const Lattice &superlat) {
-    //TODO: Implement canonical::check instead of comparing?
     const SymGroup &pg = prim.point_group();
     Lattice canon_lat = canonical::equivalent(superlat, pg);
     std::string result = CASM::generate_name(transf_mat(prim.lattice(), canon_lat, prim.lattice().tol()));
-    if(xtal::is_equivalent(superlat, canon_lat)) {
+    if(!xtal::is_equivalent(superlat, canon_lat)) {
       auto to_canonical_ix = canonical::operation_index(superlat, pg);
       result += ("." + std::to_string(pg[to_canonical_ix].inverse().index()));
     }

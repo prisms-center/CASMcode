@@ -52,8 +52,8 @@ jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol
 
     // -- check canonical generation
 
-    Lattice canon = canonical_equivalent_lattice(*it, effective_pg, tol);
-    Lattice canon2 = canonical_equivalent_lattice(canon, effective_pg, tol);
+    Lattice canon = xtal::canonical::equivalent(*it, effective_pg, tol);
+    Lattice canon2 = xtal::canonical::equivalent(canon, effective_pg, tol);
     bool check = almost_equal(
                    canon.lat_column_mat(),
                    canon2.lat_column_mat(),
