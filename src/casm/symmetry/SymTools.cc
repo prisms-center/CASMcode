@@ -1,8 +1,9 @@
 #include <iterator>
+#include "casm/crystallography/SymTools.hh"
 #include "casm/symmetry/SymTools.hh"
 #include "casm/symmetry/SymTools_impl.hh"
-#include "casm/crystallography/LatticeCanonicalForm.hh"
 #include "casm/symmetry/SymGroup.hh"
+
 namespace {
   CASM::SymGroup subgroup_from_indices(const CASM::SymGroup &super_group, const std::vector<CASM::Index> &subgroup_indices) {
     std::vector<CASM::SymOp> subgroup_operations;

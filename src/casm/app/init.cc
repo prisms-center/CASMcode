@@ -11,7 +11,7 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Structure.hh"
 
 namespace CASM {

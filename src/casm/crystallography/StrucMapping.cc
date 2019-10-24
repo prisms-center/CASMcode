@@ -6,8 +6,7 @@
 #include "casm/strain/StrainConverter.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/crystallography/Niggli.hh"
-#include "casm/crystallography/LatticeCanonicalForm.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/LatticeMap.hh"
 
 namespace CASM {

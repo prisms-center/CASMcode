@@ -199,14 +199,15 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/LatticeIsEquivalent.cc\
     src/casm/crystallography/SpeciesAttribute.cc\
     src/casm/crystallography/Site.cc\
-    src/casm/crystallography/LatticeCanonicalForm.cc\
     src/casm/crystallography/LatticeEnumEquivalents.cc\
     src/casm/crystallography/SimpleStructureTools.cc\
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Lattice.cc\
     src/casm/crystallography/SimpleStructure.cc\
+    src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/BasicStructure.cc\
     src/casm/crystallography/SimpleStrucMapCalculator.cc\
+    src/casm/crystallography/CanonicalForm.cc\
     src/casm/crystallography/SymType.cc\
     src/casm/crystallography/LatticeMap.cc\
     src/casm/crystallography/HermiteCounter.cc\
@@ -850,7 +851,6 @@ libcasm_la_SOURCES = \
     include/casm/hull/Hull.hh\
     include/casm/crystallography/Structure.hh\
     include/casm/crystallography/SimpleStructure.hh\
-    include/casm/crystallography/LatticeCanonicalForm.hh\
     include/casm/crystallography/LatticeMap.hh\
     include/casm/crystallography/SpeciesAttribute.hh\
     include/casm/crystallography/CoordinateSystems.hh\
@@ -860,6 +860,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/PrimGrid.hh\
     include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
+    include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
@@ -870,6 +871,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/BasicStructure.hh\
     include/casm/crystallography/SuperlatticeEnumerator.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
+    include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Site.hh\
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/jsonStruc.hh\
@@ -946,4 +948,4 @@ libcasm_la_SOURCES = \
 libcasm_la_LDFAGS = \
     -avoid-version\
     $(BOOST_LDFLAGS)
-# src/casm/version/autoversion.lo: .FORCE
+src/casm/version/autoversion.lo: .FORCE

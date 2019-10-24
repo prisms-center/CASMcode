@@ -163,21 +163,6 @@ namespace CASM {
       double m_tol;
     };
     /** @} */
-
-    namespace canonical {
-
-      /**
-       * Return a canonical Lattice by first converting the
-       * given Lattice into the standard Niggli form,
-       * followed by applying the point group of the Lattice
-       * so that the one oriented in the most standard manner
-       * is selected.
-       */
-      Lattice equivalent(Lattice const &in_lat, std::vector<SymOp> const &point_grp, double compare_tol);
-
-      /// Return the index of the operation that makes the lattice canonical
-      Index operation_index(Lattice const &in_lat, std::vector<SymOp> const &point_grp, double compare_tol);
-    } // namespace canonical
   } // namespace xtal
 } // namespace CASM
 

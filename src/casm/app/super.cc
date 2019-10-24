@@ -6,7 +6,7 @@
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
-#include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Adapter.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/clex/Configuration_impl.hh"

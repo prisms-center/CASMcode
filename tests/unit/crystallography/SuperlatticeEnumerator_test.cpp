@@ -14,6 +14,7 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 
 using namespace CASM;
 boost::filesystem::path testdir(autotools::abs_srcdir() + "/tests/unit/crystallography");

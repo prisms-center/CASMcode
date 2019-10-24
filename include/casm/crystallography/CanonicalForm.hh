@@ -22,6 +22,15 @@ namespace CASM {
       bool check(const Lattice &lat, std::vector<SymOp> const &g);
 
 
+      /**
+       * Return a canonical Lattice by first converting the
+       * given Lattice into the standard Niggli form,
+       * followed by applying the point group of the Lattice
+       * so that the one oriented in the most standard manner
+       * is selected.
+       */
+      Lattice equivalent(Lattice const &in_lat, std::vector<SymOp> const &point_grp, double compare_tol);
+
       /// Canonical equivalent lattice, using this lattice's point group
       Lattice equivalent(const Lattice &lat);
 
@@ -36,30 +45,9 @@ namespace CASM {
       ///   may be false because they may be equivalent, but without identical
       ///   lat_column_mat().
       Index operation_index(const Lattice &lat, std::vector<SymOp> const &g);
-    }
 
-
-    /// Check if canonical_form(ref_lattice) == canonical_form(other)
-    /* bool lattices_are_symmetrically_equivalent(const Lattice& ref_lattice, const Lattice& other); */
-
-
-    /// \brief Construct indices of the subgroup that leaves a lattice unchanged
-    std::vector<Index> invariant_subgroup_indices(const Lattice &lat, std::vector<SymOp> const &super_grp);
-
-    /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
-    template <typename OutputIt>
-    OutputIt invariant_subgroup_indices(const Lattice &lat, const std::vector<SymOp> &super_group, OutputIt result) {
-      LatticeIsEquivalent is_equiv(lat);
-
-      Index ix = 0;
-      for(auto it = super_group.begin(); it != super_group.end(); ++it) {
-        if(is_equiv(*it)) {
-          *result = ix;
-          ++result;
-        }
-        ++ix;
-      }
-      return result;
+      /// Return the index of the operation that makes the lattice canonical
+      Index operation_index(Lattice const &in_lat, std::vector<SymOp> const &point_grp, double compare_tol);
     }
 
   } // namespace xtal

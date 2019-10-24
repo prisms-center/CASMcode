@@ -1,8 +1,9 @@
 #ifndef SYMTOOLS_IMPL_HH
 #define SYMTOOLS_IMPL_HH
 
+#include "casm/crystallography/CanonicalForm.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/symmetry/SymGroup.hh"
-#include "casm/crystallography/LatticeCanonicalForm.hh"
 
 namespace CASM {
   namespace sym {

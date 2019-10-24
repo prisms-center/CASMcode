@@ -8,8 +8,7 @@
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
-#include "casm/crystallography/LatticeCanonicalForm.hh"
-#include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 
 namespace CASM {
 

@@ -2,6 +2,7 @@
 
 /// What is being tested:
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 
 /// What is being used to test it:
 #include "casm/misc/CASM_Eigen_math.hh"
