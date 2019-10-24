@@ -1238,7 +1238,7 @@ namespace CASM {
   }
 
   // write Lattice in json as array of vectors
-  jsonParser &to_json(const Lattice &lat, jsonParser &json) {
+  jsonParser &to_json(const xtal::Lattice &lat, jsonParser &json) {
     json.put_array();
     json.push_back(lat[0]);
     json.push_back(lat[1]);
@@ -1247,9 +1247,9 @@ namespace CASM {
   }
 
   // read Lattice from a json array of Eigen::Vector3d
-  void from_json(Lattice &lat, const jsonParser &json, double xtal_tol) {
+  void from_json(xtal::Lattice &lat, const jsonParser &json, double xtal_tol) {
     try {
-      lat = Lattice(
+      lat = xtal::Lattice(
               json[0].get<Eigen::Vector3d >(),
               json[1].get<Eigen::Vector3d >(),
               json[2].get<Eigen::Vector3d >(),

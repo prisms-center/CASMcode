@@ -1,6 +1,3 @@
-#ifndef CASM_LatticeCanonicalForm_impl
-#define CASM_LatticeCanonicalForm_impl
-
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/LatticeCanonicalForm.hh"
 #include "casm/crystallography/Niggli.hh"
@@ -10,6 +7,7 @@
 namespace CASM {
   namespace xtal {
     namespace canonical {
+
       bool check(const Lattice &lat) {
         return canonical::check(lat, calc_point_group(lat));
       }
@@ -18,25 +16,16 @@ namespace CASM {
         return almost_equal(lat.lat_column_mat(), canonical::equivalent(lat, g).lat_column_mat(), lat.tol());
       }
 
-      /* bool is_canonical(const Lattice& lat) { return is_canonical(lat, calc_point_group(lat)); } */
-
       Lattice equivalent(const Lattice &lat) {
         return canonical::equivalent(lat, calc_point_group(lat));
       }
 
-      /// Uses provided group to find 'to_canonical' SymOp
-      ///
-      /// - Returns first SymOp for which canonical_form.is_equivalent(apply(op, *this))
-      /// - Note that that copy_apply(this->to_canonical(), *this).is_canonical()
-      ///   may be false because they may be equivalent, but without identical
-      ///   lat_column_mat().
-      Index operation_index(const Lattice &lat, std::vector<SymOp> const &g) {
-        return canonical::operation_index(lat, g, lat.tol());
+      Lattice equivalent(const Lattice &lat, std::vector<SymOp> const &g) {
+        return canonical::equivalent(lat, g, lat.tol());
       }
 
-      /// Canonical equivalent lattice, using the provided group
-      Lattice equivalent_lattice(const Lattice &lat, std::vector<SymOp> const &g) {
-        return canonical::equivalent(lat, g, lat.tol());
+      Index operation_index(const Lattice &lat, std::vector<SymOp> const &g) {
+        return canonical::operation_index(lat, g, lat.tol());
       }
 
     } // namespace canonical
@@ -69,5 +58,3 @@ namespace CASM {
 
   } // namespace xtal
 } // namespace CASM
-
-#endif
