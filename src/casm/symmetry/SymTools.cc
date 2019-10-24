@@ -1,7 +1,7 @@
 #include <iterator>
 #include "casm/symmetry/SymTools.hh"
 #include "casm/symmetry/SymTools_impl.hh"
-#include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/LatticeCanonicalForm.hh"
 #include "casm/symmetry/SymGroup.hh"
 namespace {
   CASM::SymGroup subgroup_from_indices(const CASM::SymGroup &super_group, const std::vector<CASM::Index> &subgroup_indices) {
@@ -18,7 +18,7 @@ namespace {
 namespace CASM {
   namespace sym {
     SymGroup invariant_subgroup(const SymGroup &super_group, const xtal::Lattice &lat) {
-      auto subgroup_operation_indices = lat.invariant_subgroup_indices(super_group);
+      auto subgroup_operation_indices = xtal::invariant_subgroup_indices(lat, super_group);
       return subgroup_from_indices(super_group, subgroup_operation_indices);
     }
   } // namespace sym

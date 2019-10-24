@@ -7,6 +7,7 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/LatticeCanonicalForm.hh"
 #include "casm/crystallography/LatticeMap.hh"
 
 namespace CASM {
@@ -284,7 +285,7 @@ namespace CASM {
       // We know child_struc.lattice() is a supercell of the prim, now we have to
       // reorient 'child_struc' by a point-group operation of the parent to match canonical lattice vectors
       // This may not be a rotation in the child structure's point group
-      Lattice derot_c_lat(Lattice(parent().lat_column_mat * trans_mat, m_tol).canonical_form(calculator().point_group()));
+      Lattice derot_c_lat(canonical::equivalent(Lattice(parent().lat_column_mat * trans_mat, m_tol), calculator().point_group()));
 
       // We now find a transformation matrix of c_lat so that, after transformation, it is related
       // to derot_c_lat by rigid rotation only. Following line finds R and T such that derot_c_lat = R*c_lat*T
@@ -464,8 +465,8 @@ namespace CASM {
           continue;
         }
         Lattice canon_lat = *it;
-        if(!canon_lat.is_canonical(calculator().point_group())) {
-          canon_lat = canon_lat.canonical_form(calculator().point_group());
+        if(canonical::check(canon_lat, calculator().point_group())) {
+          canon_lat = canonical::equivalent(canon_lat, calculator().point_group());
         }
         lat_vec.push_back(canon_lat);
       }

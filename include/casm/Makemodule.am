@@ -914,7 +914,6 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/Lattice_impl.hh\
-    include/casm/crystallography/LatticeCanonicalForm_impl.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/Molecule.hh\

@@ -8,6 +8,8 @@
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
+#include "casm/crystallography/LatticeCanonicalForm.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
 
@@ -333,12 +335,12 @@ namespace CASM {
 
   template<typename Base>
   bool SupercellCanonicalForm<Base>::is_canonical() const {
-    return derived().lattice().is_canonical(derived().prim().point_group());
+    return xtal::canonical::check(derived().lattice(), derived().prim().point_group());
   }
 
   template<typename Base>
   SymOp SupercellCanonicalForm<Base>::to_canonical() const {
-    auto to_canonical_ix = derived().lattice().to_canonical(derived().prim().point_group());
+    auto to_canonical_ix = xtal::canonical::operation_index(derived().lattice(), derived().prim().point_group());
     return derived().prim().point_group()[to_canonical_ix];
   }
 
@@ -349,7 +351,7 @@ namespace CASM {
 
   template<typename Base>
   Lattice SupercellCanonicalForm<Base>::canonical_lattice() const {
-    return canonical_equivalent_lattice(
+    return canonical::equivalent(
              derived().lattice(),
              derived().prim().point_group(),
              derived().crystallography_tol());

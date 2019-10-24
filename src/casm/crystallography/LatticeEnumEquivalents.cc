@@ -37,7 +37,7 @@ namespace CASM {
     ///
     LatticeEnumEquivalents::LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g) :
       EnumEquivalents<Lattice, std::vector<SymOp>::const_iterator, SymOp, SymRepIndexCompare>(
-        lat.canonical_form(super_g), super_g.begin(), super_g.end(), MakeInvariantSubgroup()) {
+        canonical::equivalent(lat, super_g), super_g.begin(), super_g.end(), MakeInvariantSubgroup()) {
 
       if(!super_g.begin()->has_valid_master()) {
         throw std::runtime_error("Error constructing LatticeEnumEquivalents: SymGroup has no MasterSymGroup");

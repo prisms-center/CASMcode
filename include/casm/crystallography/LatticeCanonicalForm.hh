@@ -1,8 +1,9 @@
 #ifndef CASM_LatticeCanonicalForm
 #define CASM_LatticeCanonicalForm
 
-#include <vector>
 #include "casm/CASM_global_definitions.hh"
+#include "casm/crystallography/LatticeIsEquivalent.hh"
+#include <vector>
 
 namespace CASM {
   class SymGroup;
@@ -11,32 +12,22 @@ namespace CASM {
 
     class Lattice;
 
-    /// Lattice canonical form finding
-    template<typename Base>
-    class LatticeCanonicalForm : public Base {
-    public:
+    namespace canonical {
+      /// True if lat_column_mat is approximately equal to the lat_column_mat of the canonical_form, using
+      /// the lattice point group to find the most canonical form
+      bool check(const Lattice &lat);
 
-      using Base::derived;
+      /// True if lat_column_mat is approximately equal to the lat_column_mat of the canonical_form, using
+      /// the provided symmetry operations to find the most canonical form
+      bool check(const Lattice &lat, std::vector<SymOp> const &g);
 
-      LatticeCanonicalForm();
-
-      /// Uses Lattice point group
-      bool is_canonical() const;
-
-      /// Check if *this = other*U, where U is unimodular
-      bool is_equivalent(const Lattice &other) const;
-
-      /// Check if this->canonical_form() == other.canonical_form()
-      bool is_sym_equivalent(const Lattice &other) const;
 
       /// Canonical equivalent lattice, using this lattice's point group
-      Lattice canonical_form() const;
+      Lattice equivalent(const Lattice &lat);
 
+      /// Canonical equivalent lattice, using the provided group
+      Lattice equivalent(const Lattice &lat, std::vector<SymOp> const &g);
 
-      /// Uses provided group
-      ///
-      /// - True if lat_column_mat is approximately equal to the lat_column_mat of the canonical_form
-      bool is_canonical(std::vector<SymOp> const &g) const;
 
       /// Uses provided group to find 'to_canonical' SymOp
       ///
@@ -44,30 +35,34 @@ namespace CASM {
       /// - Note that that copy_apply(this->to_canonical(), *this).is_canonical()
       ///   may be false because they may be equivalent, but without identical
       ///   lat_column_mat().
-      Index to_canonical(std::vector<SymOp> const &g) const;
-
-      /// Canonical equivalent lattice, using the provided group
-      Lattice canonical_form(std::vector<SymOp> const &g) const;
+      Index operation_index(const Lattice &lat, std::vector<SymOp> const &g);
+    }
 
 
-      /// \brief Construct indices of the subgroup that leaves a lattice unchanged
-      std::vector<Index> invariant_subgroup_indices(std::vector<SymOp> const &super_grp) const;
+    /// Check if canonical_form(ref_lattice) == canonical_form(other)
+    /* bool lattices_are_symmetrically_equivalent(const Lattice& ref_lattice, const Lattice& other); */
 
-      /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
-      /* std::vector<Index> invariant_subgroup_indices(std::vector<SymOp>::const_iterator begin, std::vector<SymOp>::const_iterator end) const; */
 
-      /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
-      template<typename OutputIt>
-      OutputIt invariant_subgroup_indices(const std::vector<SymOp> &super_group, OutputIt result) const;
+    /// \brief Construct indices of the subgroup that leaves a lattice unchanged
+    std::vector<Index> invariant_subgroup_indices(const Lattice &lat, std::vector<SymOp> const &super_grp);
 
-    private:
+    /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
+    template <typename OutputIt>
+    OutputIt invariant_subgroup_indices(const Lattice &lat, const std::vector<SymOp> &super_group, OutputIt result) {
+      LatticeIsEquivalent is_equiv(lat);
 
-      double _tol() const {
-        return derived().tol();
+      Index ix = 0;
+      for(auto it = super_group.begin(); it != super_group.end(); ++it) {
+        if(is_equiv(*it)) {
+          *result = ix;
+          ++result;
+        }
+        ++ix;
       }
+      return result;
+    }
 
-    };
-  }
-}
+  } // namespace xtal
+} // namespace CASM
 
 #endif

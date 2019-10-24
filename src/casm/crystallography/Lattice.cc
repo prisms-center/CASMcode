@@ -24,8 +24,6 @@ namespace CASM {
     template std::pair<array_symop_cit, Eigen::Matrix3d> is_supercell<Lattice, array_symop_cit>(
       const Lattice &, const Lattice &, array_symop_cit, array_symop_cit, double);
 
-    template class LatticeCanonicalForm<Comparisons<CRTPBase<Lattice> > >;
-
     Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
                      Eigen::Ref<const Eigen::Vector3d> const &vec2,
                      Eigen::Ref<const Eigen::Vector3d> const &vec3,
@@ -330,7 +328,7 @@ namespace CASM {
       SuperlatticeEnumerator enumerator(effective_pg.begin(), effective_pg.end(), *this,  enum_props);
       supercell.clear();
       for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-        supercell.push_back(canonical_equivalent_lattice(*it, effective_pg, TOL));
+        supercell.push_back(canonical::equivalent(*it, effective_pg, TOL));
       }
       return;
     }

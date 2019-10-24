@@ -124,6 +124,11 @@ namespace CASM {
       return m_lat.inv_lat_column_mat();
     }
 
+    bool is_equivalent(const Lattice &ref_lattice, const Lattice &other) {
+      LatticeIsEquivalent is_equiv(ref_lattice);
+      return is_equiv(other);
+    }
+
   }
 }
 

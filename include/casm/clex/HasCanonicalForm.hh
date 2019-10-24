@@ -4,6 +4,10 @@
 #include <vector>
 
 namespace CASM {
+  namespace xtal {
+    class Lattice;
+  }
+
   class SymGroup;
   class SymOp;
   class PermuteIterator;
@@ -236,7 +240,7 @@ namespace CASM {
     SymOp from_canonical() const;
 
     /// \brief Return canonical equivalent lattice
-    Lattice canonical_lattice() const;
+    xtal::Lattice canonical_lattice() const;
 
     /// \brief Return canonical equivalent Supercell
     ///

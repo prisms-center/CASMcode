@@ -199,6 +199,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/LatticeIsEquivalent.cc\
     src/casm/crystallography/SpeciesAttribute.cc\
     src/casm/crystallography/Site.cc\
+    src/casm/crystallography/LatticeCanonicalForm.cc\
     src/casm/crystallography/LatticeEnumEquivalents.cc\
     src/casm/crystallography/SimpleStructureTools.cc\
     src/casm/crystallography/Molecule.cc\
@@ -863,7 +864,6 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/Lattice_impl.hh\
-    include/casm/crystallography/LatticeCanonicalForm_impl.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/Molecule.hh\
