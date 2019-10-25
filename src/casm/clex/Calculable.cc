@@ -4,17 +4,17 @@
 #include <boost/filesystem.hpp>
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/casm_io/jsonParser.hh"
+//#include "casm/casm_io/jsonParser.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/database/PropertiesDatabase.hh"
 
 namespace CASM {
 
-  /// \brief Return calculated properties JSON for requested calctype
+  /// \brief Return MappedProperties for requested calctype
   ///
-  /// - If nothing calculated, returns empty JSON object
+  /// - If nothing calculated, returns empty MappedProperties object
   template<typename _Base>
-  jsonParser Calculable<_Base>::calc_properties(std::string calctype) const {
+  MappedProperties const &Calculable<_Base>::calc_properties(std::string calctype) const {
     if(calctype.empty()) {
       calctype = derived().primclex().settings().default_clex().calctype;
     }
@@ -23,18 +23,18 @@ namespace CASM {
       _refresh_calc_properties(calctype);
       it = m_calc_properties_map.find(calctype);
     }
-    if((it->second).contains("mapped")) {
-      return it->second["mapped"];
-    }
+    //if((it->second).contains("mapped")) {
+    //return it->second["mapped"];
+    //}
     return it->second;
   }
 
   template<typename _Base>
-  void Calculable<_Base>::set_calc_properties(const jsonParser &json, std::string calctype) {
+  void Calculable<_Base>::set_calc_properties(const MappedProperties &_prop, std::string calctype) {
     if(calctype.empty()) {
       calctype = derived().primclex().settings().default_clex().calctype;
     }
-    m_calc_properties_map[calctype] = json;
+    m_calc_properties_map[calctype] = _prop;
   }
 
   template<typename _Base>
@@ -126,7 +126,7 @@ namespace CASM {
       m_calc_properties_map[calctype] = *it;
     }
     else {
-      m_calc_properties_map[calctype] = jsonParser::object();
+      m_calc_properties_map[calctype] = MappedProperties();
     }
   }
 
@@ -142,7 +142,7 @@ namespace CASM {
   }
   template<typename ConfigType>
   void reset_properties(ConfigType &config) {
-    config.set_calc_properties(jsonParser(), "");
+    config.set_calc_properties(MappedProperties(), "");
   }
 
   /// \brief Status of calculation
@@ -223,8 +223,9 @@ namespace CASM {
   /// - file contents verbatim
   /// -  "data_timestamp" with the last write time of the file
   ///
+  /*
   template<typename ConfigType>
-  std::tuple<jsonParser, bool, bool> read_calc_properties(const ConfigType &config, std::string calctype) {
+  std::tuple<MappedProperties, bool, bool> read_calc_properties(const ConfigType &config, std::string calctype) {
     if(calctype == "") {
       calctype = config.primclex().settings().default_clex().calctype;
     }
@@ -232,7 +233,7 @@ namespace CASM {
              config.primclex(),
              calc_properties_path(config.primclex(), config.name(), calctype));
   }
-
+  */
   /// \brief Read properties.calc.json from file
   ///
   /// \returns tuple of:
@@ -244,33 +245,36 @@ namespace CASM {
   /// - file contents verbatim
   /// - "data_timestamp" with the last write time of the file
   ///
+  /*
   template<typename ConfigType>
-  std::tuple<jsonParser, bool, bool> read_calc_properties(const PrimClex &primclex, const fs::path &filepath) {
+  std::tuple<MappedProperties, bool, bool> read_calc_properties(const PrimClex &primclex, const fs::path &filepath) {
     if(!fs::exists(filepath)) {
-      return std::make_tuple(jsonParser(), false, false);
+      return std::make_tuple(MappedProperties(), false, false);
     }
     jsonParser props(filepath);
     if(!props.is_obj()) {
       primclex.err_log() << "error parsing: " << filepath << std::endl;
       primclex.err_log() << "not a valid properties.calc.json for Configuration: not a JSON object" << std::endl;
-      return std::make_tuple(jsonParser(), false, false);
+      return std::make_tuple(MappedProperties(), false, false);
     }
-    props["data_timestamp"] = fs::last_write_time(filepath);
+    MappedProperties result;
+    from_json(result, props);
+    result.timestamp = fs::last_write_time(filepath);
 
     const auto &prop_vec = primclex.settings().properties<ConfigType>();
-    bool is_calc = is_calculated(jsonParser(filepath), prop_vec);
-    return std::make_tuple(props, true, is_calc);
+    bool is_calc = is_calculated(result, prop_vec);
+    return std::make_tuple(result, true, is_calc);
   }
+  */
 
   /// \brief Return true if all required properties are included in the JSON
-  bool is_calculated(
-    const jsonParser &calc_properties,
-    const std::vector<std::string> &required_properties) {
+  bool is_calculated(const MappedProperties &calc_properties,
+                     const std::vector<std::string> &required_properties) {
 
     return std::all_of(required_properties.begin(),
                        required_properties.end(),
     [&](const std::string & key) {
-      return calc_properties.contains(key);
+      return (calc_properties.global.count(key) || calc_properties.site.count(key));
     });
   }
 
@@ -328,8 +332,6 @@ template bool has_failure_type(const type &config,std::string calctype); \
 template fs::path calc_properties_path(const type &config,std::string calctype); \
 template fs::path pos_path(const type &config); \
 template fs::path calc_status_path(const type &config,std::string calctype); \
-template std::tuple<jsonParser, bool, bool> read_calc_properties<type>(const type &config,std::string calctype); \
-template std::tuple<jsonParser, bool, bool> read_calc_properties<type>(const PrimClex &primclex, const fs::path &filepath); \
 template class Calculable<CRTPBase<type>>;
 
   BOOST_PP_SEQ_FOR_EACH(INST_ConfigType, _, CASM_DB_CONFIG_TYPES)

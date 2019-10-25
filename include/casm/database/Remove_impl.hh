@@ -21,20 +21,20 @@ namespace CASM {
       std::vector<std::string> fail;
       for(const auto &val : selection.data()) {
         if(!has_existing_data_or_files(val.first)) {
-          db_config().erase(val.first);
+          db_config<ConfigType>().erase(val.first);
         }
         else {
-          log() << "skipping " << val.first << ": has existing data or files" << std::endl;
+          primclex().log() << "skipping " << val.first << ": has existing data or files" << std::endl;
           fail.push_back(val.first);
         }
       }
 
       if(fail.size()) {
         _erase_report(fail);
-        log() << "Skipped " << fail.size() << " " << traits<ConfigType>::name << std::endl;
-        log() << "  See " << m_report_dir / "remove_fail" << std::endl;
+        primclex().log() << "Skipped " << fail.size() << " " << traits<ConfigType>::name << std::endl;
+        primclex().log() << "  See " << m_report_dir / "remove_fail" << std::endl;
       }
-      db_config().commit();
+      db_config<ConfigType>().commit();
     }
 
     /// \brief Erase data and files (permanently), but not Configuration

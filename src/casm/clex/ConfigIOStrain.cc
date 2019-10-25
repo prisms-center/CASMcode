@@ -54,7 +54,7 @@ namespace CASM {
     //****************************************************************************************
 
     bool RelaxationStrain::validate(const Configuration &_config) const {
-      return _config.calc_properties(m_calctype).contains("relaxation_deformation");
+      return _config.calc_properties(m_calctype).global.count("deformation");
     }
 
     //****************************************************************************************
@@ -80,7 +80,7 @@ namespace CASM {
 
     //****************************************************************************************
     Eigen::VectorXd RelaxationStrain::evaluate(const Configuration &_config) const {
-      return m_straincalc.unrolled_strain_metric(_config.calc_properties(m_calctype)["relaxation_deformation"].get<Eigen::Matrix3d>());
+      return m_straincalc.unrolled_strain_metric(_config.calc_properties(m_calctype).global.at("deformation"));
     }
 
     //****************************************************************************************

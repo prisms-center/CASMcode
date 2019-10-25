@@ -34,16 +34,14 @@ namespace CASM {
     DiffTransConfigMapper::DiffTransConfigMapper(const PrimClex &_pclex,
                                                  double _lattice_weight,
                                                  double _max_volume_change/*=0.5*/,
-                                                 int options/*=robust*/,
+                                                 int options/*=StrucMapper::robust*/,
                                                  double _tol/*=TOL*/) :
       m_pclex(&_pclex),
       m_lattice_weight(_lattice_weight),
       m_max_volume_change(_max_volume_change),
       m_min_va_frac(0.),
       m_max_va_frac(1.),
-      m_robust_flag(options & robust),
-      m_strict_flag(options & strict),
-      m_rotate_flag(options & rotate),
+      m_options(options),
       m_tol(max(1e-9, _tol)) {
       //squeeze lattice_weight into (0,1] if necessary
       m_lattice_weight = max(min(_lattice_weight, 1.0), 1e-9);
@@ -66,7 +64,7 @@ namespace CASM {
       ConfigMapper mapper(primclex(),
                           lattice_weight(),
                           m_max_volume_change,
-                          m_robust_flag || m_rotate_flag || m_strict_flag,
+                          m_options,
                           primclex().crystallography_tol());
       //Find out which species are moving from which basis site to the other
       mapper.struc_mapper().set_max_va_frac(m_max_va_frac);
@@ -225,9 +223,11 @@ namespace CASM {
           count++;
         }
         if(!all_strucs.contains("kra")) {
-          all_strucs["kra"] = *(std::max_element(energies.begin(), energies.end())) - (energies.front() + energies.back()) / 2.0;
+          result.kra = *(std::max_element(energies.begin(), energies.end())) - (energies.front() + energies.back()) / 2.0;
         }
-        result.kra = all_strucs["kra"].get<double>();
+        else {
+          result.kra = all_strucs["kra"].get<double>();
+        }
       }
       result.success = true;
       return result;

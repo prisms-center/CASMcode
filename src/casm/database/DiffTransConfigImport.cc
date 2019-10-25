@@ -24,13 +24,14 @@ namespace CASM {
     StructureMap<Kinetics::DiffTransConfiguration>::StructureMap(
       const PrimClex &primclex,
       std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper) :
-      ConfigData<Kinetics::DiffTransConfiguration>(primclex, null_log()),
+      //ConfigData<Kinetics::DiffTransConfiguration>(primclex, null_log()),
       m_difftransconfigmapper(std::move(mapper)) {}
 
     StructureMap<Kinetics::DiffTransConfiguration>::StructureMap(
       const PrimClex &primclex,
       const jsonParser &kwargs) :
-      ConfigData<Kinetics::DiffTransConfiguration>(primclex, null_log()) {
+      //ConfigData<Kinetics::DiffTransConfiguration>(primclex, null_log())
+    {
 
       // -- read settings --
       bool rotate = true;
@@ -155,8 +156,8 @@ namespace CASM {
       //res.mapped_props.mapped["cart_op"] = map_result.cart_op;
       //This is a hack right now because default conflict score looks for minimum
       // relaxed_energy which doesn't make sense for diff_trans_config
-      res.mapped_props.mapped["relaxed_energy"] = map_result.kra;
-      res.mapped_props.mapped["kra"] = map_result.kra;
+      //res.mapped_props.scalar("relaxed_energy") = map_result.kra;
+      res.mapped_props.scalar("kra") = map_result.kra;
 
 
 

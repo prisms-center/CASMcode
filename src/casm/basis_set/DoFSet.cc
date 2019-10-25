@@ -148,7 +148,7 @@ namespace CASM {
 
   /// \brief Apply SymOp to a DoFSet
   DoFSet &apply(const SymOp &op, DoFSet &_dof) {
-    _dof.transform_basis(_dof.traits().symop_to_matrix(op.matrix(), op.time_reversal()));
+    _dof.transform_basis(_dof.traits().symop_to_matrix(op.matrix(), op.tau(), op.time_reversal()));
     return _dof;
   }
 

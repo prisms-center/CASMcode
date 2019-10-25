@@ -6,6 +6,7 @@
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/misc/ParsingDictionary.hh"
 
 namespace CASM {
   template<typename T>

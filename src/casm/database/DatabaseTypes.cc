@@ -61,7 +61,7 @@ namespace CASM {
 
         template<typename T>
         void eval() {
-          ConfigData<T> data(primclex, null_log());
+          ConfigData data(primclex, null_log(), TypeTag<T>());
           auto it = primclex.db<T>().scel_range(scelname).begin();
           auto end = primclex.db<T>().scel_range(scelname).end();
           for(; it != end; ++it) {

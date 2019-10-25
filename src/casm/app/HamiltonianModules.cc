@@ -22,7 +22,8 @@ namespace CASM {
 
   HamiltonianModules::HamiltonianModules(ProjectSettings const *_set) :
     m_dof_dict(make_parsing_dictionary<DoFDictionary::value_type>().clone()),
-    m_aniso_val_dict(make_parsing_dictionary<AnisoValDictionary::value_type>().clone()) {
+    m_aniso_val_dict(make_parsing_dictionary<AnisoValDictionary::value_type>().clone()),
+    m_symrep_builder_dict(make_parsing_dictionary<SymRepBuilderDictionary::value_type>().clone()) {
     //std::cout << "Inside HamiltonianModules Constructor\n";
     // add DoF plugins
     if(_set) {

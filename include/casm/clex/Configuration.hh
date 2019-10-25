@@ -76,7 +76,7 @@ namespace CASM {
                            const jsonParser &source,
                            const ConfigDoF &_dof);
 
-
+    /*
     /// Construct a Configuration from JSON data
     Configuration(const Supercell &_supercell,
                   const std::string &_id,
@@ -86,7 +86,7 @@ namespace CASM {
     Configuration(const PrimClex &_primclex,
                   const std::string &_configname,
                   const jsonParser &_data);
-
+    */
     /// Build a Configuration sized to _scel with all fields initialized and set to zero
     static Configuration zeros(Supercell const &_scel);
 
@@ -339,13 +339,10 @@ namespace CASM {
     jsonParser &to_json(jsonParser &json) const;
 
     /// Reads the Configuration from JSON
-    void from_json(const jsonParser &json, const Supercell &scel, std::string _id);
+    //void from_json(const jsonParser &json, const Supercell &scel, std::string _id);
 
     /// Reads the Configuration from JSON
-    void from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname);
-
-    /// Writes incomplete properties.calc.json of config for kra purposes
-    std::ostream &print_properties(std::string calctype, std::ostream &sout) const;
+    //void from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname);
 
     /// Writes incomplete properties.calc.json of config for kra purposes
     jsonParser print_properties(std::string calctype) const;
@@ -377,6 +374,7 @@ namespace CASM {
 
   };
 
+  /*
   template<>
   struct jsonConstructor<Configuration> {
 
@@ -390,6 +388,7 @@ namespace CASM {
       const Supercell &scel,
       const std::string &id);
   };
+  */
 
   /// \brief Holds results of Configuration::insert
   ///
@@ -451,15 +450,6 @@ namespace CASM {
   Configuration sub_configuration(Supercell &sub_scel,
                                   const Configuration &super_config,
                                   const UnitCell &origin = UnitCell(0, 0, 0));
-
-  /// \brief Retrieves specified calculated property having type specified by ValueType
-  /// \param prop_name Name of property, corresponding to its key in properties.calc.json
-  template <typename ValueType>
-  ValueType get_calc_property(Configuration const &_config, std::string const &prop_name) {
-    ValueType result;
-    _config.calc_properties()[prop_name].get(result);
-    return result;
-  }
 
   /// \brief Make Configuration from name string
   Configuration make_configuration(const PrimClex &primclex, std::string name);

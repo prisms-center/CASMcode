@@ -23,17 +23,36 @@ namespace CASM {
 
     }
 
+    /// \brief Returns name of SymRepBuilder type
     std::string const &name() const {
       return m_name;
     }
 
+    /// \brief Returns true if symmetry representation is affected by time-reversal
     bool time_reversal_active() const {
       return m_time_reversal;
     }
 
+    /// \brief Virtual destructor allows deletion of derived classes through pointer to interface
     virtual ~SymRepBuilderInterface() {};
 
-    virtual Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix, bool time_reversal, Index dim) const = 0;
+    /// \brief Given the 3x3 rotation/rotoreflection matrix, translation vector 'tau', and time_reversal operator of Cartesian SymOp,
+    /// constructs a dim x dim matrix representation of the symop
+    /// Derived implementations may require that dim have a specific value, or fall within a range of allowed values.
+    virtual Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                            Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                            bool time_reversal,
+                                            Index dim) const = 0;
+
+    /// \brief Given the 3x3 rotation/rotoreflection matrix, translation vector 'tau', and time_reversal operator of Cartesian SymOp,
+    /// constructs a dim x dim complexmatrix representation of the symop
+    /// Derived implementations may require that dim have a specific value, or fall within a range of allowed values.
+    virtual Eigen::MatrixXcd symop_to_complex_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                                     Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                                     bool time_reversal,
+                                                     Index dim) const {
+      return symop_to_matrix(_matrix, _tau, time_reversal, dim).cast<std::complex<double> >();
+    }
 
     std::unique_ptr<SymRepBuilderInterface> clone() const {
       return std::unique_ptr<SymRepBuilderInterface>(_clone());
@@ -63,7 +82,10 @@ namespace CASM {
     NullSymRepBuilder() :
       SymRepBuilderBase("Null") {}
 
-    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix, bool time_reversal, Index dim) const override {
+    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                    Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                    bool time_reversal,
+                                    Index dim) const override {
       return Eigen::MatrixXd();
     }
   private:
@@ -77,7 +99,10 @@ namespace CASM {
     CartesianSymRepBuilder() :
       SymRepBuilderBase("Cartesian") {}
 
-    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix, bool time_reversal, Index dim) const override {
+    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                    Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                    bool time_reversal,
+                                    Index dim) const override {
       return _matrix;
     }
   private:
@@ -91,7 +116,10 @@ namespace CASM {
     AngularMomentumSymRepBuilder() :
       TimeReversalSymRepBuilderBase("AngularMomentum") {}
 
-    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix, bool time_reversal, Index dim) const override {
+    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                    Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                    bool time_reversal,
+                                    Index dim) const override {
       return ((time_reversal ? -1. : 1.) * _matrix.determinant()) * _matrix;
     }
   private:
@@ -105,7 +133,10 @@ namespace CASM {
     TimeReversalSymRepBuilder() :
       TimeReversalSymRepBuilderBase("TimeReversal") {}
 
-    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix, bool time_reversal, Index dim) const override {
+    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                    Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                    bool time_reversal,
+                                    Index dim) const override {
       return -Eigen::MatrixXd::Identity(dim, dim);
     }
   private:
@@ -119,7 +150,10 @@ namespace CASM {
     Rank2TensorSymRepBuilder() :
       SymRepBuilderBase("Rank2Tensor") {}
 
-    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &S, bool time_reversal, Index dim) const override {
+    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &S,
+                                    Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                    bool time_reversal,
+                                    Index dim) const override {
       Eigen::MatrixXd result(6, 6);
 
       result <<
@@ -153,31 +187,38 @@ namespace CASM {
     static AnisoValTraits magspin();
     static AnisoValTraits magmom();
 
+    static std::string name_suffix(std::string const &_name, char delim = '_') {
+      std::string result;
+      for(char c : _name) {
+        if(c == delim)
+          result.clear();
+        else
+          result.push_back(c);
+      }
+      return result;
+    }
+
+    AnisoValTraits(std::string const &_name);
+
     AnisoValTraits(std::string const &_name,
                    std::vector<std::string> const &_std_var_names,
                    unsigned char _options,
                    SymRepBuilderInterface const &_symrep_builder = NullSymRepBuilder(),
                    std::set<std::string> const &_incompatible = {},
                    std::set<std::string> const &_must_apply_before = {},
-                   std::set<std::string> const &_must_apply_after = {}) :
-      m_name(_name),
-      m_standard_var_names(_std_var_names),
-      m_opt(_options),
-      m_symrep_builder(_symrep_builder.clone()),
-      m_incompatible(_incompatible),
-      m_apply_before(_must_apply_before),
-      m_apply_after(_must_apply_after) {
-
-    }
+                   std::set<std::string> const &_must_apply_after = {},
+                   bool _default = false);
 
     static std::string class_desc() {
       return "AnisoValTraits";
     }
 
     /// \brief Generate a symmetry representation for the supporting vector space
-    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix, bool time_reversal) const {
+    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                    Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                    bool time_reversal) const {
       if(m_symrep_builder != nullptr) {
-        return m_symrep_builder->symop_to_matrix(_matrix, time_reversal, dim());
+        return m_symrep_builder->symop_to_matrix(_matrix, _tau, time_reversal, dim());
       }
       //else
       return Eigen::MatrixXd::Identity(dim(), dim());
@@ -186,6 +227,16 @@ namespace CASM {
     /// \brief const access of name
     std::string const &name() const {
       return m_name;
+    }
+
+    /// \brief return true if *this has 'default' designation, meaning it can be overridden
+    bool is_default() const {
+      return m_default;
+    }
+
+    /// \brief return 'options' bitflag
+    unsigned char options() const {
+      return m_opt;
     }
 
     // Please use !AnisoValTraits::global() instead of implementing AnisoValTraits::local()
@@ -228,12 +279,6 @@ namespace CASM {
       return name() < other_name;
     }
 
-    /// \brief comparison of name, domain (discrete/continuous) and mode (local/global)
-    bool identical(AnisoValTraits const &other) const {
-      return name() == other.name()
-             && m_opt == other.m_opt;
-    }
-
     /// \brief allow implicit conversion to std::string (name)
     operator std::string const &() const {
       return name();
@@ -262,8 +307,16 @@ namespace CASM {
       return notstd::make_unique<AnisoValTraits>(*this);
     }
 
+    std::string symrep_builder_name() const {
+      if(m_symrep_builder)
+        return m_symrep_builder->name();
+      else
+        return "NULL";
+    }
+
   protected:
     std::string m_name;
+    bool m_default;
     std::vector<std::string> m_standard_var_names;
     unsigned char m_opt;
     notstd::cloneable_ptr<const SymRepBuilderInterface> m_symrep_builder;
@@ -272,6 +325,18 @@ namespace CASM {
     std::set<std::string> m_apply_after;
   };
 
+
+  /// \brief comparison of name, domain (discrete/continuous) and mode (local/global)
+  bool identical(AnisoValTraits const &A, AnisoValTraits const &B) {
+    return (A.name() == B.name()
+            && A.is_default() == B.is_default()
+            && A.symrep_builder_name() == B.symrep_builder_name()
+            && A.standard_var_names() == B.standard_var_names()
+            && A.options() == B.options()
+            && A.must_apply_before() == B.must_apply_before()
+            && A.must_apply_after() == B.must_apply_after()
+            && A.incompatible() == B.incompatible());
+  }
 
   namespace AnisoVal_impl {
     /// \brief A class to manage dynamic evaluation of BasisFunctions

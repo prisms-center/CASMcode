@@ -6,16 +6,57 @@
 #include "casm/database/PropertiesDatabase.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 
-// explicit template instantiations
-#define INST_Import(r, data, type) \
-template class ConfigData<type>; \
-template class StructureMap<type>; \
-
 namespace CASM {
   namespace DB {
 
-    BOOST_PP_SEQ_FOR_EACH(INST_Import, _, CASM_DB_CONFIG_TYPES)
+    jsonParser &to_json(MappingSettings const &_set, jsonParser &_json) {
+      _json["lattice_weight"] = _set.lattice_weight;
+      _json["ideal"] = _set.ideal;
+      _json["strict"] = _set.strict;
+      if(!_set.forced_lattices.empty())
+        _json["forced_lattices"] = _set.forced_lattices;
+      if(!_set.filter.empty())
+        _json["filter"] = _set.filter;
+      _json["cost_tol"] = _set.cost_tol;
+      _json["min_va_frac"] = _set.min_va_frac;
+      _json["max_va_frac"] = _set.max_va_frac;
+      _json["max_vol_change"] = _set.max_vol_change;
 
+      return _json;
+    }
+
+    jsonParser const &from_json(MappingSettings &_set, jsonParser const &_json) {
+      _set.set_default();
+
+      if(_json.contains("lattice_weight"))
+        _set.lattice_weight = _json["lattice_weight"].get<double>();
+
+      if(_json.contains("ideal"))
+        _set.ideal = _json["ideal"].get<bool>();
+
+      if(_json.contains("strict"))
+        _set.strict = _json["strict"].get<bool>();
+
+      if(_json.contains("forced_lattices"))
+        _set.forced_lattices = _json["forced_lattices"].get<std::vector<std::string> >();
+
+      if(_json.contains("filter"))
+        _set.filter = _json["filter"].get<std::string>();
+
+      if(_json.contains("cost_tol"))
+        _set.cost_tol = _json["cost_tol"].get<double>();
+
+      if(_json.contains("min_va_frac"))
+        _set.min_va_frac = _json["min_va_frac"].get<double>();
+
+      if(_json.contains("max_va_frac"))
+        _set.max_va_frac = _json["max_va_frac"].get<double>();
+
+      if(_json.contains("max_vol_change"))
+        _set.max_vol_change = _json["max_vol_change"].get<double>();
+
+      return _json;
+    }
 
     /// Create a new report directory to avoid overwriting existing results
     fs::path create_report_dir(fs::path report_dir) {
@@ -45,19 +86,19 @@ namespace CASM {
       /// Use 'from_configname' as 'configname'
       GenericDatumFormatter<std::string, ConfigIO::Result> configname() {
         return GenericDatumFormatter<std::string, Result>("configname", "", [&](const Result & res) {
-          return res.mapped_props.from;
+          return res.map_result.props.from;
         });
       }
 
       GenericDatumFormatter<std::string, ConfigIO::Result> from_configname() {
         return GenericDatumFormatter<std::string, Result>("from_configname", "", [&](const Result & res) {
-          return res.mapped_props.from;
+          return res.map_result.props.from;
         });
       }
 
       GenericDatumFormatter<std::string, ConfigIO::Result> to_configname() {
         return GenericDatumFormatter<std::string, Result>("to_configname", "", [&](const Result & res) {
-          return res.mapped_props.to;
+          return res.map_result.props.to;
         });
       }
 
@@ -78,10 +119,10 @@ namespace CASM {
                  "preexisting_data",
                  "",
         [&](const Result & res) {
-          return data_results.find(res.mapped_props.from)->second.preexisting;
+          return data_results.find(res.map_result.props.from)->second.preexisting;
         },
         [&](const Result & res) {
-          return data_results.find(res.mapped_props.from) != data_results.end();
+          return data_results.find(res.map_result.props.from) != data_results.end();
         });
       }
 
@@ -90,10 +131,10 @@ namespace CASM {
                  "import_data",
                  "",
         [&](const Result & res) {
-          return data_results.find(res.mapped_props.from)->second.last_insert == res.pos;
+          return data_results.find(res.map_result.props.from)->second.last_insert == res.pos;
         },
         [&](const Result & res) {
-          return data_results.count(res.mapped_props.from) != 0;
+          return data_results.count(res.map_result.props.from) != 0;
         });
       }
 
@@ -102,7 +143,7 @@ namespace CASM {
                  "import_additional_files",
                  "",
         [&](const Result & res) {
-          auto it = data_results.find(res.mapped_props.from);
+          auto it = data_results.find(res.map_result.props.from);
           if(it != data_results.end()) {
             return it->second.copy_more;
           }
@@ -114,10 +155,10 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "lattice_deformation_cost", "",
         [&](const Result & res) {
-          return res.mapped_props.mapped["lattice_deformation_cost"].get<double>();
+          return res.map_result.props.scalar("lattice_deformation_cost");
         },
         [&](const Result & res) {
-          return res.mapped_props.mapped.contains("lattice_deformation_cost");
+          return res.map_result.props.has_scalar("lattice_deformation_cost");
         });
       }
 
@@ -125,10 +166,10 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "basis_deformation_cost", "",
         [&](const Result & res) {
-          return res.mapped_props.mapped["basis_deformation_cost"].get<double>();
+          return res.map_result.props.scalar("basis_deformation_cost");
         },
         [&](const Result & res) {
-          return res.mapped_props.mapped.contains("basis_deformation_cost");
+          return res.map_result.props.has_scalar("basis_deformation_cost");
         });
       }
 
@@ -136,10 +177,10 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "relaxed_energy", "",
         [&](const Result & res) {
-          return res.mapped_props.mapped["relaxed_energy"].get<double>();
+          return res.map_result.props.scalar("relaxed_energy");
         },
         [&](const Result & res) {
-          return res.mapped_props.mapped.contains("relaxed_energy");
+          return res.map_result.props.has_scalar("relaxed_energy");
         });
       }
 
@@ -147,7 +188,7 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "score", "",
         [&](const Result & res) {
-          return db_props.score(res.mapped_props);
+          return db_props.score(res.map_result.props);
         },
         [&](const Result & res) {
           return res.has_data;
@@ -158,10 +199,10 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "best_score", "",
         [&](const Result & res) {
-          return db_props.best_score(res.mapped_props.to);
+          return db_props.best_score(res.map_result.props.to);
         },
         [&](const Result & res) {
-          return db_props.find_via_to(res.mapped_props.to) != db_props.end();
+          return db_props.find_via_to(res.map_result.props.to) != db_props.end();
         });
       }
 
@@ -169,10 +210,10 @@ namespace CASM {
         return GenericDatumFormatter<bool, Result>(
                  "is_best", "",
         [&](const Result & res) {
-          return res.mapped_props.from == db_props.relaxed_from(res.mapped_props.to);
+          return res.map_result.props.from == db_props.relaxed_from(res.map_result.props.to);
         },
         [&](const Result & res) {
-          return db_props.find_via_to(res.mapped_props.to) != db_props.end();
+          return db_props.find_via_to(res.map_result.props.to) != db_props.end();
         });
       }
 
@@ -220,21 +261,6 @@ namespace CASM {
       }
     }
 
-    ConfigDataGeneric::ConfigDataGeneric(const PrimClex &_primclex, Log &_file_log) :
-      Logging(_primclex),
-      m_primclex(_primclex), m_file_log(_file_log) {}
-
-    /// \brief Path to default calctype training_data directory for config
-    Database<Supercell> &ConfigDataGeneric::db_supercell() const {
-      return primclex().db<Supercell>();
-    }
-
-    /// \brief Path to default calctype training_data directory for config
-    fs::path ConfigDataGeneric::calc_dir(const std::string configname) const {
-      return primclex().dir().configuration_calc_dir(configname,
-                                                     primclex().settings().default_clex().calctype);
-    }
-
     /// \brief Return path to properties.calc.json that will be imported
     ///        checking a couple possible locations relative to pos_path
     ///
@@ -244,7 +270,7 @@ namespace CASM {
     /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
     /// else returns empty path
     ///
-    fs::path ConfigDataGeneric::calc_properties_path(fs::path pos_path) const {
+    fs::path ConfigData::calc_properties_path(fs::path pos_path, PrimClex const &_pclex) {
 
       // check 1: is a JSON file
       if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
@@ -255,7 +281,7 @@ namespace CASM {
       {
         fs::path dft_path = pos_path;
         dft_path.remove_filename();
-        (dft_path /= ("calctype." + primclex().settings().default_clex().calctype)) /= "properties.calc.json";
+        (dft_path /= ("calctype." + _pclex.settings().default_clex().calctype)) /= "properties.calc.json";
         if(fs::exists(dft_path)) {
           return dft_path;
         }
@@ -275,9 +301,33 @@ namespace CASM {
       return fs::path();
     }
 
+    // If pos_path can be used to resolve a properties.calc.json, return its path.
+    // Otherwise return pos_path
+    static fs::path resolve_struc_path(fs::path pos_path, PrimClex const &_pclex) {
+      fs::path p = ConfigData::calc_properties_path(pos_path, _pclex);
+      if(!p.empty())
+        pos_path = p;
+      return pos_path;
+    }
+
+    /// \brief Path to default calctype training_data directory for config
+    Database<Supercell> &ConfigData::db_supercell() const {
+      return primclex().db<Supercell>();
+    }
+
+    PropertiesDatabase &ConfigData::db_props() const {
+      return m_db_props_func();
+    }
+
+    /// \brief Path to default calctype training_data directory for config
+    fs::path ConfigData::calc_dir(const std::string configname) const {
+      return primclex().dir().configuration_calc_dir(configname,
+                                                     primclex().settings().default_clex().calctype);
+    }
+
     /// \brief Return true if there are existing files in the traning_data directory
     ///        for a particular configuration
-    bool ConfigDataGeneric::has_existing_files(const std::string &from_configname) const {
+    bool ConfigData::has_existing_files(const std::string &from_configname) const {
       fs::path p = calc_dir(from_configname);
       if(!fs::exists(p)) {
         return false;
@@ -287,28 +337,24 @@ namespace CASM {
 
     /// \brief Return true if there are existing files in the traning_data directory
     ///        for a particular configuration
-    bool ConfigDataGeneric::has_existing_data(const std::string &from_configname) const {
+    bool ConfigData::has_existing_data(const std::string &from_configname) const {
       return db_props().find_via_from(from_configname) != db_props().end();
     }
 
-    bool ConfigDataGeneric::has_existing_data_or_files(const std::string &from_configname) const {
+    bool ConfigData::has_existing_data_or_files(const std::string &from_configname) const {
       return has_existing_data(from_configname) || has_existing_files(from_configname);
     }
 
     /// Check if 'properties.calc.json' file has not changed since last read
     ///
     /// - Compares 'data_timestamp' && fs::last_write_time
-    bool ConfigDataGeneric::no_change(const std::string &configname) const {
-      fs::path prop_path = calc_properties_path(configname);
+    bool ConfigData::no_change(const std::string &configname) const {
+      fs::path prop_path = calc_properties_path(configname, primclex());
       if(!prop_path.empty()) {
         auto it = db_props().find_via_from(configname);
-        if(it != db_props().end()) {
-          auto json_it = it->unmapped.find("data_timestamp");
-          if(json_it != it->unmapped.end() &&
-             json_it->get<time_t>() == fs::last_write_time(prop_path)) {
-
-            return true;
-          }
+        if(it != db_props().end()
+           && it->timestamp == fs::last_write_time(prop_path)) {
+          return true;
         }
       }
       return false;
@@ -316,7 +362,7 @@ namespace CASM {
 
     /// \brief Remove existing files in the traning_data directory for a particular
     ///        configuration
-    void ConfigDataGeneric::rm_files(const std::string &configname, bool dry_run) const {
+    void ConfigData::rm_files(const std::string &configname, bool dry_run) const {
       fs::path p = calc_dir(configname);
       if(!fs::exists(p)) {
         return;
@@ -339,7 +385,7 @@ namespace CASM {
     /// - did_cp: if properties.calc.json file was found and copied
     /// - did_cp_more: if additional files were found and copied
     ///
-    std::pair<bool, bool> ConfigDataGeneric::cp_files(
+    std::pair<bool, bool> ConfigData::cp_files(
       const fs::path &pos_path,
       const std::string &configname,
       bool dry_run,
@@ -355,7 +401,7 @@ namespace CASM {
         }
       }
 
-      fs::path calc_props_path = calc_properties_path(pos_path);
+      fs::path calc_props_path = calc_properties_path(pos_path, primclex());
       if(calc_props_path.empty()) {
         return std::make_pair(did_cp, did_cp_more);
       }

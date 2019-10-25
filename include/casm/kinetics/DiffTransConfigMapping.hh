@@ -69,12 +69,6 @@ namespace CASM {
     class DiffTransConfigMapper {
     public:
       enum NullInitializer {null_initializer};
-      enum Options {none = 0,
-                    rotate = (1u << 0),
-                    strict = (1u << 1),
-                    robust = (1u << 2)
-                   };
-
       ///\brief Default construction not allowed -- this constructor provides an override
       DiffTransConfigMapper(NullInitializer) :
         m_pclex(nullptr),
@@ -101,20 +95,21 @@ namespace CASM {
       ///
       ///\param _options
       ///\parblock
-      ///          specify a combination of DiffTransConfigMapper::Options using bitwise OR: Ex. _options=DiffTransConfigMapper::rotate|ConfigMapper::strict
+      ///          specify a combination of StrucMapper::Options using bitwise OR: Ex. _options=StrucMapper::robust|StrucMapper::strict
       ///          Options are:
-      ///             'rotate': removes rigid rotation of the imported crystal, in a least-squares sense (i.e., yields a symmetric deformation tensor)
+      ///             'strict': prevents transformation into canonical form. Tries to preserve original orientation of imported structure if possible
       ///             'robust': does not assume the imported structure might be ideal ('robust' is much slower for importing ideal structures, but if 'robust' is not
       ///                       set and a non-ideal structure is passed, this will be almost always be detected and robust methods will be used instead. Thus, 'robust'
       ///                       is slightly faster if imported Structures are *not* ideal)
-      ///             'strict': prevents transformation into canonical form. Tries to preserve original orientation of imported structure if possible
+      ///             'sym_strain': only calculates contribution to lattice mapping score due to symmetry-breaking strains
+      ///             'sym_basis': only calculates contribution to basis mapping score due to symmetry-breaking displacements
       ///\endparblock
       ///
       ///\param _tol tolerance for mapping comparisons
       DiffTransConfigMapper(const PrimClex &_pclex,
                             double _lattice_weight,
                             double _max_volume_change = 0.5,
-                            int _options = robust, // this should actually be a bitwise-OR of ConfigMapper::Options
+                            int _options = StrucMapper::robust, // this should actually be a bitwise-OR of StrucMapper::Options
                             double _tol = TOL);
 
 
@@ -227,7 +222,7 @@ namespace CASM {
       double m_max_volume_change;
       double m_min_va_frac;
       double m_max_va_frac;
-      bool m_robust_flag, m_strict_flag, m_rotate_flag;
+      int m_options;
       double m_tol;
 
       const std::vector<Lattice> &_lattices_of_vol(Index prim_vol) const;

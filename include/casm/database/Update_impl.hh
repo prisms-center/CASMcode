@@ -23,7 +23,7 @@ namespace CASM {
           continue;
         }
         std::string name = val.first;
-        fs::path pos = calc_properties_path(primclex(), name);
+        fs::path pos = calc_properties_path(name, primclex());
 
         // reasons to update data or not:
         //
@@ -47,15 +47,19 @@ namespace CASM {
         // erase existing data (not files), unlinking relaxation mappings && resetting 'best' data
         db_props().erase_via_from(name);
 
+        bool primitive_only = true;
         std::vector<ConfigIO::Result> tvec;
-        auto config_it = db_config().find(name);
-        m_structure_mapper.map(pos, config_it, std::back_inserter(tvec));
+        auto config_it = db_config<ConfigType>().find(name);
+        if(config_it == db_config<ConfigType>().end())
+          m_structure_mapper.map(resolve_struc_path(pos, primclex()), nullptr, primitive_only, std::back_inserter(tvec));
+        else
+          m_structure_mapper.map(resolve_struc_path(pos, primclex()), notstd::make_unique<Configuration>(*config_it), primitive_only, std::back_inserter(tvec));
         for(auto &res : tvec) {
           results.push_back(res);
           // if mapped && has data, insert
-          if(!res.mapped_props.to.empty() && res.has_data) {
+          if(!res.map_result.props.to.empty() && res.has_data) {
             // insert data:
-            db_props().insert(res.mapped_props);
+            db_props().insert(res.map_result.props);
           }
         }
 
@@ -63,7 +67,7 @@ namespace CASM {
       _update_report(results, selection);
 
       db_supercell().commit();
-      db_config().commit();
+      db_config<ConfigType>().commit();
       db_props().commit();
     }
 
@@ -92,25 +96,25 @@ namespace CASM {
 
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
-        if(res.mapped_props.to.empty()) {
+        if(res.map_result.props.to.empty()) {
           fail.push_back(res);
         }
         else {
-          if(all_to.find(res.mapped_props.to) == all_to.end()) {
-            all_to.insert(std::make_pair(res.mapped_props.to, 0));
+          if(all_to.find(res.map_result.props.to) == all_to.end()) {
+            all_to.insert(std::make_pair(res.map_result.props.to, 0));
           }
-          all_to[res.mapped_props.to]++;
+          all_to[res.map_result.props.to]++;
           success.push_back(res);
         }
       }
 
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
-        if(all_to[res.mapped_props.to] > 1) {
+        if(all_to[res.map_result.props.to] > 1) {
           conflict.push_back(res);
-          if(res.mapped_props.from != res.mapped_props.to) {
+          if(res.map_result.props.from != res.map_result.props.to) {
             unstable.push_back(res);
-            if(!selection.is_selected(res.mapped_props.to)) {
+            if(!selection.is_selected(res.map_result.props.to)) {
               unselected.push_back(res);
             }
           }
@@ -124,8 +128,8 @@ namespace CASM {
         fs::path p = m_report_dir / (prefix + "_fail");
         fs::ofstream sout(p);
 
-        log() << "WARNING: Could not map " << fail.size() << " results." << std::endl;
-        log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "WARNING: Could not map " << fail.size() << " results." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         sout << formatter(fail.begin(), fail.end());
       }
@@ -135,8 +139,8 @@ namespace CASM {
         fs::path p = m_report_dir / (prefix + "_map_success");
         fs::ofstream sout(p);
 
-        log() << "Successfully mapped " << success.size() << " results." << std::endl;
-        log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "Successfully mapped " << success.size() << " results." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         sout << formatter(success.begin(), success.end());
       }
@@ -146,8 +150,8 @@ namespace CASM {
         fs::path p = m_report_dir / (prefix + "_map_conflict");
         fs::ofstream sout(p);
 
-        log() << "WARNING: Found " << conflict.size() << " conflicting relaxation results." << std::endl;
-        log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "WARNING: Found " << conflict.size() << " conflicting relaxation results." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         sout << formatter(conflict.begin(), conflict.end());
       }
@@ -157,8 +161,8 @@ namespace CASM {
         fs::path p = m_report_dir / (prefix + "_unstable");
         fs::ofstream sout(p);
 
-        log() << "WARNING: Found " << unstable.size() << " unstable relaxations." << std::endl;
-        log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "WARNING: Found " << unstable.size() << " unstable relaxations." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         sout << formatter(unstable.begin(), unstable.end());
       }
@@ -168,8 +172,8 @@ namespace CASM {
         fs::path p = m_report_dir / (prefix + "_unselected");
         fs::ofstream sout(p);
 
-        log() << "WARNING: Found " << unselected.size() << " unstable relaxations to unselected configurations." << std::endl;
-        log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "WARNING: Found " << unselected.size() << " unstable relaxations to unselected configurations." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         sout << formatter(unselected.begin(), unselected.end());
       }

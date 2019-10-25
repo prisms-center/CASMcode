@@ -27,18 +27,20 @@ namespace CASM {
     template<typename T> class DatabaseIterator;
 
     template<>
-    class StructureMap<Kinetics::DiffTransConfiguration> :
-      public ConfigData<Kinetics::DiffTransConfiguration> {
+    class StructureMap<Kinetics::DiffTransConfiguration> {
+      //:public ConfigData<Kinetics::DiffTransConfiguration> {
 
     public:
 
+      using ConfigType = Kinetics::DiffTransConfiguration;
+
       /// Construct with PrimClex and by moving a ConfigMapper
-      StructureMap<Kinetics::DiffTransConfiguration>(
+      StructureMap<ConfigType>(
         const PrimClex &_primclex,
         std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper);
 
       /// Construct with PrimClex and settings (see Import / Update desc)
-      StructureMap<Kinetics::DiffTransConfiguration>(
+      StructureMap<ConfigType>(
         const PrimClex &_primclex,
         const jsonParser &kwargs);
 
@@ -83,7 +85,7 @@ namespace CASM {
       /// \brief Constructor
       Import(
         const PrimClex &primclex,
-        const StructureMap<Kinetics::DiffTransConfiguration> &mapper,
+        const StructureMap<ConfigType> &mapper,
         bool import_data,
         bool copy_additional_files,
         bool overwrite,
@@ -93,7 +95,7 @@ namespace CASM {
       static const std::string desc;
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::ImportOption &import_opt);
 
-      using ImportT<Kinetics::DiffTransConfiguration>::import;
+      using ImportT<ConfigType>::import;
 
     protected:
 
@@ -111,13 +113,13 @@ namespace CASM {
       /// \brief Constructor
       Update(
         const PrimClex &primclex,
-        const StructureMap<Kinetics::DiffTransConfiguration> &mapper,
+        const StructureMap<ConfigType> &mapper,
         fs::path report_dir);
 
       static const std::string desc;
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt);
 
-      using UpdateT<Kinetics::DiffTransConfiguration>::update;
+      using UpdateT<ConfigType>::update;
 
     private:
 

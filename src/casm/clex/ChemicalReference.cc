@@ -402,7 +402,7 @@ namespace CASM {
       double close_dist = std::numeric_limits<double>::max();
 
       for(auto it = begin; it != end; ++it) {
-        if(!it->calc_properties().contains("relaxed_energy")) {
+        if(!it->calc_properties().has_scalar("relaxed_energy")) {
           continue;
         }
         double curr_dist = (target - comp(*it)).norm();

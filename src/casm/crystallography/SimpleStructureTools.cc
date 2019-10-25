@@ -299,86 +299,110 @@ namespace CASM {
 
   void from_json(SimpleStructure &_struc, const jsonParser &json) {
     std::string prefix = _struc.prefix();
-    if(!prefix.empty())
-      prefix.push_back('_');
+
+    Eigen::Matrix3d tmat;
+    tmat.setIdentity();
+
+    //if(!prefix.empty())
+    prefix.push_back('_');
 
     try {
       std::string tstr;
       CASM::from_json(tstr, json["coord_mode"]);
 
+      if(json.contains("lattice")) {
+        _struc.lat_column_mat = json["lattice"].get<Eigen::Matrix3d>().transpose();
+      }
+      else if(json.contains(prefix + "lattice")) {
+        _struc.lat_column_mat = json[prefix + "lattice"].get<Eigen::Matrix3d>().transpose();
+      }
+
       COORD_TYPE mode = CART;
-      if(tstr == "direct" || tstr == "Direct")
+      if(tstr == "direct" || tstr == "Direct") {
         mode = FRAC;
+        tmat = _struc.lat_column_mat;
+      }
 
-      _struc.lat_column_mat = json[prefix + "lattice"].get<Eigen::Matrix3d>().transpose();
       {
-        auto it = json.find(prefix + "global_dofs");
-        if(it != json.end()) {
-          for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-            _struc.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>();
+        std::vector<std::string> fields({"global_vals", "global_dofs"});
+        for(std::string const &field : fields) {
+          auto it = json.find(field);
+          if(it != json.end()) {
+            for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
+              _struc.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
+            }
           }
+        }
+        if(json.contains(prefix + "energy")) {
+          _struc.properties["energy"] = json[prefix + "energy"].get<Eigen::MatrixXd>();
+        }
+        else if(json.contains("energy")) {
+          _struc.properties["energy"] = json["energy"].get<Eigen::MatrixXd>();
         }
       }
 
 
-      if(json.contains("atoms_per_type")) {
-        std::vector<Index> ntype = json["atoms_per_type"].get<std::vector<Index> >();
-        std::vector<std::string> type = json["atoms_type"].get<std::vector<std::string> >();
+      for(std::string sp : {
+            "atom", "mol"
+          }) {
+        SimpleStructure::Info &sp_info = (sp == "atom" ? _struc.atom_info : _struc.mol_info);
+        if(json.contains(sp + "s_per_type")) {
+          std::vector<Index> ntype = json[sp + "s_per_type"].get<std::vector<Index> >();
 
-        for(Index i = 0; i < ntype.size(); ++i) {
-          for(Index j = 0; j < ntype[i]; ++j) {
-            _struc.atom_info.names.push_back(type[i]);
+          std::vector<std::string> type = json[sp + "s_type"].get<std::vector<std::string> >();
+
+          for(Index i = 0; i < ntype.size(); ++i) {
+            for(Index j = 0; j < ntype[i]; ++j) {
+              sp_info.names.push_back(type[i]);
+            }
           }
         }
-
-        if(mode == FRAC)
-          _struc.atom_info.coords = _struc.lat_column_mat * json[prefix + "atom_coords"].get<Eigen::MatrixXd>().transpose();
+        else if(json.contains(sp + "_types")) {
+          from_json(sp_info.names, json[sp + "_types"]);
+        }
         else
-          _struc.atom_info.coords = json[prefix + "atom_coords"].get<Eigen::MatrixXd>().transpose();
-      }
+          continue;
 
-      if(json.contains("mols_per_type")) {
-        std::vector<Index> ntype = json["mols_per_type"].get<std::vector<Index> >();
-        std::vector<std::string> type = json["mols_type"].get<std::vector<std::string> >();
-
-        for(Index i = 0; i < ntype.size(); ++i) {
-          for(Index j = 0; j < ntype[i]; ++j) {
-            _struc.mol_info.names.push_back(type[i]);
+        // Remainder of loop body only evaluates if continue statement above is not triggered
+        {
+          std::vector<std::string> fields({prefix + "basis", "basis", sp + "_coords"});
+          for(std::string const &field : fields) {
+            auto it = json.find(field);
+            if(it != json.end()) {
+              sp_info.coords = tmat * it->get<Eigen::MatrixXd>().transpose();
+              break;
+            }
           }
         }
 
-        if(mode == FRAC)
-          _struc.mol_info.coords = _struc.lat_column_mat * json[prefix + "mol_coords"].get<Eigen::MatrixXd>().transpose();
-        else
-          _struc.mol_info.coords = _struc.lat_column_mat * json[prefix + "mol_coords"].get<Eigen::MatrixXd>().transpose();
-      }
-
-      {
-        auto it = json.find(prefix + "atom_dofs");
-        if(it != json.end()) {
-          for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-            _struc.atom_info.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
+        {
+          std::vector<std::string> fields({sp + "_dofs", sp + "_vals"});
+          for(std::string const &field : fields) {
+            auto it = json.find(field);
+            if(it != json.end()) {
+              for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
+                sp_info.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
+              }
+            }
           }
         }
-      }
 
-      {
-        auto it = json.find(prefix + "mol_dofs");
-        if(it != json.end()) {
-          for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-            _struc.mol_info.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
-          }
+        if(json.contains(sp + "_selective_dynamics")) {
+          _struc.selective_dynamics = true;
+          sp_info.SD = json[sp + "_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
         }
       }
 
-      json.get_if(_struc.selective_dynamics, "selective_dynamics");
-      if(_struc.selective_dynamics) {
-        if(json.contains("atom_selective_dynamics")) {
-          _struc.atom_info.SD = json["atom_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
-        }
-        if(json.contains("mol_selective_dynamics")) {
-          _struc.mol_info.SD = json["mol_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
-        }
+      if(json.contains(prefix + "forces")) {
+        _struc.atom_info.properties["force"] = json[prefix + "forces"].get<Eigen::MatrixXd>().transpose();
+      }
+      else if(json.contains("forces")) {
+        _struc.atom_info.properties["force"] = json["forces"].get<Eigen::MatrixXd>().transpose();
+      }
+
+
+      if(json.contains("mol_selective_dynamics")) {
+        _struc.mol_info.SD = json["mol_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
       }
 
     }

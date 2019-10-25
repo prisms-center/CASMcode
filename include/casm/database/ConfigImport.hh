@@ -23,60 +23,52 @@ namespace CASM {
 namespace CASM {
   namespace DB {
 
-    template<typename T> class DatabaseIterator;
-
     template<>
-    class StructureMap<Configuration> : public ConfigData<Configuration> {
+    class StructureMap<Configuration> {// : public ConfigData {
 
     public:
 
       /// Construct with PrimClex and by moving a ConfigMapper
-      StructureMap<Configuration>(
-        const PrimClex &_primclex,
-        std::unique_ptr<ConfigMapper> mapper,
-        bool primitive_only,
-        std::vector<std::string> dof);
+      StructureMap<Configuration>(MappingSettings const &_set,
+                                  std::unique_ptr<ConfigMapper> mapper);
+
 
       /// Construct with PrimClex and settings (see Import / Update desc)
-      StructureMap<Configuration>(
-        const PrimClex &_primclex,
-        const jsonParser &kwargs,
-        bool primitive_only,
-        std::vector<std::string> dof);
+      StructureMap<Configuration>(MappingSettings const &_set,
+                                  const PrimClex &_primclex);
+
+
 
       typedef std::back_insert_iterator<std::vector<ConfigIO::Result> > map_result_inserter;
 
       /// \brief Specialized mapping method for Configuration
       ///
       /// \param p Path to structure or properties.calc.json file. Not guaranteed to exist or be valid.
-      /// \param hint Iterator to 'from' config for 'casm update', or 'end' if unknown as with 'casm import'.
+      /// \param hint std::unique_ptr<Configuration> to 'from' config for 'casm update', or 'end' if unknown as with 'casm import'.
       /// \param result Insert iterator of Result objects to output mapping results
       ///
       /// - Should output one or more mapping results from the structure located at specied path
       /// - >1 result handles case of non-primitive configurations
       /// - responsible for filling in Result data structure
       /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
-      map_result_inserter map(
-        fs::path p,
-        DatabaseIterator<ConfigType> hint,
-        map_result_inserter result) const;
+      map_result_inserter map(fs::path p,
+                              std::unique_ptr<Configuration> const &hint_config,
+                              bool primitive_only,
+                              map_result_inserter result) const;
 
-      /// Returns JSON with settings used after combing constructor input and defaults
-      const jsonParser &used() const;
+      /// Returns settings used for import
+      const MappingSettings &settings() const {
+        return m_set;
+      }
 
 
     private:
 
-      /// \brief Import Configuration with only occupation DoF
-      bool _occupation_only() const;
-
       /// \brief Read SimpleStructure to be imported
       SimpleStructure _make_structure(const fs::path &p) const;
 
+      MappingSettings m_set;
       std::unique_ptr<ConfigMapper> m_configmapper;
-      jsonParser m_used;
-      bool m_preserve_rotation;
-      bool m_primitive_only;
       std::vector<std::string> m_dof;
     };
 
@@ -84,21 +76,20 @@ namespace CASM {
     template<>
     class Import<Configuration> : public ImportT<Configuration> {
     public:
+      using ImportT<Configuration>::settings;
+      using ImportT<Configuration>::import;
 
       /// \brief Constructor
       Import(
         const PrimClex &primclex,
         const StructureMap<Configuration> &mapper,
-        bool import_data,
-        bool copy_additional_files,
-        bool overwrite,
-        fs::path report_dir,
+        ImportSettings const &_set,
+        fs::path const &report_dir,
         Log &file_log);
 
       static const std::string desc;
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::ImportOption &import_opt);
 
-      using ImportT<Configuration>::import;
 
     protected:
 
@@ -113,16 +104,17 @@ namespace CASM {
     class Update<Configuration> : public UpdateT<Configuration> {
     public:
 
+      using UpdateT<Configuration>::update;
+
       /// \brief Constructor
       Update(
         const PrimClex &primclex,
         const StructureMap<Configuration> &mapper,
-        fs::path report_dir);
+        fs::path const &report_dir);
 
       static const std::string desc;
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt);
 
-      using UpdateT<Configuration>::update;
 
     private:
 
