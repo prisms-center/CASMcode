@@ -25,7 +25,7 @@ void check_made_from_name(const Configuration &config, std::string name) {
 
   // check that Supercell are equivalent (though vectors may be different)
   EXPECT_EQ(
-    config.supercell().lattice().is_equivalent(made_from_name.supercell().lattice()),
+    xtal::is_equivalent(config.supercell().lattice(), made_from_name.supercell().lattice()),
     true);
 
   // fill supercell and check that config are identical
@@ -43,7 +43,7 @@ Lattice non_canonical_equiv_test_lat(const PrimClex &primclex) {
   Eigen::Vector3d standard_b = a - b + c;
   Eigen::Vector3d standard_c = a + b - c;
 
-  Lattice canon_lat = canonical_equivalent_lattice(
+  Lattice canon_lat = xtal::canonical::equivalent(
                         Lattice(standard_a, standard_b, 2 * standard_c),
                         primclex.prim().point_group(),
                         primclex.crystallography_tol());
@@ -51,7 +51,7 @@ Lattice non_canonical_equiv_test_lat(const PrimClex &primclex) {
   Index scel_op_index = 0;
   for(const auto &op : primclex.prim().point_group()) {
     test_lat = copy_apply(op, canon_lat);
-    if(!test_lat.is_equivalent(canon_lat)) {
+    if(!xtal::is_equivalent(test_lat, canon_lat)) {
       return test_lat;
     }
     ++scel_op_index;

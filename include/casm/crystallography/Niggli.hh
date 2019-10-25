@@ -1,9 +1,9 @@
 #ifndef NIGGLI_HH
 #define NIGGLI_HH
 
-#include <vector>
-#include "casm/external/Eigen/Core"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/external/Eigen/Core"
+#include <vector>
 
 namespace CASM {
   class SymOp;
@@ -57,36 +57,36 @@ namespace CASM {
 
       NiggliRep(const Eigen::Matrix3d &init_lat_col_mat);
 
-      ///Square of lattice length a
+      /// Square of lattice length a
       double A() const;
 
-      ///Square of lattice length b
+      /// Square of lattice length b
       double B() const;
 
-      ///Square of lattice length c
+      /// Square of lattice length c
       double C() const;
 
-      ///2bc*cos(alpha)
+      /// 2bc*cos(alpha)
       double ksi() const;
 
-      ///2ac*cos(beta)
+      /// 2ac*cos(beta)
       double eta() const;
 
-      ///2ab*cos(gamma)
+      /// 2ab*cos(gamma)
       double zeta() const;
 
       const Eigen::Matrix3d &metrical_matrix() const;
 
-      ///A<=B OR (A==B, |ksi| <= |eta|)
+      /// A<=B OR (A==B, |ksi| <= |eta|)
       bool meets_criteria_1(double compare_tol) const;
 
-      ///B<=C OR (B==C, |eta| <= |zeta|)
+      /// B<=C OR (B==C, |eta| <= |zeta|)
       bool meets_criteria_2(double compare_tol) const;
 
-      ///For type I: ksi>0 && eta>0 && zeta>0 (all angles < 90)
+      /// For type I: ksi>0 && eta>0 && zeta>0 (all angles < 90)
       bool meets_criteria_3(double compare_tol) const;
 
-      ///For type II: ksi<=0 && eta<=0 && zeta<=0 (all angles >= 90)
+      /// For type II: ksi<=0 && eta<=0 && zeta<=0 (all angles >= 90)
       bool meets_criteria_4(double compare_tol) const;
 
       ///|ksi|<=B OR (ksi==B, zeta<=2*eta) OR (ksi==-B, zeta==0)
@@ -98,76 +98,72 @@ namespace CASM {
       ///|zeta|<=A OR (zeta==A, eta<=2*ksi) OR (zeta==-A, eta==0)
       bool meets_criteria_7(double compare_tol) const;
 
-      ///ksi+eta+zeta+A+B<0 OR (ksi+eta+zeta+A+B==0, 2*A+2*eta+zeta>0)
-      ///C<=A+B+C+ksi+eta+zeta OR (C==A+B+C+ksi+eta+zeta, 2*A+2*eta+zeta<=0)
+      /// ksi+eta+zeta+A+B<0 OR (ksi+eta+zeta+A+B==0, 2*A+2*eta+zeta>0)
+      /// C<=A+B+C+ksi+eta+zeta OR (C==A+B+C+ksi+eta+zeta, 2*A+2*eta+zeta<=0)
       bool meets_criteria_8(double compare_tol) const;
 
-      ///True if all conditions are true, and either 4 OR 3 is false
+      /// True if all conditions are true, and either 4 OR 3 is false
       bool is_niggli(double compare_tol) const;
 
-      ///True if all conditions except 4 are true
+      /// True if all conditions except 4 are true
       bool is_niggli_type1(double compare_tol) const;
 
-      ///True if all conditions except 3 are true
+      /// True if all conditions except 3 are true
       bool is_niggli_type2(double compare_tol) const;
 
       void debug_criteria(double compare_tol) const;
 
       /// Number of criteria met
       Index niggli_index(double compare_tol) const;
-    private:
 
-      ///Transpose of initialization lattice dotted with itself
+    private:
+      /// Transpose of initialization lattice dotted with itself
       const Eigen::Matrix3d m_metrical_matrix;
 
-      ///Scaling factor for niggli comparisons
+      /// Scaling factor for niggli comparisons
       const double m_scale_factor;
     };
 
     /// Number of niggli criteria met
     Index niggli_index(const Eigen::Matrix3d &test_lat_mat, double compare_tol);
 
-    ///Find the niggli, most standard oriented version of the given orbit (defined by the given SymGroup) of lattices
-    Lattice canonical_equivalent_lattice(Lattice const &in_lat, std::vector<SymOp> const &point_grp, double compare_tol);
-
-    /// Return canonical equivalent lattice, and 'to_canonical' SymOp
-    std::pair<Lattice, SymOp> _canonical_equivalent_lattice(
-      Lattice const &in_lat,
-      std::vector<SymOp> const &point_grp,
-      double compare_tol);
-
-    ///Convert the given lattice into it's niggli reduced form, with the most standard orientation possilbe
+    /// Convert the given lattice into it's niggli reduced form, with the most standard orientation possilbe
     Lattice niggli(const Lattice &in_lat, double compare_tol, bool keep_handedness = false);
 
-    ///Check whether the given lattice (represented as a matrix) is in niggli TYPE ?? reduced form (does not check for orientation)
+    /// Check whether the given lattice (represented as a matrix) is in niggli TYPE ?? reduced form (does not check for
+    /// orientation)
     bool is_niggli(const Eigen::Matrix3d &test_lat_mat, double compare_tol);
 
-    ///Check whether the given lattice is niggli (does not check for orientation)
+    /// Check whether the given lattice is niggli (does not check for orientation)
     bool is_niggli(const Lattice &test_lat, double compare_tol);
 
     /// \brief Generate a vector whose lexicographical value determines how well it's oriented in space
     Eigen::VectorXd spatial_unroll(const Eigen::Matrix3d &lat_mat, double compare_tol);
 
-    /// \brief Compare the spatial orientation (ignoring matrix symmetry) and determine which one is oriented more standard. True if high is more standard.
-    bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
+    /// \brief Compare the spatial orientation (ignoring matrix symmetry) and determine which one is oriented more standard.
+    /// True if high is more standard.
+    bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat,
+                                              Eigen::Matrix3d &high_score_lat_mat,
+                                              double compare_tol);
 
     /// \brief Determine whether high_score has a more standard format than low_score
-    bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
+    bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat,
+                                      const Eigen::Matrix3d &high_score_lat_mat,
+                                      double compare_tol);
 
     class StandardOrientationCompare {
     public:
       StandardOrientationCompare(double _tol) : m_tol(_tol) {}
 
-      bool operator()(const Eigen::Matrix3d &LHS, const Eigen::Matrix3d &RHS)const {
+      bool operator()(const Eigen::Matrix3d &LHS, const Eigen::Matrix3d &RHS) const {
         return standard_orientation_compare(LHS, RHS, m_tol);
       }
 
     private:
       double m_tol;
-
     };
     /** @} */
-  }
-}
+  } // namespace xtal
+} // namespace CASM
 
 #endif

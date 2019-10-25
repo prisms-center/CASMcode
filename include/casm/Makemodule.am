@@ -37,13 +37,6 @@ casm_basis_set_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
-casm_adapters_includedir=$(includedir)/casm/adapters
-casm_adapters_include_HEADERS = \
-    include/casm/adapters/AdapterInterface.hh\
-    include/casm/adapters/ToCrystallography.hh
-
-#-------------------------------------------------------------------------------#
-
 casm_app_includedir=$(includedir)/casm/app
 casm_app_include_HEADERS = \
     include/casm/app/run.hh\
@@ -716,7 +709,9 @@ casm_symmetry_include_HEADERS = \
     include/casm/symmetry/Orbit_impl.hh\
     include/casm/symmetry/SubOrbits.hh\
     include/casm/symmetry/ScelSubOrbits.hh\
+    include/casm/symmetry/SymTools_impl.hh\
     include/casm/symmetry/SymBasisPermute.hh\
+    include/casm/symmetry/SymTools.hh\
     include/casm/symmetry/SymMatrixXd.hh\
     include/casm/symmetry/ConfigSubOrbits_impl.hh\
     include/casm/symmetry/InvariantSubgroup_impl.hh\
@@ -905,7 +900,6 @@ casm_crystallography_includedir=$(includedir)/casm/crystallography
 casm_crystallography_include_HEADERS = \
     include/casm/crystallography/Structure.hh\
     include/casm/crystallography/SimpleStructure.hh\
-    include/casm/crystallography/LatticeCanonicalForm.hh\
     include/casm/crystallography/LatticeMap.hh\
     include/casm/crystallography/SpeciesAttribute.hh\
     include/casm/crystallography/CoordinateSystems.hh\
@@ -913,18 +907,20 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/PrimGrid.hh\
+    include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
+    include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/Lattice_impl.hh\
-    include/casm/crystallography/LatticeCanonicalForm_impl.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/BasicStructure.hh\
     include/casm/crystallography/SuperlatticeEnumerator.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
+    include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Site.hh\
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/jsonStruc.hh\

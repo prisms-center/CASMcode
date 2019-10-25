@@ -89,6 +89,10 @@ namespace CASM {
 
     };
 
+    /// Check if ref_lattice = other*U, where U is unimodular
+    bool is_equivalent(const Lattice &ref_lattice, const Lattice &other);
+
+
   }
 }
 
