@@ -28,15 +28,15 @@ namespace CASM {
     /// classes. Any symmetry related operations within the crystallography module must be in terms
     /// of this type.
     /* typedef std::tuple<SymOpMatrixType, SymOpTranslationType, SymOpTimeReversalType> SymOpType; */
-    typedef SymOpData SymOpType;
-    typedef std::vector<SymOpType> SymGroupType;
+    typedef SymOpData SymOp;
+    typedef std::vector<SymOp> SymOpVector;
 
     /// Accessor for SymOpType. Returns transformation matrix (Cartesian).
-    const SymOpMatrixType &get_matrix(const SymOpType &op);
+    const SymOpMatrixType &get_matrix(const SymOp &op);
     /// Accessor for SymOpType. Returns translation vector (tau).
-    const SymOpTranslationType &get_translation(const SymOpType &op);
+    const SymOpTranslationType &get_translation(const SymOp &op);
     /// Accessor for SymOpType. Returns whether the symmetry operation is time reversal active.
-    SymOpTimeReversalType get_time_reversal(const SymOpType &op);
+    SymOpTimeReversalType get_time_reversal(const SymOp &op);
 
   } // namespace xtal
 } // namespace CASM
