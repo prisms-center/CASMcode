@@ -17,6 +17,10 @@
 #include "casm/crystallography/CanonicalForm.hh"
 
 using namespace CASM;
+using xtal::Structure;
+using xtal::ScelEnumProps;
+using xtal::SuperlatticeEnumerator;
+
 boost::filesystem::path testdir(autotools::abs_srcdir() + "/tests/unit/crystallography");
 
 void autofail() {

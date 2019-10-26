@@ -19,7 +19,7 @@ namespace CASM {
 
       /// True if lat_column_mat is approximately equal to the lat_column_mat of the canonical_form, using
       /// the provided symmetry operations to find the most canonical form
-      bool check(const Lattice &lat, std::vector<SymOp> const &g);
+      bool check(const Lattice &lat, std::vector<CASM::SymOp> const &g);
 
 
       /**
@@ -29,13 +29,13 @@ namespace CASM {
        * so that the one oriented in the most standard manner
        * is selected.
        */
-      Lattice equivalent(Lattice const &in_lat, std::vector<SymOp> const &point_grp, double compare_tol);
+      Lattice equivalent(Lattice const &in_lat, std::vector<CASM::SymOp> const &point_grp, double compare_tol);
 
       /// Canonical equivalent lattice, using this lattice's point group
       Lattice equivalent(const Lattice &lat);
 
       /// Canonical equivalent lattice, using the provided group
-      Lattice equivalent(const Lattice &lat, std::vector<SymOp> const &g);
+      Lattice equivalent(const Lattice &lat, std::vector<CASM::SymOp> const &g);
 
 
       /// Uses provided group to find 'to_canonical' SymOp
@@ -44,10 +44,10 @@ namespace CASM {
       /// - Note that that copy_apply(this->to_canonical(), *this).is_canonical()
       ///   may be false because they may be equivalent, but without identical
       ///   lat_column_mat().
-      Index operation_index(const Lattice &lat, std::vector<SymOp> const &g);
+      Index operation_index(const Lattice &lat, std::vector<CASM::SymOp> const &g);
 
       /// Return the index of the operation that makes the lattice canonical
-      Index operation_index(Lattice const &in_lat, std::vector<SymOp> const &point_grp, double compare_tol);
+      Index operation_index(Lattice const &in_lat, std::vector<CASM::SymOp> const &point_grp, double compare_tol);
     }
 
   } // namespace xtal

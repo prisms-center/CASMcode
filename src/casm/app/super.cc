@@ -218,7 +218,7 @@ namespace CASM {
 
     }
 
-    COORD_MODE C(coordtype);
+    xtal::COORD_MODE C(coordtype);
 
     // lambda for printing
     auto print = [&](const BasicStructure<Site> &struc) {
@@ -366,7 +366,7 @@ namespace CASM {
 
         auto M = enforce_min_volume(pg.begin(), pg.end(), prim_lat, iround(T),  min_vol, vm.count("fixed-shape"));
 
-        superduper = canonical::equivalent(make_supercell(superduper, M), pg, TOL);
+        superduper = xtal::canonical::equivalent(make_supercell(superduper, M), pg, TOL);
 
         auto S = is_supercell(superduper, prim_lat, TOL).second;
 
@@ -470,7 +470,7 @@ namespace CASM {
                    min_vol,
                    vm.count("fixed-shape"));
 
-        Lattice niggli_lat = canonical::equivalent(make_supercell(prim_lat, T * M), pg, TOL);
+        Lattice niggli_lat = xtal::canonical::equivalent(make_supercell(prim_lat, T * M), pg, TOL);
         T = iround(is_supercell(niggli_lat, prim_lat, TOL).second);
 
         args.log() << "    Transformation matrix, after enforcing mininum volume:\n"
@@ -508,7 +508,7 @@ namespace CASM {
         std::stringstream ss;
         const Configuration &con = *primclex.db<Configuration>().find(configname[0]);
 
-        VaspIO::PrintPOSCAR p(to_simple_structure(con), con.name());
+        VaspIO::PrintPOSCAR p(xtal::to_simple_structure(con), con.name());
         p.sort();
         p.print(ss);
 
@@ -588,7 +588,7 @@ namespace CASM {
         Eigen::Matrix3i H_canon;
         Eigen::Matrix3d op_canon;
 
-        Eigen::Matrix3d S_niggli = canonical::equivalent(Lattice(S), pg, tol).lat_column_mat();
+        Eigen::Matrix3d S_niggli = xtal::canonical::equivalent(Lattice(S), pg, tol).lat_column_mat();
         Eigen::Matrix3i T_niggli = iround(U.inverse() * S_niggli);
         Eigen::Matrix3i H_niggli = hermite_normal_form(T_niggli).first;
 

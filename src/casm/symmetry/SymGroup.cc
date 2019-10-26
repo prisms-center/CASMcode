@@ -3383,7 +3383,7 @@ namespace CASM {
   //*******************************************************************************************
 
   void SymGroup::print(std::ostream &out, COORD_TYPE mode) const {
-    out << size() << " # " << COORD_MODE::NAME(mode) << " representation of group containing " << size() << " elements:\n\n";
+    out << size() << " # " << xtal::COORD_MODE::NAME(mode) << " representation of group containing " << size() << " elements:\n\n";
     Eigen::Matrix3d c2f_mat(Eigen::Matrix3d::Identity());
     if(mode == FRAC)
       c2f_mat = lattice().inv_lat_column_mat();

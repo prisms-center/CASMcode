@@ -12,6 +12,8 @@
 #include "casm/symmetry/SymGroup.hh"
 
 using namespace CASM;
+using xtal::SuperlatticeEnumerator;
+using xtal::ScelEnumProps;
 
 void lattice_pg_test() {
 

@@ -48,7 +48,7 @@ namespace CASM {
 
 
       /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
-      bool _is_lattice_pg_op(SymOp const &_op) const;
+      bool _is_lattice_pg_op(CASM::SymOp const &_op) const;
 
       /// \brief Returns true if structure has attributes affected by time reversal
       // private for now, expose if necessary
@@ -227,7 +227,7 @@ namespace CASM {
     };
 
     template<typename CoordType>
-    BasicStructure<CoordType> operator*(const SymOp &LHS, const BasicStructure<CoordType> &RHS);
+    BasicStructure<CoordType> operator*(const CASM::SymOp &LHS, const BasicStructure<CoordType> &RHS);
 
     template<typename CoordType>
     BasicStructure<CoordType> operator*(const Lattice &LHS, const BasicStructure<CoordType> &RHS);
@@ -240,10 +240,10 @@ namespace CASM {
     BasicStructure<CoordType> operator+(const BasicStructure<CoordType> &LHS, const Coordinate &RHS);
 
     template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc);
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc);
 
     template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol);
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol);
 
     //template<typename CoordType>
     //jsonParser &to_json(const BasicStructure<CoordType> &basic, jsonParser &json);

@@ -161,13 +161,13 @@ namespace CASM {
 
       for(Index i = 0; i < m_prop_names.size(); i++) {
         if(m_prop_names[i] == "basis_score")
-          result_vec.push_back(StrucMapping::basis_cost(mapping, relaxed_struc.n_mol()));
+          result_vec.push_back(xtal::StrucMapping::basis_cost(mapping, relaxed_struc.n_mol()));
         else if(m_prop_names[i] == "lattice_score")
-          result_vec.push_back(StrucMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapping, relaxed_struc.n_mol()));
+          result_vec.push_back(xtal::StrucMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapping, relaxed_struc.n_mol()));
         else if(m_prop_names[i] == "total_score") {
-          double sc = StrucMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapping, relaxed_struc.n_mol());
+          double sc = xtal::StrucMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapping, relaxed_struc.n_mol());
 
-          double bc = StrucMapping::basis_cost(mapping, relaxed_struc.n_mol());
+          double bc = xtal::StrucMapping::basis_cost(mapping, relaxed_struc.n_mol());
 
           double w = m_strucmapper->strain_weight();
           result_vec.push_back(w * sc + (1.0 - w)*bc);

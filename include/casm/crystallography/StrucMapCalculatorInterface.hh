@@ -31,7 +31,7 @@ namespace CASM {
     public:
 
       StrucMapCalculatorInterface(SimpleStructure _parent,
-                                  std::vector<SymOp> _point_group = {SymOp()},
+                                  std::vector<CASM::SymOp> _point_group = {CASM::SymOp()},
                                   SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                   StrucMapping::AllowedSpecies allowed_species = {}) :
         m_parent(std::move(_parent)),
@@ -73,11 +73,11 @@ namespace CASM {
         return m_parent;
       }
 
-      std::vector<SymOp> const &point_group() const {
+      std::vector<CASM::SymOp> const &point_group() const {
         return m_point_group;
       }
 
-      void set_point_group(std::vector<SymOp> _point_group) {
+      void set_point_group(std::vector<CASM::SymOp> _point_group) {
         m_point_group = std::move(_point_group);
       }
 
@@ -114,7 +114,7 @@ namespace CASM {
 
       /// \brief Make an exact copy of the calculator (including any initialized members)
       std::unique_ptr<StrucMapCalculatorInterface> quasi_clone(SimpleStructure _parent,
-                                                               std::vector<SymOp> _point_group = {SymOp()},
+                                                               std::vector<CASM::SymOp> _point_group = {CASM::SymOp()},
                                                                SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                                                StrucMapping::AllowedSpecies _allowed_species = {}) const {
         return std::unique_ptr<StrucMapCalculatorInterface>(this->_quasi_clone(std::move(_parent),
@@ -142,7 +142,7 @@ namespace CASM {
     private:
       SimpleStructure m_parent;
 
-      std::vector<SymOp> m_point_group;
+      std::vector<CASM::SymOp> m_point_group;
 
       SimpleStructure::SpeciesMode m_species_mode;
 
@@ -157,7 +157,7 @@ namespace CASM {
 
       /// \brief Make an exact copy of the calculator (including any initialized members)
       virtual StrucMapCalculatorInterface *_quasi_clone(SimpleStructure _parent,
-                                                        std::vector<SymOp> _point_group = {SymOp()},
+                                                        std::vector<CASM::SymOp> _point_group = {CASM::SymOp()},
                                                         SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                                         StrucMapping::AllowedSpecies _allowed_species = {}) const = 0;
 

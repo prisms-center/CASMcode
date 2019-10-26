@@ -10,10 +10,14 @@
 namespace CASM {
   namespace xtal {
     class Structure;
+    class PrimGrid;
+    class UnitCell;
   }
-  class PermuteIterator;
+  using xtal::Structure;
+  using xtal::PrimGrid;
+  using xtal::UnitCell;
 
-  using namespace xtal;
+  class PermuteIterator;
 
   class SupercellSymInfo {
   public:

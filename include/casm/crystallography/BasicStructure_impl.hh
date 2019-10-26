@@ -144,7 +144,7 @@ namespace CASM {
       Index time_max = Index(_time_reversal_active() && time_reversal_enabled);
       //std::cout << "time_max is " << time_max << "\n";
       //std::cout << "time_reversal_enabled is " << time_reversal_enabled << "\n";
-      SymOp test_op;
+      CASM::SymOp test_op;
       if(factor_group.size() != 0) {
         std::cerr << "WARNING in BasicStructure<CoordType>::generate_factor_group_slow" << std::endl;
         std::cerr << "The factor group passed isn't empty and it's about to be rewritten!" << std::endl;
@@ -156,7 +156,7 @@ namespace CASM {
         test_op = point_group[pg];
         for(Index tr = 0; tr <= time_max; tr++) {
           if(tr) {
-            test_op = test_op * SymOp::time_reversal_op();
+            test_op = test_op * CASM::SymOp::time_reversal_op();
           }
 
           if(!_is_lattice_pg_op(test_op)) {
@@ -234,7 +234,7 @@ namespace CASM {
               */
               t_tau -= center_of_mass;/**/
 
-              SymOp tSym(SymOp::translation(t_tau.cart())*test_op);
+              CASM::SymOp tSym(CASM::SymOp::translation(t_tau.cart())*test_op);
               tSym.set_map_error(max_error);
 
               if(!factor_group.contains_periodic(tSym)) {
@@ -290,8 +290,8 @@ namespace CASM {
         }
         else {
           for(Index j = 0; j < prim_grid.size(); j++) {
-            factor_group.push_back(SymOp::translation(prim_grid.scel_coord(j).cart())*prim_fg[i]);
-            // set lattice, in case SymOp::operator* ever changes
+            factor_group.push_back(CASM::SymOp::translation(prim_grid.scel_coord(j).cart())*prim_fg[i]);
+            // set lattice, in case CASM::SymOp::operator* ever changes
           }
         }
       }
@@ -410,7 +410,7 @@ namespace CASM {
     template<typename CoordType>
     bool BasicStructure<CoordType>::is_primitive() const {
       SymGroup valid_translations, identity_group;
-      identity_group.push_back(SymOp());
+      identity_group.push_back(CASM::SymOp());
       _generate_factor_group_slow(valid_translations, identity_group, false);
       if(valid_translations.size() == 1)
         return true;
@@ -435,7 +435,7 @@ namespace CASM {
       double prim_vol_tol = std::abs(0.5 * lattice().vol() / double(basis().size())); //sets a hard lower bound for the minimum value of the volume of the primitive cell
 
       SymGroup valid_translations, identity_group;
-      identity_group.push_back(SymOp());
+      identity_group.push_back(CASM::SymOp());
       _generate_factor_group_slow(valid_translations, identity_group, false);
       if(valid_translations.size() > 1) {
         prim_flag = false;
@@ -945,7 +945,7 @@ namespace CASM {
     //***********************************************************
 
     template<typename CoordType>
-    BasicStructure<CoordType> operator*(const SymOp &LHS, const BasicStructure<CoordType> &RHS) { //AAB
+    BasicStructure<CoordType> operator*(const CASM::SymOp &LHS, const BasicStructure<CoordType> &RHS) { //AAB
 
       return BasicStructure<CoordType>(RHS).apply_sym(LHS);
     }
@@ -963,7 +963,7 @@ namespace CASM {
 
     /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
     template<typename CoordType>
-    bool BasicStructure<CoordType>::_is_lattice_pg_op(SymOp const &_op) const {
+    bool BasicStructure<CoordType>::_is_lattice_pg_op(CASM::SymOp const &_op) const {
       //std::cout << "CHECKING OP: \n" << _op.matrix() << std::endl;
       if(!LatticeIsEquivalent(lattice())(_op)) {
         //std::cout << "FAILED LATTICE CHECK\n"<< std::endl;
@@ -999,14 +999,14 @@ namespace CASM {
     //***********************************************************
 
     template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc) {
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc) {
       return symop_site_map(_op, _struc, _struc.lattice().tol());
     }
 
     //***********************************************************
 
     template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol) {
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol) {
       std::vector<UnitCellCoord> result;
       // Determine how basis sites transform from the origin unit cell
       for(int b = 0; b < _struc.basis().size(); b++) {

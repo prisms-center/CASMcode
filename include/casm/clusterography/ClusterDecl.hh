@@ -8,8 +8,6 @@ namespace CASM {
     class UnitCellCoord;
   }
 
-  using namespace xtal;
-
   template<typename T> struct traits;
 
   template<typename ClusterType> class ClusterInvariants;
@@ -24,7 +22,7 @@ namespace CASM {
   ///
   /// \ingroup IntegralCluster
   ///
-  typedef CoordCluster<UnitCellCoord> IntegralCluster;
+  typedef CoordCluster<xtal::UnitCellCoord> IntegralCluster;
 
   typedef AperiodicOrbit<IntegralCluster> AperiodicIntegralClusterOrbit;
   typedef LocalOrbit<IntegralCluster> LocalIntegralClusterOrbit;

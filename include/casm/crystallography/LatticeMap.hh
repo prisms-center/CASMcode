@@ -66,7 +66,7 @@ namespace CASM {
                  Index _num_atoms,
                  double _tol,
                  int _range /*= 2*/,
-                 std::vector<SymOp> const &_point_group/*={}*/,
+                 std::vector<CASM::SymOp> const &_point_group/*={}*/,
                  Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat = Eigen::MatrixXd::Identity(9, 9),
                  double _init_better_than = 1e20);
 
@@ -75,7 +75,7 @@ namespace CASM {
                  Index _num_atoms,
                  double _tol,
                  int _range /*= 2*/,
-                 std::vector<SymOp> const &_point_group/*={}*/,
+                 std::vector<CASM::SymOp> const &_point_group/*={}*/,
                  Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat = Eigen::MatrixXd::Identity(9, 9),
                  double _init_better_than = 1e20);
 

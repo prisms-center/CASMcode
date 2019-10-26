@@ -12,7 +12,8 @@ namespace CASM {
     class BasicStructure;
     class Site;
   }
-  using namespace xtal;
+  using xtal::BasicStructure;
+  using xtal::Site;
 
   //defines the enum type used in composition.
   enum COMPOSITION_TYPE {PARAM_COMP = 0, NUMBER_ATOMS = 1};

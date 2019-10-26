@@ -15,7 +15,13 @@ namespace CASM {
     template<typename CoordType>
     class BasicStructure;
     class SimpleStructure;
+    class UnitCellCoord;
   }
+  using xtal::Site;
+  using xtal::Structure;
+  using xtal::BasicStructure;
+  using xtal::SimpleStructure;
+  using xtal::UnitCellCoord;
 
   class jsonParser;
   class PrimNeighborList;

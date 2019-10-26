@@ -16,7 +16,7 @@ namespace CASM {
     class SimpleStrucMapCalculator : public StrucMapCalculatorInterface {
     public:
       SimpleStrucMapCalculator(SimpleStructure _parent,
-                               std::vector<SymOp> _point_group = {SymOp()},
+                               std::vector<CASM::SymOp> _point_group = {CASM::SymOp()},
                                SimpleStructure::SpeciesMode species_mode = SimpleStructure::SpeciesMode::ATOM,
                                StrucMapping::AllowedSpecies allowed_species = {}) :
         StrucMapCalculatorInterface(std::move(_parent),
@@ -69,7 +69,7 @@ namespace CASM {
 
       /// \brief Make an exact copy of the calculator (including any initialized members)
       virtual StrucMapCalculatorInterface *_quasi_clone(SimpleStructure _parent,
-                                                        std::vector<SymOp> _point_group = {SymOp()},
+                                                        std::vector<CASM::SymOp> _point_group = {CASM::SymOp()},
                                                         SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                                         StrucMapping::AllowedSpecies _allowed_species = {}) const override {
         return new SimpleStrucMapCalculator(std::move(_parent), std::move(_point_group), _species_mode, std::move(_allowed_species));

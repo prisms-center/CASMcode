@@ -222,7 +222,7 @@ namespace CASM {
       /// \param enum_props Data structure specifying how to enumerate supercells
       ///
       SuperlatticeEnumerator(const Lattice &unit,
-                             const SymGroupType &point_grp,
+                             const SymOpVector &point_grp,
                              const ScelEnumProps &enum_props);
 
       /// Initialize with the unit lattice to be tiled, and specification for how to enumerate
@@ -233,14 +233,14 @@ namespace CASM {
                              ExternSymGroupTypeIt end,
                              const Lattice &unit,
                              const ScelEnumProps &enum_props)
-        : SuperlatticeEnumerator(unit, adapter::Adapter<SymGroupType, ExternSymGroupTypeIt>()(begin, end), enum_props) {
+        : SuperlatticeEnumerator(unit, adapter::Adapter<SymOpVector, ExternSymGroupTypeIt>()(begin, end), enum_props) {
       }
 
       /// \brief Access the unit the is being made into superlattices
       const Lattice &unit() const;
 
       /// \brief Access the unit point group
-      const SymGroupType &point_group() const;
+      const SymOpVector &point_group() const;
 
       /// \brief Set the beginning volume
       void begin_volume(size_type _begin_volume);
@@ -284,7 +284,7 @@ namespace CASM {
       /* Lattice m_lat; */
 
       /// \brief The point group of the unit cell
-      SymGroupType m_point_group;
+      SymOpVector m_point_group;
 
       /// \brief The first volume supercells to be iterated over (what cbegin uses)
       const int m_begin_volume;
@@ -362,7 +362,7 @@ namespace CASM {
     ///
     Eigen::Matrix3i enforce_min_volume(const Lattice &unit,
                                        const Eigen::Matrix3i &T,
-                                       const SymGroupType &point_grp,
+                                       const SymOpVector &point_grp,
                                        Index volume,
                                        bool fix_shape = false);
 
@@ -373,7 +373,7 @@ namespace CASM {
                                        const Eigen::Matrix3i &T,
                                        Index volume,
                                        bool fix_shape = false) {
-      return enforce_min_volume(unit, T, adapter::Adapter<SymGroupType, ExternSymGroupTypeIt>()(begin, end), volume, fix_shape);
+      return enforce_min_volume(unit, T, adapter::Adapter<SymOpVector, ExternSymGroupTypeIt>()(begin, end), volume, fix_shape);
     }
 
     /// \brief Return canonical hermite normal form of the supercell matrix
@@ -408,7 +408,7 @@ namespace CASM {
     /// \relatesalso Lattice
     ///
     Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T,
-                                  const SymGroupType &effective_pg,
+                                  const SymOpVector &effective_pg,
                                   const Lattice &ref_lattice);
     template<typename ExternSymGroupTypeIt>
     Eigen::Matrix3i canonical_hnf(
@@ -416,7 +416,7 @@ namespace CASM {
       ExternSymGroupTypeIt end,
       const Eigen::Matrix3i &T,
       const Lattice &ref_lattice) {
-      return canonical_hnf(T, adapter::Adapter<SymGroupType, ExternSymGroupTypeIt>()(begin, end), ref_lattice);
+      return canonical_hnf(T, adapter::Adapter<SymOpVector, ExternSymGroupTypeIt>()(begin, end), ref_lattice);
     }
 
   }

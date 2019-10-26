@@ -229,7 +229,7 @@ namespace CASM {
   std::pair<DB::DatabaseIterator<Supercell>, bool> Supercell::insert() const {
     return primclex().db<Supercell>().emplace(
              & primclex(),
-             canonical::equivalent(
+             xtal::canonical::equivalent(
                lattice(),
                prim().point_group(),
                crystallography_tol()));
@@ -449,10 +449,10 @@ namespace CASM {
 
   std::string scelname(const Structure &prim, const Lattice &superlat) {
     const SymGroup &pg = prim.point_group();
-    Lattice canon_lat = canonical::equivalent(superlat, pg);
+    Lattice canon_lat = xtal::canonical::equivalent(superlat, pg);
     std::string result = CASM::generate_name(transf_mat(prim.lattice(), canon_lat, prim.lattice().tol()));
     if(!xtal::is_equivalent(superlat, canon_lat)) {
-      auto to_canonical_ix = canonical::operation_index(superlat, pg);
+      auto to_canonical_ix = xtal::canonical::operation_index(superlat, pg);
       result += ("." + std::to_string(pg[to_canonical_ix].inverse().index()));
     }
     return result;
@@ -460,7 +460,7 @@ namespace CASM {
 
   std::string canonical_scelname(const Structure &prim, const Lattice &superlat) {
     const SymGroup &pg = prim.point_group();
-    return CASM::generate_name(transf_mat(prim.lattice(), canonical::equivalent(superlat, pg), prim.lattice().tol()));
+    return CASM::generate_name(transf_mat(prim.lattice(), xtal::canonical::equivalent(superlat, pg), prim.lattice().tol()));
   }
 
 

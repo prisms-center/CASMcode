@@ -143,7 +143,7 @@ namespace CASM {
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 
-    return make_scel_enum_props(
+    return xtal::make_scel_enum_props(
              primclex,
              make_enumerator_scel_enum_input(_kwargs, enum_opt));
   }

@@ -128,7 +128,7 @@ namespace CASM {
   ///   supercell list should be skipped
   ///
   ScelEnumByProps::ScelEnumByProps(const PrimClex &primclex, const jsonParser &input) :
-    ScelEnumByProps(primclex, make_scel_enum_props(primclex, input), _get_else(input, "existing_only", false)) {}
+    ScelEnumByProps(primclex, xtal::make_scel_enum_props(primclex, input), _get_else(input, "existing_only", false)) {}
 
   std::string ScelEnumByProps::name() const {
     return ScelEnumByProps::enumerator_name;

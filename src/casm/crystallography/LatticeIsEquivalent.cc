@@ -16,23 +16,23 @@ namespace CASM {
     }
 
     /// Checks if lat = copy_apply(B,lat)*U, with unimodular U
-    bool LatticeIsEquivalent::operator()(const SymOp &B) const {
+    bool LatticeIsEquivalent::operator()(const CASM::SymOp &B) const {
       return (*this)(copy_apply(B, m_lat));
     }
 
     /// Checks if copy_apply(A, lat) = copy_apply(B,lat)*U, with unimodular U
-    bool LatticeIsEquivalent::operator()(const SymOp &A, const SymOp &B) const {
+    bool LatticeIsEquivalent::operator()(const CASM::SymOp &A, const CASM::SymOp &B) const {
       LatticeIsEquivalent f {copy_apply(A, m_lat)};
       return f(copy_apply(B, m_lat));
     }
 
     /// Checks if lat = apply(B,other)*U, with unimodular U
-    bool LatticeIsEquivalent::operator()(const SymOp &B, const Lattice &other) const {
+    bool LatticeIsEquivalent::operator()(const CASM::SymOp &B, const Lattice &other) const {
       return (*this)(copy_apply(B, other));
     }
 
     /// Checks if copy_apply(A, lat) = apply(B,other)*U, with unimodular U
-    bool LatticeIsEquivalent::operator()(const SymOp &A, const SymOp &B, const Lattice &other) const {
+    bool LatticeIsEquivalent::operator()(const CASM::SymOp &A, const CASM::SymOp &B, const Lattice &other) const {
       LatticeIsEquivalent f {copy_apply(A, m_lat)};
       return (*this)(copy_apply(B, other));
     }
@@ -48,7 +48,7 @@ namespace CASM {
 
 
     /// Is this lattice equivalent to apply(op, *this)
-    bool IsPointGroupOp::operator()(const SymOp &op) const {
+    bool IsPointGroupOp::operator()(const CASM::SymOp &op) const {
       return (*this)(op.matrix());
     }
 
@@ -85,8 +85,8 @@ namespace CASM {
       return m_cart_op;
     }
 
-    SymOp IsPointGroupOp::sym_op() const {
-      return SymOp::point_op(cart_op(), map_error());
+    CASM::SymOp IsPointGroupOp::sym_op() const {
+      return CASM::SymOp::point_op(cart_op(), map_error());
     }
 
     ///Find the effect of applying symmetry to the lattice vectors

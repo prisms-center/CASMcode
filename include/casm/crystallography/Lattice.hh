@@ -138,7 +138,7 @@ namespace CASM {
       /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
       /// \param effective_pg is a group that should either be equivalent to the full point group of this lattice
       /// or be a subgroup of that full point group
-      void generate_supercells(std::vector<Lattice> &supercell, const std::vector<SymOp> &effective_pg, const ScelEnumProps &enum_props) const;
+      void generate_supercells(std::vector<Lattice> &supercell, const std::vector<CASM::SymOp> &effective_pg, const ScelEnumProps &enum_props) const;
 
       /// \brief make a supercell of this lattice.
       /// Equivalent to Lattice(lat_column_mat()*trans_mat)
@@ -192,11 +192,11 @@ namespace CASM {
       //John G 121212
       ///Checks if lattice is a supercell of tile, acting on multiplication matrix. Check is performed applying operations from symlist
       bool is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat) const;
-      bool is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symlist, Eigen::Matrix3d &multimat) const;
+      bool is_supercell_of(const Lattice &tile, const std::vector<CASM::SymOp> &symlist, Eigen::Matrix3d &multimat) const;
 
       ///Checks if lattice is a supercell of tile, applying operations from symlist
       bool is_supercell_of(const Lattice &tile) const;
-      bool is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symlist) const;
+      bool is_supercell_of(const Lattice &tile, const std::vector<CASM::SymOp> &symlist) const;
 
       ///Return a lattice with diagonal matrix that fits around starting lattice
       Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
@@ -217,7 +217,7 @@ namespace CASM {
       void pg_converge(double small_tol, double large_tol, double increment);
 
       /// \brief Symmetrized copy of this lattice, having symmetry of group \param _pg
-      Lattice symmetrized(const std::vector<SymOp> &_pg) const;
+      Lattice symmetrized(const std::vector<CASM::SymOp> &_pg) const;
 
       /// \brief Symmetrized copy of this lattice, having symmetry of group formed by fractional-coordinate symops \param _pg
       Lattice symmetrized(const std::vector<Eigen::Matrix3i> &_pg) const;
@@ -270,23 +270,23 @@ namespace CASM {
     /// \param point_group should be empty
     /// \param pg_tol can be increased to find point group of lattice vectors
     /// that are slightly distorted due to numerical noise
-    std::vector<SymOp> calc_point_group(Lattice const &_lat);
+    std::vector<CASM::SymOp> calc_point_group(Lattice const &_lat);
 
     /// \brief Populate \param point_group with the point group of this lattice
     /// \param point_group should be empty
     /// \param pg_tol can be increased to find point group of lattice vectors
     /// that are slightly distorted due to numerical noise
-    std::vector<SymOp> calc_point_group(Lattice const &_lat, double _tol);
+    std::vector<CASM::SymOp> calc_point_group(Lattice const &_lat, double _tol);
 
 
     /// \brief Returns the volume of a Lattice
     double volume(const Lattice &lat);
 
     /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const SymOp &op, Lattice &lat);
+    Lattice &apply(const CASM::SymOp &op, Lattice &lat);
 
     /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const SymOp &op, const Lattice &lat);
+    Lattice copy_apply(const CASM::SymOp &op, const Lattice &lat);
 
     /// \brief Returns a super Lattice
     Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat);

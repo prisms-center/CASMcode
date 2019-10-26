@@ -11,8 +11,15 @@
 #include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Lattice;
+    class Coordinate;
+  }
+  using xtal::Lattice;
+  using xtal::Coordinate;
+
+
   class SymGroup;
-  using namespace xtal;
 
   /** \ingroup Symmetry
    *  @{

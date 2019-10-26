@@ -106,7 +106,7 @@ namespace CASM {
     //SuperlatticeEnumerator
 
     SuperlatticeEnumerator::SuperlatticeEnumerator(const Lattice &unit,
-                                                   const SymGroupType &point_grp,
+                                                   const SymOpVector &point_grp,
                                                    const ScelEnumProps &enum_props) :
       m_unit(unit),
       m_point_group(point_grp),
@@ -124,7 +124,7 @@ namespace CASM {
       return m_unit;
     }
 
-    const SymGroupType &SuperlatticeEnumerator::point_group() const {
+    const SymOpVector &SuperlatticeEnumerator::point_group() const {
       return m_point_group;
     }
 
@@ -230,7 +230,7 @@ namespace CASM {
     Eigen::Matrix3i enforce_min_volume(
       const Lattice &unit,
       const Eigen::Matrix3i &T,
-      const SymGroupType &point_grp,
+      const SymOpVector &point_grp,
       Index volume,
       bool fix_shape) {
 
@@ -266,7 +266,7 @@ namespace CASM {
 
     }
 
-    Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SymGroupType &effective_pg, const Lattice &ref_lattice) {
+    Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SymOpVector &effective_pg, const Lattice &ref_lattice) {
       Eigen::Matrix3d lat = ref_lattice.lat_column_mat();
 
       //get T in hermite normal form
@@ -293,8 +293,8 @@ namespace CASM {
 
   }
 
-  ScelEnumProps jsonConstructor<xtal::ScelEnumProps>::from_json(const jsonParser &json, const PrimClex &primclex) {
-    return make_scel_enum_props(primclex, json);
+  xtal::ScelEnumProps jsonConstructor<xtal::ScelEnumProps>::from_json(const jsonParser &json, const PrimClex &primclex) {
+    return xtal::make_scel_enum_props(primclex, json);
   }
 
 

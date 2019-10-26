@@ -113,7 +113,7 @@ namespace CASM {
   }
 
   /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
-  UnitCellCoord jsonConstructor<UnitCellCoord>::from_json(const jsonParser &json, const BasicStructure<Site> &unit) {
+  UnitCellCoord jsonConstructor<UnitCellCoord>::from_json(const jsonParser &json, const xtal::BasicStructure<xtal::Site> &unit) {
     xtal::UnitCellCoord coord(unit);
     CASM::from_json(coord, json);
     return coord;

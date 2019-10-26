@@ -20,7 +20,6 @@ namespace CASM {
   namespace xtal {
     class UnitCellCoord;
   }
-  using namespace xtal;
 
   class OccPerturbation;
   class OccPerturbationInvariants;
@@ -31,7 +30,7 @@ namespace CASM {
     typedef OccupationTransformation Element;
     typedef OccPerturbationInvariants InvariantsType;
     typedef Index size_type;
-    static UnitCellCoord position(const OccPerturbation &perturb);
+    static xtal::UnitCellCoord position(const OccPerturbation &perturb);
   };
 
   typedef PrimPeriodicSymCompare<OccPerturbation> PrimPeriodicOccPerturbSymCompare;

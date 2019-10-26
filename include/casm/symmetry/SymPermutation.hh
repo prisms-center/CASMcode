@@ -10,9 +10,9 @@ namespace CASM {
   namespace xtal {
     class Lattice;
   }
-  class MasterSymGroup;
+  using xtal::Lattice;
 
-  using namespace xtal;
+  class MasterSymGroup;
 
   /** \ingroup Symmetry
    *  @{

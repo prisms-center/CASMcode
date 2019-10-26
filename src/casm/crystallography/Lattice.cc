@@ -15,7 +15,7 @@ namespace CASM {
     namespace {
 
       typedef std::vector<Lattice>::iterator vec_lat_it;
-      typedef std::vector<SymOp>::const_iterator array_symop_cit;
+      typedef std::vector<CASM::SymOp>::const_iterator array_symop_cit;
     }
 
     template Lattice superdupercell<vec_lat_it, array_symop_cit>(
@@ -272,7 +272,7 @@ namespace CASM {
 
       double orig_tol = tol();
       set_tol(large_tol);
-      std::vector<SymOp> point_group(calc_point_group(*this));
+      std::vector<CASM::SymOp> point_group(calc_point_group(*this));
 
       for(Index i = 0; i < point_group.size(); i++) {
         tarray.push_back(point_group[i].map_error());
@@ -293,10 +293,10 @@ namespace CASM {
       for(double i = small_tol; i <= large_tol; i += increment) {
         tols.push_back(i);
         set_tol(i);
-        std::vector<SymOp> point_group(calc_point_group(*this));
+        std::vector<CASM::SymOp> point_group(calc_point_group(*this));
         num_ops.push_back(point_group.size());
         num_enforced_ops.push_back(0);
-        for(SymOp const &op : point_group) {
+        for(CASM::SymOp const &op : point_group) {
           if(op.map_error() > i) {
             num_enforced_ops.back()++;
           }
@@ -322,7 +322,7 @@ namespace CASM {
     /// See PrimcClex::generate_supercells for information on dims and G.
     ///
     void Lattice::generate_supercells(std::vector<Lattice> &supercell,
-                                      const std::vector<SymOp> &effective_pg,
+                                      const std::vector<CASM::SymOp> &effective_pg,
                                       const ScelEnumProps &enum_props) const {
 
       SuperlatticeEnumerator enumerator(effective_pg.begin(), effective_pg.end(), *this,  enum_props);
@@ -600,7 +600,7 @@ namespace CASM {
 
     //********************************************************************
 
-    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist, Eigen::Matrix3d &multimat) const {
+    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<CASM::SymOp> &symoplist, Eigen::Matrix3d &multimat) const {
       auto result = is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol());
       multimat = result.second;
       return result.first != symoplist.end();
@@ -622,7 +622,7 @@ namespace CASM {
 
     //********************************************************************
 
-    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist) const {
+    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<CASM::SymOp> &symoplist) const {
       return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol()).first != symoplist.end();
     }
 
@@ -938,7 +938,7 @@ namespace CASM {
 
       Lattice surface_lat(surface_cell.col(0), surface_cell.col(1), surface_cell.col(2));
       surface_lat.make_right_handed();
-      std::vector<SymOp> surf_lat_pg(calc_point_group(surface_lat));
+      std::vector<CASM::SymOp> surf_lat_pg(calc_point_group(surface_lat));
 
       Eigen::Matrix3d transmat;
       surface_lat.is_supercell_of(*this, surf_lat_pg, transmat);
@@ -979,7 +979,7 @@ namespace CASM {
      */
     //********************************************************************
 
-    Lattice Lattice::symmetrized(const std::vector<SymOp> &_pg) const {
+    Lattice Lattice::symmetrized(const std::vector<CASM::SymOp> &_pg) const {
       Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
       Eigen::Matrix3d frac_mat;
       for(Index ng = 0; ng < _pg.size(); ng++) {
@@ -1051,7 +1051,7 @@ namespace CASM {
     //***********************************************************
 
     Lattice Lattice::symmetrized(double sym_tol) const {
-      std::vector<SymOp> point_group = calc_point_group(*this, sym_tol);
+      std::vector<CASM::SymOp> point_group = calc_point_group(*this, sym_tol);
       return symmetrized(point_group);
     }
 
@@ -1068,24 +1068,24 @@ namespace CASM {
 
 
     /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const SymOp &op, Lattice &lat) {
+    Lattice &apply(const CASM::SymOp &op, Lattice &lat) {
       return lat = Lattice(op.matrix() * lat.lat_column_mat(), lat.tol());
     }
 
     /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const SymOp &op, const Lattice &lat) {
+    Lattice copy_apply(const CASM::SymOp &op, const Lattice &lat) {
       return Lattice(op.matrix() * lat.lat_column_mat(), lat.tol());
     }
 
     //********************************************************************
 
-    std::vector<SymOp> calc_point_group(Lattice const &_lat) {
+    std::vector<CASM::SymOp> calc_point_group(Lattice const &_lat) {
       return calc_point_group(_lat, _lat.tol());
     }
 
     //********************************************************************
 
-    std::vector<SymOp> calc_point_group(Lattice const &_lat, double tol) {
+    std::vector<CASM::SymOp> calc_point_group(Lattice const &_lat, double tol) {
       std::vector<Eigen::Matrix3i> point_group;
       point_group.reserve(48);
 
@@ -1125,7 +1125,7 @@ namespace CASM {
         }
       }
 
-      std::vector<SymOp> result;
+      std::vector<CASM::SymOp> result;
       result.reserve(point_group.size());
       Eigen::Matrix3d t_cart, t_diff;
       Lattice symlat = tlat_reduced.symmetrized(point_group);
@@ -1133,7 +1133,7 @@ namespace CASM {
       for(Eigen::Matrix3i const &frac : point_group) {
         t_cart = symlat.lat_column_mat() * frac.cast<double>() * symlat.inv_lat_column_mat();
         t_diff = t_cart * _lat.lat_column_mat() - _lat.lat_column_mat();
-        result.push_back(SymOp::point_op(t_cart, sqrt((t_diff.transpose()*t_diff).diagonal().maxCoeff())));
+        result.push_back(CASM::SymOp::point_op(t_cart, sqrt((t_diff.transpose()*t_diff).diagonal().maxCoeff())));
       }
       return result;
     }

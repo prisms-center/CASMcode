@@ -29,16 +29,16 @@ namespace CASM {
       bool operator()(const Lattice &other) const;
 
       /// Checks if lat = copy_apply(B,lat)*U, with unimodular U
-      bool operator()(const SymOp &B) const;
+      bool operator()(const CASM::SymOp &B) const;
 
       /// Checks if copy_apply(A, lat) = copy_apply(B,lat)*U, with unimodular U
-      bool operator()(const SymOp &A, const SymOp &B) const;
+      bool operator()(const CASM::SymOp &A, const CASM::SymOp &B) const;
 
       /// Checks if lat = apply(B,other)*U, with unimodular U
-      bool operator()(const SymOp &B, const Lattice &other) const;
+      bool operator()(const CASM::SymOp &B, const Lattice &other) const;
 
       /// Checks if copy_apply(A, lat) = apply(B,other)*U, with unimodular U
-      bool operator()(const SymOp &A, const SymOp &B, const Lattice &other) const;
+      bool operator()(const CASM::SymOp &A, const CASM::SymOp &B, const Lattice &other) const;
 
       /// Returns U found for last check
       Eigen::Matrix3d U() const;
@@ -58,7 +58,7 @@ namespace CASM {
       IsPointGroupOp(const Lattice &lat);
 
       /// Checks if ref_lat = cart_op*ref_lat*transf_mat(), for any transf_mat()
-      bool operator()(const SymOp &cart_op) const;
+      bool operator()(const CASM::SymOp &cart_op) const;
 
       /// Checks if ref_lat = cart_op*ref_lat*transf_mat(), for any transf_mat()
       bool operator()(const Eigen::Matrix3d &cart_op) const;
@@ -72,7 +72,7 @@ namespace CASM {
       /// If evaluates true, then ref_lat == cart_op()*L*transf_mat() to the specified tolerance
       Eigen::Matrix3d cart_op() const;
 
-      SymOp sym_op() const;
+      CASM::SymOp sym_op() const;
 
     private:
 
