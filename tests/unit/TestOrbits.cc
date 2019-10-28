@@ -25,7 +25,7 @@ namespace test {
     }
     catch(std::exception &e) {
       default_err_log().error("'make_prim_periodic_orbits' failed in TestPrimPeriodicIntegralClusterOrbits");
-      default_err_log() << "prim: \n" << primclex.prim() << std::endl;
+      //default_err_log() << "prim: \n" << primclex.prim() << std::endl;
       default_err_log() << "specs: \n" << specs << std::endl;
       default_err_log() << e.what() << std::endl;
       throw e;
@@ -51,7 +51,7 @@ namespace test {
     }
     catch(std::exception &e) {
       default_err_log().error("'Kinetics::make_prim_periodic_diff_trans_orbits' failed in TestPrimPeriodicDiffusionTransformationOrbits");
-      default_err_log() << "prim: \n" << primclex.prim() << std::endl;
+      //default_err_log() << "prim: \n" << primclex.prim() << std::endl;
       default_err_log() << "specs: \n" << specs << std::endl;
       default_err_log() << "orbits.size(): " << orbits.size() << std::endl;
       default_err_log() << e.what() << std::endl;
@@ -100,7 +100,7 @@ namespace test {
     }
     catch(std::exception &e) {
       default_err_log().error("'Kinetics::make_prim_periodic_diff_trans_orbits' failed in TestPrimPeriodicDiffusionTransformationOrbits");
-      default_err_log() << "prim: \n" << primclex.prim() << std::endl;
+      //default_err_log() << "prim: \n" << primclex.prim() << std::endl;
       default_err_log() << "specs: \n" << specs << std::endl;
       default_err_log() << "orbits.size(): " << orbits.size() << std::endl;
       default_err_log() << "branch_begin: " << branch_begin << std::endl;
@@ -125,7 +125,7 @@ namespace test {
     }
     catch(std::exception &e) {
       default_err_log().error("'Kinetics::DiffusionTransformationEnum::run' failed in TestPrimPeriodicDiffusionTransformationOrbits");
-      default_err_log() << "prim: \n" << primclex.prim() << std::endl;
+      //default_err_log() << "prim: \n" << primclex.prim() << std::endl;
       default_err_log() << "diff_trans_specs: \n" << diff_trans_specs << std::endl;
       default_err_log() << e.what() << std::endl;
       throw e;
@@ -158,7 +158,7 @@ namespace test {
     }
     catch(std::exception &e) {
       default_err_log().error("'make_local_orbits' failed in TestLocalOrbits");
-      default_err_log() << "prim: \n" << primclex.prim() << std::endl;
+      //default_err_log() << "prim: \n" << primclex.prim() << std::endl;
       default_err_log() << "diff_trans: \n" << diff_trans << std::endl;
       default_err_log() << "specs: \n" << specs << std::endl;
       default_err_log() << e.what() << std::endl;
