@@ -7,6 +7,12 @@ import subprocess
 import git
 import re
 
+def executable_ldflags():
+    from sys import platform
+    if platform == "darwin" and 'CASM_BOOST_PREFIX' in os.environ:
+        return ['-Wl,-rpath,' + os.environ['CASM_BOOST_PREFIX'] + '/lib']
+    else:
+        return None
 
 def horizontal_space():
     return "\n\n"
@@ -295,11 +301,11 @@ def git_root(path):
 def all_files_tracked_by_git():
     return subprocess.check_output(
         ["git", "ls-tree", "--full-tree", "-r", "--name-only",
-         "HEAD"]).splitlines()
+         "HEAD"], encoding="utf-8").splitlines()
 
 
 def all_files_ignored_by_git():
-    return subprocess.check_output(["git", "status", "--ignored"]).splitlines()
+    return subprocess.check_output(["git", "status", "--ignored"], encoding="utf-8").splitlines()
 
 
 @static_vars(cached_roots={})
@@ -327,8 +333,7 @@ def relative_filepath_is_tracked_by_git(filename):
 
     git_root_path = relative_filepath_is_tracked_by_git.cached_roots[cwd]
 
-    return os.path.relpath(filename,
-                           git_root_path) in all_files_tracked_by_git()
+    return os.path.relpath(filename, git_root_path) in all_files_tracked_by_git()
 
 
 def purge_untracked_files(file_list):
@@ -456,7 +461,8 @@ def make_unit_test(unit_test_directory):
         "check",
         SOURCES=source_files,
         LDADD=ldadd,
-        CPPFLAGS=["$(AM_CPPFLAGS)", "-I$(top_srcdir)/tests/unit/"])
+        CPPFLAGS=["$(AM_CPPFLAGS)", "-I$(top_srcdir)/tests/unit/"],
+        LDFLAGS=executable_ldflags())
 
     extra_files = [f for f in only_makeable_files if f not in source_files]
     value += "\n"
@@ -514,11 +520,15 @@ def make_aggregated_unit_test():
     value += horizontal_divide()
 
     test_root = "tests/unit"
+    test_group = [
+        name for name in os.listdir(test_root)
+        if name not in [".deps", ".libs", "test_projects"]
+    ]
     test_directories = [
         name
         for name in
-        [os.path.join(test_root, ls) for ls in os.listdir(test_root)]
-        if os.path.isdir(name) and "test_projects" not in name
+        [os.path.join(test_root, group) for group in test_group]
+        if os.path.isdir(name)
     ]
 
     for d in test_directories:
@@ -618,7 +628,8 @@ def make_ccasm():
         "ccasm",
         "bin",
         SOURCES=["apps/ccasm/ccasm.cpp"],
-        LDADD=["libcasm.la"] + all_boost_LDADD_flags())
+        LDADD=["libcasm.la"] + all_boost_LDADD_flags(),
+        LDFLAGS=executable_ldflags())
     return value
 
 
@@ -643,7 +654,8 @@ def make_casm_complete():
         "casm-complete",
         "bin",
         SOURCES=["apps/completer/complete.cpp"],
-        LDADD=["libcasm.la"] + all_boost_LDADD_flags())
+        LDADD=["libcasm.la"] + all_boost_LDADD_flags(),
+        LDFLAGS=executable_ldflags())
 
     value += "\n\nendif"
 
@@ -697,7 +709,7 @@ def make_libcasm(additional_sources):
         "src/casm",
         additional_sources,
         LIBADD=all_boost_LDADD_flags(),
-        LDFAGS=["-avoid-version", "$(BOOST_LDFLAGS)"])
+        LDFLAGS=["-avoid-version", "$(BOOST_LDFLAGS)"])
     value+="\nsrc/casm/version/autoversion.lo: .FORCE"
     return value
 
@@ -719,7 +731,7 @@ def make_libccasm(additional_sources):
         "libccasm",
         "src/ccasm",
         additional_sources,
-        LDFAGS=["-avoid-version"])
+        LDFLAGS=["-avoid-version"])
     return value
 
 
@@ -751,16 +763,6 @@ def _exit_on_bad_run_directory():
 
 
 def main():
-
-
-    try:
-        repo = git.Repo("./")
-        if os.path.basename(repo.working_dir) != "CASMcode-dev":
-            _exit_on_bad_run_directory()
-
-    except git.exc.InvalidGitRepositoryError:
-        _exit_on_bad_run_directory()
-
     chunk = make_ccasm()
     target = os.path.join("apps", "ccasm", "Makemodule.am")
     string_to_file(chunk, target)
