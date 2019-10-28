@@ -3,6 +3,7 @@
 #include "boost/lexical_cast.hpp"
 #include "casm/CASM_global_enum.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/symmetry/SymGroup.hh"
 

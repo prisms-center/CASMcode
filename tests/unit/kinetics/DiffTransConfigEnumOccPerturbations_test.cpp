@@ -7,6 +7,8 @@
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "TestConfiguration.hh"
 #include "TestOrbits.hh"
 #include "casm/app/AppIO_impl.hh"
@@ -417,4 +419,3 @@ TEST(DiffTransConfigEnumOccPerturbationsTest, ZrOTest_run) {
     EXPECT_EQ(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
   }
 }
-

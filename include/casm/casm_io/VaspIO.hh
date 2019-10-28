@@ -7,6 +7,8 @@
 
 namespace CASM {
 
+  class Log;
+
   /// \brief Functions and classes related to VASP input/output
   namespace VaspIO {
 

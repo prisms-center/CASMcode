@@ -6,6 +6,8 @@
 
 /// What is being used to test it:
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "casm/casm_io/jsonFile.hh"
 #include "casm/clex/PrimClex.hh"
@@ -180,4 +182,3 @@ TEST(InvariantSubgroupTest, Test0) {
     }
   }
 }
-

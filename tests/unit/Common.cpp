@@ -4,6 +4,9 @@
 
 #include <thread>
 #include <chrono>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
+#include "Proj.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/app/ProjectBuilder.hh"

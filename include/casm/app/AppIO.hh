@@ -6,6 +6,7 @@
 #include <boost/filesystem/path.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_enum.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/clex/CompositionConverter.hh"

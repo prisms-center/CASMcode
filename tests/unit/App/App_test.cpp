@@ -8,6 +8,10 @@
 #include <boost/filesystem.hpp>
 
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
+#include "casm/system/Popen.hh"
+#include "casm/casm_io/Log.hh"
 
 using namespace CASM;
 

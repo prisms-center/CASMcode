@@ -9,7 +9,6 @@
 #include <vector>
 #include <set>
 #include "casm/misc/CASM_TMP.hh"
-#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/Help.hh"
 #include "casm/casm_io/json_io/container.hh"
 

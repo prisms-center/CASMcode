@@ -1,4 +1,5 @@
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 
 namespace CASM {

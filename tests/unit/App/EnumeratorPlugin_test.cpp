@@ -8,6 +8,7 @@
 #include <boost/filesystem.hpp>
 
 #include "Common.hh"
+#include "ZrOProj.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/APICommand.hh"
 #include "casm/app/enum.hh"

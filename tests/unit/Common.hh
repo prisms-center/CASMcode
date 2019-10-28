@@ -1,8 +1,13 @@
 #ifndef UNIT_COMMON_HH
 #define UNIT_COMMON_HH
 
-#include "FCCTernaryProj.hh"
-#include "ZrOProj.hh"
+#include <iostream>
+#include <string>
+#include "casm/casm_io/jsonParser.hh"
+// #include "FCCTernaryProj.hh"
+// #include "ZrOProj.hh"
+
+using namespace CASM;
 
 namespace test {
   /// \brief Check expected JSON vs calculated JSON using BOOST_CHECK_EQUAL

@@ -9,7 +9,8 @@
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/crystallography/Structure.hh"
 #include "Common.hh"
-
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clusterography/IntegralCluster_impl.hh"
 

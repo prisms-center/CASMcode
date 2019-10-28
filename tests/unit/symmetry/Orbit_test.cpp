@@ -9,6 +9,8 @@
 
 /// What is being used to test it:
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "TestConfiguration.hh"
 #include "casm/casm_io/jsonFile.hh"
 #include "casm/clex/PrimClex.hh"
@@ -151,4 +153,3 @@ TEST(OrbitTest, Test1) {
 
   EXPECT_EQ(orbits.size(), 74);
 }
-

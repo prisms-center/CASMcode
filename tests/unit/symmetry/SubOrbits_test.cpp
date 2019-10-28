@@ -12,6 +12,8 @@
 
 /// What is being used to test it:
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
@@ -700,4 +702,3 @@ TEST(SubOrbitsTest, L12Proj) {
 
   }
 }
-

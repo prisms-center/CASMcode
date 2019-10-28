@@ -8,6 +8,8 @@
 #include <boost/filesystem.hpp>
 
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 
@@ -58,4 +60,3 @@ TEST(GrandCanonicalTest, Test0) {
   EXPECT_TRUE(check(std::string("casm monte -s ") + settings_dest.string()));
 
 }
-
