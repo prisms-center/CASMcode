@@ -14,8 +14,8 @@ namespace CASM {
     /// Within the scope of crystallography, this struct will serve as the symmetry
     /// object, which holds a transformation matrix, translation vector, and time
     /// reversal boolean, whithout any other overhead.
-    struct SymOpData {
-      SymOpData(const SymOpMatrixType &mat, const SymOpTranslationType &translation, SymOpTimeReversalType time_reversal)
+    struct SymOp {
+      SymOp(const SymOpMatrixType &mat, const SymOpTranslationType &translation, SymOpTimeReversalType time_reversal)
         : matrix(mat), translation(translation), is_time_reversal_active(time_reversal) {
       }
 
@@ -28,7 +28,6 @@ namespace CASM {
     /// classes. Any symmetry related operations within the crystallography module must be in terms
     /// of this type.
     /* typedef std::tuple<SymOpMatrixType, SymOpTranslationType, SymOpTimeReversalType> SymOpType; */
-    typedef SymOpData SymOp;
     typedef std::vector<SymOp> SymOpVector;
 
     /// Accessor for SymOpType. Returns transformation matrix (Cartesian).
