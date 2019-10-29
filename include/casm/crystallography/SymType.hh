@@ -19,6 +19,14 @@ namespace CASM {
         : matrix(mat), translation(translation), is_time_reversal_active(time_reversal) {
       }
 
+      static SymOp identity() {
+        return SymOp(SymOpMatrixType::Identity(), SymOpTranslationType::Zero(), false);
+      }
+
+      static SymOp point_operation(const SymOpMatrixType &mat) {
+        return SymOp(mat, SymOpTranslationType::Zero(), false);
+      }
+
       SymOpMatrixType matrix;
       SymOpTranslationType translation;
       SymOpTimeReversalType is_time_reversal_active;

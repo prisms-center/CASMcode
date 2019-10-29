@@ -5,6 +5,7 @@
 #include <cmath>
 #include <vector>
 
+#include "casm/crystallography/Adapter.hh"
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/CASM_global_definitions.hh"
@@ -15,8 +16,7 @@ namespace CASM {
   class jsonParser;
 
   namespace xtal {
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    class SymOp;
     class ScelEnumProps;
 
     /** \defgroup Crystallography
@@ -283,10 +283,15 @@ namespace CASM {
     double volume(const Lattice &lat);
 
     /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const CASM::SymOp &op, Lattice &lat);
+    Lattice &apply(const SymOp &op, Lattice &lat);
 
     /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const CASM::SymOp &op, const Lattice &lat);
+    Lattice copy_apply(const SymOp &op, const Lattice &lat);
+
+    template <typename ExternSymOp>
+    Lattice copy_apply(const ExternSymOp &op, const Lattice &lat) {
+      return copy_apply(adapter::Adapter<SymOp, ExternSymOp>()(op), lat);
+    }
 
     /// \brief Returns a super Lattice
     Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat);

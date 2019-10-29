@@ -1068,13 +1068,13 @@ namespace CASM {
 
 
     /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const CASM::SymOp &op, Lattice &lat) {
-      return lat = Lattice(op.matrix() * lat.lat_column_mat(), lat.tol());
+    Lattice &apply(const SymOp &op, Lattice &lat) {
+      return lat = Lattice(get_matrix(op) * lat.lat_column_mat(), lat.tol());
     }
 
     /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const CASM::SymOp &op, const Lattice &lat) {
-      return Lattice(op.matrix() * lat.lat_column_mat(), lat.tol());
+    Lattice copy_apply(const SymOp &op, const Lattice &lat) {
+      return Lattice(get_matrix(op) * lat.lat_column_mat(), lat.tol());
     }
 
     //********************************************************************

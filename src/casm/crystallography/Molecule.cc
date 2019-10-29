@@ -38,7 +38,7 @@ namespace CASM {
     //****************************************************
 
     AtomPosition &AtomPosition::apply_sym(const SymOp &op) {
-      m_position = op.matrix() * m_position;
+      m_position = get_matrix(op) * m_position;
       for(auto it = m_attribute_map.begin(); it != m_attribute_map.end(); ++it)
         (it->second).apply_sym(op);
 

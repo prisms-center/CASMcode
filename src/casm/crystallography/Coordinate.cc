@@ -220,7 +220,7 @@ namespace CASM {
     //********************************************************************
 
     Coordinate &Coordinate::apply_sym(const SymOp &op) {
-      cart() = op.matrix() * const_cart() + op.tau();
+      cart() = get_matrix(op) * this->const_cart() + get_translation(op);
 
       return *this;
     }
@@ -229,10 +229,10 @@ namespace CASM {
     // Applies symmetry to a coordinate, but doesn't apply translation
     //********************************************************************
 
-    Coordinate &Coordinate::apply_sym_no_trans(const SymOp &op) {
-      cart() = op.matrix() * const_cart();
-      return *this;
-    }
+    /* Coordinate &Coordinate::apply_sym_no_trans(const SymOp &op) { */
+    /*   cart() = op.matrix() * const_cart(); */
+    /*   return *this; */
+    /* } */
 
     //********************************************************************
     // Change the home lattice of the coordinate, selecting one representation (either CART or FRAC)

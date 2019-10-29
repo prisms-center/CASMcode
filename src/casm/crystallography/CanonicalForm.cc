@@ -1,3 +1,4 @@
+#include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -20,7 +21,7 @@ namespace CASM {
       ///   where ref_lat = niggli(in_lat, compare_tol, false)
       ///
       std::pair<Lattice, Index>
-      _equivalent_lattice_and_index(const Lattice &in_lat, const std::vector<CASM::SymOp> &point_grp, double compare_tol) {
+      _equivalent_lattice_and_index(const Lattice &in_lat, const SymOpVector &point_grp, double compare_tol) {
 
         auto lat_set = _niggli_set(in_lat, compare_tol, true);
         if(lat_set.empty())
@@ -38,12 +39,12 @@ namespace CASM {
         Index ix = 0;
         for(auto it = point_grp.begin(); it != point_grp.end(); ++it, ++ix) {
           // Skip operations that change the handedness of the lattice
-          if(it->matrix().determinant() <= 0.0) {
+          if(get_matrix(*it).determinant() <= 0.0) {
             continue;
           }
 
           for(Eigen::MatrixXd const &lat_mat : lat_set) {
-            trans_lat_mat = it->matrix() * lat_mat;
+            trans_lat_mat = get_matrix(*it) * lat_mat;
             assert(is_niggli(lat_mat, compare_tol) && "Result of 'niggli()' is not a Niggli cell");
 
             if(first || standard_orientation_compare(most_canonical_lat_mat, trans_lat_mat, compare_tol)) {
@@ -57,11 +58,11 @@ namespace CASM {
         return std::make_pair(Lattice(most_canonical_lat_mat, in_lat.tol()), to_canonical_ix);
       }
 
-      Lattice equivalent(const Lattice &in_lat, const std::vector<CASM::SymOp> &point_grp, double compare_tol) {
+      Lattice equivalent(const Lattice &in_lat, const SymOpVector &point_grp, double compare_tol) {
         return _equivalent_lattice_and_index(in_lat, point_grp, compare_tol).first;
       }
 
-      Lattice equivalent(const Lattice &lat, std::vector<CASM::SymOp> const &g) {
+      Lattice equivalent(const Lattice &lat, SymOpVector const &g) {
         return canonical::equivalent(lat, g, lat.tol());
       }
 
@@ -69,7 +70,7 @@ namespace CASM {
         return canonical::equivalent(lat, calc_point_group(lat));
       }
 
-      bool check(const Lattice &lat, std::vector<CASM::SymOp> const &g) {
+      bool check(const Lattice &lat, SymOpVector const &g) {
         return almost_equal(lat.lat_column_mat(), canonical::equivalent(lat, g).lat_column_mat(), lat.tol());
       }
 
@@ -77,11 +78,11 @@ namespace CASM {
         return canonical::check(lat, calc_point_group(lat));
       }
 
-      Index operation_index(const Lattice &in_lat, const std::vector<CASM::SymOp> &point_grp, double compare_tol) {
+      Index operation_index(const Lattice &in_lat, const SymOpVector &point_grp, double compare_tol) {
         return _equivalent_lattice_and_index(in_lat, point_grp, compare_tol).second;
       }
 
-      Index operation_index(const Lattice &lat, std::vector<CASM::SymOp> const &g) {
+      Index operation_index(const Lattice &lat, SymOpVector const &g) {
         return canonical::operation_index(lat, g, lat.tol());
       }
 

@@ -7,7 +7,8 @@
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SimpleStructure.hh"
-#include "casm/symmetry/SymOp.hh"
+#include "casm/crystallography/SymType.hh"
+#include "casm/crystallography/Adapter.hh"
 
 namespace CASM {
   namespace xtal {
@@ -31,7 +32,7 @@ namespace CASM {
     public:
 
       StrucMapCalculatorInterface(SimpleStructure _parent,
-                                  std::vector<CASM::SymOp> _point_group = {CASM::SymOp()},
+                                  SymOpVector _point_group = {SymOp::identity()},
                                   SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                   StrucMapping::AllowedSpecies allowed_species = {}) :
         m_parent(std::move(_parent)),
@@ -73,12 +74,17 @@ namespace CASM {
         return m_parent;
       }
 
-      std::vector<CASM::SymOp> const &point_group() const {
+      SymOpVector const &point_group() const {
         return m_point_group;
       }
 
-      void set_point_group(std::vector<CASM::SymOp> _point_group) {
+      void set_point_group(SymOpVector _point_group) {
         m_point_group = std::move(_point_group);
+      }
+
+      template <typename ExternSymOpVector>
+      void set_point_group(ExternSymOpVector _point_group) {
+        return this->set_point_group(adapter::Adapter<SymOpVector, ExternSymOpVector>()(_point_group));
       }
 
       StrucMapping::FixedSpecies const &fixed_species() const {
@@ -114,13 +120,21 @@ namespace CASM {
 
       /// \brief Make an exact copy of the calculator (including any initialized members)
       std::unique_ptr<StrucMapCalculatorInterface> quasi_clone(SimpleStructure _parent,
-                                                               std::vector<CASM::SymOp> _point_group = {CASM::SymOp()},
+                                                               SymOpVector _point_group = {SymOp::identity()},
                                                                SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                                                StrucMapping::AllowedSpecies _allowed_species = {}) const {
         return std::unique_ptr<StrucMapCalculatorInterface>(this->_quasi_clone(std::move(_parent),
                                                                                std::move(_point_group),
                                                                                _species_mode,
                                                                                std::move(_allowed_species)));
+      }
+
+      template <typename ExternSymOpVector>
+      std::unique_ptr<StrucMapCalculatorInterface> quasi_clone(SimpleStructure _parent,
+                                                               ExternSymOpVector _point_group = {SymOp::identity()},
+                                                               SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
+                                                               StrucMapping::AllowedSpecies _allowed_species = {}) const {
+        return this->quasi_clone(_parent, adapter::Adapter<SymOpVector, ExternSymOpVector>()(_point_group), _species_mode, _allowed_species);
       }
 
     protected:
@@ -142,7 +156,7 @@ namespace CASM {
     private:
       SimpleStructure m_parent;
 
-      std::vector<CASM::SymOp> m_point_group;
+      SymOpVector m_point_group;
 
       SimpleStructure::SpeciesMode m_species_mode;
 
@@ -157,7 +171,7 @@ namespace CASM {
 
       /// \brief Make an exact copy of the calculator (including any initialized members)
       virtual StrucMapCalculatorInterface *_quasi_clone(SimpleStructure _parent,
-                                                        std::vector<CASM::SymOp> _point_group = {CASM::SymOp()},
+                                                        SymOpVector _point_group = {SymOp::identity()},
                                                         SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                                         StrucMapping::AllowedSpecies _allowed_species = {}) const = 0;
 

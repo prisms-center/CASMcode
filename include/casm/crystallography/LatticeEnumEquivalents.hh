@@ -22,7 +22,7 @@ namespace CASM {
     /// \ingroup LatticeEnum
     ///
     class LatticeEnumEquivalents :
-      public EnumEquivalents<Lattice, std::vector<SymOp>::const_iterator, SymOp, SymRepIndexCompare> {
+      public EnumEquivalents<Lattice, std::vector<CASM::SymOp>::const_iterator, CASM::SymOp, SymRepIndexCompare> {
 
     public:
       LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g);

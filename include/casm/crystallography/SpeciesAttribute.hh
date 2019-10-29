@@ -9,9 +9,8 @@
 
 namespace CASM {
   class jsonParser;
-  class MasterSymGroup;
-  class SymOp;
   namespace xtal {
+    class SymOp;
     class SpeciesAttribute;
 
     namespace SpeciesAttribute_impl {
@@ -45,8 +44,6 @@ namespace CASM {
         /// \brief Generate a symmetry representation for the supporting vector space
         /// If attribute is Mx1 vector, res<ulting matrix will be MxM
         virtual SpeciesAttribute copy_apply(SymOp const &_op, SpeciesAttribute const &_attr) const = 0;
-
-
 
         /// \brief non-virtual method to obtain copy through BasicTraits pointer
         std::unique_ptr<BasicTraits> clone() const {

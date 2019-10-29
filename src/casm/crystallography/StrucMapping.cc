@@ -5,6 +5,7 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/LatticeMap.hh"

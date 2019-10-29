@@ -199,10 +199,10 @@ namespace CASM {
       }
       //trans_and_expand primitive factor_group
       IsPointGroupOp check_op(lattice());
-      for(SymOp const &op : prim.factor_group()) {
+      for(CASM::SymOp const &op : prim.factor_group()) {
         if(check_op(op)) {
           for(Index j = 0; j < prim_grid.size(); j++) {
-            m_factor_group.push_back(within_cell(SymOp::translation(prim_grid.scel_coord(j).const_cart())*op,
+            m_factor_group.push_back(within_cell(CASM::SymOp::translation(prim_grid.scel_coord(j).const_cart())*op,
                                                  lattice(),
                                                  PERIODIC));
           }
@@ -396,7 +396,7 @@ namespace CASM {
       //                                       * basis()[sitemap[b].sublat()].dof(doftype.name().basis())
       Eigen::MatrixXd trep, trepblock;
       for(Index s = 0; s < m_factor_group.size(); ++s) {
-        SymOp const &op = m_factor_group[s];
+        auto const &op = m_factor_group[s];
         if(verbose) {
           if(op.index() % 100 == 0)
             std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << op.index() << "/" << m_factor_group.size() << std::flush;
@@ -410,7 +410,10 @@ namespace CASM {
           auto const &dofref_to = basis()[sitemap[b].sublat()].occupant_dof();
           auto const &dofref_from = basis()[b].occupant_dof();
           OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
-          if(eq(op, dofref_to)) {
+          //TODO
+          //Calling the adapter here, because we said we don't want anything outside
+          //of crystallography to invoke crystallography/Adapter.hh
+          if(eq(adapter::Adapter<SymOp, CASM::SymOp>()(op), dofref_to)) {
             if(dofref_from.symrep_ID().is_identity()) {
               if(!eq.perm().is_identity()) {
                 dofref_from.allocate_symrep(m_factor_group);
@@ -437,7 +440,10 @@ namespace CASM {
             DoFSet const &dofref_to = basis()[sitemap[b].sublat()].dof(dof_dim.first);
             DoFSet const &dofref_from = basis()[b].dof(dof_dim.first);
             DoFIsEquivalent eq(dofref_from);
-            if(!eq(op, dofref_to)) {
+            //TODO
+            //Calling the adapter here, because we said we don't want anything outside
+            //of crystallography to invoke crystallography/Adapter.hh
+            if(!eq(adapter::Adapter<SymOp, CASM::SymOp>()(op), dofref_to)) {
               throw std::runtime_error("While generating symmetry representation for local DoF \""
                                        + dof_dim.first
                                        + "\", a symmetry operation was identified that invalidates the degree of freedom. "
@@ -466,9 +472,12 @@ namespace CASM {
       //std::cout << "INSIDE _generate_global_symreps\n";
       for(auto const &dof : m_dof_map) {
         dof.second.allocate_symrep(m_factor_group);
-        for(SymOp const &op : m_factor_group) {
+        for(auto const &op : m_factor_group) {
           DoFIsEquivalent eq(dof.second);
-          if(!eq(op)) {
+          //TODO
+          //Calling the adapter here, because we said we don't want anything outside
+          //of crystallography to invoke crystallography/Adapter.hh
+          if(!eq(adapter::Adapter<SymOp, CASM::SymOp>()(op))) {
             throw std::runtime_error("While generating symmetry representation for global DoF \""
                                      + dof.first
                                      + "\", a symmetry operation was identified that invalidates the degree of freedom. "

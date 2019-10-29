@@ -78,7 +78,7 @@ namespace CASM {
       return unit().basis()[sublat()];
     }
 
-    UnitCellCoord &UnitCellCoord::apply_sym(const SymOp &op) {
+    UnitCellCoord &UnitCellCoord::apply_sym(const CASM::SymOp &op) {
 
       // transform using stored SymBasisPermute representation
       const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID());
@@ -93,7 +93,7 @@ namespace CASM {
       return *this;
     }
 
-    UnitCellCoord UnitCellCoord::copy_apply(const SymOp &op) const {
+    UnitCellCoord UnitCellCoord::copy_apply(const CASM::SymOp &op) const {
       UnitCellCoord result(*this);
       result.apply_sym(op);
       return result;

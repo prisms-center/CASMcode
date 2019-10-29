@@ -2,17 +2,21 @@
 #define XTALSYMTOOLS_HH
 
 #include <vector>;
+#include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/CASM_global_definitions.hh"
-#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
-  class SymOp;
   namespace xtal {
     class Lattice;
 
     /// \brief Construct indices of the subgroup that leaves a lattice unchanged
-    std::vector<Index> invariant_subgroup_indices(const Lattice &lat, std::vector<SymOp> const &super_grp);
+    std::vector<Index> invariant_subgroup_indices(const Lattice &lat, SymOpVector const &super_grp);
+
+    template <typename ExternSymOpVector>
+    std::vector<Index> invariant_subgroup_indices(const Lattice &lat, ExternSymOpVector const &super_grp) {
+      return invariant_subgroup_indices(lat, adapter::Adapter<SymOpVector, ExternSymOpVector>()(super_grp));
+    }
 
     /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
     template <typename OutputIt>

@@ -7,11 +7,11 @@
 
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Adapter.hh"
 
 namespace CASM {
-  class SymOp;
   namespace xtal {
-
+    class SymOp;
     class Lattice;
 
     namespace Coordinate_impl {
@@ -256,8 +256,13 @@ namespace CASM {
       ///Transform coordinate by symmetry operation (including translation)
       Coordinate &apply_sym(const SymOp &op); //AAB
 
+      template <typename ExternSymOp>
+      Coordinate &apply_sym(const ExternSymOp &op) {
+        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
+      }
+
       ///Transform coordinate by symmetry operation (without translation)
-      Coordinate &apply_sym_no_trans(const SymOp &op); //AAB
+      /* Coordinate &apply_sym_no_trans(const SymOp &op); //AAB */
 
     private:
 

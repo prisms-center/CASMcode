@@ -963,7 +963,11 @@ namespace CASM {
 
     /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
     template<typename CoordType>
-    bool BasicStructure<CoordType>::_is_lattice_pg_op(CASM::SymOp const &_op) const {
+    bool BasicStructure<CoordType>::_is_lattice_pg_op(CASM::SymOp const &evil_op) const {
+      //TODO: Resolve where the Adapter should be called. I'm doing it here because
+      //DoFIsEquivalent is outside of crystallography, and we decided that crystallography/Adapter.hh
+      //should be limited to its own module.
+      auto _op = adapter::Adapter<xtal::SymOp, CASM::SymOp>()(evil_op);
       //std::cout << "CHECKING OP: \n" << _op.matrix() << std::endl;
       if(!LatticeIsEquivalent(lattice())(_op)) {
         //std::cout << "FAILED LATTICE CHECK\n"<< std::endl;
