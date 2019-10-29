@@ -3,6 +3,8 @@
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/symmetry/SymTools.hh"
+#include "casm/symmetry/SymTools_impl.hh"
 
 namespace CASM {
 
@@ -14,7 +16,7 @@ namespace CASM {
 
       template<typename SymOpIterator, typename SymOpOutputIterator>
       SymOpOutputIterator operator()(const Supercell &scel, SymOpIterator begin, SymOpIterator end, SymOpOutputIterator result) {
-        return scel.lattice().invariant_subgroup(begin, end, result);
+        return sym::invariant_subgroup(std::vector<SymOp>(begin, end), scel.lattice(), result);
       }
     };
 

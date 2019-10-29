@@ -435,7 +435,7 @@ namespace CASM {
   //*******************************************************************************************
   SymGroup SymGroup::lattice_point_group(Lattice const &_lat) {
 
-    SymGroup point_group(calc_point_group(_lat),&_lat);
+    SymGroup point_group(calc_point_group(_lat), &_lat);
 
 
     if(!point_group.is_group(_lat.tol())) {
@@ -456,7 +456,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  SymGroup::SymGroup(std::vector<SymOp> from_array, Lattice const* _lat_ptr, PERIODICITY_TYPE init_type) :
+  SymGroup::SymGroup(std::vector<SymOp> from_array, Lattice const *_lat_ptr, PERIODICITY_TYPE init_type) :
     m_lat_ptr(_lat_ptr),
     m_group_periodicity(init_type),
     m_max_error(-1) {

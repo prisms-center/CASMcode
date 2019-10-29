@@ -1,6 +1,8 @@
 #include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymTools.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
@@ -15,7 +17,7 @@ namespace CASM {
                                      std::vector<SymGroupRepID> const &occ_symrep_IDs,
                                      std::map<DoFKey, std::vector<SymGroupRepID> > const &local_dof_symrep_IDs) :
     m_prim_grid(_prim_lat, _super_lat, NB),
-    m_factor_group(prim_grid().scel_lattice().invariant_subgroup(_prim_factor_group)),
+    m_factor_group(sym::invariant_subgroup(_prim_factor_group, prim_grid().scel_lattice())),
     m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID),
     m_has_aniso_occs(false),
     m_has_occupation_dofs(false) {

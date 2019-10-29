@@ -8,7 +8,7 @@
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/CASM_global_definitions.hh"
-#include "casm/crystallography/LatticeCanonicalForm.hh"
+/* #include "casm/crystallography/LatticeCanonicalForm.hh" */
 
 namespace CASM {
   class SymOp;
@@ -31,7 +31,7 @@ namespace CASM {
      *  @{
      */
 
-    class Lattice : public LatticeCanonicalForm<Comparisons<CRTPBase<Lattice>>> {
+    class Lattice : public Comparisons<CRTPBase<Lattice>> {
     public:
       typedef Eigen::Matrix3d::ColXpr LatVec;
       typedef Eigen::Matrix3d::ConstColXpr ConstLatVec;
