@@ -7,12 +7,6 @@ import subprocess
 import git
 import re
 
-def executable_ldflags():
-    from sys import platform
-    if platform == "darwin" and 'CASM_BOOST_PREFIX' in os.environ:
-        return ['-Wl,-rpath,' + os.environ['CASM_BOOST_PREFIX'] + '/lib']
-    else:
-        return None
 
 def horizontal_space():
     return "\n\n"
@@ -112,7 +106,7 @@ def make_add_to_LTLIBRARIES(libname, LT_prefix, **kwargs):
                                 ["{}.la".format(libname)])
 
     for k in kwargs:
-        if len(kwargs[k]) == 0:
+        if not kwargs[k] or len(kwargs[k]) == 0:
             continue
         value += "\n"
         value += basic_maker_string("{}_la_{}".format(
@@ -142,7 +136,7 @@ def make_add_to_PROGRAMS(program_name, PROGRAMS_prefix, **kwargs):
                                 [program_name])
 
     for k in kwargs:
-        if len(kwargs[k]) == 0:
+        if not kwargs[k] or len(kwargs[k]) == 0:
             continue
         value += "\n"
         value += basic_maker_string("{}_{}".format(
@@ -461,8 +455,7 @@ def make_unit_test(unit_test_directory):
         "check",
         SOURCES=source_files,
         LDADD=ldadd,
-        CPPFLAGS=["$(AM_CPPFLAGS)", "-I$(top_srcdir)/tests/unit/"],
-        LDFLAGS=executable_ldflags())
+        CPPFLAGS=["$(AM_CPPFLAGS)", "-I$(top_srcdir)/tests/unit/"])
 
     extra_files = [f for f in only_makeable_files if f not in source_files]
     value += "\n"
@@ -628,8 +621,7 @@ def make_ccasm():
         "ccasm",
         "bin",
         SOURCES=["apps/ccasm/ccasm.cpp"],
-        LDADD=["libcasm.la"] + all_boost_LDADD_flags(),
-        LDFLAGS=executable_ldflags())
+        LDADD=["libcasm.la"] + all_boost_LDADD_flags())
     return value
 
 
@@ -654,8 +646,7 @@ def make_casm_complete():
         "casm-complete",
         "bin",
         SOURCES=["apps/completer/complete.cpp"],
-        LDADD=["libcasm.la"] + all_boost_LDADD_flags(),
-        LDFLAGS=executable_ldflags())
+        LDADD=["libcasm.la"] + all_boost_LDADD_flags())
 
     value += "\n\nendif"
 

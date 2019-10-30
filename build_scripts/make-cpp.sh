@@ -8,6 +8,7 @@ check_var "CASM_BOOST_PREFIX" "Boost libraries location"
 check_var "CASM_BASH_COMPLETION_DIR" "Location to install CASM bash_completion script"
 check_var "CASM_CONFIGFLAGS" "configure options"
 check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations"
+check_var "CASM_LDFLAGS" "Linker flags" ""
 check_var "CASM_CC" "C compiler" ${CC:-"cc"}
 check_var "CASM_CXX" "C++ compiler" ${CXX:-"c++"}
 check_var "CASM_PYTHON" "Python interpreter" ${PYTHON:-"python"}
@@ -35,7 +36,7 @@ fi
 if ! [ -f ./configure ]; then
   $CASM_PYTHON make_Makemodule.py \
     && ./bootstrap.sh \
-    && ./configure CXXFLAGS="${CASM_CXXFLAGS}" CC="$CASM_CC" CXX="$CASM_CXX" PYTHON="$CASM_PYTHON" ${CASM_CONFIGFLAGS} \
+    && ./configure CXXFLAGS="${CASM_CXXFLAGS}" CC="$CASM_CC" CXX="$CASM_CXX" PYTHON="$CASM_PYTHON" LDFLAGS="${CASM_LDFLAGS}" ${CASM_CONFIGFLAGS} \
     || { echo "configuration failed"; exit 1; }
 else
   echo "'configure' already exists; continuing... (delete it to re-configure)"
