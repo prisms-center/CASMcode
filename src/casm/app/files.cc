@@ -1,8 +1,8 @@
 #include <cstring>
 
-#include "casm/app/casm_functions.hh"
 #include "casm/misc/algorithm.hh"
-#include "casm/casm_io/FileEnumerator.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/app/FileEnumerator.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
@@ -235,4 +235,3 @@ namespace CASM {
   };
 
 }
-
