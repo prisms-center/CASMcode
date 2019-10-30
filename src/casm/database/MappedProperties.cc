@@ -7,13 +7,15 @@ namespace CASM {
   /*
   const std::string traits<ScoreMappedProperties::Method>::name = "method";
 
+
   const std::multimap<ScoreMappedProperties::Method, std::vector<std::string> > traits<ScoreMappedProperties::Method>::strval = {
     {ScoreMappedProperties::Method::deformation_cost, {"deformation_cost"} },
     {ScoreMappedProperties::Method::minimum, {"minimum"} },
     {ScoreMappedProperties::Method::maximum, {"maximum"} },
     {ScoreMappedProperties::Method::direct_selection, {"direct_selection"} }
   };
-
+  */
+  /*
   ENUM_IO_DEF(CASM::ScoreMappedProperties::Method)
   */
 
@@ -36,38 +38,40 @@ namespace CASM {
   double &MappedProperties::scalar(std::string const &_name) {
     auto it = global.find(_name);
     if(it == global.end()) {
-      it = global.emplace(std::make_pair<const std::string, Eigen::MatrixXd>(_name, Eigen::MatrixXd::Zero(1, 1))).first;
+      it = global.emplace(std::make_pair(_name, Eigen::MatrixXd::Zero(1, 1).eval())).first;
     }
     assert((it->second).rows() == 1 && (it->second).cols() == 1);
     return (it->second)(0, 0);
-
   }
-  //jsonParser &to_json(const MappedProperties &obj, jsonParser &json) {
-  //json.put_obj();
-  //json["from"] = obj.from;
-  //json["to"] = obj.to;
-  //json["unmapped"] = obj.unmapped;
-  //json["mapped"] = obj.mapped;
-  //return json;
-  //}
+  jsonParser &to_json(const MappedProperties &obj, jsonParser &json) {
+    json.put_obj();
+    json["from"] = obj.from;
+    json["to"] = obj.to;
+    json["global"] = obj.global;
+    json["site"] = obj.site;
+    json["timestamp"] = obj.timestamp;
+    return json;
+  }
 
-  //void from_json(MappedProperties &obj, const jsonParser &json) {
-  //from_json(obj.from, json["from"]);
-  //from_json(obj.to, json["to"]);
-  //from_json(obj.unmapped, json["unmapped"]);
-  //from_json(obj.mapped, json["mapped"]);
-  //}
+  jsonParser const &from_json(MappedProperties &obj, const jsonParser &json) {
+    from_json(obj.from, json["from"]);
+    from_json(obj.to, json["to"]);
+    from_json(obj.global, json["global"]);
+    from_json(obj.site, json["site"]);
+    from_json(obj.timestamp, json["timestamp"]);
+    return json;
+  }
 
   ScoreMappedProperties::Option::Option(Method _method, std::string _name, double _lattice_weight) :
-    m_method(_method),
-    m_name(std::move(_name)),
-    m_lattice_weight(_lattice_weight) {
-    if(_method = Method::deformation_cost) {
-      if(m_lattice_weight < 0.0 || m_lattice_weight > 1.0) {
+    method(_method),
+    name(std::move(_name)),
+    lattice_weight(_lattice_weight) {
+    if(method == Method::deformation_cost) {
+      if(lattice_weight < 0.0 || lattice_weight > 1.0) {
         throw std::invalid_argument("Invalid ScoreMappedProperties option, using 'deformation_cost' method, lattice_weight must be between 0.0 and 1.0");
       }
     }
-    else if(m_name.empty()) {
+    else if(name.empty()) {
       throw std::invalid_argument("Invalid ScoreMappedProperties option, using 'minimum', 'maximum, or 'direct_selection' method, additional string argument is required.");
     }
   }
@@ -78,48 +82,21 @@ namespace CASM {
   ScoreMappedProperties::ScoreMappedProperties(ScoreMappedProperties::Option _opt) :
     m_opt(_opt) {
 
-    // default to minimum "relaxed_energy"
-    if(m_params.is_null() || m_params.size() == 0) {
-      m_params.put_obj();
-      m_params["method"] = "minimum";
-      m_params["property"] = "relaxed_energy";
-    }
-
-    from_json(m_method, m_params["method"]);
-
-    switch(m_method) {
-    case Method::deformation_cost: {
-      from_json(m_lattice_weight, m_params["lattice_weight"]);
-      if(m_lattice_weight < 0.0 || m_lattice_weight > 1.0) {
-        throw std::invalid_argument("Invalid ScoreMappedProperties lattice weight");
-      }
-      break;
-    }
-    case Method::minimum:
-    case Method::maximum: {
-      from_json(m_propname, m_params["property"]);
-      break;
-    }
-    case Method::direct_selection: {
-      from_json(m_direct_selection_name, m_params["name"]);
-      break;
-    }
-    }
   }
 
   double ScoreMappedProperties::operator()(const MappedProperties &obj) const {
-    switch(m_method) {
+    switch(m_opt.method) {
     case Method::minimum: {
-      return obj.scalar(m_propname);
+      return obj.scalar(m_opt.name);
     }
     case Method::maximum: {
-      return -obj.scalar(m_propname);
+      return -obj.scalar(m_opt.name);
     }
     case Method::deformation_cost: {
-      return obj.scalar("lattice_deformation_cost") * m_lattice_weight + obj.scalar("basis_deformation_cost") * (1.0 - m_lattice_weight);
+      return obj.scalar("lattice_deformation_cost") * m_opt.lattice_weight + obj.scalar("basis_deformation_cost") * (1.0 - m_opt.lattice_weight);
     }
     case Method::direct_selection: {
-      if(obj.to == m_direct_selection_name) {
+      if(obj.to == m_opt.name) {
         return 0.0;
       }
       else {
@@ -133,30 +110,76 @@ namespace CASM {
   }
 
   bool ScoreMappedProperties::validate(const MappedProperties &obj) const {
-    switch(m_method) {
+    switch(m_opt.method) {
     case Method::minimum:
-    case Method::maximum: {
-      return obj.global.contains(m_propname);
-    }
-    case Method::deformation_cost: {
-      return obj.global.contains("lattice_deformation_cost") &&
-             obj.global.contains("basis_deformation_cost");
-    }
-    case Method::direct_selection: {
+    case Method::maximum:
+      return obj.global.count(m_opt.name);
+    case Method::deformation_cost:
+      return obj.has_scalar("lattice_deformation_cost") &&
+             obj.has_scalar("basis_deformation_cost");
+    case Method::direct_selection:
       return true;
-    }
-    default: {
+    default:
       return false;
-    }
     }
   }
 
+
+
   bool ScoreMappedProperties::operator==(const ScoreMappedProperties &B) const {
-    return m_params == B.m_params;
+    return m_opt.method == B.m_opt.method &&
+           m_opt.name == B.m_opt.name;
   }
 
   bool ScoreMappedProperties::operator!=(const ScoreMappedProperties &B) const {
     return !(*this == B);
+  }
+
+  jsonParser &to_json(const ScoreMappedProperties &score, jsonParser &json) {
+    switch(score.option().method) {
+    case ScoreMappedProperties::Method::minimum:
+      json["method"] = "minimum";
+      json["property"] = score.option().name;
+      break;
+    case ScoreMappedProperties::Method::maximum:
+      json["method"] = "maximum";
+      json["property"] = score.option().name;
+      break;
+    case ScoreMappedProperties::Method::deformation_cost:
+      json["method"] = "deformation_cost";
+      break;
+    case ScoreMappedProperties::Method::direct_selection:
+      json["method"] = "direct_selection";
+      json["name"] = score.option().name;
+      break;
+    }
+
+    return json;
+  }
+
+  jsonParser const &from_json(ScoreMappedProperties &score, const jsonParser &json) {
+    ScoreMappedProperties::Option opt;
+    if(json.contains("method")) {
+      std::string method = json["method"].get<std::string>();
+      if(method == "minimum") {
+        opt.method = ScoreMappedProperties::Method::minimum;
+        opt.name = json["property"].get<std::string>();
+      }
+      else if(method == "maximum") {
+        opt.method = ScoreMappedProperties::Method::maximum;
+        opt.name = json["property"].get<std::string>();
+      }
+      else if(method == "deformation_cost") {
+        opt.method = ScoreMappedProperties::Method::deformation_cost;
+        opt.name = "";
+      }
+      else if(method == "direct_selection") {
+        opt.method = ScoreMappedProperties::Method::direct_selection;
+        opt.name = json["name"].get<std::string>();
+      }
+    }
+    score = ScoreMappedProperties(opt);
+    return json;
   }
 
   /*

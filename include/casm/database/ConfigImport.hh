@@ -16,8 +16,7 @@ namespace CASM {
   class SimpleStructure;
   class PrimClex;
   class jsonParser;
-  template<typename T> class BasicStructure;
-  class Site;
+
 }
 
 namespace CASM {
@@ -53,7 +52,6 @@ namespace CASM {
       /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
       map_result_inserter map(fs::path p,
                               std::unique_ptr<Configuration> const &hint_config,
-                              bool primitive_only,
                               map_result_inserter result) const;
 
       /// Returns settings used for import
@@ -69,20 +67,19 @@ namespace CASM {
 
       MappingSettings m_set;
       std::unique_ptr<ConfigMapper> m_configmapper;
-      std::vector<std::string> m_dof;
     };
 
     /// Configuration-specialized Import
     template<>
     class Import<Configuration> : public ImportT<Configuration> {
     public:
-      using ImportT<Configuration>::settings;
-      using ImportT<Configuration>::import;
+      using ImportT<ConfigType>::settings;
+      using ImportT<ConfigType>::import;
 
       /// \brief Constructor
       Import(
         const PrimClex &primclex,
-        const StructureMap<Configuration> &mapper,
+        const StructureMap<ConfigType> &mapper,
         ImportSettings const &_set,
         fs::path const &report_dir,
         Log &file_log);
@@ -104,12 +101,12 @@ namespace CASM {
     class Update<Configuration> : public UpdateT<Configuration> {
     public:
 
-      using UpdateT<Configuration>::update;
+      using UpdateT<ConfigType>::update;
 
       /// \brief Constructor
       Update(
         const PrimClex &primclex,
-        const StructureMap<Configuration> &mapper,
+        const StructureMap<ConfigType> &mapper,
         fs::path const &report_dir);
 
       static const std::string desc;

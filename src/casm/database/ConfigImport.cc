@@ -84,7 +84,6 @@ namespace CASM {
     StructureMap<Configuration>::map_result_inserter StructureMap<Configuration>::map(
       fs::path p,
       std::unique_ptr<Configuration> const &hint_config,
-      bool primitive_only,
       map_result_inserter result) const {
       // need to set Result data (w/ defaults):
       // - std::string pos = "";
@@ -117,7 +116,7 @@ namespace CASM {
 
       for(auto const &map : map_result.maps) {
         // insert in database (note that this also/only inserts primitive)
-        ConfigInsertResult insert_result = map.second.second.insert(primitive_only);
+        ConfigInsertResult insert_result = map.second.second.insert(settings().primitive_only);
 
         res.is_new_config = insert_result.insert_canonical;
 
@@ -136,15 +135,6 @@ namespace CASM {
         //}
 
         //to_json(map_result.maps.begin()->first, res.map_result.props.mapped);
-
-        // if the result was a success, need to populate relaxed energy in
-        // map_result.relaxation_properties["best_mapping"]["relaxed_energy"]
-        if(res.pos.extension() == ".json" || res.pos.extension() == ".JSON") {
-          jsonParser json(res.pos);
-          if(json.contains("relaxed_energy")) {
-            res.map_result.props.scalar("relaxed_energy") = json["relaxed_energy"].get<double>();
-          }
-        }
 
         // it may be the structure was not primitive:
         // - in which case we need to create a result indicating that the primitive
@@ -574,6 +564,7 @@ namespace CASM {
       jsonParser map_json;
       kwargs.get_else(map_json, "mapping", jsonParser());
       MappingSettings map_settings = map_json.get<MappingSettings>();
+      map_settings.primitive_only = true;
 
       StructureMap<Configuration> mapper(map_settings, primclex);
       used["mapping"] = mapper.settings();

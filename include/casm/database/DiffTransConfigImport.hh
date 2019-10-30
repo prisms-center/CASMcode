@@ -35,14 +35,12 @@ namespace CASM {
       using ConfigType = Kinetics::DiffTransConfiguration;
 
       /// Construct with PrimClex and by moving a ConfigMapper
-      StructureMap<ConfigType>(
-        const PrimClex &_primclex,
-        std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper);
+      StructureMap(MappingSettings const &_set,
+                   std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper);
 
       /// Construct with PrimClex and settings (see Import / Update desc)
-      StructureMap<ConfigType>(
-        const PrimClex &_primclex,
-        const jsonParser &kwargs);
+      StructureMap(MappingSettings const &_set,
+                   const PrimClex &primclex);
 
       typedef std::back_insert_iterator<std::vector<ConfigIO::Result> > map_result_inserter;
 
@@ -58,11 +56,11 @@ namespace CASM {
       /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
       map_result_inserter map(
         fs::path p,
-        DatabaseIterator<ConfigType> hint,
+        std::unique_ptr<ConfigType> const &hint_config,
         map_result_inserter result) const;
 
       /// Returns JSON with settings used after combing constructor input and defaults
-      const jsonParser &used() const;
+      const MappingSettings &settings() const;
 
 
     private:
@@ -70,32 +68,31 @@ namespace CASM {
       /// \brief Import Configuration with only occupation DoF
       bool _occupation_only() const;
 
-      /// \brief Read BasicStructure<Site> to be imported
-      BasicStructure<Site> _make_structure(const fs::path &p) const;
+      /// \brief Read SimpleStructure to be imported
+      SimpleStructure _make_structure(const fs::path &p) const;
+
+      MappingSettings m_set;
 
       std::unique_ptr<Kinetics::DiffTransConfigMapper> m_difftransconfigmapper;
-      jsonParser m_used;
     };
 
     /// DiffTransConfiguration-specialized Import
     template<>
     class Import<Kinetics::DiffTransConfiguration> : public ImportT<Kinetics::DiffTransConfiguration> {
     public:
+      using ImportT<ConfigType>::import;
 
       /// \brief Constructor
       Import(
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
-        bool import_data,
-        bool copy_additional_files,
-        bool overwrite,
-        fs::path report_dir,
+        ImportSettings const &_set,
+        fs::path const &report_dir,
         Log &file_log);
 
       static const std::string desc;
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::ImportOption &import_opt);
 
-      using ImportT<ConfigType>::import;
 
     protected:
 
@@ -131,5 +128,4 @@ namespace CASM {
 
   }
 }
-
 #endif

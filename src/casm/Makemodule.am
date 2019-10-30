@@ -87,6 +87,7 @@ libcasm_la_SOURCES = \
   src/casm/clex/Configuration.cc\
   src/casm/clex/ConfigurationTraits.cc\
   src/casm/clex/ECIContainer.cc\
+  src/casm/clex/MappedPropertiesTools.cc\
   src/casm/clex/NeighborList.cc\
   src/casm/clex/OrbitFunctionTraits.cc\
   src/casm/clex/ParamComposition.cc\

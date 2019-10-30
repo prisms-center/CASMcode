@@ -35,11 +35,9 @@ namespace CASM {
     /// Specifies default parameters for all values, in order to simplify
     /// parsing from JSON
     struct ImportSettings {
-      ImportSettings(bool _primitive_only = false,
-                     bool _data = false,
+      ImportSettings(bool _data = false,
                      bool _additional_files = false,
                      bool _overwrite = false) :
-        primitive_only(_primitive_only),
         data(_data),
         additional_files(_additional_files),
         overwrite(_overwrite) {}
@@ -48,7 +46,6 @@ namespace CASM {
         *this = ImportSettings();
       }
 
-      bool primitive_only;
       // attempt to import calculation results into database, else just insert
       // configurations w/out data
       bool data;

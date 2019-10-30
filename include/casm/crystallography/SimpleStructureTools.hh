@@ -87,17 +87,6 @@ namespace CASM {
   /// \brief use information in _reference to initialize atom_info from mol_info
   void _atomize(SimpleStructure &_sstruc, Eigen::Ref<const Eigen::VectorXi> const &_mol_occ, BasicStructure<Site> const &_reference);
 
-  /// \brief Construct from Configuration and specify prefix for output quantities
-  jsonParser json_supplement(Configuration const &_config,
-                             std::string const &_prefix = "",
-                             std::vector<DoFKey> const &_which_dofs = {});
-
-  /// \brief Construct from Configuration and specify prefix for output quantities
-  jsonParser json_supplement(ConfigDoF const &_dof,
-                             BasicStructure<Site> const &_reference,
-                             std::string const &_prefix = "",
-                             std::vector<DoFKey> _which_dofs = {});
-
   /// \brief Output to JSON, excluding any molecular or atomic species contained in 'excluded_species'
   jsonParser &to_json(SimpleStructure const &_struc,
                       jsonParser &json_supplement,

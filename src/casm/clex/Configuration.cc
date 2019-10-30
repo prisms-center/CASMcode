@@ -84,7 +84,7 @@ namespace CASM {
 
     set_source(source);
   }
-  /*
+
   /// Construct a Configuration from JSON data
   Configuration::Configuration(
     const Supercell &_supercell,
@@ -114,7 +114,7 @@ namespace CASM {
     Configuration(*_primclex.db<Supercell>().find(Configuration::split_name(_configname).first),
                   Configuration::split_name(_configname).second,
                   _data) {}
-  */
+
   //*********************************************************************************
 
   Configuration Configuration::zeros(Supercell const &_scel) {
@@ -757,69 +757,6 @@ namespace CASM {
 
   //*********************************************************************************
 
-  jsonParser Configuration::print_properties(std::string calctype) const {
-    jsonParser prop_calc_json;
-    Lattice ref_lat = supercell().lattice();
-    MappedProperties const &props = calc_properties(calctype);
-    if(props.global.count("relaxation_deformation")) {
-      ref_lat = Lattice(props.global.at("relaxation_deformation") * supercell().lattice().lat_column_mat());
-    }
-    prop_calc_json["relaxed_lattice"] = ref_lat.lat_column_mat().transpose();
-    std::vector<std::pair<std::string, Coordinate>> basis;
-    for(int i = 0 ; i < supercell().num_sites(); i++) {
-      Coordinate ref_coord = supercell().coord(i);
-      if(props.site.count("relaxation_displacement")) {
-        ref_coord.cart() += props.site.at("relaxation_displacement");
-      }
-      if(props.global.count("relaxation_deformation")) {
-        ref_coord.cart() = props.global.at("relaxation_deformation") * ref_coord.const_cart();
-      }
-      Coordinate deformed_coord(ref_coord.const_cart(), ref_lat, CART);
-      deformed_coord.within();
-      std::pair<std::string, Coordinate> site(mol(i).name(), deformed_coord);
-      basis.push_back(site);
-    }
-    std::sort(basis.begin(), basis.end(), [ = ](const std::pair<std::string, Coordinate> &A, const std::pair<std::string, Coordinate> &B) {
-      return A.first < B.first;
-    });
-    std::map<std::string, int> atom_type_count;
-    Eigen::MatrixXd relaxed_basis(supercell().num_sites(), 3);
-    int i = 0;
-    for(auto it = basis.begin(); it != basis.end(); ++it) {
-      if(it->first != "Va" && it->first != "va" && it->first != "VA") {
-        auto search = atom_type_count.find(it->first);
-        if(search == atom_type_count.end()) {
-          atom_type_count.emplace(it->first, 1);
-        }
-        else {
-          search->second++;
-        }
-        relaxed_basis.row(i) = it->second.const_frac().transpose();
-        ++i;
-      }
-    }
-    Eigen::MatrixXd tmp = relaxed_basis.topLeftCorner(i, 3);
-    relaxed_basis = tmp;
-    prop_calc_json["coord_mode"] = "Direct";
-    std::vector<std::string> atom_type;
-    std::vector<int> atoms_per_type;
-    for(auto it = atom_type_count.begin(); it != atom_type_count.end(); ++it) {
-      atom_type.push_back(it->first);
-      atoms_per_type.push_back(it->second);
-    }
-    prop_calc_json["atom_type"] = atom_type;
-    prop_calc_json["atoms_per_type"] = atoms_per_type;
-    prop_calc_json["relaxed_basis"] = relaxed_basis;
-    for(auto it = props.global.begin(); it != props.global.end(); ++it)
-      prop_calc_json[it->first] = it->second;
-
-    for(auto it = props.site.begin(); it != props.site.end(); ++it)
-      prop_calc_json[it->first] = it->second;
-
-    return prop_calc_json;
-  }
-  //*********************************************************************************
-
   /// Private members:
 
   /// Reads the Configuration from JSON
@@ -838,7 +775,7 @@ namespace CASM {
   ///   read properties: (absolute path in config_list)
   ///     json["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
   ///
-  /*
+
   void Configuration::from_json(const jsonParser &json, const Supercell &scel, std::string _id) {
 
     m_supercell = &scel;
@@ -877,18 +814,18 @@ namespace CASM {
 
     auto calc_props_it = prop_it->find("calc");
     if(calc_props_it != prop_it->end()) {
-      set_calc_properties(*calc_props_it, set.default_clex().calctype);
+      set_calc_properties(calc_props_it->get<MappedProperties>(), set.default_clex().calctype);
     }
 
   }
-  */
 
-  /*
+
+
   void Configuration::from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname) {
     auto name = Configuration::split_name(_configname);
     this->from_json(json, *primclex.db<Supercell>().find(name.first), name.second);
   }
-  */
+
 
   bool Configuration::operator<(const Configuration &B) const {
     return less()(B);
@@ -922,7 +859,7 @@ namespace CASM {
     ConfigIsEquivalent f(*this, crystallography_tol());
     return f(B);
   }
-  /*
+
   Configuration jsonConstructor<Configuration>::from_json(
     const jsonParser &json,
     const PrimClex &primclex,
@@ -938,7 +875,7 @@ namespace CASM {
 
     return Configuration(scel, id, json);
   }
-  */
+
   //*********************************************************************************
 
   std::string pos_string(Configuration const  &_config) {
@@ -971,7 +908,7 @@ namespace CASM {
 
   std::string config_json_string(Configuration const  &_config) {
     std::stringstream ss;
-    jsonParser tjson = json_supplement(_config);
+    jsonParser tjson;// = json_supplement(_config);
     to_json(to_simple_structure(_config), tjson);
     tjson.print(ss);
     return ss.str();
@@ -1198,39 +1135,6 @@ namespace CASM {
     // if $CANON_SCELNAME/$CANON_INDEX
     return *primclex.db<Configuration>().find(name);
   }
-
-  /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
-  /// \param config must have a canonical name
-  Configuration &apply_properties(Configuration &config, std::string calctype) {
-    throw std::runtime_error("apply_properties(Configuration) deprecation");
-
-    if(!is_calculated(config, calctype)) {
-      config.primclex().log() << ">>>>>>!!!!!WARNING: Attempting to extract properties from a configuration without properties!!!!" << std::endl
-                              << "Endpoint " << config.name() << " is not calculated in calctype " << calctype << "!!!!<<<<<<" << std::endl << std::endl;;
-    }
-
-    MappedProperties const &calc_props = config.calc_properties(calctype);
-    //config.init_deformation();
-    //config.init_displacement();
-
-    if(calc_props.site.count("relaxation_displacement")) {
-      Eigen::MatrixXd disp = calc_props.site.at("relaxation_displacement");
-      //config.set_displacement(disp.transpose());
-    }
-    if(calc_props.global.count("relaxation_deformation")) {
-      Eigen::Matrix3d deform = calc_props.global.at("relaxation_deformation");
-      //config.set_deformation(deform);
-    }
-    return config;
-  }
-
-  /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
-  /// \param config must have a canonical name
-  Configuration copy_apply_properties(const Configuration &config, std::string calctype) {
-    Configuration tmp = config;
-    return apply_properties(tmp, calctype);
-  }
-
 
   /// \brief Returns correlations using 'clexulator'.
   Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator) {

@@ -100,7 +100,6 @@ namespace CASM {
         //   See _import documentation for more.
         m_structure_mapper.map(resolve_struc_path(*it, primclex()),
                                nullptr,
-                               settings().primitive_only,
                                std::back_inserter(tvec));
         for(auto &res : tvec) {
 

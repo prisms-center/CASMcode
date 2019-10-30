@@ -185,43 +185,6 @@ namespace CASM {
   }
 
   //***************************************************************************
-  /// \brief Construct from Configuration and specify prefix for output quantities
-  jsonParser json_supplement(Configuration const &_config,
-                             std::string const &_prefix,
-                             std::vector<DoFKey> const &_which_dofs) {
-
-
-    return json_supplement(_config.configdof(), _config.prim(), _prefix, _which_dofs);
-  }
-
-  //***************************************************************************
-  /// \brief Construct from Configuration and specify prefix for output quantities
-  jsonParser json_supplement(ConfigDoF const &_dof,
-                             BasicStructure<Site> const &_reference,
-                             std::string const &_prefix,
-                             std::vector<DoFKey> which_dofs) {
-    jsonParser result;
-    if(which_dofs.empty()) {
-      for(std::string const &dof : continuous_local_dof_types(_reference))
-        which_dofs.push_back(dof);
-      for(std::string const &dof : global_dof_types(_reference))
-        which_dofs.push_back(dof);
-    }
-
-    for(DoFKey const &dof : which_dofs) {
-      if(dof != "none" && dof != "occ") {
-        auto traits_ptr = &DoFType::traits(dof);
-        if(traits_ptr->val_traits().global())
-          result[_prefix + "global_dofs"][dof] = traits_ptr->dof_to_json(_dof, _reference);
-        else
-          result[_prefix + "mol_dofs"][dof] = traits_ptr->dof_to_json(_dof, _reference);
-
-      }
-    }
-    return result;
-  }
-
-  //***************************************************************************
 
   jsonParser &to_json(SimpleStructure const &_struc,
                       jsonParser &supplement,

@@ -197,15 +197,15 @@ namespace CASM {
       Kinetics::DiffTransConfigInterpolation interpolater(result.config->diff_trans(), result.config->from_config(), result.config->to_config(), result.structures.size() - 2); //<- using current calctype here
       int image_no = 0;
       for(auto it = interpolater.begin(); it != interpolater.end(); ++it) {
-        result.relaxation_properties.push_back(jsonParser());
-        result.relaxation_properties[image_no].put_obj();
+        //result.relaxation_properties.push_back(jsonParser());
+        //result.relaxation_properties[image_no].put_obj();
         //Structure pseudoprim = make_deformed_struc(*it);
         //Structure img = Structure(result.structures[image_no]);
         // ConfigMapperResult tmp_result = ConfigMapping::structure_mapping(pseudoprim, img, lattice_weight());
         //result.relaxation_properties[image_no]["lattice_deformation"] = tmp_result.relaxation_properties["best_mapping"]["lattice_deformation"];
-        result.relaxation_properties[image_no]["lattice_deformation"] = -1.0;
+        //result.relaxation_properties[image_no]["lattice_deformation"] = -1.0;
         //result.relaxation_properties[image_no]["basis_deformation"] = tmp_result.relaxation_properties["best_mapping"]["basis_deformation"];
-        result.relaxation_properties[image_no]["basis_deformation"] = -1.0;
+        //result.relaxation_properties[image_no]["basis_deformation"] = -1.0;
         image_no++;
       }
 
@@ -219,7 +219,7 @@ namespace CASM {
         std::vector<double> energies;
         for(auto &img : all_strucs) {
           energies.push_back(img["relaxed_energy"].get<double>());
-          result.relaxation_properties[count]["relaxed_energy"] = img["relaxed_energy"];
+          //result.relaxation_properties[count]["relaxed_energy"] = img["relaxed_energy"];
           count++;
         }
         if(!all_strucs.contains("kra")) {
@@ -343,11 +343,18 @@ namespace CASM {
       }
       for(int i = 0; i < moving_atoms.size(); i++) {
         std::vector<std::string> allowed_from_occs = primclex().prim().basis()[from_coords[moving_atoms[i]].sublat()].allowed_occupants();
-        Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), from_struc.basis()[moving_atoms[i]].occ_name()));
+        Index from_occ_index = std::distance(allowed_from_occs.begin(),
+                                             std::find(allowed_from_occs.begin(),
+                                                       allowed_from_occs.end(),
+                                                       from_struc.basis()[moving_atoms[i]].occ_name()));
         //for now pos is 0 because Molecules are hard
         Kinetics::SpeciesLocation from_loc(from_coords[moving_atoms[i]], from_occ_index, 0);
         std::vector<std::string> allowed_to_occs = primclex().prim().basis()[to_coords[moving_atoms[i]].sublat()].allowed_occupants();
-        Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), from_struc.basis()[moving_atoms[i]].occ_name()));
+        Index to_occ_index = std::distance(allowed_to_occs.begin(),
+                                           std::find(allowed_to_occs.begin(),
+                                                     allowed_to_occs.end(),
+                                                     from_struc.basis()[moving_atoms[i]].occ_name()));
+
         //for now pos is 0 because Molecules are hard
         Kinetics::SpeciesLocation to_loc(to_coords[moving_atoms[i]], to_occ_index, 0);
         diff_trans.species_traj().emplace_back(from_loc, to_loc);

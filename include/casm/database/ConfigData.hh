@@ -7,7 +7,7 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
-#include "casm/database/MappedProperties.hh"
+
 
 
 // To be specialized for calculable 'ConfigType' classes:
@@ -35,6 +35,7 @@ namespace CASM {
       MappingSettings(double _lattice_weight = 0.5,
                       bool _ideal = false,
                       bool _strict = false,
+                      bool _primitive_only = false,
                       std::vector<std::string> _forced_lattices = {},
                       std::string _filter = "",
                       double _cost_tol = CASM::TOL,
@@ -44,6 +45,7 @@ namespace CASM {
         lattice_weight(_lattice_weight),
         ideal(_ideal),
         strict(_strict),
+        primitive_only(_primitive_only),
         forced_lattices(_forced_lattices),
         filter(_filter),
         cost_tol(_cost_tol),
@@ -58,6 +60,7 @@ namespace CASM {
       double lattice_weight;
       bool ideal;
       bool strict;
+      bool primitive_only;
       std::vector<std::string> forced_lattices;
       std::string filter;
       double cost_tol;
@@ -96,7 +99,6 @@ namespace CASM {
         fs::path pos;
 
         // Set 'to'/'from' as empty strings if no mapping possible
-        //MappedProperties mapped_props;
         ConfigMapperResult::MapData map_result;
 
         // If a properties.calc.json file is found in standard locations

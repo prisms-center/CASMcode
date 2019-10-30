@@ -67,9 +67,9 @@ namespace CASM {
     double &scalar(std::string const &_name);
   };
 
-  //jsonParser &to_json(const MappedProperties &score, jsonParser &json);
+  jsonParser &to_json(const MappedProperties &prop, jsonParser &json);
 
-  //void from_json(MappedProperties &score, const jsonParser &json);
+  jsonParser const &from_json(MappedProperties &prop, const jsonParser &json);
 
 
   /// Compare via A.from < B.from
@@ -130,8 +130,6 @@ namespace CASM {
 
 
     /// \brief Default uses minimum relaxed_energy
-    ScoreMappedProperties();
-
     explicit ScoreMappedProperties(Option _opt = Option(Method::minimum, "relaxed_energy"));
 
     double operator()(const MappedProperties &obj) const;
@@ -148,9 +146,9 @@ namespace CASM {
     Option m_opt;
   };
 
-  //jsonParser &to_json(const ScoreMappedProperties &score, jsonParser &json);
+  jsonParser &to_json(const ScoreMappedProperties &score, jsonParser &json);
 
-  //void from_json(ScoreMappedProperties &score, const jsonParser &json);
+  jsonParser const &from_json(ScoreMappedProperties &score, const jsonParser &json);
 }
 
 namespace CASM {

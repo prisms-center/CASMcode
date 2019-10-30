@@ -3,6 +3,7 @@
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/database/MappedProperties.hh"
+#include "casm/clex/Configuration.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
 #include "casm/crystallography/StrucMapping.hh"

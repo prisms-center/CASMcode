@@ -22,100 +22,50 @@ namespace CASM {
     // --- DiffTransConfiguration specializations --------------------------------
 
     StructureMap<Kinetics::DiffTransConfiguration>::StructureMap(
-      const PrimClex &primclex,
+      MappingSettings const &_set,
       std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper) :
-      //ConfigData<Kinetics::DiffTransConfiguration>(primclex, null_log()),
+      m_set(_set),
       m_difftransconfigmapper(std::move(mapper)) {}
 
     StructureMap<Kinetics::DiffTransConfiguration>::StructureMap(
-      const PrimClex &primclex,
-      const jsonParser &kwargs) :
-      //ConfigData<Kinetics::DiffTransConfiguration>(primclex, null_log())
-    {
-
-      // -- read settings --
-      bool rotate = true;
-      bool strict = false;
-      bool ideal;
-      kwargs.get_else(ideal, "ideal", false);
-
-      double lattice_weight;
-      kwargs.get_else(lattice_weight, "lattice_weight", 0.5);
-
-      double max_vol_change;
-      kwargs.get_else(max_vol_change, "max_vol_change", 0.3);
-
-      double min_va_frac;
-      kwargs.get_else(min_va_frac, "min_va_frac", 0.0);
-
-      double max_va_frac;
-      kwargs.get_else(max_va_frac, "max_va_frac", 0.5);
-
-      // -- collect settings used --
-      m_used.put_obj();
-      m_used["ideal"] = ideal;
-      m_used["lattice_weight"] = lattice_weight;
-      m_used["max_vol_change"] = max_vol_change;
-      m_used["min_va_frac"] = min_va_frac;
-      m_used["max_va_frac"] = max_va_frac;
-
-      //These are names of the lattices you want to restrict searches to
-      std::vector<std::string> forced_lattice_names;
-      kwargs.get_else(forced_lattice_names, "forced_lattices", std::vector<std::string>());
-
-      bool lattices_forced_in_settings = (forced_lattice_names.size() > 0);
-      if(lattices_forced_in_settings) {
-        m_used["forced_lattices"] = forced_lattice_names;
-      }
-      bool restricted;
-      kwargs.get_else(restricted, "restricted", false);
-      if(restricted) {
-        m_used["restricted"] = restricted;
-      }
+      MappingSettings const &_set,
+      const PrimClex &primclex) :
+      m_set(_set) {
       // -- construct ConfigMapper --
-      int map_opt = Kinetics::DiffTransConfigMapper::Options::none;
-      if(rotate) map_opt |= Kinetics::DiffTransConfigMapper::Options::rotate;
-      if(strict) map_opt |= Kinetics::DiffTransConfigMapper::Options::strict;
-      if(!ideal) map_opt |= Kinetics::DiffTransConfigMapper::Options::robust;
+      int map_opt = StrucMapper::Options::none;
+      //if(m_set.rotate) map_opt |= StrucMapper::Options::rotate;
+      if(m_set.strict) map_opt |= StrucMapper::Options::strict;
+      if(!m_set.ideal) map_opt |= StrucMapper::Options::robust;
 
       m_difftransconfigmapper.reset(new Kinetics::DiffTransConfigMapper(
                                       primclex,
-                                      lattice_weight,
-                                      max_vol_change,
+                                      m_set.lattice_weight,
+                                      m_set.max_vol_change,
                                       map_opt,
                                       primclex.crystallography_tol()));
-      m_difftransconfigmapper->set_min_va_frac(min_va_frac);
-      m_difftransconfigmapper->set_max_va_frac(max_va_frac);
+      m_difftransconfigmapper->set_min_va_frac(m_set.min_va_frac);
+      m_difftransconfigmapper->set_max_va_frac(m_set.max_va_frac);
 
       //If the settings specified at least one lattice, then force that on the configmapper
-      if(lattices_forced_in_settings) {
-        m_difftransconfigmapper->set_forced_lattices(forced_lattice_names);
-      }
-
-      //If the settings specified use boxiness, then force that on the configmapper
-      if(restricted) {
-        m_difftransconfigmapper->restricted();
-      }
+      if(m_set.forced_lattices.size())
+        m_difftransconfigmapper->set_forced_lattices(m_set.forced_lattices);
     }
 
-    const jsonParser &StructureMap<Kinetics::DiffTransConfiguration>::used() const {
-      return m_used;
-    }
+
 
     StructureMap<Kinetics::DiffTransConfiguration>::map_result_inserter StructureMap<Kinetics::DiffTransConfiguration>::map(
       fs::path p,
-      DatabaseIterator<Kinetics::DiffTransConfiguration> hint,
+      std::unique_ptr<Kinetics::DiffTransConfiguration> const &hint_config,
       map_result_inserter result) const {
-      //todo
-      fs::path prop_path = this->calc_properties_path(p);
 
       ConfigIO::Result res;
-      res.pos = (prop_path.empty() ? p : prop_path);
+      res.pos = p;
 
-      std::unique_ptr<Kinetics::DiffTransConfiguration> hint_config;
-      if(hint != db_config().end()) {
-        hint_config = notstd::make_unique<Kinetics::DiffTransConfiguration>(*hint);
-        res.mapped_props.from = hint_config->name();
+
+      //if(hint != db_config().end()) {
+      //hint_config = notstd::make_unique<Kinetics::DiffTransConfiguration>(*hint);
+      if(hint_config) {
+        res.map_result.props.from = hint_config->name();
       }
 
       // do mapping
@@ -123,18 +73,21 @@ namespace CASM {
       map_result = m_difftransconfigmapper->import_structure_occupation(res.pos, hint_config.get());
       if(!map_result.success) {
         res.fail_msg = map_result.fail_msg;
-        *result++ = res;
+        *result++ = std::move(res);
         return result;
       }
       // if the result was a success, need to populate proper fields in
       // map_result.relaxation_properties["best_mapping"]
-      if(res.pos.extension() == ".json" || res.pos.extension() == ".JSON") {
-        jsonParser json(res.pos);
-        if(json.contains("kra")) {
-          map_result.kra = json["kra"].get<double>();
-        }
-        //Maybe move kra calculation from DiffTransConfigMapping to here
-      }
+      //if(res.pos.extension() == ".json" || res.pos.extension() == ".JSON") {
+      //jsonParser json(res.pos);
+      //if(json.contains("kra")) {
+      //  map_result.kra = json["kra"].get<double>();
+      //}
+      //Maybe move kra calculation from DiffTransConfigMapping to here
+      //}
+
+      std::cerr << "DiffTransConfigImport is broken and does not currently record KRA properly.";
+      //map_result.kra = json["kra"].get<double>();
       // insert in database (note that this also/only inserts primitive)
       if(!map_result.config->has_valid_from_occ()) {
         throw std::runtime_error("You forgot to set m_from_config_is_A");
@@ -142,22 +95,25 @@ namespace CASM {
       }
       Kinetics::DiffTransConfigInsertResult insert_result = map_result.config->insert();
       res.is_new_config = insert_result.insert_canonical;
-      res.mapped_props.to = insert_result.canonical_it->name();
+      res.map_result.props.to = insert_result.canonical_it->name();
+
       // read in raw unmapped data and put into res
-      if(!prop_path.empty()) {
-        std::tie(res.mapped_props.unmapped, res.has_data, res.has_complete_data) = read_calc_properties<Kinetics::DiffTransConfiguration>(primclex(), prop_path);
-      }
+      //if(!prop_path.empty()) {
+      //std::tie(res.map_result.props.unmapped, res.has_data, res.has_complete_data) = read_calc_properties<Kinetics::DiffTransConfiguration>(primclex(), prop_path);
+      //}
 
 
 
       // copy relaxation properties from best config mapping into 'mapped' props
-      res.mapped_props.mapped[insert_result.canonical_it.name()] = map_result.relaxation_properties;
+      std::cerr << "Commented out part that gets DiffTransConfig properties\n";
+      //res.map_result.props.mapped[insert_result.canonical_it.name()] = map_result.relaxation_properties;
+
       //These two aren't really being used yet
-      //res.mapped_props.mapped["cart_op"] = map_result.cart_op;
+      //res.map_result.props.mapped["cart_op"] = map_result.cart_op;
       //This is a hack right now because default conflict score looks for minimum
       // relaxed_energy which doesn't make sense for diff_trans_config
-      //res.mapped_props.scalar("relaxed_energy") = map_result.kra;
-      res.mapped_props.scalar("kra") = map_result.kra;
+      //res.map_result.props.scalar("relaxed_energy") = map_result.kra;
+      res.map_result.props.scalar("kra") = map_result.kra;
 
 
 
@@ -171,13 +127,10 @@ namespace CASM {
     Import<Kinetics::DiffTransConfiguration>::Import(
       const PrimClex &primclex,
       const StructureMap<Kinetics::DiffTransConfiguration> &mapper,
-      bool import_data,
-      bool copy_additional_files,
-      bool overwrite,
-      fs::path report_dir,
+      ImportSettings const  &_set,
+      fs::path const &report_dir,
       Log &file_log) :
-
-      ImportT(primclex, mapper, import_data, copy_additional_files, overwrite, report_dir, file_log) {}
+      ImportT(primclex, mapper, _set, report_dir, file_log) {}
 
     const std::string Import<Kinetics::DiffTransConfiguration>::desc =
 
@@ -229,8 +182,6 @@ namespace CASM {
 
       const po::variables_map &vm = import_opt.vm();
       jsonParser used;
-      jsonParser _default;
-
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
       fs::path report_dir = primclex.dir().reports_dir() / "import_report";
@@ -238,31 +189,22 @@ namespace CASM {
 
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
       // the 'used' settings
-      jsonParser map_json;
-      kwargs.get_else(map_json, "mapping", jsonParser());
-      StructureMap<Kinetics::DiffTransConfiguration> mapper(primclex, map_json);
-      used["mapping"] = mapper.used();
+      MappingSettings map_settings;
+      if(kwargs.contains("mapping"))
+        from_json(map_settings, kwargs["mapping"]);
 
-      // 'data' subsettings
-      jsonParser data;
-      kwargs.get_if(data, "data");
+      StructureMap<Kinetics::DiffTransConfiguration> mapper(map_settings, primclex);
+      used["mapping"] = mapper.settings();
 
-      bool import_data;
+      ImportSettings import_settings;
+      if(kwargs.contains("data"))
+        from_json(import_settings, kwargs["data"]);
+
       if(vm.count("data")) {
-        import_data = true;
+        import_settings.data = true;
       }
-      else {
-        data.get_else(import_data, "import", false);
-      }
-      used["data"]["import"] = import_data;
 
-      bool copy_additional_files;
-      data.get_else(copy_additional_files, "copy_additional_files", false);
-      used["data"]["copy_additional_files"] = copy_additional_files;
-
-      bool overwrite;
-      data.get_else(overwrite, "overwrite", false);
-      used["data"]["overwrite"] = overwrite;
+      used["data"] = import_settings;
 
       // -- print used settings --
       Log &log = primclex.log();
@@ -273,9 +215,7 @@ namespace CASM {
       Import<Kinetics::DiffTransConfiguration> f(
         primclex,
         mapper,
-        import_data,
-        copy_additional_files,
-        overwrite,
+        import_settings,
         report_dir,
         primclex.log());
 
@@ -361,10 +301,12 @@ namespace CASM {
 
       // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values
       // still need to figure out how to specify this in general
-      jsonParser map_json;
-      kwargs.get_else(map_json, "mapping", jsonParser());
-      StructureMap<Kinetics::DiffTransConfiguration> mapper(primclex, map_json);
-      used["mapping"] = mapper.used();
+      MappingSettings map_settings;
+      if(kwargs.contains("mapping"))
+        from_json(map_settings, kwargs["mapping"]);
+
+      StructureMap<Kinetics::DiffTransConfiguration> mapper(map_settings, primclex);
+      used["mapping"] = mapper.settings();
 
       // 'data' subsettings
       // bool import_data = true;

@@ -53,7 +53,7 @@ namespace CASM {
           remaining += boost::distance(remover.primclex().db<Kinetics::DiffTransConfiguration>().orbit_range(orbitname));
         }
         else {
-          ConfigData<Kinetics::DiffTransConfiguration> data(remover.primclex(), null_log());
+          ConfigData data(remover.primclex(), null_log(), TypeTag<Kinetics::DiffTransConfiguration>());
           auto it = primclex.db<Kinetics::DiffTransConfiguration>().orbit_range(orbitname).begin();
           auto end = primclex.db<Kinetics::DiffTransConfiguration>().orbit_range(orbitname).end();
           for(; it != end; ++it) {

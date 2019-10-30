@@ -13,6 +13,7 @@ namespace CASM {
       _json["lattice_weight"] = _set.lattice_weight;
       _json["ideal"] = _set.ideal;
       _json["strict"] = _set.strict;
+      _json["primitive_only"] = _set.primitive_only;
       if(!_set.forced_lattices.empty())
         _json["forced_lattices"] = _set.forced_lattices;
       if(!_set.filter.empty())
@@ -36,6 +37,9 @@ namespace CASM {
 
       if(_json.contains("strict"))
         _set.strict = _json["strict"].get<bool>();
+
+      if(_json.contains("primitive_only"))
+        _set.primitive_only = _json["primitive_only"].get<bool>();
 
       if(_json.contains("forced_lattices"))
         _set.forced_lattices = _json["forced_lattices"].get<std::vector<std::string> >();

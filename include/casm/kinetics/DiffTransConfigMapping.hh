@@ -5,6 +5,8 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/StrucMapping.hh"
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/crystallography/Structure.hh"
@@ -38,16 +40,6 @@ namespace CASM {
 
     /// The configuration the input structure was mapped onto
     std::unique_ptr<Kinetics::DiffTransConfiguration> config;
-
-    /// relaxation_properties is populated by relaxation properties:
-    ///
-    /// - 'lattice_deformation': lattice mapping score
-    /// - 'basis_deformation': atomic mapping score
-    /// - 'volume_relaxation': V/V_ideal
-    /// - 'relaxation_deformation': 3x3 tensor describing cell relaxation
-    /// - 'relaxation_displacement': Nx3 matrix describing basis displacements
-    /// - 'relaxed_energy': the energy of the relaxed configuration
-    std::vector<jsonParser> relaxation_properties;
 
     double kra;
 
@@ -187,7 +179,7 @@ namespace CASM {
     private:
 
       /// \brief loads structures from folder of poscars or compound properties.calc.json
-      std::vector<BasicStructure<Site>> _get_structures(const fs::path &pos_path) const;
+      std::vector<BasicStructure<Site> > _get_structures(const fs::path &pos_path) const;
 
       /// \brief Helper function that creates a diff_trans from the information of which atoms are moving
       Kinetics::DiffusionTransformation _make_hop(BasicStructure<Site> const &from_struc,

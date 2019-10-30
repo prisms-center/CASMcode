@@ -76,7 +76,7 @@ namespace CASM {
                            const jsonParser &source,
                            const ConfigDoF &_dof);
 
-    /*
+
     /// Construct a Configuration from JSON data
     Configuration(const Supercell &_supercell,
                   const std::string &_id,
@@ -86,7 +86,7 @@ namespace CASM {
     Configuration(const PrimClex &_primclex,
                   const std::string &_configname,
                   const jsonParser &_data);
-    */
+
     /// Build a Configuration sized to _scel with all fields initialized and set to zero
     static Configuration zeros(Supercell const &_scel);
 
@@ -339,13 +339,10 @@ namespace CASM {
     jsonParser &to_json(jsonParser &json) const;
 
     /// Reads the Configuration from JSON
-    //void from_json(const jsonParser &json, const Supercell &scel, std::string _id);
+    void from_json(const jsonParser &json, const Supercell &scel, std::string _id);
 
     /// Reads the Configuration from JSON
-    //void from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname);
-
-    /// Writes incomplete properties.calc.json of config for kra purposes
-    jsonParser print_properties(std::string calctype) const;
+    void from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname);
 
     /// \brief Split configuration name string into scelname and config id
     static std::pair<std::string, std::string> split_name(std::string configname);
@@ -374,7 +371,7 @@ namespace CASM {
 
   };
 
-  /*
+
   template<>
   struct jsonConstructor<Configuration> {
 
@@ -388,7 +385,7 @@ namespace CASM {
       const Supercell &scel,
       const std::string &id);
   };
-  */
+
 
   /// \brief Holds results of Configuration::insert
   ///
@@ -453,12 +450,6 @@ namespace CASM {
 
   /// \brief Make Configuration from name string
   Configuration make_configuration(const PrimClex &primclex, std::string name);
-
-  /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
-  Configuration &apply_properties(Configuration &config, std::string calctype);
-
-  /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
-  Configuration copy_apply_properties(const Configuration &config, std::string calctype);
 
   /// \brief Returns correlations using 'clexulator'.
   Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator);

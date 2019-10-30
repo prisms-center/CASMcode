@@ -327,6 +327,7 @@ namespace CASM {
 
 
   /// \brief comparison of name, domain (discrete/continuous) and mode (local/global)
+  inline
   bool identical(AnisoValTraits const &A, AnisoValTraits const &B) {
     return (A.name() == B.name()
             && A.is_default() == B.is_default()
