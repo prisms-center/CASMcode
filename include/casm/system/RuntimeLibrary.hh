@@ -7,14 +7,42 @@
 #include <functional>
 #include <dlfcn.h>
 #include <cstdlib>
-#include "casm/system/Popen.hh"
 #include "casm/CASM_global_definitions.hh"
-#include "casm/casm_io/Log.hh"
 
 namespace CASM {
 
+  class runtime_lib_compile_error : public std::runtime_error {
+  public:
+    runtime_lib_compile_error(
+      std::string _filename_base,
+      std::string _cmd,
+      std::string _result,
+      std::string _what);
+
+    std::string filename_base;
+    std::string cmd;
+    std::string result;
+
+    void print(std::ostream &sout) const;
+  };
+
+  class runtime_lib_shared_error : public std::runtime_error {
+  public:
+    runtime_lib_shared_error(
+      std::string _filename_base,
+      std::string _cmd,
+      std::string _result,
+      std::string _what);
+
+    std::string filename_base;
+    std::string cmd;
+    std::string result;
+
+    void print(std::ostream &sout) const;
+  };
+
   /// \brief Write, compile, load and use code at runtime
-  class RuntimeLibrary : public Logging {
+  class RuntimeLibrary {
 
   public:
 
@@ -23,9 +51,7 @@ namespace CASM {
     RuntimeLibrary(
       std::string _filename_base,
       std::string _compile_options,
-      std::string _so_options,
-      std::string compile_msg,
-      const Logging &logging = Logging());
+      std::string _so_options);
 
     ~RuntimeLibrary();
 

@@ -3,18 +3,45 @@
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-#include "casm/casm_io/Log.hh"
+#include "casm/system/Popen.hh"
 
 namespace CASM {
+
+  runtime_lib_compile_error::runtime_lib_compile_error(
+    std::string _filename_base,
+    std::string _cmd,
+    std::string _result,
+    std::string _what):
+    std::runtime_error(_what), filename_base(_filename_base), cmd(_cmd), result(_result) {}
+
+  void runtime_lib_compile_error::print(std::ostream &sout) const {
+    sout << "Error compiling: " << filename_base + ".cc" << std::endl;
+    sout << "Attempted: " << cmd << std::endl;
+    sout << result << std::endl;
+    sout << what() << std::endl;
+  }
+
+
+  runtime_lib_shared_error::runtime_lib_shared_error(
+    std::string _filename_base,
+    std::string _cmd,
+    std::string _result,
+    std::string _what):
+    std::runtime_error(_what), filename_base(_filename_base), cmd(_cmd), result(_result) {}
+
+  void runtime_lib_shared_error::print(std::ostream &sout) const {
+    sout << "Error compiling shared object: " << filename_base + ".so" << std::endl;
+    sout << "Attempted: " << cmd << std::endl;
+    sout << result << std::endl;
+    sout << what() << std::endl;
+  }
+
 
   /// \brief Construct a RuntimeLibrary object, with the options to be used for compile
   ///        the '.o' file and the '.so' file
   RuntimeLibrary::RuntimeLibrary(std::string filename_base,
                                  std::string compile_options,
-                                 std::string so_options,
-                                 std::string compile_msg,
-                                 const Logging &logging) :
-    Logging(logging),
+                                 std::string so_options) :
     m_filename_base(filename_base),
     m_compile_options(compile_options),
     m_so_options(so_options),
@@ -27,21 +54,8 @@ namespace CASM {
       if(fs::exists(m_filename_base + ".cc")) {
 
         // Compile it
-        log().compiling<Log::standard>(m_filename_base + ".cc");
-        log().begin_lap();
-        log() << compile_msg << std::endl;
-        try {
-          _compile();
-        }
-        catch(std::exception &e) {
-          log() << "Error compiling clexulator. To fix: \n";
-          log() << "  - Check compiler error messages.\n";
-          log() << "  - Check compiler options with 'casm settings -l'\n";
-          log() << "    - Update compiler options with 'casm settings --set-compile-options '...options...'\n";
-          log() << "    - Make sure the casm headers can be found by including '-I/path/to/casm'\n";
-          throw;
-        }
-        log() << "compile time: " << log().lap_time() << " (s)\n" << std::endl;
+        _compile();
+
       }
       else {
         throw std::runtime_error(
@@ -89,19 +103,13 @@ namespace CASM {
     std::string cmd = m_compile_options + " -o " + m_filename_base + ".o" + " -c " + m_filename_base + ".cc";
     p.popen(cmd);
     if(p.exit_code()) {
-      err_log() << "Error compiling: " << m_filename_base + ".cc" << std::endl;
-      err_log() << "Attempted: " << cmd << std::endl;
-      err_log() << p.gets() << std::endl;
-      throw std::runtime_error("Can not compile " + m_filename_base + ".cc");
+      throw runtime_lib_compile_error(m_filename_base, cmd, p.gets(), "Can not compile " + m_filename_base + ".cc");
     }
 
     cmd = m_so_options + " -o " + m_filename_base + ".so" + " " + m_filename_base + ".o";
     p.popen(cmd);
     if(p.exit_code()) {
-      err_log() << "Error compiling shared object: " << m_filename_base + ".so" << std::endl;
-      err_log() << "Attempted: " << cmd << std::endl;
-      err_log() << p.gets() << std::endl;
-      throw std::runtime_error("Can not compile " + m_filename_base + ".o");
+      throw runtime_lib_shared_error(m_filename_base, cmd, p.gets(), "Can not compile " + m_filename_base + ".cc");
     }
   }
 

@@ -3,6 +3,10 @@
 
 /// What is being tested:
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/app/LogRuntimeLibrary.hh"
+
+/// Dependencies
+#include "casm/casm_io/Log.hh"
 
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
@@ -10,7 +14,7 @@
 
 using namespace CASM;
 
-TEST(RuntimeLibraryTest, FunctionTest) {
+TEST(LogRuntimeLibraryTest, FunctionTest) {
 
   EXPECT_EQ(true, true);
   std::string cc_filename_base = autotools::abs_srcdir() + "/tests/unit/system/runtime_lib";
@@ -36,27 +40,29 @@ TEST(RuntimeLibraryTest, FunctionTest) {
                        link_path(RuntimeLibrary::default_boost_libdir().first.string());
   EXPECT_EQ(true, true);
 
-  RuntimeLibrary lib(
-    cc_filename_base,
-    compile_opt,
-    so_opt);
+  std::shared_ptr<RuntimeLibrary> lib = log_make_shared_runtime_lib(
+                                          cc_filename_base,
+                                          compile_opt,
+                                          so_opt,
+                                          "Compiling RuntimeLibrary test code",
+                                          Logging());
 
   EXPECT_EQ(true, true);
 
   // get the 'int forty_two()' function
-  std::function<int()> forty_two = lib.get_function<int()>("forty_two");
+  std::function<int()> forty_two = lib->get_function<int()>("forty_two");
 
   // use it to do something
   EXPECT_EQ(42, forty_two());
 
   // get the 'int add(int, int)' function
-  std::function<int(int, int)> add = lib.get_function<int(int, int)>("add");
+  std::function<int(int, int)> add = lib->get_function<int(int, int)>("add");
 
   // use it to do something
   EXPECT_EQ(5, add(2, 3));
 
   // delete the library
-  lib.rm();
+  lib->rm();
 
   EXPECT_EQ(true, true);
 
