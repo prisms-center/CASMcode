@@ -33,6 +33,10 @@ namespace CASM {
       }
       return result;
     }
+
+    Eigen::Matrix3i symmetry_matrix_to_frac(const Lattice &lat, const Eigen::Matrix3d &cart_matrix);
+    Eigen::Matrix3d symmetry_matrix_to_cart(const Lattice &lat, const Eigen::Matrix3i &cart_matrix);
+
   } // namespace xtal
 } // namespace CASM
 

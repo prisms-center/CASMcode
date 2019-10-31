@@ -13,6 +13,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"

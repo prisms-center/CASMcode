@@ -3,6 +3,7 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"

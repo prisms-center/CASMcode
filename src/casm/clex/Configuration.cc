@@ -10,6 +10,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"

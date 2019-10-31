@@ -7,7 +7,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Niggli.hh"
-#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
   namespace xtal {
@@ -15,7 +14,7 @@ namespace CASM {
     namespace {
 
       typedef std::vector<Lattice>::iterator vec_lat_it;
-      typedef std::vector<CASM::SymOp>::const_iterator array_symop_cit;
+      typedef std::vector<SymOp>::const_iterator array_symop_cit;
     }
 
     template Lattice superdupercell<vec_lat_it, array_symop_cit>(
@@ -267,46 +266,44 @@ namespace CASM {
 
     //********************************************************************
 
-    std::vector<double> Lattice::pg_converge(double large_tol) {
-      std::vector<double> tarray;
+    /* std::vector<double> Lattice::pg_converge(double large_tol) { */
+    /*   std::vector<double> tarray; */
 
-      double orig_tol = tol();
-      set_tol(large_tol);
-      std::vector<CASM::SymOp> point_group(calc_point_group(*this));
+    /*   double orig_tol = tol(); */
+    /*   set_tol(large_tol); */
+    /*   auto point_group=calc_point_group(*this); */
 
-      for(Index i = 0; i < point_group.size(); i++) {
-        tarray.push_back(point_group[i].map_error());
-      }
-      set_tol(orig_tol);
-      return tarray;
-    }
-
-
+    /*   for(Index i = 0; i < point_group.size(); i++) { */
+    /*     tarray.push_back(point_group[i].map_error()); */
+    /*   } */
+    /*   set_tol(orig_tol); */
+    /*   return tarray; */
+    /* } */
 
     //********************************************************************
 
-    void Lattice::pg_converge(double small_tol, double large_tol, double increment) {
-      std::vector<double> tols;
-      std::vector<int> num_ops, num_enforced_ops;
+    /* void Lattice::pg_converge(double small_tol, double large_tol, double increment) { */
+    /*   std::vector<double> tols; */
+    /*   std::vector<int> num_ops, num_enforced_ops; */
 
-      double orig_tol = tol();
-      for(double i = small_tol; i <= large_tol; i += increment) {
-        tols.push_back(i);
-        set_tol(i);
-        std::vector<CASM::SymOp> point_group(calc_point_group(*this));
-        num_ops.push_back(point_group.size());
-        num_enforced_ops.push_back(0);
-        for(CASM::SymOp const &op : point_group) {
-          if(op.map_error() > i) {
-            num_enforced_ops.back()++;
-          }
-        }
-      }
-      set_tol(orig_tol);
+    /*   double orig_tol = tol(); */
+    /*   for(double i = small_tol; i <= large_tol; i += increment) { */
+    /*     tols.push_back(i); */
+    /*     set_tol(i); */
+    /*     std::vector<CASM::SymOp> point_group(calc_point_group(*this)); */
+    /*     num_ops.push_back(point_group.size()); */
+    /*     num_enforced_ops.push_back(0); */
+    /*     for(CASM::SymOp const &op : point_group) { */
+    /*       if(op.map_error() > i) { */
+    /*         num_enforced_ops.back()++; */
+    /*       } */
+    /*     } */
+    /*   } */
+    /*   set_tol(orig_tol); */
 
 
-      return;
-    }
+    /*   return; */
+    /* } */
 
     //********************************************************************
 
@@ -322,7 +319,7 @@ namespace CASM {
     /// See PrimcClex::generate_supercells for information on dims and G.
     ///
     void Lattice::generate_supercells(std::vector<Lattice> &supercell,
-                                      const std::vector<CASM::SymOp> &effective_pg,
+                                      const std::vector<SymOp> &effective_pg,
                                       const ScelEnumProps &enum_props) const {
 
       SuperlatticeEnumerator enumerator(effective_pg.begin(), effective_pg.end(), *this,  enum_props);
@@ -600,7 +597,7 @@ namespace CASM {
 
     //********************************************************************
 
-    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<CASM::SymOp> &symoplist, Eigen::Matrix3d &multimat) const {
+    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist, Eigen::Matrix3d &multimat) const {
       auto result = is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol());
       multimat = result.second;
       return result.first != symoplist.end();
@@ -622,7 +619,7 @@ namespace CASM {
 
     //********************************************************************
 
-    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<CASM::SymOp> &symoplist) const {
+    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist) const {
       return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol()).first != symoplist.end();
     }
 
@@ -677,20 +674,10 @@ namespace CASM {
       //you may want to reorient the vectors so that the ab plane is exposed (useful for Structure::stitch)
 
       if(millers == Eigen::Vector3i(0, 1, 0)) {
-        std::cout << "No chopping neccesary" << std::endl;
-        std::cout << "Flipping your vectors to bring a and b into plane:" << std::endl;
-        std::cout << "b --> c" << std::endl;
-        std::cout << "a --> b" << std::endl;
-        std::cout << "c --> a" << std::endl;
         return Lattice(lat_column_mat().col(2), lat_column_mat().col(0), lat_column_mat().col(1), tol());
       }
 
       else if(millers == Eigen::Vector3i(1, 0, 0)) {
-        std::cout << "No chopping neccesary" << std::endl;
-        std::cout << "Flipping your vectors to bring a and b into plane:" << std::endl;
-        std::cout << "a --> c" << std::endl;
-        std::cout << "b --> a" << std::endl;
-        std::cout << "c --> b" << std::endl;
         return Lattice(lat_column_mat().col(1), lat_column_mat().col(2), lat_column_mat().col(0), tol());
       }
 
@@ -737,9 +724,6 @@ namespace CASM {
         inv_miller = scale_to_int(inv_miller_dubs, TOL);
         H_miller_point = inv_miller[(zero + 1) % 3] * lat_column_mat().col((zero + 1) % 3);
         K_miller_point = inv_miller[(zero + 2) % 3] * lat_column_mat().col((zero + 2) % 3);
-
-        std::cout << "inv millers dubs: " << inv_miller_dubs << std::endl;
-        std::cout << "inv millers : " << inv_miller << std::endl;
 
         HK = K_miller_point - H_miller_point;
         surface_cell.col(1) = HK;
@@ -861,7 +845,6 @@ namespace CASM {
         normal = normal / normal[0];
       }
 
-
       else if(fabs(normal[1]) >= fabs(normal[2]) && fabs(normal[1]) >= fabs(normal[0]) && fabs(normal[1]) != 0) {
         normal = normal / normal[1];
       }
@@ -869,12 +852,6 @@ namespace CASM {
       else {
         normal = normal / normal[2];
       }
-
-      std::cout << "New cell vectors a and b have been generated:" << std::endl;
-      std::cout << "Vector A: <" << surface_cell.col(0) << ">" << std::endl;
-      std::cout << "Vector B: <" << surface_cell.col(1) << ">" << std::endl;
-      std::cout << "Gamma :" << (180 / M_PI)*CASM::angle(surface_cell.col(0), surface_cell.col(1)) << "\u00B0" << std::endl << std::endl;
-      std::cout << "Ready to make C..." << std::endl;
 
       Eigen::Vector3d tnormal;
       //orthoscore represents how close the linear combination is to the plane normal. 1 is perfect, 0 is stupid.
@@ -901,24 +878,11 @@ namespace CASM {
         //Only use new linear combination if it's more orthogonal than the previous one
         if(orthoscore > torthoscore + TOL) {
           torthoscore = orthoscore;
-          std::cout << "Attempt No." << factor << " to get third lattice vector:" << std::endl;
-          std::cout << "Combine: " << L_combination[0] << "*a+" << L_combination[1] << "*b+" << L_combination[2] << "*c" << std::endl << std::endl;
-          std::cout << "Cell overview:" << std::endl;
-          std::cout << "Orthogonality score: " << orthoscore << std::endl;
-          std::cout << "Vector A: <" << surface_cell.col(0) << " >" << std::endl;
-          std::cout << "Vector B: <" << surface_cell.col(1) << " >" << std::endl;
-          std::cout << "Vector C: <" << surface_cell.col(2) << " >" << std::endl << std::endl;
-          std::cout << "Alpha :" << (180 / M_PI)*CASM::angle(surface_cell.col(1), surface_cell.col(2)) << "\u00B0" << std::endl << std::endl;
-          std::cout << "Beta :" << (180 / M_PI)*CASM::angle(surface_cell.col(2), surface_cell.col(0)) << "\u00B0" << std::endl << std::endl;
-          std::cout << "Gamma :" << (180 / M_PI)*CASM::angle(surface_cell.col(0), surface_cell.col(1)) << "\u00B0" << std::endl << std::endl << std::endl;
 
           last_surface_cell = surface_cell; //Remember currect generated cell, in case we can't find anything better later
           one_found = true;
 
           new_vol = fabs(surface_cell.col(2).dot(surface_cell.col(0).cross(surface_cell.col(1))));
-
-          std::cout << "Volume: " << new_vol << std::endl;
-          std::cout << "Volume equivalent to " << new_vol / vol() << " primitive volumes" << std::endl << std::endl;
         }
 
         factor++;
@@ -938,7 +902,8 @@ namespace CASM {
 
       Lattice surface_lat(surface_cell.col(0), surface_cell.col(1), surface_cell.col(2));
       surface_lat.make_right_handed();
-      std::vector<CASM::SymOp> surf_lat_pg(calc_point_group(surface_lat));
+      /* std::vector<CASM::SymOp> surf_lat_pg(calc_point_group(surface_lat)); */
+      auto surf_lat_pg = calc_point_group(surface_lat);
 
       Eigen::Matrix3d transmat;
       surface_lat.is_supercell_of(*this, surf_lat_pg, transmat);
@@ -970,20 +935,11 @@ namespace CASM {
     }
 
 
-    //John G 011013
-    //********************************************************************
-    /**
-     * Applies all operations of given SymGroup to the lattice and averages
-     * out the lattice vectors, changing your lattice to perfectly match
-     * with the SymGroup.
-     */
-    //********************************************************************
-
-    Lattice Lattice::symmetrized(const std::vector<CASM::SymOp> &_pg) const {
+    Lattice Lattice::symmetrized(const std::vector<SymOp> &_pg) const {
       Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
       Eigen::Matrix3d frac_mat;
       for(Index ng = 0; ng < _pg.size(); ng++) {
-        frac_mat = iround(inv_lat_column_mat() * _pg[ng].matrix() * lat_column_mat()).cast<double>();
+        frac_mat = iround(inv_lat_column_mat() * get_matrix(_pg[ng]) * lat_column_mat()).cast<double>();
         tLat2 += frac_mat.transpose() * lat_column_mat().transpose() * lat_column_mat() * frac_mat;
       }
       tLat2 /= double(_pg.size());
@@ -1006,16 +962,7 @@ namespace CASM {
 
     }
 
-    //John G 011013
-    //********************************************************************
-    /**
-     * Applies all operations of given SymGroup to the lattice and averages
-     * out the lattice vectors, changing your lattice to perfectly match
-     * with the SymGroup.
-     */
-    //********************************************************************
-
-    Lattice Lattice::symmetrized(const std::vector<Eigen::Matrix3i> &_pg) const {
+    Lattice Lattice::symmetrized_with_fractional(const std::vector<Eigen::Matrix3i> &_pg) const {
       Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
 
       for(Eigen::Matrix3i const &frac_mat : _pg) {
@@ -1051,7 +998,7 @@ namespace CASM {
     //***********************************************************
 
     Lattice Lattice::symmetrized(double sym_tol) const {
-      std::vector<CASM::SymOp> point_group = calc_point_group(*this, sym_tol);
+      auto point_group = calc_point_group(*this, sym_tol);
       return symmetrized(point_group);
     }
 
@@ -1079,15 +1026,15 @@ namespace CASM {
 
     //********************************************************************
 
-    std::vector<CASM::SymOp> calc_point_group(Lattice const &_lat) {
+    std::vector<SymOp> calc_point_group(Lattice const &_lat) {
       return calc_point_group(_lat, _lat.tol());
     }
 
     //********************************************************************
 
-    std::vector<CASM::SymOp> calc_point_group(Lattice const &_lat, double tol) {
-      std::vector<Eigen::Matrix3i> point_group;
-      point_group.reserve(48);
+    std::vector<SymOp> calc_point_group(Lattice const &_lat, double tol) {
+      std::vector<Eigen::Matrix3i> frac_point_group;
+      frac_point_group.reserve(48);
 
       //Enumerate all possible matrices with elements equal to -1, 0, or 1
       //These represent operations that reorder lattice vectors or replace one
@@ -1099,7 +1046,7 @@ namespace CASM {
       IsPointGroupOp is_equiv(tlat_reduced);
       for(Eigen::Matrix3i const &mat : unimodular_matrices()) {
         if(is_equiv(mat)) {
-          point_group.push_back(mat);
+          frac_point_group.push_back(mat);
           /*std::cout
             << "mat is PG op " << point_group.size() << ":\n" << mat << "\n"
             << "metric:\n" << tlat_reduced.lat_column_mat().transpose()*tlat_reduced.lat_column_mat() << "\n"
@@ -1109,31 +1056,31 @@ namespace CASM {
       }
 
       // Find group closure using fractional form (skip for groups sizes that are very unlikely to be unconverged)
-      if(point_group.size() != 48 && point_group.size() != 24) {
+      if(frac_point_group.size() != 48 && frac_point_group.size() != 24) {
         Eigen::Matrix3i t_op;
-        for(Index i = 0; i < point_group.size(); ++i) {
-          t_op = inverse(point_group[i]);
-          if(!contains(point_group, t_op)) {
-            point_group.push_back(t_op);
+        for(Index i = 0; i < frac_point_group.size(); ++i) {
+          t_op = inverse(frac_point_group[i]);
+          if(!contains(frac_point_group, t_op)) {
+            frac_point_group.push_back(t_op);
           }
-          for(Index j = i; j < point_group.size(); ++j) {
-            t_op = point_group[i] * point_group[j];
-            if(!contains(point_group, t_op)) {
-              point_group.push_back(t_op);
+          for(Index j = i; j < frac_point_group.size(); ++j) {
+            t_op = frac_point_group[i] * frac_point_group[j];
+            if(!contains(frac_point_group, t_op)) {
+              frac_point_group.push_back(t_op);
             }
           }
         }
       }
 
-      std::vector<CASM::SymOp> result;
-      result.reserve(point_group.size());
+      std::vector<SymOp> result;
+      result.reserve(frac_point_group.size());
       Eigen::Matrix3d t_cart, t_diff;
-      Lattice symlat = tlat_reduced.symmetrized(point_group);
+      Lattice symlat = tlat_reduced.symmetrized_with_fractional(frac_point_group);
       //std::cout << "Symmetrized lattice is\n " << symlat.lat_column_mat() << "\n";
-      for(Eigen::Matrix3i const &frac : point_group) {
+      for(Eigen::Matrix3i const &frac : frac_point_group) {
         t_cart = symlat.lat_column_mat() * frac.cast<double>() * symlat.inv_lat_column_mat();
         t_diff = t_cart * _lat.lat_column_mat() - _lat.lat_column_mat();
-        result.push_back(CASM::SymOp::point_op(t_cart, sqrt((t_diff.transpose()*t_diff).diagonal().maxCoeff())));
+        result.push_back(SymOp::point_operation(t_cart));
       }
       return result;
     }

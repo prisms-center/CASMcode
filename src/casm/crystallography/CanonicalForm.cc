@@ -1,9 +1,8 @@
+#include <set>
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SymGroup.hh"
-#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
   namespace xtal {

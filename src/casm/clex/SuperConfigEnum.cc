@@ -1,6 +1,7 @@
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/clex/ConfigEnumEquivalents.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/clex/PrimClex.hh"
