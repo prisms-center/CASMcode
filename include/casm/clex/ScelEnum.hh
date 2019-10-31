@@ -144,6 +144,53 @@ namespace CASM {
     InputEnumerator<Supercell> m_enum;
   };
 
+  /// \brief Read unit cell transformation matrix from JSON input
+  ///
+  /// Input json with one of the following forms:
+  /// - \code
+  ///   {
+  ///     "unit_cell" : [
+  ///       [X, X, X],
+  ///       [X, X, X],
+  ///       [X, X, X]
+  ///     ]
+  ///   }
+  ///   \endcode
+  /// - \code
+  ///   { "unit_cell" : "SCEL..."}
+  ///   \endcode
+  /// - If input is null or does not contain "unit_cell", returns identity matrix.
+  ///
+  Eigen::Matrix3i make_unit_cell(const PrimClex &primclex, const jsonParser &json);
+
+  /// \brief Make a ScelEnumProps object from JSON input
+  ///
+  /// - min: int (default=1)
+  /// - max: int (default=max existing supercell size)
+  /// - dirs: string, (default="abc")
+  /// - unit_cell: 3x3 matrix of int, or string (default=identity matrix)
+  /// \code
+  /// {
+  ///   "min" : 1,
+  ///   "max" : 5,
+  ///   "dirs" : "abc",
+  ///   "unit_cell" : [
+  ///     [0, 0, 0],
+  ///     [0, 0, 0],
+  ///     [0, 0, 0]
+  ///   ],
+  ///   "unit_cell" : "SCEL...",
+  /// }
+  /// \endcode
+  ///
+  ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
+
+  template <>
+  struct jsonConstructor<xtal::ScelEnumProps> {
+    static xtal::ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
+  };
+
+
 }
 
 /** @}*/
