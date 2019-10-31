@@ -1,7 +1,5 @@
 #include "casm/crystallography/Molecule.hh"
-
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
   namespace xtal {

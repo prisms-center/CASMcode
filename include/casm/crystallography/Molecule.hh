@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+#include "casm/CASM_global_definitions.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/crystallography/SpeciesAttribute.hh"
 #include "casm/crystallography/Adapter.hh"

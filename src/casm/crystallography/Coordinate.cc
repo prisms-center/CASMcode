@@ -2,7 +2,6 @@
 
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
   namespace xtal {

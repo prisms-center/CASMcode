@@ -6,7 +6,6 @@
 #include <vector>
 
 namespace CASM {
-  class SymOp;
 
   namespace xtal {
     class Lattice;

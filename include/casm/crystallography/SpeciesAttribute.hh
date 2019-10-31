@@ -4,7 +4,6 @@
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
-#include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/misc/ParsingDictionary.hh"
 
 namespace CASM {
