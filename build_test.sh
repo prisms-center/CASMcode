@@ -22,7 +22,7 @@ check_var "CASM_SKIP_CPP_TESTS" "Set to non-zero length to skip ++ tests" ""
 check_var "CASM_CXXFLAGS" "Compiler flags" ""
 check_var "CASM_NCPU" "Compiler -j option" 2
 check_var "CASM_TESTS" "Particular test categories to run (default="", runs all tests)" ""
-check_var "CASM_TEST_FLAGS" "Customize the options given to the test programs" "--log_level=test_suite --catch_system_errors=no"
+check_var "CASM_TEST_FLAGS" "Customize the options given to the test programs" ""
 
 ### end variables ###
 
