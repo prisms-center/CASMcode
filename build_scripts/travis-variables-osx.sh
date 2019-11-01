@@ -13,6 +13,7 @@ CASM_CONFIGFLAGS+="--with-bash-completion-dir=$CASM_BASH_COMPLETION_DIR "
 export CASM_CONFIGFLAGS
 
 check_var "CASM_CXXFLAGS" "Compiler flags" "-O3 -Wall -fPIC --std=c++11 -DNDEBUG -fcolor-diagnostics -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations"
+check_var "CASM_LDFLAGS" "Linker flags" "-Wl,-rpath,$CASM_BOOST_PREFIX/lib"
 check_var "CASM_CC" "C compiler" ${CC:-"cc"}
 check_var "CASM_CXX" "C++ compiler" ${CXX:-"c++"}
 check_var "CASM_PYTHON" "Python interpreter" ${PYTHON:-"python"}
