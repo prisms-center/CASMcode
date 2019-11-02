@@ -1,12 +1,13 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Lattice_impl.hh"
-#include "casm/misc/algorithm.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
+#include "casm/misc/algorithm.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Niggli.hh"
+/* #include "casm/crystallography/SymTools.hh" */
 
 namespace CASM {
   namespace xtal {
@@ -263,49 +264,6 @@ namespace CASM {
 
       return super_kpoints;
     }
-
-    //********************************************************************
-
-    /* std::vector<double> Lattice::pg_converge(double large_tol) { */
-    /*   std::vector<double> tarray; */
-
-    /*   double orig_tol = tol(); */
-    /*   set_tol(large_tol); */
-    /*   auto point_group=calc_point_group(*this); */
-
-    /*   for(Index i = 0; i < point_group.size(); i++) { */
-    /*     tarray.push_back(point_group[i].map_error()); */
-    /*   } */
-    /*   set_tol(orig_tol); */
-    /*   return tarray; */
-    /* } */
-
-    //********************************************************************
-
-    /* void Lattice::pg_converge(double small_tol, double large_tol, double increment) { */
-    /*   std::vector<double> tols; */
-    /*   std::vector<int> num_ops, num_enforced_ops; */
-
-    /*   double orig_tol = tol(); */
-    /*   for(double i = small_tol; i <= large_tol; i += increment) { */
-    /*     tols.push_back(i); */
-    /*     set_tol(i); */
-    /*     std::vector<CASM::SymOp> point_group(calc_point_group(*this)); */
-    /*     num_ops.push_back(point_group.size()); */
-    /*     num_enforced_ops.push_back(0); */
-    /*     for(CASM::SymOp const &op : point_group) { */
-    /*       if(op.map_error() > i) { */
-    /*         num_enforced_ops.back()++; */
-    /*       } */
-    /*     } */
-    /*   } */
-    /*   set_tol(orig_tol); */
-
-
-    /*   return; */
-    /* } */
-
-    //********************************************************************
 
     /// \brief Generate super Lattice
     ///
@@ -903,12 +861,12 @@ namespace CASM {
       Lattice surface_lat(surface_cell.col(0), surface_cell.col(1), surface_cell.col(2));
       surface_lat.make_right_handed();
       /* std::vector<CASM::SymOp> surf_lat_pg(calc_point_group(surface_lat)); */
-      auto surf_lat_pg = calc_point_group(surface_lat);
+      /* auto surf_lat_pg = calc_point_group(surface_lat); */
 
-      Eigen::Matrix3d transmat;
-      surface_lat.is_supercell_of(*this, surf_lat_pg, transmat);
+      /* Eigen::Matrix3d transmat; */
+      /* surface_lat.is_supercell_of(*this, surf_lat_pg, transmat); */
 
-      std::cout << "Your conversion matrix was:" << std::endl << transmat << std::endl;
+      /* std::cout << "Your conversion matrix was:" << std::endl << transmat << std::endl; */
 
       return surface_lat;
     }
@@ -932,74 +890,6 @@ namespace CASM {
     ///Are lattice vectors identical for two lattices
     bool Lattice::_eq(const Lattice &RHS) const {
       return almost_equal(RHS.lat_column_mat(), lat_column_mat());
-    }
-
-
-    Lattice Lattice::symmetrized(const std::vector<SymOp> &_pg) const {
-      Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
-      Eigen::Matrix3d frac_mat;
-      for(Index ng = 0; ng < _pg.size(); ng++) {
-        frac_mat = iround(inv_lat_column_mat() * get_matrix(_pg[ng]) * lat_column_mat()).cast<double>();
-        tLat2 += frac_mat.transpose() * lat_column_mat().transpose() * lat_column_mat() * frac_mat;
-      }
-      tLat2 /= double(_pg.size());
-
-      // tLat2 has the symmetrized lengths and angles -- it is equal to L.transpose()*L, where L=lat_column_mat()
-      // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
-      Eigen::Matrix3d tMat;
-
-      Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-      // tMat is sqrt of symlat.transpose()*symlat
-      tMat = tSVD.matrixU() * tSVD.singularValues().cwiseSqrt().asDiagonal() * tSVD.matrixV().transpose();
-
-      // if starting lattice were perfect, we would have origlat=rotation*tMat
-      tSVD.compute(tMat * inv_lat_column_mat());
-
-      tLat2 = tSVD.matrixV() * tSVD.matrixU().transpose() * tMat;
-
-      return Lattice(tLat2, tol());
-
-    }
-
-    Lattice Lattice::symmetrized_with_fractional(const std::vector<Eigen::Matrix3i> &_pg) const {
-      Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
-
-      for(Eigen::Matrix3i const &frac_mat : _pg) {
-        tLat2 += frac_mat.cast<double>().transpose() * lat_column_mat().transpose() * lat_column_mat() * frac_mat.cast<double>();
-      }
-      tLat2 /= double(_pg.size());
-
-      //std::cout << "symmetrized metric: \n" << tLat2 << "\n";
-
-      // tLat2 has the symmetrized lengths and angles -- it is equal to L.transpose()*L, where L=lat_column_mat()
-      // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
-      Eigen::Matrix3d tMat;
-
-      Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tLat2, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-      // tMat is sqrt of symlat.transpose()*symlat
-      tMat = tSVD.matrixU() * tSVD.singularValues().cwiseSqrt().asDiagonal() * tSVD.matrixV().transpose();
-
-      // if starting lattice were perfect, we would have origlat=rotation*tMat
-      tSVD.compute(tMat * inv_lat_column_mat());
-
-      tLat2 = tSVD.matrixV() * tSVD.matrixU().transpose() * tMat;
-
-      return Lattice(tLat2, tol());
-    }
-
-    //***********************************************************
-    /**
-     * Same as the other symmetrize routine, except this one assumes
-     * that the symmetry group you mean to use is the point group
-     * of your lattice within a certain tolerance.
-     */
-    //***********************************************************
-
-    Lattice Lattice::symmetrized(double sym_tol) const {
-      auto point_group = calc_point_group(*this, sym_tol);
-      return symmetrized(point_group);
     }
 
     //***********************************************************
@@ -1026,64 +916,6 @@ namespace CASM {
 
     //********************************************************************
 
-    std::vector<SymOp> calc_point_group(Lattice const &_lat) {
-      return calc_point_group(_lat, _lat.tol());
-    }
-
-    //********************************************************************
-
-    std::vector<SymOp> calc_point_group(Lattice const &_lat, double tol) {
-      std::vector<Eigen::Matrix3i> frac_point_group;
-      frac_point_group.reserve(48);
-
-      //Enumerate all possible matrices with elements equal to -1, 0, or 1
-      //These represent operations that reorder lattice vectors or replace one
-      //or more lattice vectors with a face or body diagonal.
-
-      //For this algorithm to work, lattice needs to be in reduced form.
-      Lattice tlat_reduced(_lat.reduced_cell());
-      tlat_reduced.set_tol(tol);
-      IsPointGroupOp is_equiv(tlat_reduced);
-      for(Eigen::Matrix3i const &mat : unimodular_matrices()) {
-        if(is_equiv(mat)) {
-          frac_point_group.push_back(mat);
-          /*std::cout
-            << "mat is PG op " << point_group.size() << ":\n" << mat << "\n"
-            << "metric:\n" << tlat_reduced.lat_column_mat().transpose()*tlat_reduced.lat_column_mat() << "\n"
-            << "transformed metric:\n" << mat.cast<double>().transpose()*tlat_reduced.lat_column_mat().transpose()*tlat_reduced.lat_column_mat()*mat.cast<double>() << "\n"
-            << "-----------\n\n";*/
-        }
-      }
-
-      // Find group closure using fractional form (skip for groups sizes that are very unlikely to be unconverged)
-      if(frac_point_group.size() != 48 && frac_point_group.size() != 24) {
-        Eigen::Matrix3i t_op;
-        for(Index i = 0; i < frac_point_group.size(); ++i) {
-          t_op = inverse(frac_point_group[i]);
-          if(!contains(frac_point_group, t_op)) {
-            frac_point_group.push_back(t_op);
-          }
-          for(Index j = i; j < frac_point_group.size(); ++j) {
-            t_op = frac_point_group[i] * frac_point_group[j];
-            if(!contains(frac_point_group, t_op)) {
-              frac_point_group.push_back(t_op);
-            }
-          }
-        }
-      }
-
-      std::vector<SymOp> result;
-      result.reserve(frac_point_group.size());
-      Eigen::Matrix3d t_cart, t_diff;
-      Lattice symlat = tlat_reduced.symmetrized_with_fractional(frac_point_group);
-      //std::cout << "Symmetrized lattice is\n " << symlat.lat_column_mat() << "\n";
-      for(Eigen::Matrix3i const &frac : frac_point_group) {
-        t_cart = symlat.lat_column_mat() * frac.cast<double>() * symlat.inv_lat_column_mat();
-        t_diff = t_cart * _lat.lat_column_mat() - _lat.lat_column_mat();
-        result.push_back(SymOp::point_operation(t_cart));
-      }
-      return result;
-    }
 
     ///\brief returns Lattice that is smallest possible supercell of both input Lattice
     ///

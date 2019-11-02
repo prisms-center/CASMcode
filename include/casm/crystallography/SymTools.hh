@@ -34,8 +34,36 @@ namespace CASM {
       return result;
     }
 
+    /// Convert a Cartesian symmetry operation representation to fractional
     Eigen::Matrix3i symmetry_matrix_to_frac(const Lattice &lat, const Eigen::Matrix3d &cart_matrix);
+    /// Convert a fractional symmetry operation representation to Cartesian
     Eigen::Matrix3d symmetry_matrix_to_cart(const Lattice &lat, const Eigen::Matrix3i &cart_matrix);
+
+    /// \brief Return a copy of the given lattice, which obeys the symmetry of the given group \param enforced_group
+    Lattice symmetrize(const Lattice &lat, const std::vector<SymOp> &enforced_group);
+
+    //TODO
+    //Why does this routine take a tolerance, if the lattice itself has a tolerance?
+    //Should we get rid of the tolerance inside of lattice?
+    /// \brief Return a copy of the given lattice, which obeys the symmetry of its point group, when generated
+    /// within the tolerance \param point_group_tolerance
+    Lattice symmetrize(const Lattice &lat, double point_group_tolerance);
+
+    /// Relax the vectors of the given lattice such that it obeys the symmetry of the given group,
+    /// where the symmetry operations are given in fractional representations
+    /* Lattice symmetrized_with_fractional(const Lattice& lat, const std::vector<Eigen::Matrix3i> &fractional_point_group); */
+
+    /// \brief Populate \param point_group with the point group of this lattice
+    /// \param point_group should be empty
+    /// \param pg_tol can be increased to find point group of lattice vectors
+    /// that are slightly distorted due to numerical noise
+    std::vector<SymOp> make_point_group(Lattice const &_lat);
+
+    /// \brief Populate \param point_group with the point group of this lattice
+    /// \param point_group should be empty
+    /// \param pg_tol can be increased to find point group of lattice vectors
+    /// that are slightly distorted due to numerical noise
+    std::vector<SymOp> make_point_group(Lattice const &_lat, double _tol);
 
   } // namespace xtal
 } // namespace CASM

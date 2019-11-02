@@ -217,18 +217,6 @@ namespace CASM {
       ///Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
       Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
 
-      /* std::vector<double> pg_converge(double large_tol); */
-      /* void pg_converge(double small_tol, double large_tol, double increment); */
-
-      /// \brief Symmetrized copy of this lattice, having symmetry of group \param _pg
-      Lattice symmetrized(const std::vector<SymOp> &_pg) const;
-
-      /// \brief Symmetrized copy of this lattice, having symmetry of group formed by fractional-coordinate symops \param _pg
-      Lattice symmetrized_with_fractional(const std::vector<Eigen::Matrix3i> &_pg) const;
-
-      /// \brief Symmetrized copy of this lattice having symmetry of point group calculated based on tolerance \param _tol
-      Lattice symmetrized(double _tol) const;
-
       double tol() const {
         return m_tol;
       }
@@ -260,8 +248,6 @@ namespace CASM {
       double m_tol;
     };
 
-
-
     /* never write a Matrix*Lattice operator, PLEASE
 
        template <class T>
@@ -269,18 +255,6 @@ namespace CASM {
 
        Lattice operator*(const Eigen::Matrix3d &LHS, const Lattice &RHS);
     */
-
-    /// \brief Populate \param point_group with the point group of this lattice
-    /// \param point_group should be empty
-    /// \param pg_tol can be increased to find point group of lattice vectors
-    /// that are slightly distorted due to numerical noise
-    std::vector<SymOp> calc_point_group(Lattice const &_lat);
-
-    /// \brief Populate \param point_group with the point group of this lattice
-    /// \param point_group should be empty
-    /// \param pg_tol can be increased to find point group of lattice vectors
-    /// that are slightly distorted due to numerical noise
-    std::vector<SymOp> calc_point_group(Lattice const &_lat, double _tol);
 
 
     /// \brief Returns the volume of a Lattice

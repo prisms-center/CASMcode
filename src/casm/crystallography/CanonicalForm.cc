@@ -2,6 +2,7 @@
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
@@ -66,7 +67,7 @@ namespace CASM {
       }
 
       Lattice equivalent(const Lattice &lat) {
-        return canonical::equivalent(lat, calc_point_group(lat));
+        return canonical::equivalent(lat, make_point_group(lat));
       }
 
       bool check(const Lattice &lat, SymOpVector const &g) {
@@ -74,7 +75,7 @@ namespace CASM {
       }
 
       bool check(const Lattice &lat) {
-        return canonical::check(lat, calc_point_group(lat));
+        return canonical::check(lat, make_point_group(lat));
       }
 
       Index operation_index(const Lattice &in_lat, const SymOpVector &point_grp, double compare_tol) {

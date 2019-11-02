@@ -2,6 +2,7 @@
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/AppIO.hh"
@@ -145,7 +146,7 @@ namespace CASM {
       Structure tmp = struc;
       // a) symmetrize the lattice vectors
       Lattice lat = tmp.lattice();
-      lat = lat.symmetrized(tol);
+      lat = xtal::symmetrize(lat, tol);
       lat.set_tol(tol);
 
       tmp.set_lattice(lat, FRAC);

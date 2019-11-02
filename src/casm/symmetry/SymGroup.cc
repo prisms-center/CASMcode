@@ -8,6 +8,7 @@
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
@@ -441,7 +442,7 @@ namespace CASM {
     //so when that happens you can just pass it whatever calc_point_group
     //returns
 
-    auto lattice_point_group = calc_point_group(_lat);
+    auto lattice_point_group = xtal::make_point_group(_lat);
     std::vector<CASM::SymOp> casted_point_group;
     for(const auto &op : lattice_point_group) {
       //The tolerance passed here is totally arbitrary...
