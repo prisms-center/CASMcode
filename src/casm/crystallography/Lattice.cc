@@ -276,17 +276,17 @@ namespace CASM {
     ///
     /// See PrimcClex::generate_supercells for information on dims and G.
     ///
-    void Lattice::generate_supercells(std::vector<Lattice> &supercell,
-                                      const std::vector<SymOp> &effective_pg,
-                                      const ScelEnumProps &enum_props) const {
+    /* void Lattice::generate_supercells(std::vector<Lattice> &supercell, */
+    /*                                   const std::vector<SymOp> &effective_pg, */
+    /*                                   const ScelEnumProps &enum_props) const { */
 
-      SuperlatticeEnumerator enumerator(effective_pg.begin(), effective_pg.end(), *this,  enum_props);
-      supercell.clear();
-      for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-        supercell.push_back(canonical::equivalent(*it, effective_pg, TOL));
-      }
-      return;
-    }
+    /*   SuperlatticeEnumerator enumerator(effective_pg.begin(), effective_pg.end(), *this,  enum_props); */
+    /*   supercell.clear(); */
+    /*   for(auto it = enumerator.begin(); it != enumerator.end(); ++it) { */
+    /*     supercell.push_back(canonical::equivalent(*it, effective_pg, TOL)); */
+    /*   } */
+    /*   return; */
+    /* } */
 
 
     //********************************************************************

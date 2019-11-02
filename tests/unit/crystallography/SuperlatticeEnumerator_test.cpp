@@ -77,54 +77,51 @@ jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol
   return mat_dump;
 }
 
-jsonParser lat_test_case(const std::string &pos_filename, int minvol, int maxvol) {
-  const Structure test_struc(testdir / pos_filename);
-  const Lattice test_lat = test_struc.lattice();
-  const SymGroup effective_pg = test_struc.factor_group();
+/* jsonParser lat_test_case(const std::string &pos_filename, int minvol, int maxvol) { */
+/*   const Structure test_struc(testdir / pos_filename); */
+/*   const Lattice test_lat = test_struc.lattice(); */
+/*   const SymGroup effective_pg = test_struc.factor_group(); */
 
-  std::vector<Lattice> enumerated_lats;
-  ScelEnumProps enum_props(minvol, maxvol + 1);
-  test_lat.generate_supercells(enumerated_lats, effective_pg, enum_props);
+/*   std::vector<Lattice> enumerated_lats; */
+/*   ScelEnumProps enum_props(minvol, maxvol + 1); */
+/*   test_lat.generate_supercells(enumerated_lats, effective_pg, enum_props); */
 
-  jsonParser lat_dump;
-  lat_dump["input"]["min_vol"] = minvol;
-  lat_dump["input"]["max_vol"] = maxvol;
-  lat_dump["input"]["source"] = pos_filename;
-  lat_dump["output"]["lats"] = enumerated_lats;
+/*   jsonParser lat_dump; */
+/*   lat_dump["input"]["min_vol"] = minvol; */
+/*   lat_dump["input"]["max_vol"] = maxvol; */
+/*   lat_dump["input"]["source"] = pos_filename; */
+/*   lat_dump["output"]["lats"] = enumerated_lats; */
 
-  return lat_dump;
-}
+/*   return lat_dump; */
+/* } */
 
-jsonParser generate_all_test_cases() {
-  jsonParser all_test_cases;
+/* jsonParser generate_all_test_cases() { */
+/*   jsonParser all_test_cases; */
 
-  //********************************************************************//
 
-  std::vector<jsonParser> all_mat_tests;
-  all_mat_tests.push_back(mat_test_case("POS1.txt", 1, 6));
-  all_mat_tests.push_back(mat_test_case("PRIM1.txt", 2, 9));
-  all_mat_tests.push_back(mat_test_case("PRIM2.txt", 4, 7));
-  all_mat_tests.push_back(mat_test_case("PRIM4.txt", 1, 8));
-  all_test_cases["mat_test_cases"] = all_mat_tests;
+/*   std::vector<jsonParser> all_mat_tests; */
+/*   all_mat_tests.push_back(mat_test_case("POS1.txt", 1, 6)); */
+/*   all_mat_tests.push_back(mat_test_case("PRIM1.txt", 2, 9)); */
+/*   all_mat_tests.push_back(mat_test_case("PRIM2.txt", 4, 7)); */
+/*   all_mat_tests.push_back(mat_test_case("PRIM4.txt", 1, 8)); */
+/*   all_test_cases["mat_test_cases"] = all_mat_tests; */
 
-  //********************************************************************//
 
-  std::vector<jsonParser> all_lat_tests;
-  all_lat_tests.push_back(lat_test_case("POS1.txt", 2, 6));
-  all_lat_tests.push_back(lat_test_case("PRIM1.txt", 2, 9));
-  all_lat_tests.push_back(lat_test_case("PRIM2.txt", 3, 7));
-  all_lat_tests.push_back(lat_test_case("PRIM4.txt", 1, 8));
-  all_lat_tests.push_back(lat_test_case("PRIM5.txt", 1, 8));
+/*   std::vector<jsonParser> all_lat_tests; */
+/*   all_lat_tests.push_back(lat_test_case("POS1.txt", 2, 6)); */
+/*   all_lat_tests.push_back(lat_test_case("PRIM1.txt", 2, 9)); */
+/*   all_lat_tests.push_back(lat_test_case("PRIM2.txt", 3, 7)); */
+/*   all_lat_tests.push_back(lat_test_case("PRIM4.txt", 1, 8)); */
+/*   all_lat_tests.push_back(lat_test_case("PRIM5.txt", 1, 8)); */
 
-  all_test_cases["lat_test_cases"] = all_lat_tests;
+/*   all_test_cases["lat_test_cases"] = all_lat_tests; */
 
-  //********************************************************************//
 
-  jsonParser test1 = all_test_cases;
-  jsonParser test2 = all_test_cases;
+/*   jsonParser test1 = all_test_cases; */
+/*   jsonParser test2 = all_test_cases; */
 
-  return all_test_cases;
-}
+/*   return all_test_cases; */
+/* } */
 
 
 void trans_enum_test() {
@@ -193,59 +190,59 @@ void restricted_test() {
 //they should have been, so these hard coded examples to check
 //had to be regenerated...
 
-TEST(SuperlatticeEnumeratorTest, EnumeratorConsistency) {
+/* TEST(SuperlatticeEnumeratorTest, EnumeratorConsistency) { */
 
-  boost::filesystem::path old_test_path = testdir / "test_cases.json";
-  boost::filesystem::path current_test_path = testdir / "current_test_results.json";
+/*   boost::filesystem::path old_test_path = testdir / "test_cases.json"; */
+/*   boost::filesystem::path current_test_path = testdir / "current_test_results.json"; */
 
-  jsonParser current_test_results = generate_all_test_cases();
-  current_test_results.write(current_test_path);
+/*   jsonParser current_test_results = generate_all_test_cases(); */
+/*   current_test_results.write(current_test_path); */
 
-  //Find out where things fail
-  //Comparison will fail if you don't compare from pre-written files.
-  jsonParser curr(current_test_path);
-  jsonParser existing(old_test_path);
+/*   //Find out where things fail */
+/*   //Comparison will fail if you don't compare from pre-written files. */
+/*   jsonParser curr(current_test_path); */
+/*   jsonParser existing(old_test_path); */
 
-  boost::filesystem::path failure_point = find_diff(curr, existing, TOL);
+/*   boost::filesystem::path failure_point = find_diff(curr, existing, TOL); */
 
-  if(!failure_point.empty()) {
-    std::cout << "Difference at: " << failure_point << "\n" << std::endl;
+/*   if(!failure_point.empty()) { */
+/*     std::cout << "Difference at: " << failure_point << "\n" << std::endl; */
 
-    auto &_existing = existing.at(failure_point);
-    auto &_curr = curr.at(failure_point);
-    if(_existing.type() != _curr.type()) {
-      std::cout << "Different types\n" << std::endl;
-    }
-    else if(_existing.is_array() && (_existing.size() != _curr.type())) {
-      std::cout << "Different array sizes" << std::endl;
-      std::cout << "  Expected: " << _existing.size() << std::endl;
-      std::cout << "  Found: " << _curr.size() << std::endl;
+/*     auto &_existing = existing.at(failure_point); */
+/*     auto &_curr = curr.at(failure_point); */
+/*     if(_existing.type() != _curr.type()) { */
+/*       std::cout << "Different types\n" << std::endl; */
+/*     } */
+/*     else if(_existing.is_array() && (_existing.size() != _curr.type())) { */
+/*       std::cout << "Different array sizes" << std::endl; */
+/*       std::cout << "  Expected: " << _existing.size() << std::endl; */
+/*       std::cout << "  Found: " << _curr.size() << std::endl; */
 
-    }
-    else if(_existing.is_obj() && (_existing.size() != _curr.type())) {
-      std::cout << "Different object sizes\n" << std::endl;
-      std::cout << "  Expected: " << _existing.size() << std::endl;
-      std::cout << "  Found: " << _curr.size() << std::endl;
+/*     } */
+/*     else if(_existing.is_obj() && (_existing.size() != _curr.type())) { */
+/*       std::cout << "Different object sizes\n" << std::endl; */
+/*       std::cout << "  Expected: " << _existing.size() << std::endl; */
+/*       std::cout << "  Found: " << _curr.size() << std::endl; */
 
-    }
-    else {
-      std::cout << "Different values\n" << std::endl;
-    }
+/*     } */
+/*     else { */
+/*       std::cout << "Different values\n" << std::endl; */
+/*     } */
 
-    std::cout << "Expected: \n" << existing.at(failure_point) << "\n"
-              << "Found: \n" << curr.at(failure_point) << std::endl;
-  }
+/*     std::cout << "Expected: \n" << existing.at(failure_point) << "\n" */
+/*               << "Found: \n" << curr.at(failure_point) << std::endl; */
+/*   } */
 
 
-  EXPECT_TRUE(failure_point.empty());
+/*   EXPECT_TRUE(failure_point.empty()); */
 
-  current_test_results["WARNING"] = "This has been added as an inconvenience to anyone who is thinking of replacing the \
-current test_results.json file. Do not replace anything unless you're certain the old \
-results were incorrect, and these are an improvement. If you are sure you want to proceed, eliminate this key.";
+/*   current_test_results["WARNING"] = "This has been added as an inconvenience to anyone who is thinking of replacing the \ */
+/* current test_results.json file. Do not replace anything unless you're certain the old \ */
+/* results were incorrect, and these are an improvement. If you are sure you want to proceed, eliminate this key."; */
 
-  current_test_results.write(current_test_path);
+/*   current_test_results.write(current_test_path); */
 
-}
+/* } */
 
 TEST(SuperlatticeEnumeratorTest, RestrictedEnumeration) {
   trans_enum_test();

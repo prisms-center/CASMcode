@@ -65,6 +65,8 @@ namespace CASM {
     /// that are slightly distorted due to numerical noise
     std::vector<SymOp> make_point_group(Lattice const &_lat, double _tol);
 
+    //************************************************************************************************************************//
+
   } // namespace xtal
 } // namespace CASM
 

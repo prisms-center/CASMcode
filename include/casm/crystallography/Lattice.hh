@@ -137,12 +137,12 @@ namespace CASM {
       /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
       /// \param effective_pg is a group that should either be equivalent to the full point group of this lattice
       /// or be a subgroup of that full point group
-      void generate_supercells(std::vector<Lattice> &supercell, const SymOpVector &effective_pg, const ScelEnumProps &enum_props) const;
+      /* void generate_supercells(std::vector<Lattice> &supercell, const SymOpVector &effective_pg, const ScelEnumProps &enum_props) const; */
 
-      template<typename ExtenSymOpVector>
-      void generate_supercells(std::vector<Lattice> &supercell, const ExtenSymOpVector &effective_pg, const ScelEnumProps &enum_props) const {
-        return this->generate_supercells(supercell, adapter::Adapter<SymOpVector, ExtenSymOpVector>()(effective_pg), enum_props);
-      }
+      /* template<typename ExtenSymOpVector> */
+      /* void generate_supercells(std::vector<Lattice> &supercell, const ExtenSymOpVector &effective_pg, const ScelEnumProps &enum_props) const { */
+      /*   return this->generate_supercells(supercell, adapter::Adapter<SymOpVector, ExtenSymOpVector>()(effective_pg), enum_props); */
+      /* } */
 
       /// \brief make a supercell of this lattice.
       /// Equivalent to Lattice(lat_column_mat()*trans_mat)

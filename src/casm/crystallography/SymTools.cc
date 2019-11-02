@@ -72,12 +72,10 @@ namespace CASM {
       return Lattice(tLat2, lattice.tol());
     }
 
-
     Lattice symmetrize(const Lattice &lattice, double point_group_tolerance) {
       auto point_group = make_point_group(lattice, point_group_tolerance);
       return symmetrize(lattice, point_group);
     }
-
 
     std::vector<SymOp> make_point_group(Lattice const &_lat) {
       return make_point_group(_lat, _lat.tol());
