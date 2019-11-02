@@ -1,4 +1,5 @@
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/CASM_global_enum.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/CanonicalForm.hh"

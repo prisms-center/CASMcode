@@ -8,6 +8,7 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Molecule.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/symmetry/SymGroup.hh"
 

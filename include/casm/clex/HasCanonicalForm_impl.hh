@@ -9,6 +9,7 @@
 #include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/crystallography/CanonicalForm.hh"
+#include "casm/crystallography/SymTools.hh"
 
 namespace CASM {
 

@@ -129,5 +129,13 @@ namespace CASM {
       return result;
     }
 
+    Lattice &apply(const SymOp &op, Lattice &lat) {
+      return lat = Lattice(get_matrix(op) * lat.lat_column_mat(), lat.tol());
+    }
+
+    Lattice copy_apply(const SymOp &op, const Lattice &lat) {
+      return Lattice(get_matrix(op) * lat.lat_column_mat(), lat.tol());
+    }
+
   } // namespace xtal
 } // namespace CASM

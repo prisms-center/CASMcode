@@ -2,6 +2,7 @@
 #define CASM_HasPrimClex_impl
 
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/HasPrimClex.hh"
 
 namespace CASM {
 

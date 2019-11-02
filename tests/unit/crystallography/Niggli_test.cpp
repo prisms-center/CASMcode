@@ -105,7 +105,7 @@ namespace CASM {
                     0, 1, 0,
                     0, 0, 1;
 
-      Lattice comparelat = make_supercell(testlat, comp_transmat);
+      Lattice comparelat = make_superlattice(testlat, comp_transmat);
 
       Lattice nigglicompare = xtal::canonical::equivalent(comparelat, pg, TOL);
       Lattice nigglitest = xtal::canonical::equivalent(*it, pg, TOL);

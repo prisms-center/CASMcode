@@ -263,7 +263,7 @@ namespace CASM {
       file >> Tm;
       file.close();
 
-      auto super = unitcell.create_superstruc(make_supercell(unitcell.lattice(), Tm));
+      auto super = unitcell.create_superstruc(make_superlattice(unitcell.lattice(), Tm));
       super.set_title(std::string("Supercell of ") + unitcell.title());
 
       print(super);
@@ -299,7 +299,7 @@ namespace CASM {
             file >> T.data()[i];
           }
           file.close();
-          lat[it->string()] = make_supercell(primclex.prim().lattice(), T);
+          lat[it->string()] = make_superlattice(primclex.prim().lattice(), T);
         }
       }
 
@@ -367,7 +367,7 @@ namespace CASM {
 
         auto M = enforce_min_volume(pg.begin(), pg.end(), prim_lat, iround(T),  min_vol, vm.count("fixed-shape"));
 
-        superduper = xtal::canonical::equivalent(make_supercell(superduper, M), pg, TOL);
+        superduper = xtal::canonical::equivalent(make_superlattice(superduper, M), pg, TOL);
 
         auto S = is_supercell(superduper, prim_lat, TOL).second;
 
@@ -471,7 +471,7 @@ namespace CASM {
                    min_vol,
                    vm.count("fixed-shape"));
 
-        Lattice niggli_lat = xtal::canonical::equivalent(make_supercell(prim_lat, T * M), pg, TOL);
+        Lattice niggli_lat = xtal::canonical::equivalent(make_superlattice(prim_lat, T * M), pg, TOL);
         T = iround(is_supercell(niggli_lat, prim_lat, TOL).second);
 
         args.log() << "    Transformation matrix, after enforcing mininum volume:\n"
@@ -488,7 +488,7 @@ namespace CASM {
 
         args.log() << "  Unit cell lattice: \n" << scel.lattice().lat_column_mat() << "\n\n";
 
-        Lattice super_lat = make_supercell(scel.lattice(), T);
+        Lattice super_lat = make_superlattice(scel.lattice(), T);
         const Supercell &super_scel = *Supercell(&primclex, super_lat).insert().first;
 
         args.log() << "  Add supercell: " << super_scel.name() << "\n\n";
@@ -524,7 +524,7 @@ namespace CASM {
         args.log() << "\n\n";
 
 
-        BasicStructure<Site> super = unit.create_superstruc(make_supercell(unit.lattice(), T));
+        BasicStructure<Site> super = unit.create_superstruc(make_superlattice(unit.lattice(), T));
         super.set_title(std::string("Supercell of ") + con.name());
 
         args.log() << "Super structure:";

@@ -265,30 +265,6 @@ namespace CASM {
       return super_kpoints;
     }
 
-    /// \brief Generate super Lattice
-    ///
-    /// Use SupercellEnumerator to enumerate possible HNF transformation matrices. Unique supercells
-    /// are identified by applying point group operations and keeping the supercell if the HNF is 'canonical',
-    /// meaning that the HNF indices in order H00, H11, H22, H12, H02, H01 are the lexicographically greatest.
-    ///
-    /// The supercell that is inserted in the 'supercell' container is the niggli cell, rotated to a
-    /// standard orientation (see standard_orientation function).
-    ///
-    /// See PrimcClex::generate_supercells for information on dims and G.
-    ///
-    /* void Lattice::generate_supercells(std::vector<Lattice> &supercell, */
-    /*                                   const std::vector<SymOp> &effective_pg, */
-    /*                                   const ScelEnumProps &enum_props) const { */
-
-    /*   SuperlatticeEnumerator enumerator(effective_pg.begin(), effective_pg.end(), *this,  enum_props); */
-    /*   supercell.clear(); */
-    /*   for(auto it = enumerator.begin(); it != enumerator.end(); ++it) { */
-    /*     supercell.push_back(canonical::equivalent(*it, effective_pg, TOL)); */
-    /*   } */
-    /*   return; */
-    /* } */
-
-
     //********************************************************************
     /**This function finds the reduced cell from the given primitive cell.
      *
@@ -903,16 +879,6 @@ namespace CASM {
       }
     }
 
-
-    /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const SymOp &op, Lattice &lat) {
-      return lat = Lattice(get_matrix(op) * lat.lat_column_mat(), lat.tol());
-    }
-
-    /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const SymOp &op, const Lattice &lat) {
-      return Lattice(get_matrix(op) * lat.lat_column_mat(), lat.tol());
-    }
 
     //********************************************************************
 

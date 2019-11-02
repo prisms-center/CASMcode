@@ -65,6 +65,17 @@ namespace CASM {
     /// that are slightly distorted due to numerical noise
     std::vector<SymOp> make_point_group(Lattice const &_lat, double _tol);
 
+    /// \brief Apply SymOp to a Lattice
+    Lattice &apply(const SymOp &op, Lattice &lat);
+
+    /// \brief Copy and apply SymOp to a Lattice
+    Lattice copy_apply(const SymOp &op, const Lattice &lat);
+
+    template <typename ExternSymOp>
+    Lattice copy_apply(const ExternSymOp &op, const Lattice &lat) {
+      return copy_apply(adapter::Adapter<SymOp, ExternSymOp>()(op), lat);
+    }
+
     //************************************************************************************************************************//
 
   } // namespace xtal

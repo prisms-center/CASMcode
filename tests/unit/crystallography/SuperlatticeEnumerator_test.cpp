@@ -135,7 +135,7 @@ void trans_enum_test() {
            1, -1, 1,
            1, 1, -1;
 
-  Lattice bigunit = make_supercell(testlat, transmat);
+  Lattice bigunit = make_superlattice(testlat, transmat);
 
   ScelEnumProps enum_props(1, 5 + 1, "abc", transmat);
   SuperlatticeEnumerator enumerator(pg.begin(), pg.end(), testlat, enum_props);

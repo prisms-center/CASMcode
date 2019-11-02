@@ -49,7 +49,7 @@ namespace CASM {
 
     typename SuperlatticeIterator::reference SuperlatticeIterator::operator*() const {
       if(!m_super_updated) {
-        m_super = make_supercell(m_enum->unit(), matrix());
+        m_super = make_superlattice(m_enum->unit(), matrix());
         m_super_updated = true;
       }
       return m_super;
@@ -57,7 +57,7 @@ namespace CASM {
 
     typename SuperlatticeIterator::pointer SuperlatticeIterator::operator->() const {
       if(!m_super_updated) {
-        m_super = make_supercell(m_enum->unit(), matrix());
+        m_super = make_superlattice(m_enum->unit(), matrix());
         m_super_updated = true;
       }
       return &m_super;

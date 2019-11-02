@@ -132,23 +132,6 @@ namespace CASM {
       /// \brief Return boxiness factor directly proportional to volume/SA ratio
       double boxiness() const;
 
-
-      /// \brief Populate \param supercell with symmetrically distinct supercells of this lattice
-      /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
-      /// \param effective_pg is a group that should either be equivalent to the full point group of this lattice
-      /// or be a subgroup of that full point group
-      /* void generate_supercells(std::vector<Lattice> &supercell, const SymOpVector &effective_pg, const ScelEnumProps &enum_props) const; */
-
-      /* template<typename ExtenSymOpVector> */
-      /* void generate_supercells(std::vector<Lattice> &supercell, const ExtenSymOpVector &effective_pg, const ScelEnumProps &enum_props) const { */
-      /*   return this->generate_supercells(supercell, adapter::Adapter<SymOpVector, ExtenSymOpVector>()(effective_pg), enum_props); */
-      /* } */
-
-      /// \brief make a supercell of this lattice.
-      /// Equivalent to Lattice(lat_column_mat()*trans_mat)
-      template <typename T>
-      Lattice make_supercell(const Eigen::Matrix<T, 3, 3> &trans_mat) const;
-
       /// \brief Find the lattice vectors which give most compact unit cell
       /// Compactness is measured by how close lat_column_mat().transpose()*lat_column_mat() is to a diagonal matrix
       Lattice reduced_cell() const;
@@ -260,20 +243,6 @@ namespace CASM {
     /// \brief Returns the volume of a Lattice
     double volume(const Lattice &lat);
 
-    /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const SymOp &op, Lattice &lat);
-
-    /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const SymOp &op, const Lattice &lat);
-
-    template <typename ExternSymOp>
-    Lattice copy_apply(const ExternSymOp &op, const Lattice &lat) {
-      return copy_apply(adapter::Adapter<SymOp, ExternSymOp>()(op), lat);
-    }
-
-    /// \brief Returns a super Lattice
-    Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat);
-
     /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
     std::pair<bool, Eigen::Matrix3d> is_supercell(const Lattice &scel, const Lattice &unit, double tol);
 
@@ -327,14 +296,6 @@ namespace CASM {
       return lat.lat_column_mat() * frac_mat * lat.inv_lat_column_mat();
     }
 
-    //********************************************************************
-    // A column of trans_mat specifies a lattice vector of the supercell in terms of the
-    // lattice vectors of (*this) lattice.
-    template <typename T>
-    Lattice Lattice::make_supercell(const Eigen::Matrix<T, 3, 3> &trans_mat) const {
-      return Lattice(lat_column_mat() * trans_mat, tol());
-    }
-
     /// \brief Returns the volume of a Lattice
     ///
     /// \returns volume of the Lattice
@@ -346,7 +307,7 @@ namespace CASM {
     }
 
     /// \brief Returns a super Lattice
-    inline Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat) {
+    inline Lattice make_superlattice(const Lattice &lat, const Eigen::Matrix3i &transf_mat) {
       return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.cast<double>(), lat.tol());
     }
 

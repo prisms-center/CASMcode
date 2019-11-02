@@ -1,6 +1,7 @@
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 
 #include "casm/crystallography/SymType.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
