@@ -1,6 +1,6 @@
 #include "casm/app/HamiltonianModules_impl.hh"
 #include "casm/misc/ParsingDictionary.hh"
-
+#include "casm/crystallography/SymRepBuilder.hh"
 namespace CASM {
 
   template<>
@@ -19,6 +19,17 @@ namespace CASM {
     return dict;
   }
 
+  template<>
+  HamiltonianModules::SymRepBuilderDictionary make_parsing_dictionary<SymRepBuilderInterface>() {
+    HamiltonianModules::SymRepBuilderDictionary dict;
+    dict.insert(
+      SymRepBuilder::Identity(),
+      SymRepBuilder::Cartesian(),
+      SymRepBuilder::TimeReversal(),
+      SymRepBuilder::AngularMomentum(),
+      SymRepBuilder::Rank2Tensor());
+    return dict;
+  }
 
   HamiltonianModules::HamiltonianModules(ProjectSettings const *_set) :
     m_dof_dict(make_parsing_dictionary<DoFDictionary::value_type>().clone()),

@@ -1186,7 +1186,7 @@ namespace CASM {
     std::map<DoFKey, std::vector<DoFSetInfo> > result;
 
     for(DoFKey const &type : continuous_local_dof_types(_struc)) {
-      std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoFType::basic_traits(type).dim(), 0)));
+      std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::BasicTraits(type).dim(), 0)));
 
       for(Index b = 0; b < _struc.basis().size(); ++b) {
         if(_struc.basis()[b].has_dof(type)) {

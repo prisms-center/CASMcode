@@ -3,6 +3,7 @@
 
 #include <boost/filesystem/fstream.hpp>
 #include "casm/database/Remove.hh"
+#include "casm/database/ConfigData_impl.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/database/PropertiesDatabase.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -14,6 +15,12 @@ namespace CASM {
   namespace DB {
 
     // --- RemoveT ---
+
+    template<typename _ConfigType>
+    RemoveT<_ConfigType>::RemoveT(const PrimClex &primclex, fs::path report_dir, Log &_file_log) :
+      ConfigData(primclex, _file_log, TypeTag<ConfigType>()),
+      m_report_dir(report_dir) {}
+
 
     /// \brief Erase Configurations that have no data
     template<typename _ConfigType>

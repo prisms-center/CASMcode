@@ -78,10 +78,11 @@ namespace CASM {
     //components[priority_index[1]] is maxed out and so on
     std::vector<int> priority_index;
 
+    Index nfound(0);
     //Holds a list of possible end members, this list is appended to
     //as and when we find an end_member.
-    std::vector< Eigen::MatrixXi > tend_members;
-    Eigen::MatrixXi tend;
+    std::map<Index, std::vector<Eigen::VectorXi > > tend_members;
+    Eigen::VectorXi tend(m_sublattice_map.rows());
 
     //set the size of priority index to the number of components in
     //the system, following this it is seeded with a starting priority
@@ -94,38 +95,37 @@ namespace CASM {
       //already been maxed out
       Eigen::MatrixXi tsublat_comp = m_sublattice_map;
 
-      //resize and set tend to 0's,we will add to this
-      //array as we loop over the priority indices
-      tend.setZero(1, m_sublattice_map.rows());
-
       //calculate the end_member that corresponds to this
       //priority_index
-      for(Index i = 0; i < priority_index.size(); i++) {
-        tend(0, priority_index[i]) = tsublat_comp.row(priority_index[i]).sum();
+      for(Index i : priority_index) {
+        tend[i] = tsublat_comp.row(i).sum();
         //set the value to 0 in those sublattices that have been maxed out
-        max_out(priority_index[i], tsublat_comp);
+        max_out(i, tsublat_comp);
       }
 
       //figure out if it is already in our list of end members
-      bool is_unique = true;
-      for(Index i = 0; i < tend_members.size(); i++) {
-        if(tend == tend_members[i]) {
-          is_unique = false;
-          break;
-        }
+      Index sqnorm = tend.squaredNorm();
+      auto it = tend_members.find(sqnorm);
+      if(it == tend_members.end()) {
+        tend_members[sqnorm].push_back(tend);
+        ++nfound;
       }
-      if(is_unique) {
-        tend_members.push_back(tend); //add to the list if it is unique
+      else if(!contains(it->second, tend)) {
+        it->second.push_back(tend);
+        ++nfound;
       }
+      //std::cout << "tend_members.size(): " << tend_members.size() << "\n";
     }
     while(next_permutation(priority_index.begin(), priority_index.end())); //repeat the above for all permutations of priority_index
 
     //Store tend_members as an Eigen::MatrixXi
     //makes it easier to find the rank of the space
-    m_prim_end_members.resize(tend_members.size(), m_sublattice_map.rows());
-    for(Index i = 0; i < tend_members.size(); i++) {
-      for(EigenIndex j = 0; j < m_sublattice_map.rows(); j++) {
-        m_prim_end_members(i, j) = double(tend_members[i](0, j));
+    m_prim_end_members.resize(nfound, m_sublattice_map.rows());
+    Index l = 0;
+    for(auto it = tend_members.rbegin(); it != tend_members.rend(); ++it) {
+      //std::cout << "sqnorm " << it->first << " has " << it->second.size() << "\n";
+      for(auto const &el : it->second) {
+        m_prim_end_members.row(l++) = el.cast<double>().transpose();
       }
     }
   }
@@ -162,9 +162,6 @@ namespace CASM {
     Eigen::FullPivHouseholderQR<Eigen::MatrixXd> qr(m_prim_end_members);
     Eigen::VectorXd torigin; //temp origin
     Eigen::VectorXd test_comp;
-    std::vector< Eigen::VectorXd > tspanning; //set of spanning end members
-    bool is_positive; //flag to test for positive composition axes
-    std::vector<int> priority_index;
 
     // If there is already a set of enumerated spaces for this
     // Composition object
@@ -178,88 +175,78 @@ namespace CASM {
     if(verbose)
       std::cout << "Rank of space : " << m_rank_of_space << std::endl;
 
-    //This array is used to figure out which of the end members to
-    //select as spanning end members
-    std::vector<int> binary_choose(m_prim_end_members.rows() - 1, 0);
+    // Count over K-combinations of end members, for each K-combination, select one as origin and the rest as axes
+    Index K = m_rank_of_space;
+    Index N = m_prim_end_members.rows();
+    Index ncomb = nchoosek(N, K);
+    Eigen::MatrixXd tmembers(m_prim_end_members.cols(), K);
 
-    //the priority index is used to pick a set of origin and end
-    //members to span the space
-    for(EigenIndex i = 0; i < m_prim_end_members.rows(); i++) {
-      priority_index.push_back(i);
-    }
+    // Combination is stored in 'combo' vector
+    std::vector<Index> combo;
 
-    for(int i = 0; i + 1 < (m_rank_of_space); i++) {
-      binary_choose[binary_choose.size() - 1 - i] = 1;
-    }
-    if(verbose)
-      std::cout << "Binary choose: " << binary_choose << std::endl;
+    //set of spanning end members
+    std::vector< Eigen::VectorXd > tspanning;
+    for(Index c = 0; c < ncomb; ++c) {
+      combo = index_to_kcombination(c, K);
+      for(Index i = 0; i < K; ++i) {
+        tmembers.col(i) = m_prim_end_members.row(combo[i]).transpose();
+      }
+      if(c > 100000 && m_allowed_list.size() > 0)
+        break;
+      if(qr.compute(tmembers).rank() < K)
+        continue;
 
-    if(verbose)
-      std::cout << "Computing the possible composition axes ... " << std::endl;
+      if(verbose) {
+        double p = round(1e4 * double(c) / double(ncomb)) / 100.;
+        std::cout << "combo #" << c << ": " << combo << std::endl;
+        std::cout << "Found " << m_allowed_list.size() << std::endl;
+        std::cout << p << "% complete. Considering possible origins for set \n" << tmembers << std::endl;
+      }
 
-    //loop through all the end members and start them off as the origin
-    for(EigenIndex i = 0; i < m_prim_end_members.rows(); i++) {
-      torigin = m_prim_end_members.row(i).transpose();
+      //loop through all the end members and start them off as the origin
+      for(Index i_o = 0; i_o < K; ++i_o) {
+        torigin = tmembers.col(i_o);
 
-      if(verbose)
-        std::cout << "The origin is: " << torigin << std::endl;
+        if(verbose)
+          std::cout << "The origin is: " << torigin.transpose() << "\n---" << std::endl;
 
-      //NOTE: priority seems to be a misnomer here, its really the
-      //list of end members that are in contention to be considered as
-      //the set of spanning end members. Consider changing the name
-      std::vector<int> tpriority = priority_index;
-      tpriority.erase(tpriority.begin() + i); //remove the 'origin' from contention
-      std::vector<int> tbinary_choose(binary_choose.begin(), binary_choose.end());
-
-      //loop over all permutations of priority_index and pick rank-1
-      //end members to span the space. Only keep those combinations
-      //that result in positive compositions
-      do {
+        //after picking origin, see if remaining end members span the space
+        //end members to span the space. Only keep those combinations
+        //that result in positive compositions
         tspanning.clear();
-        std::vector< Eigen::VectorXi > tvec; //hold the list of end members that are being considered
+        for(Index j = 0; j < K; ++j) {
 
-        if(verbose)
-          std::cout << "The end members being considered: " << std::endl;
-
-        for(Index j = 0; j < tbinary_choose.size(); j++) {
-          if(tbinary_choose[j] == 1) {
-            tspanning.push_back((m_prim_end_members.row(tpriority[j]).transpose() - torigin));
-            tvec.push_back(m_prim_end_members.row(tpriority[j]).transpose().cast<int>());
+          if(j != i_o) {
+            tspanning.push_back(tmembers.col(j) - torigin);
           }
-          if(verbose)
-            std::cout << m_prim_end_members.row(tpriority[j]) << std::endl;
         }
-
-        if(verbose)
-          std::cout << "---" << std::endl;
 
         //initialize a ParamComposition object with these spanning vectors and origin
         ParamComposition tcomp = calc_composition_object(torigin, tspanning);
-        is_positive = true;
 
         //loop through end members and see what the values of the compositions works out to
         if(verbose)
           std::cout << "Calculated compositions:" << std::endl;
 
-        for(EigenIndex j = 0; j < m_prim_end_members.rows(); j++) {
+        //flag to test for positive composition axes
+        bool is_positive = true;
+
+        for(Index j = 0; is_positive && j < m_prim_end_members.rows(); j++) {
           // Calculates the composition value given the previously
           // initialized Composition object
           test_comp = tcomp.calc(m_prim_end_members.row(j), NUMBER_ATOMS);
           if(verbose)
-            std::cout << m_prim_end_members.row(j) << "  :  " << test_comp << std::endl;
+            std::cout << m_prim_end_members.row(j) << "  :  " << test_comp.transpose() << std::endl;
 
-          for(EigenIndex k = 0; k < test_comp.size(); k++) {
+          for(Index k = 0; k < test_comp.size(); k++) {
             //if the calculated parametric composition value is either
             //less than 0 or is nan(this will occur if the current set
             //of origin and spanning end members form a subspace in
             //the composition space for this PRIM)
-            if((test_comp(k) < 0 && !almost_zero(test_comp(k))) || std::isnan(test_comp(k))) {
+            if(test_comp(k) < -TOL) {
               is_positive = false;
               break;
             }
-          }
-          if(!is_positive) {
-            break;
           }
         }
         if(is_positive) {
@@ -268,11 +255,10 @@ namespace CASM {
         }
 
       }
-      while(next_permutation(tbinary_choose.begin(), tbinary_choose.end()));
-      fflush(stdout);
     }
-    std::cout << "                                                                                                                          \r";
-    fflush(stdout);
+    if(verbose)
+      std::cout << "                                                                                                                          " << std::endl;
+
   }
 
   //---------------------------------------------------------------------------

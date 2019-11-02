@@ -178,7 +178,7 @@ namespace CASM {
     m_mtrand(&_mtrand),
     m_mag(_mag),
     m_normal(_normal),
-    m_unit_length(DoFType::basic_traits(_dof_key).unit_length()),
+    m_unit_length(DoF::BasicTraits(_dof_key).unit_length()),
     m_site_selection(_in_config.sites().begin(), _in_config.sites().end()) {
 
     if(m_unit_length)

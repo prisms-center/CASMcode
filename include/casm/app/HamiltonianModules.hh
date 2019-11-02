@@ -62,6 +62,9 @@ namespace CASM {
   template<>
   HamiltonianModules::AnisoValDictionary make_parsing_dictionary<AnisoValTraits>();
 
+  template<>
+  HamiltonianModules::SymRepBuilderDictionary make_parsing_dictionary<SymRepBuilderInterface>();
+
 
 
   /// \brief Load DoF plugins from a CASM project

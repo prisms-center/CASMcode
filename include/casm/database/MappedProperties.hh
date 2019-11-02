@@ -108,9 +108,21 @@ namespace CASM {
 
     enum class Method {deformation_cost, minimum, maximum, direct_selection};
 
+    static std::string method_name(Method m) {
+      if(m == Method::minimum)
+        return "minimum";
+      else if(m == Method::maximum)
+        return "maximum";
+      else if(m == Method::direct_selection)
+        return "direct_selection";
+      else if(m == Method::deformation_cost)
+        return "deformation_cost";
+      return "unknown";
+    }
+
     struct Option {
       Option(Method _method = Method::minimum, std::string _name = "relaxed_energy") :
-        Option(_method, _name, 0.) {}
+        Option(_method, _name, -1.) {}
 
 
       Option(Method _method, double _lattice_weight = 0.5) :
@@ -140,7 +152,9 @@ namespace CASM {
 
     bool operator!=(const ScoreMappedProperties &B) const;
 
-    const Option &option() const;
+    const Option &option() const {
+      return m_opt;
+    }
 
   private:
     Option m_opt;

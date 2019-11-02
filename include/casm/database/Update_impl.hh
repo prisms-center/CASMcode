@@ -3,6 +3,7 @@
 
 #include <boost/filesystem/fstream.hpp>
 #include "casm/database/Update.hh"
+#include "casm/database/ConfigData_impl.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/clex/PrimClex_impl.hh"
 
@@ -10,6 +11,18 @@ namespace CASM {
   namespace DB {
 
     // --- UpdateT ---
+
+    /// \brief Constructor
+    template<typename _ConfigType>
+    UpdateT<_ConfigType>::UpdateT(
+      const PrimClex &primclex,
+      const StructureMap<ConfigType> &mapper,
+      fs::path report_dir) :
+      ConfigData(primclex, null_log(), TypeTag<ConfigType>()),
+      m_structure_mapper(mapper),
+      m_report_dir(report_dir) {}
+
+
 
     /// \brief Re-parse calculations 'from' all selected configurations
     template<typename _ConfigType>

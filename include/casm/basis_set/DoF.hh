@@ -5,6 +5,7 @@
 #include<set>
 #include<functional>
 #include<boost/algorithm/string.hpp>
+#include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/basis_set/DoFDecl.hh"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_Eigen.hh"
@@ -25,13 +26,8 @@ namespace CASM {
   class DoFSet;
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  namespace DoFType {
-    using BasicTraits = AnisoValTraits;
-    BasicTraits const &basic_traits(std::string const &dof_key);
-    void register_traits(BasicTraits const &_traits);
-  }
-
   namespace DoF {
+    using BasicTraits = AnisoValTraits;
 
     /// A RemoteHandle can be initialized with either a double or integer reference and then passed to a
     /// DoF (or to a BasisFunction, which contains DoFs), in order for the DoF to access the remote value
@@ -122,12 +118,11 @@ namespace CASM {
     /// Optionally, the ID can be 'locked' which prevents it from being changed
     class Base {
     public:
-      using BasicTraits = AnisoValTraits;
       using RemoteHandle = DoF::RemoteHandle;
 
       Base() :
-        m_type_name("EMPTY"),
-        m_var_name("EMPTY"),
+        m_traits(BasicTraits::null()),
+        m_var_name("NULL"),
         m_dof_ID(-1),
         m_ID_lock(false) {}
 
@@ -136,12 +131,12 @@ namespace CASM {
            Index _ID);
 
       BasicTraits const &traits() const {
-        return DoFType::basic_traits(type_name());
+        return m_traits;
       }
 
       /// \brief Const access of DoF type name
       std::string type_name() const {
-        return m_type_name;
+        return m_traits.name();
       }
 
       /// \brief Const access of variable name
@@ -182,17 +177,9 @@ namespace CASM {
         m_ID_lock = false;
       }
 
-    protected:
-      void _set_type_name(std::string _type_name) {
-        std::swap(m_type_name, _type_name);
-      }
-
-      void _set_var_name(std::string _var_name) {
-        std::swap(m_var_name, _var_name);
-      }
     private:
 
-      std::string m_type_name;
+      BasicTraits m_traits;
       std::string m_var_name;
 
       /// dof_ID is a way to distinguish between DoFs with the same name but different identities
@@ -209,6 +196,7 @@ namespace CASM {
   class DiscreteDoF : public DoF::Base {
   public:
     using Base = DoF::Base;
+    using BasicTraits = DoF::BasicTraits;
     DiscreteDoF():
       Base(),
       m_current_state(0),
@@ -334,18 +322,6 @@ namespace CASM {
       m_domain(_domain) { }
 
 
-    /*
-    OccupantDoF(TypeFunc _func,
-                std::initializer_list<T> _domain,
-                int _current_state = 0) :
-      DiscreteDoF(*_func(),
-                  "s",
-                  -1,
-                  _current_state,
-                  SymGroupRepID::identity(_domain.size())),
-      m_domain(_domain.begin(),
-               _domain.end()) {    }
-    */
     const T &occ() const {
       return m_domain[m_current_state];
     }
@@ -460,6 +436,8 @@ namespace CASM {
   class ContinuousDoF : public DoF::Base {
   public:
     using Base = DoF::Base;
+    using BasicTraits = DoF::BasicTraits;
+
     ContinuousDoF(BasicTraits const &_traits,
                   std::string const &_var_name,
                   Index _ID,
@@ -475,15 +453,6 @@ namespace CASM {
 
     ContinuousDoF(BasicTraits const &_traits)
       : ContinuousDoF(_traits, "", -1, NAN, NAN) {}
-
-    /*
-    ContinuousDoF(TypeFunc _func,
-                  std::string const &_var_name,
-                  Index _ID,
-                  double _min,
-                  double _max) :
-      ContinuousDoF(*_func(), _var_name, _ID, _min, _max) {}
-    */
 
     double value() const {
       return current_val;

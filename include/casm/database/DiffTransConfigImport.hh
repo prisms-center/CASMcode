@@ -6,7 +6,6 @@
 #include <string>
 #include <memory>
 #include "casm/CASM_global_definitions.hh"
-#include "casm/database/ConfigData.hh"
 #include "casm/database/Update.hh"
 #include "casm/database/Import.hh"
 
@@ -28,7 +27,6 @@ namespace CASM {
 
     template<>
     class StructureMap<Kinetics::DiffTransConfiguration> {
-      //:public ConfigData<Kinetics::DiffTransConfiguration> {
 
     public:
 
@@ -60,7 +58,9 @@ namespace CASM {
         map_result_inserter result) const;
 
       /// Returns JSON with settings used after combing constructor input and defaults
-      const MappingSettings &settings() const;
+      const MappingSettings &settings() const {
+        return m_set;
+      }
 
 
     private:

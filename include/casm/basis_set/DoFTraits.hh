@@ -178,7 +178,7 @@ namespace CASM {
 
 
     inline
-    BasicTraits const &basic_traits(std::string const &dof_key) {
+    DoF::BasicTraits const &basic_traits(std::string const &dof_key) {
       return traits(dof_key).val_traits();
     }
 

@@ -307,7 +307,7 @@ namespace CASM {
 
     // If pos_path can be used to resolve a properties.calc.json, return its path.
     // Otherwise return pos_path
-    static fs::path resolve_struc_path(fs::path pos_path, PrimClex const &_pclex) {
+    fs::path ConfigData::resolve_struc_path(fs::path pos_path, PrimClex const &_pclex) {
       fs::path p = ConfigData::calc_properties_path(pos_path, _pclex);
       if(!p.empty())
         pos_path = p;

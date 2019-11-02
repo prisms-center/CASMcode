@@ -76,11 +76,7 @@ namespace CASM {
         const StructureMap<ConfigType> &mapper,
         ImportSettings const  &_set,
         fs::path report_dir,
-        Log &_file_log) :
-        ConfigData(primclex, _file_log, TypeTag<ConfigType>()),
-        m_structure_mapper(mapper),
-        m_set(_set),
-        m_report_dir(report_dir) {}
+        Log &_file_log);
 
       template<typename PathIterator>
       void import(PathIterator begin, PathIterator end);

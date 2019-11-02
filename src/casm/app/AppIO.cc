@@ -32,7 +32,6 @@ namespace CASM {
     json.put_obj();
     to_json_array(c2f_mat * apos.cart(), json["coordinate"]);
     json["name"] = apos.name();
-    json["SD_flag"] = apos.sd_flag();
     if(apos.attributes().size())
       json["attributes"] = apos.attributes();
     return json;
@@ -51,19 +50,18 @@ namespace CASM {
   AtomPosition jsonConstructor<AtomPosition>::from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat, HamiltonianModules const &_modules) {
     std::string _name;
     Eigen::Vector3d _pos(0., 0., 0.);
-    AtomPosition::sd_type _SD_flag {{false, false, false}};
     std::map<std::string, SpeciesAttribute> attr_map;
     if(json.is_obj()) {
       _name = json["name"].get<std::string>();
-      if(json.contains("coordinate"))
+      if(json.contains("coordinate")) {
         _pos = f2c_mat * json["coordinate"].get<Eigen::Vector3d>();
-      if(json.contains("SD_flag"))
-        _SD_flag = json["SD_flag"].get<typename AtomPosition::sd_type>();
-
+        //std::cout << "f2c_mat: \n" << f2c_mat << "\n";
+        //std::cout << "_pos: " << _pos.transpose() << "\n";
+      }
       if(json.contains("attributes")) {
         auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
         for(; it != end_it; ++it) {
-          auto result_pair = attr_map.emplace(it.name(), *(_modules.aniso_val_dict().lookup(it.name())));
+          auto result_pair = attr_map.emplace(it.name(), _modules.aniso_val_dict().lookup(it.name()));
           CASM::from_json(result_pair.first->second, *it);
         }
       }
@@ -75,7 +73,7 @@ namespace CASM {
     else
       throw std::runtime_error("Invalid JSON input encountered. Unable to parse AtomPosition object.\n");
 
-    AtomPosition result(_pos, _name, _SD_flag);
+    AtomPosition result(_pos, _name);
     result.set_attributes(attr_map);
     return result;
   }
@@ -84,9 +82,9 @@ namespace CASM {
   //   Write Molecule to json.
   //****************************************************
 
-  jsonParser &to_json(Molecule const &mol, jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
+  jsonParser &to_json(Molecule const &mol, jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &c2f_mat) {
     json.put_obj();
-    CASM::to_json(mol.atoms(), json["atoms"], f2c_mat);
+    CASM::to_json(mol.atoms(), json["atoms"], c2f_mat);
     json["name"] = mol.name();
     if(mol.attributes().size())
       json["attributes"] = mol.attributes();
@@ -100,7 +98,7 @@ namespace CASM {
   //
   //****************************************************
 
-  void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat, HamiltonianModules const &_modules) {
+  void from_json(Molecule &mol, const jsonParser &json, Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat, HamiltonianModules const &_modules) {
     std::vector<AtomPosition> _atoms;
     if(json.contains("atoms")) {
       CASM::from_json(_atoms, json["atoms"], f2c_mat, _modules);
@@ -111,11 +109,15 @@ namespace CASM {
     if(json.contains("attributes")) {
       auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
       for(; it != end_it; ++it) {
-        auto result_pair = attr_map.emplace(it.name(), *(_modules.aniso_val_dict().lookup(it.name())));
+        auto result_pair = attr_map.emplace(it.name(), _modules.aniso_val_dict().lookup(it.name()));
         from_json(result_pair.first->second, *it);
       }
     }
     mol.set_attributes(attr_map);
+
+    //jsonParser tjson;
+    //to_json(mol,tjson,f2c_mat.inverse());
+    //std::cout << "Read Molecule :\n"<< json << "\n";
   }
 
   //****************************************************
@@ -203,7 +205,7 @@ namespace CASM {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
         try {
-          _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*(_modules.aniso_val_dict().lookup(it.name())))));
+          _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(_modules.aniso_val_dict().lookup(it.name()))));
         }
         catch(std::exception &e) {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
@@ -283,7 +285,7 @@ namespace CASM {
               throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
             try {
-              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(*(_modules->aniso_val_dict().lookup(it.name())))));
+              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(_modules->aniso_val_dict().lookup(it.name()))));
             }
             catch(std::exception &e) {
               throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
@@ -301,7 +303,7 @@ namespace CASM {
       // Molecules
       std::map<std::string, Molecule> mol_map;
       Eigen::Matrix3d f2c;
-      if(mode == CART)
+      if(mode == FRAC)
         f2c = lat.lat_column_mat();
       else
         f2c.setIdentity();

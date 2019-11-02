@@ -10,7 +10,7 @@ namespace CASM {
   public:
     ConfigDoFValues() : m_n_sublat(0), m_n_vol(0)
     {}
-    ConfigDoFValues(DoFType::BasicTraits const &_traits, Index _n_sublat, Index _n_vol) :
+    ConfigDoFValues(DoF::BasicTraits const &_traits, Index _n_sublat, Index _n_vol) :
       m_type(_traits.name()),
       m_n_sublat(_n_sublat),
       m_n_vol(_n_vol) {
@@ -60,7 +60,7 @@ namespace CASM {
 
     LocalDiscreteConfigDoFValues() {}
 
-    LocalDiscreteConfigDoFValues(DoFType::BasicTraits const &_traits,
+    LocalDiscreteConfigDoFValues(DoF::BasicTraits const &_traits,
                                  Index _n_sublat,
                                  Index _n_vol,
                                  Eigen::Ref< const ValueType > const &_vals,
@@ -121,7 +121,7 @@ namespace CASM {
 
     LocalContinuousConfigDoFValues() {}
 
-    LocalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits,
+    LocalContinuousConfigDoFValues(DoF::BasicTraits const &_traits,
                                    Index _n_sublat,
                                    Index _n_vol,
                                    Eigen::Ref< const ValueType > const &_vals,
@@ -203,7 +203,7 @@ namespace CASM {
     GlobalContinuousConfigDoFValues() :
       m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(0, 0)) {}
 
-    GlobalContinuousConfigDoFValues(DoFType::BasicTraits const &_traits,
+    GlobalContinuousConfigDoFValues(DoF::BasicTraits const &_traits,
                                     Index _n_sublat,
                                     Index _n_vol,
                                     Eigen::Ref< const ValueType > const &_vals,

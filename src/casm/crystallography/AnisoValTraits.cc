@@ -62,6 +62,22 @@ namespace CASM {
   }
 
 
+  AnisoValTraits AnisoValTraits::null() {
+    return AnisoValTraits("NULL",
+                          {},
+                          LOCAL,
+                          NullSymRepBuilder(),
+                          {},
+                          {});
+  }
+
+  AnisoValTraits AnisoValTraits::energy() {
+    return AnisoValTraits("energy",
+    {"E"},
+    GLOBAL,
+    SymRepBuilder::Identity());
+  }
+
   AnisoValTraits AnisoValTraits::disp() {
     return AnisoValTraits("disp",
     {"dx", "dy", "dz"},

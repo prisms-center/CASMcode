@@ -126,11 +126,13 @@ namespace CASM {
 
     /// \brief Returns type_name of DoFSet, which should be a standardized DoF type (e.g., "disp", "magspin", "GLstrain")
     std::string const &type_name() const {
-      return m_type_name;
+      return m_traits.name();
     }
 
     /// \brief Returns traits object for the DoF type of this DoFSet
-    BasicTraits const &traits() const;
+    BasicTraits const &traits() const {
+      return m_traits;
+    }
 
     /// \brief Set identifying index (ID) of this DoFSet
     /// ID is context dependent but is used to different distinct DoFSets that are otherwise equivalent
@@ -219,7 +221,7 @@ namespace CASM {
 
 
   private:
-    std::string m_type_name;
+    BasicTraits m_traits;
     std::vector<ContinuousDoF> m_components;
     mutable DoFSetInfo m_info;
 

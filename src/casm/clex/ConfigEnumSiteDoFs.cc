@@ -374,7 +374,7 @@ namespace CASM {
     m_min(min_val),
     m_max(max_val),
     m_inc(inc_val),
-    m_unit_length(DoFType::basic_traits(_dof).unit_length()),
+    m_unit_length(DoF::BasicTraits(_dof).unit_length()),
     m_sites(_init.sites().begin(), _init.sites().end()),
     m_subset_mode(false),
     //m_combo_mode(false),

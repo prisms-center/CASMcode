@@ -7,11 +7,11 @@ namespace CASM {
   namespace DoF_impl {
     class OccupationDoFTraits : public DoFType::Traits {
     public:
-      using Base = DoFType::BasicTraits;
+      using BasicTraits = DoF::BasicTraits;
       OccupationDoFTraits():
-        DoFType::Traits(Base("occ",
+        DoFType::Traits(BasicTraits("occ",
       {},
-      Base::LOCAL),
+      BasicTraits::LOCAL),
       /*_requires_site_basis = */ true) {
 
       }

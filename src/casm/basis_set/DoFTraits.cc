@@ -32,7 +32,7 @@ namespace CASM {
     }
 
     Traits const &traits(std::string const &dof_key) {
-      return *Local::_traits_dict().lookup(dof_key);
+      return Local::_traits_dict().lookup(dof_key);
     }
 
 
@@ -506,12 +506,12 @@ namespace CASM {
   template<>
   DoFType::TraitsDictionary make_parsing_dictionary<DoFType::Traits>() {
     //std::cout << "Making Parsing dictionary... \n";
-    DoFType::register_traits(DoFType::occupation().val_traits());
-    DoFType::register_traits(DoFType::displacement().val_traits());
-    DoFType::register_traits(DoFType::magspin().val_traits());
-    DoFType::register_traits(DoFType::EAstrain().val_traits());
-    DoFType::register_traits(DoFType::Hstrain().val_traits());
-    DoFType::register_traits(DoFType::GLstrain().val_traits());
+    /*DoFType::register_traits(DoFType::occupation());
+    DoFType::register_traits(DoFType::displacement());
+    DoFType::register_traits(DoFType::magspin());
+    DoFType::register_traits(DoFType::EAstrain());
+    DoFType::register_traits(DoFType::Hstrain());
+    DoFType::register_traits(DoFType::GLstrain());*/
 
     DoFType::TraitsDictionary dict;
 

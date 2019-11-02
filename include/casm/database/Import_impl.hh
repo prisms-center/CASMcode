@@ -3,6 +3,7 @@
 
 #include <boost/filesystem/fstream.hpp>
 #include "casm/database/Import.hh"
+#include "casm/database/ConfigData_impl.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/import.hh"
@@ -79,6 +80,20 @@ namespace CASM {
 
 
     // --- ImportT ---
+
+    /// \brief Constructor
+    template<typename _ConfigType>
+    ImportT<_ConfigType>::ImportT(
+      const PrimClex &primclex,
+      const StructureMap<ConfigType> &mapper,
+      ImportSettings const  &_set,
+      fs::path report_dir,
+      Log &_file_log) :
+      ConfigData(primclex, _file_log, TypeTag<ConfigType>()),
+      m_structure_mapper(mapper),
+      m_set(_set),
+      m_report_dir(report_dir) {}
+
 
     template<typename _ConfigType>
     template<typename PathIterator>

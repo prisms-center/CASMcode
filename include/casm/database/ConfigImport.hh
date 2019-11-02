@@ -6,7 +6,6 @@
 #include <string>
 #include <memory>
 #include "casm/CASM_global_definitions.hh"
-#include "casm/database/ConfigData.hh"
 #include "casm/database/Update.hh"
 #include "casm/database/Import.hh"
 

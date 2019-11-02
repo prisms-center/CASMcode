@@ -47,10 +47,7 @@ namespace CASM {
       UpdateT(
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
-        fs::path report_dir) :
-        ConfigData(primclex, null_log(), TypeTag<ConfigType>()),
-        m_structure_mapper(mapper),
-        m_report_dir(report_dir) {}
+        fs::path report_dir);
 
       /// \brief Re-parse calculations 'from' all selected configurations
       void update(const DB::Selection<ConfigType> &selection, bool force);

@@ -62,17 +62,21 @@ namespace CASM {
     return json;
   }
 
-  ScoreMappedProperties::Option::Option(Method _method, std::string _name, double _lattice_weight) :
-    method(_method),
+  ScoreMappedProperties::Option::Option(Method _m, std::string _name, double _lattice_weight) :
+    method(_m),
     name(std::move(_name)),
     lattice_weight(_lattice_weight) {
-    if(method == Method::deformation_cost) {
-      if(lattice_weight < 0.0 || lattice_weight > 1.0) {
-        throw std::invalid_argument("Invalid ScoreMappedProperties option, using 'deformation_cost' method, lattice_weight must be between 0.0 and 1.0");
-      }
+    if(_m == Method::minimum || _m == Method::maximum) {
+      if(name.empty())
+        throw std::invalid_argument("Scoring method '" + method_name(_m) + "' requires additional string field \"property\".");
     }
-    else if(name.empty()) {
-      throw std::invalid_argument("Invalid ScoreMappedProperties option, using 'minimum', 'maximum, or 'direct_selection' method, additional string argument is required.");
+    else if(_m == Method::direct_selection) {
+      if(name.empty())
+        throw std::invalid_argument("Scoring method '" + method_name(_m) + "' requires additional string field \"name\".");
+    }
+    else if(_m == Method::deformation_cost) {
+      if(lattice_weight < 0. || lattice_weight > 1.)
+        throw std::invalid_argument("Scoring method '" + method_name(_m) + "' requires numerical parameter \"lattice_weight\" between 0.0 and 1.0.");
     }
   }
 

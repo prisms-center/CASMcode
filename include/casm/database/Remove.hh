@@ -38,9 +38,7 @@ namespace CASM {
       using Logging::log;
       */
 
-      RemoveT(const PrimClex &primclex, fs::path report_dir, Log &_file_log) :
-        ConfigData(primclex, _file_log, TypeTag<ConfigType>()),
-        m_report_dir(report_dir) {}
+      RemoveT(const PrimClex &primclex, fs::path report_dir, Log &_file_log);
 
       /// \brief Erase Configurations that have no data
       void erase(const DB::Selection<ConfigType> &selection, bool dry_run);

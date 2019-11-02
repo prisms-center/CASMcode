@@ -449,7 +449,7 @@ namespace CASM {
       if(el != name())
         _result.insert(el);
       if(el != "atomize")
-        _accumulate_before(DoFType::basic_traits(el).must_apply_before(), _result);
+        _accumulate_before(AnisoValTraits(el).must_apply_before(), _result);
     }
   }
 
@@ -460,7 +460,7 @@ namespace CASM {
       if(el != name())
         _result.insert(el);
       if(el != "atomize")
-        _accumulate_after(DoFType::basic_traits(el).must_apply_after(), _result);
+        _accumulate_after(AnisoValTraits(el).must_apply_after(), _result);
     }
   }
 

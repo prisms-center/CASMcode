@@ -85,8 +85,9 @@ namespace CASM {
     std::vector<BasisSet> OccupationDoFTraits::construct_site_bases(Structure const &_prim,
                                                                     std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                                     jsonParser const &_bspecs) const {
-      std::vector<BasisSet> result(_prim.basis().size());
 
+      std::vector<BasisSet> result(_prim.basis().size());
+      std::cout << "OccupationDoFTraits::construct_site_bases()\n";
       //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
 
       for(Index i = 0; i < _asym_unit.size(); i++) {
