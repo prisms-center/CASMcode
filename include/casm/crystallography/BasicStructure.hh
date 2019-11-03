@@ -185,8 +185,8 @@ namespace CASM {
       void generate_factor_group(SymGroup &factor_group) const;
       void generate_factor_group_slow(SymGroup &factor_group) const;
       void _generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_point_group, bool time_reversal_enabled = true) const;
-      void fg_converge(double small_tol, double large_tol, double increment);
-      void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
+      /* void fg_converge(double small_tol, double large_tol, double increment); */
+      /* void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment); */
 
       void symmetrize(const SymGroup &relaxed_factors);
       void symmetrize(const double &tolerance);
@@ -226,8 +226,8 @@ namespace CASM {
       //void from_json(const jsonParser &json);
     };
 
-    template<typename CoordType>
-    BasicStructure<CoordType> operator*(const CASM::SymOp &LHS, const BasicStructure<CoordType> &RHS);
+    /* template<typename CoordType> */
+    /* BasicStructure<CoordType> operator*(const CASM::SymOp &LHS, const BasicStructure<CoordType> &RHS); */
 
     template<typename CoordType>
     BasicStructure<CoordType> operator*(const Lattice &LHS, const BasicStructure<CoordType> &RHS);

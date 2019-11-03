@@ -299,48 +299,6 @@ namespace CASM {
       return;
     }
 
-    //************************************************************
-
-    template<typename CoordType>
-    void BasicStructure<CoordType>::fg_converge(double small_tol, double large_tol, double increment) {
-      SymGroup factor_group;
-      fg_converge(factor_group, small_tol, large_tol, increment);
-    }
-
-    //************************************************************
-
-    template<typename CoordType>
-    void BasicStructure<CoordType>::fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment) {
-
-      std::vector<double> tols;
-      std::vector<bool> is_group;
-      std::vector<int> num_ops, num_enforced_ops;
-      std::vector<std::string> name;
-
-      double orig_tol = lattice().tol();
-      for(double i = small_tol; i < large_tol; i += increment) {
-        tols.push_back(i);
-        m_lattice.set_tol(i);
-
-        factor_group.clear();
-        generate_factor_group(factor_group);
-        factor_group.get_multi_table();
-        num_ops.push_back(factor_group.size());
-        is_group.push_back(factor_group.is_group(i));
-        factor_group.enforce_group(i);
-        num_enforced_ops.push_back(factor_group.size());
-        factor_group.character_table();
-        name.push_back(factor_group.get_name());
-      }
-      m_lattice.set_tol(orig_tol);
-
-      for(Index i = 0; i < tols.size(); i++) {
-        std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
-      }
-
-      return;
-    }
-
     //***********************************************************
     /**
      * It is NOT wise to use this function unless you have already
@@ -923,8 +881,6 @@ namespace CASM {
         m_basis[i] += shift;
       }
 
-      //factor_group += shift;
-      //asym_unit += shift;
       return (*this);
     }
 
@@ -944,11 +900,11 @@ namespace CASM {
 
     //***********************************************************
 
-    template<typename CoordType>
-    BasicStructure<CoordType> operator*(const CASM::SymOp &LHS, const BasicStructure<CoordType> &RHS) { //AAB
+    /* template<typename CoordType> */
+    /* BasicStructure<CoordType> operator*(const CASM::SymOp &LHS, const BasicStructure<CoordType> &RHS) { //AAB */
 
-      return BasicStructure<CoordType>(RHS).apply_sym(LHS);
-    }
+    /*   return BasicStructure<CoordType>(RHS).apply_sym(LHS); */
+    /* } */
 
     //***********************************************************
 

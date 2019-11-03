@@ -133,13 +133,43 @@ namespace CASM {
     //************************************************************
 
     void Structure::fg_converge(double small_tol, double large_tol, double increment) {
-      BasicStructure<Site>::fg_converge(m_factor_group, small_tol, large_tol, increment);
+      _fg_converge(m_factor_group, small_tol, large_tol, increment);
       return;
     }
 
-    //************************************************************
     void Structure::fg_converge(double large_tol) {
-      BasicStructure<Site>::fg_converge(m_factor_group, lattice().tol(), large_tol, (large_tol - lattice().tol()) / 10.0);
+      _fg_converge(m_factor_group, lattice().tol(), large_tol, (large_tol - lattice().tol()) / 10.0);
+      return;
+    }
+
+    void Structure::_fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment) {
+
+      std::vector<double> tols;
+      std::vector<bool> is_group;
+      std::vector<int> num_ops, num_enforced_ops;
+      std::vector<std::string> name;
+
+      double orig_tol = lattice().tol();
+      for(double i = small_tol; i < large_tol; i += increment) {
+        tols.push_back(i);
+        m_lattice.set_tol(i);
+
+        factor_group.clear();
+        BasicStructure<Site>::generate_factor_group(factor_group);
+        factor_group.get_multi_table();
+        num_ops.push_back(factor_group.size());
+        is_group.push_back(factor_group.is_group(i));
+        factor_group.enforce_group(i);
+        num_enforced_ops.push_back(factor_group.size());
+        factor_group.character_table();
+        name.push_back(factor_group.get_name());
+      }
+      m_lattice.set_tol(orig_tol);
+
+      for(Index i = 0; i < tols.size(); i++) {
+        std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
+      }
+
       return;
     }
 

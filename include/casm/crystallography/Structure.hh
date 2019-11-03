@@ -46,6 +46,7 @@ namespace CASM {
       /// Obtain global dof symreps of factor_group
       void _generate_global_symreps(bool verbose = false) const;
 
+      void _fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
     public: //PUBLIC METHODS
 
