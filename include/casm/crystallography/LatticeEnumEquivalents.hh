@@ -4,6 +4,7 @@
 #include "casm/symmetry/EnumEquivalents.hh"
 #include "casm/symmetry/SymOpRepresentation.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/SymTools.hh"
 
 namespace CASM {
   class SymGroup;

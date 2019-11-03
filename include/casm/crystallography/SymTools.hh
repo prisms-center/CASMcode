@@ -34,10 +34,12 @@ namespace CASM {
       return result;
     }
 
+    //TODO
+    //Unimplemented. Is this the same as cart2frac and frac2cart?
     /// Convert a Cartesian symmetry operation representation to fractional
-    Eigen::Matrix3i symmetry_matrix_to_frac(const Lattice &lat, const Eigen::Matrix3d &cart_matrix);
+    /* Eigen::Matrix3i symmetry_matrix_to_frac(const Lattice &lat, const Eigen::Matrix3d &cart_matrix); */
     /// Convert a fractional symmetry operation representation to Cartesian
-    Eigen::Matrix3d symmetry_matrix_to_cart(const Lattice &lat, const Eigen::Matrix3i &cart_matrix);
+    /* Eigen::Matrix3d symmetry_matrix_to_cart(const Lattice &lat, const Eigen::Matrix3i &cart_matrix); */
 
     /// \brief Return a copy of the given lattice, which obeys the symmetry of the given group \param enforced_group
     Lattice symmetrize(const Lattice &lat, const std::vector<SymOp> &enforced_group);
@@ -98,6 +100,30 @@ namespace CASM {
         }
       }
       return std::make_pair(end, res.second);
+    }
+
+    ///\brief returns Lattice that is smallest possible superlattice of all input Lattice
+    ///
+    /// SymOpIterator are provided to apply to each Lattice in an attempt
+    /// to find the smallest possible superduperlattice of all symmetrically transformed Lattice
+    template<typename LatIterator, typename SymOpIterator>
+    Lattice make_equivalent_superduperlattice(LatIterator begin,
+                                              LatIterator end,
+                                              SymOpIterator op_begin,
+                                              SymOpIterator op_end) {
+
+      Lattice best = *begin;
+      for(auto it = ++begin; it != end; ++it) {
+        Lattice tmp_best = make_superduperlattice(best, *it);
+        for(auto op_it = op_begin; op_it != op_end; ++op_it) {
+          Lattice test = make_superduperlattice(best, copy_apply(*op_it, *it));
+          if(std::abs(volume(test)) < std::abs(volume(tmp_best))) {
+            tmp_best = test;
+          }
+        }
+        best = tmp_best;
+      }
+      return best;
     }
 
   } // namespace xtal

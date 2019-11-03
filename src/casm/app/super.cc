@@ -346,7 +346,7 @@ namespace CASM {
       if(vm.count("fixed-orientation")) {
         end = begin;
       }
-      Lattice superduper = xtal::make_superduperlattice(lat_only.begin(), lat_only.end(), begin, end);
+      Lattice superduper = xtal::make_equivalent_superduperlattice(lat_only.begin(), lat_only.end(), begin, end);
 
       /// enforce a minimum volume
       if(vm.count("min-volume")) {

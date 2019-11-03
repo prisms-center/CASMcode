@@ -5,17 +5,14 @@
 #include <cmath>
 #include <vector>
 
-#include "casm/crystallography/Adapter.hh"
 #include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/CASM_global_definitions.hh"
-/* #include "casm/crystallography/LatticeCanonicalForm.hh" */
 
 namespace CASM {
   class jsonParser;
 
   namespace xtal {
-    class SymOp;
     class ScelEnumProps;
 
     /** \defgroup Crystallography
@@ -242,12 +239,13 @@ namespace CASM {
     ///\brief returns Lattice that is smallest possible superlattice of both input Lattice
     Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2);
 
+    //TODO
+    //Unimplemented until someone actually needs it, will be similarly implemented as
+    //make_equivalent_superduperlattice in SymTools.hh
     ///\brief returns Lattice that is smallest possible superlattice of all input Lattice
-    template<typename LatIterator, typename SymOpIterator>
-    Lattice make_superduperlattice(LatIterator begin,
-                                   LatIterator end,
-                                   SymOpIterator op_begin = SymOpIterator(),
-                                   SymOpIterator op_end = SymOpIterator());
+    /* template<typename LatIterator> */
+    /* Lattice make_superduperlattice(LatIterator begin, */
+    /*                                LatIterator end); */
 
     Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol);
 

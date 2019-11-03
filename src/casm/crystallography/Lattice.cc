@@ -1,25 +1,13 @@
-#include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/Lattice_impl.hh"
-#include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
-#include "casm/misc/algorithm.hh"
-
-#include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/crystallography/SuperlatticeEnumerator.hh"
+#include "casm/casm_io/jsonParser.hh"
+#include "casm/container/Counter.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
-/* #include "casm/crystallography/SymTools.hh" */
+#include "casm/misc/algorithm.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
   namespace xtal {
-
-    namespace {
-
-      typedef std::vector<Lattice>::iterator vec_lat_it;
-      typedef std::vector<SymOp>::const_iterator array_symop_cit;
-    }
-
-    template Lattice make_superduperlattice<vec_lat_it, array_symop_cit>(
-      vec_lat_it, vec_lat_it, array_symop_cit, array_symop_cit);
 
     Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
                      Eigen::Ref<const Eigen::Vector3d> const &vec2,
@@ -148,7 +136,7 @@ namespace CASM {
     }
 
     //********************************************************************
-    //Calculate length of lattice vector 'i'
+
     double Lattice::length(Index i) const {
       // Calculates Lengths
       return m_lat_mat.col(i).norm();
@@ -202,7 +190,7 @@ namespace CASM {
     }
 
     //********************************************************************
-    //Gets the reciprocal lattice from the lattice vectors... (AAB)
+
     Lattice Lattice::reciprocal() const {
       /* Old Expression
          return Lattice(2 * M_PI * cross_prod(vecs[1], vecs[2])/vol,
@@ -497,7 +485,6 @@ namespace CASM {
       return;
     }
 
-    //********************************************************************
     /**
      * This function, given a linearly independent set of lattice vectors, finds the
      * dimensions along the unit cell vectors such that a sphere of given radius
@@ -510,7 +497,7 @@ namespace CASM {
      * remaining lattice vector a1. This will tell us the number of a1 vectors
      * needed to make a grid to encompass the sphere.
      */
-    //********************************************************************
+
     Eigen::Vector3i Lattice::enclose_sphere(double radius) const {
 
       // reciprocal vectors
