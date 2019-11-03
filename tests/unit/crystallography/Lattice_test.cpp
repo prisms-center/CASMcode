@@ -96,9 +96,9 @@ void lattice_superduper_test() {
 
   for(auto it1 = lat_list.cbegin(); it1 != lat_list.cend(); ++it1) {
     for(auto it2 = it1 + 1; it2 != lat_list.cend(); ++it2) {
-      Lattice sdlat = superdupercell(*it1, *it2);
-      EXPECT_TRUE(sdlat.is_supercell_of(*it1));
-      EXPECT_TRUE(sdlat.is_supercell_of(*it2));
+      Lattice sdlat = xtal::make_superduperlattice(*it1, *it2);
+      EXPECT_TRUE(xtal::is_superlattice(sdlat, *it1, sdlat.tol()).first);
+      EXPECT_TRUE(xtal::is_superlattice(sdlat, *it2, sdlat.tol()).first);
     }
   }
 

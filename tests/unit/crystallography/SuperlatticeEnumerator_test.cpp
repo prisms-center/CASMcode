@@ -143,7 +143,7 @@ void trans_enum_test() {
   std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
 
   for(Index i = 0; i > enumerated_lat.size(); i++) {
-    EXPECT_TRUE(enumerated_lat[i].is_supercell_of(bigunit));
+    EXPECT_TRUE(xtal::is_superlattice(enumerated_lat[i], bigunit, enumerated_lat[i].tol()).first);
   }
 
   return;

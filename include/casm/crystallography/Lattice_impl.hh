@@ -51,21 +51,21 @@ namespace CASM {
     }
 
 
-    ///\brief returns Lattice that is smallest possible supercell of all input Lattice
+    ///\brief returns Lattice that is smallest possible superlattice of all input Lattice
     ///
     /// If SymOpIterator are provided they are applied to each Lattice in an attempt
-    /// to find the smallest possible superdupercell of all symmetrically transformed Lattice
+    /// to find the smallest possible superduperlattice of all symmetrically transformed Lattice
     template<typename LatIterator, typename SymOpIterator>
-    Lattice superdupercell(LatIterator begin,
-                           LatIterator end,
-                           SymOpIterator op_begin,
-                           SymOpIterator op_end) {
+    Lattice make_superduperlattice(LatIterator begin,
+                                   LatIterator end,
+                                   SymOpIterator op_begin,
+                                   SymOpIterator op_end) {
 
       Lattice best = *begin;
       for(auto it = ++begin; it != end; ++it) {
-        Lattice tmp_best = superdupercell(best, *it);
+        Lattice tmp_best = make_superduperlattice(best, *it);
         for(auto op_it = op_begin; op_it != op_end; ++op_it) {
-          Lattice test = superdupercell(best, copy_apply(*op_it, *it));
+          Lattice test = make_superduperlattice(best, copy_apply(*op_it, *it));
           if(std::abs(volume(test)) < std::abs(volume(tmp_best))) {
             tmp_best = test;
           }
@@ -75,27 +75,6 @@ namespace CASM {
       return best;
     }
 
-    /// Check if there is a symmetry operation, op, and transformation matrix T,
-    ///   such that scel is a supercell of the result of applying op to unit
-    ///
-    /// \returns pair corresponding to first successful op and T, or with op=end if not successful
-    template<typename Object, typename OpIterator>
-    std::pair<OpIterator, Eigen::Matrix3d> is_supercell(
-      const Object &scel,
-      const Object &unit,
-      OpIterator begin,
-      OpIterator end,
-      double tol) {
-
-      std::pair<bool, Eigen::Matrix3d> res;
-      for(auto it = begin; it != end; ++it) {
-        res = is_supercell(scel, copy_apply(*it, unit), tol);
-        if(res.first) {
-          return std::make_pair(it, res.second);
-        }
-      }
-      return std::make_pair(end, res.second);
-    }
   }
 }
 

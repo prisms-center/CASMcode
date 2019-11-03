@@ -57,7 +57,7 @@ namespace CASM {
     m_sym_info(make_supercell_sym_info(prim(), superlattice)),
     m_nlist_size_at_construction(-1) {
 
-    auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
+    auto res = xtal::is_superlattice(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
     if(!res.first) {
       _prim->err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
                        << "  Bad supercell, the transformation matrix is not integer." << std::endl;
@@ -418,7 +418,7 @@ namespace CASM {
   }
 
   Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {
-    auto res = is_supercell(super_lat, prim_lat, tol);
+    auto res = xtal::is_superlattice(super_lat, prim_lat, tol);
     if(!res.first) {
       std::stringstream err_msg;
       err_msg <<

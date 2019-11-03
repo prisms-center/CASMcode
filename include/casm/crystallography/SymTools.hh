@@ -78,6 +78,28 @@ namespace CASM {
 
     //************************************************************************************************************************//
 
+    /// Check if there is a symmetry operation, op, and transformation matrix T,
+    ///   such that scel is a superlattice of the result of applying op to unit
+    ///
+    /// \returns pair corresponding to first successful op and T, or with op=end if not successful
+    template<typename Object, typename OpIterator>
+    std::pair<OpIterator, Eigen::Matrix3d> is_equivalent_superlattice(
+      const Object &scel,
+      const Object &unit,
+      OpIterator begin,
+      OpIterator end,
+      double tol) {
+
+      std::pair<bool, Eigen::Matrix3d> res;
+      for(auto it = begin; it != end; ++it) {
+        res = is_superlattice(scel, copy_apply(*it, unit), tol);
+        if(res.first) {
+          return std::make_pair(it, res.second);
+        }
+      }
+      return std::make_pair(end, res.second);
+    }
+
   } // namespace xtal
 } // namespace CASM
 

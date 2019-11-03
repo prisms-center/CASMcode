@@ -4,6 +4,7 @@
 #include "casm/symmetry/ConfigSubOrbits_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/crystallography/Lattice_impl.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 
@@ -158,7 +159,7 @@ namespace CASM {
         for(const auto &config : background_sel.selected()) {
 
           // Check if configuration can tile background scel
-          auto res = is_supercell(background_scel.lattice(), config.ideal_lattice(), begin, end, tol);
+          auto res = xtal::is_equivalent_superlattice(background_scel.lattice(), config.ideal_lattice(), begin, end, tol);
           if(res.first == end) {
             std::string msg = "Error in " + enum_name + ": Configuration "
                               + config.name() + " cannot tile supercell " + scelname;

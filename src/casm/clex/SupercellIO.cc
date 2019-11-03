@@ -5,6 +5,7 @@
 #include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Lattice_impl.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/database/Selected_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
@@ -73,7 +74,7 @@ namespace CASM {
     SupercellCheckBase<Base>::_evaluate(const Supercell &scel, const Supercell &unit) const {
       if(&scel != m_last_scel || &unit != m_last_unit) {
 
-        auto res = is_supercell(
+        auto res = xtal::is_equivalent_superlattice(
                      scel.lattice(),
                      unit.lattice(),
                      unit.prim().factor_group().begin(),

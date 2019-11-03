@@ -122,7 +122,7 @@ namespace CASM {
         return m_inv_lat_mat;
       }
 
-      /// Calculates the kpoint mesh for a supercell lattice given the kpoint mesh
+      /// Calculates the kpoint mesh for a superlattice lattice given the kpoint mesh
       /// for the primitive lattice
       std::vector<int> calc_kpoints(std::vector<int> prim_kpoints, Lattice prim_lat);
 
@@ -175,15 +175,6 @@ namespace CASM {
 
       ///Matrix that relates two lattices (e.g., strain or slat)
       //Eigen::Matrix3d operator/(const Lattice &RHS);
-
-      //John G 121212
-      ///Checks if lattice is a supercell of tile, acting on multiplication matrix. Check is performed applying operations from symlist
-      bool is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat) const;
-      bool is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symlist, Eigen::Matrix3d &multimat) const;
-
-      ///Checks if lattice is a supercell of tile, applying operations from symlist
-      bool is_supercell_of(const Lattice &tile) const;
-      bool is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symlist) const;
 
       ///Return a lattice with diagonal matrix that fits around starting lattice
       Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
@@ -243,30 +234,20 @@ namespace CASM {
     /// \brief Returns the volume of a Lattice
     double volume(const Lattice &lat);
 
-    /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
-    std::pair<bool, Eigen::Matrix3d> is_supercell(const Lattice &scel, const Lattice &unit, double tol);
-
-    /// Check if there is a symmetry operation, op, and transformation matrix T,
-    ///   such that scel is a supercell of the result of applying op to unit
-    template<typename Object, typename OpIterator>
-    std::pair<OpIterator, Eigen::Matrix3d> is_supercell(
-      const Object &scel,
-      const Object &unit,
-      OpIterator begin,
-      OpIterator end,
-      double tol);
+    /// Check if scel is a superlattice of unitcell unit and some integer transformation matrix T
+    std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol);
 
     std::istream &operator>>(std::istream &in, const Lattice &lattice_in);
 
-    ///\brief returns Lattice that is smallest possible supercell of both input Lattice
-    Lattice superdupercell(const Lattice &lat1, const Lattice &lat2);
+    ///\brief returns Lattice that is smallest possible superlattice of both input Lattice
+    Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2);
 
-    ///\brief returns Lattice that is smallest possible supercell of all input Lattice
+    ///\brief returns Lattice that is smallest possible superlattice of all input Lattice
     template<typename LatIterator, typename SymOpIterator>
-    Lattice superdupercell(LatIterator begin,
-                           LatIterator end,
-                           SymOpIterator op_begin = SymOpIterator(),
-                           SymOpIterator op_end = SymOpIterator());
+    Lattice make_superduperlattice(LatIterator begin,
+                                   LatIterator end,
+                                   SymOpIterator op_begin = SymOpIterator(),
+                                   SymOpIterator op_end = SymOpIterator());
 
     Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol);
 

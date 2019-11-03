@@ -18,11 +18,8 @@ namespace CASM {
       typedef std::vector<SymOp>::const_iterator array_symop_cit;
     }
 
-    template Lattice superdupercell<vec_lat_it, array_symop_cit>(
+    template Lattice make_superduperlattice<vec_lat_it, array_symop_cit>(
       vec_lat_it, vec_lat_it, array_symop_cit, array_symop_cit);
-
-    template std::pair<array_symop_cit, Eigen::Matrix3d> is_supercell<Lattice, array_symop_cit>(
-      const Lattice &, const Lattice &, array_symop_cit, array_symop_cit, double);
 
     Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
                      Eigen::Ref<const Eigen::Vector3d> const &vec2,
@@ -531,32 +528,6 @@ namespace CASM {
 
     //********************************************************************
 
-    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist, Eigen::Matrix3d &multimat) const {
-      auto result = is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol());
-      multimat = result.second;
-      return result.first != symoplist.end();
-    }
-
-    //********************************************************************
-
-    bool Lattice::is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat) const {
-      auto result = is_supercell(*this, tile, tol());
-      multimat = result.second;
-      return result.first;
-    }
-
-    //********************************************************************
-
-    bool Lattice::is_supercell_of(const Lattice &tile) const {
-      return is_supercell(*this, tile, tol()).first;
-    }
-
-    //********************************************************************
-
-    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist) const {
-      return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol()).first != symoplist.end();
-    }
-
     /**
      * A lattice is considered right handed when the
      * determinant of the lattice vector matrix is positive.
@@ -836,13 +807,6 @@ namespace CASM {
 
       Lattice surface_lat(surface_cell.col(0), surface_cell.col(1), surface_cell.col(2));
       surface_lat.make_right_handed();
-      /* std::vector<CASM::SymOp> surf_lat_pg(calc_point_group(surface_lat)); */
-      /* auto surf_lat_pg = calc_point_group(surface_lat); */
-
-      /* Eigen::Matrix3d transmat; */
-      /* surface_lat.is_supercell_of(*this, surf_lat_pg, transmat); */
-
-      /* std::cout << "Your conversion matrix was:" << std::endl << transmat << std::endl; */
 
       return surface_lat;
     }
@@ -883,7 +847,7 @@ namespace CASM {
     //********************************************************************
 
 
-    ///\brief returns Lattice that is smallest possible supercell of both input Lattice
+    ///\brief returns Lattice that is smallest possible superlattice of both input Lattice
     ///
     //*******************************************************************************************
     //
@@ -892,7 +856,7 @@ namespace CASM {
     //        L_{sd} = L_1 * N_1 = L_2 * N_2,     (*1*)
     //  where N_1 and N_2 are integer matrices such that Eq.(*1*) is satisfied and det(N_1) and det(N_2) are minimized.
     //
-    //  It is assumed that L_1 = L * M_1 and L_2 = L * M_2  (i.e., L_1 and L_2 are supercells of PRIM lattice L having
+    //  It is assumed that L_1 = L * M_1 and L_2 = L * M_2  (i.e., L_1 and L_2 are superlattices of PRIM lattice L having
     //  integer transformation matrices M_1 and M_2, respectively).
     //
     //  Algorithm proceeds by noting inv(L_2)*L_1 = N_2*inv(N_1) = inv(M_2)*inv(M_1) = A/n, where A is an integer matrix and n = det(M_2). Assuming that
@@ -906,7 +870,7 @@ namespace CASM {
     //  The resulting solution will have det(M_1*N_1)>=lcm(det(M_1),det(M_2))
     //
     //*******************************************************************************************
-    Lattice superdupercell(const Lattice &lat1, const Lattice &lat2) {
+    Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2) {
 
       Eigen::Matrix3d dA(lat2.inv_lat_column_mat()*lat1.lat_column_mat());
       long N = 1, num, denom;
@@ -936,10 +900,10 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
+    /// Check if scel is a superlattice of unitcell unit and some integer transformation matrix T
     // First, find unit*Matrix3i approximation of 'scel', then check if reconstructing 'unit' from this approximation
     // results in residual vectors less than length 'tol'
-    std::pair<bool, Eigen::Matrix3d> is_supercell(const Lattice &scel, const Lattice &unit, double tol) {
+    std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol) {
       // check scel = unit*T, with integer T
       std::pair<bool, Eigen::Matrix3d> result(std::make_pair(true, unit.inv_lat_column_mat() * scel.lat_column_mat()));
 
