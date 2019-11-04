@@ -156,10 +156,11 @@ namespace CASM {
       tmp.fg_converge(tol);
       // c) symmetrize the basis sites
       SymGroup g = tmp.factor_group();
-      tmp.symmetrize(g);
+      tmp = xtal::symmetrize(tmp, g);
 
+      //TODO: Why are we doing this twice?
       g = tmp.factor_group();
-      tmp.symmetrize(g);
+      tmp = xtal::symmetrize(tmp, g);
       if(tmp.factor_group().is_group(tol) && (tmp.factor_group().size() > biggest)) {
         struc = tmp;
       }

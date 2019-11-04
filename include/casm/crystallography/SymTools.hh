@@ -5,6 +5,7 @@
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/crystallography/Coordinate.hh"
 
 namespace CASM {
   namespace xtal {
@@ -126,6 +127,60 @@ namespace CASM {
       return best;
     }
 
+  } // namespace xtal
+} // namespace CASM
+
+namespace CASM {
+  namespace xtal {
+    ///Given a symmetry group, the basis of the structure will have
+    ///each operation applied to it. The resulting set of basis
+    ///from performing these operations will be averaged out,
+    ///yielding a new average basis.
+    template<typename StructureType>
+    StructureType symmetrize(const StructureType &structure, const std::vector<SymOp> &enforced_group) {
+      //All your sites need to be within
+      auto symmetrized_structure = structure;
+      symmetrized_structure.reset();
+
+      //First make a copy of your current basis
+      //This copy will eventually become the new average basis.
+      auto avg_basis = structure.basis();
+
+      //Loop through given symmetry group an fill a temporary "operated basis"
+      decltype(avg_basis) operbasis;
+
+      //Loop through given symmetry group an fill a temporary "operated basis"
+      for(Index rf = 0; rf < enforced_group.size(); rf++) {
+        operbasis.clear();
+        for(Index b = 0; b < symmetrized_structure.basis().size(); b++) {
+          operbasis.push_back(enforced_group[rf]*symmetrized_structure.basis()[b]);
+        }
+        //Now that you have a transformed basis, find the closest mapping of atoms
+        //Then average the distance and add it to the average basis
+        for(Index b = 0; b < symmetrized_structure.basis().size(); b++) {
+          double smallest = 1000000;
+          Coordinate bshift(symmetrized_structure.lattice()), tshift(symmetrized_structure.lattice());
+          for(Index ob = 0; ob < operbasis.size(); ob++) {
+            double dist = operbasis[ob].min_dist(symmetrized_structure.basis()[b], tshift);
+            if(dist < smallest) {
+              bshift = tshift;
+              smallest = dist;
+            }
+          }
+          bshift.cart() *= (1.0 / enforced_group.size());
+          avg_basis[b] += bshift;
+        }
+
+      }
+      symmetrized_structure.set_basis(avg_basis);
+      symmetrized_structure.update();    //TODO: Do we want this?
+      return symmetrized_structure;
+    }
+
+    template<typename StructureType, typename ExternSymOpVector>
+    StructureType symmetrize(const StructureType &structure, const ExternSymOpVector &enforced_group) {
+      return xtal::symmetrize(structure, adapter::Adapter<SymOpVector, ExternSymOpVector>()(enforced_group));
+    }
   } // namespace xtal
 } // namespace CASM
 

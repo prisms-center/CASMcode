@@ -553,79 +553,6 @@ namespace CASM {
       m_basis.back().set_lattice(lattice(), mode);
     }
 
-
-
-
-    //***********************************************************
-    /**
-     * Given a symmetry group, the basis of the structure will have
-     * each operation applied to it. The resulting set of basis
-     * from performing these operations will be averaged out,
-     * yielding a new average basis that will replace the current one.
-     */
-    //***********************************************************
-
-    template<typename CoordType>
-    void BasicStructure<CoordType>::symmetrize(const SymGroup &relaxed_factors) {
-      //First make a copy of your current basis
-      //This copy will eventually become the new average basis.
-      //reset();
-      std::vector<CoordType> avg_basis = basis();
-
-      //Loop through given symmetry group an fill a temporary "operated basis"
-      std::vector<CoordType> operbasis;
-
-      //assume identity comes first, so we skip it
-      for(Index rf = 0; rf < relaxed_factors.size(); rf++) {
-        operbasis.clear();
-        for(Index b = 0; b < basis().size(); b++) {
-          operbasis.push_back(relaxed_factors[rf]*basis()[b]);
-        }
-        //Now that you have a transformed basis, find the closest mapping of atoms
-        //Then average the distance and add it to the average basis
-        for(Index b = 0; b < basis().size(); b++) {
-          double smallest = 1000000;
-          Coordinate bshift(lattice()), tshift(lattice());
-          for(Index ob = 0; ob < operbasis.size(); ob++) {
-            double dist = operbasis[ob].min_dist(m_basis[b], tshift);
-            if(dist < smallest) {
-              bshift = tshift;
-              smallest = dist;
-            }
-          }
-          bshift.cart() *= (1.0 / relaxed_factors.size());
-          avg_basis[b] += bshift;
-        }
-
-      }
-      set_basis(avg_basis);
-      //update();
-      return;
-    }
-
-    //***********************************************************
-    /**
-     * Same as the other symmetrize routine, except this one assumes
-     * that the symmetry group you mean to use is the factor group
-     * of your structure within a certain tolerance.
-     *
-     * Notice that the tolerance is also used on your point group!!
-     */
-    //***********************************************************
-
-
-    template<typename CoordType>
-    void BasicStructure<CoordType>::symmetrize(const double &tolerance) {
-      SymGroup factor_group;
-      double orig_tol = lattice().tol();
-      m_lattice.set_tol(tolerance);
-      generate_factor_group(factor_group);
-      symmetrize(factor_group);
-      m_lattice.set_tol(orig_tol);
-      return;
-    }
-
-
     //************************************************************
     /// Counts sites that allow vacancies
     template<typename CoordType>
@@ -897,14 +824,6 @@ namespace CASM {
       //asym_unit -= shift;
       return (*this);
     }
-
-    //***********************************************************
-
-    /* template<typename CoordType> */
-    /* BasicStructure<CoordType> operator*(const CASM::SymOp &LHS, const BasicStructure<CoordType> &RHS) { //AAB */
-
-    /*   return BasicStructure<CoordType>(RHS).apply_sym(LHS); */
-    /* } */
 
     //***********************************************************
 

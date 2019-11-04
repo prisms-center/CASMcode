@@ -336,42 +336,42 @@ namespace CASM {
      */
     //***********************************************************
 
-    void Structure::symmetrize(const SymGroup &relaxed_factors) {
-      //First make a copy of your current basis
-      //This copy will eventually become the new average basis.
-      reset();
-      std::vector<Site> avg_basis = basis();
+    /* void Structure::symmetrize(const SymGroup &relaxed_factors) { */
+    /*   //First make a copy of your current basis */
+    /*   //This copy will eventually become the new average basis. */
+    /*   reset(); */
+    /*   std::vector<Site> avg_basis = basis(); */
 
-      //Loop through given symmetry group an fill a temporary "operated basis"
-      std::vector<Site> operbasis;
-      for(Index rf = 0; rf < relaxed_factors.size(); rf++) {
-        operbasis.clear();
-        for(Index b = 0; b < basis().size(); b++) {
-          operbasis.push_back(relaxed_factors[rf]*basis()[b]);
-        }
+    /*   //Loop through given symmetry group an fill a temporary "operated basis" */
+    /*   std::vector<Site> operbasis; */
+    /*   for(Index rf = 0; rf < relaxed_factors.size(); rf++) { */
+    /*     operbasis.clear(); */
+    /*     for(Index b = 0; b < basis().size(); b++) { */
+    /*       operbasis.push_back(relaxed_factors[rf]*basis()[b]); */
+    /*     } */
 
-        //Now that you have a transformed basis, find the closest mapping of atoms
-        //Then average the distance and add it to the average basis
-        for(Index b = 0; b < basis().size(); b++) {
-          double smallest = 1000000;
-          Coordinate bshift(lattice()), tshift(lattice());
-          for(Index ob = 0; ob < operbasis.size(); ob++) {
-            double dist = operbasis[ob].min_dist(basis()[b], tshift);
-            if(dist < smallest) {
-              bshift = tshift;
-              smallest = dist;
-            }
-          }
-          bshift.cart() *= (1.0 / relaxed_factors.size());
-          avg_basis[b] += bshift;
-        }
+    /*     //Now that you have a transformed basis, find the closest mapping of atoms */
+    /*     //Then average the distance and add it to the average basis */
+    /*     for(Index b = 0; b < basis().size(); b++) { */
+    /*       double smallest = 1000000; */
+    /*       Coordinate bshift(lattice()), tshift(lattice()); */
+    /*       for(Index ob = 0; ob < operbasis.size(); ob++) { */
+    /*         double dist = operbasis[ob].min_dist(basis()[b], tshift); */
+    /*         if(dist < smallest) { */
+    /*           bshift = tshift; */
+    /*           smallest = dist; */
+    /*         } */
+    /*       } */
+    /*       bshift.cart() *= (1.0 / relaxed_factors.size()); */
+    /*       avg_basis[b] += bshift; */
+    /*     } */
 
-      }
-      set_basis(avg_basis);
-      //generate_factor_group();
-      update();
-      return;
-    }
+    /*   } */
+    /*   set_basis(avg_basis); */
+    /*   //generate_factor_group(); */
+    /*   update(); */
+    /*   return; */
+    /* } */
 
     //***********************************************************
     /**
@@ -383,15 +383,15 @@ namespace CASM {
      */
     //***********************************************************
 
-    void Structure::symmetrize(const double &tolerance) {
-      double orig_tol = lattice().tol();
-      m_lattice.set_tol(tolerance);
-      generate_factor_group();
-      SymGroup g = factor_group();
-      symmetrize(g);
-      m_lattice.set_tol(orig_tol);
-      return;
-    }
+    /* void Structure::symmetrize(const double &tolerance) { */
+    /*   double orig_tol = lattice().tol(); */
+    /*   m_lattice.set_tol(tolerance); */
+    /*   generate_factor_group(); */
+    /*   SymGroup g = factor_group(); */
+    /*   symmetrize(g); */
+    /*   m_lattice.set_tol(orig_tol); */
+    /*   return; */
+    /* } */
 
     //This function gets the permutation representation of the
     // factor group operations of the structure. It first applies
