@@ -1074,6 +1074,19 @@ namespace CASM {
   }
 
   //************************************************************
+  /// Returns a vector with a list of allowed molecule names at each site
+  template<typename CoordType>
+  std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure<CoordType> const &_struc) {
+    std::vector<std::vector<std::string> > result(_struc.basis().size());
+
+    for(Index b = 0; b < _struc.basis().size(); ++b)
+      result[b] = _struc.basis(b).allowed_occupants();
+
+    return result;
+  }
+
+
+  //************************************************************
 
   /// Returns a list of how many of each species exist in this Structure
   ///   The Specie types are ordered according to struc_species()

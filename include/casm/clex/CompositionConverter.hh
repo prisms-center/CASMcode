@@ -8,11 +8,6 @@
 #include "casm/clex/ParamComposition.hh"
 
 namespace CASM {
-  template<typename CoordType>
-  class BasicStructure;
-
-  class Site;
-
   class jsonParser;
 
   /// \brief Convert between number of species per unit cell and parametric composition
@@ -142,7 +137,7 @@ namespace CASM {
 
   /// \brief Generate CompositionConverter specifying standard composition axes for a prim Structure
   template<typename OutputIterator>
-  OutputIterator standard_composition_axes(const BasicStructure<Site> &prim, OutputIterator result);
+  OutputIterator standard_composition_axes(ParamComposition::AllowedOccupants _allowed_occs, OutputIterator result);
 
   /// \brief Pretty-print map of name/CompositionConverter pairs
   void display_composition_axes(std::ostream &stream, const std::map<std::string, CompositionConverter> &map);
@@ -163,13 +158,13 @@ namespace CASM {
   void from_json(CompositionConverter &f, const jsonParser &json);
 
   /// \brief Generate a column matrix containing all the possible molecular end members
-  Eigen::MatrixXd end_members(const BasicStructure<Site> &prim);
+  Eigen::MatrixXd end_members(const ParamComposition::AllowedOccupants &_allowed_occs);
 
-  /// \brief Return the composition space of a BasicStructure<Site>
-  Eigen::MatrixXd composition_space(const BasicStructure<Site> &prim, double tol = 1e-14);
+  /// \brief Return the composition space of a ParamComposition::AllowedOccupants
+  Eigen::MatrixXd composition_space(const ParamComposition::AllowedOccupants &_allowed_occs, double tol = 1e-14);
 
-  /// \brief Return the null composition space of a BasicStructure<Site>
-  Eigen::MatrixXd null_composition_space(const BasicStructure<Site> &prim, double tol = 1e-14);
+  /// \brief Return the null composition space of a ParamComposition::AllowedOccupants
+  Eigen::MatrixXd null_composition_space(const ParamComposition::AllowedOccupants &_allowed_occs, double tol = 1e-14);
 
 
   // ------ Definitions ---------------------------------------------
@@ -232,11 +227,10 @@ namespace CASM {
     _add_end_member(_others...);
   }
 
-  /// \brief Generate CompositionConverter specifying standard composition axes for a prim BasicStructure<Site>
+  /// \brief Generate CompositionConverter specifying standard composition axes for a _allowed_occs ParamComposition::AllowedOccupants
   template<typename OutputIterator>
-  OutputIterator standard_composition_axes(const BasicStructure<Site> &prim, OutputIterator result) {
-    ParamComposition param_comp(prim);
-    param_comp.generate_sublattice_map();
+  OutputIterator standard_composition_axes(ParamComposition::AllowedOccupants _allowed_occs, OutputIterator result) {
+    ParamComposition param_comp(_allowed_occs);
     param_comp.generate_prim_end_members();
     param_comp.generate_composition_space();
 
