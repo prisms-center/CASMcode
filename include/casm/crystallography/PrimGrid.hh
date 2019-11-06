@@ -99,6 +99,19 @@ namespace CASM {
       /// U*mnp = ijk
       UnitCell from_canonical(const UnitCell &mnp) const;
 
+      const matrix_type &matrixU()const {
+        return m_U;
+      };
+      const matrix_type &invU()const {
+        return m_invU;
+      };
+
+      const Eigen::DiagonalWrapper<const PrimGrid::vector_type> matrixS()const;
+
+      int S(Index i) const {
+        return m_S[i];
+      };
+
 
     public:
       PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
@@ -119,19 +132,6 @@ namespace CASM {
       const matrix_type &trans_mat() const {
         return m_trans_mat;
       }
-
-      const matrix_type &matrixU()const {
-        return m_U;
-      };
-      const matrix_type &invU()const {
-        return m_invU;
-      };
-
-      const Eigen::DiagonalWrapper<const PrimGrid::vector_type> matrixS()const;
-
-      int S(Index i) const {
-        return m_S[i];
-      };
 
       Index sublat(Index linear_index) const {
         return linear_index / m_N_vol;
