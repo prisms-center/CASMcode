@@ -127,7 +127,7 @@ namespace CASM {
       const UnitType &unit() const;
 
       /// \brief Change unit structure, keeping indices constant
-      void set_unit(const UnitType &_unit);
+      /* void set_unit(const UnitType &_unit); */
 
       /// \brief Access the Lattice
       const Lattice &lattice() const;
@@ -200,9 +200,9 @@ namespace CASM {
     }
 
     /// \brief Change unit structure, keeping indices constant
-    inline void UnitCellCoord::set_unit(const UnitType &_unit) {
-      m_unit = &_unit;
-    }
+    /* inline void UnitCellCoord::set_unit(const UnitType &_unit) { */
+    /*   m_unit = &_unit; */
+    /* } */
 
     inline UnitCell &UnitCellCoord::unitcell() {
       return m_unitcell;
