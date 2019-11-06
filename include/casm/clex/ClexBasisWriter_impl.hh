@@ -197,7 +197,7 @@ namespace CASM {
         << "#include <cstddef>\n"
         << "#include \"casm/clex/Clexulator.hh\"\n"
         << "#include \"casm/clex/BasicClexParamPack.hh\"\n"
-        << "#include \"casm/CASM_global_Eigen.hh\"\n"
+        << "#include \"casm/global/eigen.hh\"\n"
         << (m_param_pack_mix_in -> cpp_includes_string()) << "\n"
         << "\n\n\n"
 

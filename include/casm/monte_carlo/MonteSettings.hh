@@ -2,7 +2,7 @@
 #define CASM_MonteSettings_HH
 
 #include <string>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/clex/ECIContainer.hh"

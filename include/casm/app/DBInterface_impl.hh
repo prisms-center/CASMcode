@@ -7,7 +7,7 @@
 #include "casm/app/query.hh"
 #include "casm/app/select.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/database/Selection.hh"
 
 namespace CASM {

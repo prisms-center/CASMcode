@@ -1,8 +1,8 @@
 #ifndef CASM_VaspIO
 #define CASM_VaspIO
 
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_enum.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/enum.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 
 namespace CASM {

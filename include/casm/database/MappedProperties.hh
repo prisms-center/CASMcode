@@ -144,8 +144,9 @@ namespace CASM {
 }
 
 namespace CASM {
-  ENUM_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
   ENUM_TRAITS(CASM::DB::ScoreMappedProperties::Method)
+  ENUM_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
+  ENUM_JSON_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
 }
 
 #endif

@@ -6,7 +6,7 @@
 
 #include "casm/misc/HallOfFame.hh"
 #include "casm/misc/cloneable_ptr.hh"
-#include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"

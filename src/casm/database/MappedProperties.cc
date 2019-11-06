@@ -14,6 +14,7 @@ namespace CASM {
   };
 
   ENUM_IO_DEF(CASM::DB::ScoreMappedProperties::Method)
+  ENUM_JSON_IO_DEF(CASM::DB::ScoreMappedProperties::Method)
 
 }
 
@@ -142,4 +143,3 @@ namespace CASM {
 
   }
 }
-

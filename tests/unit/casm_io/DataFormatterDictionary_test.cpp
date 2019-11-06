@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 /// What is being tested:
-#include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
 
 #include <sstream>
 #include "autotools.hh"

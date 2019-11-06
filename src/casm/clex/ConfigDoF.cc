@@ -1,7 +1,7 @@
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigDoFValues.hh"
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SymPermutation.hh"

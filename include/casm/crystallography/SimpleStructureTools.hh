@@ -5,7 +5,7 @@
 #include <string>
 #include <set>
 #include "casm/external/Eigen/Dense"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/basis_set/DoFDecl.hh"
 
 

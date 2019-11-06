@@ -1,7 +1,7 @@
 #ifndef CASM_OccupationTransformationTraits
 #define CASM_OccupationTransformationTraits
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 
 namespace CASM {

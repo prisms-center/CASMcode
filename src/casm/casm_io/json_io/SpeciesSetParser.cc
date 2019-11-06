@@ -13,6 +13,7 @@ namespace CASM {
   };
 
   ENUM_IO_DEF(ALLOWED_SPECIES_TYPES)
+  ENUM_JSON_IO_DEF(ALLOWED_SPECIES_TYPES)
 
   std::string msg(ALLOWED_SPECIES_TYPES types) {
     if(types == ALLOWED_SPECIES_TYPES::ALL) {

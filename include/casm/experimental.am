@@ -36,19 +36,19 @@ BUILT_SOURCES+=\
 			   ./include/casm/clex/Norm.hh\
 			   ./include/casm/casm_io/VaspIO.hh\
 			   ./include/casm/casm_io/SafeOfstream.hh\
-			   ./include/casm/casm_io/DataStream.hh\
-			   ./include/casm/casm_io/EigenDataStream.hh\
+			   ./include/casm/casm_io/dataformatter/DataStream.hh\
+			   ./include/casm/casm_io/dataformatter/EigenDataStream.hh\
 			   ./include/casm/casm_io/FileEnumerator.hh\
 			   ./include/casm/casm_io/Args.hh\
 			   ./include/casm/casm_io/json_io/clex.hh\
 			   ./include/casm/casm_io/json_io/global.hh\
 			   ./include/casm/casm_io/json_io/container.hh\
-			   ./include/casm/casm_io/DataFormatterTools.hh\
+			   ./include/casm/casm_io/dataformatter/DataFormatterTools.hh\
 			   ./include/casm/casm_io/FormatFlag.hh\
 			   ./include/casm/casm_io/jsonParser.hh\
 			   ./include/casm/casm_io/Log.hh\
 			   ./include/casm/casm_io/EnumIO.hh\
-			   ./include/casm/casm_io/DataFormatter.hh\
+			   ./include/casm/casm_io/dataformatter/DataFormatter.hh\
 			   ./include/casm/external/boost.hh\
 			   ./include/casm/basis_set/BasisFunction.hh\
 			   ./include/casm/basis_set/Variable.hh\
@@ -132,5 +132,5 @@ BUILT_SOURCES+=\
 			   ./include/casm/container/Tensor.hh\
 			   ./include/casm/container/Permutation.hh\
 			   ./include/casm/container/PolyTrie.hh\
-			   ./include/casm/CASM_global_definitions.hh\
+			   ./include/casm/global/definitions.hh\
 			   ./include/casm/strain/StrainConverter.hh

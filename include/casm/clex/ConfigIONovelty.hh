@@ -1,7 +1,7 @@
 #ifndef CONFIGIONOVELTY_HH
 #define CONFIGIONOVELTY_HH
 
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 
 namespace CASM {
 

@@ -2,7 +2,7 @@
 #define CASM_Clex
 #include <cstddef>
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/app/ClexDescription.hh"

@@ -3,7 +3,7 @@
 
 #include <boost/filesystem/path.hpp>
 #include <string>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/monte_carlo/MonteSampler.hh"
 #include "casm/monte_carlo/MonteCounter.hh"
 

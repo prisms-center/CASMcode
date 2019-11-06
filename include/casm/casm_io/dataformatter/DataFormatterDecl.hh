@@ -1,8 +1,8 @@
 #ifndef CASM_DataFormatterDecl
 #define CASM_DataFormatterDecl
 
-#include "casm/CASM_global_Eigen.hh"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/eigen.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 

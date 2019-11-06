@@ -7,7 +7,7 @@
 #include <functional>
 #include <dlfcn.h>
 #include <cstdlib>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 

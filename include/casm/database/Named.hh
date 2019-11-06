@@ -2,7 +2,7 @@
 #define CASM_Named
 
 #include <string>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
   class PrimClex;

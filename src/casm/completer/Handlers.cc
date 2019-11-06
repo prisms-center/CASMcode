@@ -2,7 +2,7 @@
 #define HANDLERS_CC
 
 #include "casm/completer/Handlers.hh"
-#include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/EnumIO.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"

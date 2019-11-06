@@ -2,7 +2,7 @@
 #define CASM_RemovePrimPeriodicDiffTransOrbit
 
 #include <string>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
 #include "casm/database/Remove.hh"
 

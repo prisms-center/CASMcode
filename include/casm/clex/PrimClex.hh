@@ -2,7 +2,7 @@
 #define CASM_PrimClex
 
 #include <memory>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/casm_io/Log.hh"
 
 /// Cluster expansion class

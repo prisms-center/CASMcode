@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "casm/external/Eigen/Core"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
   class SymOp;

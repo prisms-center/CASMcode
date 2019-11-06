@@ -4,8 +4,8 @@
 #include <string>
 #include <map>
 #include <boost/filesystem/path.hpp>
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_enum.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/enum.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
@@ -176,6 +176,7 @@ namespace CASM {
   };
 
   ENUM_IO_DECL(ORBIT_PRINT_MODE)
+  ENUM_JSON_IO_DECL(ORBIT_PRINT_MODE)
   ENUM_TRAITS(ORBIT_PRINT_MODE)
 
   struct OrbitPrinterOptions {

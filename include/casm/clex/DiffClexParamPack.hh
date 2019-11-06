@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include "casm/casm_io/stream_io/container.hh"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/clex/ClexParamPack.hh"
 #include "casm/casm_io/EnumIO.hh"
 #include "casm/external/fadbad/fadiff.h"

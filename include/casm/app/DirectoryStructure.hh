@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <boost/filesystem/path.hpp>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 
 namespace CASM {

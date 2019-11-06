@@ -2,7 +2,7 @@
 #define CASM_InvariantSubgroup
 
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 

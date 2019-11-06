@@ -6,13 +6,13 @@
 #include <sstream>
 #include <vector>
 #include <functional>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/container/multivector.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/unique_cloneable_map.hh"
-#include "casm/casm_io/DataFormatterDecl.hh"
+#include "casm/casm_io/dataformatter/DataFormatterDecl.hh"
 #include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/DataStream.hh"
+#include "casm/casm_io/dataformatter/DataStream.hh"
 #include "casm/casm_io/FormatFlag.hh"
 
 

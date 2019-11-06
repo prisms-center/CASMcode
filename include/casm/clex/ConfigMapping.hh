@@ -1,7 +1,7 @@
 #ifndef CASM_ConfigMapping
 #define CASM_ConfigMapping
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
 #include "casm/crystallography/StrucMapping.hh"

@@ -1,7 +1,7 @@
 #include "casm/symmetry/SymGroupRep.hh"
 
 #include <numeric>
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/eigen.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/stream_io/container.hh"

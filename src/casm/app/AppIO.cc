@@ -671,6 +671,7 @@ namespace CASM {
   };
 
   ENUM_IO_DEF(ORBIT_PRINT_MODE)
+  ENUM_JSON_IO_DEF(ORBIT_PRINT_MODE)
 
   jsonParser &to_json(const OrbitPrinterOptions &opt, jsonParser &json) {
     json.put_obj();

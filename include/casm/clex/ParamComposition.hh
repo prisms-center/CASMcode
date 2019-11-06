@@ -2,8 +2,8 @@
 #define PARAMCOMPOSITION_HH
 
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/eigen.hh"
 #include "casm/casm_io/stream_io/container.hh"
 
 namespace CASM {

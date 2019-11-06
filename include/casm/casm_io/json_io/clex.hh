@@ -2,7 +2,7 @@
 #define CASM_jsonIO_clex
 
 #include "casm/casm_io/jsonParser.hh"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 #include "casm/clex/ChemicalReference.hh"
 

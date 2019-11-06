@@ -1,4 +1,4 @@
-#include "casm/casm_io/DataStream.hh"
+#include "casm/casm_io/dataformatter/DataStream.hh"
 #include "casm/misc/CASM_math.hh"
 
 namespace CASM {

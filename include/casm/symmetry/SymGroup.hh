@@ -5,7 +5,7 @@
 #include <string>
 #include <iomanip>
 
-#include "casm/CASM_global_enum.hh"
+#include "casm/global/enum.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/container/multivector.hh"
 
