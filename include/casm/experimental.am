@@ -42,10 +42,10 @@ BUILT_SOURCES+=\
 			   ./include/casm/casm_io/Args.hh\
 			   ./include/casm/casm_io/json_io/clex.hh\
 			   ./include/casm/casm_io/json_io/global.hh\
-			   ./include/casm/casm_io/json_io/container.hh\
+			   ./include/casm/casm_io/container/json_io.hh\
 			   ./include/casm/casm_io/dataformatter/DataFormatterTools.hh\
 			   ./include/casm/casm_io/FormatFlag.hh\
-			   ./include/casm/casm_io/jsonParser.hh\
+			   ./include/casm/casm_io/json_io/jsonParser.hh\
 			   ./include/casm/casm_io/Log.hh\
 			   ./include/casm/casm_io/EnumIO.hh\
 			   ./include/casm/casm_io/dataformatter/DataFormatter.hh\

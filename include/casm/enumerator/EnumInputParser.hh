@@ -1,7 +1,7 @@
 #ifndef CASM_EnumInputParser
 #define CASM_EnumInputParser
 
-#include "casm/casm_io/InputParser_impl.hh"
+#include "casm/casm_io/json_io/InputParser_impl.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "casm/clex/HasPrimClex.hh"
 #include "casm/completer/Handlers.hh"

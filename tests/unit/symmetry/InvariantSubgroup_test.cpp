@@ -9,7 +9,7 @@
 #include "FCCTernaryProj.hh"
 #include "ZrOProj.hh"
 #include "casm/app/AppIO_impl.hh"
-#include "casm/casm_io/jsonFile.hh"
+#include "casm/casm_io/json_io/jsonFile.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/symmetry/Orbit_impl.hh"

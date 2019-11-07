@@ -2,7 +2,7 @@
 #define CASM_core_io_traits_global_enum
 
 #include "casm/global/enum.hh"
-#include "casm/casm_io/traits/enum.hh"
+#include "casm/casm_io/enum/io_traits.hh"
 
 namespace CASM {
 

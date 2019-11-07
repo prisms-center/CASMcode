@@ -1,5 +1,5 @@
-#include "casm/casm_io/stream_io/enum.hh"
-#include "casm/casm_io/json_io/enum.hh"
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
 
 
 // #ifndef CASM_EnumIO
@@ -14,7 +14,7 @@
 // #include <set>
 // #include "casm/misc/CASM_TMP.hh"
 // #include "casm/casm_io/Help.hh"
-// #include "casm/casm_io/json_io/container.hh"
+// #include "casm/casm_io/container/json_io.hh"
 //
 // namespace CASM {
 //

@@ -2,8 +2,8 @@
 #include <wordexp.h>
 #include <boost/filesystem.hpp>
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/casm_functions.hh"

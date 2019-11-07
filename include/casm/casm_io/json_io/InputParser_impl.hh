@@ -1,7 +1,8 @@
 #ifndef CASM_InputParser_impl
 #define CASM_InputParser_impl
 
-#include "casm/casm_io/InputParser.hh"
+#include "casm/casm_io/json_io/InputParser.hh"
+#include "casm/global/enum/io_traits.hh"
 #include "casm/casm_io/Help.hh"
 
 namespace CASM {

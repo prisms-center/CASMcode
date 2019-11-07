@@ -1,6 +1,6 @@
 #include <vector>
 #include <iostream>
-#include <casm/casm_io/stream_io/container.hh>
+#include <casm/casm_io/container/stream_io.hh>
 #include <string>
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>

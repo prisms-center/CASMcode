@@ -8,7 +8,7 @@
 #include "casm/misc/cloneable_ptr.hh"
 
 #include "casm/enumerator/EnumInputParser.hh"
-#include "casm/casm_io/InputParser_impl.hh"
+#include "casm/casm_io/json_io/InputParser_impl.hh"
 #include "casm/clusterography/ClusterSpecsParser_impl.hh"
 #include "casm/casm_io/json_io/SpeciesSetParser_impl.hh"
 

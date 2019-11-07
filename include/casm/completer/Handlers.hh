@@ -5,7 +5,7 @@
 #include <vector>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/global/definitions.hh"
 #include "casm/global/enum.hh"
 

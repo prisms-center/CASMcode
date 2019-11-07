@@ -1,5 +1,5 @@
-#ifndef CASM_support_io_traits_enum
-#define CASM_support_io_traits_enum
+#ifndef CASM_support_enum_io_traits
+#define CASM_support_enum_io_traits
 
 #include <iostream>
 #include <string>

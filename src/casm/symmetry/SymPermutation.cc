@@ -1,7 +1,7 @@
 #include "casm/symmetry/SymPermutation.hh"
 
 #include "casm/container/Permutation.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
 

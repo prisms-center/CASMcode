@@ -4,7 +4,7 @@
 #include <string>
 
 #include "casm/global/definitions.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/misc/CASM_TMP.hh"

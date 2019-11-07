@@ -8,7 +8,7 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/symmetry/VectorSymCompare_impl.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/container/Counter.hh"
 

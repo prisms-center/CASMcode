@@ -1,4 +1,4 @@
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include "casm/misc/CASM_math.hh"

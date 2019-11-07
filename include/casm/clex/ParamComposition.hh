@@ -4,7 +4,7 @@
 #include <vector>
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
   namespace xtal {

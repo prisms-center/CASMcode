@@ -3,7 +3,7 @@
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
 

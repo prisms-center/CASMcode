@@ -14,8 +14,8 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/app/enum.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
-#include "casm/casm_io/jsonFile.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/json_io/jsonFile.hh"
+#include "casm/casm_io/container/stream_io.hh"
 
 using namespace CASM;
 using namespace test;

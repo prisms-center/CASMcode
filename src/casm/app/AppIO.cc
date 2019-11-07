@@ -1,5 +1,6 @@
 #include "casm/app/AppIO_impl.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/global/enum/io_traits.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/app/HamiltonianModules.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/Orbit_impl.hh"

@@ -1,7 +1,7 @@
-#ifndef CASM_support_io_json_enum
-#define CASM_support_io_json_enum
+#ifndef CASM_support_enum_json_io
+#define CASM_support_enum_json_io
 
-#include "casm/casm_io/traits/enum.hh"
+#include "casm/casm_io/enum/io_traits.hh"
 
 namespace CASM {
 

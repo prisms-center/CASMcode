@@ -1,7 +1,7 @@
 #include "casm/clex/ConfigMapping.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
@@ -202,7 +202,7 @@ namespace CASM {
   PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
     SimpleStrucMapCalculator(to_simple_structure(_prim),
-                             std::vector<SymOp>({
+                             std::vector<SymOp>( {
     SymOp()
   }),
   _species_mode,

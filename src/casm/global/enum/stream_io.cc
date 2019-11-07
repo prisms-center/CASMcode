@@ -1,4 +1,5 @@
-#include "casm/core_io/stream/global/enum.hh"
+#include "casm/global/enum/stream_io.hh"
+#include "casm/global/enum/io_traits.hh"
 
 namespace CASM {
 

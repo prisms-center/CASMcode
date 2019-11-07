@@ -5,7 +5,7 @@
 #include "casm/clex/PrimClex_impl.hh"
 
 #include "casm/casm_io/EnumIO.hh"
-#include "casm/casm_io/InputParser_impl.hh"
+#include "casm/casm_io/json_io/InputParser_impl.hh"
 #include "casm/misc/CRTPBase.hh"
 #include "casm/clex/HasPrimClex.hh"
 

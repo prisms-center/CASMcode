@@ -2,9 +2,9 @@
 
 #include <numeric>
 #include "casm/global/eigen.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"

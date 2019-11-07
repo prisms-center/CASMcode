@@ -1,8 +1,8 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/misc/algorithm.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/container/json_io.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"

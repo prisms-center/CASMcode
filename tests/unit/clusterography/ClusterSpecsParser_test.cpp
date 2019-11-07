@@ -12,7 +12,7 @@
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
-#include "casm/casm_io/jsonFile.hh"
+#include "casm/casm_io/json_io/jsonFile.hh"
 #include "casm/completer/Handlers.hh"
 #include "FCCTernaryProj.hh"
 #include "ZrOProj.hh"

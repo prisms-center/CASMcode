@@ -1,6 +1,6 @@
-#include "casm/casm_io/InputParser_impl.hh"
+#include "casm/casm_io/json_io/InputParser_impl.hh"
 #include "casm/casm_io/Help.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
 

@@ -8,7 +8,7 @@
 #include "casm/external/Eigen/Dense"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/casm_io/EnumIO.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
 #include "casm/symmetry/SymOp.hh"
 
 namespace CASM {

@@ -3,7 +3,7 @@
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/casm_io/SafeOfstream.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/database/Selected_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/app/casm_functions.hh"

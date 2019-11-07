@@ -1,8 +1,8 @@
-#ifndef CASM_jsonIO_container
-#define CASM_jsonIO_container
+#ifndef CASM_support_container_json_io
+#define CASM_support_container_json_io
 
 #include <set>
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/container/Array.hh"

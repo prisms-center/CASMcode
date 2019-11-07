@@ -4,7 +4,7 @@
 #include "casm/crystallography/Molecule.hh"
 #include "casm/casm_io/Log.hh"
 
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/OccupationDoFTraits.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"

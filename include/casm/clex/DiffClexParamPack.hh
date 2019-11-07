@@ -5,7 +5,7 @@
 #include <string>
 #include <sstream>
 
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/global/definitions.hh"
 #include "casm/clex/ClexParamPack.hh"
 #include "casm/casm_io/EnumIO.hh"

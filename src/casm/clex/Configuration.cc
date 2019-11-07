@@ -23,7 +23,7 @@
 #include "casm/database/ScelDatabase.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/casm_io/VaspIO.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"

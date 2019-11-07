@@ -6,7 +6,7 @@
 #include <sstream>
 #include "autotools.hh"
 #include "Common.hh"
-#include "casm/casm_io/jsonFile.hh"
+#include "casm/casm_io/json_io/jsonFile.hh"
 #include "casm/database/Selection.hh"
 #include "casm/database/Selected.hh"
 #include "casm/database/Database.hh"

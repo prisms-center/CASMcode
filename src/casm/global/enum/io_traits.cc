@@ -1,4 +1,4 @@
-#include "casm/core_io/traits/global/enum.hh"
+#include "casm/global/enum/io_traits.hh"
 
 namespace CASM {
 

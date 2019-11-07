@@ -1,6 +1,6 @@
 #include "casm/monte_carlo/MonteDefinitions.hh"
 
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
 
 namespace CASM {
 

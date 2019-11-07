@@ -1,8 +1,8 @@
 #ifndef CASM_core_io_stream_global_enum
 #define CASM_core_io_stream_global_enum
 
-#include "casm/core_io/traits/global/enum.hh"
-#include "casm/casm_io/stream_io/enum.hh"
+#include "casm/global/enum.hh"
+#include "casm/casm_io/enum/stream_io.hh"
 
 namespace CASM {
 

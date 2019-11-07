@@ -14,7 +14,7 @@
 #include "casm/app/AppIO_impl.hh"
 #include "casm/app/enum.hh"
 #include "casm/app/QueryHandler.hh"
-#include "casm/casm_io/jsonFile.hh"
+#include "casm/casm_io/json_io/jsonFile.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/ScelEnum.hh"

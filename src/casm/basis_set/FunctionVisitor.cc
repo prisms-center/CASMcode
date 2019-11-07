@@ -5,7 +5,7 @@
 #include "casm/basis_set/PolynomialFunction.hh"
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/misc/CASM_math.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 namespace CASM {
   std::vector<std::string> parse_label_template(std::string const &_template) {
     // parse _template into the Array m_sub_strings

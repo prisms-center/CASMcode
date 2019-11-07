@@ -1,10 +1,10 @@
 #include "casm/symmetry/SymInfo.hh"
 
 #include "boost/lexical_cast.hpp"
-#include "casm/global/enum.hh"
+#include "casm/global/enum/io_traits.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {

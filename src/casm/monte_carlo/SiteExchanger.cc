@@ -1,7 +1,7 @@
 #include "casm/monte_carlo/SiteExchanger.hh"
 
 #include "casm/crystallography/Structure.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/CompositionConverter.hh"

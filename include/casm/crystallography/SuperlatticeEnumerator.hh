@@ -3,7 +3,7 @@
 
 #include "casm/external/Eigen/Dense"
 
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
 #include "casm/crystallography/HermiteCounter.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymType.hh"

@@ -4,7 +4,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include "casm/global/definitions.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"

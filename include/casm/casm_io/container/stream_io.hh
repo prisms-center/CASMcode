@@ -1,5 +1,5 @@
-#ifndef CASM_streamIO_container
-#define CASM_streamIO_container
+#ifndef CASM_support_container_stream_io
+#define CASM_support_container_stream_io
 
 #include <iostream>
 #include <vector>

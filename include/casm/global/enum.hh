@@ -46,7 +46,7 @@ namespace CASM {
 
 }
 
-#include "casm/core_io/stream/global/enum.hh"
-#include "casm/core_io/json/global/enum.hh"
+#include "casm/global/enum/stream_io.hh"
+#include "casm/global/enum/json_io.hh"
 
 #endif

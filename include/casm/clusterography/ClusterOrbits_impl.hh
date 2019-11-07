@@ -9,7 +9,7 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/TypeInfo.hh"
 #include "casm/misc/unique_map.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/jsonParser.hh"
 #include "casm/casm_io/EnumIO.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/symmetry/Orbit_impl.hh"

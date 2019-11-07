@@ -1,7 +1,7 @@
 #include "casm/container/Permutation.hh"
 #include "casm/misc/algorithm.hh"
-#include "casm/casm_io/json_io/container.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
 
