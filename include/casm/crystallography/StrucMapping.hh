@@ -551,22 +551,22 @@ namespace CASM {
 
 
 
-    namespace StrucMapping_impl {
+    /* namespace StrucMapping_impl { */
 
-      std::set<MappingNode> k_best_lat_maps_better_than(Lattice const &_parent_prim,
-                                                        std::vector<Lattice> const &_parent_scels,
-                                                        Lattice const &_child_prim,
-                                                        std::vector<Lattice> const &_child_scels,
-                                                        Index _num_atoms,
-                                                        std::vector<SymOp> const &_parent_pg,
-                                                        Index k,
-                                                        double strain_weight,
-                                                        double basis_weight,
-                                                        double _tol,
-                                                        double min_cost = 1e-6,
-                                                        double max_cost = StrucMapping::small_inf());
+    /*   std::set<MappingNode> k_best_lat_maps_better_than(Lattice const &_parent_prim, */
+    /*                                                     std::vector<Lattice> const &_parent_scels, */
+    /*                                                     Lattice const &_child_prim, */
+    /*                                                     std::vector<Lattice> const &_child_scels, */
+    /*                                                     Index _num_atoms, */
+    /*                                                     std::vector<SymOp> const &_parent_pg, */
+    /*                                                     Index k, */
+    /*                                                     double strain_weight, */
+    /*                                                     double basis_weight, */
+    /*                                                     double _tol, */
+    /*                                                     double min_cost = 1e-6, */
+    /*                                                     double max_cost = StrucMapping::small_inf()); */
 
-    }
+    /* } */
 
 
   }

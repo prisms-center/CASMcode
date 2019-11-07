@@ -11,6 +11,7 @@ namespace CASM {
   class PermuteIterator;
   class jsonParser;
   class SymGroupRepID;
+  class SymOp;
 
   /// \brief A container class for the different degrees of freedom a Configuration
   /// might have

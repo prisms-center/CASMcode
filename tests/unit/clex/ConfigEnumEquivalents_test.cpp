@@ -90,7 +90,7 @@ TEST(ConfigEnumEquivalentsTest, Test1) {
         jsonParser json;
         ScelEnumEquivalents e(*scel_j);
         for(const auto &tunit : e) {
-          if(is_supercell(scel.lattice(), tunit.lattice(), tol).first) {
+          if(xtal::is_superlattice(scel.lattice(), tunit.lattice(), tol).first) {
             total_count[i] += prim_count[j];
           }
         }

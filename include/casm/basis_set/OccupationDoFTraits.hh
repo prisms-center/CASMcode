@@ -25,7 +25,7 @@ namespace CASM {
         }*/
 
       /// \brief Generate a symmetry representation for the supporting vector space
-      Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override {
+      Eigen::MatrixXd symop_to_matrix(xtal::SymOp const &op) const override {
         throw std::runtime_error("OccupationDoFTraits::generate_symrep not implemented!");
 
       }

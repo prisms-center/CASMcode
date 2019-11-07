@@ -5,8 +5,10 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Lattice_impl.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/LatticeMap.hh"
 
 namespace CASM {
@@ -257,7 +259,7 @@ namespace CASM {
 
     MappingNode StrucMapper::map_ideal_struc(const SimpleStructure &child_struc) const {
 
-      // Lattice::is_supercell_of() isn't very smart right now, and will return
+      // xtal::is_superlattice isn't very smart right now, and will return
       // false if the two lattices differ by a rigid rotation
       // In the future this may not be the case, so we will assume that child_struc may
       // be rigidly rotated relative to prim
@@ -269,7 +271,9 @@ namespace CASM {
       Lattice c_lat(child_struc.lat_column_mat, m_tol);
 
 
-      if(!c_lat.is_supercell_of(Lattice(parent().lat_column_mat), trans_mat)) {
+      bool c_lat_is_supercell_of_parent;
+      std::tie(c_lat_is_supercell_of_parent, trans_mat) = xtal::is_superlattice(c_lat, Lattice(parent().lat_column_mat), c_lat.tol());
+      if(!c_lat_is_supercell_of_parent) {
         /*std::cerr << "CRITICAL ERROR: In map_ideal_struc(), primitive structure does not tile the provided\n"
           << "                superstructure. Please use map_deformed_struc() instead.\n"
           << "                Exiting...\n";
@@ -284,11 +288,11 @@ namespace CASM {
       // We know child_struc.lattice() is a supercell of the prim, now we have to
       // reorient 'child_struc' by a point-group operation of the parent to match canonical lattice vectors
       // This may not be a rotation in the child structure's point group
-      Lattice derot_c_lat(Lattice(parent().lat_column_mat * trans_mat, m_tol).canonical_form(calculator().point_group()));
+      Lattice derot_c_lat(canonical::equivalent(Lattice(parent().lat_column_mat * trans_mat, m_tol), calculator().point_group()));
 
       // We now find a transformation matrix of c_lat so that, after transformation, it is related
       // to derot_c_lat by rigid rotation only. Following line finds R and T such that derot_c_lat = R*c_lat*T
-      auto res = is_supercell(derot_c_lat, c_lat, calculator().point_group().begin(), calculator().point_group().end(), m_tol);
+      auto res = xtal::is_equivalent_superlattice(derot_c_lat, c_lat, calculator().point_group().begin(), calculator().point_group().end(), m_tol);
 
       std::set<MappingNode> mapping_seed({MappingNode(LatticeNode(Lattice(parent().lat_column_mat, m_tol),
                                                                   derot_c_lat,
@@ -464,8 +468,8 @@ namespace CASM {
           continue;
         }
         Lattice canon_lat = *it;
-        if(!canon_lat.is_canonical(calculator().point_group())) {
-          canon_lat = canon_lat.canonical_form(calculator().point_group());
+        if(canonical::check(canon_lat, calculator().point_group())) {
+          canon_lat = canonical::equivalent(canon_lat, calculator().point_group());
         }
         lat_vec.push_back(canon_lat);
       }

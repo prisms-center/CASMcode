@@ -3,10 +3,13 @@
 
 
 #include "casm/crystallography/StrucMapCalculatorInterface.hh"
+#include "casm/crystallography/Adapter.hh"
 
 namespace CASM {
   namespace xtal {
     class SimpleStructure;
+    class SymOp;
+    typedef std::vector<SymOp> SymOpVector;
 
     // In this file:
     struct MappingNode;
@@ -16,7 +19,7 @@ namespace CASM {
     class SimpleStrucMapCalculator : public StrucMapCalculatorInterface {
     public:
       SimpleStrucMapCalculator(SimpleStructure _parent,
-                               std::vector<SymOp> _point_group = {SymOp()},
+                               SymOpVector _point_group = {SymOp::identity()},
                                SimpleStructure::SpeciesMode species_mode = SimpleStructure::SpeciesMode::ATOM,
                                StrucMapping::AllowedSpecies allowed_species = {}) :
         StrucMapCalculatorInterface(std::move(_parent),
@@ -36,6 +39,14 @@ namespace CASM {
           }
         }
         _max_n_va() = m_va_allowed.size();
+      }
+
+      template <typename ExternSymOpVector>
+      SimpleStrucMapCalculator(SimpleStructure _parent,
+                               ExternSymOpVector _point_group = {SymOp::identity()},
+                               SimpleStructure::SpeciesMode species_mode = SimpleStructure::SpeciesMode::ATOM,
+                               StrucMapping::AllowedSpecies allowed_species = {}) :
+        SimpleStrucMapCalculator(_parent, adapter::Adapter<SymOpVector, ExternSymOpVector>()(_point_group), species_mode, allowed_species) {
       }
 
       virtual ~SimpleStrucMapCalculator() {}
@@ -69,7 +80,7 @@ namespace CASM {
 
       /// \brief Make an exact copy of the calculator (including any initialized members)
       virtual StrucMapCalculatorInterface *_quasi_clone(SimpleStructure _parent,
-                                                        std::vector<SymOp> _point_group = {SymOp()},
+                                                        SymOpVector _point_group = {SymOp::identity()},
                                                         SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                                         StrucMapping::AllowedSpecies _allowed_species = {}) const override {
         return new SimpleStrucMapCalculator(std::move(_parent), std::move(_point_group), _species_mode, std::move(_allowed_species));

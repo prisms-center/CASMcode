@@ -7,6 +7,7 @@
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/clex/Supercell.hh"
 
 namespace CASM {
   namespace Monte {
@@ -295,7 +296,7 @@ namespace CASM {
       for(size_type i = 0; i < primclex.composition_axes().components().size(); i++) {
 
         // sample for non-vacancy components
-        if(is_vacancy(primclex.composition_axes().components()[i])) {
+        if(xtal::is_vacancy(primclex.composition_axes().components()[i])) {
           vacancy_index = i;
           break;
         }
@@ -305,7 +306,7 @@ namespace CASM {
       for(size_type i = 0; i < primclex.composition_axes().components().size(); i++) {
 
         // sample for non-vacancy components
-        if(!is_vacancy(primclex.composition_axes().components()[i])) {
+        if(!xtal::is_vacancy(primclex.composition_axes().components()[i])) {
 
           print_name = std::string("atom_frac(") + primclex.composition_axes().components()[i] + ")";
 

@@ -105,17 +105,13 @@ Behind the scenes, this will:
 
 1. Do everything that `build.sh` does (build the c++ libraries and programs).
 2. Execute `make check` to run c++ tests
-3. Run Python tests
 
 Options (beyond those for `build.sh`):
 
 - Set ``CASM_SKIP_CPP_TESTS`` to non-zero length to skip c++ tests.
 - Do ``unset CASM_SKIP_CPP_TESTS`` to re-enable c++ tests.
-- Set ``CASM_SKIP_PYTHON_TESTS`` to non-zero length to skip Python tests.
-- Do ``unset CASM_SKIP_PYTHON_TESTS`` to re-enable Python tests.
 
 See also ``tests/README.md`` for information on writing C++ tests and running select tests.
-See also ``python/casm/README.md`` for information on Python tests.
 
 To clean up test products:
 

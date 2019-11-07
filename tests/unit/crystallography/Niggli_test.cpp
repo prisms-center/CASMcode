@@ -2,6 +2,7 @@
 
 /// What is being tested:
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 
 /// What is being used to test it:
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -104,10 +105,10 @@ namespace CASM {
                     0, 1, 0,
                     0, 0, 1;
 
-      Lattice comparelat = make_supercell(testlat, comp_transmat);
+      Lattice comparelat = make_superlattice(testlat, comp_transmat);
 
-      Lattice nigglicompare = canonical_equivalent_lattice(comparelat, pg, TOL);
-      Lattice nigglitest = canonical_equivalent_lattice(*it, pg, TOL);
+      Lattice nigglicompare = xtal::canonical::equivalent(comparelat, pg, TOL);
+      Lattice nigglitest = xtal::canonical::equivalent(*it, pg, TOL);
 
       EXPECT_TRUE(nigglicompare == nigglitest);
       l++;
@@ -144,19 +145,19 @@ namespace CASM {
 
     Lattice lat_B(lat_mat_B);
 
-    EXPECT_EQ(standard_orientation_compare(lat_mat_A, lat_mat_B, tol), true);
-    EXPECT_EQ(standard_orientation_compare(lat_mat_B, lat_mat_A, tol), false);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_A, lat_mat_B, tol), true);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_B, lat_mat_A, tol), false);
 
-    EXPECT_EQ(standard_orientation_compare(lat_mat_A2, lat_mat_B, tol), true);
-    EXPECT_EQ(standard_orientation_compare(lat_mat_B, lat_mat_A2, tol), false);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_A2, lat_mat_B, tol), true);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_B, lat_mat_A2, tol), false);
 
-    EXPECT_EQ(standard_orientation_compare(lat_mat_A, lat_mat_A2, tol), false);
-    EXPECT_EQ(standard_orientation_compare(lat_mat_A2, lat_mat_A, tol), false);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_A, lat_mat_A2, tol), false);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_A2, lat_mat_A, tol), false);
 
     Structure prim(test::ZrO_prim());
-    Lattice canon_A = canonical_equivalent_lattice(lat_A, prim.point_group(), tol);
-    Lattice canon_A2 = canonical_equivalent_lattice(lat_A2, prim.point_group(), tol);
-    Lattice canon_B = canonical_equivalent_lattice(lat_B, prim.point_group(), tol);
+    Lattice canon_A = xtal::canonical::equivalent(lat_A, prim.point_group(), tol);
+    Lattice canon_A2 = xtal::canonical::equivalent(lat_A2, prim.point_group(), tol);
+    Lattice canon_B = xtal::canonical::equivalent(lat_B, prim.point_group(), tol);
 
     EXPECT_EQ(canon_A == canon_A2, true);
     EXPECT_EQ(canon_A2 == canon_B, true);

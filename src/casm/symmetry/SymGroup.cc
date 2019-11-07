@@ -8,6 +8,7 @@
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
@@ -435,7 +436,20 @@ namespace CASM {
   //*******************************************************************************************
   SymGroup SymGroup::lattice_point_group(Lattice const &_lat) {
 
-    SymGroup point_group(calc_point_group(_lat),&_lat);
+    //TODO
+    //Should an adapter exist for this?
+    //There was talk about making SymGroup not depend on CASM::SymOp,
+    //so when that happens you can just pass it whatever calc_point_group
+    //returns
+
+    auto lattice_point_group = xtal::make_point_group(_lat);
+    std::vector<CASM::SymOp> casted_point_group;
+    for(const auto &op : lattice_point_group) {
+      //The tolerance passed here is totally arbitrary...
+      casted_point_group.emplace_back(get_matrix(op), get_translation(op), get_time_reversal(op), CASM::TOL);
+    }
+
+    SymGroup point_group(casted_point_group, &_lat);
 
 
     if(!point_group.is_group(_lat.tol())) {
@@ -456,7 +470,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  SymGroup::SymGroup(std::vector<SymOp> from_array, Lattice const* _lat_ptr, PERIODICITY_TYPE init_type) :
+  SymGroup::SymGroup(std::vector<SymOp> from_array, Lattice const *_lat_ptr, PERIODICITY_TYPE init_type) :
     m_lat_ptr(_lat_ptr),
     m_group_periodicity(init_type),
     m_max_error(-1) {
@@ -3383,7 +3397,7 @@ namespace CASM {
   //*******************************************************************************************
 
   void SymGroup::print(std::ostream &out, COORD_TYPE mode) const {
-    out << size() << " # " << COORD_MODE::NAME(mode) << " representation of group containing " << size() << " elements:\n\n";
+    out << size() << " # " << xtal::COORD_MODE::NAME(mode) << " representation of group containing " << size() << " elements:\n\n";
     Eigen::Matrix3d c2f_mat(Eigen::Matrix3d::Identity());
     if(mode == FRAC)
       c2f_mat = lattice().inv_lat_column_mat();

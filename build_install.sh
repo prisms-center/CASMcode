@@ -31,4 +31,3 @@ if [[ "$CASM_OS_NAME" == "osx" ]]; then
   install_name_tool -add_rpath "$CASM_PREFIX/lib" "$CASM_PREFIX/bin/ccasm" \
     || { echo "  already set"; }
 fi
-pip install $CASM_BUILD_DIR/python/casm

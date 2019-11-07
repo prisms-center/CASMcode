@@ -108,7 +108,7 @@ namespace CASM {
     auto struc_mol_name = struc_molecule_name(prim());
     m_data->vacancy_allowed = false;
     for(int i = 0; i < struc_mol_name.size(); ++i) {
-      if(is_vacancy(struc_mol_name[i])) {
+      if(xtal::is_vacancy(struc_mol_name[i])) {
         m_data->vacancy_allowed = true;
         m_data->vacancy_index = i;
       }

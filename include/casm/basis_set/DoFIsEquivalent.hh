@@ -8,7 +8,10 @@
 
 namespace CASM {
   class DoFSet;
-  class SymOp;
+
+  namespace xtal {
+    class SymOp;
+  }
 
 
   /// \brief Class for checking equivalence of two DoFSet objects, with respect to symmetry transformations
@@ -30,10 +33,10 @@ namespace CASM {
     bool operator()(DoFSet const &_other) const;
 
     /// returns true if copy_apply(_op,m_dof.basis()) = m_dof.basis()*U
-    bool operator()(SymOp const &_op) const;
+    bool operator()(xtal::SymOp const &_op) const;
 
     /// returns true if copy_apply(_op,m_dof.basis()) = _other.basis()*U
-    bool operator()(SymOp const &_op, DoFSet const &_other) const;
+    bool operator()(xtal::SymOp const &_op, DoFSet const &_other) const;
 
     /// return transformation matrix U calculated during last successful comparison
     Eigen::MatrixXd const &U() const {
@@ -77,10 +80,10 @@ namespace CASM {
     bool operator()(OccDoFType const &_other) const;
 
     /// returns true if copy_apply(_op,m_dof) = P.permute(m_dof)
-    bool operator()(SymOp const &_op) const;
+    bool operator()(xtal::SymOp const &_op) const;
 
     /// returns true if copy_apply(_op,m_dof) =  P.permute(_other)
-    bool operator()(SymOp const &_op, OccDoFType const &_other) const;
+    bool operator()(xtal::SymOp const &_op, OccDoFType const &_other) const;
 
     /// return transformation permutation P calculated during last successful comparison
     Permutation const &perm() const {

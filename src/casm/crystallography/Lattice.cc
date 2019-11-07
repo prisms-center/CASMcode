@@ -1,30 +1,13 @@
-#include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/Lattice_impl.hh"
-#include "casm/misc/algorithm.hh"
-#include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
-
-#include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/crystallography/SuperlatticeEnumerator.hh"
+#include "casm/casm_io/jsonParser.hh"
+#include "casm/container/Counter.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
-#include "casm/symmetry/SymOp.hh"
+#include "casm/misc/algorithm.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
   namespace xtal {
-
-    namespace {
-
-      typedef std::vector<Lattice>::iterator vec_lat_it;
-      typedef std::vector<SymOp>::const_iterator array_symop_cit;
-    }
-
-    template Lattice superdupercell<vec_lat_it, array_symop_cit>(
-      vec_lat_it, vec_lat_it, array_symop_cit, array_symop_cit);
-
-    template std::pair<array_symop_cit, Eigen::Matrix3d> is_supercell<Lattice, array_symop_cit>(
-      const Lattice &, const Lattice &, array_symop_cit, array_symop_cit, double);
-
-    template class LatticeCanonicalForm<Comparisons<CRTPBase<Lattice> > >;
 
     Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
                      Eigen::Ref<const Eigen::Vector3d> const &vec2,
@@ -153,7 +136,7 @@ namespace CASM {
     }
 
     //********************************************************************
-    //Calculate length of lattice vector 'i'
+
     double Lattice::length(Index i) const {
       // Calculates Lengths
       return m_lat_mat.col(i).norm();
@@ -207,7 +190,7 @@ namespace CASM {
     }
 
     //********************************************************************
-    //Gets the reciprocal lattice from the lattice vectors... (AAB)
+
     Lattice Lattice::reciprocal() const {
       /* Old Expression
          return Lattice(2 * M_PI * cross_prod(vecs[1], vecs[2])/vol,
@@ -266,75 +249,6 @@ namespace CASM {
 
       return super_kpoints;
     }
-
-    //********************************************************************
-
-    std::vector<double> Lattice::pg_converge(double large_tol) {
-      std::vector<double> tarray;
-
-      double orig_tol = tol();
-      set_tol(large_tol);
-      std::vector<SymOp> point_group(calc_point_group(*this));
-
-      for(Index i = 0; i < point_group.size(); i++) {
-        tarray.push_back(point_group[i].map_error());
-      }
-      set_tol(orig_tol);
-      return tarray;
-    }
-
-
-
-    //********************************************************************
-
-    void Lattice::pg_converge(double small_tol, double large_tol, double increment) {
-      std::vector<double> tols;
-      std::vector<int> num_ops, num_enforced_ops;
-
-      double orig_tol = tol();
-      for(double i = small_tol; i <= large_tol; i += increment) {
-        tols.push_back(i);
-        set_tol(i);
-        std::vector<SymOp> point_group(calc_point_group(*this));
-        num_ops.push_back(point_group.size());
-        num_enforced_ops.push_back(0);
-        for(SymOp const &op : point_group) {
-          if(op.map_error() > i) {
-            num_enforced_ops.back()++;
-          }
-        }
-      }
-      set_tol(orig_tol);
-
-
-      return;
-    }
-
-    //********************************************************************
-
-    /// \brief Generate super Lattice
-    ///
-    /// Use SupercellEnumerator to enumerate possible HNF transformation matrices. Unique supercells
-    /// are identified by applying point group operations and keeping the supercell if the HNF is 'canonical',
-    /// meaning that the HNF indices in order H00, H11, H22, H12, H02, H01 are the lexicographically greatest.
-    ///
-    /// The supercell that is inserted in the 'supercell' container is the niggli cell, rotated to a
-    /// standard orientation (see standard_orientation function).
-    ///
-    /// See PrimcClex::generate_supercells for information on dims and G.
-    ///
-    void Lattice::generate_supercells(std::vector<Lattice> &supercell,
-                                      const std::vector<SymOp> &effective_pg,
-                                      const ScelEnumProps &enum_props) const {
-
-      SuperlatticeEnumerator enumerator(effective_pg.begin(), effective_pg.end(), *this,  enum_props);
-      supercell.clear();
-      for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-        supercell.push_back(canonical_equivalent_lattice(*it, effective_pg, TOL));
-      }
-      return;
-    }
-
 
     //********************************************************************
     /**This function finds the reduced cell from the given primitive cell.
@@ -571,7 +485,6 @@ namespace CASM {
       return;
     }
 
-    //********************************************************************
     /**
      * This function, given a linearly independent set of lattice vectors, finds the
      * dimensions along the unit cell vectors such that a sphere of given radius
@@ -584,7 +497,7 @@ namespace CASM {
      * remaining lattice vector a1. This will tell us the number of a1 vectors
      * needed to make a grid to encompass the sphere.
      */
-    //********************************************************************
+
     Eigen::Vector3i Lattice::enclose_sphere(double radius) const {
 
       // reciprocal vectors
@@ -601,32 +514,6 @@ namespace CASM {
     }
 
     //********************************************************************
-
-    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist, Eigen::Matrix3d &multimat) const {
-      auto result = is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol());
-      multimat = result.second;
-      return result.first != symoplist.end();
-    }
-
-    //********************************************************************
-
-    bool Lattice::is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat) const {
-      auto result = is_supercell(*this, tile, tol());
-      multimat = result.second;
-      return result.first;
-    }
-
-    //********************************************************************
-
-    bool Lattice::is_supercell_of(const Lattice &tile) const {
-      return is_supercell(*this, tile, tol()).first;
-    }
-
-    //********************************************************************
-
-    bool Lattice::is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symoplist) const {
-      return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), tol()).first != symoplist.end();
-    }
 
     /**
      * A lattice is considered right handed when the
@@ -679,20 +566,10 @@ namespace CASM {
       //you may want to reorient the vectors so that the ab plane is exposed (useful for Structure::stitch)
 
       if(millers == Eigen::Vector3i(0, 1, 0)) {
-        std::cout << "No chopping neccesary" << std::endl;
-        std::cout << "Flipping your vectors to bring a and b into plane:" << std::endl;
-        std::cout << "b --> c" << std::endl;
-        std::cout << "a --> b" << std::endl;
-        std::cout << "c --> a" << std::endl;
         return Lattice(lat_column_mat().col(2), lat_column_mat().col(0), lat_column_mat().col(1), tol());
       }
 
       else if(millers == Eigen::Vector3i(1, 0, 0)) {
-        std::cout << "No chopping neccesary" << std::endl;
-        std::cout << "Flipping your vectors to bring a and b into plane:" << std::endl;
-        std::cout << "a --> c" << std::endl;
-        std::cout << "b --> a" << std::endl;
-        std::cout << "c --> b" << std::endl;
         return Lattice(lat_column_mat().col(1), lat_column_mat().col(2), lat_column_mat().col(0), tol());
       }
 
@@ -739,9 +616,6 @@ namespace CASM {
         inv_miller = scale_to_int(inv_miller_dubs, TOL);
         H_miller_point = inv_miller[(zero + 1) % 3] * lat_column_mat().col((zero + 1) % 3);
         K_miller_point = inv_miller[(zero + 2) % 3] * lat_column_mat().col((zero + 2) % 3);
-
-        std::cout << "inv millers dubs: " << inv_miller_dubs << std::endl;
-        std::cout << "inv millers : " << inv_miller << std::endl;
 
         HK = K_miller_point - H_miller_point;
         surface_cell.col(1) = HK;
@@ -863,7 +737,6 @@ namespace CASM {
         normal = normal / normal[0];
       }
 
-
       else if(fabs(normal[1]) >= fabs(normal[2]) && fabs(normal[1]) >= fabs(normal[0]) && fabs(normal[1]) != 0) {
         normal = normal / normal[1];
       }
@@ -871,12 +744,6 @@ namespace CASM {
       else {
         normal = normal / normal[2];
       }
-
-      std::cout << "New cell vectors a and b have been generated:" << std::endl;
-      std::cout << "Vector A: <" << surface_cell.col(0) << ">" << std::endl;
-      std::cout << "Vector B: <" << surface_cell.col(1) << ">" << std::endl;
-      std::cout << "Gamma :" << (180 / M_PI)*CASM::angle(surface_cell.col(0), surface_cell.col(1)) << "\u00B0" << std::endl << std::endl;
-      std::cout << "Ready to make C..." << std::endl;
 
       Eigen::Vector3d tnormal;
       //orthoscore represents how close the linear combination is to the plane normal. 1 is perfect, 0 is stupid.
@@ -903,24 +770,11 @@ namespace CASM {
         //Only use new linear combination if it's more orthogonal than the previous one
         if(orthoscore > torthoscore + TOL) {
           torthoscore = orthoscore;
-          std::cout << "Attempt No." << factor << " to get third lattice vector:" << std::endl;
-          std::cout << "Combine: " << L_combination[0] << "*a+" << L_combination[1] << "*b+" << L_combination[2] << "*c" << std::endl << std::endl;
-          std::cout << "Cell overview:" << std::endl;
-          std::cout << "Orthogonality score: " << orthoscore << std::endl;
-          std::cout << "Vector A: <" << surface_cell.col(0) << " >" << std::endl;
-          std::cout << "Vector B: <" << surface_cell.col(1) << " >" << std::endl;
-          std::cout << "Vector C: <" << surface_cell.col(2) << " >" << std::endl << std::endl;
-          std::cout << "Alpha :" << (180 / M_PI)*CASM::angle(surface_cell.col(1), surface_cell.col(2)) << "\u00B0" << std::endl << std::endl;
-          std::cout << "Beta :" << (180 / M_PI)*CASM::angle(surface_cell.col(2), surface_cell.col(0)) << "\u00B0" << std::endl << std::endl;
-          std::cout << "Gamma :" << (180 / M_PI)*CASM::angle(surface_cell.col(0), surface_cell.col(1)) << "\u00B0" << std::endl << std::endl << std::endl;
 
           last_surface_cell = surface_cell; //Remember currect generated cell, in case we can't find anything better later
           one_found = true;
 
           new_vol = fabs(surface_cell.col(2).dot(surface_cell.col(0).cross(surface_cell.col(1))));
-
-          std::cout << "Volume: " << new_vol << std::endl;
-          std::cout << "Volume equivalent to " << new_vol / vol() << " primitive volumes" << std::endl << std::endl;
         }
 
         factor++;
@@ -940,12 +794,6 @@ namespace CASM {
 
       Lattice surface_lat(surface_cell.col(0), surface_cell.col(1), surface_cell.col(2));
       surface_lat.make_right_handed();
-      std::vector<SymOp> surf_lat_pg(calc_point_group(surface_lat));
-
-      Eigen::Matrix3d transmat;
-      surface_lat.is_supercell_of(*this, surf_lat_pg, transmat);
-
-      std::cout << "Your conversion matrix was:" << std::endl << transmat << std::endl;
 
       return surface_lat;
     }
@@ -971,92 +819,6 @@ namespace CASM {
       return almost_equal(RHS.lat_column_mat(), lat_column_mat());
     }
 
-
-    //John G 011013
-    //********************************************************************
-    /**
-     * Applies all operations of given SymGroup to the lattice and averages
-     * out the lattice vectors, changing your lattice to perfectly match
-     * with the SymGroup.
-     */
-    //********************************************************************
-
-    Lattice Lattice::symmetrized(const std::vector<SymOp> &_pg) const {
-      Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
-      Eigen::Matrix3d frac_mat;
-      for(Index ng = 0; ng < _pg.size(); ng++) {
-        frac_mat = iround(inv_lat_column_mat() * _pg[ng].matrix() * lat_column_mat()).cast<double>();
-        tLat2 += frac_mat.transpose() * lat_column_mat().transpose() * lat_column_mat() * frac_mat;
-      }
-      tLat2 /= double(_pg.size());
-
-      // tLat2 has the symmetrized lengths and angles -- it is equal to L.transpose()*L, where L=lat_column_mat()
-      // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
-      Eigen::Matrix3d tMat;
-
-      Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-      // tMat is sqrt of symlat.transpose()*symlat
-      tMat = tSVD.matrixU() * tSVD.singularValues().cwiseSqrt().asDiagonal() * tSVD.matrixV().transpose();
-
-      // if starting lattice were perfect, we would have origlat=rotation*tMat
-      tSVD.compute(tMat * inv_lat_column_mat());
-
-      tLat2 = tSVD.matrixV() * tSVD.matrixU().transpose() * tMat;
-
-      return Lattice(tLat2, tol());
-
-    }
-
-    //John G 011013
-    //********************************************************************
-    /**
-     * Applies all operations of given SymGroup to the lattice and averages
-     * out the lattice vectors, changing your lattice to perfectly match
-     * with the SymGroup.
-     */
-    //********************************************************************
-
-    Lattice Lattice::symmetrized(const std::vector<Eigen::Matrix3i> &_pg) const {
-      Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
-
-      for(Eigen::Matrix3i const &frac_mat : _pg) {
-        tLat2 += frac_mat.cast<double>().transpose() * lat_column_mat().transpose() * lat_column_mat() * frac_mat.cast<double>();
-      }
-      tLat2 /= double(_pg.size());
-
-      //std::cout << "symmetrized metric: \n" << tLat2 << "\n";
-
-      // tLat2 has the symmetrized lengths and angles -- it is equal to L.transpose()*L, where L=lat_column_mat()
-      // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
-      Eigen::Matrix3d tMat;
-
-      Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tLat2, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-      // tMat is sqrt of symlat.transpose()*symlat
-      tMat = tSVD.matrixU() * tSVD.singularValues().cwiseSqrt().asDiagonal() * tSVD.matrixV().transpose();
-
-      // if starting lattice were perfect, we would have origlat=rotation*tMat
-      tSVD.compute(tMat * inv_lat_column_mat());
-
-      tLat2 = tSVD.matrixV() * tSVD.matrixU().transpose() * tMat;
-
-      return Lattice(tLat2, tol());
-    }
-
-    //***********************************************************
-    /**
-     * Same as the other symmetrize routine, except this one assumes
-     * that the symmetry group you mean to use is the point group
-     * of your lattice within a certain tolerance.
-     */
-    //***********************************************************
-
-    Lattice Lattice::symmetrized(double sym_tol) const {
-      std::vector<SymOp> point_group = calc_point_group(*this, sym_tol);
-      return symmetrized(point_group);
-    }
-
     //***********************************************************
 
     bool Lattice::is_right_handed() const {
@@ -1069,78 +831,10 @@ namespace CASM {
     }
 
 
-    /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const SymOp &op, Lattice &lat) {
-      return lat = Lattice(op.matrix() * lat.lat_column_mat(), lat.tol());
-    }
-
-    /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const SymOp &op, const Lattice &lat) {
-      return Lattice(op.matrix() * lat.lat_column_mat(), lat.tol());
-    }
-
     //********************************************************************
 
-    std::vector<SymOp> calc_point_group(Lattice const &_lat) {
-      return calc_point_group(_lat, _lat.tol());
-    }
 
-    //********************************************************************
-
-    std::vector<SymOp> calc_point_group(Lattice const &_lat, double tol) {
-      std::vector<Eigen::Matrix3i> point_group;
-      point_group.reserve(48);
-
-      //Enumerate all possible matrices with elements equal to -1, 0, or 1
-      //These represent operations that reorder lattice vectors or replace one
-      //or more lattice vectors with a face or body diagonal.
-
-      //For this algorithm to work, lattice needs to be in reduced form.
-      Lattice tlat_reduced(_lat.reduced_cell());
-      tlat_reduced.set_tol(tol);
-      IsPointGroupOp is_equiv(tlat_reduced);
-      for(Eigen::Matrix3i const &mat : unimodular_matrices()) {
-        if(is_equiv(mat)) {
-          point_group.push_back(mat);
-          /*std::cout
-            << "mat is PG op " << point_group.size() << ":\n" << mat << "\n"
-            << "metric:\n" << tlat_reduced.lat_column_mat().transpose()*tlat_reduced.lat_column_mat() << "\n"
-            << "transformed metric:\n" << mat.cast<double>().transpose()*tlat_reduced.lat_column_mat().transpose()*tlat_reduced.lat_column_mat()*mat.cast<double>() << "\n"
-            << "-----------\n\n";*/
-        }
-      }
-
-      // Find group closure using fractional form (skip for groups sizes that are very unlikely to be unconverged)
-      if(point_group.size() != 48 && point_group.size() != 24) {
-        Eigen::Matrix3i t_op;
-        for(Index i = 0; i < point_group.size(); ++i) {
-          t_op = inverse(point_group[i]);
-          if(!contains(point_group, t_op)) {
-            point_group.push_back(t_op);
-          }
-          for(Index j = i; j < point_group.size(); ++j) {
-            t_op = point_group[i] * point_group[j];
-            if(!contains(point_group, t_op)) {
-              point_group.push_back(t_op);
-            }
-          }
-        }
-      }
-
-      std::vector<SymOp> result;
-      result.reserve(point_group.size());
-      Eigen::Matrix3d t_cart, t_diff;
-      Lattice symlat = tlat_reduced.symmetrized(point_group);
-      //std::cout << "Symmetrized lattice is\n " << symlat.lat_column_mat() << "\n";
-      for(Eigen::Matrix3i const &frac : point_group) {
-        t_cart = symlat.lat_column_mat() * frac.cast<double>() * symlat.inv_lat_column_mat();
-        t_diff = t_cart * _lat.lat_column_mat() - _lat.lat_column_mat();
-        result.push_back(SymOp::point_op(t_cart, sqrt((t_diff.transpose()*t_diff).diagonal().maxCoeff())));
-      }
-      return result;
-    }
-
-    ///\brief returns Lattice that is smallest possible supercell of both input Lattice
+    ///\brief returns Lattice that is smallest possible superlattice of both input Lattice
     ///
     //*******************************************************************************************
     //
@@ -1149,7 +843,7 @@ namespace CASM {
     //        L_{sd} = L_1 * N_1 = L_2 * N_2,     (*1*)
     //  where N_1 and N_2 are integer matrices such that Eq.(*1*) is satisfied and det(N_1) and det(N_2) are minimized.
     //
-    //  It is assumed that L_1 = L * M_1 and L_2 = L * M_2  (i.e., L_1 and L_2 are supercells of PRIM lattice L having
+    //  It is assumed that L_1 = L * M_1 and L_2 = L * M_2  (i.e., L_1 and L_2 are superlattices of PRIM lattice L having
     //  integer transformation matrices M_1 and M_2, respectively).
     //
     //  Algorithm proceeds by noting inv(L_2)*L_1 = N_2*inv(N_1) = inv(M_2)*inv(M_1) = A/n, where A is an integer matrix and n = det(M_2). Assuming that
@@ -1163,7 +857,7 @@ namespace CASM {
     //  The resulting solution will have det(M_1*N_1)>=lcm(det(M_1),det(M_2))
     //
     //*******************************************************************************************
-    Lattice superdupercell(const Lattice &lat1, const Lattice &lat2) {
+    Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2) {
 
       Eigen::Matrix3d dA(lat2.inv_lat_column_mat()*lat1.lat_column_mat());
       long N = 1, num, denom;
@@ -1193,10 +887,10 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
+    /// Check if scel is a superlattice of unitcell unit and some integer transformation matrix T
     // First, find unit*Matrix3i approximation of 'scel', then check if reconstructing 'unit' from this approximation
     // results in residual vectors less than length 'tol'
-    std::pair<bool, Eigen::Matrix3d> is_supercell(const Lattice &scel, const Lattice &unit, double tol) {
+    std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol) {
       // check scel = unit*T, with integer T
       std::pair<bool, Eigen::Matrix3d> result(std::make_pair(true, unit.inv_lat_column_mat() * scel.lat_column_mat()));
 
@@ -1240,7 +934,7 @@ namespace CASM {
   }
 
   // write Lattice in json as array of vectors
-  jsonParser &to_json(const Lattice &lat, jsonParser &json) {
+  jsonParser &to_json(const xtal::Lattice &lat, jsonParser &json) {
     json.put_array();
     json.push_back(lat[0]);
     json.push_back(lat[1]);
@@ -1249,9 +943,9 @@ namespace CASM {
   }
 
   // read Lattice from a json array of Eigen::Vector3d
-  void from_json(Lattice &lat, const jsonParser &json, double xtal_tol) {
+  void from_json(xtal::Lattice &lat, const jsonParser &json, double xtal_tol) {
     try {
-      lat = Lattice(
+      lat = xtal::Lattice(
               json[0].get<Eigen::Vector3d >(),
               json[1].get<Eigen::Vector3d >(),
               json[2].get<Eigen::Vector3d >(),

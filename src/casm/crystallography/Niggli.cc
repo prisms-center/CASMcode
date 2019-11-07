@@ -1,9 +1,8 @@
 #include "casm/crystallography/Niggli.hh"
-#include <set>
-#include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/CASM_math.hh"
+#include <set>
 
 namespace CASM {
   namespace xtal {
@@ -39,7 +38,6 @@ namespace CASM {
       }
 
       return result;
-
     }
 
     std::vector<Eigen::Matrix3d> const &NiggliRep::cell_invariant_transforms() {
@@ -47,14 +45,12 @@ namespace CASM {
       return result;
     }
 
-    NiggliRep::NiggliRep(const Eigen::Matrix3d &init_lat_col_mat):
-      m_metrical_matrix(init_lat_col_mat.transpose() * init_lat_col_mat),
-      m_scale_factor(cuberoot(init_lat_col_mat.determinant()))	{
+    NiggliRep::NiggliRep(const Eigen::Matrix3d &init_lat_col_mat)
+      : m_metrical_matrix(init_lat_col_mat.transpose() * init_lat_col_mat),
+        m_scale_factor(cuberoot(init_lat_col_mat.determinant())) {
     }
 
-    NiggliRep::NiggliRep(const Lattice &init_lat):
-      NiggliRep(init_lat.lat_column_mat()) {
-    }
+    NiggliRep::NiggliRep(const Lattice &init_lat) : NiggliRep(init_lat.lat_column_mat()) {}
 
     double NiggliRep::A() const {
       return m_metrical_matrix(0, 0);
@@ -87,12 +83,12 @@ namespace CASM {
     bool NiggliRep::meets_criteria_1(double compare_tol) const {
       bool does_meet = true;
       compare_tol = m_scale_factor * compare_tol;
-      //For niggli you need A<=B
+      // For niggli you need A<=B
       if(CASM::compare(B(), A(), compare_tol)) {
         does_meet = false;
       }
 
-      //If A==B, then niggli requires |ksi|<=|eta|
+      // If A==B, then niggli requires |ksi|<=|eta|
       else if(almost_equal(A(), B(), compare_tol) && compare(std::abs(eta()), std::abs(ksi()), compare_tol)) {
         does_meet = false;
       }
@@ -104,12 +100,12 @@ namespace CASM {
       bool does_meet = true;
 
       compare_tol = m_scale_factor * compare_tol;
-      //For niggli you need B<=C
+      // For niggli you need B<=C
       if(compare(C(), B(), compare_tol)) {
         does_meet = false;
       }
 
-      //If B==C, then niggli requires |eta|<=|zeta|
+      // If B==C, then niggli requires |eta|<=|zeta|
       else if(almost_equal(B(), C(), compare_tol) && compare(std::abs(zeta()), std::abs(eta()), compare_tol)) {
         does_meet = false;
       }
@@ -120,7 +116,7 @@ namespace CASM {
     bool NiggliRep::meets_criteria_3(double compare_tol) const {
       compare_tol = m_scale_factor * compare_tol;
       bool does_meet = false;
-      //For type one niggli cells, the angles are all less than 90 degrees
+      // For type one niggli cells, the angles are all less than 90 degrees
       if(compare(0.0, ksi(), compare_tol) && compare(0.0, eta(), compare_tol) && compare(0.0, zeta(), compare_tol)) {
         does_meet = true;
       }
@@ -131,7 +127,7 @@ namespace CASM {
     bool NiggliRep::meets_criteria_4(double compare_tol) const {
       compare_tol = m_scale_factor * compare_tol;
       bool does_meet = false;
-      //For type two niggli cells, the angles are all more than or equal to 90 degrees
+      // For type two niggli cells, the angles are all more than or equal to 90 degrees
       if(!compare(0.0, ksi(), compare_tol) && !compare(0.0, eta(), compare_tol) && !compare(0.0, zeta(), compare_tol)) {
         does_meet = true;
       }
@@ -143,17 +139,17 @@ namespace CASM {
       compare_tol = m_scale_factor * compare_tol;
       bool does_meet = true;
 
-      //For niggli you need |ksi|<=B
+      // For niggli you need |ksi|<=B
       if(compare(B(), std::abs(ksi()), compare_tol)) {
         does_meet = false;
       }
 
-      //If ksi==B, then niggli requires zeta<=2*eta
+      // If ksi==B, then niggli requires zeta<=2*eta
       else if(almost_equal(ksi(), B(), compare_tol) && compare(2 * eta(), zeta(), compare_tol)) {
       }
 
-      //If ksi==-B, then niggli requires zeta==0
-      else if(almost_equal(ksi(), (-1)*B(), compare_tol) && !almost_zero(zeta(), compare_tol)) {
+      // If ksi==-B, then niggli requires zeta==0
+      else if(almost_equal(ksi(), (-1) * B(), compare_tol) && !almost_zero(zeta(), compare_tol)) {
         does_meet = false;
       }
 
@@ -164,18 +160,18 @@ namespace CASM {
       compare_tol = m_scale_factor * compare_tol;
       bool does_meet = true;
 
-      //For niggli you need |eta|<=A
+      // For niggli you need |eta|<=A
       if(compare(A(), std::abs(eta()), compare_tol)) {
         does_meet = false;
       }
 
-      //If ksi==A, then niggli requires zeta<=2*ksi
+      // If ksi==A, then niggli requires zeta<=2*ksi
       else if(almost_equal(eta(), A(), compare_tol) && compare(2 * ksi(), zeta(), compare_tol)) {
         does_meet = false;
       }
 
-      //If ksi==-A, then niggli requires zeta==0
-      else if(almost_equal(eta(), (-1)*A(), compare_tol) && !almost_zero(zeta(), compare_tol)) {
+      // If ksi==-A, then niggli requires zeta==0
+      else if(almost_equal(eta(), (-1) * A(), compare_tol) && !almost_zero(zeta(), compare_tol)) {
         does_meet = false;
       }
 
@@ -186,18 +182,18 @@ namespace CASM {
       compare_tol = m_scale_factor * compare_tol;
       bool does_meet = true;
 
-      //For niggli you need |zeta|<=A
+      // For niggli you need |zeta|<=A
       if(compare(A(), std::abs(zeta()), compare_tol)) {
         does_meet = false;
       }
 
-      //If zeta==A, then you need eta<=2*ksi
+      // If zeta==A, then you need eta<=2*ksi
       else if(almost_equal(zeta(), A(), compare_tol) && compare(2 * ksi(), eta(), compare_tol)) {
         does_meet = false;
       }
 
-      //If zeta==-A, then you need eta==0
-      else if(almost_equal(zeta(), (-1)*A(), compare_tol) && !almost_zero(eta(), compare_tol)) {
+      // If zeta==-A, then you need eta==0
+      else if(almost_equal(zeta(), (-1) * A(), compare_tol) && !almost_zero(eta(), compare_tol)) {
         does_meet = false;
       }
 
@@ -210,12 +206,12 @@ namespace CASM {
 
       double clobber = A() + B() + C() + ksi() + eta() + zeta();
 
-      //For niggli you need C<=A+B+C+ksi+eta+zeta
+      // For niggli you need C<=A+B+C+ksi+eta+zeta
       if(compare(clobber, C(), compare_tol)) {
         does_meet = false;
       }
 
-      //If C==A+B+C+ksi+eta+zeta, then 2*A+2*eta+zeta<=0
+      // If C==A+B+C+ksi+eta+zeta, then 2*A+2*eta+zeta<=0
       else if(almost_equal(clobber, C(), compare_tol) && compare(0.0, 2 * A() + 2 * eta() + zeta(), compare_tol)) {
         does_meet = false;
       }
@@ -233,13 +229,9 @@ namespace CASM {
 
     bool NiggliRep::is_niggli(double compare_tol) const {
       bool totally_niggli = false;
-      if(meets_criteria_1(compare_tol) &&
-         meets_criteria_2(compare_tol) &&
-         (meets_criteria_3(compare_tol) != meets_criteria_4(compare_tol)) &&
-         meets_criteria_5(compare_tol) &&
-         meets_criteria_6(compare_tol) &&
-         meets_criteria_7(compare_tol) &&
-         meets_criteria_8(compare_tol)) {
+      if(meets_criteria_1(compare_tol) && meets_criteria_2(compare_tol) &&
+         (meets_criteria_3(compare_tol) != meets_criteria_4(compare_tol)) && meets_criteria_5(compare_tol) &&
+         meets_criteria_6(compare_tol) && meets_criteria_7(compare_tol) && meets_criteria_8(compare_tol)) {
         totally_niggli = true;
       }
 
@@ -247,31 +239,20 @@ namespace CASM {
     }
 
     void NiggliRep::debug_criteria(double compare_tol) const {
-      std::cout << meets_criteria_1(compare_tol) <<
-                meets_criteria_2(compare_tol) <<
-                meets_criteria_3(compare_tol) <<
-                meets_criteria_4(compare_tol) <<
-                meets_criteria_5(compare_tol) <<
-                meets_criteria_6(compare_tol) <<
-                meets_criteria_7(compare_tol) <<
-                meets_criteria_8(compare_tol) << std::endl;
+      std::cout << meets_criteria_1(compare_tol) << meets_criteria_2(compare_tol) << meets_criteria_3(compare_tol)
+                << meets_criteria_4(compare_tol) << meets_criteria_5(compare_tol) << meets_criteria_6(compare_tol)
+                << meets_criteria_7(compare_tol) << meets_criteria_8(compare_tol) << std::endl;
 
-      std::cout << A() << " " << B() << " " << C() << " "
-                << ksi() << " " << eta() << " " << zeta() << std::endl;
+      std::cout << A() << " " << B() << " " << C() << " " << ksi() << " " << eta() << " " << zeta() << std::endl;
 
       return;
     }
 
     Index NiggliRep::niggli_index(double compare_tol) const {
-      return
-        Index(meets_criteria_1(compare_tol))
-        + Index(meets_criteria_2(compare_tol))
-        + Index(meets_criteria_3(compare_tol)
-                || meets_criteria_4(compare_tol))
-        + Index(meets_criteria_5(compare_tol))
-        + Index(meets_criteria_6(compare_tol))
-        + Index(meets_criteria_7(compare_tol))
-        + Index(meets_criteria_8(compare_tol));
+      return Index(meets_criteria_1(compare_tol)) + Index(meets_criteria_2(compare_tol)) +
+             Index(meets_criteria_3(compare_tol) || meets_criteria_4(compare_tol)) +
+             Index(meets_criteria_5(compare_tol)) + Index(meets_criteria_6(compare_tol)) +
+             Index(meets_criteria_7(compare_tol)) + Index(meets_criteria_8(compare_tol));
     }
 
     Index niggli_index(const Eigen::Matrix3d &test_lat_mat, double compare_tol) {
@@ -281,7 +262,7 @@ namespace CASM {
     bool is_niggli(const Eigen::Matrix3d &test_lat_mat, double compare_tol) {
       NiggliRep ntest(test_lat_mat);
 
-      //ntest.debug_criteria(compare_tol);
+      // ntest.debug_criteria(compare_tol);
       return ntest.is_niggli(compare_tol);
     }
 
@@ -290,7 +271,8 @@ namespace CASM {
     }
 
     // Helper function, declared only in this file. Returns all niggli cells of 'in_lat'
-    std::set<Eigen::Matrix3d, StandardOrientationCompare> _niggli_set(const Lattice &in_lat, double compare_tol, bool keep_handedness) {
+    std::set<Eigen::Matrix3d, StandardOrientationCompare>
+    _niggli_set(const Lattice &in_lat, double compare_tol, bool keep_handedness) {
       Lattice reduced_in = in_lat.reduced_cell();
 
       if(!keep_handedness) {
@@ -336,64 +318,6 @@ namespace CASM {
         throw std::runtime_error("In niggli(), did not find any lattices matching niggli criteria!");
       }
       return Lattice(*lat_set.rbegin(), in_lat.tol());
-
-    }
-
-    /**
-     * Return a canonical Lattice by first converting the
-     * given Lattice into the standard Niggli form,
-     * followed by applying the point group of the Lattice
-     * so that the one oriented in the most standard manner
-     * is selected.
-     */
-
-    Lattice canonical_equivalent_lattice(const Lattice &in_lat, const std::vector<SymOp> &point_grp, double compare_tol) {
-      return _canonical_equivalent_lattice(in_lat, point_grp, compare_tol).first;
-    }
-
-    /// Return canonical equivalent lattice, and 'to_canonical' SymOp
-    ///
-    /// The 'to_canonical' SymOp, to_canonical_op, satisfies:
-    ///   canonical_lat == niggli(to_canonical_op.matrix() * ref_lat.lat_column_mat())
-    /// to within the specified tolerance.
-    ///   where ref_lat = niggli(in_lat, compare_tol, false)
-    ///
-    std::pair<Lattice, SymOp> _canonical_equivalent_lattice(
-      const Lattice &in_lat,
-      const std::vector<SymOp> &point_grp,
-      double compare_tol) {
-
-      auto lat_set = _niggli_set(in_lat, compare_tol, true);
-      if(lat_set.empty())
-        throw std::runtime_error("In _canonical_equivalent_lattice(), did not find any niggli representations of provided lattice.");
-      bool first = true;
-      Eigen::Matrix3d most_canonical_lat_mat, trans_lat_mat;
-      auto to_canonical = point_grp.begin();
-
-      // The niggli cell is based purely on the metric tensor, and so is invariant cartesian rotation
-      // (i.e., the niggli cell uniquely orders lattice parameters and angles but does not uniquely specify orientation)
-      // We find all niggli representations for 'in_lat', and then loop over point group operations.
-      // For each point group operation, reorient all the niggli representations, keeping track of
-      // which orientation is 'most' canonical, according to casm standard orientation
-      for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
-        //Skip operations that change the handedness of the lattice
-        if(it->matrix().determinant() <= 0.0) {
-          continue;
-        }
-
-        for(Eigen::MatrixXd const &lat_mat : lat_set) {
-          trans_lat_mat = it->matrix() * lat_mat;
-          assert(is_niggli(lat_mat, compare_tol) && "Result of 'niggli()' is not a Niggli cell");
-
-          if(first || standard_orientation_compare(most_canonical_lat_mat, trans_lat_mat, compare_tol)) {
-            first = false;
-            most_canonical_lat_mat = trans_lat_mat;
-            to_canonical = it;
-          }
-        }
-      }
-
-      return std::make_pair(Lattice(most_canonical_lat_mat, in_lat.tol()), *to_canonical);
     }
 
     /**
@@ -411,8 +335,8 @@ namespace CASM {
      */
 
     Eigen::VectorXd spatial_unroll(const Eigen::Matrix3d &lat_mat, double compare_tol) {
-      //We want to give a preference to lattices with more positive values than negative ones
-      //Count how many non-negative entries there are
+      // We want to give a preference to lattices with more positive values than negative ones
+      // Count how many non-negative entries there are
       int non_negatives = 0;
       for(int i = 0; i < 3; i++) {
         for(int j = 0; j < 3; j++) {
@@ -422,33 +346,23 @@ namespace CASM {
         }
       }
 
-
       Eigen::VectorXd lat_spatial_descriptor(16);
 
       lat_spatial_descriptor <<
-                             //Favor positive values
+                             // Favor positive values
                              non_negatives,
 
-                             //Favor large diagonal values
-                             lat_mat(0, 0),
-                             lat_mat(1, 1),
-                             lat_mat(2, 2),
+                             // Favor large diagonal values
+                             lat_mat(0, 0), lat_mat(1, 1), lat_mat(2, 2),
 
-                             //Favor small off diagonal values
-                             -std::abs(lat_mat(2, 1)),
-                             -std::abs(lat_mat(2, 0)),
-                             -std::abs(lat_mat(1, 0)),
-                             -std::abs(lat_mat(1, 2)),
-                             -std::abs(lat_mat(0, 2)),
-                             -std::abs(lat_mat(0, 1)),
+                             // Favor small off diagonal values
+                             -std::abs(lat_mat(2, 1)), -std::abs(lat_mat(2, 0)), -std::abs(lat_mat(1, 0)), -std::abs(lat_mat(1, 2)),
+                             -std::abs(lat_mat(0, 2)), -std::abs(lat_mat(0, 1)),
 
-                             //Favor upper triangular
-                             float_sgn(lat_mat(2, 1), compare_tol),
-                             float_sgn(lat_mat(2, 0), compare_tol),
-                             float_sgn(lat_mat(1, 0), compare_tol),
-                             float_sgn(lat_mat(1, 2), compare_tol),
-                             float_sgn(lat_mat(0, 2), compare_tol),
-                             float_sgn(lat_mat(0, 1), compare_tol);
+                             // Favor upper triangular
+                             float_sgn(lat_mat(2, 1), compare_tol), float_sgn(lat_mat(2, 0), compare_tol),
+                             float_sgn(lat_mat(1, 0), compare_tol), float_sgn(lat_mat(1, 2), compare_tol),
+                             float_sgn(lat_mat(0, 2), compare_tol), float_sgn(lat_mat(0, 1), compare_tol);
 
       return lat_spatial_descriptor;
     }
@@ -461,7 +375,9 @@ namespace CASM {
      * has a more standard spatial orientation.
      */
 
-    bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
+    bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat,
+                                              const Eigen::Matrix3d &high_score_lat_mat,
+                                              double compare_tol) {
       Eigen::VectorXd low_score_lat_unroll = spatial_unroll(low_score_lat_mat, compare_tol);
       Eigen::VectorXd high_score_lat_unroll = spatial_unroll(high_score_lat_mat, compare_tol);
 
@@ -482,27 +398,34 @@ namespace CASM {
      * has a more standard orientation.
      */
 
-    bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
+    bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat,
+                                      const Eigen::Matrix3d &high_score_lat_mat,
+                                      double compare_tol) {
       bool low_score_is_symmetric = Eigen::is_symmetric(low_score_lat_mat, compare_tol);
       bool low_score_is_bisymmetric = Eigen::is_bisymmetric(low_score_lat_mat, compare_tol);
 
       bool high_score_is_symmetric = Eigen::is_symmetric(high_score_lat_mat, compare_tol);
       bool high_score_is_bisymmetric = Eigen::is_bisymmetric(high_score_lat_mat, compare_tol);
 
-      //The high_score is less symmetric than the low score, therefore high<low
-      if((low_score_is_bisymmetric && !high_score_is_bisymmetric) || (low_score_is_symmetric && !high_score_is_symmetric)) {
+      // The high_score is less symmetric than the low score, therefore high<low
+      if((low_score_is_bisymmetric && !high_score_is_bisymmetric) ||
+         (low_score_is_symmetric && !high_score_is_symmetric)) {
         return false;
       }
 
-      //The high_score is more symmetric than the low_score, therefore high>low automatically (matrix symmetry trumps spatial orientation)
-      else if((!low_score_is_bisymmetric && high_score_is_bisymmetric) || (!low_score_is_symmetric && high_score_is_symmetric)) {
+      // The high_score is more symmetric than the low_score, therefore high>low automatically (matrix symmetry trumps
+      // spatial orientation)
+      else if((!low_score_is_bisymmetric && high_score_is_bisymmetric) ||
+              (!low_score_is_symmetric && high_score_is_symmetric)) {
         return true;
       }
 
-      //If you made it here then the high_score and the low_score have the same symmetry level, so we check for the spatial orientation
+      // If you made it here then the high_score and the low_score have the same symmetry level, so we check for the
+      // spatial orientation
       else {
         return standard_orientation_spatial_compare(low_score_lat_mat, high_score_lat_mat, compare_tol);
       }
     }
-  }
-}
+
+  } // namespace xtal
+} // namespace CASM

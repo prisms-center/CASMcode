@@ -177,7 +177,7 @@ namespace CASM {
         return translation_permutations()[i];
       }
 
-      SymOp sym_op(Index l) const;
+      CASM::SymOp sym_op(Index l) const;
     };
 
     /** @} */

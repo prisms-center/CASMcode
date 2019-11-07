@@ -16,6 +16,7 @@
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
+#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
   namespace xtal {
@@ -355,8 +356,8 @@ namespace CASM {
     };
 
     //==============================================================================================
-    SymOp PrimGrid::sym_op(Index l) const {
-      return SymOp::translation(scel_coord(l).cart());
+    CASM::SymOp PrimGrid::sym_op(Index l) const {
+      return CASM::SymOp::translation(scel_coord(l).cart());
     }
   }
 }

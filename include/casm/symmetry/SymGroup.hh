@@ -14,7 +14,7 @@ namespace CASM {
     class Lattice;
   }
 
-  using namespace xtal;
+  using xtal::Lattice;
 
   class SymGroup;
   class MasterSymGroup;

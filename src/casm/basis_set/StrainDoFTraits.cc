@@ -1,7 +1,7 @@
-#include "casm/symmetry/SymOp.hh"
 #include "casm/basis_set/StrainDoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/basis_set/BasisSet.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Site.hh"
@@ -17,9 +17,9 @@ namespace CASM {
   namespace DoF_impl {
 
     /// \brief Generate a symmetry representation for the supporting vector space
-    Eigen::MatrixXd StrainDoFTraits::symop_to_matrix(SymOp const &op) const {
+    Eigen::MatrixXd StrainDoFTraits::symop_to_matrix(xtal::SymOp const &op) const {
       Eigen::MatrixXd result(6, 6);
-      auto const &S = op.matrix();
+      auto const &S = get_matrix(op);
       result <<
              S(0, 0)*S(0, 0), S(0, 1)*S(0, 1), S(0, 2)*S(0, 2), sqrt(2)*S(0, 1)*S(0, 2), sqrt(2)*S(0, 2)*S(0, 0), sqrt(2)*S(0, 0)*S(0, 1),
              S(1, 0)*S(1, 0), S(1, 1)*S(1, 1), S(1, 2)*S(1, 2), sqrt(2)*S(1, 1)*S(1, 2), sqrt(2)*S(1, 2)*S(1, 0), sqrt(2)*S(1, 0)*S(1, 1),

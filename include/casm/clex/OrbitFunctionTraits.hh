@@ -15,7 +15,8 @@ namespace CASM {
     class UnitCellCoord;
     class Structure;
   }
-  using namespace xtal;
+  using xtal::UnitCellCoord;
+  using xtal::Structure;
 
   class BasisSet;
   class SymGroup;

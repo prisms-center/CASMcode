@@ -7,16 +7,9 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/OrbitDecl.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Structure.hh"
 
 namespace CASM {
-  namespace xtal {
-    class UnitCell;
-    class Coordinate;
-  }
-  using namespace xtal;
 
   /* -- SymCompare Declarations --------------------------- */
 

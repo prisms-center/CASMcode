@@ -1,7 +1,9 @@
 CASM C++ tests
 ==========
 
-`CASM` uses the [boost unit test framework](http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/index.html) for C++ testing.
+`CASM` uses the [googletest](https://github.com/google/googletest/blob/master/googletest/docs/primer.md) testing framework for C++ testing.
+
+Selecting tests: https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#selecting-tests
 
 
 Writing Tests
@@ -59,15 +61,16 @@ Options:
 - Add a file named `'skip_TestCase'` to skip the `TestCase` class in that directory.
 
 
-Run particular test categories
----------------------------------------
-- To run particular C++ test categories, set the ``CASM_TESTS`` environment variable
+Run particular test programs
+----------------------------
+- CASM tests are grouped into separate test programs for different CASM components
+- To run a particular C++ test program, set the ``CASM_TESTS`` environment variable
 
 From ``CASMcode`` directory:
 
 ```
-$ TEST1=tests/unit/App/run_test_App
-$ TEST2=tests/unit/clex/run_test_clex
+$ TEST1=casm_unit_crystallography
+$ TEST2=casm_unit_symmetry
   ...
 $ export CASM_TESTS="$TEST1 $TEST2 ..."
 $ bash build_test.sh
@@ -77,24 +80,16 @@ Run particular test cases
 -------------------------
 
 - To customize the options given to the test programs, for instance to run only particular test suites or test cases, set the ``CASM_TEST_FLAGS`` environment variable.
-- For more options see [docs](http://www.boost.org/doc/libs/1_42_0/libs/test/doc/html/utf/user-guide/runtime-config/run-by-name.html)
- 
+- For more options see [selecting tests](https://github.com/google/googletest/blob/master/googletest/docs/primer.md)
+
+
 From ``CASMcode`` directory:
 
 ```
-$ export CASM_TESTS="tests/unit/clex/run_test_clex"
-$ CASM_TEST_FLAGS="--run_test=ScelEnumEquivalentsTest/Test2 "
-$ CASM_TEST_FLAGS+="--log_level=test_suite "
-$ CASM_TEST_FLAGS+="--catch_system_errors=no "
-$ export CASM_TEST_FLAGS
-$ 
+$ export CASM_TESTS="casm_test_crystallography "
+$ export CASM_TEST_FLAGS="--gtest_filter=CoordinateTest.* --gtest_color=yes "
+$
 $ bash build_test.sh
-```
-
-The default ``CASM_TEST_FLAGS`` are:
-
-```
-$ CASM_TEST_FLAGS="--log_level=test_suite --catch_system_errors=no"
 ```
 
 Clean test output

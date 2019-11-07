@@ -7,8 +7,11 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
+
+  using xtal::Coordinate;
 
   /// \brief Construct the subgroup that leaves an element unchanged
   ///
@@ -115,7 +118,7 @@ namespace CASM {
       auto test = sym_compare.prepare(copy_apply(it.sym_op(), e));
       if(sym_compare.equal(test, e)) {
         coord.cart() = sym_compare.spatial_transform().integral_tau();
-        auto trans_it = scel.sym_info().permute_it(0, make_unitcell(coord));
+        auto trans_it = scel.sym_info().permute_it(0, xtal::make_unitcell(coord));
         result.push_back(trans_it * it);
       }
       ++it;

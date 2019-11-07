@@ -12,7 +12,7 @@
 #include "casm/basis_set/DoFSet.hh"
 
 namespace CASM {
-  class MasterSymGroup;
+  class SymOp;
   namespace xtal {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,7 +48,7 @@ namespace CASM {
 
 
       /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
-      bool _is_lattice_pg_op(SymOp const &_op) const;
+      bool _is_lattice_pg_op(CASM::SymOp const &_op) const;
 
       /// \brief Returns true if structure has attributes affected by time reversal
       // private for now, expose if necessary
@@ -134,12 +134,13 @@ namespace CASM {
       void copy_attributes_from(const BasicStructure &RHS);
       //virtual void copy_attributes_from(const BasicStructure &RHS); <---- should be virtual, but will have to use some sort of visitor pattern to make work
 
-      // update does reset() first, and then calls set_site_internals
+      //TODO: update just calls set_site_internals? what does that even mean?
       void update();
 
       // clears site_internals and does within()
       virtual void reset();
 
+      //TODO: what does this mean? should it be private? Should set_basis call this at the end?
       /// Associate each site with its basis index by setting its internal flags (asym_ind -> -1)
       void set_site_internals();
 
@@ -181,15 +182,9 @@ namespace CASM {
         return SymGroupRepID();
       }
 
-
       void generate_factor_group(SymGroup &factor_group) const;
       void generate_factor_group_slow(SymGroup &factor_group) const;
       void _generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_point_group, bool time_reversal_enabled = true) const;
-      void fg_converge(double small_tol, double large_tol, double increment);
-      void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
-
-      void symmetrize(const SymGroup &relaxed_factors);
-      void symmetrize(const double &tolerance);
 
 
       /// Returns true if the structure describes a crystal primitive cell
@@ -226,8 +221,8 @@ namespace CASM {
       //void from_json(const jsonParser &json);
     };
 
-    template<typename CoordType>
-    BasicStructure<CoordType> operator*(const SymOp &LHS, const BasicStructure<CoordType> &RHS);
+    /* template<typename CoordType> */
+    /* BasicStructure<CoordType> operator*(const CASM::SymOp &LHS, const BasicStructure<CoordType> &RHS); */
 
     template<typename CoordType>
     BasicStructure<CoordType> operator*(const Lattice &LHS, const BasicStructure<CoordType> &RHS);
@@ -240,10 +235,10 @@ namespace CASM {
     BasicStructure<CoordType> operator+(const BasicStructure<CoordType> &LHS, const Coordinate &RHS);
 
     template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc);
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc);
 
     template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol);
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol);
 
     //template<typename CoordType>
     //jsonParser &to_json(const BasicStructure<CoordType> &basic, jsonParser &json);

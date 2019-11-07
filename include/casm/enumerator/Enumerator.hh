@@ -29,7 +29,9 @@ namespace CASM {
     class Lattice;
     class SuperlatticeEnumerator;
   }
-  using namespace xtal;
+  using xtal::ScelEnumProps;
+  using xtal::Lattice;
+  using xtal::SuperlatticeEnumerator;
 
 
   /** \defgroup Enumerator

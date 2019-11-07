@@ -19,7 +19,14 @@ namespace CASM {
     template<typename T> class BasicStructure;
     class Site;
     class Structure;
+    class Coordinate;
+    class UnitCellCoord;
   }
+  using xtal::BasicStructure;
+  using xtal::Site;
+  using xtal::Structure;
+  using xtal::Coordinate;
+  using xtal::UnitCellCoord;
 
   template<typename T, typename U> class ConfigIterator;
   class PermuteIterator;
@@ -28,8 +35,6 @@ namespace CASM {
   class ConfigDoF;
   class Configuration;
   class SuperNeighborList;
-
-  using namespace xtal;
 
   namespace DB {
     template<typename T> class DatabaseIterator;

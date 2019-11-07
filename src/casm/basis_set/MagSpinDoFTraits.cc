@@ -1,7 +1,7 @@
 #include "casm/basis_set/MagSpinDoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/symmetry/SymOp.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
@@ -11,9 +11,10 @@
 namespace CASM {
   namespace DoF_impl {
     /// \brief Generate a symmetry representation for the supporting vector space
-    Eigen::MatrixXd MagSpinDoFTraits::symop_to_matrix(SymOp const &op) const {
+    Eigen::MatrixXd MagSpinDoFTraits::symop_to_matrix(xtal::SymOp const &op) const {
       //std::cout << "Getting magspin symrep, time_reversal() is " << op.time_reversal() << "\n";
-      return ((op.time_reversal() ? -1 : 1) * op.matrix().determinant()) * op.matrix();
+      auto op_matrix = get_matrix(op);
+      return ((get_time_reversal(op) ? -1 : 1) * op_matrix.determinant()) * op_matrix;
     }
 
     /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site

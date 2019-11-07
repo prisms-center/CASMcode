@@ -337,4 +337,69 @@ namespace CASM {
     }
   }
 
+  Eigen::Matrix3i make_unit_cell(const PrimClex &primclex, const jsonParser &input) {
+
+    // read generating matrix (unit cell)
+    Eigen::Matrix3i generating_matrix;
+    if(input.is_null() || !input.contains("unit_cell")) {
+      generating_matrix = Eigen::Matrix3i::Identity();
+    }
+    else if(input["unit_cell"].is_array()) {
+      from_json(generating_matrix, input["unit_cell"]);
+    }
+    else if(input["unit_cell"].is_string()) {
+      generating_matrix = primclex.db<Supercell>().find(input["unit_cell"].get<std::string>())->transf_mat();
+    }
+    else {
+      throw std::invalid_argument(
+        "Error reading unit cell from JSON input: 'unit_cell' must be a 3x3 integer matrix or supercell name");
+    }
+    return generating_matrix;
+  }
+
+  ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input) {
+
+    // read volume range
+    ScelEnumProps::size_type min_vol;
+    ScelEnumProps::size_type max_vol;
+
+    if(!input.contains("min")) {
+      min_vol = 1;
+    }
+    else {
+      from_json(min_vol, input["min"]);
+    }
+    if(!(min_vol > 0)) {
+      throw std::invalid_argument(
+        "Error in ScelEnumProps JSON input: 'min_volume' must be >0");
+    }
+
+    // read "max" scel size, or by default use largest existing supercell
+    ScelEnumProps::size_type max_scel_size = 1;
+    for(const auto &scel : primclex.db<Supercell>()) {
+      if(scel.volume() > max_scel_size) {
+        max_scel_size = scel.volume();
+      }
+    }
+
+    input.get_else(max_vol, "max", max_scel_size);
+    if(!(max_vol >= min_vol)) {
+      throw std::invalid_argument(
+        "Error in ScelEnumProps JSON input: 'max' must be greater than or equal to 'min'");
+    }
+
+    // read generating matrix (unit cell)
+    Eigen::Matrix3i generating_matrix = make_unit_cell(primclex, input);
+
+    std::string dirs;
+    input.get_else<std::string>(dirs, "dirs", "abc");
+
+    return ScelEnumProps(min_vol, max_vol + 1, dirs, generating_matrix);
+  }
+
+  xtal::ScelEnumProps jsonConstructor<xtal::ScelEnumProps>::from_json(const jsonParser &json, const PrimClex &primclex) {
+    return make_scel_enum_props(primclex, json);
+  }
+
+
 }
