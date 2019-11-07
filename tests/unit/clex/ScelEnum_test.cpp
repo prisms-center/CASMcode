@@ -47,7 +47,7 @@ TEST(ScelEnumTest, Test1) {
     for(; it != end; ++it, ++count) {
       m_names.push_back(it->name());
 
-      Lattice canon_check = canonical_equivalent_lattice(
+      Lattice canon_check = xtal::canonical::equivalent(
                               it->lattice(),
                               primclex.prim().point_group(),
                               primclex.crystallography_tol());

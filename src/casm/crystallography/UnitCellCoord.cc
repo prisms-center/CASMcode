@@ -78,7 +78,7 @@ namespace CASM {
       return unit().basis()[sublat()];
     }
 
-    UnitCellCoord &UnitCellCoord::apply_sym(const SymOp &op) {
+    UnitCellCoord &UnitCellCoord::apply_sym(const CASM::SymOp &op) {
 
       // transform using stored SymBasisPermute representation
       const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID());
@@ -93,7 +93,7 @@ namespace CASM {
       return *this;
     }
 
-    UnitCellCoord UnitCellCoord::copy_apply(const SymOp &op) const {
+    UnitCellCoord UnitCellCoord::copy_apply(const CASM::SymOp &op) const {
       UnitCellCoord result(*this);
       result.apply_sym(op);
       return result;
@@ -113,7 +113,7 @@ namespace CASM {
   }
 
   /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
-  UnitCellCoord jsonConstructor<UnitCellCoord>::from_json(const jsonParser &json, const BasicStructure<Site> &unit) {
+  UnitCellCoord jsonConstructor<UnitCellCoord>::from_json(const jsonParser &json, const xtal::BasicStructure<xtal::Site> &unit) {
     xtal::UnitCellCoord coord(unit);
     CASM::from_json(coord, json);
     return coord;

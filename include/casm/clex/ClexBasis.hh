@@ -16,7 +16,10 @@ namespace CASM {
     class Structure;
     class UnitCell;
   }
-  using namespace xtal;
+  using xtal::Site;
+  using xtal::BasicStructure;
+  using xtal::Structure;
+  using xtal::UnitCell;
 
 
   class PrimNeighborList;

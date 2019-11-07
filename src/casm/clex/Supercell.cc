@@ -11,8 +11,9 @@
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
@@ -56,7 +57,7 @@ namespace CASM {
     m_sym_info(make_supercell_sym_info(prim(), superlattice)),
     m_nlist_size_at_construction(-1) {
 
-    auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
+    auto res = xtal::is_superlattice(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
     if(!res.first) {
       _prim->err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
                        << "  Bad supercell, the transformation matrix is not integer." << std::endl;
@@ -229,7 +230,7 @@ namespace CASM {
   std::pair<DB::DatabaseIterator<Supercell>, bool> Supercell::insert() const {
     return primclex().db<Supercell>().emplace(
              & primclex(),
-             canonical_equivalent_lattice(
+             xtal::canonical::equivalent(
                lattice(),
                prim().point_group(),
                crystallography_tol()));
@@ -417,7 +418,7 @@ namespace CASM {
   }
 
   Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {
-    auto res = is_supercell(super_lat, prim_lat, tol);
+    auto res = xtal::is_superlattice(super_lat, prim_lat, tol);
     if(!res.first) {
       std::stringstream err_msg;
       err_msg <<
@@ -449,17 +450,18 @@ namespace CASM {
 
   std::string scelname(const Structure &prim, const Lattice &superlat) {
     const SymGroup &pg = prim.point_group();
-    Lattice canon_lat = superlat.canonical_form(pg);
+    Lattice canon_lat = xtal::canonical::equivalent(superlat, pg);
     std::string result = CASM::generate_name(transf_mat(prim.lattice(), canon_lat, prim.lattice().tol()));
-    if(!superlat.is_equivalent(canon_lat)) {
-      result += ("." + std::to_string(superlat.from_canonical(pg).index()));
+    if(!xtal::is_equivalent(superlat, canon_lat)) {
+      auto to_canonical_ix = xtal::canonical::operation_index(superlat, pg);
+      result += ("." + std::to_string(pg[to_canonical_ix].inverse().index()));
     }
     return result;
   }
 
   std::string canonical_scelname(const Structure &prim, const Lattice &superlat) {
     const SymGroup &pg = prim.point_group();
-    return CASM::generate_name(transf_mat(prim.lattice(), superlat.canonical_form(pg), prim.lattice().tol()));
+    return CASM::generate_name(transf_mat(prim.lattice(), xtal::canonical::equivalent(superlat, pg), prim.lattice().tol()));
   }
 
 

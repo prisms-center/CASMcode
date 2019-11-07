@@ -109,7 +109,7 @@ namespace CASM {
           auto make_traits = lib_ptr->template get_function<signature>(
             "make_" + f_s.substr(0, f_size - 3) + "_species_traits");
 
-          std::unique_ptr<SpeciesAttribute_impl::BasicTraits> ptr(make_traits());
+          std::unique_ptr<xtal::SpeciesAttribute_impl::BasicTraits> ptr(make_traits());
 
           // will clone on insert
           *dict_it++ = *ptr;

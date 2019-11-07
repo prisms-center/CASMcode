@@ -4,6 +4,7 @@
 #include "casm/symmetry/EnumEquivalents.hh"
 #include "casm/symmetry/SymOpRepresentation.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/SymTools.hh"
 
 namespace CASM {
   class SymGroup;
@@ -22,7 +23,7 @@ namespace CASM {
     /// \ingroup LatticeEnum
     ///
     class LatticeEnumEquivalents :
-      public EnumEquivalents<Lattice, std::vector<SymOp>::const_iterator, SymOp, SymRepIndexCompare> {
+      public EnumEquivalents<Lattice, std::vector<CASM::SymOp>::const_iterator, CASM::SymOp, SymRepIndexCompare> {
 
     public:
       LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g);

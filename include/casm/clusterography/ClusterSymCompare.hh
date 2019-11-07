@@ -6,8 +6,10 @@
 namespace CASM {
   namespace xtal {
     class PrimGrid;
+    class UnitCellCoord;
   }
-  using namespace xtal;
+  using xtal::PrimGrid;
+  using xtal::UnitCellCoord;
 
   template<typename Derived>
   class ClusterSymCompare;

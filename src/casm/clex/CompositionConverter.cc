@@ -368,7 +368,7 @@ namespace CASM {
       double coeff = Mt(i, j);
 
       // print nothing if n == 0
-      if(almost_zero(coeff) || is_vacancy(m_components[j])) {
+      if(almost_zero(coeff) || xtal::is_vacancy(m_components[j])) {
         continue;
       }
 
@@ -651,7 +651,7 @@ namespace CASM {
     // Get Va index if it exists, and store 0 or 1 in N_Va
     std::vector<std::string> struc_mol_name = struc_molecule_name(prim);
     Index Va_index = find_index_if(struc_mol_name, [ = ](const std::string & str) {
-      return is_vacancy(str);
+      return xtal::is_vacancy(str);
     });
     bool has_Va = (Va_index != struc_mol_name.size());
 

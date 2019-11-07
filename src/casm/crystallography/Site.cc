@@ -2,7 +2,6 @@
 
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
-#include "casm/casm_io/Log.hh"
 
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/basis_set/DoFTraits.hh"
@@ -159,12 +158,12 @@ namespace CASM {
      */
     //****************************************************
 
-    Site &Site::apply_sym_no_trans(const SymOp &op) {
-      Coordinate::apply_sym_no_trans(op);
-      _apply_sym_attributes(op);
+    /* Site &Site::apply_sym_no_trans(const SymOp &op) { */
+    /*   Coordinate::apply_sym_no_trans(op); */
+    /*   _apply_sym_attributes(op); */
 
-      return *this;
-    }
+    /*   return *this; */
+    /* } */
 
     //****************************************************
     /**

@@ -13,8 +13,18 @@ namespace CASM {
     class Site;
     template<typename T>
     class BasicStructure;
+    class MappingNode;
+    class SimpleStructure;
+    class SimpleStrucMapCalculator;
+    class StrucMapper;
   }
-  using namespace xtal;
+  using xtal::Lattice;
+  using xtal::Site;
+  using xtal::BasicStructure;
+  using xtal::MappingNode;
+  using xtal::SimpleStructure;
+  using xtal::SimpleStrucMapCalculator;
+  using xtal::StrucMapper;
 
   class Supercell;
   class PermuteIterator;

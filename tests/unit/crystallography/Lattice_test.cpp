@@ -2,15 +2,19 @@
 
 /// What is being tested:
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/LatticeIsEquivalent.hh"
 
 /// What is being used to test it:
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Molecule.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/symmetry/SymGroup.hh"
 
 using namespace CASM;
+using xtal::SuperlatticeEnumerator;
+using xtal::ScelEnumProps;
 
 void lattice_pg_test() {
 
@@ -33,7 +37,7 @@ void lattice_is_equivalent_test() {
     Lattice fcc = Lattice::fcc();
     SymGroup pg = SymGroup::lattice_point_group(fcc);
     for(const auto &op : pg) {
-      EXPECT_EQ(fcc.is_equivalent(copy_apply(op, fcc)), 1);
+      EXPECT_TRUE(xtal::is_equivalent(fcc, copy_apply(op, fcc)));
     }
   }
   {
@@ -42,7 +46,7 @@ void lattice_is_equivalent_test() {
     SymGroup pg = SymGroup::lattice_point_group(bcc);
 
     for(const auto &op : pg) {
-      EXPECT_EQ(bcc.is_equivalent(copy_apply(op, bcc)), 1);
+      EXPECT_TRUE(xtal::is_equivalent(bcc, copy_apply(op, bcc)));
     }
   }
   {
@@ -51,7 +55,7 @@ void lattice_is_equivalent_test() {
     SymGroup pg = SymGroup::lattice_point_group(cubic);
 
     for(const auto &op : pg) {
-      EXPECT_EQ(cubic.is_equivalent(copy_apply(op, cubic)), 1);
+      EXPECT_TRUE(xtal::is_equivalent(cubic, copy_apply(op, cubic)));
     }
   }
   {
@@ -59,7 +63,7 @@ void lattice_is_equivalent_test() {
     SymGroup pg = SymGroup::lattice_point_group(hex);
 
     for(const auto &op : pg) {
-      EXPECT_EQ(hex.is_equivalent(copy_apply(op, hex)), 1);
+      EXPECT_TRUE(xtal::is_equivalent(hex, copy_apply(op, hex)));
     }
   }
 }
@@ -92,9 +96,9 @@ void lattice_superduper_test() {
 
   for(auto it1 = lat_list.cbegin(); it1 != lat_list.cend(); ++it1) {
     for(auto it2 = it1 + 1; it2 != lat_list.cend(); ++it2) {
-      Lattice sdlat = superdupercell(*it1, *it2);
-      EXPECT_TRUE(sdlat.is_supercell_of(*it1));
-      EXPECT_TRUE(sdlat.is_supercell_of(*it2));
+      Lattice sdlat = xtal::make_superduperlattice(*it1, *it2);
+      EXPECT_TRUE(xtal::is_superlattice(sdlat, *it1, sdlat.tol()).first);
+      EXPECT_TRUE(xtal::is_superlattice(sdlat, *it2, sdlat.tol()).first);
     }
   }
 

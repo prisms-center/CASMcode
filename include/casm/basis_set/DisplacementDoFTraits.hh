@@ -17,7 +17,7 @@ namespace CASM {
       }
 
       /// \brief Generate a symmetry representation for the supporting vector space
-      Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override;
+      Eigen::MatrixXd symop_to_matrix(xtal::SymOp const &op) const override;
 
 
       /// \brief Apply DoF values for this DoF to _struc

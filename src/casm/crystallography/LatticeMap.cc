@@ -1,8 +1,9 @@
+#include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/LatticeMap.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
-#include "casm/symmetry/SymOp.hh"
+
 namespace CASM {
   namespace xtal {
     StrainCostCalculator::StrainCostCalculator(Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat /*= Eigen::MatrixXd::Identity(9,9)*/) {
@@ -107,7 +108,7 @@ namespace CASM {
                            Index num_atoms,
                            double _tol,
                            int _range/*=2*/,
-                           std::vector<SymOp> const &_point_group /*={}*/,
+                           SymOpVector const &_point_group /*={}*/,
                            Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat,
                            double _init_better_than /* = 1e20 */) :
       m_child(_child.reduced_cell().lat_column_mat()),
@@ -140,7 +141,7 @@ namespace CASM {
       // Construct inverse fractional symops
       LatticeIsEquivalent symcheck(reduced_parent);
       m_fsym_mats.reserve(_point_group.size());
-      for(SymOp const &op : _point_group) {
+      for(auto const &op : _point_group) {
         if(!symcheck(op))
           continue;
         if(symcheck.U().isIdentity())
@@ -163,7 +164,7 @@ namespace CASM {
                            Index _num_atoms,
                            double _tol,
                            int _range /*= 2*/,
-                           std::vector<SymOp> const &_point_group /*={}*/,
+                           SymOpVector const &_point_group /*={}*/,
                            Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat,
                            double _init_better_than /* = 1e20 */) :
       LatticeMap(Lattice(_parent),

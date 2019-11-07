@@ -12,10 +12,11 @@ namespace CASM {
     template<typename T> class BasicStructure;
     class StrucMapper;
   }
+  using xtal::Site;
+  using xtal::BasicStructure;
+  using xtal::StrucMapper;
 
   class Configuration;
-
-  using namespace xtal;
 
   namespace ConfigIO {
 

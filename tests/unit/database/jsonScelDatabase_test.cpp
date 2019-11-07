@@ -13,6 +13,8 @@
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 
 using namespace CASM;
+using xtal::ScelEnumProps;
+using xtal::SuperlatticeEnumerator;
 
 
 TEST(jsonScelDatabase_Test, Test1) {
@@ -36,7 +38,7 @@ TEST(jsonScelDatabase_Test, Test1) {
   auto fg = prim.factor_group();
   SuperlatticeEnumerator lat_enum(fg.begin(), fg.end(), prim.lattice(), enum_props);
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
-    db_scel.emplace(&primclex, it->canonical_form(prim.point_group()));
+    db_scel.emplace(&primclex, xtal::canonical::equivalent(*it, prim.point_group()));
   }
   EXPECT_EQ(db_scel.size(), 87);
 

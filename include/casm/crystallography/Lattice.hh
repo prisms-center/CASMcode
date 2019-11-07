@@ -8,15 +8,11 @@
 #include "casm/global/eigen.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/global/definitions.hh"
-#include "casm/crystallography/LatticeCanonicalForm.hh"
 
 namespace CASM {
-  class SymOp;
   class jsonParser;
 
   namespace xtal {
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     class ScelEnumProps;
 
     /** \defgroup Crystallography
@@ -31,7 +27,7 @@ namespace CASM {
      *  @{
      */
 
-    class Lattice : public LatticeCanonicalForm<Comparisons<CRTPBase<Lattice>>> {
+    class Lattice : public Comparisons<CRTPBase<Lattice>> {
     public:
       typedef Eigen::Matrix3d::ColXpr LatVec;
       typedef Eigen::Matrix3d::ConstColXpr ConstLatVec;
@@ -123,7 +119,7 @@ namespace CASM {
         return m_inv_lat_mat;
       }
 
-      /// Calculates the kpoint mesh for a supercell lattice given the kpoint mesh
+      /// Calculates the kpoint mesh for a superlattice lattice given the kpoint mesh
       /// for the primitive lattice
       std::vector<int> calc_kpoints(std::vector<int> prim_kpoints, Lattice prim_lat);
 
@@ -132,18 +128,6 @@ namespace CASM {
 
       /// \brief Return boxiness factor directly proportional to volume/SA ratio
       double boxiness() const;
-
-
-      /// \brief Populate \param supercell with symmetrically distinct supercells of this lattice
-      /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
-      /// \param effective_pg is a group that should either be equivalent to the full point group of this lattice
-      /// or be a subgroup of that full point group
-      void generate_supercells(std::vector<Lattice> &supercell, const std::vector<SymOp> &effective_pg, const ScelEnumProps &enum_props) const;
-
-      /// \brief make a supercell of this lattice.
-      /// Equivalent to Lattice(lat_column_mat()*trans_mat)
-      template <typename T>
-      Lattice make_supercell(const Eigen::Matrix<T, 3, 3> &trans_mat) const;
 
       /// \brief Find the lattice vectors which give most compact unit cell
       /// Compactness is measured by how close lat_column_mat().transpose()*lat_column_mat() is to a diagonal matrix
@@ -189,15 +173,6 @@ namespace CASM {
       ///Matrix that relates two lattices (e.g., strain or slat)
       //Eigen::Matrix3d operator/(const Lattice &RHS);
 
-      //John G 121212
-      ///Checks if lattice is a supercell of tile, acting on multiplication matrix. Check is performed applying operations from symlist
-      bool is_supercell_of(const Lattice &tile, Eigen::Matrix3d &multimat) const;
-      bool is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symlist, Eigen::Matrix3d &multimat) const;
-
-      ///Checks if lattice is a supercell of tile, applying operations from symlist
-      bool is_supercell_of(const Lattice &tile) const;
-      bool is_supercell_of(const Lattice &tile, const std::vector<SymOp> &symlist) const;
-
       ///Return a lattice with diagonal matrix that fits around starting lattice
       Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
 
@@ -212,18 +187,6 @@ namespace CASM {
 
       ///Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
       Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
-
-      std::vector<double> pg_converge(double large_tol);
-      void pg_converge(double small_tol, double large_tol, double increment);
-
-      /// \brief Symmetrized copy of this lattice, having symmetry of group \param _pg
-      Lattice symmetrized(const std::vector<SymOp> &_pg) const;
-
-      /// \brief Symmetrized copy of this lattice, having symmetry of group formed by fractional-coordinate symops \param _pg
-      Lattice symmetrized(const std::vector<Eigen::Matrix3i> &_pg) const;
-
-      /// \brief Symmetrized copy of this lattice having symmetry of point group calculated based on tolerance \param _tol
-      Lattice symmetrized(double _tol) const;
 
       double tol() const {
         return m_tol;
@@ -256,8 +219,6 @@ namespace CASM {
       double m_tol;
     };
 
-
-
     /* never write a Matrix*Lattice operator, PLEASE
 
        template <class T>
@@ -266,55 +227,25 @@ namespace CASM {
        Lattice operator*(const Eigen::Matrix3d &LHS, const Lattice &RHS);
     */
 
-    /// \brief Populate \param point_group with the point group of this lattice
-    /// \param point_group should be empty
-    /// \param pg_tol can be increased to find point group of lattice vectors
-    /// that are slightly distorted due to numerical noise
-    std::vector<SymOp> calc_point_group(Lattice const &_lat);
-
-    /// \brief Populate \param point_group with the point group of this lattice
-    /// \param point_group should be empty
-    /// \param pg_tol can be increased to find point group of lattice vectors
-    /// that are slightly distorted due to numerical noise
-    std::vector<SymOp> calc_point_group(Lattice const &_lat, double _tol);
-
 
     /// \brief Returns the volume of a Lattice
     double volume(const Lattice &lat);
 
-    /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const SymOp &op, Lattice &lat);
-
-    /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const SymOp &op, const Lattice &lat);
-
-    /// \brief Returns a super Lattice
-    Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat);
-
-    /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
-    std::pair<bool, Eigen::Matrix3d> is_supercell(const Lattice &scel, const Lattice &unit, double tol);
-
-    /// Check if there is a symmetry operation, op, and transformation matrix T,
-    ///   such that scel is a supercell of the result of applying op to unit
-    template<typename Object, typename OpIterator>
-    std::pair<OpIterator, Eigen::Matrix3d> is_supercell(
-      const Object &scel,
-      const Object &unit,
-      OpIterator begin,
-      OpIterator end,
-      double tol);
+    /// Check if scel is a superlattice of unitcell unit and some integer transformation matrix T
+    std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol);
 
     std::istream &operator>>(std::istream &in, const Lattice &lattice_in);
 
-    ///\brief returns Lattice that is smallest possible supercell of both input Lattice
-    Lattice superdupercell(const Lattice &lat1, const Lattice &lat2);
+    ///\brief returns Lattice that is smallest possible superlattice of both input Lattice
+    Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2);
 
-    ///\brief returns Lattice that is smallest possible supercell of all input Lattice
-    template<typename LatIterator, typename SymOpIterator>
-    Lattice superdupercell(LatIterator begin,
-                           LatIterator end,
-                           SymOpIterator op_begin = SymOpIterator(),
-                           SymOpIterator op_end = SymOpIterator());
+    //TODO
+    //Unimplemented until someone actually needs it, will be similarly implemented as
+    //make_equivalent_superduperlattice in SymTools.hh
+    ///\brief returns Lattice that is smallest possible superlattice of all input Lattice
+    /* template<typename LatIterator> */
+    /* Lattice make_superduperlattice(LatIterator begin, */
+    /*                                LatIterator end); */
 
     Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol);
 
@@ -344,14 +275,6 @@ namespace CASM {
       return lat.lat_column_mat() * frac_mat * lat.inv_lat_column_mat();
     }
 
-    //********************************************************************
-    // A column of trans_mat specifies a lattice vector of the supercell in terms of the
-    // lattice vectors of (*this) lattice.
-    template <typename T>
-    Lattice Lattice::make_supercell(const Eigen::Matrix<T, 3, 3> &trans_mat) const {
-      return Lattice(lat_column_mat() * trans_mat, tol());
-    }
-
     /// \brief Returns the volume of a Lattice
     ///
     /// \returns volume of the Lattice
@@ -363,7 +286,7 @@ namespace CASM {
     }
 
     /// \brief Returns a super Lattice
-    inline Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat) {
+    inline Lattice make_superlattice(const Lattice &lat, const Eigen::Matrix3i &transf_mat) {
       return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.cast<double>(), lat.tol());
     }
 

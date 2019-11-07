@@ -10,8 +10,12 @@ namespace CASM {
 
   namespace xtal {
     class PrimGrid;
+    class UnitCell;
+    class UnitCellCoord;
   }
-  using namespace xtal;
+  using xtal::PrimGrid;
+  using xtal::UnitCell;
+  using xtal::UnitCellCoord;
 
   /** \ingroup ClexClex
    *  @{

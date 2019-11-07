@@ -14,9 +14,12 @@
 namespace CASM {
   namespace xtal {
     class Structure;
+    class UnitCellCoord;
     class Site;
   }
-  using namespace xtal;
+  using xtal::Structure;
+  using xtal::UnitCellCoord;
+  using xtal::Site;
 
   class Supercell;
 

@@ -37,7 +37,7 @@ namespace CASM {
     }
 
     for(int i = 0; i < names.size(); ++i) {
-      if(!is_vacancy(names[i])) {
+      if(!xtal::is_vacancy(names[i])) {
         species_num[names[i]] = vec(i);
       }
     }
@@ -286,7 +286,7 @@ namespace CASM {
     // --- convert input compositions to atom_frac
 
     Index Va_index = find_index_if(struc_mol_name, [ = ](const std::string & str) {
-      return is_vacancy(str);
+      return xtal::is_vacancy(str);
     });
     bool has_Va = (Va_index != struc_mol_name.size());
 
@@ -494,7 +494,7 @@ namespace CASM {
   // print plane as '<indent>mol_i(1): energy_per_species\n', for each molecule
   void ChemicalReferencePrinter::print(const Eigen::VectorXd &plane) {
     for(int i = 0; i < plane.size(); ++i) {
-      if(!is_vacancy(struc_mol_name[i])) {
+      if(!xtal::is_vacancy(struc_mol_name[i])) {
         stream << std::string(indent, ' ') << struc_mol_name[i] << "(1): " << plane(i) << "\n";
       }
     }

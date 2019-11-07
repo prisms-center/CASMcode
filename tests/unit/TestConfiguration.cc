@@ -13,7 +13,7 @@ namespace test {
     const PrimClex &primclex,
     const Eigen::Matrix3i &T,
     const std::vector<int> &_occupation) :
-    TestConfiguration(primclex, make_supercell(primclex.prim().lattice(), T), _occupation) {}
+    TestConfiguration(primclex, xtal::make_superlattice(primclex.prim().lattice(), T), _occupation) {}
 
   TestConfiguration::TestConfiguration(
     const PrimClex &primclex,

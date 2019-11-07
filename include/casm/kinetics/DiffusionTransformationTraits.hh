@@ -8,7 +8,6 @@ namespace CASM {
   namespace xtal {
     class UnitCellCoord;
   }
-  using namespace xtal;
 
   namespace Kinetics {
     class DiffusionTransformation;
@@ -25,7 +24,7 @@ namespace CASM {
 
     typedef typename Kinetics::DiffusionTransformation MostDerived;
     typedef typename Kinetics::DiffTransInvariants InvariantsType;
-    static UnitCellCoord position(const Kinetics::DiffusionTransformation &diff_trans);
+    static xtal::UnitCellCoord position(const Kinetics::DiffusionTransformation &diff_trans);
   };
 
   /// Specialization gives required for DatabaseTypeOrbit

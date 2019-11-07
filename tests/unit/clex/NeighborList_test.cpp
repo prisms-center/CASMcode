@@ -84,7 +84,7 @@ TEST(NeighborListTest, SuperNeighborListBasics) {
   T << 2, 0, 0,
   0, 2, 0,
   0, 0, 2;
-  Lattice super_lat = make_supercell(prim.lattice(), T);
+  Lattice super_lat = make_superlattice(prim.lattice(), T);
   PrimGrid grid(prim.lattice(), super_lat);
   SuperNeighborList super_nlist(grid, nlist);
 

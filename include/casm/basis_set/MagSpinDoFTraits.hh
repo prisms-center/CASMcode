@@ -24,7 +24,7 @@ namespace CASM {
         return true;
       }
 
-      Eigen::MatrixXd symop_to_matrix(SymOp const &op) const override;
+      Eigen::MatrixXd symop_to_matrix(xtal::SymOp const &op) const override;
 
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
       std::vector<BasisSet> construct_site_bases(Structure const &_prim,

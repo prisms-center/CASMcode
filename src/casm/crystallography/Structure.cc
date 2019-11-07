@@ -133,13 +133,43 @@ namespace CASM {
     //************************************************************
 
     void Structure::fg_converge(double small_tol, double large_tol, double increment) {
-      BasicStructure<Site>::fg_converge(m_factor_group, small_tol, large_tol, increment);
+      _fg_converge(m_factor_group, small_tol, large_tol, increment);
       return;
     }
 
-    //************************************************************
     void Structure::fg_converge(double large_tol) {
-      BasicStructure<Site>::fg_converge(m_factor_group, lattice().tol(), large_tol, (large_tol - lattice().tol()) / 10.0);
+      _fg_converge(m_factor_group, lattice().tol(), large_tol, (large_tol - lattice().tol()) / 10.0);
+      return;
+    }
+
+    void Structure::_fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment) {
+
+      std::vector<double> tols;
+      std::vector<bool> is_group;
+      std::vector<int> num_ops, num_enforced_ops;
+      std::vector<std::string> name;
+
+      double orig_tol = lattice().tol();
+      for(double i = small_tol; i < large_tol; i += increment) {
+        tols.push_back(i);
+        m_lattice.set_tol(i);
+
+        factor_group.clear();
+        BasicStructure<Site>::generate_factor_group(factor_group);
+        factor_group.get_multi_table();
+        num_ops.push_back(factor_group.size());
+        is_group.push_back(factor_group.is_group(i));
+        factor_group.enforce_group(i);
+        num_enforced_ops.push_back(factor_group.size());
+        factor_group.character_table();
+        name.push_back(factor_group.get_name());
+      }
+      m_lattice.set_tol(orig_tol);
+
+      for(Index i = 0; i < tols.size(); i++) {
+        std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
+      }
+
       return;
     }
 
@@ -199,10 +229,10 @@ namespace CASM {
       }
       //trans_and_expand primitive factor_group
       IsPointGroupOp check_op(lattice());
-      for(SymOp const &op : prim.factor_group()) {
+      for(CASM::SymOp const &op : prim.factor_group()) {
         if(check_op(op)) {
           for(Index j = 0; j < prim_grid.size(); j++) {
-            m_factor_group.push_back(within_cell(SymOp::translation(prim_grid.scel_coord(j).const_cart())*op,
+            m_factor_group.push_back(within_cell(CASM::SymOp::translation(prim_grid.scel_coord(j).const_cart())*op,
                                                  lattice(),
                                                  PERIODIC));
           }
@@ -306,42 +336,42 @@ namespace CASM {
      */
     //***********************************************************
 
-    void Structure::symmetrize(const SymGroup &relaxed_factors) {
-      //First make a copy of your current basis
-      //This copy will eventually become the new average basis.
-      reset();
-      std::vector<Site> avg_basis = basis();
+    /* void Structure::symmetrize(const SymGroup &relaxed_factors) { */
+    /*   //First make a copy of your current basis */
+    /*   //This copy will eventually become the new average basis. */
+    /*   reset(); */
+    /*   std::vector<Site> avg_basis = basis(); */
 
-      //Loop through given symmetry group an fill a temporary "operated basis"
-      std::vector<Site> operbasis;
-      for(Index rf = 0; rf < relaxed_factors.size(); rf++) {
-        operbasis.clear();
-        for(Index b = 0; b < basis().size(); b++) {
-          operbasis.push_back(relaxed_factors[rf]*basis()[b]);
-        }
+    /*   //Loop through given symmetry group an fill a temporary "operated basis" */
+    /*   std::vector<Site> operbasis; */
+    /*   for(Index rf = 0; rf < relaxed_factors.size(); rf++) { */
+    /*     operbasis.clear(); */
+    /*     for(Index b = 0; b < basis().size(); b++) { */
+    /*       operbasis.push_back(relaxed_factors[rf]*basis()[b]); */
+    /*     } */
 
-        //Now that you have a transformed basis, find the closest mapping of atoms
-        //Then average the distance and add it to the average basis
-        for(Index b = 0; b < basis().size(); b++) {
-          double smallest = 1000000;
-          Coordinate bshift(lattice()), tshift(lattice());
-          for(Index ob = 0; ob < operbasis.size(); ob++) {
-            double dist = operbasis[ob].min_dist(basis()[b], tshift);
-            if(dist < smallest) {
-              bshift = tshift;
-              smallest = dist;
-            }
-          }
-          bshift.cart() *= (1.0 / relaxed_factors.size());
-          avg_basis[b] += bshift;
-        }
+    /*     //Now that you have a transformed basis, find the closest mapping of atoms */
+    /*     //Then average the distance and add it to the average basis */
+    /*     for(Index b = 0; b < basis().size(); b++) { */
+    /*       double smallest = 1000000; */
+    /*       Coordinate bshift(lattice()), tshift(lattice()); */
+    /*       for(Index ob = 0; ob < operbasis.size(); ob++) { */
+    /*         double dist = operbasis[ob].min_dist(basis()[b], tshift); */
+    /*         if(dist < smallest) { */
+    /*           bshift = tshift; */
+    /*           smallest = dist; */
+    /*         } */
+    /*       } */
+    /*       bshift.cart() *= (1.0 / relaxed_factors.size()); */
+    /*       avg_basis[b] += bshift; */
+    /*     } */
 
-      }
-      set_basis(avg_basis);
-      //generate_factor_group();
-      update();
-      return;
-    }
+    /*   } */
+    /*   set_basis(avg_basis); */
+    /*   //generate_factor_group(); */
+    /*   update(); */
+    /*   return; */
+    /* } */
 
     //***********************************************************
     /**
@@ -353,15 +383,15 @@ namespace CASM {
      */
     //***********************************************************
 
-    void Structure::symmetrize(const double &tolerance) {
-      double orig_tol = lattice().tol();
-      m_lattice.set_tol(tolerance);
-      generate_factor_group();
-      SymGroup g = factor_group();
-      symmetrize(g);
-      m_lattice.set_tol(orig_tol);
-      return;
-    }
+    /* void Structure::symmetrize(const double &tolerance) { */
+    /*   double orig_tol = lattice().tol(); */
+    /*   m_lattice.set_tol(tolerance); */
+    /*   generate_factor_group(); */
+    /*   SymGroup g = factor_group(); */
+    /*   symmetrize(g); */
+    /*   m_lattice.set_tol(orig_tol); */
+    /*   return; */
+    /* } */
 
     //This function gets the permutation representation of the
     // factor group operations of the structure. It first applies
@@ -396,7 +426,7 @@ namespace CASM {
       //                                       * basis()[sitemap[b].sublat()].dof(doftype.name().basis())
       Eigen::MatrixXd trep, trepblock;
       for(Index s = 0; s < m_factor_group.size(); ++s) {
-        SymOp const &op = m_factor_group[s];
+        auto const &op = m_factor_group[s];
         if(verbose) {
           if(op.index() % 100 == 0)
             std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << op.index() << "/" << m_factor_group.size() << std::flush;
@@ -410,7 +440,10 @@ namespace CASM {
           auto const &dofref_to = basis()[sitemap[b].sublat()].occupant_dof();
           auto const &dofref_from = basis()[b].occupant_dof();
           OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
-          if(eq(op, dofref_to)) {
+          //TODO
+          //Calling the adapter here, because we said we don't want anything outside
+          //of crystallography to invoke crystallography/Adapter.hh
+          if(eq(adapter::Adapter<SymOp, CASM::SymOp>()(op), dofref_to)) {
             if(dofref_from.symrep_ID().is_identity()) {
               if(!eq.perm().is_identity()) {
                 dofref_from.allocate_symrep(m_factor_group);
@@ -437,7 +470,10 @@ namespace CASM {
             DoFSet const &dofref_to = basis()[sitemap[b].sublat()].dof(dof_dim.first);
             DoFSet const &dofref_from = basis()[b].dof(dof_dim.first);
             DoFIsEquivalent eq(dofref_from);
-            if(!eq(op, dofref_to)) {
+            //TODO
+            //Calling the adapter here, because we said we don't want anything outside
+            //of crystallography to invoke crystallography/Adapter.hh
+            if(!eq(adapter::Adapter<SymOp, CASM::SymOp>()(op), dofref_to)) {
               throw std::runtime_error("While generating symmetry representation for local DoF \""
                                        + dof_dim.first
                                        + "\", a symmetry operation was identified that invalidates the degree of freedom. "
@@ -466,9 +502,12 @@ namespace CASM {
       //std::cout << "INSIDE _generate_global_symreps\n";
       for(auto const &dof : m_dof_map) {
         dof.second.allocate_symrep(m_factor_group);
-        for(SymOp const &op : m_factor_group) {
+        for(auto const &op : m_factor_group) {
           DoFIsEquivalent eq(dof.second);
-          if(!eq(op)) {
+          //TODO
+          //Calling the adapter here, because we said we don't want anything outside
+          //of crystallography to invoke crystallography/Adapter.hh
+          if(!eq(adapter::Adapter<SymOp, CASM::SymOp>()(op))) {
             throw std::runtime_error("While generating symmetry representation for global DoF \""
                                      + dof.first
                                      + "\", a symmetry operation was identified that invalidates the degree of freedom. "

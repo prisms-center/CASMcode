@@ -1,6 +1,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SpeciesAttribute.hh"
-#include "casm/symmetry/SymOp.hh"
+#include "casm/crystallography/SymType.hh"
 
 namespace CASM {
   namespace xtal {
@@ -9,7 +9,6 @@ namespace CASM {
       SpeciesAttribute BasicTraits::copy_apply(SymOp const &_op, SpeciesAttribute const &_attr) const {
         return _attr;
       }
-
     }
 
     //*******************************************************************

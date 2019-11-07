@@ -2,15 +2,15 @@
 
 namespace CASM {
   namespace xtal {
-    const SymOpMatrixType &get_matrix(const SymOpType &op) {
+    const SymOpMatrixType &get_matrix(const SymOp &op) {
       return op.matrix;
     }
 
-    const SymOpTranslationType &get_translation(const SymOpType &op) {
+    const SymOpTranslationType &get_translation(const SymOp &op) {
       return op.translation;
     }
 
-    SymOpTimeReversalType get_time_reversal(const SymOpType &op) {
+    SymOpTimeReversalType get_time_reversal(const SymOp &op) {
       return op.is_time_reversal_active;
     }
   } // namespace xtal

@@ -1,7 +1,7 @@
 #include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"
-#include "casm/symmetry/SymOp.hh"
+#include "casm/crystallography/SymType.hh"
 
 namespace CASM {
 
@@ -9,11 +9,11 @@ namespace CASM {
     return _label_equiv(other) && _vector_equiv(other.basis(), m_dof.basis());
   }
 
-  bool DoFIsEquivalent::operator()(SymOp const &_op) const {
+  bool DoFIsEquivalent::operator()(xtal::SymOp const &_op) const {
     return _vector_equiv(m_dof.basis(), DoFType::traits(m_dof.type_name()).symop_to_matrix(_op) * m_dof.basis());
   }
 
-  bool DoFIsEquivalent::operator()(SymOp const &_op, DoFSet const &other) const {
+  bool DoFIsEquivalent::operator()(xtal::SymOp const &_op, DoFSet const &other) const {
     return _label_equiv(other) && _vector_equiv(other.basis(), DoFType::traits(m_dof.type_name()).symop_to_matrix(_op) * m_dof.basis());
 
   }

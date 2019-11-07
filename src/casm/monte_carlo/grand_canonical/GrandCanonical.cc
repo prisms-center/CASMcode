@@ -1,16 +1,17 @@
 
-#include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
-#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/basis_set/DoF.hh"
+#include "casm/crystallography/SymTools.hh"
+#include "casm/clex/Norm.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/database/ConfigDatabase.hh"
 #include "casm/misc/algorithm.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings_impl.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/monte_carlo/MonteCarlo_impl.hh"
 #include "casm/monte_carlo/MonteIO_impl.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Norm.hh"
-#include "casm/basis_set/DoF.hh"
-#include "casm/database/ConfigDatabase.hh"
-#include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
-#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings_impl.hh"
 
 
 namespace CASM {
@@ -766,7 +767,7 @@ namespace CASM {
         // save allowed configs
         for(auto it = eq_range.first; it != eq_range.second; ++it) {
           const Lattice &motif_lat = db.find(it->second)->supercell().lattice();
-          if(is_supercell(scel_lat, motif_lat, begin, end, TOL).first != end) {
+          if(xtal::is_equivalent_superlattice(scel_lat, motif_lat, begin, end, TOL).first != end) {
             allowed.push_back(it);
           }
         }

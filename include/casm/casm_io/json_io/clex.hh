@@ -12,7 +12,8 @@ namespace CASM {
     class BasicStructure;
     class Site;
   }
-  using namespace xtal;
+  using xtal::BasicStructure;
+  using xtal::Site;
 
   /**
    * \ingroup ProjectIO

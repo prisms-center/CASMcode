@@ -8,8 +8,6 @@
 #include "casm/external/Eigen/Dense"
 #include "casm/global/definitions.hh"
 
-
-
 namespace CASM {
   namespace xtal {
 

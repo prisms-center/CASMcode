@@ -12,7 +12,9 @@ namespace CASM {
     class UnitCellCoord;
     class Molecule;
   }
-  using namespace xtal;
+  using xtal::UnitCell;
+  using xtal::UnitCellCoord;
+  using xtal::Molecule;
 
   class PrimClex;
   class Supercell;

@@ -14,6 +14,8 @@
 #include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
+using xtal::ScelEnumProps;
+using xtal::SuperlatticeEnumerator;
 
 TEST(ScelDatabase_Test, Test1) {
 
@@ -80,7 +82,7 @@ TEST(ScelDatabase_Test, Test1) {
   EXPECT_EQ(true, true);
   EXPECT_EQ(std::distance(lat_enum.begin(), lat_enum.end()), 87);
   for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
-    db_scel.emplace(&primclex, it->canonical_form(prim.point_group()));
+    db_scel.emplace(&primclex, xtal::canonical::equivalent(*it, prim.point_group()));
   }
   EXPECT_EQ(db_scel.size(), 87);
 

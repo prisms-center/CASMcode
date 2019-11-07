@@ -7,6 +7,10 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 
 using namespace CASM;
+using xtal::Site;
+using xtal::Lattice;
+using xtal::Coordinate;
+using xtal::Molecule;
 
 
 TEST(SiteTest, Test1) {

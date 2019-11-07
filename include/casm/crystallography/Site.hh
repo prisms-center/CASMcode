@@ -12,7 +12,6 @@
 
 namespace CASM {
   class jsonParser;
-  class SymOp;
 
   template<typename OccType>
   class OccupantDoF;
@@ -20,7 +19,7 @@ namespace CASM {
 
   namespace xtal {
 
-
+    class SymOp;
     class Molecule;
 
 
@@ -97,7 +96,14 @@ namespace CASM {
       void set_label(Index _new_label);
 
       Site &apply_sym(const SymOp &op);
-      Site &apply_sym_no_trans(const SymOp &op);
+
+      template <typename ExternSymOp>
+      Site &apply_sym(const ExternSymOp &op) {
+        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
+      }
+
+
+      /* Site &apply_sym_no_trans(const SymOp &op); */
 
       void read(std::istream &stream, bool SD_is_on = false);
       void read(std::istream &stream, std::string &elem, bool SD_is_on);
@@ -141,7 +147,13 @@ namespace CASM {
 
     std::ostream &operator<< (std::ostream &stream, const Site &site);
 
+    ///Apply the symmetry operation to the site, and return a new transformed value
     Site operator*(const SymOp &LHS, const Site &RHS);
+    template<typename ExternSymOp>
+    Site operator*(const ExternSymOp &LHS, const Site &RHS) {
+      return adapter::Adapter<SymOp, ExternSymOp>()(LHS) * RHS;
+    }
+
     Site operator+(const Site &LHS, const Coordinate &RHS);
     Site operator+(const Coordinate &LHS, const Site &RHS);
 

@@ -21,7 +21,7 @@ namespace test {
   public:
 
     Proj(fs::path _proj_dir,
-         const BasicStructure<Site> &_prim,
+         const xtal::BasicStructure<xtal::Site> &_prim,
          std::string _title,
          std::string _desc) :
       dir(_proj_dir),
@@ -33,7 +33,7 @@ namespace test {
     virtual ~Proj() {}
 
     fs::path dir;
-    BasicStructure<Site> prim;
+    xtal::BasicStructure<xtal::Site> prim;
     std::string title;
     std::string desc;
 

@@ -1,12 +1,10 @@
 #ifndef SuperlatticeEnumerator_HH
 #define SuperlatticeEnumerator_HH
 
-#include "casm/external/Eigen/Dense"
-
-#include "casm/casm_io/json_io/jsonParser.hh"
 #include "casm/crystallography/HermiteCounter.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymType.hh"
+#include "casm/external/Eigen/Dense"
 #include "casm/misc/cloneable_ptr.hh"
 
 //Including this file allows passing arbitrary
@@ -15,9 +13,8 @@
 #include "casm/crystallography/Adapter.hh"
 
 namespace CASM {
-  class PrimClex;
+  class jsonParser;
   namespace xtal {
-
 
     /** \defgroup LatticeEnum Lattice Enumerators
      *
@@ -222,7 +219,7 @@ namespace CASM {
       /// \param enum_props Data structure specifying how to enumerate supercells
       ///
       SuperlatticeEnumerator(const Lattice &unit,
-                             const SymGroupType &point_grp,
+                             const SymOpVector &point_grp,
                              const ScelEnumProps &enum_props);
 
       /// Initialize with the unit lattice to be tiled, and specification for how to enumerate
@@ -233,14 +230,14 @@ namespace CASM {
                              ExternSymGroupTypeIt end,
                              const Lattice &unit,
                              const ScelEnumProps &enum_props)
-        : SuperlatticeEnumerator(unit, adapter::Adapter<SymGroupType, ExternSymGroupTypeIt>()(begin, end), enum_props) {
+        : SuperlatticeEnumerator(unit, adapter::Adapter<SymOpVector, ExternSymGroupTypeIt>()(begin, end), enum_props) {
       }
 
       /// \brief Access the unit the is being made into superlattices
       const Lattice &unit() const;
 
       /// \brief Access the unit point group
-      const SymGroupType &point_group() const;
+      const SymOpVector &point_group() const;
 
       /// \brief Set the beginning volume
       void begin_volume(size_type _begin_volume);
@@ -284,7 +281,7 @@ namespace CASM {
       /* Lattice m_lat; */
 
       /// \brief The point group of the unit cell
-      SymGroupType m_point_group;
+      SymOpVector m_point_group;
 
       /// \brief The first volume supercells to be iterated over (what cbegin uses)
       const int m_begin_volume;
@@ -301,47 +298,6 @@ namespace CASM {
     };
 
     //********************************************************************************************************//
-
-    /// \brief Read unit cell transformation matrix from JSON input
-    ///
-    /// Input json with one of the following forms:
-    /// - \code
-    ///   {
-    ///     "unit_cell" : [
-    ///       [X, X, X],
-    ///       [X, X, X],
-    ///       [X, X, X]
-    ///     ]
-    ///   }
-    ///   \endcode
-    /// - \code
-    ///   { "unit_cell" : "SCEL..."}
-    ///   \endcode
-    /// - If input is null or does not contain "unit_cell", returns identity matrix.
-    ///
-    Eigen::Matrix3i make_unit_cell(const PrimClex &primclex, const jsonParser &json);
-
-    /// \brief Make a ScelEnumProps object from JSON input
-    ///
-    /// - min: int (default=1)
-    /// - max: int (default=max existing supercell size)
-    /// - dirs: string, (default="abc")
-    /// - unit_cell: 3x3 matrix of int, or string (default=identity matrix)
-    /// \code
-    /// {
-    ///   "min" : 1,
-    ///   "max" : 5,
-    ///   "dirs" : "abc",
-    ///   "unit_cell" : [
-    ///     [0, 0, 0],
-    ///     [0, 0, 0],
-    ///     [0, 0, 0]
-    ///   ],
-    ///   "unit_cell" : "SCEL...",
-    /// }
-    /// \endcode
-    ///
-    ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
 
     /// \brief Return a transformation matrix that ensures a supercell of at least
     ///        some volume
@@ -362,7 +318,7 @@ namespace CASM {
     ///
     Eigen::Matrix3i enforce_min_volume(const Lattice &unit,
                                        const Eigen::Matrix3i &T,
-                                       const SymGroupType &point_grp,
+                                       const SymOpVector &point_grp,
                                        Index volume,
                                        bool fix_shape = false);
 
@@ -373,7 +329,7 @@ namespace CASM {
                                        const Eigen::Matrix3i &T,
                                        Index volume,
                                        bool fix_shape = false) {
-      return enforce_min_volume(unit, T, adapter::Adapter<SymGroupType, ExternSymGroupTypeIt>()(begin, end), volume, fix_shape);
+      return enforce_min_volume(unit, T, adapter::Adapter<SymOpVector, ExternSymGroupTypeIt>()(begin, end), volume, fix_shape);
     }
 
     /// \brief Return canonical hermite normal form of the supercell matrix
@@ -408,7 +364,7 @@ namespace CASM {
     /// \relatesalso Lattice
     ///
     Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T,
-                                  const SymGroupType &effective_pg,
+                                  const SymOpVector &effective_pg,
                                   const Lattice &ref_lattice);
     template<typename ExternSymGroupTypeIt>
     Eigen::Matrix3i canonical_hnf(
@@ -416,16 +372,11 @@ namespace CASM {
       ExternSymGroupTypeIt end,
       const Eigen::Matrix3i &T,
       const Lattice &ref_lattice) {
-      return canonical_hnf(T, adapter::Adapter<SymGroupType, ExternSymGroupTypeIt>()(begin, end), ref_lattice);
+      return canonical_hnf(T, adapter::Adapter<SymOpVector, ExternSymGroupTypeIt>()(begin, end), ref_lattice);
     }
 
   }
   jsonParser &to_json(const xtal::ScelEnumProps &props, jsonParser &json);
-
-  template <>
-  struct jsonConstructor<xtal::ScelEnumProps> {
-    static xtal::ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
-  };
 
 }
 
