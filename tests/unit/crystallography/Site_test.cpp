@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/crystallography/Site.hh"
@@ -10,9 +9,7 @@
 using namespace CASM;
 
 
-BOOST_AUTO_TEST_SUITE(SiteTest)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(SiteTest, Test1) {
 
   Eigen::Vector3d vec(0.0, 0.2, 0.4);
   double tol(1e-5);
@@ -27,19 +24,17 @@ BOOST_AUTO_TEST_CASE(Test1) {
   Coordinate coord(vec, lat, CART);
 
   Site site_a(lat);
-  BOOST_CHECK_EQUAL(site_a.occupant_dof().size(), 0);
+  EXPECT_EQ(site_a.occupant_dof().size(), 0);
 
   Site site_b(coord, "A");
-  BOOST_CHECK_EQUAL(site_b.occupant_dof().size(), 1);
+  EXPECT_EQ(site_b.occupant_dof().size(), 1);
 
   Site site_c(coord, {Molecule::make_atom("A"), Molecule::make_atom("B"), Molecule::make_atom("C")});
-  BOOST_CHECK_EQUAL(site_c.occupant_dof().size(), 3);
+  EXPECT_EQ(site_c.occupant_dof().size(), 3);
 
   std::vector<Molecule> tocc {Molecule::make_atom("C"), Molecule::make_atom("D")};
   site_c.set_allowed_occupants(tocc);
-  BOOST_CHECK_EQUAL(site_c.occupant_dof().size(), 2);
+  EXPECT_EQ(site_c.occupant_dof().size(), 2);
 
 }
 
-
-BOOST_AUTO_TEST_SUITE_END()

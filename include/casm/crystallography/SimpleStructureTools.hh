@@ -10,90 +10,94 @@
 
 
 namespace CASM {
-
-  /** \ingroup Structure
-   *  @{
-   */
-  class SimpleStructure;
-
   class jsonParser;
   class Supercell;
   class ConfigDoF;
   class Configuration;
-  class Site;
-
-  template<typename CoordType>
-  class BasicStructure;
 
   namespace DoFType {
     class Traits;
   }
 
-  class TransformDirective {
-  public:
 
-    /// \brief consturct from transformation or DoF type name
-    TransformDirective(std::string const &_name);
+  namespace xtal {
 
-    /// \brief Name of DoFType or transformation
-    std::string const &name() const {
-      return m_name;
-    }
+    /** \ingroup Structure
+     *  @{
+     */
+    class SimpleStructure;
 
-    /// \brief Compare with _other TransformDirective. Returns true if this TransformDirective has precedence
-    bool operator<(TransformDirective const &_other) const;
+    class Site;
 
-    /// \brief Applies transformation to _struc using information contained in _config
-    void transform(ConfigDoF const  &_config, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const;
+    template<typename CoordType>
+    class BasicStructure;
 
-  private:
-    /// \brief Build m_before object by recursively traversing DoF dependencies
-    void _accumulate_before(std::set<std::string>const &_queue, std::set<std::string> &_result) const;
+    class TransformDirective {
+    public:
 
-    /// \brief Build m_after object by recursively traversing DoF dependencies
-    void _accumulate_after(std::set<std::string>const &_queue, std::set<std::string> &_result) const;
+      /// \brief consturct from transformation or DoF type name
+      TransformDirective(std::string const &_name);
 
-    std::string m_name;
-    std::set<std::string> m_before;
-    std::set<std::string> m_after;
+      /// \brief Name of DoFType or transformation
+      std::string const &name() const {
+        return m_name;
+      }
 
-    DoFType::Traits const *m_traits_ptr;
-  };
+      /// \brief Compare with _other TransformDirective. Returns true if this TransformDirective has precedence
+      bool operator<(TransformDirective const &_other) const;
 
-  /// \brief Construct from decorated structure and specify prefix for output quantities
-  SimpleStructure to_simple_structure(BasicStructure<Site> const &_struc, std::string const &_prefix = "");
+      /// \brief Applies transformation to _struc using information contained in _config
+      void transform(ConfigDoF const  &_config, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const;
 
-  /// \brief Construct from Configuration and specify prefix for output quantities
-  SimpleStructure to_simple_structure(Configuration const &_config,
-                                      std::string const &_prefix = "",
-                                      std::vector<DoFKey> const &_which_dofs = {});
+    private:
+      /// \brief Build m_before object by recursively traversing DoF dependencies
+      void _accumulate_before(std::set<std::string>const &_queue, std::set<std::string> &_result) const;
 
-  /// \brief Construct from ConfigDoF _dof belonging to provided Supercell _scel; specify prefix for output quantities
-  SimpleStructure to_simple_structure(Supercell const &_scel,
-                                      ConfigDoF const &_dof,
-                                      std::string const &_prefix = "",
-                                      std::vector<DoFKey> const &_which_dofs = {});
+      /// \brief Build m_after object by recursively traversing DoF dependencies
+      void _accumulate_after(std::set<std::string>const &_queue, std::set<std::string> &_result) const;
+
+      std::string m_name;
+      std::set<std::string> m_before;
+      std::set<std::string> m_after;
+
+      DoFType::Traits const *m_traits_ptr;
+    };
+
+    /// \brief Construct from decorated structure and specify prefix for output quantities
+    SimpleStructure to_simple_structure(BasicStructure<Site> const &_struc, std::string const &_prefix = "");
+
+    /// \brief Construct from Configuration and specify prefix for output quantities
+    SimpleStructure to_simple_structure(Configuration const &_config,
+                                        std::string const &_prefix = "",
+                                        std::vector<DoFKey> const &_which_dofs = {});
+
+    /// \brief Construct from ConfigDoF _dof belonging to provided Supercell _scel; specify prefix for output quantities
+    SimpleStructure to_simple_structure(Supercell const &_scel,
+                                        ConfigDoF const &_dof,
+                                        std::string const &_prefix = "",
+                                        std::vector<DoFKey> const &_which_dofs = {});
 
 
-  std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim);
-  std::vector<std::set<Index> > mol_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim);
+    std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim);
+    std::vector<std::set<Index> > mol_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim);
 
-  std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc, Configuration const &_config);
-  std::vector<std::set<Index> > mol_site_compatibility(SimpleStructure const &sstruc, Configuration const &_config);
+    std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc, Configuration const &_config);
+    std::vector<std::set<Index> > mol_site_compatibility(SimpleStructure const &sstruc, Configuration const &_config);
 
-  /// \brief Imposes DoF values from ConfigDoF _config onto *this, using using any necessary information contained in _reference
-  void _apply_dofs(SimpleStructure &_sstruc, ConfigDoF const &_config, BasicStructure<Site> const &_reference, std::vector<DoFKey> which_dofs);
+    /// \brief Imposes DoF values from ConfigDoF _config onto *this, using using any necessary information contained in _reference
+    void _apply_dofs(SimpleStructure &_sstruc, ConfigDoF const &_config, BasicStructure<Site> const &_reference, std::vector<DoFKey> which_dofs);
 
-  /// \brief use information in _reference to initialize atom_info from mol_info
-  void _atomize(SimpleStructure &_sstruc, Eigen::Ref<const Eigen::VectorXi> const &_mol_occ, BasicStructure<Site> const &_reference);
+    /// \brief use information in _reference to initialize atom_info from mol_info
+    void _atomize(SimpleStructure &_sstruc, Eigen::Ref<const Eigen::VectorXi> const &_mol_occ, BasicStructure<Site> const &_reference);
 
-  /// \brief Output to JSON, excluding any molecular or atomic species contained in 'excluded_species'
-  jsonParser &to_json(SimpleStructure const &_struc,
-                      jsonParser &json_supplement,
-                      std::set<std::string> const &excluded_species = {"Va", "VA", "va"});
+    /// \brief Output to JSON, excluding any molecular or atomic species contained in 'excluded_species'
+    jsonParser &to_json(SimpleStructure const &_struc,
+                        jsonParser &json_supplement,
+                        std::set<std::string> const &excluded_species = {"Va", "VA", "va"});
 
-  /// \brief Read from JSON
-  void from_json(SimpleStructure &_struc, const jsonParser &json);
+    /// \brief Read from JSON
+    void from_json(SimpleStructure &_struc, const jsonParser &json);
 
+  }
 }
 #endif

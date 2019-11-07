@@ -2,7 +2,7 @@
 #define CASM_ScelEnum
 
 #include "casm/misc/cloneable_ptr.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/enumerator/InputEnumerator.hh"
 #include "casm/enumerator/RandomAccessEnumerator.hh"
 #include "casm/clex/Supercell.hh"
@@ -101,9 +101,9 @@ namespace CASM {
 
     const PrimClex *m_primclex;
 
-    std::unique_ptr<SupercellEnumerator<Lattice> > m_lattice_enum;
-    SupercellEnumerator<Lattice>::const_iterator m_lat_it;
-    SupercellEnumerator<Lattice>::const_iterator m_lat_end;
+    std::unique_ptr<SuperlatticeEnumerator > m_lattice_enum;
+    SuperlatticeEnumerator::const_iterator m_lat_it;
+    SuperlatticeEnumerator::const_iterator m_lat_end;
 
     bool m_existing_only;
   };

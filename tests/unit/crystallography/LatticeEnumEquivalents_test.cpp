@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/crystallography/LatticeEnumEquivalents.hh"
@@ -7,38 +6,43 @@
 /// What is being used to test it:
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Structure.hh"
-#include "ZrOProj.hh"
+#include "crystallography/TestStructures.hh"
 
 using namespace CASM;
 using namespace test;
 
-BOOST_AUTO_TEST_SUITE(LatticeEnumEquivalentsTest)
+void generate_master_lat_pt_grp(MasterSymGroup *master, const Lattice &lat) {
+  master->set_lattice(lat);
+  for(const auto &op : SymGroup::lattice_point_group(lat)) {
+    master->push_back(op);
+  }
+}
 
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(LatticeEnumEquivalentsTest, Test1) {
 
   Structure ZrO(ZrO_prim());
 
   LatticeEnumEquivalents enumerator(ZrO.lattice(), ZrO.factor_group());
-  BOOST_CHECK_MESSAGE(1, "LatticeEnumEquivalents construction failed");
+  EXPECT_TRUE(1) << "LatticeEnumEquivalents construction failed";
 
   auto begin = enumerator.begin();
-  BOOST_CHECK_MESSAGE(1, "LatticeEnumEquivalents::begin() failed");
+  EXPECT_TRUE(1) << "LatticeEnumEquivalents::begin() failed";
 
   auto end = enumerator.end();
-  BOOST_CHECK_MESSAGE(1, "LatticeEnumEquivalents::end() failed");
+  EXPECT_TRUE(1) << "LatticeEnumEquivalents::end() failed";
 
   // for prim, should only be one equivalent
-  BOOST_CHECK_EQUAL(1, std::distance(begin, end));
+  EXPECT_EQ(1, std::distance(begin, end));
 
   // LatticeEnumEquivalents is an InputEnum and allows only a single pass
-  BOOST_CHECK_EQUAL(enumerator.valid(), false);
+  EXPECT_EQ(enumerator.valid(), false);
 
   // LatticeEnumEquivalents is an InputEnum and allows only a single pass
-  BOOST_CHECK_EQUAL(0, std::distance(enumerator.begin(), enumerator.end()));
+  EXPECT_EQ(0, std::distance(enumerator.begin(), enumerator.end()));
 
 }
 
-BOOST_AUTO_TEST_CASE(Test2) {
+TEST(LatticeEnumEquivalentsTest, Test2) {
 
   Structure ZrO(ZrO_prim());
 
@@ -47,117 +51,116 @@ BOOST_AUTO_TEST_CASE(Test2) {
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, b, c), ZrO.factor_group());
-    BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(3, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, 2 * b, c), ZrO.factor_group());
-    BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
 
 }
 
-BOOST_AUTO_TEST_CASE(Test3) {
+TEST(LatticeEnumEquivalentsTest, Test3) {
 
   Lattice lat = Lattice::hexagonal();
-
-  SymGroup pg = SymGroup::lattice_point_group(lat);
-  //lat.generate_point_group(pg);
+  MasterSymGroup pg;
+  generate_master_lat_pt_grp(&pg, lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
 
   {
     LatticeEnumEquivalents e(lat, pg);
-    BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg);
-    BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(3, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, 2 * b, c), pg);
-    BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
 
 }
 
-BOOST_AUTO_TEST_CASE(Test4) {
+TEST(LatticeEnumEquivalentsTest, Test4) {
 
   Lattice lat = Lattice::cubic();
-  SymGroup pg = SymGroup::lattice_point_group(lat);
+  MasterSymGroup pg;
+  generate_master_lat_pt_grp(&pg, lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
 
   {
     LatticeEnumEquivalents e(lat, pg);
-    BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg);
-    BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(3, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, c), pg);
-    BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(3, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, 2.*c), pg);
-    BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(4.*a, 2.*b, 1.*c), pg);
-    BOOST_CHECK_EQUAL(6, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(6, std::distance(e.begin(), e.end()));
   }
 
 }
 
-BOOST_AUTO_TEST_CASE(Test5) {
+TEST(LatticeEnumEquivalentsTest, Test5) {
 
   Lattice lat = Lattice::fcc();
-
-  SymGroup pg = SymGroup::lattice_point_group(lat);
+  MasterSymGroup pg;
+  generate_master_lat_pt_grp(&pg, lat);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = lat.vectors();
 
   {
     LatticeEnumEquivalents e(lat, pg);
-    BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg);
-    BOOST_CHECK_EQUAL(4, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(4, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(c, a - b, a + b - c), pg);
-    BOOST_CHECK_EQUAL(3, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(3, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, c), pg);
-    BOOST_CHECK_EQUAL(6, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(6, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, 2.*c), pg);
-    BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
 
   {
     LatticeEnumEquivalents e(Lattice(4.*a, 2.*b, 1.*c), pg);
-    BOOST_CHECK_EQUAL(12, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(12, std::distance(e.begin(), e.end()));
   }
 
 }
 
-BOOST_AUTO_TEST_SUITE_END()

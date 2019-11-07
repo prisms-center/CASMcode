@@ -1,15 +1,21 @@
 #ifndef CASM_ConfigIOStrucScore
 #define CASM_ConfigIOStrucScore
 
+#include <boost/filesystem.hpp>
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Site;
+    template<typename T> class BasicStructure;
+    class StrucMapper;
+  }
 
-  class Structure;
   class Configuration;
-  class StrucMapper;
+
+  using namespace xtal;
 
   namespace ConfigIO {
 

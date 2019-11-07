@@ -2,6 +2,8 @@
 #include <iostream>
 
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
+#include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"

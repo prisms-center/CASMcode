@@ -4,14 +4,23 @@
 
 namespace CASM {
 
-  SpeciesAttribute &SpeciesAttribute::apply_sym(SymOp const &_op) {
-    m_value = traits().symop_to_matrix(_op.matrix(), _op.tau(), _op.time_reversal()) * m_value;
-    return *this;
+  namespace xtal {
+    SpeciesAttribute &SpeciesAttribute::apply_sym(SymOp const &_op) {
+      m_value = traits().symop_to_matrix(_op.matrix(), _op.tau(), _op.time_reversal()) * m_value;
+      return *this;
+    }
+
+    //*******************************************************************
+
+    bool SpeciesAttribute::identical(SpeciesAttribute const &other, double _tol) const {
+      return name() == other.name() && almost_equal(value(), other.value(), _tol);
+    }
   }
 
-  //*******************************************************************
-
-  bool SpeciesAttribute::identical(SpeciesAttribute const &other, double _tol) const {
-    return name() == other.name() && almost_equal(value(), other.value(), _tol);
+  template<>
+  ParsingDictionary<xtal::SpeciesAttribute::BasicTraits>  make_parsing_dictionary<xtal::SpeciesAttribute::BasicTraits>() {
+    ParsingDictionary<xtal::SpeciesAttribute::BasicTraits> dict;
+    return dict;
   }
+
 }

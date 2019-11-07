@@ -167,6 +167,20 @@ namespace CASM {
 
   //*******************************************************************************************
 
+  const SymOp::matrix_type &get_matrix(const SymOp &op) {
+    return op.matrix();
+  }
+
+  const SymOp::vector_type &get_translation(const SymOp &op) {
+    return op.tau();
+  }
+
+  bool get_time_reversal(const SymOp &op) {
+    return op.time_reversal();
+  }
+
+  //*******************************************************************************************
+
   jsonParser &SymOp::to_json(jsonParser &json) const {
     json.put_obj();
 

@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/Supercell_impl.hh"
@@ -14,9 +13,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(SupercellTest)
-
-BOOST_AUTO_TEST_CASE(TestSupercellName) {
+TEST(SupercellTest, TestSupercellName) {
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -28,22 +25,22 @@ BOOST_AUTO_TEST_CASE(TestSupercellName) {
 
   {
     Supercell scel {&primclex, Lattice(a, b, c)};
-    BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(scel.name(), "SCEL1_1_1_1_0_0_0");
+    EXPECT_EQ(true, true);
+    EXPECT_EQ(scel.name(), "SCEL1_1_1_1_0_0_0");
   }
 
   {
     // standard cubic FCC unit cell
     Supercell scel {&primclex, Lattice(c + b - a, a - b + c, a + b - c)};
-    BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(scel.name(), "SCEL4_2_2_1_1_1_0");
+    EXPECT_EQ(true, true);
+    EXPECT_EQ(scel.name(), "SCEL4_2_2_1_1_1_0");
   }
 
   {
     // non-standard, but equivalent cubic FCC unit cell
     Supercell scel {&primclex, Lattice(c + b - a, a - b + c, (a + b - c) + (c + b - a))};
-    BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(scel.name(), "SCEL4_2_2_1_1_1_0");
+    EXPECT_EQ(true, true);
+    EXPECT_EQ(scel.name(), "SCEL4_2_2_1_1_1_0");
   }
 
   {
@@ -52,10 +49,8 @@ BOOST_AUTO_TEST_CASE(TestSupercellName) {
     Lattice rotated_lat = copy_apply(primclex.prim().point_group()[10], lat);
 
     Supercell scel {&primclex, rotated_lat};
-    BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(scel.name(), "SCEL8_4_2_1_1_3_2.5");
+    EXPECT_EQ(true, true);
+    EXPECT_EQ(scel.name(), "SCEL8_4_2_1_1_3_2.5");
   }
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

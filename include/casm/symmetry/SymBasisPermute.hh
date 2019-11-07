@@ -6,10 +6,14 @@
 #include "casm/symmetry/SymOpRepresentation.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Lattice;
+  }
+
   class MasterSymGroup;
-  class Lattice;
   class jsonParser;
 
+  using namespace xtal;
   /** \ingroup SymOp
    *  @{
    */

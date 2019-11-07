@@ -43,7 +43,7 @@ namespace CASM {
 
       using AtomName = std::string;
 
-      using SpeciesMode = SimpleStructure::SpeciesMode;
+      using SpeciesMode = xtal::SimpleStructure::SpeciesMode;
 
       /// \brief Construct PrintPOSCAR object
       ///
@@ -56,7 +56,7 @@ namespace CASM {
       /// - atom names appended to each coordinate line
       /// - {"Va", "va", "VA"} atoms ignored
       ///
-      PrintPOSCAR(SimpleStructure _struc, std::string _title = "", SpeciesMode _mode = SpeciesMode::ATOM);
+      PrintPOSCAR(xtal::SimpleStructure _struc, std::string _title = "", SpeciesMode _mode = SpeciesMode::ATOM);
 
       /// \brief Set title
       void set_title(std::string title) {
@@ -141,8 +141,10 @@ namespace CASM {
 
       std::string m_title;
       SpeciesMode m_species_mode;
-      SimpleStructure m_struc;
+
+      xtal::SimpleStructure m_struc;
       std::vector<Index> m_permute;
+
       double m_scale;
       COORD_TYPE m_coord_mode;
       bool m_atom_names;

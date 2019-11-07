@@ -13,6 +13,25 @@
 #include "casm/clex/Configuration.hh"
 namespace CASM {
 
+  template<typename ValueType, bool IsConst>
+  class ValEnumerator;
+
+  class PrimClex;
+  class Supercell;
+  class ScelEnum;
+
+  namespace Completer {
+    class EnumOption;
+  }
+
+  namespace xtal {
+    class ScelEnumProps;
+    class Lattice;
+    class SuperlatticeEnumerator;
+  }
+  using namespace xtal;
+
+
   /** \defgroup Enumerator
    *
    *  \ingroup Container
@@ -44,7 +63,7 @@ namespace CASM {
    *
    *  - To collect CLI input and construct an ScelEnum which enumerates canonical
    *  Supercell: ::make_enumerator_scel_enum
-   *  - To collect CLI input and construct an SupercellEnumerator<Lattice> which
+   *  - To collect CLI input and construct an SuperlatticeEnumerator which
    *  enumerates super-lattices which may not be canonical: ::make_enumerator_superlat_enum
    *  - To save results from enumerators of unique, primitive, canonical
    *  Configurations: ::insert_unique_canon_configs
@@ -85,9 +104,6 @@ namespace CASM {
 
       @{
   */
-
-  template<typename ValueType, bool IsConst>
-  class ValEnumerator;
 
   // ---- Enumerator ---------------------
 
@@ -398,18 +414,6 @@ namespace CASM {
 
   // ---- Interface ---------------------
 
-  class PrimClex;
-  class ScelEnum;
-  class ScelEnumProps;
-  class Lattice;
-  class Supercell;
-  template<typename T>
-  class SupercellEnumerator;
-
-  namespace Completer {
-    class EnumOption;
-  }
-
   /** \addtogroup Enumerator
       @{
   */
@@ -485,8 +489,8 @@ namespace CASM {
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt);
 
-  /// \brief Standardizes parsing casm enum input options to make an SupercellEnumerator<Lattice>
-  std::unique_ptr<SupercellEnumerator<Lattice> > make_enumerator_superlat_enum(
+  /// \brief Standardizes parsing casm enum input options to make a SuperlatticeEnumerator
+  std::unique_ptr<SuperlatticeEnumerator> make_enumerator_superlat_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt);

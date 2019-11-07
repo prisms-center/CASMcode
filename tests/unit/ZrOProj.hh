@@ -1,8 +1,10 @@
 #ifndef CASMtest_ZrOProj
 #define CASMtest_ZrOProj
 
+#include "gtest/gtest.h"
 #include <boost/filesystem.hpp>
 
+#include "crystallography/TestStructures.hh"
 #include "Proj.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/crystallography/Molecule.hh"
@@ -15,35 +17,12 @@ using namespace CASM;
 
 namespace test {
 
-  inline BasicStructure<Site> ZrO_prim() {
-
-    // lattice vectors as rows
-    Eigen::Matrix3d lat;
-    lat << 3.233986860000, 0.000000000000, 0.000000000000,
-        -1.616993430000, 2.800714770000, 0.000000000000,
-        0.000000000000, 0.000000000000, 5.168678340000;
-
-    BasicStructure<Site> struc(Lattice(lat.transpose()));
-    struc.set_title("ZrO");
-
-    Molecule O = Molecule::make_atom("O");
-    Molecule Zr = Molecule::make_atom("Zr");
-    Molecule Va = Molecule::make_vacancy();
-
-    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), FRAC), {Zr}));
-    struc.push_back(Site(Coordinate(Eigen::Vector3d(2. / 3., 1. / 3., 1. / 2.), struc.lattice(), FRAC), {Zr}));
-    struc.push_back(Site(Coordinate(Eigen::Vector3d(1. / 3., 2. / 3., 1. / 4.), struc.lattice(), FRAC), {Va, O}));
-    struc.push_back(Site(Coordinate(Eigen::Vector3d(1. / 3., 2. / 3., 3. / 4.), struc.lattice(), FRAC), {Va, O}));
-
-    return struc;
-  }
-
   class ZrOProj : public Proj {
 
   public:
 
     ZrOProj() :
-      Proj(proj_dir("tests/unit/test_projects/ZrO"),
+      Proj(proj_dir(autotools::abs_srcdir() + "/tests/unit/test_projects/ZrO"),
            ZrO_prim(),
            "ZrO",
            "HCP Zr with octahedral interstitial O") {}
@@ -89,6 +68,7 @@ namespace test {
       _check_composition_axes(axes.begin(), axes.end());
     }
 
+    //TODO: This code has been copied and pasted... there's probably a lot of it lurking around
     /// \brief Uses bspecs() and checks that 5 branches are generated,
     ///        and that --orbits, --clusters, and --functions run without error.
     void check_bset() override {
@@ -96,15 +76,15 @@ namespace test {
       // check for success with a valid bspecs
       bspecs().write(dir / "basis_sets" / "bset.default" / "bspecs.json");
 
-      m_p.popen(cd_and() + "ccasm bset -u");
-      BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
+      m_p.popen(cd_and() + autotools::abs_ccasm_path() + " bset -u");
+      EXPECT_EQ(m_p.exit_code(), 0) << m_p.gets();
 
-      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*clust\.json)")) == true, m_p.gets());
-      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*basis\.json)")) == true, m_p.gets());
-      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*)" + title + R"(_Clexulator\.cc)")) == true, m_p.gets());
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*clust\.json)")), true) << m_p.gets();
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*basis\.json)")), true) << m_p.gets();
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*)" + title + R"(_Clexulator\.cc)")), true) << m_p.gets();
 
-      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set->default_clex().bset)), m_p.gets());
-      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set->name(), m_set->default_clex().bset)), m_p.gets());
+      EXPECT_EQ(true, fs::exists(m_dirs.clust(m_set->default_clex().bset))) << m_p.gets();
+      EXPECT_EQ(true, fs::exists(m_dirs.clexulator_src(m_set->name(), m_set->default_clex().bset))) << m_p.gets();
 
       std::string str;
 
@@ -115,9 +95,9 @@ namespace test {
       boost::regex re(pattern);
 
       std::vector<std::string> checks = {
-        "ccasm bset --orbits",
-        "ccasm bset --clusters",
-        "ccasm bset --functions"
+        autotools::abs_ccasm_path() + " bset --orbits",
+        autotools::abs_ccasm_path() + " bset --clusters",
+        autotools::abs_ccasm_path() + " bset --functions"
       };
 
       for(auto it = checks.begin(); it != checks.end(); ++it) {
@@ -128,15 +108,15 @@ namespace test {
         auto end = boost::sregex_iterator();
         auto count = std::distance(begin, end);
 
-        BOOST_CHECK_MESSAGE(count == 5, m_p.gets());
+        EXPECT_EQ(count, 5) << m_p.gets();
       }
 
       // check that you can't overwrite without using -f
-      m_p.popen(cd_and() + "ccasm bset -u");
-      BOOST_CHECK_EQUAL(m_p.exit_code(), 6);
+      m_p.popen(cd_and() + autotools::abs_ccasm_path() + " bset -u");
+      EXPECT_EQ(m_p.exit_code(), 6);
 
-      m_p.popen(cd_and() + "ccasm bset -uf");
-      BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
+      m_p.popen(cd_and() + autotools::abs_ccasm_path() + " bset -uf");
+      EXPECT_EQ(m_p.exit_code(), 0);
 
     }
 
@@ -144,19 +124,19 @@ namespace test {
     void check_enum() override {
 
       {
-        m_p.popen(cd_and() + "ccasm enum --method ScelEnum --max 10");
+        m_p.popen(cd_and() + autotools::abs_ccasm_path() + " enum --method ScelEnum --max 10");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
-        BOOST_CHECK_MESSAGE(primclex.generic_db<Supercell>().size() == 147, m_p.gets());
+        EXPECT_EQ(primclex.generic_db<Supercell>().size(), 147) << m_p.gets();
       }
 
       {
-        m_p.popen(cd_and() + "ccasm enum --method ConfigEnumAllOccupations --max 6");
+        m_p.popen(cd_and() + autotools::abs_ccasm_path() + " enum --method ConfigEnumAllOccupations --max 6");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
-        BOOST_CHECK_MESSAGE(primclex.generic_db<Configuration>().size() == 5763, m_p.gets());
+        EXPECT_EQ(primclex.generic_db<Configuration>().size(), 5763) << m_p.gets();
       }
     }
 

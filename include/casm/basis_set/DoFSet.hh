@@ -2,6 +2,7 @@
 #define CASM_DoFSet
 
 #include <vector>
+#include <string>
 #include "casm/basis_set/DoF.hh"
 
 

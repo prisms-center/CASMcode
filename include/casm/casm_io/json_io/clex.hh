@@ -7,10 +7,12 @@
 #include "casm/clex/ChemicalReference.hh"
 
 namespace CASM {
-  template<typename CoordType>
-  class BasicStructure;
-
-  class Site;
+  namespace xtal {
+    template<typename CoordType>
+    class BasicStructure;
+    class Site;
+  }
+  using namespace xtal;
 
   /**
    * \ingroup ProjectIO

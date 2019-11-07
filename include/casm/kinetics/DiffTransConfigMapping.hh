@@ -12,8 +12,11 @@
 #include "casm/crystallography/Structure.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Lattice;
+  }
+
   class Supercell;
-  class Lattice;
   class SymGroup;
   class PrimClex;
   class Configuration;

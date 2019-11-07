@@ -1,0 +1,11 @@
+bin_PROGRAMS += \
+    ccasm
+ccasm_SOURCES = \
+    apps/ccasm/ccasm.cpp
+ccasm_LDADD = \
+    libcasm.la\
+    $(BOOST_SYSTEM_LIB)\
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_REGEX_LIB)\
+    $(BOOST_CHRONO_LIB)

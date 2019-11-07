@@ -14,20 +14,23 @@
 #include "casm/symmetry/SymInfo.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Structure;
+    class SpeciesAttribute;
+    class AtomPosition;
+    class Molecule;
+    class Site;
+    class UnitCellCoord;
+    template<typename CoordType> class BasicStructure;
+  }
+  using namespace xtal;
 
   // --- These functions are for casm I/O -----------
 
-  template<typename CoordType> class BasicStructure;
-  class Structure;
-  class SpeciesAttribute;
-  class AtomPosition;
-  class Molecule;
-  class Site;
   class jsonParser;
   class ClexBasis;
   class HamiltonianModules;
   class ChemicalReference;
-  class UnitCellCoord;
   class SymGroup;
   class PrimClex;
 

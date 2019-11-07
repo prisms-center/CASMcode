@@ -1,4 +1,4 @@
-# Build and upload conda packages 'casm-cpp' 'casm-python' and 'casm'
+# Build and upload conda packages 'casm-cpp' and 'casm'
 #
 #   requires variables:
 #     CASM_CONDA_TOKEN
@@ -23,7 +23,7 @@ check_var "CASM_CONDA_ID_USER" "Where to push conda packages (https://anaconda.o
 check_secret_var "CASM_CONDA_TOKEN" "Token required to upload conda packages"
 check_var "CASM_CONDA_LABEL" "Conda channel label (\"dev\" or \"main\")" "dev"
 check_var "CASM_CONDA_DIR" "Location where conda is installed" "$HOME/.local/conda"
-check_var "CASM_BUILD_BOOST" "If non-zero length, build casm-boost, otherwise build casm-python, casm-cpp, and casm" ""
+check_var "CASM_BUILD_BOOST" "If non-zero length, build casm-boost, otherwise build casm-cpp and casm" ""
 check_var "CASM_NCPU" "Compiler -j option" 2
 
 if [ "$CASM_OS_NAME" == "osx" ]; then
@@ -43,11 +43,6 @@ bash $CASM_BUILD_DIR/build_scripts/install-miniconda.sh
 if [ -n "$CASM_BUILD_BOOST" ]; then
   build_conda_package "casm-boost" $CASM_CONDA_FEATURE $CASM_BOOST_VERSION $CASM_BOOST_BUILD_NUMBER
 else
-  # only build casm-python once for linux/osx
-  if [ "$CASM_CONDA_FEATURE" == "$CASM_DEFAULT_CONDA_FEATURE" ]; then
-    build_conda_package "casm-python" $CASM_OS_NAME $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
-  fi
-
   build_conda_package "casm-cpp" $CASM_CONDA_FEATURE $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
   build_conda_package "casm" $CASM_CONDA_FEATURE $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
 fi

@@ -4,13 +4,14 @@
 #include "casm/clex/Reference.hh"
 
 namespace CASM {
+  namespace xtal {
+    template<typename CoordType>
+    class BasicStructure;
+    class Site;
+  }
+  using namespace xtal;
 
   class PrimClex;
-
-  class Site;
-
-  template<typename CoordType>
-  class BasicStructure;
 
   /** \ingroup Reference
    *

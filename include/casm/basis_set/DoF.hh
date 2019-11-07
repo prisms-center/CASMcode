@@ -4,6 +4,7 @@
 #include<vector>
 #include<set>
 #include<functional>
+#include<string>
 #include<boost/algorithm/string.hpp>
 #include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/basis_set/DoFDecl.hh"
@@ -15,15 +16,23 @@
 #include "casm/symmetry/SymGroupRepID.hh"
 
 namespace CASM {
-  class SymGroup;
+
+  namespace xtal {
+    class Molecule;
+  }
+  using namespace xtal;
 
   class AnisoValTraits;
+
+  class SymGroup;
+  class jsonParser;
 
   template<typename OccType>
   class OccupantDoF;
 
   class ContinuousDoF;
   class DoFSet;
+
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   namespace DoF {

@@ -1,5 +1,5 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 #include "casm/clusterography/ClusterOrbits.hh"
@@ -21,9 +21,7 @@
 using namespace CASM;
 using namespace test;
 
-BOOST_AUTO_TEST_SUITE(LocalClusterExpansionTest)
-
-BOOST_AUTO_TEST_CASE(Test0) {
+TEST(LocalClusterExpansionTest, Test0) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -32,7 +30,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
 
-  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
+  fs::path bspecs_path = autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
 
@@ -54,7 +52,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     &primclex);
   Kinetics::DiffusionTransformation trans = diff_trans_orbits[0].prototype();
 
-  fs::path local_bspecs_path = "tests/unit/kinetics/ZrO_local_bspecs_1.json";
+  fs::path local_bspecs_path = autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_local_bspecs_1.json";
   jsonParser local_bspecs {local_bspecs_path};
 
   // in ZrO we are looking at the hop from octahedral interstitial (O-site) to nearest octahedral interstitial (O-site):
@@ -131,17 +129,17 @@ BOOST_AUTO_TEST_CASE(Test0) {
   for(const auto &orb : local_orbits) {
     mult.push_back(orb.size());
     if(expected_mult_it != expected_mult.end()) {
-      BOOST_CHECK_EQUAL(orb.size(), *expected_mult_it);
+      EXPECT_EQ(orb.size(), *expected_mult_it);
       ++expected_mult_it;
       --count_check[orb.prototype().size()];
     }
     else {
-      BOOST_CHECK_EQUAL(orb.size(), 0);
+      EXPECT_EQ(orb.size(), 0);
     }
   }
 
   for(const auto &pair : count_check) {
-    BOOST_CHECK_EQUAL(pair.second, 0);
+    EXPECT_EQ(pair.second, 0);
   }
 
 
@@ -153,4 +151,3 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
 }
 
-BOOST_AUTO_TEST_SUITE_END()

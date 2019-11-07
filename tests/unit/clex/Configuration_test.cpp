@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/Configuration_impl.hh"
@@ -18,20 +17,20 @@ using namespace CASM;
 
 /// Check that name -> configuration recreates an equivalent configuration
 void check_made_from_name(const Configuration &config, std::string name) {
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   // make configuration from name and database
   Configuration made_from_name = make_configuration(config.primclex(), name);
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   // check that Supercell are equivalent (though vectors may be different)
-  BOOST_CHECK_EQUAL(
-    config.supercell().lattice().is_equivalent(made_from_name.supercell().lattice()),
+  EXPECT_EQ(
+    xtal::is_equivalent(config.supercell().lattice(), made_from_name.supercell().lattice()),
     true);
 
   // fill supercell and check that config are identical
   Configuration in_same_supercell = made_from_name.fill_supercell(config.supercell());
-  BOOST_CHECK_EQUAL((config == in_same_supercell), true);
+  EXPECT_EQ((config == in_same_supercell), true);
 }
 
 Lattice non_canonical_equiv_test_lat(const PrimClex &primclex) {
@@ -44,7 +43,7 @@ Lattice non_canonical_equiv_test_lat(const PrimClex &primclex) {
   Eigen::Vector3d standard_b = a - b + c;
   Eigen::Vector3d standard_c = a + b - c;
 
-  Lattice canon_lat = canonical_equivalent_lattice(
+  Lattice canon_lat = xtal::canonical::equivalent(
                         Lattice(standard_a, standard_b, 2 * standard_c),
                         primclex.prim().point_group(),
                         primclex.crystallography_tol());
@@ -52,7 +51,7 @@ Lattice non_canonical_equiv_test_lat(const PrimClex &primclex) {
   Index scel_op_index = 0;
   for(const auto &op : primclex.prim().point_group()) {
     test_lat = copy_apply(op, canon_lat);
-    if(!test_lat.is_equivalent(canon_lat)) {
+    if(!xtal::is_equivalent(test_lat, canon_lat)) {
       return test_lat;
     }
     ++scel_op_index;
@@ -61,9 +60,7 @@ Lattice non_canonical_equiv_test_lat(const PrimClex &primclex) {
   throw std::runtime_error("could not find non_canonical_equiv_test_lat");
 }
 
-BOOST_AUTO_TEST_SUITE(ConfigurationTest)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(ConfigurationTest, Test1) {
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -76,58 +73,58 @@ BOOST_AUTO_TEST_CASE(Test1) {
   Supercell scel {&primclex, Lattice(a, b, c)};
 
   Configuration config(scel);
-  BOOST_CHECK_EQUAL(config.size(), 1);
+  EXPECT_EQ(config.size(), 1);
 
   // set occupation
-  BOOST_CHECK_EQUAL(config.has_occupation(), false);
+  EXPECT_EQ(config.has_occupation(), false);    //TODO: This fails
 
   config.init_occupation();
-  BOOST_CHECK_EQUAL(config.has_occupation(), true);
+  EXPECT_EQ(config.has_occupation(), true);
 
   config.set_occupation(std::vector<int>({0}));
-  BOOST_CHECK_EQUAL(config.has_occupation(), true);
+  EXPECT_EQ(config.has_occupation(), true);
 
   for(int i = 0; i < 3; ++i) {
     config.set_occ(0, i);
-    BOOST_CHECK_EQUAL(config.occ(0), i);
+    EXPECT_EQ(config.occ(0), i);
   }
 
   // set displacement
   /*
   typedef Configuration::displacement_matrix_t disp_matrix_t;
-  BOOST_CHECK_EQUAL(config.has_displacement(), false);
+  EXPECT_EQ(config.has_displacement(), false);
 
   config.init_displacement();
-  BOOST_CHECK_EQUAL(config.has_displacement(), true);
+  EXPECT_EQ(config.has_displacement(), true);
 
   config.clear_displacement();
-  BOOST_CHECK_EQUAL(config.has_displacement(), false);
+  EXPECT_EQ(config.has_displacement(), false);
 
   config.set_displacement(disp_matrix_t::Zero(3, 1));
-  BOOST_CHECK_EQUAL(config.has_displacement(), true);
+  EXPECT_EQ(config.has_displacement(), true);
 
   for(int i = 0; i < 3; ++i) {
     Eigen::Vector3d d = Eigen::Vector3d::Zero();
     d(i) = 0.001;
     config.set_disp(0, d);
-    BOOST_CHECK_EQUAL(almost_equal(config.disp(0), d), true);
+    EXPECT_EQ(almost_equal(config.disp(0), d), true);
   }
 
   // set deformation
-  BOOST_CHECK_EQUAL(config.has_deformation(), false);
+  EXPECT_EQ(config.has_deformation(), false);
 
   config.init_deformation();
-  BOOST_CHECK_EQUAL(config.has_deformation(), true);
+  EXPECT_EQ(config.has_deformation(), true);
 
   config.clear_deformation();
-  BOOST_CHECK_EQUAL(config.has_deformation(), false);
+  EXPECT_EQ(config.has_deformation(), false);
 
   config.set_deformation(Eigen::Matrix3d::Zero());
-  BOOST_CHECK_EQUAL(config.has_deformation(), true);
+  EXPECT_EQ(config.has_deformation(), true);
   */
 }
 
-BOOST_AUTO_TEST_CASE(TestConfigurationName) {
+TEST(ConfigurationTest, TestConfigurationName) {
   // test Configuration::generate_name_impl
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -148,15 +145,15 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       config.set_occupation(std::vector<int>({0}));
 
       // not in datbase -> id == "none"
-      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/none");
+      EXPECT_EQ(config.name(), "SCEL1_1_1_1_0_0_0/none");
 
       auto res = db.insert(config);
 
       // not from database, but now in it -> id == "0"
-      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/0");
+      EXPECT_EQ(config.name(), "SCEL1_1_1_1_0_0_0/0");
 
       // in datbase -> id == "0"
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL1_1_1_1_0_0_0/0");
+      EXPECT_EQ(res.first->name(), "SCEL1_1_1_1_0_0_0/0");
 
       check_made_from_name(config, res.first->name());
     }
@@ -166,15 +163,15 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       Configuration config(scel);
       config.set_occupation(std::vector<int>({1}));
       // not in datbase -> id == "none"
-      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/none");
+      EXPECT_EQ(config.name(), "SCEL1_1_1_1_0_0_0/none");
 
       auto res = db.insert(config);
 
       // not from database, but now in it -> id == "1"
-      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/1");
+      EXPECT_EQ(config.name(), "SCEL1_1_1_1_0_0_0/1");
 
       // in datbase -> id == "1"
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL1_1_1_1_0_0_0/1");
+      EXPECT_EQ(res.first->name(), "SCEL1_1_1_1_0_0_0/1");
 
       check_made_from_name(config, res.first->name());
     }
@@ -185,7 +182,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       config.set_occupation(std::vector<int>({0}));
 
       // not from database, but now in it -> id == "0"
-      BOOST_CHECK_EQUAL(config.name(), "SCEL1_1_1_1_0_0_0/0");
+      EXPECT_EQ(config.name(), "SCEL1_1_1_1_0_0_0/0");
     }
 
     while(db.size()) {
@@ -201,11 +198,11 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
       config.set_occupation(std::vector<int>({1, 0, 0, 0}));
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/none");
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/none");
 
       auto res = db.insert(config.in_canonical_supercell());
 
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
+      EXPECT_EQ(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
 
       check_made_from_name(config, "SCEL4_2_2_1_1_1_0/0");
     }
@@ -215,14 +212,14 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       Configuration config(scel);
       config.set_occupation(std::vector<int>({0, 1, 0, 0}));
 
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
 
       auto res = db.insert(config.in_canonical_supercell());
-      BOOST_CHECK_EQUAL(res.second, false);
+      EXPECT_EQ(res.second, false);
 
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
 
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
+      EXPECT_EQ(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
 
       check_made_from_name(config, "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
     }
@@ -232,14 +229,14 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       Configuration config(scel);
       config.set_occupation(std::vector<int>({0, 0, 0, 0}));
 
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/none");
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/none");
 
       auto res = db.insert(config.in_canonical_supercell());
-      BOOST_CHECK_EQUAL(res.second, true);
+      EXPECT_EQ(res.second, true);
 
       // primitive does not yet exist in database
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/1");
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/1");
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/1");
+      EXPECT_EQ(res.first->name(), "SCEL4_2_2_1_1_1_0/1");
 
       // insert primitive
       res = db.insert(config.primitive().in_canonical_supercell());
@@ -247,7 +244,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       // primitive does exist in database
       // - it gets index 2, even though it is the only config from this supercell
       //   in the database, because we don't re-use indices
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL1_1_1_1_0_0_0/2");
+      EXPECT_EQ(res.first->name(), "SCEL1_1_1_1_0_0_0/2");
 
       // make config from primitive name
       check_made_from_name(config, "SCEL4_2_2_1_1_1_0/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
@@ -268,12 +265,12 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       config.set_occupation(std::vector<int>({1, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0");
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/0");
 
       auto res = db.insert(config.in_canonical_supercell());
-      BOOST_CHECK_EQUAL(res.second, false);
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0");
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
+      EXPECT_EQ(res.second, false);
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/0");
+      EXPECT_EQ(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
 
       check_made_from_name(config, "SCEL4_2_2_1_1_1_0/0");
     }
@@ -284,14 +281,14 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       config.set_occupation(std::vector<int>({0, 1, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.3");
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.3");
 
       auto res = db.insert(config.in_canonical_supercell());
-      BOOST_CHECK_EQUAL(res.second, false);
+      EXPECT_EQ(res.second, false);
 
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.3");
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.3");
 
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
+      EXPECT_EQ(res.first->name(), "SCEL4_2_2_1_1_1_0/0");
 
       check_made_from_name(config, "SCEL4_2_2_1_1_1_0/0.equiv.0.3");
     }
@@ -302,10 +299,10 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       config.set_occupation(std::vector<int>({0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
-      BOOST_CHECK_EQUAL(config.name(), "SCEL4_2_2_1_1_1_0/1");
+      EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/1");
 
       auto res = db.insert(config.in_canonical_supercell());
-      BOOST_CHECK_EQUAL(res.second, false);
+      EXPECT_EQ(res.second, false);
 
       check_made_from_name(config, "SCEL4_2_2_1_1_1_0/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
 
@@ -322,12 +319,12 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       config.set_occupation(std::vector<int>({1, 0, 0, 0, 0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
-      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/none.equiv.0.0");
+      EXPECT_EQ(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/none.equiv.0.0");
 
       auto res = db.insert(config.in_canonical_supercell());
-      BOOST_CHECK_EQUAL(res.second, true);
-      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.0");
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL8_4_2_1_1_3_2/0");
+      EXPECT_EQ(res.second, true);
+      EXPECT_EQ(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.0");
+      EXPECT_EQ(res.first->name(), "SCEL8_4_2_1_1_3_2/0");
 
       check_made_from_name(config, "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.0");
     }
@@ -338,13 +335,13 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       config.set_occupation(std::vector<int>({0, 1, 0, 0, 0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
-      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.1");
+      EXPECT_EQ(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.1");
 
       auto res = db.insert(config.in_canonical_supercell());
-      BOOST_CHECK_EQUAL(res.second, false);
+      EXPECT_EQ(res.second, false);
 
-      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.1");
-      BOOST_CHECK_EQUAL(res.first->name(), "SCEL8_4_2_1_1_3_2/0");
+      EXPECT_EQ(config.name(), "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.1");
+      EXPECT_EQ(res.first->name(), "SCEL8_4_2_1_1_3_2/0");
 
       check_made_from_name(config, "SCEL8_4_2_1_1_3_2.4/super.1.SCEL8_4_2_1_1_3_2/0.equiv.0.1");
     }
@@ -355,10 +352,10 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
       config.set_occupation(std::vector<int>({0, 0, 0, 0, 0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^ see above
-      BOOST_CHECK_EQUAL(config.name(), "SCEL8_4_2_1_1_3_2.4/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
+      EXPECT_EQ(config.name(), "SCEL8_4_2_1_1_3_2.4/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
 
       auto res = db.insert(config.in_canonical_supercell());
-      BOOST_CHECK_EQUAL(res.second, true);
+      EXPECT_EQ(res.second, true);
 
       check_made_from_name(config, "SCEL8_4_2_1_1_3_2.4/super.0.SCEL1_1_1_1_0_0_0/2.equiv.0.0");
     }
@@ -366,7 +363,7 @@ BOOST_AUTO_TEST_CASE(TestConfigurationName) {
 
 }
 
-BOOST_AUTO_TEST_CASE(Test2) {
+TEST(ConfigurationTest, Test2) {
 
   // test Configuration::fill_supercell
 
@@ -381,7 +378,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
 
   Configuration config(scel);
-  BOOST_CHECK_EQUAL(config.size(), 2);
+  EXPECT_EQ(config.size(), 2);
 
   // include occupation only
   config.set_occupation(std::vector<int>({1, 0}));
@@ -395,7 +392,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
     Configuration check(scel);
     check.set_occupation(std::vector<int>({1, 0}));
 
-    BOOST_CHECK_EQUAL(filled, check);
+    EXPECT_EQ(filled, check);
   }
 
   {
@@ -407,7 +404,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
     Configuration check(scel);
     check.set_occupation(std::vector<int>({1, 0, 1, 0}));
 
-    BOOST_CHECK_EQUAL(filled, check);
+    EXPECT_EQ(filled, check);
   }
 
   {
@@ -420,7 +417,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
     Configuration check(scel);
     check.set_occupation(std::vector<int>({1, 0}));
 
-    BOOST_CHECK_EQUAL(filled, check);
+    EXPECT_EQ(filled, check);
   }
 
 
@@ -444,7 +441,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
     //check.set_disp(0, dx);
 
 
-    BOOST_CHECK_EQUAL(filled, check);
+    EXPECT_EQ(filled, check);
   }
 
   {
@@ -459,7 +456,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
     //check.set_disp(0, dx);
     //check.set_disp(2, dx);
 
-    BOOST_CHECK_EQUAL(filled, check);
+    EXPECT_EQ(filled, check);
   }
 
   {
@@ -473,12 +470,12 @@ BOOST_AUTO_TEST_CASE(Test2) {
     //check.init_displacement();
     //check.set_disp(0, dy);
 
-    BOOST_CHECK_EQUAL(filled, check);
+    EXPECT_EQ(filled, check);
   }
 
 }
 
-BOOST_AUTO_TEST_CASE(Test3) {
+TEST(ConfigurationTest, Test3) {
   // test ConfigCanonicalForm functions
 
   test::FCCTernaryProj proj;
@@ -495,41 +492,39 @@ BOOST_AUTO_TEST_CASE(Test3) {
     // supercell (standard cubic FCC)
     Supercell scel {&primclex, Lattice(b + c - a, a + c - b, a + b - c)};
     //std::cout << scel.lattice().lat_column_mat() << std::endl;
-    BOOST_CHECK_EQUAL(scel.is_canonical(), true);
+    EXPECT_EQ(scel.is_canonical(), true);
 
     {
       Configuration config(scel);
       config.set_occupation(std::vector<int>({1, 0, 0, 0}));
-      BOOST_CHECK_EQUAL(config.is_canonical(), true);
-      BOOST_CHECK_EQUAL(config.is_primitive(), true);
-      BOOST_CHECK_EQUAL(config.invariant_subgroup().size(), 48);
+      EXPECT_EQ(config.is_canonical(), true);
+      EXPECT_EQ(config.is_primitive(), true);
+      EXPECT_EQ(config.invariant_subgroup().size(), 48);
 
       {
         Configuration test(scel);
         test.set_occupation(std::vector<int>({1, 0, 0, 0}));
-        BOOST_CHECK_EQUAL(config == test, true);
-        BOOST_CHECK_EQUAL(config.is_sym_equivalent(test), true);
-        BOOST_CHECK_EQUAL(test.is_sym_equivalent(config), true);
-        BOOST_CHECK_EQUAL(test < config, false);
-        BOOST_CHECK_EQUAL(config < test, false);
+        EXPECT_EQ(config == test, true);
+        EXPECT_EQ(config.is_sym_equivalent(test), true);
+        EXPECT_EQ(test.is_sym_equivalent(config), true);
+        EXPECT_EQ(test < config, false);
+        EXPECT_EQ(config < test, false);
       }
 
       {
         Configuration test(scel);
         test.set_occupation(std::vector<int>({0, 1, 0, 0}));
-        BOOST_CHECK_EQUAL(config == test, false);
-        BOOST_CHECK_EQUAL(config.is_sym_equivalent(test), true);
-        BOOST_CHECK_EQUAL(test.is_sym_equivalent(config), true);
-        BOOST_CHECK_EQUAL(test < config, true);
-        BOOST_CHECK_EQUAL(config < test, false);
+        EXPECT_EQ(config == test, false);
+        EXPECT_EQ(config.is_sym_equivalent(test), true);
+        EXPECT_EQ(test.is_sym_equivalent(config), true);
+        EXPECT_EQ(test < config, true);
+        EXPECT_EQ(config < test, false);
 
         auto to_canonical = test.to_canonical();
-        BOOST_CHECK_EQUAL(to_canonical.factor_group_index(), 0);
-        BOOST_CHECK_EQUAL(to_canonical.translation_index(), 1);
-        BOOST_CHECK_EQUAL(copy_apply(to_canonical, test) == config, true);
+        EXPECT_EQ(to_canonical.factor_group_index(), 0);
+        EXPECT_EQ(to_canonical.translation_index(), 1);
+        EXPECT_EQ(copy_apply(to_canonical, test) == config, true);
       }
     }
   }
 }
-
-BOOST_AUTO_TEST_SUITE_END()

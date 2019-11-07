@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/casm_io/EnumIO.hh"
@@ -31,24 +30,24 @@ void enum_io_test(EnumType TEST) {
   std::string to_str = opt.front();
 
   // 1.
-  BOOST_CHECK_EQUAL(to_string(TEST), to_str);
+  ASSERT_EQ(to_string(TEST), to_str);
 
   // 2.
-  BOOST_CHECK_THROW(from_string<EnumType>("mistake"), std::invalid_argument);
+  ASSERT_THROW(from_string<EnumType>("mistake"), std::invalid_argument);
 
   // 3.
-  BOOST_CHECK_EQUAL(!multiline_help<EnumType>().empty(), true);
+  ASSERT_EQ(!multiline_help<EnumType>().empty(), true);
 
   // 4.
-  BOOST_CHECK_EQUAL(!singleline_help<EnumType>().empty(), true);
+  ASSERT_EQ(!singleline_help<EnumType>().empty(), true);
 
   // 5.
-  BOOST_CHECK_EQUAL(help<EnumType>(), multiline_help<EnumType>());
+  ASSERT_EQ(help<EnumType>(), multiline_help<EnumType>());
 
   // 6.
   std::stringstream ss;
   ss << TEST;
-  BOOST_CHECK_EQUAL(ss.str(), to_str);
+  ASSERT_EQ(ss.str(), to_str);
 
   // check reading unrecognized strings
   {
@@ -59,14 +58,14 @@ void enum_io_test(EnumType TEST) {
     std::stringstream ss;
     ss << "mistake";
     ss.seekg(0);
-    BOOST_CHECK_THROW((ss >> tmp), std::invalid_argument);
+    ASSERT_THROW((ss >> tmp), std::invalid_argument);
 
     // 8. & 9. to_json  & from_json
     json.put_obj();
     json[traits<EnumType>::name] = "mistake";
-    BOOST_CHECK_THROW(from_json(tmp, json[traits<EnumType>::name]), std::invalid_argument);
-    BOOST_CHECK_THROW((tmp = from_json<EnumType>(json[traits<EnumType>::name])), std::invalid_argument);
-    BOOST_CHECK_THROW((tmp = json[traits<EnumType>::name].template get<EnumType>()), std::invalid_argument);
+    ASSERT_THROW(from_json(tmp, json[traits<EnumType>::name]), std::invalid_argument);
+    ASSERT_THROW((tmp = from_json<EnumType>(json[traits<EnumType>::name])), std::invalid_argument);
+    ASSERT_THROW((tmp = json[traits<EnumType>::name].template get<EnumType>()), std::invalid_argument);
   }
 
   // try reading all recognized strings
@@ -76,60 +75,56 @@ void enum_io_test(EnumType TEST) {
     EnumType tmp;
 
     // 2.
-    BOOST_CHECK_EQUAL(TEST, from_string<EnumType>(val));
+    ASSERT_EQ(TEST, from_string<EnumType>(val));
 
     // 7.
     std::stringstream ss;
     ss << val;
     ss.seekg(0);
     ss >> tmp;
-    BOOST_CHECK_EQUAL(TEST, tmp);
+    ASSERT_EQ(TEST, tmp);
 
     // 8. & 9. to_json  & from_json
     json.put_obj();
     json[traits<EnumType>::name] = val;
     from_json(tmp, json[traits<EnumType>::name]);
-    BOOST_CHECK_EQUAL(TEST, tmp);
-    BOOST_CHECK_EQUAL(TEST, from_json<EnumType>(json[traits<EnumType>::name]));
-    BOOST_CHECK_EQUAL(TEST, json[traits<EnumType>::name].template get<EnumType>());
+    ASSERT_EQ(TEST, tmp);
+    ASSERT_EQ(TEST, from_json<EnumType>(json[traits<EnumType>::name]));
+    ASSERT_EQ(TEST, json[traits<EnumType>::name].template get<EnumType>());
   }
 
 }
 
-BOOST_AUTO_TEST_SUITE(EnumIOTest)
-
 // From CASM_global_enum
 
-BOOST_AUTO_TEST_CASE(CoordTypeTest) {
+TEST(EnumIOTest, CoordTypeTest) {
   enum_io_test(COORD_TYPE::FRAC);
   enum_io_test(COORD_TYPE::CART);
   enum_io_test(COORD_TYPE::INTEGRAL);
   //enum_io_test(COORD_TYPE::COORD_DEFAULT);
 }
 
-BOOST_AUTO_TEST_CASE(PeriodicityTypeTest) {
+TEST(EnumIOTest, PeriodicityTypeTest) {
   enum_io_test(PERIODICITY_TYPE::PERIODIC);
   enum_io_test(PERIODICITY_TYPE::APERIODIC);
   enum_io_test(PERIODICITY_TYPE::LOCAL);
-  BOOST_CHECK_EQUAL(PERIODICITY_TYPE::APERIODIC, PERIODICITY_TYPE::LOCAL);
+  ASSERT_EQ(PERIODICITY_TYPE::APERIODIC, PERIODICITY_TYPE::LOCAL);
   //enum_io_test(PERIODICITY_TYPE::PERIODICITY_DEFAULT);
 }
 
-BOOST_AUTO_TEST_CASE(EquivalenceTypeTest) {
+TEST(EnumIOTest, EquivalenceTypeTest) {
   enum_io_test(EQUIVALENCE_TYPE::PRIM);
   enum_io_test(EQUIVALENCE_TYPE::SCEL);
   enum_io_test(EQUIVALENCE_TYPE::CONFIG);
 }
 
-BOOST_AUTO_TEST_CASE(CellTypeTest) {
+TEST(EnumIOTest, CellTypeTest) {
   enum_io_test(CELL_TYPE::PRIM);
   enum_io_test(CELL_TYPE::SCEL);
 }
 
-BOOST_AUTO_TEST_CASE(OnErrorTest) {
+TEST(EnumIOTest, OnErrorTest) {
   enum_io_test(OnError::THROW);
   enum_io_test(OnError::WARN);
   enum_io_test(OnError::CONTINUE);
 }
-
-BOOST_AUTO_TEST_SUITE_END()

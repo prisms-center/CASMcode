@@ -18,12 +18,14 @@ namespace CASM {
   class SymRepBuilderInterface;
   class AnisoValTraits;
 
+
   namespace DoFType {
     class Traits;
   }
 
   class HamiltonianModules {
   public:
+
 
     using DoFDictionary = ParsingDictionary<DoFType::Traits>;
     using SymRepBuilderDictionary = ParsingDictionary<SymRepBuilderInterface>;

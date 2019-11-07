@@ -1,5 +1,5 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 #include "casm/clex/ConfigEnumAllOccupations.hh"
@@ -8,7 +8,6 @@
 
 /// What is being used to test it:
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/NeighborList.hh"
@@ -20,16 +19,14 @@
 using namespace CASM;
 using namespace test;
 
-BOOST_AUTO_TEST_SUITE(ConfigEnumEquivalentsTest)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(ConfigEnumEquivalentsTest, Test1) {
 
   // tests ConfigEnumAllOccupations and ConfigEnumEquivalents
 
   // read test file
-  fs::path test_cases_path("tests/unit/clex/ConfigEnumEquivalents_test_cases.json");
+  fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clex/ConfigEnumEquivalents_test_cases.json");
   jsonParser tests(test_cases_path);
-  fs::path test_proj_dir("tests/unit/clex/test_proj");
+  fs::path test_proj_dir(autotools::abs_srcdir() + "/tests/unit/clex/test_proj");
 
   for(auto test_it = tests.begin(); test_it != tests.end(); ++test_it) {
 
@@ -40,9 +37,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
     bool quiet = false;
     j.get_else(quiet, "quiet", false);
 
-    BOOST_CHECK_MESSAGE(j.contains("title"), "test case 'title' is required");
-    BOOST_CHECK_MESSAGE(j.contains("prim"), "test case 'prim' is required");
-    BOOST_CHECK_MESSAGE(j.contains("max_vol"), "test case 'max_vol' is required");
+    EXPECT_TRUE(j.contains("title")) << "test case 'title' is required";
+    EXPECT_TRUE(j.contains("prim")) << "test case 'prim' is required";
+    EXPECT_TRUE(j.contains("max_vol")) << "test case 'max_vol' is required";
 
     // generate prim
     Structure prim(read_prim(j["prim"], TOL));
@@ -117,7 +114,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
       // check that the number of Configurations enumerated is equal to
       // the product of the number of allowed occupants on each site in the
       // Supercell
-      BOOST_CHECK_EQUAL(total_count[i], prod);
+      EXPECT_EQ(total_count[i], prod);
 
       ++i;
     }
@@ -131,5 +128,3 @@ BOOST_AUTO_TEST_CASE(Test1) {
     }
   }
 }
-
-BOOST_AUTO_TEST_SUITE_END()

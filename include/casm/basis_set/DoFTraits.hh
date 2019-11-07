@@ -9,20 +9,22 @@
 #include "casm/misc/ParsingDictionary.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Site;
+    class Structure;
+    template<typename CoordType>
+    class BasicStructure;
+    class SimpleStructure;
+  }
+
   class jsonParser;
   class PrimNeighborList;
-  class Structure;
   class BasisSet;
-  class Site;
 
   template<typename T>
   class ParsingDictionary;
 
-  template<typename CoordType>
-  class BasicStructure;
-
   class ConfigDoF;
-  class SimpleStructure;
 
   namespace DoFType {
     class Traits;

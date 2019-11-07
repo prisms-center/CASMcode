@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/crystallography/Molecule.hh"
@@ -8,23 +7,21 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 
 using namespace CASM;
+using namespace xtal;
 
-
-BOOST_AUTO_TEST_SUITE(MoleculeTest)
-
-BOOST_AUTO_TEST_CASE(AtomPositionTest1) {
+TEST(MoleculeTest, AtomPositionTest1) {
 
   Eigen::Vector3d vec(0.0, 0.2, 0.4);
   double tol(1e-5);
 
   AtomPosition atom_pos(vec, "A");
 
-  BOOST_CHECK_EQUAL(atom_pos.name(), "A");
-  BOOST_CHECK_EQUAL(almost_equal(atom_pos.cart(), vec, tol), true);
+  EXPECT_EQ(atom_pos.name(), "A");
+  EXPECT_EQ(almost_equal(atom_pos.cart(), vec, tol), true);
 
 }
 
-BOOST_AUTO_TEST_CASE(MoleculeTest1) {
+TEST(MoleculteTest, MoleculeTest1) {
 
   Eigen::Vector3d vec(0.0, 0.2, 0.4);
   double tol(1e-5);
@@ -36,42 +33,38 @@ BOOST_AUTO_TEST_CASE(MoleculeTest1) {
   Molecule mol_va = Molecule::make_vacancy();
   Molecule mol_va2 = Molecule::make_atom("Va"); // will make vacancy with no atoms
 
-  BOOST_CHECK_EQUAL(mol_a.size(), 1);
-  BOOST_CHECK_EQUAL(mol_a.name(), "A");
-  BOOST_CHECK_EQUAL(mol_a.is_vacancy(), false);
-  BOOST_CHECK_EQUAL(mol_a.atom(0).name() == "A", true);
+  EXPECT_EQ(mol_a.size(), 1);
+  EXPECT_EQ(mol_a.name(), "A");
+  EXPECT_EQ(mol_a.is_vacancy(), false);
+  EXPECT_EQ(mol_a.atom(0).name() == "A", true);
 
-  BOOST_CHECK_EQUAL(mol_h2o.size(), 3);
-  BOOST_CHECK_EQUAL(mol_h2o.name(), "H2O");
-  BOOST_CHECK_EQUAL(mol_h2o.is_vacancy(), false);
-  BOOST_CHECK_EQUAL(mol_h2o.atoms().size(), 3);
-  BOOST_CHECK_EQUAL(mol_h2o.atoms().at(0).name(), "H");
-  BOOST_CHECK_EQUAL(mol_h2o.atoms().at(1).name(), "H");
-  BOOST_CHECK_EQUAL(mol_h2o.atoms().at(2).name(), "O");
-  BOOST_CHECK_EQUAL(mol_h2o.atom(0).name(), "H");
-  BOOST_CHECK_EQUAL(mol_h2o.atom(1).name(), "H");
-  BOOST_CHECK_EQUAL(mol_h2o.atom(2).name(), "O");
-  BOOST_CHECK_EQUAL(mol_h2o.is_divisible(), false);
-  BOOST_CHECK_EQUAL(mol_h2o.is_indivisible(), true);
+  EXPECT_EQ(mol_h2o.size(), 3);
+  EXPECT_EQ(mol_h2o.name(), "H2O");
+  EXPECT_EQ(mol_h2o.is_vacancy(), false);
+  EXPECT_EQ(mol_h2o.atoms().size(), 3);
+  EXPECT_EQ(mol_h2o.atoms().at(0).name(), "H");
+  EXPECT_EQ(mol_h2o.atoms().at(1).name(), "H");
+  EXPECT_EQ(mol_h2o.atoms().at(2).name(), "O");
+  EXPECT_EQ(mol_h2o.atom(0).name(), "H");
+  EXPECT_EQ(mol_h2o.atom(1).name(), "H");
+  EXPECT_EQ(mol_h2o.atom(2).name(), "O");
+  EXPECT_EQ(mol_h2o.is_divisible(), false);
+  EXPECT_EQ(mol_h2o.is_indivisible(), true);
 
-  BOOST_CHECK_EQUAL(mol_Zr2.size(), 2);
-  BOOST_CHECK_EQUAL(mol_Zr2.name(), "Zr2");
-  BOOST_CHECK_EQUAL(mol_Zr2.is_vacancy(), false);
-  BOOST_CHECK_EQUAL(mol_Zr2.is_divisible(), true);
-  BOOST_CHECK_EQUAL(mol_Zr2.is_indivisible(), false);
+  EXPECT_EQ(mol_Zr2.size(), 2);
+  EXPECT_EQ(mol_Zr2.name(), "Zr2");
+  EXPECT_EQ(mol_Zr2.is_vacancy(), false);
+  EXPECT_EQ(mol_Zr2.is_divisible(), true);
+  EXPECT_EQ(mol_Zr2.is_indivisible(), false);
 
-  //BOOST_CHECK_EQUAL(mol_va.size(), 0); // if Molecule empty for Va
-  BOOST_CHECK_EQUAL(mol_va.size(), 1);
-  BOOST_CHECK_EQUAL(mol_va.name(), "Va");
-  BOOST_CHECK_EQUAL(mol_va.is_vacancy(), true);
+  //EXPECT_EQ(mol_va.size(), 0); // if Molecule empty for Va
+  EXPECT_EQ(mol_va.size(), 1);
+  EXPECT_EQ(mol_va.name(), "Va");
+  EXPECT_EQ(mol_va.is_vacancy(), true);
 
-  //BOOST_CHECK_EQUAL(mol_va2.size(), 0); // if Molecule empty for Va
-  BOOST_CHECK_EQUAL(mol_va2.size(), 1);
-  BOOST_CHECK_EQUAL(mol_va2.name(), "Va");
-  BOOST_CHECK_EQUAL(mol_va2.is_vacancy(), true);
-
-
+  //EXPECT_EQ(mol_va2.size(), 0); // if Molecule empty for Va
+  EXPECT_EQ(mol_va2.size(), 1);
+  EXPECT_EQ(mol_va2.name(), "Va");
+  EXPECT_EQ(mol_va2.is_vacancy(), true);
 }
 
-
-BOOST_AUTO_TEST_SUITE_END()

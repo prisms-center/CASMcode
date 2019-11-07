@@ -11,7 +11,7 @@ namespace test {
 
     TestDiffTransConfigOccPerturbations(
       const TestConfiguration &test_config,
-      const DiffusionTransformation &diff_trans,
+      const Kinetics::DiffusionTransformation &diff_trans,
       const std::vector<int> &_occupation);
 
     TestDiffTransConfigOccPerturbations(

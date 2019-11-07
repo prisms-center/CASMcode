@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/ChemicalReference_impl.hh"
@@ -15,9 +14,8 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(ChemicalReferenceTest)
 
-BOOST_AUTO_TEST_CASE(Basics) {
+TEST(ChemicalReferenceTest, Basics) {
 
   Structure prim(test::FCC_ternary_prim());
   double tol = TOL;
@@ -43,7 +41,7 @@ BOOST_AUTO_TEST_CASE(Basics) {
 
   // check the global reference hyperplane
   //std::cout << "global ref: " << chem_ref.global().transpose() << std::endl;
-  BOOST_CHECK_EQUAL(almost_equal(chem_ref.global(), Eigen::Vector3d(-1.0, -2.0, -4.0), tol), true);
+  EXPECT_EQ(almost_equal(chem_ref.global(), Eigen::Vector3d(-1.0, -2.0, -4.0), tol), true);
 
   // this should not be allowed to compile:
   //chem_ref.global() = Eigen::Vector3d::Zero();
@@ -51,20 +49,20 @@ BOOST_AUTO_TEST_CASE(Basics) {
   // try writing to json
   jsonParser json;
   to_json(chem_ref, json);
-  BOOST_CHECK_EQUAL(json.contains("global"), true);
+  EXPECT_EQ(json.contains("global"), true);
 
   // try reading from json
   ChemicalReference chem_ref2 = json.get<ChemicalReference>(prim, tol);
-  BOOST_CHECK_EQUAL(almost_equal(chem_ref2.global(), Eigen::Vector3d(-1.0, -2.0, -4.0), tol), true);
+  EXPECT_EQ(almost_equal(chem_ref2.global(), Eigen::Vector3d(-1.0, -2.0, -4.0), tol), true);
 
 
   // try writing to json, as in project file
   write_chemical_reference(chem_ref, json);
-  BOOST_CHECK_EQUAL(json.contains("chemical_reference"), true);
+  EXPECT_EQ(json.contains("chemical_reference"), true);
 
   // try reading from json, as in a project file
   ChemicalReference chem_ref3 = read_chemical_reference(json, prim, tol);
-  BOOST_CHECK_EQUAL(almost_equal(chem_ref3.global(), Eigen::Vector3d(-1.0, -2.0, -4.0), tol), true);
+  EXPECT_EQ(almost_equal(chem_ref3.global(), Eigen::Vector3d(-1.0, -2.0, -4.0), tol), true);
 
 
   // check the print formatting
@@ -75,7 +73,7 @@ BOOST_AUTO_TEST_CASE(Basics) {
 
 }
 
-BOOST_AUTO_TEST_CASE(HyperplaneConstructor) {
+TEST(ChemicalReferenceTest, HyperplaneConstructor) {
 
   Structure prim(test::FCC_ternary_prim());
 
@@ -87,7 +85,7 @@ BOOST_AUTO_TEST_CASE(HyperplaneConstructor) {
 
   // check the global reference hyperplane
   //std::cout << "global ref: " << chem_ref.global().transpose() << std::endl;
-  BOOST_CHECK_EQUAL(almost_equal(chem_ref.global(), Eigen::Vector3d(-1.0, -2.0, -4.0), TOL), true);
+  EXPECT_EQ(almost_equal(chem_ref.global(), Eigen::Vector3d(-1.0, -2.0, -4.0), TOL), true);
 
   // this should not be allowed to compile:
   //chem_ref.global() = Eigen::Vector3d::Zero();
@@ -95,13 +93,11 @@ BOOST_AUTO_TEST_CASE(HyperplaneConstructor) {
   // try writing to json
   jsonParser json;
   to_json(chem_ref, json);
-  BOOST_CHECK_EQUAL(json.contains("global"), true);
+  EXPECT_EQ(json.contains("global"), true);
   //std::cout << json << std::endl;
 
   // try writing to json, as in project file
   write_chemical_reference(chem_ref, json);
-  BOOST_CHECK_EQUAL(json.contains("chemical_reference"), true);
+  EXPECT_EQ(json.contains("chemical_reference"), true);
   //std::cout << json << std::endl;
 }
-
-BOOST_AUTO_TEST_SUITE_END()

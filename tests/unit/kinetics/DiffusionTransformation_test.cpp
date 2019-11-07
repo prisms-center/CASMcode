@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
@@ -35,14 +34,12 @@ namespace {
   };
 }
 
-BOOST_AUTO_TEST_SUITE(DiffusionTransformationTest)
-
-BOOST_AUTO_TEST_CASE(BasicsTest0) {
+TEST(DiffusionTransformationTest, BasicsTest0) {
 
   typedef Kinetics::SpeciesLocation SpecieLocation;
 
   /// Make test project
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
   test::ZrOProj proj;
   proj.check_init();
   proj.check_composition();
@@ -53,7 +50,7 @@ BOOST_AUTO_TEST_CASE(BasicsTest0) {
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   // Make background config
   Supercell _scel {&primclex, Lattice(1 * a, 1 * b, 1 * c)};
@@ -64,13 +61,13 @@ BOOST_AUTO_TEST_CASE(BasicsTest0) {
   Configuration background_config = _config.
                                     fill_supercell(background_scel, primclex.prim().factor_group()).
                                     in_canonical_supercell();
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   {
     // Construct
     Kinetics::DiffusionTransformation diff_trans(prim);
-    BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(diff_trans.occ_transform().size(), 0);
+    EXPECT_EQ(true, true);
+    EXPECT_EQ(diff_trans.occ_transform().size(), 0);
 
     UnitCellCoord uccoordA(prim, 3, 1, 1, 1);
     UnitCellCoord uccoordB(prim, 2, 1, 1, 2);
@@ -80,80 +77,80 @@ BOOST_AUTO_TEST_CASE(BasicsTest0) {
     // Add transform (so that it's not sorted as constructed)
     diff_trans.occ_transform().emplace_back(uccoordB, iO, iVa);
     diff_trans.occ_transform().emplace_back(uccoordA, iVa, iO);
-    BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(diff_trans.is_valid_occ_transform(), true);
+    EXPECT_EQ(true, true);
+    EXPECT_EQ(diff_trans.is_valid_occ_transform(), true);
 
     // Add non-self consistent trajectory
     diff_trans.species_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
     diff_trans.species_traj().emplace_back(SpecieLocation(uccoordB, iVa, 0), SpecieLocation(uccoordA, iVa, 0));
-    BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(diff_trans.is_valid_species_traj(), true);
-    BOOST_CHECK_EQUAL(diff_trans.species_types_map(), true);
-    BOOST_CHECK_EQUAL(diff_trans.breaks_indivisible_mol(), false);
-    BOOST_CHECK_EQUAL(diff_trans.is_subcluster_transformation(), false);
-    BOOST_CHECK_EQUAL(diff_trans.is_self_consistent(), false);
-    BOOST_CHECK_EQUAL(diff_trans.is_valid(), false);
+    EXPECT_EQ(true, true);
+    EXPECT_EQ(diff_trans.is_valid_species_traj(), true);
+    EXPECT_EQ(diff_trans.species_types_map(), true);
+    EXPECT_EQ(diff_trans.breaks_indivisible_mol(), false);
+    EXPECT_EQ(diff_trans.is_subcluster_transformation(), false);
+    EXPECT_EQ(diff_trans.is_self_consistent(), false);
+    EXPECT_EQ(diff_trans.is_valid(), false);
     diff_trans.species_traj().clear();
 
     // Add valid trajectory
     diff_trans.species_traj().emplace_back(SpecieLocation(uccoordA, iVa, 0), SpecieLocation(uccoordB, iVa, 0));
     diff_trans.species_traj().emplace_back(SpecieLocation(uccoordB, iO, 0), SpecieLocation(uccoordA, iO, 0));
-    BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(diff_trans.is_valid_species_traj(), true);
-    BOOST_CHECK_EQUAL(diff_trans.species_types_map(), true);
-    BOOST_CHECK_EQUAL(diff_trans.breaks_indivisible_mol(), false);
-    BOOST_CHECK_EQUAL(diff_trans.is_subcluster_transformation(), false);
-    BOOST_CHECK_EQUAL(diff_trans.is_self_consistent(), true);
-    BOOST_CHECK_EQUAL(diff_trans.is_valid(), true);
+    EXPECT_EQ(true, true);
+    EXPECT_EQ(diff_trans.is_valid_species_traj(), true);
+    EXPECT_EQ(diff_trans.species_types_map(), true);
+    EXPECT_EQ(diff_trans.breaks_indivisible_mol(), false);
+    EXPECT_EQ(diff_trans.is_subcluster_transformation(), false);
+    EXPECT_EQ(diff_trans.is_self_consistent(), true);
+    EXPECT_EQ(diff_trans.is_valid(), true);
 
     // Check sorting
-    BOOST_CHECK_EQUAL((diff_trans.occ_transform()[0].uccoord == uccoordA), false);
-    BOOST_CHECK_EQUAL(diff_trans.is_sorted(), false);
+    EXPECT_EQ((diff_trans.occ_transform()[0].uccoord == uccoordA), false);
+    EXPECT_EQ(diff_trans.is_sorted(), false);
     diff_trans.sort();
-    BOOST_CHECK_EQUAL((diff_trans.occ_transform()[0].uccoord == uccoordA), true);
-    BOOST_CHECK_EQUAL(true, true);
-    BOOST_CHECK_EQUAL(diff_trans.is_sorted(), true);
+    EXPECT_EQ((diff_trans.occ_transform()[0].uccoord == uccoordA), true);
+    EXPECT_EQ(true, true);
+    EXPECT_EQ(diff_trans.is_sorted(), true);
 
     // Copy
     Kinetics::DiffusionTransformation other(diff_trans);
 
     // Compare
-    BOOST_CHECK_EQUAL((other == diff_trans), true);
+    EXPECT_EQ((other == diff_trans), true);
 
     // Check canonical form
-    BOOST_CHECK_EQUAL(diff_trans.is_canonical(background_scel), false);
+    EXPECT_EQ(diff_trans.is_canonical(background_scel), false);
 
     {
       ScelIsCanonical<Kinetics::DiffusionTransformation> f(background_scel);
-      BOOST_CHECK_EQUAL(f(diff_trans), false);
+      EXPECT_EQ(f(diff_trans), false);
     }
 
     // Translate (to canonical form)
     other = diff_trans + UnitCell(1, 1, 1);
 
     // Compare
-    BOOST_CHECK_EQUAL((diff_trans < other), true);
+    EXPECT_EQ((diff_trans < other), true);
 
     // Check canonical form
-    BOOST_CHECK_EQUAL(other.is_canonical(background_scel), true);
-    BOOST_CHECK_EQUAL((diff_trans.canonical_form(background_scel) == other), true);
+    EXPECT_EQ(other.is_canonical(background_scel), true);
+    EXPECT_EQ((diff_trans.canonical_form(background_scel) == other), true);
 
     {
       ScelIsCanonical<Kinetics::DiffusionTransformation> f(background_scel);
-      BOOST_CHECK_EQUAL(f(other), true);
+      EXPECT_EQ(f(other), true);
     }
 
     // Check invariant subgroup (haven't checked for accuracy)
-    BOOST_CHECK_EQUAL(
+    EXPECT_EQ(
       other.invariant_subgroup(
         prim.factor_group(),
         PrimPeriodicDiffTransSymCompare(primclex)).size(), 12);
-    BOOST_CHECK_EQUAL(other.invariant_subgroup(background_scel).size(), 12);
+    EXPECT_EQ(other.invariant_subgroup(background_scel).size(), 12);
   }
 
 }
 
-BOOST_AUTO_TEST_CASE(SpeedTest0) {
+TEST(DiffusionTransformationTest, SpeedTest0) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -161,7 +158,7 @@ BOOST_AUTO_TEST_CASE(SpeedTest0) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
 
-  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
+  fs::path bspecs_path = autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
@@ -186,10 +183,10 @@ BOOST_AUTO_TEST_CASE(SpeedTest0) {
     }
   }
 
-  BOOST_CHECK_EQUAL(generators.elements.size(), 507);
+  EXPECT_EQ(generators.elements.size(), 507);
 }
 
-BOOST_AUTO_TEST_CASE(SpeedTest1) {
+TEST(DiffusionTransformationTest, SpeedTest1) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -197,7 +194,7 @@ BOOST_AUTO_TEST_CASE(SpeedTest1) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
 
-  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
+  fs::path bspecs_path = autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
@@ -217,13 +214,13 @@ BOOST_AUTO_TEST_CASE(SpeedTest1) {
     primclex.crystallography_tol(),
     std::back_inserter(diff_trans_orbits),
     &primclex);
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
-  BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 507);
+  EXPECT_EQ(diff_trans_orbits.size(), 507);
 }
 
 
-BOOST_AUTO_TEST_CASE(EnumTest0) {
+TEST(DiffusionTransformationTest, EnumTest0) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -232,7 +229,7 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
 
-  fs::path bspecs_path = "tests/unit/kinetics/ZrO_bspecs_0.json";
+  fs::path bspecs_path = autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_bspecs_0.json";
   jsonParser bspecs {bspecs_path};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
@@ -247,7 +244,7 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
   //print_clust(orbits.begin(), orbits.end(), primclex.log(), ProtoSitesPrinter());
 
   Kinetics::DiffusionTransformation trans(primclex.prim());
-  BOOST_CHECK_EQUAL(trans.size(), 0);
+  EXPECT_EQ(trans.size(), 0);
 
   // in ZrO (and other binary Va-X materials):
   // empty and point cluster have 0 valid DiffusionTransformation
@@ -302,17 +299,17 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
   auto expected_mult_it = expected_mult.begin();
 
 
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
   for(auto it = orbits.begin(); it != orbits.end(); ++it) {
 
     // print the IntegralCluster prototype used to generate DiffTrans
     // std::cout << "----------------\n";
     // std::cout << "IntegralCluster: \n" << it->prototype() << std::endl;
-    // BOOST_CHECK_EQUAL(true, true);
+    // EXPECT_EQ(true, true);
 
     // check the number of valid DiffTrans
     Kinetics::DiffusionTransformationEnum e {it->prototype()};
-    BOOST_CHECK_EQUAL(std::distance(e.begin(), e.end()), count_check[it->prototype().size()]);
+    EXPECT_EQ(std::distance(e.begin(), e.end()), count_check[it->prototype().size()]);
 
     // make orbits of DiffTrans
     std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
@@ -322,27 +319,27 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
       primclex.crystallography_tol(),
       std::back_inserter(diff_trans_orbits),
       &primclex);
-    BOOST_CHECK_EQUAL(true, true);
+    EXPECT_EQ(true, true);
 
     // check how many DiffTrans orbits there are for each IntegralCluster orbit
     orbit_count.push_back(diff_trans_orbits.size());
     if(expected_orbit_count_it != expected_orbit_count.end()) {
-      BOOST_CHECK_EQUAL(diff_trans_orbits.size(), *expected_orbit_count_it);
+      EXPECT_EQ(diff_trans_orbits.size(), *expected_orbit_count_it);
       ++expected_orbit_count_it;
     }
     else {
-      BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 0);
+      EXPECT_EQ(diff_trans_orbits.size(), 0);
     }
 
     // check the size of the DiffTrans orbits
     for(const auto &orb : diff_trans_orbits) {
       mult.push_back(orb.size());
       if(expected_mult_it != expected_mult.end()) {
-        BOOST_CHECK_EQUAL(orb.size(), *expected_mult_it);
+        EXPECT_EQ(orb.size(), *expected_mult_it);
         ++expected_mult_it;
       }
       else {
-        BOOST_CHECK_EQUAL(orb.size(), 0);
+        EXPECT_EQ(orb.size(), 0);
       }
     }
     jsonParser dtjson;
@@ -350,9 +347,9 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
     if(diff_trans_orbits.size()) {
       to_json(diff_trans_orbits[0].prototype(), dtjson);
       Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(dtjson, primclex.prim());
-      BOOST_CHECK_EQUAL(trans == diff_trans_orbits[0].prototype(), 1);
-      BOOST_CHECK_EQUAL(diff_trans_orbits[0].prototype().is_valid(), 1);
-      BOOST_CHECK_EQUAL(trans.is_valid(), 1);
+      EXPECT_EQ(trans == diff_trans_orbits[0].prototype(), 1);
+      EXPECT_EQ(diff_trans_orbits[0].prototype().is_valid(), 1);
+      EXPECT_EQ(trans.is_valid(), 1);
     }
 
     //print DiffTrans prototypes
@@ -380,7 +377,7 @@ BOOST_AUTO_TEST_CASE(EnumTest0) {
 
 }
 
-BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
+TEST(DiffusionTransformationTest, DiffTransEnumParserTest) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
@@ -395,18 +392,18 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
           }
         }
       })"));
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->cspecs().orbit_branch_specs().max_branch, 3);
-    BOOST_CHECK_EQUAL(almost_equal(parser->cspecs().orbit_branch_specs().max_length(2), 5.), true);
-    BOOST_CHECK_EQUAL(almost_equal(parser->cspecs().orbit_branch_specs().max_length(3), 3.), true);
-    BOOST_CHECK_EQUAL(parser->cspecs().orbit_specs().custom_generators.elements.size(), 0);
-    BOOST_CHECK_EQUAL(parser->dry_run(), false);
-    BOOST_CHECK_EQUAL(parser->coord_type(), FRAC);
-    BOOST_CHECK_EQUAL(parser->orbit_printer_opt().orbit_print_mode, ORBIT_PRINT_MODE::PROTO);
-    BOOST_CHECK_EQUAL(parser->required_species().size(), 0);
-    BOOST_CHECK_EQUAL(parser->excluded_species().size(), 0);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->cspecs().orbit_branch_specs().max_branch, 3);
+    EXPECT_EQ(almost_equal(parser->cspecs().orbit_branch_specs().max_length(2), 5.), true);
+    EXPECT_EQ(almost_equal(parser->cspecs().orbit_branch_specs().max_length(3), 3.), true);
+    EXPECT_EQ(parser->cspecs().orbit_specs().custom_generators.elements.size(), 0);
+    EXPECT_EQ(parser->dry_run(), false);
+    EXPECT_EQ(parser->coord_type(), FRAC);
+    EXPECT_EQ(parser->orbit_printer_opt().orbit_print_mode, ORBIT_PRINT_MODE::PROTO);
+    EXPECT_EQ(parser->required_species().size(), 0);
+    EXPECT_EQ(parser->excluded_species().size(), 0);
 
     primclex.log() << parser->report() << std::endl;
   }
@@ -418,15 +415,15 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
         "exclude": ["A", "B"],
         "dry_run": true
       })"));
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 1);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->cspecs().exists(), false);
-    BOOST_CHECK_EQUAL(parser->dry_run(), true);
-    BOOST_CHECK_EQUAL(parser->coord_type(), FRAC);
-    BOOST_CHECK_EQUAL(parser->orbit_printer_opt().orbit_print_mode, ORBIT_PRINT_MODE::PROTO);
-    BOOST_CHECK_EQUAL(parser->required_species().size(), 1);
-    BOOST_CHECK_EQUAL(parser->excluded_species().size(), 2);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->all_errors().size(), 1);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->cspecs().exists(), false);
+    EXPECT_EQ(parser->dry_run(), true);
+    EXPECT_EQ(parser->coord_type(), FRAC);
+    EXPECT_EQ(parser->orbit_printer_opt().orbit_print_mode, ORBIT_PRINT_MODE::PROTO);
+    EXPECT_EQ(parser->required_species().size(), 1);
+    EXPECT_EQ(parser->excluded_species().size(), 2);
 
     primclex.log() << parser->report() << std::endl;
   }
@@ -439,17 +436,17 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
         "exclude": ["A", "B"],
         "dry_run": true
       })"));
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 1);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->cspecs().exists(), true);
-    BOOST_CHECK_EQUAL(parser->cspecs().orbit_branch_specs().exists(), false);
-    BOOST_CHECK_EQUAL(parser->cspecs().orbit_specs().exists(), false);
-    BOOST_CHECK_EQUAL(parser->dry_run(), true);
-    BOOST_CHECK_EQUAL(parser->coord_type(), FRAC);
-    BOOST_CHECK_EQUAL(parser->orbit_printer_opt().orbit_print_mode, ORBIT_PRINT_MODE::PROTO);
-    BOOST_CHECK_EQUAL(parser->required_species().size(), 1);
-    BOOST_CHECK_EQUAL(parser->excluded_species().size(), 2);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->all_errors().size(), 1);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->cspecs().exists(), true);
+    EXPECT_EQ(parser->cspecs().orbit_branch_specs().exists(), false);
+    EXPECT_EQ(parser->cspecs().orbit_specs().exists(), false);
+    EXPECT_EQ(parser->dry_run(), true);
+    EXPECT_EQ(parser->coord_type(), FRAC);
+    EXPECT_EQ(parser->orbit_printer_opt().orbit_print_mode, ORBIT_PRINT_MODE::PROTO);
+    EXPECT_EQ(parser->required_species().size(), 1);
+    EXPECT_EQ(parser->excluded_species().size(), 2);
 
     primclex.log() << parser->report() << std::endl;
   }
@@ -467,12 +464,12 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
         },
         "dry_run": true
       })"));
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->required_species().size(), 1);
-    BOOST_CHECK_EQUAL(parser->excluded_species().size(), 2);
-    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->required_species().size(), 1);
+    EXPECT_EQ(parser->excluded_species().size(), 2);
+    EXPECT_EQ(parser->dry_run(), true);
 
     primclex.log() << parser->report() << std::endl;
   }
@@ -489,10 +486,10 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
         },
         "dry_run": true
       })"));
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 1);
-    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 1);
+    EXPECT_EQ(parser->dry_run(), true);
 
     primclex.log() << parser->report() << std::endl;
   }
@@ -509,11 +506,11 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
         },
         "dry_run": true
       })"));
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 1);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->required_species().size(), 1);
-    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->all_errors().size(), 1);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->required_species().size(), 1);
+    EXPECT_EQ(parser->dry_run(), true);
 
     primclex.log() << parser->report() << std::endl;
   }
@@ -530,10 +527,10 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
         "dry_run": true,
         "unrecognized": true
       })"));
-    BOOST_CHECK_EQUAL(parser->valid(), true);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 0);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 1);
-    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+    EXPECT_EQ(parser->valid(), true);
+    EXPECT_EQ(parser->all_errors().size(), 0);
+    EXPECT_EQ(parser->all_warnings().size(), 1);
+    EXPECT_EQ(parser->dry_run(), true);
 
     primclex.log() << parser->report() << std::endl;
   }
@@ -550,16 +547,16 @@ BOOST_AUTO_TEST_CASE(DiffTransEnumParserTest) {
         "dry_run": true,
         "coordinate_mode": true
       })"));
-    BOOST_CHECK_EQUAL(parser->valid(), false);
-    BOOST_CHECK_EQUAL(parser->all_errors().size(), 1);
-    BOOST_CHECK_EQUAL(parser->all_warnings().size(), 0);
-    BOOST_CHECK_EQUAL(parser->dry_run(), true);
+    EXPECT_EQ(parser->valid(), false);
+    EXPECT_EQ(parser->all_errors().size(), 1);
+    EXPECT_EQ(parser->all_warnings().size(), 0);
+    EXPECT_EQ(parser->dry_run(), true);
 
     primclex.log() << parser->report() << std::endl;
   }
 }
 
-BOOST_AUTO_TEST_CASE(EnumTest1) {
+TEST(DiffusionTransformationTest, EnumTest1) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -609,7 +606,7 @@ BOOST_AUTO_TEST_CASE(EnumTest1) {
   log << SymInfoOptionsParser::standard_help() << std::endl;
 
 
-  jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
+  jsonFile diff_trans_json {autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_diff_trans_0.json"};
   diff_trans_json["dry_run"] = true;
   diff_trans_json["coordinate_mode"] = std::string("CART");
   diff_trans_json["orbit_printer_opt"]["print_invariant_grp"] = true;
@@ -617,11 +614,11 @@ BOOST_AUTO_TEST_CASE(EnumTest1) {
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
-  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 123);
-  BOOST_CHECK_EQUAL(success, 0);
+  EXPECT_EQ(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 123);
+  EXPECT_EQ(success, 0);
 }
 
-BOOST_AUTO_TEST_CASE(EnumTest2) {
+TEST(DiffusionTransformationTest, EnumTest2) {
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -662,7 +659,7 @@ BOOST_AUTO_TEST_CASE(EnumTest2) {
   log << std::endl;
 
 
-  jsonFile diff_trans_json {"tests/unit/kinetics/FCCTernary_diff_trans_err_0.json"};
+  jsonFile diff_trans_json {autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_diff_trans_err_0.json"};
   diff_trans_json["coordinate_mode"] = std::string("FRAC");
   diff_trans_json["orbit_printer_opt"]["orbit_print_mode"] = std::string("FULL");
   diff_trans_json["orbit_printer_opt"]["print_invariant_grp"] = true;
@@ -672,8 +669,6 @@ BOOST_AUTO_TEST_CASE(EnumTest2) {
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
-  BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
-  BOOST_CHECK_EQUAL(success, 1);
+  EXPECT_EQ(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
+  EXPECT_EQ(success, 1);
 }
-
-BOOST_AUTO_TEST_SUITE_END()

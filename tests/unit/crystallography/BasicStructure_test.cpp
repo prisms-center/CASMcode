@@ -1,12 +1,12 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 #include "casm/crystallography/BasicStructure.hh"
 
 /// What is being used to test it:
 #include <boost/filesystem/fstream.hpp>
-#include "ZrOProj.hh"
+#include "crystallography/TestStructures.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
@@ -14,7 +14,7 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/casm_io/VaspIO.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 
 using namespace CASM;
@@ -34,13 +34,13 @@ void prim1_read_test(BasicStructure<Site> &struc) {
 
   double tol = struc.lattice().tol();
 
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(0.0, 2.0, 2.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(2.0, 0.0, 2.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(2.0, 2.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.basis().size(), 1);
+  EXPECT_EQ(almost_equal(struc.lattice()[0], Eigen::Vector3d(0.0, 2.0, 2.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[1], Eigen::Vector3d(2.0, 0.0, 2.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[2], Eigen::Vector3d(2.0, 2.0, 0.0), tol), true);
+  EXPECT_EQ(struc.basis().size(), 1);
 
   // basis site 0 has three possible occupants
-  BOOST_CHECK_EQUAL(struc.basis()[0].occupant_dof().size(), 3);
+  EXPECT_EQ(struc.basis()[0].occupant_dof().size(), 3);
 
   std::string check_name[3] = {"A", "B", "C"};
 
@@ -48,15 +48,15 @@ void prim1_read_test(BasicStructure<Site> &struc) {
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis()[0].occupant_dof()[i].name(), check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis()[0].occupant_dof()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis()[0].occupant_dof()[i].atom(0).name(), check_name[i]);
+    EXPECT_EQ(struc.basis()[0].occupant_dof()[i].name(), check_name[i]);
+    EXPECT_EQ(almost_equal(struc.basis()[0].occupant_dof()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    EXPECT_EQ(struc.basis()[0].occupant_dof()[i].atom(0).name(), check_name[i]);
   }
 
   // FCC motif
   MasterSymGroup factor_grp;
   struc.generate_factor_group(factor_grp);
-  BOOST_CHECK_EQUAL(48, factor_grp.size());
+  EXPECT_EQ(48, factor_grp.size());
 }
 
 /** PRIM2 *****************************
@@ -77,13 +77,13 @@ void prim2_read_test(BasicStructure<Site> &struc) {
 
   double tol = struc.lattice().tol();
 
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.basis().size(), 4);
+  EXPECT_EQ(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
+  EXPECT_EQ(struc.basis().size(), 4);
 
   // basis site 0 has three possible occupants
-  BOOST_CHECK_EQUAL(struc.basis()[0].occupant_dof().size(), 3);
+  EXPECT_EQ(struc.basis()[0].occupant_dof().size(), 3);
 
   std::string check_name[3] = {"A", "B", "C"};
   int check_value[4] = {0, 0, 1, 2};
@@ -93,17 +93,17 @@ void prim2_read_test(BasicStructure<Site> &struc) {
       // occupants are Molecule with name "A", etc.
       // Molecule are composed of AtomPosition
       // An AtomPosition 'is' a Coordinate with a Specie
-      BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof()[j].name(), check_name[j]);
-      BOOST_CHECK_EQUAL(almost_equal(struc.basis()[i].occupant_dof()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-      BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof()[j].atom(0).name(), check_name[j]);
+      EXPECT_EQ(struc.basis()[i].occupant_dof()[j].name(), check_name[j]);
+      EXPECT_EQ(almost_equal(struc.basis()[i].occupant_dof()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+      EXPECT_EQ(struc.basis()[i].occupant_dof()[j].atom(0).name(), check_name[j]);
     }
-    BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof().value(), check_value[i]);
+    EXPECT_EQ(struc.basis()[i].occupant_dof().value(), check_value[i]);
   }
 
   // ordering on FCC motif
   MasterSymGroup factor_grp;
   struc.generate_factor_group(factor_grp);
-  BOOST_CHECK_EQUAL(16, factor_grp.size());
+  EXPECT_EQ(16, factor_grp.size());
 }
 
 
@@ -143,36 +143,41 @@ void pos1_read_test(BasicStructure<Site> &struc) {
 
   double tol = struc.lattice().tol();
 
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.basis().size(), 4);
+  EXPECT_EQ(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
+  EXPECT_EQ(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
+  EXPECT_EQ(struc.basis().size(), 4);
 
   std::string check_name[4] = {"A", "A", "B", "C"};
 
   for(int i = 0; i < 4; i++) {
     // basis site 0 and 1 have one possible occupant
-    BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof().size(), 1);
+    EXPECT_EQ(struc.basis()[i].occupant_dof().size(), 1);
 
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
-    BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof()[0].name(), check_name[i]);
-    BOOST_CHECK_EQUAL(almost_equal(struc.basis()[i].occupant_dof()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-    BOOST_CHECK_EQUAL(struc.basis()[i].occupant_dof()[0].atom(0).name(), check_name[i]);
+    EXPECT_EQ(struc.basis()[i].occupant_dof()[0].name(), check_name[i]);
+    EXPECT_EQ(almost_equal(struc.basis()[i].occupant_dof()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    EXPECT_EQ(struc.basis()[i].occupant_dof()[0].atom(0).name(), check_name[i]);
   }
 
   // FCC structure
   MasterSymGroup factor_grp;
   struc.generate_factor_group(factor_grp);
-  BOOST_CHECK_EQUAL(16, factor_grp.size());
+  EXPECT_EQ(16, factor_grp.size());
 }
 
-BOOST_AUTO_TEST_SUITE(BasicStructureSiteTest)
+namespace {
+  fs::path crystallography_test_directory() {
+    return autotools::abs_srcdir() + "/tests/unit/crystallography";
+  }
+}
 
-BOOST_AUTO_TEST_CASE(PRIM1Test) {
 
-  fs::path testdir = "tests/unit/crystallography";
+TEST(BasicStructureSiteTest, PRIM1Test) {
+
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
   BasicStructure<Site> struc(fs::path(testdir / "PRIM1.txt"));
@@ -188,27 +193,27 @@ BOOST_AUTO_TEST_CASE(PRIM1Test) {
 
 }
 
-BOOST_AUTO_TEST_CASE(PRIM2Test) {
+TEST(BasicStructureSiteTest, PRIM2Test) {
 
-  fs::path testdir = "tests/unit/crystallography";
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
   BasicStructure<Site> struc(fs::path(testdir / "PRIM2.txt"));
   prim2_read_test(struc);
 }
 
-BOOST_AUTO_TEST_CASE(PRIM3Test) {
+TEST(BasicStructureSiteTest, PRIM3Test) {
 
-  fs::path testdir = "tests/unit/crystallography";
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in an incorrectly formatted PRIM and check that an exception is thrown
-  BOOST_CHECK_THROW(BasicStructure<Site>(fs::path(testdir / "PRIM3.txt")), std::runtime_error);
+  EXPECT_THROW(BasicStructure<Site>(fs::path(testdir / "PRIM3.txt")), std::runtime_error);
 
 }
 
-BOOST_AUTO_TEST_CASE(POS1Test) {
+TEST(BasicStructureSiteTest, POS1Test) {
 
-  fs::path testdir = "tests/unit/crystallography";
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
   BasicStructure<Site> struc(fs::path(testdir / "POS1.txt"));
@@ -217,7 +222,7 @@ BOOST_AUTO_TEST_CASE(POS1Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR printer(to_simple_structure(struc));
+  VaspIO::PrintPOSCAR printer(to_simple_structure(struc), struc.title());
   printer.set_append_atom_names_off();
   printer.print(sout);
   sout.close();
@@ -228,9 +233,9 @@ BOOST_AUTO_TEST_CASE(POS1Test) {
 
 }
 
-BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
+TEST(BasicStructureSiteTest, POS1Vasp5Test) {
 
-  fs::path testdir = "tests/unit/crystallography";
+  fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
   BasicStructure<Site> struc(fs::path(testdir / "POS1.txt"));
@@ -239,7 +244,7 @@ BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_vasp5_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR(to_simple_structure(struc)).print(sout);
+  VaspIO::PrintPOSCAR(to_simple_structure(struc), struc.title()).print(sout);
   sout.close();
 
   // Read new file and run tests again
@@ -248,26 +253,24 @@ BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
 
 }
 
-BOOST_AUTO_TEST_CASE(IsPrimitiveTest) {
+TEST(BasicStructureSiteTest, IsPrimitiveTest) {
 
   Structure prim(test::ZrO_prim());
 
   const SymGroup effective_pg = prim.factor_group();
 
   ScelEnumProps enum_props(1, 6);
-  SupercellEnumerator<Lattice> scel_enum(prim.lattice(), effective_pg, enum_props);
+  SuperlatticeEnumerator scel_enum(effective_pg.begin(), effective_pg.end(), prim.lattice(), enum_props);
 
   for(auto it = scel_enum.begin(); it != scel_enum.end(); ++it) {
 
     Structure super = prim.create_superstruc(*it);
-    BOOST_CHECK_EQUAL(super.lattice().is_right_handed(), true);
+    EXPECT_EQ(super.lattice().is_right_handed(), true);
 
     Structure new_prim;
     super.is_primitive(new_prim);
-    BOOST_CHECK_EQUAL(new_prim.lattice().is_right_handed(), true);
-    BOOST_CHECK_EQUAL(new_prim.lattice().is_right_handed(), super.lattice().is_right_handed());
+    EXPECT_EQ(new_prim.lattice().is_right_handed(), true);
+    EXPECT_EQ(new_prim.lattice().is_right_handed(), super.lattice().is_right_handed());
   }
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

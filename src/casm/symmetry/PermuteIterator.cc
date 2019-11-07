@@ -216,7 +216,7 @@ namespace CASM {
       }
       if(i == result.size()) {
         result.push_back((begin->sym_op()).no_trans());
-        std::cout << "pushed back op " << result.back().index() << "\n";
+        //std::cout << "pushed back op " << result.back().index() << "\n";
       }
     }
     result.sort();

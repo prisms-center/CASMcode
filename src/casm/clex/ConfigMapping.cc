@@ -10,7 +10,6 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/LatticeMap.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/symmetry/PermuteIterator.hh"
@@ -223,7 +222,9 @@ namespace CASM {
   PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
     SimpleStrucMapCalculator(to_simple_structure(_prim),
-                             std::vector<SymOp>({SymOp()}),
+                             std::vector<SymOp>({
+    SymOp()
+  }),
   _species_mode,
   ConfigMapping::_allowed_species(_prim)),
 

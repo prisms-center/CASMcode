@@ -10,18 +10,21 @@
 #include "casm/crystallography/BasicStructure.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Lattice;
+    class Site;
+    template<typename T>
+    class BasicStructure;
+  }
+  using namespace xtal;
+
   class Supercell;
-  class Lattice;
   class PermuteIterator;
   class PrimClex;
   class Configuration;
   class ConfigDoF;
   class SupercellSymInfo;
 
-  class Site;
-
-  template<typename T>
-  class BasicStructure;
 
   namespace Completer {
     class ImportOption;

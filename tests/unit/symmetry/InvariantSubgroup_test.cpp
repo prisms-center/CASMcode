@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/symmetry/InvariantSubgroup.hh"
@@ -15,9 +14,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(InvariantSubgroupTest)
-
-BOOST_AUTO_TEST_CASE(Test0) {
+TEST(InvariantSubgroupTest, Test0) {
   test::ZrOProj proj;
   proj.check_init();
 
@@ -30,10 +27,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   Log &log = primclex.log();
 
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  jsonFile bspecs {"tests/unit/kinetics/ZrO_bspecs_0.json"};
+  jsonFile bspecs {autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_bspecs_0.json"};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
@@ -43,7 +40,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     primclex.crystallography_tol(),
     std::back_inserter(orbits),
     primclex.log());
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   PrototypePrinter<IntegralCluster> printer;
   printer.opt.coord_type = INTEGRAL;
@@ -58,15 +55,15 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
       // Test make_invariant_subgroup using the orbit equivalence map & orbit.prototype()
       SymGroup cluster_group_b = make_invariant_subgroup(orbit);
-      BOOST_CHECK_EQUAL(cluster_group_a.size(), cluster_group_b.size());
+      EXPECT_EQ(cluster_group_a.size(), cluster_group_b.size());
 
       // Test make_invariant_subgroup using Supercell
       std::vector<PermuteIterator> cluster_group_c = make_invariant_subgroup(orbit.prototype(), prim_scel);
-      BOOST_CHECK_EQUAL(cluster_group_a.size(), cluster_group_c.size());
+      EXPECT_EQ(cluster_group_a.size(), cluster_group_c.size());
 
     }
     //test::print_computed_result(std::cout, "cluster_group_size", cluster_group_size);
-    BOOST_CHECK_EQUAL(true, true);
+    EXPECT_EQ(true, true);
   }
 
   // Individual cluster test cases
@@ -85,8 +82,8 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::vector<PermuteIterator> _config_fg = config.factor_group();
     SymGroup config_fg = make_sym_group(_config_fg.begin(), _config_fg.end());
 
-    BOOST_CHECK_EQUAL(scel_vol2.factor_group().size(), 8);
-    BOOST_CHECK_EQUAL(config_fg.size(), 16);
+    EXPECT_EQ(scel_vol2.factor_group().size(), 8);
+    EXPECT_EQ(config_fg.size(), 16);
 
     // a couple test cases:
 
@@ -94,7 +91,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
     {
       IntegralCluster clust {prim};
       SymGroup cluster_group = make_invariant_subgroup(clust, config_fg, scel_sym_compare);
-      BOOST_CHECK_EQUAL(cluster_group.size(), 16);
+      EXPECT_EQ(cluster_group.size(), 16);
     }
 
     // point cluster
@@ -102,7 +99,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
       IntegralCluster clust {prim};
       clust.elements().push_back(UnitCellCoord {prim, 2, 0, 0, 0});
       SymGroup cluster_group = make_invariant_subgroup(clust, config_fg, scel_sym_compare);
-      BOOST_CHECK_EQUAL(cluster_group.size(), 4);
+      EXPECT_EQ(cluster_group.size(), 4);
     }
 
     // pair cluster
@@ -111,7 +108,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
       clust.elements().push_back(UnitCellCoord {prim, 3, 1, 0, 0});
       clust.elements().push_back(UnitCellCoord {prim, 2, 1, 1, 1});
       SymGroup cluster_group = make_invariant_subgroup(clust, config_fg, scel_sym_compare);
-      BOOST_CHECK_EQUAL(cluster_group.size(), 2);
+      EXPECT_EQ(cluster_group.size(), 2);
     }
 
     // pair cluster - equivalent to previous cluster by prim symmetry, different by scel symmetry
@@ -120,7 +117,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
       clust.elements().push_back(UnitCellCoord {prim, 3, 1, 0, 0});
       clust.elements().push_back(UnitCellCoord {prim, 2, 2, 1, 1});
       SymGroup cluster_group = make_invariant_subgroup(clust, config_fg, scel_sym_compare);
-      BOOST_CHECK_EQUAL(cluster_group.size(), 1);
+      EXPECT_EQ(cluster_group.size(), 1);
     }
   }
 
@@ -140,8 +137,8 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::vector<PermuteIterator> _config_fg = config.factor_group();
     SymGroup config_fg = make_sym_group(_config_fg.begin(), _config_fg.end());
 
-    BOOST_CHECK_EQUAL(scel_vol2.factor_group().size() * 2, _config_fg.size());
-    BOOST_CHECK_EQUAL(config_fg.size(), _config_fg.size());
+    EXPECT_EQ(scel_vol2.factor_group().size() * 2, _config_fg.size());
+    EXPECT_EQ(config_fg.size(), _config_fg.size());
 
     for(const auto &orbit : orbits) {
 
@@ -162,26 +159,25 @@ BOOST_AUTO_TEST_CASE(Test0) {
         SymGroup cluster_group_a = make_invariant_subgroup(el, config_fg, scel_sym_compare);
 
         // group size must equal number of elements * invariant group size
-        BOOST_CHECK_EQUAL(config_fg.size(), suborbit.size()*cluster_group_a.size());
+        EXPECT_EQ(config_fg.size(), suborbit.size()*cluster_group_a.size());
 
         // Test make_invariant_subgroup using the orbit equivalence map & orbit.prototype()
         SymGroup cluster_group_b = make_invariant_subgroup(suborbit);
-        BOOST_CHECK_EQUAL(cluster_group_a.size(), cluster_group_b.size());
+        EXPECT_EQ(cluster_group_a.size(), cluster_group_b.size());
 
         // Test make_invariant_subgroup using Supercell
         std::vector<PermuteIterator> cluster_group_c = make_invariant_subgroup(el, scel_vol2);
-        BOOST_CHECK_EQUAL(cluster_group_a.size(), cluster_group_c.size());
+        EXPECT_EQ(cluster_group_a.size(), cluster_group_c.size());
       }
 
       if(!orbit.prototype().size()) {
-        BOOST_CHECK_EQUAL(orbit.size(), 1);
-        BOOST_CHECK_EQUAL(el_sum, 1);
+        EXPECT_EQ(orbit.size(), 1);
+        EXPECT_EQ(el_sum, 1);
       }
       else {
-        BOOST_CHECK_EQUAL(2 * orbit.size(), el_sum);
+        EXPECT_EQ(2 * orbit.size(), el_sum);
       }
     }
   }
 }
 
-BOOST_AUTO_TEST_SUITE_END()

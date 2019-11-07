@@ -17,11 +17,14 @@
 #include "casm/clusterography/ClusterDecl.hh"
 
 namespace CASM {
+  namespace xtal {
+    class Molecule;
+    class UnitCellCoord;
+  }
+  using namespace xtal;
 
-  class Molecule;
   class PrimClex;
   class Supercell;
-  class UnitCellCoord;
   class Clexulator;
   class FillSupercell;
   class ConfigIsEquivalent;

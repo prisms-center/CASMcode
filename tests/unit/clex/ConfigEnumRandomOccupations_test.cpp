@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
@@ -16,9 +15,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(ConfigEnumRandomOccupationsTest)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(ConfigEnumRandomOccupationsTest, Test1) {
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -35,7 +32,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   {
     ConfigEnumRandomOccupations e(scel, n_configs, mtrand);
-    BOOST_CHECK_EQUAL(n_configs, std::distance(e.begin(), e.end()));
+    EXPECT_EQ(n_configs, std::distance(e.begin(), e.end()));
   }
 
 
@@ -48,7 +45,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     for(const auto &scel : e) {
       (void) scel;
     }
-    BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 14);
+    EXPECT_EQ(primclex.generic_db<Supercell>().size(), 14);
   }
 
   {
@@ -56,12 +53,12 @@ BOOST_AUTO_TEST_CASE(Test1) {
     jsonParser json;
     json["n_config"] = 200;
     ConfigEnumRandomOccupations::run(primclex, json, enum_opt, nullptr);
-    BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size() > 150, true);
+    EXPECT_EQ(primclex.generic_db<Configuration>().size() > 150, true);
   }
 
 }
 
-BOOST_AUTO_TEST_CASE(ConfigEnumRandomOccupationsRunTest) {
+TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
 
   // create a project
   test::FCCTernaryProj proj;
@@ -75,10 +72,10 @@ BOOST_AUTO_TEST_CASE(ConfigEnumRandomOccupationsRunTest) {
     parse_args(opt, "casm enum --method ScelEnum --max 4", primclex);
     ScelEnum::run(primclex, jsonParser(), opt, nullptr);
   }
-  BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
+  EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   primclex.generic_db<Supercell>().close();
   primclex.generic_db<Supercell>().open();
-  BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
+  EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
 
   std::string cmd = R"(casm enum --method ConfigEnumRandomOccupations -a)";
   jsonParser kwargs;
@@ -91,25 +88,23 @@ BOOST_AUTO_TEST_CASE(ConfigEnumRandomOccupationsRunTest) {
     parse_args(opt, cmd + " --dry-run", primclex);
     ConfigEnumRandomOccupations::run(primclex, kwargs, opt, nullptr);
   }
-  BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
-  BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size() > 0, true);
+  EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
+  EXPECT_EQ(primclex.generic_db<Configuration>().size() > 0, true);
   primclex.generic_db<Configuration>().close();
   primclex.generic_db<Configuration>().open();
-  BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
-  BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size(), 0);
+  EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
+  EXPECT_EQ(primclex.generic_db<Configuration>().size(), 0);
 
   {
     Completer::EnumOption opt;
     parse_args(opt, cmd, primclex);
     ConfigEnumRandomOccupations::run(primclex, kwargs, opt, nullptr);
   }
-  BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
-  BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size() > 0, true);
+  EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
+  EXPECT_EQ(primclex.generic_db<Configuration>().size() > 0, true);
   primclex.generic_db<Configuration>().close();
   primclex.generic_db<Configuration>().open();
-  BOOST_CHECK_EQUAL(primclex.generic_db<Supercell>().size(), 13);
-  BOOST_CHECK_EQUAL(primclex.generic_db<Configuration>().size() > 0, true);
+  EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
+  EXPECT_EQ(primclex.generic_db<Configuration>().size() > 0, true);
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

@@ -10,12 +10,18 @@
 #include "casm/database/Import.hh"
 
 namespace CASM {
+  namespace xtal {
+    template<typename T> class BasicStructure;
+    class Site;
+    class SimpleStructure;
+  }
+  using namespace xtal;
+
+
   class ConfigMapper;
   class Configuration;
-  class SimpleStructure;
   class PrimClex;
   class jsonParser;
-
 }
 
 namespace CASM {

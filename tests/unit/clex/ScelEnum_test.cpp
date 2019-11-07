@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/ScelEnum.hh"
@@ -16,9 +15,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(ScelEnumTest)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(ScelEnumTest, Test1) {
 
   test::ZrOProj proj;
   proj.check_init();
@@ -36,20 +33,20 @@ BOOST_AUTO_TEST_CASE(Test1) {
     ScelEnumProps enum_props(1, 10);
     ScelEnumByProps e(primclex, enum_props);
 
-    BOOST_CHECK_EQUAL(e.name(), "ScelEnumByProps");
+    EXPECT_EQ(e.name(), "ScelEnumByProps");
 
     auto it = e.begin();
-    BOOST_CHECK(true);
-    BOOST_CHECK_EQUAL(it.name(), "ScelEnumByProps");
+    EXPECT_TRUE(true);
+    EXPECT_EQ(it.name(), "ScelEnumByProps");
 
     auto end = e.end();
-    BOOST_CHECK(true);
+    EXPECT_TRUE(true);
 
     Index count = 0;
     for(; it != end; ++it, ++count) {
       m_names.push_back(it->name());
 
-      Lattice canon_check = canonical_equivalent_lattice(
+      Lattice canon_check = xtal::canonical::equivalent(
                               it->lattice(),
                               primclex.prim().point_group(),
                               primclex.crystallography_tol());
@@ -64,38 +61,38 @@ BOOST_AUTO_TEST_CASE(Test1) {
         std::cout << "canon_check: \n" << canon_check.lat_column_mat() << std::endl;
       }
 
-      BOOST_CHECK_EQUAL(check, true);
+      EXPECT_EQ(check, true);
 
-      BOOST_CHECK_EQUAL(it->is_canonical(), true);
+      EXPECT_EQ(it->is_canonical(), true);
 
     }
-    BOOST_CHECK_EQUAL(count, 114);
-    BOOST_CHECK(it == end);
+    EXPECT_EQ(count, 114);
+    EXPECT_TRUE(it == end);
   }
 
   // -- use results to Test ScelEnumByName --------------------
   {
     ScelEnumByName e(primclex, m_names.begin(), m_names.end());
-    BOOST_CHECK_EQUAL(e.name(), "ScelEnumByName");
+    EXPECT_EQ(e.name(), "ScelEnumByName");
 
     auto it = e.begin();
-    BOOST_CHECK(true);
-    BOOST_CHECK_EQUAL(it.name(), "ScelEnumByName");
+    EXPECT_TRUE(true);
+    EXPECT_EQ(it.name(), "ScelEnumByName");
 
     auto end = e.end();
-    BOOST_CHECK(true);
+    EXPECT_TRUE(true);
 
     Index count = 0;
     for(; it != end; ++it, ++count) {
       //std::cout << it->name() << std::endl;
     }
-    BOOST_CHECK_EQUAL(count, 114);
-    BOOST_CHECK(it == end);
+    EXPECT_EQ(count, 114);
+    EXPECT_TRUE(it == end);
   }
 
 }
 
-BOOST_AUTO_TEST_CASE(Test2) {
+TEST(ScelEnumTest, Test2) {
 
   // create a project
   test::FCCTernaryProj proj;
@@ -117,12 +114,10 @@ BOOST_AUTO_TEST_CASE(Test2) {
     return code;
   };
 
-  BOOST_CHECK_EQUAL(exec("casm enum -h"), 0);
-  BOOST_CHECK_EQUAL(exec("casm enum --method ScelEnum --max 4"), 0);
-  BOOST_CHECK_EQUAL(exec("casm enum --method ConfigEnumAllOccupations --all"), 0);
-  BOOST_CHECK_EQUAL(exec("casm enum --method ScelEnum --max 8"), 0);
-  BOOST_CHECK_EQUAL(exec("casm enum --method ConfigEnumAllOccupations --max 6 -i '{\"existing_only\":true}'"), 0);
+  EXPECT_EQ(exec("casm enum -h"), 0);
+  EXPECT_EQ(exec("casm enum --method ScelEnum --max 4"), 0);
+  EXPECT_EQ(exec("casm enum --method ConfigEnumAllOccupations --all"), 0);
+  EXPECT_EQ(exec("casm enum --method ScelEnum --max 8"), 0);
+  EXPECT_EQ(exec("casm enum --method ConfigEnumAllOccupations --max 6 -i '{\"existing_only\":true}'"), 0);
 
 }
-
-BOOST_AUTO_TEST_SUITE_END()

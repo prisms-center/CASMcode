@@ -499,7 +499,7 @@ namespace CASM {
 
     const auto &db = primclex().db<Configuration>();
     const Lattice &canon_scel_lat = supercell().canonical_form().lattice();
-    bool is_canon_equiv_lat = supercell().lattice().is_equivalent(canon_scel_lat);
+    bool is_canon_equiv_lat = xtal::is_equivalent(this->supercell().lattice(), canon_scel_lat);
 
     // If in the canonical equivalent supercell lattice:
     if(is_canon_equiv_lat) {

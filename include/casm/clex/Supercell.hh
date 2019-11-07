@@ -15,16 +15,21 @@
 
 namespace CASM {
 
+  namespace xtal {
+    template<typename T> class BasicStructure;
+    class Site;
+    class Structure;
+  }
+
   template<typename T, typename U> class ConfigIterator;
   class PermuteIterator;
   class PrimClex;
   class Clexulator;
   class ConfigDoF;
   class Configuration;
-  template<typename T> class BasicStructure;
-  class Site;
   class SuperNeighborList;
-  class Structure;
+
+  using namespace xtal;
 
   namespace DB {
     template<typename T> class DatabaseIterator;

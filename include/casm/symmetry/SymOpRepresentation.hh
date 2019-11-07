@@ -10,9 +10,11 @@
 #include "casm/symmetry/SymGroupRepID.hh"
 
 namespace CASM {
+  namespace xtal {
+    class UnitCellCoord;
+  }
   class MasterSymGroup;
   class Permutation;
-  class UnitCellCoord;
   class SymBasisPermute;
 
   /** \ingroup Symmetry

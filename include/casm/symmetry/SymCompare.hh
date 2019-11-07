@@ -12,13 +12,15 @@
 #include "casm/crystallography/Structure.hh"
 
 namespace CASM {
+  namespace xtal {
+    class UnitCell;
+    class Coordinate;
+  }
+  using namespace xtal;
 
   /* -- SymCompare Declarations --------------------------- */
 
   class SymOp;
-  class UnitCell;
-  class Coordinate;
-
 
   /// \brief CRTP base class for implementing element and orbit comparison
   ///

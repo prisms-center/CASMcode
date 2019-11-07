@@ -6,6 +6,7 @@ namespace CASM {
   namespace DoF_impl {
     class StrainDoFTraits : public DoFType::Traits {
     public:
+
       StrainDoFTraits(std::string const &_metric) :
         DoFType::Traits(AnisoValTraits::strain(_metric)),
         m_metric(_metric) {

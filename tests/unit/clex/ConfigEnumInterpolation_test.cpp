@@ -1,5 +1,4 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/ConfigEnumInterpolation.hh"
@@ -12,9 +11,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(ConfigEnumInterpolationTest)
-
-BOOST_AUTO_TEST_CASE(Test1) {
+TEST(ConfigEnumInterpolationTest, Test1) {
   /*
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -27,6 +24,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
 
+  //TODO: I was gonna uncomment this test, but it seems these functions
+  //don't exist anymore
   Configuration c_begin(scel);
   c_begin.init_displacement();
   c_begin.init_deformation();
@@ -60,5 +59,3 @@ BOOST_AUTO_TEST_CASE(Test1) {
   }
   */
 }
-
-BOOST_AUTO_TEST_SUITE_END()

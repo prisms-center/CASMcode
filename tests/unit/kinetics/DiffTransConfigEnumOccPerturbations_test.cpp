@@ -1,5 +1,5 @@
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#include "gtest/gtest.h"
+#include "autotools.hh"
 
 /// What is being tested:
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
@@ -36,10 +36,10 @@ namespace {
     TestOrbits0(const PrimClex &primclex) :
       test::TestPrimPeriodicDiffusionTransformationOrbits(
         primclex,
-        jsonFile("tests/unit/kinetics/ZrO_bspecs_0.json"),
+        jsonFile(autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_bspecs_0.json"),
         2, 4) { // orbit_branches [2,4)
-      BOOST_CHECK_EQUAL(orbits.size(), 74);
-      BOOST_CHECK_EQUAL(diff_trans_orbits.size(), 4);
+      EXPECT_EQ(orbits.size(), 74);
+      EXPECT_EQ(diff_trans_orbits.size(), 4);
     }
   };
 
@@ -109,10 +109,10 @@ namespace {
                          dt_orbit,
                          local_specs));
       log << "done" << std::endl;
-      BOOST_CHECK_EQUAL(true, true);
-      BOOST_CHECK_EQUAL(enumerator->valid(), true);
-      BOOST_CHECK_EQUAL(enumerator->step(), 0);
-      BOOST_CHECK_EQUAL((enumerator->begin() != enumerator->end()), true);
+      EXPECT_EQ(true, true);
+      EXPECT_EQ(enumerator->valid(), true);
+      EXPECT_EQ(enumerator->step(), 0);
+      EXPECT_EQ((enumerator->begin() != enumerator->end()), true);
       log << "basic checks ok" << std::endl;
 
       run();
@@ -260,19 +260,18 @@ namespace {
       while(enumerator->valid());
 
       log.end("TestEnumComponents");
-      BOOST_CHECK_EQUAL(enumerator->valid(), false);
+      EXPECT_EQ(enumerator->valid(), false);
 
     }
   };
 
 }
 
-BOOST_AUTO_TEST_SUITE(DiffTransConfigEnumOccPerturbationsTest)
 
-BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
+TEST(DiffTransConfigEnumOccPerturbationsTest, NeighborhoodOverlapTest) {
 
   /// Make test project
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
   test::ZrOProj proj;
   proj.check_init();
   proj.check_composition();
@@ -282,7 +281,7 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
   //const Structure &prim = primclex.prim();
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   // Make orbits
   TestOrbits0 to(primclex);
@@ -291,7 +290,7 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
   TestLocalOrbits local_to(
     primclex,
     to.diff_trans_orbits[0].prototype(),
-    jsonFile("tests/unit/kinetics/ZrO_local_bspecs_1.json"));
+    jsonFile(autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_local_bspecs_1.json"));
 
   ///Make various supercells
   Supercell scel1 {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
@@ -304,23 +303,23 @@ BOOST_AUTO_TEST_CASE(NeighborhoodOverlapTest) {
   scel_list.push_back(scel3);
   scel_list.push_back(scel4);
 
-  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_to.orbits, scel1), 1);
-  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_to.orbits, scel2), 0);
-  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_to.orbits, scel3), 1);
-  BOOST_CHECK_EQUAL(has_local_neighborhood_overlap(local_to.orbits, scel4), 1);
+  EXPECT_EQ(has_local_neighborhood_overlap(local_to.orbits, scel1), 1);
+  EXPECT_EQ(has_local_neighborhood_overlap(local_to.orbits, scel2), 0);
+  EXPECT_EQ(has_local_neighborhood_overlap(local_to.orbits, scel3), 1);
+  EXPECT_EQ(has_local_neighborhood_overlap(local_to.orbits, scel4), 1);
   std::vector<Supercell> result = viable_supercells(local_to.orbits, scel_list);
-  BOOST_CHECK_EQUAL(*(result.begin()) == scel2, 1);
+  EXPECT_EQ(*(result.begin()) == scel2, 1);
 
 }
 
-BOOST_AUTO_TEST_CASE(ZrOTest_Components) {
+TEST(DiffTransConfigEnumOccPerturbationsTest, ZrOTest_Components) {
 
   /// Make test project
   test::ZrOProj proj;
   proj.check_init();
   Log &log = null_log();
   PrimClex primclex(proj.dir, null_log());
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
 
   // Make orbits & background config
   log.construct("TestOrbits0");
@@ -332,13 +331,13 @@ BOOST_AUTO_TEST_CASE(ZrOTest_Components) {
     log.construct("TestBackgroundConfig0");
     log << "ZrO 3x3x3 supercell, alternating filled and empty O layers" << std::endl;
     TestBackgroundConfig0 tc(primclex);
-    BOOST_CHECK_EQUAL(true, true);
+    EXPECT_EQ(true, true);
     log << "  DONE" << std::endl;
 
     /// Step-by-step checks
     {
       /// Common local cluster specs
-      jsonFile local_specs("tests/unit/kinetics/ZrO_local_bspecs_0.json");
+      jsonFile local_specs(autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_local_bspecs_0.json");
 
       {
         log.check("DiffTrans orbit 0");
@@ -346,20 +345,20 @@ BOOST_AUTO_TEST_CASE(ZrOTest_Components) {
         TestEnumComponents te(tc.config, to.diff_trans_orbits[0], local_specs, log);
         log << "- expected base configurations:" << 1 << std::endl;
         log << "  - base 0: c-axis hop between neighboring filled and empty layer" << std::endl;
-        BOOST_CHECK_EQUAL(te.enumerator->base().size(), 1);
+        EXPECT_EQ(te.enumerator->base().size(), 1);
         log << "- expected local orbit branch, multiplicity:" << std::endl;
         log << "  - base config 0:" << std::endl;
         log << "    - 1: null perturbation" << std::endl;
         log << "    - 6: nearest point cluster in O layer" << std::endl;
         log << "    - 6: nearest point cluster in Va layer" << std::endl;
-        BOOST_CHECK_EQUAL(te.local_orbit_branch[0], std::vector<int>({0, 1, 1}));
-        BOOST_CHECK_EQUAL(te.local_orbit_mult[0], std::vector<int>({1, 6, 6}));
+        EXPECT_EQ(te.local_orbit_branch[0], std::vector<int>({0, 1, 1}));
+        EXPECT_EQ(te.local_orbit_mult[0], std::vector<int>({1, 6, 6}));
         log << "- expected unique, canonical DiffTransConfigurations:" << std::endl;
         log << "  - base config 0:" << std::endl;
         log << "    - 0: null perturbation" << std::endl;
         log << "    - 1: nearest Va in O layer" << std::endl;
         log << "    - 2: nearest O in Va layer" << std::endl;
-        BOOST_CHECK_EQUAL(te.unique_canon_perturb[0].size(), 3);
+        EXPECT_EQ(te.unique_canon_perturb[0].size(), 3);
         log << "done" << std::endl;
 
       }
@@ -368,10 +367,10 @@ BOOST_AUTO_TEST_CASE(ZrOTest_Components) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(ZrOTest_run) {
+TEST(DiffTransConfigEnumOccPerturbationsTest, ZrOTest_run) {
 
   /// Make test project
-  BOOST_CHECK_EQUAL(true, true);
+  EXPECT_EQ(true, true);
   test::ZrOProj proj;
   proj.check_init();
 
@@ -386,10 +385,10 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
   jsonParser kwargs;
   to_json(ScelEnumProps(1, 5), kwargs["supercells"]);
   kwargs["supercells"]["existing_only"] = false;
-  //BOOST_CHECK_EQUAL(true, true);
+  //EXPECT_EQ(true, true);
 
   ConfigEnumAllOccupations::run(primclex, kwargs, enum_opt, nullptr);
-  //BOOST_CHECK_EQUAL(true, true);
+  //EXPECT_EQ(true, true);
 
   // Test Kinetics::DiffTransConfigEnumOccPerturbations::run
   {
@@ -397,11 +396,11 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
     enum_opt.desc();
 
     // Generate DiffTrans
-    jsonFile diff_trans_json {"tests/unit/kinetics/ZrO_diff_trans_0.json"};
+    jsonFile diff_trans_json {autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_diff_trans_0.json"};
     int success = Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
     const auto &diff_trans_db = primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>();
-    BOOST_CHECK_EQUAL(diff_trans_db.size(), 3);
-    BOOST_CHECK_EQUAL(success, 0);
+    EXPECT_EQ(diff_trans_db.size(), 3);
+    EXPECT_EQ(success, 0);
 
     //    //print DiffTrans prototypes
     //    {
@@ -410,13 +409,12 @@ BOOST_AUTO_TEST_CASE(ZrOTest_run) {
     //    }
 
     // Generate perturbations
-    jsonFile diff_perturb_json {"tests/unit/kinetics/ZrO_diff_perturb_0.json"};
+    jsonFile diff_perturb_json {autotools::abs_srcdir() + "/tests/unit/kinetics/ZrO_diff_perturb_0.json"};
     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
-    BOOST_CHECK_EQUAL(true, true);
+    EXPECT_EQ(true, true);
 
     // Test (quantity 1856 not checked for accuracy)
-    BOOST_CHECK_EQUAL(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
+    EXPECT_EQ(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
   }
 }
 
-BOOST_AUTO_TEST_SUITE_END();
