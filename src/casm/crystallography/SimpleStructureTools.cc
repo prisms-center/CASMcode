@@ -188,209 +188,6 @@ namespace CASM {
     }
 
     //***************************************************************************
-    /// \brief Construct from Configuration and specify prefix for output quantities
-    jsonParser json_supplement(Configuration const &_config,
-                               std::string const &_prefix,
-                               std::vector<DoFKey> const &_which_dofs) {
-
-
-      return json_supplement(_config.configdof(), _config.prim(), _prefix, _which_dofs);
-    }
-
-    //***************************************************************************
-    /// \brief Construct from Configuration and specify prefix for output quantities
-    jsonParser json_supplement(ConfigDoF const &_dof,
-                               BasicStructure<Site> const &_reference,
-                               std::string const &_prefix,
-                               std::vector<DoFKey> which_dofs) {
-      jsonParser result;
-      if(which_dofs.empty()) {
-        for(std::string const &dof : continuous_local_dof_types(_reference))
-          which_dofs.push_back(dof);
-        for(std::string const &dof : global_dof_types(_reference))
-          which_dofs.push_back(dof);
-      }
-
-      for(DoFKey const &dof : which_dofs) {
-        if(dof != "none" && dof != "occ") {
-          auto traits_ptr = &DoFType::traits(dof);
-          if(traits_ptr->global())
-            result[_prefix + "global_dofs"][dof] = traits_ptr->dof_to_json(_dof, _reference);
-          else
-            result[_prefix + "mol_dofs"][dof] = traits_ptr->dof_to_json(_dof, _reference);
-
-        }
-      }
-      return result;
-    }
-
-    //***************************************************************************
-
-    jsonParser &to_json(SimpleStructure const &_struc,
-                        jsonParser &supplement,
-                        std::set<std::string> const &excluded_species) {
-
-      std::string prefix = _struc.prefix();
-      if(!prefix.empty())
-        prefix.push_back('_');
-
-
-      std::vector<Index> atom_permute, mol_permute;
-      jsonParser &ajson = supplement["atom_type"].put_array();
-
-      for(Index i = 0; i < _struc.atom_info.names.size(); ++i) {
-        if(excluded_species.count(_struc.atom_info.names[i]))
-          continue;
-        ajson.push_back(_struc.atom_info.names[i]);
-        atom_permute.push_back(i);
-      }
-
-      jsonParser &mjson = supplement["mol_type"].put_array();
-      for(Index i = 0; i < _struc.mol_info.names.size(); ++i) {
-        if(excluded_species.count(_struc.mol_info.names[i]))
-          continue;
-        mjson.push_back(_struc.mol_info.names[i]);
-        mol_permute.push_back(i);
-      }
-
-      supplement[prefix + "lattice"] = _struc.lat_column_mat.transpose();
-
-      for(auto const &dof : _struc.dofs) {
-        to_json_array(dof.second, supplement[prefix + "global_dofs"][dof.first]["value"]);
-      }
-
-      for(auto const &dof : _struc.atom_info.dofs) {
-        jsonParser &tjson = supplement[prefix + "atom_dofs"][dof.first]["value"].put_array();
-        for(Index i : atom_permute)
-          tjson.push_back(dof.second.col(i), jsonParser::as_array());
-      }
-
-      for(auto const &dof : _struc.mol_info.dofs) {
-        jsonParser &tjson = supplement[prefix + "mol_dofs"][dof.first]["value"].put_array();
-        for(Index i : mol_permute)
-          tjson.push_back(dof.second.col(i), jsonParser::as_array());
-      }
-
-      if(_struc.selective_dynamics) {
-        supplement["selective_dynamics"] = _struc.selective_dynamics;
-        supplement["atom_selective_dynamics"].put_array();
-        supplement["mol_selective_dynamics"].put_array();
-      }
-
-
-      {
-        jsonParser &tjson = supplement[prefix + "atom_coords"].put_array();
-        for(Index i : atom_permute) {
-          tjson.push_back(_struc.atom_info.coords.col(i), jsonParser::as_array());
-          if(_struc.selective_dynamics)
-            supplement["atom_selective_dynamics"].push_back(_struc.atom_info.SD.col(i), jsonParser::as_array());
-        }
-      }
-
-      {
-        jsonParser &tjson = supplement[prefix + "mol_coords"].put_array();
-        for(Index i : mol_permute) {
-          tjson.push_back(_struc.mol_info.coords.col(i), jsonParser::as_array());
-          if(_struc.selective_dynamics)
-            supplement["mol_selective_dynamics"].push_back(_struc.mol_info.SD.col(i), jsonParser::as_array());
-        }
-      }
-      return supplement;
-    }
-
-    //***************************************************************************
-
-    void from_json(SimpleStructure &_struc, const jsonParser &json) {
-      std::string prefix = _struc.prefix();
-      if(!prefix.empty())
-        prefix.push_back('_');
-
-      try {
-        std::string tstr;
-        CASM::from_json(tstr, json["coord_mode"]);
-
-        COORD_TYPE mode = CART;
-        if(tstr == "direct" || tstr == "Direct")
-          mode = FRAC;
-
-        _struc.lat_column_mat = json[prefix + "lattice"].get<Eigen::Matrix3d>().transpose();
-        {
-          auto it = json.find(prefix + "global_dofs");
-          if(it != json.end()) {
-            for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-              _struc.dofs[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>();
-            }
-          }
-        }
-
-
-        if(json.contains("atoms_per_type")) {
-          std::vector<Index> ntype = json["atoms_per_type"].get<std::vector<Index> >();
-          std::vector<std::string> type = json["atoms_type"].get<std::vector<std::string> >();
-
-          for(Index i = 0; i < ntype.size(); ++i) {
-            for(Index j = 0; j < ntype[i]; ++j) {
-              _struc.atom_info.names.push_back(type[i]);
-            }
-          }
-
-          if(mode == FRAC)
-            _struc.atom_info.coords = _struc.lat_column_mat * json[prefix + "atom_coords"].get<Eigen::MatrixXd>().transpose();
-          else
-            _struc.atom_info.coords = json[prefix + "atom_coords"].get<Eigen::MatrixXd>().transpose();
-        }
-
-        if(json.contains("mols_per_type")) {
-          std::vector<Index> ntype = json["mols_per_type"].get<std::vector<Index> >();
-          std::vector<std::string> type = json["mols_type"].get<std::vector<std::string> >();
-
-          for(Index i = 0; i < ntype.size(); ++i) {
-            for(Index j = 0; j < ntype[i]; ++j) {
-              _struc.mol_info.names.push_back(type[i]);
-            }
-          }
-
-          if(mode == FRAC)
-            _struc.mol_info.coords = _struc.lat_column_mat * json[prefix + "mol_coords"].get<Eigen::MatrixXd>().transpose();
-          else
-            _struc.mol_info.coords = _struc.lat_column_mat * json[prefix + "mol_coords"].get<Eigen::MatrixXd>().transpose();
-        }
-
-        {
-          auto it = json.find(prefix + "atom_dofs");
-          if(it != json.end()) {
-            for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-              _struc.atom_info.dofs[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
-            }
-          }
-        }
-
-        {
-          auto it = json.find(prefix + "mol_dofs");
-          if(it != json.end()) {
-            for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-              _struc.mol_info.dofs[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
-            }
-          }
-        }
-
-        json.get_if(_struc.selective_dynamics, "selective_dynamics");
-        if(_struc.selective_dynamics) {
-          if(json.contains("atom_selective_dynamics")) {
-            _struc.atom_info.SD = json["atom_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
-          }
-          if(json.contains("mol_selective_dynamics")) {
-            _struc.mol_info.SD = json["mol_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
-          }
-        }
-
-      }
-      catch(const std::exception &ex) {
-        throw std::runtime_error(std::string("Unable to parse Structure from JSON object.  One or more tags were improperly specified:\n") + ex.what());
-      }
-    }
-
-    //***************************************************************************
 
     void _apply_dofs(SimpleStructure &_sstruc, ConfigDoF const &_config, BasicStructure<Site> const &_reference, std::vector<DoFKey> which_dofs) {
       std::set<TransformDirective> tformers({TransformDirective("atomize")});
@@ -505,4 +302,207 @@ namespace CASM {
         m_traits_ptr->dof_to_json(_json, _config, _reference);
         }*/
   }
+  //***************************************************************************
+  /// \brief Construct from Configuration and specify prefix for output quantities
+  jsonParser json_supplement(Configuration const &_config,
+                             std::string const &_prefix,
+                             std::vector<DoFKey> const &_which_dofs) {
+
+
+    return json_supplement(_config.configdof(), _config.prim(), _prefix, _which_dofs);
+  }
+
+  //***************************************************************************
+  /// \brief Construct from Configuration and specify prefix for output quantities
+  jsonParser json_supplement(ConfigDoF const &_dof,
+                             BasicStructure<Site> const &_reference,
+                             std::string const &_prefix,
+                             std::vector<DoFKey> which_dofs) {
+    jsonParser result;
+    if(which_dofs.empty()) {
+      for(std::string const &dof : continuous_local_dof_types(_reference))
+        which_dofs.push_back(dof);
+      for(std::string const &dof : global_dof_types(_reference))
+        which_dofs.push_back(dof);
+    }
+
+    for(DoFKey const &dof : which_dofs) {
+      if(dof != "none" && dof != "occ") {
+        auto traits_ptr = &DoFType::traits(dof);
+        if(traits_ptr->global())
+          result[_prefix + "global_dofs"][dof] = traits_ptr->dof_to_json(_dof, _reference);
+        else
+          result[_prefix + "mol_dofs"][dof] = traits_ptr->dof_to_json(_dof, _reference);
+
+      }
+    }
+    return result;
+  }
+
+  //***************************************************************************
+
+  jsonParser &to_json(SimpleStructure const &_struc,
+                      jsonParser &supplement,
+                      std::set<std::string> const &excluded_species) {
+
+    std::string prefix = _struc.prefix();
+    if(!prefix.empty())
+      prefix.push_back('_');
+
+
+    std::vector<Index> atom_permute, mol_permute;
+    jsonParser &ajson = supplement["atom_type"].put_array();
+
+    for(Index i = 0; i < _struc.atom_info.names.size(); ++i) {
+      if(excluded_species.count(_struc.atom_info.names[i]))
+        continue;
+      ajson.push_back(_struc.atom_info.names[i]);
+      atom_permute.push_back(i);
+    }
+
+    jsonParser &mjson = supplement["mol_type"].put_array();
+    for(Index i = 0; i < _struc.mol_info.names.size(); ++i) {
+      if(excluded_species.count(_struc.mol_info.names[i]))
+        continue;
+      mjson.push_back(_struc.mol_info.names[i]);
+      mol_permute.push_back(i);
+    }
+
+    supplement[prefix + "lattice"] = _struc.lat_column_mat.transpose();
+
+    for(auto const &dof : _struc.dofs) {
+      to_json_array(dof.second, supplement[prefix + "global_dofs"][dof.first]["value"]);
+    }
+
+    for(auto const &dof : _struc.atom_info.dofs) {
+      jsonParser &tjson = supplement[prefix + "atom_dofs"][dof.first]["value"].put_array();
+      for(Index i : atom_permute)
+        tjson.push_back(dof.second.col(i), jsonParser::as_array());
+    }
+
+    for(auto const &dof : _struc.mol_info.dofs) {
+      jsonParser &tjson = supplement[prefix + "mol_dofs"][dof.first]["value"].put_array();
+      for(Index i : mol_permute)
+        tjson.push_back(dof.second.col(i), jsonParser::as_array());
+    }
+
+    if(_struc.selective_dynamics) {
+      supplement["selective_dynamics"] = _struc.selective_dynamics;
+      supplement["atom_selective_dynamics"].put_array();
+      supplement["mol_selective_dynamics"].put_array();
+    }
+
+
+    {
+      jsonParser &tjson = supplement[prefix + "atom_coords"].put_array();
+      for(Index i : atom_permute) {
+        tjson.push_back(_struc.atom_info.coords.col(i), jsonParser::as_array());
+        if(_struc.selective_dynamics)
+          supplement["atom_selective_dynamics"].push_back(_struc.atom_info.SD.col(i), jsonParser::as_array());
+      }
+    }
+
+    {
+      jsonParser &tjson = supplement[prefix + "mol_coords"].put_array();
+      for(Index i : mol_permute) {
+        tjson.push_back(_struc.mol_info.coords.col(i), jsonParser::as_array());
+        if(_struc.selective_dynamics)
+          supplement["mol_selective_dynamics"].push_back(_struc.mol_info.SD.col(i), jsonParser::as_array());
+      }
+    }
+    return supplement;
+  }
+
+  //***************************************************************************
+
+  void from_json(SimpleStructure &_struc, const jsonParser &json) {
+    std::string prefix = _struc.prefix();
+    if(!prefix.empty())
+      prefix.push_back('_');
+
+    try {
+      std::string tstr;
+      CASM::from_json(tstr, json["coord_mode"]);
+
+      COORD_TYPE mode = CART;
+      if(tstr == "direct" || tstr == "Direct")
+        mode = FRAC;
+
+      _struc.lat_column_mat = json[prefix + "lattice"].get<Eigen::Matrix3d>().transpose();
+      {
+        auto it = json.find(prefix + "global_dofs");
+        if(it != json.end()) {
+          for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
+            _struc.dofs[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>();
+          }
+        }
+      }
+
+
+      if(json.contains("atoms_per_type")) {
+        std::vector<Index> ntype = json["atoms_per_type"].get<std::vector<Index> >();
+        std::vector<std::string> type = json["atoms_type"].get<std::vector<std::string> >();
+
+        for(Index i = 0; i < ntype.size(); ++i) {
+          for(Index j = 0; j < ntype[i]; ++j) {
+            _struc.atom_info.names.push_back(type[i]);
+          }
+        }
+
+        if(mode == FRAC)
+          _struc.atom_info.coords = _struc.lat_column_mat * json[prefix + "atom_coords"].get<Eigen::MatrixXd>().transpose();
+        else
+          _struc.atom_info.coords = json[prefix + "atom_coords"].get<Eigen::MatrixXd>().transpose();
+      }
+
+      if(json.contains("mols_per_type")) {
+        std::vector<Index> ntype = json["mols_per_type"].get<std::vector<Index> >();
+        std::vector<std::string> type = json["mols_type"].get<std::vector<std::string> >();
+
+        for(Index i = 0; i < ntype.size(); ++i) {
+          for(Index j = 0; j < ntype[i]; ++j) {
+            _struc.mol_info.names.push_back(type[i]);
+          }
+        }
+
+        if(mode == FRAC)
+          _struc.mol_info.coords = _struc.lat_column_mat * json[prefix + "mol_coords"].get<Eigen::MatrixXd>().transpose();
+        else
+          _struc.mol_info.coords = _struc.lat_column_mat * json[prefix + "mol_coords"].get<Eigen::MatrixXd>().transpose();
+      }
+
+      {
+        auto it = json.find(prefix + "atom_dofs");
+        if(it != json.end()) {
+          for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
+            _struc.atom_info.dofs[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
+          }
+        }
+      }
+
+      {
+        auto it = json.find(prefix + "mol_dofs");
+        if(it != json.end()) {
+          for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
+            _struc.mol_info.dofs[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
+          }
+        }
+      }
+
+      json.get_if(_struc.selective_dynamics, "selective_dynamics");
+      if(_struc.selective_dynamics) {
+        if(json.contains("atom_selective_dynamics")) {
+          _struc.atom_info.SD = json["atom_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
+        }
+        if(json.contains("mol_selective_dynamics")) {
+          _struc.mol_info.SD = json["mol_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
+        }
+      }
+
+    }
+    catch(const std::exception &ex) {
+      throw std::runtime_error(std::string("Unable to parse Structure from JSON object.  One or more tags were improperly specified:\n") + ex.what());
+    }
+  }
+
 }

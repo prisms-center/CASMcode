@@ -11,7 +11,7 @@ namespace CASM {
   namespace xtal {
     class Structure;
   }
-  using namespace xtal;
+  using xtal::Structure;
 
   class DirectoryStructure;
   class ProjectSettings;

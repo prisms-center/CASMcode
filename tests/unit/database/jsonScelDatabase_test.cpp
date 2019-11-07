@@ -13,6 +13,8 @@
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 
 using namespace CASM;
+using xtal::ScelEnumProps;
+using xtal::SuperlatticeEnumerator;
 
 
 TEST(jsonScelDatabase_Test, Test1) {

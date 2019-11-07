@@ -15,6 +15,7 @@
 
 namespace CASM {
   namespace xtal {
+    class COORD_MODE;
     class Structure;
     class AtomPosition;
     class Molecule;
@@ -22,7 +23,13 @@ namespace CASM {
     class UnitCellCoord;
     template<typename CoordType> class BasicStructure;
   }
-  using namespace xtal;
+  using xtal::COORD_MODE;
+  using xtal::Structure;
+  using xtal::AtomPosition;
+  using xtal::Molecule;
+  using xtal::Site;
+  using xtal::UnitCellCoord;
+  using xtal::BasicStructure;
 
   // --- These functions are for casm I/O -----------
 

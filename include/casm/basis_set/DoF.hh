@@ -17,10 +17,6 @@
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
-  namespace xtal {
-    class Molecule;
-  }
-  using namespace xtal;
 
   class SymGroup;
   class jsonParser;

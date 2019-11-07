@@ -18,6 +18,8 @@
 #include "casm/crystallography/Structure.hh"
 
 using namespace CASM;
+using xtal::ScelEnumProps;
+using xtal::SuperlatticeEnumerator;;
 
 /** PRIM1 *****************************
 Face-centered Cubic (FCC, cF)

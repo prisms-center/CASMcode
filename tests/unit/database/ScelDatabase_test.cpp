@@ -14,6 +14,8 @@
 #include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
+using xtal::ScelEnumProps;
+using xtal::SuperlatticeEnumerator;
 
 TEST(ScelDatabase_Test, Test1) {
 

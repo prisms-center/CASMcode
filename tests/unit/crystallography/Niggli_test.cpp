@@ -105,7 +105,7 @@ namespace CASM {
                     0, 1, 0,
                     0, 0, 1;
 
-      Lattice comparelat = make_supercell(testlat, comp_transmat);
+      Lattice comparelat = make_superlattice(testlat, comp_transmat);
 
       Lattice nigglicompare = xtal::canonical::equivalent(comparelat, pg, TOL);
       Lattice nigglitest = xtal::canonical::equivalent(*it, pg, TOL);
@@ -145,14 +145,14 @@ namespace CASM {
 
     Lattice lat_B(lat_mat_B);
 
-    EXPECT_EQ(standard_orientation_compare(lat_mat_A, lat_mat_B, tol), true);
-    EXPECT_EQ(standard_orientation_compare(lat_mat_B, lat_mat_A, tol), false);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_A, lat_mat_B, tol), true);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_B, lat_mat_A, tol), false);
 
-    EXPECT_EQ(standard_orientation_compare(lat_mat_A2, lat_mat_B, tol), true);
-    EXPECT_EQ(standard_orientation_compare(lat_mat_B, lat_mat_A2, tol), false);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_A2, lat_mat_B, tol), true);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_B, lat_mat_A2, tol), false);
 
-    EXPECT_EQ(standard_orientation_compare(lat_mat_A, lat_mat_A2, tol), false);
-    EXPECT_EQ(standard_orientation_compare(lat_mat_A2, lat_mat_A, tol), false);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_A, lat_mat_A2, tol), false);
+    EXPECT_EQ(xtal::standard_orientation_compare(lat_mat_A2, lat_mat_A, tol), false);
 
     Structure prim(test::ZrO_prim());
     Lattice canon_A = xtal::canonical::equivalent(lat_A, prim.point_group(), tol);

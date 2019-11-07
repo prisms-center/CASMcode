@@ -17,27 +17,27 @@ namespace CASM {
     /// module, simply declare and define accessors get_matrix, get_translation, and
     /// get_time_reversal
     template <typename FromType>
-    struct Adapter<xtal::SymOpType, FromType> {
-      xtal::SymOpType operator()(const FromType &adaptable) {
-        return xtal::SymOpType(get_matrix(adaptable), get_translation(adaptable), get_time_reversal(adaptable));
+    struct Adapter<xtal::SymOp, FromType> {
+      xtal::SymOp operator()(const FromType &adaptable) {
+        return xtal::SymOp(get_matrix(adaptable), get_translation(adaptable), get_time_reversal(adaptable));
       }
     };
 
     /// Converts any container of any symmetry type with begin() and end() defined into
     /// SymGroupType, as defined by the crystallography module.
     template <typename FromType>
-    struct Adapter<xtal::SymGroupType, FromType> {
+    struct Adapter<xtal::SymOpVector, FromType> {
       template <typename FromTypeIt>
-      xtal::SymGroupType operator()(FromTypeIt begin, FromTypeIt end) {
-        xtal::SymGroupType casted_group;
-        Adapter<xtal::SymOpType, typename FromTypeIt::value_type> to_symop_type;
+      xtal::SymOpVector operator()(FromTypeIt begin, FromTypeIt end) {
+        xtal::SymOpVector casted_group;
+        Adapter<xtal::SymOp, typename FromTypeIt::value_type> to_symop_type;
         for(auto it = begin; it != end; ++it) {
           casted_group.emplace_back(to_symop_type(*it));
         }
         return casted_group;
       }
 
-      xtal::SymGroupType operator()(const FromType &adaptable) {
+      xtal::SymOpVector operator()(const FromType &adaptable) {
         return this->operator()(adaptable.begin(), adaptable.end());
       }
     };

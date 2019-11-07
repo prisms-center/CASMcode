@@ -8,12 +8,14 @@
 namespace CASM {
   namespace xtal {
     class Lattice;
+    class UnitCellCoord;
   }
+  using xtal::Lattice;
+  using xtal::UnitCellCoord;
 
   class MasterSymGroup;
   class jsonParser;
 
-  using namespace xtal;
   /** \ingroup SymOp
    *  @{
    */

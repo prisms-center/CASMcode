@@ -948,4 +948,4 @@ libcasm_la_SOURCES = \
 libcasm_la_LDFAGS = \
     -avoid-version\
     $(BOOST_LDFLAGS)
-src/casm/version/autoversion.lo: .FORCE
+# src/casm/version/autoversion.lo: .FORCE

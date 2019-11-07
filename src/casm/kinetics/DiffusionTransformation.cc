@@ -695,7 +695,7 @@ namespace CASM {
     bool path_collision(const DiffusionTransformation &diff_trans) {
       std::vector<SpeciesTrajectory> paths_to_check;
       for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); ++it) {
-        if(!is_vacancy(it->from.species())) {
+        if(!xtal::is_vacancy(it->from.species())) {
           paths_to_check.push_back(*it);
         }
       }

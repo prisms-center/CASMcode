@@ -10,8 +10,13 @@
 namespace CASM {
   namespace xtal {
     class Molecule;
+    class UnitCell;
+    template<typename Base>
+    struct Translatable;
   }
-  using namespace xtal;
+  using xtal::Molecule;
+  using xtal::UnitCell;
+  using xtal::Translatable;
 
 
   class Configuration;

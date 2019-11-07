@@ -108,8 +108,8 @@ namespace CASM {
   }
   namespace ConfigMapping {
 
-    StrucMapping::AllowedSpecies _allowed_species(BasicStructure<Site> const &_prim,
-                                                  SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM) {
+    xtal::StrucMapping::AllowedSpecies _allowed_species(BasicStructure<Site> const &_prim,
+                                                        SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM) {
       std::vector<std::unordered_set<std::string> > result(_prim.basis().size());
       Index i = 0;
       for(Site const &site : _prim.basis()) {
@@ -251,12 +251,12 @@ namespace CASM {
                                                     Configuration const *hint_ptr,
                                                     std::vector<DoFKey> const &_hint_dofs) const {
     ConfigMapperResult result;
-    double best_cost = StrucMapping::big_inf();
+    double best_cost = xtal::StrucMapping::big_inf();
 
     bool is_new_config(true);
 
     if(hint_ptr != nullptr) {
-      StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(to_simple_structure(*hint_ptr, "", _hint_dofs),
+      StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::to_simple_structure(*hint_ptr, "", _hint_dofs),
                                                                    make_point_group(hint_ptr->point_group()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
                           struc_mapper().strain_weight(),

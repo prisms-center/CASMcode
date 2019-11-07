@@ -1,6 +1,7 @@
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 
-#include "casm/symmetry/SymOp.hh"
+#include "casm/crystallography/SymType.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
@@ -49,7 +50,7 @@ namespace CASM {
 
     /// Is this lattice equivalent to apply(op, *this)
     bool IsPointGroupOp::operator()(const SymOp &op) const {
-      return (*this)(op.matrix());
+      return (*this)(get_matrix(op));
     }
 
     /// Is this lattice equivalent to apply(op, *this)
@@ -86,7 +87,7 @@ namespace CASM {
     }
 
     SymOp IsPointGroupOp::sym_op() const {
-      return SymOp::point_op(cart_op(), map_error());
+      return SymOp::point_operation(cart_op());
     }
 
     ///Find the effect of applying symmetry to the lattice vectors

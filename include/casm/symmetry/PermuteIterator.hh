@@ -11,7 +11,7 @@ namespace CASM {
   namespace xtal {
     class PrimGrid;
   }
-  using namespace xtal;
+  using xtal::PrimGrid;
 
   /** \ingroup SymOp
    *  @{

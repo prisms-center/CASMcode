@@ -7,12 +7,12 @@ namespace CASM {
   namespace xtal {
     class Structure;
   }
+  using xtal::Structure;
+
   class ClexBasis;
   class PrimNeighborList;
   class ParamPackMixIn;
   class OrbitFunctionTraits;
-
-  using namespace xtal;
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

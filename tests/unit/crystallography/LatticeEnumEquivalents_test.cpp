@@ -10,6 +10,7 @@
 
 using namespace CASM;
 using namespace test;
+using xtal::LatticeEnumEquivalents;
 
 void generate_master_lat_pt_grp(MasterSymGroup *master, const Lattice &lat) {
   master->set_lattice(lat);

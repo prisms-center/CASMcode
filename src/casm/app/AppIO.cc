@@ -10,6 +10,7 @@
 
 namespace CASM {
 
+  using xtal::SpeciesAttribute;
 
   // --------- PrimIO Definitions --------------------------------------------------
 

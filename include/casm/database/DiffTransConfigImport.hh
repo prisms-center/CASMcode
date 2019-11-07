@@ -19,7 +19,8 @@ namespace CASM {
     template<typename T> class BasicStructure;
     class Site;
   }
-  using namespace xtal;
+  using xtal::BasicStructure;
+  using xtal::Site;;
 
   class PrimClex;
   class jsonParser;

@@ -1,6 +1,8 @@
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Lattice_impl.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/clex/ConfigEnumEquivalents.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/clex/PrimClex.hh"
@@ -84,11 +86,11 @@ namespace CASM {
 
     auto check_is_supercell = [&](const Lattice & plat) {
       auto end = primclex.prim().factor_group().end();
-      return is_supercell(unit_cell.lattice(),
-                          plat,
-                          primclex.prim().factor_group().begin(),
-                          end,
-                          primclex.crystallography_tol()).first != end;
+      return xtal::is_equivalent_superlattice(unit_cell.lattice(),
+                                              plat,
+                                              primclex.prim().factor_group().begin(),
+                                              end,
+                                              primclex.crystallography_tol()).first != end;
     };
 
     if(!kwargs.contains("subconfigs")) {

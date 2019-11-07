@@ -3,9 +3,12 @@
 
 #include "casm/external/Eigen/Dense"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Adapter.hh"
 
 namespace CASM {
   namespace xtal {
+
+    class SymOp;
 
     /// \brief Lattice comparisons
     ///
@@ -30,6 +33,11 @@ namespace CASM {
 
       /// Checks if lat = copy_apply(B,lat)*U, with unimodular U
       bool operator()(const SymOp &B) const;
+
+      template <typename ExternSymOp>
+      bool operator()(const ExternSymOp &B) const {
+        return this->operator()(adapter::Adapter<SymOp, ExternSymOp>()(B));
+      }
 
       /// Checks if copy_apply(A, lat) = copy_apply(B,lat)*U, with unimodular U
       bool operator()(const SymOp &A, const SymOp &B) const;
@@ -59,6 +67,11 @@ namespace CASM {
 
       /// Checks if ref_lat = cart_op*ref_lat*transf_mat(), for any transf_mat()
       bool operator()(const SymOp &cart_op) const;
+
+      template <typename ExternSymOp>
+      bool operator()(const ExternSymOp &cart_op) const {
+        return this->operator()(adapter::Adapter<SymOp, ExternSymOp>()(cart_op));
+      }
 
       /// Checks if ref_lat = cart_op*ref_lat*transf_mat(), for any transf_mat()
       bool operator()(const Eigen::Matrix3d &cart_op) const;

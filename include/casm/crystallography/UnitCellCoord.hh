@@ -157,9 +157,9 @@ namespace CASM {
 
       bool operator<(const UnitCellCoord &B) const;
 
-      UnitCellCoord &apply_sym(const SymOp &op);
+      UnitCellCoord &apply_sym(const CASM::SymOp &op);
 
-      UnitCellCoord copy_apply(const SymOp &op) const;
+      UnitCellCoord copy_apply(const CASM::SymOp &op) const;
 
       operator Coordinate() const;
 

@@ -3,11 +3,13 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Adapter.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
@@ -69,11 +71,11 @@ namespace CASM {
        "Name of supercell to use as unit cell. For ex. 'SCEL2_2_1_1_0_0_0'.")
 
       ("duper",
-       "Construct the superdupercell, the minimum supercell of all input supercells "
+       "Construct the superduperlattice, the minimum supercell of all input supercells "
        "and configurations.")
 
       ("fixed-orientation",
-       "When constructing the superdupercell, do not consider other symmetrically "
+       "When constructing the superduperlattice, do not consider other symmetrically "
        "equivalent orientations.")
 
       ("min-volume",
@@ -89,7 +91,7 @@ namespace CASM {
 
       ("verbose",
        "When used with --duper, show how the input lattices are transformed "
-       "to tile the superdupercell.")
+       "to tile the superduperlattice.")
 
       ("add-canonical,a", "Will add the generated super configuration in it's "
        "canonical form in the equivalent niggli supercell.")
@@ -184,11 +186,11 @@ namespace CASM {
 
                    "  casm super --duper --scelnames scel1 [scel2 ...] --confignames con1 [con2 ...]\n"
                    "    --configs [mylist ...] --transf-mat M1 [M2 ...]                    \n" <<
-                   "  - Makes the superdupercell of the lattices of all inputs            \n" <<
+                   "  - Makes the superduperlattice of the lattices of all inputs            \n" <<
                    "  - Using '--configs' with no arguments is equivalent to '--configs MASTER',\n" <<
                    "    which uses the master config list                                 \n" <<
                    "  - Default applies prim point group ops to try to find minimum volume\n" <<
-                   "    superdupercell, disable with '--fixed-orientation'                \n\n";
+                   "    superduperlattice, disable with '--fixed-orientation'                \n\n";
 
         return 0;
       }
@@ -218,7 +220,7 @@ namespace CASM {
 
     }
 
-    COORD_MODE C(coordtype);
+    xtal::COORD_MODE C(coordtype);
 
     // lambda for printing
     auto print = [&](const BasicStructure<Site> &struc) {
@@ -262,7 +264,7 @@ namespace CASM {
       file >> Tm;
       file.close();
 
-      auto super = unitcell.create_superstruc(make_supercell(unitcell.lattice(), Tm));
+      auto super = unitcell.create_superstruc(make_superlattice(unitcell.lattice(), Tm));
       super.set_title(std::string("Supercell of ") + unitcell.title());
 
       print(super);
@@ -285,7 +287,7 @@ namespace CASM {
 
     if(vm.count("duper")) {
 
-      // collect all the Lattice to make the superdupercell of
+      // collect all the Lattice to make the superduperlattice of
       std::map<std::string, Lattice> lat;
       std::map<std::string, Lattice> config_lat;
 
@@ -298,7 +300,7 @@ namespace CASM {
             file >> T.data()[i];
           }
           file.close();
-          lat[it->string()] = make_supercell(primclex.prim().lattice(), T);
+          lat[it->string()] = make_superlattice(primclex.prim().lattice(), T);
         }
       }
 
@@ -338,13 +340,13 @@ namespace CASM {
         lat_only.push_back(it->second);
       }
 
-      // create superdupercell
+      // create superduperlattice
       auto begin = primclex.prim().point_group().begin();
       auto end = primclex.prim().point_group().end();
       if(vm.count("fixed-orientation")) {
         end = begin;
       }
-      Lattice superduper = superdupercell(lat_only.begin(), lat_only.end(), begin, end);
+      Lattice superduper = xtal::make_equivalent_superduperlattice(lat_only.begin(), lat_only.end(), begin, end);
 
       /// enforce a minimum volume
       if(vm.count("min-volume")) {
@@ -357,20 +359,20 @@ namespace CASM {
 
         auto prim_lat = primclex.prim().lattice();
         const SymGroup &pg = primclex.prim().point_group();
-        auto T = is_supercell(superduper, prim_lat, TOL).second;
+        auto T = is_superlattice(superduper, prim_lat, TOL).second;
 
-        args.log() << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
+        args.log() << "  superduperlattice lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
         args.log() << "    Initial transformation matrix:\n" << iround(T)
                    << "\n    (volume = " << iround(T).cast<double>().determinant() << ")\n\n";
 
         auto M = enforce_min_volume(pg.begin(), pg.end(), prim_lat, iround(T),  min_vol, vm.count("fixed-shape"));
 
-        superduper = canonical::equivalent(make_supercell(superduper, M), pg, TOL);
+        superduper = xtal::canonical::equivalent(make_superlattice(superduper, M), pg, TOL);
 
-        auto S = is_supercell(superduper, prim_lat, TOL).second;
+        auto S = is_superlattice(superduper, prim_lat, TOL).second;
 
-        args.log() << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
+        args.log() << "  superduperlattice lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
         args.log() << "    Transformation matrix, after enforcing mininum volume:\n"
                    << iround(S) << "\n    (volume = " << iround(S).cast<double>().determinant() << ")\n\n";
@@ -382,12 +384,12 @@ namespace CASM {
 
       args.log() << "--- Lattices as column vector matrices ---\n\n";
 
-      args.log() << "  Superdupercell: " << superduper_scel.name() << "\n\n";
+      args.log() << "  superduperlattice: " << superduper_scel.name() << "\n\n";
 
-      args.log() << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
+      args.log() << "  superduperlattice lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
       args.log() << "  Transformation matrix, relative the primitive cell:\n";
-      args.log() << iround(is_supercell(superduper, primclex.prim().lattice(), TOL).second) << "\n\n";
+      args.log() << iround(is_superlattice(superduper, primclex.prim().lattice(), TOL).second) << "\n\n";
 
       if(vm.count("verbose")) {
         args.log() << "Transformation matrices: \n";
@@ -396,7 +398,7 @@ namespace CASM {
           args.log() << "  Unit: " << it->first << ":\n"
                      << it->second.lat_column_mat() << "\n\n";
 
-          auto res = is_supercell(superduper, it->second, begin, end, TOL);
+          auto res = xtal::is_equivalent_superlattice(superduper, it->second, begin, end, TOL);
           args.log() << "  Superduper = (op*unit) * T\n\nop:\n";
           args.log() << res.first->matrix() << "\n\n";
           args.log() << "  T:\n";
@@ -414,7 +416,7 @@ namespace CASM {
       if(vm.count("add-canonical")) {
         args.log() << "Add super configurations:\n";
         for(auto it = config_lat.begin(); it != config_lat.end(); ++it) {
-          auto res = is_supercell(superduper, it->second, begin, end, TOL);
+          auto res = xtal::is_equivalent_superlattice(superduper, it->second, begin, end, TOL);
           FillSupercell f(superduper_scel, *res.first);
           auto insert_res = f(*primclex.db<Configuration>().find(it->first)).insert();
           if(insert_res.insert_canonical) {
@@ -470,8 +472,8 @@ namespace CASM {
                    min_vol,
                    vm.count("fixed-shape"));
 
-        Lattice niggli_lat = canonical::equivalent(make_supercell(prim_lat, T * M), pg, TOL);
-        T = iround(is_supercell(niggli_lat, prim_lat, TOL).second);
+        Lattice niggli_lat = xtal::canonical::equivalent(make_superlattice(prim_lat, T * M), pg, TOL);
+        T = iround(is_superlattice(niggli_lat, prim_lat, TOL).second);
 
         args.log() << "    Transformation matrix, after enforcing mininum volume:\n"
                    << T << "\n    (volume = " << iround(T).cast<double>().determinant() << ")\n\n";
@@ -487,7 +489,7 @@ namespace CASM {
 
         args.log() << "  Unit cell lattice: \n" << scel.lattice().lat_column_mat() << "\n\n";
 
-        Lattice super_lat = make_supercell(scel.lattice(), T);
+        Lattice super_lat = make_superlattice(scel.lattice(), T);
         const Supercell &super_scel = *Supercell(&primclex, super_lat).insert().first;
 
         args.log() << "  Add supercell: " << super_scel.name() << "\n\n";
@@ -508,7 +510,7 @@ namespace CASM {
         std::stringstream ss;
         const Configuration &con = *primclex.db<Configuration>().find(configname[0]);
 
-        VaspIO::PrintPOSCAR p(to_simple_structure(con), con.name());
+        VaspIO::PrintPOSCAR p(xtal::to_simple_structure(con), con.name());
         p.sort();
         p.print(ss);
 
@@ -523,7 +525,7 @@ namespace CASM {
         args.log() << "\n\n";
 
 
-        BasicStructure<Site> super = unit.create_superstruc(make_supercell(unit.lattice(), T));
+        BasicStructure<Site> super = unit.create_superstruc(make_superlattice(unit.lattice(), T));
         super.set_title(std::string("Supercell of ") + con.name());
 
         args.log() << "Super structure:";
@@ -588,7 +590,7 @@ namespace CASM {
         Eigen::Matrix3i H_canon;
         Eigen::Matrix3d op_canon;
 
-        Eigen::Matrix3d S_niggli = canonical::equivalent(Lattice(S), pg, tol).lat_column_mat();
+        Eigen::Matrix3d S_niggli = xtal::canonical::equivalent(Lattice(S), pg, tol).lat_column_mat();
         Eigen::Matrix3i T_niggli = iround(U.inverse() * S_niggli);
         Eigen::Matrix3i H_niggli = hermite_normal_form(T_niggli).first;
 
@@ -656,7 +658,9 @@ namespace CASM {
       // see if super_lat is a supercell of unitlat
       // S == U*T
       Eigen::Matrix3d T;
-      if(super_lat.is_supercell_of(unit_lat, T)) {
+      bool is_superlat;
+      std::tie(is_superlat, T) = xtal::is_superlattice(super_lat, unit_lat, super_lat.tol());
+      if(is_superlat) {
         args.log() << "The super lattice is a supercell of the unit lattice.\n\n";
 
         args.log() << "The transformation matrix, T, where S = U*T, is: \n" << iround(T) << "\n\n";
