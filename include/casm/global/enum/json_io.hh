@@ -2,6 +2,7 @@
 #define CASM_core_io_json_global_enum
 
 #include "casm/global/enum.hh"
+#include "casm/global/enum/io_traits.hh"
 #include "casm/casm_io/enum/json_io.hh"
 
 namespace CASM {
