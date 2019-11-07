@@ -889,7 +889,7 @@ namespace CASM {
       std::vector<UnitCellCoord> result;
       // Determine how basis sites transform from the origin unit cell
       for(int b = 0; b < _struc.basis().size(); b++) {
-        result.push_back(UnitCellCoord(_struc, CASM::copy_apply(_op, _struc.basis()[b]), _tol));
+        result.emplace_back(CASM::copy_apply(_op, _struc.basis()[b]), _tol);
       }
       return result;
     }

@@ -433,7 +433,7 @@ namespace CASM {
         [&](const Coordinate & coord) {
         return test.dist(coord) < max_radius;
         })) {
-          *result++ = UnitCellCoord(unit, test, xtal_tol);
+          *result++ = UnitCellCoord(test, xtal_tol);
         }
       }
     }
@@ -497,9 +497,9 @@ namespace CASM {
         }
 
         Coordinate test(*it + lat_point);
-        UnitCellCoord tmp(diff_trans.prim(), test, xtal_tol);
+        UnitCellCoord tmp(test, xtal_tol);
         if(dist_to_path(diff_trans, tmp) < max_radius && dist_to_path(diff_trans, tmp) > xtal_tol) {
-          *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
+          *result++ = UnitCellCoord(test, xtal_tol);
         }
         if(dist_to_path(diff_trans, tmp) <= xtal_tol) {
           auto spec_it = diff_trans.species_traj().begin();
@@ -509,7 +509,7 @@ namespace CASM {
             }
           }
           if(spec_it == diff_trans.species_traj().end()) {
-            *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
+            *result++ = UnitCellCoord(test, xtal_tol);
           }
         }
       }
@@ -607,7 +607,7 @@ namespace CASM {
       for(int i = 0; i < prim.basis().size(); i++) {
         // create a prototype cluster
         cluster_type test(prim);
-        test.elements().push_back(UnitCellCoord(prim, i, UnitCell(0, 0, 0)));
+        test.elements().emplace_back(i, UnitCell(0, 0, 0));
         generators.insert(test);
       }
 
@@ -897,7 +897,7 @@ namespace CASM {
     std::vector<UnitCellCoord> candidate_sites;
     for(int i = 0; i < prim.basis().size(); ++i) {
       if(site_filter(prim.basis()[i])) {
-        candidate_sites.emplace_back(prim, i, 0, 0, 0);
+        candidate_sites.emplace_back(i, 0, 0, 0);
       }
     }
 
@@ -973,7 +973,7 @@ namespace CASM {
     if(max_length.size() >= 2) {
       for(int i = 0; i < prim.basis().size(); ++i) {
         if(site_filter(prim.basis()[i])) {
-          candidate_sites.emplace_back(prim, i, 0, 0, 0);
+          candidate_sites.emplace_back(i, 0, 0, 0);
         }
       }
       specs.emplace_back(prim,

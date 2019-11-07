@@ -22,8 +22,8 @@ namespace CASM {
   OccPerturbationInvariants::OccPerturbationInvariants(
     const OccPerturbation &perturb) :
     cluster_invariants(perturb.cluster().invariants()),
-    from_species_count(CASM::from_species_count(perturb.begin(), perturb.end())),
-    to_species_count(CASM::to_species_count(perturb.begin(), perturb.end())) {}
+    from_species_count(CASM::from_species_count(perturb.prim(), perturb.begin(), perturb.end())),
+    to_species_count(CASM::to_species_count(perturb.prim(), perturb.begin(), perturb.end())) {}
 
   /// \brief Check if DiffTransInvariants are equal
   bool almost_equal(const OccPerturbationInvariants &A, const OccPerturbationInvariants &B, double tol) {

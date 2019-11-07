@@ -282,7 +282,7 @@ namespace CASM {
     }
 
     UnitCellCoord DiffTransConfigMapper::_site_to_uccoord(const Site &site, const PrimClex &pclex, double tol) const {
-      return UnitCellCoord(pclex.prim(), site, tol);
+      return UnitCellCoord(site, tol);
     }
 
     void DiffTransConfigMapper::_precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure<Site> &from, BasicStructure<Site> &to) const {

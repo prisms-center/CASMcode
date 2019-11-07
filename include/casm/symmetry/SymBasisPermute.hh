@@ -41,7 +41,7 @@ namespace CASM {
   /// - Additional translations, such as those in supercell factor group operations,
   ///   may be stored in SymOp::integral_tau(). Those additional contributions
   ///   can be included with:
-  ///   - u.unitcell() += (u.unit().lattice().inv_lat_column_mat() * op.integral_tau()).cast<long>();
+  ///   - u.unitcell() += (prim.lattice().inv_lat_column_mat() * op.integral_tau()).cast<long>();
   ///
   class SymBasisPermute: public SymOpRepresentation {
   private:

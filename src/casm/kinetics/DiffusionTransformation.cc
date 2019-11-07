@@ -537,11 +537,11 @@ namespace CASM {
     }
 
     std::map<std::string, Index> DiffusionTransformation::_from_species_count() const {
-      return from_species_count(m_occ_transform.begin(), m_occ_transform.end());
+      return from_species_count(this->prim(), m_occ_transform.begin(), m_occ_transform.end());
     }
 
     std::map<std::string, Index> DiffusionTransformation::_to_species_count() const {
-      return to_species_count(m_occ_transform.begin(), m_occ_transform.end());
+      return to_species_count(this->prim(), m_occ_transform.begin(), m_occ_transform.end());
     }
 
     /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
@@ -627,12 +627,12 @@ namespace CASM {
     std::pair<UnitCellCoord, Eigen::Vector3d> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
       double dist = std::numeric_limits<double>::max();
       Eigen::Vector3d ret_vec;
-      Structure prim(diff_trans.species_traj().begin()->from.uccoord.unit());
+      auto prim = diff_trans.prim();
       std::set<int> sublat_indices;
       for(int i = 0; i < prim.basis().size(); i++) {
         sublat_indices.insert(i);
       }
-      UnitCellCoord ret_coord(prim);
+      UnitCellCoord ret_coord;
       // construct
       PrimNeighborList nlist(
         PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, TOL),
@@ -652,7 +652,7 @@ namespace CASM {
       }
       for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
         for(int b = 0; b < prim.basis().size(); b++) {
-          UnitCellCoord uccoord(prim, b, *n_it);
+          UnitCellCoord uccoord(b, *n_it);
           bool in_diff_trans = false;
           for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); it++) {
             if(uccoord == it->from.uccoord || uccoord == it->to.uccoord) {

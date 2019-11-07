@@ -198,8 +198,7 @@ namespace CASM {
 
     /// map a UnitCellCoord inside the supercell
     UnitCellCoord PrimGrid::within(const UnitCellCoord &bijk)const {
-
-      return UnitCellCoord(bijk.unit(), bijk.sublat(), within(bijk.unitcell()));
+      return UnitCellCoord(bijk.sublat(), within(bijk.unitcell()));
     }
 
     //**********************************************************************************************

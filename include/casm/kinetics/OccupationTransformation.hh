@@ -32,6 +32,7 @@ namespace CASM {
       public Comparisons<Translatable<DoFTransformation<CRTPBase<OccupationTransformation>>>> {
 
     public:
+      typedef BasicStructure<Site> PrimType;
       /// Constructor Create an OccupationTransformation on a site indicating what the current
       /// occupant is on that site and the one it will change to
       OccupationTransformation(const UnitCellCoord &_uccoord,
@@ -44,7 +45,7 @@ namespace CASM {
 
       /// The tiling unit of the infinite crystal that the site of this
       /// OccupationTransformation lives in
-      const UnitCellCoord::UnitType &prim() const;
+      /* const UnitCellCoord::UnitType &prim() const; */
 
       /// \brief The UnitCellCoord that is changing occupants
       const UnitCellCoord coord() const;
@@ -93,15 +94,15 @@ namespace CASM {
   }
 
   /// Returns an empty map for a given infinite crystal
-  std::map<std::string, Index> empty_species_count(const UnitCellCoord::UnitType &prim);
+  std::map<std::string, Index> empty_species_count(const OccupationTransformation::PrimType &prim);
 
   /// Iterates over a vector of Occupation Transformation to give the count map of initial species
   template<typename OccTransfIt>
-  std::map<std::string, Index> from_species_count(OccTransfIt begin, OccTransfIt end);
+  std::map<std::string, Index> from_species_count(const OccupationTransformation::PrimType &prim, OccTransfIt begin, OccTransfIt end);
 
   /// Iterates over a vector of OccupationTransformation to give the count map of final species
   template<typename OccTransfIt>
-  std::map<std::string, Index> to_species_count(OccTransfIt begin, OccTransfIt end);
+  std::map<std::string, Index> to_species_count(const OccupationTransformation::PrimType &prim, OccTransfIt begin, OccTransfIt end);
 
 
   /// \brief Write OccupationTransformation to JSON object
@@ -110,7 +111,7 @@ namespace CASM {
   template<>
   struct jsonConstructor<Kinetics::OccupationTransformation> {
 
-    static Kinetics::OccupationTransformation from_json(const jsonParser &json, const UnitCellCoord::UnitType &prim);
+    static Kinetics::OccupationTransformation from_json(const jsonParser &json, const OccupationTransformation::PrimType &prim);
   };
 
   void from_json(Kinetics::OccupationTransformation &fill_value, const jsonParser &read_json);

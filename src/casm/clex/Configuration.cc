@@ -1672,7 +1672,6 @@ namespace CASM {
         Index prim_motif_tile_ind = m_scel->prim_grid().find(prim_grid.scel_coord(i));
 
         UnitCellCoord mc_uccoord(
-          prim,
           oriented_uccoord.sublat(),
           m_scel->prim_grid().unitcell(prim_motif_tile_ind) + oriented_uccoord.unitcell());
 

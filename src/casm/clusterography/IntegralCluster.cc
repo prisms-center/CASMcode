@@ -133,7 +133,7 @@ namespace CASM {
 
         Coordinate tcoord(vcoord, clust.prim().lattice(), coord_type);
 
-        clust.elements().emplace_back(clust.prim(), tcoord, xtal_tol);
+        clust.elements().emplace_back(tcoord, xtal_tol);
       }
     }
     return;

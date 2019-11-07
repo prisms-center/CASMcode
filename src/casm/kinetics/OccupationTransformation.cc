@@ -23,9 +23,9 @@ namespace CASM {
       to_value(_to_value),
       uccoord(_uccoord) {}
 
-    const UnitCellCoord::UnitType &OccupationTransformation::prim() const {
-      return uccoord.unit();
-    }
+    /* const UnitCellCoord::UnitType &OccupationTransformation::prim() const { */
+    /*   return uccoord.unit(); */
+    /* } */
 
     const UnitCellCoord OccupationTransformation::coord() const {
       return uccoord;
@@ -89,7 +89,7 @@ namespace CASM {
     }
   }
 
-  std::map<std::string, Index> empty_species_count(const UnitCellCoord::UnitType &prim) {
+  std::map<std::string, Index> empty_species_count(const OccupationTransformation::PrimType &prim) {
     auto species = struc_species(prim);
     std::map<std::string, Index> _species_count;
     for(const std::string &s : species) {
@@ -99,11 +99,11 @@ namespace CASM {
   }
 
   template<typename OccTransfIt>
-  std::map<std::string, Index> from_species_count(OccTransfIt begin, OccTransfIt end) {
+  std::map<std::string, Index> from_species_count(const OccupationTransformation::PrimType &prim, OccTransfIt begin, OccTransfIt end) {
     if(begin == end) {
       return std::map<std::string, Index>();
     }
-    std::map<std::string, Index> _species_count = empty_species_count(begin->prim());
+    std::map<std::string, Index> _species_count = empty_species_count(prim);
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
       const Molecule &mol = t.uccoord.sublat_site().occupant_dof()[t.from_value];
@@ -116,18 +116,20 @@ namespace CASM {
   typedef std::vector<OccupationTransformation>::iterator OccTransfVecIt;
   typedef std::vector<OccupationTransformation>::const_iterator OccTransfVecConstIt;
   template std::map<std::string, Index> from_species_count<OccTransfVecIt>(
+    const OccupationTransformation::PrimType &prim,
     OccTransfVecIt begin,
     OccTransfVecIt end);
   template std::map<std::string, Index> from_species_count<OccTransfVecConstIt>(
+    const OccupationTransformation::PrimType &prim,
     OccTransfVecConstIt begin,
     OccTransfVecConstIt end);
 
   template<typename OccTransfIt>
-  std::map<std::string, Index> to_species_count(OccTransfIt begin, OccTransfIt end) {
+  std::map<std::string, Index> to_species_count(const OccupationTransformation::PrimType &prim, OccTransfIt begin, OccTransfIt end) {
     if(begin == end) {
       return std::map<std::string, Index>();
     }
-    std::map<std::string, Index> _species_count = empty_species_count(begin->prim());
+    std::map<std::string, Index> _species_count = empty_species_count(prim);
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
       const Molecule &mol = t.uccoord.sublat_site().occupant_dof()[t.to_value];
@@ -138,9 +140,11 @@ namespace CASM {
     return _species_count;
   }
   template std::map<std::string, Index> to_species_count<OccTransfVecIt>(
+    const OccupationTransformation::PrimType &prim,
     OccTransfVecIt begin,
     OccTransfVecIt end);
   template std::map<std::string, Index> to_species_count<OccTransfVecConstIt>(
+    const OccupationTransformation::PrimType &prim,
     OccTransfVecConstIt begin,
     OccTransfVecConstIt end);
 
@@ -153,7 +157,7 @@ namespace CASM {
     return json;
   }
 
-  Kinetics::OccupationTransformation jsonConstructor<Kinetics::OccupationTransformation>::from_json(const jsonParser &json, const UnitCellCoord::UnitType &prim) {
+  Kinetics::OccupationTransformation jsonConstructor<Kinetics::OccupationTransformation>::from_json(const jsonParser &json, const OccupationTransformation::PrimType &prim) {
     return Kinetics::OccupationTransformation(
              jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
              json["from_value"].get<Index>(),

@@ -102,16 +102,13 @@ namespace CASM {
 
     public:
 
-      /// \brief SymBasisPermute rep should be obtainable from UnitType
-      typedef BasicStructure<Site> UnitType;
+      explicit UnitCellCoord();
 
-      explicit UnitCellCoord(const UnitType &unit);
+      UnitCellCoord(Index _sublat, const UnitCell &_unitcell);
 
-      UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell);
+      UnitCellCoord(Index _sublat, Index i, Index j, Index k);
 
-      UnitCellCoord(const UnitType &unit, Index _sublat, Index i, Index j, Index k);
-
-      UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol);
+      UnitCellCoord(const Coordinate &coord, double tol);
 
 
       UnitCellCoord(const UnitCellCoord &B) = default;
@@ -124,7 +121,7 @@ namespace CASM {
 
 
       /// \brief Get unit structure reference
-      const UnitType &unit() const;
+      /* const UnitType &unit() const; */
 
       /// \brief Change unit structure, keeping indices constant
       /* void set_unit(const UnitType &_unit); */
@@ -170,7 +167,6 @@ namespace CASM {
 
       bool eq_impl(const UnitCellCoord &B) const;
 
-      const UnitType *m_unit;
       UnitCell m_unitcell;
       Index m_sublat;
 
@@ -182,22 +178,20 @@ namespace CASM {
 
     /* -- UnitCellCoord Definitions ------------------------------------- */
 
-    inline UnitCellCoord::UnitCellCoord(const UnitType &unit) :
-      m_unit(&unit) {}
+    //TODO: Should this explicitly initialize to 0 0 0 0?
+    inline UnitCellCoord::UnitCellCoord() {}
 
-    inline UnitCellCoord::UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell) :
-      m_unit(&unit),
+    inline UnitCellCoord::UnitCellCoord(Index _sublat, const UnitCell &_unitcell) :
       m_unitcell(_unitcell),
       m_sublat(_sublat) {}
 
-    inline UnitCellCoord::UnitCellCoord(const UnitType &unit, Index _sublat, Index i, Index j, Index k) :
-      m_unit(&unit),
+    inline UnitCellCoord::UnitCellCoord(Index _sublat, Index i, Index j, Index k) :
       m_unitcell(i, j, k),
       m_sublat(_sublat) {}
 
-    inline const UnitCellCoord::UnitType &UnitCellCoord::unit() const {
-      return *m_unit;
-    }
+    /* inline const UnitCellCoord::UnitType &UnitCellCoord::unit() const { */
+    /*   return *m_unit; */
+    /* } */
 
     /// \brief Change unit structure, keeping indices constant
     /* inline void UnitCellCoord::set_unit(const UnitType &_unit) { */
