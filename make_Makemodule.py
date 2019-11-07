@@ -60,6 +60,8 @@ def basic_maker_string(variable, operator, targets):
     str
 
     """
+    targets.sort()
+
     value = "{} {} \\\n".format(variable, operator)
     # spacing = len(value) - 2
     for target in targets:
@@ -162,6 +164,7 @@ def make_add_to_EXTRA_DIST(files):
     str
 
     """
+    files.sort()
     if len(files) == 0:
         return ""
     return basic_maker_string("EXTRA_DIST", "+=", files)
@@ -187,6 +190,7 @@ def make_HEADERS(includedir, files):
     str
 
     """
+    files.sort()
     flattened = includedir.replace('/', '_')
 
     value = flattened + "_includedir=" + os.path.join("$(includedir)",
@@ -294,12 +298,13 @@ def git_root(path):
 
 def all_files_tracked_by_git():
     return subprocess.check_output(
-        ["git", "ls-tree", "--full-tree", "-r", "--name-only",
-         "HEAD"], encoding="utf-8").splitlines()
+        ["git", "ls-tree", "--full-tree", "-r", "--name-only", "HEAD"],
+        encoding="utf-8").splitlines()
 
 
 def all_files_ignored_by_git():
-    return subprocess.check_output(["git", "status", "--ignored"], encoding="utf-8").splitlines()
+    return subprocess.check_output(
+        ["git", "status", "--ignored"], encoding="utf-8").splitlines()
 
 
 @static_vars(cached_roots={})
@@ -327,7 +332,8 @@ def relative_filepath_is_tracked_by_git(filename):
 
     git_root_path = relative_filepath_is_tracked_by_git.cached_roots[cwd]
 
-    return os.path.relpath(filename, git_root_path) in all_files_tracked_by_git()
+    return os.path.relpath(filename,
+                           git_root_path) in all_files_tracked_by_git()
 
 
 def purge_untracked_files(file_list):
@@ -382,11 +388,10 @@ def all_boost_LDADD_flags():
     def flagify(lib):
         return "$(BOOST_{}_LIB)".format(lib)
 
-    return [
-        flagify(lib)
-        for lib in
-        ["SYSTEM", "FILESYSTEM", "PROGRAM_OPTIONS", "REGEX", "CHRONO"]
-    ]
+    libs = ["SYSTEM", "FILESYSTEM", "PROGRAM_OPTIONS", "REGEX", "CHRONO"]
+    libs.sort()
+
+    return [flagify(lib) for lib in libs]
 
 
 def make_libgtest():
@@ -397,7 +402,7 @@ def make_libgtest():
     str
 
     """
-    value= make_add_to_LTLIBRARIES(
+    value = make_add_to_LTLIBRARIES(
         "libgtest",
         "check",
         SOURCES=["submodules/googletest/googletest/src/gtest-all.cc"],
@@ -406,8 +411,8 @@ def make_libgtest():
             "-DGTEST_LINKED_AS_SHARED_LIBRARY=1"
         ])
 
-    value+="\n"
-    value+=make_add_to_EXTRA_DIST(["submodules/googletest"])
+    value += "\n"
+    value += make_add_to_EXTRA_DIST(["submodules/googletest"])
     return value
 
 
@@ -517,12 +522,14 @@ def make_aggregated_unit_test():
         name for name in os.listdir(test_root)
         if name not in [".deps", ".libs", "test_projects"]
     ]
+    test_group.sort()
+
     test_directories = [
         name
-        for name in
-        [os.path.join(test_root, group) for group in test_group]
+        for name in [os.path.join(test_root, group) for group in test_group]
         if os.path.isdir(name)
     ]
+    test_directories.sort()
 
     for d in test_directories:
         print("Create Makefile segment for unit test {}".format(d))
@@ -574,6 +581,7 @@ def make_include(includeable_path):
         f for f in only_tracked_files
         if is_extensionless_Eigen_header(f) or has_header_extension(f)
     ]
+    only_header_files.sort()
 
     target_path = includeable_path[8::]
     return make_HEADERS(target_path, only_header_files)
@@ -591,6 +599,7 @@ def make_recursive_include(search_root):
     value = horizontal_divide()
 
     dirpaths = [dirpath for dirpath, dirnames, files in os.walk(search_root)]
+    dirpaths.sort()
 
     for d in dirpaths:
         print("Create Makefile segment for headers in {}".format(d))
@@ -701,8 +710,9 @@ def make_libcasm(additional_sources):
         additional_sources,
         LIBADD=all_boost_LDADD_flags(),
         LDFLAGS=["-avoid-version", "$(BOOST_LDFLAGS)"])
-    value+="\nsrc/casm/version/autoversion.lo: .FORCE"
+    value += "\nsrc/casm/version/autoversion.lo: .FORCE"
     return value
+
 
 def make_libccasm(additional_sources):
     """Create Makefile for libccasm by aggregating every source
@@ -719,10 +729,7 @@ def make_libccasm(additional_sources):
 
     """
     value = make_lib(
-        "libccasm",
-        "src/ccasm",
-        additional_sources,
-        LDFLAGS=["-avoid-version"])
+        "libccasm", "src/ccasm", additional_sources, LDFLAGS=["-avoid-version"])
     return value
 
 
@@ -758,16 +765,13 @@ def main():
     target = os.path.join("apps", "ccasm", "Makemodule.am")
     string_to_file(chunk, target)
 
-
     chunk = make_casm_complete()
     target = os.path.join("apps", "completer", "Makemodule.am")
     string_to_file(chunk, target)
 
-
     chunk = make_aggregated_unit_test()
     target = os.path.join("tests", "unit", "Makemodule.am")
     string_to_file(chunk, target)
-
 
     chunk = make_recursive_include("include/casm")
     target = os.path.join("include", "casm", "Makemodule.am")
@@ -782,7 +786,6 @@ def main():
     target = os.path.join("src", "casm", "Makemodule.am")
     string_to_file(chunk, target)
 
-
     chunk = make_recursive_include("include/ccasm")
     target = os.path.join("include", "ccasm", "Makemodule.am")
     string_to_file(chunk, target)
@@ -795,6 +798,7 @@ def main():
     chunk = make_libccasm(header_files)
     target = os.path.join("src", "ccasm", "Makemodule.am")
     string_to_file(chunk, target)
+
 
 if __name__ == "__main__":
     main()
