@@ -736,8 +736,8 @@ namespace CASM {
       out.ostream().precision(prec);
       out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
       for(const auto &coord : clust) {
-        if(_mode == CART) vec = coord.coordinate().cart();
-        else if(_mode == FRAC) vec = coord.coordinate().frac();
+        if(_mode == CART) vec = coord.coordinate(clust.prim()).cart();
+        else if(_mode == FRAC) vec = coord.coordinate(clust.prim()).frac();
         width = print_matrix_width(out, vec.transpose(), width);
       }
 
@@ -745,7 +745,7 @@ namespace CASM {
       Eigen::IOFormat format(prec, width + 1);
       for(const auto &coord : clust) {
         out << out.indent_str();
-        coord.site().print(out, format);
+        coord.site(clust.prim()).print(out, format);
         if(this->opt.delim) out << this->opt.delim;
         out << std::flush;
       }
@@ -763,7 +763,7 @@ namespace CASM {
       Eigen::IOFormat format(prec, width);
       for(const auto &coord : clust) {
         out << out.indent_str() << coord << " ";
-        coord.site().occupant_dof().print(out);
+        coord.site(clust.prim()).occupant_dof().print(out);
         out << std::flush;
         if(this->opt.delim) out << this->opt.delim;
         out << std::flush;
@@ -807,16 +807,16 @@ namespace CASM {
       for(Index no = 0; no < asym_unit.size(); no++) {
         out << indent << indent << "Asymmetric unit " << no + 1 << ":\n";
         for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
-          Index b = asym_unit[no][ne][0].sublat();
+          Index b = asym_unit[no][ne][0].sublattice();
           out << indent << indent << "  Basis site " << b << ":\n"
               << "  ";
           if(printer_mode.check() == INTEGRAL) {
             out << indent << indent << asym_unit[no][ne][0] << ' ';
-            asym_unit[no][ne][0].site().occupant_dof().print(out);
+            asym_unit[no][ne][0].site(prim).occupant_dof().print(out);
             out << std::flush;
           }
           else
-            asym_unit[no][ne][0].site().print(out);
+            asym_unit[no][ne][0].site(prim).print(out);
 
           out << "\n";
           if(dofset.second[b].size() == 0)
@@ -897,7 +897,7 @@ namespace CASM {
       for(Index no = 0; no < asym_unit.size(); no++) {
 
         for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
-          Index b = asym_unit[no][ne][0].sublat();
+          Index b = asym_unit[no][ne][0].sublattice();
           sitef[b]["sublat"] = b;
           sitef[b]["asym_unit"] = no;
 

@@ -6,7 +6,7 @@
 #include <utility>
 #include <iostream>
 
-#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/clusterography/UnitCellCoord.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 #include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/symmetry/SymGroup.hh"
@@ -14,11 +14,9 @@
 namespace CASM {
   namespace xtal {
     class Structure;
-    class UnitCellCoord;
     class Site;
   }
   using xtal::Structure;
-  using xtal::UnitCellCoord;
   using xtal::Site;
 
   class Supercell;
