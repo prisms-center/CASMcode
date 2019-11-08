@@ -1,11 +1,11 @@
 #ifndef XTALSYMTOOLS_HH
 #define XTALSYMTOOLS_HH
 
-#include <vector>;
+#include <vector>
 #include "casm/crystallography/Adapter.hh"
-#include "casm/crystallography/LatticeIsEquivalent.hh"
-#include "casm/CASM_global_definitions.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/LatticeIsEquivalent.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
   namespace xtal {
