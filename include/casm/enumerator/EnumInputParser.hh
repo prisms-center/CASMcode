@@ -1,11 +1,12 @@
 #ifndef CASM_EnumInputParser
 #define CASM_EnumInputParser
 
-#include "casm/casm_io/json_io/InputParser_impl.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "casm/clex/HasPrimClex.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/enumerator/Enumerator_impl.hh"
+#include "casm/global/enum/stream_io.hh"
 #include "casm/misc/CRTPBase.hh"
 
 namespace CASM {

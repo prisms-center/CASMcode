@@ -3,7 +3,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include "casm/casm_io/json_io/InputParser_impl.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/clusterography/IntegralCluster_impl.hh"

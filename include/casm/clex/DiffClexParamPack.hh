@@ -6,11 +6,12 @@
 #include <sstream>
 
 #include "casm/casm_io/container/stream_io.hh"
-#include "casm/global/definitions.hh"
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
 #include "casm/clex/ClexParamPack.hh"
-#include "casm/casm_io/EnumIO.hh"
 #include "casm/external/fadbad/fadiff.h"
 #include "casm/external/fadbad/badiff.h"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
   /** \ingroup Clexulator

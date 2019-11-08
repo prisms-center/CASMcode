@@ -4,7 +4,7 @@
 #include <boost/filesystem.hpp>
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/database/PropertiesDatabase.hh"
 

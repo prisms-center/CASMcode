@@ -3,7 +3,7 @@
 
 #include "casm/database/Database.hh"
 #include "casm/casm_io/SafeOfstream.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/clex/PrimClex.hh"

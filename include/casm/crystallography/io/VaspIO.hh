@@ -1,5 +1,5 @@
-#ifndef CASM_VaspIO
-#define CASM_VaspIO
+#ifndef CASM_crystallography_io_VaspIO
+#define CASM_crystallography_io_VaspIO
 
 #include "casm/global/definitions.hh"
 #include "casm/global/enum.hh"

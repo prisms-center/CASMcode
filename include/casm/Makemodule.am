@@ -69,12 +69,10 @@ casm_basis_set_include_HEADERS = \
 
 casm_casm_io_includedir=$(includedir)/casm/casm_io
 casm_casm_io_include_HEADERS = \
-    include/casm/casm_io/EnumIO.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
     include/casm/casm_io/Log.hh\
-    include/casm/casm_io/SafeOfstream.hh\
-    include/casm/casm_io/VaspIO.hh
+    include/casm/casm_io/SafeOfstream.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -102,18 +100,6 @@ casm_casm_io_enum_include_HEADERS = \
     include/casm/casm_io/enum/io_traits.hh\
     include/casm/casm_io/enum/json_io.hh\
     include/casm/casm_io/enum/stream_io.hh
-
-#-------------------------------------------------------------------------------#
-
-casm_casm_io_json_io_includedir=$(includedir)/casm/casm_io/json_io
-casm_casm_io_json_io_include_HEADERS = \
-    include/casm/casm_io/json_io/InputParser.hh\
-    include/casm/casm_io/json_io/InputParser_impl.hh\
-    include/casm/casm_io/json_io/SpeciesSetParser.hh\
-    include/casm/casm_io/json_io/SpeciesSetParser_impl.hh\
-    include/casm/casm_io/json_io/clex.hh\
-    include/casm/casm_io/json_io/jsonFile.hh\
-    include/casm/casm_io/json_io/jsonParser.hh
 
 #-------------------------------------------------------------------------------#
 

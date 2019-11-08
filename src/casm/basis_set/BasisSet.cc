@@ -7,7 +7,7 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/container/stream_io.hh"
 
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 #include "casm/container/Permutation.hh"
 #include "casm/container/Counter.hh"

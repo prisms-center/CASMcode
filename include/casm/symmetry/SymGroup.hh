@@ -1,9 +1,11 @@
 #ifndef SYMGROUP_HH
 #define SYMGROUP_HH
 
-#include <iostream>
-#include <string>
 #include <iomanip>
+#include <iostream>
+#include <map>
+#include <set>
+#include <string>
 
 #include "casm/global/enum.hh"
 #include "casm/symmetry/SymOp.hh"

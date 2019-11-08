@@ -4,7 +4,7 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/global/enum/io_traits.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
-#include "casm/casm_io/EnumIO.hh"
+#include "casm/casm_io/enum/stream_io.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"

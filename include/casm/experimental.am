@@ -34,18 +34,18 @@ BUILT_SOURCES+=\
 			   ./include/casm/clex/ConfigIOStrucScore.hh\
 			   ./include/casm/clex/Supercell.hh\
 			   ./include/casm/clex/Norm.hh\
-			   ./include/casm/casm_io/VaspIO.hh\
+			   ./include/casm/crystallography/io/VaspIO.hh\
 			   ./include/casm/casm_io/SafeOfstream.hh\
 			   ./include/casm/casm_io/dataformatter/DataStream.hh\
 			   ./include/casm/casm_io/dataformatter/EigenDataStream.hh\
 			   ./include/casm/casm_io/FileEnumerator.hh\
 			   ./include/casm/casm_io/Args.hh\
-			   ./include/casm/casm_io/json_io/clex.hh\
-			   ./include/casm/casm_io/json_io/global.hh\
+			   ./include/casm/clex/io/json/ChemicalReference.hh\
+			   ./include/casm/casm_io/json/global.hh\
 			   ./include/casm/casm_io/container/json_io.hh\
 			   ./include/casm/casm_io/dataformatter/DataFormatterTools.hh\
 			   ./include/casm/casm_io/FormatFlag.hh\
-			   ./include/casm/casm_io/json_io/jsonParser.hh\
+			   ./include/casm/casm_io/json/jsonParser.hh\
 			   ./include/casm/casm_io/Log.hh\
 			   ./include/casm/casm_io/EnumIO.hh\
 			   ./include/casm/casm_io/dataformatter/DataFormatter.hh\

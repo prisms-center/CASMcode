@@ -4,7 +4,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/global/definitions.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/HamiltonianModules.hh"
 #include "casm/app/ProjectBuilder.hh"

@@ -7,7 +7,8 @@
 
 #include "casm/global/definitions.hh"
 #include "casm/clex/ClexParamPack.hh"
-#include "casm/casm_io/EnumIO.hh"
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
 
 namespace CASM {
   /** \ingroup Clexulator

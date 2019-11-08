@@ -1,6 +1,6 @@
 #include "casm/database/MappedProperties.hh"
 
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
 

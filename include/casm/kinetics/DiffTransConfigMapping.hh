@@ -6,7 +6,7 @@
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/Structure.hh"
 
 namespace CASM {

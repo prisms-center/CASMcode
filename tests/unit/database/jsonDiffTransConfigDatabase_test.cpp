@@ -16,7 +16,7 @@
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/ScelEnum_impl.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/casm_io/json_io/jsonFile.hh"
+#include "casm/casm_io/json/jsonFile.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"

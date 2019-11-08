@@ -1,8 +1,10 @@
 #ifndef CASM_MonteDefinitions_HH
 #define CASM_MonteDefinitions_HH
 
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
 #include "casm/global/definitions.hh"
-#include "casm/casm_io/EnumIO.hh"
+
 
 namespace CASM {
   namespace Monte {

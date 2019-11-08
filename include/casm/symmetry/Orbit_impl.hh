@@ -9,7 +9,7 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/clex/PrimClex.hh"

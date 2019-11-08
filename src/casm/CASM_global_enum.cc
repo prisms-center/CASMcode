@@ -1,5 +1,5 @@
 // #include "casm/global/enum.hh"
-// #include "casm/casm_io/json_io/jsonParser.hh"
+// #include "casm/casm_io/json/jsonParser.hh"
 //
 // namespace CASM {
 //

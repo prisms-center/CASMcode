@@ -5,7 +5,7 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/casm_io/container/stream_io.hh"
 

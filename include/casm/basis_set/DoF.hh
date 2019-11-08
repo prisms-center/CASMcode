@@ -13,7 +13,7 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {

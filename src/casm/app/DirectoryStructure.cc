@@ -5,7 +5,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include "casm/clex/Configuration.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 namespace CASM {
 
   /// return path to current or parent directory containing ".casm" directory

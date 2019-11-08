@@ -4,7 +4,7 @@
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
 

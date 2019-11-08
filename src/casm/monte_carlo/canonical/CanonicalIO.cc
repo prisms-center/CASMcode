@@ -2,7 +2,7 @@
 
 #include "casm/global/definitions.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/monte_carlo/canonical/Canonical.hh"
 #include "casm/monte_carlo/MonteIO_impl.hh"
 

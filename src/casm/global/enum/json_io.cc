@@ -1,6 +1,6 @@
 #include "casm/global/enum/json_io.hh"
 #include "casm/global/enum/io_traits.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
 

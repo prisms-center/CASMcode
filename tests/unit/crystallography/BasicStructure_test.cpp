@@ -13,7 +13,7 @@
 #include "casm/crystallography/Molecule.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/app/AppIO.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 

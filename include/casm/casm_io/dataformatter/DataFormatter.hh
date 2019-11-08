@@ -11,7 +11,7 @@
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/casm_io/dataformatter/DataFormatterDecl.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/dataformatter/DataStream.hh"
 #include "casm/casm_io/FormatFlag.hh"
 

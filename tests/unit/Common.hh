@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <string>
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 // #include "FCCTernaryProj.hh"
 // #include "ZrOProj.hh"
 

@@ -1,13 +1,13 @@
 #ifndef CASM_jsonIO_SpeciesSetParser
 #define CASM_jsonIO_SpeciesSetParser
 
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/PrimClex_impl.hh"
-
-#include "casm/casm_io/EnumIO.hh"
-#include "casm/casm_io/json_io/InputParser_impl.hh"
-#include "casm/misc/CRTPBase.hh"
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/HasPrimClex.hh"
+#include "casm/clex/PrimClex_impl.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/misc/CRTPBase.hh"
 
 namespace CASM {
 

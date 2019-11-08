@@ -1,6 +1,6 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/basis_set/DoF.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Site.hh"

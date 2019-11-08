@@ -2,7 +2,7 @@
 #include "casm/database/Selected_impl.hh"
 
 #include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 
 // explicit template instantiations

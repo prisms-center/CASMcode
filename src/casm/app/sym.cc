@@ -7,7 +7,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 
 
 #include "casm/completer/Handlers.hh"

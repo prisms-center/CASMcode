@@ -2,7 +2,7 @@
 
 #include "casm/misc/algorithm.hh"
 #include "casm/casm_io/container/stream_io.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/app/DirectoryStructure.hh"
 
 namespace CASM {

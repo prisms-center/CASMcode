@@ -1,4 +1,4 @@
-#include "casm/casm_io/json_io/SpeciesSetParser_impl.hh"
+#include "casm/app/io/json/SpeciesSetParser_impl.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 

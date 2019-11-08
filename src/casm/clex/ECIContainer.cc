@@ -1,7 +1,7 @@
 #include "casm/clex/ECIContainer.hh"
 
 #include <fstream>
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
 

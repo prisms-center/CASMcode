@@ -5,10 +5,11 @@
 #include <string>
 #include <iomanip>
 
-#include "casm/external/Eigen/Dense"
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/casm_io/EnumIO.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/external/Eigen/Dense"
 #include "casm/symmetry/SymOp.hh"
 
 namespace CASM {

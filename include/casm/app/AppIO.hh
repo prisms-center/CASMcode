@@ -7,7 +7,7 @@
 #include "casm/global/definitions.hh"
 #include "casm/global/enum.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/json_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/crystallography/CoordinateSystems.hh"

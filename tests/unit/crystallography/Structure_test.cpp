@@ -9,7 +9,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/app/AppIO.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 
 using namespace CASM;
 
