@@ -3,8 +3,8 @@
 
 #include <iostream>
 
-#include "casm/CASM_global_definitions.hh"
 #include "casm/CASM_global_Eigen.hh"
+#include "casm/CASM_global_definitions.hh"
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
@@ -29,19 +29,18 @@ namespace CASM {
     ///
     class UnitCell : public Eigen::Vector3l {
     public:
-
       UnitCell(void) : Eigen::Vector3l() {}
 
       UnitCell(Index a, Index b, Index c) : Eigen::Vector3l(a, b, c) {}
 
       // This constructor allows you to construct MyVectorType from Eigen expressions
-      template<typename OtherDerived>
-      UnitCell(const Eigen::MatrixBase<OtherDerived> &other) :
-        Eigen::Vector3l(other) {}
+      template <typename OtherDerived>
+      UnitCell(const Eigen::MatrixBase<OtherDerived> &other) : Eigen::Vector3l(other) {
+      }
 
       // This method allows you to assign Eigen expressions to MyVectorType
-      template<typename OtherDerived>
-      UnitCell &operator=(const Eigen::MatrixBase <OtherDerived> &other) {
+      template <typename OtherDerived>
+      UnitCell &operator=(const Eigen::MatrixBase<OtherDerived> &other) {
         this->Eigen::Vector3l::operator=(other);
         return *this;
       }
@@ -59,7 +58,6 @@ namespace CASM {
         }
         return false;
       }
-
     };
 
     /// Convert lattice point a unitcell
@@ -70,7 +68,7 @@ namespace CASM {
     /// Requires:
     /// - MostDerived& MostDerived::operator+=(UnitCell frac)
     ///
-    template<typename Base>
+    template <typename Base>
     struct Translatable : public Base {
 
       typedef typename Base::MostDerived MostDerived;
@@ -81,15 +79,14 @@ namespace CASM {
       }
 
       MostDerived operator+(UnitCell frac) const {
-        MostDerived tmp {derived()};
+        MostDerived tmp{derived()};
         return tmp += frac;
       }
 
       MostDerived operator-(UnitCell frac) const {
-        MostDerived tmp {derived()};
+        MostDerived tmp{derived()};
         return tmp += -frac;
       }
-
     };
 
     /* -- UnitCellCoord Declarations ------------------------------------- */
@@ -101,15 +98,19 @@ namespace CASM {
     class UnitCellCoord : public Comparisons<Translatable<CRTPBase<UnitCellCoord>>> {
 
     public:
+      typedef BasicStructure<Site> PrimType;
 
-      explicit UnitCellCoord();
+      UnitCellCoord(Index _sublat, const UnitCell &_unitcell) : m_unitcell(_unitcell), m_sublat(_sublat) {
+        if(this->sublattice() < 0) {
+          throw std::runtime_error("Error in UnitCellCoord. Construction requires a positive sublattice index.");
+        }
+      }
 
-      UnitCellCoord(Index _sublat, const UnitCell &_unitcell);
+      UnitCellCoord(Index _sublat, Index i, Index j, Index k) : UnitCellCoord(_sublat, UnitCell(i, j, k)) {}
 
-      UnitCellCoord(Index _sublat, Index i, Index j, Index k);
+      explicit UnitCellCoord() : UnitCellCoord(0, 0, 0, 0) {}
 
-      UnitCellCoord(const Coordinate &coord, double tol);
-
+      UnitCellCoord(const PrimType &prim, const Coordinate &coord, double tol);
 
       UnitCellCoord(const UnitCellCoord &B) = default;
 
@@ -119,117 +120,58 @@ namespace CASM {
 
       UnitCellCoord &operator=(UnitCellCoord &&B) = default;
 
+      const UnitCell &unitcell() const {
+        return m_unitcell;
+      }
 
-      /// \brief Get unit structure reference
-      /* const UnitType &unit() const; */
+      Index unitcell(Index i) const {
+        return m_unitcell[i];
+      }
 
-      /// \brief Change unit structure, keeping indices constant
-      /* void set_unit(const UnitType &_unit); */
-
-      /// \brief Access the Lattice
-      const Lattice &lattice() const;
+      Index sublattice() const {
+        return m_sublat;
+      }
 
       /// \brief Get corresponding coordinate
-      Coordinate coordinate() const;
+      Coordinate coordinate(const PrimType &prim) const;
 
       /// \brief Get a copy of corresponding site
-      Site site() const;
+      Site site(const PrimType &prim) const;
 
       /// \brief Get reference to corresponding sublattice site in the unit structure
-      const Site &sublat_site() const;
+      const Site &sublattice_site(const PrimType &prim) const;
 
-      UnitCell &unitcell();
-      const UnitCell &unitcell() const;
-
-      Index &unitcell(Index i);
-      const Index &unitcell(Index i) const;
-
-      Index &sublat();
-      const Index &sublat() const;
-
-      Index &operator[](Index i);
-      const Index &operator[](Index i) const;
+      Index operator[](Index i) const;
 
       UnitCellCoord &operator+=(UnitCell frac);
 
       bool operator<(const UnitCellCoord &B) const;
 
-      UnitCellCoord &apply_sym(const CASM::SymOp &op);
+      /* UnitCellCoord& apply_sym(const CASM::SymOp& op); */
 
-      UnitCellCoord copy_apply(const CASM::SymOp &op) const;
-
-      operator Coordinate() const;
+      /* UnitCellCoord copy_apply(const CASM::SymOp& op) const; */
 
     private:
-
       /// make _eq accessible
       friend struct Comparisons<Translatable<CRTPBase<UnitCellCoord>>>;
 
       bool eq_impl(const UnitCellCoord &B) const;
 
+      /// Returns false if the sublattice of *this is greater than the number of sites in the given prmitive structure
+      bool _is_compatible_with_prim(const PrimType &prim) const;
+
+      // TODO: Should this be make into an actual exception class?
+      static void _throw_incompatible_primitive_cell();
+
       UnitCell m_unitcell;
       Index m_sublat;
-
     };
 
     inline std::ostream &operator<<(std::ostream &sout, const UnitCellCoord &site) {
-      return sout << site.sublat() << ", " << site.unitcell().transpose();
+      return sout << site.sublattice() << ", " << site.unitcell().transpose();
     }
 
-    /* -- UnitCellCoord Definitions ------------------------------------- */
-
-    //TODO: Should this explicitly initialize to 0 0 0 0?
-    inline UnitCellCoord::UnitCellCoord() {}
-
-    inline UnitCellCoord::UnitCellCoord(Index _sublat, const UnitCell &_unitcell) :
-      m_unitcell(_unitcell),
-      m_sublat(_sublat) {}
-
-    inline UnitCellCoord::UnitCellCoord(Index _sublat, Index i, Index j, Index k) :
-      m_unitcell(i, j, k),
-      m_sublat(_sublat) {}
-
-    /* inline const UnitCellCoord::UnitType &UnitCellCoord::unit() const { */
-    /*   return *m_unit; */
-    /* } */
-
-    /// \brief Change unit structure, keeping indices constant
-    /* inline void UnitCellCoord::set_unit(const UnitType &_unit) { */
-    /*   m_unit = &_unit; */
-    /* } */
-
-    inline UnitCell &UnitCellCoord::unitcell() {
-      return m_unitcell;
-    }
-
-    inline const UnitCell &UnitCellCoord::unitcell() const {
-      return m_unitcell;
-    }
-
-    inline Index &UnitCellCoord::unitcell(Index i) {
-      return m_unitcell[i];
-    }
-
-    inline const Index &UnitCellCoord::unitcell(Index i) const {
-      return m_unitcell[i];
-    }
-
-    inline Index &UnitCellCoord::sublat() {
-      return m_sublat;
-    }
-
-    inline const Index &UnitCellCoord::sublat() const {
-      return m_sublat;
-    }
-
-    inline Index &UnitCellCoord::operator[](Index i) {
-      if(i == 0) {
-        return m_sublat;
-      }
-      return unitcell(i - 1);
-    }
-
-    inline const Index &UnitCellCoord::operator[](Index i) const {
+    inline Index UnitCellCoord::operator[](Index i) const {
       if(i == 0) {
         return m_sublat;
       }
@@ -252,7 +194,7 @@ namespace CASM {
           return false;
         }
       }
-      if(A.sublat() < B.sublat()) {
+      if(A.sublattice() < B.sublattice()) {
         return true;
       }
 
@@ -261,36 +203,19 @@ namespace CASM {
 
     inline bool UnitCellCoord::eq_impl(const UnitCellCoord &B) const {
       const auto &A = *this;
-      return A.unitcell()(0) == B.unitcell()(0) &&
-             A.unitcell()(1) == B.unitcell()(1) &&
-             A.unitcell()(2) == B.unitcell()(2) &&
-             A.sublat() == B.sublat();
+      return A.unitcell()(0) == B.unitcell()(0) && A.unitcell()(1) == B.unitcell()(1) &&
+             A.unitcell()(2) == B.unitcell()(2) && A.sublattice() == B.sublattice();
     }
 
-
     /** @} */
-  }
+  } // namespace xtal
 
   /// \brief Print to json as [b, i, j, k]
   jsonParser &to_json(const xtal::UnitCellCoord &ucc_val, jsonParser &fill_json);
 
-  template<typename T> struct jsonConstructor;
-
-  template<>
-  struct jsonConstructor<xtal::UnitCellCoord> {
-
-    /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
-    static xtal::UnitCellCoord from_json(const jsonParser &json, const xtal::BasicStructure<xtal::Site> &unit);
-  };
-
   /// \brief Read from json [b, i, j, k]
   void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json);
 
-
-}
+} // namespace CASM
 #endif
-
-
-
-
 
