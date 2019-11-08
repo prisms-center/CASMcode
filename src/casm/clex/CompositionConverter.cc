@@ -371,6 +371,7 @@ namespace CASM {
       double coeff = Mt(i, j);
 
       // print nothing if n == 0
+
       if(almost_zero(coeff) || Local::_is_vacancy(m_components[j])) {
         continue;
       }

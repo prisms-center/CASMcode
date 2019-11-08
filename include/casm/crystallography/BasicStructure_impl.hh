@@ -144,7 +144,7 @@ namespace CASM {
       Index time_max = Index(_time_reversal_active() && time_reversal_enabled);
       //std::cout << "time_max is " << time_max << "\n";
       //std::cout << "time_reversal_enabled is " << time_reversal_enabled << "\n";
-      SymOp test_op;
+      CASM::SymOp test_op;
       if(factor_group.size() != 0) {
         std::cerr << "WARNING in BasicStructure<CoordType>::generate_factor_group_slow" << std::endl;
         std::cerr << "The factor group passed isn't empty and it's about to be rewritten!" << std::endl;
@@ -156,7 +156,7 @@ namespace CASM {
         test_op = point_group[pg];
         for(Index tr = 0; tr <= time_max; tr++) {
           if(tr) {
-            test_op = test_op * SymOp::time_reversal_op();
+            test_op = test_op * CASM::SymOp::time_reversal_op();
           }
 
           if(!_is_lattice_pg_op(test_op)) {
@@ -234,7 +234,7 @@ namespace CASM {
               */
               t_tau -= center_of_mass;/**/
 
-              SymOp tSym(SymOp::translation(t_tau.cart())*test_op);
+              CASM::SymOp tSym(CASM::SymOp::translation(t_tau.cart())*test_op);
               tSym.set_map_error(max_error);
 
               if(!factor_group.contains_periodic(tSym)) {
@@ -290,52 +290,10 @@ namespace CASM {
         }
         else {
           for(Index j = 0; j < prim_grid.size(); j++) {
-            factor_group.push_back(SymOp::translation(prim_grid.scel_coord(j).cart())*prim_fg[i]);
-            // set lattice, in case SymOp::operator* ever changes
+            factor_group.push_back(CASM::SymOp::translation(prim_grid.scel_coord(j).cart())*prim_fg[i]);
+            // set lattice, in case CASM::SymOp::operator* ever changes
           }
         }
-      }
-
-      return;
-    }
-
-    //************************************************************
-
-    template<typename CoordType>
-    void BasicStructure<CoordType>::fg_converge(double small_tol, double large_tol, double increment) {
-      SymGroup factor_group;
-      fg_converge(factor_group, small_tol, large_tol, increment);
-    }
-
-    //************************************************************
-
-    template<typename CoordType>
-    void BasicStructure<CoordType>::fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment) {
-
-      std::vector<double> tols;
-      std::vector<bool> is_group;
-      std::vector<int> num_ops, num_enforced_ops;
-      std::vector<std::string> name;
-
-      double orig_tol = lattice().tol();
-      for(double i = small_tol; i < large_tol; i += increment) {
-        tols.push_back(i);
-        m_lattice.set_tol(i);
-
-        factor_group.clear();
-        generate_factor_group(factor_group);
-        factor_group.get_multi_table();
-        num_ops.push_back(factor_group.size());
-        is_group.push_back(factor_group.is_group(i));
-        factor_group.enforce_group(i);
-        num_enforced_ops.push_back(factor_group.size());
-        factor_group.character_table();
-        name.push_back(factor_group.get_name());
-      }
-      m_lattice.set_tol(orig_tol);
-
-      for(Index i = 0; i < tols.size(); i++) {
-        std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
       }
 
       return;
@@ -410,7 +368,7 @@ namespace CASM {
     template<typename CoordType>
     bool BasicStructure<CoordType>::is_primitive() const {
       SymGroup valid_translations, identity_group;
-      identity_group.push_back(SymOp());
+      identity_group.push_back(CASM::SymOp());
       _generate_factor_group_slow(valid_translations, identity_group, false);
       if(valid_translations.size() == 1)
         return true;
@@ -435,7 +393,7 @@ namespace CASM {
       double prim_vol_tol = std::abs(0.5 * lattice().vol() / double(basis().size())); //sets a hard lower bound for the minimum value of the volume of the primitive cell
 
       SymGroup valid_translations, identity_group;
-      identity_group.push_back(SymOp());
+      identity_group.push_back(CASM::SymOp());
       _generate_factor_group_slow(valid_translations, identity_group, false);
       if(valid_translations.size() > 1) {
         prim_flag = false;
@@ -594,79 +552,6 @@ namespace CASM {
       m_basis.back().set_basis_ind(basis().size() - 1);
       m_basis.back().set_lattice(lattice(), mode);
     }
-
-
-
-
-    //***********************************************************
-    /**
-     * Given a symmetry group, the basis of the structure will have
-     * each operation applied to it. The resulting set of basis
-     * from performing these operations will be averaged out,
-     * yielding a new average basis that will replace the current one.
-     */
-    //***********************************************************
-
-    template<typename CoordType>
-    void BasicStructure<CoordType>::symmetrize(const SymGroup &relaxed_factors) {
-      //First make a copy of your current basis
-      //This copy will eventually become the new average basis.
-      //reset();
-      std::vector<CoordType> avg_basis = basis();
-
-      //Loop through given symmetry group an fill a temporary "operated basis"
-      std::vector<CoordType> operbasis;
-
-      //assume identity comes first, so we skip it
-      for(Index rf = 0; rf < relaxed_factors.size(); rf++) {
-        operbasis.clear();
-        for(Index b = 0; b < basis().size(); b++) {
-          operbasis.push_back(relaxed_factors[rf]*basis()[b]);
-        }
-        //Now that you have a transformed basis, find the closest mapping of atoms
-        //Then average the distance and add it to the average basis
-        for(Index b = 0; b < basis().size(); b++) {
-          double smallest = 1000000;
-          Coordinate bshift(lattice()), tshift(lattice());
-          for(Index ob = 0; ob < operbasis.size(); ob++) {
-            double dist = operbasis[ob].min_dist(m_basis[b], tshift);
-            if(dist < smallest) {
-              bshift = tshift;
-              smallest = dist;
-            }
-          }
-          bshift.cart() *= (1.0 / relaxed_factors.size());
-          avg_basis[b] += bshift;
-        }
-
-      }
-      set_basis(avg_basis);
-      //update();
-      return;
-    }
-
-    //***********************************************************
-    /**
-     * Same as the other symmetrize routine, except this one assumes
-     * that the symmetry group you mean to use is the factor group
-     * of your structure within a certain tolerance.
-     *
-     * Notice that the tolerance is also used on your point group!!
-     */
-    //***********************************************************
-
-
-    template<typename CoordType>
-    void BasicStructure<CoordType>::symmetrize(const double &tolerance) {
-      SymGroup factor_group;
-      double orig_tol = lattice().tol();
-      m_lattice.set_tol(tolerance);
-      generate_factor_group(factor_group);
-      symmetrize(factor_group);
-      m_lattice.set_tol(orig_tol);
-      return;
-    }
-
 
     //************************************************************
     /// Counts sites that allow vacancies
@@ -923,8 +808,6 @@ namespace CASM {
         m_basis[i] += shift;
       }
 
-      //factor_group += shift;
-      //asym_unit += shift;
       return (*this);
     }
 
@@ -945,14 +828,6 @@ namespace CASM {
     //***********************************************************
 
     template<typename CoordType>
-    BasicStructure<CoordType> operator*(const SymOp &LHS, const BasicStructure<CoordType> &RHS) { //AAB
-
-      return BasicStructure<CoordType>(RHS).apply_sym(LHS);
-    }
-
-    //***********************************************************
-
-    template<typename CoordType>
     BasicStructure<CoordType> operator*(const Lattice &LHS, const BasicStructure<CoordType> &RHS) {
       BasicStructure<CoordType> tsuper(LHS);
       tsuper.fill_supercell(RHS);
@@ -963,7 +838,11 @@ namespace CASM {
 
     /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
     template<typename CoordType>
-    bool BasicStructure<CoordType>::_is_lattice_pg_op(SymOp const &_op) const {
+    bool BasicStructure<CoordType>::_is_lattice_pg_op(CASM::SymOp const &evil_op) const {
+      //TODO: Resolve where the Adapter should be called. I'm doing it here because
+      //DoFIsEquivalent is outside of crystallography, and we decided that crystallography/Adapter.hh
+      //should be limited to its own module.
+      auto _op = adapter::Adapter<xtal::SymOp, CASM::SymOp>()(evil_op);
       //std::cout << "CHECKING OP: \n" << _op.matrix() << std::endl;
       if(!LatticeIsEquivalent(lattice())(_op)) {
         //std::cout << "FAILED LATTICE CHECK\n"<< std::endl;
@@ -999,14 +878,14 @@ namespace CASM {
     //***********************************************************
 
     template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc) {
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc) {
       return symop_site_map(_op, _struc, _struc.lattice().tol());
     }
 
     //***********************************************************
 
     template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol) {
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol) {
       std::vector<UnitCellCoord> result;
       // Determine how basis sites transform from the origin unit cell
       for(int b = 0; b < _struc.basis().size(); b++) {

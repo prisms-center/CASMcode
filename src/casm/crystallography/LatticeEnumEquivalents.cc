@@ -18,7 +18,7 @@ namespace CASM {
           SymOpIterator begin,
           SymOpIterator end,
           SymOpOutputIterator result) {
-          return sym::invariant_subgroup(std::vector<SymOp>(begin, end), lat, result);
+          return sym::invariant_subgroup(std::vector<CASM::SymOp>(begin, end), lat, result);
         }
 
       };
@@ -36,7 +36,7 @@ namespace CASM {
     /// \throws std::runtime_error if super_g does not have a MasterSymGroup
     ///
     LatticeEnumEquivalents::LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g) :
-      EnumEquivalents<Lattice, std::vector<SymOp>::const_iterator, SymOp, SymRepIndexCompare>(
+      EnumEquivalents<Lattice, std::vector<CASM::SymOp>::const_iterator, CASM::SymOp, SymRepIndexCompare>(
         canonical::equivalent(lat, super_g), super_g.begin(), super_g.end(), MakeInvariantSubgroup()) {
 
       if(!super_g.begin()->has_valid_master()) {

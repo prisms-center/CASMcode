@@ -1,9 +1,8 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SpeciesAttribute.hh"
-#include "casm/symmetry/SymOp.hh"
+#include "casm/crystallography/SymType.hh"
 
 namespace CASM {
-
   namespace xtal {
     SpeciesAttribute &SpeciesAttribute::apply_sym(SymOp const &_op) {
       m_value = traits().symop_to_matrix(_op.matrix(), _op.tau(), _op.time_reversal()) * m_value;

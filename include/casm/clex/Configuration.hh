@@ -21,7 +21,8 @@ namespace CASM {
     class Molecule;
     class UnitCellCoord;
   }
-  using namespace xtal;
+  using xtal::Molecule;
+  using xtal::UnitCellCoord;
 
   class PrimClex;
   class Supercell;

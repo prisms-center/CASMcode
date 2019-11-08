@@ -6,11 +6,12 @@
 #include <vector>
 #include <string>
 
+#include "casm/CASM_global_definitions.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/crystallography/SpeciesAttribute.hh"
+#include "casm/crystallography/Adapter.hh"
 
 namespace CASM {
-  class SymOp;
   namespace xtal {
     class Molecule;
 
@@ -91,6 +92,11 @@ namespace CASM {
 
       /// \brief Apply symmetry (translation is ignored)
       AtomPosition &apply_sym(const SymOp &op);
+
+      template<typename ExternSymOp>
+      AtomPosition &apply_sym(const SymOp &op) {
+        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
+      }
 
     private:
       /// Atomic species
@@ -198,6 +204,11 @@ namespace CASM {
       }
 
       Molecule &apply_sym(SymOp const &op);
+
+      template<typename ExternSymOp>
+      Molecule &apply_sym(ExternSymOp const &op) {
+        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
+      }
 
       /// \brief Check equality of two molecules, within specified tolerance.
       /// Compares atoms, irrespective of order, and attributes (name is not checked)

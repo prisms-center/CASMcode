@@ -1,7 +1,7 @@
 #ifndef SYMTOOLS_HH
 #define SYMTOOLS_HH
 
-#include<vector>
+#include <vector>
 
 namespace CASM {
   class SymGroup;

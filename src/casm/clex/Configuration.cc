@@ -10,9 +10,11 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/CompositionConverter.hh"
@@ -396,7 +398,7 @@ namespace CASM {
   /// - Uses the first symop in g that such that scel is a supercell of op*(*this)
   Configuration Configuration::fill_supercell(const Supercell &scel, const SymGroup &g) const {
 
-    auto res = is_supercell(
+    auto res = xtal::is_equivalent_superlattice(
                  scel.lattice(),
                  ideal_lattice(),
                  g.begin(),
@@ -440,7 +442,7 @@ namespace CASM {
     // *this == copy_apply(op1, prim_canon_config).fill_supercell(supercell(), op2);
 
     // first find op2 == *res.first
-    auto res = is_supercell(
+    auto res = xtal::is_equivalent_superlattice(
                  config.ideal_lattice(),
                  prim_canon_config.ideal_lattice(),
                  config.prim().point_group().begin(),
@@ -880,7 +882,7 @@ namespace CASM {
 
   std::string pos_string(Configuration const  &_config) {
     std::stringstream ss;
-    VaspIO::PrintPOSCAR p(to_simple_structure(_config), _config.name());
+    VaspIO::PrintPOSCAR p(xtal::to_simple_structure(_config), _config.name());
     p.sort();
     p.print(ss);
     return ss.str();
@@ -908,8 +910,9 @@ namespace CASM {
 
   std::string config_json_string(Configuration const  &_config) {
     std::stringstream ss;
+
     jsonParser tjson;// = json_supplement(_config);
-    to_json(to_simple_structure(_config), tjson);
+    to_json(xtal::to_simple_structure(_config), tjson);
     tjson.print(ss);
     return ss.str();
   }
@@ -1502,7 +1505,7 @@ namespace CASM {
     auto begin = m_scel->primclex().prim().factor_group().begin();
     auto end = m_scel->primclex().prim().factor_group().end();
 
-    auto res = is_supercell(scel_lat, motif_lat, begin, end, tol);
+    auto res = xtal::is_equivalent_superlattice(scel_lat, motif_lat, begin, end, tol);
     if(res.first == end) {
 
       std::cerr << "Requested supercell transformation matrix: \n"

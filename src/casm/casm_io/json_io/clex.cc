@@ -26,7 +26,7 @@ namespace CASM {
         found_value = true;
         from_json(ref_state.energy_per_species, *it);
       }
-      else if(is_vacancy(it.name())) {
+      else if(xtal::is_vacancy(it.name())) {
         std::cerr << "Error reading chemical reference state: " << json << std::endl;
         throw std::runtime_error("Error reading chemical reference: Input should not include vacancies");
       }

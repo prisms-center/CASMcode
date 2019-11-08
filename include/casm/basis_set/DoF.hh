@@ -17,11 +17,6 @@
 
 namespace CASM {
 
-  namespace xtal {
-    class Molecule;
-  }
-  using namespace xtal;
-
   class AnisoValTraits;
 
   class SymGroup;

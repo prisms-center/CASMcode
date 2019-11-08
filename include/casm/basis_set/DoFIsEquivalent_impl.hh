@@ -1,4 +1,4 @@
-
+#include "casm/basis_set/DoFIsEquivalent.hh"
 
 namespace CASM {
 
@@ -25,7 +25,7 @@ namespace CASM {
 
   /// returns true if copy_apply(_op,m_dof) = P.permute(m_dof)
   template<typename OccType>
-  bool OccupantDoFIsEquivalent<OccType>::operator()(SymOp const &_op) const {
+  bool OccupantDoFIsEquivalent<OccType>::operator()(xtal::SymOp const &_op) const {
     Index j;
     for(Index i = 0; i < m_dof.size(); ++i) {
       OccType t_occ = copy_apply(_op, m_dof[i]);
@@ -44,7 +44,7 @@ namespace CASM {
 
   /// returns true if copy_apply(_op,m_dof) =  P.permute(_other)
   template<typename OccType>
-  bool OccupantDoFIsEquivalent<OccType>::operator()(SymOp const &_op, OccDoFType const &_other) const {
+  bool OccupantDoFIsEquivalent<OccType>::operator()(xtal::SymOp const &_op, OccDoFType const &_other) const {
     if(_other.size() != m_dof.size())
       return false;
     Index j;

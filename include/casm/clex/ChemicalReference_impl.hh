@@ -93,7 +93,7 @@ namespace CASM {
     // ensure no vacancies included
     for(auto it = begin; it != end; ++it) {
       for(auto mol_it = it->species_num.begin(); mol_it != it->species_num.end(); ++mol_it) {
-        if(is_vacancy(mol_it->first)) {
+        if(xtal::is_vacancy(mol_it->first)) {
           throw std::runtime_error("Error in ChemicalReference::hyperplane: Input should not include vacancies");
         }
         if(!contains(struc_mol_name, mol_it->first)) {

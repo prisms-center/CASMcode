@@ -14,7 +14,15 @@
 namespace CASM {
   namespace xtal {
     class Lattice;
+    class Site;
+    class UnitCellCoord;
+    template<typename CoordType>
+    class BasicStructure;
   }
+  using xtal::Lattice;
+  using xtal::Site;
+  using xtal::UnitCellCoord;
+  using xtal::BasicStructure;
 
   class Supercell;
   class SymGroup;

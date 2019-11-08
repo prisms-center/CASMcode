@@ -1,7 +1,7 @@
-#include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/basis_set/DisplacementDoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/clusterography/IntegralCluster.hh"

@@ -9,7 +9,6 @@ namespace CASM {
     public:
       DisplacementDoFTraits():
         DoFType::Traits(AnisoValTraits::disp()) {
-
       }
 
       /// \brief Apply DoF values for this DoF to _struc

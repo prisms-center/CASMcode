@@ -398,29 +398,6 @@ namespace CASM {
     }
 
     //***************************************************************************
-    /*
-    void _dofs_to_json(jsonParser &json, ConfigDoF const &_config, BasicStructure<Site> const &_reference, std::vector<DoFKey> which_dofs) {
-      std::set<TransformDirective> tformers({TransformDirective("atomize")});
-      if(which_dofs.empty()){
-        for(std::string const &dof : continuous_local_dof_types(_reference))
-          which_dofs.push_back(dof);
-        for(std::string const &dof : global_dof_types(_reference))
-          which_dofs.push_back(dof);
-      }
-
-      for(DoFKey const & dof : which_dofs){
-        if(dof != "none" && dof != "occ")
-          tformers.insert(dof);
-      }
-
-      //std::cout << "About to transform!!!\n";
-      for(TransformDirective const &tformer : tformers) {
-        tformer.properties_to_json(json, _config, _reference);
-      }
-    }
-    */
-
-    //***************************************************************************
     TransformDirective::TransformDirective(std::string const &_name) :
       m_name(_name),
       m_traits_ptr(nullptr) {
@@ -482,12 +459,6 @@ namespace CASM {
       }
     }
 
-    //***************************************************************************
-    /*
-    void TransformDirective::dofs_to_json(ConfigDoF const  &_config, BasicStructure<Site> const &_reference){
-      //std::cout << "Applying transformation: " << m_name << "\n";
-      if(m_traits_ptr)
-        m_traits_ptr->dof_to_json(_json, _config, _reference);
-        }*/
   }
+
 }

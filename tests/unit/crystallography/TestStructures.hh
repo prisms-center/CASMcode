@@ -8,6 +8,11 @@
 using namespace CASM;
 
 namespace test {
+  using xtal::BasicStructure;
+  using xtal::Site;
+  using xtal::Lattice;
+  using xtal::Molecule;
+  using xtal::Coordinate;
 
   inline BasicStructure<Site> ZrO_prim() {
 

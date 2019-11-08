@@ -3,7 +3,7 @@
 namespace test {
 
   TestSupercell::TestSupercell(const PrimClex &primclex, const Eigen::Matrix3i &T) :
-    scel(&primclex, make_supercell(primclex.prim().lattice(), T)),
+    scel(&primclex, xtal::make_superlattice(primclex.prim().lattice(), T)),
     prim_sym_compare(primclex),
     scel_sym_compare(scel),
     within_scel_sym_compare(scel) {}

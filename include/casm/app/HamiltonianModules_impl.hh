@@ -106,8 +106,8 @@ namespace CASM {
           auto make_traits = lib_ptr->template get_function<signature>(
             "make_" + f_s.substr(0, f_size - 3) + "_symrep_builder");
 
-          std::unique_ptr<SymRepBuilderInterface> ptr(make_traits());
 
+          std::unique_ptr<SymRepBuilderInterface> ptr(make_traits());
           // will clone on insert
           *dict_it++ = *ptr;
           *lib_it++ = std::make_pair(ptr->name(), lib_ptr);

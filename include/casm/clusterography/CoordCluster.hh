@@ -16,8 +16,13 @@ namespace CASM {
 
   namespace xtal {
     class Structure;
+    class Coordinate;
+    template<typename Base>
+    struct Translatable;
   }
-  using namespace xtal;
+  using xtal::Structure;
+  using xtal::Coordinate;
+  using xtal::Translatable;
 
   class SymOp;
 

@@ -2,7 +2,6 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/CASM_math.hh"
-#include "casm/symmetry/SymOp.hh"
 #include <set>
 
 namespace CASM {

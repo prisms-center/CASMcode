@@ -9,6 +9,7 @@
 #include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/crystallography/CanonicalForm.hh"
+#include "casm/crystallography/SymTools.hh"
 
 namespace CASM {
 
@@ -350,7 +351,7 @@ namespace CASM {
 
   template<typename Base>
   Lattice SupercellCanonicalForm<Base>::canonical_lattice() const {
-    return canonical::equivalent(
+    return xtal::canonical::equivalent(
              derived().lattice(),
              derived().prim().point_group(),
              derived().crystallography_tol());

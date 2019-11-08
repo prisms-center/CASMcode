@@ -11,8 +11,13 @@ namespace CASM {
 
   template<typename T> struct jsonConstructor;
 
+
   class AnisoValTraits;
-  class SymOp;
+
+  namespace xtal {
+    class SymOp;
+  }
+
   class SymGroup;
 
   // All identifying information for a vector of continuous independent variables (Degrees of Freedom / DoFs)
@@ -247,12 +252,12 @@ namespace CASM {
   //********************************************************************
 
   /// \brief Apply SymOp to a DoFSet
-  DoFSet &apply(const SymOp &op, DoFSet &_dof);
+  DoFSet &apply(const xtal::SymOp &op, DoFSet &_dof);
 
   //********************************************************************
 
   /// \brief Copy and apply SymOp to a DoFSet
-  DoFSet copy_apply(const SymOp &op, const DoFSet &_dof);
+  DoFSet copy_apply(const xtal::SymOp &op, const DoFSet &_dof);
 
   //********************************************************************
   template<>

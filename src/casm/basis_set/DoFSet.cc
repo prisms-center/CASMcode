@@ -1,6 +1,7 @@
 #include "casm/basis_set/DoFSet.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
@@ -140,7 +141,8 @@ namespace CASM {
   //********************************************************************
 
   /// \brief Apply SymOp to a DoFSet
-  DoFSet &apply(const SymOp &op, DoFSet &_dof) {
+
+  DoFSet &apply(const xtal::SymOp &op, DoFSet &_dof) {
     _dof.transform_basis(_dof.traits().symop_to_matrix(op.matrix(), op.tau(), op.time_reversal()));
     return _dof;
   }
@@ -148,7 +150,7 @@ namespace CASM {
   //********************************************************************
 
   /// \brief Copy and apply SymOp to a DoFSet
-  DoFSet copy_apply(const SymOp &op, const DoFSet &_dof) {
+  DoFSet copy_apply(const xtal::SymOp &op, const DoFSet &_dof) {
     DoFSet result(_dof);
     return apply(op, result);
   }
