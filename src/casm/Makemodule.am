@@ -28,6 +28,10 @@ libcasm_la_SOURCES = \
     include/casm/app/format.hh\
     include/casm/app/import.hh\
     include/casm/app/init.hh\
+    include/casm/app/io/json/SpeciesSetParser.hh\
+    include/casm/app/io/json/SpeciesSetParser_impl.hh\
+    include/casm/app/json_io.hh\
+    include/casm/app/json_io_impl.hh\
     include/casm/app/monte.hh\
     include/casm/app/query.hh\
     include/casm/app/ref.hh\
@@ -72,6 +76,10 @@ libcasm_la_SOURCES = \
     include/casm/casm_io/enum/io_traits.hh\
     include/casm/casm_io/enum/json_io.hh\
     include/casm/casm_io/enum/stream_io.hh\
+    include/casm/casm_io/json/InputParser.hh\
+    include/casm/casm_io/json/InputParser_impl.hh\
+    include/casm/casm_io/json/jsonFile.hh\
+    include/casm/casm_io/json/jsonParser.hh\
     include/casm/clex/BasicClexParamPack.hh\
     include/casm/clex/Calculable.hh\
     include/casm/clex/ChemicalReference.hh\
@@ -137,6 +145,8 @@ libcasm_la_SOURCES = \
     include/casm/clex/SupercellTraits.hh\
     include/casm/clex/Supercell_functions.hh\
     include/casm/clex/Supercell_impl.hh\
+    include/casm/clex/io/json/ChemicalReference.hh\
+    include/casm/clex/json_io.hh\
     include/casm/clusterography/ClusterDecl.hh\
     include/casm/clusterography/ClusterInvariants.hh\
     include/casm/clusterography/ClusterInvariants_impl.hh\
@@ -192,6 +202,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
+    include/casm/crystallography/io/VaspIO.hh\
     include/casm/crystallography/jsonStruc.hh\
     include/casm/database/Cache.hh\
     include/casm/database/ConfigData.hh\
