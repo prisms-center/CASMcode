@@ -437,7 +437,17 @@ namespace CASM {
       json["inverse"][i] = grp.ind_inverse(i);
     }
     json["multiplication_table"] = grp.get_multi_table();
-    //json["character_table"] = grp.character_table();
+    bool has_time_reversal = false;
+    for(SymOp const &op : grp) {
+      if(op.time_reversal()) {
+        has_time_reversal = true;
+        break;
+      }
+    }
+    if(!has_time_reversal) {
+      // For now, only print character table for nonmagnetic groups (character table routine does not work for magnetic groups)
+      json["character_table"] = grp.character_table();
+    }
   }
 
 

@@ -25,8 +25,10 @@ libcasmtesting_la_SOURCES = \
     tests/unit/TestConfiguration.hh\
     tests/unit/TestDiffTransConfigOccPerturbations.hh\
     tests/unit/FCCTernaryProj.hh\
+    tests/unit/autotools.hh\
     tests/unit/ZrOProj.hh\
     tests/unit/TestOrbits.cc\
+    tests/unit/autotools.cc\
     tests/unit/TestConfiguration.cc\
     tests/unit/TestSupercell.cc\
     tests/unit/Common.cpp
@@ -185,9 +187,11 @@ check_PROGRAMS += \
 casm_unit_crystallography_SOURCES = \
     tests/unit/crystallography/Site_test.cpp\
     tests/unit/crystallography/LatticeEnumEquivalents_test.cpp\
+    tests/unit/crystallography/SuperlatticeEnumerator_test.cpp\
     tests/unit/crystallography/Lattice_test.cpp\
     tests/unit/crystallography/Coordinate_test.cpp\
     tests/unit/crystallography/Structure_test.cpp\
+    tests/unit/crystallography/HermiteCounter_test.cpp\
     tests/unit/crystallography/BasicStructure_test.cpp\
     tests/unit/crystallography/Niggli_test.cpp\
     tests/unit/crystallography/Molecule_test.cpp\
@@ -214,6 +218,7 @@ EXTRA_DIST += \
     tests/unit/crystallography/PRIM5.txt\
     tests/unit/crystallography/POS1.txt\
     tests/unit/crystallography/test_cases.json\
+    tests/unit/crystallography/TestStructures.hh\
     tests/unit/crystallography/POS1_out.txt
 
 #-------------------------------------------------------------------------------#

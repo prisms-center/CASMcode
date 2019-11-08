@@ -71,4 +71,5 @@ namespace CASM {
     };
 
   }
+}
 #endif

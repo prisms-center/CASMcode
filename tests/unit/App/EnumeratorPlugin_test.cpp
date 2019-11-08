@@ -54,7 +54,7 @@ TEST(EnumeratorPlugin, Test1) {
 
   check(R"(enum --desc TestEnum)");
 
-  check(R"(enum --method TestEnum -i '{"supercells": {"max": 4}}')");
+  check(R"(enum --method TestEnum -i '{"supercells": {"max": 4, "existing_only" : false}}')");
 
   ASSERT_EQ(primclex.generic_db<Configuration>().size(), 336);
 }

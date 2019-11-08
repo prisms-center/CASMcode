@@ -17,10 +17,10 @@ namespace CASM {
     }
   }
 
-  template<>
-  ParsingDictionary<xtal::SpeciesAttribute::BasicTraits>  make_parsing_dictionary<xtal::SpeciesAttribute::BasicTraits>() {
-    ParsingDictionary<xtal::SpeciesAttribute::BasicTraits> dict;
-    return dict;
-  }
+  //  template<>
+  //ParsingDictionary<xtal::SpeciesAttribute::BasicTraits>  make_parsing_dictionary<xtal::SpeciesAttribute::BasicTraits>() {
+  //ParsingDictionary<xtal::SpeciesAttribute::BasicTraits> dict;
+  //return dict;
+  //}
 
 }

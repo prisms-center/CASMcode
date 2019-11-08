@@ -376,7 +376,9 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/Site.hh\
+    include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/SimpleStructure.hh\
+    include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/PrimGrid.hh\
     include/casm/crystallography/AnisoValTraits.hh\
@@ -386,6 +388,8 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/UnitCellCoord.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/Molecule.hh\
+    include/casm/crystallography/SymTools.hh\
+    include/casm/crystallography/SuperlatticeEnumerator.hh\
     include/casm/crystallography/StrucMapping.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/Coordinate.hh\
@@ -395,6 +399,8 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/SpeciesAttribute.hh\
     include/casm/crystallography/CoordinateSystems.hh\
+    include/casm/crystallography/SymType.hh\
+    include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/jsonStruc.hh\
     include/casm/symmetry/VectorSymCompare_impl.hh\
     include/casm/symmetry/SymOpRepresentation.hh\
@@ -417,6 +423,8 @@ libcasm_la_SOURCES = \
     include/casm/symmetry/SymCompare.hh\
     include/casm/symmetry/ConfigSubOrbits.hh\
     include/casm/symmetry/ScelOrbitGeneration.hh\
+    include/casm/symmetry/SymTools.hh\
+    include/casm/symmetry/SymTools_impl.hh\
     include/casm/symmetry/SupercellSymInfo.hh\
     include/casm/symmetry/SymOp.hh\
     include/casm/symmetry/Orbit_impl.hh\
@@ -944,4 +952,4 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     -avoid-version\
     $(BOOST_LDFLAGS)
-src/casm/version/autoversion.lo: .FORCE
+#src/casm/version/autoversion.lo: .FORCE
