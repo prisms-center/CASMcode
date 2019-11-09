@@ -3,6 +3,7 @@
 
 #include "casm/database/ConfigData.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/app/ProjectSettings.hh"
 
 namespace CASM {
   namespace DB {

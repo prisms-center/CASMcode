@@ -27,7 +27,7 @@ namespace CASM {
       if(add_it)
         result.push_back(perm_it);
     }
-
+    return result;
   }
 
   //***********************************************************
