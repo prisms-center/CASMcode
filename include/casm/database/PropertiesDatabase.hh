@@ -58,6 +58,7 @@ namespace CASM {
       typedef const value_type &reference;
 
       PropertiesDatabaseIteratorBase() {}
+      virtual ~PropertiesDatabaseIteratorBase() {}
 
       std::unique_ptr<PropertiesDatabaseIteratorBase> clone() const {
         return std::unique_ptr<PropertiesDatabaseIteratorBase>(this->_clone());
@@ -122,7 +123,6 @@ namespace CASM {
       long > {
 
     public:
-
 
       /// Default constructor
       PropertiesDatabaseIterator() {}
