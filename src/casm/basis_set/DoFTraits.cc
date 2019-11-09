@@ -18,6 +18,28 @@
 
 namespace CASM {
 
+  template<>
+  DoFType::TraitsDictionary make_parsing_dictionary<DoFType::Traits>() {
+    //std::cout << "Making Parsing dictionary... \n";
+    /*DoFType::register_traits(DoFType::occupation());
+    DoFType::register_traits(DoFType::displacement());
+    DoFType::register_traits(DoFType::magspin());
+    DoFType::register_traits(DoFType::EAstrain());
+    DoFType::register_traits(DoFType::Hstrain());
+    DoFType::register_traits(DoFType::GLstrain());*/
+
+    DoFType::TraitsDictionary dict;
+
+    dict.insert(
+      DoFType::occupation(),
+      DoFType::displacement(),
+      DoFType::magspin(),
+      DoFType::EAstrain(),
+      DoFType::Hstrain(),
+      DoFType::GLstrain());
+    return dict;
+  }
+
   namespace DoFType {
     namespace Local {
       static TraitsDictionary &_traits_dict() {
@@ -503,25 +525,4 @@ namespace CASM {
 
   }
 
-  template<>
-  DoFType::TraitsDictionary make_parsing_dictionary<DoFType::Traits>() {
-    //std::cout << "Making Parsing dictionary... \n";
-    /*DoFType::register_traits(DoFType::occupation());
-    DoFType::register_traits(DoFType::displacement());
-    DoFType::register_traits(DoFType::magspin());
-    DoFType::register_traits(DoFType::EAstrain());
-    DoFType::register_traits(DoFType::Hstrain());
-    DoFType::register_traits(DoFType::GLstrain());*/
-
-    DoFType::TraitsDictionary dict;
-
-    dict.insert(
-      DoFType::occupation(),
-      DoFType::displacement(),
-      DoFType::magspin(),
-      DoFType::EAstrain(),
-      DoFType::Hstrain(),
-      DoFType::GLstrain());
-    return dict;
-  }
 }

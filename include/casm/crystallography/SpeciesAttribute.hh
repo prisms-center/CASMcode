@@ -10,7 +10,7 @@
 namespace CASM {
   class jsonParser;
   namespace xtal {
-    class SymOp;
+    struct SymOp;
     class SpeciesAttribute;
 
     namespace SpeciesAttribute_impl {

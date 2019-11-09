@@ -5,7 +5,7 @@
 namespace CASM {
   namespace xtal {
     SpeciesAttribute &SpeciesAttribute::apply_sym(SymOp const &_op) {
-      m_value = traits().symop_to_matrix(_op.matrix(), _op.tau(), _op.time_reversal()) * m_value;
+      m_value = traits().symop_to_matrix(get_matrix(_op), get_translation(_op), get_time_reversal(_op)) * m_value;
       return *this;
     }
 

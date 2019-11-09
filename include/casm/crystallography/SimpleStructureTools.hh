@@ -89,15 +89,15 @@ namespace CASM {
 
     /// \brief use information in _reference to initialize atom_info from mol_info
     void _atomize(SimpleStructure &_sstruc, Eigen::Ref<const Eigen::VectorXi> const &_mol_occ, BasicStructure<Site> const &_reference);
+
+    /// \brief Output to JSON, excluding any molecular or atomic species contained in 'excluded_species'
+    jsonParser &to_json(xtal::SimpleStructure const &_struc,
+                        jsonParser &json_supplement,
+                        std::set<std::string> const &excluded_species = {"Va", "VA", "va"});
+
+    /// \brief Read from JSON
+    void from_json(xtal::SimpleStructure &_struc, const jsonParser &json);
   }
-
-  /// \brief Output to JSON, excluding any molecular or atomic species contained in 'excluded_species'
-  jsonParser &to_json(xtal::SimpleStructure const &_struc,
-                      jsonParser &json_supplement,
-                      std::set<std::string> const &excluded_species = {"Va", "VA", "va"});
-
-  /// \brief Read from JSON
-  void from_json(xtal::SimpleStructure &_struc, const jsonParser &json);
 
 }
 #endif

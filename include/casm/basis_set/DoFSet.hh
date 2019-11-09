@@ -15,7 +15,7 @@ namespace CASM {
   class AnisoValTraits;
 
   namespace xtal {
-    class SymOp;
+    struct SymOp;
   }
 
   class SymGroup;

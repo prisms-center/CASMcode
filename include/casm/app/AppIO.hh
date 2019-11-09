@@ -26,6 +26,7 @@ namespace CASM {
   }
   using xtal::COORD_MODE;
   using xtal::Structure;
+  using xtal::SpeciesAttribute;
   using xtal::AtomPosition;
   using xtal::Molecule;
   using xtal::Site;

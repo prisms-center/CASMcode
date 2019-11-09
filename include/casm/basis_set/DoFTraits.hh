@@ -15,7 +15,7 @@ namespace CASM {
     class BasicStructure;
     class SimpleStructure;
     class UnitCellCoord;
-    class SymOp;
+    struct SymOp;
   }
   using xtal::Site;
   using xtal::Structure;
@@ -88,12 +88,6 @@ namespace CASM {
       /// \brief Output @param _in to JSON
       virtual void to_json(DoFSet const &_out, jsonParser &_json) const;
 
-      <<< <<< < HEAD
-      == == == =
-        /// \brief Generate a symmetry representation for the supporting vector space
-        virtual Eigen::MatrixXd symop_to_matrix(xtal::SymOp const &op) const = 0;
-
-      >>> >>> > upstream / 0.4.X
       /// \brief Transforms SimpleSructure @param _struc by applying DoF values contained in @param _dof in a type-specific way
       virtual void apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const;
 
@@ -198,10 +192,6 @@ namespace CASM {
     }
 
   }
-
-  template<>
-  DoFType::TraitsDictionary make_parsing_dictionary<DoFType::Traits>();
-
 
 }
 #endif

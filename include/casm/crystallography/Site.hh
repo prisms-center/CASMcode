@@ -19,7 +19,7 @@ namespace CASM {
 
   namespace xtal {
 
-    class SymOp;
+    struct SymOp;
     class Molecule;
 
 

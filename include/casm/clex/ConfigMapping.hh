@@ -15,7 +15,7 @@ namespace CASM {
     class Site;
     template<typename T>
     class BasicStructure;
-    class MappingNode;
+    struct MappingNode;
     class SimpleStructure;
     class SimpleStrucMapCalculator;
     class StrucMapper;

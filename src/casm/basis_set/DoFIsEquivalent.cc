@@ -11,11 +11,11 @@ namespace CASM {
 
 
   bool DoFIsEquivalent::operator()(xtal::SymOp const &_op) const {
-    return _vector_equiv(m_dof.basis(), DoF::BasicTraits(m_dof.type_name()).symop_to_matrix(_op.matrix(), _op.tau(), _op.time_reversal()) * m_dof.basis());
+    return _vector_equiv(m_dof.basis(), DoF::BasicTraits(m_dof.type_name()).symop_to_matrix(get_matrix(_op), get_translation(_op), get_time_reversal(_op)) * m_dof.basis());
   }
 
   bool DoFIsEquivalent::operator()(xtal::SymOp const &_op, DoFSet const &other) const {
-    return _label_equiv(other) && _vector_equiv(other.basis(), DoF::BasicTraits(m_dof.type_name()).symop_to_matrix(_op.matrix(), _op.tau(), _op.time_reversal()) * m_dof.basis());
+    return _label_equiv(other) && _vector_equiv(other.basis(), DoF::BasicTraits(m_dof.type_name()).symop_to_matrix(get_matrix(_op), get_translation(_op), get_time_reversal(_op)) * m_dof.basis());
   }
 
   bool DoFIsEquivalent::_label_equiv(DoFSet const &other) const {
