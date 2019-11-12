@@ -4,6 +4,8 @@
 #include "casm/clex/Clexulator.hh"
 
 /// Dependencies
+#include "casm/system/RuntimeLibrary.hh"
+#include "casm/casm_io/Log.hh"
 
 /// What is being used to test it:
 #include <boost/filesystem.hpp>

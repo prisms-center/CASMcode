@@ -1,7 +1,7 @@
 #include "casm/monte_carlo/MonteSettings.hh"
 
 #include <boost/filesystem.hpp>
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/crystallography/Structure.hh"

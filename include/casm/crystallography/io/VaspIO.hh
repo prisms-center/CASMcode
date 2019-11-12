@@ -1,11 +1,13 @@
-#ifndef CASM_VaspIO
-#define CASM_VaspIO
+#ifndef CASM_crystallography_io_VaspIO
+#define CASM_crystallography_io_VaspIO
 
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_enum.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/enum.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 
 namespace CASM {
+
+  class Log;
 
   /// \brief Functions and classes related to VASP input/output
   namespace VaspIO {

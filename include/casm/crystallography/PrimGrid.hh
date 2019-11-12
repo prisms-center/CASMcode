@@ -6,7 +6,7 @@
 #include <cmath>
 #include <cassert>
 
-#include "casm/CASM_global_enum.hh"
+#include "casm/global/enum.hh"
 #include "casm/container/Permutation.hh"
 #include "casm/crystallography/Lattice.hh"
 

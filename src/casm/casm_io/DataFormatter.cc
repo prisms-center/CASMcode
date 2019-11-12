@@ -1,11 +1,11 @@
 #include <vector>
 #include <iostream>
-#include <casm/casm_io/stream_io/container.hh>
+#include <casm/casm_io/container/stream_io.hh>
 #include <string>
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
   //****************************************************************************************

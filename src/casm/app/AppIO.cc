@@ -1,12 +1,15 @@
 #include "casm/app/AppIO_impl.hh"
-#include "casm/casm_io/json_io/container.hh"
+
 #include "casm/app/HamiltonianModules.hh"
-#include "casm/symmetry/SymInfo.hh"
-#include "casm/symmetry/Orbit_impl.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/basis_set/FunctionVisitor.hh"
+#include "casm/global/enum/json_io.hh"
+#include "casm/global/enum/stream_io.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
+#include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/Orbit_impl.hh"
 
 namespace CASM {
 
@@ -672,6 +675,7 @@ namespace CASM {
   };
 
   ENUM_IO_DEF(ORBIT_PRINT_MODE)
+  ENUM_JSON_IO_DEF(ORBIT_PRINT_MODE)
 
   jsonParser &to_json(const OrbitPrinterOptions &opt, jsonParser &json) {
     json.put_obj();

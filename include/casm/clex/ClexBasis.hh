@@ -5,7 +5,7 @@
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/basis_set/DoFDecl.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
-#include "casm/CASM_global_enum.hh"
+#include "casm/global/enum.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 
 namespace CASM {

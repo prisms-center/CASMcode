@@ -2,8 +2,8 @@
 #define CASM_DataFormatterTools_impl
 
 #include <algorithm>
-#include "casm/casm_io/DataFormatterTools.hh"
-#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 
 namespace CASM {
 

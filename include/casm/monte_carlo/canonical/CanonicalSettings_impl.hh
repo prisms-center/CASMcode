@@ -6,7 +6,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
   namespace Monte {

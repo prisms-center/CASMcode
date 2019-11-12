@@ -2,8 +2,9 @@
 #define CASM_MappedProperties
 
 #include <string>
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/EnumIO.hh"
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
   namespace DB {
@@ -144,8 +145,9 @@ namespace CASM {
 }
 
 namespace CASM {
-  ENUM_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
   ENUM_TRAITS(CASM::DB::ScoreMappedProperties::Method)
+  ENUM_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
+  ENUM_JSON_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
 }
 
 #endif

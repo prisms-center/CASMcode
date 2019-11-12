@@ -1,7 +1,7 @@
 #ifndef CASM_jsonFile
 #define CASM_jsonFile
 
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
 

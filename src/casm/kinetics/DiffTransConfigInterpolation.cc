@@ -10,7 +10,7 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 
 // extern "C" {

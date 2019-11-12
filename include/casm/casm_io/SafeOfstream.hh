@@ -5,9 +5,10 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
+
+  namespace fs = boost::filesystem;
 
   /// \brief Write to a temporary file to ensure a good write, then rename
   ///

@@ -2,7 +2,7 @@
 #define COORDINATESYSTEMS_HH
 
 #include <iostream>
-#include "casm/CASM_global_enum.hh"
+#include "casm/global/enum.hh"
 
 namespace CASM {
   namespace xtal {

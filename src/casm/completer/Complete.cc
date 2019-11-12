@@ -2,7 +2,7 @@
 #define COMPLETE_CC
 
 #include "casm/completer/Complete.hh"
-#include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/clex/Configuration.hh"
 
 namespace CASM {

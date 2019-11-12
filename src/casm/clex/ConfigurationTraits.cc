@@ -5,7 +5,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <string>
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/casm_io/Log.hh"
 
 namespace CASM {

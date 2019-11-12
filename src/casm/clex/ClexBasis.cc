@@ -9,7 +9,7 @@
 #include "casm/app/AppIO.hh" // necessary for write_prim() function
 #include "casm/crystallography/BasicStructure_impl.hh"
 
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/eigen.hh"
 
 namespace CASM {
 

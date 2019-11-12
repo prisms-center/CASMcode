@@ -1,6 +1,6 @@
 #include <cstring>
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
 

@@ -1,8 +1,8 @@
 #ifndef MCData_HH
 #define MCData_HH
 
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/eigen.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
 
 namespace CASM {

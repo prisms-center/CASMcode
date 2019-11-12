@@ -1,6 +1,6 @@
 #ifndef CASM_MATH_HH
 #define CASM_MATH_HH
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 /*
 //Maybe we should transition to boost math library?

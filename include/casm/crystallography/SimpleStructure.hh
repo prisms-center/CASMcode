@@ -6,7 +6,7 @@
 #include <set>
 #include <map>
 #include "casm/external/Eigen/Dense"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
   namespace xtal {

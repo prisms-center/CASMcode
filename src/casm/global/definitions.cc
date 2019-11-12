@@ -1,4 +1,4 @@
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 
@@ -6,6 +6,3 @@ namespace CASM {
     return 0 <= i;
   }
 }
-
-
-

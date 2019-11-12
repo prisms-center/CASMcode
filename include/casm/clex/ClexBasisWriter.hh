@@ -1,7 +1,7 @@
 #ifndef CASM_ClexBasisWriter
 #define CASM_ClexBasisWriter
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/clex/ClexBasis.hh"
 namespace CASM {
   namespace xtal {

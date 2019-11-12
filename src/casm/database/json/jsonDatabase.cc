@@ -7,13 +7,13 @@
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/casm_io/SafeOfstream.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/Database_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 
 //for testing:
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
 

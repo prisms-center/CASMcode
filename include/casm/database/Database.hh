@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <boost/iterator/iterator_facade.hpp>
 #include "casm/misc/cloneable_ptr.hh"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/clex/HasPrimClex.hh"
 #include "casm/database/Selection_impl.hh"
 

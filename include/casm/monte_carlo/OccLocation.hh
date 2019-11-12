@@ -2,7 +2,7 @@
 #define CASM_Monte_OccLocation_HH
 
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
 class MTRand;

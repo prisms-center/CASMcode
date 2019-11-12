@@ -2,14 +2,6 @@
 
 #-------------------------------------------------------------------------------#
 
-casm_includedir=$(includedir)/casm
-casm_include_HEADERS = \
-    include/casm/CASM_global_Eigen.hh\
-    include/casm/CASM_global_definitions.hh\
-    include/casm/CASM_global_enum.hh
-
-#-------------------------------------------------------------------------------#
-
 casm_app_includedir=$(includedir)/casm/app
 casm_app_include_HEADERS = \
     include/casm/app/APICommand.hh\
@@ -23,8 +15,10 @@ casm_app_include_HEADERS = \
     include/casm/app/DirectoryStructure.hh\
     include/casm/app/EnumeratorHandler.hh\
     include/casm/app/EnumeratorHandler_impl.hh\
+    include/casm/app/FileEnumerator.hh\
     include/casm/app/HamiltonianModules.hh\
     include/casm/app/HamiltonianModules_impl.hh\
+    include/casm/app/LogRuntimeLibrary.hh\
     include/casm/app/ProjectBuilder.hh\
     include/casm/app/ProjectSettings.hh\
     include/casm/app/QueryHandler.hh\
@@ -37,6 +31,8 @@ casm_app_include_HEADERS = \
     include/casm/app/format.hh\
     include/casm/app/import.hh\
     include/casm/app/init.hh\
+    include/casm/app/json_io.hh\
+    include/casm/app/json_io_impl.hh\
     include/casm/app/monte.hh\
     include/casm/app/query.hh\
     include/casm/app/ref.hh\
@@ -49,6 +45,13 @@ casm_app_include_HEADERS = \
     include/casm/app/sym.hh\
     include/casm/app/update.hh\
     include/casm/app/view.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_app_io_json_includedir=$(includedir)/casm/app/io/json
+casm_app_io_json_include_HEADERS = \
+    include/casm/app/io/json/SpeciesSetParser.hh\
+    include/casm/app/io/json/SpeciesSetParser_impl.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -75,39 +78,46 @@ casm_basis_set_include_HEADERS = \
 
 casm_casm_io_includedir=$(includedir)/casm/casm_io
 casm_casm_io_include_HEADERS = \
-    include/casm/casm_io/DataFormatter.hh\
-    include/casm/casm_io/DataFormatterDecl.hh\
-    include/casm/casm_io/DataFormatterTools.hh\
-    include/casm/casm_io/DataFormatterTools_impl.hh\
-    include/casm/casm_io/DataFormatter_impl.hh\
-    include/casm/casm_io/DataStream.hh\
-    include/casm/casm_io/EigenDataStream.hh\
-    include/casm/casm_io/EnumIO.hh\
-    include/casm/casm_io/FileEnumerator.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
-    include/casm/casm_io/InputParser.hh\
-    include/casm/casm_io/InputParser_impl.hh\
     include/casm/casm_io/Log.hh\
-    include/casm/casm_io/SafeOfstream.hh\
-    include/casm/casm_io/VaspIO.hh\
-    include/casm/casm_io/jsonFile.hh\
-    include/casm/casm_io/jsonParser.hh
+    include/casm/casm_io/SafeOfstream.hh
 
 #-------------------------------------------------------------------------------#
 
-casm_casm_io_json_io_includedir=$(includedir)/casm/casm_io/json_io
-casm_casm_io_json_io_include_HEADERS = \
-    include/casm/casm_io/json_io/SpeciesSetParser.hh\
-    include/casm/casm_io/json_io/SpeciesSetParser_impl.hh\
-    include/casm/casm_io/json_io/clex.hh\
-    include/casm/casm_io/json_io/container.hh
+casm_casm_io_container_includedir=$(includedir)/casm/casm_io/container
+casm_casm_io_container_include_HEADERS = \
+    include/casm/casm_io/container/json_io.hh\
+    include/casm/casm_io/container/stream_io.hh
 
 #-------------------------------------------------------------------------------#
 
-casm_casm_io_stream_io_includedir=$(includedir)/casm/casm_io/stream_io
-casm_casm_io_stream_io_include_HEADERS = \
-    include/casm/casm_io/stream_io/container.hh
+casm_casm_io_dataformatter_includedir=$(includedir)/casm/casm_io/dataformatter
+casm_casm_io_dataformatter_include_HEADERS = \
+    include/casm/casm_io/dataformatter/DataFormatter.hh\
+    include/casm/casm_io/dataformatter/DataFormatterDecl.hh\
+    include/casm/casm_io/dataformatter/DataFormatterTools.hh\
+    include/casm/casm_io/dataformatter/DataFormatterTools_impl.hh\
+    include/casm/casm_io/dataformatter/DataFormatter_impl.hh\
+    include/casm/casm_io/dataformatter/DataStream.hh\
+    include/casm/casm_io/dataformatter/EigenDataStream.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_casm_io_enum_includedir=$(includedir)/casm/casm_io/enum
+casm_casm_io_enum_include_HEADERS = \
+    include/casm/casm_io/enum/io_traits.hh\
+    include/casm/casm_io/enum/json_io.hh\
+    include/casm/casm_io/enum/stream_io.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_casm_io_json_includedir=$(includedir)/casm/casm_io/json
+casm_casm_io_json_include_HEADERS = \
+    include/casm/casm_io/json/InputParser.hh\
+    include/casm/casm_io/json/InputParser_impl.hh\
+    include/casm/casm_io/json/jsonFile.hh\
+    include/casm/casm_io/json/jsonParser.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -177,7 +187,14 @@ casm_clex_include_HEADERS = \
     include/casm/clex/SupercellIO.hh\
     include/casm/clex/SupercellTraits.hh\
     include/casm/clex/Supercell_functions.hh\
-    include/casm/clex/Supercell_impl.hh
+    include/casm/clex/Supercell_impl.hh\
+    include/casm/clex/json_io.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_clex_io_json_includedir=$(includedir)/casm/clex/io/json
+casm_clex_io_json_include_HEADERS = \
+    include/casm/clex/io/json/ChemicalReference.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -254,6 +271,12 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
     include/casm/crystallography/jsonStruc.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_crystallography_io_includedir=$(includedir)/casm/crystallography/io
+casm_crystallography_io_include_HEADERS = \
+    include/casm/crystallography/io/VaspIO.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -861,6 +884,22 @@ casm_external_qhull_libqhullcpp_include_HEADERS = \
     include/casm/external/qhull/libqhullcpp/RoadError.h\
     include/casm/external/qhull/libqhullcpp/RoadLogEvent.h\
     include/casm/external/qhull/libqhullcpp/functionObjects.h
+
+#-------------------------------------------------------------------------------#
+
+casm_global_includedir=$(includedir)/casm/global
+casm_global_include_HEADERS = \
+    include/casm/global/definitions.hh\
+    include/casm/global/eigen.hh\
+    include/casm/global/enum.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_global_enum_includedir=$(includedir)/casm/global/enum
+casm_global_enum_include_HEADERS = \
+    include/casm/global/enum/io_traits.hh\
+    include/casm/global/enum/json_io.hh\
+    include/casm/global/enum/stream_io.hh
 
 #-------------------------------------------------------------------------------#
 

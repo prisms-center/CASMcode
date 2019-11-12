@@ -6,7 +6,7 @@
 
 // currently still relies on this for getting standard composition axes
 #include "casm/clex/ParamComposition.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {

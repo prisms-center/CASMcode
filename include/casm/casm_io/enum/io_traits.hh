@@ -1,5 +1,5 @@
-#ifndef CASM_EnumIO
-#define CASM_EnumIO
+#ifndef CASM_support_enum_io_traits
+#define CASM_support_enum_io_traits
 
 #include <iostream>
 #include <string>
@@ -8,14 +8,12 @@
 #include <map>
 #include <vector>
 #include <set>
-#include "casm/misc/CASM_TMP.hh"
-#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/Help.hh"
-#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 
   class jsonParser;
+  template<typename T> struct traits;
 
   /// \defgroup casmIO IO
   ///
@@ -214,58 +212,6 @@ namespace CASM {
   };  \
   template<> inline std::string singleline_help<ENUM>(){return singleline_enum_help<ENUM>();} \
   template<> inline std::string multiline_help<ENUM>(){return multiline_enum_help<ENUM>();} \
-
-#define ENUM_IO_DECL(ENUM) \
-  std::ostream &operator<<(std::ostream &sout, const ENUM& val); \
-  \
-  std::istream &operator>>(std::istream &sin, ENUM& val); \
-  \
-  jsonParser &to_json(const ENUM &val, jsonParser &json); \
-  \
-  void from_json(ENUM& val, const jsonParser& json); \
-
-#define ENUM_IO_DEF(ENUM) \
-  std::ostream &operator<<(std::ostream &sout, const ENUM& val) { \
-    sout << to_string<ENUM>(val); \
-    return sout; \
-  } \
-  \
-  std::istream &operator>>(std::istream &sin, ENUM& val) { \
-    std::string s; \
-    sin >> s; \
-    val = from_string<ENUM>(s); \
-    return sin; \
-  } \
-  \
-  jsonParser &to_json(const ENUM &val, jsonParser &json) { \
-    return to_json(to_string<ENUM>(val), json); \
-  } \
-  \
-  void from_json(ENUM& val, const jsonParser& json) { \
-    val = from_string<ENUM>(json.get<std::string>()); \
-  } \
-
-#define ENUM_IO_INLINE(ENUM) \
-  inline std::ostream &operator<<(std::ostream &sout, const ENUM& val) { \
-    sout << to_string<ENUM>(val); \
-    return sout; \
-  } \
-  \
-  inline std::istream &operator>>(std::istream &sin, ENUM& val) { \
-    std::string s; \
-    sin >> s; \
-    val = from_string<ENUM>(s); \
-    return sin; \
-  } \
-  \
-  inline jsonParser &to_json(const ENUM &val, jsonParser &json) { \
-    return to_json(to_string<ENUM>(val), json); \
-  } \
-  \
-  inline void from_json(ENUM& val, const jsonParser& json) { \
-    val = from_string<ENUM>(json.get<std::string>()); \
-  } \
-
 
 }
 

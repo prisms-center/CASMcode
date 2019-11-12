@@ -7,14 +7,14 @@
 #include<string>
 #include<boost/algorithm/string.hpp>
 #include "casm/basis_set/DoFDecl.hh"
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/eigen.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/json/jsonParser.hh"
+#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
 

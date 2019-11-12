@@ -13,7 +13,7 @@ AC_CONFIG_MACRO_DIR([build-aux/m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects 1.9 tar-ustar])
 
 
-AC_CONFIG_SRCDIR([src/casm/CASM_global_definitions.cc])
+AC_CONFIG_SRCDIR([src/casm/crystallography])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
@@ -33,7 +33,7 @@ AC_DISABLE_STATIC
 if test "$enable_static" != "no"; then
     echo "Sorry Dave, I can't let you do that. Static libraries are currently disabled.";
     exit 1;
-fi; 
+fi;
 
 AX_CXX_COMPILE_STDCXX_11
 BOOSTV=1.54

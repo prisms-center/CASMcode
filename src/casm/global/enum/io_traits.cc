@@ -1,5 +1,4 @@
-#include "casm/CASM_global_enum.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/global/enum/io_traits.hh"
 
 namespace CASM {
 
@@ -12,8 +11,6 @@ namespace CASM {
     {COORD_TYPE::INTEGRAL, {"INTEGRAL", "Integral", "integral"} }
   };
 
-  ENUM_IO_DEF(COORD_TYPE)
-
 
   const std::string traits<PERIODICITY_TYPE>::name = "periodicity_type";
 
@@ -22,8 +19,6 @@ namespace CASM {
     {PERIODICITY_TYPE::PERIODIC, {"PERIODIC"} },
     {PERIODICITY_TYPE::APERIODIC, {"APERIODIC", "LOCAL"} }
   };
-
-  ENUM_IO_DEF(PERIODICITY_TYPE)
 
 
   const std::string traits<EQUIVALENCE_TYPE>::name = "equivalence_type";
@@ -34,8 +29,6 @@ namespace CASM {
     {EQUIVALENCE_TYPE::CONFIG, {"CONFIG", "config"} }
   };
 
-  ENUM_IO_DEF(EQUIVALENCE_TYPE)
-
 
   const std::string traits<CELL_TYPE>::name = "cell_type";
 
@@ -44,10 +37,8 @@ namespace CASM {
     {CELL_TYPE::SCEL, {"SCEL"} }
   };
 
-  ENUM_IO_DEF(CELL_TYPE)
 
-
-  const std::string traits<OnError>::name = "cell_type";
+  const std::string traits<OnError>::name = "on_error";
 
   const std::multimap<OnError, std::vector<std::string> > traits<OnError>::strval = {
     {OnError::THROW, {"THROW", "throw"} },
@@ -55,8 +46,4 @@ namespace CASM {
     {OnError::CONTINUE, {"CONTINUE", "continue"}}
   };
 
-  ENUM_IO_DEF(OnError)
-
 }
-
-

@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/misc/TypeInfo.hh"
 #include "casm/misc/cloneable_ptr.hh"

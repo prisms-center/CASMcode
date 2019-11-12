@@ -1,6 +1,6 @@
 #include "casm/database/MappedProperties.hh"
 
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
 
@@ -14,6 +14,7 @@ namespace CASM {
   };
 
   ENUM_IO_DEF(CASM::DB::ScoreMappedProperties::Method)
+  ENUM_JSON_IO_DEF(CASM::DB::ScoreMappedProperties::Method)
 
 }
 
@@ -142,4 +143,3 @@ namespace CASM {
 
   }
 }
-

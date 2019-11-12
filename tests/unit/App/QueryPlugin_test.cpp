@@ -7,6 +7,7 @@
 #include <boost/filesystem.hpp>
 
 #include "Common.hh"
+#include "ZrOProj.hh"
 #include "casm/app/casm_functions.hh"
 
 using namespace CASM;
@@ -67,4 +68,3 @@ TEST(QueryPlugin, Test1) {
   EXPECT_TRUE(check(R"(ccasm query -k 'test_configname')"));
 
 }
-

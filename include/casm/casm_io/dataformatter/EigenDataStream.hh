@@ -1,8 +1,8 @@
 #ifndef EIGENDATASTREAM_HH
 #define EIGENDATASTREAM_HH
 
-#include "casm/CASM_global_Eigen.hh"
-#include "casm/casm_io/DataStream.hh"
+#include "casm/global/eigen.hh"
+#include "casm/casm_io/dataformatter/DataStream.hh"
 #include "casm/external/Eigen/Dense"
 
 namespace CASM {

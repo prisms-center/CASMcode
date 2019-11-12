@@ -8,7 +8,7 @@
 #include "casm/enumerator/Enumerator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
   namespace Completer {

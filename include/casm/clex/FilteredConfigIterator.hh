@@ -3,8 +3,8 @@
 
 #include <iterator>
 
-#include "casm/CASM_global_definitions.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/global/definitions.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 #include "casm/clex/Configuration.hh"
 
 namespace CASM {
