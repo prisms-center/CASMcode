@@ -700,8 +700,6 @@ libcasm_la_SOURCES = \
     include/casm/system/Popen.hh\
     include/casm/system/RuntimeLibrary.hh\
     include/casm/version/version.hh\
-    src/casm/CASM_global_definitions.cc\
-    src/casm/CASM_global_enum.cc\
     src/casm/app/APICommand.cc\
     src/casm/app/AppIO.cc\
     src/casm/app/CLIParse.cc\
