@@ -607,7 +607,7 @@ namespace CASM {
       /// Construct counter
       Eigen::VectorXi max_count(proto.size());
       for(int i = 0; i < proto.size(); ++i) {
-        max_count(i) = proto.prim().basis()[proto[i].sublat()].occupant_dof().size() - 1;
+        max_count(i) = proto.prim().basis()[proto[i].sublattice()].occupant_dof().size() - 1;
       }
       m_occ_counter = EigenCounter<Eigen::VectorXi>(
                         Eigen::VectorXi::Zero(proto.size()),

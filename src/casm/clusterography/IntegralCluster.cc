@@ -123,7 +123,8 @@ namespace CASM {
 
     if(coord_type == INTEGRAL) {
       //UnitCellCoord coord(clust.prim());
-      from_json(clust.elements(), json[name], clust.prim());
+      //  !!TODO!!  from_json(clust.elements(), json[name], clust.prim());
+      from_json(clust.elements(), json[name]);
     }
     else {
       clust.elements().clear();

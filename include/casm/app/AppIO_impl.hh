@@ -184,13 +184,13 @@ namespace CASM {
       if(opt.coord_type == INTEGRAL) {
         out << coord;
         out << " ";
-        coord.site().occupant_dof().print(out);
+        //  !!TODO!!  coord.site().occupant_dof().print(out);
         out << std::flush;
       }
       else {
-        coord.site().print(out);
+        //  !!TODO!!  coord.site().print(out);
       }
-      out << "  basis_index: " << coord.sublat() << "  clust_index: " << np++ << " ";
+      out << "  basis_index: " << coord.sublattice() << "  clust_index: " << np++ << " ";
       if(opt.delim)
         out << opt.delim;
       out << std::flush;

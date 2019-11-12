@@ -43,7 +43,9 @@ namespace CASM {
     }
 
     const Molecule &SpeciesLocation::mol() const {
-      return uccoord.sublat_site().occupant_dof()[occ];
+      //  !!TODO!!  return uccoord.sublat_site().occupant_dof()[occ];
+      Molecule *fixme;
+      return *fixme;
     }
 
     const std::string &SpeciesLocation::species() const {
@@ -72,7 +74,8 @@ namespace CASM {
 
   Kinetics::SpeciesLocation jsonConstructor<Kinetics::SpeciesLocation>::from_json(const jsonParser &json, const Structure &prim) {
     return Kinetics::SpeciesLocation {
-      jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
+      //  !!TODO!!  jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
+      jsonConstructor<UnitCellCoord>::from_json(json["uccoord"]),
       json["occ"].get<Index>(),
       json["pos"].get<Index>()
     };
@@ -136,8 +139,8 @@ namespace CASM {
     }
 
     SpeciesTrajectory &SpeciesTrajectory::apply_sym(const SymOp &op) {
-      from.uccoord.apply_sym(op);
-      to.uccoord.apply_sym(op);
+      //  !!TODO!!  from.uccoord.apply_sym(op);
+      //  !!TODO!!  to.uccoord.apply_sym(op);
 
       //MOLECULE_SUPPORT: apply permutation to to/from_value & to/from_species_index
       return *this;
@@ -593,16 +596,16 @@ namespace CASM {
       Eigen::Vector3d result;
       for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); it++) {
         //vector from -> input
-        Coordinate v1 = (uccoord.coordinate() - it->from.uccoord.coordinate());
+        Coordinate v1 = (uccoord.coordinate(diff_trans.prim()) - it->from.uccoord.coordinate(diff_trans.prim()));
         //vector from -> to
-        Coordinate v2 = (it->to.uccoord.coordinate() - it->from.uccoord.coordinate());
+        Coordinate v2 = (it->to.uccoord.coordinate(diff_trans.prim()) - it->from.uccoord.coordinate(diff_trans.prim()));
         // projection of v1 onto v2
         Eigen::Vector3d v3 = v1.const_cart().dot(v2.const_cart()) / (v1.const_cart().norm()) / (v2.const_cart().norm()) * v2.const_cart();
         double curr_dist;
         Eigen::Vector3d curr_vec;
         //if v3 length is greater than v2 then input is closer to "to" than the path
         if(v3.norm() > v2.const_cart().norm()) {
-          curr_vec = it->to.uccoord.coordinate().const_cart() - uccoord.coordinate().const_cart();
+          curr_vec = it->to.uccoord.coordinate(diff_trans.prim()).const_cart() - uccoord.coordinate(diff_trans.prim()).const_cart();
           curr_dist = curr_vec.norm();
         }
         //if v3 is in opposite direction of v2 then input is closer to "from" than the path
@@ -702,14 +705,14 @@ namespace CASM {
       for(int i = 0; i < paths_to_check.size(); ++i) {
         for(int j = i + 1; j < paths_to_check.size(); ++j) {
           //vector from -> to path 1
-          Eigen::Vector3d v1 = (paths_to_check[i].to.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()).const_cart();
+          Eigen::Vector3d v1 = (paths_to_check[i].to.uccoord.coordinate(diff_trans.prim()) - paths_to_check[i].from.uccoord.coordinate(diff_trans.prim())).const_cart();
           //vector from -> to path 2
-          Eigen::Vector3d v2 = (paths_to_check[j].to.uccoord.coordinate() - paths_to_check[j].from.uccoord.coordinate()).const_cart();
+          Eigen::Vector3d v2 = (paths_to_check[j].to.uccoord.coordinate(diff_trans.prim()) - paths_to_check[j].from.uccoord.coordinate(diff_trans.prim())).const_cart();
           // simplification of the following problem
           // parametric representation of path 1 = parametric representation of path 2
           // paths_to_check[i].from.uccoord.coordinate() + t*v1 = paths_to_check[j].from.uccoord.coordinate() + s*v2
           // v3 =  paths_to_check[j].from.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()
-          Eigen::Vector3d v3 = (paths_to_check[j].from.uccoord.coordinate() - paths_to_check[i].from.uccoord.coordinate()).const_cart();
+          Eigen::Vector3d v3 = (paths_to_check[j].from.uccoord.coordinate(diff_trans.prim()) - paths_to_check[i].from.uccoord.coordinate(diff_trans.prim())).const_cart();
           Eigen::MatrixXd soln(2, 1);
           Eigen::Matrix2d m;
           Eigen::MatrixXd b(2, 1);
@@ -820,12 +823,12 @@ namespace CASM {
           if(traj.from.species().length() > name_width) name_width = traj.from.species().length();
           Eigen::Vector3d vec_from, vec_to;
           if(this->opt.coord_type == CART) {
-            vec_from = traj.from.uccoord.coordinate().cart();
-            vec_to = traj.to.uccoord.coordinate().cart();
+            vec_from = traj.from.uccoord.coordinate(trans.prim()).cart();
+            vec_to = traj.to.uccoord.coordinate(trans.prim()).cart();
           }
           else {
-            vec_from = traj.from.uccoord.coordinate().frac();
-            vec_to = traj.to.uccoord.coordinate().frac();
+            vec_from = traj.from.uccoord.coordinate(trans.prim()).frac();
+            vec_to = traj.to.uccoord.coordinate(trans.prim()).frac();
           }
           width = print_matrix_width(out, vec_from, width);
           width = print_matrix_width(out, vec_to, width);
@@ -838,13 +841,13 @@ namespace CASM {
           out << std::setw(name_width) << traj.from.species() << ": ";
           {
             const auto &obj = traj.from;
-            obj.uccoord.coordinate().print(out, 0, format);
+            obj.uccoord.coordinate(trans.prim()).print(out, 0, format);
             out << " : " << obj.occ << " " << obj.pos;
           }
           out << "  ->  ";
           {
             const auto &obj = traj.to;
-            obj.uccoord.coordinate().print(out, 0, format);
+            obj.uccoord.coordinate(trans.prim()).print(out, 0, format);
             out << " : " << obj.occ << " " << obj.pos;
           }
           if(this->opt.delim)
@@ -872,12 +875,12 @@ namespace CASM {
           out << std::setw(name_width) << traj.from.species() << ": ";
           {
             const auto &obj = traj.from;
-            out << obj.uccoord.sublat() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
+            out << obj.uccoord.sublattice() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
           }
           out << "  ->  ";
           {
             const auto &obj = traj.to;
-            out << obj.uccoord.sublat() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
+            out << obj.uccoord.sublattice() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
           }
           if(this->opt.delim)
             out << this->opt.delim;

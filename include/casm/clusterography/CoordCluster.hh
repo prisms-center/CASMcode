@@ -153,7 +153,8 @@ namespace CASM {
     friend GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>;
 
     Coordinate coordinate_impl(size_type i) const {
-      return static_cast<Coordinate>(this->element(i));
+      return this->element(i).coordinate(*(this->m_prim_ptr));   //???
+      //  !!TODO!!  return static_cast<Coordinate>(this->element(i));
     }
 
   private:

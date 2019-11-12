@@ -35,8 +35,8 @@ namespace CASM {
   /// - So a UnitCellCoord, u, is transformed by a SymOp, op, like:
   ///   \code
   ///   const SymBasisPermute &rep = *op.get_basis_permute_rep(u.unit().basis_permutation_symrep_ID());
-  ///   u.unitcell() = rep.matrix()*u.unitcell() + rep.data()[u.sublat()].unitcell();
-  ///   u.sublat() = rep.data()[u.sublat()].sublat();
+  ///   u.unitcell() = rep.matrix()*u.unitcell() + rep.data()[u.sublattice()].unitcell();
+  ///   u.sublattice() = rep.data()[u.sublattice()].sublattice();
   ///   \endcode
   /// - Additional translations, such as those in supercell factor group operations,
   ///   may be stored in SymOp::integral_tau(). Those additional contributions

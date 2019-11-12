@@ -16,24 +16,24 @@ namespace CASM {
       return UnitCell(lround(lattice_point.const_frac()));
     }
 
-    UnitCellCoord::UnitCellCoord(const PrimType &prim, const Coordinate &coord, double tol) {
-      Coordinate coord_in_prim(prim.lattice());
-      coord_in_prim.cart() = coord.cart();
+    /* UnitCellCoord::UnitCellCoord(const PrimType &prim, const Coordinate &coord, double tol) { */
+    /*   Coordinate coord_in_prim(prim.lattice()); */
+    /*   coord_in_prim.cart() = coord.cart(); */
 
-      for(Index b = 0; b < prim.basis().size(); ++b) {
-        auto coord_distance_to_basis_site = coord_in_prim - prim.basis()[b];
-        auto rounded_distance = coord_distance_to_basis_site;
-        rounded_distance.frac() = round(coord_distance_to_basis_site.const_frac());
+    /*   for(Index b = 0; b < prim.basis().size(); ++b) { */
+    /*     auto coord_distance_to_basis_site = coord_in_prim - prim.basis()[b]; */
+    /*     auto rounded_distance = coord_distance_to_basis_site; */
+    /*     rounded_distance.frac() = round(coord_distance_to_basis_site.const_frac()); */
 
-        if((coord_distance_to_basis_site - rounded_distance).const_cart().norm() < tol) {
-          *this = UnitCellCoord(b, lround(coord_distance_to_basis_site.const_frac()));
-          return;
-        }
-      }
+    /*     if((coord_distance_to_basis_site - rounded_distance).const_cart().norm() < tol) { */
+    /*       *this = UnitCellCoord(b, lround(coord_distance_to_basis_site.const_frac())); */
+    /*       return; */
+    /*     } */
+    /*   } */
 
-      throw std::runtime_error("Error in 'UnitCellCoord(CoordType coord, const StrucType& struc, double tol)'\n"
-                               "  No matching basis site found.");
-    }
+    /* throw std::runtime_error("Error in 'UnitCellCoord(CoordType coord, const StrucType& struc, double tol)'\n" */
+    /*                          "  No matching basis site found."); */
+    /* } */
 
     /// \brief Get corresponding coordinate
     Coordinate UnitCellCoord::coordinate(const PrimType &prim) const {

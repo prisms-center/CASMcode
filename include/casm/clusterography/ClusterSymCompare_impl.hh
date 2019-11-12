@@ -4,6 +4,7 @@
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 
@@ -127,7 +128,7 @@ namespace CASM {
       return obj;
     }
     auto pos = position(obj);
-    this->m_spatial_transform = SymOp::translation(-pos.lattice().lat_column_mat() * pos.unitcell().template cast<double>());
+    //  !!TODO!!  this->m_spatial_transform = SymOp::translation(-pos.lattice().lat_column_mat() * pos.unitcell().template cast<double>());
     return obj - pos.unitcell();
   }
 
@@ -178,7 +179,7 @@ namespace CASM {
       return obj;
     }
     auto pos = position(obj);
-    this->m_spatial_transform = SymOp::translation(pos.lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
+    //  !!TODO!!  this->m_spatial_transform = SymOp::translation(pos.lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
     return obj + (m_prim_grid->within(pos).unitcell() - pos.unitcell());
   }
 

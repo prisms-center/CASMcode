@@ -57,7 +57,7 @@ namespace CASM {
       stream.precision(5);
       stream.width(9);
       _prototype.coordinate(np).print(stream);
-      stream << "  basis_index: " << _prototype[np].sublat() << "  clust_index: " << np << " ";
+      stream << "  basis_index: " << _prototype[np].sublattice() << "  clust_index: " << np << " ";
       if(delim)
         stream << delim;
     }

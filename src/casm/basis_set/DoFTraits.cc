@@ -98,7 +98,7 @@ namespace CASM {
           //Put neighborhood in a sensible order:
           std::map<Index, std::set<Index> > sublat_nhood;
           for(auto const &ucc : nbor.second) {
-            sublat_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
+            sublat_nhood[ucc.sublattice()].insert(_nlist.neighbor_index(ucc));
             //std::cout << "ucc : " << ucc << "; n: " << _nlist.neighbor_index(ucc)  << "\n";
           }
 
@@ -175,7 +175,7 @@ namespace CASM {
         std::map<Index, std::set<Index> > tot_nhood;
         for(auto const &nbor : _nhood)
           for(auto const &ucc : nbor.second)
-            tot_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
+            tot_nhood[ucc.sublattice()].insert(_nlist.neighbor_index(ucc));
 
         std::stringstream ssvar, ssfunc;
 
@@ -227,13 +227,13 @@ namespace CASM {
                                          nullstream);
       /*
       for(Index no = 0; no < asym_unit.size(); no++) {
-        Index nb = asym_unit[no][0][0].sublat();
+        Index nb = asym_unit[no][0][0].sublattice();
         if(_site_bases[nb].size() == 0)
           continue;
         stream <<
                indent << "// Occupation Function tables for basis sites in asymmetric unit " << no << ":\n";
         for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
-          nb = asym_unit[no][ne][0].sublat();
+          nb = asym_unit[no][ne][0].sublattice();
           stream <<
                  indent << "//   - basis site " << nb << ":\n";
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
@@ -320,13 +320,13 @@ namespace CASM {
       Index max_nf = 0;
       Index max_na = 0;
       for(Index no = 0; no < asym_unit.size(); no++) {
-        Index nb = asym_unit[no][0][0].sublat();
+        Index nb = asym_unit[no][0][0].sublattice();
         if(_site_bases[nb].size() == 0)
           continue;
 
 
         for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
-          nb = asym_unit[no][ne][0].sublat();
+          nb = asym_unit[no][ne][0].sublattice();
           if(!_prim.basis()[nb].has_dof(type_name()))
             continue;
           stream <<
@@ -434,7 +434,7 @@ namespace CASM {
       /*
         for(const auto &asym : asym_unit) {
         for(const auto &equiv : asym) {
-        Index nb = equiv[0].sublat();
+        Index nb = equiv[0].sublattice();
         for(Index f = 0; f < _site_bases[nb].size(); f++) {
 
         for(Index s = 0; s < _prim.basis()[nb].occupant_dof().size(); s++) {

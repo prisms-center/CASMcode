@@ -389,7 +389,7 @@ namespace CASM {
         std::vector<std::string> formulae(_bset_orbit[0].size());
 
         Index nbor_ind = _nlist.neighbor_index(nbor.first);
-        Index sublat_ind = nbor.first.sublat();
+        Index sublat_ind = nbor.first.sublattice();
 
         // loop over site basis functions
         BasisSet site_basis(_site_bases[sublat_ind]);
@@ -524,7 +524,7 @@ namespace CASM {
       //Find ucc's that might be translationally equivalent to current neighbor
       for(IntegralCluster const &equiv : _clust_orbit) {
         for(UnitCellCoord const &site : equiv.elements()) {
-          if(site.sublat() == nbor.sublat()) {
+          if(site.sublattice() == nbor.sublattice()) {
             trans_set.insert(site);
           }
         }

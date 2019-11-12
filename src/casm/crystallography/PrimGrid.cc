@@ -198,7 +198,7 @@ namespace CASM {
 
     /// map a UnitCellCoord inside the supercell
     UnitCellCoord PrimGrid::within(const UnitCellCoord &bijk)const {
-      return UnitCellCoord(bijk.sublat(), within(bijk.unitcell()));
+      return UnitCellCoord(bijk.sublattice(), within(bijk.unitcell()));
     }
 
     //**********************************************************************************************
@@ -268,7 +268,7 @@ namespace CASM {
             }
 
             old_l = mnp_count[0] + mnp_count[1] * m_stride[0] + mnp_count[2] * m_stride[1] + nb * size();
-            new_l = new_mnp[0] + new_mnp[1] * m_stride[0] + new_mnp[2] * m_stride[1] + b_permute.at(nb).sublat() * size();
+            new_l = new_mnp[0] + new_mnp[1] * m_stride[0] + new_mnp[2] * m_stride[1] + b_permute.at(nb).sublattice() * size();
             assert(old_l < b_permute.size()*size() && new_l < b_permute.size()*size());
             // We have found uccoord(new_l) = symop*uccoord(old_l) -- this describes how indexing of the uccoordinates change
             // However, the indexing of the uccoords remains fixed, and we want to describe the permutation of something *at* the sites,

@@ -40,11 +40,15 @@ namespace CASM {
     }
 
     const Molecule &OccupationTransformation::from_mol() const {
-      return this->uccoord.sublat_site().occupant_dof()[from_value];
+      //  !!TODO!!  return this->uccoord.sublattice_site().occupant_dof()[from_value];
+      Molecule *fixme;
+      return *fixme;
     }
 
     const Molecule &OccupationTransformation::to_mol() const {
-      return this->uccoord.sublat_site().occupant_dof()[to_value];
+      //  !!TODO!!  return this->uccoord.sublattice_site().occupant_dof()[to_value];
+      Molecule *fixme;
+      return *fixme;
     }
 
     bool OccupationTransformation::operator<(const OccupationTransformation &B) const {
@@ -57,7 +61,7 @@ namespace CASM {
     }
 
     OccupationTransformation &OccupationTransformation::apply_sym(const SymOp &op) {
-      uccoord.apply_sym(op);
+      //  !!TODO!!  uccoord.apply_sym(op);
       return *this;
     }
 
@@ -106,7 +110,7 @@ namespace CASM {
     std::map<std::string, Index> _species_count = empty_species_count(prim);
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
-      const Molecule &mol = t.uccoord.sublat_site().occupant_dof()[t.from_value];
+      const Molecule &mol = t.uccoord.sublattice_site(prim).occupant_dof()[t.from_value];
       for(const AtomPosition &species_pos : mol.atoms()) {
         _species_count[species_pos.name()]++;
       }
@@ -132,7 +136,7 @@ namespace CASM {
     std::map<std::string, Index> _species_count = empty_species_count(prim);
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
-      const Molecule &mol = t.uccoord.sublat_site().occupant_dof()[t.to_value];
+      const Molecule &mol = t.uccoord.sublattice_site(prim).occupant_dof()[t.to_value];
       for(const AtomPosition &species_pos : mol.atoms()) {
         _species_count[species_pos.name()]++;
       }
@@ -159,7 +163,7 @@ namespace CASM {
 
   Kinetics::OccupationTransformation jsonConstructor<Kinetics::OccupationTransformation>::from_json(const jsonParser &json, const OccupationTransformation::PrimType &prim) {
     return Kinetics::OccupationTransformation(
-             jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
+             jsonConstructor<UnitCellCoord>::from_json(json["uccoord"]),
              json["from_value"].get<Index>(),
              json["to_value"].get<Index>());
   }

@@ -76,7 +76,7 @@ namespace CASM {
       //  (includes translationally equivalent clusters)
       for(int ns_i = 0; ns_i < coord.size(); ++ns_i) {
         for(int ns_j = 0; ns_j < coord.size(); ++ns_j) {
-          *result++ = UnitCellCoord(coord[ns_j].sublat(), coord[ns_j].unitcell() - coord[ns_i].unitcell());
+          *result++ = UnitCellCoord(coord[ns_j].sublattice(), coord[ns_j].unitcell() - coord[ns_i].unitcell());
         }
       }
     }

@@ -110,7 +110,7 @@ namespace CASM {
 
       explicit UnitCellCoord() : UnitCellCoord(0, 0, 0, 0) {}
 
-      UnitCellCoord(const PrimType &prim, const Coordinate &coord, double tol);
+      UnitCellCoord(const Coordinate &coord, double tol);
 
       UnitCellCoord(const UnitCellCoord &B) = default;
 
@@ -132,6 +132,7 @@ namespace CASM {
         return m_sublat;
       }
 
+      //TODO: This should take a Lattice not a PrimType
       /// \brief Get corresponding coordinate
       Coordinate coordinate(const PrimType &prim) const;
 

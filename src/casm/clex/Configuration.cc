@@ -1664,7 +1664,8 @@ namespace CASM {
     for(Index s = 0 ; s < m_motif_scel->num_sites() ; s++) {
 
       // apply symmetry to re-orient and find unit cell coord
-      UnitCellCoord oriented_uccoord = copy_apply(*m_op, m_motif_scel->uccoord(s));
+      //  !!TODO!!  UnitCellCoord oriented_uccoord = copy_apply(*m_op, m_motif_scel->uccoord(s));
+      UnitCellCoord oriented_uccoord;// = copy_apply(*m_op, m_motif_scel->uccoord(s));
 
       // for each unit cell of the oriented motif in the supercell, copy the occupation
       for(Index i = 0 ; i < prim_grid.size() ; i++) {
@@ -1672,7 +1673,7 @@ namespace CASM {
         Index prim_motif_tile_ind = m_scel->prim_grid().find(prim_grid.scel_coord(i));
 
         UnitCellCoord mc_uccoord(
-          oriented_uccoord.sublat(),
+          oriented_uccoord.sublattice(),
           m_scel->prim_grid().unitcell(prim_motif_tile_ind) + oriented_uccoord.unitcell());
 
         m_index_table[s].push_back(m_scel->linear_index(mc_uccoord));

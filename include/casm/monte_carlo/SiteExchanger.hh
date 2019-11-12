@@ -25,8 +25,8 @@ namespace CASM {
         return m_variable_sites;
       }
 
-      /// \brief sublat()[i] is the sublattice index for site variable_sites()[i]
-      const std::vector<int> &sublat() const {
+      /// \brief sublattice()[i] is the sublattice index for site variable_sites()[i]
+      const std::vector<int> &sublattice() const {
         return m_sublat;
       }
 
