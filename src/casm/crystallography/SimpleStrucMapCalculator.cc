@@ -124,7 +124,7 @@ namespace CASM {
                                  pgrid.scel_lattice(), CART);
 
           Coordinate parent_coord = pgrid.scel_coord(i / pgrid.size());
-          parent_coord.cart() += p_info.coords.col(i % cgrid.size());
+          parent_coord.cart() += p_info.coords.col(i % pgrid.size());
 
           child_coord.min_dist(parent_coord, disp_coord);
           _node.disp(i) = disp_coord.const_cart();

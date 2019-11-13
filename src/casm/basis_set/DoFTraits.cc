@@ -13,17 +13,58 @@
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/misc/ParsingDictionary.hh"
+
 
 namespace CASM {
 
+  template<>
+  DoFType::TraitsDictionary make_parsing_dictionary<DoFType::Traits>() {
+    //std::cout << "Making Parsing dictionary... \n";
+    /*DoFType::register_traits(DoFType::occupation());
+    DoFType::register_traits(DoFType::displacement());
+    DoFType::register_traits(DoFType::magspin());
+    DoFType::register_traits(DoFType::EAstrain());
+    DoFType::register_traits(DoFType::Hstrain());
+    DoFType::register_traits(DoFType::GLstrain());*/
+
+    DoFType::TraitsDictionary dict;
+
+    dict.insert(
+      DoFType::occupation(),
+      DoFType::displacement(),
+      DoFType::magspin(),
+      DoFType::EAstrain(),
+      DoFType::Hstrain(),
+      DoFType::GLstrain());
+    return dict;
+  }
+
   namespace DoFType {
+    namespace Local {
+      static TraitsDictionary &_traits_dict() {
+        static TraitsDictionary static_dict = make_parsing_dictionary<Traits>();
+        return static_dict;
+
+      }
+    }
+
+    void register_traits(Traits const &_traits) {
+      Local::_traits_dict().insert(_traits);
+    }
+
+    Traits const &traits(std::string const &dof_key) {
+      return Local::_traits_dict().lookup(dof_key);
+    }
+
+
 
     void Traits::to_json(DoFSet const &_out, jsonParser &_json) const {
       bool simple = false;
-      if(_out.dim() == standard_var_names().size() && _out.basis().isIdentity()) {
+      if(_out.dim() == val_traits().standard_var_names().size() && _out.basis().isIdentity()) {
         simple = true;
         for(Index i = 0; i < _out.dim(); ++i) {
-          if(_out[i].var_name() != standard_var_names()[i]) {
+          if(_out[i].var_name() != val_traits().standard_var_names()[i]) {
             simple = false;
             break;
           }
@@ -51,10 +92,10 @@ namespace CASM {
       jsonParser result;
       result.put_obj();
 
-      if(global())
-        result["value"] = _dof.global_dof(type_name()).standard_values();
+      if(val_traits().global())
+        result["value"] = _dof.global_dof(name()).standard_values();
       else
-        result["value"] = _dof.local_dof(type_name()).standard_values().transpose();
+        result["value"] = _dof.local_dof(name()).standard_values().transpose();
       return result;
 
     }
@@ -67,12 +108,12 @@ namespace CASM {
                                                         std::string const &indent) const {
 
       std::stringstream ss;
-      if(global()) {
+      if(val_traits().global()) {
         ss <<
-           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) != ParamPack::READ) {\n";
-        for(Index a = 0; a < _prim.global_dof(type_name()).size(); ++a) {
-          ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a
-             << ", eval_" << type_name() << "_var(" << a << "));\n";
+           indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n";
+        for(Index a = 0; a < _prim.global_dof(name()).size(); ++a) {
+          ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a
+             << ", eval_" << name() << "_var(" << a << "));\n";
         }
         ss << indent << "  }\n";
 
@@ -106,12 +147,12 @@ namespace CASM {
             Index b = sublat.first;
             for(Index n : sublat.second) {
 
-              if(!_prim.basis()[b].has_dof(type_name()))
+              if(!_prim.basis()[b].has_dof(name()))
                 continue;
 
-              for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
-                ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a << ", " << n
-                      << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
+              for(Index a = 0; a < _prim.basis()[b].dof(name()).size(); ++a) {
+                ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a << ", " << n
+                      << ", eval_" << name() << "_var_" << b << "_" << a << "(" << n << "));\n";
               }
 
 
@@ -125,7 +166,7 @@ namespace CASM {
           }
 
           ss <<
-             indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) != ParamPack::READ) {\n" <<
+             indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n" <<
              ssvar.str() <<
              indent << "  }\n";
 
@@ -151,12 +192,12 @@ namespace CASM {
                                                          std::string const &indent) const {
       std::stringstream ss;
 
-      if(global()) {
+      if(val_traits().global()) {
         ss <<
-           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) != ParamPack::READ) {\n";
-        for(Index a = 0; a < _prim.global_dof(type_name()).size(); ++a) {
-          ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a
-             << ", eval_" << type_name() << "_var(" << a << "));\n";
+           indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n";
+        for(Index a = 0; a < _prim.global_dof(name()).size(); ++a) {
+          ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a
+             << ", eval_" << name() << "_var(" << a << "));\n";
         }
         ss << indent << "  }\n";
 
@@ -183,12 +224,12 @@ namespace CASM {
           Index b = nbor.first;
           for(Index n : nbor.second) {
 
-            if(!_prim.basis()[b].has_dof(type_name()))
+            if(!_prim.basis()[b].has_dof(name()))
               continue;
 
-            for(Index a = 0; a < _prim.basis()[b].dof(type_name()).size(); ++a) {
-              ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << type_name() << "_var_param_key, " << a << ", " << n
-                    << ", eval_" << type_name() << "_var_" << b << "_" << a << "(" << n << "));\n";
+            for(Index a = 0; a < _prim.basis()[b].dof(name()).size(); ++a) {
+              ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a << ", " << n
+                    << ", eval_" << name() << "_var_" << b << "_" << a << "(" << n << "));\n";
             }
 
             if(requires_site_basis()) {
@@ -200,7 +241,7 @@ namespace CASM {
           }
         }
         ss <<
-           indent << "  if(m_params.eval_mode(m_" << type_name() << "_var_param_key) != ParamPack::READ) {\n" <<
+           indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n" <<
            ssvar.str() <<
            indent << "  }\n";
         if(requires_site_basis()) {
@@ -276,19 +317,19 @@ namespace CASM {
     std::string Traits::clexulator_private_method_declarations_string(Structure const &_prim,
                                                                       std::vector<BasisSet> const &_site_bases,
                                                                       const std::string &indent) const {
-      //std::cout << "PRIVATE METHOD DECLARATIONS FOR DOF " << type_name() << "\n";
+      //std::cout << "PRIVATE METHOD DECLARATIONS FOR DOF " << name() << "\n";
       std::stringstream stream;
-      if(global()) {
-        //std::cout << "**GLOBAL PRIVATE METHOD DECLARATIONS FOR DOF " << type_name() << "\n";
+      if(val_traits().global()) {
+        //std::cout << "**GLOBAL PRIVATE METHOD DECLARATIONS FOR DOF " << name() << "\n";
         stream <<
-               indent << "double eval_" << type_name() << "_var(const int &ind) const {\n" <<
-               indent << "  return m_global_dof_ptrs[m_" << type_name() << "_var_param_key.index()]->values()[ind];\n" <<
+               indent << "double eval_" << name() << "_var(const int &ind) const {\n" <<
+               indent << "  return m_global_dof_ptrs[m_" << name() << "_var_param_key.index()]->values()[ind];\n" <<
                indent << "}\n\n";
 
         stream <<
                indent << "template<typename Scalar>\n" <<
-               indent << "Scalar const &" << type_name() << "_var(const int &ind) const {\n" <<
-               indent << "  return " << "ParamPack::Val<Scalar>::get(m_params, m_" << type_name() << "_var_param_key, ind);\n" <<
+               indent << "Scalar const &" << name() << "_var(const int &ind) const {\n" <<
+               indent << "  return " << "ParamPack::Val<Scalar>::get(m_params, m_" << name() << "_var_param_key, ind);\n" <<
                indent << "}\n";
 
         if(requires_site_basis()) {
@@ -327,16 +368,16 @@ namespace CASM {
 
         for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
           nb = asym_unit[no][ne][0].sublat();
-          if(!_prim.basis()[nb].has_dof(type_name()))
+          if(!_prim.basis()[nb].has_dof(name()))
             continue;
           stream <<
-                 indent << "// " << type_name() << " evaluators and accessors for basis site " << nb << ":\n";
-          max_na = max(max_na, _prim.basis()[nb].dof(type_name()).size());
-          for(Index a = 0; a < _prim.basis()[nb].dof(type_name()).size(); ++a) {
+                 indent << "// " << name() << " evaluators and accessors for basis site " << nb << ":\n";
+          max_na = max(max_na, _prim.basis()[nb].dof(name()).size());
+          for(Index a = 0; a < _prim.basis()[nb].dof(name()).size(); ++a) {
 
             stream <<
-                   indent << "double eval_" << type_name() << "_var_" << nb << '_' << a << "(const int &nlist_ind) const {\n" <<
-                   indent << "  return m_local_dof_ptrs[m_" << type_name() << "_var_param_key.index()]->site_value(_l(nlist_ind))[" << a << "];\n" <<
+                   indent << "double eval_" << name() << "_var_" << nb << '_' << a << "(const int &nlist_ind) const {\n" <<
+                   indent << "  return m_local_dof_ptrs[m_" << name() << "_var_param_key.index()]->site_value(_l(nlist_ind))[" << a << "];\n" <<
                    indent << "}\n\n";
 
           }
@@ -364,8 +405,8 @@ namespace CASM {
       for(Index a = 0; a < max_na; ++a) {
         stream <<
                indent << "template<typename Scalar>\n" <<
-               indent << "Scalar const &" << type_name() << "_var_" << a << "(const int &nlist_ind) const {\n" <<
-               indent << "  return " << "ParamPack::Val<Scalar>::get(m_params, m_" << type_name() << "_var_param_key, " << a << ", nlist_ind);\n" <<
+               indent << "Scalar const &" << name() << "_var_" << a << "(const int &nlist_ind) const {\n" <<
+               indent << "  return " << "ParamPack::Val<Scalar>::get(m_params, m_" << name() << "_var_param_key, " << a << ", nlist_ind);\n" <<
                indent << "}\n";
       }
       for(Index f = 0; f < max_nf; ++f) {
@@ -386,8 +427,8 @@ namespace CASM {
 
       std::vector<ParamAllocation> result;
 
-      if(global() && _bases.size()) {
-        result.push_back(ParamAllocation(std::string(type_name() + "_var"), _bases[0].size(), Index(1), true));
+      if(val_traits().global() && _bases.size()) {
+        result.push_back(ParamAllocation(std::string(name() + "_var"), _bases[0].size(), Index(1), true));
         return result;
       }
 
@@ -403,10 +444,10 @@ namespace CASM {
 
 
       for(Site const &site : _prim.basis())
-        NV = max(NV, site.dof(type_name()).size());
+        NV = max(NV, site.dof(name()).size());
 
       //for(Index i = 0; i < NB; i++)
-      result.push_back(ParamAllocation(std::string(type_name() + "_var"), Index(NV), Index(-1), true));
+      result.push_back(ParamAllocation(std::string(name() + "_var"), Index(NV), Index(-1), true));
 
       if(basis_allocation)
         result.push_back(ParamAllocation(site_basis_name(), Index(NB), Index(-1), false));
@@ -459,20 +500,20 @@ namespace CASM {
 
     std::vector<std::unique_ptr<FunctionVisitor> > Traits::site_function_visitors(std::string const &nlist_specifier) const {
       std::vector<std::unique_ptr<FunctionVisitor> > result;
-      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f<Scalar>(" + nlist_specifier + ")")));
+      result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(name(), "%p_var_%f<Scalar>(" + nlist_specifier + ")")));
       return result;
     }
 
     std::vector<std::unique_ptr<FunctionVisitor> > Traits::clust_function_visitors() const {
       std::vector<std::unique_ptr<FunctionVisitor> > result;
-      if(global()) {
-        result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var<Scalar>(%f)")));
+      if(val_traits().global()) {
+        result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(name(), "%p_var<Scalar>(%f)")));
       }
       else {
         if(requires_site_basis())
           result.push_back(std::unique_ptr<FunctionVisitor>(new SubExpressionLabeler(site_basis_name(), site_basis_name() + "_%l<Scalar>(%n)")));
         else
-          result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(type_name(), "%p_var_%f<Scalar>(%n)")));
+          result.push_back(std::unique_ptr<FunctionVisitor>(new VariableLabeler(name(), "%p_var_%f<Scalar>(%n)")));
       }
       return result;
     }
@@ -484,24 +525,4 @@ namespace CASM {
 
   }
 
-  template<>
-  DoFType::TraitsDictionary make_parsing_dictionary<DoF::BasicTraits>() {
-    //std::cout << "Making Parsing dictionary... \n";
-    DoF::register_traits(DoFType::occupation());
-    DoF::register_traits(DoFType::displacement());
-    DoF::register_traits(DoFType::magspin());
-    DoF::register_traits(DoFType::EAstrain());
-    DoF::register_traits(DoFType::Hstrain());
-    DoF::register_traits(DoFType::GLstrain());
-    DoFType::TraitsDictionary dict;
-
-    dict.insert(
-      DoFType::occupation(),
-      DoFType::displacement(),
-      DoFType::magspin(),
-      DoFType::EAstrain(),
-      DoFType::Hstrain(),
-      DoFType::GLstrain());
-    return dict;
-  }
 }

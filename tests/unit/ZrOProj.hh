@@ -61,8 +61,8 @@ namespace test {
 
     void check_composition() override {
       std::vector<std::string> axes = {
-        R"(\s+0\s+Zr\(2\)Va\(2\)\s+Zr\(2\)O\(2\)\s+Zr\(2\)Va\(2-2a\)O\(2a\))",
-        R"(\s+1\s+Zr\(2\)O\(2\)\s+Zr\(2\)Va\(2\)\s+Zr\(2\)Va\(2a\)O\(2-2a\))"
+        R"(\s+0\s+Zr\(2\)O\(2\)\s+Zr\(2\)Va\(2\)\s+Zr\(2\)Va\(2a\)O\(2-2a\))",
+        R"(\s+1\s+Zr\(2\)Va\(2\)\s+Zr\(2\)O\(2\)\s+Zr\(2\)Va\(2-2a\)O\(2a\))"
       };
 
       _check_composition_axes(axes.begin(), axes.end());
@@ -79,9 +79,9 @@ namespace test {
       m_p.popen(cd_and() + autotools::abs_ccasm_path() + " bset -u");
       EXPECT_EQ(m_p.exit_code(), 0) << m_p.gets();
 
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*clust\.json)")), true) << m_p.gets();
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*basis\.json)")), true) << m_p.gets();
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*)" + title + R"(_Clexulator\.cc)")), true) << m_p.gets();
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*clust\.json)")), true) << m_p.gets();
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*basis\.json)")), true) << m_p.gets();
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*)" + title + R"(_Clexulator\.cc)")), true) << m_p.gets();
 
       EXPECT_EQ(true, fs::exists(m_dirs.clust(m_set->default_clex().bset))) << m_p.gets();
       EXPECT_EQ(true, fs::exists(m_dirs.clexulator_src(m_set->name(), m_set->default_clex().bset))) << m_p.gets();

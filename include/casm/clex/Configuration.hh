@@ -348,12 +348,6 @@ namespace CASM {
     /// Reads the Configuration from JSON
     void from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname);
 
-    /// Writes incomplete properties.calc.json of config for kra purposes
-    std::ostream &print_properties(std::string calctype, std::ostream &sout) const;
-
-    /// Writes incomplete properties.calc.json of config for kra purposes
-    jsonParser print_properties(std::string calctype) const;
-
     /// \brief Split configuration name string into scelname and config id
     static std::pair<std::string, std::string> split_name(std::string configname);
 
@@ -381,6 +375,7 @@ namespace CASM {
 
   };
 
+
   template<>
   struct jsonConstructor<Configuration> {
 
@@ -394,6 +389,7 @@ namespace CASM {
       const Supercell &scel,
       const std::string &id);
   };
+
 
   /// \brief Holds results of Configuration::insert
   ///
@@ -456,23 +452,8 @@ namespace CASM {
                                   const Configuration &super_config,
                                   const UnitCell &origin = UnitCell(0, 0, 0));
 
-  /// \brief Retrieves specified calculated property having type specified by ValueType
-  /// \param prop_name Name of property, corresponding to its key in properties.calc.json
-  template <typename ValueType>
-  ValueType get_calc_property(Configuration const &_config, std::string const &prop_name) {
-    ValueType result;
-    _config.calc_properties()[prop_name].get(result);
-    return result;
-  }
-
   /// \brief Make Configuration from name string
   Configuration make_configuration(const PrimClex &primclex, std::string name);
-
-  /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
-  Configuration &apply_properties(Configuration &config, std::string calctype);
-
-  /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
-  Configuration copy_apply_properties(const Configuration &config, std::string calctype);
 
   /// \brief Returns correlations using 'clexulator'.
   Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator);

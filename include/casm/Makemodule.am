@@ -155,7 +155,6 @@ casm_clex_include_HEADERS = \
     include/casm/clex/ConfigIONovelty.hh\
     include/casm/clex/ConfigIOStrain.hh\
     include/casm/clex/ConfigIOStrucScore.hh\
-    include/casm/clex/ConfigImport.hh\
     include/casm/clex/ConfigIsEquivalent.hh\
     include/casm/clex/ConfigMapping.hh\
     include/casm/clex/Configuration.hh\
@@ -170,6 +169,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/HasPrimClex_impl.hh\
     include/casm/clex/HasSupercell.hh\
     include/casm/clex/HasSupercell_impl.hh\
+    include/casm/clex/MappedPropertiesTools.hh\
     include/casm/clex/NeighborList.hh\
     include/casm/clex/Norm.hh\
     include/casm/clex/OrbitFunctionTraits.hh\
@@ -244,6 +244,7 @@ casm_container_include_HEADERS = \
 casm_crystallography_includedir=$(includedir)/casm/crystallography
 casm_crystallography_include_HEADERS = \
     include/casm/crystallography/Adapter.hh\
+    include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/CanonicalForm.hh\
@@ -267,6 +268,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/StrucMapping.hh\
     include/casm/crystallography/Structure.hh\
     include/casm/crystallography/SuperlatticeEnumerator.hh\
+    include/casm/crystallography/SymRepBuilder.hh\
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\

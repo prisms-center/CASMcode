@@ -1,5 +1,6 @@
 #include "casm/clex/ConfigDoFValues.hh"
 #include "casm/casm_io/json/jsonParser.hh"
+#include "casm/container/json_io.hh"
 
 namespace CASM {
 

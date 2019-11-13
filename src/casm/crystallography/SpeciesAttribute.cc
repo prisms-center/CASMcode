@@ -4,16 +4,9 @@
 
 namespace CASM {
   namespace xtal {
-    namespace SpeciesAttribute_impl {
-
-      SpeciesAttribute BasicTraits::copy_apply(SymOp const &_op, SpeciesAttribute const &_attr) const {
-        return _attr;
-      }
-    }
-
-    //*******************************************************************
     SpeciesAttribute &SpeciesAttribute::apply_sym(SymOp const &_op) {
-      return *this = traits().copy_apply(_op, *this);
+      m_value = traits().symop_to_matrix(get_matrix(_op), get_translation(_op), get_time_reversal(_op)) * m_value;
+      return *this;
     }
 
     //*******************************************************************
@@ -22,10 +15,11 @@ namespace CASM {
       return name() == other.name() && almost_equal(value(), other.value(), _tol);
     }
   }
-  template<>
-  ParsingDictionary<xtal::SpeciesAttribute::BasicTraits>  make_parsing_dictionary<xtal::SpeciesAttribute::BasicTraits>() {
-    ParsingDictionary<xtal::SpeciesAttribute::BasicTraits> dict;
-    return dict;
-  }
+
+  //  template<>
+  //ParsingDictionary<xtal::SpeciesAttribute::BasicTraits>  make_parsing_dictionary<xtal::SpeciesAttribute::BasicTraits>() {
+  //ParsingDictionary<xtal::SpeciesAttribute::BasicTraits> dict;
+  //return dict;
+  //}
 
 }

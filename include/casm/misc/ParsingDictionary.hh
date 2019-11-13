@@ -46,7 +46,7 @@ namespace CASM {
 
     /// \brief Equivalent to find, but set 'home' and throws error with
     /// suggestion if @param _name not found
-    std::unique_ptr<T> lookup(const key_type &_name) const;
+    T const &lookup(const key_type &_name) const;
 
     /// \brief True if dictionary contains entry for @param _name
     bool contains(const key_type &_name) const {
@@ -65,13 +65,11 @@ namespace CASM {
 
   /// \brief Equivalent to find, but throw error with suggestion if _name not found
   template<typename T>
-  std::unique_ptr<T> ParsingDictionary<T>::lookup(const ParsingDictionary<T>::key_type &_name) const {
+  T const &ParsingDictionary<T>::lookup(const ParsingDictionary<T>::key_type &_name) const {
 
     auto res = find(_name);
-    if(res != end()) {
-      return res->clone();
-    }
-    else {
+
+    if(res == end()) {
 
       // If no match, try to use demerescau-levenshtein distance to make a helpful suggestion
       auto it = begin();
@@ -87,8 +85,10 @@ namespace CASM {
 
       throw std::runtime_error("Invalid " + T::class_desc() + " \"" + _name + "\" specified.\n"
                                + "                Did you mean \"" + res->name() + "\"?\n");
-
     }
+    //std::cout << "Returning result of 'lookup' for " << _name << ". result is " << res->name() << std::endl;
+    return *res;//->clone();
+
 
   }
 

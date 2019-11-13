@@ -10,7 +10,7 @@ namespace CASM {
   class DoFSet;
 
   namespace xtal {
-    class SymOp;
+    struct SymOp;
   }
 
 

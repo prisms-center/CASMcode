@@ -75,6 +75,27 @@ EXTRA_DIST += \
 #-------------------------------------------------------------------------------#
 
 TESTS += \
+    casm_unit_bin
+check_PROGRAMS += \
+    casm_unit_bin
+casm_unit_bin_SOURCES = \
+    tests/unit/gtest_main_run_all.cpp
+casm_unit_bin_LDADD = \
+    $(BOOST_CHRONO_LIB)\
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_REGEX_LIB)\
+    $(BOOST_SYSTEM_LIB)\
+    libcasm.la\
+    libcasmtesting.la
+casm_unit_bin_CPPFLAGS = \
+    $(AM_CPPFLAGS)\
+    -I$(top_srcdir)/tests/unit/
+
+
+#-------------------------------------------------------------------------------#
+
+TESTS += \
     casm_unit_casm_io
 check_PROGRAMS += \
     casm_unit_casm_io

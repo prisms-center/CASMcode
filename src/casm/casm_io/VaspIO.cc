@@ -1,7 +1,7 @@
-#include "casm/crystallography/io/VaspIO.hh"
+#include "casm/casm_io/VaspIO.hh"
 
 #include <iomanip>
-#include "casm/casm_io/Log.hh"
+#include "casm/container/algorithm.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 
 namespace CASM {
@@ -29,6 +29,7 @@ namespace CASM {
       m_title(std::move(_title)),
       m_species_mode(_mode),
       m_struc(std::move(_struc)),
+      m_permute(sequence<Index>(0, m_struc.info(_mode).size() - 1)),
       m_scale(1.0),
       m_coord_mode(FRAC),
       m_atom_names(true),
@@ -39,7 +40,7 @@ namespace CASM {
 
     /// \brief Default sort is by species name
     void PrintPOSCAR::sort() {
-      m_struc.info(m_species_mode).sort_by_name();
+      m_permute = m_struc.info(m_species_mode).sort_by_name();
     }
 
     /// \brief Print POSCAR, providing a range of std::tuple<AtomName, Coordinate, SelectiveDynamics>
@@ -58,8 +59,8 @@ namespace CASM {
 
       auto const &info = m_struc.info(m_species_mode);
 
-      if(info.permute.size() != info.size()) {
-        throw std::runtime_error("Error in PrintPOSCAR::print: info.permute.size() != info.size()");
+      if(m_permute.size() != info.size()) {
+        throw std::runtime_error("Error in PrintPOSCAR::print: m_permute.size() != info.size()");
       }
 
       // first filter out all atoms we are going to ignore, indices of the remaining atoms get put in 'atom'
@@ -69,7 +70,7 @@ namespace CASM {
       std::vector<int> atom_count;
 
       Index last = -1;
-      for(Index i : info.permute) {
+      for(Index i : m_permute) {
         // if Atom's name is not found in the ignore list, add it to 'atom'
         if(ignore().count(info.names[i]) == 0) {
           atom.push_back(i);

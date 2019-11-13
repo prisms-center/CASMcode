@@ -4,7 +4,8 @@
 namespace CASM {
   namespace xtal {
 
-    void SimpleStructure::Info::sort_by_name() {
+    std::vector<Index> SimpleStructure::Info::sort_by_name() {
+      std::vector<Index> permute;
       permute.clear();
       std::map<std::string, std::vector<Index> > smap;
       for(Index i = 0; i < names.size(); ++i) {
@@ -13,6 +14,7 @@ namespace CASM {
       for(auto const &name : smap) {
         permute.insert(permute.end(), name.second.begin(), name.second.end());
       }
+      return permute;
     }
 
     //***************************************************************************

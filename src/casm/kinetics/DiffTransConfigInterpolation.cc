@@ -171,10 +171,10 @@ namespace CASM {
           if(tokens.size() == 4) {
             Configuration canon_config = *primclex.db<Configuration>().find(config.from_config().canonical_form().name());
             canon_config.calc_properties(endpt_calctype);
-            endpts_json["0"] = apply(config.from_config_from_canonical(), canon_config).print_properties(endpt_calctype);
+            //endpts_json["0"] = apply(config.from_config_from_canonical(), canon_config).print_properties(endpt_calctype);
           }
           else {
-            endpts_json["0"] = make_configuration(primclex, config.from_config().name()).print_properties(endpt_calctype);
+            //endpts_json["0"] = make_configuration(primclex, config.from_config().name()).print_properties(endpt_calctype);
           }
         }
         else {
@@ -192,10 +192,10 @@ namespace CASM {
           if(tokens2.size() == 4) {
             Configuration canon_config = *primclex.db<Configuration>().find(config.to_config().canonical_form().name());
             canon_config.calc_properties(endpt_calctype);
-            endpts_json[std::to_string(i - 1)] = apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype);
+            //endpts_json[std::to_string(i - 1)] = apply(config.to_config_from_canonical(), canon_config).print_properties(endpt_calctype);
           }
           else {
-            endpts_json[std::to_string(i - 1)] = make_configuration(primclex, config.to_config().name()).print_properties(endpt_calctype);
+            //endpts_json[std::to_string(i - 1)] = make_configuration(primclex, config.to_config().name()).print_properties(endpt_calctype);
           }
         }
         else {
@@ -241,16 +241,22 @@ namespace CASM {
       Configuration ret_frm = dfc.from_config();
       Configuration ret_to = dfc.to_config();
       if(dfc.from_configname().find("none") == std::string::npos) {
-        Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
-        ret_frm = copy_apply(dfc.from_config_from_canonical(), rlx_frm);
+        std::cerr << "WARNING: get_relaxed_endpoints in DiffTransConfigInterpolation is broken!\n";
+        exit(1);
+        //Next two lines are commented out because copy_apply_properties no longer exists
+        //Configuration rlx_frm = copy_apply_properties(make_configuration(dfc.primclex(), dfc.from_configname()), calctype);
+        //ret_frm = copy_apply(dfc.from_config_from_canonical(), rlx_frm);
       }
       else {
         dfc.primclex().log() << ">>>>>>!!!!!WARNING: FROM (INITIAL) CONFIGURATION NOT PRESENT IN CONFIG LIST!!!!!" << std::endl
                              << "I suggest enumerating and calculating it before interpolating!!!!!<<<<<<" << std::endl << std::endl;
       }
       if(dfc.to_configname().find("none") == std::string::npos) {
-        Configuration rlx_to = copy_apply_properties(make_configuration(dfc.primclex(), dfc.to_configname()), calctype);
-        ret_to = copy_apply(dfc.to_config_from_canonical(), rlx_to);
+        std::cerr << "WARNING: get_relaxed_endpoints in DiffTransConfigInterpolation is broken!\n";
+        exit(1);
+        //Next two lines are commented out because copy_apply_properties no longer exists
+        //Configuration rlx_to = copy_apply_properties(make_configuration(dfc.primclex(), dfc.to_configname()), calctype);
+        //ret_to = copy_apply(dfc.to_config_from_canonical(), rlx_to);
       }
       else {
         dfc.primclex().log() << ">>>>>>!!!!!WARNING: TO (FINAL) CONFIGURATION NOT PRESENT IN CONFIG LIST!!!!!" << std::endl
@@ -262,9 +268,14 @@ namespace CASM {
     /// applies deformation from input config onto outpur_config and prints it to a file.
     void apply_deformation(const PrimClex primclex, std::string output_configname, std::string output_path,
                            std::string input_configname, std::string calctype) {
-      Configuration input_config = copy_apply_properties(make_configuration(primclex, input_configname), calctype);
+
+      std::cerr << "WARNING: get_relaxed_endpoints in DiffTransConfigInterpolation is broken!\n";
+      exit(1);
+      //Next two lines are commented out because copy_apply_properties no longer exists
+      //Configuration input_config = copy_apply_properties(make_configuration(primclex, input_configname), calctype);
       //Eigen::Matrix3d deformation = input_config.deformation();
       Configuration final_config = make_configuration(primclex, output_configname);
+      //Next Line commented out because set_deformation no longer exists
       //final_config.set_deformation(deformation);
       fs::ofstream(output_path) << pos_string(final_config);
 

@@ -7,26 +7,12 @@ namespace CASM {
   namespace DoF_impl {
     class OccupationDoFTraits : public DoFType::Traits {
     public:
+      using BasicTraits = DoF::BasicTraits;
       OccupationDoFTraits():
-        DoFType::Traits("occ",
+        DoFType::Traits(BasicTraits("occ",
       {},
-      DoFType::LOCAL,
-      /*_requires_site_basis = */ true,
-      /*_unit_length = */ false) {
-
-      }
-
-
-      /*/// \brief Generate a symmetry representation for this DoF
-      SymGroupRepID generate_symrep(MasterSymGroup const &_group,
-                                    Structure const &_prim,
-                                    Index _nb) const override {
-        throw std::runtime_error("OccupationDoFTraits::generate_symrep not implemented!");
-        }*/
-
-      /// \brief Generate a symmetry representation for the supporting vector space
-      Eigen::MatrixXd symop_to_matrix(xtal::SymOp const &op) const override {
-        throw std::runtime_error("OccupationDoFTraits::generate_symrep not implemented!");
+      BasicTraits::LOCAL),
+      /*_requires_site_basis = */ true) {
 
       }
 
@@ -89,7 +75,7 @@ namespace CASM {
                                                  std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
                                                  jsonParser const &_bspecs) const override;
     protected:
-      DoFType::BasicTraits *_clone() const override;
+      DoFType::Traits *_clone() const override;
     };
   }
 

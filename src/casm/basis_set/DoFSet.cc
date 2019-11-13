@@ -1,28 +1,17 @@
 #include "casm/basis_set/DoFSet.hh"
-#include "casm/basis_set/DoFTraits.hh"
+#include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
-  namespace DoFType {
 
-    /// \brief implements json parsing of a specialized DoFSet.
-    void BasicTraits::from_json(DoFSet &_dof, jsonParser const &json) const {
-      return;
-    }
+  DoFSet::DoFSet(BasicTraits const &_traits) :
+    m_traits(_traits),
+    m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)) {
 
-    /// \brief implements json parsing of a specialized DoFSet.
-    void BasicTraits::to_json(DoFSet const &_dof, jsonParser &json) const {
-      return;
-    }
   }
 
-  //********************************************************************
-
-  DoFType::Traits const &DoFSet::traits() const {
-    return DoFType::traits(type_name());
-  }
 
   //********************************************************************
   void DoFSet::allocate_symrep(SymGroup const &_group) const {
@@ -84,8 +73,6 @@ namespace CASM {
 
     bool is_error = false;
 
-    auto const &traits_ref = DoFType::traits(type_name());
-
     json.get_if(m_excluded_occs, "excluded_occupants");
     auto it = json.find("axes");
     if(it != json.end()) {
@@ -97,15 +84,15 @@ namespace CASM {
         }
 
         for(std::string const &aname : anames)
-          m_components.push_back(ContinuousDoF(traits_ref,
+          m_components.push_back(ContinuousDoF(traits(),
                                                aname,
                                                -1, // ID
                                                -std::numeric_limits<double>::infinity(),
                                                std::numeric_limits<double>::infinity()));
 
         Eigen::MatrixXd tbasis = it->get<Eigen::MatrixXd>().transpose();
-        if(tbasis.rows() != traits_ref.dim()) {
-          throw std::runtime_error("Parsing DoF " + type_name() + ", number of columns in field \"axes\" must be " + std::to_string(traits_ref.dim()));
+        if(tbasis.rows() != traits().dim()) {
+          throw std::runtime_error("Parsing DoF " + type_name() + ", number of columns in field \"axes\" must be " + std::to_string(traits().dim()));
         }
         m_info.set_basis(tbasis);
       }
@@ -115,25 +102,25 @@ namespace CASM {
       if(is_error) {
         std::stringstream ss;
         ss << json;
-        throw std::runtime_error("Parsing malformed JSON DoF object " + ss.str() + " each element of object \"basis\" must be an array containing " + std::to_string(traits_ref.dim() + 1) + " elements.\n The first element of each sub-array must be a string, and the remaining elements must be numbers. ");
+        throw std::runtime_error("Parsing malformed JSON DoF object " + ss.str() + " each element of object \"basis\" must be an array containing " + std::to_string(traits().dim() + 1) + " elements.\n The first element of each sub-array must be a string, and the remaining elements must be numbers. ");
       }
 
     }
     else {
-      m_info.set_basis(Eigen::MatrixXd::Identity(traits_ref.dim(), traits_ref.dim()));
-      for(std::string var_name : traits_ref.standard_var_names()) {
+      m_info.set_basis(Eigen::MatrixXd::Identity(traits().dim(), traits().dim()));
+      for(std::string var_name : traits().standard_var_names()) {
         //std::cout << "Adding var_name " << var_name << "\n";
-        m_components.push_back(ContinuousDoF(traits_ref,
+        m_components.push_back(ContinuousDoF(traits(),
                                              var_name,
                                              -1, // ID
                                              -std::numeric_limits<double>::infinity(),
                                              std::numeric_limits<double>::infinity()));
-        if(traits_ref.global())
+        if(traits().global())
           m_components.back().lock_ID();
 
       }
     }
-    traits_ref.from_json(*this, json);
+    //traits().from_json(*this, json);
 
   }
 
@@ -147,15 +134,16 @@ namespace CASM {
     if(!m_excluded_occs.empty())
       json["excluded_occupants"] = m_excluded_occs;
 
-    DoF::traits(type_name()).to_json(*this, json);
+    //DoF::traits(type_name()).to_json(*this, json);
     return json;
   }
 
   //********************************************************************
 
   /// \brief Apply SymOp to a DoFSet
-  DoFSet &apply(const xtal::SymOp &op, DoFSet &_dof) {
-    _dof.transform_basis(DoFType::traits(_dof.type_name()).symop_to_matrix(op));
+
+  DoFSet &apply(const xtal::SymOp &_op, DoFSet &_dof) {
+    _dof.transform_basis(_dof.traits().symop_to_matrix(get_matrix(_op), get_translation(_op), get_time_reversal(_op)));
     return _dof;
   }
 
@@ -169,11 +157,13 @@ namespace CASM {
 
   //********************************************************************
 
-  DoFSet jsonConstructor<DoFSet>::from_json(const jsonParser &json, DoF::BasicTraits const &_type) {
+  DoFSet jsonConstructor<DoFSet>::from_json(const jsonParser &json, DoFSet::BasicTraits const &_type) {
     DoFSet value(_type);
     value.from_json(json);
     return value;
   }
+
+  //********************************************************************
 
   DoFSet DoFSet::make_default(DoFSet::BasicTraits const &_type) {
     DoFSet result(_type);

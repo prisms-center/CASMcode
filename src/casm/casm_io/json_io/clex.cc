@@ -200,7 +200,7 @@ namespace CASM {
     else {
 
       // if: [X, X, X, X]
-      if(json.begin()->is_number() || json.begin()->is_int()) {
+      if(json.begin()->is_number()) {
 
         if(json.size() != struc_mol_name.size()) {
           std::cerr << "received: " << json << std::endl;
