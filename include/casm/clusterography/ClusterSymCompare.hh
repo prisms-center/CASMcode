@@ -53,31 +53,14 @@ namespace CASM {
 
   public:
 
-    /// Element refers to Cluster, not element of Cluster
-    /*
-    typedef typename traits<Derived>::MostDerived MostDerived;
-    typedef typename traits<Derived>::Element Element;
-    typedef Element ClusterType;
-    typedef typename traits<Element>::InvariantsType InvariantsType;
-    */
-
     typedef typename Base::MostDerived MostDerived;
+    /// Element refers to Cluster, not element of Cluster
     typedef typename traits<MostDerived>::Element Element;
     typedef Element ClusterType;
     typedef typename traits<Element>::InvariantsType InvariantsType;
     using Base::derived;
 
-    /// \brief Return tolerance
-    double tol() const;
-
   protected:
-
-    /// \brief Constructor
-    ///
-    /// \param tol Tolerance for invariants_compare of site-to-site distances
-    ///
-    ClusterSymCompare(double tol);
-
 
     /// \brief Orders 'prepared' elements in the same orbit
     bool invariants_compare_impl(const Element &A, const Element &B) const;
@@ -95,10 +78,6 @@ namespace CASM {
     ///
     /// - Returns traits<Element>::position(el)
     static UnitCellCoord position(const Element &el);
-
-  private:
-
-    double m_tol;
 
   };
 
@@ -126,7 +105,7 @@ namespace CASM {
   /// \ingroup IntegralCluster
   ///
   template<typename Element>
-  class AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/> :
+  class AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/> :    //aka LocalSymCompare?
     public ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> {
 
   public:
@@ -139,6 +118,11 @@ namespace CASM {
     /// \param tol Tolerance for invariants_compare of site-to-site distances
     ///
     AperiodicSymCompare(double tol);
+
+    /// \brief Return tolerance
+    double tol() const {
+      return this->m_tol;
+    }
 
   protected:
     friend SymCompare<CRTPBase<AperiodicSymCompare<Element>>>;
@@ -153,6 +137,17 @@ namespace CASM {
     ///
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
+
+    // !!TODO!! Specialize the SymCompare here for applying symmetry copy_apply_impl
+    // You'll have to add a private prim, make it shared ptr type for now, and give it
+    // some clever typedef/using statement so that you can easily swap it out
+
+    // !!TODO!! Also add forwarding calls the the optional compare things of SymCompare so
+    // that it's obvious that you can override them
+
+  private:
+
+    double m_tol;
 
   };
 
@@ -185,6 +180,11 @@ namespace CASM {
 
     PrimPeriodicSymCompare(const PrimClex &primclex);
 
+    /// \brief Return tolerance
+    double tol() const {
+      return this->m_tol;
+    }
+
   protected:
     friend SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>;
 
@@ -197,6 +197,10 @@ namespace CASM {
     ///
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
+
+  private:
+
+    double m_tol;
 
   };
 
@@ -229,6 +233,11 @@ namespace CASM {
     /// \brief Constructor
     ScelPeriodicSymCompare(const Supercell &scel);
 
+    /// \brief Return tolerance
+    double tol() const {
+      return this->m_tol;
+    }
+
   protected:
     friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
 
@@ -243,6 +252,11 @@ namespace CASM {
     Element representation_prepare_impl(Element obj) const;
 
     const PrimGrid *m_prim_grid;
+
+  private:
+
+    double m_tol;
+
   };
 
   /// \brief Comparisons of GenericCluster-derived types using supercell periodic symmetry
@@ -275,6 +289,11 @@ namespace CASM {
     /// \brief Constructor
     WithinScelSymCompare(const Supercell &scel);
 
+    /// \brief Return tolerance
+    double tol() const {
+      return this->m_tol;
+    }
+
   protected:
     friend SymCompare<CRTPBase<WithinScelSymCompare<Element>>>;
 
@@ -294,6 +313,11 @@ namespace CASM {
     Element representation_prepare_impl(Element obj) const;
 
     const PrimGrid *m_prim_grid;
+
+  private:
+
+    double m_tol;
+
   };
 
 }

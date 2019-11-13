@@ -10,22 +10,6 @@
 
 namespace CASM {
 
-  /// \brief Return tolerance
-  template<typename Base>
-  double ClusterSymCompare<Base>::tol() const {
-    return m_tol;
-  }
-
-  /// \brief Constructor
-  ///
-  /// \param tol Tolerance for invariants_compare of site-to-site distances
-  ///
-  template<typename Base>
-  ClusterSymCompare<Base>::ClusterSymCompare(double tol):
-    m_tol(tol) {
-
-  }
-
   /// \brief Orders 'prepared' elements in the same orbit
   ///
   /// - Returns 'true' to indicate A < B
@@ -36,7 +20,7 @@ namespace CASM {
   /// - Then compare all displacements, from longest to shortest
   template<typename Base>
   bool ClusterSymCompare<Base>::invariants_compare_impl(const Element &A, const Element &B) const {
-    return CASM::compare(A.invariants(), B.invariants(), tol());
+    return CASM::compare(A.invariants(), B.invariants(), this->derived().tol());
   }
 
   /// \brief Compares 'prepared' elements
@@ -75,8 +59,7 @@ namespace CASM {
   ///
   template<typename Element>
   AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  AperiodicSymCompare(double tol):
-    ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>>(tol) {}
+  AperiodicSymCompare(double tol): m_tol(tol) {}
 
   /// \brief Prepare an element for comparison
   ///
@@ -106,8 +89,7 @@ namespace CASM {
   ///
   template<typename Element>
   PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  PrimPeriodicSymCompare(double tol):
-    ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>>(tol) {}
+  PrimPeriodicSymCompare(double tol): m_tol(tol) {}
 
   /// \brief Constructor
   ///
@@ -157,7 +139,7 @@ namespace CASM {
   template<typename Element>
   ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   ScelPeriodicSymCompare(const PrimGrid &prim_grid, double tol):
-    ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>>(tol),
+    m_tol(tol),
     m_prim_grid(&prim_grid) {}
 
   /// \brief Constructor
@@ -208,7 +190,7 @@ namespace CASM {
   template<typename Element>
   WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
   WithinScelSymCompare(const PrimGrid &prim_grid, double tol):
-    ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>>(tol),
+    m_tol(tol),
     m_prim_grid(&prim_grid) {}
 
   /// \brief Constructor
