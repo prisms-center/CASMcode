@@ -199,7 +199,7 @@ namespace CASM {
     /// \brief ElementWiseSymCluster applies symmetry element-by-element
     MostDerived &apply_sym(const SymOp &op) {
       for(auto &e : derived()) {
-        //  !!TODO!!  e.apply_sym(op);
+        e.apply_sym(op);
       }
       return derived();
     }
