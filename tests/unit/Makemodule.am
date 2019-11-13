@@ -311,6 +311,28 @@ EXTRA_DIST += \
 #-------------------------------------------------------------------------------#
 
 TESTS += \
+    casm_unit_mapping
+check_PROGRAMS += \
+    casm_unit_mapping
+casm_unit_mapping_SOURCES = \
+    tests/unit/gtest_main_run_all.cpp\
+    tests/unit/mapping/StrucMapping_test.cpp
+casm_unit_mapping_LDADD = \
+    $(BOOST_CHRONO_LIB)\
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_REGEX_LIB)\
+    $(BOOST_SYSTEM_LIB)\
+    libcasm.la\
+    libcasmtesting.la
+casm_unit_mapping_CPPFLAGS = \
+    $(AM_CPPFLAGS)\
+    -I$(top_srcdir)/tests/unit/
+
+
+#-------------------------------------------------------------------------------#
+
+TESTS += \
     casm_unit_misc
 check_PROGRAMS += \
     casm_unit_misc

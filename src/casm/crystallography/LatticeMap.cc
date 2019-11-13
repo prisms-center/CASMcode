@@ -51,10 +51,11 @@ namespace CASM {
     //*******************************************************************************************
     //static function
     double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol, double _vol_factor) {
+      Eigen::Matrix3d tmat = polar_decomposition(F / _vol_factor);
 
       // -> epsilon=(F_deviatoric-identity)
-      double unscaled = ((F / _vol_factor - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()
-                         + (F.inverse() * _vol_factor - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()) / 2.;
+      double unscaled = ((tmat - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()
+                         + (tmat.inverse() - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()) / 2.;
 
       // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
       return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * unscaled / 7.795554179;
@@ -146,7 +147,8 @@ namespace CASM {
           continue;
         if(symcheck.U().isIdentity())
           continue;
-        m_fsym_mats.push_back(iround(symcheck.U().cast<double>().inverse()));
+        //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
+        m_fsym_mats.push_back(iround(symcheck.U().inverse()));
         for(Index i = 0; i < (m_fsym_mats.size() - 1); ++i) {
           if(m_fsym_mats[i] == m_fsym_mats.back()) {
             m_fsym_mats.pop_back();
@@ -179,11 +181,15 @@ namespace CASM {
     //*******************************************************************************************
     void LatticeMap::reset(double _better_than) {
       m_currmat = 0;
+
+      // From relation F * parent * inv_mat.inverse() = child
+      m_F = m_child * inv_mat().cast<double>() * m_parent.inverse(); // -> F
+
       double tcost = m_calc.strain_cost(m_F, m_atomic_vol, m_vol_factor);
+
       // Initialize to first valid mapping
       if(tcost <= _better_than && _check_canonical()) {
-        // From relation F * parent * inv_mat.inverse() = child
-        m_F = m_child * inv_mat().cast<double>() * m_parent.inverse(); // -> F
+
         m_cost = tcost;
         // reconstruct correct N for unreduced lattice
         m_N = m_U * inv_mat().cast<double>().inverse() * m_V_inv;
@@ -262,19 +268,30 @@ namespace CASM {
       double tcost = max_cost;
 
       while(++m_currmat < n_mat()) {
-        if(!_check_canonical())
+        if(!_check_canonical()) {
+          //std::cout << "Not canonical: \n" << inv_mat() << "\n";
           continue;
+        }
 
         // From relation F * parent * inv_mat.inverse() = child
         m_F = m_child * inv_mat().cast<double>() * m_parent.inverse(); // -> F
         tcost = m_calc.strain_cost(m_F, m_atomic_vol, m_vol_factor);
+        //DEBUG
+        //Eigen::Matrix3d M=m_parent.transpose()*m_parent;
+        //Eigen::Matrix3d M2=inv_mat().cast<double>().inverse().transpose()*M*inv_mat().cast<double>().inverse();
+        //if(almost_equal(M,M2,1e-4)){
+        //std::cout << "***POINT OP: \n" << "N: \n" << (m_U * inv_mat().cast<double>().inverse() * m_V_inv) << "\nF: \n" << m_F<< "\ncost: " << tcost << "\n***\n";
+        //}
+        //\DEBUG
         if(tcost < max_cost) {
+          //std::cout << "cost: " << max_cost << " -> " << tcost << "\n";
           m_cost = tcost;
 
           // need to undo the effect of transformation to reduced cell on 'N'
           // Maybe better to get m_N from m_F instead?  m_U and m_V_inv depend on the lattice reduction
           // that was performed in the constructor, so we would need to store "non-reduced" parent and child
           m_N = m_U * inv_mat().cast<double>().inverse() * m_V_inv;
+          //std::cout << "N:\n" << m_N << "\n";
           //  We already have:
           //        m_F = m_child * inv_mat().cast<double>() * m_parent.inverse();
           break;

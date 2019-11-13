@@ -16,7 +16,7 @@ namespace CASM {
                      bool force) : m_tol(xtal_tol) {
       m_lat_mat << vec1, vec2, vec3;
       if(!force && m_lat_mat.determinant() < 0) {
-        this->make_right_handed();
+        //this->make_right_handed();
         //throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
       }
       m_inv_lat_mat = m_lat_mat.inverse();
@@ -82,7 +82,7 @@ namespace CASM {
       m_inv_lat_mat(lat_mat.inverse()),
       m_tol(xtal_tol) {
       if(!force && m_lat_mat.determinant() < 0) {
-        this->make_right_handed();
+        //this->make_right_handed();
         //throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
       }
     }

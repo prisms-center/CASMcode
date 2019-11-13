@@ -16,7 +16,7 @@ namespace CASM {
 
       // Find a site in child whose occupant has the lowest number of possible
       // mapped sites in the parent. This will minimize translations
-      Index i_trans(c_info.size()), n_best(p_info.size());
+      Index i_trans(c_info.size()), n_best(p_info.size() + 2);
       for(Index i = 0; i < c_info.names.size() && n_best > 1; ++i) {
         auto it = max_n_species().find(c_info.names[i]);
         if(it != max_n_species().end()) {
@@ -26,6 +26,7 @@ namespace CASM {
           }
         }
       }
+      //std::cout << "i_trans: " << i_trans << "  c_info.size(): " << c_info.size() << "  n_best: " << n_best << "\n";
       if(i_trans == c_info.size())
         return result;
 
@@ -75,7 +76,9 @@ namespace CASM {
                                             SimpleStructure const &child_struc) const {
 
       populate_displacement(_node, child_struc);
+      //std::cout << "**Finalizing: cost: " << _node.cost;
       _node.cost = _node.basis_weight * StrucMapping::basis_cost(_node, info(child_struc).size()) + _node.strain_weight * _node.lat_node.cost;
+      //std::cout << " -> " << _node.cost << "\n";
       _node.is_valid = true;
       return;
     }
@@ -123,8 +126,8 @@ namespace CASM {
                                  + _node.basis_node.translation,
                                  pgrid.scel_lattice(), CART);
 
-          Coordinate parent_coord = pgrid.scel_coord(i / pgrid.size());
-          parent_coord.cart() += p_info.coords.col(i % pgrid.size());
+          Coordinate parent_coord = pgrid.scel_coord(i / p_info.size());
+          parent_coord.cart() += p_info.coords.col(i % p_info.size());
 
           child_coord.min_dist(parent_coord, disp_coord);
           _node.disp(i) = disp_coord.const_cart();

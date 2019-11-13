@@ -2,6 +2,7 @@
 #define CASM_StrucMapCalculatorInterface
 
 #include <vector>
+#include <iostream>
 #include <unordered_set>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_math.hh"
@@ -43,7 +44,7 @@ namespace CASM {
         if(m_allowed_species.empty()) {
           auto const &p_info(info(parent()));
           m_allowed_species.resize(p_info.size());
-          for(Index i = 0; i < m_allowed_species.size(); ++i)
+          for(Index i = 0; i < p_info.size(); ++i)
             m_allowed_species[i].insert(p_info.names[i]);
         }
 
@@ -60,10 +61,13 @@ namespace CASM {
           else if((it->second) > 0)
             ++(it->second);
         }
+        std::cout << "Fixed_species: ";
         for(auto it = _fixed_species().begin(); it != _fixed_species().end(); ++it) {
           if((it->second) == 0)
             _fixed_species().erase(it);
+          std::cout << it->first << "  ";
         }
+        std::cout << "\n";
       }
 
       SimpleStructure::Info const &info(SimpleStructure const &_struc) const {

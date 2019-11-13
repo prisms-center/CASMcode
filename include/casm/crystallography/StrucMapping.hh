@@ -38,8 +38,6 @@ namespace CASM {
         return _val > small_inf() / 2.;
       }
 
-
-
       /// \brief Calculate the strain cost function of a MappingNode using LatticeMap::calc_strain_cost()
       /// \param Nsites number of atoms in the relaxed structure, for proper normalization
       double strain_cost(double relaxed_lat_vol, const MappingNode &mapped_config, Index Nsites);
@@ -118,26 +116,14 @@ namespace CASM {
       /// @param child_N_atom is number of sites in the child
       LatticeNode(LatticeMap const &_lat_map,
                   Lattice const &parent_prim,
-                  Lattice const &child_prim,
-                  Index child_N_atom);
+                  Lattice const &child_prim);
 
-      /// \brief Compare two LatticeMap objects, based on their mapping cost
-      bool operator<(LatticeNode const &other)const {
-        return cost < other.cost - 1e-6;
-      }
+      /// \brief Compare two LatticeMap objects, based on their mapping cost first, followed by PrimGrid transformation matrices
+      bool operator<(LatticeNode const &other)const;
 
     };
 
-    inline
-    bool identical(LatticeNode const &A, LatticeNode const &B) {
-      if(!almost_equal(A.cost, B.cost, 1e-6))
-        return false;
-      if(A.parent.trans_mat() != B.parent.trans_mat())
-        return false;
-      if(A.child.trans_mat() != B.child.trans_mat())
-        return false;
-      return true;
-    }
+    bool identical(LatticeNode const &A, LatticeNode const &B);
 
     struct HungarianNode {
       HungarianNode(double _tol = 1e-6) : cost(0), cost_offset(0), m_tol(_tol) {}
@@ -196,9 +182,7 @@ namespace CASM {
         cost = hungarian_method(cost_mat, assignment, m_tol) + cost_offset + m_tol * translation.norm() / 10.0;
       }
 
-      bool operator<(HungarianNode const &other)const {
-        return cost < other.cost - m_tol;
-      }
+      bool operator<(HungarianNode const &other)const;
 
       std::vector<Index> permutation() const {
         std::vector<Index> result(assignment.size() + forced_on.size(), 0);
@@ -216,16 +200,8 @@ namespace CASM {
       double m_tol;
     };
 
-    inline
-    bool identical(HungarianNode const &A, HungarianNode const &B) {
-      if(!almost_equal(A.cost, B.cost, 1e-6))
-        return false;
-      if(!almost_equal(A.translation, B.translation, 1e-6))
-        return false;
-      if(A.forced_on != B.forced_on)
-        return false;
-      return true;
-    }
+    bool identical(HungarianNode const &A, HungarianNode const &B);
+
 
 
     /// Data structure holding a potential mapping, which consists of deformation, occupation array, and displacement field
@@ -479,7 +455,8 @@ namespace CASM {
       ///\endparblock
       ///\param best_cost[in] optional parameter. Method will return false of no mapping is found better than 'best_cost'
       std::set<MappingNode> map_deformed_struc(const SimpleStructure &child_struc,
-                                               double best_cost = StrucMapping::big_inf(),
+                                               double max_cost = StrucMapping::big_inf(),
+                                               double min_cost = -TOL,
                                                bool keep_invalid = false) const;
 
       ///\brief Low-level routine to map a structure onto a ConfigDof assuming a specific Lattice, without assuming structure is ideal
@@ -492,21 +469,25 @@ namespace CASM {
       ///\endparblock
       std::set<MappingNode> map_deformed_struc_impose_lattice(const SimpleStructure &child_struc,
                                                               const Lattice &imposed_lat,
-                                                              double best_cost = StrucMapping::big_inf(),
+                                                              double max_cost = StrucMapping::big_inf(),
+                                                              double min_cost = -TOL,
                                                               bool keep_invalid = false) const;
 
       std::set<MappingNode> map_deformed_struc_impose_lattice_node(const SimpleStructure &child_struc,
                                                                    const LatticeNode &imposed_node,
-                                                                   double best_cost = StrucMapping::big_inf(),
+                                                                   double max_cost = StrucMapping::big_inf(),
+                                                                   double min_cost = -TOL,
                                                                    bool keep_invalid = false) const;
 
 
 
       Index k_best_maps_better_than(SimpleStructure const &child_struc,
                                     std::set<MappingNode> &queue,
-                                    double max_cost,
-                                    bool keep_invalid,
-                                    bool erase_tail = true) const;
+                                    double max_cost = StrucMapping::big_inf(),
+                                    double min_cost = -TOL,
+                                    bool keep_invalid = false,
+                                    bool keep_tail = false,
+                                    bool no_partiton = false) const;
 
 
       StrucMapCalculatorInterface const &calculator() const {
@@ -520,6 +501,9 @@ namespace CASM {
                                                         double min_cost = 1e-6,
                                                         double max_cost = StrucMapping::small_inf()) const;
     private:
+      ///\brief returns number of species in a SimpleStructure given the current calculator settings. Use instead of sstruc.n_atom() for consistency
+      Index _n_species(SimpleStructure const &sstruc) const;
+
       //Implement filter as std::function<bool(Lattice const&)> or as polymorphic type or as query (i.e., DataFormatter)
       bool _filter_lat(Lattice const &_lat)const {
         return true;
