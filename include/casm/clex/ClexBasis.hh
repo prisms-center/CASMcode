@@ -4,9 +4,10 @@
 #include <string>
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/basis_set/DoFDecl.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
-#include "casm/global/enum.hh"
 #include "casm/clusterography/ClusterDecl.hh"
+#include "casm/global/enum.hh"
 
 namespace CASM {
   namespace xtal {

@@ -1,8 +1,11 @@
 #include "casm/basis_set/DoFSet.hh"
+
+#include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
-#include "casm/symmetry/SymGroup.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
 

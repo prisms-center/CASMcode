@@ -1,9 +1,12 @@
 #ifndef CASM_HamiltonianModules_impl
 #define CASM_HamiltonianModules_impl
+
 #include <boost/filesystem.hpp>
 #include "casm/app/HamiltonianModules.hh"
+#include "casm/app/LogRuntimeLibrary.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/system/LogRuntimeLibrary.hh"
+#include "casm/system/RuntimeLibrary.hh"
+
 namespace CASM {
   /// \brief Load DoF plugins from a CASM project
   template<typename DoFDictInserter, typename RuntimeLibInserter>

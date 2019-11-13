@@ -5,8 +5,8 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/eigen.hh"
 #include "casm/crystallography/SymRepBuilder.hh"
 
 //Defines notstd::make_unique<>()

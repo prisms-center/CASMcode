@@ -1,6 +1,7 @@
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 
 #include <iomanip>
+#include "casm/casm_io/Log.hh"
 #include "casm/container/algorithm.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 

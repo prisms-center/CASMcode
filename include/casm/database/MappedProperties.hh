@@ -3,7 +3,9 @@
 
 #include <string>
 #include <ctime>
-#include "casm/global/Eigen.hh"
+#include "casm/global/eigen.hh"
+#include "casm/casm_io/enum/io_traits.hh"
+#include "casm/casm_io/enum/stream_io.hh"
 
 namespace CASM {
 

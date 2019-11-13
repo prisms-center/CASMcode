@@ -1,5 +1,5 @@
-#ifndef CASM_global_Eigen
-#define CASM_global_Eigen
+#ifndef CASM_global_eigen
+#define CASM_global_eigen
 
 #include "casm/external/Eigen/Dense"
 
