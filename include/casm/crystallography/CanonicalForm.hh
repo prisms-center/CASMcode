@@ -7,7 +7,7 @@
 
 namespace CASM {
   namespace xtal {
-    class SymOp;
+    struct SymOp;
     typedef std::vector<SymOp> SymOpVector;
     class Lattice;
 

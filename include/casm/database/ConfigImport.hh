@@ -30,7 +30,7 @@ namespace CASM {
   namespace DB {
 
     template<>
-    class StructureMap<Configuration> {// : public ConfigData {
+    class StructureMap<Configuration> {
 
     public:
 

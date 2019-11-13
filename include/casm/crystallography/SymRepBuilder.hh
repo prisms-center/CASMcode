@@ -9,12 +9,16 @@
 namespace CASM {
 
   /// \brief Abstract base class that provides interface for converting cartesian isometry to specialized transformation matrix
+  /// Given a symmetry operation as a 3x3 orthogonal matrix acting on Cartesian space, a 3x1 Cartesian translation, and a time-reversal flag
+  /// (true indicates +t goes to -t and false indicates +t goes to +t), returns a particular NxN matrix transformation whose dimension and
+  /// value depends on the underlying implementation.
   class SymRepBuilderInterface {
   public:
+    /// \brief Interace class manages the name of the SymRepBuilder and whether it is affected by time-reversal (i.e., time_reversal_active() is true)
     SymRepBuilderInterface(std::string const &_name,
-                           bool _time_reversal) :
+                           bool _time_reversal_active) :
       m_name(_name),
-      m_time_reversal(_time_reversal) {
+      m_time_reversal_active(_time_reversal_active) {
 
     }
 
@@ -25,7 +29,7 @@ namespace CASM {
 
     /// \brief Returns true if symmetry representation is affected by time-reversal
     bool time_reversal_active() const {
-      return m_time_reversal;
+      return m_time_reversal_active;
     }
 
     /// \brief Virtual destructor allows deletion of derived classes through pointer to interface
@@ -57,7 +61,7 @@ namespace CASM {
     virtual SymRepBuilderInterface *_clone() const = 0;
 
     std::string m_name;
-    bool m_time_reversal;
+    bool m_time_reversal_active;
   };
 
   template<bool uses_time_reversal>
@@ -68,10 +72,12 @@ namespace CASM {
 
   };
 
+
   using SymRepBuilderBase = TemplateSymRepBuilderBase<false>;
 
   using TimeReversalSymRepBuilderBase = TemplateSymRepBuilderBase<true>;
 
+  /// \brief Un-cloneable class for specifying absence of valid SymRepBuilder
   class NullSymRepBuilder : public SymRepBuilderBase {
   public:
     NullSymRepBuilder() :
@@ -89,6 +95,7 @@ namespace CASM {
     }
   };
 
+  /// \brief Builds symmetry representation as the Cartesian matrix of povided SymOp
   class CartesianSymRepBuilder : public SymRepBuilderBase {
   public:
     CartesianSymRepBuilder() :
@@ -106,6 +113,7 @@ namespace CASM {
     }
   };
 
+  /// \brief Builds symmetry representation as the 'dim' x 'dim' identity matrix, regardless of symop
   class IdentitySymRepBuilder : public SymRepBuilderBase {
   public:
     IdentitySymRepBuilder() :
@@ -123,6 +131,7 @@ namespace CASM {
     }
   };
 
+  /// \brief Builds symmetry representation that is the angular momentum symmetry representation of provided symop
   class AngularMomentumSymRepBuilder : public TimeReversalSymRepBuilderBase {
   public:
     AngularMomentumSymRepBuilder() :
@@ -140,6 +149,7 @@ namespace CASM {
     }
   };
 
+  /// \brief Builds symmetry representation that is 'dim'x'dim' +Identity (-Identity) matrix if time_reversal is false (true)
   class TimeReversalSymRepBuilder : public TimeReversalSymRepBuilderBase {
   public:
     TimeReversalSymRepBuilder() :
@@ -157,6 +167,7 @@ namespace CASM {
     }
   };
 
+  /// \brief Build 6x6 symmetry representation for a rank 2 Cartesian tensor represented in Kelvin notation
   class Rank2TensorSymRepBuilder : public SymRepBuilderBase {
   public:
     Rank2TensorSymRepBuilder() :
@@ -184,6 +195,7 @@ namespace CASM {
     }
   };
 
+  // Named constructors for all previously defined SymRepBuilders
   namespace SymRepBuilder {
     inline
     CartesianSymRepBuilder Identity() {

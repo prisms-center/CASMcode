@@ -12,6 +12,60 @@
 
 namespace CASM {
   namespace xtal {
+    namespace Local {
+      /// Read SimpleStructure::Info for provided species type -- sp="mol" for molecule or sp="atom" for atom
+      /// and having the provide prefix
+      static void _info_from_json(SimpleStructure &_struc,
+                                  const jsonParser &json,
+                                  Eigen::Matrix3d const &f2c_mat,
+                                  std::string sp,
+                                  std::string prefix) {
+        SimpleStructure::Info &sp_info = (sp == "atom" ? _struc.atom_info : _struc.mol_info);
+        if(json.contains(sp + "s_per_type")) {
+          std::vector<Index> ntype = json[sp + "s_per_type"].get<std::vector<Index> >();
+
+          std::vector<std::string> type = json[sp + "s_type"].get<std::vector<std::string> >();
+
+          for(Index i = 0; i < ntype.size(); ++i) {
+            for(Index j = 0; j < ntype[i]; ++j) {
+              sp_info.names.push_back(type[i]);
+            }
+          }
+        }
+        else if(json.contains(sp + "_types")) {
+          from_json(sp_info.names, json[sp + "_types"]);
+        }
+        else
+          return;
+
+        // Remainder of loop body only evaluates if continue statement above is not triggered
+        {
+          std::vector<std::string> fields({prefix + "basis", "basis", sp + "_coords"});
+          for(std::string const &field : fields) {
+            auto it = json.find(field);
+            if(it != json.end()) {
+              sp_info.coords = f2c_mat * it->get<Eigen::MatrixXd>().transpose();
+              break;
+            }
+          }
+        }
+
+        {
+          std::vector<std::string> fields({sp + "_dofs", sp + "_vals"});
+          for(std::string const &field : fields) {
+            auto it = json.find(field);
+            if(it != json.end()) {
+              for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
+                sp_info.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
+              }
+            }
+          }
+        }
+
+      }
+    }
+
+    //***************************************************************************
 
     SimpleStructure to_simple_structure(BasicStructure<Site> const &_struc, const std::string &_prefix) {
       SimpleStructure result(_prefix);
@@ -193,7 +247,7 @@ namespace CASM {
                         std::set<std::string> const &excluded_species) {
 
       std::string prefix = _struc.prefix();
-      if(!prefix.empty())
+      if(!prefix.empty() && prefix.back() != '_')
         prefix.push_back('_');
 
 
@@ -265,8 +319,8 @@ namespace CASM {
     void from_json(SimpleStructure &_struc, const jsonParser &json) {
       std::string prefix = _struc.prefix();
 
-      Eigen::Matrix3d tmat;
-      tmat.setIdentity();
+      Eigen::Matrix3d f2c_mat;
+      f2c_mat.setIdentity();
 
       //if(!prefix.empty())
       prefix.push_back('_');
@@ -285,7 +339,7 @@ namespace CASM {
         COORD_TYPE mode = CART;
         if(tstr == "direct" || tstr == "Direct") {
           mode = FRAC;
-          tmat = _struc.lat_column_mat;
+          f2c_mat = _struc.lat_column_mat;
         }
 
         {
@@ -306,58 +360,6 @@ namespace CASM {
           }
         }
 
-
-        for(std::string sp : {
-              "atom", "mol"
-            }) {
-          SimpleStructure::Info &sp_info = (sp == "atom" ? _struc.atom_info : _struc.mol_info);
-          if(json.contains(sp + "s_per_type")) {
-            std::vector<Index> ntype = json[sp + "s_per_type"].get<std::vector<Index> >();
-
-            std::vector<std::string> type = json[sp + "s_type"].get<std::vector<std::string> >();
-
-            for(Index i = 0; i < ntype.size(); ++i) {
-              for(Index j = 0; j < ntype[i]; ++j) {
-                sp_info.names.push_back(type[i]);
-              }
-            }
-          }
-          else if(json.contains(sp + "_types")) {
-            from_json(sp_info.names, json[sp + "_types"]);
-          }
-          else
-            continue;
-
-          // Remainder of loop body only evaluates if continue statement above is not triggered
-          {
-            std::vector<std::string> fields({prefix + "basis", "basis", sp + "_coords"});
-            for(std::string const &field : fields) {
-              auto it = json.find(field);
-              if(it != json.end()) {
-                sp_info.coords = tmat * it->get<Eigen::MatrixXd>().transpose();
-                break;
-              }
-            }
-          }
-
-          {
-            std::vector<std::string> fields({sp + "_dofs", sp + "_vals"});
-            for(std::string const &field : fields) {
-              auto it = json.find(field);
-              if(it != json.end()) {
-                for(auto it2 = it->begin(); it2 != it->end(); ++it2) {
-                  sp_info.properties[it2.name()] = (*it2)["value"].get<Eigen::MatrixXd>().transpose();
-                }
-              }
-            }
-          }
-
-          if(json.contains(sp + "_selective_dynamics")) {
-            _struc.selective_dynamics = true;
-            sp_info.SD = json[sp + "_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
-          }
-        }
-
         if(json.contains(prefix + "forces")) {
           _struc.atom_info.properties["force"] = json[prefix + "forces"].get<Eigen::MatrixXd>().transpose();
         }
@@ -365,9 +367,10 @@ namespace CASM {
           _struc.atom_info.properties["force"] = json["forces"].get<Eigen::MatrixXd>().transpose();
         }
 
-
-        if(json.contains("mol_selective_dynamics")) {
-          _struc.mol_info.SD = json["mol_selective_dynamics"].get<Eigen::MatrixXi>().transpose();
+        for(std::string sp : {
+              "atom", "mol"
+            }) {
+          Local::_info_from_json(_struc, json, f2c_mat, sp, prefix);
         }
 
       }

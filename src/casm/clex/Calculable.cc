@@ -22,9 +22,7 @@ namespace CASM {
       _refresh_calc_properties(calctype);
       it = m_calc_properties_map.find(calctype);
     }
-    //if((it->second).contains("mapped")) {
-    //return it->second["mapped"];
-    //}
+
     return it->second;
   }
 
@@ -210,61 +208,6 @@ namespace CASM {
     }
     return calc_status_path(config.primclex(), config.name(), calctype);
   }
-
-  /// \brief Read properties.calc.json from training_data
-  ///
-  /// \returns tuple of:
-  /// - 0: JSON with calculated properties (or empty object)
-  /// - 1: bool indicating there is any data
-  /// - 2: bool indicating complete data
-  ///
-  /// JSON includes:
-  /// - file contents verbatim
-  /// -  "data_timestamp" with the last write time of the file
-  ///
-  /*
-  template<typename ConfigType>
-  std::tuple<MappedProperties, bool, bool> read_calc_properties(const ConfigType &config, std::string calctype) {
-    if(calctype == "") {
-      calctype = config.primclex().settings().default_clex().calctype;
-    }
-    return read_calc_properties<ConfigType>(
-             config.primclex(),
-             calc_properties_path(config.primclex(), config.name(), calctype));
-  }
-  */
-  /// \brief Read properties.calc.json from file
-  ///
-  /// \returns tuple of:
-  /// - 0: JSON with calculated properties (or empty object)
-  /// - 1: bool indicating there is any data
-  /// - 2: bool indicating complete data
-  ///
-  /// JSON includes:
-  /// - file contents verbatim
-  /// - "data_timestamp" with the last write time of the file
-  ///
-  /*
-  template<typename ConfigType>
-  std::tuple<MappedProperties, bool, bool> read_calc_properties(const PrimClex &primclex, const fs::path &filepath) {
-    if(!fs::exists(filepath)) {
-      return std::make_tuple(MappedProperties(), false, false);
-    }
-    jsonParser props(filepath);
-    if(!props.is_obj()) {
-      primclex.err_log() << "error parsing: " << filepath << std::endl;
-      primclex.err_log() << "not a valid properties.calc.json for Configuration: not a JSON object" << std::endl;
-      return std::make_tuple(MappedProperties(), false, false);
-    }
-    MappedProperties result;
-    from_json(result, props);
-    result.timestamp = fs::last_write_time(filepath);
-
-    const auto &prop_vec = primclex.settings().properties<ConfigType>();
-    bool is_calc = is_calculated(result, prop_vec);
-    return std::make_tuple(result, true, is_calc);
-  }
-  */
 
   /// \brief Return true if all required properties are included in the JSON
   bool is_calculated(const MappedProperties &calc_properties,

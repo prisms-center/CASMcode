@@ -39,7 +39,7 @@ namespace CASM {
   }
 
   AnisoValTraits::AnisoValTraits(std::string const &_name) {
-    *this = Local::traits(_name);
+    *this = Local::traits(name_suffix(_name));
   }
 
   AnisoValTraits::AnisoValTraits(std::string const &_name,
@@ -50,7 +50,7 @@ namespace CASM {
                                  std::set<std::string> const &_must_apply_before /*= {}*/,
                                  std::set<std::string> const &_must_apply_after /*= {}*/,
                                  bool _default /*= false*/) :
-    m_name(_name),
+    m_name(name_suffix(_name)),
     m_default(_default),
     m_standard_var_names(_std_var_names),
     m_opt(_options),
@@ -58,6 +58,10 @@ namespace CASM {
     m_incompatible(_incompatible),
     m_apply_before(_must_apply_before),
     m_apply_after(_must_apply_after) {
+    if(m_name != _name) {
+      throw std::runtime_error("Attempting to initialize AnisoValTraits object that does not satisfy naming constraints. Name '" + _name + "' was reduced to '" + m_name + "'."
+                               + " Note: The underscore character '_' is not allowed.\n");
+    }
     Local::register_traits(*this);
   }
 
@@ -108,7 +112,7 @@ namespace CASM {
   AnisoValTraits AnisoValTraits::magspin() {
     return AnisoValTraits("magspin",
     {"sx", "sy", "sz"},
-    LOCAL | UNIT_LENGTH,
+    LOCAL,
     AngularMomentumSymRepBuilder(),
     {},
     {"atomize"});
