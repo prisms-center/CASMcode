@@ -31,7 +31,6 @@ TEST(SubOrbitsTest, ZrOProj) {
   EXPECT_EQ(true, true);
   test::ZrOProj proj;
   proj.check_init();
-  proj.check_composition();
 
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
@@ -266,7 +265,6 @@ TEST(SubOrbitsTest, FCCTernaryProj) {
   EXPECT_EQ(true, true);
   test::FCCTernaryProj proj;
   proj.check_init();
-  proj.check_composition();
 
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);
@@ -473,7 +471,6 @@ TEST(SubOrbitsTest, L12Proj) {
   EXPECT_EQ(true, true);
   test::FCCTernaryProj proj;
   proj.check_init();
-  proj.check_composition();
 
   Logging logging = Logging::null();
   PrimClex primclex(proj.dir, logging);

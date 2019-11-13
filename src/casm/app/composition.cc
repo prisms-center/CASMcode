@@ -11,6 +11,7 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 
 namespace CASM {
 
@@ -202,7 +203,7 @@ namespace CASM {
 
         opt.standard.clear();
         std::vector<CompositionConverter> v;
-        standard_composition_axes(primclex.prim(), std::back_inserter(v));
+        standard_composition_axes(allowed_molecule_names(primclex.prim()), std::back_inserter(v));
         for(int i = 0; i < v.size(); i++) {
           opt.standard[std::to_string(i)] = v[i];
         }

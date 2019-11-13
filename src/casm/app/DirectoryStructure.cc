@@ -190,8 +190,8 @@ namespace CASM {
   }
 
   /// \brief Return Species Traits plugin dir
-  fs::path DirectoryStructure::species_traits_plugins() const {
-    return m_root / m_casm_dir / "species_traits";
+  fs::path DirectoryStructure::symrep_builder_plugins() const {
+    return m_root / m_casm_dir / "symrep_builder";
   }
 
   template<typename DataObject>

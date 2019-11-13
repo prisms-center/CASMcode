@@ -18,7 +18,7 @@ namespace CASM {
       Coordinate(init_home),
       m_label(-1),
       m_type_ID(-1),
-      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation(), "s" /*variable name*/, std::vector<Molecule>()).clone()) {
+      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation().val_traits(), "s" /*variable name*/, std::vector<Molecule>()).clone()) {
       //occupant_dof.set_value(0);
     }
 
@@ -28,7 +28,7 @@ namespace CASM {
       Coordinate(init_pos),
       m_label(-1),
       m_type_ID(-1),
-      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>()).clone()) {
+      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation().val_traits(), "s"/* variable name*/, std::vector<Molecule>()).clone()) {
 
       std::vector<Molecule> tocc;
       tocc.push_back(Molecule::make_atom(occ_name));
@@ -43,7 +43,7 @@ namespace CASM {
       Coordinate(init_pos),
       m_label(-1),
       m_type_ID(-1),
-      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>(site_occ)).clone()) {
+      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation().val_traits(), "s"/* variable name*/, std::vector<Molecule>(site_occ)).clone()) {
 
     }
 
@@ -91,7 +91,7 @@ namespace CASM {
 
     bool Site::time_reversal_active() const {
       for(auto const &_dof : m_dof_map)
-        if(DoF::traits(_dof.first).time_reversal_active())
+        if(_dof.second.traits().time_reversal_active())
           return true;
 
       for(auto const &mol : occupant_dof().domain())

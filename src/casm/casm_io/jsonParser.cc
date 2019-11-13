@@ -248,7 +248,7 @@ namespace CASM {
       }
       return true;
     }
-    else if(is_number()) {
+    else if(is_float()) {
       bool res = CASM::almost_equal(this->get<double>(), B.get<double>(), tol);
       return res;
     }
@@ -277,8 +277,13 @@ namespace CASM {
   }
 
   /// Check if number type (not including int)
-  bool jsonParser::is_number() const {
+  bool jsonParser::is_float() const {
     return type() == json_spirit::real_type;
+  }
+
+  /// Check if number type (including int)
+  bool jsonParser::is_number() const {
+    return is_int() || is_float();
   }
 
   /// Check if string

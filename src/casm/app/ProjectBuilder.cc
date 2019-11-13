@@ -9,6 +9,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/database/DatabaseTypes.hh"
 
@@ -170,7 +171,7 @@ namespace CASM {
 
       opt.standard.clear();
       std::vector<CompositionConverter> v;
-      standard_composition_axes(prim, std::back_inserter(v));
+      standard_composition_axes(allowed_molecule_names(prim), std::back_inserter(v));
       for(int i = 0; i < v.size(); i++) {
         opt.standard[std::to_string(i)] = v[i];
       }

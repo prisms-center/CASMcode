@@ -263,6 +263,26 @@ namespace CASM {
     return json;
   }
 
+  /// \brief Write Eigen Matrix/Vector to JSON
+  template <typename Derived>
+  CASM::jsonParser &to_json(const Eigen::MatrixBase<Derived> &value, CASM::jsonParser &json, CASM::jsonParser::as_flattest) {
+    if(value.rows() == 1) {
+      if(value.cols() == 1) {
+        json = value(1, 1);
+      }
+      else {
+        to_json(value, json, jsonParser::as_array());
+      }
+    }
+    else if(value.cols() == 1) {
+      to_json(value, json, jsonParser::as_array());
+    }
+    else
+      to_json(value, json);
+
+    return json;
+  }
+
 
   /// \brief Write Eigen Matrix with 1 row or 1 column to JSON array
   template <typename Derived>
@@ -284,7 +304,11 @@ namespace CASM {
   /// - Reads 1d JSON array as column vector
   template <typename Derived>
   void from_json(Eigen::MatrixBase<Derived>  &value, const CASM::jsonParser &json) {
-    if(json.is_array() && !json[0].is_array()) {
+    if(json.is_number()) {
+      value.derived().resize(1, 1);
+      from_json(value(0, 0), json);
+    }
+    else if(json.is_array() && !json[0].is_array()) {
       value.derived().resize(json.size(), 1);
       for(int i = 0; i < value.rows(); i++) {
         from_json(value(i, 0), json[i]);

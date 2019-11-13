@@ -2,152 +2,173 @@
 #define CASM_MappedProperties
 
 #include <string>
+#include <ctime>
+#include "casm/global/eigen.hh"
+#include "casm/casm_io/enum/io_traits.hh"
 #include "casm/casm_io/enum/stream_io.hh"
-#include "casm/casm_io/enum/json_io.hh"
-#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
-  namespace DB {
 
-    /// \brief Data structure stored in PropertiesDatabase
+  /// \brief Data structure stored in PropertiesDatabase
+  ///
+  /// - Use documentation here as reference for reading/writing 'properties.calc.json'
+  ///   files.
+  ///
+  struct MappedProperties {
+
+    /// The name of the config that was the starting point for relaxation
+    /// If no relaxation, from == to
+    std::string from;
+
+    /// The name of the config that was the ending point of relaxation
+    /// If no relaxation, from == to
+    std::string to;
+
+    std::time_t timestamp;
+
+    /// Raw & unmapped calculated properties, as from properties.calc.json:
     ///
-    /// - Use documentation here as reference for reading/writing 'properties.calc.json'
-    ///   files.
+    /// For Configuration:
+    /// - "relaxed_forces": shape=(Nx3), Final forces
+    ///   on atoms.
+    /// - "relaxed_lattice": Lattice, shape=(3x3), Final lattice
+    ///   vectors, stored column vectors of (3x3) matrix
+    /// - "relaxed_basis": Eigen::MatrixXd, shape=(Nx3), Final basis
+    ///   coordinates.
+    /// - "relaxed_energy": double, shape=(1x1), Final energy.
+    /// - "relaxed_magmom": double, shape=(1x1) Final total magnetic moment.
+    /// - "relaxed_mag_basis": shape=(Nx1), Final magnetic moment at each
+    ///   basis site
+    std::map<std::string, Eigen::MatrixXd> global;
+
+    /// Parsed & mapped properties, as from ConfigMapperResult:
     ///
-    struct MappedProperties {
-
-      /// The name of the config that was the starting point for relaxation
-      /// If no relaxation, from == to
-      std::string from;
-
-      /// The name of the config that was the ending point of relaxation
-      /// If no relaxation, from == to
-      std::string to;
-
-      /// Raw & unmapped calculated properties, as from properties.calc.json:
-      ///
-      /// For Configuration:
-      /// - "atom_type": std::vector<std::string>, List of species names as in
-      ///   the PRIM, as ordered in basis.
-      /// - "atoms_per_type": Eigen::VectorXi, List of number of atoms of each type,
-      ///   corresponds to entries in "atom_type".
-      /// - "coord_mode": str, Coordinate mode for basis (always 'direct').
-      /// - "relaxed_forces": Eigen::MatrixXd, shape=(N,3), Final forces
-      ///   on atoms.
-      /// - "relaxed_lattice": Lattice, shape=(3,3), Final lattice
-      ///   vectors, stored as list [ [a0, a1, a2], [b0, b1, b2], [c0, c1, c2]].
-      /// - "relaxed_basis": Eigen::MatrixXd, shape=(N,3), Final basis
-      ///   coordinates.
-      /// - "relaxed_energy": double, Final energy.
-      /// - "relaxed_magmom": double, Final total magnetic moment.
-      /// - "relaxed_mag_basis": Eigen::VectorXd, Final magnetic moment at each
-      ///   basis site
-      jsonParser unmapped;
-
-      /// Parsed & mapped properties, as from ConfigMapperResult:
-      ///
-      /// For Configuration:
-      /// - From ConfigMapperResult::relaxation_properties:
-      ///   - 'lattice_deformation': double, lattice mapping score
-      ///   - 'basis_deformation': double, basis mapping score
-      ///   - 'volume_relaxation': double, V/V_ideal
-      ///   - 'relaxation_deformation': Eigen::Matrix3d, also referred to as F:
-      ///     cart_op*L_calc = F*L_ideal, L_calc being the lattice in the imported structure,
-      ///     and L_ideal the lattice of the ideal mapped to Configuration, and
-      ///     cart_op is a cartesian transformation matrix operation.
-      ///   - 'relaxation_displacement': Eigen::MatrixXd, shape=(N,3) Gives the
-      ///     the cartesian displacement of each Molecule reference position from the
-      ///     ideal basis location. Remember, displacements are applied before
-      ///     deformation.
-      /// - From ConfigMapperResult
-      ///   - "best_assignment": Permutation, Representations the permutation
-      ///     that maps sites in the imported structure onto sites of the ideal crystal.
-      ///     i.e. config[i] = imported_structure[best_assignment[i]]
-      /// - From ConfigMapperResult::cart_op:
-      ///   - "cart_op": Eigen::Matrix3d, the cartesian isometry that rotates the
-      ///     imported structure onto the coordinate system of the ideal crystal.
-      ///
-      jsonParser mapped;
-    };
-
-    jsonParser &to_json(const MappedProperties &score, jsonParser &json);
-
-    void from_json(MappedProperties &score, const jsonParser &json);
-
-
-    /// Compare via A.from < B.from
+    /// For Configuration:
+    /// - From ConfigMapperResult::relaxation_properties:
+    ///   - 'lattice_deformation': double, shape=(1x1) , lattice mapping score
+    ///   - 'basis_deformation': double, shape=(1x1), basis mapping score
+    ///   - 'relaxation_deformation': shape=(3x3), also referred to as F:
+    ///     cart_op*L_calc = F*L_ideal, L_calc being the lattice in the imported structure,
+    ///     and L_ideal the lattice of the ideal mapped to Configuration, and
+    ///     cart_op is a cartesian transformation matrix operation.
+    ///   - 'relaxation_displacement': shape=(N,3) Gives the
+    ///     the cartesian displacement of each Molecule reference position from the
+    ///     ideal basis location. Remember, displacements are applied before
+    ///     deformation.
+    /// - From ConfigMapperResult::cart_op:
+    ///   - "cart_op": shape=(3x3), the cartesian isometry that rotates the
+    ///     imported structure onto the coordinate system of the ideal crystal.
     ///
-    /// - Enforces one calculated properties per starting configuration
-    inline bool operator<(const MappedProperties &A, const MappedProperties &B) {
-      return A.from < B.from;
+    std::map<std::string, Eigen::MatrixXd> site;
+
+    bool has_scalar(std::string const &_name) const;
+
+    double const &scalar(std::string const &_name) const;
+
+    double &scalar(std::string const &_name);
+  };
+
+  jsonParser &to_json(const MappedProperties &prop, jsonParser &json);
+
+  jsonParser const &from_json(MappedProperties &prop, const jsonParser &json);
+
+
+  /// Compare via A.from < B.from
+  ///
+  /// - Enforces one calculated properties per starting configuration
+  inline bool operator<(const MappedProperties &A, const MappedProperties &B) {
+    return A.from < B.from;
+  }
+
+
+  /// Resolve mapping conflicts by 'scoring' the MappedProperties structure
+  ///
+  /// Options:
+  /// \code
+  /// {
+  ///   "method" : "deformation_cost",
+  ///   "lattice_weight" : number in range [0,1.0]
+  /// }
+  /// {
+  ///   "method" : "minimum",
+  ///   "property" : property name (i.e. "relaxed_energy")
+  /// }
+  /// {
+  ///   "method" : "maximum",
+  ///   "property" : property name (i.e. "some property")
+  /// }
+  /// {
+  ///   "method" : "direct_selection",
+  ///   "name" : configname to force as 'best' (i.e. "SCEL3_1_1_3_0_0_0/4")
+  /// }
+  /// \endcode
+  ///
+  class ScoreMappedProperties {
+
+  public:
+
+    enum class Method {deformation_cost, minimum, maximum, direct_selection};
+
+    static std::string method_name(Method m) {
+      if(m == Method::minimum)
+        return "minimum";
+      else if(m == Method::maximum)
+        return "maximum";
+      else if(m == Method::direct_selection)
+        return "direct_selection";
+      else if(m == Method::deformation_cost)
+        return "deformation_cost";
+      return "unknown";
     }
 
+    struct Option {
+      Option(Method _method = Method::minimum, std::string _name = "relaxed_energy") :
+        Option(_method, _name, -1.) {}
 
-    /// Resolve mapping conflicts by 'scoring' the MappedProperties structure
-    ///
-    /// Options:
-    /// \code
-    /// {
-    ///   "method" : "deformation_cost",
-    ///   "lattice_weight" : number in range [0,1.0]
-    /// }
-    /// {
-    ///   "method" : "minimum",
-    ///   "property" : property name (i.e. "relaxed_energy")
-    /// }
-    /// {
-    ///   "method" : "maximum",
-    ///   "property" : property name (i.e. "some property")
-    /// }
-    /// {
-    ///   "method" : "direct_selection",
-    ///   "name" : configname to force as 'best' (i.e. "SCEL3_1_1_3_0_0_0/4")
-    /// }
-    /// \endcode
-    ///
-    class ScoreMappedProperties {
 
-    public:
+      Option(Method _method, double _lattice_weight = 0.5) :
+        Option(_method, "", _lattice_weight) {}
 
-      enum class Method {deformation_cost, minimum, maximum, direct_selection};
+      /// Method for scoring
+      Method method;
 
-      /// \brief Default uses minimum relaxed_energy
-      ScoreMappedProperties();
+      /// Property name or configname used for scoring
+      std::string name;
 
-      explicit ScoreMappedProperties(const jsonParser &_params);
-
-      double operator()(const MappedProperties &obj) const;
-
-      bool validate(const MappedProperties &obj) const;
-
-      bool operator==(const ScoreMappedProperties &B) const;
-
-      bool operator!=(const ScoreMappedProperties &B) const;
-
-      const jsonParser &params() const;
+      double lattice_weight;
 
     private:
-
-      jsonParser m_params;
-
-      Method m_method;
-
-      std::string m_propname;
-      double m_lattice_weight;
-      std::string m_direct_selection_name;
+      Option(Method _method, std::string _name, double _lattice_weight);
     };
 
-    jsonParser &to_json(const ScoreMappedProperties &score, jsonParser &json);
 
-    void from_json(ScoreMappedProperties &score, const jsonParser &json);
+    /// \brief Default uses minimum relaxed_energy
+    explicit ScoreMappedProperties(Option _opt = Option(Method::minimum, "relaxed_energy"));
 
-  }
+    double operator()(const MappedProperties &obj) const;
+
+    bool validate(const MappedProperties &obj) const;
+
+    bool operator==(const ScoreMappedProperties &B) const;
+
+    bool operator!=(const ScoreMappedProperties &B) const;
+
+    const Option &option() const {
+      return m_opt;
+    }
+
+  private:
+    Option m_opt;
+  };
+
+  jsonParser &to_json(const ScoreMappedProperties &score, jsonParser &json);
+
+  jsonParser const &from_json(ScoreMappedProperties &score, const jsonParser &json);
 }
 
 namespace CASM {
-  ENUM_TRAITS(CASM::DB::ScoreMappedProperties::Method)
-  ENUM_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
-  ENUM_JSON_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
+  ENUM_IO_DECL(CASM::ScoreMappedProperties::Method)
+  ENUM_TRAITS(CASM::ScoreMappedProperties::Method)
 }
 
 #endif

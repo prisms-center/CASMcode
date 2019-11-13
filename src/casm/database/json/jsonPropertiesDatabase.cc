@@ -26,7 +26,7 @@ namespace CASM {
         auto it = json["conflict_score"].begin();
         auto end = json["conflict_score"].end();
         for(; it != end; ++it) {
-          set_score_method(it.name(), ScoreMappedProperties(*it));
+          set_score_method(it.name(), it->get<ScoreMappedProperties>());
         }
       }
 

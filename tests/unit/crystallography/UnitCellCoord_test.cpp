@@ -12,14 +12,9 @@ using namespace CASM;
 
 TEST(UnitCellCoordTest, Test1) {
 
-  test::FCCTernaryProj proj;
-  proj.check_init();
-  proj.check_composition();
-
-  PrimClex primclex(proj.dir, default_log());
-
+  BasicStructure<Site> prim = test::FCC_ternary_prim();
   {
-    UnitCellCoord uccoord(primclex.prim(), 0, -1, 1, 1);
+    UnitCellCoord uccoord(prim, 0, -1, 1, 1);
     Eigen::Vector3d vec = uccoord.site().cart();
     EXPECT_EQ(almost_equal(vec, Eigen::Vector3d(4., 0., 0.)), true);
   }

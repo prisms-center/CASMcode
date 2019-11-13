@@ -112,7 +112,6 @@ libcasm_la_SOURCES = \
     include/casm/clex/ConfigIONovelty.hh\
     include/casm/clex/ConfigIOStrain.hh\
     include/casm/clex/ConfigIOStrucScore.hh\
-    include/casm/clex/ConfigImport.hh\
     include/casm/clex/ConfigIsEquivalent.hh\
     include/casm/clex/ConfigMapping.hh\
     include/casm/clex/Configuration.hh\
@@ -127,6 +126,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/HasPrimClex_impl.hh\
     include/casm/clex/HasSupercell.hh\
     include/casm/clex/HasSupercell_impl.hh\
+    include/casm/clex/MappedPropertiesTools.hh\
     include/casm/clex/NeighborList.hh\
     include/casm/clex/Norm.hh\
     include/casm/clex/OrbitFunctionTraits.hh\
@@ -176,6 +176,7 @@ libcasm_la_SOURCES = \
     include/casm/container/algorithm.hh\
     include/casm/container/multivector.hh\
     include/casm/crystallography/Adapter.hh\
+    include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/CanonicalForm.hh\
@@ -199,6 +200,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/StrucMapping.hh\
     include/casm/crystallography/Structure.hh\
     include/casm/crystallography/SuperlatticeEnumerator.hh\
+    include/casm/crystallography/SymRepBuilder.hh\
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
@@ -752,7 +754,6 @@ libcasm_la_SOURCES = \
     src/casm/casm_io/FormatFlag.cc\
     src/casm/casm_io/InputParser.cc\
     src/casm/casm_io/Log.cc\
-    src/casm/casm_io/VaspIO.cc\
     src/casm/casm_io/jsonParser.cc\
     src/casm/casm_io/json_io/SpeciesSetParser.cc\
     src/casm/casm_io/json_io/clex.cc\
@@ -784,6 +785,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/Configuration.cc\
     src/casm/clex/ConfigurationTraits.cc\
     src/casm/clex/ECIContainer.cc\
+    src/casm/clex/MappedPropertiesTools.cc\
     src/casm/clex/NeighborList.cc\
     src/casm/clex/OrbitFunctionTraits.cc\
     src/casm/clex/ParamComposition.cc\
@@ -803,6 +805,7 @@ libcasm_la_SOURCES = \
     src/casm/completer/Complete.cc\
     src/casm/completer/Handlers.cc\
     src/casm/container/Permutation.cc\
+    src/casm/crystallography/AnisoValTraits.cc\
     src/casm/crystallography/BasicStructure.cc\
     src/casm/crystallography/CanonicalForm.cc\
     src/casm/crystallography/Coordinate.cc\
@@ -826,6 +829,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\
     src/casm/crystallography/UnitCellCoord.cc\
+    src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\
     src/casm/database/ConfigImport.cc\

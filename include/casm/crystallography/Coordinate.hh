@@ -11,7 +11,7 @@
 
 namespace CASM {
   namespace xtal {
-    class SymOp;
+    struct SymOp;
     class Lattice;
 
     namespace Coordinate_impl {

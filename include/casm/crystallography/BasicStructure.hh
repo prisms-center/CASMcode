@@ -260,6 +260,11 @@ namespace CASM {
     std::vector<std::string> struc_molecule_name(BasicStructure<CoordType> const &_struc);
 
     //************************************************************
+    /// Returns a vector with a list of allowed molecule names at each site
+    template<typename CoordType>
+    std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure<CoordType> const &_struc);
+
+    //************************************************************
 
     /// Returns a list of how many of each species exist in this Structure
     ///   The Specie types are ordered according to struc_species()

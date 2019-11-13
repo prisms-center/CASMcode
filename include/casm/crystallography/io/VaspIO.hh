@@ -143,7 +143,10 @@ namespace CASM {
 
       std::string m_title;
       SpeciesMode m_species_mode;
+
       xtal::SimpleStructure m_struc;
+      std::vector<Index> m_permute;
+
       double m_scale;
       COORD_TYPE m_coord_mode;
       bool m_atom_names;

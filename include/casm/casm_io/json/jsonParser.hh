@@ -116,6 +116,10 @@ namespace CASM {
     /// as single, instead of nested array
     struct as_array { };
 
+    /// Formatting directive, when passed as argument to to_json method, will attempt to format
+    /// as 'flattest' object (scalar for 1x1x1x..., single array for nx1x..., etc.
+    struct as_flattest { };
+
     // ---- Read/Print JSON  ----------------------------------
 
     /// Reads json from the stream
@@ -176,6 +180,7 @@ namespace CASM {
     bool is_null() const;
     bool is_bool() const;
     bool is_int() const;
+    bool is_float() const;
     bool is_number() const;
     bool is_string() const;
     bool is_obj() const;
