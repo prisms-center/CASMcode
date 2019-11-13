@@ -77,7 +77,7 @@ namespace CASM {
     Array<int> factor_list;
 
     if(target <= 1) {
-      std::cerr << "WARNING in CASM_Global_Definitions::get_prime_factors" << std::endl;
+      std::cerr << "WARNING in global/definitions::get_prime_factors" << std::endl;
       std::cerr << "You're asking for prime factors of " << target << ". Returning empty array." << std::endl << std::endl;
       return factors_array;
     }

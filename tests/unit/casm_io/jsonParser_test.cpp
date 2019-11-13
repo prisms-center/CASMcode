@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 /// What is being tested:
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 /// What is being used to test it:
 #include <boost/filesystem.hpp>

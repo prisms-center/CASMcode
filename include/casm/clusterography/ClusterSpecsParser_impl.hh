@@ -3,7 +3,7 @@
 
 #include "casm/clusterography/ClusterSpecsParser.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/Database.hh"
 #include "casm/database/ScelDatabase.hh"

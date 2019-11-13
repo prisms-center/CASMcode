@@ -1,13 +1,13 @@
 #ifndef CASM_LatticeCanonicalForm
 #define CASM_LatticeCanonicalForm
 
-#include "casm/CASM_global_definitions.hh"
-#include "casm/crystallography/LatticeIsEquivalent.hh"
 #include <vector>
+#include "casm/crystallography/LatticeIsEquivalent.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
   namespace xtal {
-    class SymOp;
+    struct SymOp;
     typedef std::vector<SymOp> SymOpVector;
     class Lattice;
 

@@ -1,8 +1,8 @@
 #ifndef CASM_CanonicalConditions_HH
 #define CASM_CanonicalConditions_HH
 
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/eigen.hh"
 
 namespace CASM {
   class PrimClex;

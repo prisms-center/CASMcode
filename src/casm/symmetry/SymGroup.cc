@@ -9,13 +9,14 @@
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymTools.hh"
+#include "casm/global/enum/json_io.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/casm_io/Log.hh"
 
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
   //INITIALIZE STATIC MEMBER MasterSymGroup::GROUP_COUNT

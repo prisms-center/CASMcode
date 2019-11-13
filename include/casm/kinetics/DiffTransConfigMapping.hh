@@ -2,13 +2,13 @@
 #define CASM_DiffTransConfigMapping
 
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Site.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/Structure.hh"
 
 namespace CASM {

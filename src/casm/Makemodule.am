@@ -1,9 +1,6 @@
 lib_LTLIBRARIES += \
     libcasm.la
 libcasm_la_SOURCES = \
-    include/casm/CASM_global_Eigen.hh\
-    include/casm/CASM_global_definitions.hh\
-    include/casm/CASM_global_enum.hh\
     include/casm/app/APICommand.hh\
     include/casm/app/APICommand_impl.hh\
     include/casm/app/AppIO.hh\
@@ -15,8 +12,10 @@ libcasm_la_SOURCES = \
     include/casm/app/DirectoryStructure.hh\
     include/casm/app/EnumeratorHandler.hh\
     include/casm/app/EnumeratorHandler_impl.hh\
+    include/casm/app/FileEnumerator.hh\
     include/casm/app/HamiltonianModules.hh\
     include/casm/app/HamiltonianModules_impl.hh\
+    include/casm/app/LogRuntimeLibrary.hh\
     include/casm/app/ProjectBuilder.hh\
     include/casm/app/ProjectSettings.hh\
     include/casm/app/QueryHandler.hh\
@@ -29,6 +28,10 @@ libcasm_la_SOURCES = \
     include/casm/app/format.hh\
     include/casm/app/import.hh\
     include/casm/app/init.hh\
+    include/casm/app/io/json/SpeciesSetParser.hh\
+    include/casm/app/io/json/SpeciesSetParser_impl.hh\
+    include/casm/app/json_io.hh\
+    include/casm/app/json_io_impl.hh\
     include/casm/app/monte.hh\
     include/casm/app/query.hh\
     include/casm/app/ref.hh\
@@ -57,29 +60,26 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/PolynomialFunction.hh\
     include/casm/basis_set/StrainDoFTraits.hh\
     include/casm/basis_set/Variable.hh\
-    include/casm/casm_io/DataFormatter.hh\
-    include/casm/casm_io/DataFormatterDecl.hh\
-    include/casm/casm_io/DataFormatterTools.hh\
-    include/casm/casm_io/DataFormatterTools_impl.hh\
-    include/casm/casm_io/DataFormatter_impl.hh\
-    include/casm/casm_io/DataStream.hh\
-    include/casm/casm_io/EigenDataStream.hh\
-    include/casm/casm_io/EnumIO.hh\
-    include/casm/casm_io/FileEnumerator.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
-    include/casm/casm_io/InputParser.hh\
-    include/casm/casm_io/InputParser_impl.hh\
     include/casm/casm_io/Log.hh\
     include/casm/casm_io/SafeOfstream.hh\
-    include/casm/casm_io/VaspIO.hh\
-    include/casm/casm_io/jsonFile.hh\
-    include/casm/casm_io/jsonParser.hh\
-    include/casm/casm_io/json_io/SpeciesSetParser.hh\
-    include/casm/casm_io/json_io/SpeciesSetParser_impl.hh\
-    include/casm/casm_io/json_io/clex.hh\
-    include/casm/casm_io/json_io/container.hh\
-    include/casm/casm_io/stream_io/container.hh\
+    include/casm/casm_io/container/json_io.hh\
+    include/casm/casm_io/container/stream_io.hh\
+    include/casm/casm_io/dataformatter/DataFormatter.hh\
+    include/casm/casm_io/dataformatter/DataFormatterDecl.hh\
+    include/casm/casm_io/dataformatter/DataFormatterTools.hh\
+    include/casm/casm_io/dataformatter/DataFormatterTools_impl.hh\
+    include/casm/casm_io/dataformatter/DataFormatter_impl.hh\
+    include/casm/casm_io/dataformatter/DataStream.hh\
+    include/casm/casm_io/dataformatter/EigenDataStream.hh\
+    include/casm/casm_io/enum/io_traits.hh\
+    include/casm/casm_io/enum/json_io.hh\
+    include/casm/casm_io/enum/stream_io.hh\
+    include/casm/casm_io/json/InputParser.hh\
+    include/casm/casm_io/json/InputParser_impl.hh\
+    include/casm/casm_io/json/jsonFile.hh\
+    include/casm/casm_io/json/jsonParser.hh\
     include/casm/clex/BasicClexParamPack.hh\
     include/casm/clex/Calculable.hh\
     include/casm/clex/ChemicalReference.hh\
@@ -145,6 +145,8 @@ libcasm_la_SOURCES = \
     include/casm/clex/SupercellTraits.hh\
     include/casm/clex/Supercell_functions.hh\
     include/casm/clex/Supercell_impl.hh\
+    include/casm/clex/io/json/ChemicalReference.hh\
+    include/casm/clex/json_io.hh\
     include/casm/clusterography/ClusterDecl.hh\
     include/casm/clusterography/ClusterInvariants.hh\
     include/casm/clusterography/ClusterInvariants_impl.hh\
@@ -202,6 +204,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
+    include/casm/crystallography/io/VaspIO.hh\
     include/casm/crystallography/jsonStruc.hh\
     include/casm/database/Cache.hh\
     include/casm/database/ConfigData.hh\
@@ -580,6 +583,12 @@ libcasm_la_SOURCES = \
     include/casm/external/qhull/libqhullcpp/RoadError.h\
     include/casm/external/qhull/libqhullcpp/RoadLogEvent.h\
     include/casm/external/qhull/libqhullcpp/functionObjects.h\
+    include/casm/global/definitions.hh\
+    include/casm/global/eigen.hh\
+    include/casm/global/enum.hh\
+    include/casm/global/enum/io_traits.hh\
+    include/casm/global/enum/json_io.hh\
+    include/casm/global/enum/stream_io.hh\
     include/casm/hull/Hull.hh\
     include/casm/kinetics/DiffTransConfigEnumOccPerturbations.hh\
     include/casm/kinetics/DiffTransConfigInterpolation.hh\
@@ -693,8 +702,6 @@ libcasm_la_SOURCES = \
     include/casm/system/Popen.hh\
     include/casm/system/RuntimeLibrary.hh\
     include/casm/version/version.hh\
-    src/casm/CASM_global_definitions.cc\
-    src/casm/CASM_global_enum.cc\
     src/casm/app/APICommand.cc\
     src/casm/app/AppIO.cc\
     src/casm/app/CLIParse.cc\
@@ -703,6 +710,7 @@ libcasm_la_SOURCES = \
     src/casm/app/DirectoryStructure.cc\
     src/casm/app/EnumeratorHandler.cc\
     src/casm/app/HamiltonianModules.cc\
+    src/casm/app/LogRuntimeLibrary.cc\
     src/casm/app/ProjectBuilder.cc\
     src/casm/app/ProjectSettings.cc\
     src/casm/app/QueryHandler.cc\
@@ -746,7 +754,6 @@ libcasm_la_SOURCES = \
     src/casm/casm_io/FormatFlag.cc\
     src/casm/casm_io/InputParser.cc\
     src/casm/casm_io/Log.cc\
-    src/casm/casm_io/VaspIO.cc\
     src/casm/casm_io/jsonParser.cc\
     src/casm/casm_io/json_io/SpeciesSetParser.cc\
     src/casm/casm_io/json_io/clex.cc\
@@ -822,6 +829,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\
     src/casm/crystallography/UnitCellCoord.cc\
+    src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\
     src/casm/database/ConfigImport.cc\
@@ -878,6 +886,10 @@ libcasm_la_SOURCES = \
     src/casm/external/qhull/libqhullcpp/RboxPoints.cpp\
     src/casm/external/qhull/libqhullcpp/RoadError.cpp\
     src/casm/external/qhull/libqhullcpp/RoadLogEvent.cpp\
+    src/casm/global/definitions.cc\
+    src/casm/global/enum/io_traits.cc\
+    src/casm/global/enum/json_io.cc\
+    src/casm/global/enum/stream_io.cc\
     src/casm/hull/Hull.cc\
     src/casm/kinetics/DiffTransConfigEnumOccPerturbations.cc\
     src/casm/kinetics/DiffTransConfigInterpolation.cc\

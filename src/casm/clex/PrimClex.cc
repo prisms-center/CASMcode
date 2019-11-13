@@ -1,6 +1,5 @@
 #include "casm/clex/PrimClex_impl.hh"
 
-#include "casm/system/RuntimeLibrary.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Structure.hh"

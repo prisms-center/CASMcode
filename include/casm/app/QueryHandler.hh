@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "casm/misc/cloneable_ptr.hh"
-#include "casm/casm_io/DataFormatterDecl.hh"
+#include "casm/casm_io/dataformatter/DataFormatterDecl.hh"
 
 namespace CASM {
 

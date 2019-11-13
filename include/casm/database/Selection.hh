@@ -5,10 +5,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/range/iterator_range.hpp>
-#include "casm/misc/CASM_TMP.hh"
-#include "casm/casm_io/DataFormatterDecl.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/EnumIO.hh"
+#include "casm/casm_io/dataformatter/DataFormatterDecl.hh"
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
+#include "casm/misc/CASM_TMP.hh"
 
 namespace CASM {
   namespace DB {

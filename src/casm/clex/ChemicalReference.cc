@@ -1,5 +1,5 @@
 #include "casm/clex/ChemicalReference_impl.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/Configuration.hh"

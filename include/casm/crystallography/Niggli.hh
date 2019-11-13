@@ -1,9 +1,9 @@
 #ifndef NIGGLI_HH
 #define NIGGLI_HH
 
-#include "casm/CASM_global_definitions.hh"
-#include "casm/external/Eigen/Core"
 #include <vector>
+#include "casm/external/Eigen/Core"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 

@@ -1,5 +1,5 @@
-#include "casm/casm_io/json_io/container.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"

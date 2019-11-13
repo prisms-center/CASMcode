@@ -6,10 +6,10 @@
 #include <memory>
 #include <string>
 
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/eigen.hh"
 #include "casm/misc/cloneable_ptr.hh"
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 
 namespace CASM {
 

@@ -1,7 +1,7 @@
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
 
-#include "casm/CASM_global_definitions.hh"
-#include "casm/casm_io/DataFormatter.hh"
+#include "casm/global/definitions.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/monte_carlo/MonteIO_impl.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"

@@ -17,7 +17,7 @@
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ConfigDatabase.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/app/casm_functions.hh"
 
 #include "casm/completer/Handlers.hh"

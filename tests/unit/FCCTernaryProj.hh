@@ -8,7 +8,7 @@
 #include <boost/filesystem/fstream.hpp>
 
 #include "Proj.hh"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"

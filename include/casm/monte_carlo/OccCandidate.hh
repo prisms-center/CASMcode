@@ -4,7 +4,7 @@
 #include <vector>
 #include <tuple>
 #include <utility>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {

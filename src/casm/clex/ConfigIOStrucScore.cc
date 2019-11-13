@@ -1,6 +1,6 @@
 #include <functional>
 #include <boost/filesystem.hpp>
-#include "casm/casm_io/EigenDataStream.hh"
+#include "casm/casm_io/dataformatter/EigenDataStream.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/Structure.hh"

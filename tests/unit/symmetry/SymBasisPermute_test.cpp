@@ -5,6 +5,8 @@
 
 /// What is being used to test it:
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "TestConfiguration.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/misc/CASM_Eigen_math.hh"

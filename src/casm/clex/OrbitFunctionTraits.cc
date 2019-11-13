@@ -1,7 +1,7 @@
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/clusterography/IntegralCluster_impl.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include <ostream>
 
 namespace CASM {

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <map>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include <vector>
 
 namespace CASM {

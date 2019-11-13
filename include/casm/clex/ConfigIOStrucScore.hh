@@ -2,8 +2,8 @@
 #define CASM_ConfigIOStrucScore
 
 #include <boost/filesystem.hpp>
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {

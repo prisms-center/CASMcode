@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/external/MersenneTwister/MersenneTwister.h"
 #include "casm/clex/Supercell.hh"

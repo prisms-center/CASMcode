@@ -90,15 +90,6 @@ namespace CASM {
   template<typename ConfigType>
   fs::path calc_status_path(const ConfigType &config, std::string calctype = "");
 
-  /// \brief Read properties.calc.json from training_data
-  //template<typename ConfigType>
-  //std::tuple<MappedProperties, bool, bool> read_calc_properties(const ConfigType &config, std::string calctype = "");
-
-  /// \brief Read properties.calc.json from file
-  //template<typename ConfigType>
-  //std::tuple<MappedProperties, bool, bool> read_calc_properties(const PrimClex &primclex, const fs::path &filepath);
-
-
   /// \brief Return true if all required properties are included in the JSON
   bool is_calculated(
     const MappedProperties &calc_properties,

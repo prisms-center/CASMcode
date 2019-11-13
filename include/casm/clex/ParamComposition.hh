@@ -2,9 +2,9 @@
 #define PARAMCOMPOSITION_HH
 
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_Eigen.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/eigen.hh"
+#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
   //defines the enum type used in composition.

@@ -5,16 +5,16 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/eigen.hh"
 #include "casm/crystallography/SymRepBuilder.hh"
 
 //Defines notstd::make_unique<>()
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
-  /// In future, may include function pointers (wrapped in std::function<>) for controlling certain parts
-  /// of program execution
+
+  ///\brief Class for specifying essential traits of anisotropic values (e.g., degrees of freedom, calculated properties, and discretized species attributes)
   class AnisoValTraits {
   public:
     static const unsigned char LOCAL = 0;
@@ -22,14 +22,35 @@ namespace CASM {
     static const unsigned char UNIT_LENGTH = (1u << 1);
     static const unsigned char DESCRIBES_ORIENTATION = (1u << 2);
 
+    ///\brief Named constructor for uninitialized AnisoValTraits
     static AnisoValTraits null();
+
+    ///\brief Named constructor for total energy AnisoValTraits
     static AnisoValTraits energy();
+
+    ///\brief Named constructor for site displacement AnisoValTraits
     static AnisoValTraits disp();
+
+    ///\brief Named constructor for site force AnisoValTraits
     static AnisoValTraits force();
-    static AnisoValTraits strain(std::string const &_prefix);
+
+    ///\brief Named constructor for global strain AnisoValTraits
+    /// @param _metric specifies which strain metric. Choices are:
+    ///  - "GL" : Green-Lagrange
+    ///  - "AE" : Almansi-Euler
+    ///  - "H"  : Hencky
+    static AnisoValTraits strain(std::string const &_metric);
+
+    ///\brief Named constructor for site magnetic spin AnisoValTraits
     static AnisoValTraits magspin();
+
+    ///\brief Named constructor for magnetic moment AnisoValTraits
+    /// Same as AnisoValTraits::magspin(), but requires unit length
     static AnisoValTraits magmom();
 
+    /// \brief Given a string, returns string with all characters before the final @delim character deleted
+    /// For example, if a trajector has properties with  key1="step1_force", key2="step2_force", etc, then
+    /// AnisoValTraits::name_suffix(key1) will return "force" if delim='_'
     static std::string name_suffix(std::string const &_name, char delim = '_') {
       std::string result;
       for(char c : _name) {
@@ -41,8 +62,9 @@ namespace CASM {
       return result;
     }
 
-    AnisoValTraits(std::string const &_name);
-
+    /// \brief Explicit constructor for AnisoValTraits must specify *all* attributes at construction
+    /// There is no mutator for AnisoValTraits. Explicitly constructing two AnisoValTraits objects
+    /// with the same name but non-identical data members will result in a thrown exception.
     AnisoValTraits(std::string const &_name,
                    std::vector<std::string> const &_std_var_names,
                    unsigned char _options,
@@ -51,6 +73,10 @@ namespace CASM {
                    std::set<std::string> const &_must_apply_before = {},
                    std::set<std::string> const &_must_apply_after = {},
                    bool _default = false);
+
+    /// \brief Returns previously explicitly initialized AnisoValTraits with name AnisoValTraits::name_suffix(_name)
+    /// If no AnisoValTraits with matching name has been initialized, throws an exception
+    AnisoValTraits(std::string const &_name);
 
     static std::string class_desc() {
       return "AnisoValTraits";

@@ -9,6 +9,7 @@
 #include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
+#include "ZrOProj.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
@@ -150,4 +151,3 @@ TEST(LocalClusterExpansionTest, Test0) {
 
 
 }
-

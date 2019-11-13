@@ -1,9 +1,12 @@
 #ifndef CASM_HamiltonianModules_impl
 #define CASM_HamiltonianModules_impl
+
 #include <boost/filesystem.hpp>
 #include "casm/app/HamiltonianModules.hh"
+#include "casm/app/LogRuntimeLibrary.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/system/RuntimeLibrary.hh"
+
 namespace CASM {
   /// \brief Load DoF plugins from a CASM project
   template<typename DoFDictInserter, typename RuntimeLibInserter>
@@ -39,7 +42,7 @@ namespace CASM {
           std::string msg = "Compiling new custom DoFTraits for DoF: " + f_s.substr(0, f_size - 3);
 
           // '-L$CASM_PREFIX/.libs' is a hack so 'make check' works
-          auto lib_ptr = std::make_shared<RuntimeLibrary>(
+          auto lib_ptr = log_make_shared_runtime_lib(
                            p_s.substr(0, p_size - 3),
                            set.compile_options() + " " + include_path(dir.dof_plugins()),
                            set.so_options() + " -lcasm ",
@@ -96,7 +99,7 @@ namespace CASM {
           std::string msg = "Compiling new custom SymRepBuilderInterface: " + f_s.substr(0, f_size - 3);
 
           // '-L$CASM_PREFIX/.libs' is a hack so 'make check' works
-          auto lib_ptr = std::make_shared<RuntimeLibrary>(
+          auto lib_ptr = log_make_shared_runtime_lib(
                            p_s.substr(0, p_size - 3),
                            set.compile_options() + " " + include_path(dir.symrep_builder_plugins()),
                            set.so_options() + " -lcasm ",

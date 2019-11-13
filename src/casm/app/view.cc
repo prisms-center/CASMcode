@@ -3,7 +3,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/system/Popen.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/database/Selection_impl.hh"

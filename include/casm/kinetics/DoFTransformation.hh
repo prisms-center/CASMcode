@@ -2,7 +2,7 @@
 #define CASM_DoFTransformation
 
 #include <memory>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 

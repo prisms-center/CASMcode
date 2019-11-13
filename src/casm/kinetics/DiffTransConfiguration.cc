@@ -5,7 +5,7 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/database/Named_impl.hh"

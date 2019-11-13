@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 #include "casm/container/PolyTrie.hh"

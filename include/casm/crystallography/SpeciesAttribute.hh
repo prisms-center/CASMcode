@@ -1,7 +1,7 @@
 #ifndef CASM_SpeciesAttribute
 #define CASM_SpeciesAttribute
 
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/eigen.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/misc/ParsingDictionary.hh"

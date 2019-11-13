@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 #include <memory>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/database/Update.hh"
 #include "casm/database/Import.hh"
 
@@ -30,7 +30,7 @@ namespace CASM {
   namespace DB {
 
     template<>
-    class StructureMap<Configuration> {// : public ConfigData {
+    class StructureMap<Configuration> {
 
     public:
 

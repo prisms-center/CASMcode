@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 
 namespace CASM {

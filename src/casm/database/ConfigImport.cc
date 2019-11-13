@@ -14,7 +14,7 @@
 #include "casm/database/Import_impl.hh"
 #include "casm/database/Update_impl.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {

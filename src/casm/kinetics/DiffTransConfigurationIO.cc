@@ -1,7 +1,7 @@
 #include "casm/kinetics/DiffTransConfigurationIO.hh"
 
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
-#include "casm/casm_io/DataFormatterTools_impl.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/Selected.hh"

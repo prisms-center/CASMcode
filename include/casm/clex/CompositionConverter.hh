@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <map>
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/eigen.hh"
 
 #include "casm/clex/ParamComposition.hh"
 
