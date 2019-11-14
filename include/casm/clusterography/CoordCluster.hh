@@ -116,7 +116,7 @@ namespace CASM {
 
   template<typename CoordType>
   class CoordCluster : public
-    CanonicalForm<ElementWiseSymApply<GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>>> {
+    CanonicalForm<GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>> {
 
   public:
 

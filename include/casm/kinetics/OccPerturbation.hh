@@ -41,10 +41,9 @@ namespace CASM {
 
   class OccPerturbation : public
     CanonicalForm <
-    ElementWiseSymApply <
     DoFTransformation <
     GenericCoordCluster <
-    CRTPBase<OccPerturbation >>> >> {
+    CRTPBase<OccPerturbation >>> > {
 
   public:
 
