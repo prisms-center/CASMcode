@@ -3,8 +3,8 @@
 #include "casm/database/Selected.hh"
 
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
-#include "casm/casm_io/DataFormatter_impl.hh"
-#include "casm/casm_io/DataFormatterTools_impl.hh"
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
 
 namespace CASM {
 

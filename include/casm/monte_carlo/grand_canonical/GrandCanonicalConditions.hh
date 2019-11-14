@@ -2,7 +2,7 @@
 #define CASM_GrandCanonicalConditions_HH
 
 #include "casm/clex/PrimClex.hh"
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/eigen.hh"
 
 namespace CASM {
   namespace Monte {

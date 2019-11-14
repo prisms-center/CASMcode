@@ -1,7 +1,7 @@
 #ifndef SYMGROUPREPID_HH
 #define SYMGROUPREPID_HH
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include <iostream>
 #include <stdexcept>
 

@@ -5,7 +5,8 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
 

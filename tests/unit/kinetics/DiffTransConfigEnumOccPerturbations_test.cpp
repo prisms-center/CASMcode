@@ -7,12 +7,14 @@
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "TestConfiguration.hh"
 #include "TestOrbits.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "casm/app/enum.hh"
 #include "casm/app/QueryHandler.hh"
-#include "casm/casm_io/jsonFile.hh"
+#include "casm/casm_io/json/jsonFile.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/ScelEnum.hh"
@@ -417,4 +419,3 @@ TEST(DiffTransConfigEnumOccPerturbationsTest, ZrOTest_run) {
     EXPECT_EQ(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
   }
 }
-

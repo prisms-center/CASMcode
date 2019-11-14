@@ -139,23 +139,23 @@ namespace CASM {
       OccFuncLabeler site_prefactor_labeler("(m_occ_func_%b_%f[occ_f] - m_occ_func_%b_%f[occ_i])");
 
       auto site_bases_iter = clex.site_bases().find(dof_key);
-      if(site_bases_iter == clex.site_bases().end())
-        throw std::runtime_error(std::string("Unable to look up site basis ") + dof_key + " during clexulator printing.\n");
-
-      std::tuple<std::string, std::string> dflower_functions = ClexBasisWriter_impl::clexulator_dflower_function_strings(class_name,
-                                                               clex.bset_orbit(no),
-                                                               site_bases_iter->second,
-                                                               _tree[no],
-                                                               dflower_method_namer,
-                                                               nhood,
-                                                               _nlist,
-                                                               visitors,
-                                                               site_prefactor_labeler,
-                                                               indent);
+      if(site_bases_iter != clex.site_bases().end()) {
+        std::tuple<std::string, std::string> dflower_functions = ClexBasisWriter_impl::clexulator_dflower_function_strings(class_name,
+                                                                 clex.bset_orbit(no),
+                                                                 site_bases_iter->second,
+                                                                 _tree[no],
+                                                                 dflower_method_namer,
+                                                                 nhood,
+                                                                 _nlist,
+                                                                 visitors,
+                                                                 site_prefactor_labeler,
+                                                                 indent);
 
 
-      bfunc_def_stream << std::get<func_declaration>(dflower_functions);
-      bfunc_imp_stream << std::get<func_definition>(dflower_functions);
+        bfunc_def_stream << std::get<func_declaration>(dflower_functions);
+        bfunc_imp_stream << std::get<func_definition>(dflower_functions);
+      }
+      // else, no dflower functions get printed, and they all revert to zero_func()
 
       lf += clex.bset_orbit(no)[0].size();
     }//Finished writing method definitions and definitions for basis functions
@@ -197,7 +197,7 @@ namespace CASM {
         << "#include <cstddef>\n"
         << "#include \"casm/clex/Clexulator.hh\"\n"
         << "#include \"casm/clex/BasicClexParamPack.hh\"\n"
-        << "#include \"casm/CASM_global_Eigen.hh\"\n"
+        << "#include \"casm/global/eigen.hh\"\n"
         << (m_param_pack_mix_in -> cpp_includes_string()) << "\n"
         << "\n\n\n"
 

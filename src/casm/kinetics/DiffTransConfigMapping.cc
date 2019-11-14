@@ -2,7 +2,7 @@
 #include "casm/clex/ConfigMapping.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/Configuration.hh"
@@ -33,16 +33,14 @@ namespace CASM {
     DiffTransConfigMapper::DiffTransConfigMapper(const PrimClex &_pclex,
                                                  double _lattice_weight,
                                                  double _max_volume_change/*=0.5*/,
-                                                 int options/*=robust*/,
+                                                 int options/*=StrucMapper::robust*/,
                                                  double _tol/*=TOL*/) :
       m_pclex(&_pclex),
       m_lattice_weight(_lattice_weight),
       m_max_volume_change(_max_volume_change),
       m_min_va_frac(0.),
       m_max_va_frac(1.),
-      m_robust_flag(options & robust),
-      m_strict_flag(options & strict),
-      m_rotate_flag(options & rotate),
+      m_options(options),
       m_tol(max(1e-9, _tol)) {
       //squeeze lattice_weight into (0,1] if necessary
       m_lattice_weight = max(min(_lattice_weight, 1.0), 1e-9);
@@ -65,7 +63,7 @@ namespace CASM {
       ConfigMapper mapper(primclex(),
                           lattice_weight(),
                           m_max_volume_change,
-                          m_robust_flag || m_rotate_flag || m_strict_flag,
+                          m_options,
                           primclex().crystallography_tol());
       //Find out which species are moving from which basis site to the other
       mapper.struc_mapper().set_max_va_frac(m_max_va_frac);
@@ -199,15 +197,15 @@ namespace CASM {
       Kinetics::DiffTransConfigInterpolation interpolater(result.config->diff_trans(), result.config->from_config(), result.config->to_config(), result.structures.size() - 2); //<- using current calctype here
       int image_no = 0;
       for(auto it = interpolater.begin(); it != interpolater.end(); ++it) {
-        result.relaxation_properties.push_back(jsonParser());
-        result.relaxation_properties[image_no].put_obj();
+        //result.relaxation_properties.push_back(jsonParser());
+        //result.relaxation_properties[image_no].put_obj();
         //Structure pseudoprim = make_deformed_struc(*it);
         //Structure img = Structure(result.structures[image_no]);
         // ConfigMapperResult tmp_result = ConfigMapping::structure_mapping(pseudoprim, img, lattice_weight());
         //result.relaxation_properties[image_no]["lattice_deformation"] = tmp_result.relaxation_properties["best_mapping"]["lattice_deformation"];
-        result.relaxation_properties[image_no]["lattice_deformation"] = -1.0;
+        //result.relaxation_properties[image_no]["lattice_deformation"] = -1.0;
         //result.relaxation_properties[image_no]["basis_deformation"] = tmp_result.relaxation_properties["best_mapping"]["basis_deformation"];
-        result.relaxation_properties[image_no]["basis_deformation"] = -1.0;
+        //result.relaxation_properties[image_no]["basis_deformation"] = -1.0;
         image_no++;
       }
 
@@ -221,13 +219,15 @@ namespace CASM {
         std::vector<double> energies;
         for(auto &img : all_strucs) {
           energies.push_back(img["relaxed_energy"].get<double>());
-          result.relaxation_properties[count]["relaxed_energy"] = img["relaxed_energy"];
+          //result.relaxation_properties[count]["relaxed_energy"] = img["relaxed_energy"];
           count++;
         }
         if(!all_strucs.contains("kra")) {
-          all_strucs["kra"] = *(std::max_element(energies.begin(), energies.end())) - (energies.front() + energies.back()) / 2.0;
+          result.kra = *(std::max_element(energies.begin(), energies.end())) - (energies.front() + energies.back()) / 2.0;
         }
-        result.kra = all_strucs["kra"].get<double>();
+        else {
+          result.kra = all_strucs["kra"].get<double>();
+        }
       }
       result.success = true;
       return result;
@@ -343,11 +343,18 @@ namespace CASM {
       }
       for(int i = 0; i < moving_atoms.size(); i++) {
         std::vector<std::string> allowed_from_occs = primclex().prim().basis()[from_coords[moving_atoms[i]].sublattice()].allowed_occupants();
-        Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), from_struc.basis()[moving_atoms[i]].occ_name()));
+        Index from_occ_index = std::distance(allowed_from_occs.begin(),
+                                             std::find(allowed_from_occs.begin(),
+                                                       allowed_from_occs.end(),
+                                                       from_struc.basis()[moving_atoms[i]].occ_name()));
         //for now pos is 0 because Molecules are hard
         Kinetics::SpeciesLocation from_loc(from_coords[moving_atoms[i]], from_occ_index, 0);
         std::vector<std::string> allowed_to_occs = primclex().prim().basis()[to_coords[moving_atoms[i]].sublattice()].allowed_occupants();
-        Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), from_struc.basis()[moving_atoms[i]].occ_name()));
+        Index to_occ_index = std::distance(allowed_to_occs.begin(),
+                                           std::find(allowed_to_occs.begin(),
+                                                     allowed_to_occs.end(),
+                                                     from_struc.basis()[moving_atoms[i]].occ_name()));
+
         //for now pos is 0 because Molecules are hard
         Kinetics::SpeciesLocation to_loc(to_coords[moving_atoms[i]], to_occ_index, 0);
         diff_trans.species_traj().emplace_back(from_loc, to_loc);

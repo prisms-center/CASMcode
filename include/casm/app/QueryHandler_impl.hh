@@ -1,12 +1,13 @@
 #ifndef CASM_QueryHandler_impl
 #define CASM_QueryHandler_impl
 
+#include "casm/system/RuntimeLibrary.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/casm_io/DataFormatterTools_impl.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/database/Selected_impl.hh"
-#include "casm/system/RuntimeLibrary.hh"
+#include "casm/app/LogRuntimeLibrary.hh"
 
 namespace CASM {
 
@@ -138,7 +139,7 @@ namespace CASM {
           std::string msg = "compiling new custom query: " + f_s.substr(0, f_size - 3);
 
           // '-L$CASM_PREFIX/.libs' is a hack so 'make check' works
-          auto lib_ptr = std::make_shared<RuntimeLibrary>(
+          auto lib_ptr = log_make_shared_runtime_lib(
                            p_s.substr(0, p_size - 3),
                            set.compile_options() + " " + include_path(dir.query_plugins<DataObject>()),
                            set.so_options() + " -lcasm ",

@@ -8,6 +8,7 @@
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "casm/crystallography/Structure.hh"
 
 using namespace CASM;

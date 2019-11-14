@@ -3,6 +3,7 @@
 
 #include <boost/filesystem/fstream.hpp>
 #include "casm/database/Import.hh"
+#include "casm/database/ConfigData_impl.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/import.hh"
@@ -80,6 +81,20 @@ namespace CASM {
 
     // --- ImportT ---
 
+    /// \brief Constructor
+    template<typename _ConfigType>
+    ImportT<_ConfigType>::ImportT(
+      const PrimClex &primclex,
+      const StructureMap<ConfigType> &mapper,
+      ImportSettings const  &_set,
+      fs::path report_dir,
+      Log &_file_log) :
+      ConfigData(primclex, _file_log, TypeTag<ConfigType>()),
+      m_structure_mapper(mapper),
+      m_set(_set),
+      m_report_dir(report_dir) {}
+
+
     template<typename _ConfigType>
     template<typename PathIterator>
     void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
@@ -98,7 +113,9 @@ namespace CASM {
 
         // Outputs one or more mapping results from the structure located at specied path
         //   See _import documentation for more.
-        m_structure_mapper.map(*it, db_config().end(), std::back_inserter(tvec));
+        m_structure_mapper.map(resolve_struc_path(*it, primclex()),
+                               nullptr,
+                               std::back_inserter(tvec));
         for(auto &res : tvec) {
 
           results.push_back(res);
@@ -124,18 +141,18 @@ namespace CASM {
           //      !better_score:
           //        do not import
           // if could not map, no data, or do not import data, continue
-          if(res.mapped_props.to.empty() || !res.has_data || !m_import_data) {
+          if(res.map_result.props.to.empty() || !res.has_data || !settings().data) {
             continue;
           }
           // else we will try to import data
           // for import we currently don't have a way to get the initial config,
           // so set from = to, if not already so
           //   could support properties.calc.json: "ideal_" or "initial_" DoF
-          if(res.mapped_props.to != res.mapped_props.from) {
-            res.mapped_props.from = res.mapped_props.to;
+          if(res.map_result.props.to != res.map_result.props.from) {
+            res.map_result.props.from = res.map_result.props.to;
           }
-          std::string from = res.mapped_props.from;
-          std::string to = res.mapped_props.to;
+          std::string from = res.map_result.props.from;
+          std::string to = res.map_result.props.to;
 
           // store info about data import, note if preexisting data before this batch
           auto data_res_it = data_results.find(from);
@@ -145,14 +162,14 @@ namespace CASM {
           }
           ConfigIO::ImportData &data_res = data_res_it->second;
           // if preexisting data, do not import new data unless overwrite option set
-          if(data_res.preexisting && !m_overwrite) {
+          if(data_res.preexisting && !settings().overwrite) {
             continue;
           }
 
           // if existing data (could be from this batch), check if score would
           //   be improved
           if(db_props().find_via_to(to) != db_props().end()) {
-            double score = db_props().score(res.mapped_props);
+            double score = db_props().score(res.map_result.props);
             double best_score = db_props().best_score(to);
             if(score >= best_score) {
               continue;
@@ -166,20 +183,20 @@ namespace CASM {
           if(pos != db_props().end()) {
             db_props().erase(pos);
           }
-          db_props().insert(res.mapped_props);
+          db_props().insert(res.map_result.props);
 
           // copy files:
           //   there might be existing files in cases of import conflicts
           rm_files(from, false);
           std::tie(data_res.copy_data, data_res.copy_more) =
-            cp_files(res.pos, from, false, m_copy_additional_files);
+            cp_files(res.pos, from, false, settings().additional_files);
         }
 
       }
       _import_report(results, data_results);
 
       db_supercell().commit();
-      db_config().commit();
+      db_config<ConfigType>().commit();
       db_props().commit();
     }
 
@@ -209,14 +226,14 @@ namespace CASM {
       for(long i = 0; i < results.size(); ++i) {
 
         const auto &res = results[i];
-        if(res.mapped_props.to.empty()) {
+        if(res.map_result.props.to.empty()) {
           map_fail.push_back(res);
 
         }
         else {
           map_success.push_back(res);
-          if(res.has_data && m_import_data && db_props().find_via_to(res.mapped_props.to) != db_props().end()
-             && db_props().score(res.mapped_props) < db_props().best_score(res.mapped_props.to)) {
+          if(res.has_data && settings().data && db_props().find_via_to(res.map_result.props.to) != db_props().end()
+             && db_props().score(res.map_result.props) < db_props().best_score(res.map_result.props.to)) {
             import_data_fail.push_back(res);
           }
         }
@@ -227,9 +244,9 @@ namespace CASM {
       std::vector<ConfigIO::Result> conflict;
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
-        auto it = conflict_count.find(res.mapped_props.from);
+        auto it = conflict_count.find(res.map_result.props.from);
         if(it == conflict_count.end()) {
-          conflict_count[res.mapped_props.from] = std::vector<long>(1, i);
+          conflict_count[res.map_result.props.from] = std::vector<long>(1, i);
         }
         else {
           it->second.push_back(i);
@@ -251,8 +268,8 @@ namespace CASM {
         fs::path p = m_report_dir / (prefix + "_map_fail");
         fs::ofstream sout(p);
 
-        log() << "WARNING: Could not import " << map_fail.size() << " structures." << std::endl;
-        log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "WARNING: Could not import " << map_fail.size() << " structures." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         DataFormatterDictionary<ConfigIO::Result> dict;
         dict.insert(ConfigIO::pos(), ConfigIO::fail_msg());
@@ -268,8 +285,8 @@ namespace CASM {
         fs::path p = m_report_dir / (prefix + "_map_success");
         fs::ofstream sout(p);
 
-        log() << "Successfully imported " << map_success.size() << " structures." << std::endl;
-        log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "Successfully imported " << map_success.size() << " structures." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         sout << formatter(map_success.begin(), map_success.end());
       }
@@ -279,12 +296,12 @@ namespace CASM {
         fs::path p = m_report_dir / (prefix + "_data_fail");
         fs::ofstream sout(p);
 
-        log() << "WARNING: Did not import data from "
-              << import_data_fail.size() << " structures which have are a mapping score"
-              " better than the existing data." << std::endl;
-        log() << "  You may wish to inspect these structures and allow overwriting "
-              "or remove existing data manually." << std::endl;
-        log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "WARNING: Did not import data from "
+                         << import_data_fail.size() << " structures which have are a mapping score"
+                         " better than the existing data." << std::endl;
+        primclex().log() << "  You may wish to inspect these structures and allow overwriting "
+                         "or remove existing data manually." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         sout << formatter(import_data_fail.begin(), import_data_fail.end());
       }
@@ -293,11 +310,11 @@ namespace CASM {
         fs::path p = m_report_dir / (prefix + "_conflict");
         fs::ofstream sout(p);
 
-        log() << "WARNING: Imported data from structures that mapped to the same configuration." << std::endl
-              << "  Data can only be imported from one of the conflicting structures." << std::endl
-              << "  Based on the current conflict resolution method the 'best' result was automatically chosen, " << std::endl
-              << "  but you may wish to inspect these results and manually select which structures to import." << std::endl;
-        log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "WARNING: Imported data from structures that mapped to the same configuration." << std::endl
+                         << "  Data can only be imported from one of the conflicting structures." << std::endl
+                         << "  Based on the current conflict resolution method the 'best' result was automatically chosen, " << std::endl
+                         << "  but you may wish to inspect these results and manually select which structures to import." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         sout << formatter(conflict.begin(), conflict.end());
       }

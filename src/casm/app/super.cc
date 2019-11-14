@@ -17,7 +17,7 @@
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ConfigDatabase.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/app/casm_functions.hh"
 
 #include "casm/completer/Handlers.hh"
@@ -241,7 +241,7 @@ namespace CASM {
     // -- no casm project necessary for super cell of a POSCAR -------
 
     // want absolute paths
-    for(auto && file : tmatfile) {
+    for(auto &&file : tmatfile) {
       abs_tmatfile.push_back(fs::absolute(file));
     }
     abs_structfile = fs::absolute(structfile);
@@ -544,7 +544,7 @@ namespace CASM {
           auto map_res = configmapper.import_structure(to_simple_structure(super));
 
           if(map_res.success()) {
-            auto insert_res = ((map_res.maps.begin()->second).config_ptr)->insert();
+            auto insert_res = (map_res.maps.begin()->second).second.insert();
             Configuration imported_config = *insert_res.canonical_it;
 
             if(insert_res.insert_canonical) {

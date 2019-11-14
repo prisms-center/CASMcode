@@ -3,6 +3,7 @@
 
 #include <boost/filesystem/fstream.hpp>
 #include "casm/database/Remove.hh"
+#include "casm/database/ConfigData_impl.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/database/PropertiesDatabase.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -15,26 +16,32 @@ namespace CASM {
 
     // --- RemoveT ---
 
+    template<typename _ConfigType>
+    RemoveT<_ConfigType>::RemoveT(const PrimClex &primclex, fs::path report_dir, Log &_file_log) :
+      ConfigData(primclex, _file_log, TypeTag<ConfigType>()),
+      m_report_dir(report_dir) {}
+
+
     /// \brief Erase Configurations that have no data
     template<typename _ConfigType>
     void RemoveT<_ConfigType>::erase(const DB::Selection<ConfigType> &selection, bool dry_run) {
       std::vector<std::string> fail;
       for(const auto &val : selection.data()) {
         if(!has_existing_data_or_files(val.first)) {
-          db_config().erase(val.first);
+          db_config<ConfigType>().erase(val.first);
         }
         else {
-          log() << "skipping " << val.first << ": has existing data or files" << std::endl;
+          primclex().log() << "skipping " << val.first << ": has existing data or files" << std::endl;
           fail.push_back(val.first);
         }
       }
 
       if(fail.size()) {
         _erase_report(fail);
-        log() << "Skipped " << fail.size() << " " << traits<ConfigType>::name << std::endl;
-        log() << "  See " << m_report_dir / "remove_fail" << std::endl;
+        primclex().log() << "Skipped " << fail.size() << " " << traits<ConfigType>::name << std::endl;
+        primclex().log() << "  See " << m_report_dir / "remove_fail" << std::endl;
       }
-      db_config().commit();
+      db_config<ConfigType>().commit();
     }
 
     /// \brief Erase data and files (permanently), but not Configuration

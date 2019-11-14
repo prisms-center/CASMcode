@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <boost/filesystem/path.hpp>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 
 namespace CASM {
@@ -101,8 +101,8 @@ namespace CASM {
     /// \brief Return DoF plugin dir
     fs::path dof_plugins() const;
 
-    /// \brief Return Species Traits plugin dir
-    fs::path species_traits_plugins() const;
+    /// \brief Return SymrepBuilder plugin dir
+    fs::path symrep_builder_plugins() const;
 
     template<typename DataObject>
     fs::path master_selection() const;

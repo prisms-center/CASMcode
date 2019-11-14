@@ -1,8 +1,10 @@
+#include "casm/clex/ScelEnum_impl.hh"
+
+#include "casm/app/enum.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymType.hh"
-#include "casm/clex/ScelEnum_impl.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/app/enum.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_ScelEnum_interface() {

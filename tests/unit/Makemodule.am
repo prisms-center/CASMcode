@@ -48,6 +48,7 @@ check_PROGRAMS += \
 casm_unit_App_SOURCES = \
     tests/unit/App/App_test.cpp\
     tests/unit/App/EnumeratorPlugin_test.cpp\
+    tests/unit/App/LogRuntimeLibrary_test.cpp\
     tests/unit/App/QueryPlugin_test.cpp\
     tests/unit/App/settings_test.cpp\
     tests/unit/gtest_main_run_all.cpp
@@ -70,6 +71,27 @@ EXTRA_DIST += \
     tests/unit/App/TestEnum.cc\
     tests/unit/App/TestEnum.hh\
     tests/unit/App/TestEnum_impl.hh
+
+#-------------------------------------------------------------------------------#
+
+TESTS += \
+    casm_unit_bin
+check_PROGRAMS += \
+    casm_unit_bin
+casm_unit_bin_SOURCES = \
+    tests/unit/gtest_main_run_all.cpp
+casm_unit_bin_LDADD = \
+    $(BOOST_CHRONO_LIB)\
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_REGEX_LIB)\
+    $(BOOST_SYSTEM_LIB)\
+    libcasm.la\
+    libcasmtesting.la
+casm_unit_bin_CPPFLAGS = \
+    $(AM_CPPFLAGS)\
+    -I$(top_srcdir)/tests/unit/
+
 
 #-------------------------------------------------------------------------------#
 
@@ -286,6 +308,27 @@ EXTRA_DIST += \
     tests/unit/kinetics/ZrO_local_bspecs_0.json\
     tests/unit/kinetics/ZrO_local_bspecs_1.json\
     tests/unit/kinetics/l12_local_bspecs_0.json
+
+#-------------------------------------------------------------------------------#
+
+TESTS += \
+    casm_unit_mapping
+check_PROGRAMS += \
+    casm_unit_mapping
+casm_unit_mapping_SOURCES = \
+    tests/unit/gtest_main_run_all.cpp
+casm_unit_mapping_LDADD = \
+    $(BOOST_CHRONO_LIB)\
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_REGEX_LIB)\
+    $(BOOST_SYSTEM_LIB)\
+    libcasm.la\
+    libcasmtesting.la
+casm_unit_mapping_CPPFLAGS = \
+    $(AM_CPPFLAGS)\
+    -I$(top_srcdir)/tests/unit/
+
 
 #-------------------------------------------------------------------------------#
 

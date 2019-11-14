@@ -12,7 +12,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 
 using namespace CASM;
 

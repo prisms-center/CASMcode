@@ -1,5 +1,5 @@
-#include "casm/casm_io/json_io/SpeciesSetParser_impl.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/app/io/json/SpeciesSetParser_impl.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 
 namespace CASM {
@@ -13,6 +13,7 @@ namespace CASM {
   };
 
   ENUM_IO_DEF(ALLOWED_SPECIES_TYPES)
+  ENUM_JSON_IO_DEF(ALLOWED_SPECIES_TYPES)
 
   std::string msg(ALLOWED_SPECIES_TYPES types) {
     if(types == ALLOWED_SPECIES_TYPES::ALL) {

@@ -5,9 +5,11 @@
 #include <string>
 #include <iomanip>
 
-#include "casm/external/Eigen/Dense"
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/casm_io/EnumIO.hh"
+#include "casm/external/Eigen/Dense"
 #include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
@@ -39,6 +41,7 @@ namespace CASM {
   ENUM_TRAITS(symmetry_type)
 
   ENUM_IO_DECL(symmetry_type)
+  ENUM_JSON_IO_DECL(symmetry_type)
 
   struct SymInfoOptions {
     SymInfoOptions(COORD_TYPE _coord_type = FRAC, double _tol = TOL, Index _prec = 7, bool _print_matrix_tau = false) :

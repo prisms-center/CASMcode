@@ -19,7 +19,7 @@ namespace CASM {
 
   namespace xtal {
 
-    class SymOp;
+    struct SymOp;
     class Molecule;
 
 
@@ -124,10 +124,10 @@ namespace CASM {
 
       Site &_apply_sym_attributes(const SymOp &op);
 
-      mutable Index m_type_ID;
-
       /// Integer label used to differentiate sites of otherwise identical type
       Index m_label;
+
+      mutable Index m_type_ID;
 
       // Configuration state is fundamentally different from most other degrees of freedom,
       // so we'll treat it separately. 'occupant' is the discrete degree of freedom associated

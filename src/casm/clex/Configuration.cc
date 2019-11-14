@@ -19,13 +19,14 @@
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/clex/ClexParamPack.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/basis_set/DoF.hh"
-#include "casm/casm_io/VaspIO.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/crystallography/io/VaspIO.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -593,31 +594,12 @@ namespace CASM {
 
   //*********************************************************************************
 
-  Configuration &Configuration::apply_sym(const PermuteIterator &it) {
+  Configuration &Configuration::apply_sym(const PermuteIterator &op) {
     auto all_props = calc_properties_map();
-    configdof().apply_sym(it);
-    for(auto ii = all_props.begin(); ii != all_props.end(); ++ii) {
-      std::string calctype = ii->first;
-      jsonParser transformed_props;
-      for(auto json_it = all_props[calctype]["mapped"].begin(); json_it != all_props[calctype]["mapped"].end(); ++json_it) {
-        if(json_it.name() == "relaxed_energy") {
-          transformed_props["relaxed_energy"] = *json_it;
-        }
-        Eigen::Matrix3d fg_cart_op = it.sym_op().matrix();
-        if(json_it.name() == "relaxation_deformation") {
-          transformed_props["relaxation_deformation"] = fg_cart_op * json_it->get<Eigen::Matrix3d>() * fg_cart_op.transpose();
-        }
-        Permutation tperm(it.combined_permute());
-        if(json_it.name() == "relaxation_displacement" || json_it.name() == "relaxed_forces") {
-          Eigen::MatrixXd new_matrix = fg_cart_op * json_it->get<Eigen::MatrixXd>().transpose();
-          Eigen::MatrixXd permuted_matrix(3, size());
-          for(Index i = 0; i < size(); i++) {
-            permuted_matrix.col(i) = new_matrix.col(tperm[i]);
-          }
-          transformed_props[json_it.name()] = permuted_matrix.transpose();
-        }
-      }
-      set_calc_properties(transformed_props, calctype);
+    configdof().apply_sym(op);
+    for(auto it = all_props.begin(); it != all_props.end(); ++it) {
+      std::string calctype = it->first;
+      set_calc_properties(copy_apply(op, it->second), calctype);
     }
     return *this;
   }
@@ -777,74 +759,6 @@ namespace CASM {
 
   //*********************************************************************************
 
-  std::ostream &Configuration::print_properties(std::string calctype, std::ostream &sout) const {
-    jsonParser prop_calc_json = print_properties(calctype);
-    sout << prop_calc_json;
-    return sout;
-  }
-
-  jsonParser Configuration::print_properties(std::string calctype) const {
-    jsonParser prop_calc_json;
-    Lattice ref_lat = supercell().lattice();
-    if(calc_properties(calctype).contains("relaxation_deformation")) {
-      ref_lat = Lattice(calc_properties(calctype)["relaxation_deformation"].get<Eigen::Matrix3d>() * supercell().lattice().lat_column_mat());
-    }
-    prop_calc_json["relaxed_lattice"] = ref_lat.lat_column_mat().transpose();
-    std::vector<std::pair<std::string, Coordinate>> basis;
-    for(int i = 0 ; i < supercell().num_sites(); i++) {
-      Coordinate ref_coord = supercell().coord(i);
-      if(calc_properties(calctype).contains("relaxation_displacement")) {
-        ref_coord.cart() += calc_properties(calctype)["relaxation_displacement"].get<Eigen::MatrixXd>().row(i).transpose();
-      }
-      if(calc_properties(calctype).contains("relaxation_deformation")) {
-        ref_coord.cart() = calc_properties(calctype)["relaxation_deformation"].get<Eigen::Matrix3d>() * ref_coord.const_cart();
-      }
-      Coordinate deformed_coord(ref_coord.const_cart(), ref_lat, CART);
-      deformed_coord.within();
-      std::pair<std::string, Coordinate> site(mol(i).name(), deformed_coord);
-      basis.push_back(site);
-    }
-    std::sort(basis.begin(), basis.end(), [ = ](const std::pair<std::string, Coordinate> &A, const std::pair<std::string, Coordinate> &B) {
-      return A.first < B.first;
-    });
-    std::map<std::string, int> atom_type_count;
-    Eigen::MatrixXd relaxed_basis(supercell().num_sites(), 3);
-    int i = 0;
-    for(auto it = basis.begin(); it != basis.end(); ++it) {
-      if(it->first != "Va" && it->first != "va" && it->first != "VA") {
-        auto search = atom_type_count.find(it->first);
-        if(search == atom_type_count.end()) {
-          atom_type_count.emplace(it->first, 1);
-        }
-        else {
-          search->second++;
-        }
-        relaxed_basis.row(i) = it->second.const_frac().transpose();
-        ++i;
-      }
-    }
-    Eigen::MatrixXd tmp = relaxed_basis.topLeftCorner(i, 3);
-    relaxed_basis = tmp;
-    prop_calc_json["coord_mode"] = "Direct";
-    std::vector<std::string> atom_type;
-    std::vector<int> atoms_per_type;
-    for(auto it = atom_type_count.begin(); it != atom_type_count.end(); ++it) {
-      atom_type.push_back(it->first);
-      atoms_per_type.push_back(it->second);
-    }
-    prop_calc_json["atom_type"] = atom_type;
-    prop_calc_json["atoms_per_type"] = atoms_per_type;
-    prop_calc_json["relaxed_basis"] = relaxed_basis;
-    if(calc_properties(calctype).contains("relaxed_energy")) {
-      prop_calc_json["relaxed_energy"] = calc_properties(calctype)["relaxed_energy"];
-    }
-    if(calc_properties(calctype).contains("relaxed_forces")) {
-      prop_calc_json["relaxed_forces"] = calc_properties(calctype)["relaxed_forces"];
-    }
-    return prop_calc_json;
-  }
-  //*********************************************************************************
-
   /// Private members:
 
   /// Reads the Configuration from JSON
@@ -863,6 +777,7 @@ namespace CASM {
   ///   read properties: (absolute path in config_list)
   ///     json["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
   ///
+
   void Configuration::from_json(const jsonParser &json, const Supercell &scel, std::string _id) {
 
     m_supercell = &scel;
@@ -901,15 +816,18 @@ namespace CASM {
 
     auto calc_props_it = prop_it->find("calc");
     if(calc_props_it != prop_it->end()) {
-      set_calc_properties(*calc_props_it, set.default_clex().calctype);
+      set_calc_properties(calc_props_it->get<MappedProperties>(), set.default_clex().calctype);
     }
 
   }
+
+
 
   void Configuration::from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname) {
     auto name = Configuration::split_name(_configname);
     this->from_json(json, *primclex.db<Supercell>().find(name.first), name.second);
   }
+
 
   bool Configuration::operator<(const Configuration &B) const {
     return less()(B);
@@ -992,7 +910,8 @@ namespace CASM {
 
   std::string config_json_string(Configuration const  &_config) {
     std::stringstream ss;
-    jsonParser tjson = json_supplement(_config);
+
+    jsonParser tjson;// = json_supplement(_config);
     to_json(xtal::to_simple_structure(_config), tjson);
     tjson.print(ss);
     return ss.str();
@@ -1220,41 +1139,6 @@ namespace CASM {
     return *primclex.db<Configuration>().find(name);
   }
 
-  /// \brief Grabs calculated properties from the indicated calctype and applies them to Configuration
-  /// \param config must have a canonical name
-  Configuration &apply_properties(Configuration &config, std::string calctype) {
-    throw std::runtime_error("apply_properties(Configuration) deprecation");
-
-    if(!is_calculated(config, calctype)) {
-      config.primclex().log() << ">>>>>>!!!!!WARNING: Attempting to extract properties from a configuration without properties!!!!" << std::endl
-                              << "Endpoint " << config.name() << " is not calculated in calctype " << calctype << "!!!!<<<<<<" << std::endl << std::endl;;
-    }
-
-    jsonParser calc_props = config.calc_properties(calctype);
-    //config.init_deformation();
-    //config.init_displacement();
-
-    if(calc_props.contains("relaxation_displacement")) {
-      Eigen::MatrixXd disp;
-      disp = calc_props["relaxation_displacement"].get<Eigen::MatrixXd>();
-      //config.set_displacement(disp.transpose());
-    }
-    if(calc_props.contains("relaxation_deformation")) {
-      Eigen::Matrix3d deform;
-      deform = calc_props["relaxation_deformation"].get<Eigen::Matrix3d>();
-      //config.set_deformation(deform);
-    }
-    return config;
-  }
-
-  /// \brief Grabs calculated properties from the indicated calctype and applies them to a copy of Configuration
-  /// \param config must have a canonical name
-  Configuration copy_apply_properties(const Configuration &config, std::string calctype) {
-    Configuration tmp = config;
-    return apply_properties(tmp, calctype);
-  }
-
-
   /// \brief Returns correlations using 'clexulator'.
   Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator) {
     return correlations(config.configdof(), config.supercell(), clexulator);
@@ -1310,7 +1194,7 @@ namespace CASM {
 
   /// \brief Returns the relaxed energy, normalized per unit cell
   double relaxed_energy(const Configuration &config) {
-    return config.calc_properties()["relaxed_energy"].get<double>() / config.supercell().volume();
+    return config.calc_properties().scalar("relaxed_energy") / config.supercell().volume();
   }
 
   /// \brief Returns the relaxed energy, normalized per species
@@ -1366,34 +1250,24 @@ namespace CASM {
     return clex_formation_energy(config) / n_species(config);
   }
 
-  /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
-  double rms_force(const Configuration &_config) {
-    //Get RMS force:
-    const jsonParser &props = _config.calc_properties();
-
-    Eigen::MatrixXd forces;
-    props["relaxed_forces"].get(forces);
-    return sqrt((forces.transpose() * forces).trace() / double(forces.rows()));
-  }
-
   /// \brief Cost function that describes the degree to which basis sites have relaxed
   double basis_deformation(const Configuration &_config) {
-    return _config.calc_properties()["basis_deformation"].get<double>();
+    return _config.calc_properties().scalar("basis_deformation");
   }
 
   /// \brief Cost function that describes the degree to which lattice has relaxed
   double lattice_deformation(const Configuration &_config) {
-    return _config.calc_properties()["lattice_deformation"].get<double>();
+    return _config.calc_properties().scalar("lattice_deformation");
   }
 
   /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
   double volume_relaxation(const Configuration &_config) {
-    return _config.calc_properties()["volume_relaxation"].get<double>();
+    return _config.calc_properties().scalar("volume_relaxation");
   }
 
   /// \brief Returns the relaxed magnetic moment, normalized per unit cell
   double relaxed_magmom(const Configuration &_config) {
-    return _config.calc_properties()["relaxed_magmom"].get<double>();
+    return _config.calc_properties().scalar("relaxed_magmom");
   }
 
   /// \brief Returns the relaxed magnetic moment, normalized per species
@@ -1403,13 +1277,17 @@ namespace CASM {
 
   /// \brief relaxed forces of configuration, determined from DFT (eV/Angstr.), as a 3xN matrix
   Eigen::MatrixXd relaxed_forces(const Configuration &_config) {
-    //Get RMS force:
-    const jsonParser &props = _config.calc_properties();
-
-    Eigen::MatrixXd forces;
-    props["relaxed_forces"].get(forces);
-    return forces;
+    return _config.calc_properties().site.at("relaxed_forces");
   }
+
+  /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
+  double rms_force(const Configuration &_config) {
+    //Get RMS force:
+    Eigen::MatrixXd F = relaxed_forces(_config);
+
+    return sqrt((F * F.transpose()).trace() / double(F.cols()));
+  }
+
 
   /// \brief Returns an IntegralCluster representing the perturbation between the configs
   IntegralCluster config_diff(const Configuration &_config1, const Configuration &_config2) {
@@ -1494,7 +1372,7 @@ namespace CASM {
   }
 
   bool has_relaxed_energy(const Configuration &_config) {
-    return _config.calc_properties().contains("relaxed_energy");
+    return _config.calc_properties().has_scalar("relaxed_energy");
   }
 
   bool has_reference_energy(const Configuration &_config) {
@@ -1507,29 +1385,29 @@ namespace CASM {
   }
 
   bool has_rms_force(const Configuration &_config) {
-    const jsonParser &props = _config.calc_properties();
-    auto it = props.find("relaxed_forces");
-    return it != props.end() && it->size();
+    MappedProperties const &props = _config.calc_properties();
+    auto it = props.site.find("relaxed_forces");
+    return it != props.site.end() && it->second.cols();
   }
 
   bool has_basis_deformation(const Configuration &_config) {
-    return _config.calc_properties().contains("basis_deformation");
+    return _config.calc_properties().has_scalar("basis_deformation");
   }
 
   bool has_lattice_deformation(const Configuration &_config) {
-    return _config.calc_properties().contains("lattice_deformation");
+    return _config.calc_properties().has_scalar("lattice_deformation");
   }
 
   bool has_volume_relaxation(const Configuration &_config) {
-    return _config.calc_properties().contains("volume_relaxation");
+    return _config.calc_properties().has_scalar("volume_relaxation");
   }
 
   bool has_relaxed_magmom(const Configuration &_config) {
-    return _config.calc_properties().contains("relaxed_magmom");
+    return _config.calc_properties().has_scalar("relaxed_magmom");
   }
 
   bool has_relaxed_mag_basis(const Configuration &_config) {
-    return _config.calc_properties().contains("relaxed_mag_basis");
+    return _config.calc_properties().site.count("relaxed_mag_basis");
   }
 
 
@@ -1753,7 +1631,7 @@ namespace CASM {
 
     Eigen::MatrixXd gcorr;
     Index scel_vol = scel.volume();
-    if(DoF::traits(key).global()) {
+    if(DoF::BasicTraits(key).global()) {
       Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
       //std::cout << "global_dof is: \n" << gcorr_func << std::endl;
       gcorr.setZero(gcorr_func.size(), clexulator.corr_size());

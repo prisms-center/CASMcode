@@ -26,20 +26,19 @@ namespace CASM {
 
     /// Generic ConfigType-dependent part of Remove
     template<typename _ConfigType>
-    class RemoveT : protected ConfigData<_ConfigType> {
+    class RemoveT : protected ConfigData {
 
     public:
 
       typedef _ConfigType ConfigType;
-      using ConfigData<_ConfigType>::db_config;
+      /*using ConfigData<_ConfigType>::db_config;
       using ConfigData<_ConfigType>::db_props;
       using ConfigData<_ConfigType>::has_existing_data_or_files;
       using ConfigData<_ConfigType>::rm_files;
       using Logging::log;
+      */
 
-      RemoveT(const PrimClex &primclex, fs::path report_dir, Log &_file_log) :
-        ConfigData<_ConfigType>(primclex, _file_log),
-        m_report_dir(report_dir) {}
+      RemoveT(const PrimClex &primclex, fs::path report_dir, Log &_file_log);
 
       /// \brief Erase Configurations that have no data
       void erase(const DB::Selection<ConfigType> &selection, bool dry_run);

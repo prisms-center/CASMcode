@@ -2,8 +2,8 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/external/gzstream/gzstream.h"
-#include "casm/casm_io/VaspIO.hh"
-#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/crystallography/io/VaspIO.hh"
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructure.hh"

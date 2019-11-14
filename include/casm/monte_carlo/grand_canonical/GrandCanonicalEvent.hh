@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "casm/external/Eigen/Dense"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/monte_carlo/DoFMod.hh"
 
 namespace CASM {

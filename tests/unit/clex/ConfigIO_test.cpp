@@ -14,6 +14,8 @@
 #include "casm/database/Database.hh"
 #include "casm/database/Selected.hh"
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 
 using namespace CASM;
 

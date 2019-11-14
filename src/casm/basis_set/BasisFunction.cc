@@ -1,6 +1,6 @@
 #include "casm/basis_set/BasisFunction.hh"
 #include "casm/basis_set/BasisSet.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
 

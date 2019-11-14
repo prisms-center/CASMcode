@@ -1,6 +1,6 @@
 #include "casm/monte_carlo/OccCandidate.hh"
 #include "casm/monte_carlo/Conversions.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Supercell.hh"
 

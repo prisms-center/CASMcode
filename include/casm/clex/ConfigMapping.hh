@@ -1,7 +1,9 @@
 #ifndef CASM_ConfigMapping
 #define CASM_ConfigMapping
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
+#include "casm/database/MappedProperties.hh"
+#include "casm/clex/Configuration.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
 #include "casm/crystallography/StrucMapping.hh"
@@ -13,7 +15,7 @@ namespace CASM {
     class Site;
     template<typename T>
     class BasicStructure;
-    class MappingNode;
+    struct MappingNode;
     class SimpleStructure;
     class SimpleStrucMapCalculator;
     class StrucMapper;
@@ -57,6 +59,10 @@ namespace CASM {
     PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
                            SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM);
 
+    /// \brief Creates copy of _child_struc by applying isometry, lattice transformation, translation, and site permutation of _node
+    SimpleStructure resolve_setting(MappingNode const &_node,
+                                    SimpleStructure const &_child_struc) const override;
+
   private:
     /// \brief Make an exact copy of the calculator (including any initialized members)
     StrucMapCalculatorInterface *_clone() const override {
@@ -73,24 +79,25 @@ namespace CASM {
   struct ConfigMapperResult {
     enum class HintStatus { None, Derivative, Equivalent, Identical};
 
-    struct Individual {
-      Individual(std::string _name,
-                 std::unique_ptr<Configuration> _config_ptr,
-                 HintStatus _hint_status = HintStatus::None) :
+    struct MapData {
+      MapData(std::string _name,
+              HintStatus _hint_status = HintStatus::None) :
         name(std::move(_name)),
-        config_ptr(std::move(_config_ptr)),
         hint_status(_hint_status) {}
 
       std::string name;
-      std::unique_ptr<Configuration> config_ptr;
+      MappedProperties props;
       HintStatus hint_status;
     };
 
+    using Individual = std::pair<MapData, Configuration>;
     ConfigMapperResult() {}
 
     bool success() const {
       return !maps.empty();
     }
+
+    Index n_optimal(double tol = TOL) const;
 
     /// Mapped structure, before applying lattice similarity and/or rotation to
     /// input structure.

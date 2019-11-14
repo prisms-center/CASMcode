@@ -7,7 +7,7 @@
 #include <new>
 #include <stdlib.h>
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/container/Array.hh"
 #include "casm/misc/CASM_TMP.hh"
 

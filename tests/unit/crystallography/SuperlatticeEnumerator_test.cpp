@@ -8,6 +8,8 @@
 #include "casm/crystallography/Structure.hh"
 
 /// What is being used to test it:
+#include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymType.hh"

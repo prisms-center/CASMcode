@@ -1,8 +1,8 @@
 #ifndef CASM_Array_math
 #define CASM_Array_math
 
-#include "casm/CASM_global_definitions.hh"
-//#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/definitions.hh"
+//#include "casm/global/eigen.hh"
 #include "casm/container/Array.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 

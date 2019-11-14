@@ -32,11 +32,11 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   EXPECT_EQ(db_props.empty(), true);
   EXPECT_EQ(db_props.size(), 0);
 
-  DB::MappedProperties props;
+  MappedProperties props;
   props.from = "from/0";
   props.to = "to/0";
-  props.unmapped = jsonParser::parse(std::string(R"({"test":"data"})"));
-  props.mapped = jsonParser::parse(std::string(R"({"relaxed_energy":0.1})"));
+  props.scalar("relaxed_energy") = 0.1;
+  props.site["test"] = Eigen::MatrixXd::Ones(3, 3);
 
   auto res = db_props.insert(props);
   EXPECT_EQ(res.second, true);
@@ -51,8 +51,8 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
 
   props.from = "from/1";
   props.to = "to/1";
-  props.unmapped = jsonParser::parse(std::string(R"({"test":"data"})"));
-  props.mapped = jsonParser::parse(std::string(R"({"relaxed_energy":0.2})"));
+  props.scalar("relaxed_energy") = 0.2;
+  props.site["test"] = Eigen::MatrixXd::Ones(3, 3);
 
   res = db_props.insert(props);
   EXPECT_EQ(res.second, true);
@@ -67,8 +67,8 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
 
   props.from = "from/2";
   props.to = "to/1";
-  props.unmapped = jsonParser::parse(std::string(R"({"test":"data"})"));
-  props.mapped = jsonParser::parse(std::string(R"({"relaxed_energy":0.3})"));
+  props.scalar("relaxed_energy") = 0.3;
+  props.site["test"] = Eigen::MatrixXd::Ones(3, 3);
 
   res = db_props.insert(props);
   EXPECT_EQ(res.second, true);

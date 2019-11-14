@@ -8,7 +8,7 @@
 namespace CASM {
   namespace xtal {
     class SimpleStructure;
-    class SymOp;
+    struct SymOp;
     typedef std::vector<SymOp> SymOpVector;
 
     // In this file:

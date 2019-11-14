@@ -4,9 +4,6 @@
 /// What is being tested:
 #include "casm/system/RuntimeLibrary.hh"
 
-/// Dependencies
-#include "casm/casm_io/Log.hh"
-
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -42,9 +39,7 @@ TEST(RuntimeLibraryTest, FunctionTest) {
   RuntimeLibrary lib(
     cc_filename_base,
     compile_opt,
-    so_opt,
-    "Compiling RuntimeLibrary test code",
-    Logging());
+    so_opt);
 
   EXPECT_EQ(true, true);
 
@@ -66,4 +61,3 @@ TEST(RuntimeLibraryTest, FunctionTest) {
   EXPECT_EQ(true, true);
 
 }
-

@@ -1,4 +1,4 @@
-#include "casm/casm_io/EigenDataStream.hh"
+#include "casm/casm_io/dataformatter/EigenDataStream.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/Configuration.hh"

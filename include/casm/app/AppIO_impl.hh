@@ -11,8 +11,8 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/clex.hh"
+#include "casm/casm_io/json/jsonParser.hh"
+#include "casm/clex/io/json/ChemicalReference.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 
 #include "casm/database/Selection_impl.hh"

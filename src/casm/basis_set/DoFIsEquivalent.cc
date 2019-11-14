@@ -9,13 +9,13 @@ namespace CASM {
     return _label_equiv(other) && _vector_equiv(other.basis(), m_dof.basis());
   }
 
+
   bool DoFIsEquivalent::operator()(xtal::SymOp const &_op) const {
-    return _vector_equiv(m_dof.basis(), DoFType::traits(m_dof.type_name()).symop_to_matrix(_op) * m_dof.basis());
+    return _vector_equiv(m_dof.basis(), DoF::BasicTraits(m_dof.type_name()).symop_to_matrix(get_matrix(_op), get_translation(_op), get_time_reversal(_op)) * m_dof.basis());
   }
 
   bool DoFIsEquivalent::operator()(xtal::SymOp const &_op, DoFSet const &other) const {
-    return _label_equiv(other) && _vector_equiv(other.basis(), DoFType::traits(m_dof.type_name()).symop_to_matrix(_op) * m_dof.basis());
-
+    return _label_equiv(other) && _vector_equiv(other.basis(), DoF::BasicTraits(m_dof.type_name()).symop_to_matrix(get_matrix(_op), get_translation(_op), get_time_reversal(_op)) * m_dof.basis());
   }
 
   bool DoFIsEquivalent::_label_equiv(DoFSet const &other) const {
@@ -43,15 +43,16 @@ namespace CASM {
       //        << "Basis after: \n" << _after_basis << "\n\n"
       //        << "DoF size: " << m_dof.size() << "\n\n"
       //        << "Augmented rank: " << aug.colPivHouseholderQr().rank() << "\n\n";
-
-      if(aug.colPivHouseholderQr().rank() != m_dof.size())
+      Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(aug);
+      qr.setThreshold(m_tol);
+      if(qr.rank() != m_dof.size())
         return false;
     }
 
     // Find the transform m_U where
     // _before_basis*m_U = _after_basis
     m_U = _before_basis.colPivHouseholderQr().solve(_after_basis);
-    if(!(m_U.transpose()*m_U).eval().isIdentity(1e-5)) {
+    if(!(m_U.transpose()*m_U).eval().isIdentity(m_tol)) {
       throw std::runtime_error("Cannot find orthogonal symmetry representation for DoF \"" + m_dof.type_name() + "\". Please review inputs.\n");
     }
     return true;

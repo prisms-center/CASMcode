@@ -28,22 +28,26 @@ namespace CASM {
   public:
 
     /// \brief Construct with a Supercell, using all permutations
-    TestEnum(const Supercell &_scel);
+    TestEnum(const ConfigEnumInput &_in_config);
 
     std::string name() const override {
       return enumerator_name;
     }
 
+    bool canonical_guarantee() const {
+      return !m_subset_mode;
+    }
+
     static const std::string enumerator_name;
     static std::string interface_help();
 
-    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt, EnumeratorMap const *interface_map);
 
-    template<typename ScelIterator>
+    template<typename InConfigIterator>
     static int run(
       const PrimClex &primclex,
-      ScelIterator begin,
-      ScelIterator end,
+      InConfigIterator begin,
+      InConfigIterator end,
       const std::vector<std::string> &filter_expr = {},
       bool dry_run = false);
 
@@ -59,8 +63,10 @@ namespace CASM {
     /// Returns true if current() is primitive and canonical
     bool _check_current() const;
 
+    std::vector<Index> m_selection;
     Counter<std::vector<int> > m_counter;
     notstd::cloneable_ptr<Configuration> m_current;
+    bool m_subset_mode;
   };
 
   /** @}*/

@@ -27,11 +27,12 @@ namespace CASM {
 
     /// Generic ConfigType-dependent part of Import
     template<typename _ConfigType>
-    class UpdateT : protected ConfigData<_ConfigType> {
+    class UpdateT : protected ConfigData {
 
     public:
 
       typedef _ConfigType ConfigType;
+      /*
       using ConfigData<_ConfigType>::has_existing_files;
       using ConfigData<_ConfigType>::no_change;
       using ConfigData<_ConfigType>::db_props;
@@ -40,15 +41,13 @@ namespace CASM {
       using ConfigData<_ConfigType>::rm_files;
       using ConfigData<_ConfigType>::primclex;
       using Logging::log;
+      */
 
       /// \brief Constructor
       UpdateT(
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
-        fs::path report_dir) :
-        ConfigData<_ConfigType>(primclex, null_log()),
-        m_structure_mapper(mapper),
-        m_report_dir(report_dir) {}
+        fs::path report_dir);
 
       /// \brief Re-parse calculations 'from' all selected configurations
       void update(const DB::Selection<ConfigType> &selection, bool force);
@@ -70,7 +69,8 @@ namespace CASM {
 
     // To be specialized for ConfigType (no default implemenation exists)
     template<typename ConfigType>
-    class Update : public UpdateT<ConfigType> {
+    class Update;
+    /*: public UpdateT<ConfigType> {
     public:
       static const std::string desc;
       int run(const PrimClex &, const jsonParser &input, const Completer::UpdateOption &opt);
@@ -78,7 +78,7 @@ namespace CASM {
     private:
       // Allow ConfigType to specialize the report formatting for 'update'
       DataFormatter<ConfigIO::Result> _update_formatter() const override;
-    };
+      };*/
 
   }
 }

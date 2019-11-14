@@ -6,12 +6,16 @@
 #include "casm/basis_set/DoF.hh"
 
 
+
 namespace CASM {
 
   template<typename T> struct jsonConstructor;
 
+
+  class AnisoValTraits;
+
   namespace xtal {
-    class SymOp;
+    struct SymOp;
   }
 
   class SymGroup;
@@ -97,7 +101,7 @@ namespace CASM {
   /// is a key for retrieving the SymGroupRep that encodes how the DoFSet transforms with symmetry.
   class DoFSet {
   public:
-    using BasicTraits = DoFType::BasicTraits;
+    using BasicTraits = AnisoValTraits;
 
     using TypeFunc =  std::function<notstd::cloneable_ptr<BasicTraits>()>;
 
@@ -112,16 +116,14 @@ namespace CASM {
     ///    \endcode
     static DoFSet make_default(DoFSet::BasicTraits const &_type);
 
-    /// \brief Construct with DoFType::BasicTraits object, in order to catch typos near point of origin
+    /// \brief Construct with BasicTraits object, in order to catch typos near point of origin
     /// DoFSet is initialized to zero dimension. Use static function DoFSet::make_default() to construct
     /// A viable DoFSet having standard parameters
     /// Example usage:
     ///    \code
     ///    DoFSet my_disp_dof(DoF::traits("disp"))
     ///    \endcode
-    DoFSet(BasicTraits const &_type) :
-      m_type_name(_type.type_name()),
-      m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(_type.dim(), 0)) {}
+    DoFSet(BasicTraits const &_type);
 
     /// \brief Returns number of components in this DoFSet
     Index size() const {
@@ -130,11 +132,13 @@ namespace CASM {
 
     /// \brief Returns type_name of DoFSet, which should be a standardized DoF type (e.g., "disp", "magspin", "GLstrain")
     std::string const &type_name() const {
-      return m_type_name;
+      return m_traits.name();
     }
 
     /// \brief Returns traits object for the DoF type of this DoFSet
-    DoFType::Traits const &traits() const;
+    BasicTraits const &traits() const {
+      return m_traits;
+    }
 
     /// \brief Set identifying index (ID) of this DoFSet
     /// ID is context dependent but is used to different distinct DoFSets that are otherwise equivalent
@@ -223,7 +227,7 @@ namespace CASM {
 
 
   private:
-    std::string m_type_name;
+    BasicTraits m_traits;
     std::vector<ContinuousDoF> m_components;
     mutable DoFSetInfo m_info;
 
@@ -258,7 +262,7 @@ namespace CASM {
   //********************************************************************
   template<>
   struct jsonConstructor<DoFSet> {
-    static DoFSet from_json(const jsonParser &json, DoF::BasicTraits const &_type);
+    static DoFSet from_json(const jsonParser &json, DoFSet::BasicTraits const &_type);
   };
 
   //********************************************************************

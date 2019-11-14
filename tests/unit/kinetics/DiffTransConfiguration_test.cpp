@@ -8,6 +8,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
 #include "Common.hh"
+#include "ZrOProj.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 
@@ -125,4 +126,3 @@ TEST(DiffTransConfigurationTest, Test0) {
   EXPECT_EQ(dtc == loaded_dtc, 1);
 
 }
-

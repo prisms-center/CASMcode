@@ -1,7 +1,7 @@
 #include "casm/database/json/jsonPropertiesDatabase.hh"
 
 #include <boost/filesystem.hpp>
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 
 namespace CASM {
@@ -26,7 +26,7 @@ namespace CASM {
         auto it = json["conflict_score"].begin();
         auto end = json["conflict_score"].end();
         for(; it != end; ++it) {
-          set_score_method(it.name(), ScoreMappedProperties(*it));
+          set_score_method(it.name(), it->get<ScoreMappedProperties>());
         }
       }
 

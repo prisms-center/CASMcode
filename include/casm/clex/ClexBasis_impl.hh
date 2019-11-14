@@ -1,14 +1,16 @@
 #ifndef CASM_ClexBasis_impl
 #define CASM_ClexBasis_impl
 
-#include "casm/container/algorithm.hh"
 #include "casm/clex/ClexBasis.hh"
-#include "casm/clex/OrbitFunctionTraits.hh"
+
 #include "casm/basis_set/DoFTraits.hh"
-#include "casm/symmetry/SymRepTools.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/clex/OrbitFunctionTraits.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/container/algorithm.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/symmetry/SymRepTools.hh"
 
 
 namespace CASM {
@@ -27,7 +29,7 @@ namespace CASM {
     if(dof_keys.empty()) {
       for(auto const &dof : m_global_bases)
         global_keys.push_back(dof.first);
-      for(auto const &dof : m_global_bases)
+      for(auto const &dof : m_site_bases)
         local_keys.push_back(dof.first);
     }
     else if(dof_keys.size() > 1 || dof_keys[0] != "none") {

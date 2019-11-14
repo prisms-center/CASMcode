@@ -2,7 +2,7 @@
 
 #include <tuple>
 #include "casm/system/RuntimeLibrary.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/QueryHandler.hh"

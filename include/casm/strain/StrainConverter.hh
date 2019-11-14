@@ -2,10 +2,10 @@
 #define STRAINCONVERTER_HH
 
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
-#include "casm/container/Array.hh"
-#include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/external/Eigen/Dense"
+#include "casm/container/Array.hh"
+#include "casm/global/definitions.hh"
+#include "casm/symmetry/SymGroupRepID.hh"
 
 
 //--------------------------------------------------

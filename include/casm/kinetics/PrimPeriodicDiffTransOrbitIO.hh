@@ -1,6 +1,6 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 #include "casm/symmetry/Orbit.hh"
 
 namespace CASM {
