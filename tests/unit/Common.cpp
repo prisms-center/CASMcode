@@ -127,14 +127,6 @@ namespace test {
     m_set->set_casm_libdir(autotools::abs_libdir());
     m_set->set_casm_includedir(autotools::abs_includedir());
 
-    /* m_set->set_casm_prefix(fs::current_path()); */
-
-    // handle scons and autotools
-    /* if(!fs::exists(m_set->casm_libdir().first / "libcasm.dylib") && */
-    /*    !fs::exists(m_set->casm_libdir().first / "libcasm.so")) { */
-    /*   m_set->set_casm_libdir(autotools::abs_libdir()); */
-    /* } */
-
     m_set->commit();
 
     EXPECT_EQ(true, fs::exists(dir));
