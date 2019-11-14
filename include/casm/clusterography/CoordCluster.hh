@@ -148,18 +148,6 @@ namespace CASM {
       return m_element;
     }
 
-    //TODO: Since we're moving away from having apply_sym as methods, maybe we
-    //shouldn't override here, and instead change the core of ElementWiseSymApply.
-    //This particular override is still required if CoordType is UnitCellCoord though,
-    //so should this specialization be done even further away from here?
-    /* CoordCluster &apply_sym(const SymOp &op) { */
-    /*   for(auto &e : *this) { */
-    /*       //!!TODO!! */
-
-    /*   } */
-    /*   return *this; */
-    /* } */
-
   protected:
 
     friend GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>;

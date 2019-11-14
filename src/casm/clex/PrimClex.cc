@@ -367,12 +367,18 @@ namespace CASM {
 
       std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
 
+      //TODO: PrimClex should eventually just hold a shared_ptr
+      //instead of an actual Structure, and it can get passed directly.
+      //For now, an extraneous copy is make to satisfy SymCompare classes
+      typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
+      auto prim_ptr = std::make_shared<symcompare_type::PrimType>(this->prim());
+
       read_clust(
         std::back_inserter(orbits),
         jsonParser(dir().clust(key.bset)),
         prim(),
         prim().factor_group(),
-        PrimPeriodicSymCompare<IntegralCluster>(crystallography_tol()),
+        symcompare_type(prim_ptr, crystallography_tol()),
         crystallography_tol()
       );
 

@@ -1,10 +1,12 @@
-#include "casm/clusterography/IntegralCluster.hh"
-#include "casm/casm_io/Log.hh"
-#include "casm/casm_io/json/jsonParser.hh"
-#include "casm/casm_io/container/json_io.hh"
 #include "casm/app/AppIO.hh"
-#include "casm/crystallography/Structure.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/global/enum/json_io.hh"
 
 namespace CASM {

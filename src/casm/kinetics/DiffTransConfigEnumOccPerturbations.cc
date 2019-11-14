@@ -24,6 +24,13 @@ extern "C" {
   }
 }
 
+namespace {
+  using namespace CASM;
+  ScelPeriodicSymCompare<IntegralCluster> construct_scel_sym_compare(const Supercell &scel) {
+    auto prim_ptr = std::make_shared<ScelPeriodicSymCompare<IntegralCluster>::PrimType>(scel.primclex().prim());
+    return ScelPeriodicSymCompare<IntegralCluster>(prim_ptr, scel.prim_grid(), scel.crystallography_tol());
+  }
+}
 
 namespace CASM {
 
@@ -38,7 +45,7 @@ namespace CASM {
       m_include_unperturbed(true),
       m_skip_subclusters(true),
       m_local_cspecs(local_cspecs),
-      m_scel_sym_compare(_supercell()),
+      m_scel_sym_compare(::construct_scel_sym_compare(this->_supercell())),
       m_curr(OccPerturbation(_prim())) {
 
       this->_initialize();
@@ -226,7 +233,8 @@ namespace CASM {
         std::vector<PermuteIterator> diff_trans_g {
           dtorbit.prototype().invariant_subgroup(bg_config.supercell())};
         SymGroup diff_trans_sym_g { make_sym_group(diff_trans_g) };
-        ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare {bg_config.supercell()};
+        /* ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare {bg_config.supercell()}; */
+        auto scel_sym_compare =::construct_scel_sym_compare(bg_config.supercell());
 
         make_local_orbits(
           dtorbit.prototype(),

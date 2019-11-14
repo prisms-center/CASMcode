@@ -1,20 +1,22 @@
 #ifndef CASM_ClusterSymCompare
 #define CASM_ClusterSymCompare
 
+#include <memory>
 #include "casm/symmetry/SymCompare.hh"
 
 namespace CASM {
   namespace xtal {
     class PrimGrid;
     class UnitCellCoord;
+    template<typename CoordType>
+    class BasicStructure;
+    class Site;
   }
   using xtal::PrimGrid;
   using xtal::UnitCellCoord;
 
   template<typename Derived>
   class ClusterSymCompare;
-  class PrimClex;
-  class Supercell;
 
   /// \brief Traits class for ClusterSymCompare
   ///
@@ -72,8 +74,7 @@ namespace CASM {
     // For now, this is the the sorting permutation
     std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj)const;
 
-  protected:
-
+    //TODO: Ask what in the world this is doing
     /// \brief type-specific way to get position of element
     ///
     /// - Returns traits<Element>::position(el)
@@ -110,6 +111,9 @@ namespace CASM {
 
   public:
 
+    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef std::shared_ptr<const PrimType> PrimType_ptr;
+
     typedef ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> Base;
     using Base::position;
 
@@ -117,14 +121,15 @@ namespace CASM {
     ///
     /// \param tol Tolerance for invariants_compare of site-to-site distances
     ///
-    AperiodicSymCompare(double tol);
+    AperiodicSymCompare(PrimType_ptr prim_ptr, double tol);
 
     /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
-  protected:
+  private:
+
     friend SymCompare<CRTPBase<AperiodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
@@ -147,9 +152,20 @@ namespace CASM {
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
 
-  private:
+    //NEVER make this public please
+    /* const PrimType& prim() const */
+    /* { */
+    /*     return this->m_prim.get(); */
+    /* } */
 
     double m_tol;
+
+    //TODO: Does it still make sense for all these classes to be templated?
+    //These all seem like specializations for UnitCellCoord, unless I abstract out the
+    //part the applies symmetry too. Alternatively, you could hack these classes to work
+    //with something like Coordinate, as long as there is copy_apply(SymOp, Coordinate, PrimType)
+    ///Pointer to the primitive structure, necessary to apply symmetry to the Element
+    PrimType_ptr m_prim;
 
   };
 
@@ -171,23 +187,27 @@ namespace CASM {
 
   public:
 
+    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef std::shared_ptr<PrimType> PrimType_ptr;
     typedef ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> Base;
+
     using Base::position;
 
     /// \brief Constructor
     ///
     /// \param tol Tolerance for invariants_compare of site-to-site distances
     ///
-    PrimPeriodicSymCompare(double tol);
+    PrimPeriodicSymCompare(PrimType_ptr prim_ptr, double tol);
 
-    PrimPeriodicSymCompare(const PrimClex &primclex);
+    /* PrimPeriodicSymCompare(const PrimClex &primclex); */
 
     /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
-  protected:
+  private:
+
     friend SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
@@ -210,10 +230,10 @@ namespace CASM {
       return obj;
     }
 
-  private:
-
     double m_tol;
 
+    ///Pointer to the primitive structure, necessary to apply symmetry to the Element
+    PrimType_ptr m_prim;
   };
 
   /// \brief Comparisons of GenericCluster-derived types using supercell periodic symmetry
@@ -233,6 +253,9 @@ namespace CASM {
 
   public:
 
+    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef std::shared_ptr<PrimType> PrimType_ptr;
+
     typedef ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> Base;
     using Base::position;
 
@@ -240,17 +263,18 @@ namespace CASM {
     ///
     /// \param tol Tolerance for invariants_compare of site-to-site distances
     ///
-    ScelPeriodicSymCompare(const PrimGrid &prim_grid, double tol);
+    ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol);
 
     /// \brief Constructor
-    ScelPeriodicSymCompare(const Supercell &scel);
+    /* ScelPeriodicSymCompare(const Supercell &scel); */
 
     /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
-  protected:
+  private:
+
     friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
@@ -275,10 +299,10 @@ namespace CASM {
 
     const PrimGrid *m_prim_grid;
 
-  private:
-
     double m_tol;
 
+    ///Pointer to the primitive structure, necessary to apply symmetry to the Element
+    PrimType_ptr m_prim;
   };
 
   /// \brief Comparisons of GenericCluster-derived types using supercell periodic symmetry
@@ -299,24 +323,29 @@ namespace CASM {
 
   public:
 
+    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef std::shared_ptr<PrimType> PrimType_ptr;
     typedef ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> Base;
+
     using Base::position;
 
     /// \brief Constructor
     ///
     /// \param tol Tolerance for invariants_compare of site-to-site distances
     ///
-    WithinScelSymCompare(const PrimGrid &prim_grid, double tol);
+    WithinScelSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol);
 
     /// \brief Constructor
-    WithinScelSymCompare(const Supercell &scel);
+    /* WithinScelSymCompare(const Supercell &scel); */
 
     /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
-  protected:
+  private:
+
+
     friend SymCompare<CRTPBase<WithinScelSymCompare<Element>>>;
 
     /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
@@ -346,10 +375,10 @@ namespace CASM {
 
     const PrimGrid *m_prim_grid;
 
-  private:
-
     double m_tol;
 
+    ///Pointer to the primitive structure, necessary to apply symmetry to the Element
+    PrimType_ptr m_prim;
   };
 
 }

@@ -1,6 +1,14 @@
 #include "casm/kinetics/DiffTransConfigIsEqual.hh"
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 
+namespace {
+  using namespace CASM;
+  ScelPeriodicDiffTransSymCompare construct_scel_sym_compare(const Supercell &scel) {
+    auto prim_ptr = std::make_shared<ScelPeriodicDiffTransSymCompare::PrimType>(scel.primclex().prim());
+    return ScelPeriodicDiffTransSymCompare(prim_ptr, scel.prim_grid(), scel.crystallography_tol());
+  }
+}
+
 namespace CASM {
   namespace Kinetics {
 
@@ -219,7 +227,7 @@ namespace CASM {
 
     DiffTransConfigIsEqualFast::DiffTransConfigIsEqualFast(const DiffTransConfiguration &_dtconfig) :
       m_dtconfig(&_dtconfig),
-      m_sym_compare(_dtconfig.supercell()) {}
+      m_sym_compare(::construct_scel_sym_compare(_dtconfig.supercell())) {}
 
     /// \brief Check if dtconfig < other (may have different Supercell, may not be sorted)
     bool DiffTransConfigIsEqualFast::operator()(const DiffTransConfiguration &other) const {

@@ -5,8 +5,6 @@
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
 
 namespace CASM {
 
@@ -59,7 +57,7 @@ namespace CASM {
   ///
   template<typename Element>
   AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  AperiodicSymCompare(double tol): m_tol(tol) {}
+  AperiodicSymCompare(PrimType_ptr prim_ptr, double tol): m_prim(prim_ptr), m_tol(tol) {}
 
   /// \brief Prepare an element for comparison
   ///
@@ -89,16 +87,16 @@ namespace CASM {
   ///
   template<typename Element>
   PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  PrimPeriodicSymCompare(double tol): m_tol(tol) {}
+  PrimPeriodicSymCompare(PrimType_ptr prim_ptr, double tol): m_tol(tol) {}
 
   /// \brief Constructor
   ///
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
-  template<typename Element>
-  PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  PrimPeriodicSymCompare(const PrimClex &primclex):
-    PrimPeriodicSymCompare(primclex.crystallography_tol()) {}
+  //template<typename Element>
+  //PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  //PrimPeriodicSymCompare(const PrimClex &primclex):
+  //  PrimPeriodicSymCompare(primclex.crystallography_tol()) {}
 
   /// \brief Prepare an element for comparison
   ///
@@ -138,7 +136,8 @@ namespace CASM {
   ///
   template<typename Element>
   ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  ScelPeriodicSymCompare(const PrimGrid &prim_grid, double tol):
+  ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol):
+    m_prim(prim_ptr),
     m_tol(tol),
     m_prim_grid(&prim_grid) {}
 
@@ -146,10 +145,10 @@ namespace CASM {
   ///
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
-  template<typename Element>
-  ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  ScelPeriodicSymCompare(const Supercell &scel):
-    ScelPeriodicSymCompare(scel.prim_grid(), scel.crystallography_tol()) {}
+  //template<typename Element>
+  //ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  //ScelPeriodicSymCompare(const Supercell &scel):
+  //  ScelPeriodicSymCompare(scel.prim_grid(), scel.crystallography_tol()) {}
 
   /// \brief Prepare an element for comparison
   ///
@@ -189,7 +188,8 @@ namespace CASM {
   ///
   template<typename Element>
   WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  WithinScelSymCompare(const PrimGrid &prim_grid, double tol):
+  WithinScelSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol):
+    m_prim(prim_ptr),
     m_tol(tol),
     m_prim_grid(&prim_grid) {}
 
@@ -197,10 +197,10 @@ namespace CASM {
   ///
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
-  template<typename Element>
-  WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  WithinScelSymCompare(const Supercell &scel):
-    WithinScelSymCompare<Element>(scel.prim_grid(), scel.crystallography_tol()) {}
+  //template<typename Element>
+  //WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  //WithinScelSymCompare(const Supercell &scel):
+  //  WithinScelSymCompare<Element>(scel.prim_grid(), scel.crystallography_tol()) {}
 
   /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
   ///

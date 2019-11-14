@@ -4,12 +4,23 @@
 #include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/clex/Supercell.hh"
 
+#include "casm/clex/PrimClex.hh"
+namespace {
+  //TODO:
+  //This should eventually not exist, and the prim pointer can
+  //be available through the Supercell directly via its PrimClex
+  using namespace CASM;
+  std::shared_ptr<BasicStructure<Site>> _prim_pointer_from_supercell(const Supercell &scel) {
+    return std::make_shared<BasicStructure<Site>>(scel.primclex().prim());
+  }
+}
+
 namespace CASM {
 
   template<typename _ElementType>
   ScelCanonicalGenerator<_ElementType>::ScelCanonicalGenerator(const Supercell &_scel) :
     m_scel(&_scel),
-    m_sym_compare(_scel.prim_grid(), _scel.crystallography_tol()) {}
+    m_sym_compare(::_prim_pointer_from_supercell(_scel), _scel.prim_grid(), _scel.crystallography_tol()) {}
 
   template<typename _ElementType>
   const Supercell &ScelCanonicalGenerator<_ElementType>::supercell() const {
@@ -82,7 +93,7 @@ namespace CASM {
   ScelIsCanonical<_ElementType>::ScelIsCanonical(
     const Supercell &_scel) :
     m_scel(&_scel),
-    m_sym_compare(_scel.prim_grid(), _scel.crystallography_tol()) {}
+    m_sym_compare(::_prim_pointer_from_supercell(_scel), _scel.prim_grid(), _scel.crystallography_tol()) {}
 
   template<typename _ElementType>
   const Supercell &ScelIsCanonical<_ElementType>::supercell() const {
