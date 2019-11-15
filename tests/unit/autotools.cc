@@ -23,4 +23,12 @@ namespace autotools {
   std::string abs_ccasm_path() {
     return abs_top_builddir() + "/ccasm";
   }
+
+  std::string abs_libdir() {
+    return abs_top_builddir() + "/.libs";
+  }
+
+  std::string abs_includedir() {
+    return abs_srcdir() + "/include";
+  }
 }
