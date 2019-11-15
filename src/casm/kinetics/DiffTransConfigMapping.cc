@@ -183,11 +183,7 @@ namespace CASM {
       //std::cout << "to config is " << std::endl << non_canon_to_config << std::endl;
       //NEED TO SET ORBIT NAME OF DTC SOMEHOW FOR NEW DIFF TRANS
 
-      //TODO:
-      //Eventually this prim_ptr should come directly from PrimClex
-      auto prim_ptr = std::make_shared<PrimPeriodicDiffTransSymCompare::PrimType>(this->primclex().prim());
-
-      PrimPeriodicDiffTransSymCompare sym_c {prim_ptr, primclex().crystallography_tol()};
+      PrimPeriodicDiffTransSymCompare sym_c {this->primclex().shared_prim(), primclex().crystallography_tol()};
       OrbitGenerators<PrimPeriodicDiffTransOrbit> generators(primclex().prim().factor_group(), sym_c);
       generators.insert(sym_c.prepare(diff_trans));
       std::vector<PrimPeriodicDiffTransOrbit> dt_orbits;

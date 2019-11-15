@@ -108,12 +108,8 @@ namespace CASM {
     PermuteIterator begin,
     PermuteIterator end) {
 
-    //TODO: Eventually the prim_ptr should be passed or
-    //be accessible via Supercell through its PrimClex
-    auto prim_ptr = std::make_shared<typename ScelPeriodicSymCompare<Element>::PrimType>(scel.primclex().prim());
-
     ScelPeriodicSymCompare<Element> sym_compare(
-      prim_ptr,
+      scel.primclex().shared_prim(),
       scel.prim_grid(),
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
@@ -151,12 +147,8 @@ namespace CASM {
     PermuteIteratorIt begin,
     PermuteIteratorIt end) {
 
-    //TODO: Eventually the prim_ptr should be passed or
-    //be accessible via Supercell through its PrimClex
-    auto prim_ptr = std::make_shared<typename ScelPeriodicSymCompare<Element>::PrimType>(scel.primclex().prim());
-
     ScelPeriodicSymCompare<Element> sym_compare(
-      prim_ptr,
+      scel.primclex().shared_prim(),
       scel.prim_grid(),
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));

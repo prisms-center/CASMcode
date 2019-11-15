@@ -6,7 +6,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/clusterography/GenericCluster.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
-#include "casm/clusterography/UnitCellCoord.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/clex/HasCanonicalForm.hh"
 

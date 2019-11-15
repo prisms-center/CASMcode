@@ -187,18 +187,14 @@ namespace CASM {
 
           const SymGroup &prim_grp = primclex.prim().factor_group();
 
-          //TODO: Eventually stop constructing this shared_ptr,
-          //it should be given by PrimClex (?)
-          auto prim_ptr = std::make_shared<xtal::BasicStructure<xtal::Site>>(xtal::BasicStructure<xtal::Site>(primclex.prim()));
-
-          PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(prim_ptr, primclex.crystallography_tol());
+          PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
           SymGroup generating_grp {
             make_invariant_subgroup(dtorbit.prototype(), prim_grp, dt_sym_compare)};
 
           make_local_orbits(
             dtorbit.prototype(),
             generating_grp,
-            LocalSymCompare<IntegralCluster>(prim_ptr, primclex.crystallography_tol()),
+            LocalSymCompare<IntegralCluster>(primclex.shared_prim(), primclex.crystallography_tol()),
             local_bspecs_json,
             alloy_sites_filter,
             primclex.crystallography_tol(),
@@ -344,15 +340,11 @@ namespace CASM {
       typedef PrimPeriodicIntegralClusterOrbit orbit_type;
       typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
 
-      //TODO: Eventually stop constructing this shared_ptr,
-      //it should be given by PrimClex (?)
-      auto prim_ptr = std::make_shared<symcompare_type::PrimType>(symcompare_type::PrimType(primclex.prim()));
-
       std::vector<orbit_type> orbits;
       primclex.orbits(
         clex_desc,
         std::back_inserter(orbits),
-        orbit_type::SymCompareType(prim_ptr, set.crystallography_tol()));
+        orbit_type::SymCompareType(primclex.shared_prim(), set.crystallography_tol()));
 
       if(vm.count("orbits")) {
         print_clust(orbits.begin(), orbits.end(), args.log(), ProtoSitesPrinter());

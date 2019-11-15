@@ -892,10 +892,9 @@ namespace CASM {
     typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
 
     const SymGroup &generating_grp = prim.factor_group();
-    //TODO: Eventually stop passing a "real" structure, and pass
-    //a BasicStructure shared_ptr (SymGroup can be generated via
-    //xtal::make_factor_group). For now, an extraneous copy is made
-    auto prim_ptr = std::make_shared<symcompare_type::PrimType>(symcompare_type::PrimType(prim));
+
+    //SymCompare requires a shared resource, but it will die within this scope
+    auto prim_ptr = std::make_shared<const symcompare_type::PrimType>(prim);
     PrimPeriodicSymCompare<IntegralCluster> sym_compare(prim_ptr, xtal_tol);
 
     std::vector<UnitCellCoord> candidate_sites;
@@ -953,10 +952,9 @@ namespace CASM {
     typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
 
     const SymGroup &generating_grp = prim.factor_group();
-    //TODO: Eventually stop passing a "real" structure, and pass
-    //a BasicStructure shared_ptr (SymGroup can be generated via
-    //xtal::make_factor_group). For now, an extraneous copy is made
-    auto prim_ptr = std::make_shared<symcompare_type::PrimType>(symcompare_type::PrimType(prim));
+
+    //SymCompare requires a shared resource, but it will die within this scope
+    auto prim_ptr = std::make_shared<const symcompare_type::PrimType>(prim);
     PrimPeriodicSymCompare<IntegralCluster> sym_compare(prim_ptr, xtal_tol);
 
     // collect OrbitBranchSpecs here
@@ -1053,10 +1051,7 @@ namespace CASM {
     std::vector<double> max_length = ClusterOrbits_impl::max_length_from_bspecs(bspecs);
 
     // collect custom orbit generating clusters in 'generators'
-    //TODO: Eventually stop passing a "real" structure, and pass
-    //a BasicStructure shared_ptr (SymGroup can be generated via
-    //xtal::make_factor_group). For now, an extraneous copy is made
-    auto prim_ptr = std::make_shared<symcompare_type::PrimType>(symcompare_type::PrimType(prim));
+    auto prim_ptr = std::make_shared<const symcompare_type::PrimType>(prim);
     PrimPeriodicSymCompare<IntegralCluster> sym_compare(prim_ptr, xtal_tol);
     OrbitGenerators<orbit_type> generators(prim.factor_group(), sym_compare);
 

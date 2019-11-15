@@ -1,29 +1,30 @@
 #ifndef CASM_ClusterSymCompare
 #define CASM_ClusterSymCompare
 
-#include <memory>
 #include "casm/symmetry/SymCompare.hh"
+#include <memory>
 
 namespace CASM {
   namespace xtal {
     class PrimGrid;
     class UnitCellCoord;
-    template<typename CoordType>
+    template <typename CoordType>
     class BasicStructure;
     class Site;
-  }
+  } // namespace xtal
   using xtal::PrimGrid;
   using xtal::UnitCellCoord;
 
-  template<typename Derived>
+  template <typename Derived>
   class ClusterSymCompare;
 
   /// \brief Traits class for ClusterSymCompare
   ///
   /// \ingroup IntegralCluster
   ///
-  template<typename Derived>
-  struct traits<ClusterSymCompare<Derived>> : public traits<Derived> {};
+  template <typename Derived>
+  struct traits<ClusterSymCompare<Derived>> : public traits<Derived> {
+  };
 
   /// \brief CRTP Base class for Cluster comparisons
   ///
@@ -50,11 +51,10 @@ namespace CASM {
   ///
   /// \ingroup Clusterography
   ///
-  template<typename Base>
+  template <typename Base>
   class ClusterSymCompare : public Base {
 
   public:
-
     typedef typename Base::MostDerived MostDerived;
     /// Element refers to Cluster, not element of Cluster
     typedef typename traits<MostDerived>::Element Element;
@@ -63,7 +63,6 @@ namespace CASM {
     using Base::derived;
 
   protected:
-
     /// \brief Orders 'prepared' elements in the same orbit
     bool invariants_compare_impl(const Element &A, const Element &B) const;
 
@@ -72,25 +71,20 @@ namespace CASM {
 
     /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
     // For now, this is the the sorting permutation
-    std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj)const;
+    std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj) const;
 
-    //TODO: Ask what in the world this is doing
+    // TODO: Ask what in the world this is doing
     /// \brief type-specific way to get position of element
     ///
     /// - Returns traits<Element>::position(el)
     static UnitCellCoord position(const Element &el);
-
   };
 
   template <
     typename ClusterType,
     typename = typename std::enable_if <
-      std::is_same <
-        UnitCellCoord,
-        decltype(traits<ClusterType>::position(std::declval<ClusterType>()))
-        >::value >::type >
+      std::is_same<UnitCellCoord, decltype(traits<ClusterType>::position(std::declval<ClusterType>()))>::value >::type >
   using enable_if_integral_position = ClusterType;
-
 
   /* -- LocalSymCompare<IntegralCluster> Declaration ------------------------------------- */
 
@@ -105,12 +99,12 @@ namespace CASM {
   ///
   /// \ingroup IntegralCluster
   ///
-  template<typename Element>
-  class AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/> :    //aka LocalSymCompare?
-    public ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> {
+  template <typename Element>
+  class AperiodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
+    : // aka LocalSymCompare?
+      public ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> {
 
   public:
-
     typedef xtal::BasicStructure<xtal::Site> PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
@@ -129,7 +123,6 @@ namespace CASM {
     }
 
   private:
-
     friend SymCompare<CRTPBase<AperiodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
@@ -152,23 +145,15 @@ namespace CASM {
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
 
-    //NEVER make this public please
-    /* const PrimType& prim() const */
-    /* { */
-    /*     return this->m_prim.get(); */
-    /* } */
-
     double m_tol;
 
-    //TODO: Does it still make sense for all these classes to be templated?
-    //These all seem like specializations for UnitCellCoord, unless I abstract out the
-    //part the applies symmetry too. Alternatively, you could hack these classes to work
-    //with something like Coordinate, as long as there is copy_apply(SymOp, Coordinate, PrimType)
-    ///Pointer to the primitive structure, necessary to apply symmetry to the Element
+    // TODO: Does it still make sense for all these classes to be templated?
+    // These all seem like specializations for UnitCellCoord, unless I abstract out the
+    // part the applies symmetry too. Alternatively, you could hack these classes to work
+    // with something like Coordinate, as long as there is copy_apply(SymOp, Coordinate, PrimType)
+    /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
-
   };
-
 
   /// \brief Comparisons of GenericCluster-derived types using prim periodic symmetry
   ///
@@ -181,14 +166,13 @@ namespace CASM {
   ///
   /// \ingroup IntegralCluster
   ///
-  template<typename Element>
-  class PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/> :
-    public ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> {
+  template <typename Element>
+  class PrimPeriodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
+    : public ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> {
 
   public:
-
     typedef xtal::BasicStructure<xtal::Site> PrimType;
-    typedef std::shared_ptr<PrimType> PrimType_ptr;
+    typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> Base;
 
     using Base::position;
@@ -199,15 +183,12 @@ namespace CASM {
     ///
     PrimPeriodicSymCompare(PrimType_ptr prim_ptr, double tol);
 
-    /* PrimPeriodicSymCompare(const PrimClex &primclex); */
-
     /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
   private:
-
     friend SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
@@ -232,7 +213,7 @@ namespace CASM {
 
     double m_tol;
 
-    ///Pointer to the primitive structure, necessary to apply symmetry to the Element
+    /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
   };
 
@@ -247,14 +228,13 @@ namespace CASM {
   ///
   /// \ingroup IntegralCluster
   ///
-  template<typename Element>
-  class ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/> :
-    public ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> {
+  template <typename Element>
+  class ScelPeriodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
+    : public ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> {
 
   public:
-
     typedef xtal::BasicStructure<xtal::Site> PrimType;
-    typedef std::shared_ptr<PrimType> PrimType_ptr;
+    typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
     typedef ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> Base;
     using Base::position;
@@ -265,16 +245,12 @@ namespace CASM {
     ///
     ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol);
 
-    /// \brief Constructor
-    /* ScelPeriodicSymCompare(const Supercell &scel); */
-
     /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
   private:
-
     friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
@@ -301,7 +277,7 @@ namespace CASM {
 
     double m_tol;
 
-    ///Pointer to the primitive structure, necessary to apply symmetry to the Element
+    /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
   };
 
@@ -317,14 +293,13 @@ namespace CASM {
   ///
   /// \ingroup IntegralCluster
   ///
-  template<typename Element>
-  class WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/> :
-    public ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> {
+  template <typename Element>
+  class WithinScelSymCompare<Element /*, enable_if_integral_position<Element>*/>
+    : public ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> {
 
   public:
-
     typedef xtal::BasicStructure<xtal::Site> PrimType;
-    typedef std::shared_ptr<PrimType> PrimType_ptr;
+    typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> Base;
 
     using Base::position;
@@ -335,28 +310,22 @@ namespace CASM {
     ///
     WithinScelSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol);
 
-    /// \brief Constructor
-    /* WithinScelSymCompare(const Supercell &scel); */
-
     /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
   private:
-
-
     friend SymCompare<CRTPBase<WithinScelSymCompare<Element>>>;
 
     /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
     ///
-    std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj)const;
+    std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj) const;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
     /// - Applies superlattice translation such that first site of cluster is within supercell
     Element spatial_prepare_impl(Element obj) const;
-
 
     /// \brief Prepare an element for comparison via transformation of its internal representation
     ///
@@ -377,10 +346,10 @@ namespace CASM {
 
     double m_tol;
 
-    ///Pointer to the primitive structure, necessary to apply symmetry to the Element
+    /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
   };
 
-}
+} // namespace CASM
 
 #endif

@@ -16,11 +16,7 @@ namespace CASM {
 
       const auto &g = prim().factor_group();
 
-      //TODO:Eventually just have a prim_ptr already available, for now
-      //an extraneous copy is made to please the SymCompare classes
-      auto prim_ptr = std::make_shared<PrimPeriodicDiffTransSymCompare::PrimType>(this->prim());
-
-      PrimPeriodicDiffTransSymCompare sym_compare(prim_ptr, crystallography_tol());
+      PrimPeriodicDiffTransSymCompare sym_compare(this->primclex().shared_prim(), crystallography_tol());
       return diff_trans.find_sym_equivalent(
                prototype_iterator(begin()),
                prototype_iterator(end()),

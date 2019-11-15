@@ -43,13 +43,8 @@ namespace CASM {
       bool _required) :
       EnumInputParser(_primclex, _input, _enum_opt, _path, _required) {
 
-      typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
-      //TODO: Eventually stop constructing this shared_ptr,
-      //it should be given by PrimClex (?)
-      auto prim_ptr = std::make_shared<symcompare_type::PrimType>(symcompare_type::PrimType(_primclex.prim()));
-
       // check "cspecs"
-      symcompare_type sym_compare(prim_ptr, _primclex.crystallography_tol());
+      PrimPeriodicSymCompare<IntegralCluster>  sym_compare(_primclex.shared_prim(), _primclex.crystallography_tol());
       this->kwargs["cspecs"] = m_cspecs_parser =
                                  std::make_shared<PrimPeriodicClustersByMaxLength>(
                                    _primclex, _primclex.prim().factor_group(), sym_compare, input, relpath("cspecs"), true);

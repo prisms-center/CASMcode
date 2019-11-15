@@ -30,11 +30,7 @@ namespace CASM {
       const Structure &prim = begin->prototype().prim();
       const auto &generating_grp = prim.factor_group();
 
-      //TODO:
-      //prim_ptr will eventually be accessible from PrimClex
-      auto prim_ptr = std::make_shared<xtal::BasicStructure<xtal::Site>>(xtal::BasicStructure<xtal::Site>(primclex->prim()));
-
-      PrimPeriodicDiffTransSymCompare sym_compare {prim_ptr, xtal_tol};
+      PrimPeriodicDiffTransSymCompare sym_compare {primclex->shared_prim(), xtal_tol};
 
       OrbitGenerators<PrimPeriodicDiffTransOrbit> generators {generating_grp, sym_compare};
 

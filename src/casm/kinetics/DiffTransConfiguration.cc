@@ -13,9 +13,8 @@
 
 namespace {
   using namespace CASM;
-  ScelPeriodicDiffTransSymCompare construct_scel_sym_compare(const Supercell &scel) {
-    auto prim_ptr = std::make_shared<ScelPeriodicDiffTransSymCompare::PrimType>(scel.primclex().prim());
-    return ScelPeriodicDiffTransSymCompare(prim_ptr, scel.prim_grid(), scel.crystallography_tol());
+  ScelPeriodicDiffTransSymCompare _construct_scel_sym_compare(const Supercell &scel) {
+    return ScelPeriodicDiffTransSymCompare(scel.primclex().shared_prim(), scel.prim_grid(), scel.crystallography_tol());
   }
 }
 
@@ -34,7 +33,7 @@ namespace CASM {
                                                    const PrimPeriodicDiffTransOrbit &_dtorbit) :
       m_config_A(_from_config),
       m_config_B(_from_config),
-      m_sym_compare(::construct_scel_sym_compare(_from_config.supercell())),
+      m_sym_compare(::_construct_scel_sym_compare(_from_config.supercell())),
       m_diff_trans(m_sym_compare.prepare(_dtorbit.prototype())),
       m_orbit_name(_dtorbit.name()) {
 
@@ -46,7 +45,7 @@ namespace CASM {
                                                    const DiffusionTransformation &_diff_trans) :
       m_config_A(_from_config),
       m_config_B(_from_config),
-      m_sym_compare(::construct_scel_sym_compare(_from_config.supercell())),
+      m_sym_compare(::_construct_scel_sym_compare(_from_config.supercell())),
       m_diff_trans(_diff_trans) {
       m_from_config_is_A = true;
       if(_diff_trans != m_sym_compare.prepare(_diff_trans)) {
@@ -72,7 +71,7 @@ namespace CASM {
 
       m_config_A(_supercell),
       m_config_B(_supercell),
-      m_sym_compare(::construct_scel_sym_compare(_supercell)),
+      m_sym_compare(::_construct_scel_sym_compare(_supercell)),
       m_diff_trans(_supercell.prim()) {
 
       this->from_json(_data, _supercell);
@@ -86,7 +85,7 @@ namespace CASM {
 
       m_config_A(Supercell(&_primclex, _primclex.prim().lattice())),
       m_config_B(Supercell(&_primclex, _primclex.prim().lattice())),
-      m_sym_compare(::construct_scel_sym_compare(supercell())),
+      m_sym_compare(::_construct_scel_sym_compare(supercell())),
       m_diff_trans(_primclex.prim()) {
 
       this->from_json(_data, _primclex);
@@ -252,7 +251,7 @@ namespace CASM {
       m_config_B = m_config_A;
 
       // get diff trans
-      m_sym_compare = ::construct_scel_sym_compare(_scel);
+      m_sym_compare = ::_construct_scel_sym_compare(_scel);
       m_diff_trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim());
 
       //Makes sure we have a from config and to config, though we don't
@@ -292,7 +291,7 @@ namespace CASM {
       m_config_B = m_config_A;
 
       // get diff trans
-      m_sym_compare = ::construct_scel_sym_compare(supercell());
+      m_sym_compare = ::_construct_scel_sym_compare(supercell());
       m_diff_trans = m_sym_compare.prepare(
                        jsonConstructor<Kinetics::DiffusionTransformation>::from_json(json["diff_trans"], prim()));
       m_diff_trans.apply_to(m_config_B);
@@ -459,7 +458,7 @@ namespace CASM {
     /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
     Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
       Configuration result = bg_config;
-      ScelPeriodicDiffTransSymCompare sym_compare =::construct_scel_sym_compare(bg_config.supercell());
+      ScelPeriodicDiffTransSymCompare sym_compare =::_construct_scel_sym_compare(bg_config.supercell());
       if(diff_trans != sym_compare.prepare(diff_trans)) {
         std::cout << "diff_trans: \n" << diff_trans << std::endl;
         std::cout << "sym_compare.prepare(diff_trans): \n" << sym_compare.prepare(diff_trans) << std::endl;
