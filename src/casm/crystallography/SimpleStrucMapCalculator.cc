@@ -17,7 +17,7 @@ namespace CASM {
       // Find a site in child whose occupant has the lowest number of possible
       // mapped sites in the parent. This will minimize translations
       Index i_trans(c_info.size()), n_best(p_info.size() + 2);
-      for(Index i = 0; i < c_info.names.size() && n_best > 1; ++i) {
+      for(Index i = 0; i < c_info.size() && n_best > 1; ++i) {
         auto it = max_n_species().find(c_info.names[i]);
         if(it != max_n_species().end()) {
           if(it->second < n_best) {
@@ -25,20 +25,26 @@ namespace CASM {
             i_trans = i;
           }
         }
+        else {
+          //std::cout << "\n NO TRANSLATIONS AVAILABLE FOR: " << c_info.names[i] << "\n";
+          //child species not known in parent -- incompatible
+          return result;
+        }
       }
-      //std::cout << "i_trans: " << i_trans << "  c_info.size(): " << c_info.size() << "  n_best: " << n_best << "\n";
-      if(i_trans == c_info.size())
-        return result;
+
+      std::string sp = c_info.names[i_trans];
+      //std::cout << "\ni_trans: " << i_trans << "  sp: " << sp << "  c_info.size(): " << c_info.size() << "  n_best: " << n_best << "\n";
 
       result.reserve(n_best);
 
-      std::string sp = c_info.names[i_trans];
       Coordinate translation(_node.lat_node.parent.scel_lattice());
       // Try translating child atom at i_trans onto each chemically compatible site of parent
       for(Index j = 0; j < _allowed_species().size(); ++j) {
         if(_allowed_species()[j].count(sp)) {
           translation.cart() = p_info.coords.col(j) - c_info.coords.col(i_trans);
+          //std::cout << "trans before within: " << translation.const_cart().transpose() << "\n";
           translation.voronoi_within();
+          //std::cout << "trans after within: " << translation.const_cart().transpose() << "\n";
           result.push_back(translation.const_cart());
         }
       }

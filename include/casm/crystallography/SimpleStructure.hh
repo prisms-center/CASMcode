@@ -23,7 +23,6 @@ namespace CASM {
       struct Info {
         std::vector<std::string> names;
         Eigen::MatrixXd coords;
-        Eigen::MatrixXi SD;
 
         std::map<std::string, Eigen::MatrixXd> properties;
 
@@ -32,7 +31,6 @@ namespace CASM {
         void resize(Index N) {
           names.resize(N, "Va");
           coords.setZero(3, N);
-          SD.setZero(3, N);
         }
 
         Index size() const {
@@ -69,7 +67,6 @@ namespace CASM {
       void rotate_coords(Eigen::Ref<const Eigen::Matrix3d> const &_R);
 
       Eigen::Matrix3d lat_column_mat;
-      bool selective_dynamics;
 
       // Use occupation vector in order to avoid messy molecule-name aliasing issues
       Info mol_info;

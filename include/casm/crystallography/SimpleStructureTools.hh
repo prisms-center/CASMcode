@@ -63,6 +63,9 @@ namespace CASM {
       DoFType::Traits const *m_traits_ptr;
     };
 
+
+    SimpleStructure to_superstructure(Eigen::Ref<const Eigen::Matrix3i> const &_T, SimpleStructure const &_sstruc);
+
     /// \brief Construct from decorated structure and specify prefix for output quantities
     SimpleStructure to_simple_structure(BasicStructure<Site> const &_struc, std::string const &_prefix = "");
 

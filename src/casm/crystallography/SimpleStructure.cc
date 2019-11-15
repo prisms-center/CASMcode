@@ -20,7 +20,6 @@ namespace CASM {
     //***************************************************************************
 
     SimpleStructure::SimpleStructure(const std::string &_prefix) :
-      selective_dynamics(false),
       m_prefix(_prefix) {
     }
 
