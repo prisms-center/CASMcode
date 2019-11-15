@@ -802,8 +802,9 @@ namespace CASM {
     }
   }
 
-  ProtoFuncsPrinter::ProtoFuncsPrinter(ClexBasis const &_clex_basis, OrbitPrinterOptions const &_opt) :
+  ProtoFuncsPrinter::ProtoFuncsPrinter(ClexBasis const &_clex_basis, PrimType_ptr _prim_ptr, OrbitPrinterOptions const &_opt) :
     SitesPrinter(_opt),
+    prim_ptr(_prim_ptr),
     clex_basis(_clex_basis) {
     for(auto const &dofset : clex_basis.site_bases()) {
       for(BasisSet const &bset : dofset.second) {
