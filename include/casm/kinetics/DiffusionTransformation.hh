@@ -34,6 +34,8 @@ namespace CASM {
     /// configurational degrees of freedom)
     struct SpeciesLocation : public Comparisons<CRTPBase<SpeciesLocation>> {
 
+      typedef xtal::BasicStructure<xtal::Site> PrimType;
+
       /// Constructor Create SpeciesLocation using a bijk and
       /// an occ index into that basis site's occupant array
       SpeciesLocation(const UnitCellCoord &_uccoord, Index _occ, Index _pos);
@@ -51,9 +53,9 @@ namespace CASM {
       /// Lexicographical comparison of SpeciesLocation for sorting purposes
       bool operator<(const SpeciesLocation &B) const;
 
-      const Molecule &mol() const;
+      const Molecule &mol(const PrimType &prim) const;
 
-      const std::string &species() const;
+      const std::string &species(const PrimType &prim) const;
 
     private:
 
@@ -88,6 +90,8 @@ namespace CASM {
     class SpeciesTrajectory : public Comparisons<CRTPBase<SpeciesTrajectory>> {
 
     public:
+      typedef xtal::Structure PrimType;
+
       /// Constructor Creates SpeciesTrajectory from two SpecieLocation objects
       /// SpecieLocation objects should have the same Specie information
       /// transforming a Ni into an Al does not make sense
@@ -103,7 +107,7 @@ namespace CASM {
 
       /// Tells whether or not the SpeciesTrajectory is valid due to
       /// having the same Species moving
-      bool species_types_map() const;
+      bool species_types_map(const PrimType &prim) const;
 
       /// Tells whether or not the SpeciesTrajectory is moving a species or not
       /// true indicates the trajectory is useless
@@ -114,7 +118,7 @@ namespace CASM {
       /// \brief Gives the ending coordinate of the specie moving
       UnitCellCoord to_loc() const;
       /// \brief Gives the name of the specie moving
-      std::string species() const;
+      std::string species(const PrimType &prim) const;
 
 
       SpeciesLocation from;
@@ -124,7 +128,7 @@ namespace CASM {
       bool operator<(const SpeciesTrajectory &B) const;
 
       /// Apply symmetry to locations within the trajectory
-      SpeciesTrajectory &apply_sym(const SymOp &op);
+      SpeciesTrajectory &apply_sym(const SymOp &op, const PrimType &prim);
 
       /// Swaps the direction of the trajectory
       void reverse();

@@ -107,7 +107,8 @@ namespace CASM {
     if(!obj.size()) {
       return obj;
     }
-    auto pos = position(obj);
+
+    const auto pos = position(obj);
     this->m_spatial_transform = SymOp::translation(-this->m_prim->lattice().lat_column_mat() * pos.unitcell().template cast<double>());
     return obj - pos.unitcell();
   }
@@ -159,7 +160,7 @@ namespace CASM {
     if(!obj.size()) {
       return obj;
     }
-    auto pos = position(obj);
+    const auto pos = position(obj);
     this->m_spatial_transform = SymOp::translation(this->m_prim->lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
     return obj + (m_prim_grid->within(pos).unitcell() - pos.unitcell());
   }

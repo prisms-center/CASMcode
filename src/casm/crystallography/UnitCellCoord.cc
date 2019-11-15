@@ -64,27 +64,6 @@ namespace CASM {
       return prim.basis()[sublattice()];
     }
 
-    /* UnitCellCoord &UnitCellCoord::apply_sym(const CASM::SymOp &op) { */
-
-    /*   // transform using stored SymBasisPermute representation */
-    /*   const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID()); */
-    /*   unitcell() = rep.matrix() * unitcell() + rep[sublattice()].unitcell(); */
-    /*   sublattice() = rep[sublattice()].sublattice(); */
-
-    /*   // additional translations (such as needed for supercell factor groups), */
-    /*   // are stored in SymOp::integral_tau() (in cartesian coordinates) */
-    /*   // this converts that to fractional coordinates and adds it to this->unitcell() */
-    /*   unitcell() += lround(unit().lattice().inv_lat_column_mat() * op.integral_tau()); */
-
-    /*   return *this; */
-    /* } */
-
-    /* UnitCellCoord UnitCellCoord::copy_apply(const CASM::SymOp &op) const { */
-    /*   UnitCellCoord result(*this); */
-    /*   result.apply_sym(op); */
-    /*   return result; */
-    /* } */
-
   } // namespace xtal
 
   /// \brief Print to json as [b, i, j, k]

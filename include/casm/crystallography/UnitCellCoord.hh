@@ -10,13 +10,22 @@
 namespace CASM {
   class jsonParser;
   class SymOp;
-  namespace xtal {
 
+  namespace xtal {
     class Coordinate;
     class Site;
     template <typename CoordType>
     class BasicStructure;
+    class Structure;
     class Lattice;
+    class UnitCellCoord;
+  }
+
+  namespace sym {
+    xtal::UnitCellCoord &apply(const CASM::SymOp &op, xtal::UnitCellCoord &ucc, const xtal::Structure &prim);
+  }
+
+  namespace xtal {
 
     /** \ingroup Coordinate
      *  @{
@@ -155,6 +164,16 @@ namespace CASM {
     private:
       /// make _eq accessible
       friend struct Comparisons<Translatable<CRTPBase<UnitCellCoord>>>;
+      //Grant access to in place applying symmetry
+      friend UnitCellCoord &sym::apply(const CASM::SymOp &op, UnitCellCoord &ucc, const Structure &prim);
+
+      UnitCell &_unitcell() {
+        return m_unitcell;
+      }
+
+      Index &_sublattice() {
+        return m_sublat;
+      }
 
       bool eq_impl(const UnitCellCoord &B) const;
 

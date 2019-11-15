@@ -1,9 +1,11 @@
+#include "casm/clex/NeighborList.hh"
+#include "casm/container/Counter.hh"
+#include "casm/database/DiffTransOrbitDatabase.hh"
+#include "casm/database/Named_impl.hh"
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/clex/NeighborList.hh"
-#include "casm/database/Named_impl.hh"
-#include "casm/database/DiffTransOrbitDatabase.hh"
-#include "casm/container/Counter.hh"
+#include "casm/symmetry/SymTools.hh"
+
 namespace CASM {
 
   namespace DB {
@@ -42,14 +44,12 @@ namespace CASM {
       return _tuple() < B._tuple();
     }
 
-    const Molecule &SpeciesLocation::mol() const {
-      //  !!TODO!!  return uccoord.sublat_site().occupant_dof()[occ];
-      Molecule *fixme;
-      return *fixme;
+    const Molecule &SpeciesLocation::mol(const PrimType &prim) const {
+      return uccoord.sublattice_site(prim).occupant_dof()[occ];
     }
 
-    const std::string &SpeciesLocation::species() const {
-      return mol().atom(pos).name();
+    const std::string &SpeciesLocation::species(const PrimType &prim) const {
+      return mol(prim).atom(pos).name();
     }
 
     std::tuple<UnitCellCoord, Index, Index> SpeciesLocation::_tuple() const {
@@ -74,7 +74,6 @@ namespace CASM {
 
   Kinetics::SpeciesLocation jsonConstructor<Kinetics::SpeciesLocation>::from_json(const jsonParser &json, const Structure &prim) {
     return Kinetics::SpeciesLocation {
-      //  !!TODO!!  jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
       jsonConstructor<UnitCellCoord>::from_json(json["uccoord"]),
       json["occ"].get<Index>(),
       json["pos"].get<Index>()
@@ -110,8 +109,8 @@ namespace CASM {
       return *this;
     }
 
-    bool SpeciesTrajectory::species_types_map() const {
-      return from.species() == to.species();
+    bool SpeciesTrajectory::species_types_map(const PrimType &prim) const {
+      return from.species(prim) == to.species(prim);
     }
 
     bool SpeciesTrajectory::is_no_change() const {
@@ -127,9 +126,9 @@ namespace CASM {
       return to.uccoord;
     }
     /// \brief Gives the name of the specie moving
-    std::string SpeciesTrajectory::species() const {
-      if(species_types_map()) {
-        return from.species();
+    std::string SpeciesTrajectory::species(const PrimType &prim) const {
+      if(species_types_map(prim)) {
+        return from.species(prim);
       }
       throw std::runtime_error("Attempting to access single specie of a malformed SpeciesTrajectory");
     }
@@ -138,9 +137,9 @@ namespace CASM {
       return _tuple() < B._tuple();
     }
 
-    SpeciesTrajectory &SpeciesTrajectory::apply_sym(const SymOp &op) {
-      //  !!TODO!!  from.uccoord.apply_sym(op);
-      //  !!TODO!!  to.uccoord.apply_sym(op);
+    SpeciesTrajectory &SpeciesTrajectory::apply_sym(const SymOp &op, const PrimType &prim) {
+      sym::apply(op, from.uccoord, prim);
+      sym::apply(op, to.uccoord, prim);
 
       //TODO: MOLECULE_SUPPORT: apply permutation to to/from_value & to/from_species_index
       return *this;
@@ -263,7 +262,7 @@ namespace CASM {
                species_traj().begin(),
                species_traj().end(),
       [ = ](const SpeciesTrajectory & t) {
-        return t.species_types_map();
+        return t.species_types_map(this->prim());
       });
     }
 
@@ -278,7 +277,7 @@ namespace CASM {
       //   and the 'from' molecule is indivisible -> true
 
       auto f = [ = ](const SpeciesTrajectory & A, const SpeciesTrajectory & B) {
-        return A.from.uccoord == B.from.uccoord && A.to.uccoord != B.to.uccoord && A.from.mol().is_indivisible();
+        return A.from.uccoord == B.from.uccoord && A.to.uccoord != B.to.uccoord && A.from.mol(this->prim()).is_indivisible();
       };
 
       return std::adjacent_find(tmp.begin(), tmp.end(), f) != tmp.end();
@@ -325,7 +324,7 @@ namespace CASM {
     bool DiffusionTransformation::is_self_consistent() const {
       for(const auto &trans : occ_transform()) {
         auto is_from_match = [&](const SpeciesTrajectory & traj) {
-          return trans.uccoord == traj.from.uccoord && trans.from_mol() == traj.from.mol();
+          return trans.uccoord == traj.from.uccoord && trans.from_mol() == traj.from.mol(this->prim());
         };
         auto from_match_count = std::count_if(species_traj().begin(), species_traj().end(), is_from_match);
         if(from_match_count != trans.from_mol().size()) {
@@ -333,7 +332,7 @@ namespace CASM {
         }
 
         auto is_to_match = [&](const SpeciesTrajectory & traj) {
-          return trans.uccoord == traj.to.uccoord && trans.to_mol() == traj.to.mol();
+          return trans.uccoord == traj.to.uccoord && trans.to_mol() == traj.to.mol(this->prim());
         };
         auto to_match_count = std::count_if(species_traj().begin(), species_traj().end(), is_to_match);
         (void) to_match_count;
@@ -463,7 +462,7 @@ namespace CASM {
       }
 
       for(auto &t : m_species_traj) {
-        t.apply_sym(op);
+        t.apply_sym(op, this->prim());
       }
       return *this;
     }
@@ -698,7 +697,7 @@ namespace CASM {
     bool path_collision(const DiffusionTransformation &diff_trans) {
       std::vector<SpeciesTrajectory> paths_to_check;
       for(auto it = diff_trans.species_traj().begin(); it != diff_trans.species_traj().end(); ++it) {
-        if(!xtal::is_vacancy(it->from.species())) {
+        if(!xtal::is_vacancy(it->from.species(diff_trans.prim()))) {
           paths_to_check.push_back(*it);
         }
       }
@@ -820,7 +819,7 @@ namespace CASM {
         out.ostream().precision(prec);
         out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
         for(const auto &traj : trans.species_traj()) {
-          if(traj.from.species().length() > name_width) name_width = traj.from.species().length();
+          if(traj.from.species(trans.prim()).length() > name_width) name_width = traj.from.species(trans.prim()).length();
           Eigen::Vector3d vec_from, vec_to;
           if(this->opt.coord_type == CART) {
             vec_from = traj.from.uccoord.coordinate(trans.prim()).cart();
@@ -838,7 +837,7 @@ namespace CASM {
         Eigen::IOFormat format(prec, width + 1);
         for(const auto &traj : trans.species_traj()) {
           out << out.indent_str();
-          out << std::setw(name_width) << traj.from.species() << ": ";
+          out << std::setw(name_width) << traj.from.species(trans.prim()) << ": ";
           {
             const auto &obj = traj.from;
             obj.uccoord.coordinate(trans.prim()).print(out, 0, format);
@@ -863,7 +862,7 @@ namespace CASM {
         out.ostream().precision(prec);
         out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
         for(const auto &traj : trans.species_traj()) {
-          if(traj.from.species().length() > name_width) name_width = traj.from.species().length();
+          if(traj.from.species(trans.prim()).length() > name_width) name_width = traj.from.species(trans.prim()).length();
           width = print_matrix_width(out, traj.from.uccoord.unitcell(), width);
           width = print_matrix_width(out, traj.to.uccoord.unitcell(), width);
         }
@@ -872,7 +871,7 @@ namespace CASM {
         Eigen::IOFormat format(prec, width);
         for(const auto &traj : trans.species_traj()) {
           out << out.indent_str();
-          out << std::setw(name_width) << traj.from.species() << ": ";
+          out << std::setw(name_width) << traj.from.species(trans.prim()) << ": ";
           {
             const auto &obj = traj.from;
             out << obj.uccoord.sublattice() << ", " << obj.uccoord.unitcell().transpose().format(format) << " : " << obj.occ << " " << obj.pos;
@@ -896,9 +895,9 @@ namespace CASM {
       out << out.indent_str() << "species trajectory:" << this->opt.delim;
       for(const auto &traj : trans.species_traj()) {
         out << out.indent_str();
-        out << traj.from << " (" << traj.from.species() << ")";
+        out << traj.from << " (" << traj.from.species(trans.prim()) << ")";
         out << "  ->  ";
-        out << traj.to << " (" << traj.to.species() << ")";
+        out << traj.to << " (" << traj.to.species(trans.prim()) << ")";
 
         if(this->opt.delim)
           out << this->opt.delim;

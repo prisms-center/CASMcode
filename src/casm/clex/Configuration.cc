@@ -6,31 +6,32 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
-#include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/PermuteIterator.hh"
-#include "casm/crystallography/Molecule.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Lattice_impl.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/basis_set/DoF.hh"
+#include "casm/casm_io/container/stream_io.hh"
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/ClexParamPack.hh"
+#include "casm/clex/Clexulator.hh"
+#include "casm/clex/CompositionConverter.hh"
+#include "casm/clex/ECIContainer.hh"
+#include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/Lattice_impl.hh"
+#include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SymTools.hh"
-#include "casm/clex/Clexulator.hh"
-#include "casm/clex/ECIContainer.hh"
-#include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/ChemicalReference.hh"
-#include "casm/clex/MappedPropertiesTools.hh"
-#include "casm/clex/ClexParamPack.hh"
-#include "casm/database/Named_impl.hh"
-#include "casm/database/ConfigDatabase.hh"
-#include "casm/database/ScelDatabase.hh"
-#include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/io/VaspIO.hh"
-#include "casm/casm_io/container/stream_io.hh"
-#include "casm/app/QueryHandler.hh"
-#include "casm/app/ProjectSettings.hh"
-#include "casm/app/DirectoryStructure.hh"
+#include "casm/database/ConfigDatabase.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
+#include "casm/database/Named_impl.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/symmetry/SymTools.hh"
 
 namespace CASM {
 
@@ -1542,7 +1543,7 @@ namespace CASM {
     for(Index s = 0 ; s < m_motif_scel->num_sites() ; s++) {
 
       // apply symmetry to re-orient and find unit cell coord
-      UnitCellCoord oriented_uccoord = xtal::copy_apply(*m_op, m_motif_scel->uccoord(s), this->m_supercell_ptr->primclex().prim());
+      UnitCellCoord oriented_uccoord = sym::copy_apply(*m_op, m_motif_scel->uccoord(s), this->m_supercell_ptr->primclex().prim());
 
       // for each unit cell of the oriented motif in the supercell, copy the occupation
       for(Index i = 0 ; i < prim_grid.size() ; i++) {

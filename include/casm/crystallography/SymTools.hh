@@ -185,26 +185,26 @@ namespace CASM {
   } // namespace xtal
 } // namespace CASM
 
-namespace CASM {
-  namespace xtal {
-    class SymOp;
-    template <typename CoordType>
-    class BasicStructure;
-    class Site;
-    class Structure;
+/* namespace CASM { */
+/*   namespace xtal { */
+/*     class SymOp; */
+/*     template <typename CoordType> */
+/*     class BasicStructure; */
+/*     class Site; */
+/*     class Structure; */
 
-    /// \brief Apply SymOp to a UnitCellCoord
-    UnitCellCoord &apply(const SymOp &op, UnitCellCoord &ucc, const BasicStructure<Site> &prim);
+/*     /// \brief Apply SymOp to a UnitCellCoord */
+/*     UnitCellCoord &apply(const SymOp &op, UnitCellCoord &ucc, const BasicStructure<Site> &prim); */
 
-    /// \brief Copy and apply SymOp to a UnitCellCoord
-    UnitCellCoord copy_apply(const SymOp &op, const UnitCellCoord &ucc, const BasicStructure<Site> &prim);
+/*     /// \brief Copy and apply SymOp to a UnitCellCoord */
+/*     UnitCellCoord copy_apply(const SymOp &op, const UnitCellCoord &ucc, const BasicStructure<Site> &prim); */
 
-    template <typename ExternSymOp>
-    UnitCellCoord copy_apply(const ExternSymOp &op, const UnitCellCoord &ucc, const BasicStructure<Site> &prim) {
-      return copy_apply(adapter::Adapter<SymOp, ExternSymOp>()(op), ucc, prim);
-    }
+/*     template <typename ExternSymOp> */
+/*     UnitCellCoord copy_apply(const ExternSymOp &op, const UnitCellCoord &ucc, const BasicStructure<Site> &prim) { */
+/*       return copy_apply(adapter::Adapter<SymOp, ExternSymOp>()(op), ucc, prim); */
+/*     } */
 
-  }
-} // namespace CASM
+/*   } // namespace xtal */
+/* } // namespace CASM */
 
 #endif

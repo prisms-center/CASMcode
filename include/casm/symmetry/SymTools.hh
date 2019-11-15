@@ -8,6 +8,8 @@ namespace CASM {
   class SymOp;
   namespace xtal {
     class Lattice;
+    class UnitCellCoord;
+    class Structure;
   }
   namespace sym {
     ///Returns the subgroup of the given group that keeps the lattice invariant
@@ -15,6 +17,12 @@ namespace CASM {
 
     template<typename OutputIt>
     OutputIt invariant_subgroup(const std::vector<SymOp> &super_group, const xtal::Lattice &lat, OutputIt result);
+
+    /// \brief Apply SymOp to a UnitCellCoord
+    xtal::UnitCellCoord &apply(const SymOp &op, xtal::UnitCellCoord &ucc, const xtal::Structure &prim);
+
+    /// \brief Copy and apply SymOp to a UnitCellCoord
+    xtal::UnitCellCoord copy_apply(const SymOp &op, const xtal::UnitCellCoord &ucc, const xtal::Structure &prim);
   }
 }
 
