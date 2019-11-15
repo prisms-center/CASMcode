@@ -59,7 +59,7 @@ namespace CASM {
   }
 
   void ConfigEnumInput::_add_site(UnitCellCoord const &_ucc) {
-    //  !!TODO!!  m_sites_selection.insert(m_config.supercell().prim_grid().find(_ucc));
+    m_sites_selection.insert(m_config.supercell().prim_grid().find(_ucc.coordinate(this->supercell().primclex().prim())));
   }
 
 
@@ -228,7 +228,6 @@ namespace CASM {
       find_it = _kwargs.find("sites");
       if(find_it != _kwargs.end()) {
         std::vector<UnitCellCoord> sites;
-        //  !!TODO!!  find_it->get(sites, primclex.prim());
         find_it->get(sites);
         Index l = 0;
         if(is_init) {

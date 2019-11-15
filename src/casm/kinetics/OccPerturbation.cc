@@ -127,7 +127,6 @@ namespace CASM {
 
   Coordinate OccPerturbation::coordinate_impl(size_type i) const {
     return this->element(i).uccoord.coordinate(this->prim());
-    //  !!TODO!!  return static_cast<Coordinate>(element(i).uccoord);
   }
 
 

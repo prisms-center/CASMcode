@@ -142,7 +142,7 @@ namespace CASM {
       //  !!TODO!!  from.uccoord.apply_sym(op);
       //  !!TODO!!  to.uccoord.apply_sym(op);
 
-      //MOLECULE_SUPPORT: apply permutation to to/from_value & to/from_species_index
+      //TODO: MOLECULE_SUPPORT: apply permutation to to/from_value & to/from_species_index
       return *this;
     }
 

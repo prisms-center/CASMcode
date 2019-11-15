@@ -161,7 +161,7 @@ namespace CASM {
       /// Returns false if the sublattice of *this is greater than the number of sites in the given prmitive structure
       bool _is_compatible_with_prim(const PrimType &prim) const;
 
-      // TODO: Should this be make into an actual exception class?
+      // TODO: Should this be made into an actual exception class?
       static void _throw_incompatible_primitive_cell();
 
       UnitCell m_unitcell;

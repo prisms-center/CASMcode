@@ -1542,8 +1542,7 @@ namespace CASM {
     for(Index s = 0 ; s < m_motif_scel->num_sites() ; s++) {
 
       // apply symmetry to re-orient and find unit cell coord
-      //  !!TODO!!  UnitCellCoord oriented_uccoord = copy_apply(*m_op, m_motif_scel->uccoord(s));
-      UnitCellCoord oriented_uccoord;// = copy_apply(*m_op, m_motif_scel->uccoord(s));
+      UnitCellCoord oriented_uccoord = xtal::copy_apply(*m_op, m_motif_scel->uccoord(s), this->m_supercell_ptr->primclex().prim());
 
       // for each unit cell of the oriented motif in the supercell, copy the occupation
       for(Index i = 0 ; i < prim_grid.size() ; i++) {

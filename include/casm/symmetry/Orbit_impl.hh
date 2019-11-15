@@ -232,21 +232,21 @@ namespace CASM {
   template<typename _SymCompareType>
   GenericOrbit<_SymCompareType> &GenericOrbit<_SymCompareType>::apply_sym(const SymOp &op) {
 
-    //!!TODO!!
-    //// transform elements
-    //for(auto it = m_element.begin(); it != m_element.end(); ++it) {
-    //  it->apply_sym(op);
-    //}
+    // transform elements
+    for(auto it = m_element.begin(); it != m_element.end(); ++it) {
+      /* it->apply_sym(op); */ //TODO: Mark this spot for review when merging
+      *it = m_sym_compare.copy_apply(op, *it);
+    }
 
-    //// transform equivalence map: std::vector<std::vector<SymOp> >
-    //for(auto it = m_equivalence_map.begin(); it != m_equivalence_map.end(); ++it) {
-    //  for(auto op_it = it->begin(); op_it != it->end(); ++op_it) {
-    //    op_it->apply_sym(op);
-    //  }
-    //}
+    // transform equivalence map: std::vector<std::vector<SymOp> >
+    for(auto it = m_equivalence_map.begin(); it != m_equivalence_map.end(); ++it) {
+      for(auto op_it = it->begin(); op_it != it->end(); ++op_it) {
+        op_it->apply_sym(op);
+      }
+    }
 
-    //// transform sym_compare functor
-    //m_sym_compare.apply_sym(op);
+    // transform sym_compare functor
+    m_sym_compare.apply_sym(op);
 
     return *this;
   }
