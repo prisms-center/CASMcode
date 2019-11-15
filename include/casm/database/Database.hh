@@ -93,6 +93,7 @@ namespace CASM {
       typedef const value_type &reference;
 
       DatabaseIteratorBase() {}
+      virtual ~DatabaseIteratorBase() {}
 
       virtual std::string name() const = 0;
 

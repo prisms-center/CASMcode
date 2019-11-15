@@ -78,6 +78,7 @@ namespace CASM {
       m_short_desc(_short_desc),
       m_long_desc(_long_desc) {}
 
+    virtual ~OrbitFunctionTraits() {}
 
     std::string const &name() const {
       return m_name;

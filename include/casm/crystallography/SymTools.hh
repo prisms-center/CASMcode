@@ -1,12 +1,12 @@
 #ifndef XTALSYMTOOLS_HH
 #define XTALSYMTOOLS_HH
 
+#include <vector>
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/global/definitions.hh"
-#include <vector>
 
 namespace CASM {
   namespace xtal {
@@ -87,9 +87,13 @@ namespace CASM {
     ///   such that scel is a superlattice of the result of applying op to unit
     ///
     /// \returns pair corresponding to first successful op and T, or with op=end if not successful
-    template <typename Object, typename OpIterator>
-    std::pair<OpIterator, Eigen::Matrix3d>
-    is_equivalent_superlattice(const Object &scel, const Object &unit, OpIterator begin, OpIterator end, double tol) {
+    template<typename Object, typename OpIterator>
+    std::pair<OpIterator, Eigen::Matrix3d> is_equivalent_superlattice(
+      const Object &scel,
+      const Object &unit,
+      OpIterator begin,
+      OpIterator end,
+      double tol) {
 
       std::pair<bool, Eigen::Matrix3d> res;
       for(auto it = begin; it != end; ++it) {
@@ -105,9 +109,11 @@ namespace CASM {
     ///
     /// SymOpIterator are provided to apply to each Lattice in an attempt
     /// to find the smallest possible superduperlattice of all symmetrically transformed Lattice
-    template <typename LatIterator, typename SymOpIterator>
-    Lattice
-    make_equivalent_superduperlattice(LatIterator begin, LatIterator end, SymOpIterator op_begin, SymOpIterator op_end) {
+    template<typename LatIterator, typename SymOpIterator>
+    Lattice make_equivalent_superduperlattice(LatIterator begin,
+                                              LatIterator end,
+                                              SymOpIterator op_begin,
+                                              SymOpIterator op_end) {
 
       Lattice best = *begin;
       for(auto it = ++begin; it != end; ++it) {
