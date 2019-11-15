@@ -16,22 +16,6 @@
 namespace CASM {
   namespace DoF_impl {
 
-    /// \brief Generate a symmetry representation for the supporting vector space
-    Eigen::MatrixXd StrainDoFTraits::symop_to_matrix(xtal::SymOp const &op) const {
-      Eigen::MatrixXd result(6, 6);
-      auto const &S = get_matrix(op);
-      result <<
-             S(0, 0)*S(0, 0), S(0, 1)*S(0, 1), S(0, 2)*S(0, 2), sqrt(2)*S(0, 1)*S(0, 2), sqrt(2)*S(0, 2)*S(0, 0), sqrt(2)*S(0, 0)*S(0, 1),
-             S(1, 0)*S(1, 0), S(1, 1)*S(1, 1), S(1, 2)*S(1, 2), sqrt(2)*S(1, 1)*S(1, 2), sqrt(2)*S(1, 2)*S(1, 0), sqrt(2)*S(1, 0)*S(1, 1),
-             S(2, 0)*S(2, 0), S(2, 1)*S(2, 1), S(2, 2)*S(2, 2), sqrt(2)*S(2, 1)*S(2, 2), sqrt(2)*S(2, 2)*S(2, 0), sqrt(2)*S(2, 0)*S(2, 1),
-             sqrt(2)*S(1, 0)*S(2, 0), sqrt(2)*S(1, 1)*S(2, 1), sqrt(2)*S(1, 2)*S(2, 2), S(1, 1)*S(2, 2) + S(1, 2)*S(2, 1), S(1, 0)*S(2, 2) + S(1, 2)*S(2, 0), S(1, 1)*S(2, 0) + S(1, 0)*S(2, 1),
-             sqrt(2)*S(2, 0)*S(0, 0), sqrt(2)*S(2, 1)*S(0, 1), sqrt(2)*S(2, 2)*S(0, 2), S(2, 1)*S(0, 2) + S(2, 2)*S(0, 1), S(2, 0)*S(0, 2) + S(2, 2)*S(0, 0), S(2, 1)*S(0, 0) + S(2, 0)*S(0, 1),
-             sqrt(2)*S(0, 0)*S(1, 0), sqrt(2)*S(0, 1)*S(1, 1), sqrt(2)*S(0, 2)*S(1, 2), S(0, 1)*S(1, 2) + S(0, 2)*S(1, 1), S(0, 0)*S(1, 2) + S(0, 2)*S(1, 0), S(0, 1)*S(1, 0) + S(0, 0)*S(1, 1);
-      return result;
-    }
-
-
-
     /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
     std::vector<BasisSet> StrainDoFTraits::construct_site_bases(Structure const &_prim,
                                                                 std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
@@ -39,11 +23,11 @@ namespace CASM {
 
 
       //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
-      if(_prim.global_dofs().find(type_name()) == _prim.global_dofs().end())
+      if(_prim.global_dofs().find(name()) == _prim.global_dofs().end())
         return std::vector<BasisSet>();
 
       std::vector<BasisSet> result(1);
-      result[0].set_variable_basis(_prim.global_dof(type_name()));
+      result[0].set_variable_basis(_prim.global_dof(name()));
 
       return result;
     }
@@ -53,7 +37,7 @@ namespace CASM {
 
     /// \brief Apply DoF values for this DoF to _struc
     void StrainDoFTraits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
-      Eigen::VectorXd unrolled_metric = _dof.global_dof(type_name()).standard_values();
+      Eigen::VectorXd unrolled_metric = _dof.global_dof(name()).standard_values();
       StrainConverter c(m_metric);
       Eigen::Matrix3d F = c.unrolled_strain_metric_to_F(unrolled_metric);
 
@@ -63,7 +47,7 @@ namespace CASM {
     }
 
     jsonParser StrainDoFTraits::dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const {
-      Eigen::VectorXd unrolled_metric = _dof.global_dof(type_name()).standard_values();
+      Eigen::VectorXd unrolled_metric = _dof.global_dof(name()).standard_values();
       StrainConverter c(m_metric);
       Eigen::Matrix3d F = c.unrolled_strain_metric_to_F(unrolled_metric);
 

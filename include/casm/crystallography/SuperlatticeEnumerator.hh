@@ -1,11 +1,10 @@
 #ifndef SuperlatticeEnumerator_HH
 #define SuperlatticeEnumerator_HH
 
-#include "casm/external/Eigen/Dense"
-
 #include "casm/crystallography/HermiteCounter.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymType.hh"
+#include "casm/external/Eigen/Dense"
 #include "casm/misc/cloneable_ptr.hh"
 
 //Including this file allows passing arbitrary

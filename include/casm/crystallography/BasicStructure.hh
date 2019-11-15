@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "casm/CASM_global_enum.hh"
+#include "casm/global/enum.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/basis_set/DoFSet.hh"
 
@@ -258,6 +258,11 @@ namespace CASM {
     /// Returns an Array of each *possible* Molecule in this Structure
     template<typename CoordType>
     std::vector<std::string> struc_molecule_name(BasicStructure<CoordType> const &_struc);
+
+    //************************************************************
+    /// Returns a vector with a list of allowed molecule names at each site
+    template<typename CoordType>
+    std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure<CoordType> const &_struc);
 
     //************************************************************
 

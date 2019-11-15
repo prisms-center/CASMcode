@@ -8,7 +8,7 @@
 #include <boost/filesystem/fstream.hpp>
 
 #include "Proj.hh"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
@@ -19,31 +19,13 @@
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/database/Database.hh"
 
+#include "crystallography/TestStructures.hh"
+
 using namespace CASM;
 
 
 namespace test {
 
-  inline BasicStructure<Site> FCC_ternary_prim() {
-
-    // lattice vectors as cols
-    Eigen::Matrix3d lat;
-    lat << 0.0, 2.0, 2.0,
-        2.0, 0.0, 2.0,
-        2.0, 2.0, 0.0;
-
-    BasicStructure<Site> struc {Lattice{lat}};
-    struc.set_title("FCC_ternary");
-
-    Molecule A = Molecule::make_atom("A");
-    Molecule B = Molecule::make_atom("B");
-    Molecule C = Molecule::make_atom("C");
-
-    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), {A, B, C}));
-
-    return struc;
-
-  }
 
   class FCCTernaryProj : public Proj {
 
@@ -135,12 +117,11 @@ namespace test {
     void check_symmetry() override {
       _check_symmetry(48, 10, 48, 10, 48, 10, "Oh", "Oh");
     }
-
     void check_composition() override {
       std::vector<std::string> axes = {
-        R"(\s+0\s+A\s+B\s+C\s+A\(1-a-b\)B\(a\)C\(b\))",
-        R"(\s+1\s+B\s+A\s+C\s+A\(a\)B\(1-a-b\)C\(b\))",
-        R"(\s+2\s+C\s+A\s+B\s+A\(a\)B\(b\)C\(1-a-b\))"
+        R"(\s+0\s+C\s+B\s+A\s+A\(b\)B\(a\)C\(1-a-b\))",
+        R"(\s+1\s+B\s+C\s+A\s+A\(b\)B\(1-a-b\)C\(a\))",
+        R"(\s+2\s+A\s+C\s+B\s+A\(1-a-b\)B\(b\)C\(a\))"
       };
 
       _check_composition_axes(axes.begin(), axes.end());
@@ -164,9 +145,9 @@ namespace test {
       m_p.popen(cd_and() + autotools::abs_ccasm_path() + " bset -u");
       EXPECT_EQ(m_p.exit_code(), 0) << m_p.gets();
 
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*clust\.json)")), true) << m_p.gets();
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*basis\.json)")), true) << m_p.gets();
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*)" + title + R"(_Clexulator\.cc)")), true) << m_p.gets();
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*clust\.json)")), true) << m_p.gets();
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*basis\.json)")), true) << m_p.gets();
+      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*)" + title + R"(_Clexulator\.cc)")), true) << m_p.gets();
 
       EXPECT_EQ(true, fs::exists(m_dirs.clust(m_set->default_clex().bset))) << m_p.gets();
       EXPECT_EQ(true, fs::exists(m_dirs.clexulator_src(m_set->name(), m_set->default_clex().bset))) << m_p.gets();

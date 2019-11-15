@@ -1,6 +1,5 @@
 #include "casm/clex/PrimClex_impl.hh"
 
-#include "casm/system/RuntimeLibrary.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Structure.hh"
@@ -25,19 +24,21 @@ namespace CASM {
 
   struct PrimClex::PrimClexData {
 
+    typedef PrimClex::PrimType PrimType;
+
     PrimClexData(const Structure &_prim) :
-      prim(_prim) {
+      prim_ptr(std::make_shared<PrimType>(_prim)) {
       //Guarantee presence of symmetry info;
-      prim.factor_group();
+      prim_ptr->factor_group();
     }
 
     PrimClexData(const fs::path &_root) :
       dir(_root),
       settings(_root),
-      prim(read_prim(dir.prim(), settings.crystallography_tol(), &(settings.hamiltonian_modules()))) {
+      prim_ptr(std::make_shared<PrimType>(read_prim(dir.prim(), settings.crystallography_tol(), &(settings.hamiltonian_modules())))) {
 
       //Guarantee presence of symmetry info;
-      prim.factor_group();
+      prim_ptr->factor_group();
 
     }
 
@@ -46,7 +47,7 @@ namespace CASM {
     DirectoryStructure dir;
     ProjectSettings settings;
 
-    Structure prim;
+    std::shared_ptr<const PrimType> prim_ptr;
     bool vacancy_allowed;
     Index vacancy_index;
 
@@ -264,8 +265,12 @@ namespace CASM {
   // ** Prim and Orbitree accessors **
 
   /// const Access to primitive Structure
-  const Structure &PrimClex::prim() const {
-    return m_data->prim;
+  const PrimClex::PrimType &PrimClex::prim() const {
+    return *(m_data->prim_ptr);
+  }
+
+  std::shared_ptr<const PrimClex::PrimType> &PrimClex::shared_prim() const {
+    return this->m_data->prim_ptr;
   }
 
   Index PrimClex::n_basis() const {

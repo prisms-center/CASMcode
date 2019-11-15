@@ -7,7 +7,7 @@
 #include <utility>
 #include <boost/program_options.hpp>
 #include "casm/completer/Handlers.hh"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 

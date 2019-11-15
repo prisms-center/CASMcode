@@ -14,6 +14,8 @@
 #include "casm/app/enum.hh"
 #include "casm/app/CLIParse.hh"
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 
 using namespace CASM;
 using namespace test;

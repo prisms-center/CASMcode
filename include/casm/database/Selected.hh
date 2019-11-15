@@ -1,8 +1,8 @@
 #ifndef CASM_Selected
 #define CASM_Selected
 
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 #include "casm/database/Selection.hh"
 
 namespace CASM {

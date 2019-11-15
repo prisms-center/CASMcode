@@ -6,16 +6,16 @@
 
 namespace CASM {
 
-  template<typename ScelIterator>
+  template<typename InConfigIterator>
   int TestEnum::run(
     const PrimClex &primclex,
-    ScelIterator begin,
-    ScelIterator end,
+    InConfigIterator begin,
+    InConfigIterator end,
     const std::vector<std::string> &filter_expr,
     bool dry_run) {
 
-    auto lambda = [&](const Supercell & scel) {
-      return notstd::make_unique<TestEnum>(scel);
+    auto lambda = [&](const ConfigEnumInput & in_config) {
+      return notstd::make_unique<TestEnum>(in_config);
     };
 
     int returncode = insert_unique_canon_configs(

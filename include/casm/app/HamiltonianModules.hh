@@ -3,8 +3,10 @@
 
 #include <map>
 #include <memory>
-
+#include "casm/basis_set/DoFTraits.hh"
+#include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/misc/ParsingDictionary.hh"
 
 namespace CASM {
   template<typename T>
@@ -13,22 +15,21 @@ namespace CASM {
   class RuntimeLibrary;
   class ProjectSettings;
 
+  class SymRepBuilderInterface;
+  class AnisoValTraits;
+
+
   namespace DoFType {
-    class BasicTraits;
+    class Traits;
   }
-
-  namespace xtal {
-    namespace SpeciesAttribute_impl {
-      class BasicTraits;
-    }
-  }
-
 
   class HamiltonianModules {
   public:
 
-    using DoFDictionary = ParsingDictionary<DoFType::BasicTraits>;
-    using SpeciesAttributeDictionary = ParsingDictionary<CASM::xtal::SpeciesAttribute_impl::BasicTraits>;
+
+    using DoFDictionary = ParsingDictionary<DoFType::Traits>;
+    using SymRepBuilderDictionary = ParsingDictionary<SymRepBuilderInterface>;
+    using AnisoValDictionary = ParsingDictionary<AnisoValTraits>;
 
     HamiltonianModules(ProjectSettings const *set = nullptr);
 
@@ -38,23 +39,35 @@ namespace CASM {
 
     DoFDictionary const &dof_dict()const;
 
-    SpeciesAttributeDictionary &species_attribute_dict();
+    AnisoValDictionary &aniso_val_dict();
 
-    SpeciesAttributeDictionary const &species_attribute_dict()const;
+    AnisoValDictionary const &aniso_val_dict()const;
 
-    //std::unique_ptr<HamiltonianModules > clone() const;
+    SymRepBuilderDictionary &symrep_builder_dict();
+
+    SymRepBuilderDictionary const &symrep_builder_dict() const;
 
   private:
 
     notstd::cloneable_ptr<DoFDictionary >  m_dof_dict;
 
-    notstd::cloneable_ptr<SpeciesAttributeDictionary>  m_species_attribute_dict;
+    notstd::cloneable_ptr<AnisoValDictionary>  m_aniso_val_dict;
+
+    notstd::cloneable_ptr<SymRepBuilderDictionary>  m_symrep_builder_dict;
 
     std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_dof_lib;
 
-    std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_species_attribute_lib;
+    std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_symrep_builder_lib;
 
   };
+
+  template<>
+  HamiltonianModules::AnisoValDictionary make_parsing_dictionary<AnisoValTraits>();
+
+  template<>
+  HamiltonianModules::SymRepBuilderDictionary make_parsing_dictionary<SymRepBuilderInterface>();
+
+
 
   /// \brief Load DoF plugins from a CASM project
   template<typename DoFDictInserter, typename RuntimeLibInserter>
@@ -64,12 +77,12 @@ namespace CASM {
     DoFDictInserter dict_it,
     RuntimeLibInserter lib_it);
 
-  /// \brief Load SpeciesAttribute plugins from a CASM project
-  template<typename AttributeDictInserter, typename RuntimeLibInserter>
-  std::pair<AttributeDictInserter, RuntimeLibInserter>
-  load_species_attribute_plugins(
+  /// \brief Load SymRepBuilder plugins from a CASM project
+  template<typename SymRepBuilderDictInserter, typename RuntimeLibInserter>
+  std::pair<SymRepBuilderDictInserter, RuntimeLibInserter>
+  load_symrep_builder_plugins(
     const ProjectSettings &set,
-    AttributeDictInserter dict_it,
+    SymRepBuilderDictInserter dict_it,
     RuntimeLibInserter lib_it);
 
 }

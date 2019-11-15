@@ -1,7 +1,7 @@
 #ifndef CONFIGIOHULL_HH
 #define CONFIGIOHULL_HH
 
-#include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/hull/Hull.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/Selection.hh"
@@ -265,4 +265,3 @@ namespace CASM {
 }
 
 #endif
-

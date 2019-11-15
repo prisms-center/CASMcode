@@ -6,7 +6,7 @@
 #include <map>
 #include <set>
 
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/eigen.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/casm_io/Log.hh"

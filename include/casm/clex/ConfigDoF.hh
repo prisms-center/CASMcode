@@ -2,8 +2,8 @@
 #define ConfigDoF_HH
 
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/definitions.hh"
+#include "casm/global/eigen.hh"
 #include "casm/clex/ConfigDoFValues.hh"
 #include "casm/container/ContainerTraits.hh"
 namespace CASM {
@@ -183,7 +183,7 @@ namespace CASM {
 
     /// Tolerance used for transformation to canonical form -- used also for comparisons, since
     /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form
-    /// (This is relevant only for displacement and deformation degrees of freedom
+    /// (This is relevant only for continuous degrees of freedom)
     mutable double m_tol;
 
   };
@@ -221,17 +221,17 @@ namespace CASM {
                        LocalInfoContainerType const &local_dof_info,
                        std::vector<SymGroupRepID> const &occ_symrep_IDs,
                        double _tol) :
-    m_occupation(DoF::traits("occ"), _N_sublat, _N_vol, OccValueType::Zero(_N_sublat * _N_vol), occ_symrep_IDs),
+    m_occupation(DoF::BasicTraits("occ"), _N_sublat, _N_vol, OccValueType::Zero(_N_sublat * _N_vol), occ_symrep_IDs),
     m_tol(_tol) {
     for(auto const &dof : global_dof_info) {
-      DoF::BasicTraits const &ttraits = DoF::traits(dof.first);
+      DoF::BasicTraits ttraits(dof.first);
 
       if(!ttraits.global())
         throw std::runtime_error("Attempting to initialize ConfigDoF global value using local DoF " + dof.first);
       m_global_dofs[dof.first] = GlobalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::VectorXd::Zero(dof.second.dim()), dof.second);
     }
     for(auto const &dof : local_dof_info) {
-      DoF::BasicTraits const &ttraits = DoF::traits(dof.first);
+      DoF::BasicTraits ttraits(dof.first);
       if(_N_sublat == 0)
         continue;
       if(ttraits.global())

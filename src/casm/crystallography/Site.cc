@@ -3,7 +3,7 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
 
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/OccupationDoFTraits.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"
@@ -18,7 +18,7 @@ namespace CASM {
       Coordinate(init_home),
       m_label(-1),
       m_type_ID(-1),
-      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation(), "s" /*variable name*/, std::vector<Molecule>()).clone()) {
+      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation().val_traits(), "s" /*variable name*/, std::vector<Molecule>()).clone()) {
       //occupant_dof.set_value(0);
     }
 
@@ -28,7 +28,7 @@ namespace CASM {
       Coordinate(init_pos),
       m_label(-1),
       m_type_ID(-1),
-      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>()).clone()) {
+      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation().val_traits(), "s"/* variable name*/, std::vector<Molecule>()).clone()) {
 
       std::vector<Molecule> tocc;
       tocc.push_back(Molecule::make_atom(occ_name));
@@ -43,7 +43,7 @@ namespace CASM {
       Coordinate(init_pos),
       m_label(-1),
       m_type_ID(-1),
-      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation(), "s"/* variable name*/, std::vector<Molecule>(site_occ)).clone()) {
+      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation().val_traits(), "s"/* variable name*/, std::vector<Molecule>(site_occ)).clone()) {
 
     }
 
@@ -91,7 +91,7 @@ namespace CASM {
 
     bool Site::time_reversal_active() const {
       for(auto const &_dof : m_dof_map)
-        if(DoF::traits(_dof.first).time_reversal_active())
+        if(_dof.second.traits().time_reversal_active())
           return true;
 
       for(auto const &mol : occupant_dof().domain())
@@ -380,20 +380,21 @@ namespace CASM {
               break;
             }
           if(index == tocc.size()) {
-            default_err_log() << "ERROR in Site::read(). Occupying molecule not listed in possible occupants" << std::endl;
-            default_err_log() << "  occupying molecule name: " << mol_name << "  index: " << index << std::endl;
-            default_err_log() << "  possible occupants: ";
+            std::stringstream ss;
+            ss << "Error in Site::read(): Occupying molecule not listed in possible occupants" << std::endl;
+            ss << "  occupying molecule name: " << mol_name << "  index: " << index << std::endl;
+            ss << "  possible occupants: ";
             for(Index i = 0; i < tocc.size(); i++)
-              default_err_log() << tocc[i].name() << " ";
-            default_err_log() << " " << std::endl;
-            exit(1);
+              ss << tocc[i].name() << " ";
+            ss << " " << std::endl;
+            throw std::runtime_error(ss.str());
           }
           else
             m_occupant_dof->set_value(index);
 
         }
         else {
-          default_err_log() << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
+          throw std::runtime_error("Error in Site::read(): Trying to read Site info, but no valid input was received.");
         }
         m_type_ID = -1;
         return;
@@ -403,7 +404,7 @@ namespace CASM {
         m_occupant_dof->set_domain(tocc);
       }
       else {
-        default_err_log() << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
+        throw std::runtime_error("Error in Site::read(): Trying to read Site info, but no valid input was received.");
       }
       stream.ignore(1000, '\n');
 
@@ -441,7 +442,7 @@ namespace CASM {
         m_occupant_dof->set_domain(tocc);
       }
       else {
-        default_err_log() << "WARNING: Trying to read Site info, but no valid input was received." << std::endl;
+        throw std::runtime_error("Error in Site::read(): Trying to read Site info, but no valid input was received.");
       }
       stream.ignore(1000, '\n');
 

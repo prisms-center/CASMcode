@@ -14,13 +14,13 @@
 #include "casm/database/Import_impl.hh"
 #include "casm/database/Update_impl.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 
   template class DataFormatter<DB::ConfigIO::Result>;
-
+  /*
   jsonParser &to_json(MappingNode const &_map, jsonParser &_json) {
 
     _json["relaxation_deformation"] = _map.lat_node.stretch;
@@ -31,7 +31,7 @@ namespace CASM {
     _json["total_cost"] = _map.cost;
 
     return _json;
-  }
+    }*/
 
   namespace DB {
 
@@ -40,99 +40,41 @@ namespace CASM {
     // --- Import<Configuration> ---
 
     /// Construct with PrimClex and by moving a ConfigMapper
-    StructureMap<Configuration>::StructureMap(
-      const PrimClex &primclex,
-      std::unique_ptr<ConfigMapper> mapper,
-      bool primitive_only,
-      std::vector<std::string> dof) :
-      ConfigData<Configuration>(primclex, null_log()),
-      m_configmapper(std::move(mapper)),
-      m_primitive_only(primitive_only),
-      m_dof(dof) {
+    StructureMap<Configuration>::StructureMap(MappingSettings const &_set,
+                                              std::unique_ptr<ConfigMapper> mapper) :
+      m_set(_set),
+      m_configmapper(std::move(mapper)) {
+
     }
 
-    /// Construct with PrimClex and JSON settings (see Import / Update desc)
-    StructureMap<Configuration>::StructureMap(
-      const PrimClex &primclex,
-      const jsonParser &kwargs,
-      bool primitive_only,
-      std::vector<std::string> dof) :
-      ConfigData<Configuration>(primclex, null_log()),
-      m_preserve_rotation(false),
-      m_primitive_only(primitive_only),
-      m_dof(dof) {
+    /// Construct with PrimClex and MappingSettings (see Import / Update desc)
+    StructureMap<Configuration>::StructureMap(MappingSettings const &_set,
+                                              const PrimClex &primclex) :
+      m_set(_set) {
 
-      // -- read settings --
-      bool strict = false;
-      bool ideal;
-      kwargs.get_else(ideal, "ideal", false);
-
-      double lattice_weight;
-      kwargs.get_else(lattice_weight, "lattice_weight", 0.5);
-
-      double max_vol_change;
-      kwargs.get_else(max_vol_change, "max_vol_change", 0.3);
-
-      double min_va_frac;
-      kwargs.get_else(min_va_frac, "min_va_frac", 0.0);
-
-      double max_va_frac;
-      kwargs.get_else(max_va_frac, "max_va_frac", 0.5);
-
-      //These are names of the lattices you want to restrict searches to
-      std::vector<std::string> forced_lattice_names;
-      kwargs.get_else(forced_lattice_names, "forced_lattices", std::vector<std::string>());
-
-      // -- collect settings used --
-      m_used.put_obj();
-      m_used["ideal"] = ideal;
-      m_used["lattice_weight"] = lattice_weight;
-      m_used["max_vol_change"] = max_vol_change;
-      m_used["min_va_frac"] = min_va_frac;
-      m_used["max_va_frac"] = max_va_frac;
-
-      bool lattices_forced_in_settings = (forced_lattice_names.size() > 0);
-      if(lattices_forced_in_settings) {
-        m_used["forced_lattices"] = forced_lattice_names;
-      }
-      bool restricted;
-      kwargs.get_else(restricted, "restricted", false);
-      if(restricted) {
-        m_used["restricted"] = restricted;
-      }
       // -- construct ConfigMapper --
       int map_opt = StrucMapper::none;
-      if(strict) map_opt |= StrucMapper::strict;
-      if(!ideal) map_opt |= StrucMapper::robust;
+      if(m_set.strict) map_opt |= StrucMapper::strict;
+      if(!m_set.ideal) map_opt |= StrucMapper::robust;
 
       m_configmapper.reset(new ConfigMapper(
                              primclex,
-                             lattice_weight,
-                             max_vol_change,
+                             m_set.lattice_weight,
+                             m_set.max_vol_change,
                              map_opt,
                              primclex.crystallography_tol()));
-      m_configmapper->struc_mapper().set_min_va_frac(min_va_frac);
-      m_configmapper->struc_mapper().set_max_va_frac(max_va_frac);
+      m_configmapper->struc_mapper().set_min_va_frac(m_set.min_va_frac);
+      m_configmapper->struc_mapper().set_max_va_frac(m_set.max_va_frac);
 
       //If the settings specified at least one lattice, then force that on the configmapper
-      if(lattices_forced_in_settings) {
-        m_configmapper->add_allowed_lattices(forced_lattice_names);
-      }
-
-      //If the settings specified use boxiness, then force that on the configmapper
-      if(restricted) {
-        m_configmapper->struc_mapper().restricted();
-      }
-    }
-
-    const jsonParser &StructureMap<Configuration>::used() const {
-      return m_used;
+      if(m_set.forced_lattices.size())
+        m_configmapper->add_allowed_lattices(m_set.forced_lattices);
     }
 
     /// \brief Specialized import method for ConfigType
     ///
     /// \param p Path to structure or properties.calc.json file. Not guaranteed to exist or be valid.
-    /// \param hint Iterator to 'from' config for 'casm update', or 'end' if unknown as with 'casm import'.
+    /// \param hint std::unique_ptr<Configuration> to 'from' config for 'casm update', or 'end' if unknown as with 'casm import'.
     /// \param result Insert iterator of Result objects to output mapping results
     ///
     /// - Should output one or more mapping results from the structure located at specied path
@@ -141,87 +83,79 @@ namespace CASM {
     /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
     StructureMap<Configuration>::map_result_inserter StructureMap<Configuration>::map(
       fs::path p,
-      DatabaseIterator<Configuration> hint,
+      std::unique_ptr<Configuration> const &hint_config,
       map_result_inserter result) const {
       // need to set Result data (w/ defaults):
-      // - fs::path pos = "";
+      // - std::string pos = "";
       // - MappedProperties mapped_props {from:"", to:"", unmapped:{}, mapped:{}};
       // - bool has_data = false;
       // - bool has_complete_data = false;
       // - bool is_new_config = false;
       // - std::string fail_msg = "";
 
-      // get path to properties.calc.json that will be imported
-      //   (checking a couple possible locations relative to pos_path),
-      //   or empty if none could be found
-      fs::path prop_path = this->calc_properties_path(p);
-
       ConfigIO::Result res;
-      res.pos = (prop_path.empty() ? p : prop_path);
-
-      std::unique_ptr<Configuration> hint_config;
-      if(hint != db_config().end()) {
-        hint_config = notstd::make_unique<Configuration>(*hint);
-        res.mapped_props.from = hint_config->name();
-      }
-
+      res.pos = p;
       // read from structure file or properties.calc.json file (if exists)
-      SimpleStructure sstruc = this->_make_structure(res.pos);
+      SimpleStructure sstruc = this->_make_structure(res.pos.string());
 
       // do mapping
-      ConfigMapperResult map_result;
-      if(_occupation_only()) {
-        map_result = m_configmapper->import_structure(sstruc, hint_config.get());
-      }
-      else {
-        map_result =  m_configmapper->import_structure(sstruc);
-      }
+      ConfigMapperResult map_result = m_configmapper->import_structure(sstruc, hint_config.get());
+
 
       if(!map_result.success()) {
         res.fail_msg = map_result.fail_msg;
-        *result++ = res;
+        *result++ = std::move(res);
         return result;
       }
-      // insert in database (note that this also/only inserts primitive)
-      ConfigInsertResult insert_result = (map_result.maps.begin()->second).config_ptr->insert(m_primitive_only);
 
-      res.is_new_config = insert_result.insert_canonical;
-
-      res.mapped_props.to = insert_result.canonical_it.name();
-
-      // check for and read raw 'unmapped' data, adds 'data_timestamp'
-      if(!prop_path.empty()) {
-        std::tie(res.mapped_props.unmapped, res.has_data, res.has_complete_data) =
-          read_calc_properties<Configuration>(primclex(), prop_path);
+      if(map_result.n_optimal() > 1) {
+        res.fail_msg = "There were " + std::to_string(map_result.n_optimal()) + " optimal mappings, when only one was expected.";
+        *result++ = std::move(res);
+        return result;
       }
 
-      to_json(map_result.maps.begin()->first, res.mapped_props.mapped);
+      for(auto const &map : map_result.maps) {
+        // insert in database (note that this also/only inserts primitive)
+        ConfigInsertResult insert_result = map.second.second.insert(settings().primitive_only);
 
-      // if the result was a success, need to populate relaxed energy in
-      // map_result.relaxation_properties["best_mapping"]["relaxed_energy"]
-      if(res.pos.extension() == ".json" || res.pos.extension() == ".JSON") {
-        jsonParser json(res.pos);
-        if(json.contains("relaxed_energy")) {
-          res.mapped_props.mapped["relaxed_energy"] = json["relaxed_energy"];
+        res.is_new_config = insert_result.insert_canonical;
+
+
+        res.map_result.props = map.second.first.props;
+        res.map_result.props.to = insert_result.canonical_it.name();
+        res.map_result.props.timestamp = fs::last_write_time(res.pos);
+        std::cerr << "WARNING: Inside map() function of ConfigImport.cc, but there may be strange things happening with MappedProperties\n";
+
+
+
+        // check for and read raw 'unmapped' data, adds 'data_timestamp'
+        //if(!prop_path.empty()) {
+        //std::tie(res.map_result.props.unmapped, res.has_data, res.has_complete_data) =
+        //  read_calc_properties<Configuration>(primclex(), prop_path);
+        //}
+
+        //to_json(map_result.maps.begin()->first, res.map_result.props.mapped);
+
+        // it may be the structure was not primitive:
+        // - in which case we need to create a result indicating that the primitive
+        //   was also inserted in the database,
+        // - but don't try to scale the data for the primitive
+        if(insert_result.canonical_it != insert_result.primitive_it) {
+          ConfigIO::Result prim_res;
+          prim_res.pos = res.pos;
+          prim_res.map_result.props.from = insert_result.primitive_it.name();
+          prim_res.map_result.props.to = insert_result.primitive_it.name();
+          prim_res.is_new_config = insert_result.insert_primitive;
+          // at this point, the mapped structure result is complete
+
+          *result++ = res;
+          *result++ = prim_res;
+        }
+        else {
+          // at this point, the mapped structure result is complete
+          *result++ = res;
         }
       }
-
-      // at this point, the mapped structure result is complete
-      *result++ = res;
-
-      // it may be the structure was not primitive:
-      // - in which case we need to create a result indicating that the primitive
-      //   was also inserted in the database,
-      // - but don't try to scale the data for the primitive
-      if(insert_result.canonical_it != insert_result.primitive_it) {
-        ConfigIO::Result prim_res;
-        prim_res.pos = res.pos;
-        prim_res.mapped_props.from = insert_result.primitive_it.name();
-        prim_res.mapped_props.to = insert_result.primitive_it.name();
-        prim_res.is_new_config = insert_result.insert_primitive;
-        *result++ = prim_res;
-      }
-
       return result;
     }
 
@@ -245,26 +179,17 @@ namespace CASM {
       return sstruc;
     }
 
-    /// \brief Import Configuration with only occupation DoF
-    bool StructureMap<Configuration>::_occupation_only() const {
-      return m_dof.size() == 1 && m_dof[0] == "occupation";
-    }
-
-
     // --- Import<Configuration> ---
 
     /// \brief Constructor
     Import<Configuration>::Import(
       const PrimClex &primclex,
       const StructureMap<Configuration> &mapper,
-      bool import_data,
-      bool copy_additional_files,
-      bool overwrite,
-      fs::path report_dir,
+      ImportSettings const &_set,
+      fs::path const &report_dir,
       Log &file_log) :
 
-      ImportT(primclex, mapper, import_data, copy_additional_files, overwrite,
-              report_dir, file_log) {}
+      ImportT(primclex, mapper, _set, report_dir, file_log) {}
 
 
     const std::string Import<Configuration>::desc =
@@ -305,15 +230,15 @@ namespace CASM {
 
       "Settings: \n\n"
 
-      "  primitive_only: bool (optional, default=false)\n"
-      "      By convention, primitive configurations are always imported along with \n"
-      "      non-primitive configurations. If false, only the primitive configuration\n"
-      "      will be imported. Note: data from non-primitive configurations is never\n"
-      "      used for primitive configurations.\n\n"
-
       "  mapping: JSON object (optional)\n"
       "      A JSON object containing the following options controlling the structure-\n"
       "      mapping algorithm:\n"
+
+      "    primitive_only: bool (optional, default=false)\n"
+      "        By convention, primitive configurations are always imported along with \n"
+      "        non-primitive configurations. If false, only the primitive configuration\n"
+      "        will be imported. Note: data from non-primitive configurations is never\n"
+      "        used for primitive configurations.\n\n"
 
       "    lattice_weight: number in range [0.0, 1.0] (optional, default=0.5) \n"
       "        Candidate configurations are compared using \"deformation_cost\" to \n"
@@ -353,6 +278,10 @@ namespace CASM {
       "        Can be slower if used on deformed structures, in which case more \n"
       "        robust methods will be used\n\n"
 
+      "    forced_lattices: array of strings (optional) \n"
+      "        Restricts the import to only consider supercells provided via a list of\n"
+      "        a list of their conventional names (i.e., \"SCEL2_2_1_1_1_1_0\").\n"
+
       "  data: JSON object (optional)\n"
       "      A JSON object containing the following options controlling when calculated \n"
       "      properties are updated.\n\n"
@@ -369,7 +298,7 @@ namespace CASM {
 
       "        If false, only configuration structure is imported.\n\n"
 
-      "    copy_additional_files: bool (optional, default = false)\n"
+      "    additional_files: bool (optional, default = false)\n"
       "        If true, attempt to copy all files & directories in the same directory\n"
       "        as the structure file or , if it exists, the properties.calc.json file.\n"
       "        Files & directories will only by copied if there are no existing files\n"
@@ -389,14 +318,13 @@ namespace CASM {
 
       // -- collect input settings --
 
-      const po::variables_map &vm = import_opt.vm();
-      jsonParser used;
-      jsonParser _default;
+      MappingSettings map_settings;
+      if(kwargs.contains("mapping"))
+        from_json(map_settings, kwargs["mapping"]);
 
-      // general settings
-      bool primitive_only;
-      kwargs.get_else(primitive_only, "primitive_only", false);
-      used["primitive_only"] = primitive_only;
+      ImportSettings import_settings;
+      if(kwargs.contains("data"))
+        from_json(import_settings, kwargs["data"]);
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
       fs::path report_dir = primclex.dir().reports_dir() / "import_report";
@@ -404,47 +332,22 @@ namespace CASM {
 
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
       // the 'used' settings
-      // ONLY FOR SITUATIONS WHERE RELAXATION PROPERTIES NEED TO BE IMPOSED
-      /*std::vector<std::string> dof {"occupation", "deformation", "displacement"};*/
-      std::vector<std::string> dof {"occupation"};
-      jsonParser map_json;
-      kwargs.get_else(map_json, "mapping", jsonParser());
-      StructureMap<Configuration> mapper(primclex, map_json, primitive_only, dof);
-      used["mapping"] = mapper.used();
+      StructureMap<Configuration> mapper(map_settings, primclex);
 
-      // 'data' subsettings
-      jsonParser data;
-      kwargs.get_if(data, "data");
-
-      bool import_data;
-      if(vm.count("data")) {
-        import_data = true;
-      }
-      else {
-        data.get_else(import_data, "import", false);
-      }
-      used["data"]["import"] = import_data;
-
-      bool copy_additional_files;
-      data.get_else(copy_additional_files, "copy_additional_files", false);
-      used["data"]["copy_additional_files"] = copy_additional_files;
-
-      bool overwrite;
-      data.get_else(overwrite, "overwrite", false);
-      used["data"]["overwrite"] = overwrite;
+      jsonParser used_settings;
+      used_settings["mapping"] = mapper.settings();
+      used_settings["data"] = import_settings;
 
       // -- print used settings --
       Log &log = primclex.log();
       log.read("Settings");
-      log << used << std::endl << std::endl;
+      log << used_settings << std::endl << std::endl;
 
       // -- construct Import --
       Import<Configuration> f(
         primclex,
         mapper,
-        import_data,
-        copy_additional_files,
-        overwrite,
+        import_settings,
         report_dir,
         primclex.log());
 
@@ -629,7 +532,7 @@ namespace CASM {
     Update<Configuration>::Update(
       const PrimClex &primclex,
       const StructureMap<Configuration> &mapper,
-      fs::path report_dir) :
+      fs::path const &report_dir) :
       UpdateT(primclex, mapper, report_dir) {}
 
     int Update<Configuration>::run(
@@ -643,8 +546,6 @@ namespace CASM {
       jsonParser used;
 
       // general settings
-      bool primitive_only = false;
-
       bool force;
       if(vm.count("force")) {
         force = true;
@@ -660,11 +561,13 @@ namespace CASM {
 
       // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values
       // still need to figure out how to specify this in general
-      std::vector<std::string> dof {"occupation"};
       jsonParser map_json;
       kwargs.get_else(map_json, "mapping", jsonParser());
-      StructureMap<Configuration> mapper(primclex, map_json, primitive_only, dof);
-      used["mapping"] = mapper.used();
+      MappingSettings map_settings = map_json.get<MappingSettings>();
+      map_settings.primitive_only = true;
+
+      StructureMap<Configuration> mapper(map_settings, primclex);
+      used["mapping"] = mapper.settings();
 
       // 'data' subsettings
       // bool import_data = true;

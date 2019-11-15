@@ -867,7 +867,7 @@ namespace CASM {
     template<typename CoordType>
     bool BasicStructure<CoordType>::_time_reversal_active() const {
       for(auto const &dof : m_dof_map)
-        if(DoF::traits(dof.first).time_reversal_active())
+        if(dof.second.traits().time_reversal_active())
           return true;
       for(CoordType const &site : basis())
         if(site.time_reversal_active())
@@ -954,6 +954,19 @@ namespace CASM {
 
       return struc_mol_name;
     }
+
+    //************************************************************
+    /// Returns a vector with a list of allowed molecule names at each site
+    template<typename CoordType>
+    std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure<CoordType> const &_struc) {
+      std::vector<std::vector<std::string> > result(_struc.basis().size());
+
+      for(Index b = 0; b < _struc.basis().size(); ++b)
+        result[b] = _struc.basis(b).allowed_occupants();
+
+      return result;
+    }
+
 
     //************************************************************
 
@@ -1068,7 +1081,7 @@ namespace CASM {
       std::map<DoFKey, std::vector<DoFSetInfo> > result;
 
       for(DoFKey const &type : continuous_local_dof_types(_struc)) {
-        std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::traits(type).dim(), 0)));
+        std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::BasicTraits(type).dim(), 0)));
 
         for(Index b = 0; b < _struc.basis().size(); ++b) {
           if(_struc.basis()[b].has_dof(type)) {

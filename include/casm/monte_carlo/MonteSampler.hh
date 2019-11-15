@@ -1,11 +1,11 @@
 #ifndef CASM_MonteSampler_HH
 #define CASM_MonteSampler_HH
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/monte_carlo/MCData.hh"
 #include "casm/monte_carlo/MonteCounter.hh"
 #include "casm/clex/CompositionConverter.hh"
-#include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/clex/Configuration.hh"
 
 namespace CASM {

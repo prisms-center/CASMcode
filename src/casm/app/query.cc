@@ -3,7 +3,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/casm_io/FormatFlag.hh"
-#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/database/Selection.hh"

@@ -2,7 +2,7 @@
 #define CASM_FUNCTIONS_HH
 
 #include <boost/filesystem/path.hpp>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/app/CLIParse.hh"
 #include "casm/misc/cloneable_ptr.hh"

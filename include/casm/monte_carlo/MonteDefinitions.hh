@@ -1,8 +1,10 @@
 #ifndef CASM_MonteDefinitions_HH
 #define CASM_MonteDefinitions_HH
 
-#include "casm/CASM_global_definitions.hh"
-#include "casm/casm_io/EnumIO.hh"
+#include "casm/casm_io/enum/stream_io.hh"
+#include "casm/casm_io/enum/json_io.hh"
+#include "casm/global/definitions.hh"
+
 
 namespace CASM {
   namespace Monte {
@@ -16,6 +18,7 @@ namespace CASM {
     };
 
     ENUM_IO_DECL(CASM::Monte::ENSEMBLE)
+    ENUM_JSON_IO_DECL(CASM::Monte::ENSEMBLE)
 
 
     /// \brief Monte Carlo method type
@@ -24,6 +27,7 @@ namespace CASM {
     };
 
     ENUM_IO_DECL(CASM::Monte::METHOD)
+    ENUM_JSON_IO_DECL(CASM::Monte::METHOD)
 
 
     ///How often to sample runs
@@ -32,6 +36,7 @@ namespace CASM {
     };
 
     ENUM_IO_DECL(CASM::Monte::SAMPLE_MODE)
+    ENUM_JSON_IO_DECL(CASM::Monte::SAMPLE_MODE)
 
 
     ///How to change conditions
@@ -40,6 +45,7 @@ namespace CASM {
     };
 
     ENUM_IO_DECL(CASM::Monte::DRIVE_MODE)
+    ENUM_JSON_IO_DECL(CASM::Monte::DRIVE_MODE)
 
     ///How often to sample runs
     enum class ENUM_SAMPLE_MODE {
@@ -47,6 +53,7 @@ namespace CASM {
     };
 
     ENUM_IO_DECL(CASM::Monte::ENUM_SAMPLE_MODE)
+    ENUM_JSON_IO_DECL(CASM::Monte::ENUM_SAMPLE_MODE)
 
   }
 }
@@ -66,5 +73,3 @@ namespace CASM {
 }
 
 #endif
-
-

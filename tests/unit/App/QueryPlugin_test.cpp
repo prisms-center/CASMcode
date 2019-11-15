@@ -7,6 +7,7 @@
 #include <boost/filesystem.hpp>
 
 #include "Common.hh"
+#include "ZrOProj.hh"
 #include "casm/app/casm_functions.hh"
 
 using namespace CASM;
@@ -24,7 +25,7 @@ TEST(QueryPlugin, Test1) {
   auto cp = [&](std::string _filename) {
 
     fs::path filename(_filename);
-    fs::path src = "tests/unit/App" / filename;
+    fs::path src = fs::path(autotools::abs_srcdir()) / "tests/unit/App" / filename;
     ASSERT_TRUE(fs::exists(src));
 
     fs::path dest = primclex.dir().query_plugins<Configuration>();
@@ -67,4 +68,3 @@ TEST(QueryPlugin, Test1) {
   EXPECT_TRUE(check(R"(ccasm query -k 'test_configname')"));
 
 }
-

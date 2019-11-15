@@ -7,6 +7,8 @@
 #include <boost/filesystem.hpp>
 
 #include "Common.hh"
+#include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/external/MersenneTwister/MersenneTwister.h"
 #include "casm/monte_carlo/Conversions.hh"
@@ -157,4 +159,3 @@ TEST(OccLocationTest, FCCTernary_DiluteConfig) {
   test::FCCTernaryProj proj;
   run_case(proj, dilute_config, mtrand);
 }
-

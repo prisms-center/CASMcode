@@ -1,5 +1,5 @@
 #include "casm/symmetry/SymGroupRepID.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
 

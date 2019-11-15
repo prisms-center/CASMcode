@@ -1,6 +1,6 @@
 #include "casm/monte_carlo/MonteDefinitions.hh"
 
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
 
@@ -13,6 +13,7 @@ namespace CASM {
 
   namespace Monte {
     ENUM_IO_DEF(CASM::Monte::ENSEMBLE)
+    ENUM_JSON_IO_DEF(CASM::Monte::ENSEMBLE)
   }
 
   const std::string traits<Monte::METHOD>::name = "method";
@@ -24,6 +25,7 @@ namespace CASM {
 
   namespace Monte {
     ENUM_IO_DEF(CASM::Monte::METHOD)
+    ENUM_JSON_IO_DEF(CASM::Monte::METHOD)
   }
 
   const std::string traits<Monte::SAMPLE_MODE>::name = "sample_by";
@@ -35,6 +37,7 @@ namespace CASM {
 
   namespace Monte {
     ENUM_IO_DEF(CASM::Monte::SAMPLE_MODE)
+    ENUM_JSON_IO_DEF(CASM::Monte::SAMPLE_MODE)
   }
 
   const std::string traits<Monte::DRIVE_MODE>::name = "mode";
@@ -46,6 +49,7 @@ namespace CASM {
 
   namespace Monte {
     ENUM_IO_DEF(CASM::Monte::DRIVE_MODE)
+    ENUM_JSON_IO_DEF(CASM::Monte::DRIVE_MODE)
   }
 
   const std::string traits<Monte::ENUM_SAMPLE_MODE>::name = "sample_mode";
@@ -57,5 +61,6 @@ namespace CASM {
 
   namespace Monte {
     ENUM_IO_DEF(CASM::Monte::ENUM_SAMPLE_MODE)
+    ENUM_JSON_IO_DEF(CASM::Monte::ENUM_SAMPLE_MODE)
   }
 }

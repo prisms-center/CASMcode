@@ -1,7 +1,7 @@
 #ifndef UNIT_TestOrbits
 #define UNIT_TestOrbits
 
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterOrbits.hh"

@@ -1,7 +1,7 @@
 #include "casm/misc/CASM_math.hh"
 
 #include <map>
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/eigen.hh"
 
 namespace CASM {
   //*******************************************************************************************

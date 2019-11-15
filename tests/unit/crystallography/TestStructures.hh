@@ -37,6 +37,27 @@ namespace test {
     return struc;
   }
 
+  inline BasicStructure<Site> FCC_ternary_prim() {
+
+    // lattice vectors as cols
+    Eigen::Matrix3d lat;
+    lat << 0.0, 2.0, 2.0,
+        2.0, 0.0, 2.0,
+        2.0, 2.0, 0.0;
+
+    BasicStructure<Site> struc {Lattice{lat}};
+    struc.set_title("FCC_ternary");
+
+    Molecule A = Molecule::make_atom("A");
+    Molecule B = Molecule::make_atom("B");
+    Molecule C = Molecule::make_atom("C");
+
+    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), {A, B, C}));
+
+    return struc;
+
+  }
+
 }
 
 #endif

@@ -5,9 +5,9 @@
 #include <cmath>
 #include <vector>
 
-#include "casm/CASM_global_Eigen.hh"
+#include "casm/global/eigen.hh"
 #include "casm/misc/Comparisons.hh"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
   class jsonParser;

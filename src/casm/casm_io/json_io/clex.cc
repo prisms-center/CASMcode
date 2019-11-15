@@ -1,9 +1,9 @@
-#include "casm/casm_io/json_io/clex.hh"
+#include "casm/clex/io/json/ChemicalReference.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
 
@@ -200,7 +200,7 @@ namespace CASM {
     else {
 
       // if: [X, X, X, X]
-      if(json.begin()->is_number() || json.begin()->is_int()) {
+      if(json.begin()->is_number()) {
 
         if(json.size() != struc_mol_name.size()) {
           std::cerr << "received: " << json << std::endl;

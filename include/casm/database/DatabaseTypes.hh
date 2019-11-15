@@ -4,7 +4,7 @@
 #include <set>
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/enum.hpp>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/database/DatabaseTypesTraits.hh"
 

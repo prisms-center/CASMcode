@@ -6,7 +6,7 @@
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clusterography/IntegralCluster_impl.hh"
@@ -166,7 +166,7 @@ namespace CASM {
         }
       }
 
-      jsonParser bspecs_json(dir.bspecs(bset));
+      jsonParser bspecs_json;
       jsonParser local_bspecs_json;
       std::unique_ptr<ClexBasis> clex_basis_ptr;
 
@@ -174,6 +174,8 @@ namespace CASM {
       std::vector<LocalIntegralClusterOrbit> local_orbits;
 
       try {
+        bspecs_json = jsonParser::parse(dir.bspecs(bset));
+
         if(bspecs_json.contains("local_bspecs")) {
           local_bspecs_json = bspecs_json["local_bspecs"];
           //this is a local basis set

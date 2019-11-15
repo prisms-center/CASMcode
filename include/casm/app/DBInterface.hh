@@ -3,7 +3,7 @@
 
 #include "casm/app/casm_functions.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/DataFormatterDecl.hh"
+#include "casm/casm_io/dataformatter/DataFormatterDecl.hh"
 
 namespace CASM {
 

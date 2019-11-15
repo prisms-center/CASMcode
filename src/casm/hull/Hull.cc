@@ -7,7 +7,7 @@
 #include "casm/external/Eigen/Dense"
 #include "casm/external/qhull/libqhullcpp/QhullFacetList.h"
 #include "casm/external/qhull/libqhullcpp/QhullVertexSet.h"
-#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 
 namespace CASM {

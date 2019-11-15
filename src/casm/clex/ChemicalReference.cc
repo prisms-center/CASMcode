@@ -1,5 +1,6 @@
 #include "casm/clex/ChemicalReference_impl.hh"
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
@@ -315,7 +316,7 @@ namespace CASM {
     //  --- check that the input space spans the prim space --------------------
 
     // get the prim composition space (column vectors are comp_n)
-    Eigen::MatrixXd C = composition_space(prim, tol);
+    Eigen::MatrixXd C = composition_space(allowed_molecule_names(prim), tol);
 
     // get Molecule allowed in prim, and how many there are
     std::vector<Molecule> struc_mol = struc_molecule(prim);
@@ -340,7 +341,7 @@ namespace CASM {
       std::cerr << "Input space does not span the composition space of your prim." << std::endl;
 
       std::cerr << "Input space (column vectors in atom_frac space):\n" << N.topRows(prim_N_mol) << std::endl;
-      std::cerr << "End members:\n" << end_members(prim) << std::endl;
+      std::cerr << "End members:\n" << end_members(allowed_molecule_names(prim)) << std::endl;
       std::cerr << "Prim space (column vectors in atom_frac space):\n" << C << std::endl;
       std::cerr << "Rows correspond to: " << jsonParser(struc_mol_name) << std::endl;
       std::cerr << "X, prim_space = input_space*X: \n" << X << std::endl;
@@ -402,7 +403,7 @@ namespace CASM {
       double close_dist = std::numeric_limits<double>::max();
 
       for(auto it = begin; it != end; ++it) {
-        if(!it->calc_properties().contains("relaxed_energy")) {
+        if(!it->calc_properties().has_scalar("relaxed_energy")) {
           continue;
         }
         double curr_dist = (target - comp(*it)).norm();

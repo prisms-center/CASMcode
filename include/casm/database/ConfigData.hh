@@ -2,11 +2,12 @@
 #define CASM_DB_ConfigData
 
 #include <boost/filesystem.hpp>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
+#include "casm/clex/ConfigMapping.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
-#include "casm/database/MappedProperties.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
+
 
 
 // To be specialized for calculable 'ConfigType' classes:
@@ -27,6 +28,52 @@ namespace CASM {
 
   namespace DB {
 
+    /// \brief Struct with optional parameters for Config Mapping
+    /// Specifies default parameters for all values, in order to simplify
+    /// parsing from JSON
+    struct MappingSettings {
+      MappingSettings(double _lattice_weight = 0.5,
+                      bool _ideal = false,
+                      bool _strict = false,
+                      bool _primitive_only = false,
+                      std::vector<std::string> _forced_lattices = {},
+                      std::string _filter = "",
+                      double _cost_tol = CASM::TOL,
+                      double _min_va_frac = 0.,
+                      double _max_va_frac = 0.5,
+                      double _max_vol_change = 0.3) :
+        lattice_weight(_lattice_weight),
+        ideal(_ideal),
+        strict(_strict),
+        primitive_only(_primitive_only),
+        forced_lattices(_forced_lattices),
+        filter(_filter),
+        cost_tol(_cost_tol),
+        min_va_frac(_min_va_frac),
+        max_va_frac(_max_va_frac),
+        max_vol_change(_max_vol_change) {}
+
+      void set_default() {
+        *this = MappingSettings();
+      }
+
+      double lattice_weight;
+      bool ideal;
+      bool strict;
+      bool primitive_only;
+      std::vector<std::string> forced_lattices;
+      std::string filter;
+      double cost_tol;
+      double min_va_frac;
+      double max_va_frac;
+      double max_vol_change;
+
+    };
+
+    jsonParser &to_json(MappingSettings const &_set, jsonParser &_json);
+
+    jsonParser const &from_json(MappingSettings &_set, jsonParser const &_json);
+
     template<typename T> class Selection;
     template<typename ValueType> class Database;
     template<typename ValueType> class DatabaseIterator;
@@ -42,17 +89,17 @@ namespace CASM {
 
         Result() :
           pos(""),
+          map_result(""),
           has_data(false),
           has_complete_data(false),
           is_new_config(false),
           fail_msg("") {}
 
-
         // structure or properties.calc.json location as input
         fs::path pos;
 
         // Set 'to'/'from' as empty strings if no mapping possible
-        MappedProperties mapped_props;
+        ConfigMapperResult::MapData map_result;
 
         // If a properties.calc.json file is found in standard locations
         bool has_data;
@@ -131,12 +178,31 @@ namespace CASM {
 
     }
 
+    template<typename T>
+    struct TypeTag {
+      using type = T;
+    };
 
-    class ConfigDataGeneric : public Logging {
 
+    class ConfigData {
     public:
+      /// \brief Return path to properties.calc.json that will be imported
+      ///        checking a couple possible locations relative to pos_path
+      ///
+      /// checks:
+      /// 1) is a JSON file? is pos_path ends in ".json" or ".JSON", return pos_path
+      /// 2) assume pos_path is /path/to/POS, checks for /path/to/calctype.current/properties.calc.json
+      /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
+      /// else returns empty path
+      ///
+      static fs::path calc_properties_path(fs::path pos_path, PrimClex const &_pclex);
 
-      ConfigDataGeneric(const PrimClex &_primclex, Log &_file_log);
+      // If pos_path can be used to resolve a properties.calc.json, return its path.
+      // Otherwise return pos_path
+      static fs::path resolve_struc_path(fs::path pos_path, PrimClex const &_pclex);
+
+      template<typename ConfigType>
+      ConfigData(const PrimClex &_primclex, Log &_file_log, TypeTag<ConfigType>);
 
       const PrimClex &primclex() const {
         return m_primclex;
@@ -148,23 +214,14 @@ namespace CASM {
 
       Database<Supercell> &db_supercell() const;
 
-      /// Uses primclex().settings().default_clex().calctype
-      virtual PropertiesDatabase &db_props() const = 0;
+      template<typename ConfigType>
+      Database<ConfigType> &db_config() const;
 
+      /// Uses primclex().settings().default_clex().calctype
+      PropertiesDatabase &db_props() const;
 
       /// \brief Path to default calctype training_data directory for config
       fs::path calc_dir(const std::string configname) const;
-
-      /// \brief Return path to properties.calc.json that will be imported
-      ///        checking a couple possible locations relative to pos_path
-      ///
-      /// checks:
-      /// 1) is a JSON file? is pos_path ends in ".json" or ".JSON", return pos_path
-      /// 2) assume pos_path is /path/to/POS, checks for /path/to/calctype.current/properties.calc.json
-      /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
-      /// else returns empty path
-      ///
-      fs::path calc_properties_path(fs::path pos_path) const;
 
       /// \brief Return true if there are existing files in the traning_data directory
       ///        for a particular configuration
@@ -191,31 +248,19 @@ namespace CASM {
         bool dry_run,
         bool copy_additional_files) const;
 
-
     private:
       const PrimClex &m_primclex;
       Log &m_file_log;
-    };
-
-
-    template<typename _ConfigType>
-    class ConfigData : public ConfigDataGeneric {
-    public:
-      typedef _ConfigType ConfigType;
-
-      ConfigData(const PrimClex &_primclex, Log &_file_log) :
-        ConfigDataGeneric(_primclex, _file_log) {}
-
-      Database<ConfigType> &db_config() const;
-
-      PropertiesDatabase &db_props() const override;
-
+      std::function<PropertiesDatabase&()> m_db_props_func;
     };
 
 
     // To be specialized for ConfigType (no default implemenation exists)
     template<typename ConfigType>
-    class StructureMap {
+    class StructureMap;
+    /*
+      template<typename ConfigType>
+      class StructureMap {
 
     public:
 
@@ -236,7 +281,7 @@ namespace CASM {
         DatabaseIterator<ConfigType> hint,
         map_result_inserter result) const;
     };
-
+    */
   }
 }
 

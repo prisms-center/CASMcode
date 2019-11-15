@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "casm/casm_io/stream_io/container.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 #include "casm/container/PolyTrie.hh"
@@ -217,7 +217,7 @@ namespace CASM {
   std::set<Index> Variable::dof_IDs() const {
     std::set<Index> result;
     for(Index i = 0; i < m_dof_set.size(); i++) {
-      if(!m_dof_set[i].traits().global() &&  !almost_zero(m_coeffs[i]))
+      if(!m_dof_set[i].is_locked() &&  !almost_zero(m_coeffs[i]))
         result.insert(m_dof_set[i].ID());
     }
     return result;

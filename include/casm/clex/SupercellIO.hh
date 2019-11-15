@@ -1,8 +1,8 @@
 #ifndef CASM_SupercellIO
 #define CASM_SupercellIO
 
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 
 
 namespace CASM {

@@ -6,6 +6,7 @@
 
 #include "casm/database/Cache.hh"
 #include "casm/database/Named.hh"
+#include "casm/database/MappedProperties.hh"
 
 namespace CASM {
 
@@ -27,10 +28,10 @@ namespace CASM {
     typedef typename Base::MostDerived MostDerived;
     using Base::derived;
 
-    /// \brief Return calculated properties JSON for requested calctype
-    jsonParser calc_properties(std::string calctype = "") const;
+    /// \brief Return MappedProperties for requested calctype
+    MappedProperties const &calc_properties(std::string calctype = "") const;
 
-    void set_calc_properties(const jsonParser &json, std::string calctype = "");
+    void set_calc_properties(const MappedProperties &_prop, std::string calctype = "");
 
     /// \brief grabs properties from the indicated calctype and adds info to calc_properties_map
     void refresh_calc_properties(std::string calctype = "");
@@ -41,7 +42,7 @@ namespace CASM {
 
     void push_back_source(const jsonParser &source);
 
-    std::map<std::string, jsonParser> calc_properties_map() const {
+    std::map<std::string, MappedProperties> calc_properties_map() const {
       return m_calc_properties_map;
     }
   protected:
@@ -54,7 +55,7 @@ namespace CASM {
 
   private:
 
-    mutable std::map<std::string, jsonParser> m_calc_properties_map;
+    mutable std::map<std::string, MappedProperties> m_calc_properties_map;
     jsonParser m_source;
   };
 
@@ -89,18 +90,9 @@ namespace CASM {
   template<typename ConfigType>
   fs::path calc_status_path(const ConfigType &config, std::string calctype = "");
 
-  /// \brief Read properties.calc.json from training_data
-  template<typename ConfigType>
-  std::tuple<jsonParser, bool, bool> read_calc_properties(const ConfigType &config, std::string calctype = "");
-
-  /// \brief Read properties.calc.json from file
-  template<typename ConfigType>
-  std::tuple<jsonParser, bool, bool> read_calc_properties(const PrimClex &primclex, const fs::path &filepath);
-
-
   /// \brief Return true if all required properties are included in the JSON
   bool is_calculated(
-    const jsonParser &calc_properties,
+    const MappedProperties &calc_properties,
     const std::vector<std::string> &required_properties);
 
   fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname, std::string calctype = "");

@@ -1,9 +1,10 @@
 #include "casm/symmetry/SymInfo.hh"
 
 #include "boost/lexical_cast.hpp"
-#include "casm/CASM_global_enum.hh"
+#include "casm/global/enum/json_io.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
@@ -22,6 +23,7 @@ namespace CASM {
   };
 
   ENUM_IO_DEF(symmetry_type)
+  ENUM_JSON_IO_DEF(symmetry_type)
 
   jsonParser &to_json(const SymInfoOptions &opt, jsonParser &json) {
     json.put_obj();

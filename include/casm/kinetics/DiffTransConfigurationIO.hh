@@ -3,8 +3,8 @@
 
 #include "casm/clex/Supercell.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 #include "casm/container/ContainerTraits.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"

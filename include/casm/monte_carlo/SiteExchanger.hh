@@ -2,7 +2,7 @@
 #define CASM_SiteExchanger_HH
 
 #include <vector>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 

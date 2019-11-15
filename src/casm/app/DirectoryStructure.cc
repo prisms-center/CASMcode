@@ -5,7 +5,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include "casm/clex/Configuration.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 namespace CASM {
 
   /// return path to current or parent directory containing ".casm" directory
@@ -190,8 +190,8 @@ namespace CASM {
   }
 
   /// \brief Return Species Traits plugin dir
-  fs::path DirectoryStructure::species_traits_plugins() const {
-    return m_root / m_casm_dir / "species_traits";
+  fs::path DirectoryStructure::symrep_builder_plugins() const {
+    return m_root / m_casm_dir / "symrep_builder";
   }
 
   template<typename DataObject>

@@ -1,7 +1,7 @@
 #include "casm/clex/ConfigMapping.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
@@ -26,6 +26,8 @@ namespace CASM {
       }
       return result;
     }
+
+    //*******************************************************************************************
 
     template<typename IterType>
     static IterType strictest_equivalent(IterType begin, IterType end, MappingNode const &_node) {
@@ -106,6 +108,24 @@ namespace CASM {
       return best_it;
     }
   }
+
+  //*******************************************************************************************
+  Index ConfigMapperResult::n_optimal(double tol/*=TOL*/) const {
+    Index result = 0;
+    auto it = maps.begin();
+    while(it != maps.end() && almost_equal((it->first).cost, (maps.begin()->first).cost, tol))
+      ++result;
+    return result;
+  }
+
+  //*******************************************************************************************
+  SimpleStructure PrimStrucMapCalculator::resolve_setting(MappingNode const &_node,
+                                                          SimpleStructure const &_child_struc) const {
+
+    throw std::runtime_error("ConfigMapping::resolve_setting is not implemented!");
+    return _child_struc;
+  }
+  //*******************************************************************************************
   namespace ConfigMapping {
 
     xtal::StrucMapping::AllowedSpecies _allowed_species(BasicStructure<Site> const &_prim,
@@ -253,7 +273,7 @@ namespace CASM {
     ConfigMapperResult result;
     double best_cost = xtal::StrucMapping::big_inf();
 
-    bool is_new_config(true);
+    //bool is_new_config(true);
 
     if(hint_ptr != nullptr) {
       StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::to_simple_structure(*hint_ptr, "", _hint_dofs),
@@ -275,19 +295,19 @@ namespace CASM {
         for(auto const &map : config_maps) {
           SimpleStructure oriented_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
           ConfigDoF tdof = to_configdof(map, oriented_struc, scel);
-          std::unique_ptr<Configuration> tconfig = notstd::make_unique<Configuration>(scel, jsonParser(), tdof);
+          Configuration tconfig(scel, jsonParser(), tdof);
           if(strict()) {
             // Strictness transformation reduces permutation swaps, translation magnitude, and isometry character
             PermuteIterator it_strict = Local::strictest_equivalent(scel.sym_info().permute_begin(), scel.sym_info().permute_end(), map);
             MappingNode tnode = copy_apply(it_strict, map);
-            tconfig->apply_sym(it_strict);
-            result.maps.emplace(tnode, ConfigMapperResult::Individual("", std::move(tconfig)));
+            tconfig.apply_sym(it_strict);
+            result.maps.emplace(std::make_pair(tnode, std::make_pair(ConfigMapperResult::MapData(""), std::move(tconfig))));
           }
           else {
-            PermuteIterator it_canon = tconfig->to_canonical();
+            PermuteIterator it_canon = tconfig.to_canonical();
             MappingNode tnode = copy_apply(it_canon, map);
-            tconfig->apply_sym(it_canon);
-            result.maps.emplace(tnode, ConfigMapperResult::Individual("", std::move(tconfig)));
+            tconfig.apply_sym(it_canon);
+            result.maps.emplace(std::make_pair(tnode, std::make_pair(ConfigMapperResult::MapData(""), std::move(tconfig))));
           }
         }
       }
@@ -303,19 +323,19 @@ namespace CASM {
       std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.scel_lattice());
       SimpleStructure oriented_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
       ConfigDoF tdof = to_configdof(map, oriented_struc, *shared_scel);
-      std::unique_ptr<Configuration> tconfig = notstd::make_unique<Configuration>(shared_scel, jsonParser(), tdof);
+      Configuration tconfig(shared_scel, jsonParser(), tdof);
       if(strict()) {
         // Strictness transformation reduces permutation swaps, translation magnitude, and isometry character
         PermuteIterator it_strict = Local::strictest_equivalent(shared_scel->sym_info().permute_begin(), shared_scel->sym_info().permute_end(), map);
         MappingNode tnode = copy_apply(it_strict, map);
-        tconfig->apply_sym(it_strict);
-        result.maps.emplace(tnode, ConfigMapperResult::Individual("", std::move(tconfig)));
+        tconfig.apply_sym(it_strict);
+        result.maps.emplace(std::make_pair(tnode, std::make_pair(ConfigMapperResult::MapData(""), std::move(tconfig))));
       }
       else {
-        PermuteIterator it_canon = tconfig->to_canonical();
+        PermuteIterator it_canon = tconfig.to_canonical();
         MappingNode tnode = copy_apply(it_canon, map);
-        tconfig->apply_sym(it_canon);
-        result.maps.emplace(tnode, ConfigMapperResult::Individual("", std::move(tconfig)));
+        tconfig.apply_sym(it_canon);
+        result.maps.emplace(std::make_pair(tnode, std::make_pair(ConfigMapperResult::MapData(""), std::move(tconfig))));
       }
     }
     //\End routine A

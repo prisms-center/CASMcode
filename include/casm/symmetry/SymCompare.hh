@@ -3,7 +3,7 @@
 
 #include <utility>
 #include <memory>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/OrbitDecl.hh"

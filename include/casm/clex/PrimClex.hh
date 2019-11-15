@@ -2,7 +2,7 @@
 #define CASM_PrimClex
 
 #include <memory>
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/casm_io/Log.hh"
 
 /// Cluster expansion class
@@ -56,6 +56,7 @@ namespace CASM {
   class PrimClex : public Logging {
 
   public:
+    typedef xtal::Structure PrimType;
 
     // **** Constructors ****
 
@@ -110,7 +111,10 @@ namespace CASM {
     // ** Accessors **
 
     /// const Access to primitive Structure
-    const Structure &prim() const;
+    const PrimType &prim() const;
+
+    /// Access to the primitive Structure as a shared resource
+    std::shared_ptr<const PrimType> &shared_prim() const;
 
     /// const Access to number of basis atoms
     Index n_basis() const;

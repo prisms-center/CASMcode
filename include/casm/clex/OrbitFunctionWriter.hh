@@ -1,7 +1,7 @@
 #ifndef CASM_OrbitFunctionTraits
 #define CASM_OrbitFunctionTraits
 
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 

@@ -234,6 +234,18 @@ struct has_move<T, void_t<decltype(&T::move)> > : std::true_type {
   template<typename Type>
   bool operator!=(const cloneable_ptr<Type> &A, const cloneable_ptr<Type> &B);
 
+  template<typename Type>
+  bool operator==(std::nullptr_t, const cloneable_ptr<Type> &B);
+
+  template<typename Type>
+  bool operator!=(std::nullptr_t, const cloneable_ptr<Type> &B);
+
+  template<typename Type>
+  bool operator==(const cloneable_ptr<Type> &A, std::nullptr_t);
+
+  template<typename Type>
+  bool operator!=(const cloneable_ptr<Type> &A, std::nullptr_t);
+
 
   // --- Immplementation ---
 
@@ -414,6 +426,27 @@ struct has_move<T, void_t<decltype(&T::move)> > : std::true_type {
   bool operator!=(const cloneable_ptr<Type> &A, const cloneable_ptr<Type> &B) {
     return A.unique() != B.unique();
   }
+
+  template<typename Type>
+  bool operator==(std::nullptr_t, const cloneable_ptr<Type> &B) {
+    return B.unique() == nullptr;
+  }
+
+  template<typename Type>
+  bool operator!=(std::nullptr_t, const cloneable_ptr<Type> &B) {
+    return B.unique() != nullptr;
+  }
+
+  template<typename Type>
+  bool operator==(const cloneable_ptr<Type> &A, std::nullptr_t) {
+    return A.unique() == nullptr;
+  }
+
+  template<typename Type>
+  bool operator!=(const cloneable_ptr<Type> &A, std::nullptr_t) {
+    return A.unique() != nullptr;
+  }
+
 }
 
 #endif

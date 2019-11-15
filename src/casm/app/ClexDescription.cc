@@ -1,8 +1,8 @@
 #include "casm/app/ClexDescription.hh"
 
 #include "casm/misc/algorithm.hh"
-#include "casm/casm_io/stream_io/container.hh"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/container/stream_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/app/DirectoryStructure.hh"
 
 namespace CASM {

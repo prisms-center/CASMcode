@@ -4,6 +4,9 @@
 
 #include <thread>
 #include <chrono>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
+#include "Proj.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/app/ProjectBuilder.hh"
@@ -121,13 +124,8 @@ namespace test {
 
     make();
 
-    m_set->set_casm_prefix(fs::current_path());
-
-    // handle scons and autotools
-    if(!fs::exists(m_set->casm_libdir().first / "libcasm.dylib") &&
-       !fs::exists(m_set->casm_libdir().first / "libcasm.so")) {
-      m_set->set_casm_libdir(fs::current_path() / ".libs");
-    }
+    m_set->set_casm_libdir(autotools::abs_libdir());
+    m_set->set_casm_includedir(autotools::abs_includedir());
 
     m_set->commit();
 

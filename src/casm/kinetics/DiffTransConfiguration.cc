@@ -5,7 +5,7 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/database/Named_impl.hh"
@@ -486,12 +486,12 @@ namespace CASM {
 
     /// \brief Indicates whether there is a valid kra for DiffTransConfiguration
     bool has_kra(const DiffTransConfiguration &dtc) {
-      return dtc.calc_properties().contains("kra");
+      return dtc.calc_properties().has_scalar("kra");
     }
 
     /// \brief Returns kra for DiffTransConfiguration
     double kra(const DiffTransConfiguration &dtc) {
-      return dtc.calc_properties()["kra"].get<double>();
+      return dtc.calc_properties().scalar("kra");
     }
 
     /// \brief Returns the distance to furthest perturbation from diffusion hop

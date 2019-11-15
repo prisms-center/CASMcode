@@ -2,7 +2,7 @@
 #define CASM_Monte_CanonicalEvent
 
 #include "casm/external/Eigen/Dense"
-#include "casm/CASM_global_definitions.hh"
+#include "casm/global/definitions.hh"
 #include "casm/monte_carlo/OccLocation.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
 
