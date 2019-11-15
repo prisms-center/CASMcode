@@ -1,7 +1,6 @@
 #ifndef XTALSYMTOOLS_HH
 #define XTALSYMTOOLS_HH
 
-
 #include <vector>
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/Coordinate.hh"
