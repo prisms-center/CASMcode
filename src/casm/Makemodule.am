@@ -204,6 +204,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
+    include/casm/crystallography/UnitCellCoordTraits.hh\
     include/casm/crystallography/io/VaspIO.hh\
     include/casm/crystallography/jsonStruc.hh\
     include/casm/database/Cache.hh\
@@ -829,6 +830,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\
     src/casm/crystallography/UnitCellCoord.cc\
+    src/casm/crystallography/UnitCellCoordTraits.cc\
     src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\

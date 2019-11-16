@@ -3,6 +3,7 @@
 
 #include "casm/symmetry/SymCompare.hh"
 #include "casm/symmetry/SymTools.hh"
+#include "casm/crystallography/UnitCellCoordTraits.hh"
 #include <memory>
 
 namespace CASM {
@@ -136,7 +137,8 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      return sym::copy_apply(op, obj, *m_prim);
+      //  !!TODO!!  return sym::copy_apply(op, obj, *m_prim);
+      return obj;
     }
 
     /// \brief Prepare an element for comparison via transformation of its internal representation
@@ -146,8 +148,6 @@ namespace CASM {
 
     double m_tol;
 
-    // TODO: Does it still make sense for all these classes to be templated?
-    // These all seem like specializations for UnitCellCoord
     PrimType_ptr m_prim;
   };
 
@@ -203,7 +203,11 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      return sym::copy_apply(op, obj, *m_prim);
+      if(CASM::traits<Element>::name == "UnitCellCoord") {
+        return sym::copy_apply(op, obj, *m_prim);
+      }
+
+      return obj.copy_apply(op);
     }
 
     double m_tol;
@@ -264,7 +268,8 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      return sym::copy_apply(op, obj, *m_prim);
+      //  !!TODO!!  return sym::copy_apply(op, obj, *m_prim);
+      return obj;
     }
 
     const PrimGrid *m_prim_grid;
@@ -332,7 +337,8 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      return sym::copy_apply(op, obj, *m_prim);
+      //  !!TODO!!  return sym::copy_apply(op, obj, *m_prim);
+      return obj;
     }
 
     const PrimGrid *m_prim_grid;
