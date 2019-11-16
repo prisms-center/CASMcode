@@ -25,7 +25,7 @@ namespace CASM {
   using xtal::Translatable;
 
   template <typename Base>
-  class CopyApply;
+  class CopyApplyForEachWithPrim;
 
   class SymOp;
 
@@ -116,7 +116,7 @@ namespace CASM {
     static const std::string name;
 
     template <typename Base>
-    using CopyApplyType = CopyApply<Base>;
+    using CopyApplyType = CopyApplyForEachWithPrim<Base>;
     /* template <typename Base> */
     /* class CopyApplyType */
     /* { */
@@ -137,7 +137,6 @@ namespace CASM {
     typedef typename traits<CoordCluster<CoordType>>::Element Element;
     typedef typename traits<CoordCluster<CoordType>>::InvariantsType InvariantsType;
     typedef typename traits<CoordCluster<CoordType>>::size_type size_type;
-    typedef typename traits<CoordCluster<CoordType>>::CopyApplyType CopyApplyType;
 
     CoordCluster(const PrimType &prim) :
       m_prim_ptr(&prim) {}

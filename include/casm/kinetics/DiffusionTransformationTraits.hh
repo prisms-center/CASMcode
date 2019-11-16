@@ -18,6 +18,9 @@ namespace CASM {
   typedef Kinetics::PrimPeriodicDiffTransSymCompare PrimPeriodicDiffTransSymCompare;
   typedef Kinetics::ScelPeriodicDiffTransSymCompare ScelPeriodicDiffTransSymCompare;
 
+  template <typename Base>
+  class CopyApply;
+
   /// Traits necessary for SymCompare
   template<>
   struct traits<Kinetics::DiffusionTransformation> {
@@ -26,6 +29,8 @@ namespace CASM {
     typedef typename Kinetics::DiffTransInvariants InvariantsType;
     static xtal::UnitCellCoord position(const Kinetics::DiffusionTransformation &diff_trans);
     static std::string name;
+    template<typename Base>
+    using CopyApplyType = CopyApply<Base>;
   };
 
   /// Specialization gives required for DatabaseTypeOrbit

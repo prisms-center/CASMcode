@@ -6,6 +6,9 @@
 
 namespace CASM {
 
+  template <typename Base>
+  class CopyApplyForEach;
+
   // --- OccupationTransformation ---
   //
   // should rename:
@@ -31,6 +34,8 @@ namespace CASM {
     typedef OccPerturbationInvariants InvariantsType;
     typedef Index size_type;
     static xtal::UnitCellCoord position(const OccPerturbation &perturb);
+    template <typename Base>
+    using CopyApplyType = CopyApplyForEach<Base>;
   };
 
   typedef PrimPeriodicSymCompare<OccPerturbation> PrimPeriodicOccPerturbSymCompare;
