@@ -4,6 +4,8 @@
 #include "casm/symmetry/SymCompare.hh"
 #include "casm/symmetry/SymTools.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/clusterography/ElementSymApply.hh"
+#include "casm/clusterography/CoordCluster.hh"
 #include <memory>
 
 namespace CASM {
@@ -181,7 +183,7 @@ namespace CASM {
   ///
   template <typename Element>
   class PrimPeriodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
-    : public ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> {
+    : public   traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>>> {
 
   public:
     typedef xtal::Structure PrimType;
@@ -219,9 +221,9 @@ namespace CASM {
     }
 
     /// \brief Transform the element under the given symmetry operation
-    Element copy_apply_impl(SymOp const &op, const Element &obj) const {
-      return stupid::ElementCopyApply<Element>()(op, obj, *m_prim);
-    }
+    /* Element copy_apply_impl(SymOp const &op, const Element &obj) const { */
+    /* return stupid::ElementCopyApply<Element>()(op, obj, *m_prim); */
+    /* } */
 
     double m_tol;
 
@@ -242,9 +244,9 @@ namespace CASM {
   ///
   template <typename Element>
   class ScelPeriodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
-    : public ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> {
+: public ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> {
 
-  public:
+public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
@@ -262,7 +264,7 @@ namespace CASM {
       return this->m_tol;
     }
 
-  private:
+private:
     friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
@@ -307,9 +309,9 @@ namespace CASM {
   ///
   template <typename Element>
   class WithinScelSymCompare<Element /*, enable_if_integral_position<Element>*/>
-    : public ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> {
+: public ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> {
 
-  public:
+public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> Base;
@@ -327,7 +329,7 @@ namespace CASM {
       return this->m_tol;
     }
 
-  private:
+private:
     friend SymCompare<CRTPBase<WithinScelSymCompare<Element>>>;
 
     /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form

@@ -24,6 +24,9 @@ namespace CASM {
   using xtal::Coordinate;
   using xtal::Translatable;
 
+  template <typename Base>
+  class CopyApply;
+
   class SymOp;
 
   /** \defgroup Clusterography
@@ -111,6 +114,15 @@ namespace CASM {
     static CoordType position(const CoordCluster<CoordType> &clust);
     typedef unsigned int size_type;
     static const std::string name;
+
+    template <typename Base>
+    using CopyApplyType = CopyApply<Base>;
+    /* template <typename Base> */
+    /* class CopyApplyType */
+    /* { */
+    /*     public: */
+    /*     typedef CopyApply<Base> type; */
+    /* }; */
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,6 +137,7 @@ namespace CASM {
     typedef typename traits<CoordCluster<CoordType>>::Element Element;
     typedef typename traits<CoordCluster<CoordType>>::InvariantsType InvariantsType;
     typedef typename traits<CoordCluster<CoordType>>::size_type size_type;
+    typedef typename traits<CoordCluster<CoordType>>::CopyApplyType CopyApplyType;
 
     CoordCluster(const PrimType &prim) :
       m_prim_ptr(&prim) {}
