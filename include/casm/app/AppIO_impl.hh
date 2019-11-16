@@ -17,6 +17,7 @@
 
 #include "casm/database/Selection_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/SymTools.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 
 

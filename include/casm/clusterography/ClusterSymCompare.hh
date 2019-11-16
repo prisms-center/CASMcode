@@ -2,6 +2,7 @@
 #define CASM_ClusterSymCompare
 
 #include "casm/symmetry/SymCompare.hh"
+#include "casm/symmetry/SymTools.hh"
 #include <memory>
 
 namespace CASM {
@@ -73,7 +74,6 @@ namespace CASM {
     // For now, this is the the sorting permutation
     std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj) const;
 
-    // TODO: Ask what in the world this is doing
     /// \brief type-specific way to get position of element
     ///
     /// - Returns traits<Element>::position(el)
@@ -105,7 +105,7 @@ namespace CASM {
       public ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> {
 
   public:
-    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
     typedef ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> Base;
@@ -136,8 +136,7 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      //!!TODO!!
-      return obj;
+      return sym::copy_apply(op, obj, *m_prim);
     }
 
     /// \brief Prepare an element for comparison via transformation of its internal representation
@@ -148,10 +147,7 @@ namespace CASM {
     double m_tol;
 
     // TODO: Does it still make sense for all these classes to be templated?
-    // These all seem like specializations for UnitCellCoord, unless I abstract out the
-    // part the applies symmetry too. Alternatively, you could hack these classes to work
-    // with something like Coordinate, as long as there is copy_apply(SymOp, Coordinate, PrimType)
-    /// Pointer to the primitive structure, necessary to apply symmetry to the Element
+    // These all seem like specializations for UnitCellCoord
     PrimType_ptr m_prim;
   };
 
@@ -171,7 +167,7 @@ namespace CASM {
     : public ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> {
 
   public:
-    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> Base;
 
@@ -207,8 +203,7 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      //!!TODO!!
-      return obj;
+      return sym::copy_apply(op, obj, *m_prim);
     }
 
     double m_tol;
@@ -233,7 +228,7 @@ namespace CASM {
     : public ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> {
 
   public:
-    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
     typedef ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> Base;
@@ -269,8 +264,7 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      //!!TODO!!
-      return obj;
+      return sym::copy_apply(op, obj, *m_prim);
     }
 
     const PrimGrid *m_prim_grid;
@@ -298,7 +292,7 @@ namespace CASM {
     : public ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> {
 
   public:
-    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> Base;
 
@@ -338,8 +332,7 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      //!!TODO!!
-      return obj;
+      return sym::copy_apply(op, obj, *m_prim);
     }
 
     const PrimGrid *m_prim_grid;
