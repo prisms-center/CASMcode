@@ -110,6 +110,7 @@ namespace CASM {
     typedef ClusterInvariants<CoordCluster<CoordType>> InvariantsType;
     static CoordType position(const CoordCluster<CoordType> &clust);
     typedef unsigned int size_type;
+    static const std::string name;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -169,6 +170,9 @@ namespace CASM {
   CoordType traits<CoordCluster<CoordType>>::position(const CoordCluster<CoordType> &clust) {
     return clust[0];
   }
+
+  template<typename CoordType>
+  const std::string traits<CoordCluster<CoordType>>::name = "CoordCluster";
 
 }
 

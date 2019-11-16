@@ -802,6 +802,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/Supercell_functions.cc\
     src/casm/clusterography/ClusterOrbits.cc\
     src/casm/clusterography/ClusterSpecsParser.cc\
+    src/casm/clusterography/ClusterSymCompareSpecializations.cc\
     src/casm/clusterography/IntegralCluster.cc\
     src/casm/completer/Complete.cc\
     src/casm/completer/Handlers.cc\

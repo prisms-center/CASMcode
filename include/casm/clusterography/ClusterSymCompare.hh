@@ -203,11 +203,7 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      if(CASM::traits<Element>::name == "UnitCellCoord") {
-        return sym::copy_apply(op, obj, *m_prim);
-      }
-
-      return obj.copy_apply(op);
+      return CASM::copy_apply(op, obj);
     }
 
     double m_tol;

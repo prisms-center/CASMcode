@@ -25,6 +25,7 @@ namespace CASM {
     typedef typename Kinetics::DiffusionTransformation MostDerived;
     typedef typename Kinetics::DiffTransInvariants InvariantsType;
     static xtal::UnitCellCoord position(const Kinetics::DiffusionTransformation &diff_trans);
+    static std::string name;
   };
 
   /// Specialization gives required for DatabaseTypeOrbit
