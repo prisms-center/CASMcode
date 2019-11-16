@@ -3,7 +3,7 @@
 
 #include "casm/symmetry/SymCompare.hh"
 #include "casm/symmetry/SymTools.hh"
-#include "casm/crystallography/UnitCellCoordTraits.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include <memory>
 
 namespace CASM {
@@ -16,6 +16,23 @@ namespace CASM {
   } // namespace xtal
   using xtal::PrimGrid;
   using xtal::UnitCellCoord;
+
+  namespace stupid {
+    template<typename Element>
+    struct ElementCopyApply {
+      Element operator()(const CASM::SymOp &op, const Element &e, const xtal::Structure &prim) {
+        return CASM::copy_apply(op, e);
+      }
+    };
+
+    template<>
+    struct ElementCopyApply<xtal::UnitCellCoord> {
+      xtal::UnitCellCoord operator()(const CASM::SymOp &op, const xtal::UnitCellCoord &e, const xtal::Structure &prim) {
+        return sym::copy_apply(op, e, prim);
+      }
+    };
+  }
+
 
   template <typename Derived>
   class ClusterSymCompare;
@@ -202,8 +219,8 @@ namespace CASM {
     }
 
     /// \brief Transform the element under the given symmetry operation
-    Element copy_apply_impl(SymOp const &op, Element obj) const {
-      return CASM::copy_apply(op, obj);
+    Element copy_apply_impl(SymOp const &op, const Element &obj) const {
+      return stupid::ElementCopyApply<Element>()(op, obj, *m_prim);
     }
 
     double m_tol;
