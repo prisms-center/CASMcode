@@ -59,13 +59,13 @@ namespace CASM {
 
         for(Eigen::Vector3d const &translation : calculator.translations(seed, child_struc)) {
 
-          std::cout << "Attempting translation: " << translation.transpose() << "\n";
+          //std::cout << "Attempting translation: " << translation.transpose() << "\n";
 
           MappingNode node = seed;
           node.basis_node.translation = translation;
           if(!calculator.populate_cost_mat(node,
                                            child_struc)) {
-            std::cout << "Invalid cost matrix\n";
+            //std::cout << "Invalid cost matrix:\n" << node.basis_node.cost_mat << "\n";
             // Indicates that structure is incompatible with supercell, regardless of translation so return false
             return false;
           }
@@ -76,25 +76,24 @@ namespace CASM {
           // if assignment is smaller than child_struc.basis().size(), then child_struc is incompattible with supercell
           // (assignment.size()==0 if the hungarian routine detects an incompatibility, regardless of translation)
           if(!node.is_viable) {
-            std::cout << "Solution not viable\n";
+            //std::cout << "Solution not viable\n";
             return false;
           }
 
-          std::cout << "Initial lattice cost: " << node.lat_node.cost << " Initial basis cost: " << node.basis_node.cost;
+          //std::cout << "Initial lattice cost: " << node.lat_node.cost << " Initial basis cost: " << node.basis_node.cost;
           // Now we are filling up displacements
           calculator.finalize(node, child_struc);
 
-          std::cout << "  Final basis cost: " << node.basis_node.cost << " Final total cost: " << node.cost << "\n";
+          //std::cout << "  Final basis cost: " << node.basis_node.cost << " Final total cost: " << node.cost << "\n";
 
           // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
-          //node.cost = strain_weight() * node.lat_node.cost + basis_weight() * (StrucMapping::basis_cost(node, c_info.size() * node.lat_node.child.size()) + m_tol * node.basis_node.translation.norm() / 10.0);
           if(node.cost < max_cost) {
             *it = node;
           }
 
         }
 
-        std::cout << "END INITIAL BASIS MAPS\n";
+        //std::cout << "END INITIAL BASIS MAPS\n";
         return true;
       }
 
@@ -103,19 +102,30 @@ namespace CASM {
       template<typename OutputIterator>
       static void partition_node(MappingNode const &_node,
                                  StrucMapCalculatorInterface const &_calculator,
-                                 SimpleStructure const &_child_struc,
+                                 SimpleStructure child_struc,
                                  OutputIterator it) {
-        std::cout << "PARTITIONING NODE\n";
-        Index j, jj, currj, tj;
+        //derotate first
+        child_struc.rotate_coords(_node.isometry());
+
+        //Then undeform by inverse of right stretch
+        child_struc.deform_coords(_node.stretch());
+
+
+        //std::cout << "PARTITIONING NODE\n";
+        Index j, jj, currj;
         Index n = _node.basis_node.assignment.size();
         MappingNode t1(_node),
                     t2(_node);
 
+        _node.is_partitioned = true;
+        t1.is_partitioned = false;
+        t2.is_partitioned = false;
+
         MappingNode *p1 = &t1;
         MappingNode *p2 = &t2;
         for(Index m = n; 1 < m && (p1->is_viable || p2->is_viable); --m) {
-          HungarianNode &n1(p1->basis_node);
-          HungarianNode &n2(p2->basis_node);
+          AssignmentNode &n1(p1->basis_node);
+          AssignmentNode &n2(p2->basis_node);
           //clear assignment and cost_mat
           n2.assignment.clear();
           n2.irow.clear();
@@ -133,7 +143,7 @@ namespace CASM {
           // using the original indexing from n1
           n2.forced_on.emplace(n1.irow[0], n1.icol[currj]);
 
-          // Strike row 0 and col currj to form new HungarianNode for t2
+          // Strike row 0 and col currj to form new AssignmentNode for t2
           // (i,j) indexes the starting cost_mat, (i-1, jj) indexes the resulting cost_mat
           n2.irow = std::vector<Index>(++n1.irow.begin(), n1.irow.end());
           // We will also store an updated assignment vector in t2, which will be
@@ -162,7 +172,7 @@ namespace CASM {
           p1->calc();
           if(p1->is_viable) {
             //even if p1 is unviable, p2 may still be viable, so we continue
-            _calculator.finalize(*p1, _child_struc);
+            _calculator.finalize(*p1, child_struc);
             it = *p1;
           }
           std::swap(p1, p2);
@@ -243,7 +253,7 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    bool HungarianNode::operator <(HungarianNode const &B) const {
+    bool AssignmentNode::operator <(AssignmentNode const &B) const {
       if(empty() != B.empty())
         return empty();
       if(!almost_equal(cost, B.cost, 1e-6))
@@ -267,7 +277,7 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    bool identical(HungarianNode const &A, HungarianNode const &B) {
+    bool identical(AssignmentNode const &A, AssignmentNode const &B) {
       if(A.empty() != B.empty())
         return false;
       if(!almost_equal(A.cost, B.cost, 1e-6))
@@ -313,7 +323,7 @@ namespace CASM {
           cost = StrucMapping::big_inf();
         }
         else {
-          cost += basis_weight * basis_node.cost;
+          cost = strain_weight * lat_node.cost + basis_weight * basis_node.cost;
         }
       }
       else
@@ -631,8 +641,8 @@ namespace CASM {
 
       auto it = queue.begin();
       while(it != queue.end() && (it->cost <= min_cost || nfound < k) && it->cost <= max_cost) {
-        std::cout << "queue.size() " << queue.size() << " min: " << min_cost << " curr: " << it->cost  << " max_cost: "
-                  << max_cost << " nfound: " << nfound << " k: " << k << "\n";
+        //std::cout << "queue.size() " << queue.size() << " min: " << min_cost << " curr: " << it->cost  << " max_cost: "
+        //          << max_cost << " nfound: " << nfound << " k: " << k << "\n";
 
         auto current = it;
         bool erase = true;
@@ -642,7 +652,7 @@ namespace CASM {
 
           // Consider two exlusive cases (and base case, in which current node isn't even viable)
           if(current->basis_node.empty()) {
-            std::cout << "EMPTY BRANCH!\n";
+            //std::cout << "EMPTY BRANCH!\n";
             //std::cout << "Case 1\n";
             // Case 1: Current node only describes a lattice mapping with no basis mapping
             //         Perform basis mapping, insert result into queue, and erase current
@@ -659,7 +669,7 @@ namespace CASM {
             }
           }
           else if(current->is_viable) {
-            std::cout << "INSIDE VIABLE BRANCH\n";
+            //std::cout << "INSIDE VIABLE BRANCH\n";
 
             // Case 2: Current node is a complete mapping and is viable
             //         Either it is a valid node, and thus part of the solution set,
@@ -712,7 +722,7 @@ namespace CASM {
         if(erase)
           queue.erase(current);
       }
-      std::cout << "queue.size(): " << queue.size() << "  nfound: " << nfound << "  dist1: " << std::distance(queue.begin(), it) << "  dist2: " << std::distance(it, queue.end()) << "\n";
+      //std::cout << "queue.size(): " << queue.size() << "  nfound: " << nfound << "  dist1: " << std::distance(queue.begin(), it) << "  dist2: " << std::distance(it, queue.end()) << "\n";
       // Erase everything worse than the solution set, unless asked not to
       if(!keep_tail && it != queue.end()) {
         queue.erase(it, queue.end());

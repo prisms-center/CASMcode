@@ -19,7 +19,7 @@ namespace CASM {
 
     // In this file:
     struct LatticeNode;
-    struct HungarianNode;
+    struct AssignmentNode;
     struct MappingNode;
     class StrucMapper;
 
@@ -124,8 +124,8 @@ namespace CASM {
 
     bool identical(LatticeNode const &A, LatticeNode const &B);
 
-    struct HungarianNode {
-      HungarianNode(double _tol = 1e-6) : time_reversal(false), cost(0), cost_offset(0), m_tol(_tol) {}
+    struct AssignmentNode {
+      AssignmentNode(double _tol = 1e-6) : time_reversal(false), cost(0), cost_offset(0), m_tol(_tol) {}
 
       /// \brief Mapping translation from child to parent
       /// Defined such that
@@ -179,12 +179,7 @@ namespace CASM {
         return cost_mat.size() == 0 && assignment.empty();
       }
 
-      void solve() {
-        // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
-        cost = hungarian_method(cost_mat, assignment, m_tol) + cost_offset + m_tol * translation.norm() / 10.0;
-      }
-
-      bool operator<(HungarianNode const &other)const;
+      bool operator<(AssignmentNode const &other)const;
 
       std::vector<Index> permutation() const {
         std::vector<Index> result(assignment.size() + forced_on.size(), 0);
@@ -202,7 +197,7 @@ namespace CASM {
       double m_tol;
     };
 
-    bool identical(HungarianNode const &A, HungarianNode const &B);
+    bool identical(AssignmentNode const &A, AssignmentNode const &B);
 
 
 
@@ -274,7 +269,7 @@ namespace CASM {
 
 
       LatticeNode lat_node;
-      HungarianNode basis_node;
+      AssignmentNode basis_node;
       double strain_weight;
       double basis_weight;
 

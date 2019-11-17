@@ -73,6 +73,10 @@ namespace CASM {
                                  SimpleStructure const &child_struc) const;
 
     private:
+      bool _sublat_allows_va(Index b) const {
+        return m_va_allowed.count(b);
+      }
+
       /// \brief Make an exact copy of the calculator (including any initialized members)
       virtual StrucMapCalculatorInterface *_clone() const override {
         return new SimpleStrucMapCalculator(*this);
