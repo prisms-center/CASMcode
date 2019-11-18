@@ -25,6 +25,7 @@ namespace CASM {
 
     template<typename Element>
     Element copy_apply_impl(const SymOp &op, const Element &obj) const {
+      //TODO: Is there a clever way to have the prim stored in here instead?
       return sym::copy_apply(op, obj, this->derived().prim());
     }
   };

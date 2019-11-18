@@ -19,32 +19,32 @@ namespace CASM {
   using xtal::PrimGrid;
   using xtal::UnitCellCoord;
 
-  namespace stupid {
-    template<typename Element>
-    struct ElementCopyApply {
-      Element operator()(const CASM::SymOp &op, const Element &e, const xtal::Structure &prim) {
-        return CASM::copy_apply(op, e);
-      }
-    };
+  /* namespace stupid { */
+  /*   template<typename Element> */
+  /*   struct ElementCopyApply { */
+  /*     Element operator()(const CASM::SymOp &op, const Element &e, const xtal::Structure &prim) { */
+  /*       return CASM::copy_apply(op, e); */
+  /*     } */
+  /*   }; */
 
-    template<>
-    struct ElementCopyApply<xtal::UnitCellCoord> {
-      xtal::UnitCellCoord operator()(const CASM::SymOp &op, const xtal::UnitCellCoord &e, const xtal::Structure &prim) {
-        return sym::copy_apply(op, e, prim);
-      }
-    };
+  /*   template<> */
+  /*   struct ElementCopyApply<xtal::UnitCellCoord> { */
+  /*     xtal::UnitCellCoord operator()(const CASM::SymOp &op, const xtal::UnitCellCoord &e, const xtal::Structure &prim) { */
+  /*       return sym::copy_apply(op, e, prim); */
+  /*     } */
+  /*   }; */
 
-    template<typename CoordType>
-    struct ElementCopyApply<CoordCluster<CoordType>> {
-      CoordCluster<CoordType> operator()(const CASM::SymOp &op, const CoordCluster<CoordType> &clust, const xtal::Structure &prim) {
-        auto result = clust;
-        for(auto &e : result) {
-          sym::apply(op, e, prim);
-        }
-        return result;
-      }
-    };
-  }
+  /*   template<typename CoordType> */
+  /*   struct ElementCopyApply<CoordCluster<CoordType>> { */
+  /*     CoordCluster<CoordType> operator()(const CASM::SymOp &op, const CoordCluster<CoordType> &clust, const xtal::Structure &prim) { */
+  /*       auto result = clust; */
+  /*       for(auto &e : result) { */
+  /*         sym::apply(op, e, prim); */
+  /*       } */
+  /*       return result; */
+  /*     } */
+  /*   }; */
+  /* } */
 
 
   template <typename Derived>
@@ -132,29 +132,29 @@ namespace CASM {
   ///
   template <typename Element>
   class AperiodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
-    : // aka LocalSymCompare?
-      public ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> {
+    : public traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>>> {
 
   public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
+    typedef typename traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>>> Base;
 
-    typedef ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> Base;
-    using Base::position;
+                                                             using Base::position;
 
-    /// \brief Constructor
-    ///
-    /// \param tol Tolerance for invariants_compare of site-to-site distances
-    ///
-    AperiodicSymCompare(PrimType_ptr prim_ptr, double tol);
+                                                             /// \brief Constructor
+                                                             ///
+                                                             /// \param tol Tolerance for invariants_compare of site-to-site distances
+                                                             ///
+                                                             AperiodicSymCompare(PrimType_ptr prim_ptr, double tol);
 
-    /// \brief Return tolerance
+                                                             /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
   private:
     friend SymCompare<CRTPBase<AperiodicSymCompare<Element>>>;
+    friend Base;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
@@ -167,14 +167,17 @@ namespace CASM {
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      //  !!TODO!!  return sym::copy_apply(op, obj, *m_prim);
-      return obj;
+      return Base::copy_apply_impl(op, obj);
     }
 
     /// \brief Prepare an element for comparison via transformation of its internal representation
     ///
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
+
+    const PrimType &prim() const {
+      return *m_prim;
+    }
 
     double m_tol;
 
@@ -194,28 +197,30 @@ namespace CASM {
   ///
   template <typename Element>
   class PrimPeriodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
-    : public   ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> {
+: public traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>>> {
 
-  public:
+public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
-    typedef ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> Base;
+    typedef typename traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>>> Base;
 
-    using Base::position;
+                                                             using Base::position;
 
-    /// \brief Constructor
-    ///
-    /// \param tol Tolerance for invariants_compare of site-to-site distances
-    ///
-    PrimPeriodicSymCompare(PrimType_ptr prim_ptr, double tol);
+                                                             /// \brief Constructor
+                                                             ///
+                                                             /// \param tol Tolerance for invariants_compare of site-to-site distances
+                                                             ///
+                                                             PrimPeriodicSymCompare(PrimType_ptr prim_ptr, double tol);
 
-    /// \brief Return tolerance
+                                                             /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
-  private:
+private:
     friend SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>;
+    //Allow private access to whatever CopyApplyType is, because sometimes you need that prim
+    friend Base;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
     ///
@@ -231,9 +236,14 @@ namespace CASM {
       return Base::inter_orbit_compare(A, B);
     }
 
+    //TODO: Do we even want to have this here? Or is it obvious from the inheritance scheme that this is happening?
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, const Element &obj) const {
-      return stupid::ElementCopyApply<Element>()(op, obj, *m_prim);
+      return Base::copy_apply_impl(op, obj);
+    }
+
+    const PrimType &prim() const {
+      return *m_prim;
     }
 
     double m_tol;
@@ -255,13 +265,13 @@ namespace CASM {
   ///
   template <typename Element>
   class ScelPeriodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
-    : public traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>>> {
+: public traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>>> {
 
-  public:
+public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
-    /* typedef ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> Base; */
+    //TODO: Am I doing this right?
     typedef typename traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>>> Base;
                                                              using Base::position;
 
@@ -276,7 +286,7 @@ namespace CASM {
       return this->m_tol;
     }
 
-  private:
+private:
     friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
     //Allow private access to whatever CopyApplyType is, because sometimes you need that prim
     friend Base;
@@ -326,28 +336,29 @@ namespace CASM {
   ///
   template <typename Element>
   class WithinScelSymCompare<Element /*, enable_if_integral_position<Element>*/>
-: public ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> {
+: public traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>>> {
 
 public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
-    typedef ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> Base;
+    typedef typename traits<Element>::template CopyApplyType<ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>>> Base;
 
-    using Base::position;
+                                                             using Base::position;
 
-    /// \brief Constructor
-    ///
-    /// \param tol Tolerance for invariants_compare of site-to-site distances
-    ///
-    WithinScelSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol);
+                                                             /// \brief Constructor
+                                                             ///
+                                                             /// \param tol Tolerance for invariants_compare of site-to-site distances
+                                                             ///
+                                                             WithinScelSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol);
 
-    /// \brief Return tolerance
+                                                             /// \brief Return tolerance
     double tol() const {
       return this->m_tol;
     }
 
 private:
     friend SymCompare<CRTPBase<WithinScelSymCompare<Element>>>;
+    friend Base;
 
     /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
     ///
@@ -369,8 +380,11 @@ private:
 
     /// \brief Transform the element under the given symmetry operation
     Element copy_apply_impl(SymOp const &op, Element obj) const {
-      //  !!TODO!!  return sym::copy_apply(op, obj, *m_prim);
-      return obj;
+      return Base::copy_apply_impl(op, obj);
+    }
+
+    const PrimType &prim() const {
+      return *m_prim;
     }
 
     const PrimGrid *m_prim_grid;
