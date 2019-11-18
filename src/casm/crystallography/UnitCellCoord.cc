@@ -11,29 +11,27 @@
 namespace CASM {
   namespace xtal {
 
-    /// Convert lattice point a unitcell
-    UnitCell make_unitcell(Coordinate const &lattice_point) {
+    UnitCell UnitCell::from_coordinate(Coordinate const &lattice_point) {
       return UnitCell(lround(lattice_point.const_frac()));
     }
 
-    /* UnitCellCoord::UnitCellCoord(const PrimType &prim, const Coordinate &coord, double tol) { */
-    /*   Coordinate coord_in_prim(prim.lattice()); */
-    /*   coord_in_prim.cart() = coord.cart(); */
 
-    /*   for(Index b = 0; b < prim.basis().size(); ++b) { */
-    /*     auto coord_distance_to_basis_site = coord_in_prim - prim.basis()[b]; */
-    /*     auto rounded_distance = coord_distance_to_basis_site; */
-    /*     rounded_distance.frac() = round(coord_distance_to_basis_site.const_frac()); */
+    UnitCellCoord UnitCellCoord::from_coordinate(const PrimType &prim, const Coordinate &coord, double tol) {
+      Coordinate coord_in_prim(prim.lattice());
+      coord_in_prim.cart() = coord.cart();
 
-    /*     if((coord_distance_to_basis_site - rounded_distance).const_cart().norm() < tol) { */
-    /*       *this = UnitCellCoord(b, lround(coord_distance_to_basis_site.const_frac())); */
-    /*       return; */
-    /*     } */
-    /*   } */
+      for(Index b = 0; b < prim.basis().size(); ++b) {
+        auto coord_distance_to_basis_site = coord_in_prim - prim.basis()[b];
+        auto rounded_distance = coord_distance_to_basis_site;
+        rounded_distance.frac() = round(coord_distance_to_basis_site.const_frac());
 
-    /* throw std::runtime_error("Error in 'UnitCellCoord(CoordType coord, const StrucType& struc, double tol)'\n" */
-    /*                          "  No matching basis site found."); */
-    /* } */
+        if((coord_distance_to_basis_site - rounded_distance).const_cart().norm() < tol) {
+          return UnitCellCoord(b, lround(coord_distance_to_basis_site.const_frac()));
+        }
+      }
+
+      throw std::runtime_error("Error constructing UnitCellCoord. No basis site could be found within the given tolerance.");
+    }
 
     /// \brief Get corresponding coordinate
     Coordinate UnitCellCoord::coordinate(const PrimType &prim) const {

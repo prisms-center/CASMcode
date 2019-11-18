@@ -100,7 +100,7 @@ namespace CASM {
   Index Supercell::linear_index(const Coordinate &coord, double tol) const {
     Coordinate tcoord(coord);
     tcoord.within();
-    return linear_index(UnitCellCoord(coord, tol));
+    return linear_index(UnitCellCoord::from_coordinate(this->primclex().prim(), coord, tol));
   }
 
   /// \brief Return the linear index corresponding to integral coordinates

@@ -47,6 +47,9 @@ namespace CASM {
       UnitCell(const Eigen::MatrixBase<OtherDerived> &other) : Eigen::Vector3l(other) {
       }
 
+      /// Convert lattice point to a unitcell
+      static UnitCell from_coordinate(Coordinate const &lattice_point);
+
       // This method allows you to assign Eigen expressions to MyVectorType
       template <typename OtherDerived>
       UnitCell &operator=(const Eigen::MatrixBase<OtherDerived> &other) {
@@ -68,9 +71,6 @@ namespace CASM {
         return false;
       }
     };
-
-    /// Convert lattice point a unitcell
-    UnitCell make_unitcell(Coordinate const &lattice_point);
 
     /// \brief CRTP class to implement '-=', '+', and '-' in terms of '+='
     ///
@@ -119,7 +119,7 @@ namespace CASM {
 
       explicit UnitCellCoord() : UnitCellCoord(0, 0, 0, 0) {}
 
-      UnitCellCoord(const Coordinate &coord, double tol);
+      static UnitCellCoord from_coordinate(const PrimType &, const Coordinate &coord, double tol);
 
       UnitCellCoord(const UnitCellCoord &B) = default;
 
@@ -141,7 +141,6 @@ namespace CASM {
         return m_sublat;
       }
 
-      //TODO: This should take a Lattice not a PrimType
       /// \brief Get corresponding coordinate
       Coordinate coordinate(const PrimType &prim) const;
 

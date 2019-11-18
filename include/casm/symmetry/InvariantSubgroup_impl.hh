@@ -120,7 +120,7 @@ namespace CASM {
       auto test = sym_compare.prepare(sym_compare.copy_apply(it.sym_op(), e));
       if(sym_compare.equal(test, e)) {
         coord.cart() = sym_compare.spatial_transform().integral_tau();
-        auto trans_it = scel.sym_info().permute_it(0, xtal::make_unitcell(coord));
+        auto trans_it = scel.sym_info().permute_it(0, xtal::UnitCell::from_coordinate(coord));
         result.push_back(trans_it * it);
       }
       ++it;
@@ -159,7 +159,7 @@ namespace CASM {
       auto test = sym_compare.prepare(sym_compare.copy_apply(it->sym_op(), e));
       if(sym_compare.equal(test, e)) {
         coord.cart() = sym_compare.spatial_transform().integral_tau();
-        auto trans_it = scel.sym_info().permute_it(0, make_unitcell(coord));
+        auto trans_it = scel.sym_info().permute_it(0, xtal::UnitCell::from_coordinate(coord));
         result.push_back(trans_it * (*it));
       }
       ++it;

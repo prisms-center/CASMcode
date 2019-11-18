@@ -432,7 +432,7 @@ namespace CASM {
         [&](const Coordinate & coord) {
         return test.dist(coord) < max_radius;
         })) {
-          *result++ = UnitCellCoord(test, xtal_tol);
+          *result++ = UnitCellCoord::from_coordinate(unit, test, xtal_tol);
         }
       }
     }
@@ -496,9 +496,9 @@ namespace CASM {
         }
 
         Coordinate test(*it + lat_point);
-        UnitCellCoord tmp(test, xtal_tol);
+        auto tmp = UnitCellCoord::from_coordinate(diff_trans.prim(), test, xtal_tol);
         if(dist_to_path(diff_trans, tmp) < max_radius && dist_to_path(diff_trans, tmp) > xtal_tol) {
-          *result++ = UnitCellCoord(test, xtal_tol);
+          *result++ = UnitCellCoord::from_coordinate(diff_trans.prim(), test, xtal_tol);
         }
         if(dist_to_path(diff_trans, tmp) <= xtal_tol) {
           auto spec_it = diff_trans.species_traj().begin();
@@ -508,7 +508,7 @@ namespace CASM {
             }
           }
           if(spec_it == diff_trans.species_traj().end()) {
-            *result++ = UnitCellCoord(test, xtal_tol);
+            *result++ = UnitCellCoord::from_coordinate(diff_trans.prim(), test, xtal_tol);
           }
         }
       }
