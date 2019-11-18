@@ -79,7 +79,8 @@ namespace CASM {
             //std::cout << "Solution not viable\n";
             return false;
           }
-
+          //std::cout << "Valid translation: " << translation.transpose() << "\n";
+          //std::cout << "cost_mat: \n" << node.basis_node.cost_mat << "\n";
           //std::cout << "Initial lattice cost: " << node.lat_node.cost << " Initial basis cost: " << node.basis_node.cost;
           // Now we are filling up displacements
           calculator.finalize(node, child_struc);
@@ -256,13 +257,13 @@ namespace CASM {
     bool AssignmentNode::operator <(AssignmentNode const &B) const {
       if(empty() != B.empty())
         return empty();
-      if(!almost_equal(cost, B.cost, 1e-6))
-        return cost < B.cost;
+      //if(!almost_equal(cost, B.cost, 1e-6))
+      //return cost < B.cost;
       if(time_reversal != B.time_reversal)
         return B.time_reversal;
       if(!almost_equal(translation, B.translation, 1e-6))
         return float_lexicographical_compare(translation, B.translation, 1e-6);
-      if(assignment != B.assignment)
+      /*if(assignment != B.assignment)
         return std::lexicographical_compare(assignment.begin(),
                                             assignment.end(),
                                             B.assignment.begin(),
@@ -272,6 +273,7 @@ namespace CASM {
                                             forced_on.end(),
                                             B.forced_on.begin(),
                                             B.forced_on.end());
+      */
       return false;
     }
 
@@ -280,16 +282,16 @@ namespace CASM {
     bool identical(AssignmentNode const &A, AssignmentNode const &B) {
       if(A.empty() != B.empty())
         return false;
-      if(!almost_equal(A.cost, B.cost, 1e-6))
-        return false;
+      //if(!almost_equal(A.cost, B.cost, 1e-6))
+      //return false;
       if(A.time_reversal != B.time_reversal)
         return false;
       if(!almost_equal(A.translation, B.translation, 1e-6))
         return false;
-      if(A.assignment != B.assignment)
-        return false;
-      if(A.forced_on != B.forced_on)
-        return false;
+      //if(A.assignment != B.assignment)
+      //return false;
+      //if(A.forced_on != B.forced_on)
+      //return false;
       return true;
     }
     //*******************************************************************************************
@@ -330,6 +332,31 @@ namespace CASM {
         cost = StrucMapping::big_inf();
       //std::cout << "INSIDE CALC() cost is: " << cost << "\n";
 
+    }
+
+    bool MappingNode::operator<(MappingNode const &B) const {
+      if(!almost_equal(cost, B.cost)) {
+        return cost < B.cost;
+      }
+      if(!almost_equal(lat_node.cost, B.lat_node.cost)) {
+        return lat_node.cost < B.lat_node.cost;
+      }
+      if(basis_node.empty() != B.basis_node.empty()) {
+        return basis_node.empty();
+      }
+      if(!identical(lat_node, B.lat_node)) {
+        return lat_node < B.lat_node;
+      }
+      if(!identical(basis_node, B.basis_node)) {
+        return basis_node < B.basis_node;
+      }
+      if(permutation != B.permutation)
+        return std::lexicographical_compare(permutation.begin(),
+                                            permutation.end(),
+                                            B.permutation.begin(),
+                                            B.permutation.end());
+
+      return false;
     }
 
     //*******************************************************************************************

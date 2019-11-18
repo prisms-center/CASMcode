@@ -290,24 +290,7 @@ namespace CASM {
       /// they constitute particular mapping onto parent structure
       std::vector<Index> permutation;
 
-      bool operator<(MappingNode const &other) const {
-        if(!almost_equal(cost, other.cost)) {
-          return cost < other.cost;
-        }
-        if(!almost_equal(lat_node.cost, other.lat_node.cost)) {
-          return lat_node.cost < other.lat_node.cost;
-        }
-        if(basis_node.empty() != other.basis_node.empty()) {
-          return basis_node.empty();
-        }
-        if(!identical(lat_node, other.lat_node)) {
-          return lat_node < other.lat_node;
-        }
-        if(!identical(basis_node, other.basis_node)) {
-          return basis_node < other.basis_node;
-        }
-        return false;
-      }
+      bool operator<(MappingNode const &other) const;
     };
 
     /// \brief External accessor for isometry, to provide xtal::SymOp adaptability

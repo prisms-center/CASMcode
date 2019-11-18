@@ -21,12 +21,24 @@ namespace CASM {
       enum class SpeciesMode {ATOM, MOL};
 
       struct Info {
+        // Can treat as a Eigen::VectorXd
+        using Coord = Eigen::MatrixXd::ColXpr;
+        using ConstCoord = Eigen::MatrixXd::ConstColXpr;
+
         std::vector<std::string> names;
         Eigen::MatrixXd coords;
 
         std::map<std::string, Eigen::MatrixXd> properties;
 
         std::vector<Index> sort_by_name();
+
+        Coord coord(Index i) {
+          return coords.col(i);
+        }
+
+        ConstCoord coord(Index i) const {
+          return coords.col(i);
+        }
 
         void resize(Index N) {
           names.resize(N, "Va");

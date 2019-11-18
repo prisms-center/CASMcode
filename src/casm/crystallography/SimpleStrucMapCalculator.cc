@@ -107,8 +107,6 @@ namespace CASM {
       // initialize displacement matrix with all zeros
       _node.displacement.setZero(3, pgrid.size()*p_info.size());
 
-      Eigen::Vector3d avg_disp(0, 0, 0);
-
       Coordinate disp_coord(pgrid.scel_lattice());
       Index cN = c_info.size() * cgrid.size();
       // Populate displacements given as the difference in the Coordinates
@@ -134,16 +132,20 @@ namespace CASM {
 
           Coordinate parent_coord = pgrid.scel_coord(i % pgrid.size());
           parent_coord.cart() += p_info.coords.col(i / pgrid.size());
-
           child_coord.min_dist(parent_coord, disp_coord);
+          //std::cout << "\nMap " << _node.permutation[i] << "->" << i << "\n"
+          //        << "Child coord (" << _node.permutation[i] % cgrid.size()<< ", "<< _node.permutation[i] / cgrid.size() << "): "
+          //        << child_coord.const_cart().transpose() << "\n"
+          //        << "Parent coord: (" << i % pgrid.size()<< ", "<< i / pgrid.size() << "): "
+          //        << parent_coord.const_cart().transpose() << "\n"
+          //        << "Disp coord: " << disp_coord.const_cart().transpose() << "\n";
           _node.displacement.col(i) = disp_coord.const_cart();
 
-          avg_disp += _node.disp(i);
         }
       }
 
-      avg_disp /= max<double>(double(cN), 1.);
-
+      Eigen::Vector3d avg_disp = _node.displacement.rowwise().sum() / max<double>(double(cN), 1.);
+      //std::cout << "avg disp: " << avg_disp << "\n";
       for(Index i = 0; i < _node.permutation.size(); i++) {
         if(_node.permutation[i] < cN) {
           _node.displacement.col(i) -= avg_disp;
