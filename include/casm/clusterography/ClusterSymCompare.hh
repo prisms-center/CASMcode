@@ -165,14 +165,14 @@ namespace CASM {
     /// - For aperiodic cases, no isometric transformations are allowed, so apply and return identity
     Element spatial_prepare_impl(Element obj) const;
 
-    bool inter_orbit_compare_impl(const Element &A, const Element &B) const {
-      return Base::inter_orbit_compare(A, B);
-    }
+    /* bool inter_orbit_compare_impl(const Element &A, const Element &B) const { */
+    /*   return Base::inter_orbit_compare(A, B); */
+    /* } */
 
     /// \brief Transform the element under the given symmetry operation
-    Element copy_apply_impl(SymOp const &op, Element obj) const {
-      return Base::copy_apply_impl(op, obj);
-    }
+    /* Element copy_apply_impl(SymOp const &op, Element obj) const { */
+    /*   return Base::copy_apply_impl(op, obj); */
+    /* } */
 
     /// \brief Prepare an element for comparison via transformation of its internal representation
     ///
@@ -239,15 +239,16 @@ private:
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
 
-    bool inter_orbit_compare_impl(const Element &A, const Element &B) const {
-      return Base::inter_orbit_compare(A, B);
-    }
+    //Don't do this or you'll end up with circular function calls (LOL)
+    /* bool inter_orbit_compare_impl(const Element &A, const Element &B) const { */
+    /*   return Base::inter_orbit_compare(A, B); */
+    /* } */
 
     // TODO: Do we even want to have this here? Or is it obvious from the inheritance scheme that this is happening?
     /// \brief Transform the element under the given symmetry operation
-    Element copy_apply_impl(SymOp const &op, const Element &obj) const {
-      return Base::copy_apply_impl(op, obj);
-    }
+    /* Element copy_apply_impl(SymOp const &op, const Element &obj) const { */
+    /*   return Base::copy_apply_impl(op, obj); */
+    /* } */
 
     const PrimType &prim() const {
       return *m_prim;
@@ -311,14 +312,14 @@ private:
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
 
-    bool inter_orbit_compare_impl(const Element &A, const Element &B) const {
-      return Base::inter_orbit_compare(A, B);
-    }
+    /* bool inter_orbit_compare_impl(const Element &A, const Element &B) const { */
+    /*   return Base::inter_orbit_compare(A, B); */
+    /* } */
 
     /// \brief Transform the element under the given symmetry operation
-    Element copy_apply_impl(SymOp const &op, Element obj) const {
-      return Base::copy_apply_impl(op, obj);
-    }
+    /* Element copy_apply_impl(SymOp const &op, Element obj) const { */
+    /*   return Base::copy_apply_impl(op, obj); */
+    /* } */
 
     const PrimType &prim() const {
       return *m_prim;
@@ -387,14 +388,14 @@ private:
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
 
-    bool inter_orbit_compare_impl(const Element &A, const Element &B) const {
-      return Base::inter_orbit_compare(A, B);
-    }
+    /* bool inter_orbit_compare_impl(const Element &A, const Element &B) const { */
+    /*   return Base::inter_orbit_compare(A, B); */
+    /* } */
 
     /// \brief Transform the element under the given symmetry operation
-    Element copy_apply_impl(SymOp const &op, Element obj) const {
-      return Base::copy_apply_impl(op, obj);
-    }
+    /* Element copy_apply_impl(SymOp const &op, Element obj) const { */
+    /*   return Base::copy_apply_impl(op, obj); */
+    /* } */
 
     const PrimType &prim() const {
       return *m_prim;

@@ -4,7 +4,6 @@
 #include <vector>
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/global/definitions.hh"
 

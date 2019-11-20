@@ -87,7 +87,7 @@ namespace CASM {
   ///
   template<typename Element>
   PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  PrimPeriodicSymCompare(PrimType_ptr prim_ptr, double tol): m_tol(tol) {}
+  PrimPeriodicSymCompare(PrimType_ptr prim_ptr, double tol): m_prim(prim_ptr), m_tol(tol) {}
 
   /// \brief Constructor
   ///

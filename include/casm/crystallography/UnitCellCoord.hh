@@ -164,7 +164,7 @@ namespace CASM {
       /// make _eq accessible
       friend struct Comparisons<Translatable<CRTPBase<UnitCellCoord>>>;
       //Grant access to in place applying symmetry
-      friend UnitCellCoord &sym::apply(const CASM::SymOp &op, UnitCellCoord &ucc, const Structure &prim);
+      friend UnitCellCoord &CASM::sym::apply(const CASM::SymOp &op, UnitCellCoord &ucc, const xtal::Structure &prim);
 
       UnitCell &_unitcell() {
         return m_unitcell;
