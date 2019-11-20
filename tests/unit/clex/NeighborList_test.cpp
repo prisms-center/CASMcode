@@ -39,7 +39,7 @@ TEST(NeighborListTest, PrimNeighborListBasics) {
 
   // expand
   std::set<UnitCellCoord> nbors;
-  nbors.insert(UnitCellCoord(prim, 0, UnitCell(3, 0, 0)));
+  nbors.emplace(0, UnitCell(3, 0, 0));
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
@@ -73,7 +73,7 @@ TEST(NeighborListTest, SuperNeighborListBasics) {
 
   // expand
   std::set<UnitCellCoord> nbors;
-  nbors.insert(UnitCellCoord(prim, 0, UnitCell(3, 0, 0)));
+  nbors.emplace(0, UnitCell(3, 0, 0));
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
@@ -166,7 +166,7 @@ TEST(NeighborListTest, Proj) {
 
   //std::cout << "expand nlist again" << std::endl;
   nbors.clear();
-  nbors.insert(UnitCellCoord(prim, 0, UnitCell(4, 0, 0)));
+  nbors.emplace(0, UnitCell(4, 0, 0));
   nlist.expand(nbors.begin(), nbors.end());
   EXPECT_EQ(nlist.size(), 381);
 

@@ -12,6 +12,7 @@
 #include "casm/casm_io/json/jsonFile.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ElementSymApply.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 
 using namespace CASM;
@@ -78,7 +79,7 @@ TEST(InvariantSubgroupTest, Test0) {
     config.init_occupation();
 
     // Scel sym_compare
-    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2);
+    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2.primclex().shared_prim(), scel_vol2.prim_grid(), scel_vol2.crystallography_tol());
 
     // Get the config factor group (should just be all Supercell operations)
     std::vector<PermuteIterator> _config_fg = config.factor_group();
@@ -99,7 +100,7 @@ TEST(InvariantSubgroupTest, Test0) {
     // point cluster
     {
       IntegralCluster clust {prim};
-      clust.elements().push_back(UnitCellCoord {prim, 2, 0, 0, 0});
+      clust.elements().emplace_back(2, 0, 0, 0);
       SymGroup cluster_group = make_invariant_subgroup(clust, config_fg, scel_sym_compare);
       EXPECT_EQ(cluster_group.size(), 4);
     }
@@ -107,8 +108,8 @@ TEST(InvariantSubgroupTest, Test0) {
     // pair cluster
     {
       IntegralCluster clust {prim};
-      clust.elements().push_back(UnitCellCoord {prim, 3, 1, 0, 0});
-      clust.elements().push_back(UnitCellCoord {prim, 2, 1, 1, 1});
+      clust.elements().emplace_back(3, 1, 0, 0);
+      clust.elements().emplace_back(2, 1, 1, 1);
       SymGroup cluster_group = make_invariant_subgroup(clust, config_fg, scel_sym_compare);
       EXPECT_EQ(cluster_group.size(), 2);
     }
@@ -116,8 +117,8 @@ TEST(InvariantSubgroupTest, Test0) {
     // pair cluster - equivalent to previous cluster by prim symmetry, different by scel symmetry
     {
       IntegralCluster clust {prim};
-      clust.elements().push_back(UnitCellCoord {prim, 3, 1, 0, 0});
-      clust.elements().push_back(UnitCellCoord {prim, 2, 2, 1, 1});
+      clust.elements().emplace_back(3, 1, 0, 0);
+      clust.elements().emplace_back(2, 2, 1, 1);
       SymGroup cluster_group = make_invariant_subgroup(clust, config_fg, scel_sym_compare);
       EXPECT_EQ(cluster_group.size(), 1);
     }
@@ -133,7 +134,7 @@ TEST(InvariantSubgroupTest, Test0) {
     config.init_occupation();
 
     // Scel sym_compare
-    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2);
+    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2.primclex().shared_prim(), scel_vol2.prim_grid(), scel_vol2.crystallography_tol());
 
     // Get the config factor group (should just be all Supercell operations)
     std::vector<PermuteIterator> _config_fg = config.factor_group();
@@ -142,12 +143,13 @@ TEST(InvariantSubgroupTest, Test0) {
     EXPECT_EQ(scel_vol2.factor_group().size() * 2, _config_fg.size());
     EXPECT_EQ(config_fg.size(), _config_fg.size());
 
+    auto copy_apply_f = sym::CopyApplyElementWiseWithPrim(primclex.shared_prim());
     for(const auto &orbit : orbits) {
 
       OrbitGenerators<ScelPeriodicIntegralClusterOrbit> generators {config_fg, scel_sym_compare};
       for(const auto &eq : orbit) {
         for(auto it = scel_vol2.sym_info().translate_begin(); it != scel_vol2.sym_info().translate_end(); ++it) {
-          generators.insert(copy_apply(it, eq));
+          generators.insert(copy_apply_f(it->sym_op(), eq));
         }
       }
 

@@ -19,7 +19,15 @@ namespace CASM {
     class Coordinate;
     template<typename Base>
     struct Translatable;
+    class UnitCellCoord;
   }
+
+  namespace sym {
+    class CopyApplyWithPrim;
+    class CopyApplyElementWiseWithPrim;
+    class CopyApplyDefault;
+  }
+
   using xtal::Structure;
   using xtal::Coordinate;
   using xtal::Translatable;
@@ -117,12 +125,7 @@ namespace CASM {
 
     template <typename Base>
     using CopyApplyType = CopyApplyForEachWithPrim<Base>;
-    /* template <typename Base> */
-    /* class CopyApplyType */
-    /* { */
-    /*     public: */
-    /*     typedef CopyApply<Base> type; */
-    /* }; */
+    typedef sym::CopyApplyElementWiseWithPrim copy_apply_f_type;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

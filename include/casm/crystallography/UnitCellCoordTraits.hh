@@ -1,6 +1,7 @@
 #ifndef UNITCELLCOORDTRAITS_HH
 #define UNITCELLCOORDTRAITS_HH
 
+#include "casm/clusterography/ElementSymApply.hh"
 #include <string>
 
 namespace CASM {
@@ -19,6 +20,8 @@ namespace CASM {
     static const std::string name;
     template <typename Base>
     using CopyApplyType = CopyApplyWithPrim<Base>;
+
+    typedef sym::CopyApplyWithPrim copy_apply_f_type;
 
     /* template <typename Base> */
     /* class CopyApplyType */

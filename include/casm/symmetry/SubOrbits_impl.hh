@@ -8,15 +8,11 @@
 namespace CASM {
 
   // --- MakeSubOrbitGenerators ---
+  //
 
-  inline MakeSubOrbitGenerators::MakeSubOrbitGenerators(
-    const SymGroup &group,
-    const SymGroup &subgroup) :
-    m_group(group),
-    m_subgroup(subgroup) {}
-
+  template<typename CopyApplyType>
   template<typename OrbitType, typename ElementOutputIterator>
-  ElementOutputIterator MakeSubOrbitGenerators::operator()(
+  ElementOutputIterator MakeSubOrbitGenerators<CopyApplyType>::operator()(
     const OrbitType &orbit,
     ElementOutputIterator result) const {
 
@@ -24,8 +20,9 @@ namespace CASM {
     return (*this)(orbit.prototype(), invariant_subgroup, result);
   }
 
+  template<typename CopyApplyType>
   template<typename Element, typename SymCompareType, typename ElementOutputIterator>
-  ElementOutputIterator MakeSubOrbitGenerators::operator()(
+  ElementOutputIterator MakeSubOrbitGenerators<CopyApplyType>::operator()(
     const Element &element,
     const SymCompareType &sym_compare,
     ElementOutputIterator result) const {
@@ -34,8 +31,9 @@ namespace CASM {
     return (*this)(element, invariant_subgroup, result);
   }
 
+  template<typename CopyApplyType>
   template<typename Element, typename ElementOutputIterator>
-  ElementOutputIterator MakeSubOrbitGenerators::operator()(
+  ElementOutputIterator MakeSubOrbitGenerators<CopyApplyType>::operator()(
     const Element &element,
     const SymGroup &invariant_subgroup,
     ElementOutputIterator result) const {
@@ -55,7 +53,7 @@ namespace CASM {
       // if test_op is max
       if(std::none_of(m_subgroup.begin(), m_subgroup.end(), lambda)) {
         // apply to element and construct suborbit generator
-        *result++ = copy_apply(test_op, element);
+        *result++ = this->m_copy_apply_f(test_op, element);
       }
     }
     return result;
@@ -63,42 +61,44 @@ namespace CASM {
 
   /// \brief Output the orbit generators necessary to construct the sub-orbits
   /// corresponding to group -> subgroup symmetry breaking
-  template<typename Element, typename ElementOutputIterator>
+  template<typename Element, typename CopyApplyElementType, typename ElementOutputIterator>
   ElementOutputIterator make_suborbit_generators(
     const Element &element,
     const SymGroup &invariant_subgroup,
     const SymGroup &group,
     const SymGroup &subgroup,
+    const CopyApplyElementType &copy_apply_f,
     ElementOutputIterator result) {
 
-    MakeSubOrbitGenerators f{group, subgroup};
+    MakeSubOrbitGenerators<CopyApplyElementType> f{group, subgroup, copy_apply_f};
     return f(element, invariant_subgroup, result);
   }
 
   /// \brief Output the orbit generators necessary to construct the sub-orbits
   /// corresponding to group -> subgroup symmetry breaking
-  template<typename Element, typename SymCompareType, typename ElementOutputIterator>
-  ElementOutputIterator make_suborbit_generators(
-    const Element &element,
-    const SymCompareType &sym_compare,
-    const SymGroup &group,
-    const SymGroup &subgroup,
-    ElementOutputIterator result) {
+  /* template<typename Element, typename SymCompareType, typename ElementOutputIterator> */
+  /* ElementOutputIterator make_suborbit_generators( */
+  /*   const Element &element, */
+  /*   const SymCompareType &sym_compare, */
+  /*   const SymGroup &group, */
+  /*   const SymGroup &subgroup, */
+  /*   ElementOutputIterator result) { */
 
-    MakeSubOrbitGenerators f{group, subgroup};
-    return f(element, sym_compare, result);
-  }
+  /*   MakeSubOrbitGenerators f{group, subgroup}; */
+  /*   return f(element, sym_compare, result); */
+  /* } */
 
   /// \brief Output the orbit generators necessary to construct the sub-orbits
   /// corresponding to group -> subgroup symmetry breaking
-  template<typename OrbitType, typename ElementOutputIterator>
+  template<typename OrbitType, typename CopyApplyElementType, typename ElementOutputIterator>
   ElementOutputIterator make_suborbit_generators(
     const OrbitType &orbit,
     const SymGroup &group,
     const SymGroup &subgroup,
+    const CopyApplyElementType &copy_apply_f,
     ElementOutputIterator result) {
 
-    MakeSubOrbitGenerators f{group, subgroup};
+    MakeSubOrbitGenerators<CopyApplyElementType> f{group, subgroup, copy_apply_f};
     return f(orbit, result);
   }
 

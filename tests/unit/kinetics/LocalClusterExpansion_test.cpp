@@ -112,8 +112,8 @@ TEST(LocalClusterExpansionTest, Test0) {
   SymGroup generating_grp {
     trans.invariant_subgroup(
       primclex.prim().factor_group(),
-      PrimPeriodicDiffTransSymCompare(primclex.crystallography_tol()))};
-  LocalSymCompare<IntegralCluster> sym_compare(primclex.crystallography_tol());
+      PrimPeriodicDiffTransSymCompare(primclex.shared_prim(), primclex.crystallography_tol()))};
+  LocalSymCompare<IntegralCluster> sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
 
   make_local_orbits(
     trans,

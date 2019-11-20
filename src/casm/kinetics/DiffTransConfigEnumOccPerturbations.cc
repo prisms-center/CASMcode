@@ -1,5 +1,6 @@
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
+#include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/symmetry/ConfigSubOrbits_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"

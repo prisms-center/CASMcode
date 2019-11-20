@@ -1,12 +1,17 @@
 #ifndef CASM_DiffusionTransformationTraits
 #define CASM_DiffusionTransformationTraits
 
+#include "casm/clusterography/ElementSymApply.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include <iostream>
 
 namespace CASM {
   namespace xtal {
     class UnitCellCoord;
+  }
+
+  namespace sym {
+    class CopyApplyElementWiseWithPrim;
   }
 
   namespace Kinetics {
@@ -31,6 +36,7 @@ namespace CASM {
     static std::string name;
     template<typename Base>
     using CopyApplyType = CopyApply<Base>;
+    typedef sym::CopyApplyDefault copy_apply_f_type;
   };
 
   /// Specialization gives required for DatabaseTypeOrbit

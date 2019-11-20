@@ -906,4 +906,13 @@ namespace CASM {
     }
   }
 
+  namespace sym {
+    Kinetics::DiffusionTransformation copy_apply(const CASM::SymOp &op, const Kinetics::DiffusionTransformation &diff_trans, const xtal::Structure &prim) {
+      //#YOLO. I can't deal with everyone's member functions right now
+      auto result = diff_trans;
+      result.apply_sym(op);
+      return result;
+    }
+  }
+
 }

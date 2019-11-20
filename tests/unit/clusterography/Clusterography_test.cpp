@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
 #include "autotools.hh"
 
+#include <memory>
+
 /// What is being tested:
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
@@ -75,19 +77,20 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
     EXPECT_TRUE(j.contains("bspecs")) << "test case 'bspecs' is required";
 
     // generate prim
-    Structure prim(read_prim(j["prim"], TOL));
+    auto prim_ptr = std::make_shared<Structure>(read_prim(j["prim"], TOL));
+    const auto &prim = *prim_ptr;
     double crystallography_tol = TOL;
 
     // generate a one site orbit, prim periodic
     {
       IntegralCluster clust(prim);
       EXPECT_TRUE(true) << "IntegralCluster constructed";
-      clust.elements().push_back(UnitCellCoord(prim, 0, UnitCell(0, 0, 0)));
+      clust.elements().emplace_back(0, UnitCell(0, 0, 0));
       EXPECT_TRUE(clust.size() == 1) << "site added";
       PrimPeriodicOrbit<IntegralCluster> orbit(
         clust,
         prim.factor_group(),
-        PrimPeriodicSymCompare<IntegralCluster>(crystallography_tol));
+        PrimPeriodicSymCompare<IntegralCluster>(prim_ptr, crystallography_tol));
       EXPECT_TRUE(orbit.prototype().size() == 1) << "orbit generated";
 
       check("first_prim_periodic_orbit", j, expected_first_prim_periodic_orbit(orbit), test_cases_path, quiet);
