@@ -67,7 +67,7 @@ namespace CASM {
         if(it_B == B.attributes().cend() || !(it_A->second).identical(it_B->second, tol))
           return false;
       }
-
+      return true;
     }
 
     //****************************************************
