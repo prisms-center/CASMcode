@@ -1,5 +1,6 @@
 #include "casm/clex/Configuration_impl.hh"
 
+#include <memory>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
@@ -200,12 +201,10 @@ namespace CASM {
   Configuration Configuration::primitive() const {
     Configuration tconfig {*this};
 
-    std::unique_ptr<Supercell> next_scel;
-
     // check if config is primitive, and if not, obtain a translation that maps the config on itself
     while(true) {
-
       PermuteIterator result = tconfig.find_translation();
+
       if(result == tconfig.supercell().sym_info().translate_end()) {
         break;
       }
@@ -216,14 +215,8 @@ namespace CASM {
                           result.sym_op().tau(),
                           crystallography_tol()).make_right_handed().reduced_cell();
 
-      next_scel.reset(new Supercell(&primclex(), new_lat));
-
       // create a sub configuration in the new supercell
-      tconfig = sub_configuration(*next_scel, tconfig);
-
-      tconfig.m_supercell_ptr.reset(next_scel.release());
-      tconfig.m_supercell = tconfig.m_supercell_ptr.get();
-
+      tconfig = sub_configuration(std::make_shared<Supercell>(&primclex(), new_lat), tconfig);
     }
 
     return tconfig;
@@ -936,28 +929,18 @@ namespace CASM {
   }
 
 
-  //*********************************************************************************
-  /// \brief Returns the sub-configuration that fills a particular Supercell
-  ///
-  /// \param sub_scel The Supercell of the sub-configuration
-  /// \param super_config The super-configuration
-  /// \param origin The UnitCell indicating the which unit cell in the
-  ///        super-configuration is the origin in sub-configuration
-  ///
-  /// - Copies DoF from the super-configuration directly into the sub-configuration
-  ///
   Configuration sub_configuration(
-    Supercell &sub_scel,
+    std::shared_ptr<Supercell> sub_scel_ptr,
     const Configuration &super_config,
     const UnitCell &origin) {
 
 
-    if(&sub_scel.primclex() != &super_config.primclex()) {
+    if(&sub_scel_ptr->primclex() != &super_config.primclex()) {
       throw std::runtime_error(std::string("Error in 'sub_configuration:"
                                            " PrimClex of sub-Supercell and super-configuration are not the same"));
     }
 
-    Configuration sub_config {sub_scel};
+    Configuration sub_config {sub_scel_ptr};
     // copy global dof
     for(auto const &dof : super_config.configdof().global_dofs()) {
       sub_config.configdof().set_global_dof(dof.first, dof.second.values());
@@ -1147,7 +1130,6 @@ namespace CASM {
 
   /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
   Eigen::MatrixXd gradcorrelations(const Configuration &config, Clexulator &clexulator, DoFKey &key) {
-    //std::cout <<  "Gradcorr of config " << config.name() << "...\n";
     return gradcorrelations(config.configdof(), config.supercell(), clexulator, key);
   }
 
@@ -1633,7 +1615,6 @@ namespace CASM {
     Index scel_vol = scel.volume();
     if(DoF::BasicTraits(key).global()) {
       Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
-      //std::cout << "global_dof is: \n" << gcorr_func << std::endl;
       gcorr.setZero(gcorr_func.size(), clexulator.corr_size());
       //Holds contribution to global correlations from a particular neighborhood
 
@@ -1654,7 +1635,6 @@ namespace CASM {
     else {
 
       Eigen::MatrixXd gcorr_func;
-      //std::cout << "local_dof is: \n" << gcorr_func << std::endl;
       gcorr.setZero(configdof.local_dof(key).values().size(), clexulator.corr_size());
       //Holds contribution to global correlations from a particular neighborhood
       Index l;
@@ -1666,7 +1646,6 @@ namespace CASM {
 
         for(Index c = 0; c < clexulator.corr_size(); ++c) {
           gcorr_func = clexulator.param_pack().read(paramkey(c));
-          //std::cout << "for c " << c << " gcorr_func is: \n" << gcorr_func << "\n\n";
 
           for(Index n = 0; n < scel.nlist().sites(v).size(); ++n) {
             l = scel.nlist().sites(v)[n];

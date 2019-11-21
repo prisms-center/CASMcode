@@ -3,6 +3,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/basis_set/DoF.hh"
+#include "casm/symmetry/SymTools.hh"
 
 #include "casm/kinetics/DoFTransformation_impl.hh"
 
@@ -39,16 +40,12 @@ namespace CASM {
       return to_value;
     }
 
-    const Molecule &OccupationTransformation::from_mol() const {
-      //  !!TODO!!  return this->uccoord.sublattice_site().occupant_dof()[from_value];
-      Molecule *fixme;
-      return *fixme;
+    const Molecule &OccupationTransformation::from_mol(const PrimType &prim) const {
+      return this->uccoord.sublattice_site(prim).occupant_dof()[from_value];
     }
 
-    const Molecule &OccupationTransformation::to_mol() const {
-      //  !!TODO!!  return this->uccoord.sublattice_site().occupant_dof()[to_value];
-      Molecule *fixme;
-      return *fixme;
+    const Molecule &OccupationTransformation::to_mol(const PrimType &prim) const {
+      return this->uccoord.sublattice_site(prim).occupant_dof()[to_value];
     }
 
     bool OccupationTransformation::operator<(const OccupationTransformation &B) const {
@@ -60,10 +57,10 @@ namespace CASM {
       return *this;
     }
 
-    OccupationTransformation &OccupationTransformation::apply_sym(const SymOp &op) {
-      //  !!TODO!!  uccoord.apply_sym(op);
-      return *this;
-    }
+    /* OccupationTransformation &OccupationTransformation::apply_sym(const SymOp &op) { */
+    //  !!TODO!!  uccoord.apply_sym(op);
+    /* return *this; */
+    /* } */
 
     Configuration &OccupationTransformation::apply_to(Configuration &config) const {
       config.set_occ(config.linear_index(uccoord), to_value);
@@ -85,10 +82,13 @@ namespace CASM {
     }
 
     /// \brief Print OccupationTransformation to stream, using default Printer<Kinetics::OccupationTransformation>
-    std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans) {
+    /* std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans) { */
+    std::ostream &operator<<(std::ostream &sout, const std::pair<const OccupationTransformation *, const OccupationTransformation::PrimType *> &trans_and_prim) {
+      const auto &trans = *trans_and_prim.first;
+      const auto &prim = *trans_and_prim.second;
       Printer<Kinetics::OccupationTransformation> printer;
       Log out(sout);
-      printer.print(trans, out);
+      printer.print(trans, prim, out);
       return sout;
     }
   }
@@ -175,7 +175,7 @@ namespace CASM {
 
   const std::string Printer<Kinetics::OccupationTransformation>::element_name = "OccupationTransformation";
 
-  void Printer<Kinetics::OccupationTransformation>::print(const Kinetics::OccupationTransformation &trans, Log &out) {
+  void Printer<Kinetics::OccupationTransformation>::print(const Kinetics::OccupationTransformation &trans, const Element::PrimType &prim, Log &out) {
     if(!out.print()) {
       return;
     }
@@ -183,12 +183,25 @@ namespace CASM {
 
     out << out.indent_str();
     out << trans.uccoord << " : ";
-    out << trans.from_value << " (" << trans.from_mol().name() << ")";
+    out << trans.from_value << " (" << trans.from_mol(prim).name() << ")";
     out << "  ->  ";
-    out << trans.to_value << " (" << trans.to_mol().name() << ")";
+    out << trans.to_value << " (" << trans.to_mol(prim).name() << ")";
     if(this->opt.delim)
       out << this->opt.delim;
     out << std::flush;
   }
 
+  namespace sym {
+    Kinetics::OccupationTransformation &apply(const SymOp &op, Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim) {
+      sym::apply(op, occ_trans.uccoord, prim);
+      return occ_trans;
+    }
+
+    Kinetics::OccupationTransformation copy_apply(const SymOp &op, const Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim) {
+      auto result = occ_trans;
+      sym::apply(op, result, prim);
+      return result;
+    }
+
+  }
 }

@@ -12,6 +12,9 @@ namespace CASM {
         m_config.supercell(),
         m_prim_config.supercell(),
         m_prim_config_fg.begin(),
-        m_prim_config_fg.end())) {}
+        m_prim_config_fg.end())) {
+    std::cout << "In constructor, still " << m_config.supercell().primclex().prim().basis().size() << std::endl;
+    std::cout << "In constructor, also " << m_prim_config.supercell().primclex().prim().basis().size() << std::endl;
+  }
 
 }

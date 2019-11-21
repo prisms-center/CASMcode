@@ -166,7 +166,7 @@ namespace CASM {
 
     Printer<Kinetics::OccupationTransformation> printer;
     for(const auto &trans : perturb) {
-      printer.print(trans, out);
+      printer.print(trans, perturb.prim(), out);
     }
   }
 }

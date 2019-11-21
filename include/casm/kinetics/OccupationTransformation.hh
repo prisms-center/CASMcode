@@ -6,6 +6,7 @@
 #include "casm/misc/Comparisons.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/app/AppIO.hh"
+#include <functional>
 
 namespace CASM {
   namespace xtal {
@@ -32,7 +33,7 @@ namespace CASM {
       public Comparisons<Translatable<DoFTransformation<CRTPBase<OccupationTransformation>>>> {
 
     public:
-      typedef BasicStructure<Site> PrimType;
+      typedef Structure PrimType;
       /// Constructor Create an OccupationTransformation on a site indicating what the current
       /// occupant is on that site and the one it will change to
       OccupationTransformation(const UnitCellCoord &_uccoord,
@@ -57,10 +58,10 @@ namespace CASM {
       const Index to_occ() const;
 
       /// The current occupant of the site
-      const Molecule &from_mol() const;
+      const Molecule &from_mol(const PrimType &prim) const;
 
       /// The future occupant of the site
-      const Molecule &to_mol() const;
+      const Molecule &to_mol(const PrimType &prim) const;
 
       /// Lexicographical comparison of OccupationTransformation for sorting purposes
       bool operator<(const OccupationTransformation &B) const;
@@ -69,7 +70,7 @@ namespace CASM {
       OccupationTransformation &operator+=(UnitCell Frac);
 
       /// Applies symmetry to the coordinate of this transformation
-      OccupationTransformation &apply_sym(const SymOp &op);
+      /* OccupationTransformation &apply_sym(const SymOp &op,const PrimType& prim); */
 
       /// Transform the occupation of config and return a configuration
       /// that is perturbed according to this transformation
@@ -89,7 +90,8 @@ namespace CASM {
     };
 
     /// \brief Print OccupationTransformation to stream, using default Printer<Kinetics::OccupationTransformation>
-    std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans);
+    /* std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans); */
+    std::ostream &operator<<(std::ostream &sout, const std::pair<const OccupationTransformation *, const OccupationTransformation::PrimType *> &trans_and_prim);
 
   }
 
@@ -125,8 +127,16 @@ namespace CASM {
     Printer(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
       PrinterBase(_opt) {}
 
-    void print(const Element &element, Log &out);
+    void print(const Element &element, const Element::PrimType &prim, Log &out);
   };
+
+  namespace sym {
+    /// \brief Apply SymOp to a OccupationTransformation
+    Kinetics::OccupationTransformation &apply(const SymOp &op, Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim);
+
+    /// \brief Copy and apply SymOp to a OccupationTransformation
+    Kinetics::OccupationTransformation copy_apply(const SymOp &op, const Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim);
+  }
 }
 
 #endif

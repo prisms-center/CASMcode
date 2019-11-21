@@ -4,6 +4,7 @@
 #include "casm/global/definitions.hh"
 #include "casm/misc/CRTPBase.hh"
 #include "casm/symmetry/SymTools.hh"
+#include "casm/kinetics/OccupationTransformation.hh"    //TODO: Forwad declary sym::copy_apply?
 #include <memory>
 
 namespace CASM {

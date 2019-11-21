@@ -30,10 +30,6 @@ LT_INIT([shared disable-static])
 AC_PROG_LIBTOOL
 LT_LIB_DLLOAD
 AC_DISABLE_STATIC
-if test "$enable_static" != "no"; then
-    echo "Sorry Dave, I can't let you do that. Static libraries are currently disabled.";
-    exit 1;
-fi;
 
 AX_CXX_COMPILE_STDCXX_11
 BOOSTV=1.54

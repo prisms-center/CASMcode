@@ -56,6 +56,7 @@ namespace CASM {
     // get generating elements for prim->supercell orbit splitting
     std::vector<Element> scel_suborbit_generators;
 
+    std::cout << "Guess I went here after all" << std::endl;
     make_suborbit_generators(
       orbit,
       m_prim_config.prim().factor_group(),
@@ -83,6 +84,11 @@ namespace CASM {
     OrbitType orbit,
     const Configuration &config,
     ElementOutputIterator result) {
+
+    std::cout << config.supercell().primclex().prim().basis().size() << " atoms in the prim" << std::endl;
+    std::cout << "size " << config.primitive().size() << std::endl;
+    std::cout << "num each mol " << config.primitive().sublat_num_each_molecule() << std::endl;
+    std::cout << "in canonical (size) " << config.primitive().in_canonical_supercell().size() << std::endl;
 
     return MakeConfigSubOrbitGenerators{config}(orbit, result);
   }

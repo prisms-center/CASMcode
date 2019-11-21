@@ -3,8 +3,10 @@
 #include "casm/database/DiffTransOrbitDatabase.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
+#include "casm/kinetics/OccupationTransformation.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymTools.hh"
+#include <utility>
 
 namespace CASM {
 
@@ -291,7 +293,7 @@ namespace CASM {
 
       // check if any vacancy transforms into a "different" vacancy
       auto is_va_to_va = [&](const OccupationTransformation & t) {
-        return t.from_mol().is_vacancy() && t.to_mol().is_vacancy();
+        return t.from_mol(this->prim()).is_vacancy() && t.to_mol(this->prim()).is_vacancy();
       };
 
       if(std::any_of(m_occ_transform.begin(), m_occ_transform.end(), is_va_to_va)) {
@@ -324,19 +326,19 @@ namespace CASM {
     bool DiffusionTransformation::is_self_consistent() const {
       for(const auto &trans : occ_transform()) {
         auto is_from_match = [&](const SpeciesTrajectory & traj) {
-          return trans.uccoord == traj.from.uccoord && trans.from_mol() == traj.from.mol(this->prim());
+          return trans.uccoord == traj.from.uccoord && trans.from_mol(this->prim()) == traj.from.mol(this->prim());
         };
         auto from_match_count = std::count_if(species_traj().begin(), species_traj().end(), is_from_match);
-        if(from_match_count != trans.from_mol().size()) {
+        if(from_match_count != trans.from_mol(this->prim()).size()) {
           return false;
         }
 
         auto is_to_match = [&](const SpeciesTrajectory & traj) {
-          return trans.uccoord == traj.to.uccoord && trans.to_mol() == traj.to.mol(this->prim());
+          return trans.uccoord == traj.to.uccoord && trans.to_mol(this->prim()) == traj.to.mol(this->prim());
         };
         auto to_match_count = std::count_if(species_traj().begin(), species_traj().end(), is_to_match);
         (void) to_match_count;
-        if(from_match_count != trans.to_mol().size()) {
+        if(from_match_count != trans.to_mol(this->prim()).size()) {
           return false;
         }
       }
@@ -458,7 +460,7 @@ namespace CASM {
     DiffusionTransformation &DiffusionTransformation::apply_sym(const SymOp &op) {
       m_cluster.reset();
       for(auto &t : m_occ_transform) {
-        t.apply_sym(op);
+        sym::apply(op, t, this->prim());
       }
 
       for(auto &t : m_species_traj) {
@@ -890,7 +892,8 @@ namespace CASM {
     else {
       out << out.indent_str() << "occupation transformation:" << this->opt.delim;
       for(const auto &t : trans.occ_transform()) {
-        out << t;
+        out << std::make_pair(&t, &trans.prim());
+        /* out << t; */
       }
       out << out.indent_str() << "species trajectory:" << this->opt.delim;
       for(const auto &traj : trans.species_traj()) {

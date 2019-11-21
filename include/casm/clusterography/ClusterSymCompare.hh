@@ -3,9 +3,7 @@
 
 #include "casm/clusterography/CoordCluster.hh"
 #include "casm/clusterography/ElementSymApply.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/symmetry/SymCompare.hh"
-#include "casm/symmetry/SymTools.hh"
 #include <memory>
 
 namespace CASM {
