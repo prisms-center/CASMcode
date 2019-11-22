@@ -210,6 +210,8 @@ casm_clusterography_include_HEADERS = \
     include/casm/clusterography/ClusterSymCompare.hh\
     include/casm/clusterography/ClusterSymCompare_impl.hh\
     include/casm/clusterography/CoordCluster.hh\
+    include/casm/clusterography/CoordClusterTraits.hh\
+    include/casm/clusterography/ElementSymApply.hh\
     include/casm/clusterography/GenericCluster.hh\
     include/casm/clusterography/IntegralCluster.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
