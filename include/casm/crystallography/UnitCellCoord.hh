@@ -21,10 +21,6 @@ namespace CASM {
     class UnitCellCoord;
   }
 
-  namespace sym {
-    xtal::UnitCellCoord &apply(const CASM::SymOp &op, xtal::UnitCellCoord &ucc, const xtal::Structure &prim);
-  }
-
   namespace xtal {
 
     /** \ingroup Coordinate
@@ -163,8 +159,6 @@ namespace CASM {
     private:
       /// make _eq accessible
       friend struct Comparisons<Translatable<CRTPBase<UnitCellCoord>>>;
-      //Grant access to in place applying symmetry
-      friend UnitCellCoord &CASM::sym::apply(const CASM::SymOp &op, UnitCellCoord &ucc, const xtal::Structure &prim);
 
       UnitCell &_unitcell() {
         return m_unitcell;

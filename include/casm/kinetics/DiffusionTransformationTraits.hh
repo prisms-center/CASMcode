@@ -1,7 +1,6 @@
 #ifndef CASM_DiffusionTransformationTraits
 #define CASM_DiffusionTransformationTraits
 
-/* #include "casm/clusterography/ElementSymApply.hh" */
 #include "casm/symmetry/OrbitDecl.hh"
 #include <iostream>
 

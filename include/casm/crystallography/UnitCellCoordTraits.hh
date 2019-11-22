@@ -1,7 +1,7 @@
 #ifndef UNITCELLCOORDTRAITS_HH
 #define UNITCELLCOORDTRAITS_HH
 
-#include "casm/clusterography/ElementSymApply.hh"
+#include "casm/symmetry/ElementSymApply.hh"
 #include <string>
 
 namespace CASM {

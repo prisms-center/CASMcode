@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 /// What is being tested:
-#include "casm/clusterography/ElementSymApply.hh"
+#include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/SubOrbits.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
 

@@ -2,7 +2,7 @@
 #define CASM_ClusterSymCompare
 
 #include "casm/clusterography/CoordCluster.hh"
-#include "casm/clusterography/ElementSymApply.hh"
+#include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/SymCompare.hh"
 #include <memory>
 
@@ -19,14 +19,6 @@ namespace CASM {
 
   template <typename Derived>
   class ClusterSymCompare;
-
-  /// \brief Traits class for ClusterSymCompare
-  ///
-  /// \ingroup IntegralCluster
-  ///
-  /* template <typename Derived> */
-  /* struct traits<ClusterSymCompare<Derived>> : public traits<Derived> { */
-  /* }; */
 
   /// \brief CRTP Base class for Cluster comparisons
   ///
@@ -80,12 +72,6 @@ namespace CASM {
     /// - Returns traits<Element>::position(el)
     static UnitCellCoord position(const Element &el);
   };
-
-  /* template < */
-  /*   typename ClusterType, */
-  /*   typename = typename std::enable_if < */
-  /*     std::is_same<UnitCellCoord, decltype(traits<ClusterType>::position(std::declval<ClusterType>()))>::value >::type > */
-  /* using enable_if_integral_position = ClusterType; */
 
   /* -- LocalSymCompare<IntegralCluster> Declaration ------------------------------------- */
 

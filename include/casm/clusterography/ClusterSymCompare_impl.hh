@@ -56,14 +56,14 @@ namespace CASM {
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
   template<typename Element>
-  AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  AperiodicSymCompare<Element>::
   AperiodicSymCompare(PrimType_ptr prim_ptr, double tol): m_prim(prim_ptr), m_tol(tol) {}
 
   /// \brief Prepare an element for comparison
   ///
   /// - Returns sorted
   template<typename Element>
-  Element AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  Element AperiodicSymCompare<Element>::
   representation_prepare_impl(Element obj) const {
     return obj.sort();
   }
@@ -72,7 +72,7 @@ namespace CASM {
   ///
   /// - Returns sorted
   template<typename Element>
-  Element AperiodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  Element AperiodicSymCompare<Element>::
   spatial_prepare_impl(Element obj) const {
 
     return obj;
@@ -86,23 +86,14 @@ namespace CASM {
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
   template<typename Element>
-  PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  PrimPeriodicSymCompare<Element>::
   PrimPeriodicSymCompare(PrimType_ptr prim_ptr, double tol): m_prim(prim_ptr), m_tol(tol) {}
-
-  /// \brief Constructor
-  ///
-  /// \param tol Tolerance for invariants_compare of site-to-site distances
-  ///
-  //template<typename Element>
-  //PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  //PrimPeriodicSymCompare(const PrimClex &primclex):
-  //  PrimPeriodicSymCompare(primclex.crystallography_tol()) {}
 
   /// \brief Prepare an element for comparison
   ///
   /// - translates so that obj[0] is in the origin unit cell
   template<typename Element>
-  Element PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  Element PrimPeriodicSymCompare<Element>::
   spatial_prepare_impl(Element obj) const {
     if(!obj.size()) {
       return obj;
@@ -118,7 +109,7 @@ namespace CASM {
   ///
   /// - Sorts so that, after translation obj[0] is in the origin unit cell
   template<typename Element>
-  Element PrimPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  Element PrimPeriodicSymCompare<Element>::
   representation_prepare_impl(Element obj) const {
     if(!obj.size()) {
       return obj;
@@ -136,26 +127,17 @@ namespace CASM {
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
   template<typename Element>
-  ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  ScelPeriodicSymCompare<Element>::
   ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol):
     m_prim(prim_ptr),
     m_tol(tol),
     m_prim_grid(&prim_grid) {}
 
-  /// \brief Constructor
-  ///
-  /// \param tol Tolerance for invariants_compare of site-to-site distances
-  ///
-  //template<typename Element>
-  //ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  //ScelPeriodicSymCompare(const Supercell &scel):
-  //  ScelPeriodicSymCompare(scel.prim_grid(), scel.crystallography_tol()) {}
-
   /// \brief Prepare an element for comparison
   ///
   /// - translates so that obj[0] is within the supercell
   template<typename Element>
-  Element ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  Element ScelPeriodicSymCompare<Element>::
   spatial_prepare_impl(Element obj) const {
     if(!obj.size()) {
       return obj;
@@ -170,7 +152,7 @@ namespace CASM {
   ///
   /// - Sorts UnitCellCoord
   template<typename Element>
-  Element ScelPeriodicSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  Element ScelPeriodicSymCompare<Element>::
   representation_prepare_impl(Element obj) const {
     if(!obj.size()) {
       return obj;
@@ -188,26 +170,17 @@ namespace CASM {
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
   template<typename Element>
-  WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  WithinScelSymCompare<Element>::
   WithinScelSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol):
     m_prim(prim_ptr),
     m_tol(tol),
     m_prim_grid(&prim_grid) {}
 
-  /// \brief Constructor
-  ///
-  /// \param tol Tolerance for invariants_compare of site-to-site distances
-  ///
-  //template<typename Element>
-  //WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
-  //WithinScelSymCompare(const Supercell &scel):
-  //  WithinScelSymCompare<Element>(scel.prim_grid(), scel.crystallography_tol()) {}
-
   /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
   ///
   /// - For now returns pointer to SymPermutation object that encodes permutation due to sorting elements
   template<typename Element>
-  std::unique_ptr<SymOpRepresentation> WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  std::unique_ptr<SymOpRepresentation> WithinScelSymCompare<Element>::
   canonical_transform_impl(Element const &obj)const {
     Element tobj = obj;
     for(Index i = 0; i < tobj.size(); ++i) {
@@ -221,20 +194,8 @@ namespace CASM {
   ///
   /// - Does nothing, since fully prepared version is just sorted and 'within'-ed version of the cluster
   template<typename Element>
-  Element WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  Element WithinScelSymCompare<Element>::
   spatial_prepare_impl(Element obj) const {
-    //if(!obj.size()) {
-    //return obj;
-    //}
-    //Element tobj = obj;
-    //for(Index i = 0; i < tobj.size(); ++i) {
-    //tobj[i] = m_prim_grid->within(tobj[i]);
-    //}
-
-    //auto pos = tobj[tobj.sort_permutation()[0]];
-
-    //this->m_spatial_transform = SymOp::translation(pos.lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
-    //return obj + (m_prim_grid->within(pos).unitcell() - pos.unitcell());
     return obj;
   }
 

@@ -6,7 +6,6 @@
 #include <utility>
 #include <iostream>
 
-/* #include "casm/clusterography/UnitCellCoord.hh" */
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 #include "casm/kinetics/DiffusionTransformationTraits.hh"

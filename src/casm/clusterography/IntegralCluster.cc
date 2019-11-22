@@ -158,4 +158,13 @@ namespace CASM {
     return clust;
   }
 
+  namespace sym {
+    template<>
+    CoordCluster<UnitCellCoord> &apply<SymOp, CoordCluster<UnitCellCoord>, xtal::Structure>(const SymOp &op, CoordCluster<UnitCellCoord> &clust, const xtal::Structure &prim) {
+      for(auto &e : clust) {
+        sym::apply(op, e, prim);
+      }
+      return clust;
+    }
+  }
 }

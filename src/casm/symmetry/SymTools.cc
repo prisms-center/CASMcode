@@ -1,6 +1,9 @@
 #include <iterator>
+#include <memory>
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymTools.hh"
 #include "casm/symmetry/SymTools_impl.hh"
 #include "casm/symmetry/SymGroup.hh"
@@ -26,31 +29,29 @@ namespace CASM {
       return subgroup_from_indices(super_group, subgroup_operation_indices);
     }
 
-    //TODO: Do we keep passing by reference or do we want to change our ways here
-    //and start passing by pointer?
-    //it could just be:
-    //apply_symmetry(op, my_ucc)  // returns new value
-    //apply_symmetry(op, &my_ucc) // modifies value
-    xtal::UnitCellCoord &apply(const CASM::SymOp &op, xtal::UnitCellCoord &mutating_ucc, const xtal::Structure &prim) {
+    template<>
+    xtal::UnitCellCoord copy_apply<CASM::SymOp, xtal::UnitCellCoord, xtal::Structure>(const CASM::SymOp &op, xtal::UnitCellCoord copied_ucc, const xtal::Structure &prim) {
 
       // transform using stored SymBasisPermute representation
       const SymBasisPermute &rep = *op.get_basis_permute_rep(prim.basis_permutation_symrep_ID());
-      mutating_ucc._unitcell() = rep.matrix() * mutating_ucc.unitcell() + rep[mutating_ucc.sublattice()].unitcell();
-      mutating_ucc._sublattice() = rep[mutating_ucc.sublattice()].sublattice();
+      xtal::UnitCell new_unitcell = rep.matrix() * copied_ucc.unitcell() + rep[copied_ucc.sublattice()].unitcell();
+      auto new_sublattice = rep[copied_ucc.sublattice()].sublattice();
 
       // additional translations (such as needed for supercell factor groups),
       // are stored in SymOp::integral_tau() (in cartesian coordinates)
-      // this converts that to fractional coordinates and adds it to this->unitcell()
-      mutating_ucc._unitcell() += lround(prim.lattice().inv_lat_column_mat() * op.integral_tau());
+      // this converts that to fractional coordinates and adds it to the unitcell()
+      new_unitcell += lround(prim.lattice().inv_lat_column_mat() * op.integral_tau());
 
+      return xtal::UnitCellCoord(new_sublattice, new_unitcell);
+    }
+
+    template<>
+    xtal::UnitCellCoord &apply<CASM::SymOp, xtal::UnitCellCoord, xtal::Structure>(const CASM::SymOp &op, xtal::UnitCellCoord &mutating_ucc, const xtal::Structure &prim) {
+      auto ucc_after_apply = copy_apply(op, mutating_ucc, prim);
+      std::swap(ucc_after_apply, mutating_ucc);
       return mutating_ucc;
     }
 
-    xtal::UnitCellCoord copy_apply(const CASM::SymOp &op, const xtal::UnitCellCoord &reference_ucc, const xtal::Structure &prim)  {
-      UnitCellCoord result(reference_ucc);
-      sym::apply(op, result, prim);
-      return result;
-    }
 
   } // namespace sym
 } // namespace CASM

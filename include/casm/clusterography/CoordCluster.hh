@@ -157,23 +157,6 @@ namespace CASM {
 
   };
 
-  namespace sym {
-    template<typename CoordType>
-    CoordCluster<CoordType> &apply(const SymOp &op, CoordCluster<CoordType> &clust, const xtal::Structure &prim) {
-      for(auto &e : clust) {
-        sym::apply(op, e, prim);
-      }
-      return clust;
-    }
-
-    template<typename CoordType>
-    CoordCluster<CoordType> copy_apply(const SymOp &op, const CoordCluster<CoordType> &clust, const xtal::Structure &prim) {
-      auto result = clust;
-      sym::apply(op, result, prim);
-      return result;
-    }
-
-  }
 }
 
 #endif

@@ -5,7 +5,6 @@
 #include "casm/misc/CRTPBase.hh"
 //TODO: Fix this include insanity. This is only here because it has the
 //sym::copy_apply routines that are needed for instantiation
-#include "casm/symmetry/SymTools.hh"
 #include "casm/clusterography/CoordCluster.hh"
 #include "casm/kinetics/OccPerturbation.hh"
 
@@ -17,6 +16,16 @@ namespace CASM {
 
   namespace xtal {
     class Structure;
+  }
+
+  namespace sym {
+    /// Apply a transformation, in place, return reference to the provided object.
+    template<typename Object, typename Transform, typename...Args>
+    Object &apply(const Transform &f, Object &obj, Args &&...args);
+
+    /// Copy and apply a transformation, retun a new transformed copy.
+    template<typename Object, typename Transform, typename...Args>
+    Object copy_apply(const Transform &f, Object obj, Args &&...args);
   }
 
   /**

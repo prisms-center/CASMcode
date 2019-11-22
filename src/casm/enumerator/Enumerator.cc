@@ -59,7 +59,7 @@ namespace CASM {
   }
 
   void ConfigEnumInput::_add_site(UnitCellCoord const &_ucc) {
-    m_sites_selection.insert(m_config.supercell().prim_grid().find(_ucc.coordinate(this->supercell().primclex().prim())));
+    m_sites_selection.insert(m_config.supercell().prim_grid().find(_ucc.coordinate(this->supercell().prim())));
   }
 
 

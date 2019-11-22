@@ -1,7 +1,7 @@
 #ifndef CASM_ConfigSubOrbits_impl
 #define CASM_ConfigSubOrbits_impl
 
-#include "casm/clusterography/ElementSymApply.hh"
+#include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/ConfigSubOrbits.hh"
 
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
