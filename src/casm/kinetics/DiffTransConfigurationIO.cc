@@ -34,19 +34,19 @@ namespace CASM {
 
         /// \brief Adds index rules corresponding to the parsed args
         bool MolDependent::init(const DiffTransConfiguration &_tmplt) const {
-          auto struc_mol = struc_molecule(_tmplt.primclex().prim());
+          auto struc_mol = struc_molecule_name(_tmplt.primclex().prim());
 
           if(m_mol_names.size() == 0) {
             for(Index i = 0; i < struc_mol.size(); i++) {
               _add_rule(std::vector<Index>({i}));
-              m_mol_names.push_back(struc_mol[i].name());
+              m_mol_names.push_back(struc_mol[i]);
             }
           }
           else {
             for(Index n = 0; n < m_mol_names.size(); n++) {
               Index i = 0;
               for(i = 0; i < struc_mol.size(); i++) {
-                if(struc_mol[i].name() == m_mol_names[n]) {
+                if(struc_mol[i] == m_mol_names[n]) {
                   _add_rule(std::vector<Index>({i}));
                   break;
                 }

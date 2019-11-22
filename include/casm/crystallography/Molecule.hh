@@ -27,27 +27,20 @@ namespace CASM {
     class AtomPosition {
     public:
 
-      /// Typedef for selective dynamics array
-      typedef std::array<bool, 3> sd_type;
-
-
       /// \brief Construct with x,y,z position coordinates and atom name
       AtomPosition(double _pos1,
                    double _pos2,
                    double _pos3,
-                   std::string const &_species,
-      sd_type const &_sd_flag = sd_type{{false, false, false}}) :
+                   std::string const &_species) :
         m_species(_species),
-        m_position(_pos1, _pos2, _pos3),
-        m_sd_flag(_sd_flag) { }
+        m_position(_pos1, _pos2, _pos3) {}
+
 
       /// \brief Construct with vector position and atom name
       AtomPosition(Eigen::Ref<const Eigen::Vector3d> const &_pos,
-                   std::string const &_species,
-      sd_type const &_sd_flag = sd_type{{false, false, false}}) :
+                   std::string const &_species) :
         m_species(_species),
-        m_position(_pos),
-        m_sd_flag(_sd_flag) { }
+        m_position(_pos) { }
 
       /// Const access of species name
       std::string const &name() const {
@@ -57,11 +50,6 @@ namespace CASM {
       /// \brief Const access of Cartesian position of atom
       Eigen::Vector3d const &cart() const {
         return m_position;
-      }
-
-      /// \brief Const access of selective dynamics flags
-      sd_type const &sd_flag() const {
-        return m_sd_flag;
       }
 
       bool time_reversal_active() const {
@@ -84,12 +72,12 @@ namespace CASM {
       bool identical(AtomPosition const &RHS, double _tol)const;
 
       /// \brief Print AtomPosition after applying affine transformation cart2frac*cart()+trans
-      void print(std::ostream &stream,
+      /*void print(std::ostream &stream,
                  Eigen::Ref<const Eigen::Vector3d> const &trans,
                  Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
                  int spaces,
                  bool print_sd_flags = false) const;
-
+      */
       /// \brief Apply symmetry (translation is ignored)
       AtomPosition &apply_sym(const SymOp &op);
 
@@ -106,9 +94,6 @@ namespace CASM {
       Eigen::Vector3d m_position;
 
       std::map<std::string, SpeciesAttribute> m_attribute_map;
-
-      /// selective dynamics flags
-      sd_type m_sd_flag;
     };
 
     bool compare_type(AtomPosition const &A, AtomPosition const &B, double tol);
@@ -130,13 +115,7 @@ namespace CASM {
     class Molecule {
     public:
       /// \brief Return an atomic Molecule with specified name
-      static Molecule make_atom(std::string const &atom_name,
-                                AtomPosition::sd_type const &_sd_flags);
-
-      /// \brief Return an atomic Molecule with specified name
-      static Molecule make_atom(std::string const &atom_name) {
-        return make_atom(atom_name, AtomPosition::sd_type{{false, false, false}});
-      }
+      static Molecule make_atom(std::string const &atom_name);
 
       /// \brief Return an atomic Molecule with specified name
       static Molecule make_unknown() {
@@ -146,39 +125,44 @@ namespace CASM {
       /// \brief Return a vacancy Molecule
       static Molecule make_vacancy();
 
-      /*
-      Molecule(std::string const &_name,
-               std::initializer_list<AtomPosition> const &_atoms = {},
-               bool _divisible = false) :
-        m_name(_name),
-        m_atoms(_atoms),
-        m_divisible(_divisible) {}
-      */
+      ///\brief Construct with designated name, a list of atoms, and whether molecule is chemically divisible
       Molecule(std::string const &_name,
                std::vector<AtomPosition> _atoms = {},
                bool _divisible = false) :
         m_name(_name),
         m_atoms(std::move(_atoms)),
-        m_divisible(_divisible) {}
+        m_divisible(_divisible) {
+        if(m_atoms.empty())
+          m_atoms.emplace_back(0., 0., 0., m_name);
+      }
 
+      /// \brief Number of atoms contained Molecule
       Index size() const {
         return m_atoms.size();
       }
 
+      ///\brief Designated name of Molecule (may be unrelated to constituent species)
       std::string const &name() const {
         return m_name;
       }
 
+      ///\brief Const access of all contained AtomPositions
       std::vector<AtomPosition> const &atoms() const {
         return m_atoms;
       }
 
+      ///\brief returns i'th atom position
       AtomPosition const &atom(Index i) const {
         return m_atoms[i];
       }
 
+      ///\brief True if Molecule is atom with no other attributes
+      bool is_atomic() const;
+
+      ///\brief True if Molecule represents vacancy
       bool is_vacancy() const;
 
+      ///\brief True if Molecule contains attributes that are affected by time reversal
       bool time_reversal_active() const {
         for(auto const &_atom : atoms()) {
           if(_atom.time_reversal_active())
@@ -191,15 +175,20 @@ namespace CASM {
         return false;
       }
 
-
+      ///\brief Returns dictionary of all constituent attributes of the Molecule
+      /// Does not include attributes associated with individual atoms
       std::map<std::string, SpeciesAttribute> const &attributes() const {
         return m_attribute_map;
       }
 
+      ///\brief Set all constitutent attributes of Molecule
+      /// overwrites any existing attributes
       void set_attributes(std::map<std::string, SpeciesAttribute> _attr) {
         m_attribute_map = std::move(_attr);
       }
 
+      ///\brief set all constituent atoms of Molecule
+      /// overwrites any existing atoms
       void set_atoms(std::vector<AtomPosition> _atoms) {
         m_atoms = std::move(_atoms);
       }
@@ -218,6 +207,7 @@ namespace CASM {
       /// \brief Returns true of molecule contains atom of specified name
       bool contains(std::string const &atom_name) const;
 
+      /*
       void read(std::istream &stream);
 
       void print(std::ostream &stream,
@@ -226,7 +216,7 @@ namespace CASM {
                  int spaces,
                  char delim,
                  bool print_sd_flags  = false) const;
-
+      */
       bool is_divisible() const {
         return m_divisible;
       }

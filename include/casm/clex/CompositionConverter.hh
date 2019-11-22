@@ -8,8 +8,6 @@
 #include "casm/clex/ParamComposition.hh"
 
 namespace CASM {
-  class jsonParser;
-
   /// \brief Convert between number of species per unit cell and parametric composition
   ///
   /// \ingroup Clex
@@ -152,11 +150,6 @@ namespace CASM {
   void display_param_chem_pot(std::ostream &stream, const CompositionConverter &f, int indent = 0);
 
   /// \brief Serialize CompositionConverter to JSON
-  jsonParser &to_json(const CompositionConverter &f, jsonParser &json);
-
-  /// \brief Deserialize CompositionConverter from JSON
-  void from_json(CompositionConverter &f, const jsonParser &json);
-
   /// \brief Generate a column matrix containing all the possible molecular end members
   Eigen::MatrixXd end_members(const ParamComposition::AllowedOccupants &_allowed_occs);
 

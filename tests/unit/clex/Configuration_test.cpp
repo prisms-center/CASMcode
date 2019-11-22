@@ -76,7 +76,7 @@ TEST(ConfigurationTest, Test1) {
   EXPECT_EQ(config.size(), 1);
 
   // set occupation
-  EXPECT_EQ(config.has_occupation(), false);    //TODO: This fails
+  EXPECT_EQ(config.occupation().size(), config.size());
 
   config.init_occupation();
   EXPECT_EQ(config.has_occupation(), true);

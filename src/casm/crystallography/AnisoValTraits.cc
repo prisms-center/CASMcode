@@ -82,6 +82,13 @@ namespace CASM {
     SymRepBuilder::Identity());
   }
 
+  AnisoValTraits AnisoValTraits::selective_dynamics() {
+    return AnisoValTraits("selectivedynamics",
+    {"xflag", "yflag", "zflag"},
+    LOCAL,
+    SymRepBuilder::Identity());
+  }
+
   AnisoValTraits AnisoValTraits::disp() {
     return AnisoValTraits("disp",
     {"dx", "dy", "dz"},

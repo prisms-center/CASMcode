@@ -633,9 +633,6 @@ namespace CASM {
 
     Index i;
 
-    // [basis_site][site_occupant_index]
-    auto convert = make_index_converter(prim(), struc_molecule(prim()));
-
     // create an array to count the number of each molecule
     std::vector<Eigen::VectorXi> sublat_num_each_molecule;
     for(i = 0; i < prim().basis().size(); i++) {
@@ -652,7 +649,7 @@ namespace CASM {
 
   //*********************************************************************************
   /// Returns composition, not counting vacancies
-  ///    composition[ molecule_type ]: molecule_type ordered as prim structure's struc_molecule(), with [Va]=0.0
+  ///    composition[ molecule_type ]: molecule_type ordered as prim structure's struc_molecule_name(), with [Va]=0.0
   Eigen::VectorXd Configuration::composition() const {
 
     // get the number of each molecule type
@@ -662,11 +659,11 @@ namespace CASM {
     int num_atoms = 0;
 
     // need to know which molecules are vacancies
-    auto struc_mol = struc_molecule(prim());
+    auto struc_mol = struc_molecule_name(prim());
 
     Index i;
     for(i = 0; i < struc_mol.size(); i++) {
-      if(struc_mol[i].is_vacancy()) {
+      if(xtal::is_vacancy(struc_mol[i])) {
         // set to zero, so the Va concentration is reported as 0.0
         _num_each_molecule[i] = 0;
       }
@@ -680,13 +677,13 @@ namespace CASM {
 
   //*********************************************************************************
   /// Returns composition, including vacancies
-  ///    composition[ molecule_type ]: molecule_type ordered as prim structure's struc_molecule()
+  ///    composition[ molecule_type ]: molecule_type ordered as prim structure's struc_molecule_name()
   Eigen::VectorXd Configuration::true_composition() const {
     return num_each_molecule().cast<double>() / size();
   }
 
   //*********************************************************************************
-  /// Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::struc_molecule()
+  /// Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::struc_molecule_name()
   Eigen::VectorXi Configuration::num_each_molecule() const {
     return CASM::num_each_molecule(m_configdof, supercell());
   }
@@ -1686,14 +1683,15 @@ namespace CASM {
   }
 
 
-  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::struc_molecule()
+  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::struc_molecule_name()
   Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
 
+    auto mol_names = struc_molecule_name(scel.prim());
     // [basis_site][site_occupant_index]
-    auto convert = make_index_converter(scel.prim(), struc_molecule(scel.prim()));
+    auto convert = make_index_converter(scel.prim(), mol_names);
 
     // create an array to count the number of each molecule
-    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(struc_molecule(scel.prim()).size());
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(mol_names.size());
 
     // count the number of each molecule
     for(Index i = 0; i < configdof.size(); i++) {
@@ -1703,7 +1701,7 @@ namespace CASM {
     return num_each_molecule;
   }
 
-  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::struc_molecule()
+  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::struc_molecule_name()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
     return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
   }
