@@ -143,11 +143,12 @@ namespace CASM {
       for(Index i : atom) {
         sout << sout.indent_str() << (c2f * info.coords.col(i)).transpose().format(format);
 
+        /*
         if(m_sel_dynamics) {
           sout << " ";
           for(Index j = 0; j < 3; ++j)
             sout << (info.SD(i, j) ? "T " : "F ");
-        }
+            }*/
 
         if(m_append_atom_names) {
           sout << " " << info.names[i];

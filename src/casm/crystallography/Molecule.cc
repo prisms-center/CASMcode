@@ -47,22 +47,31 @@ namespace CASM {
     //
     //****************************************************
 
-    bool AtomPosition::identical(AtomPosition const &RHS, double _tol = TOL) const {
+    bool AtomPosition::identical(AtomPosition const &RHS, double _tol) const {
+
+      return almost_equal(cart(), RHS.cart(), _tol) && compare_type(*this, RHS, _tol);
+    }
+
+    //****************************************************
+
+    bool compare_type(AtomPosition const &A, AtomPosition const &B, double tol) {
       // compare number of attributes
-      if(m_attribute_map.size() != RHS.m_attribute_map.size())
+      if(A.attributes().size() != B.attributes().size())
         return false;
-      if(name() != RHS.name())
+      if(A.name() != B.name())
         return false;
       // compare attributes
-      auto it(m_attribute_map.cbegin()), end_it(m_attribute_map.cend());
-      for(; it != end_it; ++it) {
-        auto it_RHS = RHS.m_attribute_map.find(it->first);
-        if(it_RHS == RHS.m_attribute_map.cend() || !(it->second).identical(it_RHS->second, _tol))
+      auto it_A(A.attributes().cbegin()), end_it(A.attributes().cend());
+      for(; it_A != end_it; ++it_A) {
+        auto it_B = B.attributes().find(it_A->first);
+        if(it_B == B.attributes().cend() || !(it_A->second).identical(it_B->second, tol))
           return false;
       }
-
-      return almost_equal(cart(), RHS.cart(), _tol);
+      return true;
     }
+
+    //****************************************************
+
     bool Molecule::is_vacancy() const {
       //return m_atoms.empty();
       return ::CASM::xtal::is_vacancy(m_atoms[0].name());

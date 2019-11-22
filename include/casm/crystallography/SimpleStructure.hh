@@ -21,18 +21,28 @@ namespace CASM {
       enum class SpeciesMode {ATOM, MOL};
 
       struct Info {
+        // Can treat as a Eigen::VectorXd
+        using Coord = Eigen::MatrixXd::ColXpr;
+        using ConstCoord = Eigen::MatrixXd::ConstColXpr;
+
         std::vector<std::string> names;
         Eigen::MatrixXd coords;
-        Eigen::MatrixXi SD;
 
         std::map<std::string, Eigen::MatrixXd> properties;
 
         std::vector<Index> sort_by_name();
 
+        Coord coord(Index i) {
+          return coords.col(i);
+        }
+
+        ConstCoord coord(Index i) const {
+          return coords.col(i);
+        }
+
         void resize(Index N) {
           names.resize(N, "Va");
           coords.setZero(3, N);
-          SD.setZero(3, N);
         }
 
         Index size() const {
@@ -69,7 +79,6 @@ namespace CASM {
       void rotate_coords(Eigen::Ref<const Eigen::Matrix3d> const &_R);
 
       Eigen::Matrix3d lat_column_mat;
-      bool selective_dynamics;
 
       // Use occupation vector in order to avoid messy molecule-name aliasing issues
       Info mol_info;

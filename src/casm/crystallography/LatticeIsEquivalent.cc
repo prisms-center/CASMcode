@@ -12,7 +12,7 @@ namespace CASM {
 
     /// Checks if lat = other*U, with unimodular U
     bool LatticeIsEquivalent::operator()(const Lattice &other) const {
-      Eigen::Matrix3d m_U = other.lat_column_mat().inverse() * m_lat.lat_column_mat();
+      m_U = other.lat_column_mat().inverse() * m_lat.lat_column_mat();
       return is_unimodular(m_U, m_lat.tol());
     }
 

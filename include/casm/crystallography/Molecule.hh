@@ -111,6 +111,7 @@ namespace CASM {
       sd_type m_sd_flag;
     };
 
+    bool compare_type(AtomPosition const &A, AtomPosition const &B, double tol);
     //****************************************************
 
     /** \defgroup Molecule
