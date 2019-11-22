@@ -67,7 +67,7 @@ src/general/populator
 #binaries
 bin/*
 builds
-build
+build*
 
 #autotools self generating
 configure
