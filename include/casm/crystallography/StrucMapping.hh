@@ -15,12 +15,12 @@ namespace CASM {
     class Lattice;
     class LatticeMap;
     class SimpleStructure;
+    class StrucMapCalculatorInterface;
 
     // In this file:
     struct LatticeNode;
-    struct HungarianNode;
+    struct AssignmentNode;
     struct MappingNode;
-    class StrucMapCalculatorInterface;
     class StrucMapper;
 
     namespace StrucMapping {
@@ -39,8 +39,6 @@ namespace CASM {
         return _val > small_inf() / 2.;
       }
 
-
-
       /// \brief Calculate the strain cost function of a MappingNode using LatticeMap::calc_strain_cost()
       /// \param Nsites number of atoms in the relaxed structure, for proper normalization
       double strain_cost(double relaxed_lat_vol, const MappingNode &mapped_config, Index Nsites);
@@ -48,8 +46,6 @@ namespace CASM {
       /// \brief Calculate the basis cost function of a MappingNode as the mean-square displacement of its atoms
       /// \param Nsites number of atoms in the relaxed structure, for proper normalization
       double basis_cost(const MappingNode &mapped_config, Index Nsites);
-
-
     }
 
     /// \brief Class describing the lattice-mapping portion of a particular mapping
@@ -119,29 +115,17 @@ namespace CASM {
       /// @param child_N_atom is number of sites in the child
       LatticeNode(LatticeMap const &_lat_map,
                   Lattice const &parent_prim,
-                  Lattice const &child_prim,
-                  Index child_N_atom);
+                  Lattice const &child_prim);
 
-      /// \brief Compare two LatticeMap objects, based on their mapping cost
-      bool operator<(LatticeNode const &other)const {
-        return cost < other.cost - 1e-6;
-      }
+      /// \brief Compare two LatticeMap objects, based on their mapping cost first, followed by PrimGrid transformation matrices
+      bool operator<(LatticeNode const &other)const;
 
     };
 
-    inline
-    bool identical(LatticeNode const &A, LatticeNode const &B) {
-      if(!almost_equal(A.cost, B.cost, 1e-6))
-        return false;
-      if(A.parent.trans_mat() != B.parent.trans_mat())
-        return false;
-      if(A.child.trans_mat() != B.child.trans_mat())
-        return false;
-      return true;
-    }
+    bool identical(LatticeNode const &A, LatticeNode const &B);
 
-    struct HungarianNode {
-      HungarianNode(double _tol = 1e-6) : cost(0), cost_offset(0), m_tol(_tol) {}
+    struct AssignmentNode {
+      AssignmentNode(double _tol = 1e-6) : time_reversal(false), cost(0), cost_offset(0), m_tol(_tol) {}
 
       /// \brief Mapping translation from child to parent
       /// Defined such that
@@ -150,6 +134,9 @@ namespace CASM {
       /// This definition assumes that 'child_coord' has been de-rotated and un-deformed according
       /// to a particular lattice mapping (as defined by a LatticeNode object)
       Eigen::Vector3d translation;
+
+      /// \brief time_reversal relationship between child and parent
+      bool time_reversal;
 
       /// \brief parent->child site assignments that have been forced on at this node
       /// for element 'el' such that forced_on.count(el)==1, 'el' denotes that
@@ -192,14 +179,7 @@ namespace CASM {
         return cost_mat.size() == 0 && assignment.empty();
       }
 
-      void solve() {
-        // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
-        cost = hungarian_method(cost_mat, assignment, m_tol) + cost_offset + m_tol * translation.norm() / 10.0;
-      }
-
-      bool operator<(HungarianNode const &other)const {
-        return cost < other.cost - m_tol;
-      }
+      bool operator<(AssignmentNode const &other)const;
 
       std::vector<Index> permutation() const {
         std::vector<Index> result(assignment.size() + forced_on.size(), 0);
@@ -217,16 +197,8 @@ namespace CASM {
       double m_tol;
     };
 
-    inline
-    bool identical(HungarianNode const &A, HungarianNode const &B) {
-      if(!almost_equal(A.cost, B.cost, 1e-6))
-        return false;
-      if(!almost_equal(A.translation, B.translation, 1e-6))
-        return false;
-      if(A.forced_on != B.forced_on)
-        return false;
-      return true;
-    }
+    bool identical(AssignmentNode const &A, AssignmentNode const &B);
+
 
 
     /// Data structure holding a potential mapping, which consists of deformation, occupation array, and displacement field
@@ -271,16 +243,20 @@ namespace CASM {
         throw std::runtime_error("MappingNode::clear() not implemented");
       }
 
-      Eigen::Matrix3d isometry() const {
+      Eigen::Matrix3d const &isometry() const {
         return lat_node.isometry;
       }
 
-      Eigen::Matrix3d stretch() const {
+      Eigen::Matrix3d const &stretch() const {
         return lat_node.stretch;
       }
 
-      Eigen::Vector3d translation() const {
+      Eigen::Vector3d const &translation() const {
         return basis_node.translation;
+      }
+
+      bool time_reversal() const {
+        return basis_node.time_reversal;
       }
 
       Displacement disp(Index i) {
@@ -293,7 +269,7 @@ namespace CASM {
 
 
       LatticeNode lat_node;
-      HungarianNode basis_node;
+      AssignmentNode basis_node;
       double strain_weight;
       double basis_weight;
 
@@ -314,22 +290,26 @@ namespace CASM {
       /// they constitute particular mapping onto parent structure
       std::vector<Index> permutation;
 
-      bool operator<(MappingNode const &other) const {
-        if(!almost_equal(cost, other.cost)) {
-          return cost < other.cost;
-        }
-        if(!identical(lat_node, other.lat_node)) {
-          return lat_node < other.lat_node;
-        }
-        if(!identical(basis_node, other.basis_node)) {
-          return basis_node < other.basis_node;
-        }
-        return false;
-      }
+      bool operator<(MappingNode const &other) const;
     };
 
+    /// \brief External accessor for isometry, to provide xtal::SymOp adaptability
+    inline
+    Eigen::Matrix3d const &get_matrix(MappingNode const &_node) {
+      return _node.isometry();
+    }
 
+    /// \brief External accessor for translation, to provide xtal::SymOp adaptability
+    inline
+    Eigen::Vector3d const &get_translation(MappingNode const &_node) {
+      return _node.translation();
+    }
 
+    /// \brief External accessor for time_reversal, to provide xtal::SymOp adaptability
+    inline
+    bool get_time_reversal(MappingNode const &_node) {
+      return _node.time_reversal();
+    }
 
     /// A class for mapping an arbitrary crystal structure as a configuration of a crystal template
     /// as described by a PrimClex.  StrucMapper manages options for the mapping algorithm and mapping cost function
@@ -376,7 +356,6 @@ namespace CASM {
       ///\param _tol tolerance for mapping comparisons
       StrucMapper(StrucMapCalculatorInterface const &_calculator,
                   double _strain_weight = 0.5,
-                  Index _Nbest = 1,
                   double _max_volume_change = 0.5,
                   int _options = robust, // this should actually be a bitwise-OR of StrucMapper::Options
                   double _tol = TOL,
@@ -459,17 +438,15 @@ namespace CASM {
         return m_allowed_superlat_map.size();
       }
 
-      std::set<MappingNode> seed_from_vol_range(SimpleStructure const &child_struc,
-                                                Index min_vol,
-                                                Index max_vol) const;
-
-      ///\brief Low-level routine to map a structure onto a ConfigDof if it is known to be ideal
+      ///\brief Returns single best mapping of ideal child structure onto parent structure
+      ///\parem child
       ///\param mapped_config[out] MappingNode that is result of mapping procedure
       ///\parblock
       ///                   populated by the permutation of sites in the imported structure
       ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
       ///\endparblock
-      MappingNode map_ideal_struc(const SimpleStructure &child_struc) const;
+      MappingNode map_ideal_struc(const SimpleStructure &child_struc,
+                                  Index k = 1) const;
 
 
 
@@ -480,7 +457,9 @@ namespace CASM {
       ///\endparblock
       ///\param best_cost[in] optional parameter. Method will return false of no mapping is found better than 'best_cost'
       std::set<MappingNode> map_deformed_struc(const SimpleStructure &child_struc,
-                                               double best_cost = StrucMapping::big_inf(),
+                                               Index k = 1,
+                                               double max_cost = StrucMapping::big_inf(),
+                                               double min_cost = -TOL,
                                                bool keep_invalid = false) const;
 
       ///\brief Low-level routine to map a structure onto a ConfigDof assuming a specific Lattice, without assuming structure is ideal
@@ -493,34 +472,53 @@ namespace CASM {
       ///\endparblock
       std::set<MappingNode> map_deformed_struc_impose_lattice(const SimpleStructure &child_struc,
                                                               const Lattice &imposed_lat,
-                                                              double best_cost = StrucMapping::big_inf(),
+                                                              Index k = 1,
+                                                              double max_cost = StrucMapping::big_inf(),
+                                                              double min_cost = -TOL,
                                                               bool keep_invalid = false) const;
 
       std::set<MappingNode> map_deformed_struc_impose_lattice_node(const SimpleStructure &child_struc,
                                                                    const LatticeNode &imposed_node,
-                                                                   double best_cost = StrucMapping::big_inf(),
+                                                                   Index k = 1,
+                                                                   double max_cost = StrucMapping::big_inf(),
+                                                                   double min_cost = -TOL,
                                                                    bool keep_invalid = false) const;
 
 
 
       Index k_best_maps_better_than(SimpleStructure const &child_struc,
                                     std::set<MappingNode> &queue,
-                                    double max_cost,
-                                    bool keep_invalid,
-                                    bool erase_tail = true) const;
+                                    Index k = 1,
+                                    double max_cost = StrucMapping::big_inf(),
+                                    double min_cost = -TOL,
+                                    bool keep_invalid = false,
+                                    bool keep_tail = false,
+                                    bool no_partiton = false) const;
 
 
       StrucMapCalculatorInterface const &calculator() const {
         return *m_calc_ptr;
       }
 
-      std::set<MappingNode> seed_k_best_from_super_lats(SimpleStructure const &child_struc,
-                                                        std::vector<Lattice> const &_parent_scels,
-                                                        std::vector<Lattice> const &_child_scels,
-                                                        Index k,
-                                                        double min_cost = 1e-6,
-                                                        double max_cost = StrucMapping::small_inf()) const;
     private:
+
+      std::set<MappingNode> _seed_k_best_from_super_lats(SimpleStructure const &child_struc,
+                                                         std::vector<Lattice> const &_parent_scels,
+                                                         std::vector<Lattice> const &_child_scels,
+                                                         Index k,
+                                                         double min_cost = 1e-6,
+                                                         double max_cost = StrucMapping::small_inf()) const;
+
+      /// \brief construc partial mapping nodes (with uninitialized basis_node) based on current settings
+      /// considers supercells with integer volume between min_vol and max_vol
+      std::set<MappingNode> _seed_from_vol_range(SimpleStructure const &child_struc,
+                                                 Index k,
+                                                 Index min_vol,
+                                                 Index max_vol) const;
+
+      ///\brief returns number of species in a SimpleStructure given the current calculator settings. Use instead of sstruc.n_atom() for consistency
+      Index _n_species(SimpleStructure const &sstruc) const;
+
       //Implement filter as std::function<bool(Lattice const&)> or as polymorphic type or as query (i.e., DataFormatter)
       bool _filter_lat(Lattice const &_lat)const {
         return true;
@@ -533,7 +531,6 @@ namespace CASM {
       Eigen::MatrixXd m_strain_gram_mat;
 
       double m_strain_weight;
-      Index m_Nbest;
       double m_max_volume_change;
       int m_options;
       bool m_restricted = false;

@@ -222,7 +222,7 @@ namespace CASM {
   PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
     SimpleStrucMapCalculator(to_simple_structure(_prim),
-                             std::vector<SymOp>( {
+                             std::vector<SymOp>({
     SymOp()
   }),
   _species_mode,
@@ -257,8 +257,6 @@ namespace CASM {
     m_pclex(&_pclex),
     m_struc_mapper(PrimStrucMapCalculator(_pclex.prim()),
                    _strain_weight,
-                   1,//_Nbest,
-                   //std::vector<SymOp>({SymOp()}),
                    _max_volume_change,
                    options,
                    _tol > 0. ? _tol : _pclex.crystallography_tol()) {
@@ -280,7 +278,6 @@ namespace CASM {
                                                                    make_point_group(hint_ptr->point_group()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
                           struc_mapper().strain_weight(),
-                          1,
                           0.,
                           struc_mapper().options(),
                           struc_mapper().tol());

@@ -48,7 +48,6 @@ check_PROGRAMS += \
 casm_unit_App_SOURCES = \
     tests/unit/App/App_test.cpp\
     tests/unit/App/EnumeratorPlugin_test.cpp\
-    tests/unit/App/LogRuntimeLibrary_test.cpp\
     tests/unit/App/QueryPlugin_test.cpp\
     tests/unit/App/settings_test.cpp\
     tests/unit/gtest_main_run_all.cpp
@@ -316,7 +315,8 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_mapping
 casm_unit_mapping_SOURCES = \
-    tests/unit/gtest_main_run_all.cpp
+    tests/unit/gtest_main_run_all.cpp\
+    tests/unit/mapping/StrucMapping_test.cpp
 casm_unit_mapping_LDADD = \
     $(BOOST_CHRONO_LIB)\
     $(BOOST_FILESYSTEM_LIB)\

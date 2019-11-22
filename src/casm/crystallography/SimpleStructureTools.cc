@@ -1,6 +1,7 @@
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clex/Configuration.hh"
@@ -63,6 +64,52 @@ namespace CASM {
         }
 
       }
+
+      //***************************************************************************
+
+      SimpleStructure::Info _replicate(SimpleStructure::Info const &_info, Index mult) {
+        SimpleStructure::Info result;
+        result.resize(_info.size()*mult);
+
+        result.coords = _info.coords.replicate(1, mult);
+
+        for(auto const &p : _info.properties) {
+          result.properties[p.first] = p.second.replicate(1, mult);
+        }
+
+        Index l = 0;
+        for(Index g = 0; g < mult; ++g) {
+          for(Index b = 0; b < _info.size(); ++b) {
+            result.names[l++] = _info.names[b];
+          }
+        }
+        return result;
+      }
+    }
+
+    //***************************************************************************
+
+    SimpleStructure to_superstructure(Eigen::Ref<const Eigen::Matrix3i> const &_T, SimpleStructure const &_sstruc) {
+
+      SimpleStructure result(_sstruc.prefix());
+      result.lat_column_mat = _sstruc.lat_column_mat * _T.cast<double>();;
+      result.properties = _sstruc.properties;
+
+
+      PrimGrid grid(Lattice(_sstruc.lat_column_mat), Lattice(result.lat_column_mat));
+
+      result.mol_info = Local::_replicate(_sstruc.mol_info, grid.size());
+      result.atom_info = Local::_replicate(_sstruc.atom_info, grid.size());
+
+      Index nm = _sstruc.mol_info.size();
+      Index na = _sstruc.atom_info.size();
+
+      for(Index g = 0; g < grid.size(); ++g) {
+        result.mol_info.coords.block(0, g * nm, 3, nm).colwise() += grid.scel_coord(g).const_cart();
+        result.atom_info.coords.block(0, g * na, 3, na).colwise() += grid.scel_coord(g).const_cart();
+      }
+
+      return result;
     }
 
     //***************************************************************************
@@ -70,9 +117,6 @@ namespace CASM {
     SimpleStructure to_simple_structure(BasicStructure<Site> const &_struc, const std::string &_prefix) {
       SimpleStructure result(_prefix);
       result.lat_column_mat = _struc.lattice().lat_column_mat();
-      result.selective_dynamics = _struc.selective_dynamics();
-
-      result.mol_info.SD = Eigen::MatrixXi::Zero(3, _struc.basis().size());
 
       result.mol_info.coords.resize(3, _struc.basis().size());
       result.mol_info.names.reserve(_struc.basis().size());
@@ -95,10 +139,7 @@ namespace CASM {
                                         std::vector<DoFKey> const &_which_dofs) {
       SimpleStructure result(_prefix);
       result.lat_column_mat = _scel.lattice().lat_column_mat();
-      result.selective_dynamics = _scel.prim().selective_dynamics();
 
-      if(result.selective_dynamics)
-        result.mol_info.SD = Eigen::MatrixXi::Zero(3, _dof.size());
 
       result.mol_info.coords.resize(3, _dof.size());
       result.mol_info.names.reserve(_dof.size());
@@ -144,8 +185,6 @@ namespace CASM {
       _sstruc.atom_info.coords.resize(3, N_atoms);
       _sstruc.atom_info.names.resize(N_atoms);
 
-      _sstruc.atom_info.SD = Eigen::MatrixXi::Zero(3, N_atoms);
-
       // a indexes atom, s indexes site (molecule)
       Index a = 0;
       s = 0;
@@ -156,13 +195,6 @@ namespace CASM {
           for(Index ms = 0; ms < molref.size(); ++ms, ++a) {
             _sstruc.atom_info.coords.col(a) = _sstruc.mol_info.coords.col(s) + molref.atom(ms).cart();
             _sstruc.atom_info.names[a] = molref.atom(ms).name();
-            if(_sstruc.selective_dynamics) {
-              _sstruc.atom_info.SD.col(a) = _sstruc.mol_info.SD.col(s);
-              for(Index i = 0; i < 3; ++i) {
-                if(molref.atom(i).sd_flag()[i])
-                  _sstruc.atom_info.SD(i, a) = 1;
-              }
-            }
           }
         }
       }
@@ -287,19 +319,10 @@ namespace CASM {
           tjson.push_back(dof.second.col(i), jsonParser::as_array());
       }
 
-      if(_struc.selective_dynamics) {
-        supplement["selective_dynamics"] = _struc.selective_dynamics;
-        supplement["atom_selective_dynamics"].put_array();
-        supplement["mol_selective_dynamics"].put_array();
-      }
-
-
       {
         jsonParser &tjson = supplement[prefix + "atom_coords"].put_array();
         for(Index i : atom_permute) {
           tjson.push_back(_struc.atom_info.coords.col(i), jsonParser::as_array());
-          if(_struc.selective_dynamics)
-            supplement["atom_selective_dynamics"].push_back(_struc.atom_info.SD.col(i), jsonParser::as_array());
         }
       }
 
@@ -307,8 +330,6 @@ namespace CASM {
         jsonParser &tjson = supplement[prefix + "mol_coords"].put_array();
         for(Index i : mol_permute) {
           tjson.push_back(_struc.mol_info.coords.col(i), jsonParser::as_array());
-          if(_struc.selective_dynamics)
-            supplement["mol_selective_dynamics"].push_back(_struc.mol_info.SD.col(i), jsonParser::as_array());
         }
       }
       return supplement;
