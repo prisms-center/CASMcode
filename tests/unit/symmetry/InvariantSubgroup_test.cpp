@@ -143,7 +143,7 @@ TEST(InvariantSubgroupTest, Test0) {
     EXPECT_EQ(scel_vol2.factor_group().size() * 2, _config_fg.size());
     EXPECT_EQ(config_fg.size(), _config_fg.size());
 
-    auto copy_apply_f = sym::CopyApplyElementWiseWithPrim(primclex.shared_prim());
+    auto copy_apply_f = sym::CopyApplyWithPrim_f(primclex.shared_prim());
     for(const auto &orbit : orbits) {
 
       OrbitGenerators<ScelPeriodicIntegralClusterOrbit> generators {config_fg, scel_sym_compare};

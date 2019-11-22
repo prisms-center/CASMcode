@@ -3,12 +3,14 @@
 
 #include <vector>
 
-#include "casm/symmetry/PermuteIterator.hh"
-#include "casm/clusterography/GenericCluster.hh"
-#include "casm/clusterography/ClusterInvariants.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/crystallography/Coordinate.hh"
 #include "casm/clex/HasCanonicalForm.hh"
+#include "casm/clusterography/ClusterInvariants.hh"
+#include "casm/clusterography/CoordClusterTraits.hh"
+#include "casm/clusterography/GenericCluster.hh"
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/symmetry/SymTools.hh"
 
 namespace CASM {
 
@@ -22,18 +24,9 @@ namespace CASM {
     class UnitCellCoord;
   }
 
-  namespace sym {
-    class CopyApplyWithPrim;
-    class CopyApplyElementWiseWithPrim;
-    class CopyApplyDefault;
-  }
-
   using xtal::Structure;
   using xtal::Coordinate;
   using xtal::Translatable;
-
-  template <typename Base>
-  class CopyApplyForEachWithPrim;
 
   class SymOp;
 
@@ -116,21 +109,6 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   template<typename CoordType>
-  struct traits<CoordCluster<CoordType>> {
-    typedef CoordType Element;
-    typedef ClusterInvariants<CoordCluster<CoordType>> InvariantsType;
-    static CoordType position(const CoordCluster<CoordType> &clust);
-    typedef unsigned int size_type;
-    static const std::string name;
-
-    template <typename Base>
-    using CopyApplyType = CopyApplyForEachWithPrim<Base>;
-    typedef sym::CopyApplyElementWiseWithPrim copy_apply_f_type;
-  };
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  template<typename CoordType>
   class CoordCluster : public
     CanonicalForm<GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>> {
 
@@ -179,16 +157,23 @@ namespace CASM {
 
   };
 
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  namespace sym {
+    template<typename CoordType>
+    CoordCluster<CoordType> &apply(const SymOp &op, CoordCluster<CoordType> &clust, const xtal::Structure &prim) {
+      for(auto &e : clust) {
+        sym::apply(op, e, prim);
+      }
+      return clust;
+    }
 
-  template<typename CoordType>
-  CoordType traits<CoordCluster<CoordType>>::position(const CoordCluster<CoordType> &clust) {
-    return clust[0];
+    template<typename CoordType>
+    CoordCluster<CoordType> copy_apply(const SymOp &op, const CoordCluster<CoordType> &clust, const xtal::Structure &prim) {
+      auto result = clust;
+      sym::apply(op, result, prim);
+      return result;
+    }
+
   }
-
-  template<typename CoordType>
-  const std::string traits<CoordCluster<CoordType>>::name = "CoordCluster";
-
 }
 
 #endif

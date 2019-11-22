@@ -158,10 +158,10 @@ TEST(SubOrbitsTest, ZrOProj) {
     /// prim -> prim_config.supercell() symmetry breaking
     DiffTransVec prim_scel_suborbit_generators;
     {
-      MakeSubOrbitGenerators<sym::CopyApplyDefault> gen(
+      MakeSubOrbitGenerators<sym::CopyApplyDefault_f> gen(
         prim_config.prim().factor_group(),
         prim_config.supercell().factor_group(),
-        sym::CopyApplyDefault());
+        sym::CopyApplyDefault_f());
       for(const auto &orbit : diff_trans_orbits) {
         gen(orbit, std::back_inserter(prim_scel_suborbit_generators));
       }
@@ -374,10 +374,10 @@ TEST(SubOrbitsTest, FCCTernaryProj) {
     /// prim -> prim_config.supercell() symmetry breaking
     DiffTransVec prim_scel_suborbit_generators;
     {
-      MakeSubOrbitGenerators<sym::CopyApplyDefault> gen(
+      MakeSubOrbitGenerators<sym::CopyApplyDefault_f> gen(
         prim_config.prim().factor_group(),
         prim_config.supercell().factor_group(),
-        sym::CopyApplyDefault());
+        sym::CopyApplyDefault_f());
       for(const auto &orbit : diff_trans_orbits) {
         gen(orbit, std::back_inserter(prim_scel_suborbit_generators));
       }
@@ -599,10 +599,10 @@ TEST(SubOrbitsTest, L12Proj) {
     /// prim -> prim_config.supercell() symmetry breaking
     DiffTransVec prim_scel_suborbit_generators;
     {
-      MakeSubOrbitGenerators<sym::CopyApplyDefault> gen(
+      MakeSubOrbitGenerators<sym::CopyApplyDefault_f> gen(
         prim_config.prim().factor_group(),
         prim_config.supercell().factor_group(),
-        sym::CopyApplyDefault());
+        sym::CopyApplyDefault_f());
       for(const auto &orbit : diff_trans_orbits) {
         gen(orbit, std::back_inserter(prim_scel_suborbit_generators));
       }

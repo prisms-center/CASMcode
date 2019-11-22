@@ -125,6 +125,11 @@ namespace CASM {
 
     void print(const Element &element, Log &out);
   };
+
+  namespace sym {
+    OccPerturbation &apply(const SymOp &op, OccPerturbation &occ_pert, const xtal::Structure &prim);
+    OccPerturbation copy_apply(const SymOp &op, const OccPerturbation &occ_pert, const xtal::Structure &prim);
+  }
 }
 
 #endif

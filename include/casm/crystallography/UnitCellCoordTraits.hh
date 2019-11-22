@@ -21,14 +21,7 @@ namespace CASM {
     template <typename Base>
     using CopyApplyType = CopyApplyWithPrim<Base>;
 
-    typedef sym::CopyApplyWithPrim copy_apply_f_type;
-
-    /* template <typename Base> */
-    /* class CopyApplyType */
-    /* { */
-    /*     public: */
-    /*     typedef CopyApplyWithPrim<Base> type; */
-    /* }; */
+    typedef sym::CopyApplyWithPrim_f copy_apply_f_type;
   };
 } // namespace CASM
 

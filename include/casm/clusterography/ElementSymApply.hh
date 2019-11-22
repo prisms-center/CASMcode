@@ -3,7 +3,12 @@
 
 #include "casm/global/definitions.hh"
 #include "casm/misc/CRTPBase.hh"
+//TODO: Fix this include insanity. This is only here because it has the
+//sym::copy_apply routines that are needed for instantiation
 #include "casm/symmetry/SymTools.hh"
+#include "casm/clusterography/CoordCluster.hh"
+#include "casm/kinetics/OccPerturbation.hh"
+
 #include <memory>
 
 namespace CASM {

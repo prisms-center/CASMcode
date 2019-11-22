@@ -17,35 +17,6 @@ namespace CASM {
   using xtal::PrimGrid;
   using xtal::UnitCellCoord;
 
-  /* namespace stupid { */
-  /*   template<typename Element> */
-  /*   struct ElementCopyApply { */
-  /*     Element operator()(const CASM::SymOp &op, const Element &e, const xtal::Structure &prim) { */
-  /*       return CASM::copy_apply(op, e); */
-  /*     } */
-  /*   }; */
-
-  /*   template<> */
-  /*   struct ElementCopyApply<xtal::UnitCellCoord> { */
-  /*     xtal::UnitCellCoord operator()(const CASM::SymOp &op, const xtal::UnitCellCoord &e, const xtal::Structure &prim)
-   * { */
-  /*       return sym::copy_apply(op, e, prim); */
-  /*     } */
-  /*   }; */
-
-  /*   template<typename CoordType> */
-  /*   struct ElementCopyApply<CoordCluster<CoordType>> { */
-  /*     CoordCluster<CoordType> operator()(const CASM::SymOp &op, const CoordCluster<CoordType> &clust, const
-   * xtal::Structure &prim) { */
-  /*       auto result = clust; */
-  /*       for(auto &e : result) { */
-  /*         sym::apply(op, e, prim); */
-  /*       } */
-  /*       return result; */
-  /*     } */
-  /*   }; */
-  /* } */
-
   template <typename Derived>
   class ClusterSymCompare;
 
@@ -53,9 +24,9 @@ namespace CASM {
   ///
   /// \ingroup IntegralCluster
   ///
-  template <typename Derived>
-  struct traits<ClusterSymCompare<Derived>> : public traits<Derived> {
-  };
+  /* template <typename Derived> */
+  /* struct traits<ClusterSymCompare<Derived>> : public traits<Derived> { */
+  /* }; */
 
   /// \brief CRTP Base class for Cluster comparisons
   ///
@@ -110,11 +81,11 @@ namespace CASM {
     static UnitCellCoord position(const Element &el);
   };
 
-  template <
-    typename ClusterType,
-    typename = typename std::enable_if <
-      std::is_same<UnitCellCoord, decltype(traits<ClusterType>::position(std::declval<ClusterType>()))>::value >::type >
-  using enable_if_integral_position = ClusterType;
+  /* template < */
+  /*   typename ClusterType, */
+  /*   typename = typename std::enable_if < */
+  /*     std::is_same<UnitCellCoord, decltype(traits<ClusterType>::position(std::declval<ClusterType>()))>::value >::type > */
+  /* using enable_if_integral_position = ClusterType; */
 
   /* -- LocalSymCompare<IntegralCluster> Declaration ------------------------------------- */
 
@@ -130,7 +101,7 @@ namespace CASM {
   /// \ingroup IntegralCluster
   ///
   template <typename Element>
-  class AperiodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
+  class AperiodicSymCompare<Element>
     : public traits<Element>::template CopyApplyType <
         ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>> >> {
 
@@ -163,15 +134,6 @@ namespace CASM {
     /// - For aperiodic cases, no isometric transformations are allowed, so apply and return identity
     Element spatial_prepare_impl(Element obj) const;
 
-    /* bool inter_orbit_compare_impl(const Element &A, const Element &B) const { */
-    /*   return Base::inter_orbit_compare(A, B); */
-    /* } */
-
-    /// \brief Transform the element under the given symmetry operation
-    /* Element copy_apply_impl(SymOp const &op, Element obj) const { */
-    /*   return Base::copy_apply_impl(op, obj); */
-    /* } */
-
     /// \brief Prepare an element for comparison via transformation of its internal representation
     ///
     /// - Returns sorted
@@ -198,7 +160,7 @@ namespace CASM {
   /// \ingroup IntegralCluster
   ///
   template <typename Element>
-  class PrimPeriodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
+  class PrimPeriodicSymCompare<Element>
 : public traits<Element>::template CopyApplyType <
   ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>> >> {
 
@@ -237,17 +199,6 @@ private:
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
 
-    //Don't do this or you'll end up with circular function calls (LOL)
-    /* bool inter_orbit_compare_impl(const Element &A, const Element &B) const { */
-    /*   return Base::inter_orbit_compare(A, B); */
-    /* } */
-
-    // TODO: Do we even want to have this here? Or is it obvious from the inheritance scheme that this is happening?
-    /// \brief Transform the element under the given symmetry operation
-    /* Element copy_apply_impl(SymOp const &op, const Element &obj) const { */
-    /*   return Base::copy_apply_impl(op, obj); */
-    /* } */
-
     const PrimType &prim() const {
       return *m_prim;
     }
@@ -270,7 +221,7 @@ private:
   /// \ingroup IntegralCluster
   ///
   template <typename Element>
-  class ScelPeriodicSymCompare<Element /*, enable_if_integral_position<Element>*/>
+  class ScelPeriodicSymCompare<Element>
 : public traits<Element>::template CopyApplyType <
   ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>> >> {
 
@@ -278,7 +229,6 @@ public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
-    // TODO: Am I doing this right?
     typedef typename traits<Element>::template CopyApplyType <
       ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>> >>
                         Base;
@@ -310,15 +260,6 @@ private:
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
 
-    /* bool inter_orbit_compare_impl(const Element &A, const Element &B) const { */
-    /*   return Base::inter_orbit_compare(A, B); */
-    /* } */
-
-    /// \brief Transform the element under the given symmetry operation
-    /* Element copy_apply_impl(SymOp const &op, Element obj) const { */
-    /*   return Base::copy_apply_impl(op, obj); */
-    /* } */
-
     const PrimType &prim() const {
       return *m_prim;
     }
@@ -344,7 +285,7 @@ private:
   /// \ingroup IntegralCluster
   ///
   template <typename Element>
-  class WithinScelSymCompare<Element /*, enable_if_integral_position<Element>*/>
+  class WithinScelSymCompare<Element>
 : public traits<Element>::template CopyApplyType <
   ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>> >> {
 
@@ -385,15 +326,6 @@ private:
     ///
     /// - Returns sorted
     Element representation_prepare_impl(Element obj) const;
-
-    /* bool inter_orbit_compare_impl(const Element &A, const Element &B) const { */
-    /*   return Base::inter_orbit_compare(A, B); */
-    /* } */
-
-    /// \brief Transform the element under the given symmetry operation
-    /* Element copy_apply_impl(SymOp const &op, Element obj) const { */
-    /*   return Base::copy_apply_impl(op, obj); */
-    /* } */
 
     const PrimType &prim() const {
       return *m_prim;

@@ -927,7 +927,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
             std::vector<PermuteIterator> dt_permute_group = equiv.invariant_subgroup(ts.scel);
             SymGroup dt_group = make_sym_group(dt_permute_group);
             OrbitGenerators<ScelPeriodicIntegralClusterOrbit> test_gen(dt_group, ts.scel_sym_compare);
-            parser->insert_custom_generators(find_res, test_gen, sym::CopyApplyElementWiseWithPrim(primclex.shared_prim()));
+            parser->insert_custom_generators(find_res, test_gen, sym::CopyApplyWithPrim_f(primclex.shared_prim()));
 
             if(linear_orbit_index == 0) {
 
@@ -1108,7 +1108,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
           }
 
           OrbitGenerators<ScelPeriodicIntegralClusterOrbit> test_gen(dt_group, ts.scel_sym_compare);
-          parser->insert_custom_generators(find_res, test_gen, sym::CopyApplyElementWiseWithPrim(primclex.shared_prim()));
+          parser->insert_custom_generators(find_res, test_gen, sym::CopyApplyWithPrim_f(primclex.shared_prim()));
 
 
 

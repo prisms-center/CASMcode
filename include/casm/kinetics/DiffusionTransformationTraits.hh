@@ -1,7 +1,7 @@
 #ifndef CASM_DiffusionTransformationTraits
 #define CASM_DiffusionTransformationTraits
 
-#include "casm/clusterography/ElementSymApply.hh"
+/* #include "casm/clusterography/ElementSymApply.hh" */
 #include "casm/symmetry/OrbitDecl.hh"
 #include <iostream>
 
@@ -11,7 +11,7 @@ namespace CASM {
   }
 
   namespace sym {
-    class CopyApplyElementWiseWithPrim;
+    class CopyApplyDefault_f;
   }
 
   namespace Kinetics {
@@ -20,11 +20,12 @@ namespace CASM {
     typedef PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> PrimPeriodicDiffTransSymCompare;
     typedef ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> ScelPeriodicDiffTransSymCompare;
   }
+
   typedef Kinetics::PrimPeriodicDiffTransSymCompare PrimPeriodicDiffTransSymCompare;
   typedef Kinetics::ScelPeriodicDiffTransSymCompare ScelPeriodicDiffTransSymCompare;
 
   template <typename Base>
-  class CopyApply;
+  class CopyApplyDefault;
 
   /// Traits necessary for SymCompare
   template<>
@@ -35,8 +36,8 @@ namespace CASM {
     static xtal::UnitCellCoord position(const Kinetics::DiffusionTransformation &diff_trans);
     static std::string name;
     template<typename Base>
-    using CopyApplyType = CopyApply<Base>;
-    typedef sym::CopyApplyDefault copy_apply_f_type;
+    using CopyApplyType = CopyApplyDefault<Base>;
+    typedef sym::CopyApplyDefault_f copy_apply_f_type;
   };
 
   /// Specialization gives required for DatabaseTypeOrbit

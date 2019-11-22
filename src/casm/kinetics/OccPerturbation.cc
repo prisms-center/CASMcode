@@ -169,4 +169,20 @@ namespace CASM {
       printer.print(trans, perturb.prim(), out);
     }
   }
+
+  namespace sym {
+    //TODO: These element-wise ones are always the same. Template them maybe?
+    OccPerturbation &apply(const SymOp &op, OccPerturbation &occ_pert, const xtal::Structure &prim) {
+      for(auto &e : occ_pert) {
+        sym::apply(op, e, prim);
+      }
+      return occ_pert;
+    }
+
+    OccPerturbation copy_apply(const SymOp &op, const OccPerturbation &occ_pert, const xtal::Structure &prim) {
+      auto result = occ_pert;
+      sym::apply(op, result, prim);
+      return result;
+    }
+  }
 }
