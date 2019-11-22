@@ -1508,7 +1508,6 @@ namespace CASM {
   }
 
   void FillSupercell::_init(const Supercell &_motif_scel) const {
-
     m_motif_scel = &_motif_scel;
 
     // ------- site dof ----------
@@ -1525,7 +1524,7 @@ namespace CASM {
     for(Index s = 0 ; s < m_motif_scel->num_sites() ; s++) {
 
       // apply symmetry to re-orient and find unit cell coord
-      UnitCellCoord oriented_uccoord = sym::copy_apply(*m_op, m_motif_scel->uccoord(s), this->m_supercell_ptr->primclex().prim());
+      UnitCellCoord oriented_uccoord = sym::copy_apply(*m_op, m_motif_scel->uccoord(s), prim);
 
       // for each unit cell of the oriented motif in the supercell, copy the occupation
       for(Index i = 0 ; i < prim_grid.size() ; i++) {
