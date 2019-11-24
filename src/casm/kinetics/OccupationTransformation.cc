@@ -24,10 +24,6 @@ namespace CASM {
       to_value(_to_value),
       uccoord(_uccoord) {}
 
-    /* const UnitCellCoord::UnitType &OccupationTransformation::prim() const { */
-    /*   return uccoord.unit(); */
-    /* } */
-
     const UnitCellCoord OccupationTransformation::coord() const {
       return uccoord;
     }
@@ -56,11 +52,6 @@ namespace CASM {
       uccoord += frac;
       return *this;
     }
-
-    /* OccupationTransformation &OccupationTransformation::apply_sym(const SymOp &op) { */
-    //  !!TODO!!  uccoord.apply_sym(op);
-    /* return *this; */
-    /* } */
 
     Configuration &OccupationTransformation::apply_to(Configuration &config) const {
       config.set_occ(config.linear_index(uccoord), to_value);

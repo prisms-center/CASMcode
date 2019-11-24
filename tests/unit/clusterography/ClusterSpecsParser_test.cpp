@@ -159,10 +159,6 @@ namespace {
     print_clust(local_pair_orbits.begin(), local_pair_orbits.end(), ts.scel.primclex().log(), orbit_printer);
 
   }
-
-
-
-
 }
 
 TEST(ClusterSpecsParserTest, PrimPeriodicClustersByMaxLengthTest) {
