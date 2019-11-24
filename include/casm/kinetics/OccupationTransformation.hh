@@ -44,10 +44,6 @@ namespace CASM {
       Index to_value;
       UnitCellCoord uccoord;
 
-      /// The tiling unit of the infinite crystal that the site of this
-      /// OccupationTransformation lives in
-      /* const UnitCellCoord::UnitType &prim() const; */
-
       /// \brief The UnitCellCoord that is changing occupants
       const UnitCellCoord coord() const;
 
