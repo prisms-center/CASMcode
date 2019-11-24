@@ -234,7 +234,6 @@ namespace CASM {
 
     // transform elements
     for(auto it = m_element.begin(); it != m_element.end(); ++it) {
-      /* it->apply_sym(op); */ //TODO: Mark this spot for review when merging
       *it = m_sym_compare.copy_apply(op, *it);
     }
 
