@@ -158,7 +158,6 @@ libcasm_la_SOURCES = \
     include/casm/clusterography/ClusterSymCompare_impl.hh\
     include/casm/clusterography/CoordCluster.hh\
     include/casm/clusterography/CoordClusterTraits.hh\
-    include/casm/clusterography/ElementSymApply.hh\
     include/casm/clusterography/GenericCluster.hh\
     include/casm/clusterography/IntegralCluster.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
@@ -669,6 +668,7 @@ libcasm_la_SOURCES = \
     include/casm/strain/StrainConverter.hh\
     include/casm/symmetry/ConfigSubOrbits.hh\
     include/casm/symmetry/ConfigSubOrbits_impl.hh\
+    include/casm/symmetry/ElementSymApply.hh\
     include/casm/symmetry/EnumEquivalents.hh\
     include/casm/symmetry/InvariantSubgroup.hh\
     include/casm/symmetry/InvariantSubgroup_impl.hh\
@@ -969,3 +969,4 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     $(BOOST_LDFLAGS)\
     -avoid-version
+src/casm/version/autoversion.lo: .FORCE

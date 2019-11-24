@@ -3,10 +3,6 @@
 
 #include "casm/global/definitions.hh"
 #include "casm/misc/CRTPBase.hh"
-//TODO: Fix this include insanity. This is only here because it has the
-//sym::copy_apply routines that are needed for instantiation
-#include "casm/clusterography/CoordCluster.hh"
-#include "casm/kinetics/OccPerturbation.hh"
 
 #include <memory>
 
@@ -20,12 +16,12 @@ namespace CASM {
 
   namespace sym {
     /// Apply a transformation, in place, return reference to the provided object.
-    template<typename Object, typename Transform, typename...Args>
-    Object &apply(const Transform &f, Object &obj, Args &&...args);
+    template <typename Transform, typename Object, typename... Args>
+    Object &apply(const Transform &f, Object &obj, const Args &...args);
 
     /// Copy and apply a transformation, retun a new transformed copy.
-    template<typename Object, typename Transform, typename...Args>
-    Object copy_apply(const Transform &f, Object obj, Args &&...args);
+    template <typename Transform, typename Object, typename... Args>
+    Object copy_apply(const Transform &f, Object obj, const Args &...args);
   }
 
   /**
@@ -37,7 +33,7 @@ namespace CASM {
    */
 
   template <typename Base>
-  class CopyApplyWithPrim : public Base {
+  class CopyApplyWithPrim_crtp : public Base {
 
   public:
     typedef typename Base::MostDerived MostDerived;
@@ -57,7 +53,7 @@ namespace CASM {
    */
 
   template <typename Base>
-  class CopyApplyDefault : public Base {
+  class CopyApplyDefault_crtp : public Base {
 
   public:
     using MostDerived = typename Base::MostDerived;
@@ -72,16 +68,16 @@ namespace CASM {
   namespace sym {
 
     /**
-     * Functor class to apply sym via CopyApplyWithPrim.
+     * Functor class to apply sym via CopyApplyWithPrim_crtp.
      * A shared prim is given at construction, which is then forwarded to
      * sym::copy_apply(const SymOp&, const T&, const Structure&), applying
      * this function to the element.
      */
 
-    class CopyApplyWithPrim_f : public CASM::CopyApplyWithPrim<CRTPBase<CopyApplyWithPrim_f>> {
+    class CopyApplyWithPrim_f : public CASM::CopyApplyWithPrim_crtp<CRTPBase<CopyApplyWithPrim_f>> {
       typedef xtal::Structure PrimType;
       typedef std::shared_ptr<const PrimType> PrimType_ptr;
-      typedef CASM::CopyApplyWithPrim<CRTPBase<CopyApplyWithPrim_f>> Base;
+      typedef CASM::CopyApplyWithPrim_crtp<CRTPBase<CopyApplyWithPrim_f>> Base;
       typedef typename Base::MostDerived MostDerived;
       using Base::derived;
       friend Base;
@@ -101,13 +97,13 @@ namespace CASM {
     };
 
     /**
-     * Functor class to apply sym via CopyApply.
+     * Functor class to apply sym via CopyApply_crtp.
      * This functor requires no arguments at construction, and relies on
      * CASM::copy_apply(const SymOp&, const T&)
      */
 
-    class CopyApplyDefault_f : public CASM::CopyApplyDefault<CRTPBase<CopyApplyDefault_f>> {
-      typedef CASM::CopyApplyDefault<CRTPBase<CopyApplyDefault_f>> Base;
+    class CopyApplyDefault_f : public CASM::CopyApplyDefault_crtp<CRTPBase<CopyApplyDefault_f>> {
+      typedef CASM::CopyApplyDefault_crtp<CRTPBase<CopyApplyDefault_f>> Base;
       typedef typename Base::MostDerived MostDerived;
       using Base::derived;
 

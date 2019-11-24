@@ -24,7 +24,7 @@ namespace CASM {
   typedef Kinetics::ScelPeriodicDiffTransSymCompare ScelPeriodicDiffTransSymCompare;
 
   template <typename Base>
-  class CopyApplyDefault;
+  class CopyApplyDefault_crtp;
 
   /// Traits necessary for SymCompare
   template<>
@@ -35,7 +35,7 @@ namespace CASM {
     static xtal::UnitCellCoord position(const Kinetics::DiffusionTransformation &diff_trans);
     static std::string name;
     template<typename Base>
-    using CopyApplyType = CopyApplyDefault<Base>;
+    using CopyApplyType = CopyApplyDefault_crtp<Base>;
     typedef sym::CopyApplyDefault_f copy_apply_f_type;
   };
 

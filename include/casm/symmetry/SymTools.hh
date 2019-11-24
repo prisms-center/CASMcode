@@ -26,17 +26,17 @@ namespace CASM {
     // TODO: Do we keep passing by reference or do we want to change our ways here
     // and start passing by pointer?
     // it could just be:
-    // apply_symmetry(op, my_ucc)  // returns new value
-    // apply_symmetry(op, &my_ucc) // modifies value
+    // sym::apply(op, my_ucc, args)  // returns new value
+    // sym::apply(op, &my_ucc, args) // modifies value
     /// Apply a transformation, in place, return reference to the provided object.
     template <typename Transform, typename Object, typename... Args>
     Object &apply(const Transform &transformation, Object &obj, const Args &... args); // = delete;
 
     /// Copy and apply a transformation, retun a new transformed copy.
     template <typename Transform, typename Object, typename... Args>
-    Object copy_apply(const Transform &transformation, Object obj, const Args &... args) {
-      apply(transformation, obj, args...);
-      return obj;
+    Object copy_apply(const Transform &transformation, Object obj_copy, const Args &... args) {
+      apply(transformation, obj_copy, args...);
+      return obj_copy;
     }
   } // namespace sym
 } // namespace CASM

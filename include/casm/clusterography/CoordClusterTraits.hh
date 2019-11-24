@@ -11,7 +11,7 @@ namespace CASM {
   }
 
   template <typename Base>
-  class CopyApplyWithPrim;
+  class CopyApplyWithPrim_crtp;
 
   template<typename CoordType>
   struct traits<CoordCluster<CoordType>> {
@@ -22,7 +22,7 @@ namespace CASM {
     static const std::string name;
 
     template <typename Base>
-    using CopyApplyType = CopyApplyWithPrim<Base>;
+    using CopyApplyType = CopyApplyWithPrim_crtp<Base>;
     typedef sym::CopyApplyWithPrim_f copy_apply_f_type;
   };
 
