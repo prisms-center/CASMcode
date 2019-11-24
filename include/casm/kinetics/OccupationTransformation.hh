@@ -44,10 +44,6 @@ namespace CASM {
       Index to_value;
       UnitCellCoord uccoord;
 
-      /// The tiling unit of the infinite crystal that the site of this
-      /// OccupationTransformation lives in
-      /* const UnitCellCoord::UnitType &prim() const; */
-
       /// \brief The UnitCellCoord that is changing occupants
       const UnitCellCoord coord() const;
 
@@ -68,9 +64,6 @@ namespace CASM {
 
       /// Rigidly shifts the coordinate of this transformation by a lattice shift
       OccupationTransformation &operator+=(UnitCell Frac);
-
-      /// Applies symmetry to the coordinate of this transformation
-      /* OccupationTransformation &apply_sym(const SymOp &op,const PrimType& prim); */
 
       /// Transform the occupation of config and return a configuration
       /// that is perturbed according to this transformation
