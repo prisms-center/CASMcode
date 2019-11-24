@@ -88,13 +88,13 @@ namespace CASM {
   ///
   template <typename Element>
   class AperiodicSymCompare<Element>
-    : public traits<Element>::template CopyApplyType <
+    : public traits<Element>::template copy_apply_crtp_type <
         ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>> >> {
 
   public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
-    typedef typename traits<Element>::template CopyApplyType <
+    typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>> >>
                         Base;
 
@@ -147,13 +147,13 @@ namespace CASM {
   ///
   template <typename Element>
   class PrimPeriodicSymCompare<Element>
-: public traits<Element>::template CopyApplyType <
+: public traits<Element>::template copy_apply_crtp_type <
   ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>> >> {
 
 public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
-    typedef typename traits<Element>::template CopyApplyType <
+    typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>> >>
                         Base;
 
@@ -172,7 +172,7 @@ public:
 
 private:
     friend SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>;
-    // Allow private access to whatever CopyApplyType is, because sometimes you need that prim
+    // Allow private access to whatever copy_apply_crtp_type is, because sometimes you need that prim
     friend Base;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
@@ -208,14 +208,14 @@ private:
   ///
   template <typename Element>
   class ScelPeriodicSymCompare<Element>
-: public traits<Element>::template CopyApplyType <
+: public traits<Element>::template copy_apply_crtp_type <
   ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>> >> {
 
 public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
-    typedef typename traits<Element>::template CopyApplyType <
+    typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>> >>
                         Base;
       using Base::position;
@@ -233,7 +233,7 @@ public:
 
 private:
     friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
-    // Allow private access to whatever CopyApplyType is, because sometimes you need that prim
+    // Allow private access to whatever copy_apply_crtp_type is, because sometimes you need that prim
     friend Base;
 
     /// \brief Prepare an element for comparison via an isometric affine transformation
@@ -272,13 +272,13 @@ private:
   ///
   template <typename Element>
   class WithinScelSymCompare<Element>
-: public traits<Element>::template CopyApplyType <
+: public traits<Element>::template copy_apply_crtp_type <
   ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>> >> {
 
 public:
     typedef xtal::Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
-    typedef typename traits<Element>::template CopyApplyType <
+    typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>> >>
                         Base;
 

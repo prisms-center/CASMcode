@@ -35,7 +35,7 @@ namespace CASM {
     static xtal::UnitCellCoord position(const Kinetics::DiffusionTransformation &diff_trans);
     static std::string name;
     template<typename Base>
-    using CopyApplyType = CopyApplyDefault_crtp<Base>;
+    using copy_apply_crtp_type = CopyApplyDefault_crtp<Base>;
     typedef sym::CopyApplyDefault_f copy_apply_f_type;
   };
 

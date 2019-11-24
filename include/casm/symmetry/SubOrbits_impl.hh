@@ -76,20 +76,6 @@ namespace CASM {
 
   /// \brief Output the orbit generators necessary to construct the sub-orbits
   /// corresponding to group -> subgroup symmetry breaking
-  /* template<typename Element, typename SymCompareType, typename ElementOutputIterator> */
-  /* ElementOutputIterator make_suborbit_generators( */
-  /*   const Element &element, */
-  /*   const SymCompareType &sym_compare, */
-  /*   const SymGroup &group, */
-  /*   const SymGroup &subgroup, */
-  /*   ElementOutputIterator result) { */
-
-  /*   MakeSubOrbitGenerators f{group, subgroup}; */
-  /*   return f(element, sym_compare, result); */
-  /* } */
-
-  /// \brief Output the orbit generators necessary to construct the sub-orbits
-  /// corresponding to group -> subgroup symmetry breaking
   template<typename OrbitType, typename CopyApplyElementType, typename ElementOutputIterator>
   ElementOutputIterator make_suborbit_generators(
     const OrbitType &orbit,

@@ -31,7 +31,7 @@ namespace CASM {
   template<>
   struct traits<OccupationTransformation> {
     template <typename Base>
-    using CopyApplyType = CopyApplyWithPrim_crtp<Base>;
+    using copy_apply_crtp_type = CopyApplyWithPrim_crtp<Base>;
   };
 
   template<>
@@ -41,7 +41,7 @@ namespace CASM {
     typedef Index size_type;
     static xtal::UnitCellCoord position(const OccPerturbation &perturb);
     template <typename Base>
-    using CopyApplyType = CopyApplyWithPrim_crtp<Base>;
+    using copy_apply_crtp_type = CopyApplyWithPrim_crtp<Base>;
   };
 
   typedef PrimPeriodicSymCompare<OccPerturbation> PrimPeriodicOccPerturbSymCompare;

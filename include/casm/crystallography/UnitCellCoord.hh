@@ -152,10 +152,6 @@ namespace CASM {
 
       bool operator<(const UnitCellCoord &B) const;
 
-      /* UnitCellCoord& apply_sym(const CASM::SymOp& op); */
-
-      /* UnitCellCoord copy_apply(const CASM::SymOp& op) const; */
-
     private:
       /// make _eq accessible
       friend struct Comparisons<Translatable<CRTPBase<UnitCellCoord>>>;

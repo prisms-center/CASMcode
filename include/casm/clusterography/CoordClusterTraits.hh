@@ -22,7 +22,7 @@ namespace CASM {
     static const std::string name;
 
     template <typename Base>
-    using CopyApplyType = CopyApplyWithPrim_crtp<Base>;
+    using copy_apply_crtp_type = CopyApplyWithPrim_crtp<Base>;
     typedef sym::CopyApplyWithPrim_f copy_apply_f_type;
   };
 
