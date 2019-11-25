@@ -370,7 +370,7 @@ namespace CASM {
 
     // generate scel lattice, and put in niggli form
     Index fg_op_index = boost::lexical_cast<Index>(tokens[1]);
-    Lattice hnf_lat = copy_apply(
+    Lattice hnf_lat = sym::copy_apply(
                         primclex.prim().factor_group()[fg_op_index],
                         make_supercell(primclex, tokens[0]).lattice());
     Lattice niggli_lat = niggli(hnf_lat, primclex.crystallography_tol());
@@ -414,7 +414,7 @@ namespace CASM {
   }
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel) {
-    return Supercell(&scel.primclex(), copy_apply(op, scel.lattice()));
+    return Supercell(&scel.primclex(), sym::copy_apply(op, scel.lattice()));
   }
 
   Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {

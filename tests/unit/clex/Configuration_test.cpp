@@ -50,7 +50,7 @@ Lattice non_canonical_equiv_test_lat(const PrimClex &primclex) {
   Lattice test_lat;
   Index scel_op_index = 0;
   for(const auto &op : primclex.prim().point_group()) {
-    test_lat = copy_apply(op, canon_lat);
+    test_lat = sym::copy_apply(op, canon_lat);
     if(!xtal::is_equivalent(test_lat, canon_lat)) {
       return test_lat;
     }

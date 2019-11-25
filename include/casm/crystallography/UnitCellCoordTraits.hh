@@ -1,10 +1,13 @@
 #ifndef UNITCELLCOORDTRAITS_HH
 #define UNITCELLCOORDTRAITS_HH
 
-#include "casm/symmetry/ElementSymApply.hh"
 #include <string>
 
 namespace CASM {
+  namespace sym {
+    class CopyApplyWithPrim_f;
+  }
+
   template <typename Base>
   class CopyApplyWithPrim_crtp;
 

@@ -8,8 +8,22 @@
 #include "casm/global/definitions.hh"
 
 namespace CASM {
+  namespace sym {
+    //TODO: These could be template specializations of what's in symmetry/SymTools.hh
+    //but I'm not sure how we're generalizing the apply/copy_apply stuff yet
+
+    /// \brief Apply SymOp to a Lattice
+    xtal::Lattice &apply(const xtal::SymOp &op, xtal::Lattice &lat);
+
+    /// \brief Copy and apply SymOp to a Lattice
+    xtal::Lattice copy_apply(const xtal::SymOp &op, xtal::Lattice lat_copy);
+
+    template <typename ExternSymOp>
+    xtal::Lattice copy_apply(const ExternSymOp &op, const xtal::Lattice &lat) {
+      return copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op), lat);
+    }
+  }
   namespace xtal {
-    class Lattice;
 
     /// \brief Construct indices of the subgroup that leaves a lattice unchanged
     std::vector<Index> invariant_subgroup_indices(const Lattice &lat, SymOpVector const &super_grp);
@@ -69,17 +83,6 @@ namespace CASM {
     /// that are slightly distorted due to numerical noise
     std::vector<SymOp> make_point_group(Lattice const &_lat, double _tol);
 
-    /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const SymOp &op, Lattice &lat);
-
-    /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const SymOp &op, const Lattice &lat);
-
-    template <typename ExternSymOp>
-    Lattice copy_apply(const ExternSymOp &op, const Lattice &lat) {
-      return copy_apply(adapter::Adapter<SymOp, ExternSymOp>()(op), lat);
-    }
-
     //************************************************************************************************************************//
 
     /// Check if there is a symmetry operation, op, and transformation matrix T,
@@ -96,7 +99,7 @@ namespace CASM {
 
       std::pair<bool, Eigen::Matrix3d> res;
       for(auto it = begin; it != end; ++it) {
-        res = is_superlattice(scel, copy_apply(*it, unit), tol);
+        res = is_superlattice(scel, sym::copy_apply(*it, unit), tol);
         if(res.first) {
           return std::make_pair(it, res.second);
         }
@@ -118,7 +121,7 @@ namespace CASM {
       for(auto it = ++begin; it != end; ++it) {
         Lattice tmp_best = make_superduperlattice(best, *it);
         for(auto op_it = op_begin; op_it != op_end; ++op_it) {
-          Lattice test = make_superduperlattice(best, copy_apply(*op_it, *it));
+          Lattice test = make_superduperlattice(best, sym::copy_apply(*op_it, *it));
           if(std::abs(volume(test)) < std::abs(volume(tmp_best))) {
             tmp_best = test;
           }
@@ -129,6 +132,7 @@ namespace CASM {
     }
 
   } // namespace xtal
+
 } // namespace CASM
 
 namespace CASM {

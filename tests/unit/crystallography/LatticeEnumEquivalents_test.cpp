@@ -6,6 +6,7 @@
 /// What is being used to test it:
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "crystallography/TestStructures.hh"
 
 using namespace CASM;

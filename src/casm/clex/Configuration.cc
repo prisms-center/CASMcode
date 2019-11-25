@@ -1511,7 +1511,7 @@ namespace CASM {
     m_motif_scel = &_motif_scel;
 
     // ------- site dof ----------
-    Lattice oriented_motif_lat = copy_apply(*m_op, m_motif_scel->lattice());
+    Lattice oriented_motif_lat = sym::copy_apply(*m_op, m_motif_scel->lattice());
 
     // Create a PrimGrid linking the prim and the oriented motif each to the supercell
     // So we can tile the decoration of the motif config onto the supercell correctly
