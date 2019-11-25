@@ -2,6 +2,7 @@
 #include "casm/container/Counter.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
 #include "casm/database/Named_impl.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffusionTransformation_impl.hh"
 #include "casm/kinetics/OccupationTransformation.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -910,11 +911,15 @@ namespace CASM {
   }
 
   namespace sym {
-    Kinetics::DiffusionTransformation copy_apply(const CASM::SymOp &op, const Kinetics::DiffusionTransformation &diff_trans, const xtal::Structure &prim) {
-      //#YOLO. I can't deal with everyone's member functions right now
-      auto result = diff_trans;
-      result.apply_sym(op);
-      return result;
+    template <typename Transform, typename Object, typename... Args>
+    Object &apply(const Transform &transformation, Object &obj, const Args &... args);
+
+    template<>
+    Kinetics::DiffusionTransformation &apply<CASM::SymOp, Kinetics::DiffusionTransformation, xtal::Structure>(const CASM::SymOp &op, Kinetics::DiffusionTransformation &mutating_diff_trans, const xtal::Structure &prim) {
+      //TODO: I can't deal with everyone's member functions right now.
+      //Extract the class method implementation and put it here.
+      mutating_diff_trans.apply_sym(op);
+      return mutating_diff_trans;
     }
   }
 

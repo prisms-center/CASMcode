@@ -4,6 +4,7 @@
 #include "casm/clusterography/CoordCluster.hh"
 #include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/SymCompare.hh"
+#include "casm/symmetry/SymTools.hh"
 #include <memory>
 
 namespace CASM {

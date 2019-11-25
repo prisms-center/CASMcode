@@ -203,7 +203,7 @@ namespace CASM {
   ///
   /// - Puts all sites within the supercell, then sorts
   template<typename Element>
-  Element WithinScelSymCompare<Element/*, enable_if_integral_position<Element>*/>::
+  Element WithinScelSymCompare<Element>::
   representation_prepare_impl(Element obj) const {
     if(!obj.size()) {
       return obj;

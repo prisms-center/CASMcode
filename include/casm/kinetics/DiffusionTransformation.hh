@@ -395,11 +395,6 @@ namespace CASM {
 
   template<typename NameIterator>
   bool excludes_all(const std::map<std::string, Index> species_count, NameIterator begin, NameIterator end);
-
-  namespace sym {
-    Kinetics::DiffusionTransformation copy_apply(const CASM::SymOp &op, const Kinetics::DiffusionTransformation &diff_trans, const xtal::Structure &prim);
-  }
-
 }
 
 #endif

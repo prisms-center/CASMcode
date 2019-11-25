@@ -3,7 +3,6 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/basis_set/DoF.hh"
-#include "casm/symmetry/SymTools.hh"
 
 #include "casm/kinetics/DoFTransformation_impl.hh"
 
@@ -181,18 +180,18 @@ namespace CASM {
       out << this->opt.delim;
     out << std::flush;
   }
+}
 
+#include "casm/symmetry/SymTools.hh"
+namespace CASM {
   namespace sym {
-    Kinetics::OccupationTransformation &apply(const SymOp &op, Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim) {
+    /* template <typename Transform, typename Object, typename... Args> */
+    /* Object &apply(const Transform &transformation, Object &obj, const Args &... args); */
+
+    template<>
+    Kinetics::OccupationTransformation &apply<CASM::SymOp, Kinetics::OccupationTransformation, xtal::Structure>(const SymOp &op, Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim) {
       sym::apply(op, occ_trans.uccoord, prim);
       return occ_trans;
     }
-
-    Kinetics::OccupationTransformation copy_apply(const SymOp &op, const Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim) {
-      auto result = occ_trans;
-      sym::apply(op, result, prim);
-      return result;
-    }
-
   }
 }

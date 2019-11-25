@@ -122,14 +122,6 @@ namespace CASM {
 
     void print(const Element &element, const Element::PrimType &prim, Log &out);
   };
-
-  namespace sym {
-    /// \brief Apply SymOp to a OccupationTransformation
-    Kinetics::OccupationTransformation &apply(const SymOp &op, Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim);
-
-    /// \brief Copy and apply SymOp to a OccupationTransformation
-    Kinetics::OccupationTransformation copy_apply(const SymOp &op, const Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim);
-  }
 }
 
 #endif

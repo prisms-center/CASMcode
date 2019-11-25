@@ -30,7 +30,7 @@ namespace CASM {
     // sym::apply(op, &my_ucc, args) // modifies value
     /// Apply a transformation, in place, return reference to the provided object.
     template <typename Transform, typename Object, typename... Args>
-    Object &apply(const Transform &transformation, Object &obj, const Args &... args); // = delete;
+    Object &apply(const Transform &transformation, Object &obj, const Args &... args);
 
     /// Copy and apply a transformation, retun a new transformed copy.
     template <typename Transform, typename Object, typename... Args>
