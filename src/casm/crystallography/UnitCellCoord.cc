@@ -1,12 +1,9 @@
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/basis_set/DoF.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SymBasisPermute.hh"
-#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
   namespace xtal {
@@ -76,14 +73,14 @@ namespace CASM {
   }
 
   /// \brief Read from json [b, i, j, k], assuming fill_value.unit() is already set
-  void from_json(UnitCellCoord &fill_value, const jsonParser &read_json) {
+  void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json) {
 
     auto b = read_json[0].get<Index>();
     auto i = read_json[1].get<Index>();
     auto j = read_json[2].get<Index>();
     auto k = read_json[3].get<Index>();
 
-    fill_value = UnitCellCoord(b, i, j, k);
+    fill_value = xtal::UnitCellCoord(b, i, j, k);
 
     return;
   }
