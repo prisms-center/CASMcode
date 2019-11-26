@@ -1,4 +1,5 @@
 #include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/external/Eigen/Core"
 #include <exception>
 #include <stdexcept>
@@ -35,6 +36,10 @@ namespace CASM {
       vec2[1] = ((vec2[1] % vol) + vol) % vol;
       vec2[2] = ((vec2[2] % vol) + vol) % vol;
       return (this->m_transformation_matrix * vec2) / vol;
+    }
+
+    UnitCellCoord LatticePointWithin::operator()(const UnitCellCoord &bijk) const {
+      return UnitCellCoord(bijk.sublattice(), this->operator()(bijk.unitcell()));
     }
 
   } // namespace xtal

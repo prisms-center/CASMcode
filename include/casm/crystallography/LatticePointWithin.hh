@@ -9,6 +9,7 @@
 namespace CASM {
   namespace xtal {
     class UnitCell;
+    class UnitCellCoord;
 
     /**
      * Handles bringing a UnitCell (i,j,k values) within a particular
@@ -49,6 +50,8 @@ namespace CASM {
       UnitCellType operator()(const UnitCellType &ijk) const {
         return UnitCellType(this->operator()(static_cast<vector_type>(ijk)));
       }
+
+      UnitCellCoord operator()(const UnitCellCoord &bijk) const;
 
     private:
       /// Integer matrix that converts the tiling unit into the superlattice.

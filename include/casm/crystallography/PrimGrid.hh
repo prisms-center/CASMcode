@@ -113,6 +113,12 @@ namespace CASM {
       };
 
 
+      /// map a UnitCell inside the supercell
+      UnitCell within(const UnitCell &ijk) const;
+
+      /// map a UnitCellCoord inside the supercell
+      UnitCellCoord within(const UnitCellCoord &_uccoord) const;
+
     public:
       PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
       PrimGrid(const Lattice &p_lat,
@@ -142,12 +148,6 @@ namespace CASM {
       Index find(const UnitCell &_unitcell) const;
       Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const;
       Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord, double _tol) const;
-
-      /// map a UnitCell inside the supercell
-      UnitCell within(const UnitCell &ijk) const;
-
-      /// map a UnitCellCoord inside the supercell
-      UnitCellCoord within(const UnitCellCoord &_uccoord) const;
 
       // get Coordinate or UnitCell from linear index
       Coordinate scel_coord(Index l) const;

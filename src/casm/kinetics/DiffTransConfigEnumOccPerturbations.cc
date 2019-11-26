@@ -1,5 +1,6 @@
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
+#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/symmetry/ConfigSubOrbits_impl.hh"
@@ -28,7 +29,8 @@ extern "C" {
 namespace {
   using namespace CASM;
   ScelPeriodicSymCompare<IntegralCluster> _construct_scel_sym_compare(const Supercell &scel) {
-    return ScelPeriodicSymCompare<IntegralCluster>(scel.primclex().shared_prim(), scel.prim_grid(), scel.crystallography_tol());
+    xtal::LatticePointWithin bring_within_f(scel.prim().lattice(), scel.lattice());
+    return ScelPeriodicSymCompare<IntegralCluster>(scel.primclex().shared_prim(), bring_within_f, scel.crystallography_tol());
   }
 }
 
