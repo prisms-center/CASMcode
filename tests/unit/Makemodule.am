@@ -192,6 +192,7 @@ casm_unit_crystallography_SOURCES = \
     tests/unit/crystallography/Coordinate_test.cpp\
     tests/unit/crystallography/HermiteCounter_test.cpp\
     tests/unit/crystallography/LatticeEnumEquivalents_test.cpp\
+    tests/unit/crystallography/LatticePointWithin_test.cpp\
     tests/unit/crystallography/Lattice_test.cpp\
     tests/unit/crystallography/Molecule_test.cpp\
     tests/unit/crystallography/Niggli_test.cpp\
@@ -199,7 +200,6 @@ casm_unit_crystallography_SOURCES = \
     tests/unit/crystallography/Structure_test.cpp\
     tests/unit/crystallography/SuperlatticeEnumerator_test.cpp\
     tests/unit/crystallography/UnitCellCoord_test.cpp\
-    tests/unit/crystallography/UnitCellWithin_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_crystallography_LDADD = \
     $(BOOST_CHRONO_LIB)\

@@ -3,7 +3,6 @@
 
 #include "casm/crystallography/Lattice.hh"
 #include "casm/external/Eigen/Core"
-#include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/global/eigen.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
@@ -18,32 +17,38 @@ namespace CASM {
      * superlattice
      */
 
-    struct UnitCellWithin {
+    struct LatticePointWithin {
       typedef Eigen::Matrix<long, 3, 3> matrix_type;
       typedef Eigen::Matrix<long, 3, 1> vector_type;
 
-      /// Specify the tiling unit and a transformation that turns the tiling unit into the desired
-      /// superlattice into which UnitCells should be brought within
-      UnitCellWithin(const matrix_type &superlattice_transformation_matrix)
+      /// Specify the tiling unit and a transformation that turns the tiling unit
+      /// into the desired superlattice into which UnitCells should be brought
+      /// within
+      LatticePointWithin(const matrix_type &superlattice_transformation_matrix)
         : m_transformation_matrix(superlattice_transformation_matrix),
           m_transformation_matrix_adjugate(adjugate(superlattice_transformation_matrix)),
           m_total_lattice_points_in_superlattice(superlattice_transformation_matrix.determinant()) {
         _throw_if_bad_transformation_matrix(this->m_transformation_matrix);
       }
 
-      UnitCellWithin(const Eigen::Matrix3i &superlattice_transformation_matrix):
-        UnitCellWithin(matrix_type(superlattice_transformation_matrix.cast<long>()))
-      {}
+      LatticePointWithin(const Eigen::Matrix3i &superlattice_transformation_matrix)
+        : LatticePointWithin(matrix_type(superlattice_transformation_matrix.cast<long>())) {
+      }
 
-      /// Specify the tiling unit, and the superlattice into which UnitCells should be brought within.
-      /// The superlattice must be an integer transformation of the tiling unit
-      UnitCellWithin(const Lattice &tiling_unit, const Lattice &superlattice):
-        UnitCellWithin(UnitCellWithin::_make_transformation_matrix(tiling_unit, superlattice, TOL))
-      {}
+      /// Specify the tiling unit, and the superlattice into which UnitCells should
+      /// be brought within. The superlattice must be an integer transformation of
+      /// the tiling unit
+      LatticePointWithin(const Lattice &tiling_unit, const Lattice &superlattice)
+        : LatticePointWithin(LatticePointWithin::_make_transformation_matrix(tiling_unit, superlattice, TOL)) {
+      }
 
-      ///Brings the given lattice point within the superlattice
-      Eigen::Vector3l operator()(const Eigen::Vector3l &ijk) const;
-      UnitCell operator()(const UnitCell &ijk) const;
+      /// Brings the given lattice point within the superlattice
+      vector_type operator()(const Eigen::Vector3l &ijk) const;
+
+      template <typename UnitCellType>
+      UnitCellType operator()(const UnitCellType &ijk) const {
+        return UnitCellType(this->operator()(static_cast<vector_type>(ijk)));
+      }
 
     private:
       /// Integer matrix that converts the tiling unit into the superlattice.

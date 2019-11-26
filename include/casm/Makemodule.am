@@ -256,6 +256,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/LatticeMap.hh\
+    include/casm/crystallography/LatticePointWithin.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
@@ -274,7 +275,6 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
     include/casm/crystallography/UnitCellCoordTraits.hh\
-    include/casm/crystallography/UnitCellWithin.hh\
     include/casm/crystallography/jsonStruc.hh
 
 #-------------------------------------------------------------------------------#
