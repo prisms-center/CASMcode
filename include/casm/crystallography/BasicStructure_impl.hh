@@ -91,7 +91,7 @@ namespace CASM {
 
     template<typename CoordType>
     void BasicStructure<CoordType>::copy_attributes_from(const BasicStructure<CoordType> &RHS) {
-
+      //TODO: Delete this? Why is it even here still?
     }
 
     //***********************************************************
