@@ -292,6 +292,10 @@ namespace CASM {
 
     /** @} */
 
+    /// Calculates the transformation matrix that takes the tiling unit to the superlattice.
+    /// Throws exceptions if the superlattice isn't compatible with its tiling unit
+    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
+
   }
   // write Lattice in json as array of vectors
   jsonParser &to_json(const xtal::Lattice &lat, jsonParser &json);

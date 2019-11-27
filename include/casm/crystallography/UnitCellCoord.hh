@@ -226,5 +226,18 @@ namespace CASM {
   void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json);
 
 } // namespace CASM
+
+// TODO: or do we prefer functors in our own dedicated namespace?
+namespace std {
+  template <>
+  struct hash<CASM::xtal::UnitCell> {
+    std::size_t operator()(const CASM::xtal::UnitCell &value) const;
+  };
+
+  template <>
+  struct hash<CASM::xtal::UnitCellCoord> {
+    std::size_t operator()(const CASM::xtal::UnitCellCoord &value) const;
+  };
+}
 #endif
 

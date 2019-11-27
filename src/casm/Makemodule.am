@@ -190,6 +190,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/LatticeMap.hh\
     include/casm/crystallography/LatticePointWithin.hh\
     include/casm/crystallography/Lattice_impl.hh\
+    include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
     include/casm/crystallography/PrimGrid.hh\
@@ -821,6 +822,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/LatticeIsEquivalent.cc\
     src/casm/crystallography/LatticeMap.cc\
     src/casm/crystallography/LatticePointWithin.cc\
+    src/casm/crystallography/LinearIndexConverter.cc\
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Niggli.cc\
     src/casm/crystallography/PrimGrid.cc\
@@ -971,4 +973,3 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     $(BOOST_LDFLAGS)\
     -avoid-version
-src/casm/version/autoversion.lo: .FORCE

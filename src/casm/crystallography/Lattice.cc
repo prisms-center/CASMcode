@@ -3,6 +3,7 @@
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/global/eigen.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
@@ -930,6 +931,25 @@ namespace CASM {
       }
 
       return new_lat;
+    }
+
+    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
+
+      Eigen::Matrix3d direct_transformation_matrix = tiling_unit.lat_column_mat().inverse() * superlattice.lat_column_mat();
+      Eigen::Matrix3l rounded_transformation_matrix = round(direct_transformation_matrix).cast<long>();
+
+      if(rounded_transformation_matrix.determinant() == 0) {
+        throw std::runtime_error(
+          "The transformation matrix that converts the tiling unit to the superlattice is singular, and therefore not valid.");
+      }
+
+      Eigen::Matrix3d matrix_error = direct_transformation_matrix - rounded_transformation_matrix.cast<double>();
+
+      if(!matrix_error.isZero(tol)) {
+        throw std::runtime_error("The provided tiling unit and superlattice are not related by an integer transformation.");
+      }
+
+      return rounded_transformation_matrix;
     }
   }
 

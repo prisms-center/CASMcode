@@ -79,7 +79,7 @@ TEST(InvariantSubgroupTest, Test0) {
     config.init_occupation();
 
     // Scel sym_compare
-    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2.primclex().shared_prim(), scel_vol2.prim_grid(), scel_vol2.crystallography_tol());
+    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2.primclex().shared_prim(), xtal::make_bring_within_f(scel_vol2), scel_vol2.crystallography_tol());
 
     // Get the config factor group (should just be all Supercell operations)
     std::vector<PermuteIterator> _config_fg = config.factor_group();
@@ -134,7 +134,7 @@ TEST(InvariantSubgroupTest, Test0) {
     config.init_occupation();
 
     // Scel sym_compare
-    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2.primclex().shared_prim(), scel_vol2.prim_grid(), scel_vol2.crystallography_tol());
+    ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare(scel_vol2.primclex().shared_prim(), xtal::make_bring_within_f(scel_vol2), scel_vol2.crystallography_tol());
 
     // Get the config factor group (should just be all Supercell operations)
     std::vector<PermuteIterator> _config_fg = config.factor_group();

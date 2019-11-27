@@ -258,6 +258,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/LatticeMap.hh\
     include/casm/crystallography/LatticePointWithin.hh\
     include/casm/crystallography/Lattice_impl.hh\
+    include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
     include/casm/crystallography/PrimGrid.hh\

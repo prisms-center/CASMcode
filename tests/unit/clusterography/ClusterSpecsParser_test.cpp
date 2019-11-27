@@ -2,6 +2,7 @@
 #include <memory>
 
 /// What is being tested:
+#include "casm/clex/Supercell.hh"
 #include "casm/clusterography/ClusterSpecsParser_impl.hh"
 
 /// What is being used to test it:
@@ -896,7 +897,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
     EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].include_subclusters, 1);
     EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].cluster.size(), 1);
 
-    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel.primclex().shared_prim(), ts.scel.prim_grid(), ts.scel.crystallography_tol());
+    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel.primclex().shared_prim(), xtal::make_bring_within_f(ts.scel), ts.scel.crystallography_tol());
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
     // only clusters in orbit to.diff_trans_orbits[0] should be found
@@ -1062,7 +1063,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
     EXPECT_EQ(parser->custom->data[1].orbit_specs->prototypes[0].include_subclusters, 1);
     EXPECT_EQ(parser->custom->data[1].orbit_specs->prototypes[0].cluster.size(), 1);
 
-    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel.primclex().shared_prim(), ts.scel.prim_grid(), ts.scel.crystallography_tol());
+    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel.primclex().shared_prim(), xtal::make_bring_within_f(ts.scel), ts.scel.crystallography_tol());
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
     // 4/6 clusters in orbit to.diff_trans_orbits[0] should match the first custom phenom

@@ -7,6 +7,7 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymOp.hh"
+#include <functional>
 
 namespace CASM {
   namespace xtal {
@@ -14,7 +15,6 @@ namespace CASM {
     UnitCell UnitCell::from_coordinate(Coordinate const &lattice_point) {
       return UnitCell(lround(lattice_point.const_frac()));
     }
-
 
     UnitCellCoord UnitCellCoord::from_coordinate(const PrimType &prim, const Coordinate &coord, double tol) {
       Coordinate coord_in_prim(prim.lattice());
@@ -88,3 +88,20 @@ namespace CASM {
     return;
   }
 } // namespace CASM
+
+namespace std {
+  std::size_t hash<CASM::xtal::UnitCell>::operator()(const CASM::xtal::UnitCell &value) const {
+    std::size_t seed = value.size();
+    for(int i = 0; i < 3; ++i) {
+      seed ^= value(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+  }
+
+  std::size_t hash<CASM::xtal::UnitCellCoord>::operator()(const CASM::xtal::UnitCellCoord &value) const {
+    const auto &uc = value.unitcell();
+    auto seed = std::hash<CASM::xtal::UnitCell>()(uc);
+    seed ^= value.sublattice() + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    return seed;
+  }
+} // namespace std

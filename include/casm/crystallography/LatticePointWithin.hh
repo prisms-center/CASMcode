@@ -1,7 +1,9 @@
 #ifndef UNITCELLWITHIN_HH
 #define UNITCELLWITHIN_HH
 
+#include <vector>
 #include "casm/external/Eigen/Core"
+#include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/global/eigen.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
@@ -10,6 +12,7 @@ namespace CASM {
     class UnitCell;
     class UnitCellCoord;
     class Lattice;
+    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 
     /**
      * Handles bringing a UnitCell (i,j,k values) within a particular
@@ -18,7 +21,8 @@ namespace CASM {
      * superlattice
      */
 
-    struct LatticePointWithin {
+    class LatticePointWithin {
+    public:
       typedef Eigen::Matrix<long, 3, 3> matrix_type;
       typedef Eigen::Matrix<long, 3, 1> vector_type;
 
@@ -40,7 +44,7 @@ namespace CASM {
       /// be brought within. The superlattice must be an integer transformation of
       /// the tiling unit
       LatticePointWithin(const Lattice &tiling_unit, const Lattice &superlattice)
-        : LatticePointWithin(LatticePointWithin::_make_transformation_matrix(tiling_unit, superlattice, TOL)) {
+        : LatticePointWithin(make_transformation_matrix(tiling_unit, superlattice, TOL)) {
       }
 
       /// Brings the given lattice point within the superlattice
@@ -64,10 +68,6 @@ namespace CASM {
 
       long int m_total_lattice_points_in_superlattice;
 
-      /// Calculates the transformation matrix that takes the tiling unit to the superlattice.
-      /// Throws exceptions if the superlattice isn't compatible with its tiling unit
-      static matrix_type _make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
-
       /// Throws exception if the transformation matrix has determinant 0
       static void _throw_if_bad_transformation_matrix(const matrix_type &transformation_matrix);
     };
@@ -80,16 +80,22 @@ namespace CASM {
      * in the list in constant time.
      */
 
-    class PrimGrid__ {
+    class OrderedLatticePointGenerator {
+    public:
       typedef LatticePointWithin::matrix_type matrix_type;
       typedef LatticePointWithin::vector_type vector_type;
 
       /// Construct with the transformation matrix that takes the tiling unit to the superlattice
-      PrimGrid__(const matrix_type &transformation_matrix);
+      OrderedLatticePointGenerator(const matrix_type &transformation_matrix);
 
       /// Given the index into the list of lattice points, return its corresponding lattice point, with
       /// guaranteed order
       vector_type operator()(Index ix) const;
+
+      /// Returns the total number of unique lattice points that can be generated
+      long int size() const {
+        return m_total_lattice_points;
+      }
 
     private:
       long int m_total_lattice_points;
@@ -114,6 +120,14 @@ namespace CASM {
       /// Create a lattice point from the provided index, in the Smith Normal Form diagonalized space
       vector_type _make_smith_normal_form_lattice_point(Index ix) const;
     };
+
+    //********************************************************************************************************************************//
+
+    ///Returns all the lattice points that exists within the superlattice that has the given transformation matrix
+    std::vector<UnitCell> make_lattice_points(const OrderedLatticePointGenerator::matrix_type &transformation_matrix);
+    std::vector<UnitCell> make_lattice_points(const Eigen::Matrix3i &transformation_matrix);
+    ///Returns all the lattice points that exists when tiling the tiling unit inside the superlattice
+    std::vector<UnitCell> make_lattice_points(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 
   } // namespace xtal
 } // namespace CASM

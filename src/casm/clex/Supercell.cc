@@ -13,6 +13,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/PrimClex.hh"
@@ -464,5 +465,11 @@ namespace CASM {
     return CASM::generate_name(transf_mat(prim.lattice(), xtal::canonical::equivalent(superlat, pg), prim.lattice().tol()));
   }
 
+  namespace xtal {
+    LatticePointWithin make_bring_within_f(const Supercell &scel) {
+      LatticePointWithin bring_within_f(scel.prim().lattice(), scel.lattice());
+      return bring_within_f;
+    }
+  }
 
 }
