@@ -15,6 +15,26 @@ namespace CASM {
       return;
     }
 
+    void LinearIndexConverter::_throw_if_incompatible_index(Index ix) const {
+      if(ix < 0 || ix >= this->_total_sites()) {
+        throw std::runtime_error("The specified index is out of range. There are " + std::to_string(this->_total_sites()) +
+                                 " availabel sites, but you specified index " + std::to_string(ix));
+      }
+      return;
+    }
+
+    void LinearIndexConverter::_throw_if_incompatible_bijk(const UnitCellCoord &bijk) const {
+      if(bijk.sublattice() >= m_basis_sites_in_prim) {
+        throw std::runtime_error("The given UnitCellCoord has a sublattice index that exceeds the expected value");
+      }
+
+      if(!m_automatically_bring_bijk_within && m_bijk_to_linear_index.find(bijk) == m_bijk_to_linear_index.end()) {
+        throw std::runtime_error("The given UnitCellCoord lands outside of the superlattice, and you requested to not allow this");
+      }
+
+      return;
+    }
+
     std::vector<UnitCellCoord> LinearIndexConverter::_make_all_ordered_bijk_values(const OrderedLatticePointGenerator &make_point,
                                                                                    int basis_sites_in_prim) {
       std::vector<UnitCellCoord> all_bijk_values;
@@ -31,15 +51,40 @@ namespace CASM {
     }
 
     void LinearIndexConverter::dont_bring_within() {
-      m_automatically_bring_within = false;
+      m_automatically_bring_bijk_within = false;
     }
 
     void LinearIndexConverter::do_bring_within() {
-      m_automatically_bring_within = true;
+      m_automatically_bring_bijk_within = true;
     }
 
     UnitCellCoord LinearIndexConverter::operator[](Index ix) const {
+      _throw_if_incompatible_index(ix);
       return m_linear_index_to_bijk[ix];
+    }
+
+    Index LinearIndexConverter::operator[](const UnitCellCoord &bijk) const {
+      //Make sure the UntiCellCoord is allowed
+      this->_throw_if_incompatible_bijk(bijk);
+
+      //If only requesting UnitCellCoord conversions that are within, you already have the value
+      if(!m_automatically_bring_bijk_within) {
+        return m_bijk_to_linear_index.at(bijk);
+      }
+
+      //Otherwise you have to bring the UnitCellCoord within the superlattice before checking,
+      //but maybe you already hit it
+      if(m_bijk_to_linear_index_outside_of_superlattice.find(bijk) != m_bijk_to_linear_index_outside_of_superlattice.end()) {
+        return m_bijk_to_linear_index_outside_of_superlattice.at(bijk);
+      }
+
+      //You've never seen this UnitCellCoord before. Bring it within the superlattice, figure out its index,
+      //and cache the result for the future
+      auto bijk_within = m_bring_within_f(bijk);
+      auto ix_within = m_bijk_to_linear_index.at(bijk_within);
+
+      m_bijk_to_linear_index_outside_of_superlattice[bijk] = ix_within;
+      return ix_within;
     }
   } // namespace xtal
 } // namespace CASM

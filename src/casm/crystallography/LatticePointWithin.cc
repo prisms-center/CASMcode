@@ -34,7 +34,7 @@ namespace CASM {
     //********************************************************************************************************************************//
 
     OrderedLatticePointGenerator::OrderedLatticePointGenerator(const matrix_type &transformation_matrix)
-      : m_bring_within_f(transformation_matrix), m_total_lattice_points(transformation_matrix.determinant()) {
+      : m_bring_within_f(transformation_matrix), m_total_lattice_points(std::abs(transformation_matrix.determinant())) {
       smith_normal_form(transformation_matrix, this->m_smith_normal_U, this->m_smith_normal_S, this->m_smith_normal_V);
 
       auto S_diagonal = this->m_smith_normal_S.diagonal();
