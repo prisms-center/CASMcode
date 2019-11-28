@@ -10,7 +10,7 @@
 
 namespace CASM {
   namespace xtal {
-    void LatticePointWithin::_throw_if_bad_transformation_matrix(const matrix_type &transformation_matrix) {
+    void LatticePointWithin_f::_throw_if_bad_transformation_matrix(const matrix_type &transformation_matrix) {
       if(transformation_matrix.determinant() == 0) {
         throw std::runtime_error(
           "The transformation matrix that converts the tiling unit to the superlattice is singular, and therefore not valid.");
@@ -18,7 +18,7 @@ namespace CASM {
       return;
     }
 
-    LatticePointWithin::vector_type LatticePointWithin::operator()(const Eigen::Vector3l &ijk) const {
+    LatticePointWithin_f::vector_type LatticePointWithin_f::operator()(const vector_type &ijk) const {
       vector_type vec2 = this->m_transformation_matrix_adjugate * ijk;
       auto vol = this->m_total_lattice_points_in_superlattice;
       vec2[0] = ((vec2[0] % vol) + vol) % vol;
@@ -27,7 +27,7 @@ namespace CASM {
       return (this->m_transformation_matrix * vec2) / vol;
     }
 
-    UnitCellCoord LatticePointWithin::operator()(const UnitCellCoord &bijk) const {
+    UnitCellCoord LatticePointWithin_f::operator()(const UnitCellCoord &bijk) const {
       return UnitCellCoord(bijk.sublattice(), this->operator()(bijk.unitcell()));
     }
 

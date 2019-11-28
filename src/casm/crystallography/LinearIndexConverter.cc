@@ -50,13 +50,20 @@ namespace CASM {
       return all_bijk_values;
     }
 
-    void LinearIndexConverter::dont_bring_within() {
+    void LinearIndexConverter::never_bring_within() {
       m_automatically_bring_bijk_within = false;
     }
 
-    void LinearIndexConverter::do_bring_within() {
+    void LinearIndexConverter::always_bring_within() {
       m_automatically_bring_bijk_within = true;
     }
+
+      UnitCellCoord LinearIndexConverter::bring_within(const UnitCellCoord& bijk) const
+      {
+          //equivalent to requesting index of bijk, then using the index to get the
+          //bijk within the superlattice
+          return UnitCellCoord(bijk.sublattice(),this->m_bring_within_f(bijk.unitcell()));
+      }
 
     UnitCellCoord LinearIndexConverter::operator[](Index ix) const {
       _throw_if_incompatible_index(ix);

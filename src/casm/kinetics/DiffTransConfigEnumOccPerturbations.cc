@@ -29,7 +29,7 @@ extern "C" {
 namespace {
   using namespace CASM;
   ScelPeriodicSymCompare<IntegralCluster> _construct_scel_sym_compare(const Supercell &scel) {
-    xtal::LatticePointWithin bring_within_f(scel.prim().lattice(), scel.lattice());
+    xtal::LatticePointWithin_f bring_within_f(scel.prim().lattice(), scel.lattice());
     return ScelPeriodicSymCompare<IntegralCluster>(scel.primclex().shared_prim(), bring_within_f, scel.crystallography_tol());
   }
 }

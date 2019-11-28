@@ -136,7 +136,7 @@ TEST(LinearIndexConverterTest, bad_fall_outside_superlattice_query) {
   int total_basis_atoms = 10;
 
   xtal::LinearIndexConverter ix_bijk_converter(trans_mat, total_basis_atoms);
-  ix_bijk_converter.dont_bring_within();
+  ix_bijk_converter.never_bring_within();
 
   try {
     auto ix = ix_bijk_converter[xtal::UnitCellCoord(1000, 1000, 1000, 0)];

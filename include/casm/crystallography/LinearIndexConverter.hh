@@ -14,6 +14,12 @@ namespace CASM {
      * where the linear index is guaranteed to preserve order based on the
      * sublattice index of the UnitCellCoord, and the Smith Normal Form
      * of the UnitCell.
+     *
+     * By default, the constructed index converter will always accept
+     * UnitCellCoord values that fall outside of the superlattice. When this
+     * happens, the given UnitCellCoord is brought into the superlattice
+     * using superlattice vector translations, and the index of the resulting
+     * UnitCellCoord is returned.
      */
 
     class LinearIndexConverter {
@@ -33,6 +39,10 @@ namespace CASM {
           const auto &bijk = m_linear_index_to_bijk[ix];
           m_bijk_to_linear_index[bijk] = ix;
         }
+
+        //By default the construction will always allow receiving bijk values that fall
+        //outside of the superlattice
+        this->always_bring_within();
       }
 
       /// Initialize with the primitie tiling unit, the superlattice, and the number of basis sites
@@ -42,10 +52,13 @@ namespace CASM {
       }
 
       /// Prevent the index converter from bringing UnitCellCoord within the supercell when querying for the index
-      void dont_bring_within();
+      void never_bring_within();
 
       /// Automatically bring UnitCellCoord values within the supercell when querying for the index (on by default)
-      void do_bring_within();
+      void always_bring_within();
+
+      /// Bring the given UnitCellCoord into the superlattice using lattice translations
+      UnitCellCoord bring_within(const UnitCellCoord& bijk) const;
 
       /// Given the linear index, retreive the corresponding UnitCellCoord
       UnitCellCoord operator[](Index ix) const;
@@ -71,7 +84,7 @@ namespace CASM {
       bool m_automatically_bring_bijk_within;
 
       /// Functor to bring UnitCellCoord values back into the superlattice
-      LatticePointWithin m_bring_within_f;
+      LatticePointWithin_f m_bring_within_f;
 
       /// Returns the total number of sites within the superlattice
       Index _total_sites() const {

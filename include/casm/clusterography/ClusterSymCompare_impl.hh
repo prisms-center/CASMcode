@@ -2,7 +2,6 @@
 #define CASM_ClusterSymCompare_impl
 
 #include "casm/clusterography/ClusterSymCompare.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
@@ -128,7 +127,7 @@ namespace CASM {
   ///
   template<typename Element>
   ScelPeriodicSymCompare<Element>::
-  ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::LatticePointWithin &bring_within_f, double tol):
+  ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::LatticePointWithin_f &bring_within_f, double tol):
     m_prim(prim_ptr),
     m_tol(tol),
     m_bring_within_f(bring_within_f) {}
@@ -171,7 +170,7 @@ namespace CASM {
   ///
   template<typename Element>
   WithinScelSymCompare<Element>::
-  WithinScelSymCompare(PrimType_ptr prim_ptr, const xtal::LatticePointWithin &bring_within_f, double tol):
+  WithinScelSymCompare(PrimType_ptr prim_ptr, const xtal::LatticePointWithin_f &bring_within_f, double tol):
     m_prim(prim_ptr),
     m_tol(tol),
     m_bring_within_f(bring_within_f) {}

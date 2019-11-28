@@ -12,6 +12,8 @@ namespace CASM {
     class UnitCell;
     class UnitCellCoord;
     class Lattice;
+
+    //This is just a forward declaration. The routine is implemented in Lattice.cc
     Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 
     /**
@@ -21,34 +23,35 @@ namespace CASM {
      * superlattice
      */
 
-    class LatticePointWithin {
+    class LatticePointWithin_f {
     public:
       typedef Eigen::Matrix<long, 3, 3> matrix_type;
       typedef Eigen::Matrix<long, 3, 1> vector_type;
 
-      /// Specify the tiling unit and a transformation that turns the tiling unit
-      /// into the desired superlattice into which UnitCells should be brought
-      /// within
-      LatticePointWithin(const matrix_type &superlattice_transformation_matrix)
+      /// Specify the integer transformation matrix that turns the tiling unit
+      /// into the desired superlattice. Lattice points (UnitCell) with fractional
+      /// coordinates relative to the tiling unit will then be brought into
+      /// the superlattice.
+      LatticePointWithin_f(const matrix_type &superlattice_transformation_matrix)
         : m_transformation_matrix(superlattice_transformation_matrix),
           m_transformation_matrix_adjugate(adjugate(superlattice_transformation_matrix)),
           m_total_lattice_points_in_superlattice(superlattice_transformation_matrix.determinant()) {
         _throw_if_bad_transformation_matrix(this->m_transformation_matrix);
       }
 
-      LatticePointWithin(const Eigen::Matrix3i &superlattice_transformation_matrix)
-        : LatticePointWithin(matrix_type(superlattice_transformation_matrix.cast<long>())) {
+      LatticePointWithin_f(const Eigen::Matrix3i &superlattice_transformation_matrix)
+        : LatticePointWithin_f(matrix_type(superlattice_transformation_matrix.cast<long>())) {
       }
 
-      /// Specify the tiling unit, and the superlattice into which UnitCells should
-      /// be brought within. The superlattice must be an integer transformation of
+      /// Specify the tiling unit, and the superlattice into which lattice points (UnitCells)
+      /// should be brought within. The superlattice must be an integer transformation of
       /// the tiling unit
-      LatticePointWithin(const Lattice &tiling_unit, const Lattice &superlattice)
-        : LatticePointWithin(make_transformation_matrix(tiling_unit, superlattice, TOL)) {
+      LatticePointWithin_f(const Lattice &tiling_unit, const Lattice &superlattice)
+        : LatticePointWithin_f(make_transformation_matrix(tiling_unit, superlattice, TOL)) {
       }
 
       /// Brings the given lattice point within the superlattice
-      vector_type operator()(const Eigen::Vector3l &ijk) const;
+      vector_type operator()(const vector_type &ijk) const;
 
       template <typename UnitCellType>
       UnitCellType operator()(const UnitCellType &ijk) const {
@@ -78,12 +81,15 @@ namespace CASM {
      * The Smith Normal Form of a transformation matrix allows the enumeration of lattice points to
      * be generated in a particular order. This class can generate any lattice point given its index
      * in the list in constant time.
+     *
+     * If you want to convert between linear index and bijk (UnitCellCoord) quickly, you probably
+     * want to be using the LinearIndexConverter class instead of this.
      */
 
     class OrderedLatticePointGenerator {
     public:
-      typedef LatticePointWithin::matrix_type matrix_type;
-      typedef LatticePointWithin::vector_type vector_type;
+      typedef LatticePointWithin_f::matrix_type matrix_type;
+      typedef LatticePointWithin_f::vector_type vector_type;
 
       /// Construct with the transformation matrix that takes the tiling unit to the superlattice
       OrderedLatticePointGenerator(const matrix_type &transformation_matrix);
@@ -101,7 +107,7 @@ namespace CASM {
       long int m_total_lattice_points;
 
       // Can map ijk values within the supercell
-      LatticePointWithin m_bring_within_f;
+      LatticePointWithin_f m_bring_within_f;
 
       /// The Smith Normal Form decomposition is: trans_mat = U*S*V, with det(U)=det(V)=1; S is diagonal
       matrix_type m_smith_normal_U;
