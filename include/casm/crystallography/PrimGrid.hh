@@ -113,7 +113,7 @@ namespace CASM {
       };
 
 
-    public:
+      /* public: */
       /// map a UnitCell inside the supercell
       UnitCell within(const UnitCell &ijk) const;
 
