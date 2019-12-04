@@ -56,6 +56,7 @@ namespace CASM {
 
   public:
 
+    //TODO: What does this even mean? You're asking for a segmentation fault
     PermuteIterator();
 
     PermuteIterator(const PermuteIterator &iter);

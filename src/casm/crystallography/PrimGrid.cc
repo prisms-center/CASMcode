@@ -12,6 +12,7 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
 
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymPermutation.hh"
@@ -357,6 +358,21 @@ namespace CASM {
     //==============================================================================================
     CASM::SymOp PrimGrid::sym_op(Index l) const {
       return CASM::SymOp::translation(scel_coord(l).cart());
+    }
+
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice) {
+      Coordinate tcoord(ijk.cast<double>(), tiling_unit, FRAC);
+      tcoord.set_lattice(superlattice, CART);
+      return tcoord;
+    }
+
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Superlattice &superlattice) {
+      return make_superlattice_coordinate(ijk, superlattice.prim_lattice(), superlattice.superlattice());
+    }
+
+    Coordinate make_superlattice_coordinate(Index ijk_ix, const Superlattice &superlattice) {
+      OrderedLatticePointGenerator index_to_ijk_f(superlattice.transformation_matrix());
+      return make_superlattice_coordinate(ijk_ix, superlattice, index_to_ijk_f);
     }
   }
 }

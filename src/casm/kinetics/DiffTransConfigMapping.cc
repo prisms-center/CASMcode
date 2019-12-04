@@ -95,7 +95,7 @@ namespace CASM {
       MappingNode from_node = *from_set.begin();
       MappingNode to_node = *to_set.begin();
 
-      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lat_node.parent.scel_lattice());
+      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lat_node.parent.superlattice());
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
 

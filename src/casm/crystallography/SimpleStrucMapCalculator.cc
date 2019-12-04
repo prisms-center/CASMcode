@@ -1,6 +1,9 @@
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
   namespace xtal {
@@ -37,7 +40,7 @@ namespace CASM {
 
       result.reserve(n_best);
 
-      Coordinate translation(_node.lat_node.parent.scel_lattice());
+      Coordinate translation(_node.lat_node.parent.superlattice());
       // Try translating child atom at i_trans onto each chemically compatible site of parent
       for(Index j = 0; j < _allowed_species().size(); ++j) {
         if(_allowed_species()[j].count(sp)) {
@@ -62,12 +65,14 @@ namespace CASM {
       result.mol_info.resize(_node.permutation.size());
       Eigen::MatrixXd coords = _node.lat_node.stretch * _node.lat_node.isometry * c_info.coords;
       coords.colwise() += _node.basis_node.translation;
-      PrimGrid const &cgrid = _node.lat_node.child;
+      auto const &cgrid = _node.lat_node.child;
       Index nmol = _child_struc.mol_info.size();
+
+      OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
       for(Index i = 0; i < _node.permutation.size(); ++i) {
         Index j = _node.permutation[i];
         if(j < (nmol * cgrid.size())) {
-          result.mol_info.coords.col(i) = coords.col(j % nmol) + cgrid.scel_coord(j / nmol).const_cart();
+          result.mol_info.coords.col(i) = coords.col(j % nmol) + make_superlattice_coordinate(j / nmol, cgrid, child_index_to_unitcell).const_cart();
           result.mol_info.names[i] = _child_struc.mol_info.names[j % nmol];
         }
       }
@@ -96,10 +101,13 @@ namespace CASM {
     void SimpleStrucMapCalculator::populate_displacement(MappingNode &_node,
                                                          SimpleStructure const &child_struc) const {
 
-      PrimGrid const &pgrid(_node.lat_node.parent);
-      PrimGrid const &cgrid(_node.lat_node.child);
+      const auto &pgrid = _node.lat_node.parent;
+      const auto &cgrid = _node.lat_node.child;
       SimpleStructure::Info const &p_info(info(parent()));
       SimpleStructure::Info const &c_info(info(child_struc));
+      //TODO: Just use linear index converter? could make things more obvious
+      OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
+      OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
 
 
       _node.permutation = _node.basis_node.permutation();
@@ -107,7 +115,7 @@ namespace CASM {
       // initialize displacement matrix with all zeros
       _node.displacement.setZero(3, pgrid.size()*p_info.size());
 
-      Coordinate disp_coord(pgrid.scel_lattice());
+      Coordinate disp_coord(pgrid.superlattice());
       Index cN = c_info.size() * cgrid.size();
       // Populate displacements given as the difference in the Coordinates
       // as described by node.permutation.
@@ -126,11 +134,11 @@ namespace CASM {
         if(_node.permutation[i] < cN) {
 
           Coordinate child_coord(c_info.coords.col(_node.permutation[i] / cgrid.size())
-                                 + cgrid.scel_coord(_node.permutation[i] % cgrid.size()).const_cart()
+                                 + make_superlattice_coordinate(_node.permutation[i] % cgrid.size(), cgrid, child_index_to_unitcell).const_cart()
                                  + _node.basis_node.translation,
-                                 pgrid.scel_lattice(), CART);
+                                 pgrid.superlattice(), CART);
 
-          Coordinate parent_coord = pgrid.scel_coord(i % pgrid.size());
+          Coordinate parent_coord = make_superlattice_coordinate(i % pgrid.size(), pgrid, parent_index_to_unitcell);
           parent_coord.cart() += p_info.coords.col(i / pgrid.size());
           child_coord.min_dist(parent_coord, disp_coord);
           //std::cout << "\nMap " << _node.permutation[i] << "->" << i << "\n"
@@ -165,11 +173,13 @@ namespace CASM {
     //****************************************************************************************************************
     bool SimpleStrucMapCalculator::populate_cost_mat(MappingNode &_node,
                                                      SimpleStructure const &child_struc) const {
-      PrimGrid const &pgrid(_node.lat_node.parent);
-      PrimGrid const &cgrid(_node.lat_node.child);
+      const auto &pgrid = _node.lat_node.parent;
+      const auto &cgrid = _node.lat_node.child;
       Eigen::Vector3d const &translation(_node.basis_node.translation);
       Eigen::MatrixXd &cost_matrix(_node.basis_node.cost_mat);
       Eigen::Matrix3d metric = (_node.lat_node.stretch * _node.lat_node.stretch).inverse();
+      OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
+      OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
 
       SimpleStructure::Info const &p_info(info(parent()));
       SimpleStructure::Info const &c_info(info(child_struc));
@@ -206,7 +216,7 @@ namespace CASM {
 
         // For each sublattice, loop over lattice points, 'n'. 'ac' tracks linear index of atoms in child supercell
         for(Index lc = 0; lc < cgrid.size(); ++lc, ++ac) {
-          Coordinate child_coord(c_info.coords.col(bc) + cgrid.scel_coord(lc).const_cart() + translation, pgrid.scel_lattice(), CART);
+          Coordinate child_coord(c_info.coords.col(bc) + make_superlattice_coordinate(lc, cgrid, child_index_to_unitcell).const_cart() + translation, pgrid.superlattice(), CART);
           // loop through all the sites in the parent supercell
           Index ap = 0;
           for(Index bp = 0; bp < p_info.size(); ++bp) {
@@ -214,10 +224,10 @@ namespace CASM {
               ap += pgrid.size();
               continue;
             }
-            Coordinate parent_coord(p_info.coords.col(bp), pgrid.scel_lattice(), CART);
+            Coordinate parent_coord(p_info.coords.col(bp), pgrid.superlattice(), CART);
 
             for(Index lp = 0; lp < pgrid.size(); ++lp, ++ap) {
-              cost_matrix(ap, ac) = (parent_coord + pgrid.scel_coord(lp)).min_dist2(child_coord, metric);
+              cost_matrix(ap, ac) = (parent_coord + make_superlattice_coordinate(lp, pgrid, parent_index_to_unitcell)).min_dist2(child_coord, metric);
             }
           }
         }

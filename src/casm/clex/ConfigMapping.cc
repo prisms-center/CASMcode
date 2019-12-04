@@ -42,7 +42,7 @@ namespace CASM {
       int best_det = sgn(round(op.matrix().determinant()));
       int best_pdist = permute_dist(_node.permutation);
 
-      Coordinate tau(_node.lat_node.parent.scel_lattice());
+      Coordinate tau(_node.lat_node.parent.superlattice());
       while(begin != end) {
         t_op = begin->sym_op() * op;
         tdet = sgn(round(t_op.matrix().determinant()));
@@ -317,7 +317,7 @@ namespace CASM {
                                                         best_cost + struc_mapper().tol());
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
     for(auto const &map : struc_maps) {
-      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.scel_lattice());
+      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.superlattice());
       SimpleStructure oriented_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
       ConfigDoF tdof = to_configdof(map, oriented_struc, *shared_scel);
       Configuration tconfig(shared_scel, jsonParser(), tdof);

@@ -1,6 +1,8 @@
 #ifndef CASM_SupercellSymInfo
 #define CASM_SupercellSymInfo
 
+#include "casm/crystallography/Lattice.hh"
+#include "casm/global/eigen.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
@@ -69,6 +71,18 @@ namespace CASM {
       return m_has_occupation_dofs;
     }
 
+    const xtal::Lattice &supercell_lattice() const {
+      return m_supercell_superlattice.superlattice();
+    }
+
+    const xtal::Lattice &prim_lattice() const {
+      return m_supercell_superlattice.prim_lattice();
+    }
+
+    Eigen::Matrix3l transformation_matrix() const {
+      return xtal::make_transformation_matrix(this->prim_lattice(), this->supercell_lattice(), CASM::TOL);
+    }
+
     /// \brief Begin iterator over pure translational permutations
     permute_const_iterator translate_begin() const;
 
@@ -85,6 +99,8 @@ namespace CASM {
 
   private:
     PrimGrid m_prim_grid;
+
+    xtal::Superlattice m_supercell_superlattice;
 
     // m_factor_group is factor group of the super cell, found by identifying the subgroup of
     // (*this).prim().factor_group() that leaves the supercell lattice vectors unchanged

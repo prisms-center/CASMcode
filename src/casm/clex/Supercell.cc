@@ -181,7 +181,7 @@ namespace CASM {
   }
 
   const Lattice &Supercell::lattice() const {
-    return prim_grid().scel_lattice();
+    return this->sym_info().supercell_lattice();
   }
 
   /// \brief Returns the SuperNeighborList

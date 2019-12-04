@@ -43,7 +43,7 @@ namespace CASM {
     std::pair<MasterSymGroup, SymGroupRepID> result;// = std::make_pair(make_sym_group(_group),SymGroupRepID());
     if(_group.empty())
       throw std::runtime_error("Empty group passed to collective_dof_symrep()");
-    result.first.set_lattice(_group[0].prim_grid().scel_lattice());
+    result.first.set_lattice(_syminfo.supercell_lattice());
     for(PermuteIterator const &perm : _group) {
       result.first.push_back(perm.sym_op());
     }

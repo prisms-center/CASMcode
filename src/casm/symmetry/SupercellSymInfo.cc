@@ -16,8 +16,10 @@ namespace CASM {
                                      std::map<DoFKey, SymGroupRepID> const &global_dof_symrep_IDs,
                                      std::vector<SymGroupRepID> const &occ_symrep_IDs,
                                      std::map<DoFKey, std::vector<SymGroupRepID> > const &local_dof_symrep_IDs) :
+    m_supercell_superlattice(_prim_lat, _super_lat),
     m_prim_grid(_prim_lat, _super_lat, NB),
-    m_factor_group(sym::invariant_subgroup(_prim_factor_group, prim_grid().scel_lattice())),
+    /* m_factor_group(sym::invariant_subgroup(_prim_factor_group, prim_grid().scel_lattice())), */
+    m_factor_group(sym::invariant_subgroup(_prim_factor_group, _super_lat)),
     m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID),
     m_has_aniso_occs(false),
     m_has_occupation_dofs(false) {
@@ -45,8 +47,6 @@ namespace CASM {
 
       m_occ_symreps[b] = SymGroupRep::RemoteHandle(factor_group(), occ_symrep_IDs[b]);
     }
-    //std::cout << "has_aniso : " << m_has_aniso_occs << "; has_occ_dofs : " << m_has_occupation_dofs <<"\n";
-
   }
 
 

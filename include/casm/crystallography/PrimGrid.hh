@@ -9,6 +9,8 @@
 #include "casm/global/enum.hh"
 #include "casm/container/Permutation.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
   class SymGroupRepID;
@@ -18,9 +20,7 @@ namespace CASM {
   namespace xtal {
 
     class Lattice;
-    class UnitCell;
     class UnitCellCoord;
-    class Coordinate;
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -120,6 +120,8 @@ namespace CASM {
       /// map a UnitCellCoord inside the supercell
       UnitCellCoord within(const UnitCellCoord &_uccoord) const;
 
+      const Lattice &scel_lattice() const;
+
     public:
       PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
       PrimGrid(const Lattice &p_lat,
@@ -128,9 +130,6 @@ namespace CASM {
                const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
                Index NB);
 
-      const Lattice &scel_lattice() const;
-
-      //const Lattice &lattice(CELL_TYPE lat_mode) const;
 
       Index size() const {
         return m_N_vol;
@@ -180,6 +179,19 @@ namespace CASM {
 
       CASM::SymOp sym_op(Index l) const;
     };
+
+    //TODO:
+    //Move this stuff somewhere that makes sense and add documentation
+
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Superlattice &superlattice);
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice);
+    Coordinate make_superlattice_coordinate(Index ijk_ix, const Superlattice &superlattice);
+
+    template <typename IndexToUnitCellType>
+    Coordinate make_superlattice_coordinate(Index ijk_ix, const Superlattice &superlattice, IndexToUnitCellType index_to_ijk_f) {
+      UnitCell ijk = index_to_ijk_f(ijk_ix);
+      return make_superlattice_coordinate(ijk, superlattice);
+    }
 
     /** @} */
   }
