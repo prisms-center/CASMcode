@@ -954,8 +954,7 @@ libcasm_la_SOURCES = \
     src/casm/symmetry/SymTools.cc\
     src/casm/system/Popen.cc\
     src/casm/system/RuntimeLibrary.cc\
-    src/casm/version/autoversion.cc\
-    src/casm/version/develop_version.cc
+    src/casm/version/autoversion.cc
 libcasm_la_LIBADD = \
     $(BOOST_CHRONO_LIB)\
     $(BOOST_FILESYSTEM_LIB)\
