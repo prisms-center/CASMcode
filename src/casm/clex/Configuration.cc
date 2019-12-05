@@ -882,10 +882,6 @@ namespace CASM {
 
   std::string pos_string(Configuration const  &_config) {
     std::stringstream ss;
-    //auto all_dofs=global_dof_types(_config.prim());
-    //auto local_dofs=all_local_dof_types(_config.prim());
-    //all_dofs.insert(all_dofs.begin(),local_dofs.begin(),local_dofs.end());
-    //VaspIO::PrintPOSCAR p(xtal::to_simple_structure(_config,"",all_dofs), _config.name());
     VaspIO::PrintPOSCAR p(xtal::to_simple_structure(_config), _config.name());
     p.sort();
     p.print(ss);
