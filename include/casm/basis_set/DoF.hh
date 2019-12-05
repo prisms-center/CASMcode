@@ -407,13 +407,6 @@ namespace CASM {
       }
     }
 
-    void print_occ(std::ostream &out) const {
-      if(valid_index(m_current_state))
-        out << occ().name();
-      else
-        out << '?';
-    }
-
     std::unique_ptr<OccupantDoF> clone() const {
       return std::unique_ptr<OccupantDoF>(static_cast<OccupantDoF *>(this->_clone()));
     }

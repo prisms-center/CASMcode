@@ -162,8 +162,8 @@ namespace CASM {
           args.log() << pos_path.string() << std::endl;
           jsonParser datajson(pos_path);
           for(auto it = datajson.begin() ; it != datajson.end() ; ++it) {
-            SimpleStructure import_struc("relaxed_");
-            from_json(import_struc, *it);
+            SimpleStructure import_struc;
+            from_json(import_struc, *it, "relaxed");
             fs::ofstream file;
             fs::path POSCARpath = tmp_dir / ("POSCAR" + it.name());
             file.open(POSCARpath);
@@ -193,7 +193,7 @@ namespace CASM {
               ostr << std::setfill('0') << std::setw(2) << count;
               fs::path POSCARpath = tmp_dir / ("POSCAR" + ostr.str());
               file.open(POSCARpath);
-              VaspIO::PrintPOSCAR p(xtal::to_simple_structure(interpol.config_enum_interpol()[count]));
+              VaspIO::PrintPOSCAR p(xtal::make_simple_structure(interpol.config_enum_interpol()[count]));
               p.sort();
               p.print(file);
               file.close();
@@ -208,14 +208,14 @@ namespace CASM {
             fs::ofstream file_i;
             fs::path POSCARpath_i = tmp_dir / "POSCAR00";
             file_i.open(POSCARpath_i);
-            VaspIO::PrintPOSCAR p_i(xtal::to_simple_structure(config.sorted().from_config()));
+            VaspIO::PrintPOSCAR p_i(xtal::make_simple_structure(config.sorted().from_config()));
             p_i.print(file_i);
             file_i.close();
 
             fs::ofstream file_f;
             fs::path POSCARpath_f = tmp_dir / "POSCAR01";
             file_f.open(POSCARpath_f);
-            VaspIO::PrintPOSCAR p_f(xtal::to_simple_structure(config.sorted().to_config()));
+            VaspIO::PrintPOSCAR p_f(xtal::make_simple_structure(config.sorted().to_config()));
             p_f.print(file_f);
             file_f.close();
 
@@ -259,9 +259,9 @@ namespace CASM {
         fs::path pos_path = calc_properties_path(primclex, config.name());
         args.log() << "Obtaining relaxed structure from:\n";
         args.log() << pos_path.string() << std::endl;
-        SimpleStructure import_struc("relaxed_");
+        SimpleStructure import_struc;
         jsonParser datajson(pos_path);
-        from_json(import_struc, datajson);
+        from_json(import_struc, datajson, "relaxed");
 
         file.open(POSCARpath);
         VaspIO::PrintPOSCAR p(import_struc);
@@ -278,7 +278,7 @@ namespace CASM {
         fs::ofstream file;
         fs::path POSCARpath = tmp_dir / "POSCAR";
         file.open(POSCARpath);
-        VaspIO::PrintPOSCAR p(xtal::to_simple_structure(config));
+        VaspIO::PrintPOSCAR p(xtal::make_simple_structure(config));
         p.sort();
         p.print(file);
         file.close();

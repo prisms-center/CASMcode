@@ -9,6 +9,8 @@ namespace CASM {
 
     dict.insert(
       AnisoValTraits::disp(),
+      AnisoValTraits::energy(),
+      AnisoValTraits::selective_dynamics(),
       AnisoValTraits::magspin(),
       AnisoValTraits::magmom(),
       AnisoValTraits::strain("EA"),

@@ -14,6 +14,7 @@ namespace CASM {
   public:
     using AllowedOccupants = std::vector<std::vector<std::string > >;
 
+    static std::vector<std::string> string_components(ParamComposition::AllowedOccupants const &_allowed_occs);
     //*************************************************************
     //CONSTRUCTORS
     ParamComposition() : m_prim_end_members(0, 0) {
