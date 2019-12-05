@@ -70,24 +70,10 @@ namespace CASM {
 
     //*************************************************************
 
-    static std::vector<std::string> _string_components(ParamComposition::AllowedOccupants const &_allowed_occs) {
-      std::vector<std::string> result;
-      for(auto const &site : _allowed_occs) {
-        for(auto const &occ : site) {
-          if(!contains(result, occ)) {
-            result.push_back(occ);
-          }
-        }
-      }
-      return result;
-    }
-
-    //*************************************************************
-
     static std::map<std::set<Index>, std::map<std::set<Index>, Index> > _chemical_subsystems(ParamComposition::AllowedOccupants const &_allowed_occs) {
       std::map<std::set<Index>, std::map<std::set<Index>, Index> > result;
 
-      std::vector<std::string> compon = _string_components(_allowed_occs);
+      std::vector<std::string> compon = ParamComposition::string_components(_allowed_occs);
 
       // Convert _allowed_occs to occ_map, which has a pair for each unique sublattice, consisting of the indices of its allowed components and its multiplicity
       std::map<std::set<Index>, Index> occ_map;
@@ -172,12 +158,27 @@ namespace CASM {
     }
 
   }//\end namespace Local
+
+  //*************************************************************
+
+  std::vector<std::string> ParamComposition::string_components(ParamComposition::AllowedOccupants const &_allowed_occs) {
+    std::vector<std::string> result;
+    for(auto const &site : _allowed_occs) {
+      for(auto const &occ : site) {
+        if(!contains(result, occ)) {
+          result.push_back(occ);
+        }
+      }
+    }
+    return result;
+  }
+
   //---------------------------------------------------------------------------
 
   ParamComposition::ParamComposition(ParamComposition::AllowedOccupants _allowed_occs)
     : m_allowed_occs(std::move(_allowed_occs)),
       m_prim_end_members(0, 0) {
-    m_components = Local::_string_components(allowed_occs());
+    m_components = string_components(allowed_occs());
     m_comp.resize(2);
     m_comp[0].resize(0, 0);
     m_comp[1].resize(0, 0);
@@ -191,7 +192,7 @@ namespace CASM {
                                      const int &_rank_of_space,
                                      const int &COMP_TYPE) :
     m_allowed_occs(std::move(_allowed_occs)) {
-    m_components = Local::_string_components(allowed_occs());
+    m_components = string_components(allowed_occs());
     m_rank_of_space = _rank_of_space;
     m_origin = _origin;
     m_comp.resize(2);

@@ -318,16 +318,7 @@ namespace CASM {
     // get the prim composition space (column vectors are comp_n)
     Eigen::MatrixXd C = composition_space(allowed_molecule_names(prim), tol);
 
-    // get Molecule allowed in prim, and how many there are
-    std::vector<Molecule> struc_mol = struc_molecule(prim);
-    for(int i = 0; i < struc_mol.size(); i++) {
-      if(!is_molecule_name(struc_mol[i], struc_mol_name[i])) {
-        std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
-        std::cerr << "Initial struc_mol_name must be in same order as prim.struc_molecule()" << std::endl;
-        throw std::runtime_error("Error in ChemicalReference::hyperplane: Molecule name mismatch");
-      }
-    }
-    Index prim_N_mol = struc_mol.size();
+    Index prim_N_mol = struc_mol_name.size();
 
     // ensure that there is a solution X for:
     //             C = N.topRows(prim_N_mol) * X

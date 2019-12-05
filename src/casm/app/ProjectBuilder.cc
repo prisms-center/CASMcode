@@ -166,17 +166,8 @@ namespace CASM {
       }
 
 
-      // Generate standard composition axes --------------------
-      CompositionAxes opt;
-
-      opt.standard.clear();
-      std::vector<CompositionConverter> v;
-      standard_composition_axes(allowed_molecule_names(prim), std::back_inserter(v));
-      for(int i = 0; i < v.size(); i++) {
-        opt.standard[std::to_string(i)] = v[i];
-      }
-
-      opt.write(dir.composition_axes());
+      // Generate empty composition_axes.json --------------------
+      CompositionAxes().write(dir.composition_axes());
 
     }
     catch(...) {

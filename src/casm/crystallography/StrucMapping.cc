@@ -257,23 +257,10 @@ namespace CASM {
     bool AssignmentNode::operator <(AssignmentNode const &B) const {
       if(empty() != B.empty())
         return empty();
-      //if(!almost_equal(cost, B.cost, 1e-6))
-      //return cost < B.cost;
       if(time_reversal != B.time_reversal)
         return B.time_reversal;
       if(!almost_equal(translation, B.translation, 1e-6))
         return float_lexicographical_compare(translation, B.translation, 1e-6);
-      /*if(assignment != B.assignment)
-        return std::lexicographical_compare(assignment.begin(),
-                                            assignment.end(),
-                                            B.assignment.begin(),
-                                            B.assignment.end());
-      if(forced_on != B.forced_on)
-        return std::lexicographical_compare(forced_on.begin(),
-                                            forced_on.end(),
-                                            B.forced_on.begin(),
-                                            B.forced_on.end());
-      */
       return false;
     }
 
@@ -282,16 +269,10 @@ namespace CASM {
     bool identical(AssignmentNode const &A, AssignmentNode const &B) {
       if(A.empty() != B.empty())
         return false;
-      //if(!almost_equal(A.cost, B.cost, 1e-6))
-      //return false;
       if(A.time_reversal != B.time_reversal)
         return false;
       if(!almost_equal(A.translation, B.translation, 1e-6))
         return false;
-      //if(A.assignment != B.assignment)
-      //return false;
-      //if(A.forced_on != B.forced_on)
-      //return false;
       return true;
     }
     //*******************************************************************************************
@@ -384,7 +365,7 @@ namespace CASM {
     //*******************************************************************************************
 
     Index StrucMapper::_n_species(SimpleStructure const &sstruc) const {
-      return calculator().info(sstruc).size();
+      return calculator().struc_info(sstruc).size();
     }
 
     //*******************************************************************************************
@@ -500,16 +481,8 @@ namespace CASM {
       bool c_lat_is_supercell_of_parent;
       std::tie(c_lat_is_supercell_of_parent, trans_mat) = xtal::is_superlattice(c_lat, Lattice(parent().lat_column_mat), c_lat.tol());
       if(!c_lat_is_supercell_of_parent) {
-        /*std::cerr << "CRITICAL ERROR: In map_ideal_struc(), primitive structure does not tile the provided\n"
-          << "                superstructure. Please use map_deformed_struc() instead.\n"
-          << "                Exiting...\n";
-        */
         return MappingNode::invalid();
       }
-
-      // tstruc becomes idealized structure
-      //SimpleStructure tstruc(child_struc);
-
 
       // We know child_struc.lattice() is a supercell of the prim, now we have to
       // reorient 'child_struc' by a point-group operation of the parent to match canonical lattice vectors

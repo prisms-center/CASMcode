@@ -203,7 +203,6 @@ namespace CASM {
     void Structure::fill_supercell(const Structure &prim) {
       Index i, j;
 
-      m_SD_flag = prim.m_SD_flag;
       PrimGrid prim_grid(prim.lattice(), lattice());
 
       m_basis.clear();

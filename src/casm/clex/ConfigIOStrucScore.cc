@@ -136,7 +136,7 @@ namespace CASM {
     Eigen::VectorXd StrucScore::evaluate(const Configuration &_config)const {
       std::vector<double> result_vec;
 
-      SimpleStructure relaxed_struc("relaxed_");
+      SimpleStructure relaxed_struc;
 
       auto lambda = [&](const std::vector<double> &result_vec) {
         Eigen::VectorXd res = Eigen::VectorXd::Zero(result_vec.size());
@@ -146,7 +146,7 @@ namespace CASM {
         return res;
       };
 
-      from_json(relaxed_struc, jsonParser(_calc_properties_path(_config)));
+      from_json(relaxed_struc, jsonParser(_calc_properties_path(_config)), "relaxed");
 
       auto result = m_strucmapper->map_deformed_struc(relaxed_struc);
       if(result.empty()) {

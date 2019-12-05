@@ -63,7 +63,6 @@ namespace CASM {
     else {
       auto it = self.find_at(option);
       if(it == self.end()) {
-        std::cout << "not found" << std::endl;
         return std::unique_ptr<RequiredType>();
       }
       else {
