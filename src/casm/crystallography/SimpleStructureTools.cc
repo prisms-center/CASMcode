@@ -413,14 +413,10 @@ namespace CASM {
 
       for(DoFKey const &dof : which_dofs) {
         if(dof != "none" && dof != "occ")
-          std::cout << "DEBUGGING:  dof " <<  dof  << std::endl;
-        tformers.insert(dof);
+          tformers.insert(dof);
       }
 
       //std::cout << "About to transform!!!\n";
-      //THIS IS NOT CORRECT!!! THE ORDER IN WHICH TRANSFORM FOR THE TRANSFORMERS MUST BE CALLED IS A VERY SPECIFIC
-      //ORDER DICTATED BY EACH TRANSFORMERS m_before and m_after set! It should be the case that the less than operator should take
-      //care of the order but something is going incorrectly with sorting.
       for(TransformDirective const &tformer : tformers) {
         tformer.transform(_config, _reference, _sstruc);
       }
@@ -442,35 +438,12 @@ namespace CASM {
 
     //***************************************************************************
     bool TransformDirective::operator<(TransformDirective const &_other) const {
-      std::cout << " In transform directive comparator" << std::endl;
-      std::cout << " comparing:" << std::endl;
-      std::cout << "DEBUGGING: name()" << name() << std::endl;
-      std::cout << "DEBUGGING: _other.name()" << _other.name() << std::endl;
-      std::cout << "LHS before" << std::endl;
-      for(auto &k : m_before) {
-        std::cout << "DEBUGGING: k " << k  << std::endl;
-      }
-      std::cout << "LHS after" << std::endl;
-      for(auto &k : m_after) {
-        std::cout << "DEBUGGING: k " << k  << std::endl;
-      }
-      std::cout << "RHS before" << std::endl;
-      for(auto &k : _other.m_before) {
-        std::cout << "DEBUGGING: k " << k  << std::endl;
-      }
-      std::cout << "RHS after" << std::endl;
-      for(auto &k : _other.m_after) {
-        std::cout << "DEBUGGING: k " << k  << std::endl;
-      }
       if(m_before.count(_other.name()) || _other.m_after.count(name())) {
-        std::cout << "false" << std::endl;
         return false;
       }
       if(m_after.count(_other.name()) || _other.m_before.count(name())) {
-        std::cout << "true" << std::endl;
         return true;
       }
-      std::cout << "lexo compare" << std::endl;
       return name() < _other.name();
     }
 
@@ -489,14 +462,6 @@ namespace CASM {
 
     void TransformDirective::_accumulate_after(std::set<std::string>const &_queue, std::set<std::string> &_result) const {
       for(std::string const &el : _queue) {
-        //std::cout << "Must apply before for " << el << std::endl;
-        //for (auto &k : AnisoValTraits(el).must_apply_before()){
-        //	std::cout << "DEBUGGING: k" << k << std::endl;
-        //}
-        //std::cout << "Must apply after for " << el << std::endl;
-        //for (auto &k : AnisoValTraits(el).must_apply_after()){
-        //	std::cout << "DEBUGGING: k" << k << std::endl;
-        //}
         if(el != name())
           _result.insert(el);
         if(el != "atomize")
@@ -507,21 +472,13 @@ namespace CASM {
     //***************************************************************************
 
     void TransformDirective::transform(ConfigDoF const  &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
-      std::cout << "Applying transformation: " << m_name << "\n";
       if(m_traits_ptr) {
         if(m_traits_ptr->val_traits().global())
           _struc.properties[m_traits_ptr->name()] = _dof.global_dof(m_traits_ptr->name()).standard_values();
         else {
           _struc.mol_info.properties[m_traits_ptr->name()] = _dof.local_dof(m_traits_ptr->name()).standard_values();
-          std::cout << "DEBUGGING: _dof.local_dof(m_traits_ptr->name()).standard_values()" << _dof.local_dof(m_traits_ptr->name()).standard_values() << std::endl;
         }
-        std::cout << "DEBUGGING: m_traits_ptr->name()" << m_traits_ptr->name() << std::endl;
-        std::cout << "DEBUGGING: typeid(*m_traits_ptr).name() " << typeid(*m_traits_ptr).name()  << std::endl;
-        std::cout << "DEBUGGING: _struc.mol_info.coords" << _struc.mol_info.coords << std::endl;
-        std::cout << "DEBUGGING: _struc.atom_info.coords" << _struc.atom_info.coords << std::endl;
         m_traits_ptr->apply_dof(_dof, _reference, _struc);
-        std::cout << "DEBUGGING: _struc.mol_info.coords" << _struc.mol_info.coords << std::endl;
-        std::cout << "DEBUGGING: _struc.atom_info.coords" << _struc.atom_info.coords << std::endl;
       }
       else {
         _atomize(_struc, _dof.occupation(), _reference);
