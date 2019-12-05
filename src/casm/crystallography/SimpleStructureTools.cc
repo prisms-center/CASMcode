@@ -434,10 +434,12 @@ namespace CASM {
 
     //***************************************************************************
     bool TransformDirective::operator<(TransformDirective const &_other) const {
-      if(m_before.count(_other.name()) || _other.m_after.count(name()))
+      if(m_before.count(_other.name()) || _other.m_after.count(name())) {
         return false;
-      if(m_after.count(_other.name()) || _other.m_before.count(name()))
+      }
+      if(m_after.count(_other.name()) || _other.m_before.count(name())) {
         return true;
+      }
       return name() < _other.name();
     }
 
@@ -466,13 +468,12 @@ namespace CASM {
     //***************************************************************************
 
     void TransformDirective::transform(ConfigDoF const  &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
-      //std::cout << "Applying transformation: " << m_name << "\n";
       if(m_traits_ptr) {
         if(m_traits_ptr->val_traits().global())
           _struc.properties[m_traits_ptr->name()] = _dof.global_dof(m_traits_ptr->name()).standard_values();
-        else
+        else {
           _struc.mol_info.properties[m_traits_ptr->name()] = _dof.local_dof(m_traits_ptr->name()).standard_values();
-
+        }
         m_traits_ptr->apply_dof(_dof, _reference, _struc);
       }
       else {
