@@ -363,7 +363,7 @@ namespace CASM {
   /// \brief Returns the point group that leaves the Configuration unchanged
   std::string Configuration::point_group_name() const  {
     if(!cache().contains("point_group_name")) {
-      cache_insert("point_group_name", make_sym_group(this->point_group()).get_name());
+      cache_insert("point_group_name", make_sym_group(this->point_group(), this->supercell().sym_info().supercell_lattice()).get_name());
     }
     return cache()["point_group_name"].get<std::string>();
   }

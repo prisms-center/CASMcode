@@ -17,7 +17,7 @@ namespace test {
 
   const SymGroup &TestSupercell::scel_fg() const {
     if(!m_scel_fg.size()) {
-      m_scel_fg = make_sym_group(scel.sym_info().permute_begin(), scel.sym_info().permute_end());
+      m_scel_fg = make_sym_group(scel.sym_info().permute_begin(), scel.sym_info().permute_end(), this->scel.sym_info().supercell_lattice());
     }
     return m_scel_fg;
   }

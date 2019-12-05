@@ -66,14 +66,14 @@ TEST(LatticePointWithinTest, construct_via_bad_transformation) {
 
 TEST(LatticePointWithinTest, construct_via_superlattice) {
   auto trans_mat = transformation_matrix();
-  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat.cast<int>());
+  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat);
 
   xtal::LatticePointWithin_f bring_within(::fcc_lattice(), fcc_superlattice);
 }
 
 TEST(LatticePointWithinTest, construct_via_bad_superlattice) {
   auto trans_mat = transformation_matrix();
-  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat.cast<int>());
+  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat);
 
   bool good_catch = false;
   try {
@@ -115,7 +115,7 @@ TEST(LatticePointWithinTest, lattice_point_within_doest_change) {
 TEST(LatticePointWithinTest, bring_within_consistent_with_coordinate) {
   auto trans_mat = transformation_matrix();
   auto fcc_lat =::fcc_lattice();
-  auto fcc_superlattice = xtal::make_superlattice(fcc_lat, trans_mat.cast<int>());
+  auto fcc_superlattice = xtal::make_superlattice(fcc_lat, trans_mat);
 
   xtal::LatticePointWithin_f bring_within(::fcc_lattice(), fcc_superlattice);
 

@@ -54,6 +54,8 @@ namespace CASM {
     Index m_factor_group_index;
     Index m_translation_index;
 
+    const PrimGrid &prim_grid() const;
+
   public:
 
     //TODO: What does this even mean? You're asking for a segmentation fault
@@ -65,7 +67,6 @@ namespace CASM {
                     Index _factor_group_index,
                     Index _translation_index);
 
-    const PrimGrid &prim_grid() const;
 
     PermuteIterator &operator=(PermuteIterator iter);
 
@@ -78,9 +79,10 @@ namespace CASM {
     /// Returns the combination of factor_group permutation and translation permutation
     Permutation combined_permute() const;
 
-    SupercellSymInfo const &sym_info() const;
-
     SymGroup const &factor_group() const;
+
+    //TODO: Get rid of this
+    SupercellSymInfo const &sym_info() const;
 
     /// Apply the combined factor_group permutation and translation permutation being pointed at
     //template<typename T>
@@ -149,7 +151,7 @@ namespace CASM {
   };
 
   /// \brief Output PermuteIterator as (fg_index, i, j, k)
-  std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op);
+  /* std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op); */
 
   /// Iterator to next beginning of next factor group operation
   /// skipping all of the intervening operations that differ only by a translation
@@ -169,13 +171,13 @@ namespace CASM {
   ///
   /// - The result is sorted
   template<typename PermuteIteratorContainer>
-  SymGroup make_point_group(const PermuteIteratorContainer &container) {
-    return make_point_group(container.begin(), container.end());
+  SymGroup make_point_group(const PermuteIteratorContainer &container, const Lattice &supercell_lattice) {
+    return make_point_group(container.begin(), container.end(), supercell_lattice);
   }
 
   /// \brief Returns a SymGroup generated from a range of PermuteIterator
   template<typename PermuteIteratorIt>
-  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end);
+  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice);
 
   /// \brief Returns a SymGroup generated from a container of PermuteIterator
   ///
@@ -183,13 +185,13 @@ namespace CASM {
   ///
   /// - The result is sorted
   template<typename PermuteIteratorContainer>
-  SymGroup make_sym_group(const PermuteIteratorContainer &container) {
-    return make_sym_group(container.begin(), container.end());
+  SymGroup make_sym_group(const PermuteIteratorContainer &container, const Lattice &supercell_lattice) {
+    return make_sym_group(container.begin(), container.end(), supercell_lattice);
   }
 
   /// \brief Returns a SymGroup generated from a range of PermuteIterator
   template<typename PermuteIteratorIt>
-  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end);
+  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice);
 
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
 

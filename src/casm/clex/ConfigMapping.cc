@@ -275,7 +275,7 @@ namespace CASM {
 
     if(hint_ptr != nullptr) {
       StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::to_simple_structure(*hint_ptr, "", _hint_dofs),
-                                                                   make_point_group(hint_ptr->point_group()),
+                                                                   make_point_group(hint_ptr->point_group(), hint_ptr->supercell().sym_info().supercell_lattice()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
                           struc_mapper().strain_weight(),
                           0.,

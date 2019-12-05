@@ -193,10 +193,10 @@ namespace CASM {
     return it;
   }
 
-  std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op) {
-    sout << "(" << op.factor_group_index() << ", " << op.prim_grid().unitcell(op.translation_index()).transpose() << ")";
-    return sout;
-  }
+  /* std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op) { */
+  /*   sout << "(" << op.factor_group_index() << ", " << op.prim_grid().unitcell(op.translation_index()).transpose() << ")"; */
+  /*   return sout; */
+  /* } */
 
   /// \brief Returns a SymGroup generated from a range of PermuteIterator
   ///
@@ -205,9 +205,9 @@ namespace CASM {
   /// - The result is sorted
   /// - The result uses the Supercell lattice for periodic comparisons
   template<typename PermuteIteratorIt>
-  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end) {
+  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice) {
     SymGroup result;
-    result.set_lattice(begin->prim_grid().scel_lattice());
+    result.set_lattice(supercell_lattice);
     for(; begin != end; ++begin) {
       Index f = begin->sym_op().index();
       Index i;
@@ -231,9 +231,9 @@ namespace CASM {
   /// - The result is sorted
   /// - The result uses the Supercell lattice for periodic comparisons
   template<typename PermuteIteratorIt>
-  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end) {
+  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice) {
     SymGroup sym_group;
-    sym_group.set_lattice(begin->prim_grid().scel_lattice());
+    sym_group.set_lattice(supercell_lattice);
     while(begin != end) {
       sym_group.push_back(begin->sym_op());
       ++begin;
@@ -244,23 +244,23 @@ namespace CASM {
 
   template SymGroup make_sym_group(
     PermuteIterator begin,
-    PermuteIterator end);
+    PermuteIterator end, const Lattice &supercell_lattice);
   template SymGroup make_sym_group(
     std::vector<PermuteIterator>::const_iterator begin,
-    std::vector<PermuteIterator>::const_iterator end);
+    std::vector<PermuteIterator>::const_iterator end, const Lattice &supercell_lattice);
   template SymGroup make_sym_group(
     std::vector<PermuteIterator>::iterator begin,
-    std::vector<PermuteIterator>::iterator end);
+    std::vector<PermuteIterator>::iterator end, const Lattice &supercell_lattice);
 
   template SymGroup make_point_group(
     PermuteIterator begin,
-    PermuteIterator end);
+    PermuteIterator end, const Lattice &supercell_lattice);
   template SymGroup make_point_group(
     std::vector<PermuteIterator>::const_iterator begin,
-    std::vector<PermuteIterator>::const_iterator end);
+    std::vector<PermuteIterator>::const_iterator end, const Lattice &supercell_lattice);
   template SymGroup make_point_group(
     std::vector<PermuteIterator>::iterator begin,
-    std::vector<PermuteIterator>::iterator end);
+    std::vector<PermuteIterator>::iterator end, const Lattice &supercell_lattice);
 
   void swap(PermuteIterator &a, PermuteIterator &b) {
     std::swap(a.m_sym_info, b.m_sym_info);

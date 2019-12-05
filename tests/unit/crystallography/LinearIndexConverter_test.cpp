@@ -36,7 +36,7 @@ TEST(LinearIndexConverterTest, construct_via_transformation) {
 
 TEST(LinearIndexConverterTest, construct_via_superlattice) {
   auto trans_mat = transformation_matrix();
-  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat.cast<int>());
+  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat);
   xtal::LinearIndexConverter ix_bijk_converter(::fcc_lattice(), fcc_superlattice, 3);
 }
 
@@ -152,7 +152,7 @@ TEST(LinearIndexConverterTest, bad_fall_outside_superlattice_query) {
 TEST(LinearIndexConverterTest, match_to_PrimGrid) {
   auto fcc_prim =::fcc_lattice();
   auto trans_mat =::transformation_matrix();
-  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat.cast<int>());
+  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat);
   int total_basis_atoms = 10;
   xtal::LinearIndexConverter ix_bijk_converter(::fcc_lattice(), fcc_superlattice, total_basis_atoms);
 
