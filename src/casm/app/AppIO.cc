@@ -3,6 +3,8 @@
 #include "casm/app/HamiltonianModules.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/casm_io/container/json_io.hh"
+#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/clex/io/json/ChemicalReference.hh"
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
@@ -317,7 +319,10 @@ namespace CASM {
         auto it = json["species"].begin();
         auto it_end = json["species"].end();
         for(; it != it_end; ++it) {
-          auto mol_it = mol_map.emplace(it.name(), Molecule(it.name())).first;
+          std::string chem_name = it.name();
+          it->get_if(chem_name, "name");
+          //std::cout << "chem_name: " << chem_name << "\n";
+          auto mol_it = mol_map.emplace(it.name(), Molecule(chem_name)).first;
           from_json(mol_it->second, *it, f2c, *_modules);
         }
       }
@@ -362,10 +367,13 @@ namespace CASM {
       mode = COORD_MODE::CHECK();
     }
 
+    Eigen::Matrix3d c2f_mat;
     if(mode == FRAC) {
+      c2f_mat = prim.lattice().inv_lat_column_mat();
       json["coordinate_mode"] = "Fractional";
     }
     else if(mode == CART) {
+      c2f_mat.setIdentity();
       json["coordinate_mode"] = "Cartesian";
     }
 
@@ -373,7 +381,7 @@ namespace CASM {
     for(auto const &_dof : prim.global_dofs()) {
       json["dofs"][_dof.first] = _dof.second;
     }
-
+    auto mol_names = allowed_molecule_unique_names(prim);
     jsonParser &bjson = (json["basis"] = jsonParser::array(prim.basis().size()));
     for(int i = 0; i < prim.basis().size(); i++) {
       bjson[i] = jsonParser::object();
@@ -393,10 +401,17 @@ namespace CASM {
         bjson[i]["dofs"] = prim.basis()[i].dofs();
       }
 
-      bjson[i]["occupants"] = jsonParser::array(prim.basis()[i].occupant_dof().size());
+
+      jsonParser &ojson = (bjson[i]["occupants"] = jsonParser::array(prim.basis()[i].occupant_dof().size()));
 
       for(int j = 0; j < prim.basis()[i].occupant_dof().size(); j++) {
-        bjson[i]["occupants"][j] = prim.basis()[i].occupant_dof()[j].name();
+        ojson[j] = mol_names[i][j];
+        if(prim.basis()[i].occupant_dof()[j].name() != mol_names[i][j]
+           || !prim.basis()[i].occupant_dof()[j].is_atomic()) {
+          jsonParser &ojson = to_json(prim.basis()[i].occupant_dof()[j], json["species"][mol_names[i][j]], c2f_mat);
+          //if(prim.basis()[i].occupant_dof()[j].name()!=mol_names[i][j])
+          //ojson["name"]=prim.basis()[i].occupant_dof()[j].name();
+        }
       }
 
     }
@@ -526,6 +541,52 @@ namespace CASM {
 
   // --------- CompositionAxes Definitions --------------------------------------------------
 
+  /// \brief Serialize CompositionConverter to JSON
+  jsonParser &to_json(const CompositionConverter &f, jsonParser &json) {
+
+    json = jsonParser::object();
+    json["components"] = f.components();
+    json["independent_compositions"] = f.independent_compositions();
+    json["origin"] = f.origin();
+    for(int i = 0; i < f.independent_compositions(); i++) {
+      json[CompositionConverter::comp_var(i)] = f.end_member(i);
+    }
+    json["mol_formula"] = f.mol_formula();
+    json["param_formula"] = f.param_formula();
+
+    return json;
+  }
+
+  /// \brief Deserialize CompositionConverter from JSON
+  void from_json(CompositionConverter &f, const jsonParser &json) {
+
+    try {
+
+      std::vector<std::string> components;
+      Eigen::VectorXd origin;
+
+      int independent_compositions;
+
+      from_json(components, json["components"]);
+      from_json(origin, json["origin"]);
+
+      from_json(independent_compositions, json["independent_compositions"]);
+      Eigen::MatrixXd end_members(components.size(), independent_compositions);
+      Eigen::VectorXd tvec;
+      for(int i = 0; i < independent_compositions; i++) {
+        from_json(tvec, json[CompositionConverter::comp_var(i)]);
+        end_members.col(i) = tvec;
+      }
+
+      f = CompositionConverter(components.begin(), components.end(), origin, end_members);
+      return;
+    }
+    catch(...) {
+      /// re-throw exceptions
+      throw;
+    }
+  }
+
   /// \brief Read CompositionAxes from file
   ///
   /// - Stores err_code and err_message for non-fatal errors
@@ -546,7 +607,7 @@ namespace CASM {
 
     try {
 
-      read(jsonParser(_filename), _filename);
+      read(jsonParser(_filename));
 
     }
     catch(...) {
@@ -556,28 +617,32 @@ namespace CASM {
     }
   }
 
-  void CompositionAxes::read(const jsonParser &json, fs::path _filename) {
+  void CompositionAxes::read(const jsonParser &json) {
 
     try {
 
       *this = CompositionAxes();
 
-      filename = _filename;
+      json.get_if(all_axes, "possible_axes");
 
-      filename = _filename;
+      json.get_if(enumerated, "enumerated");
+
+      //Backward compatibility
+      std::map<std::string, CompositionConverter> custom;
+      json.get_if(custom, "custom_axes");
+      all_axes.insert(custom.begin(), custom.end());
 
       if(json.contains("standard_axes")) {
-        read_composition_axes(std::inserter(standard, standard.begin()), json["standard_axes"]);
-      }
-
-      if(json.contains("custom_axes")) {
-        read_composition_axes(std::inserter(custom, custom.begin()), json["custom_axes"]);
+        std::map<std::string, CompositionConverter> standard;
+        from_json(standard, json["standard_axes"]);
+        for(auto const &el : standard)
+          enumerated.insert(el.first);
+        standard.insert(standard.begin(), standard.end());
       }
 
       std::string key;
-      has_current_axes = json.get_if(key, "current_axes");
-
-      if(has_current_axes) {
+      json.get_if(key, "current_axes");
+      if(!key.empty()) {
         select(key);
       }
 
@@ -587,12 +652,20 @@ namespace CASM {
     }
   }
 
-  /// \brief Write CompositionAxes to file
-  void CompositionAxes::write(fs::path _filename) {
+  void CompositionAxes::erase_enumerated() {
+    for(std::string const &el : enumerated) {
+      all_axes.erase(el);
+      if(curr_key == el)
+        curr_key.clear();
+    }
+    enumerated.clear();
+  }
 
-    filename = _filename;
+  /// \brief Write CompositionAxes to file
+  void CompositionAxes::write(fs::path _filename) const {
+
     SafeOfstream outfile;
-    outfile.open(filename);
+    outfile.open(_filename);
     jsonParser json;
     write(json);
     json.print(outfile.ofstream());
@@ -604,60 +677,35 @@ namespace CASM {
 
     json = jsonParser::object();
 
-    json["standard_axes"][standard.cbegin()->first] = true;
-
-    for(auto it = standard.cbegin(); it != standard.cend(); ++it) {
-      json["standard_axes"][it->first] = it->second;
-    }
-
-    for(auto it = custom.cbegin(); it != custom.cend(); ++it) {
-      json["custom_axes"][it->first] = it->second;
-    }
-
-    if(has_current_axes) {
+    if(has_current_axes()) {
       json["current_axes"] = curr_key;
     }
 
+    json["possible_axes"] = all_axes;
+
+    if(enumerated.size())
+      json["enumerated"] = enumerated;
   }
 
   /// \brief Set this->curr using key
   void CompositionAxes::select(std::string key) {
-    if(standard.find(key) != standard.cend() &&
-       custom.find(key) != custom.cend()) {
-
-      std::stringstream ss;
-      ss << "Error: The composition axes " << key <<
-         " can found in both the standard and custom compostion axes.\n\n" <<
-         "Please edit the custom composition axes to remove this ambiguity.";
-
-      err_message = ss.str();
-
-      err_code = 1;
-
-    }
-    else if(standard.find(key) == standard.cend() &&
-            custom.find(key) == custom.cend()) {
-
+    auto it = all_axes.find(key);
+    if(it == all_axes.end()) {
       std::stringstream ss;
       ss << "Warning: The composition axes " << key <<
-         " can not be found in the standard or custom compostion axes.\n\n" <<
+         " cannot be found among the posible composition axes.\n\n" <<
          "Please use 'casm composition --select' to re-select your composition axes,\n" <<
-         "Please use 'casm composition --calc' to re-calc your standard axes,\n" <<
-         "or edit the custom composition axes.";
+         "use 'casm composition --calc' to re-calc your standard axes,\n" <<
+         "or add custom composition axes manually.";
 
       err_message = ss.str();
 
       err_code = 2;
     }
-    else if(standard.find(key) != standard.cend()) {
-      curr = standard[key];
+    else {
+      curr = it->second;
+      curr_key = key;
     }
-    else if(custom.find(key) != custom.cend()) {
-      curr = custom[key];
-    }
-    curr_key = key;
-    has_current_axes = true;
-
   }
 
   // ---------- prim_nlist.json IO -------------------------------------------------------------

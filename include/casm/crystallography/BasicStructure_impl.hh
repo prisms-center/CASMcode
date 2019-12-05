@@ -43,7 +43,6 @@ namespace CASM {
     template<typename CoordType>
     BasicStructure<CoordType>::BasicStructure(const BasicStructure &RHS) :
       m_lattice(RHS.lattice()),
-      m_SD_flag(RHS.m_SD_flag),
       m_title(RHS.title()),
       m_basis(RHS.basis()),
       m_dof_map(RHS.m_dof_map) {
@@ -62,7 +61,6 @@ namespace CASM {
     template<typename CoordType>
     BasicStructure<CoordType> &BasicStructure<CoordType>::operator=(const BasicStructure<CoordType> &RHS) {
       m_lattice = RHS.lattice();
-      m_SD_flag = RHS.m_SD_flag;
       m_title = RHS.title();
       set_basis(RHS.basis());
       m_dof_map = RHS.m_dof_map;
@@ -582,7 +580,7 @@ namespace CASM {
 
       CoordType tsite(lattice());
 
-      m_SD_flag = false;
+      bool SD_flag = false;
       getline(stream, m_title);
       if(title().back() == '\r')
         throw std::runtime_error(std::string("Structure file is formatted for DOS. Please convert to Unix format. (This can be done with the dos2unix command.)"));
@@ -645,7 +643,7 @@ namespace CASM {
       }
 
       if(ch == 'S' || ch == 's') {
-        m_SD_flag = true;
+        SD_flag = true;
         stream.ignore(1000, '\n');
         while(ch == ' ' || ch == '\t') {
           stream.get(ch);
@@ -659,10 +657,10 @@ namespace CASM {
       else if(ch == 'C' || ch == 'c') {
         input_mode.set(CART);
       }
-      else if(!m_SD_flag) {
+      else if(!SD_flag) {
         throw std::runtime_error(std::string("Error in line 7 of structure input file. Line 7 of structure input file should specify Direct, Cartesian, or Selective Dynamics."));
       }
-      else if(m_SD_flag) {
+      else if(SD_flag) {
         throw std::runtime_error(std::string("Error in line 8 of structure input file. Line 8 of structure input file should specify Direct or Cartesian when Selective Dynamics is on."));
       }
 
@@ -683,7 +681,7 @@ namespace CASM {
             sum_elem += num_elem[j];
           }
 
-          tsite.read(stream, elem_array[j], m_SD_flag);
+          tsite.read(stream, elem_array[j], SD_flag);
           push_back(tsite);
         }
       }
@@ -691,7 +689,7 @@ namespace CASM {
         //read the site info
         m_basis.reserve(num_sites);
         for(i = 0; i < num_sites; i++) {
-          tsite.read(stream, m_SD_flag);
+          tsite.read(stream, SD_flag);
           if((stream.rdstate() & std::ifstream::failbit) != 0) {
             std::cerr << "Error reading site " << i + 1 << " from structure input file." << std::endl;
             exit(1);
@@ -957,6 +955,41 @@ namespace CASM {
     }
 
     //************************************************************
+    /// Returns an std::vector of each *possible* Molecule in this Structure
+    template<typename CoordType>
+    std::vector<std::vector<std::string> > allowed_molecule_unique_names(BasicStructure<CoordType> const &_struc) {
+      using IPair = std::pair<Index, Index>;
+      std::map<std::string, std::vector<Molecule> > name_map;
+      std::map<std::string, IPair> imap;
+
+      std::vector<std::vector<std::string> > result(_struc.basis().size());
+      for(Index b = 0; b < _struc.basis().size(); ++b) {
+        for(Index j = 0; j < _struc.basis(b).occupant_dof().size(); ++j) {
+          Molecule const &mol(_struc.basis(b).occupant_dof()[j]);
+          result[b].push_back(mol.name());
+          auto it = name_map.find(mol.name());
+          if(it == name_map.end()) {
+            name_map[mol.name()].push_back(mol);
+            imap[mol.name()] = {b, j};
+          }
+          else {
+            Index i = find_index(it->second, mol);
+            if(i == it->second.size()) {
+              it->second.push_back(mol);
+              if(i == 1) {
+                auto inds = imap[mol.name()];
+                result[inds.first][inds.second] += ".1";
+              }
+            }
+            if(i > 0)
+              result[b][j] += ("." + std::to_string(i + 1));
+          }
+        }
+      }
+      return result;
+    }
+
+    //************************************************************
     /// Returns a vector with a list of allowed molecule names at each site
     template<typename CoordType>
     std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure<CoordType> const &_struc) {
@@ -966,50 +999,6 @@ namespace CASM {
         result[b] = _struc.basis(b).allowed_occupants();
 
       return result;
-    }
-
-
-    //************************************************************
-
-    /// Returns a list of how many of each species exist in this Structure
-    ///   The Specie types are ordered according to struc_species()
-    template<typename CoordType>
-    Eigen::VectorXi num_each_species(BasicStructure<CoordType> const &_struc) {
-
-      std::vector<std::string> tspecies = struc_species(_struc);
-      Eigen::VectorXi tnum_each_species = Eigen::VectorXi::Zero(tspecies.size());
-
-      Index i, j;
-      // For each site
-      for(i = 0; i < _struc.basis().size(); i++) {
-        // For each atomposition in the molecule on the site
-        for(j = 0; j < _struc.basis()[i].occ().size(); j++) {
-          // Count the present species
-          tnum_each_species(find_index(tspecies, _struc.basis()[i].occ().atom(j).name()))++;
-        }
-      }
-
-      return tnum_each_species;
-    }
-
-    //************************************************************
-
-    /// Returns a list of how many of each molecule exist in this Structure
-    ///   The molecule types are ordered according to struc_molecule()
-    template<typename CoordType>
-    Eigen::VectorXi num_each_molecule(BasicStructure<CoordType> const &_struc) {
-
-      std::vector<Molecule> tstruc_molecule = struc_molecule(_struc);
-      Eigen::VectorXi tnum_each_molecule = Eigen::VectorXi(tstruc_molecule.size());
-
-      Index i;
-      // For each site
-      for(i = 0; i < _struc.basis().size(); i++) {
-        // Count the molecule
-        tnum_each_molecule(find_index(tstruc_molecule, _struc.basis()[i].occ()))++;
-      }
-
-      return tnum_each_molecule;
     }
 
     //************************************************************

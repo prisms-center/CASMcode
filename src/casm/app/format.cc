@@ -249,9 +249,9 @@ namespace CASM {
                  "    \"Fractional\" or \"Direct\",                                  \n"
                  "    \"Cartesian\"                                                  \n\n"
 
-                 "\"dofs\" [OPTIONAL] (JSON object comprising DoF JSON objects):      \n"
+                 "\"dofs\" [OPTIONAL] (JSON dictionary of DoF JSON objects):      \n"
                  "  For each allowed type of global site DoF (typically strain), an  \n"
-                 "  object specifying how it is defined.                             \n\n"
+                 "  object specifying how it is defined.                             \n\n\n"
 
                  "\"basis\" (JSON array of JSON objects):                            \n\n"
 
@@ -266,13 +266,18 @@ namespace CASM {
                  "    site. The names are case sensitive, and \"Va\" is reserved for \n"
                  "    vacancies.                                                     \n\n"
 
-                 "  /\"dofs\" [OPTIONAL] (JSON object comprising DoF JSON objects):   \n"
+                 "  /\"dofs\" [OPTIONAL] (JSON dictionary of DoF JSON objects):   \n"
                  "    For each allowed type of site DoF (e.g., displacement, magnetic\n"
                  "    spin, etc.) an object specifying how it is defined. Within \"dofs\"\n"
                  "    object, each DoF is given by the key/object pair\n"
                  "      \"$DOFNAME\" : {DOFOBJECT}\n"
                  "    where $DOFNAME is the name specifier of a particular DoF type  \n"
-                 "    and the associated object specifies non-default options.\n\n"
+                 "    and the associated object specifies non-default options.\n\n\n"
+
+                 "\"species\" [OPTIONAL] (JSON dictionary of Molecule JSON objects):\n"
+                 "  A dictionary used to define extended attributes of any species \n"
+                 "  listed as an allowed occupant in \"basis\"/\"occupants\". \n\n\n"
+
 
                  "DoF JSON object:\n"
                  "  DoFs are continuous vectors having a set of standard axes that   \n"
@@ -281,11 +286,50 @@ namespace CASM {
                  "  User-specified axes may fully span the standard axes or only a   \n"
                  "  subspace.\n"
                  "  EXAMPLE: Site displacement DoF:\n"
-                 "    \"dofs\" : {\n"
+                 "    \"disp\" : {\n"
                  "      \"axis_names\" : [\"dxy\", \"dz\"],\n"
                  "      \"axes\" : [[1.0, 1.0, 0.0],\n"
                  "                [0.0, 0.0, 1.0]]\n"
-                 "    }\n\n";
+                 "    }\n\n\n"
+
+
+                 "Molecule JSON object:\n"
+                 "  Used to define species the comprise multiple atoms, off-centered\n"
+                 "  atoms, or species with attributes such as a magnetic spin or or\n"
+                 "  charge state.\n\n"
+
+                 "  Allowed fields:\n"
+                 "  \"atoms\" (JSON Array of JSON objects):\n"
+                 "    /\"name\" (string):\n"
+                 "      Name of atomic species.\n\n"
+
+                 "    /\"coordinate\" (3D JSON Array of doubles):\n"
+                 "      Position of the atom, relative to the basis site at which it\n"
+                 "      is placed. Coordinate mode is same as rest of prim.json.\n\n"
+
+                 "    /\"attributes\" [OPTIONAL] (JSON dictionary of SpeciesAttribute)\n"
+                 "      Additonal fixed attributes of the atom, such as magnetic moment,\n"
+                 "      charge state, or selective dynamics flags. The name of each\n"
+                 "      attribute must correspond to a CASM-supported SpeciesAttribute.\n\n"
+
+                 "  /\"attributes\" [OPTIONAL] (JSON dictionary of SpeciesAttribute)\n"
+                 "    Additonal fixed attributes of the molecule as a whole, such as \n"
+                 "    magnetic spin, charge state, or selective dynamics flags. The \n"
+                 "    name of each attribute must correspond to a CASM-supported \n"
+                 "    SpeciesAttribute.\n\n\n"
+
+                 "  /\"name\" [OPTIONAL] (string)\n"
+                 "    Chemical name of molecule, used to override its name in the\n"
+                 "    enclosing dictionary. This name is used for chemical comparisons\n"
+                 "    of molecules. Crystallographic and spatial comparisons are not\n"
+                 "    dependent on molecule names.\n\n\n"
+
+                 "SpeciesAttribute JSON object:\n"
+                 "  Associates the discrete value of a vector property to an Atom or Moleule.\n\n"
+                 "  Allowed fields:\n"
+                 "  \"value\" (JSON Array of doubles):\n"
+                 "    Dimension of array must match the dimension of the specified \n"
+                 "    SpeciesAttribute.\n\n";
 
 
 
@@ -1044,37 +1088,41 @@ namespace CASM {
       args.log() << "This JSON file contains the currently selected composition axes, and \n"
                  "a list of possible standard or custom composition axes.              \n\n"
 
-                 "standard_axes:                                                      \n"
-                 "  A JSON object containing each possible standard composition axes  \n"
-                 "  as an attribute with its index as the key.                        \n\n"
+                 "possible_axes:                                                      \n"
+                 "  A JSON object containing each possible set of composition axes   \n"
+                 "  as an attribute with a unique string as the key.                 \n\n"
 
-                 "custom_axes:                                                        \n"
-                 "  A JSON object containing each custom composition axes as an       \n"
-                 "  attribute with its index as the key. The keys should not be       \n"
-                 "  repeats of any of the standard_axes.                              \n\n"
+                 "current_axes:\n"
+                 "  A string denoting the key of currently selected composition axes\n"
+                 "  from among the list of \"possible_axes\".\n\n"
 
-                 "standard_axes/custom_axes:components                                \n"
+                 "enumerated:\n"
+                 "  A list of strings denoting the keys of composition axes sets that\n"
+                 "  from among the list of \"possible_axes\" that were automaticatlly\n"
+                 "  enumerated by `casm composition --calc`.\n\n"
+
+                 "possible_axes:components                                            \n"
                  "  A JSON array containing the names of possible species.            \n\n"
 
-                 "standard_axes/custom_axes:independent_compositions                  \n"
+                 "possible_axes:independent_compositions                  \n"
                  "  The number of independent composition axes.                       \n\n"
 
-                 "standard_axes/custom_axes:origin                                    \n"
+                 "possible_axes:origin                                    \n"
                  "  The composition of origin the of composition axes in terms of     \n"
                  "  number of each component species per primitive cell, ordered as in\n"
                  "  the 'components' array.                                           \n\n"
 
-                 "standard_axes/custom_axes:a, b, c, ...                              \n"
+                 "possible_axes:a, b, c, ...                              \n"
                  "  The composition of end members a, b, c, etc. in terms of number of\n"
                  "  each component species per primitive cell, ordered as in the      \n"
                  "  'components' array.                                               \n\n"
 
-                 "standard_axes/custom_axes:param_formula:                            \n"
+                 "possible_axes:param_formula:                            \n"
                  "  The formula that converts 'comp_n' (# of each component per       \n"
                  "  primitive cell) to 'comp' (composition relative the selected      \n"
                  "  composition axes).                                                \n\n"
 
-                 "standard_axes/custom_axes:mol_formula:                              \n"
+                 "possible_axes:mol_formula:                              \n"
                  "  The formula that converts 'comp' (composition relative the        \n"
                  "  selected composition axes) to 'comp_n' (# of each component per   \n"
                  "  primitive cell).                                                  \n\n\n";
@@ -1085,7 +1133,8 @@ namespace CASM {
       args.log() <<
                  "{\n"
                  "  \"current_axes\" : \"0\",\n"
-                 "  \"standard_axes\" : {\n"
+                 "  \"enumerated\" : [\"0\", \"1\"],\n"
+                 "  \"possible_axes\" : {\n"
                  "    \"0\" : {\n"
                  "      \"a\" : [\n"
                  "        [ 2.000000000000 ],\n"

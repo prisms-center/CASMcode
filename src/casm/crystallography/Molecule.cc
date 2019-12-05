@@ -8,33 +8,6 @@ namespace CASM {
     //
     //****************************************************
 
-    void AtomPosition::print(std::ostream &stream,
-                             Eigen::Ref<const Eigen::Vector3d> const &translation,
-                             Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
-                             int spaces,
-                             bool print_sd_flags /* = false */) const {
-      for(int i = 0; i < spaces; i++) {
-        stream << ' ';
-      }
-
-      stream << (cart2frac * (cart() + translation)).transpose();
-
-      if(print_sd_flags) {
-        for(int i = 0; i < 3; i++) {
-          if(m_sd_flag[i]) stream << "  T";
-          else stream << "  F";
-        }
-      }
-
-      stream << "   " << name();
-
-      return;
-    }
-
-    //****************************************************
-    //
-    //****************************************************
-
     AtomPosition &AtomPosition::apply_sym(const SymOp &op) {
       m_position = get_matrix(op) * m_position;
       for(auto it = m_attribute_map.begin(); it != m_attribute_map.end(); ++it)
@@ -70,6 +43,21 @@ namespace CASM {
       return true;
     }
 
+    //****************************************************
+
+    bool Molecule::is_atomic() const {
+      if(size() != 1)
+        return false;
+      if(!attributes().empty())
+        return false;
+      for(AtomPosition const &atom : atoms()) {
+        if(atom.cart().norm() > TOL)
+          return false;
+        if(!atom.attributes().empty())
+          return false;
+      }
+      return true;
+    }
     //****************************************************
 
     bool Molecule::is_vacancy() const {
@@ -136,29 +124,10 @@ namespace CASM {
     }
 
     //****************************************************
-    //
-    //****************************************************
-
-    void Molecule::print(std::ostream &stream,
-                         Eigen::Ref<const Eigen::Vector3d> const &translation,
-                         Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
-                         int spaces,
-                         char delim,
-                         bool print_sd_flags /* = false */) const {
-      for(Index i = 0; i < size(); i++) {
-        atom(i).print(stream, translation, cart2frac, spaces, print_sd_flags);
-        stream << delim;
-      }
-      return;
-    }
-
-    //****************************************************
     /// \brief Return an atomic Molecule with specified name and Lattice
     //****************************************************
 
-    Molecule Molecule::make_atom(std::string const &atom_name, AtomPosition::sd_type const &_sd_flags /*=AtomPosition::sd_type{false,false,false}*/) {
-      //if(CASM::is_vacancy(atom_name))
-      //  return make_vacancy();
+    Molecule Molecule::make_atom(std::string const &atom_name) {
       return Molecule(atom_name, {AtomPosition(0., 0., 0., atom_name)});
     }
 

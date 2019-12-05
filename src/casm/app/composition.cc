@@ -7,7 +7,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/app/AppIO.hh"
+#include "casm/app/AppIO_impl.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Structure.hh"
@@ -17,18 +17,13 @@ namespace CASM {
 
   void display(std::ostream &sout, const CompositionAxes &opt) {
 
-    if(opt.standard.size()) {
-      sout << "Standard composition axes:\n\n";
-      display_composition_axes(sout, opt.standard);
+    if(opt.all_axes.size()) {
+      sout << "Possible composition axes:\n\n";
+      display_composition_axes(sout, opt.all_axes);
     }
-
-    if(opt.custom.size()) {
-      sout << "Custom composition axes:\n\n";
-      display_composition_axes(sout, opt.custom);
-    }
-
     sout << "\n";
-    if(opt.has_current_axes) {
+
+    if(opt.has_current_axes()) {
       sout << "Currently selected composition axes: " << opt.curr_key << "\n";
 
       sout << "\n";
@@ -180,10 +175,10 @@ namespace CASM {
       if(opt.err_code) {
         args.log() << opt.err_message << std::endl;
       }
-      else if(opt.standard.size() && !opt.has_current_axes) {
+      else if(opt.all_axes.size() && !opt.has_current_axes()) {
         args.log() << "Please use 'casm composition --select' to choose your composition axes.\n\n";
       }
-      else if(!opt.standard.size() && !opt.has_current_axes) {
+      else if(!opt.all_axes.size()) {
         args.log() << "Please use 'casm composition --calc' to calculate standard composition axes.\n\n";
       }
 
@@ -197,16 +192,15 @@ namespace CASM {
 
         args.log() << "Using the PRIM to enumerate standard composition axes for this space.\n\n";
 
-        if(opt.standard.size()) {
+        if(opt.enumerated.size()) {
           args.log() << "Overwriting existing standard composition axes.\n\n";
         }
 
-        opt.standard.clear();
+        opt.erase_enumerated();
+
         std::vector<CompositionConverter> v;
         standard_composition_axes(allowed_molecule_names(primclex.prim()), std::back_inserter(v));
-        for(int i = 0; i < v.size(); i++) {
-          opt.standard[std::to_string(i)] = v[i];
-        }
+        opt.insert_enumerated(v.begin(), v.end());
 
         display(args.log(), opt);
 
@@ -217,7 +211,7 @@ namespace CASM {
 
         args.log() << "Wrote: " << comp_axes << "\n\n";
 
-        if(!opt.has_current_axes) {
+        if(!opt.has_current_axes()) {
           args.log() << "Please use 'casm composition --select' to choose your composition axes.\n\n";
         }
       }
@@ -226,7 +220,7 @@ namespace CASM {
 
         args.log() << "\n***************************\n\n";
 
-        if(opt.standard.size() + opt.custom.size() == 0) {
+        if(opt.all_axes.empty()) {
 
           args.log() << "Error: No composition axes found.\n\n";
 
@@ -237,21 +231,7 @@ namespace CASM {
 
         }
 
-        if(opt.standard.find(comp_opt.axis_choice_str()) != opt.standard.end() &&
-           opt.custom.find(comp_opt.axis_choice_str()) != opt.custom.end()) {
-
-          args.log() << "Error: The selected composition axes '" << comp_opt.axis_choice_str() << "' can be \n" <<
-                     "found in both the standard and custom compostion axes. Please  \n" <<
-                     "edit the custom composition axes to remove this ambiguity.     \n\n" <<
-
-                     "File: " << comp_axes << "\n\n";
-
-          return ERR_INVALID_INPUT_FILE;
-
-        }
-        else if(opt.standard.find(comp_opt.axis_choice_str()) == opt.standard.end() &&
-                opt.custom.find(comp_opt.axis_choice_str()) == opt.custom.end()) {
-
+        if(opt.all_axes.count(comp_opt.axis_choice_str()) == 0) {
           args.log() << "Error: The selected composition axes '" << comp_opt.axis_choice_str() << "' can not \n" <<
                      "be found in either the standard or custom compostion axes. Please\n" <<
                      "re-select composition axes.                                     \n\n";

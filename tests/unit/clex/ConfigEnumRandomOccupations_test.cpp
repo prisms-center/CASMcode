@@ -53,7 +53,7 @@ TEST(ConfigEnumRandomOccupationsTest, Test1) {
     jsonParser json;
     json["n_config"] = 200;
     ConfigEnumRandomOccupations::run(primclex, json, enum_opt, nullptr);
-    EXPECT_EQ(primclex.generic_db<Configuration>().size() > 150, true);
+    EXPECT_GT(primclex.generic_db<Configuration>().size(), 150);
   }
 
 }
@@ -89,7 +89,7 @@ TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
     ConfigEnumRandomOccupations::run(primclex, kwargs, opt, nullptr);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
-  EXPECT_EQ(primclex.generic_db<Configuration>().size() > 0, true);
+  EXPECT_GT(primclex.generic_db<Configuration>().size(), 0);
   primclex.generic_db<Configuration>().close();
   primclex.generic_db<Configuration>().open();
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
@@ -101,10 +101,10 @@ TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
     ConfigEnumRandomOccupations::run(primclex, kwargs, opt, nullptr);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
-  EXPECT_EQ(primclex.generic_db<Configuration>().size() > 0, true);
+  EXPECT_GT(primclex.generic_db<Configuration>().size(), 0);
   primclex.generic_db<Configuration>().close();
   primclex.generic_db<Configuration>().open();
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
-  EXPECT_EQ(primclex.generic_db<Configuration>().size() > 0, true);
+  EXPECT_GT(primclex.generic_db<Configuration>().size(), 0);
 
 }

@@ -109,6 +109,7 @@ namespace CASM {
 
     if(enum_opt.vm().count("max")) {
       scel_input["max"] = enum_opt.max_volume();
+      scel_input["existing_only"] = false;
     }
 
     if(enum_opt.all_existing()) {
@@ -129,11 +130,12 @@ namespace CASM {
       for(std::string const &scelname : scelnames)
         scel_input["names"].push_back(scelname);
 
-      if(scel_input.begin() == scel_input.end())
-        scel_input["names"].put_array();
-      else if(!scel_input.contains("existing_only"))
-        scel_input["existing_only"] = true;
+      //if(scel_input.begin() == scel_input.end() && !scel_input["names"].is_array())
+      //scel_input["names"].put_array();
     }
+    if(!scel_input.contains("existing_only"))
+      scel_input["existing_only"] = true;
+
     return scel_input;
   }
 

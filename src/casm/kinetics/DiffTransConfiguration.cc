@@ -444,12 +444,12 @@ namespace CASM {
     std::string pos_string(DiffTransConfiguration const &dtc) {
       std::stringstream ss;
       ss << "Initial POS:" << std::endl;
-      VaspIO::PrintPOSCAR from(xtal::to_simple_structure(dtc.sorted().from_config()), dtc.sorted().from_config().name());
+      VaspIO::PrintPOSCAR from(xtal::make_simple_structure(dtc.sorted().from_config()), dtc.sorted().from_config().name());
       from.sort();
       from.print(ss);
       ss << std::endl;
       ss << "Final POS:" << std::endl;
-      VaspIO::PrintPOSCAR to(xtal::to_simple_structure(dtc.sorted().to_config()), dtc.sorted().to_config().name());
+      VaspIO::PrintPOSCAR to(xtal::make_simple_structure(dtc.sorted().to_config()), dtc.sorted().to_config().name());
       to.sort();
       to.print(ss);
       return ss.str();

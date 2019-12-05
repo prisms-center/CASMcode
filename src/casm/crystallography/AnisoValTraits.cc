@@ -58,6 +58,7 @@ namespace CASM {
     m_incompatible(_incompatible),
     m_apply_before(_must_apply_before),
     m_apply_after(_must_apply_after) {
+
     if(m_name != _name) {
       throw std::runtime_error("Attempting to initialize AnisoValTraits object that does not satisfy naming constraints. Name '" + _name + "' was reduced to '" + m_name + "'."
                                + " Note: The underscore character '_' is not allowed.\n");
@@ -82,11 +83,19 @@ namespace CASM {
     SymRepBuilder::Identity());
   }
 
+  AnisoValTraits AnisoValTraits::selective_dynamics() {
+    return AnisoValTraits("selectivedynamics",
+    {"xflag", "yflag", "zflag"},
+    LOCAL,
+    SymRepBuilder::Identity());
+  }
+
   AnisoValTraits AnisoValTraits::disp() {
     return AnisoValTraits("disp",
     {"dx", "dy", "dz"},
     LOCAL,
     CartesianSymRepBuilder(),
+    {},
     {},
     {"atomize"});
   }
