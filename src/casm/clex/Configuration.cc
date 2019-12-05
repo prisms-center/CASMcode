@@ -879,7 +879,7 @@ namespace CASM {
 
   std::string pos_string(Configuration const  &_config) {
     std::stringstream ss;
-    VaspIO::PrintPOSCAR p(xtal::to_simple_structure(_config), _config.name());
+    VaspIO::PrintPOSCAR p(xtal::make_simple_structure(_config), _config.name());
     p.sort();
     p.print(ss);
     return ss.str();
@@ -909,7 +909,7 @@ namespace CASM {
     std::stringstream ss;
 
     jsonParser tjson;// = json_supplement(_config);
-    to_json(xtal::to_simple_structure(_config), tjson);
+    to_json(xtal::make_simple_structure(_config), tjson);
     tjson.print(ss);
     return ss.str();
   }

@@ -7,33 +7,6 @@ namespace CASM {
     //****************************************************
     //
     //****************************************************
-    /*
-    void AtomPosition::print(std::ostream &stream,
-                             Eigen::Ref<const Eigen::Vector3d> const &translation,
-                             Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
-                             int spaces,
-                             bool print_sd_flags) const {
-      for(int i = 0; i < spaces; i++) {
-        stream << ' ';
-      }
-
-      stream << (cart2frac * (cart() + translation)).transpose();
-
-      if(print_sd_flags) {
-        //for(int i = 0; i < 3; i++) {
-        //if(m_sd_flag[i]) stream << "  T";
-        //else stream << "  F";
-        //}
-      }
-
-      stream << "   " << name();
-
-      return;
-      }*/
-
-    //****************************************************
-    //
-    //****************************************************
 
     AtomPosition &AtomPosition::apply_sym(const SymOp &op) {
       m_position = get_matrix(op) * m_position;
@@ -149,23 +122,6 @@ namespace CASM {
           return true;
       return false;
     }
-
-    //****************************************************
-    //
-    //****************************************************
-    /*
-    void Molecule::print(std::ostream &stream,
-                         Eigen::Ref<const Eigen::Vector3d> const &translation,
-                         Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
-                         int spaces,
-                         char delim,
-                         bool print_sd_flags ) const {
-      for(Index i = 0; i < size(); i++) {
-        atom(i).print(stream, translation, cart2frac, spaces, print_sd_flags);
-        stream << delim;
-      }
-      return;
-    }*/
 
     //****************************************************
     /// \brief Return an atomic Molecule with specified name and Lattice

@@ -300,14 +300,16 @@ namespace CASM {
 
     // Add parsers for standard clusters
     fs::path p = fs::path("standard") / "orbit_branch_specs";
-    standard = std::make_shared<LocalOrbitBranchSpecsParser>(input, relpath(p), true);
+    standard = std::make_shared<LocalOrbitBranchSpecsParser>(input, relpath(p), false);
     this->kwargs[p] = standard;
 
     // Add parsers for custom clusters
     p = fs::path("custom");
     custom = std::make_shared<CustomLocalClustersByMaxLength<PhenomenalType>>(
-               _scel, input, relpath(p), true);
+               _scel, input, relpath(p), false);
     this->kwargs[p] = custom;
+    if(!(standard->exists() || custom->exists()))
+      error.insert("Error: Either 'standard' : {'orbit_branch_specs' : {<...>}} must exists or 'custom' : {<...>}.");
   }
 
   /// Find if phenom is equivalent to one of the custom phenomenal clusters

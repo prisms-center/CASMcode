@@ -7,15 +7,13 @@ namespace CASM {
 
     std::vector<Eigen::Vector3d> SimpleStrucMapCalculator::translations(MappingNode const &_node,
                                                                         SimpleStructure const &ichild_struc) const {
-
-      SimpleStructure::Info const &p_info(info(parent()));
-      SimpleStructure::Info const &c_info(info(ichild_struc));
+      SimpleStructure::Info const &p_info(this->struc_info(parent()));
+      SimpleStructure::Info const &c_info(this->struc_info(ichild_struc));
 
       std::vector<Eigen::Vector3d> result;
 
-
-      // Find a site in child whose occupant has the lowest number of possible
-      // mapped sites in the parent. This will minimize translations
+      // Find a site in child whose occupant has the lowest number of
+      // compatible sites in the parent. This will minimize translations
       Index i_trans(c_info.size()), n_best(p_info.size() + 2);
       for(Index i = 0; i < c_info.size() && n_best > 1; ++i) {
         auto it = max_n_species().find(c_info.names[i]);
@@ -26,14 +24,12 @@ namespace CASM {
           }
         }
         else {
-          //std::cout << "\n NO TRANSLATIONS AVAILABLE FOR: " << c_info.names[i] << "\n";
           //child species not known in parent -- incompatible
           return result;
         }
       }
 
       std::string sp = c_info.names[i_trans];
-      //std::cout << "\ni_trans: " << i_trans << "  sp: " << sp << "  c_info.size(): " << c_info.size() << "  n_best: " << n_best << "\n";
 
       result.reserve(n_best);
 
@@ -41,10 +37,8 @@ namespace CASM {
       // Try translating child atom at i_trans onto each chemically compatible site of parent
       for(Index j = 0; j < _allowed_species().size(); ++j) {
         if(_allowed_species()[j].count(sp)) {
-          translation.cart() = p_info.coords.col(j) - c_info.coords.col(i_trans);
-          //std::cout << "trans before within: " << translation.const_cart().transpose() << "\n";
+          translation.cart() = p_info.coord(j) - c_info.coord(i_trans);
           translation.voronoi_within();
-          //std::cout << "trans after within: " << translation.const_cart().transpose() << "\n";
           result.push_back(translation.const_cart());
         }
       }
@@ -56,9 +50,9 @@ namespace CASM {
 
     /// \brief Creates copy of _child_struc by applying isometry, lattice transformation, translation, and site permutation of _node
     SimpleStructure SimpleStrucMapCalculator::resolve_setting(MappingNode const &_node, SimpleStructure const &_child_struc) const {
-      SimpleStructure::Info const &c_info(info(_child_struc));
+      SimpleStructure::Info const &c_info(this->struc_info(_child_struc));
 
-      SimpleStructure result(_child_struc.prefix());
+      SimpleStructure result;
       result.mol_info.resize(_node.permutation.size());
       Eigen::MatrixXd coords = _node.lat_node.stretch * _node.lat_node.isometry * c_info.coords;
       coords.colwise() += _node.basis_node.translation;
@@ -67,7 +61,7 @@ namespace CASM {
       for(Index i = 0; i < _node.permutation.size(); ++i) {
         Index j = _node.permutation[i];
         if(j < (nmol * cgrid.size())) {
-          result.mol_info.coords.col(i) = coords.col(j % nmol) + cgrid.scel_coord(j / nmol).const_cart();
+          result.mol_info.coord(i) = coords.col(j % nmol) + cgrid.scel_coord(j / nmol).const_cart();
           result.mol_info.names[i] = _child_struc.mol_info.names[j % nmol];
         }
       }
@@ -83,7 +77,7 @@ namespace CASM {
 
       populate_displacement(_node, child_struc);
       //std::cout << "**Finalizing: cost: " << _node.cost;
-      _node.cost = _node.basis_weight * StrucMapping::basis_cost(_node, info(child_struc).size()) + _node.strain_weight * _node.lat_node.cost;
+      _node.cost = _node.basis_weight * StrucMapping::basis_cost(_node, this->struc_info(child_struc).size()) + _node.strain_weight * _node.lat_node.cost;
       //std::cout << " -> " << _node.cost << "\n";
       _node.is_valid = true;
       return;
@@ -98,8 +92,8 @@ namespace CASM {
 
       PrimGrid const &pgrid(_node.lat_node.parent);
       PrimGrid const &cgrid(_node.lat_node.child);
-      SimpleStructure::Info const &p_info(info(parent()));
-      SimpleStructure::Info const &c_info(info(child_struc));
+      SimpleStructure::Info const &p_info(this->struc_info(parent()));
+      SimpleStructure::Info const &c_info(this->struc_info(child_struc));
 
 
       _node.permutation = _node.basis_node.permutation();
@@ -125,13 +119,13 @@ namespace CASM {
         // IDEAL coordinate to the RELAXED coordinate
         if(_node.permutation[i] < cN) {
 
-          Coordinate child_coord(c_info.coords.col(_node.permutation[i] / cgrid.size())
+          Coordinate child_coord(c_info.coord(_node.permutation[i] / cgrid.size())
                                  + cgrid.scel_coord(_node.permutation[i] % cgrid.size()).const_cart()
                                  + _node.basis_node.translation,
                                  pgrid.scel_lattice(), CART);
 
           Coordinate parent_coord = pgrid.scel_coord(i % pgrid.size());
-          parent_coord.cart() += p_info.coords.col(i / pgrid.size());
+          parent_coord.cart() += p_info.coord(i / pgrid.size());
           child_coord.min_dist(parent_coord, disp_coord);
           //std::cout << "\nMap " << _node.permutation[i] << "->" << i << "\n"
           //        << "Child coord (" << _node.permutation[i] % cgrid.size()<< ", "<< _node.permutation[i] / cgrid.size() << "): "
@@ -171,8 +165,8 @@ namespace CASM {
       Eigen::MatrixXd &cost_matrix(_node.basis_node.cost_mat);
       Eigen::Matrix3d metric = (_node.lat_node.stretch * _node.lat_node.stretch).inverse();
 
-      SimpleStructure::Info const &p_info(info(parent()));
-      SimpleStructure::Info const &c_info(info(child_struc));
+      SimpleStructure::Info const &p_info(this->struc_info(parent()));
+      SimpleStructure::Info const &c_info(this->struc_info(child_struc));
 
       Index pN = p_info.size() * pgrid.size();
       Index cN = c_info.size() * cgrid.size();
@@ -206,7 +200,7 @@ namespace CASM {
 
         // For each sublattice, loop over lattice points, 'n'. 'ac' tracks linear index of atoms in child supercell
         for(Index lc = 0; lc < cgrid.size(); ++lc, ++ac) {
-          Coordinate child_coord(c_info.coords.col(bc) + cgrid.scel_coord(lc).const_cart() + translation, pgrid.scel_lattice(), CART);
+          Coordinate child_coord(c_info.coord(bc) + cgrid.scel_coord(lc).const_cart() + translation, pgrid.scel_lattice(), CART);
           // loop through all the sites in the parent supercell
           Index ap = 0;
           for(Index bp = 0; bp < p_info.size(); ++bp) {
@@ -214,7 +208,7 @@ namespace CASM {
               ap += pgrid.size();
               continue;
             }
-            Coordinate parent_coord(p_info.coords.col(bp), pgrid.scel_lattice(), CART);
+            Coordinate parent_coord(p_info.coord(bp), pgrid.scel_lattice(), CART);
 
             for(Index lp = 0; lp < pgrid.size(); ++lp, ++ap) {
               cost_matrix(ap, ac) = (parent_coord + pgrid.scel_coord(lp)).min_dist2(child_coord, metric);
