@@ -39,6 +39,7 @@ namespace CASM {
   }
 
   AnisoValTraits::AnisoValTraits(std::string const &_name) {
+    std::cout << "FANCY DEFAULT MAP CONSTRUCTOR IS BEING USED" << std::endl;
     *this = Local::traits(name_suffix(_name));
   }
 
@@ -58,6 +59,8 @@ namespace CASM {
     m_incompatible(_incompatible),
     m_apply_before(_must_apply_before),
     m_apply_after(_must_apply_after) {
+
+    std::cout << "REGULAR CONSTRUCTOR IS BEING USED" << std::endl;
     if(m_name != _name) {
       throw std::runtime_error("Attempting to initialize AnisoValTraits object that does not satisfy naming constraints. Name '" + _name + "' was reduced to '" + m_name + "'."
                                + " Note: The underscore character '_' is not allowed.\n");
@@ -83,10 +86,12 @@ namespace CASM {
   }
 
   AnisoValTraits AnisoValTraits::disp() {
+    std::cout << "HARDCODED DISP CONSTRUCTOR IS BEING CALLED" << std::endl;
     return AnisoValTraits("disp",
     {"dx", "dy", "dz"},
     LOCAL,
     CartesianSymRepBuilder(),
+    {},
     {},
     {"atomize"});
   }

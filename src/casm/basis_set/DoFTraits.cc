@@ -84,6 +84,7 @@ namespace CASM {
 
     //************************************************************
     void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+      std::cout << "Specified Traits class is called the base class apply dof and is therefore doing nothing!!!" << std::endl;
       return;
     }
 
