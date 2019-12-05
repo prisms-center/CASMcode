@@ -330,17 +330,17 @@ namespace CASM {
 
       char ch;
 
-      AtomPosition::sd_type SD_flag;
+      Eigen::Vector3i SD_flag;
 
       Coordinate::read(stream, COORD_MODE::CHECK());
       if(SD_is_on) {
         for(int i = 0; i < 3; i++) {
           stream >> ch;
           if(ch == 'T') {
-            SD_flag[i] = true;
+            SD_flag[i] = 1;
           }
           else if(ch == 'F') {
-            SD_flag[i] = false;
+            SD_flag[i] = 0;
           }
         }
       }
@@ -419,24 +419,24 @@ namespace CASM {
 
       set_label(-1);
 
-      AtomPosition::sd_type SD_flag;
+      Eigen::Vector3i SD_flag;
 
       Coordinate::read(stream, COORD_MODE::CHECK());
       if(SD_is_on) {
         for(int i = 0; i < 3; i++) {
           stream >> ch;
           if(ch == 'T') {
-            SD_flag[i] = true;
+            SD_flag[i] = 1;
           }
           else if(ch == 'F') {
-            SD_flag[i] = false;
+            SD_flag[i] = 0;
           }
         }
       }
 
       std::vector<Molecule> tocc;
 
-      tocc.push_back(Molecule::make_atom(elem, SD_flag));
+      tocc.push_back(Molecule::make_atom(elem));
 
       if(tocc.size()) {
         m_occupant_dof->set_domain(tocc);
@@ -458,51 +458,11 @@ namespace CASM {
     //****************************************************
 
     void Site::print(std::ostream &stream, Eigen::IOFormat format) const {
-      //occupant_dof().occ().print(stream, *this, SD_is_on);
       Coordinate::print(stream, 0, format);
       stream << " ";
       occupant_dof().print(stream);
       stream << std::flush;
 
-      return;
-    }
-
-    //****************************************************
-    /**	Print coordinate of site with name of occupying molecule
-     */
-    //****************************************************
-
-    void Site::print_occ(std::ostream &stream, Eigen::IOFormat format) const {
-      //occupant_dof().occ().print(stream, *this, SD_is_on);
-      Site::print(stream, format);
-      stream << " :: ";
-      occupant_dof().print_occ(stream);
-      stream << std::flush;
-
-      return;
-    }
-
-    //****************************************************
-    /**	Print each AtomPosition in current molecule,
-     *		with name of occupying atom
-     */
-    //****************************************************
-
-    void Site::print_mol(std::ostream &stream,
-                         int spaces,
-                         char delim,
-                         bool SD_is_on) const {
-
-      Eigen::Matrix3d c2f = Eigen::Matrix3d::Identity();
-      // change this to use FormatFlag
-      if(COORD_MODE::IS_FRAC())
-        c2f = home().inv_lat_column_mat();
-      occupant_dof().occ().print(stream,
-                                 cart(),
-                                 c2f,
-                                 spaces,
-                                 delim,
-                                 SD_is_on);
       return;
     }
 
@@ -542,9 +502,7 @@ namespace CASM {
           if(_compare_type_no_ID(_type_prototypes()[m_type_ID]))
             return m_type_ID;
         }
-        //std::cout << "NEW TYPE PROTOTYPE!\n";
-        //print_occ(std::cout);
-        //std::cout << " : TYPE_ID-> " << m_type_ID << "\n";
+
         _type_prototypes().push_back(*this);
       }
       return m_type_ID;

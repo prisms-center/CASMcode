@@ -221,7 +221,7 @@ namespace CASM {
 
   PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
-    SimpleStrucMapCalculator(to_simple_structure(_prim),
+    SimpleStrucMapCalculator(make_simple_structure(_prim),
                              std::vector<SymOp>({
     SymOp()
   }),
@@ -274,7 +274,7 @@ namespace CASM {
     //bool is_new_config(true);
 
     if(hint_ptr != nullptr) {
-      StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::to_simple_structure(*hint_ptr, "", _hint_dofs),
+      StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::make_simple_structure(*hint_ptr, _hint_dofs),
                                                                    make_point_group(hint_ptr->point_group(), hint_ptr->supercell().sym_info().supercell_lattice()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
                           struc_mapper().strain_weight(),

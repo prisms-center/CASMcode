@@ -19,12 +19,6 @@ namespace CASM {
 
     //***************************************************************************
 
-    SimpleStructure::SimpleStructure(const std::string &_prefix) :
-      m_prefix(_prefix) {
-    }
-
-    //***************************************************************************
-
     void SimpleStructure::deform_coords(Eigen::Ref<const Eigen::Matrix3d> const &_F) {
       lat_column_mat = _F * lat_column_mat;
       if(mol_info.coords.rows() == 3)

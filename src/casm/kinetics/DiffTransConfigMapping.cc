@@ -83,10 +83,10 @@ namespace CASM {
         //	*result.config =*hint_ptr;
       }
       //      else {
-      SimpleStructure from_child = to_simple_structure(result.structures[0]);
+      SimpleStructure from_child = make_simple_structure(result.structures[0]);
       std::set<MappingNode> from_set = mapper.struc_mapper().map_deformed_struc(from_child);
 
-      SimpleStructure to_child = to_simple_structure(result.structures.back());
+      SimpleStructure to_child = make_simple_structure(result.structures.back());
       std::set<MappingNode> to_set = mapper.struc_mapper().map_deformed_struc(to_child);
 
       if(from_set.empty() || to_set.empty()) {
@@ -162,7 +162,7 @@ namespace CASM {
         Configuration from_config(scel_ptr, jsonParser(), to_configdof(from_node, oriented_struc, *scel_ptr));
 
         //Configuration from_config(Configuration::zeros(scel_ptr));
-        //from_config.set_occupation(mapper.occupation(to_simple_structure(result.structures[0]),
+        //from_config.set_occupation(mapper.occupation(make_simple_structure(result.structures[0]),
         //from_node));
         Kinetics::DiffusionTransformation final_diff_trans = _shortest_hop(diff_trans, from_config.supercell());
         //THIS IS THE FIRST CASE IN WHICH WE DON'T WANT TO SORT DIFFTRANS ON CONSTRUCTION -speak with brian about removing sorting from prepare

@@ -10,7 +10,7 @@ namespace CASM {
     class MagSpinDoFTraits : public DoFType::Traits {
     public:
       MagSpinDoFTraits():
-        DoFType::Traits(AnisoValTraits::disp(), true) {
+        DoFType::Traits(AnisoValTraits::magspin(), true) {
 
       }
 

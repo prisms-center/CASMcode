@@ -20,18 +20,6 @@
 namespace CASM {
 
   template class DataFormatter<DB::ConfigIO::Result>;
-  /*
-  jsonParser &to_json(MappingNode const &_map, jsonParser &_json) {
-
-    _json["relaxation_deformation"] = _map.lat_node.stretch;
-    _json["relaxation_displacement"] = _map.displacement;
-    _json["cart_op"] = _map.lat_node.isometry;
-    _json["basis_cost"] = _map.basis_node.cost;
-    _json["lattice_cost"] = _map.lat_node.cost;
-    _json["total_cost"] = _map.cost;
-
-    return _json;
-    }*/
 
   namespace DB {
 
@@ -165,16 +153,16 @@ namespace CASM {
     /// Else, read as VASP POSCAR
     SimpleStructure StructureMap<Configuration>::_make_structure(const fs::path &p) const {
 
-      SimpleStructure sstruc("relaxed_");
+      SimpleStructure sstruc;
       if(p.extension() == ".json" || p.extension() == ".JSON") {
         jsonParser json(p);
-        from_json(sstruc, json);
+        from_json(sstruc, json, "relaxed");
       }
       else {
         BasicStructure<Site> struc;
         fs::ifstream struc_stream(p);
         struc.read(struc_stream);
-        sstruc = to_simple_structure(struc);
+        sstruc = make_simple_structure(struc);
       }
       return sstruc;
     }

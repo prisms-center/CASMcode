@@ -226,7 +226,7 @@ namespace CASM {
 
     // lambda for printing
     auto print = [&](const BasicStructure<Site> &struc) {
-      VaspIO::PrintPOSCAR printer(to_simple_structure(struc), struc.title());
+      VaspIO::PrintPOSCAR printer(make_simple_structure(struc), struc.title());
 
       if(vm.count("vasp5")) {
         printer.set_atom_names_on();
@@ -513,7 +513,7 @@ namespace CASM {
         std::stringstream ss;
         const Configuration &con = *primclex.db<Configuration>().find(configname[0]);
 
-        VaspIO::PrintPOSCAR p(xtal::to_simple_structure(con), con.name());
+        VaspIO::PrintPOSCAR p(xtal::make_simple_structure(con), con.name());
         p.sort();
         p.print(ss);
 
@@ -544,7 +544,7 @@ namespace CASM {
           double lattice_weight = 0.5;
           ConfigMapper configmapper(primclex, lattice_weight, vol_tol, map_opt, tol);
 
-          auto map_res = configmapper.import_structure(to_simple_structure(super));
+          auto map_res = configmapper.import_structure(make_simple_structure(super));
 
           if(map_res.success()) {
             auto insert_res = (map_res.maps.begin()->second).second.insert();

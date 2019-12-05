@@ -64,21 +64,19 @@ namespace CASM {
     };
 
 
-    SimpleStructure to_superstructure(Eigen::Ref<const Eigen::Matrix3i> const &_T, SimpleStructure const &_sstruc);
+    SimpleStructure make_superstructure(Eigen::Ref<const Eigen::Matrix3i> const &_T, SimpleStructure const &_sstruc);
 
-    /// \brief Construct from decorated structure and specify prefix for output quantities
-    SimpleStructure to_simple_structure(BasicStructure<Site> const &_struc, std::string const &_prefix = "");
+    /// \brief Construct from decorated structure
+    SimpleStructure make_simple_structure(BasicStructure<Site> const &_struc);
 
-    /// \brief Construct from Configuration and specify prefix for output quantities
-    SimpleStructure to_simple_structure(Configuration const &_config,
-                                        std::string const &_prefix = "",
-                                        std::vector<DoFKey> const &_which_dofs = {});
+    /// \brief Construct from Configuration
+    SimpleStructure make_simple_structure(Configuration const &_config,
+                                          std::vector<DoFKey> const &_which_dofs = {});
 
-    /// \brief Construct from ConfigDoF _dof belonging to provided Supercell _scel; specify prefix for output quantities
-    SimpleStructure to_simple_structure(Supercell const &_scel,
-                                        ConfigDoF const &_dof,
-                                        std::string const &_prefix = "",
-                                        std::vector<DoFKey> const &_which_dofs = {});
+    /// \brief Construct from ConfigDoF _dof belonging to provided Supercell _scel
+    SimpleStructure make_simple_structure(Supercell const &_scel,
+                                          ConfigDoF const &_dof,
+                                          std::vector<DoFKey> const &_which_dofs = {});
 
 
     std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim);
@@ -96,10 +94,11 @@ namespace CASM {
     /// \brief Output to JSON, excluding any molecular or atomic species contained in 'excluded_species'
     jsonParser &to_json(xtal::SimpleStructure const &_struc,
                         jsonParser &json_supplement,
-                        std::set<std::string> const &excluded_species = {"Va", "VA", "va"});
+                        std::set<std::string> const &excluded_species = {"Va", "VA", "va"},
+                        std::string prefix = "");
 
     /// \brief Read from JSON
-    void from_json(xtal::SimpleStructure &_struc, const jsonParser &json);
+    void from_json(xtal::SimpleStructure &_struc, const jsonParser &json, std::string prefix = "");
   }
 
 }

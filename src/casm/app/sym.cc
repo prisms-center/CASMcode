@@ -170,7 +170,7 @@ namespace CASM {
       fs::ofstream file_i;
       fs::path POSCARpath_i = "POSCAR_sym";
       file_i.open(POSCARpath_i);
-      VaspIO::PrintPOSCAR p_i(to_simple_structure(struc), struc.title());
+      VaspIO::PrintPOSCAR p_i(make_simple_structure(struc), struc.title());
       p_i.print(file_i);
       file_i.close();
       return 0;

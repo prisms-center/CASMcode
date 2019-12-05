@@ -86,7 +86,7 @@ void sym_mapping_test(xtal::BasicStructure<xtal::Site> struc, Index N) {
   for(Index i = 0; i < struc.basis().size(); ++i)
     struc.set_occ(i, 0);
 
-  xtal::SimpleStructure sstruc = xtal::to_simple_structure(struc);
+  xtal::SimpleStructure sstruc = xtal::make_simple_structure(struc);
 
   for(std::string &sp : sstruc.mol_info.names) {
     if(sp == "Va") {
@@ -110,7 +110,7 @@ void sym_mapping_test(xtal::BasicStructure<xtal::Site> struc, Index N) {
   T.setIdentity();
   T *= 2;
 
-  xtal::SimpleStructure sstruc2 = to_superstructure(T, sstruc);
+  xtal::SimpleStructure sstruc2 = make_superstructure(T, sstruc);
 
   {
     std::string comment("Check that we find 8 perfect mapping for a Vol8 non-primitive structure");

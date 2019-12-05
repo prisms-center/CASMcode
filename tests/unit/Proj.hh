@@ -103,6 +103,7 @@ namespace test {
 
     //TODO: Do we really want to be running CLI executables by calling them through popen?
     //Shouldn't all these things jut be called and checked by a bash script or similar?
+    m_p.popen(cd_and() + autotools::abs_ccasm_path() + " composition --calc");
     m_p.popen(cd_and() + autotools::abs_ccasm_path() + " composition --select 0");
 
     for(auto it = begin; it != end; ++it) {

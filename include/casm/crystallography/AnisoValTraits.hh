@@ -28,6 +28,9 @@ namespace CASM {
     ///\brief Named constructor for total energy AnisoValTraits
     static AnisoValTraits energy();
 
+    ///\brief Named constructor for selective_dynamics AnisoValTraits
+    static AnisoValTraits selective_dynamics();
+
     ///\brief Named constructor for site displacement AnisoValTraits
     static AnisoValTraits disp();
 

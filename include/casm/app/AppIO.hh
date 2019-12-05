@@ -155,10 +155,18 @@ namespace CASM {
     void read(fs::path _filename);
 
     /// \brief Read CompositionAxes from JSON
-    void read(const jsonParser &json, fs::path filename = fs::path());
+    void read(const jsonParser &json);
+
+    /// \brief Iterate over list of CompositionConverter and insert each one as an enumerated
+    /// axes set with a unique numerical name
+    template<typename IterType>
+    void insert_enumerated(IterType begin, IterType end);
+
+    /// \brief Erase all enumerated axes and clear this->enumerated
+    void erase_enumerated();
 
     /// \brief Write CompositionAxes to file
-    void write(fs::path _filename);
+    void write(fs::path _filename) const;
 
     /// \brief Write CompositionAxes to JSON
     void write(jsonParser &json) const;
@@ -166,17 +174,25 @@ namespace CASM {
     /// \brief Set this->curr using key
     void select(std::string key);
 
+    /// \brief True if curr_key is set
+    bool has_current_axes() const {
+      return !curr_key.empty();
+    }
 
-    std::map<std::string, CompositionConverter> standard;
-    std::map<std::string, CompositionConverter> custom;
-    bool has_current_axes = false;
+    std::map<std::string, CompositionConverter> all_axes;
+    std::set<std::string> enumerated;
     std::string curr_key;
     CompositionConverter curr;
-    fs::path filename;
 
     int err_code = 0;
     std::string err_message;
   };
+
+  jsonParser &to_json(const CompositionConverter &f, jsonParser &json);
+
+  /// \brief Deserialize CompositionConverter from JSON
+  void from_json(CompositionConverter &f, const jsonParser &json);
+
 
 
   /// \brief Read standard axes from JSON, and output to std::map<std::string, CompositionConverter>
