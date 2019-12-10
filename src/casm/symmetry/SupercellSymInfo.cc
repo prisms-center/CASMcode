@@ -11,7 +11,7 @@ namespace CASM {
 
   SupercellSymInfo::SupercellSymInfo(Lattice const &_prim_lat,
                                      Lattice const &_super_lat,
-                                     Index NB,
+                                     Index num_sites_in_prim,
                                      SymGroup const &_prim_factor_group,
                                      SymGroupRepID basis_permutation_symrep_ID,
                                      std::map<DoFKey, SymGroupRepID> const &global_dof_symrep_IDs,
@@ -19,7 +19,8 @@ namespace CASM {
                                      std::map<DoFKey, std::vector<SymGroupRepID> > const &local_dof_symrep_IDs) :
     m_supercell_superlattice(_prim_lat, _super_lat),
     m_unitcell_to_index_converter(m_supercell_superlattice.transformation_matrix()),
-    m_prim_grid(_prim_lat, _super_lat, NB),
+    m_unitcellcoord_to_index_converter(m_supercell_superlattice.transformation_matrix(), num_sites_in_prim),
+    m_prim_grid(_prim_lat, _super_lat, num_sites_in_prim),
     m_factor_group(sym::invariant_subgroup(_prim_factor_group, _super_lat)),
     m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID),
     m_has_aniso_occs(false),
@@ -28,16 +29,16 @@ namespace CASM {
       m_global_dof_symreps.emplace(std::make_pair(dofID.first, SymGroupRep::RemoteHandle(factor_group(), dofID.second)));
 
     for(auto const &dofID : local_dof_symrep_IDs) {
-      SublatSymReps treps(NB);
-      for(Index b = 0; b < NB; ++b) {
+      SublatSymReps treps(num_sites_in_prim);
+      for(Index b = 0; b < num_sites_in_prim; ++b) {
         if(!dofID.second[b].empty())
           treps[b] = SymGroupRep::RemoteHandle(factor_group(), dofID.second[b]);
       }
       m_local_dof_symreps.emplace(std::make_pair(dofID.first, std::move(treps)));
     }
 
-    m_occ_symreps.resize(NB);
-    for(Index b = 0; b < NB; ++b) {
+    m_occ_symreps.resize(num_sites_in_prim);
+    for(Index b = 0; b < num_sites_in_prim; ++b) {
       if(!occ_symrep_IDs[b].is_identity()) {
         m_has_aniso_occs = true;
         m_has_occupation_dofs = true;

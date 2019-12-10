@@ -1,8 +1,6 @@
 #include "casm/clex/Supercell_impl.hh"
 
-//#include <math.h>
 #include <vector>
-//#include <stdlib.h>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/lexical_cast.hpp>
@@ -84,7 +82,8 @@ namespace CASM {
   /// linear_index / volume();
   /// \endcode
   Index Supercell::sublat(Index linear_index) const {
-    return prim_grid().sublat(linear_index);
+    return this->sym_info().unitcellcoord_index_converter()[linear_index].sublattice();
+    /* return prim_grid().sublat(linear_index); */
   }
 
   /// \brief Given a Coordinate and tolerance, return linear index into Configuration

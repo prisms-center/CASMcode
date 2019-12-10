@@ -130,6 +130,10 @@ namespace CASM {
         return m_trans_mat;
       }
 
+      Index sublat(Index linear_index) const {
+        return linear_index / m_N_vol;
+      }
+
     public:
       PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
       PrimGrid(const Lattice &p_lat,
@@ -138,10 +142,6 @@ namespace CASM {
                const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
                Index NB);
 
-
-      Index sublat(Index linear_index) const {
-        return linear_index / m_N_vol;
-      }
 
       // find linear index that is translational equivalent to Coordinate or UnitCell
       Index find(const Coordinate &_coord) const;
