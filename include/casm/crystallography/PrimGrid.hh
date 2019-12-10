@@ -126,6 +126,10 @@ namespace CASM {
         return m_N_vol;
       }
 
+      const matrix_type &trans_mat() const {
+        return m_trans_mat;
+      }
+
     public:
       PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
       PrimGrid(const Lattice &p_lat,
@@ -134,10 +138,6 @@ namespace CASM {
                const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
                Index NB);
 
-
-      const matrix_type &trans_mat() const {
-        return m_trans_mat;
-      }
 
       Index sublat(Index linear_index) const {
         return linear_index / m_N_vol;

@@ -5,6 +5,7 @@
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/misc/CASM_math.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymOp.hh"
 #include <functional>
@@ -16,7 +17,9 @@ namespace CASM {
     UnitCell UnitCell::from_coordinate(Coordinate const &lattice_point) {
       auto rounded_lattice_point = lround(lattice_point.const_frac());
       auto round_error = lattice_point.const_frac() - rounded_lattice_point.cast<double>();
-      if(!round_error.isZero(lattice_point.lattice().tol())) {
+
+      double tol = lattice_point.lattice().tol();
+      if(!almost_zero(round_error(0), tol) || !almost_zero(round_error(1), tol) || !almost_zero(round_error(2), tol)) {
         std::cerr << round_error << std::endl;
         UnitCell::_throw_large_rounding_error();
       }
