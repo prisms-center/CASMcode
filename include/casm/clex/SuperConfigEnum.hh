@@ -1,6 +1,7 @@
 #ifndef CASM_SuperConfigEnum
 #define CASM_SuperConfigEnum
 
+#include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/container/Counter.hh"
 #include "casm/enumerator/InputEnumerator.hh"
@@ -73,9 +74,9 @@ namespace CASM {
     ///
     /// - The PrimGrid tiles the sub-configurations into the super-configuration
     /// - sub_config()[counter()[i]] is tiled into the i-th PrimGrid location
-    const PrimGrid &prim_grid() const {
-      return *m_prim_grid;
-    }
+    /* const PrimGrid &prim_grid() const { */
+    /*   return *m_prim_grid; */
+    /* } */
 
   private:
 
@@ -109,7 +110,7 @@ namespace CASM {
     }
 
     /// Access the PrimGrid
-    PrimGrid &_prim_grid() {
+    xtal::LatticePointIndexConverter &_prim_grid() {
       return *m_prim_grid;
     }
 
@@ -143,7 +144,7 @@ namespace CASM {
     Counter<Array<int> > m_counter;
 
     /// A PrimGrid that tiles thes sub_scel into the ref_scel
-    notstd::cloneable_ptr<PrimGrid> m_prim_grid;
+    notstd::cloneable_ptr<xtal::LatticePointIndexConverter> m_prim_grid;
 
     /// m_current->occ(m_index_map[i][j]) = m_sub_scel[i].occ(j)
     std::vector<std::vector<Index> > m_index_map;

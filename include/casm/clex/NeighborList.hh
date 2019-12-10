@@ -9,11 +9,10 @@
 namespace CASM {
 
   namespace xtal {
-    class PrimGrid;
     class UnitCell;
     class UnitCellCoord;
+    class Superlattice;
   }
-  using xtal::PrimGrid;
   using xtal::UnitCell;
   using xtal::UnitCellCoord;
 
@@ -148,7 +147,7 @@ namespace CASM {
 
   /// \brief The SuperNeighborList gives the linear indices of neighboring sites and unitcells in a particular Supercell
   ///
-  /// - The SuperNeighborList is constructed from a PrimGrid and PrimNeighborList
+  /// - The SuperNeighborList is constructed from a Superlattice and PrimNeighborList
   /// - The linear index of the neighboring unit cell is determined for all unit cells in
   ///   a supercell
   /// - The linear index of sites in each neighboring unit cell is determined
@@ -161,7 +160,7 @@ namespace CASM {
     typedef Index size_type;
 
     /// \brief Constructor
-    SuperNeighborList(const PrimGrid &prim_grid, const PrimNeighborList &prim_nlist);
+    SuperNeighborList(const xtal::Superlattice &prim_grid, const PrimNeighborList &prim_nlist);
 
     /// \brief get unit cell index from site index
     size_type unitcell_index(size_type site_index) const {

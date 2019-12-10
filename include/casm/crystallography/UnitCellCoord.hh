@@ -2,6 +2,7 @@
 #define UNITCELLCOORD_HH
 
 #include <iostream>
+#include <stdexcept>
 
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
@@ -43,8 +44,14 @@ namespace CASM {
       UnitCell(const Eigen::MatrixBase<OtherDerived> &other) : Eigen::Vector3l(other) {
       }
 
-      /// Convert lattice point to a unitcell
+      /// Convert lattice point to a unitcell by rounding fractional coordinates
       static UnitCell from_coordinate(Coordinate const &lattice_point);
+
+      /// Convert a unitcell to a lattice point coordinate, given the primitive tiling unit lattice
+      Coordinate coordinate(const Lattice& tiling_unit) const;
+
+      /// Finds a new UnitCell with values relative to the given tiling unit
+      UnitCell reset_tiling_unit(const Lattice& current_tiling_unit, const Lattice& new_tiling_unit) const;
 
       // This method allows you to assign Eigen expressions to MyVectorType
       template <typename OtherDerived>
@@ -65,6 +72,14 @@ namespace CASM {
           }
         }
         return false;
+      }
+
+    private:
+
+      /// Throws exception to indicate that finding integral values resulted in errors much larger than the relevant lattice tolerance
+      static void _throw_large_rounding_error()
+      {
+          throw std::runtime_error("Could not round values to integers within a reasonable tolerance");
       }
     };
 

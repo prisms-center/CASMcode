@@ -84,6 +84,9 @@ namespace CASM {
      *
      * If you want to convert between linear index and bijk (UnitCellCoord) quickly, you probably
      * want to be using the LinearIndexConverter class instead of this.
+     *
+     * The original algorithm for constant time evaluation of the linear index that makes this
+     * class possible was developed by John C. Thomas
      */
 
     class OrderedLatticePointGenerator {

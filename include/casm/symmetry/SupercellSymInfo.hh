@@ -2,6 +2,7 @@
 #define CASM_SupercellSymInfo
 
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/global/eigen.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
@@ -59,6 +60,11 @@ namespace CASM {
       return m_prim_grid;
     }
 
+    const xtal::LatticePointIndexConverter& unitcell_index_converter() const
+    {
+        return m_unitcell_to_index_converter;
+    }
+
     SymGroup const &factor_group() const {
       return m_factor_group;
     }
@@ -100,7 +106,13 @@ namespace CASM {
   private:
     PrimGrid m_prim_grid;
 
+    /// Couples the primitive lattice to the supercell lattice, and knows the transformation matrix
     xtal::Superlattice m_supercell_superlattice;
+
+    //TODO: I don't think this belongs in SupercellSymInfo, but neither did PrimGrid.
+    //I'm keeping the functionality where I found it for now, but it should really get moved somewhere else.
+    /// Converts between ijk (UnitCell) values and their corresponding index in an unrolled vector
+    xtal::LatticePointIndexConverter m_unitcell_to_index_converter;
 
     // m_factor_group is factor group of the super cell, found by identifying the subgroup of
     // (*this).prim().factor_group() that leaves the supercell lattice vectors unchanged
