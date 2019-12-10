@@ -12,30 +12,30 @@
 namespace CASM {
   namespace xtal {
 
+    //TODO: Make this take a tolerance
     UnitCell UnitCell::from_coordinate(Coordinate const &lattice_point) {
-        auto rounded_lattice_point=lround(lattice_point.const_frac());
-        auto round_error=lattice_point.const_frac()-rounded_lattice_point.cast<double>();
-        if(!round_error.isZero(lattice_point.lattice().tol()))
-        {
-            UnitCell::_throw_large_rounding_error();
-        }
+      auto rounded_lattice_point = lround(lattice_point.const_frac());
+      auto round_error = lattice_point.const_frac() - rounded_lattice_point.cast<double>();
+      if(!round_error.isZero(lattice_point.lattice().tol())) {
+        std::cerr << round_error << std::endl;
+        UnitCell::_throw_large_rounding_error();
+      }
 
       return UnitCell(rounded_lattice_point);
     }
 
-      Coordinate UnitCell::coordinate(const Lattice& tiling_unit) const
-      {
-          return Coordinate(this->cast<double>(), tiling_unit,FRAC);
-      }
+    Coordinate UnitCell::coordinate(const Lattice &tiling_unit) const {
+      return Coordinate(this->cast<double>(), tiling_unit, FRAC);
+    }
 
-      UnitCell UnitCell::reset_tiling_unit(const Lattice& current_tiling_unit, const Lattice& new_tiling_unit) const
-      {
-          auto as_coord=this->coordinate(current_tiling_unit);
-          as_coord.set_lattice(new_tiling_unit,CART);
-          return UnitCell::from_coordinate(as_coord);
-      }
+    //TODO: Make this take a tolerance
+    UnitCell UnitCell::reset_tiling_unit(const Lattice &current_tiling_unit, const Lattice &new_tiling_unit) const {
+      auto as_coord = this->coordinate(current_tiling_unit);
+      as_coord.set_lattice(new_tiling_unit, CART);
+      return UnitCell::from_coordinate(as_coord);
+    }
 
-      //************************************************************************************************************//
+    //************************************************************************************************************//
 
     UnitCellCoord UnitCellCoord::from_coordinate(const PrimType &prim, const Coordinate &coord, double tol) {
       Coordinate coord_in_prim(prim.lattice());

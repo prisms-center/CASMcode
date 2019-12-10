@@ -60,9 +60,8 @@ namespace CASM {
       return m_prim_grid;
     }
 
-    const xtal::LatticePointIndexConverter& unitcell_index_converter() const
-    {
-        return m_unitcell_to_index_converter;
+    const xtal::LatticePointIndexConverter &unitcell_index_converter() const {
+      return m_unitcell_to_index_converter;
     }
 
     SymGroup const &factor_group() const {
@@ -83,6 +82,10 @@ namespace CASM {
 
     const xtal::Lattice &prim_lattice() const {
       return m_supercell_superlattice.prim_lattice();
+    }
+
+    const xtal::Superlattice &superlattice() const {
+      return m_supercell_superlattice;
     }
 
     Eigen::Matrix3l transformation_matrix() const {

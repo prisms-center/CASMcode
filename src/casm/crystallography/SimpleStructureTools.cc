@@ -2,6 +2,7 @@
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clex/Configuration.hh"
@@ -91,25 +92,28 @@ namespace CASM {
 
     SimpleStructure make_superstructure(Eigen::Ref<const Eigen::Matrix3i> const &_T, SimpleStructure const &_sstruc) {
 
-      SimpleStructure result;
-      result.lat_column_mat = _sstruc.lat_column_mat * _T.cast<double>();;
-      result.properties = _sstruc.properties;
+      SimpleStructure superstructure;
+      superstructure.lat_column_mat = _sstruc.lat_column_mat * _T.cast<double>();;
+      superstructure.properties = _sstruc.properties;
 
+      Lattice sstruc_lattice(_sstruc.lat_column_mat);
+      Lattice superstructure_lattice(superstructure.lat_column_mat);
 
-      PrimGrid grid(Lattice(_sstruc.lat_column_mat), Lattice(result.lat_column_mat));
+      auto all_lattice_points = make_lattice_points(sstruc_lattice, superstructure_lattice, TOL);
 
-      result.mol_info = Local::_replicate(_sstruc.mol_info, grid.size());
-      result.atom_info = Local::_replicate(_sstruc.atom_info, grid.size());
+      superstructure.mol_info = Local::_replicate(_sstruc.mol_info, all_lattice_points.size());
+      superstructure.atom_info = Local::_replicate(_sstruc.atom_info, all_lattice_points.size());
 
       Index nm = _sstruc.mol_info.size();
       Index na = _sstruc.atom_info.size();
 
-      for(Index g = 0; g < grid.size(); ++g) {
-        result.mol_info.coords.block(0, g * nm, 3, nm).colwise() += grid.scel_coord(g).const_cart();
-        result.atom_info.coords.block(0, g * na, 3, na).colwise() += grid.scel_coord(g).const_cart();
+      for(Index g = 0; g < all_lattice_points.size(); ++g) {
+        Coordinate lattice_point_coordinate = make_superlattice_coordinate(all_lattice_points[g], sstruc_lattice, superstructure_lattice);
+        superstructure.mol_info.coords.block(0, g * nm, 3, nm).colwise() += lattice_point_coordinate.const_cart();
+        superstructure.atom_info.coords.block(0, g * na, 3, na).colwise() += lattice_point_coordinate.const_cart();
       }
 
-      return result;
+      return superstructure;
     }
 
     //***************************************************************************

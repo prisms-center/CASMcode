@@ -110,8 +110,8 @@ namespace CASM {
     }
 
     /// Access the PrimGrid
-    xtal::LatticePointIndexConverter &_prim_grid() {
-      return *m_prim_grid;
+    xtal::LatticePointIndexConverter &_unitcell_index_converter() {
+      return *m_unitcell_index_converter;
     }
 
     /// Fill DoF from sub_config into a Configuration
@@ -144,7 +144,7 @@ namespace CASM {
     Counter<Array<int> > m_counter;
 
     /// A PrimGrid that tiles thes sub_scel into the ref_scel
-    notstd::cloneable_ptr<xtal::LatticePointIndexConverter> m_prim_grid;
+    notstd::cloneable_ptr<xtal::LatticePointIndexConverter> m_unitcell_index_converter;
 
     /// m_current->occ(m_index_map[i][j]) = m_sub_scel[i].occ(j)
     std::vector<std::vector<Index> > m_index_map;

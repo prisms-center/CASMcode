@@ -164,7 +164,7 @@ namespace CASM {
 
   ///Return number of primitive cells that fit inside of *this
   Index Supercell::volume() const {
-    return prim_grid().size();
+    return this->sym_info().unitcell_index_converter().total_sites();
   }
 
   Index Supercell::basis_size() const {
@@ -196,7 +196,7 @@ namespace CASM {
     if(!m_nlist) {
       m_nlist_size_at_construction = primclex().nlist().size();
       m_nlist = notstd::make_cloneable<SuperNeighborList>(
-                  prim_grid(),
+                  this->sym_info().superlattice(),
                   primclex().nlist()
                 );
     }

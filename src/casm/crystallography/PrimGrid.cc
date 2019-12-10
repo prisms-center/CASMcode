@@ -361,7 +361,7 @@ namespace CASM {
     }
 
     Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice) {
-      Coordinate tcoord(ijk.cast<double>(), tiling_unit, FRAC);
+      Coordinate tcoord = ijk.coordinate(tiling_unit);
       tcoord.set_lattice(superlattice, CART);
       return tcoord;
     }

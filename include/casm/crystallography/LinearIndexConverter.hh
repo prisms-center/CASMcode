@@ -58,7 +58,7 @@ namespace CASM {
       void always_bring_within();
 
       /// Bring the given UnitCellCoord into the superlattice using lattice translations
-      UnitCellCoord bring_within(const UnitCellCoord& bijk) const;
+      UnitCellCoord bring_within(const UnitCellCoord &bijk) const;
 
       /// Given the linear index, retreive the corresponding UnitCellCoord
       UnitCellCoord operator[](Index ix) const;
@@ -66,6 +66,11 @@ namespace CASM {
       /// Given the UnitCellCoord, retreive its corresponding linear index.
       /// If applicable, brings the UnitCellCoord within the superlattice
       Index operator[](const UnitCellCoord &bijk) const;
+
+      /// Returns the total number of sites within the superlattice
+      Index total_sites() const {
+        return m_linear_index_to_bijk.size();
+      }
 
     private:
       /// Convert from linear index to UnitCellCoord
@@ -86,11 +91,6 @@ namespace CASM {
       /// Functor to bring UnitCellCoord values back into the superlattice
       LatticePointWithin_f m_bring_within_f;
 
-      /// Returns the total number of sites within the superlattice
-      Index _total_sites() const {
-        return m_linear_index_to_bijk.size();
-      }
-
       /// Throws exception if the specified index is out of the allowed range
       void _throw_if_incompatible_index(Index ix) const;
 
@@ -109,54 +109,50 @@ namespace CASM {
 
     };
 
-/**
- * Converts back and forth between UnitCelland its linear index,
- * where the linear index is guaranteed to preserve order based on the
- * and the Smith Normal Form of the UnitCell.
- *
- * By default, the constructed index converter will always accept
- * UnitCell values that fall outside of the superlattice. When this
- * happens, the given UnitCellCoord is brought into the superlattice
- * using superlattice vector translations, and the index of the resulting
- * UnitCell is returned.
- */
+    /**
+     * Converts back and forth between UnitCelland its linear index,
+     * where the linear index is guaranteed to preserve order based on the
+     * and the Smith Normal Form of the UnitCell.
+     *
+     * By default, the constructed index converter will always accept
+     * UnitCell values that fall outside of the superlattice. When this
+     * happens, the given UnitCellCoord is brought into the superlattice
+     * using superlattice vector translations, and the index of the resulting
+     * UnitCell is returned.
+     */
 
-class LatticePointIndexConverter : LinearIndexConverter
-{
+    class LatticePointIndexConverter : LinearIndexConverter {
     public:
-        typedef LinearIndexConverter::matrix_type matrix_type;
-    LatticePointIndexConverter(const matrix_type& transformation_matrix):
-        LinearIndexConverter(transformation_matrix,1)
-    {
-    }
+      typedef LinearIndexConverter::matrix_type matrix_type;
+      LatticePointIndexConverter(const matrix_type &transformation_matrix):
+        LinearIndexConverter(transformation_matrix, 1) {
+      }
 
-    using LinearIndexConverter::always_bring_within;
-    using LinearIndexConverter::never_bring_within;
-    
-    /// Bring the given UnitCell into the superlattice using lattice translations
-    UnitCell bring_within(const UnitCell& ijk) const
-    {
-        return LinearIndexConverter::bring_within(UnitCellCoord(0,ijk)).unitcell();
-    }
+      using LinearIndexConverter::always_bring_within;
+      using LinearIndexConverter::never_bring_within;
+      using LinearIndexConverter::total_sites;
 
-    /// Given the linear index, retreive the corresponding UnitCell
-    UnitCell operator[](Index ix) const
-    {
+      /// Bring the given UnitCell into the superlattice using lattice translations
+      UnitCell bring_within(const UnitCell &ijk) const {
+        return LinearIndexConverter::bring_within(UnitCellCoord(0, ijk)).unitcell();
+      }
+
+      /// Given the linear index, retreive the corresponding UnitCell
+      UnitCell operator[](Index ix) const {
         return LinearIndexConverter::operator[](ix).unitcell();
-    }
+      }
 
-    /// Given the UnitCell, retreive its corresponding linear index.
-    /// If applicable, brings the UnitCell within the superlattice
-    Index operator[](const UnitCell& ijk) const
-    {
-        return LinearIndexConverter::operator[](UnitCellCoord(0,ijk));
-    }
+      /// Given the UnitCell, retreive its corresponding linear index.
+      /// If applicable, brings the UnitCell within the superlattice
+      Index operator[](const UnitCell &ijk) const {
+        return LinearIndexConverter::operator[](UnitCellCoord(0, ijk));
+      }
 
     private:
-    //TODO:
-    //Secretly cache things to "speed things up" if you're *really* that concerned about the UnitCellCoord
-    //copies slowing you down. Don't implement this until you've profiled it.
-};
+      //TODO:
+      //Secretly cache things to "speed things up" if you're *really* that concerned about the UnitCellCoord
+      //copies slowing you down. Don't implement this until you've profiled it.
+    };
 
   } // namespace xtal
 } // namespace CASM

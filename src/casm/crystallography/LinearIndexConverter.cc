@@ -16,8 +16,8 @@ namespace CASM {
     }
 
     void LinearIndexConverter::_throw_if_incompatible_index(Index ix) const {
-      if(ix < 0 || ix >= this->_total_sites()) {
-        throw std::runtime_error("The specified index is out of range. There are " + std::to_string(this->_total_sites()) +
+      if(ix < 0 || ix >= this->total_sites()) {
+        throw std::runtime_error("The specified index is out of range. There are " + std::to_string(this->total_sites()) +
                                  " availabel sites, but you specified index " + std::to_string(ix));
       }
       return;
@@ -58,12 +58,11 @@ namespace CASM {
       m_automatically_bring_bijk_within = true;
     }
 
-      UnitCellCoord LinearIndexConverter::bring_within(const UnitCellCoord& bijk) const
-      {
-          //equivalent to requesting index of bijk, then using the index to get the
-          //bijk within the superlattice
-          return UnitCellCoord(bijk.sublattice(),this->m_bring_within_f(bijk.unitcell()));
-      }
+    UnitCellCoord LinearIndexConverter::bring_within(const UnitCellCoord &bijk) const {
+      //equivalent to requesting index of bijk, then using the index to get the
+      //bijk within the superlattice
+      return UnitCellCoord(bijk.sublattice(), this->m_bring_within_f(bijk.unitcell()));
+    }
 
     UnitCellCoord LinearIndexConverter::operator[](Index ix) const {
       _throw_if_incompatible_index(ix);

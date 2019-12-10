@@ -1,4 +1,5 @@
 #include "casm/clex/SuperConfigEnum.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Lattice_impl.hh"
@@ -229,24 +230,25 @@ namespace CASM {
     m_sub_scel = &(m_sub_config.begin()->supercell());
 
     // construct PrimGrid
-    m_prim_grid = notstd::make_cloneable<PrimGrid>(
-                    _sub_supercell().lattice(),
-                    _target_supercell().lattice()
-                  );
+    m_unitcell_index_converter = notstd::make_cloneable<xtal::LatticePointIndexConverter>(
+                                   xtal::make_transformation_matrix(
+                                     _sub_supercell().lattice(),
+                                     _target_supercell().lattice(), _target_supercell().lattice().tol())
+                                 );
 
     // initialize 'm_counter' to count over all possible sub-config on
     // each prim_grid site
     m_counter = Counter<Array<int> >(
-                  Array<int>(prim_grid().size(), 0),
-                  Array<int>(prim_grid().size(), sub_config().size() - 1),
-                  Array<int>(prim_grid().size(), 1));
+                  Array<int>(this->_unitcell_index_converter().total_sites(), 0),
+                  Array<int>(this->_unitcell_index_converter().total_sites(), sub_config().size() - 1),
+                  Array<int>(this->_unitcell_index_converter().total_sites(), 1));
 
     // save indices for mapping occupants into super config
     // so that: m_current->occ(m_index_map[i][j]) = m_sub_scel[i].occ(j)
     // and same for all other site DoF
-    m_index_map.resize(prim_grid().size());
-    for(int i = 0; i < prim_grid().size(); ++i) {
-      UnitCell ref = _sub_supercell().transf_mat().cast<Index>() * prim_grid().unitcell(i);
+    m_index_map.resize(this->_unitcell_index_converter().total_sites());
+    for(int i = 0; i < this->_unitcell_index_converter().total_sites(); ++i) {
+      UnitCell ref = _sub_supercell().transf_mat().cast<Index>() * this->_unitcell_index_converter()[i];
       for(int j = 0; j < _sub_supercell().num_sites(); ++j) {
         UnitCellCoord uccord = _sub_supercell().uccoord(j) + ref;
         Index linear_index = _target_supercell().linear_index(uccord);
@@ -324,7 +326,7 @@ namespace CASM {
     //}
 
     ConfigDoF &to = config.configdof();
-    for(Index i = 0; i < prim_grid().size(); ++i) {
+    for(Index i = 0; i < this->_unitcell_index_converter().total_sites(); ++i) {
       Configuration &from = _sub_config()[counter_val[i]];
       for(Index j = 0; j < _sub_supercell().num_sites(); ++j) {
 
