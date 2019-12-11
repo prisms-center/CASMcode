@@ -117,10 +117,8 @@ namespace CASM {
   /// \brief Return the coordinate corresponding to linear index in the supercell
   ///
   Coordinate Supercell::coord(Index linear_index) const {
-    Coordinate tcoord(prim_grid().scel_coord(linear_index % volume()));
-    tcoord.cart() += prim().basis()[sublat(linear_index)].cart();
-    return tcoord;
-    // return uccoord(linear_index).coordinate();
+    UnitCellCoord linear_index_ucc = this->sym_info().unitcellcoord_index_converter()[linear_index];
+    return linear_index_ucc.coordinate(this->prim());
   }
 
   /// \brief Return the integral coordinates corresponding to a linear index
@@ -131,7 +129,7 @@ namespace CASM {
   /// UnitCellCoord(prim(), sublat(linear_index), prim_grid().unitcell(linear_index % volume()))
   /// \endcode
   UnitCellCoord Supercell::uccoord(Index linear_index) const {
-    return UnitCellCoord(sublat(linear_index), prim_grid().unitcell(linear_index % volume()));
+    return this->sym_info().unitcellcoord_index_converter()[linear_index];
   }
 
   /// \brief returns Supercell-compatible configdof with zeroed DoF values and user-specified tolerance

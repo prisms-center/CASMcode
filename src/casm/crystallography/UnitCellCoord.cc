@@ -15,8 +15,11 @@ namespace CASM {
 
     //TODO: Make this take a tolerance
     UnitCell UnitCell::from_coordinate(Coordinate const &lattice_point) {
-      auto rounded_lattice_point = lround(lattice_point.const_frac());
-      auto round_error = lattice_point.const_frac() - rounded_lattice_point.cast<double>();
+      Eigen::Vector3l rounded_lattice_point = lround(lattice_point.const_frac());
+      Eigen::Vector3d round_error = lattice_point.const_frac() - rounded_lattice_point.cast<double>();
+
+      /* auto unscaled_round_error = lattice_point.const_frac() - rounded_lattice_point.cast<double>(); */
+      /* auto round_error = lattice_point.lattice().lat_column_mat()*unscaled_round_error; //scale the error proportionally to the length of the vector */
 
       double tol = lattice_point.lattice().tol();
       if(!almost_zero(round_error(0), tol) || !almost_zero(round_error(1), tol) || !almost_zero(round_error(2), tol)) {
@@ -80,7 +83,7 @@ namespace CASM {
       if(!this->_is_compatible_with_prim(prim)) {
         UnitCellCoord::_throw_incompatible_primitive_cell();
       }
-      return prim.basis()[sublattice()] + Coordinate(unitcell().cast<double>(), prim.lattice(), FRAC);
+      return prim.basis()[this->sublattice()] + this->unitcell().coordinate(prim.lattice());
     }
 
     /// \brief Get reference to corresponding sublattice site in the unit structure

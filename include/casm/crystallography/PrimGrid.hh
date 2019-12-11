@@ -140,6 +140,10 @@ namespace CASM {
       Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const;
       Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord, double _tol) const;
 
+      // get Coordinate or UnitCell from linear index
+      Coordinate scel_coord(Index l) const;
+      Coordinate scel_coord(const UnitCell &ijk) const;
+      UnitCell unitcell(Index i) const;
     public:
       PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
       PrimGrid(const Lattice &p_lat,
@@ -150,10 +154,6 @@ namespace CASM {
 
 
 
-      // get Coordinate or UnitCell from linear index
-      Coordinate scel_coord(Index l) const;
-      Coordinate scel_coord(const UnitCell &ijk) const;
-      UnitCell unitcell(Index i) const;
 
       SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep) const;
 
