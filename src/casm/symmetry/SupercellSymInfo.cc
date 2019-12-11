@@ -61,7 +61,7 @@ namespace CASM {
       const auto &operation = group[operation_ix];
       std::vector<Index> permutation(total_sites);
       for(Index old_l = 0; old_l < total_sites; ++old_l) {
-        UnitCellCoord old_ucc = bijk_index_converter[old_l];
+        const UnitCellCoord &old_ucc = bijk_index_converter[old_l];
         UnitCellCoord new_ucc = sym::copy_apply(operation, old_ucc, prim);
         Index new_l = bijk_index_converter[new_ucc];
         permutation[new_l] = old_l;

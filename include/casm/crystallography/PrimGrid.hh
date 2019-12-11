@@ -144,6 +144,9 @@ namespace CASM {
       Coordinate scel_coord(Index l) const;
       Coordinate scel_coord(const UnitCell &ijk) const;
       UnitCell unitcell(Index i) const;
+
+      SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep) const;
+
     public:
       PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
       PrimGrid(const Lattice &p_lat,
@@ -154,8 +157,6 @@ namespace CASM {
 
 
 
-
-      SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep) const;
 
       // Returns Array of permutations.  Permutation 'l' describes the effect of translating PrimGrid site 'l'
       // to the origin.  NB is the number of primitive-cell basis sites. -- keep public for now
