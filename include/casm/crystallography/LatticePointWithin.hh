@@ -86,7 +86,41 @@ namespace CASM {
      * want to be using the LinearIndexConverter class instead of this.
      *
      * The original algorithm for constant time evaluation of the linear index that makes this
-     * class possible was developed by John C. Thomas
+     * class possible was developed by John C. Thomas and is described below:
+     *
+     * The transformation matrix T given at construction is decomposed using Smith Normal Form
+     * decomposition, such that
+     *
+     * T=U*S*V
+     *
+     * where S is a diagonal matrix, and T converts the primitive lattice P to the superlattice L
+     * such that
+     *
+     * L=P*T
+     *
+     * Combining the two equations we find that
+     *
+     * L*V.inv()=P*U*S
+     *
+     * In other words, P*U is a primitive lattice that perfectly tiles the equivalent
+     * superlattice L*V.inv(), with the transformation matrix being S.
+     * If we define L'=L*V.inv(), P'=P*U and T'=S, the realationship looks just
+     * like a normal superlattice transformation:
+     *
+     * L'=P'*T'
+     *
+     * Since S (=T') is diagonal, points (m,n,p) on the transformed grid are a convenient choice
+     * for indexing. Defining S0=S(0,0), S1=S(1,1), and S2=S(2,2), an index i results in the following
+     * (m,n,p) values:
+     *
+     * m=(i%(S0*S1))%S0
+     * n=(i%(S0*S1))/S0
+     * p=i/(S0*S1)
+     *
+     * Once the (m,n,p) value is determined, it can be transformed back to the original grid, to yield
+     * the desired (i,j,k) value, which is in terms of the original superlattice tiling unit:
+     *
+     * (i,j,k)=U*(m,n,p)
      */
 
     class OrderedLatticePointGenerator {
