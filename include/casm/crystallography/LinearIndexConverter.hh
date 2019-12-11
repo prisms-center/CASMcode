@@ -61,7 +61,7 @@ namespace CASM {
       UnitCellCoord bring_within(const UnitCellCoord &bijk) const;
 
       /// Given the linear index, retreive the corresponding UnitCellCoord
-      UnitCellCoord operator[](Index ix) const;
+      const UnitCellCoord &operator[](Index ix) const;
 
       /// Given the UnitCellCoord, retreive its corresponding linear index.
       /// If applicable, brings the UnitCellCoord within the superlattice
@@ -138,7 +138,7 @@ namespace CASM {
       }
 
       /// Given the linear index, retreive the corresponding UnitCell
-      UnitCell operator[](Index ix) const {
+      const UnitCell &operator[](Index ix) const {
         return LinearIndexConverter::operator[](ix).unitcell();
       }
 

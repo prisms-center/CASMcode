@@ -64,7 +64,7 @@ namespace CASM {
       return UnitCellCoord(bijk.sublattice(), this->m_bring_within_f(bijk.unitcell()));
     }
 
-    UnitCellCoord LinearIndexConverter::operator[](Index ix) const {
+    const UnitCellCoord &LinearIndexConverter::operator[](Index ix) const {
       _throw_if_incompatible_index(ix);
       return m_linear_index_to_bijk[ix];
     }

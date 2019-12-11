@@ -1,11 +1,13 @@
-#include "casm/symmetry/SupercellSymInfo.hh"
-#include "casm/symmetry/PermuteIterator.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
-#include "casm/symmetry/SymGroup.hh"
-#include "casm/symmetry/SymTools.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
+#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SymBasisPermute.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymPermutation.hh"
+#include "casm/symmetry/SymTools.hh"
 
 namespace CASM {
 
@@ -52,6 +54,24 @@ namespace CASM {
   }
 
 
+  SymGroupRepID make_permutation_representation(const SymGroup &group, const xtal::LinearIndexConverter bijk_index_converter, const Structure &prim) {
+    SymGroupRepID perm_rep_ID = group.allocate_representation();
+    long total_sites = bijk_index_converter.total_sites();
+    for(Index operation_ix = 0; operation_ix < group.size(); ++operation_ix) {
+      const auto &operation = group[operation_ix];
+      std::vector<Index> permutation(total_sites);
+      for(Index old_l = 0; old_l < total_sites; ++old_l) {
+        UnitCellCoord old_ucc = bijk_index_converter[old_l];
+        UnitCellCoord new_ucc = sym::copy_apply(operation, old_ucc, prim);
+        Index new_l = bijk_index_converter[new_ucc];
+        permutation[new_l] = old_l;
+      }
+
+      group[operation_ix].set_rep(perm_rep_ID, SymPermutation(permutation));
+    }
+    return perm_rep_ID;
+  }
+
 
   // the permutation_symrep is the SymGroupRep of prim().factor_group() that describes how
   // operations of m_factor_group permute sites of the Supercell.
@@ -64,22 +84,6 @@ namespace CASM {
   SymGroupRep::RemoteHandle const &SupercellSymInfo::site_permutation_symrep() const {
     if(m_site_perm_symrep.empty()) {
       m_site_perm_symrep = SymGroupRep::RemoteHandle(factor_group(), prim_grid().make_permutation_representation(factor_group(), basis_permutation_symrep().symrep_ID()));
-      /*
-      default_err_log() << "For SCEL " << " -- " << name() << " Translation Permutations are:\n";
-      for(int i = 0; i < m_trans_permute.size(); i++)
-      default_err_log() << i << ":   " << m_trans_permute[i].perm_array() << "\n";
-
-      default_err_log() << "For SCEL " << " -- " << name() << " factor_group Permutations are:\n";
-      for(int i = 0; i < m_factor_group.size(); i++){
-      default_err_log() << "Operation " << i << ":\n";
-      m_factor_group[i].print(default_err_log(),FRAC);
-      default_err_log() << '\n';
-      default_err_log() << i << ":   " << m_factor_group[i].get_permutation_rep(m_site_perm_symrep_ID)->perm_array() << '\n';
-
-      }
-      std:: cerr << "End permutations for SCEL " << name() << '\n';
-      */
-
     }
 
     return m_site_perm_symrep;
