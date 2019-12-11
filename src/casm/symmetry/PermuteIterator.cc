@@ -5,6 +5,7 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/casm_io/json/jsonParser.hh"
+#include "casm/external/Eigen/src/Core/Matrix.h"
 
 namespace CASM {
 
@@ -171,9 +172,10 @@ namespace CASM {
     // Easiest way to get the new translation is just to compare the tau of the
     // inverse of the 'total' sym_op (described by *this), to the inverse of the
     // untranslated symop (described by m_fg_site_permutation_symrep.sym_op(it.m_factor_group_index))
-    // Result is the portion of the inverse sym_op that needs to be described by a prim_grid translation
-    it.m_translation_index =
-      prim_grid().find_cart(sym_op().inverse().tau() - factor_group()[it.factor_group_index()].tau());
+    // Result is the portion of the inverse sym_op that needs to be described by a lattice point translation
+    Eigen::Vector3d translation_cart = (sym_op().inverse().tau() - factor_group()[it.factor_group_index()].tau());
+    UnitCell translation_uc = UnitCell::from_cartesian(translation_cart, this->sym_info().prim_lattice());
+    it.m_translation_index = this->sym_info().unitcell_index_converter()[translation_uc];
 
     return it;
   }
@@ -186,9 +188,10 @@ namespace CASM {
     // Easiest way to get the new translation is just to compare the tau of the
     // 'total' sym_op (described by (*this).sym_op()*RHS.sym_op()), to the
     // untranslated symop product (described by m_fg_site_permutation_symrep.sym_op(it.factor_group_index()))
-    // Result is the portion of the product sym_op that needs to be described by a prim_grid translation
-    it.m_translation_index =
-      prim_grid().find_cart((sym_op() * RHS.sym_op()).tau() - factor_group()[it.factor_group_index()].tau());
+    // Result is the portion of the product sym_op that needs to be described by a lattice point translation
+    Eigen::Vector3d translation_cart = (sym_op() * RHS.sym_op()).tau() - factor_group()[it.factor_group_index()].tau();
+    UnitCell translation_uc = UnitCell::from_cartesian(translation_cart, this->sym_info().prim_lattice());
+    it.m_translation_index = this->sym_info().unitcell_index_converter()[translation_uc];
 
     return it;
   }

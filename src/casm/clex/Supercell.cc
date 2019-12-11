@@ -111,7 +111,7 @@ namespace CASM {
   /// bijk[0] * volume() + prim_grid().find(bijk.unitcell());
   /// \endcode
   Index Supercell::linear_index(const UnitCellCoord &bijk) const {
-    return bijk[0] * volume() + prim_grid().find(bijk.unitcell());
+    return this->sym_info().unitcellcoord_index_converter()[bijk];
   }
 
   /// \brief Return the coordinate corresponding to linear index in the supercell

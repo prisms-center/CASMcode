@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/Comparisons.hh"
@@ -47,11 +48,14 @@ namespace CASM {
       /// Convert lattice point to a unitcell by rounding fractional coordinates
       static UnitCell from_coordinate(Coordinate const &lattice_point);
 
+      /// Convert a Cartesian coordinate into a unitcell by rounding fractional coordinates to the provided lattice
+      static UnitCell from_cartesian(const Eigen::Vector3d &cartesian_coord, const Lattice &tiling_unit);
+
       /// Convert a unitcell to a lattice point coordinate, given the primitive tiling unit lattice
-      Coordinate coordinate(const Lattice& tiling_unit) const;
+      Coordinate coordinate(const Lattice &tiling_unit) const;
 
       /// Finds a new UnitCell with values relative to the given tiling unit
-      UnitCell reset_tiling_unit(const Lattice& current_tiling_unit, const Lattice& new_tiling_unit) const;
+      UnitCell reset_tiling_unit(const Lattice &current_tiling_unit, const Lattice &new_tiling_unit) const;
 
       // This method allows you to assign Eigen expressions to MyVectorType
       template <typename OtherDerived>
@@ -77,9 +81,8 @@ namespace CASM {
     private:
 
       /// Throws exception to indicate that finding integral values resulted in errors much larger than the relevant lattice tolerance
-      static void _throw_large_rounding_error()
-      {
-          throw std::runtime_error("Could not round values to integers within a reasonable tolerance");
+      static void _throw_large_rounding_error() {
+        throw std::runtime_error("Could not round values to integers within a reasonable tolerance");
       }
     };
 

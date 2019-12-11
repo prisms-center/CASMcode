@@ -81,7 +81,7 @@ namespace CASM {
 
     SymGroup const &factor_group() const;
 
-    //TODO: Get rid of this
+    //TODO: Get rid of this?
     SupercellSymInfo const &sym_info() const;
 
     /// Apply the combined factor_group permutation and translation permutation being pointed at

@@ -76,6 +76,13 @@ TEST(UnitCellCoordTest, construct_from_coordinate) {
   EXPECT_TRUE(good_catch) << "Exception misbehaved";
 }
 
+TEST(UnitCellCoordTest, construct_from_cartesian) {
+  Lattice fcc_lat =::fcc_lattice();
+  Eigen::Vector3d cart_coord = 2 * fcc_lat[0] - 5 * fcc_lat[1] + 9 * fcc_lat[2];
+  UnitCell uc_from_cart = UnitCell::from_cartesian(cart_coord, fcc_lat);
+  EXPECT_EQ(uc_from_cart, UnitCell(2, -5, 9));
+}
+
 TEST(UnitCellCoordTest, recover_coordinate) {
   double a = fcc_lattice_parameter();
 

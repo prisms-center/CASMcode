@@ -27,6 +27,11 @@ namespace CASM {
       return UnitCell(rounded_lattice_point);
     }
 
+    UnitCell UnitCell::from_cartesian(const Eigen::Vector3d &cartesian_coord, const Lattice &tiling_unit) {
+      Coordinate as_coord(cartesian_coord, tiling_unit, CART);
+      return UnitCell::from_coordinate(as_coord);
+    }
+
     Coordinate UnitCell::coordinate(const Lattice &tiling_unit) const {
       return Coordinate(this->cast<double>(), tiling_unit, FRAC);
     }

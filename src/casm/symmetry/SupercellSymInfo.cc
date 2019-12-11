@@ -125,7 +125,8 @@ namespace CASM {
   }
 
   SupercellSymInfo::permute_const_iterator SupercellSymInfo::permute_it(Index fg_index, UnitCell trans) const {
-    return permute_it(fg_index, prim_grid().find(trans));
+    Index trans_index = this->unitcell_index_converter()[trans];
+    return permute_it(fg_index, trans_index);
   }
 
 
