@@ -42,13 +42,6 @@ namespace CASM {
       m_sym_info_opt.coord_type = parse_coord_type(_opt);
       m_sym_info_opt.prec = optional_else<int>("prec", 7);
 
-      std::cout << "end SymInfoOptionsParser: " << _path << std::endl;
-      std::cout << "opt.vm().count(\"coord\"): " << _opt.vm().count("coord") << std::endl;
-      if(_opt.vm().count("coord")) {
-        std::cout << "_opt.coordtype_enum(): " << _opt.coordtype_enum() << std::endl;
-      }
-      std::cout << "optinal_else: " << optional_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC) << std::endl;
-      std::cout << "m_sym_info_opt.coord_type: " << to_string(m_sym_info_opt.coord_type) << std::endl;
     }
 
     const SymInfoOptions &sym_info_opt() const;
@@ -96,22 +89,10 @@ namespace CASM {
       m_orbit_printer_opt.coord_type = parse_coord_type(_opt);
       m_orbit_printer_opt.prec = optional_else<int>("prec", 7);
 
-      std::cout << "OrbitPrinterOptionsParser, before parsing sym_info_opt: " << _path << std::endl;
-      std::cout << "opt.vm().count(\"coord\"): " << _opt.vm().count("coord") << std::endl;
-      if(_opt.vm().count("coord")) {
-        std::cout << "_opt.coordtype_enum(): " << _opt.coordtype_enum() << std::endl;
-      }
-      std::cout << "optinal_else: " << optional_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC) << std::endl;
-      std::cout << "orbit_printer_opt().coord_type: " << to_string(orbit_printer_opt().coord_type) << std::endl;
-      std::cout << "orbit_printer_opt().sym_info_opt.coord_type: " << to_string(orbit_printer_opt().sym_info_opt.coord_type) << std::endl;
-
       this->kwargs["sym_info_opt"] = m_sym_info_opt_parser =
                                        std::make_shared<SymInfoOptionsParser>(_primclex, input, _opt, relpath("sym_info_opt"), false);
       m_orbit_printer_opt.sym_info_opt = m_sym_info_opt_parser->sym_info_opt();
 
-      std::cout << "end OrbitPrinterOptionsParser: " << _path << std::endl;
-      std::cout << "orbit_printer_opt().coord_type: " << to_string(orbit_printer_opt().coord_type) << std::endl;
-      std::cout << "orbit_printer_opt().sym_info_opt.coord_type: " << to_string(orbit_printer_opt().sym_info_opt.coord_type) << std::endl;
     }
 
     const OrbitPrinterOptions &orbit_printer_opt() const;

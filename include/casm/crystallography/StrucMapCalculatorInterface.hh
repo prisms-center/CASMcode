@@ -42,7 +42,7 @@ namespace CASM {
         m_allowed_species(std::move(allowed_species)) {
         //std::cout << "allowed_species:\n";
         if(m_allowed_species.empty()) {
-          auto const &p_info(info(parent()));
+          auto const &p_info(this->struc_info(parent()));
           m_allowed_species.resize(p_info.size());
           for(Index i = 0; i < p_info.size(); ++i) {
             m_allowed_species[i].insert(p_info.names[i]);
@@ -73,7 +73,7 @@ namespace CASM {
         //std::cout << "\n";
       }
 
-      SimpleStructure::Info const &info(SimpleStructure const &_struc) const {
+      SimpleStructure::Info const &struc_info(SimpleStructure const &_struc) const {
         return _struc.info(m_species_mode);
       }
 

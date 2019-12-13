@@ -169,7 +169,7 @@ namespace CASM {
 
           CompositionAxes opt(comp_axes);
 
-          if(opt.has_current_axes) {
+          if(opt.has_current_axes()) {
             m_data->has_composition_axes = true;
             m_data->comp_converter = opt.curr;
           }

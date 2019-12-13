@@ -135,7 +135,8 @@ TEST(NeighborListTest, Proj) {
   PrimClex primclex(proj.dir, null_log());
   primclex.settings().set_crystallography_tol(TOL);
   double tol = primclex.crystallography_tol();
-  const ProjectSettings &set = primclex.settings();
+  Structure const &prim = primclex.prim();
+  ProjectSettings const &set = primclex.settings();
 
   // initialize nlist
   PrimNeighborList nlist(

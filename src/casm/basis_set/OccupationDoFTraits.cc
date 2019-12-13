@@ -7,6 +7,7 @@
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/NeighborList.hh"
+#include <memory>
 
 namespace CASM {
   namespace DoFType {
@@ -237,10 +238,12 @@ namespace CASM {
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
 
-      //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
-      //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
-      //function call, and will affect the implementation of the SymCompare classes
-      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      //TODO: This is a temporary fix to avoid changing the interface of OccupationDoFTraits. What can
+      //happen is making these functions take a shared_ptr, but what *really* needs to happen is fixing all
+      //the classes and functions (such as those in SymCompare) that are requesting Structures when all they
+      //really need is SymRepIDs. I can't fix all that right now though, so check this out:
+      //it's a shared pointer to an existing Structure, that has a custom destructor that does nothing.
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -277,10 +280,12 @@ namespace CASM {
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
 
-      //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
-      //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
-      //function call, and will affect the implementation of the SymCompare classes
-      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      //TODO: This is a temporary fix to avoid changing the interface of OccupationDoFTraits. What can
+      //happen is making these functions take a shared_ptr, but what *really* needs to happen is fixing all
+      //the classes and functions (such as those in SymCompare) that are requesting Structures when all they
+      //really need is SymRepIDs. I can't fix all that right now though, so check this out:
+      //it's a shared pointer to an existing Structure, that has a custom destructor that does nothing.
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -343,10 +348,12 @@ namespace CASM {
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
 
-      //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
-      //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
-      //function call, and will affect the implementation of the SymCompare classes
-      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      //TODO: This is a temporary fix to avoid changing the interface of OccupationDoFTraits. What can
+      //happen is making these functions take a shared_ptr, but what *really* needs to happen is fixing all
+      //the classes and functions (such as those in SymCompare) that are requesting Structures when all they
+      //really need is SymRepIDs. I can't fix all that right now though, so check this out:
+      //it's a shared pointer to an existing Structure, that has a custom destructor that does nothing.
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,

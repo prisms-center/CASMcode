@@ -5,14 +5,11 @@
 
 #include "casm/crystallography/Structure.hh"
 #include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 
 #include "casm/casm_io/json/jsonParser.hh"
-#include "casm/clex/io/json/ChemicalReference.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 
 #include "casm/database/Selection_impl.hh"
@@ -23,27 +20,15 @@
 
 namespace CASM {
 
-  // --------- CompositionAxes Definitions --------------------------------------------------
-
-  /// \brief Read standard axes from JSON, and output to std::map<std::string, CompositionConverter>
-  ///
-  /// - json Format: {"standard_axes": {"key0" : {CompositionConverter}, ... more axes ...},
-  ///                 "custom_axes":   {"key0" : {CompositionConverter}, ... more axes ...},
-  ///                 "current_axes": "key"}
-  ///   - "axes_type" is either "standard_axes" or "custom_axes"
-  ///   - "key" is a string indicating which composition axes in the "standard_axes" or "custom_axes" JSON object
-  ///
-  /// - This read json["standard_axes"] or json["custom_axes"]
-  ///
-  template<typename OutputIterator>
-  OutputIterator read_composition_axes(OutputIterator result, const jsonParser &json) {
-
-    CompositionConverter conv;
-    for(auto it = json.cbegin(); it != json.cend(); ++it) {
-      from_json(conv, *it);
-      *result++ = std::make_pair(it.name(), conv);
+  template<typename IterType>
+  void CompositionAxes::insert_enumerated(IterType begin, IterType end) {
+    int i = 0;
+    for(; begin != end; ++begin, ++i) {
+      while(all_axes.count(std::to_string(i)))
+        ++i;
+      all_axes[std::to_string(i)] = *begin;
+      enumerated.insert(std::to_string(i));
     }
-    return result;
   }
 
   template<typename OrbitPrinter, typename Element>
