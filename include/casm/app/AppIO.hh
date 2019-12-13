@@ -1,6 +1,7 @@
 #ifndef CASM_AppIO
 #define CASM_AppIO
 
+#include <memory>
 #include <string>
 #include <map>
 #include <boost/filesystem/path.hpp>
@@ -376,14 +377,14 @@ namespace CASM {
 
   /// \brief Print site basis functions, as for 'casm bset --functions'
   void print_site_basis_funcs(
-    Structure const &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     ClexBasis const &clex_basis,
     Log &out,
     Index indent_space = 6,
     COORD_TYPE mode = FRAC);
 
   void write_site_basis_funcs(
-    Structure const &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     ClexBasis const &clex_basis,
     jsonParser &json);
 

@@ -14,6 +14,7 @@
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/misc/ParsingDictionary.hh"
+#include <memory>
 
 
 namespace CASM {
@@ -254,7 +255,12 @@ namespace CASM {
       std::stringstream stream;
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
-      make_prim_periodic_asymmetric_unit(_prim,
+
+      //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
+      //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
+      //function call, and will affect the implementation of the SymCompare classes
+      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
                                          std::back_inserter(asym_unit),
@@ -344,7 +350,12 @@ namespace CASM {
 
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
-      make_prim_periodic_asymmetric_unit(_prim,
+
+      //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
+      //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
+      //function call, and will affect the implementation of the SymCompare classes
+      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
                                          std::back_inserter(asym_unit),
@@ -460,33 +471,16 @@ namespace CASM {
 
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
-      make_prim_periodic_asymmetric_unit(_prim,
+
+      //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
+      //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
+      //function call, and will affect the implementation of the SymCompare classes
+      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
                                          std::back_inserter(asym_unit),
                                          nullstream);
-      /*
-        for(const auto &asym : asym_unit) {
-        for(const auto &equiv : asym) {
-        Index nb = equiv[0].sublattice();
-        for(Index f = 0; f < _site_bases[nb].size(); f++) {
-
-        for(Index s = 0; s < _prim.basis()[nb].occupant_dof().size(); s++) {
-        OccFuncEvaluator t_eval(s);
-        _site_bases[nb][f]->accept(t_eval);
-
-        if(s == 0)
-        stream << indent;
-        stream << "m_" << site_basis_name() << "_" << nb << '_' << f << '[' << s << "] = "
-        << t_eval.value();
-        if(s + 1 == _prim.basis()[nb].occupant_dof().size())
-        stream << ";\n\n";
-        else
-        stream << ", ";
-        }
-        }
-        }
-        }*/
       return stream.str();
     }
 

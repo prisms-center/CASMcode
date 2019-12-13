@@ -19,12 +19,14 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/EnumeratorHandler_impl.hh"
 #include "casm/app/QueryHandler_impl.hh"
+#include <memory>
 
 namespace CASM {
 
   struct PrimClex::PrimClexData {
 
     typedef PrimClex::PrimType PrimType;
+    typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
     PrimClexData(const Structure &_prim) :
       prim_ptr(std::make_shared<PrimType>(_prim)) {
@@ -47,7 +49,7 @@ namespace CASM {
     DirectoryStructure dir;
     ProjectSettings settings;
 
-    std::shared_ptr<const PrimType> prim_ptr;
+    PrimType_ptr prim_ptr;
     bool vacancy_allowed;
     Index vacancy_index;
 
@@ -369,7 +371,7 @@ namespace CASM {
       jsonParser bspecs_json;
       bspecs_json.read(dir().bspecs(key.bset));
 
-      it = m_data->clex_basis.insert(std::make_pair(key, ClexBasis(prim(), bspecs_json))).first;
+      it = m_data->clex_basis.insert(std::make_pair(key, ClexBasis(this->shared_prim(), bspecs_json))).first;
 
       std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
 

@@ -18,12 +18,9 @@ namespace CASM {
       coord_in_prim.cart() = coord.cart();
 
       for(Index b = 0; b < prim.basis().size(); ++b) {
-        auto coord_distance_to_basis_site = coord_in_prim - prim.basis()[b];
-        auto rounded_distance = coord_distance_to_basis_site;
-        rounded_distance.frac() = round(coord_distance_to_basis_site.const_frac());
-
-        if((coord_distance_to_basis_site - rounded_distance).const_cart().norm() < tol) {
-          return UnitCellCoord(b, lround(coord_distance_to_basis_site.const_frac()));
+        if(coord_in_prim.min_dist(prim.basis(b)) < tol) {
+          UnitCell coord_unitcell(lround(coord_in_prim.const_frac() - prim.basis(b).const_frac()));
+          return UnitCellCoord(b, coord_unitcell);
         }
       }
 

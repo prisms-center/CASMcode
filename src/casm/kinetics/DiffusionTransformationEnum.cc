@@ -229,7 +229,7 @@ namespace CASM {
       log.begin<Log::verbose>("Calculate cluster orbits");
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       make_prim_periodic_orbits(
-        primclex.prim(),
+        primclex.shared_prim(),
         parser.cspecs().self, // TODO
         alloy_sites_filter,
         primclex.crystallography_tol(),
