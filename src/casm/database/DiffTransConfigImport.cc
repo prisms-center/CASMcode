@@ -1,4 +1,6 @@
 #include "casm/database/DiffTransConfigImport.hh"
+#include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/kinetics/DiffTransConfigMapping.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
@@ -19,6 +21,25 @@
 namespace CASM {
   namespace DB {
 
+    /// \brief Read BasicStructure<Site> to be imported
+    ///
+    /// If 'p.extension()' == ".json" or ".JSON", read as properties.calc.json
+    /// Else, read as VASP POSCAR
+    SimpleStructure StructureMap<Kinetics::DiffTransConfiguration>::_make_structure(const fs::path &p) const {
+      SimpleStructure sstruc;
+      if(p.extension() == ".json" || p.extension() == ".JSON") {
+        jsonParser json(p);
+        from_json(sstruc, json, "relaxed");
+      }
+      else {
+        BasicStructure<Site> struc;
+        fs::ifstream struc_stream(p);
+        struc.read(struc_stream);
+        sstruc = make_simple_structure(struc);
+      }
+      return sstruc;
+    }
+
     // --- DiffTransConfiguration specializations --------------------------------
 
     StructureMap<Kinetics::DiffTransConfiguration>::StructureMap(
@@ -32,10 +53,10 @@ namespace CASM {
       const PrimClex &primclex) :
       m_set(_set) {
       // -- construct ConfigMapper --
-      int map_opt = StrucMapper::Options::none;
-      //if(m_set.rotate) map_opt |= StrucMapper::Options::rotate;
-      if(m_set.strict) map_opt |= StrucMapper::Options::strict;
-      if(!m_set.ideal) map_opt |= StrucMapper::Options::robust;
+      int map_opt = xtal::StrucMapper::Options::none;
+      //if(m_set.rotate) map_opt |= xtal::StrucMapper::Options::rotate;
+      if(m_set.strict) map_opt |= xtal::StrucMapper::Options::strict;
+      if(!m_set.ideal) map_opt |= xtal::StrucMapper::Options::robust;
 
       m_difftransconfigmapper.reset(new Kinetics::DiffTransConfigMapper(
                                       primclex,
@@ -55,11 +76,12 @@ namespace CASM {
 
     StructureMap<Kinetics::DiffTransConfiguration>::map_result_inserter StructureMap<Kinetics::DiffTransConfiguration>::map(
       fs::path p,
+      std::vector<std::string> const &req_properties,
       std::unique_ptr<Kinetics::DiffTransConfiguration> const &hint_config,
       map_result_inserter result) const {
 
       ConfigIO::Result res;
-      res.properties.path = p;
+      res.properties.file_data = p.string();
 
 
       //if(hint != db_config().end()) {
@@ -70,7 +92,7 @@ namespace CASM {
 
       // do mapping
       DiffTransConfigMapperResult map_result;
-      map_result = m_difftransconfigmapper->import_structure_occupation(res.properties.path, hint_config.get());
+      map_result = m_difftransconfigmapper->import_structure_occupation(res.properties.file_data.path(), hint_config.get());
       if(!map_result.success) {
         res.fail_msg = map_result.fail_msg;
         *result++ = std::move(res);

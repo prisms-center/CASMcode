@@ -158,7 +158,8 @@ namespace CASM {
       {
         SimpleStructure oriented_struc = mapper.struc_mapper().calculator().resolve_setting(from_node, from_child);
 
-        Configuration from_config(scel_ptr, jsonParser(), to_configdof(from_node, oriented_struc, *scel_ptr));
+        auto tdof = to_configdof(from_node, oriented_struc, *scel_ptr);
+        Configuration from_config(scel_ptr, jsonParser(), tdof.first);
 
         //Configuration from_config(Configuration::zeros(scel_ptr));
         //from_config.set_occupation(mapper.occupation(make_simple_structure(result.structures[0]),
@@ -395,9 +396,10 @@ namespace CASM {
         for(auto it =  all_strucs.begin(); it != all_strucs.end(); ++it) {
           BasicStructure<Site> struc;
           try {
-            int img_no = std::stoi(it.name());
-            from_json(simple_json(struc, "relaxed_"), *it);
-            bins.insert(std::make_pair(img_no, struc));
+            throw std::runtime_error("DiffTransConfigMapper must be re-implemented to use SimpleStructure");
+            //int img_no = std::stoi(it.name());
+            //from_json(simple_json(struc, "relaxed_"), *it);
+            //bins.insert(std::make_pair(img_no, struc));
           }
           catch(std::invalid_argument) {
           }

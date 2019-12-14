@@ -11,12 +11,8 @@
 
 namespace CASM {
   namespace xtal {
-    template<typename T> class BasicStructure;
-    class Site;
     class SimpleStructure;
   }
-  using xtal::BasicStructure;
-  using xtal::Site;
   using xtal::SimpleStructure;
 
 
@@ -50,6 +46,7 @@ namespace CASM {
       /// \brief Specialized mapping method for Configuration
       ///
       /// \param p Path to structure or properties.calc.json file. Not guaranteed to exist or be valid.
+      /// \param req_properties, list of names of properties that are required for mapped data to be considered 'complete'
       /// \param hint std::unique_ptr<Configuration> to 'from' config for 'casm update', or 'end' if unknown as with 'casm import'.
       /// \param result Insert iterator of Result objects to output mapping results
       ///
@@ -57,7 +54,9 @@ namespace CASM {
       /// - >1 result handles case of non-primitive configurations
       /// - responsible for filling in Result data structure
       /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
+      // TODO: get rid of req_properties, and have it checked on-the-fly at point where it is needed
       map_result_inserter map(fs::path p,
+                              std::vector<std::string> const &req_properties,
                               std::unique_ptr<Configuration> const &hint_config,
                               map_result_inserter result) const;
 

@@ -190,7 +190,7 @@ namespace CASM {
       /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
       /// else returns empty path
       ///
-      static fs::path calc_properties_path(fs::path pos_path, PrimClex const &_pclex);
+      static std::string calc_properties_path(fs::path pos_path, PrimClex const &_pclex);
 
       // If pos_path can be used to resolve a properties.calc.json, return its path.
       // Otherwise return pos_path

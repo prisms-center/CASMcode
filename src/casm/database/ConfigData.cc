@@ -274,11 +274,11 @@ namespace CASM {
     /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
     /// else returns empty path
     ///
-    fs::path ConfigData::calc_properties_path(fs::path pos_path, PrimClex const &_pclex) {
+    std::string ConfigData::calc_properties_path(fs::path pos_path, PrimClex const &_pclex) {
 
       // check 1: is a JSON file
       if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
-        return pos_path;
+        return pos_path.string();
       }
 
       // check 2: /path/to/POS -> /path/to/calctype.current/properties.calc.json
@@ -287,7 +287,7 @@ namespace CASM {
         dft_path.remove_filename();
         (dft_path /= ("calctype." + _pclex.settings().default_clex().calctype)) /= "properties.calc.json";
         if(fs::exists(dft_path)) {
-          return dft_path;
+          return dft_path.string();
         }
       }
 
@@ -297,12 +297,12 @@ namespace CASM {
         dft_path.remove_filename();
         dft_path /= "properties.calc.json";
         if(fs::exists(dft_path)) {
-          return dft_path;
+          return dft_path.string();
         }
       }
 
       // not found, return empty path
-      return fs::path();
+      return "";
     }
 
     // If pos_path can be used to resolve a properties.calc.json, return its path.
@@ -353,7 +353,7 @@ namespace CASM {
     ///
     /// - Compares 'data_timestamp' && fs::last_write_time
     bool ConfigData::no_change(const std::string &configname) const {
-      fs::path prop_path = calc_properties_path(configname, primclex());
+      std::string prop_path = calc_properties_path(configname, primclex());
       if(!prop_path.empty()) {
         auto it = db_props().find_via_from(configname);
         if(it != db_props().end()) {

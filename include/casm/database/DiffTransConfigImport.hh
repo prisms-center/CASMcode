@@ -15,11 +15,10 @@ namespace CASM {
     class DiffTransConfiguration;
   }
   namespace xtal {
-    template<typename T> class BasicStructure;
-    class Site;
+    class SimpleStructure;
   }
-  using xtal::BasicStructure;
-  using xtal::Site;;
+
+  using xtal::SimpleStructure;
 
   class PrimClex;
   class jsonParser;
@@ -50,6 +49,7 @@ namespace CASM {
       /// \brief Specialized mapping method for Configuration
       ///
       /// \param p Path to structure or properties.calc.json file. Not guaranteed to exist or be valid.
+      /// \param req_properties, list of names of properties that are required for mapped data to be considered 'complete'
       /// \param hint Iterator to 'from' config for 'casm update', or 'end' if unknown as with 'casm import'.
       /// \param result Insert iterator of Result objects to output mapping results
       ///
@@ -59,6 +59,7 @@ namespace CASM {
       /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
       map_result_inserter map(
         fs::path p,
+        std::vector<std::string> const &req_properties,
         std::unique_ptr<ConfigType> const &hint_config,
         map_result_inserter result) const;
 

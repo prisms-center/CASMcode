@@ -63,9 +63,15 @@ namespace CASM {
         std::vector<ConfigIO::Result> tvec;
         auto config_it = db_config<ConfigType>().find(name);
         if(config_it == db_config<ConfigType>().end())
-          m_structure_mapper.map(resolve_struc_path(pos, primclex()), nullptr, std::back_inserter(tvec));
+          m_structure_mapper.map(resolve_struc_path(pos, primclex()),
+                                 this->primclex().settings().template properties<ConfigType>(),
+                                 nullptr,
+                                 std::back_inserter(tvec));
         else
-          m_structure_mapper.map(resolve_struc_path(pos, primclex()), notstd::make_unique<ConfigType>(*config_it), std::back_inserter(tvec));
+          m_structure_mapper.map(resolve_struc_path(pos, primclex()),
+                                 this->primclex().settings().template properties<ConfigType>(),
+                                 notstd::make_unique<ConfigType>(*config_it),
+                                 std::back_inserter(tvec));
         for(auto &res : tvec) {
           results.push_back(res);
           // if mapped && has data, insert

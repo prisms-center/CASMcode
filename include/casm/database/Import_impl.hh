@@ -114,6 +114,7 @@ namespace CASM {
         // Outputs one or more mapping results from the structure located at specied path
         //   See _import documentation for more.
         m_structure_mapper.map(resolve_struc_path(*it, primclex()),
+                               this->primclex().settings().template properties<ConfigType>(),
                                nullptr,
                                std::back_inserter(tvec));
         for(auto &res : tvec) {
@@ -160,169 +161,168 @@ namespace CASM {
             data_res_it = data_results.insert({from, ConfigIO::ImportData()}).first;
             data_res_it->second.preexisting = has_existing_data_or_files(from);
           }
-          ConfigIO::ImportData &data_res
-        } = data_res_it->second;
-        // if preexisting data, do not import new data unless overwrite option set
-        if(data_res.preexisting && !settings().overwrite) {
-          continue;
-        }
-
-        // if existing data (could be from this batch), check if score would
-        //   be improved
-        if(db_props().find_via_to(to) != db_props().end()) {
-          double score = db_props().score(res.properties);
-          double best_score = db_props().best_score(to);
-          if(score >= best_score) {
+          ConfigIO::ImportData &data_res = data_res_it->second;
+          // if preexisting data, do not import new data unless overwrite option set
+          if(data_res.preexisting && !settings().overwrite) {
             continue;
           }
-        }
-        // note which structure is the latest import to configuration in case of conflicts
-        data_res.last_insert = res.properties.file_data.path();
+          // if existing data (could be from this batch), check if score would
+          //   be improved
+          if(db_props().find_via_to(to) != db_props().end()) {
+            double score = db_props().score(res.properties);
+            double best_score = db_props().best_score(to);
+            if(score >= best_score) {
+              continue;
+            }
+          }
+          // note which structure is the latest import to configuration in case of conflicts
+          data_res.last_insert = res.properties.file_data.path();
 
-        // insert data (erasing any existing):
-        auto pos = db_props().find_via_from(from);
-        if(pos != db_props().end()) {
-          db_props().erase(pos);
-        }
-        db_props().insert(res.properties);
+          // insert data (erasing any existing):
+          auto pos = db_props().find_via_from(from);
+          if(pos != db_props().end()) {
+            db_props().erase(pos);
+          }
+          db_props().insert(res.properties);
 
-        // copy files:
-        //   there might be existing files in cases of import conflicts
-        rm_files(from, false);
-        std::tie(data_res.copy_data, data_res.copy_more) =
-          cp_files(res.properties.file_data.path(), from, false, settings().additional_files);
+          // copy files:
+          //   there might be existing files in cases of import conflicts
+          rm_files(from, false);
+          std::tie(data_res.copy_data, data_res.copy_more) =
+            cp_files(res.properties.file_data.path(), from, false, settings().additional_files);
+        }
+
+      }
+
+      _import_report(results, data_results);
+
+      db_supercell().commit();
+      db_config<ConfigType>().commit();
+      db_props().commit();
+    }
+
+    template<typename _ConfigType>
+    void ImportT<_ConfigType>::_import_report(
+      std::vector<ConfigIO::Result> &results,
+      const std::map<std::string, ConfigIO::ImportData> &data_results) {
+
+      // map_fail: could not map
+      // map_success: could map
+      // import_data_fail: would import but couldn't (score < best_score && !data_results.count(from))
+      // import_data_conflicts: conflicts with other in import batch && preexisting
+      // - pos, config, score_method, chosen?, overwrite?, import data?, import additional files?, score, best_score, is_preexisting?
+
+      // list of structures that could not be mapped
+      std::vector<ConfigIO::Result> map_fail;
+
+      // list of structures that could be mapped
+      std::vector<ConfigIO::Result> map_success;
+
+      // list of structures that would be imported except preexisting data prevents it
+      std::vector<ConfigIO::Result> import_data_fail;
+
+      std::string prefix = "import_";
+      prefix += traits<ConfigType>::short_name;
+
+      for(long i = 0; i < results.size(); ++i) {
+
+        const auto &res = results[i];
+        if(res.properties.to.empty()) {
+          map_fail.push_back(res);
+
+        }
+        else {
+          map_success.push_back(res);
+          if(res.has_data && settings().data && db_props().find_via_to(res.properties.to) != db_props().end()
+             && db_props().score(res.properties) < db_props().best_score(res.properties.to)) {
+            import_data_fail.push_back(res);
+          }
+        }
+      }
+
+      // list of conflicts (multiple config with same 'from')
+      std::map<std::string, std::vector<long> > conflict_count;
+      std::vector<ConfigIO::Result> conflict;
+      for(long i = 0; i < results.size(); ++i) {
+        const auto &res = results[i];
+        auto it = conflict_count.find(res.properties.from);
+        if(it == conflict_count.end()) {
+          conflict_count[res.properties.from] = std::vector<long>(1, i);
+        }
+        else {
+          it->second.push_back(i);
+        }
+      }
+
+      for(const auto &val : conflict_count) {
+        if(val.second.size() > 1) {
+          for(const auto &i : val.second) {
+            conflict.push_back(results[i]);
+          }
+        }
+      }
+
+
+      // output a 'batch' file with paths to structures that could not be imported
+      if(map_fail.size()) {
+
+        fs::path p = m_report_dir / (prefix + "_map_fail");
+        fs::ofstream sout(p);
+
+        primclex().log() << "WARNING: Could not import " << map_fail.size() << " structures." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
+
+        DataFormatterDictionary<ConfigIO::Result> dict;
+        dict.insert(ConfigIO::pos(), ConfigIO::fail_msg());
+        auto formatter = dict.parse({"pos", "fail_msg"});
+        sout << formatter(map_fail.begin(), map_fail.end());
+      }
+
+      // - pos, config, score_method, import data?, import additional files?, score, best_score, is_preexisting?
+      auto formatter = _import_formatter(data_results);
+
+      if(map_success.size()) {
+
+        fs::path p = m_report_dir / (prefix + "_map_success");
+        fs::ofstream sout(p);
+
+        primclex().log() << "Successfully imported " << map_success.size() << " structures." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
+
+        sout << formatter(map_success.begin(), map_success.end());
+      }
+
+      if(import_data_fail.size()) {
+
+        fs::path p = m_report_dir / (prefix + "_data_fail");
+        fs::ofstream sout(p);
+
+        primclex().log() << "WARNING: Did not import data from "
+                         << import_data_fail.size() << " structures which have are a mapping score"
+                         " better than the existing data." << std::endl;
+        primclex().log() << "  You may wish to inspect these structures and allow overwriting "
+                         "or remove existing data manually." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
+
+        sout << formatter(import_data_fail.begin(), import_data_fail.end());
+      }
+
+      if(conflict.size()) {
+        fs::path p = m_report_dir / (prefix + "_conflict");
+        fs::ofstream sout(p);
+
+        primclex().log() << "WARNING: Imported data from structures that mapped to the same configuration." << std::endl
+                         << "  Data can only be imported from one of the conflicting structures." << std::endl
+                         << "  Based on the current conflict resolution method the 'best' result was automatically chosen, " << std::endl
+                         << "  but you may wish to inspect these results and manually select which structures to import." << std::endl;
+        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
+
+        sout << formatter(conflict.begin(), conflict.end());
       }
 
     }
-    _import_report(results, data_results);
 
-    db_supercell().commit();
-    db_config<ConfigType>().commit();
-    db_props().commit();
   }
-
-  template<typename _ConfigType>
-  void ImportT<_ConfigType>::_import_report(
-    std::vector<ConfigIO::Result> &results,
-    const std::map<std::string, ConfigIO::ImportData> &data_results) {
-
-    // map_fail: could not map
-    // map_success: could map
-    // import_data_fail: would import but couldn't (score < best_score && !data_results.count(from))
-    // import_data_conflicts: conflicts with other in import batch && preexisting
-    // - pos, config, score_method, chosen?, overwrite?, import data?, import additional files?, score, best_score, is_preexisting?
-
-    // list of structures that could not be mapped
-    std::vector<ConfigIO::Result> map_fail;
-
-    // list of structures that could be mapped
-    std::vector<ConfigIO::Result> map_success;
-
-    // list of structures that would be imported except preexisting data prevents it
-    std::vector<ConfigIO::Result> import_data_fail;
-
-    std::string prefix = "import_";
-    prefix += traits<ConfigType>::short_name;
-
-    for(long i = 0; i < results.size(); ++i) {
-
-      const auto &res = results[i];
-      if(res.properties.to.empty()) {
-        map_fail.push_back(res);
-
-      }
-      else {
-        map_success.push_back(res);
-        if(res.has_data && settings().data && db_props().find_via_to(res.properties.to) != db_props().end()
-           && db_props().score(res.properties) < db_props().best_score(res.properties.to)) {
-          import_data_fail.push_back(res);
-        }
-      }
-    }
-
-    // list of conflicts (multiple config with same 'from')
-    std::map<std::string, std::vector<long> > conflict_count;
-    std::vector<ConfigIO::Result> conflict;
-    for(long i = 0; i < results.size(); ++i) {
-      const auto &res = results[i];
-      auto it = conflict_count.find(res.properties.from);
-      if(it == conflict_count.end()) {
-        conflict_count[res.properties.from] = std::vector<long>(1, i);
-      }
-      else {
-        it->second.push_back(i);
-      }
-    }
-
-    for(const auto &val : conflict_count) {
-      if(val.second.size() > 1) {
-        for(const auto &i : val.second) {
-          conflict.push_back(results[i]);
-        }
-      }
-    }
-
-
-    // output a 'batch' file with paths to structures that could not be imported
-    if(map_fail.size()) {
-
-      fs::path p = m_report_dir / (prefix + "_map_fail");
-      fs::ofstream sout(p);
-
-      primclex().log() << "WARNING: Could not import " << map_fail.size() << " structures." << std::endl;
-      primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
-
-      DataFormatterDictionary<ConfigIO::Result> dict;
-      dict.insert(ConfigIO::pos(), ConfigIO::fail_msg());
-      auto formatter = dict.parse({"pos", "fail_msg"});
-      sout << formatter(map_fail.begin(), map_fail.end());
-    }
-
-    // - pos, config, score_method, import data?, import additional files?, score, best_score, is_preexisting?
-    auto formatter = _import_formatter(data_results);
-
-    if(map_success.size()) {
-
-      fs::path p = m_report_dir / (prefix + "_map_success");
-      fs::ofstream sout(p);
-
-      primclex().log() << "Successfully imported " << map_success.size() << " structures." << std::endl;
-      primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
-
-      sout << formatter(map_success.begin(), map_success.end());
-    }
-
-    if(import_data_fail.size()) {
-
-      fs::path p = m_report_dir / (prefix + "_data_fail");
-      fs::ofstream sout(p);
-
-      primclex().log() << "WARNING: Did not import data from "
-                       << import_data_fail.size() << " structures which have are a mapping score"
-                       " better than the existing data." << std::endl;
-      primclex().log() << "  You may wish to inspect these structures and allow overwriting "
-                       "or remove existing data manually." << std::endl;
-      primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
-
-      sout << formatter(import_data_fail.begin(), import_data_fail.end());
-    }
-
-    if(conflict.size()) {
-      fs::path p = m_report_dir / (prefix + "_conflict");
-      fs::ofstream sout(p);
-
-      primclex().log() << "WARNING: Imported data from structures that mapped to the same configuration." << std::endl
-                       << "  Data can only be imported from one of the conflicting structures." << std::endl
-                       << "  Based on the current conflict resolution method the 'best' result was automatically chosen, " << std::endl
-                       << "  but you may wish to inspect these results and manually select which structures to import." << std::endl;
-      primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
-
-      sout << formatter(conflict.begin(), conflict.end());
-    }
-
-  }
-
-}
 }
 
 #endif
